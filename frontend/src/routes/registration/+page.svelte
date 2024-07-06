@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
-	import { fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 	export let data: PageData;
 </script>
