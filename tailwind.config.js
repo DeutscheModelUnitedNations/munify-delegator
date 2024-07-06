@@ -1,7 +1,15 @@
 /** @type {import('tailwindcss').Config} */
+const plugin = require('tailwindcss/plugin');
+
 export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme: {
+		fontFamily: {
+			sans: ['Outfit', 'system-ui', 'sans-serif'],
+			serif: ['Vollkorn', 'ui-serif', 'Georgia', 'serif'],
+			mono: ['Roboto Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+			fa: ['FontAwesome']
+		},
 		extend: {}
 	},
 	daisyui: {
@@ -40,5 +48,22 @@ export default {
 			}
 		]
 	},
-	plugins: [require('daisyui')]
+	plugins: [
+		require('daisyui'),
+		plugin(function ({ addUtilities }) {
+			const newUtilities = {
+				'.max-ch-sm': {
+					'max-width': '50ch'
+				},
+				'.max-ch-md': {
+					'max-width': '75ch'
+				},
+				'.max-ch-lg': {
+					'max-width': '100ch'
+				}
+			};
+
+			addUtilities(newUtilities, ['responsive']);
+		})
+	]
 };

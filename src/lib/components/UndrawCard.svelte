@@ -7,7 +7,7 @@
 
 <div class="card bg-base-100 w-full max-w-96 shadow-lg">
 	<figure class="bg-slate-100 flex justify-center items-center p-6 h-60">
-		<img src={img} alt="Shoes" class="w-full h-full" />
+		<img src={img} alt="Illustration" class="w-full h-full" />
 	</figure>
 	<div class="card-body">
 		<h2 class="card-title">{titel}</h2>

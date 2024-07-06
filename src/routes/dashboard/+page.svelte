@@ -7,30 +7,26 @@
 	const testConferences = [
 		{
 			id: '1',
-			name: 'MUN-SH 2025',
-			active: true,
+			titel: 'MUN-SH 2025',
 			location: 'Kiel',
-			start: new Date(2025, 3, 1),
-			end: new Date(2025, 3, 3),
-			imageSrc: "/dmun-stock/sh1.jpg"
+			website: 'https://www.mun-sh.de',
+			start: new Date(2025, 2, 6),
+			end: new Date(2025, 2, 10),
+			image: '/dmun-stock/sh1.jpg',
 		},
 		{
 			id: '2',
-			name: 'MUNBW 2025',
-			active: true,
+			titel: 'MUNBW 2025',
 			location: 'Stuttgart',
-			start: new Date(2025, 4, 1),
-			end: new Date(2025, 4, 3),
-			imageSrc: "/dmun-stock/bw1.jpg"
+			website: 'https://www.mun-bw.de',
+			image: '/dmun-stock/bw1.jpg',
 		},
 		{
 			id: '3',
-			name: 'MUN-SH 2026',
-			active: false,
+			titel: 'MUN-SH 2026',
 			location: 'Kiel',
-			start: new Date(2026, 3, 1),
-			end: new Date(2026, 3, 3),
-			imageSrc: "/dmun-stock/sh2.jpg"
+			website: 'https://www.mun-sh.de',
+			image: '/dmun-stock/sh2.jpg',
 		}
 	];
 </script>
@@ -39,14 +35,7 @@
 <section class="mt-10 flex flex-wrap gap-4">
 	<div class="carousel carousel-center bg-slate-200 shadow-inner rounded-box w-full space-x-6 p-6">
 		{#each testConferences as conference}
-			<ConferenceCard
-				titel={conference.name}
-				location={conference.location}
-				start={conference.start}
-				end={conference.end}
-				id={conference.id}
-				imageSrc={conference.imageSrc}
-			/>
+			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
 		{/each}
 	</div>
 </section>
