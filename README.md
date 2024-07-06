@@ -4,6 +4,8 @@ MUNify DELEGATOR is a Software to manage the Registration Process and organizati
 
 Disclaimer: MUNify DELEGATOR is currently in an early stage of development and not yet ready for production use. We are working hard to provide a stable Version as soon as possible.
 
+We are happy to recieve feedback, contributions and donations. Please see below for more information.
+
 ## Features
 + **Registration Process**: Manage the Registration Process for Delegations, Single Applicants and Mentors
 + **Delegation Assignment**: Assign Delegations to Countries and Committees
@@ -59,3 +61,9 @@ By contributing you agree to release your contribution under the projects licens
 This aspect is work in progress since the project is currently in its development phase. If you want to use the project or one of its components nonetheless, please contact us via the discussion section.
 
 [LICENSE.md](LICENSE.md)
+
+## Support us / Donations
+You can support our work by donating to our non-profit organization [Deutsche Model United Nations (DMUN) e.V.](https://dmun.de).
+Please contact our board for details on how to donate by sending an email to [vorstand@dmun.de](mailto:vorstand@dmun.de).
+
+All donations are tax deductible in Germany and we are happy to provide you with a donation receipt. The money will be used to support our development of MUNify if you don't specify a different purpose.
