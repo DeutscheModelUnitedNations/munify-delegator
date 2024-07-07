@@ -5,7 +5,7 @@
 		link?: string;
 	}
 
-	export let items: Info[] = [];
+	let { items }: { items: Info[] } = $props();
 </script>
 
 <div class="grid grid-cols-[auto_1fr] gap-2">

@@ -9,7 +9,7 @@ Disclaimer: MUNify DELEGATOR is currently in an early stage of development and n
 We are happy to recieve feedback, contributions and donations. Please see below for more information.
 
 ## Features
-+ **Registration Process**: Manage the Registration Process for Delegations, Single Applicants and Mentors
++ **Registration Process**: Manage the Registration Process for Delegations, Single Applicants and Supervisors
 + **Delegation Assignment**: Assign Delegations to Countries and Committees
 + **Delegation Management**: Manage Delegations and track their Status (like Payment Status)
 

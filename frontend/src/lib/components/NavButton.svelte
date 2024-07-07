@@ -1,14 +1,17 @@
 <script lang="ts">
-    export let titel = '';
-    export let href = '';
-    export let icon = 'fa-question';
-    export let active = false;
+	interface Props {
+		titel: string;
+		href: string;
+		icon: string;
+		active: boolean;
+	}
+
+	let { titel, href, icon, active }: Props = $props();
 </script>
 
-
 <li>
-	<a href={href} class={`flex items-center ${active && "active"}`}>
-		<i class={`fa-duotone ${icon} w-5`} style={active && "--fa-primary-color: #ffffff"} />
+	<a {href} class={`flex items-center ${active && 'active'}`}>
+		<i class={`fa-duotone ${icon} w-5`} style={active && '--fa-primary-color: #ffffff'} />
 		<div>{titel}</div>
 	</a>
 </li>

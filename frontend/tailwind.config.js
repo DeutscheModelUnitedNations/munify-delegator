@@ -2,7 +2,7 @@
 const plugin = require('tailwindcss/plugin');
 
 export default {
-	content: ['./src/**/*.{html,js,svelte,ts}'],
+	content: ['./src/**/*.{html,js,svelte,ts}', './lib/**/*.{html,js,svelte,ts}'],
 	theme: {
 		fontFamily: {
 			sans: ['Outfit', 'system-ui', 'sans-serif'],

@@ -2,7 +2,7 @@
 	import LL from '$i18n/i18n-svelte';
 	import { locale } from '$i18n/i18n-svelte';
 
-	export let titel: string;
+	let { titel }: { titel: string } = $props();
 </script>
 
 <div class="navbar bg-base-100 px-4 py-2 rounded-2xl shadow-lg gap-2">

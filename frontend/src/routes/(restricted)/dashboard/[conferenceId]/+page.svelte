@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import Header from '$lib/components/Header.svelte';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 </script>
 
 <Header titel={data.conferenceId} />

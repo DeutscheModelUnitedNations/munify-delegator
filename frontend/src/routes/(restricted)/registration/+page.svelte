@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 	import type { PageData } from './$types';
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">

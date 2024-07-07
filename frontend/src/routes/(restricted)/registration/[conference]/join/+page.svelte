@@ -5,7 +5,7 @@
 	import Steps from '$lib/components/RegistrationSteps.svelte';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 
 	let step = 1;
 	let code = data.code ?? '';

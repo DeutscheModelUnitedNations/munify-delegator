@@ -3,10 +3,42 @@
 	import Steps from '$lib/components/RegistrationSteps.svelte';
 	import ReviewTable from '$lib/components/ReviewTable.svelte';
 	import type { PageData } from './$types';
+	import { fade } from 'svelte/transition';
+	import { linear } from 'svelte/easing';
 
-	export let data: PageData;
+	// TODO remove after Svelte 5 bug is fixed https://github.com/sveltejs/svelte/issues/10876
+	function workaroundSvelte5BugWithDelay({ x = 0, y = 0, delay, duration, easing = linear }) {
+		let virtual_duration = delay + duration;
+		let threshold = delay / virtual_duration;
+		return {
+			duration: virtual_duration,
+			easing: (x) => (x < threshold ? 0 : easing((x - threshold) / (1 - threshold))),
+			x,
+			y
+		};
+	}
 
-	let step = 1;
+	let { data }: { data: PageData } = $props();
+
+	let step = $state(1);
+
+	const nextStep = () => {
+		step += 1;
+		window.scrollTo({
+			top: 0,
+			left: 0,
+			behavior: 'smooth'
+		});
+	};
+
+	const prevStep = () => {
+		step -= 1;
+		window.scrollTo({
+			top: 0,
+			left: 0,
+			behavior: 'smooth'
+		});
+	};
 
 	const testData = {
 		conference: 'MUN-SH 2025',
@@ -40,7 +72,7 @@
 		<h1 class="text-3xl tracking-wider uppercase mb-3">Delegation erstellen</h1>
 		{#if step === 1}
 			<div
-				in:fly={{ x: 50, duration: 300, delay: 300 }}
+				in:fly={workaroundSvelte5BugWithDelay({ x: 50, duration: 300, delay: 300 })}
 				out:fly={{ x: -50, duration: 300 }}
 				class="flex flex-col gap-6"
 			>
@@ -60,12 +92,12 @@
 					sehr gerne bei der Vermittlung von Delegationspartner*innen. Den Kontakt finden Sie auf der
 					Website der jeweiligen Konferenz.
 				</p>
-				<button class="btn btn-lg btn-primary" on:click={() => (step = 2)}>Weiter</button>
+				<button class="btn btn-lg btn-primary" onclick={nextStep}>Weiter</button>
 				<a class="btn btn-warning" href=".">Zurück</a>
 			</div>
 		{:else if step === 2}
 			<div
-				in:fly={{ x: 50, duration: 300, delay: 300 }}
+				in:fly={workaroundSvelte5BugWithDelay({ x: 50, duration: 300, delay: 300 })}
 				out:fly={{ x: -50, duration: 300 }}
 				class="flex flex-col gap-4"
 			>
@@ -75,9 +107,9 @@
 				</p>
 				<form
 					class="contents"
-					on:submit={(e) => {
+					onsubmit={(e) => {
 						e.preventDefault();
-						step = 3;
+						nextStep();
 					}}
 				>
 					<label class="form-control w-full">
@@ -107,16 +139,11 @@
 					</label>
 					<button class="btn btn-lg btn-primary" role="submit">Weiter</button>
 				</form>
-				<button
-					class="btn btn-warning"
-					on:click={() => {
-						step = 1;
-					}}>Zurück</button
-				>
+				<button class="btn btn-warning" onclick={prevStep}>Zurück</button>
 			</div>
 		{:else if step === 3}
 			<div
-				in:fly={{ x: 50, duration: 300, delay: 300 }}
+				in:fly={workaroundSvelte5BugWithDelay({ x: 50, duration: 300, delay: 300 })}
 				out:fly={{ x: -50, duration: 300 }}
 				class="flex flex-col gap-4 items-center"
 			>
@@ -140,22 +167,14 @@
 						<td class="max-ch-sm">{testData.experience}</td>
 					</tr>
 				</ReviewTable>
-				<button
-					class="btn btn-lg btn-primary w-full"
-					on:click={() => {
-						step = 4;
-					}}>Delegation erstellen</button
+				<button class="btn btn-lg btn-primary w-full" onclick={nextStep}
+					>Delegation erstellen</button
 				>
-				<button
-					class="btn btn-warning w-full"
-					on:click={() => {
-						step = 2;
-					}}>Zurück</button
-				>
+				<button class="btn btn-warning w-full" onclick={prevStep}>Zurück</button>
 			</div>
 		{:else if step === 4}
 			<div
-				in:fly={{ x: 50, duration: 300, delay: 300 }}
+				in:fly={workaroundSvelte5BugWithDelay({ x: 50, duration: 300, delay: 300 })}
 				out:fly={{ x: -50, duration: 300 }}
 				class="flex flex-col gap-4 items-center w-full sm:w-auto"
 			>
@@ -173,7 +192,7 @@
 					</p>
 					<button
 						class="btn btn-ghost btn-primary"
-						on:click={() => {
+						onclick={() => {
 							navigator.clipboard.writeText(getReferralLink());
 							alert('Link kopiert');
 						}}
@@ -190,7 +209,7 @@
 					</p>
 					<button
 						class="btn btn-ghost btn-primary"
-						on:click={() => {
+						onclick={() => {
 							navigator.clipboard.writeText(testCode);
 							alert('Code kopiert');
 						}}

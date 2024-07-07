@@ -3,11 +3,14 @@
 	import NavButtonDropdown from '$lib/components/NavButtonDropdown.svelte';
 	import { page } from '$app/stores';
 
-	export let activeConferences: any = [];
-	export let pastConferences: any = [];
+	interface Props {
+		activeConferences: any[];
+		pastConferences: any[];
+	}
 
-	$: path = $page.url.pathname
+	let { activeConferences, pastConferences }: Props = $props();
 
+	let path = $derived($page.url.pathname);
 </script>
 
 <div class="drawer min-h-screen bg-base-100 lg:drawer-open">
@@ -25,12 +28,18 @@
 				<div class="text-2xl font-black font-bold">DELEGATOR</div>
 			</div>
 			<ul class="menu">
-				<NavButton href="/dashboard" icon="fa-house" titel="Übersicht" active={path.endsWith("dashboard")}></NavButton>
+				<NavButton
+					href="/dashboard"
+					icon="fa-house"
+					titel="Übersicht"
+					active={path.endsWith('dashboard')}
+				></NavButton>
 
 				<div class="h-6" />
 
 				{#each activeConferences as { id, name }}
-					<NavButton href="/dashboard/{id}" icon="fa-flag" titel={name} active={path.includes(id)}></NavButton>
+					<NavButton href="/dashboard/{id}" icon="fa-flag" titel={name} active={path.includes(id)}
+					></NavButton>
 				{/each}
 
 				<div class="h-6" />
@@ -38,13 +47,18 @@
 				{#if pastConferences.length > 0}
 					<NavButtonDropdown icon="fa-archive" titel="Vergangene">
 						{#each pastConferences as { id, name }}
-							<NavButton href="/dashboard/{id}" icon="fa-flag" titel={name} active={path.includes(id)}></NavButton>
+							<NavButton
+								href="/dashboard/{id}"
+								icon="fa-flag"
+								titel={name}
+								active={path.includes(id)}
+							></NavButton>
 						{/each}
 					</NavButtonDropdown>
 				{/if}
 
 				<div class="h-6" />
-				
+
 				<NavButton href="/registration" icon="fa-plus" titel="Anmeldung"></NavButton>
 			</ul>
 		</nav>

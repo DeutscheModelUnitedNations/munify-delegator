@@ -2,15 +2,29 @@
 	import { locale } from '$i18n/i18n-svelte';
 	import CardInfoSectionWithIcons from './CardInfoSectionWithIcons.svelte';
 
-	export let id;
-	export let titel;
-	export let location = '';
-	export let start: Date | undefined = undefined;
-	export let end: Date | undefined = undefined;
-	export let website;
-	export let image = '';
-	export let baseSlug;
-	export let btnText = 'Anmelden';
+	interface ConferenceCardProps {
+		id: string;
+		titel: string;
+		location: string;
+		start: Date;
+		end: Date;
+		website: string;
+		image: string;
+		baseSlug: string;
+		btnText: string;
+	}
+
+	let {
+		id,
+		titel,
+		location = '',
+		start,
+		end,
+		website,
+		image = '',
+		baseSlug,
+		btnText = 'Anmelden'
+	}: ConferenceCardProps = $props();
 
 	const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
 </script>

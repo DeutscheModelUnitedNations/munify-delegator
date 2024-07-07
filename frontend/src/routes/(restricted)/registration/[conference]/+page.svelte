@@ -3,7 +3,7 @@
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
@@ -84,15 +84,15 @@
 			<UndrawCard
 				titel="Betreuer*in"
 				img="/undraw/educator.svg"
-				btnText="Zur Betreuer*innenanmeldung"
-				btnLink={`${data.conferenceId}/mentor`}
+				btnText="Anmeldung als Betreuer*in"
+				btnLink={`${data.conferenceId}/supervisor`}
 			>
 				<CardInfoSectionWithIcons
 					items={[
 						{
 							icon: 'fa-arrow-right',
 							text: 'Hier kannst du dich als Betreuer*in für eine Delegation anmelden. Als Betreuer*in hast du Einsicht in alle deine Delegationen und kannst sie organisatorisch unterstützen.'
-						},
+						}
 					]}
 				/>
 			</UndrawCard>

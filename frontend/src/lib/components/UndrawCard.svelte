@@ -1,8 +1,12 @@
 <script lang="ts">
-	export let titel: string;
-	export let img: string;
-	export let btnText: string;
-	export let btnLink: string;
+	interface Props {
+		titel: string;
+		img: string;
+		btnText: string;
+		btnLink: string;
+	}
+
+	let { titel, img, btnText, btnLink }: Props = $props();
 </script>
 
 <div class="card bg-base-100 w-full max-w-96 shadow-lg">

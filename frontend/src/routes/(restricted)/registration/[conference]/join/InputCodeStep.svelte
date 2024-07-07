@@ -1,9 +1,13 @@
 <script lang="ts">
-	export let code: string = '';
-	export let changeCode: (code: string) => void;
-	export let changeStep: (step: number) => void;
+	interface Props {
+		code: string;
+		changeCode: (code: string) => void;
+		changeStep: (step: number) => void;
+	}
 
-	let showTooltip = false;
+	let { code, changeCode, changeStep }: Props = $props();
+
+	let showTooltip = $state(false);
 </script>
 
 <div class="flex flex-col items-center">
@@ -18,7 +22,7 @@
 				placeholder="Code"
 				value={code}
 				class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
-				on:change={(e) => {
+				onchange={(e) => {
 					changeCode(e.target?.value);
 					code = e.target?.value;
 				}}
@@ -26,7 +30,7 @@
 		</div>
 		<button
 			class="btn btn-lg btn-primary join-item"
-			on:click={() => {
+			onclick={() => {
 				console.log(code);
 				if (code.length === 0) {
 					showTooltip = true;

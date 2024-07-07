@@ -1,6 +1,10 @@
 <script lang="ts">
-	export let icon = 'fa-question';
-	export let titel = '';
+	interface Props {
+		icon: string;
+		titel: string;
+	}
+
+	let { icon, titel }: Props = $props();
 </script>
 
 <li>
