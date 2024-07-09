@@ -29,7 +29,7 @@
 	const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
 </script>
 
-<div class="carousel-item card bg-base-100 max-w-96 w-[90%] shadow-xl">
+<div class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl">
 	<figure>
 		<img src={image} alt="Conference Picture" />
 	</figure>

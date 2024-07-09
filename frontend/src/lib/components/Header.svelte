@@ -53,23 +53,13 @@
 			<li>
 				<a>
 					<i class="fa-duotone fa-user w-4" />
-					{$LL.profileOptions.PROFILE()}{$locale}
-				</a>
-			</li>
-			<li>
-				<a>
-					<label class="swap swap-rotate w-4">
-						<input type="checkbox" class="theme-controller" value="synthwave" id="theme-checkbox" />
-						<i class="fa-duotone fa-sun swap-off" />
-						<i class="fa-duotone fa-moon swap-on" />
-					</label>
-					{$LL.profileOptions.SWITCH_THEME()}
+					Profilverwaltung
 				</a>
 			</li>
 			<li>
 				<a>
 					<i class="fa-duotone fa-sign-out w-4" />
-					{$LL.profileOptions.LOGOUT()}
+					Logout
 				</a>
 			</li>
 		</ul>

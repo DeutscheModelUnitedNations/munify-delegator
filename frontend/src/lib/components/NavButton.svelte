@@ -3,10 +3,10 @@
 		titel: string;
 		href: string;
 		icon: string;
-		active: boolean;
+		active?: boolean;
 	}
 
-	let { titel, href, icon, active }: Props = $props();
+	let { titel, href, icon, active = false }: Props = $props();
 </script>
 
 <li>

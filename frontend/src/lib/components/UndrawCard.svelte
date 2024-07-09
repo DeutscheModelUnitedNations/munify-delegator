@@ -9,7 +9,7 @@
 	let { titel, img, btnText, btnLink }: Props = $props();
 </script>
 
-<div class="card bg-base-100 w-full max-w-96 shadow-lg">
+<div class="card bg-base-100 dark:bg-base-200 w-full max-w-96 shadow-lg">
 	<figure class="bg-slate-100 flex justify-center items-center p-6 h-60">
 		<img src={img} alt="Illustration" class="w-full h-full" />
 	</figure>

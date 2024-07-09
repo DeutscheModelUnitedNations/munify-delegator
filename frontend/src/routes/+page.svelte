@@ -24,9 +24,9 @@
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h2 class="text-2xl text-black font-thin">MUNify</h2>
-		<h1 class="text-4xl text-black font-bold uppercase tracking-widest">Delegator</h1>
-		<p class="text-lg text-black mt-4">Zentrale Anmeldeplattform für DMUN-Konferenzen</p>
+		<h2 class="text-2xl text-base-content font-thin">MUNify</h2>
+		<h1 class="text-4xl text-base-content font-bold uppercase tracking-widest">Delegator</h1>
+		<p class="text-lg text-base-content mt-4">Zentrale Anmeldeplattform für DMUN-Konferenzen</p>
 	</hero>
 
 	<main class="flex flex-col gap-20">
