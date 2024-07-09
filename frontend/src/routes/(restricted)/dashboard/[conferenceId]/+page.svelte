@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import Header from '$lib/components/Header.svelte';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
+	import Flag from '$lib/components/Flag.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,8 +15,49 @@
 <div class="flex flex-col py-10 gap-10">
 	{#if getData()?.accepted && getData()?.active}
 		<section class="flex flex-col gap-2">
+			<h2 class="text-2xl font-bold">Delegationsstatus</h2>
+			<div class="stats shadow">
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<Flag countryCode="de" size="md" />
+					</div>
+					<div class="stat-title">Sie vertreten</div>
+					<div class="stat-value text-2xl sm:text-4xl sm:w-auto overflow-ellipsis text-wrap">Deutschland</div>
+				</div>
+			</div>
+			<div class="stats stats-vertical sm:stats-horizontal shadow">
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<i class="text-3xl fa-duotone fa-users"></i>
+					</div>
+					<div class="stat-title">Mitglieder</div>
+					<div class="stat-value">3</div>
+					<div class="stat-desc">in der Delegation</div>
+				</div>
+
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<i class="text-3xl fa-duotone fa-flag"></i>
+					</div>
+					<div class="stat-title">Zahl</div>
+					<div class="stat-value">7</div>
+					<div class="stat-desc">ohne Bedeutung</div>
+				</div>
+
+				<div class="stat">
+					<div class="stat-figure text-secondary">
+						<i class="text-3xl fa-duotone fa-chart-pie"> </i>
+					</div>
+					<div class="stat-title">Statistik</div>
+					<div class="stat-value">1,200</div>
+					<div class="stat-desc">ohne Aussagekraft</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="flex flex-col gap-2">
 			<h2 class="text-2xl font-bold">Delegationsmitglieder</h2>
-			<div class="card bg-base-100 shadow-md">
+			<div class="card bg-base-100 shadow-md overflow-x-auto">
 				<div class="card-body">
 					<table class="table">
 						<thead>
@@ -34,7 +76,7 @@
 								<td>GV</td>
 								<td><i class="fa-duotone fa-medal"></i></td>
 								<td
-									><button class="btn btn-sm btn-ghost btn-circle"
+									><button class="btn btn-sm btn-circle"
 										><i class="fa-duotone fa-ellipsis"></i></button
 									></td
 								>
@@ -45,7 +87,7 @@
 								<td>WiSo</td>
 								<td></td>
 								<td
-									><button class="btn btn-sm btn-ghost btn-circle"
+									><button class="btn btn-sm btn-circle"
 										><i class="fa-duotone fa-ellipsis"></i></button
 									></td
 								>
@@ -101,7 +143,7 @@
 
 		<section class="flex flex-col gap-2">
 			<h2 class="text-2xl font-bold">Delegationsmitglieder</h2>
-			<div class="card bg-base-100 shadow-md">
+			<div class="card bg-base-100 shadow-md overflow-x-auto">
 				<div class="card-body">
 					<table class="table">
 						<thead>

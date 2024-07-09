@@ -53,7 +53,7 @@
 
 <section class="mt-10">
 	<h2 class="text-2xl font-bold">Alle Konferenzen</h2>
-	<table class="table">
+	<table class="table overflow-x-auto">
 		<thead>
 			<tr>
 				<th>Titel</th>

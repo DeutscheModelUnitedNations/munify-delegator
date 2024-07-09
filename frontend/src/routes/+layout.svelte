@@ -23,6 +23,7 @@
 	import '@fontsource/vollkorn/700.css';
 	import '@fontsource/vollkorn/800.css';
 	import '@fontsource/vollkorn/900.css';
+	import 'flag-icons/css/flag-icons.min.css';
 	import type { LayoutData } from './$types';
 
 	let { data }: { data: LayoutData } = $props();
