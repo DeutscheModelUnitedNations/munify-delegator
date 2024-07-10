@@ -1,0 +1,22 @@
+<script lang="ts">
+	import Wrapper from './Wrapper.svelte';
+
+	interface Props {
+		content: { icon: string; title: string; value: string; desc: string }[];
+	}
+
+	let { content }: Props = $props();
+</script>
+
+<Wrapper>
+	{#each content as stat}
+		<div class="stat">
+			<div class="stat-figure text-secondary">
+				<i class="text-3xl fa-duotone fa-{stat.icon}"></i>
+			</div>
+			<div class="stat-title">{stat.title}</div>
+			<div class="stat-value">{stat.value}</div>
+			<div class="stat-desc">{stat.desc}</div>
+		</div>
+	{/each}
+</Wrapper>

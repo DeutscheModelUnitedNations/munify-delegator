@@ -19,11 +19,16 @@
 		}
 	};
 
-	const imagePath = () => {
-		return `/node_modules/flag-icons/flags/4x3/${countryCode}.svg`;
-	};
 </script>
 
 <div class={`${flagClassNames()} rounded-lg overflow-hidden shadow flex justify-center items-center`}>
-  <img src={imagePath()} alt={countryCode} class="w-full h-full" />
+  <span class="fi fi-{countryCode}"></span>
 </div>
+
+
+<style>
+  .fi {
+    width: 100% !important;
+    line-height: 100rem !important;
+  }
+</style>

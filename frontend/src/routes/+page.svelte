@@ -51,6 +51,12 @@
 				<p>Hier findest du alle Konferenzen, bei denen du schon angemeldet bist</p>
 			</UndrawCard>
 		</section>
+		<section class="flex justify-center items-center">
+			<div class="alert alert-warning max-ch-md" role="alert">
+				<i class="fas fa-wrench"></i>
+				<span>Diese Seite befindet sich noch im Aufbauprozess und hat keinerlei Funktionalität. Sie dient lediglich als konzeptioneller Entwurf.</span>
+			</div>
+		</section>
 		<section class="flex flex-col gap-6 items-center">
 			<h2 class="text-3xl text-center">Unsere Konferezen</h2>
 			<div class="flex flex-col md:flex-row gap-4">
