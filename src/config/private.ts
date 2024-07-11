@@ -1,28 +1,17 @@
-import { Type } from "@sinclair/typebox";
-import { env } from "$env/dynamic/private";
-import { Value } from "@sinclair/typebox/value";
-
-const separator = "_";
-
-const raw = Object.entries(env).reduce(
-	(acc, [key, value]) => {
-		acc[key.split(separator).join(".")] = value;
-		return acc;
-	},
-	// biome-ignore lint/suspicious/noExplicitAny: we check type manually later
-	{} as any,
-);
+import { Type } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
+import { mapEnvToSchema } from './schemaMapper';
+import { env } from '$env/dynamic/private';
 
 const schema = Type.Object({
-	PORT: Type.Number(),
-	HOST: Type.String(),
-	DATABASE_URL: Type.String(),
+	DATABASE_URL: Type.String()
 });
 
-const schemaErrors = [...Value.Errors(schema, raw)];
-if (schemaErrors.length > 0) {
-	throw new Error(
-		`Error(s) in validating env config schema: ${schemaErrors.join(", ")}`,
-	);
-}
-export const publicConfig = Value.Decode(schema, raw);
+let raw = mapEnvToSchema({
+	env,
+	prefix: '',
+	schema,
+	separator: '_'
+});
+
+export const privateConfig = Value.Decode(schema, raw);

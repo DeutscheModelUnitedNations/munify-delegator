@@ -4,6 +4,7 @@
 	import Footer from '$lib/components/Footer.svelte';
 
 	import SHLogo from '$static/logo/mun-sh_logo.png';
+	import BWLogo from '$static/logo/munbw_logo.png';
 
 	const munSh = {
 		name: 'MUN-SH',
@@ -20,7 +21,7 @@
 		location: 'Stuttgart',
 		date: 'Mai / Juni',
 		website: 'https://munbw.de',
-		logo: '/logo/munbw_logo.png'
+		logo: BWLogo
 	};
 </script>
 

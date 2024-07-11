@@ -47,7 +47,6 @@
     "oidc-client-ts": "^3.0.1",
     "prisma": "^5.16.2",
     "svelte-adapter-bun": "^0.5.2",
-    "typesafe-i18n": "^5.26.2",
     "world-countries": "^5.0.0"
   }
 }

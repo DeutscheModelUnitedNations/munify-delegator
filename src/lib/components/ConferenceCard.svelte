@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardInfoSectionWithIcons from './CardInfoSectionWithIcons.svelte';
+	import { languageTag } from '$lib/paraglide/runtime.js';
 
 	interface ConferenceCardProps {
 		id: string;
@@ -41,7 +42,7 @@
 					icon: 'fa-calendar',
 					text:
 						start && end
-							? `${start.toLocaleDateString($locale, dateOptions)} - ${end.toLocaleDateString($locale, dateOptions)}`
+							? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
 							: 'Datum unbekannt'
 				},
 				{ icon: 'fa-globe', text: website, link: website }

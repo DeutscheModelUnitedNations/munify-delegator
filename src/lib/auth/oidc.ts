@@ -7,8 +7,8 @@ import { goto } from "$app/navigation";
 const userManager = new UserManager({
 	authority: publicConfig.OIDC.AUTHORITY,
 	client_id: publicConfig.OIDC.CLIENT_ID,
-	redirect_uri: `${publicConfig.OIDC.HOSTNAME}/auth/login-callback`,
-	post_logout_redirect_uri: `${publicConfig.OIDC.HOSTNAME}/auth/logout-callback`,
+	redirect_uri: `${publicConfig.HOSTNAME}/auth/login-callback`,
+	post_logout_redirect_uri: `${publicConfig.HOSTNAME}/auth/logout-callback`,
 	automaticSilentRenew: true,
 });
 
@@ -27,7 +27,9 @@ export function redirectLogin() {
 		visitedUrl: get(page).url.toString(),
 	};
 	const urlEncoded = encodeURIComponent(JSON.stringify(urlState));
-	userManager.signinRedirect({ url_state: urlEncoded });
+	
+	userManager.signIn
+	// signinRedirect({ url_state: urlEncoded,  });
 }
 
 export async function resolveLogin(url?: string) {
@@ -45,5 +47,5 @@ export async function resolveLogin(url?: string) {
 }
 
 export function redirectLogout() {
-	userManager.signoutRedirect();
+	// userManager.signoutRedirect();
 }

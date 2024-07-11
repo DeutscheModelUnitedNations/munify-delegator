@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ParaglideJS } from '@inlang/paraglide-sveltekit'
-	import { i18n } from '$lib/i18n'
+	import { ParaglideJS } from '@inlang/paraglide-sveltekit';
+	import { i18n } from '$lib/i18n';
 
 	import '../app.css';
 	import '@fontsource/outfit/100.css';
@@ -26,14 +26,10 @@
 	import '@fontsource/vollkorn/800.css';
 	import '@fontsource/vollkorn/900.css';
 	import 'flag-icons/css/flag-icons.min.css';
-	import type { LayoutData } from './$types';
 
 	let { children } = $props();
-
 </script>
+
 <ParaglideJS {i18n}>
-
-
-{@render children()}
-
+	{@render children()}
 </ParaglideJS>
