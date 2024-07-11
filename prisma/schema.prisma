@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator prismabox {
+  provider = "prismabox"
+  typeboxImportVariableName = "t"
+  typeboxImportDependencyName = "elysia"
+  inputModel = true
+}
+
+model Conference {
+  id        String   @id @default(nanoid())
+  title    String
+  start    DateTime?
+  end      DateTime?
+  location String?
+  website  String?
+  image    Bytes?
+}
