@@ -1,6 +1,8 @@
 <script lang="ts">
 import { getLoggedInUser, redirectLogin } from "$lib/auth/oidc";
 
+let { children } = $props();
+
 const loggedInUser = getLoggedInUser();
 
 if (!loggedInUser) {
@@ -8,4 +10,4 @@ if (!loggedInUser) {
 }
 </script>
 
-<slot />
+{@render children()}

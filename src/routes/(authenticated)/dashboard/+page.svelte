@@ -2,8 +2,6 @@
 	import Header from '$lib/components/Header.svelte';
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 
-	import LL, { locale } from '$i18n/i18n-svelte';
-
 	const testConferences = [
 		{
 			id: '1',
@@ -34,7 +32,7 @@
 	];
 </script>
 
-<Header titel="Meine Konferenzen" />
+<Header title="Meine Konferenzen" />
 <section class="mt-10 flex flex-wrap gap-4">
 	<div class="carousel carousel-center bg-slate-200 shadow-inner rounded-box w-full space-x-6 p-6">
 		{#each testConferences.filter((x) => x.active) as conference}

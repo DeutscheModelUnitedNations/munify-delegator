@@ -2,7 +2,6 @@
 	import { ParaglideJS } from '@inlang/paraglide-sveltekit'
 	import { i18n } from '$lib/i18n'
 
-	import { setLocale } from '$i18n/i18n-svelte';
 	import '../app.css';
 	import '@fontsource/outfit/100.css';
 	import '@fontsource/outfit/200.css';
@@ -29,13 +28,12 @@
 	import 'flag-icons/css/flag-icons.min.css';
 	import type { LayoutData } from './$types';
 
-	let { data }: { data: LayoutData } = $props();
+	let { children } = $props();
 
-	setLocale(data.locale ?? 'de');
 </script>
 <ParaglideJS {i18n}>
 
 
-<slot />
+{@render children()}
 
 </ParaglideJS>

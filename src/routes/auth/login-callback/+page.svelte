@@ -1,3 +1,5 @@
 <script lang="ts">
-  resolve
+	import { resolveLogin } from "$lib/auth/oidc";
+
+  resolveLogin()
 </script>

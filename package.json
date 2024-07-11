@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"docker compose -f ./dev.docker-compose.yml up \"",
     "vite": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
@@ -37,8 +37,10 @@
   "type": "module",
   "dependencies": {
     "@elysiajs/eden": "^1.0.14",
+    "@inlang/paraglide-sveltekit": "0.10.10",
     "@prisma/client": "^5.16.2",
     "@sinclair/typebox": "^0.32.34",
+    "concurrently": "^8.2.2",
     "convert-iso-codes": "^1.0.9",
     "elysia": "^1.0.27",
     "flag-icons": "^7.2.3",
@@ -46,7 +48,6 @@
     "prisma": "^5.16.2",
     "svelte-adapter-bun": "^0.5.2",
     "typesafe-i18n": "^5.26.2",
-    "world-countries": "^5.0.0",
-    "@inlang/paraglide-sveltekit": "0.10.10"
+    "world-countries": "^5.0.0"
   }
 }

@@ -1,6 +1,8 @@
 import countries from 'world-countries';
+import { languageTag } from '$lib/paraglide/runtime.js'
 
-function countryCodeToLocalName(alpha2Code: string, locale: string) {
+//TODO this could probably be part of the localization engine
+function countryCodeToLocalName(alpha2Code: string, locale = languageTag()) {
 	const getTranslationCode = (locale: string) => {
 		switch (locale) {
 			case 'de':

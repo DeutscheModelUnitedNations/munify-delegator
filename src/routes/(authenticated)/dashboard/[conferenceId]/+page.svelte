@@ -15,7 +15,7 @@
 	};
 </script>
 
-<Header titel={getData()?.conferenceName ?? 'Unknown'} />
+<Header title={getData()?.conferenceName ?? 'Unknown'} />
 <div class="flex flex-col py-10 gap-10">
 	{#if getData()?.accepted && getData()?.active}
 		<section class="flex flex-col gap-2">

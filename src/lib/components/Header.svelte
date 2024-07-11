@@ -1,8 +1,5 @@
 <script lang="ts">
-	import LL from '$i18n/i18n-svelte';
-	import { locale } from '$i18n/i18n-svelte';
-
-	let { titel }: { titel: string } = $props();
+	let { title }: { title: string } = $props();
 </script>
 
 <div class="navbar bg-base-100 px-4 py-2 rounded-2xl shadow-lg gap-2">
@@ -10,7 +7,7 @@
 		<i class="fa-solid fa-bars text-xl"></i>
 	</label>
 	<div class="grow">
-		<h1 class="lg:text-2xl lg:font-light">{titel}</h1>
+		<h1 class="lg:text-2xl lg:font-light">{title}</h1>
 	</div>
 	<!-- dropdown -->
 	<div class="dropdown dropdown-end z-10">
