@@ -1,8 +1,7 @@
 import { privateConfig } from '$config/private';
 import { publicConfig } from '$config/public';
 import Cryptr from 'cryptr';
-import { Issuer } from 'openid-client';
-import { generators } from 'openid-client';
+import { Issuer, generators } from 'openid-client';
 
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';

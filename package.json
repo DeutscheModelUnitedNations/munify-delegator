@@ -36,6 +36,8 @@
   },
   "type": "module",
   "dependencies": {
+    "@casl/ability": "^6.7.1",
+    "@casl/prisma": "^1.4.1",
     "@elysiajs/eden": "^1.0.14",
     "@inlang/paraglide-sveltekit": "0.10.10",
     "@prisma/client": "^5.16.2",

@@ -1,13 +1,14 @@
-import Elysia, { t } from "elysia";
-import { db } from "$db/db";
-import { ConferencePlain } from "$db/prismabox/Conference";
+import Elysia, { t } from 'elysia';
+import { db } from '$db/db';
+import { ConferencePlain } from '$db/prismabox/Conference';
+import { permissionsPlugin } from '$api/auth/permissions';
 
-export const conference = new Elysia().get(
-	"/conference",
-	async () => {
-		return db.conference.findMany();
+export const conference = new Elysia().use(permissionsPlugin).get(
+	'/conference',
+	async ({ permissions }) => {
+		return db.conference.findMany({ where: permissions.allowDatabaseAccessTo('list').Conference });
 	},
 	{
-		response: t.Array(ConferencePlain),
-	},
+		response: t.Array(ConferencePlain)
+	}
 );

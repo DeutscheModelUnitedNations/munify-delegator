@@ -1,13 +1,13 @@
-import {
-	codeVerifierCookieName,
-	refresh,
-	startSignin,
-	tokensCookieName,
-	userInfo
-} from '$lib/auth/oidc';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { TokenSet } from 'openid-client';
+import {
+	userInfo,
+	codeVerifierCookieName,
+	refresh,
+	startSignin,
+	tokensCookieName
+} from '$api/auth/flow';
 
 export const load: LayoutServerLoad = async ({ url, cookies }) => {
 	// are we signed in?
