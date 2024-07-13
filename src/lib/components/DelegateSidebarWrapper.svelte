@@ -1,6 +1,5 @@
 <script lang="ts">
 	import NavButton from '$lib/components/NavButton.svelte';
-	import NavButtonDropdown from '$lib/components/NavButtonDropdown.svelte';
 	import { page } from '$app/stores';
 
 	interface Props {
@@ -8,6 +7,8 @@
 		pastConferences: any[];
 	}
 
+	//TODO we COULD access the data like this https://kit.svelte.dev/docs/load#$page-data
+	// not sure if this makes sense since components should be dumb and testable and not rely on global stores maybe?
 	let { activeConferences, pastConferences }: Props = $props();
 
 	let path = $derived($page.url.pathname);

@@ -2,6 +2,7 @@ import { treaty } from '@elysiajs/eden';
 import type { App } from './api';
 import { browser } from '$app/environment';
 
+//TODO https://github.com/elysiajs/elysia/discussions/712
 export function apiClient({
 	fetch,
 	origin
