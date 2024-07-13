@@ -52,7 +52,7 @@ export const oidcPlugin = new Elysia({ name: 'oidc' })
 
 		return {
 			oidc: {
-				nextRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at) : undefined,
+				nextRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined,
 				tokenSet,
 				user
 			}

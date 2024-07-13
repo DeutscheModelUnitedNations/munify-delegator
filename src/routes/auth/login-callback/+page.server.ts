@@ -1,5 +1,5 @@
+import { codeVerifierCookieName, resolveSignin, tokensCookieName } from '$api/auth/flow';
 import type { PageServerLoad } from './$types';
-import { codeVerifierCookieName, resolveSignin, tokensCookieName } from '$lib/auth/oidc';
 import { error, redirect } from '@sveltejs/kit';
 import type { TokenSetParameters } from 'openid-client';
 

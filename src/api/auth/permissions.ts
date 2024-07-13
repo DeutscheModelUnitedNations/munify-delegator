@@ -3,13 +3,19 @@ import { type Action, defineAbilitiesForUser } from './abilities/abilities';
 import { oidcPlugin } from './oidc';
 import { accessibleBy } from '@casl/prisma';
 
+export class PermissionCheckError extends Error {
+	constructor(public message: string) {
+		super(message);
+	}
+}
+
 export type PermissionsType = (typeof permissionsPlugin)['_ephemeral']['resolve']['permissions'];
 
 export const permissionsPlugin = new Elysia({
 	name: 'permissions'
 })
 	.use(oidcPlugin)
-	.derive({ as: 'scoped' }, ({ oidc, error }) => {
+	.derive({ as: 'scoped' }, ({ oidc }) => {
 		const abilities = defineAbilitiesForUser(oidc);
 		return {
 			permissions: {
@@ -39,17 +45,17 @@ export const permissionsPlugin = new Elysia({
 				checkIf: (perms: boolean | ((a: typeof abilities) => boolean)) => {
 					if (typeof perms === 'boolean') {
 						if (!perms) {
-							throw error('Unauthorized', 'Permission check failed.');
+							throw new PermissionCheckError('Permission check failed.');
 						}
 					} else {
 						if (!perms(abilities)) {
-							throw error('Unauthorized', 'Permission check failed.');
+							throw new PermissionCheckError('Permission check failed.');
 						}
 					}
 				},
 				mustBeLoggedIn: () => {
 					if (!oidc || !oidc.user) {
-						throw error('Unauthorized', 'You are not logged in.');
+						throw new PermissionCheckError('Permission check failed.');
 					}
 				}
 			}

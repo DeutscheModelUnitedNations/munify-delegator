@@ -11,8 +11,9 @@ export const ConferencePlain = t.Object(
     location: __nullable__(t.String({ additionalProperties: false })),
     website: __nullable__(t.String({ additionalProperties: false })),
     image: __nullable__(t.Uint8Array({ additionalProperties: false })),
+    // __typename: t.Any()
   },
-  { additionalProperties: false },
+  { additionalProperties: true },
 );
 
 export const ConferenceRelations = t.Object(
