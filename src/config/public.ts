@@ -8,7 +8,7 @@ const schema = Type.Object({
 		AUTHORITY: Type.String(),
 		CLIENT_ID: Type.String(),
 	}),
-	HOSTNAME: Type.String(),
+	HOSTNAME: Type.Optional(Type.String())
 });
 
 let raw = mapEnvToSchema({
@@ -19,5 +19,3 @@ let raw = mapEnvToSchema({
 });
 
 export const publicConfig = Value.Decode(schema, raw);
-
-console.log(publicConfig);

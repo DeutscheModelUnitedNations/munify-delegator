@@ -31,7 +31,6 @@
 		<button
 			class="btn btn-lg btn-primary join-item"
 			onclick={() => {
-				console.log(code);
 				if (code.length === 0) {
 					showTooltip = true;
 					return;

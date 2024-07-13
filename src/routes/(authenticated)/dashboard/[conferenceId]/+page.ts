@@ -1,33 +1,34 @@
-import { error } from "@sveltejs/kit";
-import type { PageLoad } from "./$types";
-import { apiClient } from "$api/client";
+import { error } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
+import { apiClient } from '$api/client';
 
-export const load: PageLoad = ({ params, fetch }) => {
-	if (params.conferenceId === undefined) error(404, "Not found");
+export const load: PageLoad = async ({ params, fetch, url }) => {
+	if (params.conferenceId === undefined) error(404, 'Not found');
 
-	apiClient(fetch).api.index.get();
+	//TODO
+	const conferences = await apiClient({ fetch, origin: url.origin }).conference.get();
 
 	return {
 		conferenceId: params.conferenceId,
 		testData: [
 			{
 				conferenceId: 1,
-				conferenceName: "MUN-SH 2025",
+				conferenceName: 'MUN-SH 2025',
 				active: true,
-				accepted: true,
+				accepted: true
 			},
 			{
 				conferenceId: 2,
-				conferenceName: "MUNBW 2025",
+				conferenceName: 'MUNBW 2025',
 				active: true,
-				accepted: false,
+				accepted: false
 			},
 			{
 				conferenceId: 3,
-				conferenceName: "MUN-SH 2024",
+				conferenceName: 'MUN-SH 2024',
 				active: false,
-				accepted: true,
-			},
-		],
+				accepted: true
+			}
+		]
 	};
 };

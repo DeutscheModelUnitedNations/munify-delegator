@@ -1,13 +1,33 @@
 <script lang="ts">
-import { getLoggedInUser, redirectLogin } from "$lib/auth/oidc";
+	import { apiClient, checkForError } from '$api/client.js';
+	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 
-let { children } = $props();
+	let { children, data } = $props();
 
-const loggedInUser = getLoggedInUser();
+	onMount(() => {
+		if (!data.nextRefreshDue) return;
+		let timeout: any;
+		function runTokenRefresh(due: Date) {
+			timeout = setTimeout(
+				async () => {
+					const res = await checkForError(
+						apiClient({
+							origin: $page.url.origin
+						})['refresh-token'].get()
+					);
 
-if (!loggedInUser) {
-	redirectLogin();
-}
+					if (res.nextRefreshDue) {
+						runTokenRefresh(res.nextRefreshDue);
+					}
+				},
+				due.getTime() - Date.now() - 10 * 1000 // refresh the token 10 seconds before expiry
+			);
+		}
+		runTokenRefresh(data.nextRefreshDue!);
+
+		return () => clearTimeout(timeout);
+	});
 </script>
 
 {@render children()}
