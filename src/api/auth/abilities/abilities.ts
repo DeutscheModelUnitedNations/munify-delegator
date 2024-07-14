@@ -1,11 +1,11 @@
-import { type PureAbility, AbilityBuilder } from "@casl/ability";
-import { createPrismaAbility, type PrismaQuery } from "@casl/prisma";
-import { privateConfig } from "$config/private";
-import type { OIDCDeriveType } from "../oidc";
-import type { db } from "$db/db";
-import { defineAbilitiesForConference } from "./entities/conference";
+import { type PureAbility, AbilityBuilder } from '@casl/ability';
+import { createPrismaAbility, type PrismaQuery } from '@casl/prisma';
+import { dynamicPrivateConfig } from '$config/private';
+import type { OIDCDeriveType } from '../oidc';
+import type { db } from '$db/db';
+import { defineAbilitiesForConference } from './entities/conference';
 
-const actions = ["list", "create", "read", "update", "delete"] as const;
+const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
 
 /**
  * Actions which can be run on entities in the system:
@@ -20,36 +20,34 @@ const actions = ["list", "create", "read", "update", "delete"] as const;
 export type Action = (typeof actions)[number];
 
 type WithTypename<T extends object, TName extends string> = T & {
-  __typename: TName;
+	__typename: TName;
 };
 type TaggedSubjects<T extends Record<string, Record<string, unknown>>> =
-  | keyof T
-  | { [K in keyof T]: WithTypename<T[K], K & string> }[keyof T];
+	| keyof T
+	| { [K in keyof T]: WithTypename<T[K], K & string> }[keyof T];
 
 export type AppAbility = PureAbility<
-  [
-    Action,
-    TaggedSubjects<{
-      Conference: Awaited<
-        ReturnType<(typeof db.conference)["findUniqueOrThrow"]>
-      >;
-    }>,
-  ],
-  PrismaQuery
+	[
+		Action,
+		TaggedSubjects<{
+			Conference: Awaited<ReturnType<(typeof db.conference)['findUniqueOrThrow']>>;
+		}>
+	],
+	PrismaQuery
 >;
 
 export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
-  const builder = new AbilityBuilder<AppAbility>(createPrismaAbility);
+	const builder = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
-  if (privateConfig.NODE_ENV !== "production" && oidc && oidc.user) {
-    console.info("Development mode: granting all permissions");
-    // https://casl.js.org/v6/en/guide/intro#basics
-    builder.can("manage" as any, "all" as any);
-  }
+	if (dynamicPrivateConfig.NODE_ENV !== 'production' && oidc && oidc.user) {
+		console.info('Development mode: granting all permissions');
+		// https://casl.js.org/v6/en/guide/intro#basics
+		builder.can('manage' as any, 'all' as any);
+	}
 
-  defineAbilitiesForConference(oidc, builder);
+	defineAbilitiesForConference(oidc, builder);
 
-  return builder.build({
-    detectSubjectType: (object) => object.__typename,
-  });
+	return builder.build({
+		detectSubjectType: (object) => object.__typename
+	});
 };

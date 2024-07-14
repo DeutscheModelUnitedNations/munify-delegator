@@ -1,18 +1,24 @@
+import { building } from '$app/environment';
 import { Value } from '@sinclair/typebox/value';
-import type { TSchema } from 'elysia';
+import type { Static, TSchema } from 'elysia';
 
 // Function to map environment variables to schema
-export function mapEnvToSchema({
+export function mapEnvToSchema<T extends TSchema>({
 	env,
 	prefix,
 	schema,
 	separator
 }: {
-	schema: TSchema;
+	schema: T;
 	prefix: string;
 	env: any;
 	separator: string;
 }) {
+	// this is run statically sometimes, we dont want this to error during build/prerender
+	if (building) {
+		return {} as Static<typeof schema>;
+	}
+
 	let ret = Object.keys(schema.properties).reduce((acc, key) => {
 		const fullKey = prefix + key;
 		const property = schema.properties[key];
@@ -42,5 +48,5 @@ export function mapEnvToSchema({
 		);
 	}
 
-	return ret;
+	return Value.Decode(schema, ret);
 }

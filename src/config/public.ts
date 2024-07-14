@@ -1,21 +1,16 @@
 import { Type } from '@sinclair/typebox';
-import { Value } from '@sinclair/typebox/value';
 import { mapEnvToSchema } from './schemaMapper';
 import { env } from '$env/dynamic/public';
 
-const schema = Type.Object({
-	OIDC: Type.Object({
-		AUTHORITY: Type.String(),
-		CLIENT_ID: Type.String(),
-	}),
-	HOSTNAME: Type.Optional(Type.String())
-});
-
-let raw = mapEnvToSchema({
+export const dynamicPublicConfig = mapEnvToSchema({
 	env,
 	prefix: 'PUBLIC_',
-	schema,
-	separator: '_'
+	separator: '_',
+	schema: Type.Object({
+		OIDC: Type.Object({
+			AUTHORITY: Type.String(),
+			CLIENT_ID: Type.String()
+		}),
+		HOSTNAME: Type.Optional(Type.String())
+	})
 });
-
-export const publicConfig = Value.Decode(schema, raw);

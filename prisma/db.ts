@@ -1,4 +1,4 @@
-import { privateConfig } from '$config/private';
+import { dynamicPrivateConfig } from '$config/private';
 import { Prisma, PrismaClient } from '@prisma/client';
 
 // injects the actual types of the Prisma models into the data models at runtime
@@ -29,5 +29,5 @@ const brandExtension = Prisma.defineExtension((client) => {
 });
 
 export const db = new PrismaClient({
-	datasourceUrl: privateConfig.DATABASE_URL
+	datasourceUrl: dynamicPrivateConfig.DATABASE_URL
 }).$extends(brandExtension);
