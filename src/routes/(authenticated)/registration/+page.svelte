@@ -8,7 +8,7 @@
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup}</h1>
+		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
 		<p>Wählen Sie zuerst die Konferenz aus, zu der Sie sich gerne anmelden möchten.</p>
 		<a class="btn btn-warning mt-6" href=".">Zurück</a>
 	</hero>

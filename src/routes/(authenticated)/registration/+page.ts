@@ -1,9 +1,11 @@
-import { apiClient, checkForError } from '$api/client';
+import { checkForError } from '$api/client';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = async ({ fetch, url }) => {
-	const conferences = await checkForError(
-		apiClient({ fetch, origin: url.origin }).conference.get()
-	);
-	return { conferences };
-};
+export const load: PageLoad = loadApiHandler(async ({ api }) => {
+	const conferences = await checkForError(api.conference.get());
+
+	return {
+		conferences
+	};
+});
