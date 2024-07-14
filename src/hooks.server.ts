@@ -12,10 +12,3 @@ export const handle = sequence(i18n.handle(), async ({ event, resolve }) => {
 
 	return response;
 });
-
-export const handleError: HandleServerError = async ({ error, event, status, message }) => {
-	return {
-		message,
-		status
-	};
-};
