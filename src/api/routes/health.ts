@@ -1,3 +1,3 @@
-import Elysia, { t } from 'elysia';
+import Elysia from 'elysia';
 
-export const auth = new Elysia().get('/health/ready', async () => true);
+export const health = new Elysia().get('/health/ready', async () => true);

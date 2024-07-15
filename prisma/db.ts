@@ -1,5 +1,5 @@
 import { dynamicPrivateConfig } from '$config/private';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 // injects the actual types of the Prisma models into the data models at runtime
 // so CASL can extract those and run permission checks
