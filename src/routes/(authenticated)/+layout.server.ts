@@ -17,6 +17,7 @@ export const load: LayoutServerLoad = async ({ url, cookies }) => {
 
 		if (tokens.expired() && tokens.refresh_token) {
 			tokens = await refresh(tokens.refresh_token);
+			//TODO: set the new value in the cookie
 		}
 
 		if (tokens.access_token) {

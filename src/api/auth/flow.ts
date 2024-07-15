@@ -2,7 +2,7 @@ import { building } from '$app/environment';
 import { dynamicPrivateConfig } from '$config/private';
 import { dynamicPublicConfig } from '$config/public';
 import Cryptr from 'cryptr';
-import { BaseClient, Issuer, generators } from 'openid-client';
+import { type BaseClient, Issuer, generators } from 'openid-client';
 
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';

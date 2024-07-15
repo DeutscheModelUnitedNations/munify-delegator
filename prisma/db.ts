@@ -20,7 +20,6 @@ const brandExtension = Prisma.defineExtension((client) => {
 	for (const k of modelKeys) {
 		const capK = k.charAt(0).toUpperCase() + k.slice(1);
 		result[k] = {
-			// biome-ignore lint/suspicious/noExplicitAny:
 			__typename: { needs: {}, compute: () => capK as any }
 		};
 	}
