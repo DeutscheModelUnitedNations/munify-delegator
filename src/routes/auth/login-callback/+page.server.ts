@@ -10,7 +10,9 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	const { state, tokenSet } = await resolveSignin(url.toString(), verifier);
 
 	cookies.set(tokensCookieName, JSON.stringify(tokenSet as TokenSetParameters), {
-		sameSite: 'strict',
+		//TODO investigate if we can use 'strict' here somehow
+		// we need lax to allow the token to be sent with redirect from the auth provider
+		sameSite: 'lax',
 		path: '/',
 		expires: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined
 	});
