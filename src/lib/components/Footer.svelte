@@ -1,3 +1,7 @@
+<script lang="ts">
+	import dmunLogo from '$assets/logo/dmun_logo.png';
+</script>
+
 <footer class="footer footer-center bg-slate-100 text-base-content rounded-xl p-10 mt-10">
 	<nav class="flex flex-wrap flex-col md:flex-row gap-4">
 		<a class="link link-hover" href="/">Startseite</a>
@@ -24,7 +28,7 @@
 	</nav>
 	<aside>
 		<p>A Service by</p>
-        <img src="/logo/dmun_logo.png" alt="DMUN Logo" class="w-40" />
+        <img src={dmunLogo} alt="DMUN Logo" class="w-40" />
 		<p>
 			Copyright © {new Date().getFullYear()} - All right reserved by Deutsche Model United Nations e.V.
 		</p>

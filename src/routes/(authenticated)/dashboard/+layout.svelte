@@ -2,8 +2,6 @@
 	import DelegateSidebarWrapper from '$lib/components/DelegateSidebarWrapper.svelte';
 
 	let { data, children } = $props();
-	console.log(data.conferences);
-	
 </script>
 
 <!-- <DelegateSidebarWrapper

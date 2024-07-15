@@ -12,5 +12,5 @@ export const loadApiHandler =
 		) => Ret
 	): ((p: InputParameters) => Ret) =>
 	(p: InputParameters): Ret => {
-		return caller({ ...p, api: apiClient({ origin: p.url.origin, fetch }) });
+		return caller({ ...p, api: apiClient({ origin: p.url.origin, fetch: p.fetch }) });
 	};

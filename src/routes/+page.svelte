@@ -3,8 +3,8 @@
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 
-	import SHLogo from '$static/logo/mun-sh_logo.png';
-	import BWLogo from '$static/logo/munbw_logo.png';
+	import SHLogo from '$assets/logo/mun-sh_logo.png';
+	import BWLogo from '$assets/logo/munbw_logo.png';
 
 	const munSh = {
 		name: 'MUN-SH',

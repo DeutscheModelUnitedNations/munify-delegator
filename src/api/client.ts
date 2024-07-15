@@ -4,7 +4,7 @@ import { error } from '@sveltejs/kit';
 
 //TODO https://github.com/elysiajs/elysia/discussions/712
 export function apiClient({
-	fetch,
+	fetch: customFetch,
 	origin
 }: {
 	fetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -12,9 +12,18 @@ export function apiClient({
 }) {
 	return treaty<App>(origin, {
 		fetch: {
-			credentials: 'same-origin'
+			credentials: 'include'
 		},
-		fetcher: fetch
+		fetcher: (input: RequestInfo | URL, init?: RequestInit) => {
+			const path = new URL(input.toString()).pathname;
+			if (customFetch) {
+				// if we can we want to use the relative path to signal
+				// sveltekit to send along credentials
+				return customFetch(path, init);
+			} else {
+				return fetch(input, init);
+			}
+		}
 	}).api;
 }
 

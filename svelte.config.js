@@ -26,7 +26,7 @@ const config = {
 		adapter: adapter(),
 		alias: {
 			$api: 'src/api',
-			$static: 'static',
+			$assets: 'src/assets',
 			$db: 'prisma',
 			$config: 'src/config'
 		}

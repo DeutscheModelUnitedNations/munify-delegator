@@ -2,7 +2,7 @@
 	import CardInfoSectionWithIcons from './CardInfoSectionWithIcons.svelte';
 	import { languageTag } from '$lib/paraglide/runtime.js';
 	import { onMount } from 'svelte';
-	import defaultImage from '$static/dmun-stock/bw1.jpg';
+	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 
 	interface ConferenceCardProps {
 		id: string;

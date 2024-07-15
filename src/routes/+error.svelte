@@ -1,16 +1,19 @@
 <script lang="ts">
 	import Footer from '$lib/components/Footer.svelte';
+	import svg500 from "$assets/undraw/500.svg";
+	import svg404 from "$assets/undraw/404.svg";
+	import svgquestion from "$assets/undraw/question.svg";
 
 	import { page } from '$app/stores';
 
 	const getPicture = (e: number) => {
 		switch (e) {
 			case 404:
-				return '/undraw/404.svg';
+				return svg500;
 			case 500:
-				return '/undraw/500.svg';
+				return svg404;
 			default:
-				return '/undraw/question.svg';
+				return svgquestion;
 		}
 	};
 

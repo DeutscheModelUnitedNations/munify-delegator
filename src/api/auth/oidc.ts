@@ -31,11 +31,10 @@ export const oidcPlugin = new Elysia({ name: 'oidc' })
 			)
 		)
 	})
-	.derive({ as: 'scoped' }, async ({ cookie }) => {
+	.derive({ as: 'global' }, async ({ cookie }) => {
 		if (!cookie[tokensCookieName].value) {
 			return { oidc: { nextRefreshDue: undefined, tokenSet: undefined, user: undefined } };
 		}
-
 		let tokenSet = new TokenSet(cookie[tokensCookieName].value);
 		if (tokenSet.expired() && cookie[tokensCookieName].value.refresh_token) {
 			tokenSet = await refresh(cookie[tokensCookieName].value.refresh_token);
