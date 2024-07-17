@@ -36,6 +36,7 @@ type OIDCFlowState = {
 export function startSignin(visitedUrl: URL) {
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
 	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+		console.info('Production mode detected, redirecting to HTTPS', visitedUrl.toString());
 		visitedUrl = new URL(visitedUrl.toString().replace('http://', 'https://'));
 	}
 	const code_verifier = generators.codeVerifier();
