@@ -11,6 +11,5 @@ export const dynamicPublicConfig = mapEnvToSchema({
 			AUTHORITY: Type.String(),
 			CLIENT_ID: Type.String()
 		}),
-		HOSTNAME: Type.Optional(Type.String())
 	})
 });

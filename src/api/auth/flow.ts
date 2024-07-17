@@ -2,10 +2,12 @@ import { building } from '$app/environment';
 import { dynamicPrivateConfig } from '$config/private';
 import { dynamicPublicConfig } from '$config/public';
 import Cryptr from 'cryptr';
+import { t } from 'elysia';
 import { type BaseClient, Issuer, generators } from 'openid-client';
 
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';
+
 
 const { client, cryptr } = await (async () => {
 	// this runs statically butwe don't have access to the dynamic config values at build time
@@ -28,22 +30,23 @@ const { client, cryptr } = await (async () => {
 	return { issuer, client, cryptr };
 })();
 
-export type OIDCFlowState = {
+type OIDCFlowState = {
 	visitedUrl: string;
 };
 
-export function startSignin(state: OIDCFlowState) {
+export function startSignin(visitedUrl: URL) {
 	const code_verifier = generators.codeVerifier();
 	const encrypted_verifier = cryptr.encrypt(code_verifier);
 	const code_challenge = generators.codeChallenge(code_verifier);
+	const state: OIDCFlowState = {
+		visitedUrl: visitedUrl.toString()
+	};
 	const redirect_uri = client.authorizationUrl({
 		scope: 'openid email profile',
 		code_challenge,
 		code_challenge_method: 'S256',
 		state: encodeURIComponent(JSON.stringify(state)),
-		redirect_uri: dynamicPublicConfig.HOSTNAME
-			? dynamicPublicConfig.HOSTNAME + '/auth/login-callback'
-			: new URL(state.visitedUrl).origin + '/auth/login-callback'
+		redirect_uri: visitedUrl.origin + '/auth/login-callback'
 	});
 
 	return {
@@ -52,9 +55,9 @@ export function startSignin(state: OIDCFlowState) {
 	};
 }
 
-export async function resolveSignin(url: string, encrypted_verifier: string) {
-	const path = url.split('?')[0];
-	const urlParameters = new URLSearchParams(url.split('?')[1]);
+export async function resolveSignin(visitedUrl: URL, encrypted_verifier: string) {
+	const path = visitedUrl.toString().split('?')[0];
+	const urlParameters = new URLSearchParams(visitedUrl.toString().split('?')[1]);
 
 	const parameters: any = {};
 
