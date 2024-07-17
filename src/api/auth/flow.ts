@@ -8,7 +8,6 @@ import { type BaseClient, Issuer, generators } from 'openid-client';
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';
 
-
 const { client, cryptr } = await (async () => {
 	// this runs statically butwe don't have access to the dynamic config values at build time
 	// so we need to return dummy values
@@ -35,6 +34,10 @@ type OIDCFlowState = {
 };
 
 export function startSignin(visitedUrl: URL) {
+	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
+	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+		visitedUrl = new URL(visitedUrl.toString().replace('http://', 'https://'));
+	}
 	const code_verifier = generators.codeVerifier();
 	const encrypted_verifier = cryptr.encrypt(code_verifier);
 	const code_challenge = generators.codeChallenge(code_verifier);
