@@ -11,7 +11,7 @@ import {
 import type { TokenCookieSchemaType } from '$api/auth/oidc';
 import { dynamicPrivateConfig } from '$config/private';
 
-export const load: LayoutServerLoad = async ({ cookies, url, request }) => {
+export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	// are we signed in?
 	const existingTokens = cookies.get(tokensCookieName);
 	if (existingTokens) {
@@ -53,13 +53,7 @@ export const load: LayoutServerLoad = async ({ cookies, url, request }) => {
 	// if not, start the signin process
 
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
-	const { encrypted_verifier, redirect_uri } = startSignin(
-		dynamicPrivateConfig.NODE_ENV === 'production'
-			? new URL(
-					`${request.headers.get('x-forwarded-proto')}://${request.headers.get('x-forwarded-host')}${url.pathname}${url.search}`
-				)
-			: url
-	);
+	const { encrypted_verifier, redirect_uri } = startSignin(url);
 
 	cookies.set(codeVerifierCookieName, encrypted_verifier, {
 		sameSite: 'lax',

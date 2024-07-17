@@ -4,18 +4,11 @@ import { dynamicPrivateConfig } from '$config/private';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ url, cookies, request }) => {
+export const load: PageServerLoad = async ({ url, cookies }) => {
 	const verifier = cookies.get(codeVerifierCookieName);
 	if (!verifier) error(400, 'No code verifier cookie found.');
 
-	const { state, tokenSet } = await resolveSignin(
-		dynamicPrivateConfig.NODE_ENV === 'production'
-			? new URL(
-					`${request.headers.get('x-forwarded-proto')}://${request.headers.get('x-forwarded-host')}${url.pathname}${url.search}`
-				)
-			: url,
-		verifier
-	);
+	const { state, tokenSet } = await resolveSignin(url, verifier);
 
 	const cookieValue: TokenCookieSchemaType = {
 		access_token: tokenSet.access_token,
