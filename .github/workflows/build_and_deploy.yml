@@ -23,8 +23,12 @@ jobs:
             latest=false
           tags: |
             type=semver,pattern={{version}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
-            type=raw,value=prerelease,enable=${{ github.event_name == 'release' && github.event.release.prerelease }}
+
             type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=semver,pattern={{major}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+
+            type=raw,value=prerelease,enable=${{ github.event_name == 'release' && github.event.release.prerelease }}
             type=raw,value=nightly,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
       - name: Log in to Docker Hub
