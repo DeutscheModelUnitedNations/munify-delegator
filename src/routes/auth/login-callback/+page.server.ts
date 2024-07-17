@@ -1,6 +1,5 @@
 import { codeVerifierCookieName, resolveSignin, tokensCookieName } from '$api/auth/flow';
 import type { TokenCookieSchemaType } from '$api/auth/oidc';
-import { dynamicPrivateConfig } from '$config/private';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 

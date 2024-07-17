@@ -9,7 +9,6 @@ import {
 	tokensCookieName
 } from '$api/auth/flow';
 import type { TokenCookieSchemaType } from '$api/auth/oidc';
-import { dynamicPrivateConfig } from '$config/private';
 
 export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	// are we signed in?

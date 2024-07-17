@@ -34,6 +34,11 @@ type OIDCFlowState = {
 };
 
 export function startSignin(visitedUrl: URL) {
+	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
+	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+		visitedUrl.protocol = 'https:';
+	}
+
 	const code_verifier = generators.codeVerifier();
 	const encrypted_verifier = cryptr.encrypt(code_verifier);
 	const code_challenge = generators.codeChallenge(code_verifier);
@@ -55,6 +60,10 @@ export function startSignin(visitedUrl: URL) {
 }
 
 export async function resolveSignin(visitedUrl: URL, encrypted_verifier: string) {
+	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
+	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+		visitedUrl.protocol = 'https:';
+	}
 	const path = visitedUrl.toString().split('?')[0];
 	const urlParameters = new URLSearchParams(visitedUrl.toString().split('?')[1]);
 
