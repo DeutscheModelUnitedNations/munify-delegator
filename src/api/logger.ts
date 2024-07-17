@@ -25,7 +25,7 @@ export const logger = new Elysia({
 		ForbiddenError,
 		PermissionCheckError
 	})
-	.derive(() => {
+	.derive({ as: 'global' }, () => {
 		return {
 			requestId: Math.random().toString(36).substring(7)
 		};
@@ -38,9 +38,9 @@ export const logger = new Elysia({
 			`[${requestId}]: Handled request ${request.method} ${path} with status ${set.status}`
 		);
 	})
-	.onError({ as: 'global' }, ({ error, code, path, set, request, requestId }) => {
+	.onError({ as: 'global' }, ({ error, code, path, set, request }) => {
 		console.error(
-			`Error in ${request.method}[${requestId}] ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
+			`Error in ${request.method} ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
 		);
 
 		// Built-in elysia errors

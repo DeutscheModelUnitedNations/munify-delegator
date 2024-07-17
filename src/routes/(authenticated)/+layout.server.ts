@@ -9,7 +9,7 @@ import {
 	tokensCookieName
 } from '$api/auth/flow';
 
-export const load: LayoutServerLoad = async ({ url, cookies }) => {
+export const load: LayoutServerLoad = async ({ url, cookies, request }) => {
 	// are we signed in?
 	const existingTokens = cookies.get(tokensCookieName);
 	if (existingTokens) {
@@ -29,6 +29,9 @@ export const load: LayoutServerLoad = async ({ url, cookies }) => {
 			};
 		}
 	}
+
+	console.log('url', url.toString());
+	console.log('headers', request.headers);
 
 	// if not, start the signin process
 	const { encrypted_verifier, redirect_uri } = startSignin({
