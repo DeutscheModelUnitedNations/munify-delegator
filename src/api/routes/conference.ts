@@ -9,6 +9,6 @@ export const conference = new Elysia().use(permissionsPlugin).get(
 		return db.conference.findMany({ where: permissions.allowDatabaseAccessTo('list').Conference });
 	},
 	{
-		response: t.Array(ConferencePlain)
+		// response: t.Array(ConferencePlain)
 	}
 );

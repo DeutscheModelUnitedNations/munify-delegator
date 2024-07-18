@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 	import type { PageData } from './$types';
-	import * as m from '$lib/paraglide/messages.js'
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 </script>
@@ -15,7 +15,7 @@
 
 	<main>
 		<section
-			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flex-wrap"
+			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flew-wrap"
 		>
 			{#each data.conferences as item}
 				<ConferenceCard {...item} baseSlug="/registration" />

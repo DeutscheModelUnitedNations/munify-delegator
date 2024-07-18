@@ -1,4 +1,3 @@
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -9,20 +8,22 @@ generator client {
 }
 
 generator prismabox {
-  provider = "prismabox"
-  typeboxImportVariableName = "t"
+  provider                    = "prismabox"
+  typeboxImportVariableName   = "t"
   typeboxImportDependencyName = "elysia"
-  output = "./generated/schema"
-  inputModel = true
-  additionalFieldsPlain = ["__typename: t.Optional(t.String())"]
+  output                      = "./generated/schema"
+  inputModel                  = true
+  additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
 }
 
 model Conference {
-  id        String   @id @default(nanoid())
-  title    String
-  start    DateTime?
-  end      DateTime?
-  location String?
-  website  String?
-  image    Bytes?
+  id        String    @id @default(nanoid())
+  title     String
+  longTitle String?
+  start     DateTime?
+  end       DateTime?
+  location  String?
+  language  String?
+  website   String?
+  image     Bytes?
 }

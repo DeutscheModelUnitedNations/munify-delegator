@@ -26,8 +26,9 @@
 	import '@fontsource/vollkorn/800.css';
 	import '@fontsource/vollkorn/900.css';
 	import 'flag-icons/css/flag-icons.min.css';
+	import type { Snippet } from 'svelte';
 
-	let { children } = $props();
+	let { children }: { children: Snippet } = $props();
 </script>
 
 <ParaglideJS {i18n}>

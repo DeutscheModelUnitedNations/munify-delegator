@@ -1,4 +1,15 @@
 {
-    "$schema": "https://inlang.com/schema/inlang-message-format",
-    "signup": "Anmelden"
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"signup": "Anmelden",
+    "homeHeroSub": "Zentrale Anmeldeplattform für DMUN-Konferenzen",
+    "homeRegistration": "Konferenzanmeldung",
+    "homeRegistrationSub": "Melden Sie sich für die nächste Konferenz an, indem Sie sich bewerben",
+    "homeRegistrationBtn": "Zur Anmeldung",
+    "homeYourConferences": "Ihre Konferenzen",
+    "homeYourConferencesSub": "Sehen Sie sich die Konferenzen an, an denen Sie teilnehmen",
+    "homeYourConferencesBtn": "Zum Dashboard",
+    "homeDraftDisclaimer": "Diese Seite befindet sich noch im Aufbauprozess und hat keinerlei Funktionalität. Sie dient lediglich als konzeptioneller Entwurf.",
+    "homeOurConferences": "Unsere Konferenzen",
+    "homeAboutUs": "Über uns",
+    "homeAboutUsText": "DMUN ist ein gemeinnütziger Verein von jungen Erwachsenen, die sich für internationale Politik und die Vereinten Nationen begeistern. Wir sind bundesweit und auf internationaler Ebene im Bereich der politischen Jugendbildung und des Youth Empowerments tätig. 2003 gegründet, und seit 2012 als Nichtregierungsorganisation mit speziellem Beraterstatus beim Wirtschafts- und Sozialrat der Vereinten Nationen sowie beim UNDPI akkreditiert, veranstalten wir politische Planspiele, bei denen Jugendliche und junge Erwachsene zwischen 15 und 21 Jahren eine Konferenz der Vereinten Nationen simulieren. Außerdem setzen wir uns auf internationaler Ebene für politische Jugendbildung und die Partizipation junger Menschen an politischen Prozessen ein."
 }

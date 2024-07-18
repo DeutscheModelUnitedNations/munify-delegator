@@ -1,4 +1,15 @@
 {
-    "$schema": "https://inlang.com/schema/inlang-message-format",
-    "signup": "Sign up"
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"signup": "Sign up",
+	"homeHeroSub": "Central sign-up platform for DMUN conferences",
+	"homeRegistration": "Conference registration",
+	"homeRegistrationSub": "Sign up for the next conference by applying",
+	"homeRegistrationBtn": "Sign up",
+	"homeYourConferences": "Your conferences",
+	"homeYourConferencesSub": "View the conferences you are attending",
+	"homeYourConferencesBtn": "Go to dashboard",
+	"homeDraftDisclaimer": "This page is still under construction and has no functionality. It is only used as a conceptual design.",
+    "homeOurConferences": "Our conferences",
+    "homeAboutUs": "About us",
+    "homeAboutUsText": "DMUN is a non-profit association of young adults who are passionate about international politics and the United Nations. We are active nationwide and internationally in the field of political youth education and youth empowerment. Founded in 2003, and accredited as a non-governmental organization with special consultative status by the Economic and Social Council of the United Nations and the UNDPI since 2012, we organize political role-playing games in which young people between the ages of 15 and 21 simulate a United Nations conference. We also advocate for political youth education and the participation of young people in political processes at the international level."
 }
