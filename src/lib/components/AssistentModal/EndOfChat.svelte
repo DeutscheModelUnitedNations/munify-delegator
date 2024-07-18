@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 
 	interface Props {
@@ -6,10 +7,22 @@
 	}
 
 	let { delay = 0 }: Props = $props();
+
+	let randId: string = $state<string>(Math.random().toString(36).substring(7));
+
+	onMount(() => {
+		setTimeout(() => {
+			const chat = document.getElementById(randId);
+			if (chat) {
+				chat.scrollIntoView({ behavior: 'smooth', block: 'end' });
+			}
+		}, delay);
+	});
 </script>
 
 <div
-	class="flex gap-3 justify-center items-center text-success mt-4"
+	id={randId}
+	class="flex gap-3 justify-center items-center text-success pb-4"
 	in:fly={{ y: 0, duration: 300, delay }}
 >
 	<i class="fa-solid fa-circle-check"></i>

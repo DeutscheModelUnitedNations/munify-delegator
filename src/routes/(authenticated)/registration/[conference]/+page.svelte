@@ -26,7 +26,7 @@
 		</p>
 		<a class="btn btn-warning mt-6" href=".">Zurück</a>
 		<div role="alert" class="alert mt-10">
-			<i class="fa-solid fa-message-question text-xl mx-1"></i>
+			<i class="fa-duotone fa-message-question text-xl mx-1"></i>
 			<div class="flex flex-col">
 				<div class="font-bold tracking-wider">Anmeldeassistent</div>
 				<div class="max-ch-sm">
@@ -57,10 +57,6 @@
 						{
 							icon: 'fa-arrow-right',
 							text: 'Hier kannst du als Delegationsleiter*in eine neue Delegation anlegen und Menschen zu der Delegation einladen'
-						},
-						{
-							icon: 'fa-podium',
-							text: 'Rollen: Delegierte*r eines Staates oder Vertreter*in eines Nichtstaatlichen Akteurs'
 						}
 					]}
 				/>
@@ -77,10 +73,6 @@
 						{
 							icon: 'fa-arrow-right',
 							text: 'Hier kannst du einer Delegation mit einem Code beitreten, den dir der/die Delegationsleiter*in ausgestellt hat.'
-						},
-						{
-							icon: 'fa-podium',
-							text: 'Rollen: Delegierte*r eines Staates oder Vertreter*in eines Nichtstaatlichen Akteurs'
 						}
 					]}
 				/>
@@ -97,10 +89,6 @@
 						{
 							icon: 'fa-arrow-right',
 							text: 'Hier kannst du dich alleine auf einen Platz ein einer der Speziellen Delegationen wie der Konferenzpresse bewerben.'
-						},
-						{
-							icon: 'fa-podium',
-							text: 'Rollen: Mitglied der Konferenzpresse, Richter*in des IGH oder Prozessbevollmächtigte*r'
 						}
 					]}
 				/>

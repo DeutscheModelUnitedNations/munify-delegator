@@ -16,10 +16,14 @@
 	};
 </script>
 
-<div class="block card bg-base-100 dark:bg-base-200 max-w-96 shadow-lg hover:scale-[1.01] transition-all duration-300">
+<div
+	class="card bg-base-100 dark:bg-base-200 max-w-96 shadow-lg hover:scale-[1.01] transition-all duration-300"
+>
 	<div class="card-body">
 		<h1 class="card-title">{title}</h1>
-		<CardInfoSectionWithIcons items={infoItems()} />
+		<div class="flex-1">
+			<CardInfoSectionWithIcons items={infoItems()} />
+		</div>
 		<div class="card-actions justify-end mt-4">
 			<a class="btn btn-primary" href={link}>{btnText}</a>
 		</div>

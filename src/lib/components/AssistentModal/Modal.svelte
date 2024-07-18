@@ -35,7 +35,7 @@
 </script>
 
 <dialog id="assistent_modal" class="modal modal-open modal-bottom sm:modal-middle h-screen">
-	<div class="modal-box h-full">
+	<div class="modal-box h-full overflow-x-hidden overflow-y-auto">
 		<h3 class="text-lg font-bold">
 			<i class="fa-duotone fa-message-question mr-2"></i>
 			Anmeldeassistent
@@ -83,4 +83,5 @@
 			</form>
 		</div>
 	</div>
+	<button class="modal-backdrop hover:cursor-not-allowed" onclick={onClose}></button>
 </dialog>

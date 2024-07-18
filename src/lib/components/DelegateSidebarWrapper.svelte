@@ -26,7 +26,7 @@
 		<!-- sidebar menu -->
 		<nav class="flex min-h-screen w-72 flex-col gap-2 overflow-y-auto bg-base-200 px-6 py-10">
 			<div class="mx-4 flex flex-col justify-center">
-				<i class="fa-duotone fa-globe mb-4 text-3xl"></i>
+				<i class="fa-duotone fa-id-card-clip mb-4 text-3xl"></i>
 				<div class="text-md font-[#000] font-normal">MUNify</div>
 				<div class="text-2xl font-[#000] font-bold">DELEGATOR</div>
 			</div>

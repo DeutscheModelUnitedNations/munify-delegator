@@ -34,6 +34,7 @@
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
 	<hero class="my-20 text-center">
+		<i class="fa-duotone fa-id-card-clip text-6xl text-base-content mb-6"></i>
 		<h2 class="text-2xl text-base-content font-thin">MUNify</h2>
 		<h1 class="text-4xl text-base-content font-bold uppercase tracking-widest">Delegator</h1>
 		<p class="text-lg text-base-content mt-4">{m.homeHeroSub()}</p>
@@ -71,7 +72,7 @@
 			<h2 class="text-3xl text-center">{m.homeOurConferences()}</h2>
 			<div class="flex flex-col md:flex-row gap-4">
 				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
-					<figure class="bg-slate-100 flex justify-center items-center p-6 h-60">
+					<figure class="bg-base-300 flex justify-center items-center p-6 h-60">
 						<img src={munSh.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
@@ -88,7 +89,7 @@
 					</div>
 				</div>
 				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
-					<figure class="bg-slate-100 flex justify-center items-center p-6 h-60">
+					<figure class="bg-base-300 flex justify-center items-center p-6 h-60">
 						<img src={munBw.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">

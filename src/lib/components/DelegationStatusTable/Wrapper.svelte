@@ -26,10 +26,18 @@
 						<th>Gremium</th>
 					{/if}
 					{#if withMailStatus}
-						<th class="text-center"><i class="text-xl fa-duotone fa-envelope-open-text"></i></th>
+						<th class="text-center">
+							<div class="tooltip" data-tip="Postialische Anmeldung">
+								<i class="text-xl fa-duotone fa-envelope-open-text"></i>
+							</div>
+						</th>
 					{/if}
 					{#if withPaymentStatus}
-						<th class="text-center"><i class="text-xl fa-duotone fa-money-bill-transfer"></i></th>
+						<th class="text-center">
+							<div class="tooltip" data-tip="Beitragszahlung">
+								<i class="text-xl fa-duotone fa-money-bill-transfer"></i>
+							</div>
+						</th>
 					{/if}
 					<th></th>
 				</tr>
