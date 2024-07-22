@@ -10,6 +10,21 @@ export default {
 			mono: ['Roboto Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
 			fa: ['FontAwesome']
 		},
+		colors: {
+			primary: {
+				50: '#F7FBFD',
+				100: '#E3F0F8',
+				200: '#B9D7EF',
+				300: '#90BCE5',
+				400: '#669EDC',
+				500: '#3D7DD2',
+				600: '#295FB3',
+				700: '#204489',
+				800: '#162D60',
+				900: '#0D1836',
+				950: '#080E22'
+			}
+		},
 		extend: {}
 	},
 	daisyui: {
