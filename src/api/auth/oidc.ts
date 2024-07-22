@@ -1,6 +1,6 @@
 import Elysia, { t } from 'elysia';
 import { TokenSet } from 'openid-client';
-import { refresh, tokensCookieName, userInfo } from './flow';
+import { refresh, tokensCookieName, validateTokens } from './flow';
 import { Parameters, type Static } from '@sinclair/typebox';
 
 export type TokenCookieSchemaType = {
@@ -35,20 +35,17 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 			};
 			cookie[tokensCookieName].value = JSON.stringify(cookieValue);
 		}
-		let user: Awaited<ReturnType<typeof userInfo>> | undefined = undefined;
+		let user: Awaited<ReturnType<typeof validateTokens>> | undefined = undefined;
 		if (tokenSet.access_token) {
 			try {
-				user = await userInfo(tokenSet.access_token);
+				user = await validateTokens({
+					access_token: tokenSet.access_token,
+					id_token: tokenSet.id_token
+				});
 			} catch (error) {
-				console.warn('Failed to fetch user info', error);
+				console.warn('Failed to retrieve user info from tokens', error);
 			}
 		}
-
-		// console.log({
-		// 	nextRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined,
-		// 	tokenSet,
-		// 	user
-		// });
 
 		return {
 			oidc: {

@@ -57,6 +57,7 @@ export const permissionsPlugin = new Elysia({
 					if (!oidc || !oidc.user) {
 						throw new PermissionCheckError('Permission check failed.');
 					}
+					return oidc.user;
 				}
 			}
 		};

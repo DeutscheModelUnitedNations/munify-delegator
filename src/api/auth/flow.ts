@@ -2,13 +2,22 @@ import { building } from '$app/environment';
 import { dynamicPrivateConfig } from '$config/private';
 import { dynamicPublicConfig } from '$config/public';
 import Cryptr from 'cryptr';
-import { t } from 'elysia';
-import { type BaseClient, Issuer, generators } from 'openid-client';
+import {
+	type BaseClient,
+	type IntrospectionResponse,
+	Issuer,
+	type TokenSetParameters,
+	type UnknownObject,
+	type UserinfoResponse,
+	generators
+} from 'openid-client';
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { PermissionCheckError } from './permissions';
 
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';
 
-const { client, cryptr } = await (async () => {
+const { client, cryptr, jwks } = await (async () => {
 	// this runs statically butwe don't have access to the dynamic config values at build time
 	// so we need to return dummy values
 	if (building) {
@@ -25,8 +34,11 @@ const { client, cryptr } = await (async () => {
 		client_secret: dynamicPrivateConfig.OIDC.CLIENT_SECRET
 	});
 	const cryptr = new Cryptr(dynamicPrivateConfig.OIDC.CLIENT_SECRET ?? dynamicPrivateConfig.SECRET);
+	const jwks = issuer.metadata.jwks_uri
+		? await createRemoteJWKSet(new URL(issuer.metadata.jwks_uri))
+		: undefined;
 
-	return { issuer, client, cryptr };
+	return { issuer, client, cryptr, jwks };
 })();
 
 type OIDCFlowState = {
@@ -46,7 +58,8 @@ export function startSignin(visitedUrl: URL) {
 		visitedUrl: visitedUrl.toString()
 	};
 	const redirect_uri = client.authorizationUrl({
-		scope: 'openid email profile',
+		scope:
+			'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:project:roles urn:zitadel:iam:user:metadata',
 		code_challenge,
 		code_challenge_method: 'S256',
 		state: encodeURIComponent(JSON.stringify(state)),
@@ -83,8 +96,74 @@ export async function resolveSignin(visitedUrl: URL, encrypted_verifier: string)
 	return { tokenSet, state };
 }
 
-export function userInfo(access_token: string) {
-	return client.userinfo(access_token);
+export async function validateTokens({
+	access_token,
+	id_token
+}: Pick<TokenSetParameters, 'access_token' | 'id_token'>): Promise<
+	UserinfoResponse<UnknownObject, UnknownObject>
+> {
+	if (!access_token) throw new PermissionCheckError('No access token provided');
+
+	try {
+		if (!jwks) throw new Error('No jwks available');
+		if (!id_token) throw new Error('No id_token available');
+
+		const accessTokenValue = (
+			await jwtVerify(access_token, jwks, {
+				issuer: client.issuer.metadata.issuer,
+				audience: client.metadata.client_id
+			})
+		).payload;
+
+		const idTokenValue = (
+			await jwtVerify(id_token, jwks, {
+				issuer: client.issuer.metadata.issuer,
+				audience: client.metadata.client_id
+			})
+		).payload;
+
+		if (!accessTokenValue.sub) {
+			throw new PermissionCheckError('No subject in access token');
+		}
+
+		if (!idTokenValue.sub) {
+			throw new PermissionCheckError('No subject in id token');
+		}
+
+		if (accessTokenValue.sub !== idTokenValue.sub) {
+			throw new PermissionCheckError('Subject in access token and id token do not match');
+		}
+
+		// some basic fields which we want to be present
+		// if the id token is configured in a way that it does not contain these fields
+		// we instead want to use the userinfo endpoint
+		if (!idTokenValue.email) {
+			throw new Error('No email in id token');
+		}
+
+		if (!idTokenValue.preferred_username) {
+			throw new Error('No preferred_username in id token');
+		}
+
+		if (!idTokenValue.family_name) {
+			throw new Error('No family_name in id token');
+		}
+
+		if (!idTokenValue.given_name) {
+			throw new Error('No given_name in id token');
+		}
+
+		return {
+			sub: accessTokenValue.sub,
+			...idTokenValue
+		};
+	} catch (error) {
+		console.warn(
+			'Failed to verify tokens locally, falling back to less performant info fetch',
+			error
+		);
+		return await client.userinfo(access_token);
+	}
 }
 
 export function refresh(refresh_token: string) {

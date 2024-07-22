@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { TokenSet, type TokenSetParameters } from 'openid-client';
 import {
-	userInfo,
+	validateTokens,
 	codeVerifierCookieName,
 	refresh,
 	startSignin,
@@ -39,7 +39,10 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 		}
 
 		if (tokenSet.access_token) {
-			const user = await userInfo(tokenSet.access_token);
+			const user = await validateTokens({
+				access_token: tokenSet.access_token,
+				id_token: tokenSet.id_token
+			});
 			return {
 				user,
 				nextRefreshDue:
