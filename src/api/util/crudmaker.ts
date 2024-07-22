@@ -19,25 +19,27 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 		.use(permissionsPlugin)
 		.get(
 			`/${entity}`,
-			({ permissions }) =>
+			async ({ permissions }) => {
 				// @ts-ignore
-				db[entity].findMany({
+				return await db[entity].findMany({
 					where: permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]
-				}),
+				});
+			},
 			{
 				response: t.Array(Schemes[`${cpaitalizedEntity}Plain`])
 			}
 		)
 		.get(
 			`/${entity}/:id`,
-			({ permissions, params }) =>
+			async ({ permissions, params }) => {
 				// @ts-ignore
-				db[entity].findUniqueOrThrow({
+				return await db[entity].findUniqueOrThrow({
 					where: {
 						id: params.id,
 						AND: permissions.allowDatabaseAccessTo('read')[capitalizeFirstLetterOfUnion(entity)]
 					}
-				}),
+				});
+			},
 			{
 				response: Schemes[`${cpaitalizedEntity}Plain`]
 			}
@@ -47,7 +49,7 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 			async ({ permissions, body }) => {
 				permissions.checkIf((user) => user.can('create', capitalizeFirstLetterOfUnion(entity)));
 				// @ts-ignore
-				return db[entity].create({
+				return await db[entity].create({
 					data: body
 				});
 			},
@@ -58,15 +60,16 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 		)
 		.patch(
 			`/${entity}/:id`,
-			({ permissions, params, body }) =>
+			async ({ permissions, params, body }) => {
 				// @ts-ignore
-				db[entity].update({
+				return await db[entity].update({
 					where: {
 						id: params.id,
 						AND: permissions.allowDatabaseAccessTo('update')[capitalizeFirstLetterOfUnion(entity)]
 					},
 					data: body
-				}),
+				});
+			},
 			{
 				body: Schemes[`${cpaitalizedEntity}InputUpdate`],
 				response: Schemes[`${cpaitalizedEntity}Plain`]
@@ -74,14 +77,16 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 		)
 		.delete(
 			`/${entity}/:id`,
-			({ permissions, params }) =>
-				// @ts-ignore
-				db[entity].delete({
-					where: {
-						id: params.id,
-						AND: permissions.allowDatabaseAccessTo('delete')[capitalizeFirstLetterOfUnion(entity)]
-					}
-				}),
+			async ({ permissions, params }) =>
+				{
+					// @ts-ignore
+					return await db[entity].delete({
+						where: {
+							id: params.id,
+							AND: permissions.allowDatabaseAccessTo('delete')[capitalizeFirstLetterOfUnion(entity)]
+						}
+					});
+				},
 			{
 				response: Schemes[`${cpaitalizedEntity}Plain`]
 			}
