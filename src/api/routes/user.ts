@@ -13,7 +13,7 @@ export const user = new Elysia()
 			const user = permissions.mustBeLoggedIn();
 
 			if (!user.email || !user.family_name || !user.given_name || !user.preferred_username) {
-				throw new Error('Missing required fields');
+				throw new Error('OIDC result is missing required fields!');
 			}
 
 			return db.user.upsert({

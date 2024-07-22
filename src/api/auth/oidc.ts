@@ -20,7 +20,6 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 			return { oidc: { nextRefreshDue: undefined, tokenSet: undefined, user: undefined } };
 		}
 		const parsedCookie: TokenCookieSchemaType = JSON.parse(cookie[tokensCookieName].value);
-
 		let tokenSet = new TokenSet(parsedCookie);
 		if (tokenSet.expired() && parsedCookie.refresh_token) {
 			tokenSet = await refresh(parsedCookie.refresh_token);
