@@ -19,9 +19,11 @@ generator prismabox {
 model Conference {
   id       String    @id @default(nanoid())
   title    String
+  longTitle String?
   start    DateTime?
   end      DateTime?
   location String?
+  language  String?
   website  String?
   image    Bytes?
 }

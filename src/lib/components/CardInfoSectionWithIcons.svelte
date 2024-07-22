@@ -1,7 +1,7 @@
 <script lang="ts">
 	interface Info {
 		icon: string;
-		text: string;
+		text?: string;
 		link?: string;
 	}
 
@@ -10,7 +10,7 @@
 
 <div class="grid grid-cols-[auto_1fr] gap-2">
 	{#each items as { icon, text, link }}
-		<i class={`fa-duotone ${icon} mt-1`} ></i>
+		<i class={`fa-duotone ${icon}`} ></i>
 		{#if link}
 			<a href={link} class="hover:underline" target="_blank">{text}</a>
 		{:else}
@@ -18,3 +18,16 @@
 		{/if}
 	{/each}
 </div>
+
+<style>
+	.grid {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 0.5rem;
+	}
+
+	i {
+		text-align: center;
+		margin-top: 3px;
+	}
+</style>

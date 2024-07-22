@@ -2,7 +2,7 @@
 	import dmunLogo from '$assets/logo/dmun_logo.png';
 </script>
 
-<footer class="footer footer-center bg-slate-100 text-base-content rounded-xl p-10 mt-10">
+<footer class="footer footer-center bg-base-200 text-base-content rounded-xl p-10 mt-10">
 	<nav class="flex flex-wrap flex-col md:flex-row gap-4">
 		<a class="link link-hover" href="/">Startseite</a>
 		<a class="link link-hover" href="/registration">Anmeldung</a>

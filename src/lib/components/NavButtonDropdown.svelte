@@ -1,10 +1,13 @@
 <script lang="ts">
+	import type { Snippet } from "svelte";
+
 	interface Props {
 		icon: string;
 		titel: string;
+		children: Snippet;
 	}
 
-	let { icon, titel }: Props = $props();
+	let { icon, titel, children }: Props = $props();
 </script>
 
 <li>
@@ -14,7 +17,7 @@
 			<div>{titel}</div>
 		</summary>
 		<ul>
-			<slot />
+			{@render children()}
 		</ul>
 	</details>
 </li>

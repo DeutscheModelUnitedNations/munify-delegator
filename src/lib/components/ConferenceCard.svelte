@@ -47,9 +47,9 @@
 	};
 </script>
 
-<div class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl">
+<div class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl hover:scale-[1.01] transition-all duration-300">
 	<figure>
-		<img src={imageSrc ?? defaultImage} alt="Conference" />
+		<img src={defaultImage} alt="Conference" />
 	</figure>
 	<div class="card-body">
 		<h2 class="card-title">{title}</h2>
@@ -63,7 +63,7 @@
 							? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
 							: 'Datum unbekannt'
 				},
-				{ icon: 'fa-globe', text: website, link: website }
+				{ icon: 'fa-globe', text: website ?? "", link: website ?? "https://dmun.de" }
 			]}
 		/>
 		<div class="card-actions justify-end mt-4">
