@@ -1,7 +1,7 @@
 import Elysia from 'elysia';
 import { conference } from './routes/conference';
 import { auth } from './routes/auth';
-import { logger } from './logger';
+import { logger } from './util/logger';
 import { health } from './routes/health';
 import { user } from './routes/user';
 

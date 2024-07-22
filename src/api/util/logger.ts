@@ -7,7 +7,7 @@ import {
 	PrismaClientValidationError
 } from '@prisma/client/runtime/library';
 import Elysia from 'elysia';
-import { PermissionCheckError } from './auth/permissions';
+import { PermissionCheckError } from '../auth/permissions';
 
 //TODO see if we still need this when using graphql
 

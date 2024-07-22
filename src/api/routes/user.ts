@@ -2,19 +2,12 @@ import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
 import { UserPlain } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissions';
+import { makeCRUD } from '$api/util/crudmaker';
 
 export const user = new Elysia()
 	.use(permissionsPlugin)
-	.get(
-		'/user',
-		async ({ permissions }) => {
-			return db.user.findMany({ where: permissions.allowDatabaseAccessTo('list').User });
-		},
-		{
-			response: t.Array(UserPlain)
-		}
-	)
-	.put(
+	.use(makeCRUD('user'))
+	.patch(
 		'/user/upsert-after-login',
 		async ({ permissions }) => {
 			const user = permissions.mustBeLoggedIn();

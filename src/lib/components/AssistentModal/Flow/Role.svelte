@@ -67,7 +67,7 @@
 <ChatBot delay={400}>
 	<p>
 		Wunderbar – herzlich Willkommen! Damit ich Sie richtig durch den Anmeldeprozess führen kann,
-		verraten Sie mir doch, welche Rolle sie gerne einnehmen möchten.
+		verraten Sie mir doch, welche Rolle Sie gerne einnehmen möchten.
 	</p>
 </ChatBot>
 <ChatBot delay={1400}>
