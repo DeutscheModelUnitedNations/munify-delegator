@@ -25,8 +25,18 @@ export const logger = new Elysia({
 		ForbiddenError,
 		PermissionCheckError
 	})
-	.onBeforeHandle({ as: 'global' }, ({ request, path }) => {
-		console.info(`Received request ${request.method} ${path}`);
+	.derive({ as: 'global' }, () => {
+		return {
+			requestId: Math.random().toString(36).substring(7)
+		};
+	})
+	.onBeforeHandle({ as: 'global' }, ({ request, path, requestId }) => {
+		console.info(`[${requestId}]: Received request ${request.method} ${path}`);
+	})
+	.onAfterHandle({ as: 'global' }, ({ request, path, set, requestId }) => {
+		console.info(
+			`[${requestId}]: Handled request ${request.method} ${path} with status ${set.status}`
+		);
 	})
 	.onError({ as: 'global' }, ({ error, code, path, set, request }) => {
 		console.error(
@@ -46,7 +56,7 @@ export const logger = new Elysia({
 		switch (code) {
 			case 'PrismaClientKnownRequestError':
 				switch (error.code) {
-					 // unique constraint || not found
+					// unique constraint || not found
 					case 'P2002' || 'P2025':
 						return error.message;
 				}
@@ -56,5 +66,5 @@ export const logger = new Elysia({
 		}
 
 		set.status = 'Internal Server Error';
-		return "Internal server error";
+		return 'Internal server error';
 	});

@@ -27,3 +27,12 @@ model Conference {
   website   String?
   image     Bytes?
 }
+
+model User {
+  id                 String @id @default(nanoid())
+  email              String
+  family_name        String
+  given_name         String
+  locale             String
+  preferred_username String
+}

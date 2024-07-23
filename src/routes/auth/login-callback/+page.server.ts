@@ -1,15 +1,27 @@
 import { codeVerifierCookieName, resolveSignin, tokensCookieName } from '$api/auth/flow';
+import type { TokenCookieSchemaType } from '$api/auth/oidc';
+import { checkForError } from '$api/client';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
-import type { TokenSetParameters } from 'openid-client';
 
-export const load: PageServerLoad = async ({ url, cookies }) => {
+export const load: PageServerLoad = loadApiHandler(async ({ url, cookies, api }) => {
 	const verifier = cookies.get(codeVerifierCookieName);
 	if (!verifier) error(400, 'No code verifier cookie found.');
 
-	const { state, tokenSet } = await resolveSignin(url.toString(), verifier);
+	const { state, tokenSet } = await resolveSignin(url, verifier);
 
-	cookies.set(tokensCookieName, JSON.stringify(tokenSet as TokenSetParameters), {
+	const cookieValue: TokenCookieSchemaType = {
+		access_token: tokenSet.access_token,
+		expires_at: tokenSet.expires_at,
+		id_token: tokenSet.id_token,
+		refresh_token: tokenSet.refresh_token,
+		scope: tokenSet.scope,
+		session_state: tokenSet.session_state,
+		token_type: tokenSet.token_type
+	};
+
+	cookies.set(tokensCookieName, JSON.stringify(cookieValue), {
 		//TODO investigate if we can use 'strict' here somehow
 		// we need lax to allow the token to be sent with redirect from the auth provider
 		sameSite: 'lax',
@@ -19,5 +31,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 
 	cookies.delete(codeVerifierCookieName, { path: '/' });
 
+	await checkForError(api.user['upsert-after-login'].put());
+
 	redirect(302, state.visitedUrl);
-};
+});

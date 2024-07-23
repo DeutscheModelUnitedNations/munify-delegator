@@ -4,6 +4,7 @@ import { dynamicPrivateConfig } from '$config/private';
 import type { OIDCDeriveType } from '../oidc';
 import type { db } from '$db/db';
 import { defineAbilitiesForConference } from './entities/conference';
+import { defineAbilitiesForUserEntity } from './entities/user';
 
 const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
 
@@ -31,6 +32,7 @@ export type AppAbility = PureAbility<
 		Action,
 		TaggedSubjects<{
 			Conference: Awaited<ReturnType<(typeof db.conference)['findUniqueOrThrow']>>;
+			User: Awaited<ReturnType<(typeof db.user)['findUniqueOrThrow']>>;
 		}>
 	],
 	PrismaQuery
@@ -46,6 +48,7 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 	}
 
 	defineAbilitiesForConference(oidc, builder);
+	defineAbilitiesForUserEntity(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

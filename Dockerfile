@@ -33,7 +33,6 @@ COPY --from=builder /temp/workdir/build .
 COPY --from=builder /temp/workdir/prisma ./prisma/
 
 ENV NODE_ENV=production
-ENV PORT=3000
 USER bun
 EXPOSE 3000/tcp
 HEALTHCHECK --interval=15s --timeout=10s --retries=3 CMD curl -f http://localhost:3000/api/health/ready || exit 1

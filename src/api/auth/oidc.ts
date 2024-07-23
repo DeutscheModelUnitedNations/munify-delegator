@@ -1,51 +1,49 @@
 import Elysia, { t } from 'elysia';
 import { TokenSet } from 'openid-client';
-import { refresh, tokensCookieName, userInfo } from './flow';
-import { Parameters } from '@sinclair/typebox';
+import { refresh, tokensCookieName, validateTokens } from './flow';
+import { Parameters, type Static } from '@sinclair/typebox';
 
-export const oidcPlugin = new Elysia({ name: 'oidc' })
-	.guard({
-		cookie: t.Optional(
-			t.Partial(
-				t.Object(
-					{
-						[tokensCookieName]: t.Optional(
-							t.Partial(
-								t.Object(
-									{
-										refresh_token: t.String(),
-										access_token: t.String(),
-										token_type: t.String(),
-										id_token: t.String(),
-										scope: t.String(),
-										expires_at: t.Number(),
-										session_state: t.String()
-									},
-									{ additionalProperties: true }
-								)
-							)
-						)
-					},
-					{ additionalProperties: true }
-				)
-			)
-		)
-	})
-	.derive({ as: 'global' }, async ({ cookie }) => {
+export type TokenCookieSchemaType = {
+	refresh_token?: string;
+	access_token?: string;
+	token_type?: string;
+	id_token?: string;
+	scope?: string;
+	expires_at?: number;
+	session_state?: string;
+};
+
+export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
+	{ as: 'global' },
+	async ({ cookie }) => {
 		if (!cookie[tokensCookieName].value) {
 			return { oidc: { nextRefreshDue: undefined, tokenSet: undefined, user: undefined } };
 		}
-		let tokenSet = new TokenSet(cookie[tokensCookieName].value);
-		if (tokenSet.expired() && cookie[tokensCookieName].value.refresh_token) {
-			tokenSet = await refresh(cookie[tokensCookieName].value.refresh_token);
-			cookie[tokensCookieName].value = tokenSet;
+		const parsedCookie: TokenCookieSchemaType = JSON.parse(cookie[tokensCookieName].value);
+
+		let tokenSet = new TokenSet(parsedCookie);
+		if (tokenSet.expired() && parsedCookie.refresh_token) {
+			tokenSet = await refresh(parsedCookie.refresh_token);
+			const cookieValue: TokenCookieSchemaType = {
+				access_token: tokenSet.access_token,
+				expires_at: tokenSet.expires_at,
+				id_token: tokenSet.id_token,
+				refresh_token: tokenSet.refresh_token,
+				scope: tokenSet.scope,
+				session_state: tokenSet.session_state,
+				token_type: tokenSet.token_type
+			};
+			cookie[tokensCookieName].value = JSON.stringify(cookieValue);
 		}
-		let user: Awaited<ReturnType<typeof userInfo>> | undefined = undefined;
+		let user: Awaited<ReturnType<typeof validateTokens>> | undefined = undefined;
 		if (tokenSet.access_token) {
 			try {
-				user = await userInfo(tokenSet.access_token);
+				user = await validateTokens({
+					access_token: tokenSet.access_token,
+					id_token: tokenSet.id_token
+				});
 			} catch (error) {
-				console.warn('Failed to fetch user info', error);
+				console.warn('Failed to retrieve user info from tokens', error);
 			}
 		}
 
@@ -56,6 +54,7 @@ export const oidcPlugin = new Elysia({ name: 'oidc' })
 				user
 			}
 		};
-	});
+	}
+);
 
 export type OIDCDeriveType = Parameters<Parameters<(typeof oidcPlugin)['derive']>[1]>[0]['oidc'];

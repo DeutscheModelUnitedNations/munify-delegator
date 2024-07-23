@@ -19,3 +19,5 @@ export const dynamicPrivateConfig = mapEnvToSchema({
 		])
 	})
 });
+
+console.log(`Loaded dynamic private config in ${dynamicPrivateConfig.NODE_ENV} mode`);
