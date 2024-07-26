@@ -49,5 +49,8 @@
     "elysia": "^1.1.2",
     "prismabox": "^1.1.5",
     "prisma": "^5.17.0"
+  },
+  "dependencies": {
+    "jose": "^5.6.3"
   }
 }

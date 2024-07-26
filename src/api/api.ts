@@ -3,6 +3,7 @@ import { conference } from './routes/conference';
 import { auth } from './routes/auth';
 import { logger } from './logger';
 import { health } from './routes/health';
+import { user } from './routes/user';
 
 export const app = new Elysia({
 	normalize: true,
@@ -12,6 +13,7 @@ export const app = new Elysia({
 	.use(conference)
 	.use(health)
 	.use(auth)
+	.use(user)
 	.compile();
 
 export type App = typeof app;
