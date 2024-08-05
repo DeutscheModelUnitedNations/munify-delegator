@@ -17,22 +17,130 @@ generator prismabox {
 }
 
 model Conference {
-  id        String    @id @default(nanoid())
-  title     String
-  longTitle String?
-  start     DateTime?
-  end       DateTime?
-  location  String?
-  language  String?
-  website   String?
-  image     Bytes?
+  id                           String                    @id @default(nanoid())
+  title                        String
+  longTitle                    String?
+  start                        DateTime?
+  end                          DateTime?
+  location                     String?
+  language                     String?
+  website                      String?
+  image                        Bytes?
+  individualApplicationOptions CustomConferenceRole[]
+  nations                      ConferenceNation[]
+  nonStateActors               ConferenceNonStateActor[]
+  delegations                  Delegation[]
 }
 
 model User {
-  id                 String @id @default(nanoid())
-  email              String
-  family_name        String
-  given_name         String
-  locale             String
-  preferred_username String
+  id                    String             @id @default(nanoid())
+  // these are OIDC fields
+  email                 String
+  family_name           String
+  given_name            String
+  locale                String
+  preferred_username    String
+  delegationMemberships DelegationMember[]
+}
+
+model Nation {
+  id         String @id @default(nanoid())
+  alpha3Code String @unique
+  // other properties are fetched from nation databases/libraries which do not want to maintain on our own
+  // e.g. localized names, flags, etc.
+
+  conferenceNations ConferenceNation[]
+}
+
+//TODO do we need this separate entity? Mybe a simple relation between conference and nation is enough?
+// not every system nation is also present in a conference
+model ConferenceNation {
+  id                     String                  @id @default(nanoid())
+  conference             Conference              @relation(fields: [conferenceId], references: [id])
+  conferenceId           String
+  nation                 Nation                  @relation(fields: [nationId], references: [id])
+  nationId               String
+  delegationApplications DelegationApplication[]
+
+  @@unique([conferenceId, nationId])
+}
+
+model NonStateActor {
+  id String @id @default(nanoid())
+
+  //TODO we need to check if there is some kind of external db
+  // to get the values from, similar as in the nation entity
+  // this is my suggestion for necessary fields
+
+  //TODO i18n names?
+  name                     String                    @unique
+  icon                     Bytes?
+  abbreviation             String                    @unique
+  conferenceNonStateActors ConferenceNonStateActor[]
+}
+
+model ConferenceNonStateActor {
+  id                     String                  @id @default(nanoid())
+  conference             Conference              @relation(fields: [conferenceId], references: [id])
+  conferenceId           String
+  nonStateActor          NonStateActor           @relation(fields: [nonStateActorId], references: [id])
+  nonStateActorId        String
+  delegationApplications DelegationApplication[]
+
+  @@unique([conferenceId, nonStateActorId])
+}
+
+// these can be journalists, judges, etc.
+model CustomConferenceRole {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  name         String
+  description  String
+  icon         Bytes?
+
+  @@unique([conferenceId, name])
+}
+
+model Delegation {
+  id            String                 @id @default(nanoid())
+  conference    Conference             @relation(fields: [conferenceId], references: [id])
+  conferenceId  String
+  entryCodeHash String
+  members       DelegationMember[]
+  application   DelegationApplication?
+}
+
+enum DelegationMemberRole {
+  DELEGATE
+  HEAD_DELEGATE
+  SUPERVISOR
+}
+
+model DelegationMember {
+  id           String               @id @default(nanoid())
+  delegation   Delegation           @relation(fields: [delegationId], references: [id])
+  delegationId String
+  user         User                 @relation(fields: [userId], references: [id])
+  userId       String
+  role         DelegationMemberRole
+}
+
+enum DelegationApplicationType {
+  NATION
+  NON_STATE_ACTOR
+}
+
+model DelegationApplication {
+  id           String     @id @default(nanoid())
+  delegation   Delegation @relation(fields: [delegationId], references: [id])
+  delegationId String     @unique
+
+  type DelegationApplicationType
+
+  // nation specific fields
+  nations ConferenceNation[]
+
+  // non-state actor specific fields
+  nonStateActors ConferenceNonStateActor[]
 }
