@@ -33,6 +33,20 @@ export type AppAbility = PureAbility<
 		TaggedSubjects<{
 			Conference: Awaited<ReturnType<(typeof db.conference)['findUniqueOrThrow']>>;
 			User: Awaited<ReturnType<(typeof db.user)['findUniqueOrThrow']>>;
+			Nation: Awaited<ReturnType<(typeof db.nation)['findUniqueOrThrow']>>;
+			ConferenceNation: Awaited<ReturnType<(typeof db.conferenceNation)['findUniqueOrThrow']>>;
+			NonStateActor: Awaited<ReturnType<(typeof db.nonStateActor)['findUniqueOrThrow']>>;
+			ConferenceNonStateActor: Awaited<
+				ReturnType<(typeof db.conferenceNonStateActor)['findUniqueOrThrow']>
+			>;
+			CustomConferenceRole: Awaited<
+				ReturnType<(typeof db.customConferenceRole)['findUniqueOrThrow']>
+			>;
+			Delegation: Awaited<ReturnType<(typeof db.delegation)['findUniqueOrThrow']>>;
+			DelegationMember: Awaited<ReturnType<(typeof db.delegationMember)['findUniqueOrThrow']>>;
+			DelegationApplication: Awaited<
+				ReturnType<(typeof db.delegationApplication)['findUniqueOrThrow']>
+			>;
 		}>
 	],
 	PrismaQuery
