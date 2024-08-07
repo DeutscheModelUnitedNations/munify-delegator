@@ -28,7 +28,7 @@
 	</nav>
 	<aside>
 		<p>A Service by</p>
-        <img src={dmunLogo} alt="DMUN Logo" class="w-40 invert hue-rotate-180" />
+        <img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
 		<p>
 			Copyright © {new Date().getFullYear()} - All right reserved by Deutsche Model United Nations e.V.
 		</p>
