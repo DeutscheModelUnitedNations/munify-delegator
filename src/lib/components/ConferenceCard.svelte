@@ -6,11 +6,11 @@
 
 	interface ConferenceCardProps {
 		id: string;
-		location: string | null;
-		start: Date | null;
-		end: Date | null;
-		website: string | null;
-		image: Uint8Array | null;
+		location?: string;
+		start?: Date;
+		end?: Date;
+		website?: string;
+		image?: Uint8Array;
 		title: string;
 		baseSlug: string;
 		btnText: string;
@@ -55,7 +55,7 @@
 		<h2 class="card-title">{title}</h2>
 		<CardInfoSectionWithIcons
 			items={[
-				{ icon: 'fa-map-marker-alt', text: location },
+				{ icon: 'fa-map-marker-alt', text: location ?? 'Ort unbekannt' },
 				{
 					icon: 'fa-calendar',
 					text:

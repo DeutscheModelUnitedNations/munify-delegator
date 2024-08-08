@@ -1,8 +1,8 @@
 import countries from 'world-countries';
-import { languageTag } from '$lib/paraglide/runtime.js'
+import { languageTag } from '$lib/paraglide/runtime.js';
 
 //TODO this could probably be part of the localization engine
-function countryCodeToLocalName(alpha2Code: string, locale = languageTag()) {
+function countryCodeToLocalName(code: string, locale = languageTag(), official = false) {
 	const getTranslationCode = (locale: string) => {
 		switch (locale) {
 			case 'de':
@@ -14,12 +14,27 @@ function countryCodeToLocalName(alpha2Code: string, locale = languageTag()) {
 		}
 	};
 
-	const country = countries.find((country) => country.cca2 === alpha2Code.toUpperCase())
-		?.translations[getTranslationCode(locale)];
+	const country = countries.find((country) => {
+		if (code.length === 2) return country.cca2 === code.toUpperCase();
+		return country.cca3 === code.toUpperCase();
+	});
+
+	console.log('country', country);
 	if (country) {
-		return country.common;
+		let translation;
+
+		if (getTranslationCode(locale) == 'eng') {
+			translation = country.name;
+		} else {
+			translation = country.translations[getTranslationCode(locale)];
+		}
+
+		if (official) {
+			return translation.official;
+		}
+		return translation.common;
 	}
-	return "N/A"
+	return 'N/A';
 }
 
 export default countryCodeToLocalName;
