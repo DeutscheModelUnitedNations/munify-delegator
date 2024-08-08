@@ -51,9 +51,9 @@
     "prisma": "^5.17.0"
   },
   "dependencies": {
-    "@tanstack/svelte-table": "v9.0.0-alpha.10",
     "jose": "^5.6.3",
     "mermaid": "^10.9.1",
-    "numeral": "^2.0.6"
+    "numeral": "^2.0.6",
+    "svelte-headless-table": "^0.18.2"
   }
 }

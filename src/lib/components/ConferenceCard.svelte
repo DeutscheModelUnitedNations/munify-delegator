@@ -45,26 +45,38 @@
 		month: 'long',
 		day: 'numeric'
 	};
+
+	const cardInfoItems = () => {
+		
+		const items: {icon: string; text?: string; link?: string}[] = [
+				{ icon: 'fa-map-marker-alt', text: location ?? 'Ort unbekannt' },
+				{
+					icon: 'fa-calendar',
+					text:
+						start && end
+						? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
+						: 'Datum unbekannt'
+					},
+				]
+			
+		if (website) {
+			items.push({ icon: 'fa-globe', text: website, link: website });
+		}
+
+		return items;
+	};
 </script>
 
-<div class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl hover:scale-[1.01] transition-all duration-300">
+<div
+	class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl hover:scale-[1.01] transition-all duration-300"
+>
 	<figure>
 		<img src={defaultImage} alt="Conference" />
 	</figure>
 	<div class="card-body">
 		<h2 class="card-title">{title}</h2>
 		<CardInfoSectionWithIcons
-			items={[
-				{ icon: 'fa-map-marker-alt', text: location ?? 'Ort unbekannt' },
-				{
-					icon: 'fa-calendar',
-					text:
-						start && end
-							? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
-							: 'Datum unbekannt'
-				},
-				{ icon: 'fa-globe', text: website ?? "", link: website ?? "https://dmun.de" }
-			]}
+			items={cardInfoItems()}
 		/>
 		<div class="card-actions justify-end mt-4">
 			<a href={`${baseSlug}/${id}`} class="btn btn-primary">
