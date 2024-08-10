@@ -9,6 +9,7 @@
 		<a class="link link-hover" href="/dashboard">Deine Konferenzen</a>
 		<a class="link link-hover">Impressum</a>
 		<a class="link link-hover">Datenschutzerklärung</a>
+		<a class="link link-hover" href="management">Administration</a>
 	</nav>
 	<nav>
 		<div class="grid grid-flow-col gap-4" id="socials">
@@ -28,7 +29,7 @@
 	</nav>
 	<aside>
 		<p>A Service by</p>
-        <img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
+		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
 		<p>
 			Copyright © {new Date().getFullYear()} - All right reserved by Deutsche Model United Nations e.V.
 		</p>
@@ -36,10 +37,10 @@
 </footer>
 
 <style>
-    #socials a {
-        transition: transform 0.3s;
-    }
-    #socials a:hover {
-        transform: scale(1.2);
-    }
+	#socials a {
+		transition: transform 0.3s;
+	}
+	#socials a:hover {
+		transform: scale(1.2);
+	}
 </style>

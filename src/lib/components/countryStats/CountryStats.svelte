@@ -97,7 +97,7 @@
 		<SingleStatFromWb {...stat} {countryCode} />
 	{/each}
 </div>
-<h5 class="mt-4">
-	Die Daten stammen zum großen Teil von der World Bank. Das Abrufen kann manchmal etwas Zeit in
-	Anspruch nehmen.
+<h5 class="mt-4 text-xs">
+	Die Daten stammen zum großen Teil von der offenen Datenschnittstelle (API) der World Bank. Da es sich um einen Drittanbieterdienst handelt, kann das Abrufen kann manchmal etwas Zeit in
+	Anspruch nehmen und die Daten sind nicht immer aktuell. Es gibt keine Garantie für Richtigkeit. Wir freuen uns über Anregungen, welche weiteren Daten wir hier anzeigen sollen.
 </h5>

@@ -48,7 +48,7 @@
 		</div>
 		<ul tabindex="0" class="menu dropdown-content mt-3 w-52 rounded-box bg-base-100 p-2 shadow-2xl">
 			<li>
-				<a>
+				<a href="/my-account">
 					<i class="fa-duotone fa-user w-4" />
 					Profilverwaltung
 				</a>

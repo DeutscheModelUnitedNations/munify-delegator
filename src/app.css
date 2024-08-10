@@ -24,3 +24,17 @@
   padding: 3px !important;
   color: blue;
 }
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  .print-only {
+    display: block;
+  }
+}

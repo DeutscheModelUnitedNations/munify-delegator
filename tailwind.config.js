@@ -3,6 +3,7 @@ const plugin = require('tailwindcss/plugin');
 
 export default {
 	content: ['./src/**/*.{html,js,svelte,ts}', './lib/**/*.{html,js,svelte,ts}'],
+	safelist: ['table-xs', 'table-sm', 'table-md', 'table-lg', 'table-zebra'],
 	theme: {
 		fontFamily: {
 			sans: ['Outfit', 'system-ui', 'sans-serif'],

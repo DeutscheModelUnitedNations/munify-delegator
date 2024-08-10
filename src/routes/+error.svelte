@@ -9,9 +9,9 @@
 	const getPicture = (e: number) => {
 		switch (e) {
 			case 404:
-				return svg500;
-			case 500:
 				return svg404;
+				case 500:
+				return svg500;
 			default:
 				return svgquestion;
 		}

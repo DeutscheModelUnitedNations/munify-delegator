@@ -20,7 +20,7 @@
 	<main class="drawer-content p-4 lg:p-10">
 		{@render children()}
 	</main>
-	<aside class="drawer-side z-10 lg:drawer-open">
+	<aside class="drawer-side z-10 lg:drawer-open no-print">
 		<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
 		<!-- sidebar menu -->
 		<nav class="flex min-h-screen w-72 flex-col gap-2 overflow-y-auto bg-base-200 px-6 py-10">
