@@ -11,10 +11,10 @@
 	let street = $state('');
 	let zip = $state('');
 	let city = $state('');
+	let country = $state('DE');
 	let birthday = $state('');
-	let country = $state('');
 	let gender = $state('');
-	let foodPreference = $state('');
+	let foodPreference = $state('Vegan');
 
 	let personalDataComplete = $state(!data.redirectUrl);
 
@@ -27,8 +27,12 @@
 	};
 </script>
 
+{#if !personalDataComplete}
+	<div class="backdrop"></div>
+{/if}
+
 <div class="w-full flex flex-col items-center p-4">
-	<section class="text-center max-ch-md mt-10">
+	<section class="text-center max-ch-md mt-10 z-20">
 		<i class="fa-duotone fa-user text-5xl mb-3"></i>
 		<h1 class="text-2xl font-bold">Mein Konto</h1>
 		<p>Hier findest du alle Informationen und Präferenzen zu deinem Konto.</p>
@@ -40,7 +44,7 @@
 					<h2 class="text-xl font-bold">Daten Vervollständigen</h2>
 					<p>
 						Vielen Dank für deine Registrierung. Bitte vervollständige deine persönlichen Daten, um
-						deine Anmeldung abzuschließen (und vergiss nicht zu speichern).
+						deine Anmeldung abzuschließen.
 					</p>
 					<p>
 						Danach kannst du da weitermachen, wo du eigentlich hin wolltest. Wenn du auf Speichern
@@ -50,19 +54,18 @@
 			</div>
 		{/if}
 	</section>
-
 	<div class="flex gap-10 flex-wrap justify-center items-start mt-10">
 		<div
-			class="card w-full md:w-auto md:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl {!personalDataComplete &&
+			class="card w-full md:w-auto md:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl z-20 {!personalDataComplete &&
 				'highlight-card'}"
 		>
-			<div class="card-body">
+			<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
 				<div class="card-title block text-center">Persönliche Daten</div>
 				<form class="flex flex-col gap-4" onsubmit={onPersonalDataFormSubmit}>
 					<ProfileInput
 						label="Telefon"
 						bind:value={telephone}
-						placeholder="Telefon"
+						placeholder="+491234567890"
 						required
 						pattern={`^\+\d{6,14}$`}
 						defaultValue="+49"
@@ -119,8 +122,13 @@
 						required
 					/>
 					<button class="btn btn-primary btn-block mt-4" type="submit">
-						Speichern
-						<i class="fas fa-save"></i>
+						{#if personalDataComplete}
+							Speichern
+							<i class="fas fa-save"></i>
+						{:else}
+							Speichern und Weiter
+							<i class="fas fa-arrow-right"></i>
+						{/if}
 					</button>
 				</form>
 			</div>
@@ -186,12 +194,23 @@
 		inherits: false;
 	}
 
-	.highlight-card {
-		position: relative;
+	.backdrop {
+		content: '';
+		position: fixed;
+		width: 100vw;
+		height: 100vh;
+		background-color: rgba(0, 0, 0, 0.1);
+		z-index: 10;
+		backdrop-filter: blur(3px);
 	}
 
-	.highlight-card::after,
-	.highlight-card::before {
+	.highlight-card {
+		position: relative;
+		z-index: 10;
+	}
+
+	.highlight-card::before,
+	.highlight-card::after {
 		content: '';
 		position: absolute;
 		background: conic-gradient(
