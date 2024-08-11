@@ -3,12 +3,12 @@
 </script>
 
 <footer class="footer footer-center bg-base-200 text-base-content rounded-xl p-10 mt-10">
-	<nav class="flex flex-wrap flex-col md:flex-row gap-4">
+	<nav class="flex flex-wrap flex-col justify-center md:flex-row gap-4">
 		<a class="link link-hover" href="/">Startseite</a>
 		<a class="link link-hover" href="/registration">Anmeldung</a>
 		<a class="link link-hover" href="/dashboard">Deine Konferenzen</a>
-		<a class="link link-hover">Impressum</a>
-		<a class="link link-hover">Datenschutzerklärung</a>
+		<a class="link link-hover" href="/my-account">Profilverwaltung</a>
+		<a class="link link-hover" href="https://dmun.de/impressum" target="_blank">Impressum & Datenschutzerklärung</a>
 		<a class="link link-hover" href="management">Administration</a>
 	</nav>
 	<nav>

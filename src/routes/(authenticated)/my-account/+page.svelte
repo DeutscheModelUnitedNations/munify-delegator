@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Footer from '$lib/components/Footer.svelte';
 	import ProfileInput from '$lib/components/ProfileInput.svelte';
 	import ProfileSelect from '$lib/components/ProfileSelect.svelte';
+	import addressCountries from '$lib/helper/addressCountries.js';
+	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName.js';
 
 	let { data } = $props();
 
@@ -26,8 +27,8 @@
 	};
 </script>
 
-<div class="w-full flex flex-col items-center p-10">
-	<section class="text-center max-ch-md">
+<div class="w-full flex flex-col items-center p-4">
+	<section class="text-center max-ch-md mt-10">
 		<i class="fa-duotone fa-user text-5xl mb-3"></i>
 		<h1 class="text-2xl font-bold">Mein Konto</h1>
 		<p>Hier findest du alle Informationen und Präferenzen zu deinem Konto.</p>
@@ -73,14 +74,11 @@
 					<ProfileSelect
 						bind:value={country}
 						placeholder="Bitte Land auswählen"
-						options={[
-							{ value: 'DE', label: 'Deutschland' },
-							{ value: 'AT', label: 'Österreich' },
-							{ value: 'CH', label: 'Schweiz' }
-						]}
+						options={addressCountries
+							.map((c) => ({ value: c.iso_code, label: countryCodeToLocalName(c.iso_code, 'de') })) // TODO Add locale
+							.sort((a, b) => a.label.localeCompare(b.label))}
 						required
 					/>
-					<!-- TODO Add all Countries -->
 					<ProfileInput
 						bind:value={birthday}
 						label="Geburtstag"
@@ -88,6 +86,13 @@
 						required
 						type="date"
 						pattern="^[0-3]\d[\.[0-1]\d\.\d{4}$"
+						max={new Date(
+							new Date().getFullYear() - 10,
+							new Date().getMonth(),
+							new Date().getDate()
+						)
+							.toISOString()
+							.split('T')[0]}
 					/>
 					<ProfileSelect
 						bind:value={gender}
@@ -171,9 +176,8 @@
 			</div>
 		</div>
 	</div>
+	<Footer />
 </div>
-
-<Footer />
 
 <style>
 	@property --angle {

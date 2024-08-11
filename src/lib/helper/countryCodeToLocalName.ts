@@ -19,7 +19,6 @@ function countryCodeToLocalName(code: string, locale = languageTag(), official =
 		return country.cca3 === code.toUpperCase();
 	});
 
-	console.log('country', country);
 	if (country) {
 		let translation;
 

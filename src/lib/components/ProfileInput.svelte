@@ -8,17 +8,19 @@
 		pattern?: string;
 		required?: boolean;
 		type?: string;
+		max?: string;
 	}
 
 	let {
 		label,
 		icon,
 		value = $bindable(''),
-		defaultValue = "",
+		defaultValue = '',
 		placeholder,
 		pattern,
 		required,
-		type
+		type,
+		max
 	}: Props = $props();
 </script>
 
@@ -36,6 +38,7 @@
 			{pattern}
 			{placeholder}
 			{required}
+      {max}
 			oninput={(e) => {
 				value = e.target.value;
 			}}
