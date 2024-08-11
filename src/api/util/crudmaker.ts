@@ -1,32 +1,51 @@
 import { permissionsPlugin } from '$api/auth/permissions';
 import { db } from '$db/db';
 import * as Schemes from '$db/generated/schema/barrel';
-import Elysia, { t } from 'elysia';
+import Elysia, { t, type Static } from 'elysia';
 
 type OmitDollarPrefixed<T> = T extends `$${string}` ? never : T;
 type OmitSymbol<T> = T extends symbol ? never : T;
-type AllEntityNames = OmitSymbol<OmitDollarPrefixed<keyof typeof db>>;
+type AllEntityNames<T> = OmitSymbol<OmitDollarPrefixed<keyof T>>;
 
-function capitalizeFirstLetterOfUnion<T extends AllEntityNames>(input: T): Capitalize<T> {
+function capitalizeFirstLetterOfUnion<T extends AllEntityNames<typeof db>>(
+	input: T
+): Capitalize<T> {
 	return (input.charAt(0).toUpperCase() + input.slice(1)) as Capitalize<T>;
 }
 
 //TODO test this
 
-export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) {
-	const cpaitalizedEntity = capitalizeFirstLetterOfUnion(entity);
+export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
+	entity: EntityName,
+	customHandlers?: {
+		getAll?: () => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>[];
+		getOne?: () => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+		createOne?: (
+			input: Static<(typeof Schemes)[`${Capitalize<EntityName>}PlainInput`]>
+		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+		updateOne?: (
+			input: Static<(typeof Schemes)[`${Capitalize<EntityName>}PlainInput`]>
+		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+		deleteOne?: (
+			input: Static<(typeof Schemes)[`${Capitalize<EntityName>}WhereUnique`]>
+		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+	}
+) {
+	const capitalizedEntityName = capitalizeFirstLetterOfUnion(entity);
+
 	return new Elysia()
 		.use(permissionsPlugin)
 		.get(
 			`/${entity}`,
-			async ({ permissions }) => {
-				// @ts-ignore
-				return await db[entity].findMany({
-					where: permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]
-				});
-			},
+			customHandlers?.getAll ??
+				(async ({ permissions }) => {
+					// @ts-ignore
+					return await db[entity].findMany({
+						where: permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]
+					});
+				}),
 			{
-				response: t.Array(Schemes[`${cpaitalizedEntity}Plain`])
+				response: t.Array(Schemes[`${capitalizedEntityName}Plain`])
 			}
 		)
 		.get(
@@ -41,9 +60,10 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 				});
 			},
 			{
-				response: Schemes[`${cpaitalizedEntity}Plain`]
+				response: Schemes[`${capitalizedEntityName}Plain`]
 			}
 		)
+		.use(permissionsPlugin)
 		.post(
 			`/${entity}`,
 			async ({ permissions, body }) => {
@@ -54,10 +74,11 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 				});
 			},
 			{
-				body: Schemes[`${cpaitalizedEntity}InputCreate`],
-				response: Schemes[`${cpaitalizedEntity}Plain`]
+				body: Schemes[`${capitalizedEntityName}InputCreate`],
+				response: Schemes[`${capitalizedEntityName}Plain`]
 			}
 		)
+		.use(permissionsPlugin)
 		.patch(
 			`/${entity}/:id`,
 			async ({ permissions, params, body }) => {
@@ -71,24 +92,24 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 				});
 			},
 			{
-				body: Schemes[`${cpaitalizedEntity}InputUpdate`],
-				response: Schemes[`${cpaitalizedEntity}Plain`]
+				body: Schemes[`${capitalizedEntityName}InputUpdate`],
+				response: Schemes[`${capitalizedEntityName}Plain`]
 			}
 		)
+		.use(permissionsPlugin)
 		.delete(
 			`/${entity}/:id`,
-			async ({ permissions, params }) =>
-				{
-					// @ts-ignore
-					return await db[entity].delete({
-						where: {
-							id: params.id,
-							AND: permissions.allowDatabaseAccessTo('delete')[capitalizeFirstLetterOfUnion(entity)]
-						}
-					});
-				},
+			async ({ permissions, params }) => {
+				// @ts-ignore
+				return await db[entity].delete({
+					where: {
+						id: params.id,
+						AND: permissions.allowDatabaseAccessTo('delete')[capitalizeFirstLetterOfUnion(entity)]
+					}
+				});
+			},
 			{
-				response: Schemes[`${cpaitalizedEntity}Plain`]
+				response: Schemes[`${capitalizedEntityName}Plain`]
 			}
 		);
 }

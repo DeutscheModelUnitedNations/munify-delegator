@@ -5,6 +5,8 @@ import type { LayoutLoad } from './$types';
 export const load: LayoutLoad = loadApiHandler(async ({ api }) => {
 	const conferences = await checkForError(api.conference.get());
 
+	api.
+
 	return {
 		conferences
 	};
