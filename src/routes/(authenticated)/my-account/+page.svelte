@@ -9,12 +9,14 @@
 
 	let telephone = $state('');
 	let street = $state('');
+	let apartment = $state('');
 	let zip = $state('');
 	let city = $state('');
 	let country = $state('DE');
 	let birthday = $state('');
 	let gender = $state('');
-	let foodPreference = $state('Vegan');
+	let pronouns = $state('');
+	let foodPreference = $state('');
 
 	let personalDataComplete = $state(!data.redirectUrl);
 
@@ -63,7 +65,7 @@
 				<div class="card-title block text-center">Persönliche Daten</div>
 				<form class="flex flex-col gap-4" onsubmit={onPersonalDataFormSubmit}>
 					<ProfileInput
-						label="Telefon"
+						label="Handynummer"
 						bind:value={telephone}
 						placeholder="+491234567890"
 						required
@@ -72,6 +74,7 @@
 						type="tel"
 					/>
 					<ProfileInput bind:value={street} label="Adresse" placeholder="Straße" required />
+					<ProfileInput bind:value={apartment} placeholder="ggf. Zusatz" />
 					<ProfileInput bind:value={zip} placeholder="PLZ" required />
 					<ProfileInput bind:value={city} placeholder="Ort" required />
 					<ProfileSelect
@@ -109,6 +112,8 @@
 						]}
 						required
 					/>
+
+					<ProfileInput bind:value={pronouns} label="Pronomen" placeholder="z.B. er/ihm oder sie/ihr" required />
 
 					<ProfileSelect
 						bind:value={foodPreference}
