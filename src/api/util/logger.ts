@@ -43,6 +43,8 @@ export const logger = new Elysia({
 			`Error in ${request.method} ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
 		);
 
+		//TODO code is not what it seems to be
+
 		// Built-in elysia errors
 
 		if (code === 'VALIDATION') {
