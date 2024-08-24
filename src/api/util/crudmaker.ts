@@ -11,10 +11,38 @@ function capitalizeFirstLetterOfUnion<T extends AllEntityNames>(input: T): Capit
 	return (input.charAt(0).toUpperCase() + input.slice(1)) as Capitalize<T>;
 }
 
+const c = new Elysia().use(permissionsPlugin);
+type GETParams = Parameters<typeof c.get()>[1];
+type POSTParams = Parameters<typeof c.post>[1];
+type PATCHParams = Parameters<typeof c.patch>[1];
+type DELETEParams = Parameters<typeof c.delete>[1];
+
 //TODO test this
 
-export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) {
-	const cpaitalizedEntity = capitalizeFirstLetterOfUnion(entity);
+export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
+	entity: EntityName,
+	customHandlers?: {
+		getAll?: (context: GETParams) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>[];
+		getOne?: (context: GETParams) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+		createOne?: (
+			context: {
+				body: Static<(typeof Schemes)[`${Capitalize<EntityName>}PlainInput`]>;
+			} & POSTParams
+		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+		updateOne?: (
+			context: {
+				body: Static<(typeof Schemes)[`${Capitalize<EntityName>}PlainInput`]>;
+			} & PATCHParams
+		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+		deleteOne?: (
+			context: {
+				query: Static<(typeof Schemes)[`${Capitalize<EntityName>}WhereUnique`]>;
+			} & DELETEParams
+		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
+	}
+) {
+	const capitalizedEntityName = capitalizeFirstLetterOfUnion(entity);
+
 	return new Elysia()
 		.use(permissionsPlugin)
 		.get(
@@ -31,28 +59,30 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 		)
 		.get(
 			`/${entity}/:id`,
-			async ({ permissions, params }) => {
-				// @ts-ignore
-				return await db[entity].findUniqueOrThrow({
-					where: {
-						id: params.id,
-						AND: permissions.allowDatabaseAccessTo('read')[capitalizeFirstLetterOfUnion(entity)]
-					}
-				});
-			},
+			customHandlers?.getOne ??
+				(async ({ permissions, params }) => {
+					// @ts-ignore
+					return await db[entity].findUniqueOrThrow({
+						where: {
+							id: params.id,
+							AND: permissions.allowDatabaseAccessTo('read')[capitalizeFirstLetterOfUnion(entity)]
+						}
+					});
+				}),
 			{
 				response: Schemes[`${cpaitalizedEntity}Plain`]
 			}
 		)
 		.post(
 			`/${entity}`,
-			async ({ permissions, body }) => {
-				permissions.checkIf((user) => user.can('create', capitalizeFirstLetterOfUnion(entity)));
-				// @ts-ignore
-				return await db[entity].create({
-					data: body
-				});
-			},
+			customHandlers?.createOne ??
+				(async ({ permissions, body }) => {
+					permissions.checkIf((user) => user.can('create', capitalizeFirstLetterOfUnion(entity)));
+					// @ts-ignore
+					return await db[entity].create({
+						data: body
+					});
+				}),
 			{
 				body: Schemes[`${cpaitalizedEntity}InputCreate`],
 				response: Schemes[`${cpaitalizedEntity}Plain`]
@@ -60,16 +90,17 @@ export function makeCRUD<EntityName extends AllEntityNames>(entity: EntityName) 
 		)
 		.patch(
 			`/${entity}/:id`,
-			async ({ permissions, params, body }) => {
-				// @ts-ignore
-				return await db[entity].update({
-					where: {
-						id: params.id,
-						AND: permissions.allowDatabaseAccessTo('update')[capitalizeFirstLetterOfUnion(entity)]
-					},
-					data: body
-				});
-			},
+			customHandlers?.updateOne ??
+				(async ({ permissions, params, body }) => {
+					// @ts-ignore
+					return await db[entity].update({
+						where: {
+							id: params.id,
+							AND: permissions.allowDatabaseAccessTo('update')[capitalizeFirstLetterOfUnion(entity)]
+						},
+						data: body
+					});
+				}),
 			{
 				body: Schemes[`${cpaitalizedEntity}InputUpdate`],
 				response: Schemes[`${cpaitalizedEntity}Plain`]
