@@ -66,7 +66,5 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 		path: '/'
 	});
 
-	console.log(redirect_uri);
-
 	redirect(302, redirect_uri);
 };

@@ -20,7 +20,7 @@
     "@fontsource/roboto-mono": "^5.0.19",
     "@fontsource/vollkorn": "^5.0.21",
     "@sveltejs/kit": "^2.5.24",
-    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
     "autoprefixer": "^10.4.20",
     "daisyui": "^4.12.10",
     "postcss": "^8.4.41",
@@ -50,14 +50,10 @@
     "elysia": "^1.1.7",
     "prismabox": "^1.1.9",
     "prisma": "^5.18.0",
-    "jose": "^5.7.0",
-    "mermaid": "^11.0.2"
-  },
-  "dependencies": {
+    "mermaid": "^11.0.2",
     "@faker-js/faker": "^8.4.1",
     "esbuild": "^0.23.1",
     "jose": "^5.7.0",
-    "mermaid": "^11.0.2",
     "numeral": "^2.0.6",
     "svelte-headless-table": "^0.18.2"
   }

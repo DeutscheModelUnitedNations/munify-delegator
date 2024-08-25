@@ -13,7 +13,7 @@ generator prismabox {
   typeboxImportDependencyName = "elysia"
   output                      = "./generated/schema"
   inputModel                  = true
-  // additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
+  additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
 }
 
 model Conference {
@@ -33,7 +33,7 @@ model Conference {
   conferenceUserStatus         ConferenceParticipantStatus[]
   teamMembers                  TeamMember[]
   committees                   Committee[]
-  SingleParticipant            SingleParticipant[]
+  singleParticipant            SingleParticipant[]
 }
 
 model Committee {
@@ -65,7 +65,10 @@ model User {
   conferenceSupervisor        ConferenceSupervisor[]
   conferenceParticipantStatus ConferenceParticipantStatus[]
   teamMember                  TeamMember[]
-  SingleParticipant           SingleParticipant[]
+  singleParticipant           SingleParticipant[]
+
+  wantsToReceiveGeneralInformation Boolean @default(false)
+  wantsJoinTeamInformation         Boolean @default(false)
 }
 
 enum AdministrativeStatus {
@@ -110,13 +113,13 @@ model NonStateActor {
 
 // these can be journalists, judges, etc.
 model CustomConferenceRole {
-  id                  String             @id @default(nanoid())
-  conference          Conference         @relation(fields: [conferenceId], references: [id])
-  conferenceId        String
-  name                String
-  description         String
-  icon                Bytes?
-  singleParticipant   SingleParticipant[]
+  id                String              @id @default(nanoid())
+  conference        Conference          @relation(fields: [conferenceId], references: [id])
+  conferenceId      String
+  name              String
+  description       String
+  icon              Bytes?
+  singleParticipant SingleParticipant[]
 
   @@unique([conferenceId, name])
 }
@@ -202,5 +205,3 @@ model TeamMember {
   userId       String
   role         TeamRole   @default(MEMBER)
 }
-
-//TODO conference member entity

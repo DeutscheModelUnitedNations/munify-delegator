@@ -1,11 +1,13 @@
-import Elysia, { t } from 'elysia';
+import Elysia from 'elysia';
 import { db } from '$db/db';
 import { UserPlain } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
 
-export const user = new Elysia()
+export const user = new Elysia({
+	normalize: true
+})
 	.use(CRUDMaker.getAll('user'))
 	.use(CRUDMaker.getOne('user'))
 	.use(CRUDMaker.createOne('user'))

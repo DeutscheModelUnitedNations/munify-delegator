@@ -126,7 +126,7 @@
 								>Warum bewirbt sich Ihre Delegation bei der Konferenz</span
 							>
 						</div>
-						<textarea placeholder="Type here" class="textarea textarea-bordered w-full" />
+						<textarea placeholder="Type here" class="textarea textarea-bordered w-full"></textarea>
 					</label>
 					<label class="form-control w-full">
 						<div class="label">
@@ -135,9 +135,9 @@
 								verfügt ihre Delegation?</span
 							>
 						</div>
-						<textarea placeholder="Type here" class="textarea textarea-bordered w-full" />
+						<textarea placeholder="Type here" class="textarea textarea-bordered w-full"></textarea>
 					</label>
-					<button class="btn btn-lg btn-primary" role="submit">Weiter</button>
+					<button class="btn btn-lg btn-primary" type="submit">Weiter</button>
 				</form>
 				<button class="btn btn-warning" onclick={prevStep}>Zurück</button>
 			</div>
@@ -179,7 +179,7 @@
 				class="flex flex-col gap-4 items-center w-full sm:w-auto"
 			>
 				<div role="alert" class="alert alert-success flex justify-center">
-					<i class="fas fa-check" />
+					<i class="fas fa-check"></i>
 					<span>Delegation erfolgreich erstellt</span>
 				</div>
 				<p class="max-ch-sm">
@@ -196,7 +196,7 @@
 							navigator.clipboard.writeText(getReferralLink());
 							alert('Link kopiert');
 						}}
-						><i class="fa-duotone fa-clipboard text-xl" />
+						><i class="fa-duotone fa-clipboard text-xl"></i>
 					</button>
 				</div>
 				<p class="max-ch-sm">
@@ -213,7 +213,7 @@
 							navigator.clipboard.writeText(testCode);
 							alert('Code kopiert');
 						}}
-						><i class="fa-duotone fa-clipboard text-xl" />
+						><i class="fa-duotone fa-clipboard text-xl"></i>
 					</button>
 				</div>
 				<a class="btn btn-lg btn-primary w-full mt-10" href="/dashboard">Zum Dashboard</a>
