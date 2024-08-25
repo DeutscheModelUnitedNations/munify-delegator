@@ -1,11 +1,8 @@
+import type { AllEntityNames } from '$api/auth/abilities/abilities';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { db } from '$db/db';
 import * as Schemes from '$db/generated/schema/barrel';
-import Elysia, { t, type Static } from 'elysia';
-
-type OmitDollarPrefixed<T> = T extends `$${string}` ? never : T;
-type OmitSymbol<T> = T extends symbol ? never : T;
-type AllEntityNames = OmitSymbol<OmitDollarPrefixed<keyof typeof db>>;
+import Elysia, { t } from 'elysia';
 
 function capitalizeFirstLetterOfUnion<T extends AllEntityNames>(input: T): Capitalize<T> {
 	return (input.charAt(0).toUpperCase() + input.slice(1)) as Capitalize<T>;
