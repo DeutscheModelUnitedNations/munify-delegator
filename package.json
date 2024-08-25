@@ -48,13 +48,14 @@
     "@inlang/paraglide-js": "1.11.2",
     "@prisma/client": "^5.18.0",
     "elysia": "^1.1.7",
-    "prismabox": "^1.1.9",
+    "prismabox": "^1.1.10",
     "prisma": "^5.18.0",
     "mermaid": "^11.0.2",
     "@faker-js/faker": "^8.4.1",
     "esbuild": "^0.23.1",
     "jose": "^5.7.0",
     "numeral": "^2.0.6",
-    "svelte-headless-table": "^0.18.2"
+    "svelte-headless-table": "^0.18.2",
+    "nanoid": "^5.0.7"
   }
 }

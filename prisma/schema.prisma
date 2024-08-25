@@ -141,17 +141,26 @@ model SingleParticipant {
 
 model Delegation {
   id           String             @id @default(nanoid())
+  /// @prismabox.update.input.hide
   conference   Conference         @relation(fields: [conferenceId], references: [id])
   conferenceId String
+  /// @prismabox.input.hide
   entryCode    String
+  /// @prismabox.input.hide
   members      DelegationMember[]
 
+  /// @prismabox.input.hide
   applied         Boolean           @default(false)
+  /// @prismabox.input.hide
   appliedForRoles RoleApplication[]
+  /// @prismabox.update.input.hide
   school          String
+  /// @prismabox.update.input.hide
   motivation      String
+  /// @prismabox.update.input.hide
   experience      String
 
+  /// @prismabox.input.hide
   conferenceSupervisor   ConferenceSupervisor? @relation(fields: [conferenceSupervisorId], references: [id])
   conferenceSupervisorId String?
 }
