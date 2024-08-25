@@ -3,12 +3,28 @@ const plugin = require('tailwindcss/plugin');
 
 export default {
 	content: ['./src/**/*.{html,js,svelte,ts}', './lib/**/*.{html,js,svelte,ts}'],
+	safelist: ['table-xs', 'table-sm', 'table-md', 'table-lg', 'table-zebra'],
 	theme: {
 		fontFamily: {
 			sans: ['Outfit', 'system-ui', 'sans-serif'],
 			serif: ['Vollkorn', 'ui-serif', 'Georgia', 'serif'],
 			mono: ['Roboto Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
 			fa: ['FontAwesome']
+		},
+		colors: {
+			primary: {
+				50: '#F7FBFD',
+				100: '#E3F0F8',
+				200: '#B9D7EF',
+				300: '#90BCE5',
+				400: '#669EDC',
+				500: '#3D7DD2',
+				600: '#295FB3',
+				700: '#204489',
+				800: '#162D60',
+				900: '#0D1836',
+				950: '#080E22'
+			}
 		},
 		extend: {}
 	},

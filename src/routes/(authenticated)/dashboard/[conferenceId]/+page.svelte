@@ -8,6 +8,7 @@
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
+	import CountryStats from '$lib/components/countryStats/CountryStats.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -89,7 +90,7 @@
 	{#if getData()?.accepted && getData()?.active}
 		<section class="flex flex-col gap-2">
 			<h2 class="text-2xl font-bold">Delegationsstatus</h2>
-			<div class="stats shadow">
+			<div class="stats shadow bg-base-200">
 				<RoleWidget countryCode="gb" />
 			</div>
 			<GenericWidget content={testData.munsh25.stats} />
@@ -118,6 +119,10 @@
 					paymentStatus="error"
 				/>
 			</DelegationStatusTableWrapper>
+		</section>
+		<section class="flex flex-col">
+			<h2 class="text-2xl font-bold mb-4">Informationen zu ihrem Land</h2>
+			<CountryStats countryCode="gmb" />
 		</section>
 	{:else if getData()?.active}
 		<section role="alert" class="alert alert-warning w-full">
