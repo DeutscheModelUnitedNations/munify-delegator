@@ -1,6 +1,6 @@
 import { building } from '$app/environment';
 import { Value } from '@sinclair/typebox/value';
-import type { Static, TSchema } from 'elysia';
+import type { TSchema, Static } from '@sinclair/typebox';
 
 // Function to map environment variables to schema
 export function mapEnvToSchema<T extends TSchema>({

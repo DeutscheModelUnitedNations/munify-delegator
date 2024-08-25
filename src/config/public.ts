@@ -11,5 +11,6 @@ export const dynamicPublicConfig = mapEnvToSchema({
 			AUTHORITY: Type.String(),
 			CLIENT_ID: Type.String()
 		}),
+		DEFAULT_LOCALE: Type.String({ default: 'de' })
 	})
 });
