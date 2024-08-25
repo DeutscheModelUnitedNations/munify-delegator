@@ -2,11 +2,16 @@ import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
 import { UserPlain } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissions';
-import { makeCRUD } from '$api/util/crudmaker';
+import { CRUDMaker } from '$api/util/crudmaker';
+import { dynamicPublicConfig } from '$config/public';
 
 export const user = new Elysia()
+	.use(CRUDMaker.getAll('user'))
+	.use(CRUDMaker.getOne('user'))
+	.use(CRUDMaker.createOne('user'))
+	.use(CRUDMaker.updateOne('user'))
+	.use(CRUDMaker.deleteOne('user'))
 	.use(permissionsPlugin)
-	.use(makeCRUD('user'))
 	.patch(
 		'/user/upsert-after-login',
 		async ({ permissions }) => {
@@ -24,14 +29,14 @@ export const user = new Elysia()
 					family_name: user.family_name,
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
-					locale: user.locale ?? 'de'
+					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE
 				},
 				update: {
 					email: user.email,
 					family_name: user.family_name,
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
-					locale: user.locale ?? 'de'
+					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE
 				}
 			});
 		},

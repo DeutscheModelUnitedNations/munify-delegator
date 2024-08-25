@@ -5,50 +5,32 @@ import Elysia, { t, type Static } from 'elysia';
 
 type OmitDollarPrefixed<T> = T extends `$${string}` ? never : T;
 type OmitSymbol<T> = T extends symbol ? never : T;
-type AllEntityNames<T> = OmitSymbol<OmitDollarPrefixed<keyof T>>;
+type AllEntityNames = OmitSymbol<OmitDollarPrefixed<keyof typeof db>>;
 
-function capitalizeFirstLetterOfUnion<T extends AllEntityNames<typeof db>>(
-	input: T
-): Capitalize<T> {
+function capitalizeFirstLetterOfUnion<T extends AllEntityNames>(input: T): Capitalize<T> {
 	return (input.charAt(0).toUpperCase() + input.slice(1)) as Capitalize<T>;
 }
 
 //TODO test this
 
-export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
-	entity: EntityName,
-	customHandlers?: {
-		getAll?: () => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>[];
-		getOne?: () => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
-		createOne?: (
-			input: Static<(typeof Schemes)[`${Capitalize<EntityName>}PlainInput`]>
-		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
-		updateOne?: (
-			input: Static<(typeof Schemes)[`${Capitalize<EntityName>}PlainInput`]>
-		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
-		deleteOne?: (
-			input: Static<(typeof Schemes)[`${Capitalize<EntityName>}WhereUnique`]>
-		) => Static<(typeof Schemes)[`${Capitalize<EntityName>}Plain`]>;
-	}
-) {
-	const capitalizedEntityName = capitalizeFirstLetterOfUnion(entity);
-
-	return new Elysia()
-		.use(permissionsPlugin)
-		.get(
+export namespace CRUDMaker {
+	export function getAll<EntityName extends AllEntityNames>(entity: EntityName) {
+		return new Elysia().use(permissionsPlugin).get(
 			`/${entity}`,
-			customHandlers?.getAll ??
-				(async ({ permissions }) => {
-					// @ts-ignore
-					return await db[entity].findMany({
-						where: permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]
-					});
-				}),
+			async ({ permissions }) => {
+				// @ts-ignore
+				return await db[entity].findMany({
+					where: permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]
+				});
+			},
 			{
-				response: t.Array(Schemes[`${capitalizedEntityName}Plain`])
+				response: t.Array(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Plain`])
 			}
-		)
-		.get(
+		);
+	}
+
+	export function getOne<EntityName extends AllEntityNames>(entity: EntityName) {
+		return new Elysia().use(permissionsPlugin).get(
 			`/${entity}/:id`,
 			async ({ permissions, params }) => {
 				// @ts-ignore
@@ -60,11 +42,14 @@ export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
 				});
 			},
 			{
-				response: Schemes[`${capitalizedEntityName}Plain`]
+				response: Schemes[`${capitalizeFirstLetterOfUnion(entity)}Plain`]
 			}
-		)
-		.use(permissionsPlugin)
-		.post(
+		);
+	}
+
+	export function createOne<EntityName extends AllEntityNames>(entity: EntityName) {
+		const capitalizedEntityName = capitalizeFirstLetterOfUnion(entity);
+		return new Elysia().use(permissionsPlugin).post(
 			`/${entity}`,
 			async ({ permissions, body }) => {
 				permissions.checkIf((user) => user.can('create', capitalizeFirstLetterOfUnion(entity)));
@@ -77,9 +62,12 @@ export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
 				body: Schemes[`${capitalizedEntityName}InputCreate`],
 				response: Schemes[`${capitalizedEntityName}Plain`]
 			}
-		)
-		.use(permissionsPlugin)
-		.patch(
+		);
+	}
+
+	export function updateOne<EntityName extends AllEntityNames>(entity: EntityName) {
+		const capitalizedEntityName = capitalizeFirstLetterOfUnion(entity);
+		return new Elysia().use(permissionsPlugin).patch(
 			`/${entity}/:id`,
 			async ({ permissions, params, body }) => {
 				// @ts-ignore
@@ -95,9 +83,11 @@ export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
 				body: Schemes[`${capitalizedEntityName}InputUpdate`],
 				response: Schemes[`${capitalizedEntityName}Plain`]
 			}
-		)
-		.use(permissionsPlugin)
-		.delete(
+		);
+	}
+
+	export function deleteOne<EntityName extends AllEntityNames>(entity: EntityName) {
+		return new Elysia().use(permissionsPlugin).delete(
 			`/${entity}/:id`,
 			async ({ permissions, params }) => {
 				// @ts-ignore
@@ -109,7 +99,8 @@ export function makeCRUD<EntityName extends AllEntityNames<typeof db>>(
 				});
 			},
 			{
-				response: Schemes[`${capitalizedEntityName}Plain`]
+				response: Schemes[`${capitalizeFirstLetterOfUnion(entity)}Plain`]
 			}
 		);
+	}
 }

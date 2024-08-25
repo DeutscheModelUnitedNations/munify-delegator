@@ -13,7 +13,7 @@ generator prismabox {
   typeboxImportDependencyName = "elysia"
   output                      = "./generated/schema"
   inputModel                  = true
-  additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
+  // additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
 }
 
 model Conference {
