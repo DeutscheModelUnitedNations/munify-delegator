@@ -1,6 +1,7 @@
 {
-	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"signup": "Anmelden",
+    "$schema": "https://inlang.com/schema/inlang-message-format",
+    "signup": "Anmelden",
+    "back": "Zurück",
     "homeHeroSub": "Zentrale Anmeldeplattform für DMUN-Konferenzen",
     "homeRegistration": "Konferenzanmeldung",
     "homeRegistrationSub": "Melden Sie sich für die nächste Konferenz an, indem Sie sich bewerben",
@@ -11,5 +12,22 @@
     "homeDraftDisclaimer": "Diese Seite befindet sich noch im Aufbauprozess und hat keinerlei Funktionalität. Sie dient lediglich als konzeptioneller Entwurf.",
     "homeOurConferences": "Unsere Konferenzen",
     "homeAboutUs": "Über uns",
-    "homeAboutUsText": "DMUN ist ein gemeinnütziger Verein von jungen Erwachsenen, die sich für internationale Politik und die Vereinten Nationen begeistern. Wir sind bundesweit und auf internationaler Ebene im Bereich der politischen Jugendbildung und des Youth Empowerments tätig. 2003 gegründet, und seit 2012 als Nichtregierungsorganisation mit speziellem Beraterstatus beim Wirtschafts- und Sozialrat der Vereinten Nationen sowie beim UNDPI akkreditiert, veranstalten wir politische Planspiele, bei denen Jugendliche und junge Erwachsene zwischen 15 und 21 Jahren eine Konferenz der Vereinten Nationen simulieren. Außerdem setzen wir uns auf internationaler Ebene für politische Jugendbildung und die Partizipation junger Menschen an politischen Prozessen ein."
+    "homeAboutUsText": "DMUN ist ein gemeinnütziger Verein von jungen Erwachsenen, die sich für internationale Politik und die Vereinten Nationen begeistern. Wir sind bundesweit und auf internationaler Ebene im Bereich der politischen Jugendbildung und des Youth Empowerments tätig. 2003 gegründet, und seit 2012 als Nichtregierungsorganisation mit speziellem Beraterstatus beim Wirtschafts- und Sozialrat der Vereinten Nationen sowie beim UNDPI akkreditiert, veranstalten wir politische Planspiele, bei denen Jugendliche und junge Erwachsene zwischen 15 und 21 Jahren eine Konferenz der Vereinten Nationen simulieren. Außerdem setzen wir uns auf internationaler Ebene für politische Jugendbildung und die Partizipation junger Menschen an politischen Prozessen ein.",
+    "selectConference": "Wählen Sie zuerst die Konferenz aus, zu der Sie sich gerne anmelden möchten.",
+    "unknownLocation": "Ort unbekannt",
+    "unknownDate": "Datum unbekannt",
+    "conferenceSignupIntroduction": "Sie haben verschiedene Möglichkeiten, sich anzumelden. Auf einen Staat oder eine*n nichtstaatliche*n Akteur*in bewerben Sie sich als Team von mindestens 2 Personen. Auf Spezielle Rollen wie als Mitglied der Konferenzpresse bewerben Sie sich alleine.",
+    "signUpAssistant": "Anmeldeassistent",
+    "signUpAssistantDescription": "Der Anmeldeprozess kann auf den ersten Blick kompliziert wirken. Nutzen Sie den Anmeldeassistenten, um einen Überblick zu erhalten.",
+    "openAssistant": "Assistent starten",
+    "createDelegation": "Delegation anlegen",
+    "createDelegationDescription": "Hier kannst du als Delegationsleiter*in eine neue Delegation anlegen und Menschen zu der Delegation einladen",
+    "joinDelegation": "Delegation beitreten",
+    "enterCode": "Code eingeben",
+    "joinDelegationDescription": "Hier kannst du einer Delegation mit einem Code beitreten, den dir der/die Delegationsleiter*in ausgestellt hat.",
+    "individualApplication": "Einzelbewerbung",
+    "individualApplicationDescription": "Hier kannst du dich alleine auf einen Platz ein einer der Speziellen Delegationen wie der Konferenzpresse bewerben.",
+    "supervisor": "Betreuer*in",
+    "applyAsSupervisor": "Anmelden als Betreuer*in",
+    "applyAsSupervisorDescription": "Hier kannst du dich als Betreuer*in für eine Delegation anmelden. Als Betreuer*in hast du Einsicht in alle deine Delegationen und kannst sie organisatorisch unterstützen."
 }

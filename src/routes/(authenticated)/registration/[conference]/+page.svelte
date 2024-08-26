@@ -2,6 +2,7 @@
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import AssistentModal from '$lib/components/AssistentModal/Modal.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	import UndrawNew from '$assets/undraw/new.svg';
 	import UndrawTeam from '$assets/undraw/team.svg';
@@ -18,25 +19,22 @@
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">Anmeldung</h1>
+		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
 		<p class="max-ch-md">
-			Sie haben verschiedene Möglichkeiten, sich anzumelden. Auf einen Staat oder eine*n
-			nichtstaatliche*n Akteur*in bewerben Sie sich als Team von mindestens 2 Personen. Auf
-			Spezielle Rollen wie als Mitglied der Konferenzpresse bewerben Sie sich alleine.
+			{m.conferenceSignupIntroduction()}
 		</p>
-		<a class="btn btn-warning mt-6" href=".">Zurück</a>
+		<a class="btn btn-warning mt-6" href=".">{m.back()}</a>
 		<div role="alert" class="alert mt-10">
 			<i class="fa-duotone fa-message-question text-xl mx-1"></i>
 			<div class="flex flex-col">
-				<div class="font-bold tracking-wider">Anmeldeassistent</div>
+				<div class="font-bold tracking-wider">{m.signUpAssistant()}</div>
 				<div class="max-ch-sm">
-					Der Anmeldeprozess kann auf den ersten Blick kompliziert wirken. Nutzen Sie den
-					Anmeldeassistenten, um einen Überblick zu erhalten.
+					{m.signUpAssistantDescription()}
 				</div>
 			</div>
 			<div>
 				<button class="btn btn-sm btn-primary" onclick={() => (showAssistent = true)}
-					>Assistent öffnen</button
+					>{m.openAssistant()}</button
 				>
 			</div>
 		</div>
@@ -47,64 +45,64 @@
 			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flex-wrap"
 		>
 			<UndrawCard
-				titel="Delegation anlegen"
+				title={m.createDelegation()}
 				img={UndrawNew}
-				btnText="Neue Delegation anlegen"
+				btnText={m.createDelegation()}
 				btnLink={`${data.conferenceId}/create`}
 			>
 				<CardInfoSectionWithIcons
 					items={[
 						{
 							icon: 'fa-arrow-right',
-							text: 'Hier kannst du als Delegationsleiter*in eine neue Delegation anlegen und Menschen zu der Delegation einladen'
+							text: m.createDelegationDescription()
 						}
 					]}
 				/>
 			</UndrawCard>
 
 			<UndrawCard
-				titel="Delegation beitreten"
+				title={m.joinDelegation()}
 				img={UndrawTeam}
-				btnText="Code Eingeben"
+				btnText={m.enterCode()}
 				btnLink={`${data.conferenceId}/join`}
 			>
 				<CardInfoSectionWithIcons
 					items={[
 						{
 							icon: 'fa-arrow-right',
-							text: 'Hier kannst du einer Delegation mit einem Code beitreten, den dir der/die Delegationsleiter*in ausgestellt hat.'
+							text: m.joinDelegationDescription()
 						}
 					]}
 				/>
 			</UndrawCard>
 
 			<UndrawCard
-				titel="Einzelbewerbung"
+				title={m.individualApplication()}
 				img={UndrawLetter}
-				btnText="Zur Einzelbewerbung"
+				btnText={m.individualApplication()}
 				btnLink={`${data.conferenceId}/individual`}
 			>
 				<CardInfoSectionWithIcons
 					items={[
 						{
 							icon: 'fa-arrow-right',
-							text: 'Hier kannst du dich alleine auf einen Platz ein einer der Speziellen Delegationen wie der Konferenzpresse bewerben.'
+							text: m.individualApplicationDescription()
 						}
 					]}
 				/>
 			</UndrawCard>
 
 			<UndrawCard
-				titel="Betreuer*in"
+				title={m.supervisor()}
 				img={UndrawEducator}
-				btnText="Anmeldung als Betreuer*in"
+				btnText={m.applyAsSupervisor()}
 				btnLink={`${data.conferenceId}/supervisor`}
 			>
 				<CardInfoSectionWithIcons
 					items={[
 						{
 							icon: 'fa-arrow-right',
-							text: 'Hier kannst du dich als Betreuer*in für eine Delegation anmelden. Als Betreuer*in hast du Einsicht in alle deine Delegationen und kannst sie organisatorisch unterstützen.'
+							text: m.applyAsSupervisorDescription()
 						}
 					]}
 				/>

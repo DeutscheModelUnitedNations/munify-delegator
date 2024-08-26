@@ -182,9 +182,7 @@
 			</div>
 			<div class="card bg-base-100 shadow-md p-4 mt-4">
 				<h3 class="text-xl">Anmeldung abschließen</h3>
-				<p>
-					Bitte schließe alle Aufgaben ab und bestätige dann deine Anmeldung zur Delegation.
-				</p>
+				<p>Bitte schließe alle Aufgaben ab und bestätige dann deine Anmeldung zur Delegation.</p>
 				<table class="table">
 					<thead>
 						<tr>
@@ -224,7 +222,7 @@
 		</section>
 		<section class="flex gap-4 flex-col md:flex-row flex-wrap">
 			<UndrawCard
-				titel="Feedback"
+				title="Feedback"
 				img="/undraw/feedback.svg"
 				btnText="Feedback geben"
 				btnLink="/feedback"
@@ -232,7 +230,7 @@
 				<p>Wir freuen uns über dein Feedback zur Konferenz</p>
 			</UndrawCard>
 			<UndrawCard
-				titel="Teilnahmebestätigung"
+				title="Teilnahmebestätigung"
 				img="/undraw/certificate.svg"
 				btnText="Bestätigung herunterladen"
 				btnLink="/feedback"

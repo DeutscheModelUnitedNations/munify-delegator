@@ -22,7 +22,6 @@
 
 	const onPersonalDataFormSubmit = (e: Event) => {
 		e.preventDefault();
-		console.log({ telephone, street, zip, city, country, gender, foodPreference });
 		if (personalDataComplete || !data.redirectUrl) return;
 		personalDataComplete = true;
 		window.location.href = data.redirectUrl;
