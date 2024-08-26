@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import PlainCard from '$lib/components/PlainCard.svelte';
 
 	const testData = [
 		{
@@ -43,23 +44,14 @@
 
 	<main>
 		<section class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+			<PlainCard
+				title={'Einzelbewerbung als Delegierte*r'}
+				description="Du möchtest ein Delegierte*r sein, hast aber keine Personen für eine Delegation gefunden."
+				icon="fa-user-tie"
+				link={`./individual/delegate`}
+			/>
 			{#each testData as { roleId, role, description, icon }}
-				<div class="block card bg-base-100 max-w-96 shadow-lg">
-					<div class="card-body">
-						<h1 class="card-title">{role}</h1>
-						<CardInfoSectionWithIcons
-							items={[
-								{
-									icon: icon ?? 'fa-arrow-right',
-									text: description
-								}
-							]}
-						/>
-						<div class="card-actions justify-end mt-4">
-							<a class="btn btn-primary" href={`./individual/${roleId}`}>Bewerben</a>
-						</div>
-					</div>
-				</div>
+				<PlainCard title={role} {description} {icon} link={`./individual/${roleId}`} />
 			{/each}
 		</section>
 	</main>

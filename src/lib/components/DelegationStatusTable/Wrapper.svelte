@@ -1,14 +1,22 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
+
 	interface Props {
 		withCommittee?: boolean;
 		withMailStatus?: boolean;
 		withPaymentStatus?: boolean;
+		children: Snippet;
 	}
 
-	let { withCommittee = false, withMailStatus = false, withPaymentStatus = false }: Props = $props();
+	let {
+		withCommittee = false,
+		withMailStatus = false,
+		withPaymentStatus = false,
+		children
+	}: Props = $props();
 </script>
 
-<div class="card bg-base-100 shadow-md overflow-x-auto">
+<div class="card bg-base-100 dark:bg-base-200 shadow-md overflow-x-auto">
 	<div class="card-body">
 		<table class="table">
 			<thead>
@@ -18,16 +26,24 @@
 						<th>Gremium</th>
 					{/if}
 					{#if withMailStatus}
-						<th class="text-center"><i class="text-xl fa-duotone fa-envelope-open-text"></i></th>
+						<th class="text-center">
+							<div class="tooltip" data-tip="Postialische Anmeldung">
+								<i class="text-xl fa-duotone fa-envelope-open-text"></i>
+							</div>
+						</th>
 					{/if}
 					{#if withPaymentStatus}
-						<th class="text-center"><i class="text-xl fa-duotone fa-money-bill-transfer"></i></th>
+						<th class="text-center">
+							<div class="tooltip" data-tip="Beitragszahlung">
+								<i class="text-xl fa-duotone fa-money-bill-transfer"></i>
+							</div>
+						</th>
 					{/if}
 					<th></th>
 				</tr>
 			</thead>
 			<tbody>
-				<slot />
+				{@render children()}
 			</tbody>
 		</table>
 	</div>

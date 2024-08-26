@@ -17,13 +17,15 @@ generator prismabox {
 }
 
 model Conference {
-  id       String    @id @default(nanoid())
-  title    String
-  start    DateTime?
-  end      DateTime?
-  location String?
-  website  String?
-  image    Bytes?
+  id        String    @id @default(nanoid())
+  title     String
+  longTitle String?
+  start     DateTime?
+  end       DateTime?
+  location  String?
+  language  String?
+  website   String?
+  image     Bytes?
 }
 
 model User {

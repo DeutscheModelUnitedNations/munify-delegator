@@ -10,9 +10,31 @@
   font-display: swap;
 }
 
-body {
-  --fa-primary-color: #000000;
-  --fa-primary-opacity: 1;
-  --fa-secondary-color: #3d7dd2;
-  --fa-secondary-opacity: 1;
+#mermaid .outcome>* {
+  stroke: #000 !important;
+  transition: all 0.3s;
+}
+
+#mermaid .outcome:hover>* {
+  stroke: #3d7dd2 !important;
+  transition: all 0.3s;
+}
+
+#mermaid g.edgelabel {
+  padding: 3px !important;
+  color: blue;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  .print-only {
+    display: block;
+  }
 }

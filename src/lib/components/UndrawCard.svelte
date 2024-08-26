@@ -12,8 +12,8 @@
 	let { titel, img, btnText, btnLink, children }: Props = $props();
 </script>
 
-<div class="card bg-base-100 dark:bg-base-200 w-full max-w-96 shadow-lg">
-	<figure class="bg-slate-100 flex justify-center items-center p-6 h-60">
+<div class="card bg-base-100 dark:bg-base-200 w-full max-w-96 shadow-lg hover:scale-[1.01] transition-all duration-300">
+	<figure class="bg-base-200 dark:bg-base-content flex justify-center items-center p-6 h-60">
 		<img src={img} alt="Illustration" class="w-full h-full" />
 	</figure>
 	<div class="card-body">
