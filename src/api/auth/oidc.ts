@@ -17,7 +17,7 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 	{ as: 'global' },
 	async ({ cookie }) => {
 		if (!cookie[tokensCookieName].value) {
-			return { oidc: { nextRefreshDue: undefined, tokenSet: undefined, user: undefined } };
+			return { oidc: { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined } };
 		}
 		const parsedCookie: TokenCookieSchemaType = JSON.parse(cookie[tokensCookieName].value);
 		let tokenSet = new TokenSet(parsedCookie);
@@ -48,7 +48,7 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 
 		return {
 			oidc: {
-				nextRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined,
+				nextTokenRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined,
 				tokenSet,
 				user
 			}

@@ -162,7 +162,7 @@ model Delegation {
   experience      String
 
   /// @prismabox.input.hide
-  conferenceSupervisors   ConferenceSupervisor[]
+  supervisors   ConferenceSupervisor[]
 }
 
 model RoleApplication {

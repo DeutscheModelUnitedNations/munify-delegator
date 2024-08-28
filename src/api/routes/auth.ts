@@ -4,8 +4,8 @@ import { oidcPlugin } from '$api/auth/oidc';
 export const auth = new Elysia()
 	.use(oidcPlugin)
 	// the refresh is done automatically by the oidc derive
-	.get('/refresh-token', ({ oidc }) => ({ nextRefreshDue: oidc.nextRefreshDue }), {
+	.get('/refresh-token', ({ oidc }) => ({ nextTokenRefreshDue: oidc.nextTokenRefreshDue }), {
 		response: t.Object({
-			nextRefreshDue: t.Optional(t.Date())
+			nextTokenRefreshDue: t.Optional(t.Date())
 		})
 	});

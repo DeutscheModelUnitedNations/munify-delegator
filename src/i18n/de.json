@@ -51,5 +51,9 @@
     "orShareThisCode": "Oder teile mit Ihnen den folgenden Code, mit dem sie sich auf dieser Website anmelden können:",
     "linkCopied": "Link kopiert",
     "codeCopied": "Code kopiert",
-    "toDashboard": "Zum Dashboard"
+    "toDashboard": "Zum Dashboard",
+    "pleaseCheckDelegation": "Überprüfe die Angaben und bestätige den Beitritt zur Delegation.",
+    "confirm": "Bestätigen",
+    "headDelegate": "Delegationsleiter*in",
+    "amountOfDelegates": "Anzahl der Delegationsmitglieder"
 }

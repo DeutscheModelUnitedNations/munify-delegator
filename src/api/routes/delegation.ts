@@ -132,4 +132,64 @@ export const delegation = new Elysia()
 				t.Object({ joinAsSupervisor: t.Boolean({ default: false }) })
 			])
 		}
+	)
+	.get(
+		`/delegation/preview`,
+		async ({ permissions, query }) => {
+			permissions.mustBeLoggedIn();
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					conferenceId: query.conferenceId,
+					entryCode: query.entryCode
+				},
+				include: {
+					conference: {
+						select: {
+							title: true
+						}
+					},
+					_count: {
+						select: { members: true }
+					},
+					members: {
+						where: {
+							isHeadDelegate: true
+						},
+						include: {
+							user: {
+								select: {
+									given_name: true,
+									family_name: true
+								}
+							}
+						}
+					}
+				}
+			});
+
+			//TODO we should include the info if the user is already a member here and display it in the frontend
+			return {
+				id: delegation.id,
+				conferenceId: delegation.conferenceId,
+				entryCode: delegation.entryCode,
+				motivation: delegation.motivation,
+				school: delegation.school,
+				experience: delegation.experience,
+				memberCount: delegation._count.members,
+				headDelegateFullName: `${delegation.members[0].user.given_name} ${delegation.members[0].user.family_name}`,
+				applied: delegation.applied,
+				conferenceTitle: delegation.conference.title
+			};
+		},
+		{
+			query: t.Object({ entryCode: t.String(), conferenceId: t.String() }),
+			response: t.Composite([
+				DelegationPlain,
+				t.Object({
+					memberCount: t.Number(),
+					headDelegateFullName: t.String(),
+					conferenceTitle: t.String()
+				})
+			])
+		}
 	);
