@@ -34,6 +34,7 @@ model Conference {
   teamMembers                  TeamMember[]
   committees                   Committee[]
   singleParticipant            SingleParticipant[]
+  DelegationMember             DelegationMember[]
 }
 
 model Committee {
@@ -145,7 +146,7 @@ model Delegation {
   conference   Conference         @relation(fields: [conferenceId], references: [id])
   conferenceId String
   /// @prismabox.input.hide
-  entryCode    String
+  entryCode    String             @unique
   /// @prismabox.input.hide
   members      DelegationMember[]
 
@@ -161,8 +162,7 @@ model Delegation {
   experience      String
 
   /// @prismabox.input.hide
-  conferenceSupervisor   ConferenceSupervisor? @relation(fields: [conferenceSupervisorId], references: [id])
-  conferenceSupervisorId String?
+  conferenceSupervisors   ConferenceSupervisor[]
 }
 
 model RoleApplication {
@@ -178,13 +178,18 @@ model RoleApplication {
 
 model DelegationMember {
   id             String     @id @default(nanoid())
+  conference     Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId   String
   delegation     Delegation @relation(fields: [delegationId], references: [id])
   delegationId   String
   user           User       @relation(fields: [userId], references: [id])
   userId         String
   isHeadDelegate Boolean
 
+  // users can only be once in this delegation
   @@unique([delegationId, userId])
+  // users can only be in one delegation per conference
+  @@unique([conferenceId, userId])
 }
 
 model ConferenceSupervisor {
