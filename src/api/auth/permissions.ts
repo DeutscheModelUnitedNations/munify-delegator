@@ -9,8 +9,6 @@ export class PermissionCheckError extends Error {
 	}
 }
 
-export type PermissionsType = (typeof permissionsPlugin)['_ephemeral']['resolve']['permissions'];
-
 export const permissionsPlugin = new Elysia({
 	name: 'permissions'
 })

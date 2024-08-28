@@ -17,22 +17,200 @@ generator prismabox {
 }
 
 model Conference {
-  id        String    @id @default(nanoid())
-  title     String
-  longTitle String?
-  start     DateTime?
-  end       DateTime?
-  location  String?
-  language  String?
-  website   String?
-  image     Bytes?
+  id                           String                        @id @default(nanoid())
+  title                        String
+  longTitle                    String?
+  start                        DateTime?
+  end                          DateTime?
+  location                     String?
+  language                     String?
+  website                      String?
+  image                        Bytes?
+  individualApplicationOptions CustomConferenceRole[]
+  delegations                  Delegation[]
+  nonStateActors               NonStateActor[]
+  conferenceSupervisors        ConferenceSupervisor[]
+  conferenceUserStatus         ConferenceParticipantStatus[]
+  teamMembers                  TeamMember[]
+  committees                   Committee[]
+  singleParticipant            SingleParticipant[]
+}
+
+model Committee {
+  id                      String     @id @default(nanoid())
+  name                    String
+  abbreviation            String
+  conference              Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId            String
+  nations                 Nation[]
+  numOfSeatsPerDelegation Int        @default(1)
 }
 
 model User {
-  id                 String @id @default(nanoid())
+  id String @id @default(nanoid())
+
+  // these are OIDC fields
   email              String
   family_name        String
   given_name         String
   locale             String
   preferred_username String
+
+  // custom data fields
+  birthday DateTime?
+  phone    String?
+  address  Json //TODO subject to change
+
+  delegationMemberships       DelegationMember[]
+  conferenceSupervisor        ConferenceSupervisor[]
+  conferenceParticipantStatus ConferenceParticipantStatus[]
+  teamMember                  TeamMember[]
+  singleParticipant           SingleParticipant[]
+
+  wantsToReceiveGeneralInformation Boolean @default(false)
+  wantsJoinTeamInformation         Boolean @default(false)
+}
+
+enum AdministrativeStatus {
+  DONE
+  PROBLEM
+  PENDING
+}
+
+// administrative status of a user in a conference, used for storing e.g. payment status, postal application status, etc.
+model ConferenceParticipantStatus {
+  id                 String               @id @default(nanoid())
+  user               User                 @relation(fields: [userId], references: [id])
+  userId             String
+  conference         Conference           @relation(fields: [conferenceId], references: [id])
+  conferenceId       String
+  postalRegistration AdministrativeStatus
+  paymentStatus      AdministrativeStatus
+  didAttend          Boolean
+}
+
+model Nation {
+  alpha3Code       String            @id
+  alpha2Code       String            @unique
+  // other properties are fetched from nation databases/libraries which do not want to maintain on our own
+  // e.g. localized names, flags, etc.
+  roleApplications RoleApplication[]
+  Committee        Committee?        @relation(fields: [committeeId], references: [id])
+  committeeId      String?
+}
+
+model NonStateActor {
+  id               String            @id @default(nanoid())
+  conference       Conference        @relation(fields: [conferenceId], references: [id])
+  conferenceId     String
+  name             String            @unique
+  description      String
+  icon             Bytes?
+  abbreviation     String            @unique
+  seatAmount       Int
+  roleApplications RoleApplication[]
+}
+
+// these can be journalists, judges, etc.
+model CustomConferenceRole {
+  id                String              @id @default(nanoid())
+  conference        Conference          @relation(fields: [conferenceId], references: [id])
+  conferenceId      String
+  name              String
+  description       String
+  icon              Bytes?
+  singleParticipant SingleParticipant[]
+
+  @@unique([conferenceId, name])
+}
+
+model SingleParticipant {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+
+  applied    Boolean @default(false)
+  school     String
+  motivation String
+  experience String
+
+  customConferenceRole CustomConferenceRole[]
+}
+
+model Delegation {
+  id           String             @id @default(nanoid())
+  /// @prismabox.update.input.hide
+  conference   Conference         @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  /// @prismabox.input.hide
+  entryCode    String
+  /// @prismabox.input.hide
+  members      DelegationMember[]
+
+  /// @prismabox.input.hide
+  applied         Boolean           @default(false)
+  /// @prismabox.input.hide
+  appliedForRoles RoleApplication[]
+  /// @prismabox.update.input.hide
+  school          String
+  /// @prismabox.update.input.hide
+  motivation      String
+  /// @prismabox.update.input.hide
+  experience      String
+
+  /// @prismabox.input.hide
+  conferenceSupervisor   ConferenceSupervisor? @relation(fields: [conferenceSupervisorId], references: [id])
+  conferenceSupervisorId String?
+}
+
+model RoleApplication {
+  id              String         @id @default(nanoid())
+  nation          Nation?        @relation(fields: [nationId], references: [alpha3Code])
+  nationId        String?
+  nonStateActor   NonStateActor? @relation(fields: [nonStateActorId], references: [id])
+  nonStateActorId String?
+  rank            Int
+  delegation      Delegation?    @relation(fields: [delegationId], references: [id])
+  delegationId    String?
+}
+
+model DelegationMember {
+  id             String     @id @default(nanoid())
+  delegation     Delegation @relation(fields: [delegationId], references: [id])
+  delegationId   String
+  user           User       @relation(fields: [userId], references: [id])
+  userId         String
+  isHeadDelegate Boolean
+
+  @@unique([delegationId, userId])
+}
+
+model ConferenceSupervisor {
+  id                             String       @id @default(nanoid())
+  conference                     Conference   @relation(fields: [conferenceId], references: [id])
+  conferenceId                   String
+  delegations                    Delegation[]
+  user                           User         @relation(fields: [userId], references: [id])
+  userId                         String
+  plansOwnAttendenceAtConference Boolean
+
+  @@unique([conferenceId, userId])
+}
+
+enum TeamRole {
+  ADMIN
+  PROJECT_MANAGEMENT
+  PARTICIPANT_CARE
+  MEMBER
+}
+
+model TeamMember {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  role         TeamRole   @default(MEMBER)
 }

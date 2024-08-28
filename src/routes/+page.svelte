@@ -45,7 +45,7 @@
 			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-10"
 		>
 			<UndrawCard
-				titel={m.homeRegistration()}
+				title={m.homeRegistration()}
 				img={UdteamUp}
 				btnText={m.homeRegistrationBtn()}
 				btnLink="/registration"
@@ -54,7 +54,7 @@
 			</UndrawCard>
 
 			<UndrawCard
-				titel={m.homeYourConferences()}
+				title={m.homeYourConferences()}
 				img={UdProgress}
 				btnText={m.homeYourConferencesBtn()}
 				btnLink="/dashboard"

@@ -3,29 +3,30 @@
 	import { languageTag } from '$lib/paraglide/runtime.js';
 	import { onMount } from 'svelte';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface ConferenceCardProps {
 		id: string;
-		location?: string;
-		start?: Date;
-		end?: Date;
-		website?: string;
-		image?: Uint8Array;
+		location?: string | null;
+		start?: Date | null;
+		end?: Date | null;
+		website?: string | null;
+		image?: Uint8Array | null;
 		title: string;
 		baseSlug: string;
-		btnText: string;
+		btnText?: string;
 	}
 
 	let {
 		id,
 		image,
 		title,
-		location = '',
+		location,
 		start,
 		end,
 		website,
 		baseSlug,
-		btnText = 'Anmelden'
+		btnText
 	}: ConferenceCardProps = $props();
 
 	let imageSrc = $state<string>();
@@ -47,18 +48,17 @@
 	};
 
 	const cardInfoItems = () => {
-		
-		const items: {icon: string; text?: string; link?: string}[] = [
-				{ icon: 'fa-map-marker-alt', text: location ?? 'Ort unbekannt' },
-				{
-					icon: 'fa-calendar',
-					text:
-						start && end
+		const items: { icon: string; text?: string; link?: string }[] = [
+			{ icon: 'fa-map-marker-alt', text: location ?? m.unknownLocation() },
+			{
+				icon: 'fa-calendar',
+				text:
+					start && end
 						? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
-						: 'Datum unbekannt'
-					},
-				]
-			
+						: m.unknownDate()
+			}
+		];
+
 		if (website) {
 			items.push({ icon: 'fa-globe', text: website, link: website });
 		}
@@ -75,12 +75,10 @@
 	</figure>
 	<div class="card-body">
 		<h2 class="card-title">{title}</h2>
-		<CardInfoSectionWithIcons
-			items={cardInfoItems()}
-		/>
+		<CardInfoSectionWithIcons items={cardInfoItems()} />
 		<div class="card-actions justify-end mt-4">
 			<a href={`${baseSlug}/${id}`} class="btn btn-primary">
-				{btnText}
+				{btnText ?? m.signup()}
 				<i class="fas fa-arrow-right"></i>
 			</a>
 		</div>

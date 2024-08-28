@@ -31,7 +31,7 @@ export const load: PageServerLoad = loadApiHandler(async ({ url, cookies, api })
 
 	cookies.delete(codeVerifierCookieName, { path: '/' });
 
-	await checkForError(api.user['upsert-after-login'].put());
+	await checkForError(api.user['upsert-after-login'].patch());
 
 	redirect(302, state.visitedUrl);
 });

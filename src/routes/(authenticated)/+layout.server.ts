@@ -10,6 +10,9 @@ import {
 } from '$api/auth/flow';
 import type { TokenCookieSchemaType } from '$api/auth/oidc';
 
+//TODO: https://youtu.be/K1Tya6ovVOI?si=HFPf8-z_L9ppiTqc&t=903
+// we should not use load functions for authentication
+// instead we should use server hooks to protect routes based on the url
 export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	// are we signed in?
 	const existingTokens = cookies.get(tokensCookieName);
@@ -62,8 +65,6 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 		maxAge: 60 * 5,
 		path: '/'
 	});
-
-	console.log(redirect_uri);
 
 	redirect(302, redirect_uri);
 };

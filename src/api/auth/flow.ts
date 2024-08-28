@@ -4,14 +4,13 @@ import { dynamicPublicConfig } from '$config/public';
 import Cryptr from 'cryptr';
 import {
 	type BaseClient,
-	type IntrospectionResponse,
 	Issuer,
 	type TokenSetParameters,
 	type UnknownObject,
 	type UserinfoResponse,
 	generators
 } from 'openid-client';
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { PermissionCheckError } from './permissions';
 
 export const codeVerifierCookieName = 'code_verifier';
@@ -157,10 +156,10 @@ export async function validateTokens({
 			sub: accessTokenValue.sub,
 			...idTokenValue
 		};
-	} catch (error) {
+	} catch (error: any) {
 		console.warn(
-			'Failed to verify tokens locally, falling back to less performant info fetch',
-			error
+			'Failed to verify tokens locally, falling back to less performant info fetch:',
+			error.message
 		);
 		return await client.userinfo(access_token);
 	}
