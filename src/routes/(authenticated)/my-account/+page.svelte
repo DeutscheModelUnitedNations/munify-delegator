@@ -32,7 +32,7 @@
 	<div class="backdrop"></div>
 {/if}
 
-<div class="w-full flex flex-col items-center p-4">
+<div class="w-full flex flex-col items-center p-4 sm:p-10">
 	<section class="text-center max-ch-md mt-10 z-20">
 		<i class="fa-duotone fa-user text-5xl mb-3"></i>
 		<h1 class="text-2xl font-bold">Mein Konto</h1>
@@ -57,7 +57,7 @@
 	</section>
 	<div class="flex gap-10 flex-wrap justify-center items-start mt-10">
 		<div
-			class="card w-full md:w-auto md:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl z-20 {!personalDataComplete &&
+			class="card max-w-80 sm:max-w-full sm:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl z-20 {!personalDataComplete &&
 				'highlight-card'}"
 		>
 			<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
