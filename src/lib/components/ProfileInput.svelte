@@ -24,7 +24,7 @@
 	}: Props = $props();
 </script>
 
-<label class="form-control w-full">
+<label class="form-control w-full max-w-sm">
 	{#if label}
 		<div class="label">
 			<span class="label-text">{label}</span>
