@@ -1,62 +1,97 @@
 <script lang="ts">
-	let idsToAdd: string[] = $state([]);
+	import ReviewTable from '$lib/components/ReviewTable.svelte';
+	import { fly } from 'svelte/transition';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import type { PageData } from '../supervisor/$types';
+	import { apiClient, checkForError } from '$api/client';
+	import * as m from '$lib/paraglide/messages.js';
+	import { goto } from '$app/navigation';
 
-	let input: string = $state('');
+	let { data }: { data: PageData } = $props();
+	let api = apiClient({ origin: data.url.origin });
 
-	let addId = () => {
-		if (input.length > 0) {
-			idsToAdd.push(input);
-			input = '';
-		}
-	};
+	let code = $state(data.code ?? '');
+	let delegationPreview = $derived(
+		(async () => {
+			if (code && code.length === 6) {
+				return await checkForError(
+					api.delegation.preview.get({
+						query: {
+							entryCode: code,
+							conferenceId: data.conferenceId
+						}
+					})
+				);
+			}
+		})()
+	);
 </script>
 
-<div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
-	<hero class="my-20 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">Anmeldung für Betreuer*innen</h1>
-		<p class="max-ch-md mb-2">
-			Als Betreuer*in können Sie mehrere Delegationen überwachen. Erfragen Sie dafür bei den
-			Delegationsleiter*innen den Code der Delegation.
-		</p>
-		<p class="max-ch-md">
-			Bitte beachten Sie, dass Sie keine Delegationen selbstständig für Ihre Schüler*innen anlegen
-			können. Sie können sich nur nach Erhalt des Codes einer Delegation anschließen.
-		</p>
-		<a class="btn btn-warning mt-6" href=".">Zurück</a>
-	</hero>
-
-	<main>
-		<section class="w-full flex flex-col justify-center items-center gap-8 flex-wrap">
-			<div class="join">
-				<input
-					class="join-item input input-bordered input-lg max-w-xs w-full uppercase tracking-[0.6rem] font-mono"
-					type="text"
-					placeholder="Code"
-					bind:value={input}
-					onkeydown={(e) => e.key === 'Enter' && addId()}
-				/>
-				<button class="join-item btn btn-lg btn-primary" onclick={addId}
-					><i class="fas fa-check"></i></button
-				>
+<div class="w-full min-h-screen flex flex-col items-center p-4">
+	<main class="w-full h-full flex-1 flex flex-col items-center py-16 text-center">
+		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signupForSupervisors()}</h1>
+		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
+			<div class="flex flex-col items-center">
+				<p class="mb-10 max-ch-sm">
+					{m.delegationJoinForSupervisorsDescription()}
+				</p>
+				{#if delegationPreview}
+					{#await delegationPreview}
+						<Spinner />
+					{:then delegation}
+						{#if delegation}
+							<div
+								class="flex flex-col items-center mb-10"
+								in:fly={{ x: 50, duration: 300, delay: 300 }}
+								out:fly={{ x: 50, duration: 300 }}
+							>
+								<ReviewTable>
+									<tr>
+										<td>{m.conference()}</td>
+										<td>{delegation.conferenceTitle}</td>
+									</tr>
+									<tr>
+										<td>{m.schoolOrInstitution()}</td>
+										<td>{delegation.school}</td>
+									</tr>
+									<tr>
+										<td>{m.headDelegate()}</td>
+										<td>{delegation.headDelegateFullName}</td>
+									</tr>
+									<tr>
+										<td>{m.amountOfDelegates()}</td>
+										<td>{delegation.memberCount}</td>
+									</tr>
+								</ReviewTable>
+								<div class="flex flex-col-reverse sm:flex-row justify-between mt-4 gap-4 sm:gap-10">
+									<button
+										class="btn btn-primary"
+										onclick={async () => {
+											await checkForError(api.delegation.join.post({
+												entryCode: code,
+												joinAsSupervisor: true
+											}));
+											goto("/dashboard")
+										}}>{m.confirm()}</button
+									>
+								</div>
+							</div>
+						{/if}
+					{/await}
+				{/if}
+				<div class="join">
+					<input
+						type="text"
+						placeholder="Code"
+						bind:value={code}
+						class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
+						oninput={(e) => {
+							code = (e.target.value as string).toUpperCase().slice(0, 6);
+						}}
+					/>
+				</div>
+				<a class="btn btn-warning mt-16" href=".">{m.back()}</a>
 			</div>
-			<div class="flex flex-wrap gap-4 items-center justify-center">
-				{#each idsToAdd as id}
-					<div
-						class="flex justify-center items-center bg-primary text-white gap-2 rounded-full pl-2 pr-6 py-1 uppercase"
-					>
-						<button
-							class="btn btn-sm btn-ghost btn-circle"
-							onclick={() => (idsToAdd = idsToAdd.filter((i) => i !== id))}
-						>
-							<i class="fas fa-times"></i>
-						</button>
-						<p class="text-lg font-bold font-mono tracking-widest">{id}</p>
-					</div>
-				{/each}
-			</div>
-			{#if idsToAdd.length > 0}
-				<button class="btn btn-lg btn-primary" onclick={() => alert('#TODO')}>Beitreten</button>
-			{/if}
-		</section>
+		</div>
 	</main>
 </div>

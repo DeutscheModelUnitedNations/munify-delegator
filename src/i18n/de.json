@@ -55,5 +55,7 @@
 	"pleaseCheckDelegation": "Überprüfe die Angaben und bestätige den Beitritt zur Delegation.",
 	"confirm": "Bestätigen",
 	"headDelegate": "Delegationsleiter*in",
-	"amountOfDelegates": "Anzahl der Delegationsmitglieder"
+	"amountOfDelegates": "Anzahl der Delegationsmitglieder",
+	"signupForSupervisors": "Anmeldung für Betreuer*innen",
+	"delegationJoinForSupervisorsDescription": "Als Betreuer*in können Sie mehrere Delegationen überwachen. Erfragen Sie dafür bei den Delegationsleiter*innen den Code der Delegation. Bitte beachten Sie, dass Sie keine Delegationen selbstständig für Ihre Schüler*innen anlegen können. Sie können sich nur nach Erhalt des Codes einer Delegation anschließen."
 }
