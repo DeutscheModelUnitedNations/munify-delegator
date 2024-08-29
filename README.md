@@ -14,7 +14,7 @@ We are happy to recieve feedback, contributions and donations. Please see below 
 + **Delegation Management**: Manage Delegations and track their Status (like Payment Status)
 
 ## Develop Locally
-Make sure you have Docker and node installed. Notice that only the frontend as a concept is implemented yet.
+Make sure you have Docker and Bun installed.
 
 1. Clone the Repository
 
@@ -25,13 +25,21 @@ git clone https://github.com/DeutscheModelUnitedNations/munify-delegator.git
 2. Install Dependencies
 
 ```bash
-cd frontend && npm install
+bun install
 ```
 
 3. Start the Development Server
 
 ```bash
-cd frontend && npm run dev
+bun run dev
+
+# if you want to separate docker containers and the actual dev server you can use
+bun run dev:docker # starts all necessary dev dependencies e.g. postgres
+bun run dev:server # starts the actual dev server (vite&sveltekit)
+```
+4. (Optionally) install git hooks for automated linting etc.
+```bash
+bunx lefthook install
 ```
 
 ## FAQ
