@@ -19,16 +19,16 @@
 	const nextStep = async (create = false) => {
 		if (create) {
 			console.log({
-					conference: {
-						connect: {
-							id: data.conference.id
-						}
-					},
-					experience: delegation.experience!,
-					motivation: delegation.motivation!,
-					school: delegation.school!
-				});
-			
+				conference: {
+					connect: {
+						id: data.conference.id
+					}
+				},
+				experience: delegation.experience!,
+				motivation: delegation.motivation!,
+				school: delegation.school!
+			});
+
 			const createdDelegation = await checkForError(
 				api.delegation.post({
 					conference: {

@@ -112,7 +112,12 @@
 						required
 					/>
 
-					<ProfileInput bind:value={pronouns} label="Pronomen" placeholder="z.B. er/ihm oder sie/ihr" required />
+					<ProfileInput
+						bind:value={pronouns}
+						label="Pronomen"
+						placeholder="z.B. er/ihm oder sie/ihr"
+						required
+					/>
 
 					<ProfileSelect
 						bind:value={foodPreference}

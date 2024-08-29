@@ -49,8 +49,11 @@
 
 <ChatBot delay={400}>
 	<p>Wunderbar! Dann sind Sie hier genau richtig.</p>
-  <p>Da die Anmeldung als Gruppe auch geschlossen stattfinden muss, müssen Sie zunächst klären, ob schon jemand Ihrer Gruppe eine Delegation erstellt hat, der sie beitreten können.</p>
-  <p>Der/die Ersteller*in einer Delegation wird automatisch zur Delegationsleiter*in</p>
+	<p>
+		Da die Anmeldung als Gruppe auch geschlossen stattfinden muss, müssen Sie zunächst klären, ob
+		schon jemand Ihrer Gruppe eine Delegation erstellt hat, der sie beitreten können.
+	</p>
+	<p>Der/die Ersteller*in einer Delegation wird automatisch zur Delegationsleiter*in</p>
 </ChatBot>
 <ChatBot delay={1400}>
 	<p>Haben sie schon eine*n Delegationsleiter*in, der/die bereits eine Delegation erstellt hat?</p>

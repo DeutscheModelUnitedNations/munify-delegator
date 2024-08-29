@@ -56,7 +56,7 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 
 	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForUserEntity(oidc, builder);
-	defineAbilitiesForDelegationEntity(oidc, builder)
+	defineAbilitiesForDelegationEntity(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

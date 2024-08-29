@@ -79,7 +79,7 @@
 			formatter: (value: number) => {
 				return numeral(value).format('0.0a') + ' %';
 			}
-		},
+		}
 	];
 </script>
 
@@ -98,6 +98,8 @@
 	{/each}
 </div>
 <h5 class="mt-4 text-xs">
-	Die Daten stammen zum großen Teil von der offenen Datenschnittstelle (API) der World Bank. Da es sich um einen Drittanbieterdienst handelt, kann das Abrufen kann manchmal etwas Zeit in
-	Anspruch nehmen und die Daten sind nicht immer aktuell. Es gibt keine Garantie für Richtigkeit. Wir freuen uns über Anregungen, welche weiteren Daten wir hier anzeigen sollen.
+	Die Daten stammen zum großen Teil von der offenen Datenschnittstelle (API) der World Bank. Da es
+	sich um einen Drittanbieterdienst handelt, kann das Abrufen kann manchmal etwas Zeit in Anspruch
+	nehmen und die Daten sind nicht immer aktuell. Es gibt keine Garantie für Richtigkeit. Wir freuen
+	uns über Anregungen, welche weiteren Daten wir hier anzeigen sollen.
 </h5>

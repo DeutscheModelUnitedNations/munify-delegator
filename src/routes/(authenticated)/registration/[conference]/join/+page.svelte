@@ -39,7 +39,11 @@
 						TODO: Spinner
 					{:then delegation}
 						{#if delegation}
-							<div class="flex flex-col items-center mb-10" in:fly={{ x: 50, duration: 300, delay: 300 }} out:fly={{ x: 50, duration: 300 }}>
+							<div
+								class="flex flex-col items-center mb-10"
+								in:fly={{ x: 50, duration: 300, delay: 300 }}
+								out:fly={{ x: 50, duration: 300 }}
+							>
 								<ReviewTable>
 									<tr>
 										<td>{m.conference()}</td>

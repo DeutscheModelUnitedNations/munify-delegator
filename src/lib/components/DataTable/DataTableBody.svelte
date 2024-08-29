@@ -4,7 +4,7 @@
 	interface Props {
 		rows: any; // TODO type
 		children?: any;
-    tableBodyAttrs: any;
+		tableBodyAttrs: any;
 	}
 
 	let { rows, children, tableBodyAttrs }: Props = $props();

@@ -7,7 +7,4 @@
 	}
 
 	let { code, prevStep }: Props = $props();
-
-
 </script>
-

@@ -4,7 +4,7 @@
 		value: string;
 		options: { value: string; label: string }[];
 		placeholder?: string;
-    required?: boolean;
+		required?: boolean;
 	}
 
 	let { label, value = $bindable(''), options, placeholder, required }: Props = $props();
@@ -18,7 +18,7 @@
 	{/if}
 	<select
 		class="select select-bordered"
-    {required}
+		{required}
 		onchange={(e) => {
 			value = e.target.value;
 		}}

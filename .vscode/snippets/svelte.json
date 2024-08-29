@@ -1,12 +1,12 @@
 {
-  "FA Icon Solid": {
-    "prefix": "<is",
-    "body": "<i class=\"fas fa-$1\"></i>",
-    "description": "Font Awesome Icon Solid"
-  },
-  "FA Icon Duotone": {
-    "prefix": "<ir",
-    "body": "<i class=\"fa-duotone fa-$1\"></i>",
-    "description": "Font Awesome Icon Regular"
-  }
+	"FA Icon Solid": {
+		"prefix": "<is",
+		"body": "<i class=\"fas fa-$1\"></i>",
+		"description": "Font Awesome Icon Solid"
+	},
+	"FA Icon Duotone": {
+		"prefix": "<ir",
+		"body": "<i class=\"fa-duotone fa-$1\"></i>",
+		"description": "Font Awesome Icon Regular"
+	}
 }
