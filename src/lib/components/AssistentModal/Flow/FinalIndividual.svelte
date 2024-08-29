@@ -28,7 +28,10 @@
 	</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>Wir können Ihnen natürlich nicht garantieren, dass Sie ihre gewünschte Rolle tatsächlich bekommen.</p>
+	<p>
+		Wir können Ihnen natürlich nicht garantieren, dass Sie ihre gewünschte Rolle tatsächlich
+		bekommen.
+	</p>
 	<p>
 		Sollten wir Ihren Wunsch bei der Zuteilung nicht berücksichtigen können, wird die
 		Teilnehmendenbetreuung Kontakt aufnehmen und mit Ihnen Alternativen besprechen.

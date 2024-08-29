@@ -26,9 +26,7 @@
 	</hero>
 
 	<main>
-		<section
-			class="w-full flex flex-col justify-center items-center gap-8 flex-wrap"
-		>
+		<section class="w-full flex flex-col justify-center items-center gap-8 flex-wrap">
 			<div class="join">
 				<input
 					class="join-item input input-bordered input-lg max-w-xs w-full uppercase tracking-[0.6rem] font-mono"
@@ -43,7 +41,9 @@
 			</div>
 			<div class="flex flex-wrap gap-4 items-center justify-center">
 				{#each idsToAdd as id}
-					<div class="flex justify-center items-center bg-primary text-white gap-2 rounded-full pl-2 pr-6 py-1 uppercase">
+					<div
+						class="flex justify-center items-center bg-primary text-white gap-2 rounded-full pl-2 pr-6 py-1 uppercase"
+					>
 						<button
 							class="btn btn-sm btn-ghost btn-circle"
 							onclick={() => (idsToAdd = idsToAdd.filter((i) => i !== id))}
@@ -55,9 +55,7 @@
 				{/each}
 			</div>
 			{#if idsToAdd.length > 0}
-				<button class="btn btn-lg btn-primary" onclick={() => alert('#TODO')}
-					>Beitreten</button
-				>
+				<button class="btn btn-lg btn-primary" onclick={() => alert('#TODO')}>Beitreten</button>
 			{/if}
 		</section>
 	</main>

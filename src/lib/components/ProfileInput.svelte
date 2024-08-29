@@ -38,7 +38,7 @@
 			{pattern}
 			{placeholder}
 			{required}
-      {max}
+			{max}
 			oninput={(e) => {
 				value = e.target.value;
 			}}

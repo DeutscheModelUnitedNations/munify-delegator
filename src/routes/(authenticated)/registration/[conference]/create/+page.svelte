@@ -21,6 +21,38 @@
 	let { data }: { data: PageData } = $props();
 
 	let step = $state(1);
+	let delegation = $state<Partial<Delegation>>({});
+	let referralLink = $derived(
+		`${data.url.origin}/registration/${data.conference.id}/join?code=${delegation?.entryCode}`
+	);
+
+	const nextStep = async (create = false) => {
+		if (create) {
+			console.log({
+				conference: {
+					connect: {
+						id: data.conference.id
+					}
+				},
+				experience: delegation.experience!,
+				motivation: delegation.motivation!,
+				school: delegation.school!
+			});
+
+			const createdDelegation = await checkForError(
+				api.delegation.post({
+					conference: {
+						connect: {
+							id: data.conference.id
+						}
+					},
+					experience: delegation.experience!,
+					motivation: delegation.motivation!,
+					school: delegation.school!
+				})
+			);
+			delegation = createdDelegation;
+		}
 
 	const nextStep = () => {
 		step += 1;

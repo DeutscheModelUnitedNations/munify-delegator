@@ -8,7 +8,7 @@ export const load: PageLoad = async ({ params, url }) => {
 			firstName: 'Max',
 			lastName: 'Mustermann',
 			email: 'm.m@gmail.com',
-			uid: '1234567890',
+			uid: '1234567890'
 		}
 	};
 };

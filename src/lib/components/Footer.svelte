@@ -8,7 +8,9 @@
 		<a class="link link-hover" href="/registration">Anmeldung</a>
 		<a class="link link-hover" href="/dashboard">Deine Konferenzen</a>
 		<a class="link link-hover" href="/my-account">Profilverwaltung</a>
-		<a class="link link-hover" href="https://dmun.de/impressum" target="_blank">Impressum & Datenschutzerklärung</a>
+		<a class="link link-hover" href="https://dmun.de/impressum" target="_blank"
+			>Impressum & Datenschutzerklärung</a
+		>
 		<a class="link link-hover" href="management">Administration</a>
 	</nav>
 	<nav>

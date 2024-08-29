@@ -9,5 +9,3 @@ export const load: PageLoad = loadApiHandler(async ({ api }) => {
 		conferences
 	};
 });
-
-

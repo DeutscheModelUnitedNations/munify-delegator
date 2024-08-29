@@ -1,11 +1,11 @@
 <script lang="ts">
 	import mermaid from 'mermaid';
 
-  interface Props {
-    diagram: string;
-  }
+	interface Props {
+		diagram: string;
+	}
 
-  let { diagram }: Props = $props();
+	let { diagram }: Props = $props();
 
 	let container = $state<HTMLSpanElement>();
 

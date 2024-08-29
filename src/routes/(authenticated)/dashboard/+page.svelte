@@ -31,7 +31,9 @@
 
 <Header title="Meine Konferenzen" />
 <section class="mt-10 flex flex-wrap gap-4">
-	<div class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6">
+	<div
+		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
+	>
 		{#each testConferences.filter((x) => x.active) as conference}
 			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
 		{/each}
