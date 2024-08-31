@@ -10,6 +10,8 @@ import {
 import Elysia, { t } from 'elysia';
 import { customAlphabet } from 'nanoid';
 
+const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
+
 export const delegation = new Elysia()
 	.use(CRUDMaker.getAll('delegation'))
 	.use(CRUDMaker.getOne('delegation'))
@@ -22,11 +24,10 @@ export const delegation = new Elysia()
 			const user = permissions.mustBeLoggedIn();
 			permissions.checkIf((user) => user.can('create', 'Delegation'));
 			// https://github.com/CyberAP/nanoid-dictionary
-			const entrycode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
 
 			return db.$transaction(async (tx) => {
 				const delegation = await tx.delegation.create({
-					data: { ...body, entryCode: entrycode() }
+					data: { ...body, entryCode: makeEntryCode() }
 				});
 
 				await tx.delegationMember.create({
@@ -191,5 +192,23 @@ export const delegation = new Elysia()
 					conferenceTitle: t.String()
 				})
 			])
+		}
+	)
+	.patch(
+		`/delegation/:id/resetEntryCode`,
+		async ({ permissions, params }) => {
+			return await db.delegation.update({
+				where: {
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('update').Delegation]
+				},
+				data: {
+					entryCode: makeEntryCode()
+				}
+			});
+		},
+		{
+			body: t.Object({ newEntryCode: t.Index(Delegation, ['entryCode']) }),
+			response: DelegationPlain
 		}
 	);
