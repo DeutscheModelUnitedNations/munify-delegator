@@ -1,6 +1,5 @@
 pre-commit:
   commands:
     lint:
-      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
-      run: bunx prettier --write {staged_files}
+      run: bunx prettier --ignore-unknown --write ./{staged_files}
       stage_fixed: true
