@@ -1,6 +1,6 @@
-import Elysia from 'elysia';
+import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { UserPlain } from '$db/generated/schema/User';
+import { UserPlain, UserPlainInputUpdate } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
@@ -23,7 +23,7 @@ export const user = new Elysia({
 				throw new Error('OIDC result is missing required fields!');
 			}
 
-			return db.user.upsert({
+			const updatedUser = await db.user.upsert({
 				where: { id: user.sub },
 				create: {
 					id: user.sub,
@@ -31,8 +31,7 @@ export const user = new Elysia({
 					family_name: user.family_name,
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
-					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE,
-					address: {}
+					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE
 				},
 				update: {
 					email: user.email,
@@ -42,8 +41,47 @@ export const user = new Elysia({
 					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE
 				}
 			});
+
+			//TODO can this be done more elegantly?
+			if (
+				!updatedUser.birthday ||
+				!updatedUser.phone ||
+				!updatedUser.street ||
+				!updatedUser.apartment ||
+				!updatedUser.zip ||
+				!updatedUser.city ||
+				!updatedUser.country ||
+				!updatedUser.gender ||
+				!updatedUser.pronouns ||
+				!updatedUser.foodPreference
+			) {
+				return { userNeedsAdditionalInfo: true };
+			}
+
+			return { userNeedsAdditionalInfo: false };
 		},
 		{
+			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
+		}
+	)
+	.get(
+		'/user/me',
+		async ({ permissions }) => {
+			const user = permissions.mustBeLoggedIn();
+			return db.user.findFirstOrThrow({ where: { id: user.sub } });
+		},
+		{
+			response: UserPlain
+		}
+	)
+	.patch(
+		'/user/me',
+		async ({ permissions, body }) => {
+			const user = permissions.mustBeLoggedIn();
+			return db.user.update({ where: { id: user.sub }, data: body });
+		},
+		{
+			body: UserPlainInputUpdate,
 			response: UserPlain
 		}
 	);
