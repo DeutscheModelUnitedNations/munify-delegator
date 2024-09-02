@@ -67,11 +67,13 @@
 									<button
 										class="btn btn-primary"
 										onclick={async () => {
-											await checkForError(api.delegation.join.post({
-												entryCode: code,
-												joinAsSupervisor: false
-											}));
-											goto("/dashboard")
+											await checkForError(
+												api.delegation.join.post({
+													entryCode: code,
+													joinAsSupervisor: false
+												})
+											);
+											goto('/dashboard');
 										}}>{m.confirm()}</button
 									>
 								</div>

@@ -16,12 +16,11 @@
 		<h1 class="text-3xl tracking-wider uppercase mb-3">Anmeldung für Betreuer*innen</h1>
 		<p class="max-ch-md mb-2">
 			Als Betreuer*in können Sie mehrere Delegationen überwachen. Erfragen Sie dafür bei den
-			Delegationsleiter*innen den Code der Delegation.
-			Bitte beachten Sie, dass Sie keine Delegationen selbstständig für Ihre Schüler*innen anlegen
-			können. Sie können sich nur nach Erhalt des Codes einer Delegation anschließen.
+			Delegationsleiter*innen den Code der Delegation. Bitte beachten Sie, dass Sie keine
+			Delegationen selbstständig für Ihre Schüler*innen anlegen können. Sie können sich nur nach
+			Erhalt des Codes einer Delegation anschließen.
 		</p>
-		<p class="max-ch-md">
-		</p>
+		<p class="max-ch-md"></p>
 		<a class="btn btn-warning mt-6" href=".">Zurück</a>
 	</hero>
 

@@ -161,9 +161,9 @@
 					/>
 
 					<Checkbox
-					bind:checked={wantsJoinTeamInformation}
-					label={m.receiveJoinTeamInformation()}
-				/>
+						bind:checked={wantsJoinTeamInformation}
+						label={m.receiveJoinTeamInformation()}
+					/>
 
 					<button class="btn btn-primary btn-block mt-4" type="submit">
 						{#if !data.redirectUrl}
