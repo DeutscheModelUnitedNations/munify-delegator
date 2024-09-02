@@ -1,5 +1,6 @@
 pre-commit:
+  parallel: true
   commands:
     lint:
-      run: bunx prettier --ignore-unknown --write ./{staged_files}
+      run: bunx prettier --ignore-unknown --write "{staged_files}"
       stage_fixed: true
