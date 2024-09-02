@@ -1,10 +1,17 @@
 <script lang="ts">
 	import Header from '$lib/components/Header.svelte';
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
+	import { type PageData } from './$types';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 
-	console.log(data);
+	onMount(() => {
+		if (data.conferences.length === 1) {
+			goto(`/dashboard/${data.conferences[0].id}`);
+		}
+	});
 </script>
 
 <Header title="Meine Konferenzen" />
@@ -12,7 +19,7 @@
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
 	>
-		{#each data.conferences.filter((x) => x.status === ("PRE" || "ACTIVE")) as conference}
+		{#each data.conferences.filter((x) => x.status === ('PRE' || 'ACTIVE')) as conference}
 			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
 		{/each}
 		<a href="/registration" class="carousel-item max-w-96 w-[90%]">
@@ -31,13 +38,13 @@
 	<table class="table overflow-x-auto">
 		<thead>
 			<tr>
-				<th>title</th>
+				<th>Titel</th>
 				<th>Ort</th>
 				<th></th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each data.conference ?? [] as conference}
+			{#each data.conferences ?? [] as conference}
 				<tr>
 					<td>{conference.title}</td>
 					<td>{conference.location}</td>

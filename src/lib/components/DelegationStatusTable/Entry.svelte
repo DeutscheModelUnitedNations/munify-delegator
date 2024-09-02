@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages.js';
+
 	interface Props {
 		name: string;
 		headDelegate?: boolean;
@@ -36,7 +38,7 @@
 	<td
 		><span class="mr-2">{name}</span>
 		{#if headDelegate}
-			<div class="tooltip" data-tip="Delegationsleitung">
+			<div class="tooltip" data-tip={m.headDelegate()}>
 				<i class="ml-2 fa-duotone fa-medal"></i>
 			</div>
 		{/if}

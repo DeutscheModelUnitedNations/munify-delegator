@@ -6,7 +6,6 @@
 
 	interface Props {
 		conferences: Conference[];
-
 		children: Snippet;
 	}
 
@@ -36,12 +35,14 @@
 				<div class="text-2xl font-[#000] font-bold">DELEGATOR</div>
 			</div>
 			<ul class="menu">
-				<NavButton
-					href="/dashboard"
-					icon="fa-house"
-					title="Übersicht"
-					active={path.endsWith('dashboard')}
-				></NavButton>
+				{#if conferences.length > 1}
+					<NavButton
+						href="/dashboard"
+						icon="fa-house"
+						title="Übersicht"
+						active={path.endsWith('dashboard')}
+					></NavButton>
+				{/if}
 
 				{#if activeConferences.length > 0}
 					<div class="h-6" />

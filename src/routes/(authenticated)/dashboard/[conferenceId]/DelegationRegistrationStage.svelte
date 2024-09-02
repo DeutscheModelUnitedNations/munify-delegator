@@ -14,13 +14,16 @@
 	import type { Delegation } from '@prisma/client';
 	import { apiClient, checkForError } from '$api/client';
 	import { onMount } from 'svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
 
-	const delegationId: Delegation['id'] = data.userData.delegationMemberships?.find(
+	const delegationMembership = data.userData.delegationMemberships?.find(
 		(x) => x.conference.id === data.conferenceId
-	).delegation.id;
+	)
+	const delegationId = delegationMembership?.delegation.id;
+	const userIsHeadDelegate = !!delegationMembership?.isHeadDelegate;
 
 	let delegationData = $state<any | null>(null);
 
@@ -28,15 +31,11 @@
 		delegationData = await checkForError(api.delegation({ id: delegationId }).get());
 	});
 
-	$effect(() => {
-		console.log(delegationData ?? 'no data');
-	});
-
 	const stats = $derived([
 		{
 			icon: 'users',
 			title: 'Mitglieder',
-			value: '3',
+			value: delegationData?.members?.length,
 			desc: 'in der Delegation'
 		},
 		{
@@ -120,10 +119,18 @@
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">Delegationsmitglieder</h2>
-	<DelegationStatusTableWrapper>
-		<DelegationStatusTableEntry name="Max Mustermann" headDelegate />
-		<DelegationStatusTableEntry name="Frauke Musterfrau" />
-	</DelegationStatusTableWrapper>
+	{#if delegationData?.members}
+		<DelegationStatusTableWrapper>
+			{#each delegationData.members as member}
+				<DelegationStatusTableEntry
+					name={`${member.user.given_name} ${member.user.family_name}`}
+					headDelegate={member.isHeadDelegate}
+				/>
+			{/each}
+		</DelegationStatusTableWrapper>
+	{:else}
+		<div class="skeleton w-full h-60"></div>
+	{/if}
 </section>
 
 <section>
@@ -187,5 +194,15 @@
 			</tbody>
 		</table>
 		<button class="btn btn-warning mt-4" disabled>Anmeldung abschließen</button>
+	</div>
+</section>
+<section>
+	<h2 class="text-2xl font-bold mb-4">{m.dangerZone()}</h2>
+	<div class="flex flex-col gap-2">
+		<button class="btn btn-warning">{m.leaveDelegation()}</button>
+		{#if userIsHeadDelegate}
+			<button class="btn btn-error">{m.transferHeadDelegateship()}</button>
+			<button class="btn btn-error">{m.deleteDelegation()}</button>
+		{/if}
 	</div>
 </section>
