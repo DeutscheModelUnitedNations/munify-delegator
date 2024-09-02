@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { apiClient } from '$api/client.js';
 	import { goto } from '$app/navigation';
+	import Checkbox from '$lib/components/Checkbox.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import ProfileInput from '$lib/components/ProfileInput.svelte';
 	import ProfileSelect from '$lib/components/ProfileSelect.svelte';
@@ -19,10 +20,14 @@
 	let zip = $state(data.fullUser.zip ?? '');
 	let city = $state(data.fullUser.city ?? '');
 	let country = $state(data.fullUser.country ?? '');
-	let birthday = $state(data.fullUser.birthday as unkown as string ?? new Date().toISOString());
+	let birthday = $state((data.fullUser.birthday as unkown as string) ?? new Date().toISOString());
 	let gender = $state(data.fullUser.gender ?? '');
 	let pronouns = $state(data.fullUser.pronouns ?? '');
 	let foodPreference = $state(data.fullUser.foodPreference ?? '');
+	let wantsToReceiveGeneralInformation = $state(
+		data.fullUser.wantsToReceiveGeneralInformation ?? false
+	);
+	let wantsJoinTeamInformation = $state(data.fullUser.wantsJoinTeamInformation ?? false);
 
 	const onPersonalDataFormSubmit = async (e: Event) => {
 		e.preventDefault();
@@ -37,7 +42,9 @@
 			birthday,
 			gender,
 			pronouns,
-			foodPreference
+			foodPreference,
+			wantsToReceiveGeneralInformation,
+			wantsJoinTeamInformation
 		});
 
 		if (data.redirectUrl) {
@@ -147,6 +154,17 @@
 						]}
 						required
 					/>
+
+					<Checkbox
+						bind:checked={wantsToReceiveGeneralInformation}
+						label={m.receiveGeneralInformation()}
+					/>
+
+					<Checkbox
+					bind:checked={wantsJoinTeamInformation}
+					label={m.receiveJoinTeamInformation()}
+				/>
+
 					<button class="btn btn-primary btn-block mt-4" type="submit">
 						{#if !data.redirectUrl}
 							{m.save()}

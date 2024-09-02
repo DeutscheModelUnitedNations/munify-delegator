@@ -92,5 +92,7 @@
 	"lastName": "Nachname",
 	"email": "E-Mail",
 	"userId": "Benutzer-ID",
-	"edit": "Bearbeiten"
+	"edit": "Bearbeiten",
+	"receiveGeneralInformation": "Allgemeine E-Mails zum Projekt erhalten",
+	"receiveJoinTeamInformation": "E-Mails zum Beitritt ins Team/den Verein erhalten"
 }
