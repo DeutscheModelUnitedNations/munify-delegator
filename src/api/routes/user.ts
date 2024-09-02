@@ -1,6 +1,13 @@
-import Elysia from 'elysia';
+import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { UserPlain } from '$db/generated/schema/User';
+import { User, UserPlain } from '$db/generated/schema/User';
+import { Conference } from '$db/generated/schema/Conference';
+import { Delegation } from '$db/generated/schema/Delegation';
+import { DelegationMember } from '$db/generated/schema/DelegationMember';
+import { SingleParticipant } from '$db/generated/schema/SingleParticipant';
+import { ConferenceParticipantStatus } from '$db/generated/schema/ConferenceParticipantStatus';
+import { ConferenceSupervisor } from '$db/generated/schema/ConferenceSupervisor';
+import { TeamMember } from '$db/generated/schema/TeamMember';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
@@ -46,4 +53,99 @@ export const user = new Elysia({
 		{
 			response: UserPlain
 		}
+	)
+	.get(
+		'/user/me',
+		async ({ permissions }) => {
+			const user = permissions.mustBeLoggedIn();
+			return db.user.findUnique({
+				where: { id: user.sub },
+				include: {
+					delegationMemberships: {
+						include: {
+							conference: true,
+							delegation: true
+						}
+					},
+					singleParticipant: {
+						include: {
+							conference: true
+						}
+					},
+					conferenceParticipantStatus: {
+						include: {
+							conference: true
+						}
+					},
+					conferenceSupervisor: {
+						include: {
+							conference: true
+						}
+					},
+					teamMember: {
+						include: {
+							conference: true
+						}
+					}
+				}
+			});
+		},
+		// {
+		// 	response: t.Composite([
+		// 		User,
+		// 		t.Object({
+		// 			delegationMemberships: t.Optional(
+		// 				t.Array(
+		// 					t.Composite([
+		// 						DelegationMember,
+		// 						t.Object({
+		// 							conference: Conference,
+		// 							delegation: Delegation
+		// 						})
+		// 					])
+		// 				)
+		// 			),
+		// 			singleParticipant: t.Optional(
+		// 				t.Array(
+		// 					t.Composite([
+		// 						SingleParticipant,
+		// 						t.Object({
+		// 							conference: Conference
+		// 						})
+		// 					])
+		// 				)
+		// 			),
+		// 			conferenceParticipantStatus: t.Optional(
+		// 				t.Array(
+		// 					t.Composite([
+		// 						ConferenceParticipantStatus,
+		// 						t.Object({
+		// 							conference: Conference
+		// 						})
+		// 					])
+		// 				)
+		// 			),
+		// 			conferenceSupervisor: t.Optional(
+		// 				t.Array(
+		// 					t.Composite([
+		// 						ConferenceSupervisor,
+		// 						t.Object({
+		// 							conference: Conference
+		// 						})
+		// 					])
+		// 				)
+		// 			),
+		// 			teamMember: t.Optional(
+		// 				t.Array(
+		// 					t.Composite([
+		// 						TeamMember,
+		// 						t.Object({
+		// 							conference: Conference
+		// 						})
+		// 					])
+		// 				)
+		// 			)
+		// 		})
+		// 	])
+		// }
 	);

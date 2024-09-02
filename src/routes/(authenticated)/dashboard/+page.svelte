@@ -2,37 +2,17 @@
 	import Header from '$lib/components/Header.svelte';
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 
-	const testConferences = [
-		{
-			id: '1',
-			title: 'MUN-SH 2025',
-			location: 'Kiel',
-			website: 'https://www.mun-sh.de',
-			start: new Date(2025, 2, 6),
-			end: new Date(2025, 2, 10),
-			active: true
-		},
-		{
-			id: '2',
-			title: 'MUNBW 2025',
-			location: 'Stuttgart',
-			website: 'https://www.mun-bw.de',
-			active: true
-		},
-		{
-			id: '3',
-			title: 'MUN-SH 2024',
-			location: 'Kiel',
-			website: 'https://www.mun-sh.de',
-			active: false
-		}
-	];
+	let { data }: { data: PageData } = $props();
+
+	console.log(data);
 </script>
 
 <Header title="Meine Konferenzen" />
 <section class="mt-10 flex flex-wrap gap-4">
-	<div class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6">
-		{#each testConferences.filter((x) => x.active) as conference}
+	<div
+		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
+	>
+		{#each data.conferences.filter((x) => x.status === ("PRE" || "ACTIVE")) as conference}
 			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
 		{/each}
 		<a href="/registration" class="carousel-item max-w-96 w-[90%]">
@@ -51,13 +31,13 @@
 	<table class="table overflow-x-auto">
 		<thead>
 			<tr>
-				<th>Titel</th>
+				<th>title</th>
 				<th>Ort</th>
 				<th></th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each testConferences as conference}
+			{#each data.conference ?? [] as conference}
 				<tr>
 					<td>{conference.title}</td>
 					<td>{conference.location}</td>

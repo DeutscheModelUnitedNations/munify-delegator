@@ -12,10 +12,27 @@ import { customAlphabet } from 'nanoid';
 
 export const delegation = new Elysia()
 	.use(CRUDMaker.getAll('delegation'))
-	.use(CRUDMaker.getOne('delegation'))
 	.use(CRUDMaker.updateOne('delegation'))
 	.use(CRUDMaker.deleteOne('delegation'))
 	.use(permissionsPlugin)
+	.get('delegation/:id', async ({ permissions, params }) => {
+		const user = permissions.mustBeLoggedIn();
+		const delegation = await db.delegation.findUniqueOrThrow({
+			where: {
+				id: params.id,
+				AND: [permissions.allowDatabaseAccessTo('read').Delegation]
+			},
+			include: {
+				members: {
+					include: {
+						user: true
+					}
+				}
+			}
+		});
+
+		return delegation;
+	})
 	.post(
 		`/delegation`,
 		async ({ permissions, body }) => {

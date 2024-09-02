@@ -67,10 +67,10 @@
 		<Steps
 			currentStep={step}
 			steps={[
-				{ titel: m.infos() },
-				{ titel: m.questionnaire() },
-				{ titel: m.review() },
-				{ titel: m.invite() }
+				{ title: m.infos() },
+				{ title: m.questionnaire() },
+				{ title: m.review() },
+				{ title: m.invite() }
 			]}
 		/>
 	</header>

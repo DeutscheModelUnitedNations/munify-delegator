@@ -3,18 +3,18 @@
 
 	interface Props {
 		icon: string;
-		titel: string;
+		title: string;
 		children: Snippet;
 	}
 
-	let { icon, titel, children }: Props = $props();
+	let { icon, title, children }: Props = $props();
 </script>
 
 <li>
 	<details>
 		<summary>
 			<i class={`fa-duotone ${icon} w-5`} />
-			<div>{titel}</div>
+			<div>{title}</div>
 		</summary>
 		<ul>
 			{@render children()}

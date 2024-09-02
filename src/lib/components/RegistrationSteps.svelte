@@ -4,7 +4,7 @@
 		currentStep: number;
 	}
 	interface Step {
-		titel: string;
+		title: string;
 	}
 
 	let { steps, currentStep = 1 }: Props = $props();
@@ -17,7 +17,7 @@
 				class="step {i + 1 <= currentStep && 'step-primary'} {i + 2 <= currentStep &&
 					'check'} mx-2 text-xs sm:text-base"
 			>
-				{step.titel}
+				{step.title}
 			</li>
 		{/each}
 	</ul>

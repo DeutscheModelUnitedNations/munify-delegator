@@ -16,6 +16,12 @@ generator prismabox {
   additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
 }
 
+enum ConferenceStatus {
+  PRE
+  ACTIVE
+  POST
+}
+
 model Conference {
   id                           String                        @id @default(nanoid())
   title                        String
@@ -26,6 +32,9 @@ model Conference {
   language                     String?
   website                      String?
   image                        Bytes?
+  status                       ConferenceStatus              @default(PRE)
+  startRegistration            DateTime?
+  endRegistration              DateTime?
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
   nonStateActors               NonStateActor[]
@@ -162,7 +171,7 @@ model Delegation {
   experience      String
 
   /// @prismabox.input.hide
-  supervisors   ConferenceSupervisor[]
+  supervisors ConferenceSupervisor[]
 }
 
 model RoleApplication {

@@ -2,16 +2,21 @@
 	import NavButton from '$lib/components/NavButton.svelte';
 	import { page } from '$app/stores';
 	import type { Snippet } from 'svelte';
+	import type { Conference } from '@prisma/client';
 
 	interface Props {
-		activeConferences: any[];
-		pastConferences: any[];
+		conferences: Conference[];
+
 		children: Snippet;
 	}
 
 	//TODO we COULD access the data like this https://kit.svelte.dev/docs/load#$page-data
 	// not sure if this makes sense since components should be dumb and testable and not rely on global stores maybe?
-	let { activeConferences, pastConferences, children }: Props = $props();
+	let { conferences, children }: Props = $props();
+
+	let preConferences = $derived(conferences.filter((c) => c.status === 'PRE'));
+	let activeConferences = $derived(conferences.filter((c) => c.status === 'ACTIVE'));
+	let pastConferences = $derived(conferences.filter((c) => c.status === 'POST'));
 
 	let path = $derived($page.url.pathname);
 </script>
@@ -34,33 +39,40 @@
 				<NavButton
 					href="/dashboard"
 					icon="fa-house"
-					titel="Übersicht"
+					title="Übersicht"
 					active={path.endsWith('dashboard')}
 				></NavButton>
 
-				<div class="h-6" />
-
 				{#if activeConferences.length > 0}
+					<div class="h-6" />
 					<p class="text-xs text-gray-500 pb-2">Aktive Konferenzen</p>
-					{#each activeConferences as { id, name }}
-						<NavButton href="/dashboard/{id}" icon="fa-flag" titel={name} active={path.includes(id)}
+					{#each activeConferences as { id, title }}
+						<NavButton href="/dashboard/{id}" icon="fa-flag" {title} active={path.includes(id)}
 						></NavButton>
 					{/each}
 				{/if}
 
-				<div class="h-6" />
+				{#if preConferences.filter((c) => c.status === 'PRE').length > 0}
+					<div class="h-6" />
+					<p class="text-xs text-gray-500 pb-2">Bevorstehende Konferenzen</p>
+					{#each preConferences as { id, title }}
+						<NavButton href="/dashboard/{id}" icon="fa-flag" {title} active={path.includes(id)}
+						></NavButton>
+					{/each}
+				{/if}
 
 				{#if pastConferences.length > 0}
+					<div class="h-6" />
 					<p class="text-xs text-gray-500 pb-2">Vergangene Konferenzen</p>
-					{#each pastConferences as { id, name }}
-						<NavButton href="/dashboard/{id}" icon="fa-flag" titel={name} active={path.includes(id)}
+					{#each pastConferences as { id, title }}
+						<NavButton href="/dashboard/{id}" icon="fa-flag" {title} active={path.includes(id)}
 						></NavButton>
 					{/each}
 				{/if}
 
 				<div class="h-6" />
 
-				<NavButton href="/registration" icon="fa-plus" titel="Anmeldung"></NavButton>
+				<NavButton href="/registration" icon="fa-plus" title="Anmeldung"></NavButton>
 			</ul>
 		</nav>
 		<!-- /sidebar menu -->

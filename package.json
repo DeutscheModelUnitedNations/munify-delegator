@@ -57,5 +57,8 @@
     "numeral": "^2.0.6",
     "svelte-headless-table": "^0.18.2",
     "nanoid": "^5.0.7"
+  },
+  "prisma": {
+    "seed": "bun run prisma/seed.ts"
   }
 }
