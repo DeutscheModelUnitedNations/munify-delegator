@@ -4,7 +4,6 @@
 	import PreConferenceStage from './DelegationPreConferenceStage.svelte';
 	import RegistrationStage from './DelegationRegistrationStage.svelte';
 	import PostConferenceStage from './DelegationPostConferenceStage.svelte';
-	import { invalidateAll } from '$app/navigation';
 
 	enum STAGE {
 		REGISTRATION = 'REGISTRATION',
@@ -60,7 +59,6 @@
 	{:else if CATEGORY === 'DELEGATION'}
 		{#if determinStage() === 'REGISTRATION'}
 			<RegistrationStage {data} />
-			<button onclick={() => invalidateAll()}>Invalidate</button>
 		{:else if determinStage() === 'POST_REGISTRATION'}
 			#TODO: Implement delegation post-registration stage
 		{:else if determinStage() === 'PRE_CONFERENCE'}

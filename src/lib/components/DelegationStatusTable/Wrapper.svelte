@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		withCommittee?: boolean;
@@ -21,9 +22,9 @@
 		<table class="table">
 			<thead>
 				<tr>
-					<th>Name</th>
+					<th>{m.name()}</th>
 					{#if withCommittee}
-						<th>Gremium</th>
+						<th>{m.committee()}</th>
 					{/if}
 					{#if withMailStatus}
 						<th class="text-center">
@@ -43,7 +44,13 @@
 				</tr>
 			</thead>
 			<tbody>
-				{@render children()}
+				{#if children}
+					{@render children()}
+				{:else}
+					<tr>
+						<td>{m.noMembersFound()}</td>
+					</tr>
+				{/if}
 			</tbody>
 		</table>
 	</div>

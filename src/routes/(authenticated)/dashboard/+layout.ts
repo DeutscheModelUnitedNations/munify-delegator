@@ -7,6 +7,8 @@ export const load: LayoutLoad = loadApiHandler(async ({ api, url }) => {
 
 	const conferences = [];
 
+	let delegationData;
+
 	for (const membership of userData.delegationMemberships) {
 		const conference = membership.conference;
 		conferences.push(conference);
@@ -27,6 +29,7 @@ export const load: LayoutLoad = loadApiHandler(async ({ api, url }) => {
 	return {
 		userData,
 		conferences,
-		url
+		url,
+		delegationData
 	};
 });

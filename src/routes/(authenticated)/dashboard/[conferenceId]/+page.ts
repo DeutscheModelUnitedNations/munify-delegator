@@ -1,9 +1,28 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
+import { checkForError } from '$api/client';
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = loadApiHandler(async ({ params, api, url }) => {
 	if (params.conferenceId === undefined) error(404, 'Not found');
+
+	const userData = await checkForError(api.user.me.get());
+
+	let delegationData;
+	let delegationMembershipData;
+	
+	if (userData.delegationMemberships) {
+		delegationMembershipData = userData.delegationMemberships?.find(
+			(x) => x.conference.id === params.conferenceId
+		);
+		const delegationId = delegationMembershipData?.delegation.id;
+	
+		delegationData = await checkForError(api.delegation({ id: delegationId }).get());		
+	}
+
 	return {
-		conferenceId: params.conferenceId
+		conferenceId: params.conferenceId,
+		delegationMembershipData,
+		delegationData,
 	};
-};
+});
