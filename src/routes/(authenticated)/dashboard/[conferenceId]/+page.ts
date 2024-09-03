@@ -10,19 +10,25 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url }) => {
 
 	let delegationData;
 	let delegationMembershipData;
-	
+	let roleApplications;
+
 	if (userData.delegationMemberships) {
 		delegationMembershipData = userData.delegationMemberships?.find(
 			(x) => x.conference.id === params.conferenceId
 		);
 		const delegationId = delegationMembershipData?.delegation.id;
-	
-		delegationData = await checkForError(api.delegation({ id: delegationId }).get());		
+
+		delegationData = await checkForError(api.delegation({ id: delegationId }).get());
+		
+		roleApplications = await checkForError(
+			api.roleApplication.byDelegation({ delegationId }).get()
+		);
 	}
 
 	return {
 		conferenceId: params.conferenceId,
 		delegationMembershipData,
 		delegationData,
+		roleApplications
 	};
 });

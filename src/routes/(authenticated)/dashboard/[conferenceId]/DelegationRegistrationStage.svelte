@@ -10,6 +10,7 @@
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages.js';
+	import RoleApplicationTable from '$lib/components/RoleApplicationTable.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
@@ -54,7 +55,7 @@
 		},
 		{
 			title: m.todoEnterDelegationPreferences(),
-			completed: false,
+			completed: data.roleApplications?.length > 0 ?? undefined,
 			help: m.todoEnterDelegationPreferencesHelp()
 		}
 	]);
@@ -137,7 +138,7 @@
 	<div class="flex flex-col md:flex-row gap-4">
 		<div class="flex-1 card bg-base-100 dark:bg-base-200 shadow-md p-4">
 			<h3 class="text-xl">{m.informationAndMotivation()}</h3>
-			<p>
+			<p class="mb-4">
 				{userIsHeadDelegate
 					? m.informationAndMotivationDescriptionHeadDelegate()
 					: m.informationAndMotivationDescriptionMember()}
@@ -211,31 +212,21 @@
 		</div>
 		<div class="flex-1 card bg-base-100 dark:bg-base-200 shadow-md p-4">
 			<h3 class="text-xl">{m.delegationPreferences()}</h3>
-			<p>
+			<p class="mb-4">
 				{userIsHeadDelegate
 					? m.delegationPreferencesDescriptionHeadDelegate()
 					: m.delegationPreferencesDescriptionMember()}
 			</p>
-			<table class="table">
-				<thead>
-					<tr>
-						<th class="text-center"><i class="fa-duotone fa-hashtag"></i></th>
-						<th class="text-center"><i class="fa-duotone fa-flag"></i></th>
-						<th><i class="fa-duotone fa-text"></i></th>
-						<th class="text-center"><i class="fa-duotone fa-users"></i></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each ['de', 'fr'] as country, index}
-						<tr>
-							<td class="text-center">{index + 1}</td>
-							<td class="text-center"><Flag countryCode={country} size="xs" /></td>
-							<td class="w-full">{countryCodeToLocalName(country, 'de')}</td>
-							<td class="center">3</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			{#if !data.roleApplications}
+				<div class="skeleton w-full h-60"></div>
+			{:else if data.roleApplications.length === 0}
+				<div class="alert alert-warning">
+					<i class="fas fa-exclamation-triangle text-3xl"></i>
+					{m.noRoleApplications()}
+				</div>
+			{:else}
+				<RoleApplicationTable roleApplications={data.roleApplications} />
+			{/if}
 			<div class="flex-1"></div>
 			<button class="btn btn-primary mt-4"
 				>{true ? m.setDelegationPreferences() : m.changeDelegationPreferences()}</button
@@ -247,8 +238,9 @@
 		<p>{m.completeSignupDescription()}</p>
 		<TodoTable {todos} />
 		<button
-			class="btn btn-warning mt-4"
-			disabled={todos.filter((x) => x.completed === false).length > 0 ?? true}
+			class="btn btn-success mt-4"
+			disabled={(todos.filter((x) => x.completed === false).length > 0 ?? true) ||
+				!userIsHeadDelegate}
 		>
 			{m.completeSignupButton()}
 		</button>

@@ -93,5 +93,6 @@
     "setDelegationPreferences": "Set Preferences",
     "changeDelegationPreferences": "Change Preferences",
     "delegationIdForSupport": "If the Support asks you for your delegation ID, you can find it here:",
-    "noMembersFound": "No delegation members found"
+    "noMembersFound": "No delegation members found",
+    "noRoleApplications": "No role applications yet"
 }

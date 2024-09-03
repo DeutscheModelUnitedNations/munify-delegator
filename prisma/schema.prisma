@@ -105,8 +105,7 @@ model Nation {
   // other properties are fetched from nation databases/libraries which do not want to maintain on our own
   // e.g. localized names, flags, etc.
   roleApplications RoleApplication[]
-  Committee        Committee?        @relation(fields: [committeeId], references: [id])
-  committeeId      String?
+  committees       Committee[]
 }
 
 model NonStateActor {
@@ -117,7 +116,7 @@ model NonStateActor {
   description      String
   icon             Bytes?
   abbreviation     String            @unique
-  seatAmount       Int
+  seatAmount       Int               @default(2)
   roleApplications RoleApplication[]
 }
 

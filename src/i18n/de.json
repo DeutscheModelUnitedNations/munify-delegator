@@ -93,5 +93,6 @@
     "setDelegationPreferences": "Wünsche festlegen",
     "changeDelegationPreferences": "Wünsche anpassen",
     "delegationIdForSupport": "If the Support asks you for your delegation ID, you can find it here:",
-    "noMembersFound": "Keine Delegationsmitglieder gefunden"
+    "noMembersFound": "Keine Delegationsmitglieder gefunden",
+    "noRoleApplications": "Bisher keine Rollenbewerbungen vorhanden"
 }
