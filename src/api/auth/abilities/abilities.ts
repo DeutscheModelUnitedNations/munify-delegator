@@ -5,9 +5,11 @@ import type { OIDCDeriveType } from '../oidc';
 import type { db } from '$db/db';
 import { defineAbilitiesForConference } from './entities/conference';
 import { defineAbilitiesForUserEntity } from './entities/user';
+import { defineAbilitiesForDelegationEntity } from './entities/delegation';
 import type { Capitalize } from '@sinclair/typebox';
+import { defineAbilitiesForDelegationMemberEntity } from './entities/delegationMember';
 
-const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
+const actions = ['list', 'create', 'read', 'update', 'delete', 'join'] as const;
 
 /**
  * Actions which can be run on entities in the system:
@@ -55,6 +57,8 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 
 	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForUserEntity(oidc, builder);
+	defineAbilitiesForDelegationEntity(oidc, builder);
+	defineAbilitiesForDelegationMemberEntity(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

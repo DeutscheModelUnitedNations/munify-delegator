@@ -1,7 +1,7 @@
 <script lang="ts">
 	interface Props {
 		tableAttrs: any;
-		tableSize: "xs" | "sm" | "md" | "lg";
+		tableSize: 'xs' | 'sm' | 'md' | 'lg';
 		zebra: boolean;
 		children: any;
 	}

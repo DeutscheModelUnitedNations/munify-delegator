@@ -9,7 +9,6 @@
 
 	let { conferenceId }: Props = $props();
 
-
 	const choices = [
 		{
 			icon: 'arrow-right',
@@ -18,21 +17,17 @@
 			href: `${conferenceId}/create`
 		}
 	];
-  
 </script>
 
 <ChatBot delay={400}>
+	<p>Dann müssen Sie jetzt zunächst eine Delegation erstellen.</p>
 	<p>
-		Dann müssen Sie jetzt zunächst eine Delegation erstellen.
-	</p>
-	<p>
-		Anschließend können Sie Ihre Mitdelegierten über einen Beitrittscode oder einen magischen Link zur Anmeldung einladen.
+		Anschließend können Sie Ihre Mitdelegierten über einen Beitrittscode oder einen magischen Link
+		zur Anmeldung einladen.
 	</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>
-		Der/die Ersteller*in wird automatisch zur Delegationsleiter*in.
-	</p>
+	<p>Der/die Ersteller*in wird automatisch zur Delegationsleiter*in.</p>
 </ChatBot>
 <ChatBot delay={2400}>
 	<p>

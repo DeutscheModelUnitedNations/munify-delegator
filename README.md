@@ -1,6 +1,6 @@
 # MUNify DELEGATOR
 
-> DELEGATOR stands for *DELEGation AdministratOR*
+> DELEGATOR stands for _DELEGation AdministratOR_
 
 MUNify DELEGATOR is a Software to manage the Registration Process and organizational Matters of a Model United Nations Conference. It is part of the MUNify Project, which aims to provide a comprehensive Software Suite for Model United Nations Conferences. MUNify is an Open Source Project by the german non-profit organization Deutsche Model United Nations (DMUN) e.V.
 
@@ -9,12 +9,14 @@ Disclaimer: MUNify DELEGATOR is currently in an early stage of development and n
 We are happy to recieve feedback, contributions and donations. Please see below for more information.
 
 ## Features
-+ **Registration Process**: Manage the Registration Process for Delegations, Single Applicants and Supervisors
-+ **Delegation Assignment**: Assign Delegations to Countries and Committees
-+ **Delegation Management**: Manage Delegations and track their Status (like Payment Status)
+
+- **Registration Process**: Manage the Registration Process for Delegations, Single Applicants and Supervisors
+- **Delegation Assignment**: Assign Delegations to Countries and Committees
+- **Delegation Management**: Manage Delegations and track their Status (like Payment Status)
 
 ## Develop Locally
-Make sure you have Docker and node installed. Notice that only the frontend as a concept is implemented yet.
+
+Make sure you have Docker and Bun installed.
 
 1. Clone the Repository
 
@@ -25,16 +27,27 @@ git clone https://github.com/DeutscheModelUnitedNations/munify-delegator.git
 2. Install Dependencies
 
 ```bash
-cd frontend && npm install
+bun install
 ```
 
 3. Start the Development Server
 
 ```bash
-cd frontend && npm run dev
+bun run dev
+
+# if you want to separate docker containers and the actual dev server you can use
+bun run dev:docker # starts all necessary dev dependencies e.g. postgres
+bun run dev:server # starts the actual dev server (vite&sveltekit)
+```
+
+4. (Optionally) install git hooks for automated linting etc.
+
+```bash
+bunx lefthook install
 ```
 
 ## FAQ
+
 **Can I use this for my conference outside of DMUN?**
 Yes. We encourage and allow usage for other conferences. Please see our license for more detailed information on this.
 
@@ -52,6 +65,7 @@ Yes, you can! Please refer to the contributing section below.
 For feature suggestions, please post in the discussion section of this repository. You can find it here. If you want to write it yourself, please see the contributing section below.
 
 ## Contributing
+
 Contributions are always welcome!
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for ways to get started.
@@ -65,6 +79,7 @@ This aspect is work in progress since the project is currently in its developmen
 [LICENSE.md](LICENSE.md)
 
 ## Support us / Donations
+
 You can support our work by donating to our non-profit organization [Deutsche Model United Nations (DMUN) e.V.](https://dmun.de).
 Please contact our board for details on how to donate by sending an email to [vorstand@dmun.de](mailto:vorstand@dmun.de).
 

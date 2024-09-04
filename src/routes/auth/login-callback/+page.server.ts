@@ -31,7 +31,11 @@ export const load: PageServerLoad = loadApiHandler(async ({ url, cookies, api })
 
 	cookies.delete(codeVerifierCookieName, { path: '/' });
 
-	await checkForError(api.user['upsert-after-login'].patch());
+	const { userNeedsAdditionalInfo } = await checkForError(api.user['upsert-after-login'].patch());
 
-	redirect(302, state.visitedUrl);
+	if (userNeedsAdditionalInfo) {
+		redirect(302, `/my-account?redirect=${encodeURIComponent(state.visitedUrl)}`);
+	} else {
+		redirect(302, state.visitedUrl);
+	}
 });

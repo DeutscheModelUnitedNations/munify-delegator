@@ -9,7 +9,6 @@
 
 	let { conferenceId }: Props = $props();
 
-
 	const choices = [
 		{
 			icon: 'arrow-right',
@@ -18,7 +17,6 @@
 			href: `${conferenceId}/supervisor`
 		}
 	];
-  
 </script>
 
 <ChatBot delay={400}>

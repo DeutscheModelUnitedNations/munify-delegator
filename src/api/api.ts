@@ -23,21 +23,23 @@ export const app = new Elysia({
 	normalize: true,
 	prefix: '/api'
 })
+	// misc
+	.use(auth)
+	.use(logger)
+	.use(health)
+	// entities
 	.use(committee)
 	.use(conference)
-	// .use(conferenceSupervisor)
-	// .use(conferenceParticipantStatus)
-	// .use(auth)
-	// .use(logger)
-	// .use(customConferenceRole)
+	.use(conferenceSupervisor)
+	.use(conferenceParticipantStatus)
+	.use(customConferenceRole)
 	.use(delegation)
-	// .use(delegationMember)
-	// .use(health)
-	// .use(nation)
-	// .use(nonStateActor)
-	// .use(roleApplication)
-	// .use(singleParticipant)
-	// .use(teamMember)
+	.use(delegationMember)
+	.use(nation)
+	.use(nonStateActor)
+	.use(roleApplication)
+	.use(singleParticipant)
+	.use(teamMember)
 	.use(user)
 	.compile();
 

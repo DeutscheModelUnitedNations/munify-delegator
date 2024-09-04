@@ -43,17 +43,16 @@ export const logger = new Elysia({
 			`Error in ${request.method} ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
 		);
 
-		
 		// Built-in elysia errors
-		
+
 		if (code === 'VALIDATION') {
 			return error.message;
 		}
-		
+
 		if (code === 'NOT_FOUND') {
 			return `Path ${path} doesn't exist (${error.message})`;
 		}
-		
+
 		//TODO code is not typed correctly
 		switch (code) {
 			case 'PrismaClientKnownRequestError':

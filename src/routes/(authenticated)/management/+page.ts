@@ -9,12 +9,12 @@ export const load: PageLoad = async ({ params, fetch, url }) => {
 	return {
 		conferences: [
 			{
-				id: "1",
+				id: '1',
 				location: 'Kiel',
 				start: new Date('2025-03-01'),
 				end: new Date('2025-03-05'),
-				title: 'MUN-SH 2025',
-			},
+				title: 'MUN-SH 2025'
+			}
 		]
 	};
 };

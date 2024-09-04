@@ -48,7 +48,7 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 			});
 			return {
 				user,
-				nextRefreshDue:
+				nextTokenRefreshDue:
 					tokenSet.expires_at && tokenSet.refresh_token
 						? new Date(tokenSet.expires_at * 1000)
 						: undefined

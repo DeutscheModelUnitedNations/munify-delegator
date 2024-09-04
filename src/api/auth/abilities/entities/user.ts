@@ -7,7 +7,7 @@ export const defineAbilitiesForUserEntity = (
 	{ can }: AbilityBuilder<AppAbility>
 ) => {
 	if (oidc && oidc.user) {
-		const user = oidc.user;
+		// const user = oidc.user;
 		// can(['list', 'read'], 'User', { id: user.sub});
 	}
 };
