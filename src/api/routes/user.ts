@@ -116,7 +116,7 @@ export const user = new Elysia({
 					}
 				}
 			});
-		},
+		}
 		// {
 		// 	response: t.Composite([
 		// 		User,

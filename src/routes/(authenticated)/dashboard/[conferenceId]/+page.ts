@@ -19,7 +19,7 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url }) => {
 		const delegationId = delegationMembershipData?.delegation.id;
 
 		delegationData = await checkForError(api.delegation({ id: delegationId }).get());
-		
+
 		roleApplications = await checkForError(
 			api.roleApplication.byDelegation({ delegationId }).get()
 		);

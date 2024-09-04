@@ -17,9 +17,9 @@
 			<div class="stat-title">{stat.title}</div>
 			<div class="stat-value">
 				{#if stat.value}
-				{stat.value}
+					{stat.value}
 				{:else}
-				<span class="loading loading-dots loading-md"></span>
+					<span class="loading loading-dots loading-md"></span>
 				{/if}
 			</div>
 			<div class="stat-desc">{stat.desc}</div>
