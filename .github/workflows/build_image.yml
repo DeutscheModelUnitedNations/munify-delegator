@@ -38,9 +38,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: deutschemodelunitednations/delegator
           flavor: |
             latest=false
+          images: |
+            deutschemodelunitednations/delegator
+            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}
           tags: |
             type=raw,value=${{ github.sha }}
 
