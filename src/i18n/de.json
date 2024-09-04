@@ -20,6 +20,7 @@
 	"signUpAssistant": "Anmeldeassistent",
 	"signUpAssistantDescription": "Der Anmeldeprozess kann auf den ersten Blick kompliziert wirken. Nutzen Sie den Anmeldeassistenten, um einen Überblick zu erhalten.",
 	"openAssistant": "Assistent starten",
+	"createDelegation": "Delegation erstellen",
 	"createDelegationDescription": "Hier kannst du als Delegationsleiter*in eine neue Delegation anlegen und Menschen zu der Delegation einladen",
 	"joinDelegation": "Delegation beitreten",
 	"enterCode": "Code eingeben",
@@ -45,7 +46,6 @@
 	"schoolOrInstitution": "Schule / Institution",
 	"motivation": "Motivation",
 	"experience": "Erfahrung",
-	"createDelegation": "Delegation erstellen",
 	"delegationCreatedSuccessfully": "Delegation erfolgreich erstellt.",
 	"nowYouCanInvitePeople": "Nun müssen Sie nur noch Delegationspartner*innen einladen. Dafür können Sie den Menschen, die Sie einladen möchten, den folgenden Link senden:",
 	"orShareThisCode": "Oder teile mit Ihnen den folgenden Code, mit dem sie sich auf dieser Website anmelden können:",
@@ -93,6 +93,6 @@
 	"email": "E-Mail",
 	"userId": "Benutzer-ID",
 	"edit": "Bearbeiten",
-	"receiveGeneralInformation": "Allgemeine E-Mails zum Projekt erhalten",
-	"receiveJoinTeamInformation": "E-Mails zum Beitritt ins Team/den Verein erhalten"
+	"receiveGeneralInformation": "Allgemeine Informationen und Ankündigungen zu Konferenzen per E-Mail erhalten",
+	"receiveJoinTeamInformation": "Ausschreibungen und Ankündigungen für das DMUN Konferenzteam per E-Mail erhalten"
 }
