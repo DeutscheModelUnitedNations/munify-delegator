@@ -3,9 +3,7 @@
 	let { data, children } = $props();
 </script>
 
-<DelegateSidebarWrapper
-	activeConferences={data.conferences.filter((x) => x.active)}
-	pastConferences={data.conferences.filter((x) => !x.active)}
->
+<!-- TODO calculate actives -->
+<DelegateSidebarWrapper activeConferences={data.conferences} pastConferences={data.conferences}>
 	{@render children()}
 </DelegateSidebarWrapper>

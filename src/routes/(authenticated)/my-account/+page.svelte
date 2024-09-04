@@ -20,7 +20,7 @@
 	let zip = $state(data.fullUser.zip ?? '');
 	let city = $state(data.fullUser.city ?? '');
 	let country = $state(data.fullUser.country ?? '');
-	let birthday = $state((data.fullUser.birthday as unkown as string) ?? new Date().toISOString());
+	let birthday = $state((data.fullUser.birthday as any) ?? new Date().toISOString());
 	let gender = $state(data.fullUser.gender ?? '');
 	let pronouns = $state(data.fullUser.pronouns ?? '');
 	let foodPreference = $state(data.fullUser.foodPreference ?? '');
@@ -39,10 +39,10 @@
 			zip,
 			city,
 			country,
-			birthday,
+			birthday: birthday as any,
 			gender,
 			pronouns,
-			foodPreference,
+			foodPreference: foodPreference as any,
 			wantsToReceiveGeneralInformation,
 			wantsJoinTeamInformation
 		});

@@ -1,6 +1,6 @@
 <script lang="ts">
 	interface Props {
-		tableSize: string;
+		tableSize: 'xs' | 'sm' | 'md' | 'lg';
 	}
 
 	let { tableSize = $bindable('md') }: Props = $props();
@@ -16,7 +16,7 @@
 			value="2"
 			class="range"
 			step="1"
-			onchange={(e) => {
+			onchange={(e: any) => {
 				switch (e.target.value) {
 					case '0':
 						tableSize = 'xs';

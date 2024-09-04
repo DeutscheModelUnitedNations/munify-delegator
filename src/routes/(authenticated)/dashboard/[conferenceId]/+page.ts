@@ -12,19 +12,19 @@ export const load: PageLoad = async ({ params, fetch, url }) => {
 		conferenceId: params.conferenceId,
 		testData: [
 			{
-				conferenceId: 1,
+				conferenceId: '1',
 				conferenceName: 'MUN-SH 2025',
 				active: true,
 				accepted: true
 			},
 			{
-				conferenceId: 2,
+				conferenceId: '2',
 				conferenceName: 'MUNBW 2025',
 				active: true,
 				accepted: false
 			},
 			{
-				conferenceId: 3,
+				conferenceId: '3',
 				conferenceName: 'MUN-SH 2024',
 				active: false,
 				accepted: true

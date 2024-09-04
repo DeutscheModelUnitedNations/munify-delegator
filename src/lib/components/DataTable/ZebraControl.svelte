@@ -13,7 +13,7 @@
 			type="checkbox"
 			class="toggle"
 			checked={zebra}
-			onchange={(e) => {
+			onchange={(e: any) => {
 				zebra = e.target.checked;
 			}}
 		/>

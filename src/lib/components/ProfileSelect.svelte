@@ -19,7 +19,7 @@
 	<select
 		class="select select-bordered"
 		{required}
-		onchange={(e) => {
+		onchange={(e: any) => {
 			value = e.target.value;
 		}}
 	>

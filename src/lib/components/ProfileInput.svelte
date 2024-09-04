@@ -39,7 +39,7 @@
 			{placeholder}
 			{required}
 			{max}
-			oninput={(e) => {
+			oninput={(e: any) => {
 				value = e.target.value;
 			}}
 		/>

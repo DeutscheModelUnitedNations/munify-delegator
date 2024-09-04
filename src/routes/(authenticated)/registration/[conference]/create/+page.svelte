@@ -112,7 +112,7 @@
 							type="text"
 							placeholder={m.answerHere()}
 							class="input input-bordered w-full"
-							oninput={(e) => (delegation.school = e.target!.value)}
+							oninput={(e: any) => (delegation.school = e.target.value)}
 						/>
 					</label>
 					<label class="form-control w-full">
@@ -124,7 +124,7 @@
 						<textarea
 							placeholder={m.answerHere()}
 							class="textarea textarea-bordered w-full"
-							oninput={(e) => (delegation.motivation = e.target!.value)}
+							oninput={(e: any) => (delegation.motivation = e.target.value)}
 						></textarea>
 					</label>
 					<label class="form-control w-full">
@@ -136,7 +136,7 @@
 						<textarea
 							placeholder={m.answerHere()}
 							class="textarea textarea-bordered w-full"
-							oninput={(e) => (delegation.experience = e.target!.value)}
+							oninput={(e: any) => (delegation.experience = e.target!.value)}
 						></textarea>
 					</label>
 					<button class="btn btn-lg btn-primary" type="submit">{m.next()}</button>

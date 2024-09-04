@@ -4,7 +4,7 @@
 
 MUNify DELEGATOR is a Software to manage the Registration Process and organizational Matters of a Model United Nations Conference. It is part of the MUNify Project, which aims to provide a comprehensive Software Suite for Model United Nations Conferences. MUNify is an Open Source Project by the german non-profit organization Deutsche Model United Nations (DMUN) e.V.
 
-Disclaimer: MUNify DELEGATOR is currently in an early stage of development and not yet ready for production use. We are working hard to provide a stable Version as soon as possible.
+> Disclaimer: MUNify DELEGATOR is currently in an early stage of development and not yet ready for production use. We are working hard to provide a stable Version as soon as possible.
 
 We are happy to recieve feedback, contributions and donations. Please see below for more information.
 
@@ -16,7 +16,7 @@ We are happy to recieve feedback, contributions and donations. Please see below 
 
 ## Develop Locally
 
-Make sure you have Docker and Bun installed.
+Make sure you have Docker and Bun installed. (You might need to have Node.js installed too for managing the database ORM [prisma](https://www.prisma.io/))
 
 1. Clone the Repository
 
@@ -46,6 +46,10 @@ bun run dev:server # starts the actual dev server (vite&sveltekit)
 bunx lefthook install
 ```
 
+## Deployment
+
+The easiest way to deploy delegator on your own hardware is to use our provided [docker images](https://hub.docker.com/r/deutschemodelunitednations/delegator). You can find an example docker compose file in the [example](./example/) directoy. Please note that delegator relies on an [OIDC](https://auth0.com/intro-to-iam/what-is-openid-connect-oidc) issuer to be connected and properly configured. We recommend [ZITADEL](https://zitadel.com/) but any issuer of your choice will work. There are some additional instructions on this topic to be found in the example compose file.
+
 ## FAQ
 
 **Can I use this for my conference outside of DMUN?**
@@ -62,7 +66,7 @@ You would need to deploy the app yourself, on your own servers and do all the ne
 Yes, you can! Please refer to the contributing section below.
 
 **Can you add a feature?**
-For feature suggestions, please post in the discussion section of this repository. You can find it here. If you want to write it yourself, please see the contributing section below.
+For feature suggestions, please post in the discussion section of this repository. You can find it [here](https://github.com/DeutscheModelUnitedNations/munify-delegator/discussions/categories/help-support). If you want to write it yourself, please see the contributing section below.
 
 ## Contributing
 

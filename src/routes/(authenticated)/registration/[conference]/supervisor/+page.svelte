@@ -87,7 +87,7 @@
 						placeholder="Code"
 						bind:value={code}
 						class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
-						oninput={(e) => {
+						oninput={(e: any) => {
 							code = (e.target.value as string).toUpperCase().slice(0, 6);
 						}}
 					/>

@@ -13,7 +13,7 @@
 		class="grow"
 		value={searchValue}
 		placeholder="Suchen"
-		oninput={(e) => changeSearchValue(e.target.value)}
+		oninput={(e: any) => changeSearchValue(e.target.value)}
 	/>
 	<i class="fa-duotone fa-magnifying-glass"></i>
 </label>
