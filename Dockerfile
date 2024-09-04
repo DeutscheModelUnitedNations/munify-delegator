@@ -17,10 +17,10 @@ COPY ./prisma/schema.prisma ./prisma/schema.prisma
 RUN bunx prisma generate
 
 COPY . .
-# we check for errors
-RUN bun run check
-# now we can build the app
+# the build command generates a few things, such as i18n outputs
+# therefore we need to run the build command BEFORE we check for correctness
 RUN bun run build
+RUN bun run check
 # remove all dependencies which are unused
 # TODO https://github.com/oven-sh/bun/issues/3605
 

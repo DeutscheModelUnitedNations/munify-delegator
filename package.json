@@ -27,7 +27,7 @@
 		"@prisma/client": "^5.19.1",
 		"@sinclair/typebox": "^0.33.9",
 		"@sveltejs/kit": "^2.5.25",
-		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
+		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.7",
 		"autoprefixer": "^10.4.20",
 		"concurrently": "^8.2.2",
 		"convert-iso-codes": "^1.0.9",
