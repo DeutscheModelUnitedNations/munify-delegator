@@ -11,7 +11,8 @@
 
 <thead>
 	{#each $headerRows as headerRow (headerRow.id)}
-		<Subscribe rowAttrs={headerRow.attrs()} let:rowAttrs>
+		<!-- TODO -->
+		<!-- <Subscribe rowAttrs={headerRow.attrs()} let:rowAttrs>
 			<tr {...rowAttrs}>
 				{#each headerRow.cells as cell (cell.id)}
 					<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
@@ -33,6 +34,6 @@
 					{@render children()}
 				{/if}
 			</tr>
-		</Subscribe>
+		</Subscribe> -->
 	{/each}
 </thead>

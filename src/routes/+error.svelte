@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Footer from '$lib/components/Footer.svelte';
-	import svg500 from "$assets/undraw/500.svg";
-	import svg404 from "$assets/undraw/404.svg";
-	import svgquestion from "$assets/undraw/question.svg";
+	import svg500 from '$assets/undraw/500.svg';
+	import svg404 from '$assets/undraw/404.svg';
+	import svgquestion from '$assets/undraw/question.svg';
 
 	import { page } from '$app/stores';
 
@@ -10,7 +10,7 @@
 		switch (e) {
 			case 404:
 				return svg404;
-				case 500:
+			case 500:
 				return svg500;
 			default:
 				return svgquestion;

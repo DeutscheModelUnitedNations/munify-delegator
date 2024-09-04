@@ -1,14 +1,12 @@
+import { checkForError } from '$api/client';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = async ({ params, url }) => {
+export const load: PageLoad = loadApiHandler(async ({ url, api }) => {
+	const fullUser = await checkForError(api.user.me.get());
 	return {
 		redirectUrl: url.searchParams.get('redirect') || null,
-		accountData: {
-			login: 'm.m@mail.com',
-			firstName: 'Max',
-			lastName: 'Mustermann',
-			email: 'm.m@gmail.com',
-			uid: '1234567890',
-		}
+		fullUser,
+		url
 	};
-};
+});

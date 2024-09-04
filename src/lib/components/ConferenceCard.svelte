@@ -17,17 +17,8 @@
 		btnText?: string;
 	}
 
-	let {
-		id,
-		image,
-		title,
-		location,
-		start,
-		end,
-		website,
-		baseSlug,
-		btnText
-	}: ConferenceCardProps = $props();
+	let { id, image, title, location, start, end, website, baseSlug, btnText }: ConferenceCardProps =
+		$props();
 
 	let imageSrc = $state<string>();
 	onMount(() => {

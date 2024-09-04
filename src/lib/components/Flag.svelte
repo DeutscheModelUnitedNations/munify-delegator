@@ -20,17 +20,15 @@
 				return 'w-[8rem] h-[6rem] rounded-lg';
 		}
 	};
-
 </script>
 
 <div class="{flagClassNames()} overflow-hidden shadow flex justify-center items-center">
-  <span class="fi fi-{countryCode}"></span>
+	<span class="fi fi-{countryCode}"></span>
 </div>
 
-
 <style>
-  .fi {
-    width: 100% !important;
-    line-height: 100rem !important;
-  }
+	.fi {
+		width: 100% !important;
+		line-height: 100rem !important;
+	}
 </style>

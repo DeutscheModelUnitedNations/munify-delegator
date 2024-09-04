@@ -1,4 +1,5 @@
 <script>
-	import ManagementHeader from "$lib/components/ManagementHeader.svelte";
+	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 </script>
+
 <ManagementHeader title="Einstellungen" />

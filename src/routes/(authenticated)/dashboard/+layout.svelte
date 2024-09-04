@@ -9,6 +9,7 @@
 	}
 </script>
 
+<!-- TODO calculate actives -->
 <DelegateSidebarWrapper conferences={data.conferences}>
 	{@render children()}
 </DelegateSidebarWrapper>

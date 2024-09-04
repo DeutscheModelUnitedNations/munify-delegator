@@ -33,15 +33,15 @@
 	const changeFaDuotoneTheme = () => {
 		const r = document.querySelector(':root');
 		if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-			r?.style.setProperty('--fa-primary-color', '#b1cbed');
-			r?.style.setProperty('--fa-primary-opacity', '1');
-			r?.style.setProperty('--fa-secondary-color', '#3d7dd2');
-			r?.style.setProperty('--fa-secondary-opacity', '1');
+			(r as any)?.style.setProperty('--fa-primary-color', '#b1cbed');
+			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
+			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
 		} else {
-			r?.style.setProperty('--fa-primary-color', '#000000');
-			r?.style.setProperty('--fa-primary-opacity', '1');
-			r?.style.setProperty('--fa-secondary-color', '#3d7dd2');
-			r?.style.setProperty('--fa-secondary-opacity', '1');
+			(r as any)?.style.setProperty('--fa-primary-color', '#000000');
+			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
+			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
 		}
 
 		//--fa-primary-opacity: 1;

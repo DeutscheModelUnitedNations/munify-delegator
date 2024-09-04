@@ -1,6 +1,6 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { User, UserPlain } from '$db/generated/schema/User';
+import { User, UserPlain, UserPlainInputUpdate } from '$db/generated/schema/User';
 import { Conference } from '$db/generated/schema/Conference';
 import { Delegation } from '$db/generated/schema/Delegation';
 import { DelegationMember } from '$db/generated/schema/DelegationMember';
@@ -30,7 +30,7 @@ export const user = new Elysia({
 				throw new Error('OIDC result is missing required fields!');
 			}
 
-			return db.user.upsert({
+			const updatedUser = await db.user.upsert({
 				where: { id: user.sub },
 				create: {
 					id: user.sub,
@@ -38,8 +38,7 @@ export const user = new Elysia({
 					family_name: user.family_name,
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
-					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE,
-					address: {}
+					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE
 				},
 				update: {
 					email: user.email,
@@ -49,6 +48,34 @@ export const user = new Elysia({
 					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE
 				}
 			});
+
+			//TODO can this be done more elegantly?
+			if (
+				!updatedUser.birthday ||
+				!updatedUser.phone ||
+				!updatedUser.street ||
+				!updatedUser.apartment ||
+				!updatedUser.zip ||
+				!updatedUser.city ||
+				!updatedUser.country ||
+				!updatedUser.gender ||
+				!updatedUser.pronouns ||
+				!updatedUser.foodPreference
+			) {
+				return { userNeedsAdditionalInfo: true };
+			}
+
+			return { userNeedsAdditionalInfo: false };
+		},
+		{
+			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
+		}
+	)
+	.get(
+		'/user/me',
+		async ({ permissions }) => {
+			const user = permissions.mustBeLoggedIn();
+			return db.user.findFirstOrThrow({ where: { id: user.sub } });
 		},
 		{
 			response: UserPlain
@@ -148,4 +175,15 @@ export const user = new Elysia({
 		// 		})
 		// 	])
 		// }
+	)
+	.patch(
+		'/user/me',
+		async ({ permissions, body }) => {
+			const user = permissions.mustBeLoggedIn();
+			return db.user.update({ where: { id: user.sub }, data: body });
+		},
+		{
+			body: UserPlainInputUpdate,
+			response: UserPlain
+		}
 	);

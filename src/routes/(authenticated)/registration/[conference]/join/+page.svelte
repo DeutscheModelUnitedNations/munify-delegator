@@ -1,10 +1,11 @@
 <script lang="ts">
 	import ReviewTable from '$lib/components/ReviewTable.svelte';
 	import { fly } from 'svelte/transition';
-	import Steps from '$lib/components/RegistrationSteps.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
 	import type { PageData } from './$types';
 	import { apiClient, checkForError } from '$api/client';
 	import * as m from '$lib/paraglide/messages.js';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
@@ -36,10 +37,14 @@
 				</p>
 				{#if delegationPreview}
 					{#await delegationPreview}
-						TODO: Spinner
+						<Spinner />
 					{:then delegation}
 						{#if delegation}
-							<div class="flex flex-col items-center mb-10" in:fly={{ x: 50, duration: 300, delay: 300 }} out:fly={{ x: 50, duration: 300 }}>
+							<div
+								class="flex flex-col items-center mb-10"
+								in:fly={{ x: 50, duration: 300, delay: 300 }}
+								out:fly={{ x: 50, duration: 300 }}
+							>
 								<ReviewTable>
 									<tr>
 										<td>{m.conference()}</td>
@@ -61,11 +66,14 @@
 								<div class="flex flex-col-reverse sm:flex-row justify-between mt-4 gap-4 sm:gap-10">
 									<button
 										class="btn btn-primary"
-										onclick={() => {
-											api.delegation.join.post({
-												entryCode: code,
-												joinAsSupervisor: false
-											});
+										onclick={async () => {
+											await checkForError(
+												api.delegation.join.post({
+													entryCode: code,
+													joinAsSupervisor: false
+												})
+											);
+											goto('/dashboard');
 										}}>{m.confirm()}</button
 									>
 								</div>
@@ -79,7 +87,7 @@
 						placeholder="Code"
 						bind:value={code}
 						class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
-						oninput={(e) => {
+						oninput={(e: any) => {
 							code = (e.target.value as string).toUpperCase().slice(0, 6);
 						}}
 					/>

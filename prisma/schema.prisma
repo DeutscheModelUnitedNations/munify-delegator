@@ -56,20 +56,38 @@ model Committee {
   numOfSeatsPerDelegation Int        @default(1)
 }
 
+enum FoodPreference {
+  OMNIVORE
+  VEGETARIAN
+  VEGAN
+}
+
 model User {
   id String @id @default(nanoid())
 
-  // these are OIDC fields
+  // these are OIDC fields and only will be updated by the issuer in the login flow
+  /// @prismabox.input.hide
   email              String
+  /// @prismabox.input.hide
   family_name        String
+  /// @prismabox.input.hide
   given_name         String
+  /// @prismabox.input.hide
   locale             String
+  /// @prismabox.input.hide
   preferred_username String
 
   // custom data fields
-  birthday DateTime?
-  phone    String?
-  address  Json //TODO subject to change
+  birthday       DateTime?
+  phone          String?
+  street         String?
+  apartment      String?
+  zip            String?
+  city           String?
+  country        String?
+  gender         String?
+  pronouns       String?
+  foodPreference FoodPreference?
 
   delegationMemberships       DelegationMember[]
   conferenceSupervisor        ConferenceSupervisor[]

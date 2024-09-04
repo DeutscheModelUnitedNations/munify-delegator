@@ -48,8 +48,14 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>Sehr schön! Der normale Bewerbungsprozess für Delegierte und Vertreter*innen von NAs ist auf Gruppenanmeldungen von mindestens 2 Personen ausgelegt.</p>
-  <p>Wenn Sie keine Personen in Ihrem Umfeld kennen, die mit Ihnen teilnehmen möchten, ist das aber kein größeres Problem.</p>
+	<p>
+		Sehr schön! Der normale Bewerbungsprozess für Delegierte und Vertreter*innen von NAs ist auf
+		Gruppenanmeldungen von mindestens 2 Personen ausgelegt.
+	</p>
+	<p>
+		Wenn Sie keine Personen in Ihrem Umfeld kennen, die mit Ihnen teilnehmen möchten, ist das aber
+		kein größeres Problem.
+	</p>
 </ChatBot>
 <ChatBot delay={1400}>
 	<p>Haben Sie Personen, mit denen Sie eine Gruppe bilden können?</p>

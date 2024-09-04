@@ -4,7 +4,7 @@
 	interface Props {
 		rows: any; // TODO type
 		children?: any;
-    tableBodyAttrs: any;
+		tableBodyAttrs: any;
 	}
 
 	let { rows, children, tableBodyAttrs }: Props = $props();
@@ -12,7 +12,8 @@
 
 <tbody {...$tableBodyAttrs}>
 	{#each $rows as row (row.id)}
-		<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
+		<!-- TODO -->
+		<!-- <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
 			<tr {...rowAttrs}>
 				{#each row.cells as cell (cell.id)}
 					<Subscribe attrs={cell.attrs()} let:attrs>
@@ -25,6 +26,6 @@
 					{@render children()}
 				{/if}
 			</tr>
-		</Subscribe>
+		</Subscribe> -->
 	{/each}
 </tbody>

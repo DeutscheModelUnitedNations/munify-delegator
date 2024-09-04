@@ -38,8 +38,8 @@
 			{pattern}
 			{placeholder}
 			{required}
-      {max}
-			oninput={(e) => {
+			{max}
+			oninput={(e: any) => {
 				value = e.target.value;
 			}}
 		/>

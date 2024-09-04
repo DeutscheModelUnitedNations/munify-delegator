@@ -21,7 +21,8 @@
 
 <ChatBot delay={400}>
 	<p>
-		Super! Dann müssen Sie jetzt Ihre Delegationsleiter*innen bitten, Ihnen den Beitrittscode zu geben.
+		Super! Dann müssen Sie jetzt Ihre Delegationsleiter*innen bitten, Ihnen den Beitrittscode zu
+		geben.
 	</p>
 	<p>Mit dem Beitrittscode können Sie dann der Delegation beitreten.</p>
 </ChatBot>
