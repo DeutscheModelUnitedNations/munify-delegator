@@ -1,9 +1,7 @@
 <script lang="ts">
-	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import PlainCard from '$lib/components/PlainCard.svelte';
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
-	import IconPicker from '$lib/components/IconPicker.svelte';
 
 	let { data }: { data: PageData } = $props();
 </script>

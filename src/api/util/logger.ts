@@ -53,17 +53,16 @@ export const logger = new Elysia({
 			return `Path ${path} doesn't exist (${error.message})`;
 		}
 
-		//TODO code is not typed correctly
-		switch (code) {
-			case 'PrismaClientKnownRequestError':
-				switch (error.code) {
-					// unique constraint || not found
-					case 'P2002' || 'P2025':
-						return error.message;
-				}
-			case 'ForbiddenError' || 'PermissionCheckError':
-				set.status = 'Forbidden';
-				return "You don't have permission to do that";
+		if (code === 'ForbiddenError' || code === 'PermissionCheckError') {
+			set.status = 'Forbidden';
+			return error.message ?? "You don't have permission to do that";
+		}
+
+		//TODO code is not typed correctly for prisma errors?
+		if (code === 'PrismaClientKnownRequestError') {
+			if (error.code === 'P2025' || error.code === 'P2002') {
+				return error.message;
+			}
 		}
 
 		set.status = 'Internal Server Error';

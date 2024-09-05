@@ -38,10 +38,10 @@
 	"createDelegationProcessExplaination": "<p class='max-ch-md'>Sie sind im Begriff, eine Delegation anzulegen. Nachdem Sie eine Delegation angelegt haben, können Sie Delegationspartner*innen einladen und sich geschlossen als Delegierte auf einen Staat oder als Vertreter*innen einer/eines Nichtstaatlichen Aktuer*in bewerben.</p><p class='max-ch-md'>Sie werden automatisch als Delegationsleiter*in eingetragen. Sie können auch eine betreuende Person eintragen, die Sie bei der Organisation der Delegation unterstützt. </p><p class='max-ch-md'>Bitte beachten Sie, dass Sie sich nicht alleine auf eine Delegation bewerben können. Wenn Sie sich alleine bewerben möchten, schauen Sie <a href='.' class='link underline'>hier</a> nach Einzelplätzen, auf die Sie sich bewerben können. Außerdem hilft Ihnen die Teilnehmendenbetreuung sehr gerne bei der Vermittlung von Delegationspartner*innen. Den Kontakt finden Sie auf der Website der jeweiligen Konferenz. </p>",
 	"next": "Weiter",
 	"pleaseAnswerTheFollowingQuestions": "Bitte beantworten Sie zunächst die folgenden Fragen. Sie können die Antworten vor der Anmeldung noch ändern.",
-	"whichSchoolDoesYourDelegationComeFrom": "Von welcher Schule / Institution kommt Sie (bzw. die Mehrheit Ihrer Delegation)?",
+	"whichSchoolDoesYourDelegationComeFrom": "Von welcher Schule / Institution kommen Sie (bzw. die Mehrheit Ihrer Delegation)?",
 	"answerHere": "Antwort hier eingeben",
 	"whyDoYouWantToJoinTheConference": "Warum bewirbt sich Ihre Delegation bei der Konferenz?",
-	"howMuchExperienceDoesYourDelegationHave": "Über wie viel Erfahrung mit politischen Planspielen wie Model United Nations verfügt ihre Delegation?",
+	"howMuchExperienceDoesYourDelegationHave": "Über wie viel Erfahrung mit politischen Planspielen wie Model United Nations verfügen Sie/Ihre Delegation?",
 	"pleaseCheckYourAnswers": "Bitte Überprüfen Sie noch einmal Ihre Angaben.",
 	"conference": "Konferenz",
 	"schoolOrInstitution": "Schule / Institution",
@@ -97,5 +97,6 @@
 	"receiveGeneralInformation": "Allgemeine E-Mails zum Projekt erhalten",
 	"receiveJoinTeamInformation": "E-Mails zum Beitritt ins Team/den Verein erhalten",
 	"pickIcon": "Icon auswählen",
-	"search": "Suche"
+	"search": "Suche",
+	"submit": "Senden"
 }

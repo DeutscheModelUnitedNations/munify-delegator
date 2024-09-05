@@ -157,6 +157,8 @@ model SingleParticipant {
   experience String
 
   appliedForRoles CustomConferenceRole[]
+
+  @@unique([conferenceId, userId])
 }
 
 model Delegation {
