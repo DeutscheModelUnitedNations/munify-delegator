@@ -53,7 +53,7 @@
 				<CardInfoSectionWithIcons
 					items={[
 						{
-							icon: 'fa-arrow-right',
+							fontAwesomeIcon: 'fa-arrow-right',
 							text: m.createDelegationDescription()
 						}
 					]}
@@ -69,7 +69,7 @@
 				<CardInfoSectionWithIcons
 					items={[
 						{
-							icon: 'fa-arrow-right',
+							fontAwesomeIcon: 'fa-arrow-right',
 							text: m.joinDelegationDescription()
 						}
 					]}
@@ -85,7 +85,7 @@
 				<CardInfoSectionWithIcons
 					items={[
 						{
-							icon: 'fa-arrow-right',
+							fontAwesomeIcon: 'fa-arrow-right',
 							text: m.individualApplicationDescription()
 						}
 					]}
@@ -101,7 +101,7 @@
 				<CardInfoSectionWithIcons
 					items={[
 						{
-							icon: 'fa-arrow-right',
+							fontAwesomeIcon: 'fa-arrow-right',
 							text: m.applyAsSupervisorDescription()
 						}
 					]}

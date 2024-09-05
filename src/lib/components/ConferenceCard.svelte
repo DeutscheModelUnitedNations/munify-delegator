@@ -39,10 +39,10 @@
 	};
 
 	const cardInfoItems = () => {
-		const items: { icon: string; text?: string; link?: string }[] = [
-			{ icon: 'fa-map-marker-alt', text: location ?? m.unknownLocation() },
+		const items: { fontAwesomeIcon: string; text?: string; link?: string }[] = [
+			{ fontAwesomeIcon: 'fa-map-marker-alt', text: location ?? m.unknownLocation() },
 			{
-				icon: 'fa-calendar',
+				fontAwesomeIcon: 'fa-calendar',
 				text:
 					start && end
 						? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
@@ -51,7 +51,7 @@
 		];
 
 		if (website) {
-			items.push({ icon: 'fa-globe', text: website, link: website });
+			items.push({ fontAwesomeIcon: 'fa-globe', text: website, link: website });
 		}
 
 		return items;
