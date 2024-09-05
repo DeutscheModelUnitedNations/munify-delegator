@@ -27,6 +27,7 @@
 	"joinDelegationDescription": "Hier kannst du einer Delegation mit einem Code beitreten, den dir der/die Delegationsleiter*in ausgestellt hat.",
 	"individualApplication": "Einzelbewerbung",
 	"individualApplicationDescription": "Hier kannst du dich alleine auf einen Platz ein einer der Speziellen Delegationen wie der Konferenzpresse bewerben.",
+	"individualApplicationDescription2": "Hier können Sie sich als Einzelperson für spezielle Rollen bewerben. Diese Rollen sind nicht an eine Delegation gebunden. Wenn Sie nicht für die Rolle genommen werden, werden wir mit Ihnen Kontakt aufnehmen und eine andere Rolle vorschlagen.",
 	"supervisor": "Betreuer*in",
 	"applyAsSupervisor": "Anmelden als Betreuer*in",
 	"applyAsSupervisorDescription": "Hier kannst du dich als Betreuer*in für eine Delegation anmelden. Als Betreuer*in hast du Einsicht in alle deine Delegationen und kannst sie organisatorisch unterstützen.",
@@ -93,6 +94,7 @@
 	"email": "E-Mail",
 	"userId": "Benutzer-ID",
 	"edit": "Bearbeiten",
-	"receiveGeneralInformation": "Allgemeine Informationen und Ankündigungen zu Konferenzen per E-Mail erhalten",
-	"receiveJoinTeamInformation": "Ausschreibungen und Ankündigungen für das DMUN Konferenzteam per E-Mail erhalten"
+	"receiveGeneralInformation": "Allgemeine E-Mails zum Projekt erhalten",
+	"receiveJoinTeamInformation": "E-Mails zum Beitritt ins Team/den Verein erhalten",
+	"pickIcon": "Icon auswählen"
 }

@@ -4,15 +4,15 @@
 	interface Props {
 		title: string;
 		description: string;
-		icon: string;
+		fontAwesomeIcon: string;
 		link: string;
 		btnText?: string;
 	}
 
-	let { title, description, icon, link, btnText = 'Bewerben' }: Props = $props();
+	let { title, description, fontAwesomeIcon, link, btnText = 'Bewerben' }: Props = $props();
 
 	const infoItems = () => {
-		return [{ icon, text: description }];
+		return [{ fontAwesomeIcon, text: description }];
 	};
 </script>
 
