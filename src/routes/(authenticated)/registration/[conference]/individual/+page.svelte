@@ -6,34 +6,6 @@
 	import IconPicker from '$lib/components/IconPicker.svelte';
 
 	let { data }: { data: PageData } = $props();
-
-	// const testData = [
-	// 	{
-	// 		roleId: 1,
-	// 		role: 'Konferenzpresse',
-	// 		description: 'Du berichtest als Journalist*in über die Konferenz und die Debatten.',
-	// 		icon: 'fa-newspaper'
-	// 	},
-	// 	{
-	// 		roleId: 2,
-	// 		role: 'Richter*in am IGH',
-	// 		description:
-	// 			'Du besteigst die Richterbank und entscheidest über einen internationalen Rechtsfall.',
-	// 		icon: 'fa-gavel'
-	// 	},
-	// 	{
-	// 		roleId: 3,
-	// 		role: 'Prozessbevollmächtigte*r A',
-	// 		description: 'Du vertrittst die Interessen von A vor dem Internationalen Gerichtshof.',
-	// 		icon: 'fa-balance-scale'
-	// 	},
-	// 	{
-	// 		roleId: 4,
-	// 		role: 'Prozessbevollmächtigte*r B',
-	// 		description: 'Du vertrittst die Interessen von B vor dem Internationalen Gerichtshof.',
-	// 		icon: 'fa-balance-scale'
-	// 	}
-	// ];
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
@@ -46,12 +18,15 @@
 	</hero>
 
 	<main>
-		<IconPicker />
-
 		<section class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-			<!-- {#each data.availableCustomConferenceRoles as { description, fontAwesomeIcon, id, name }}
-				<PlainCard title={name} {description} {fontAwesomeIcon} link={`./individual/${id}`} />
-			{/each} -->
+			{#each data.availableCustomConferenceRoles as { description, fontAwesomeIcon, id, name }}
+				<PlainCard
+					title={name}
+					{description}
+					fontAwesomeIcon={fontAwesomeIcon ?? 'fa-user-tie'}
+					link={`./individual/${id}`}
+				/>
+			{/each}
 		</section>
 	</main>
 </div>
