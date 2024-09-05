@@ -36,6 +36,7 @@
 		"elysia": "^1.1.11",
 		"esbuild": "^0.23.1",
 		"flag-icons": "^7.2.3",
+		"fuse.js": "^7.0.0",
 		"jose": "^5.8.0",
 		"lefthook": "^1.7.15",
 		"mermaid": "^11.1.0",
