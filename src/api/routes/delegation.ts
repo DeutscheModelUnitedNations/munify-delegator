@@ -1,4 +1,4 @@
-import { permissionsPlugin } from '$api/auth/permissions';
+import { PermissionCheckError, permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { db } from '$db/db';
 import {
@@ -24,6 +24,34 @@ export const delegation = new Elysia()
 			const user = permissions.mustBeLoggedIn();
 			permissions.checkIf((user) => user.can('create', 'Delegation'));
 			// https://github.com/CyberAP/nanoid-dictionary
+
+			const foundSupervisor = await db.conferenceSupervisor.findFirst({
+				where: {
+					conferenceId: body.conference.connect.id,
+					user: {
+						id: user.sub
+					}
+				}
+			});
+
+			//TODO these checks appear in multiple handlers (see singleParticipant routes)
+			// we should probably find a way to handle this via the CASL rules?
+			if (foundSupervisor) {
+				throw new PermissionCheckError('You are already a supervisor in this conference');
+			}
+
+			const foundMember = await db.delegationMember.findFirst({
+				where: {
+					conferenceId: body.conference.connect.id,
+					user: {
+						id: user.sub
+					}
+				}
+			});
+
+			if (foundMember) {
+				throw new PermissionCheckError('You are already a delegation member in this conference');
+			}
 
 			return db.$transaction(async (tx) => {
 				const delegation = await tx.delegation.create({

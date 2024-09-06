@@ -80,10 +80,10 @@
 						<p class="font-thin font-xs">{munSh.longName}</p>
 						<CardInfoSectionWithIcons
 							items={[
-								{ icon: 'fa-location-dot', text: munSh.location },
-								{ icon: 'fa-calendar', text: munSh.date },
-								{ icon: 'fa-comments', text: munSh.lang },
-								{ icon: 'fa-globe', text: munSh.website, link: munSh.website }
+								{ fontAwesomeIcon: 'fa-location-dot', text: munSh.location },
+								{ fontAwesomeIcon: 'fa-calendar', text: munSh.date },
+								{ fontAwesomeIcon: 'fa-comments', text: munSh.lang },
+								{ fontAwesomeIcon: 'fa-globe', text: munSh.website, link: munSh.website }
 							]}
 						/>
 					</div>
@@ -97,10 +97,10 @@
 						<p class="font-thin font-xs">{munBw.longName}</p>
 						<CardInfoSectionWithIcons
 							items={[
-								{ icon: 'fa-location-dot', text: munBw.location },
-								{ icon: 'fa-calendar', text: munBw.date },
-								{ icon: 'fa-comments', text: munBw.lang },
-								{ icon: 'fa-globe', text: munBw.website, link: munBw.website }
+								{ fontAwesomeIcon: 'fa-location-dot', text: munBw.location },
+								{ fontAwesomeIcon: 'fa-calendar', text: munBw.date },
+								{ fontAwesomeIcon: 'fa-comments', text: munBw.lang },
+								{ fontAwesomeIcon: 'fa-globe', text: munBw.website, link: munBw.website }
 							]}
 						/>
 					</div>

@@ -26,6 +26,7 @@ services:
       # - PORT=3000
       # - HOST=0.0.0.0
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
+      # change this to something long, secure and truly random
       - SECRET=123
       # if your setup supports PROTOCOL_HEADER or HOST_HEADER you don't need to set these
       # please see the adapter/hosting options for more information
