@@ -168,5 +168,8 @@
 	"location": "Ort",
 	"pickIcon": "Icon auswählen",
 	"search": "Suche",
-	"submit": "Senden"
+	"submit": "Senden",
+	"signupNow": "Jetzt Anmelden",
+	"completeSignupWarningHeading": "Wichtig: Online-Anmeldung abschließen",
+	"completeSignupWarningText": "Obwohl Sie bereits eine Delegation angelegt haben oder einer beigetreten sind, ist die Registrierung noch nicht abgeschlossen. Bitte schließen Sie Ihre Registrierung rechtzeitig vor Ablauf der Anmeldefrist ab, damit wir die Anmeldung Ihrer Delegation im Auswahlverfahren berücksichtigen können."
 }
