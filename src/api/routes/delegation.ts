@@ -1,12 +1,16 @@
 import { PermissionCheckError, permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
+import { removeTooSmallRoleApplications } from '$api/util/removeTooSmallRoleApplications';
 import { db } from '$db/db';
+import { ConferenceSupervisorPlain } from '$db/generated/schema/ConferenceSupervisor';
 import {
 	Delegation,
 	DelegationInputCreate,
 	DelegationPlain,
 	DelegationWhereUnique
 } from '$db/generated/schema/Delegation';
+import { DelegationMemberPlain } from '$db/generated/schema/DelegationMember';
+import { RoleApplication, RoleApplicationPlain } from '$db/generated/schema/RoleApplication';
 import Elysia, { t } from 'elysia';
 import { customAlphabet } from 'nanoid';
 
@@ -14,10 +18,98 @@ const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
 
 export const delegation = new Elysia()
 	.use(CRUDMaker.getAll('delegation'))
-	.use(CRUDMaker.getOne('delegation'))
 	.use(CRUDMaker.updateOne('delegation'))
 	.use(CRUDMaker.deleteOne('delegation'))
 	.use(permissionsPlugin)
+	.get(
+		'delegation/:id',
+		async ({ permissions, params }) => {
+			const _user = permissions.mustBeLoggedIn();
+
+			await removeTooSmallRoleApplications(params.id);
+
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('read').Delegation]
+				},
+				include: {
+					members: {
+						include: {
+							user: {
+								select: {
+									id: true,
+									given_name: true,
+									family_name: true,
+									email: true,
+									pronouns: true
+								}
+							}
+						}
+					},
+					appliedForRoles: {
+						include: {
+							nation: true,
+							nonStateActor: true
+						}
+					},
+					supervisors: {
+						include: {
+							user: {
+								select: {
+									id: true,
+									given_name: true,
+									family_name: true,
+									email: true,
+									pronouns: true
+								}
+							}
+						}
+					}
+				}
+			});
+
+			return delegation;
+		},
+		{
+			response: t.Composite([
+				DelegationPlain,
+				t.Object({ appliedForRoles: t.Array(t.Omit(RoleApplication, ['delegation'])) }),
+				t.Object({
+					supervisors: t.Array(
+						t.Composite([
+							ConferenceSupervisorPlain,
+							t.Object({
+								user: t.Object({
+									id: t.String(),
+									given_name: t.String(),
+									family_name: t.String(),
+									email: t.String(),
+									pronouns: t.Nullable(t.String())
+								})
+							})
+						])
+					)
+				}),
+				t.Object({
+					members: t.Array(
+						t.Composite([
+							DelegationMemberPlain,
+							t.Object({
+								user: t.Object({
+									id: t.String(),
+									given_name: t.String(),
+									family_name: t.String(),
+									email: t.String(),
+									pronouns: t.Nullable(t.String())
+								})
+							})
+						])
+					)
+				})
+			])
+		}
+	)
 	.post(
 		`/delegation`,
 		async ({ permissions, body }) => {
@@ -97,6 +189,8 @@ export const delegation = new Elysia()
 					AND: [permissions.allowDatabaseAccessTo('join').Delegation]
 				}
 			});
+
+			await removeTooSmallRoleApplications(delegation.id);
 
 			if (body.joinAsSupervisor) {
 				await db.conferenceSupervisor.upsert({
@@ -205,7 +299,7 @@ export const delegation = new Elysia()
 				school: delegation.school,
 				experience: delegation.experience,
 				memberCount: delegation._count.members,
-				headDelegateFullName: `${delegation.members[0].user.given_name} ${delegation.members[0].user.family_name}`,
+				headDelegateFullName: `${delegation.members.find((x) => x.isHeadDelegate)?.user.given_name} ${delegation.members.find((x) => x.isHeadDelegate)?.user.family_name}`,
 				applied: delegation.applied,
 				conferenceTitle: delegation.conference.title
 			};
@@ -238,5 +332,154 @@ export const delegation = new Elysia()
 		{
 			body: t.Object({ newEntryCode: t.Index(Delegation, ['entryCode']) }),
 			response: DelegationPlain
+		}
+	)
+	.patch(
+		'/delegation/:id/transferHeadDelegateship',
+		async ({ permissions, params, body }) => {
+			const user = permissions.mustBeLoggedIn();
+			permissions.checkIf((user) => user.can('update', 'Delegation'));
+
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					id: params.id
+				},
+				include: {
+					members: true
+				}
+			});
+
+			await db.$transaction(async (tx) => {
+				await tx.delegationMember.update({
+					where: {
+						delegationId_userId: {
+							delegationId: delegation.id,
+							userId: user.sub
+						}
+					},
+					data: {
+						isHeadDelegate: false
+					}
+				});
+
+				await tx.delegationMember.update({
+					where: {
+						delegationId_userId: {
+							delegationId: delegation.id,
+							userId: body.newHeadDelegateUserId
+						}
+					},
+					data: {
+						isHeadDelegate: true
+					}
+				});
+			});
+		},
+		{
+			body: t.Object({ newHeadDelegateUserId: t.String() }),
+			params: t.Object({ id: t.String() })
+		}
+	)
+	.delete('/delegation/:id/leave', async ({ permissions, params }) => {
+		const user = permissions.mustBeLoggedIn();
+		const delegation = await db.delegation.findUniqueOrThrow({
+			where: {
+				id: params.id,
+				AND: [permissions.allowDatabaseAccessTo('delete').Delegation]
+			}
+		});
+
+		await db.$transaction(async (tx) => {
+			const userIsHeadDelegate = (
+				await tx.delegationMember.findUniqueOrThrow({
+					where: {
+						delegationId_userId: {
+							delegationId: delegation.id,
+							userId: user.sub
+						}
+					},
+					select: {
+						isHeadDelegate: true
+					}
+				})
+			).isHeadDelegate;
+
+			await tx.delegationMember.delete({
+				where: {
+					delegationId_userId: {
+						delegationId: delegation.id,
+						userId: user.sub
+					}
+				}
+			});
+
+			if (userIsHeadDelegate) {
+				const newHeadDelegate = await tx.delegationMember.findFirstOrThrow({
+					where: {
+						delegationId: delegation.id
+					},
+					select: {
+						id: true
+					}
+				});
+
+				console.log(newHeadDelegate);
+
+				await tx.delegationMember.update({
+					where: {
+						id: newHeadDelegate.id
+					},
+					data: {
+						isHeadDelegate: true
+					}
+				});
+			}
+		});
+
+		return true;
+	})
+	.patch(
+		'/delegation/:id/completeRegistration',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			removeTooSmallRoleApplications(params.id);
+
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('update').Delegation]
+				},
+				include: {
+					members: true,
+					appliedForRoles: true
+				}
+			});
+
+			if (delegation.members.length < 2) {
+				throw new Error('Not enough members');
+			}
+
+			if (delegation.appliedForRoles.length < 3) {
+				throw new Error('Not enough role applications');
+			}
+
+			if (!delegation.school || !delegation.experience || !delegation.motivation) {
+				throw new Error('Missing information');
+			}
+
+			await db.delegation.update({
+				where: {
+					id: params.id
+				},
+				data: {
+					applied: true
+				}
+			});
+
+			return true;
+		},
+		{
+			params: t.Object({ id: t.String() })
 		}
 	);

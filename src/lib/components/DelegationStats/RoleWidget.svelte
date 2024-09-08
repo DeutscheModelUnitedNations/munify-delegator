@@ -13,7 +13,7 @@
 <Wrapper className="w-full">
 	<div class="stat">
 		<div class="stat-figure text-secondary">
-			<Flag {countryCode} size="md" />
+			<Flag alpha2Code={countryCode} size="md" />
 		</div>
 		<div class="stat-title">Sie vertreten</div>
 		<div class="stat-value text-2xl sm:text-4xl sm:w-auto overflow-ellipsis text-wrap">

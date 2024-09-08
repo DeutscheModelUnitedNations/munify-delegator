@@ -1,65 +1,51 @@
 <script lang="ts">
 	import Header from '$lib/components/Header.svelte';
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
+	import type { PageData } from './$types';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import * as m from '$lib/paraglide/messages.js';
 
-	const testConferences = [
-		{
-			id: '1',
-			title: 'MUN-SH 2025',
-			location: 'Kiel',
-			website: 'https://www.mun-sh.de',
-			start: new Date(2025, 2, 6),
-			end: new Date(2025, 2, 10),
-			active: true
-		},
-		{
-			id: '2',
-			title: 'MUNBW 2025',
-			location: 'Stuttgart',
-			website: 'https://www.mun-bw.de',
-			active: true
-		},
-		{
-			id: '3',
-			title: 'MUN-SH 2024',
-			location: 'Kiel',
-			website: 'https://www.mun-sh.de',
-			active: false
+	let { data }: { data: PageData } = $props();
+
+	onMount(() => {
+		if (data.conferences.length === 1) {
+			goto(`/dashboard/${data.conferences[0].id}`);
 		}
-	];
+	});
 </script>
 
-<Header title="Meine Konferenzen" />
+<Header title={m.myConferences()} />
 <section class="mt-10 flex flex-wrap gap-4">
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
 	>
-		{#each testConferences.filter((x) => x.active) as conference}
+		{#each data.conferences.filter((x) => x.status === ('PRE' || 'ACTIVE')) as conference}
 			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
 		{/each}
 		<a href="/registration" class="carousel-item max-w-96 w-[90%]">
 			<div
 				class="w-full h-full flex flex-col justify-center items-center border border-primary border-dashed rounded-xl hover:bg-base-100 hover:shadow-lg hover:scale-[101%] transition-all duration-300 ease-in-out p-4"
 			>
-				<i class="fa-duotone fa-plus text-5xl text-primary" />
-				<p class="text-primary text-lg mt-4">Zu Konferenz anmelden</p>
+				<i class="fa-duotone fa-plus text-5xl text-primary"></i>
+				<p class="text-primary text-lg mt-4">{m.signup()}</p>
 			</div>
 		</a>
 	</div>
 </section>
 
 <section class="mt-10">
-	<h2 class="text-2xl font-bold">Alle Konferenzen</h2>
+	<h2 class="text-2xl font-bold">{m.allConferences()}</h2>
 	<table class="table overflow-x-auto">
 		<thead>
 			<tr>
-				<th>Titel</th>
-				<th>Ort</th>
+				<th>{m.title()}</th>
+				<th>{m.location()}</th>
 				<th></th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each testConferences as conference}
+			{#each data.conferences ?? [] as conference}
 				<tr>
 					<td>{conference.title}</td>
 					<td>{conference.location}</td>

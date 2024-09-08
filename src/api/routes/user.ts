@@ -1,6 +1,13 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { UserPlain, UserPlainInputUpdate } from '$db/generated/schema/User';
+import { User, UserPlain, UserPlainInputUpdate } from '$db/generated/schema/User';
+import { Conference } from '$db/generated/schema/Conference';
+import { Delegation } from '$db/generated/schema/Delegation';
+import { DelegationMember } from '$db/generated/schema/DelegationMember';
+import { SingleParticipant } from '$db/generated/schema/SingleParticipant';
+import { ConferenceParticipantStatus } from '$db/generated/schema/ConferenceParticipantStatus';
+import { ConferenceSupervisor } from '$db/generated/schema/ConferenceSupervisor';
+import { TeamMember } from '$db/generated/schema/TeamMember';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
@@ -72,6 +79,25 @@ export const user = new Elysia({
 		},
 		{
 			response: UserPlain
+		}
+	)
+	.get(
+		'/user/me',
+		async ({ permissions }) => {
+			const user = permissions.mustBeLoggedIn();
+			return db.user.findUniqueOrThrow({
+				where: { id: user.sub },
+				include: {
+					delegationMemberships: true,
+					singleParticipant: true,
+					conferenceParticipantStatus: true,
+					conferenceSupervisor: true,
+					teamMember: true
+				}
+			});
+		},
+		{
+			response: User
 		}
 	)
 	.patch(

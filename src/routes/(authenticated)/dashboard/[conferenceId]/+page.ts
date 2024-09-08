@@ -1,34 +1,34 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { apiClient } from '$api/client';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
+import { checkForError } from '$api/client';
 
-export const load: PageLoad = async ({ params, fetch, url }) => {
+export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }) => {
 	if (params.conferenceId === undefined) error(404, 'Not found');
 
-	//TODO
-	const conferences = await apiClient({ fetch, origin: url.origin }).conference.get();
+	const userData = (await parent()).userData;
+
+	const delegationMembershipData = userData.delegationMemberships?.find(
+		(x) => x.conferenceId === params.conferenceId
+	);
+
+	const delegationData = delegationMembershipData
+		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
+		: undefined;
+
+	const committees = await checkForError(
+		api.committee.get({ query: { conferenceId: params.conferenceId } })
+	);
+
+	const nonStateActors = await checkForError(
+		api.nonStateActor.get({ query: { conferenceId: params.conferenceId } })
+	);
 
 	return {
 		conferenceId: params.conferenceId,
-		testData: [
-			{
-				conferenceId: '1',
-				conferenceName: 'MUN-SH 2025',
-				active: true,
-				accepted: true
-			},
-			{
-				conferenceId: '2',
-				conferenceName: 'MUNBW 2025',
-				active: true,
-				accepted: false
-			},
-			{
-				conferenceId: '3',
-				conferenceName: 'MUN-SH 2024',
-				active: false,
-				accepted: true
-			}
-		]
+		delegationMembershipData,
+		delegationData,
+		committees,
+		nonStateActors
 	};
-};
+});

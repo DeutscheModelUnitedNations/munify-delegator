@@ -14,13 +14,17 @@ export namespace CRUDMaker {
 	export function getAll<EntityName extends AllEntityNames>(entity: EntityName) {
 		return new Elysia().use(permissionsPlugin).get(
 			`/${entity}`,
-			async ({ permissions }) => {
+			async ({ permissions, query }) => {
 				// @ts-ignore
 				return await db[entity].findMany({
-					where: permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]
+					where: {
+						...(query ?? {}),
+						AND: [permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]]
+					}
 				});
 			},
 			{
+				query: t.Optional(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Where`]),
 				response: t.Array(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Plain`])
 			}
 		);

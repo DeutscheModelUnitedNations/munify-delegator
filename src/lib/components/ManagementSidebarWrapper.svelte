@@ -34,7 +34,7 @@
 				<NavButton
 					href="/management/{conferenceId}/configuration"
 					icon="fa-gears"
-					titel="Einstellungen"
+					title="Einstellungen"
 					active={path.endsWith('configuration')}
 				></NavButton>
 
@@ -43,21 +43,21 @@
 				<NavButton
 					href="/management/{conferenceId}/participants"
 					icon="fa-users"
-					titel="Teilnehmende"
+					title="Teilnehmende"
 					active={path.endsWith('participants')}
 				></NavButton>
 
 				<NavButton
 					href="/management/{conferenceId}/delegations"
 					icon="fa-users-viewfinder"
-					titel="Delegationen"
+					title="Delegationen"
 					active={path.endsWith('delegations')}
 				></NavButton>
 
 				<NavButton
 					href="/management/{conferenceId}/individuals"
 					icon="fa-user"
-					titel="Einzelteilnehmer"
+					title="Einzelteilnehmer"
 					active={path.endsWith('individuals')}
 				></NavButton>
 			</ul>

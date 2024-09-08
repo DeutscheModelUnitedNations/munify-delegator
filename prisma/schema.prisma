@@ -17,6 +17,12 @@ generator prismabox {
   allowRecursion              = false
 }
 
+enum ConferenceStatus {
+  PRE
+  ACTIVE
+  POST
+}
+
 model Conference {
   id                           String                        @id @default(nanoid())
   title                        String
@@ -27,6 +33,9 @@ model Conference {
   language                     String?
   website                      String?
   image                        Bytes?
+  status                       ConferenceStatus              @default(PRE)
+  startRegistration            DateTime?
+  endRegistration              DateTime?
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
   nonStateActors               NonStateActor[]
@@ -115,8 +124,7 @@ model Nation {
   // other properties are fetched from nation databases/libraries which do not want to maintain on our own
   // e.g. localized names, flags, etc.
   roleApplications RoleApplication[]
-  Committee        Committee?        @relation(fields: [committeeId], references: [id])
-  committeeId      String?
+  committees       Committee[]
 }
 
 model NonStateActor {
@@ -127,7 +135,7 @@ model NonStateActor {
   description      String
   fontAwesomeIcon  String?
   abbreviation     String            @unique
-  seatAmount       Int
+  seatAmount       Int               @default(2)
   roleApplications RoleApplication[]
 }
 
@@ -173,13 +181,9 @@ model Delegation {
 
   /// @prismabox.input.hide
   applied         Boolean           @default(false)
-  /// @prismabox.input.hide
   appliedForRoles RoleApplication[]
-  /// @prismabox.update.input.hide
   school          String
-  /// @prismabox.update.input.hide
   motivation      String
-  /// @prismabox.update.input.hide
   experience      String
 
   /// @prismabox.input.hide
@@ -195,13 +199,17 @@ model RoleApplication {
   rank            Int
   delegation      Delegation?    @relation(fields: [delegationId], references: [id])
   delegationId    String?
+
+  @@unique([delegationId, nationId])
+  @@unique([delegationId, nonStateActorId])
+  @@unique([delegationId, rank])
 }
 
 model DelegationMember {
   id             String     @id @default(nanoid())
   conference     Conference @relation(fields: [conferenceId], references: [id])
   conferenceId   String
-  delegation     Delegation @relation(fields: [delegationId], references: [id])
+  delegation     Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId   String
   user           User       @relation(fields: [userId], references: [id])
   userId         String

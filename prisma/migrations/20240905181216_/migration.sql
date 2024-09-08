@@ -1,21 +1,32 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "ConferenceStatus" AS ENUM ('PRE', 'ACTIVE', 'POST');
 
-  - Added the required column `address` to the `User` table without a default value. This is not possible if the table is not empty.
+-- CreateEnum
+CREATE TYPE "FoodPreference" AS ENUM ('OMNIVORE', 'VEGETARIAN', 'VEGAN');
 
-*/
 -- CreateEnum
 CREATE TYPE "AdministrativeStatus" AS ENUM ('DONE', 'PROBLEM', 'PENDING');
 
 -- CreateEnum
 CREATE TYPE "TeamRole" AS ENUM ('ADMIN', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE', 'MEMBER');
 
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "address" JSONB NOT NULL,
-ADD COLUMN     "birthday" TIMESTAMP(3),
-ADD COLUMN     "phone" TEXT,
-ADD COLUMN     "wantsJoinTeamInformation" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "wantsToReceiveGeneralInformation" BOOLEAN NOT NULL DEFAULT false;
+-- CreateTable
+CREATE TABLE "Conference" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "longTitle" TEXT,
+    "start" TIMESTAMP(3),
+    "end" TIMESTAMP(3),
+    "location" TEXT,
+    "language" TEXT,
+    "website" TEXT,
+    "image" BYTEA,
+    "status" "ConferenceStatus" NOT NULL DEFAULT 'PRE',
+    "startRegistration" TIMESTAMP(3),
+    "endRegistration" TIMESTAMP(3),
+
+    CONSTRAINT "Conference_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Committee" (
@@ -26,6 +37,30 @@ CREATE TABLE "Committee" (
     "numOfSeatsPerDelegation" INTEGER NOT NULL DEFAULT 1,
 
     CONSTRAINT "Committee_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "family_name" TEXT NOT NULL,
+    "given_name" TEXT NOT NULL,
+    "locale" TEXT NOT NULL,
+    "preferred_username" TEXT NOT NULL,
+    "birthday" TIMESTAMP(3),
+    "phone" TEXT,
+    "street" TEXT,
+    "apartment" TEXT,
+    "zip" TEXT,
+    "city" TEXT,
+    "country" TEXT,
+    "gender" TEXT,
+    "pronouns" TEXT,
+    "foodPreference" "FoodPreference",
+    "wantsToReceiveGeneralInformation" BOOLEAN NOT NULL DEFAULT false,
+    "wantsJoinTeamInformation" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -44,7 +79,6 @@ CREATE TABLE "ConferenceParticipantStatus" (
 CREATE TABLE "Nation" (
     "alpha3Code" TEXT NOT NULL,
     "alpha2Code" TEXT NOT NULL,
-    "committeeId" TEXT,
 
     CONSTRAINT "Nation_pkey" PRIMARY KEY ("alpha3Code")
 );
@@ -57,7 +91,7 @@ CREATE TABLE "NonStateActor" (
     "description" TEXT NOT NULL,
     "icon" BYTEA,
     "abbreviation" TEXT NOT NULL,
-    "seatAmount" INTEGER NOT NULL,
+    "seatAmount" INTEGER NOT NULL DEFAULT 2,
 
     CONSTRAINT "NonStateActor_pkey" PRIMARY KEY ("id")
 );
@@ -95,7 +129,6 @@ CREATE TABLE "Delegation" (
     "school" TEXT NOT NULL,
     "motivation" TEXT NOT NULL,
     "experience" TEXT NOT NULL,
-    "conferenceSupervisorId" TEXT,
 
     CONSTRAINT "Delegation_pkey" PRIMARY KEY ("id")
 );
@@ -114,6 +147,7 @@ CREATE TABLE "RoleApplication" (
 -- CreateTable
 CREATE TABLE "DelegationMember" (
     "id" TEXT NOT NULL,
+    "conferenceId" TEXT NOT NULL,
     "delegationId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "isHeadDelegate" BOOLEAN NOT NULL,
@@ -142,7 +176,19 @@ CREATE TABLE "TeamMember" (
 );
 
 -- CreateTable
+CREATE TABLE "_CommitteeToNation" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "_CustomConferenceRoleToSingleParticipant" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "_ConferenceSupervisorToDelegation" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL
 );
@@ -160,16 +206,34 @@ CREATE UNIQUE INDEX "NonStateActor_abbreviation_key" ON "NonStateActor"("abbrevi
 CREATE UNIQUE INDEX "CustomConferenceRole_conferenceId_name_key" ON "CustomConferenceRole"("conferenceId", "name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Delegation_entryCode_key" ON "Delegation"("entryCode");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "DelegationMember_delegationId_userId_key" ON "DelegationMember"("delegationId", "userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "DelegationMember_conferenceId_userId_key" ON "DelegationMember"("conferenceId", "userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ConferenceSupervisor_conferenceId_userId_key" ON "ConferenceSupervisor"("conferenceId", "userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_CommitteeToNation_AB_unique" ON "_CommitteeToNation"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_CommitteeToNation_B_index" ON "_CommitteeToNation"("B");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_CustomConferenceRoleToSingleParticipant_AB_unique" ON "_CustomConferenceRoleToSingleParticipant"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_CustomConferenceRoleToSingleParticipant_B_index" ON "_CustomConferenceRoleToSingleParticipant"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_ConferenceSupervisorToDelegation_AB_unique" ON "_ConferenceSupervisorToDelegation"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ConferenceSupervisorToDelegation_B_index" ON "_ConferenceSupervisorToDelegation"("B");
 
 -- AddForeignKey
 ALTER TABLE "Committee" ADD CONSTRAINT "Committee_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -179,9 +243,6 @@ ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantS
 
 -- AddForeignKey
 ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantStatus_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Nation" ADD CONSTRAINT "Nation_committeeId_fkey" FOREIGN KEY ("committeeId") REFERENCES "Committee"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "NonStateActor" ADD CONSTRAINT "NonStateActor_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -199,9 +260,6 @@ ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_userId_fkey" F
 ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_conferenceSupervisorId_fkey" FOREIGN KEY ("conferenceSupervisorId") REFERENCES "ConferenceSupervisor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_nationId_fkey" FOREIGN KEY ("nationId") REFERENCES "Nation"("alpha3Code") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -209,6 +267,9 @@ ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_nonStateActorId_fk
 
 -- AddForeignKey
 ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_delegationId_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_delegationId_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -229,7 +290,19 @@ ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_conferenceId_fkey" FOREIGN K
 ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_A_fkey" FOREIGN KEY ("A") REFERENCES "Committee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_B_fkey" FOREIGN KEY ("B") REFERENCES "Nation"("alpha3Code") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_A_fkey" FOREIGN KEY ("A") REFERENCES "CustomConferenceRole"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_B_fkey" FOREIGN KEY ("B") REFERENCES "SingleParticipant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ConferenceSupervisorToDelegation" ADD CONSTRAINT "_ConferenceSupervisorToDelegation_A_fkey" FOREIGN KEY ("A") REFERENCES "ConferenceSupervisor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ConferenceSupervisorToDelegation" ADD CONSTRAINT "_ConferenceSupervisorToDelegation_B_fkey" FOREIGN KEY ("B") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
