@@ -1,6 +1,7 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"signup": "Sign up",
+	"registerNow": "Register now",
 	"back": "Back",
 	"backToHome": "Back To Home",
 	"committee": "Committee",
@@ -72,6 +73,8 @@
 	"completeSignupDescriptionHeadDelegate": "Please complete all tasks and then confirm your registration for the delegation. Once you have completed all tasks, the Head Delegate can complete the registration and participate in the selection process. Once the registration is complete, it cannot be changed back – so please make sure that all information is correct and to your delegations satisfaction.",
 	"completeSignupDescription": "Please complete all tasks with your Head Delegate. Afterwards the Head Delegate can confirm the registration for the delegation.",
 	"completeSignupButton": "Complete registration and participate in the selection process",
+	"conpleteSignupWarningHeading": "Important: Complete online registration",
+	"conpleteSignupWarningText": "Although you have already created a delegation or joined one, the registration is not yet complete. Please finalize your registration in a timely manner before the registration deadline so that we can consider your delegation's registration.",
 	"todoCreateDelegation": "Create delegation",
 	"todoInvitePeople": "Invite people",
 	"todoInvitePeopleHelp": "Invite additional members to your delegation. The minimum required number of members is 2.",
