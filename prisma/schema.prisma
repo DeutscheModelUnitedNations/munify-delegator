@@ -133,7 +133,7 @@ model NonStateActor {
   conferenceId     String
   name             String            @unique
   description      String
-  icon             Bytes?
+  fontAwesomeIcon  String?
   abbreviation     String            @unique
   seatAmount       Int               @default(2)
   roleApplications RoleApplication[]
@@ -146,7 +146,7 @@ model CustomConferenceRole {
   conferenceId      String
   name              String
   description       String
-  icon              Bytes?
+  fontAwesomeIcon   String?
   singleParticipant SingleParticipant[]
 
   @@unique([conferenceId, name])
@@ -164,7 +164,9 @@ model SingleParticipant {
   motivation String
   experience String
 
-  customConferenceRole CustomConferenceRole[]
+  appliedForRoles CustomConferenceRole[]
+
+  @@unique([conferenceId, userId])
 }
 
 model Delegation {

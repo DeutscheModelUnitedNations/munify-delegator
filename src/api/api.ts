@@ -24,8 +24,8 @@ export const app = new Elysia({
 	prefix: '/api'
 })
 	// misc
-	.use(auth)
 	.use(logger)
+	.use(auth)
 	.use(health)
 	// entities
 	.use(committee)

@@ -15,6 +15,7 @@ export const permissionsPlugin = new Elysia({
 	.use(oidcPlugin)
 	.derive({ as: 'scoped' }, ({ oidc }) => {
 		const abilities = defineAbilitiesForUser(oidc);
+		let hasBeenCalled = false;
 		return {
 			permissions: {
 				abilities,
@@ -31,7 +32,10 @@ export const permissionsPlugin = new Elysia({
 				 * ```
 				 * The default operation is "read".
 				 */
-				allowDatabaseAccessTo: (action: Action = 'read') => accessibleBy(abilities, action),
+				allowDatabaseAccessTo: (action: Action = 'read') => {
+					hasBeenCalled = true;
+					return accessibleBy(abilities, action);
+				},
 				/**
 				 * Utility that raises and error if the permissions check fails.
 				 * Allows for readable flow of permission checks which resemble natural language like this:
@@ -41,6 +45,7 @@ export const permissionsPlugin = new Elysia({
 				 * ```
 				 */
 				checkIf: (perms: boolean | ((a: typeof abilities) => boolean)) => {
+					hasBeenCalled = true;
 					if (typeof perms === 'boolean') {
 						if (!perms) {
 							throw new PermissionCheckError('Permission check failed.');
@@ -52,11 +57,25 @@ export const permissionsPlugin = new Elysia({
 					}
 				},
 				mustBeLoggedIn: () => {
+					hasBeenCalled = true;
 					if (!oidc || !oidc.user) {
 						throw new PermissionCheckError('Permission check failed.');
 					}
 					return oidc.user;
-				}
+				},
+				/**
+				 * @returns True if permissions were checked. Used to emit warnings for handlers which do not check permissions.
+				 */
+				werePermissionsChecked: () => hasBeenCalled,
+				/**
+				 * Disable the warning that is emitted when permissions are not checked for this handler
+				 */
+				disablePermissionCheckWarning: () => (hasBeenCalled = true)
 			}
 		};
+	})
+	.onAfterHandle({ as: 'global' }, ({ permissions, request, path }) => {
+		if (!permissions?.werePermissionsChecked()) {
+			console.warn('Permissions were not checked on handler ', request.method, path);
+		}
 	});
