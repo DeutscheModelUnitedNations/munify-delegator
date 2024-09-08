@@ -89,7 +89,7 @@ CREATE TABLE "NonStateActor" (
     "conferenceId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "icon" BYTEA,
+    "fontAwesomeIcon" TEXT,
     "abbreviation" TEXT NOT NULL,
     "seatAmount" INTEGER NOT NULL DEFAULT 2,
 
@@ -102,7 +102,7 @@ CREATE TABLE "CustomConferenceRole" (
     "conferenceId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "icon" BYTEA,
+    "fontAwesomeIcon" TEXT,
 
     CONSTRAINT "CustomConferenceRole_pkey" PRIMARY KEY ("id")
 );
@@ -206,7 +206,19 @@ CREATE UNIQUE INDEX "NonStateActor_abbreviation_key" ON "NonStateActor"("abbrevi
 CREATE UNIQUE INDEX "CustomConferenceRole_conferenceId_name_key" ON "CustomConferenceRole"("conferenceId", "name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "SingleParticipant_conferenceId_userId_key" ON "SingleParticipant"("conferenceId", "userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Delegation_entryCode_key" ON "Delegation"("entryCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RoleApplication_delegationId_nationId_key" ON "RoleApplication"("delegationId", "nationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RoleApplication_delegationId_nonStateActorId_key" ON "RoleApplication"("delegationId", "nonStateActorId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RoleApplication_delegationId_rank_key" ON "RoleApplication"("delegationId", "rank");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "DelegationMember_delegationId_userId_key" ON "DelegationMember"("delegationId", "userId");
@@ -272,7 +284,7 @@ ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_delegationId_fkey"
 ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_delegationId_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_delegationId_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
