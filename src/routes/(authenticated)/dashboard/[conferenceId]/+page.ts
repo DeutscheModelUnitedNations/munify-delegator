@@ -3,32 +3,32 @@ import type { PageLoad } from './$types';
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import { checkForError } from '$api/client';
 
-export const load: PageLoad = loadApiHandler(async ({ params, api, url }) => {
+export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }) => {
 	if (params.conferenceId === undefined) error(404, 'Not found');
 
-	const userData = await checkForError(api.user.me.get());
+	const userData = (await parent()).userData;
 
-	let delegationData;
-	let delegationMembershipData;
-	let roleApplications;
+	const delegationMembershipData = userData.delegationMemberships?.find(
+		(x) => x.conferenceId === params.conferenceId
+	);
 
-	if (userData.delegationMemberships) {
-		delegationMembershipData = userData.delegationMemberships?.find(
-			(x) => x.conference.id === params.conferenceId
-		);
-		const delegationId = delegationMembershipData?.delegation.id;
+	const delegationData = delegationMembershipData
+		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
+		: undefined;
 
-		delegationData = await checkForError(api.delegation({ id: delegationId }).get());
+	const committees = await checkForError(
+		api.committee.get({ query: { conferenceId: params.conferenceId } })
+	);
 
-		roleApplications = await checkForError(
-			api.roleApplication.byDelegation({ delegationId }).get()
-		);
-	}
+	const nonStateActors = await checkForError(
+		api.nonStateActor.get({ query: { conferenceId: params.conferenceId } })
+	);
 
 	return {
 		conferenceId: params.conferenceId,
 		delegationMembershipData,
 		delegationData,
-		roleApplications
+		committees,
+		nonStateActors
 	};
 });

@@ -12,7 +12,7 @@
 		<h1 class="lg:text-2xl lg:font-light">{title}</h1>
 	</div>
 	<!-- dropdown -->
-	<div class="dropdown dropdown-end z-10">
+	<!-- <div class="dropdown dropdown-end z-10">
 		<div tabindex="0" class="btn btn-square btn-ghost">
 			<div class="indicator">
 				<span class="badge indicator-item badge-error badge-xs"></span>
@@ -40,8 +40,8 @@
 					</span>
 				</a>
 			</li>
-		</ul>
-	</div>
+		</ul> 
+	</div> -->
 	<!-- /dropdown -->
 	<!-- dropdown -->
 	<ProfileButtonHeaderEmbed />

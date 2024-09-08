@@ -1,15 +1,26 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		name: string;
+		pronouns: string;
 		headDelegate?: boolean;
 		committee?: string;
 		mailStatus?: 'completed' | 'error' | 'incomplete';
 		paymentStatus?: 'completed' | 'error' | 'incomplete';
+		children?: Snippet;
 	}
 
-	let { name, headDelegate = false, committee, mailStatus, paymentStatus }: Props = $props();
+	let {
+		name,
+		pronouns,
+		headDelegate = false,
+		committee,
+		mailStatus,
+		paymentStatus,
+		children
+	}: Props = $props();
 
 	const getMailStatusTooltip = () => {
 		switch (mailStatus) {
@@ -42,6 +53,9 @@
 				<i class="ml-2 fa-duotone fa-medal"></i>
 			</div>
 		{/if}
+	</td>
+	<td>
+		{pronouns}
 	</td>
 
 	{#if committee != undefined}
@@ -80,8 +94,8 @@
 		</td>
 	{/if}
 	<td class="text-right">
-		<button class="btn btn-sm btn-circle">
-			<i class="fa-duotone fa-ellipsis"></i>
-		</button>
+		{#if children}
+			{@render children()}
+		{/if}
 	</td>
 </tr>

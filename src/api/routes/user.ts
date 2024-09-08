@@ -85,96 +85,20 @@ export const user = new Elysia({
 		'/user/me',
 		async ({ permissions }) => {
 			const user = permissions.mustBeLoggedIn();
-			return db.user.findUnique({
+			return db.user.findUniqueOrThrow({
 				where: { id: user.sub },
 				include: {
-					delegationMemberships: {
-						include: {
-							conference: true,
-							delegation: true
-						}
-					},
-					singleParticipant: {
-						include: {
-							conference: true
-						}
-					},
-					conferenceParticipantStatus: {
-						include: {
-							conference: true
-						}
-					},
-					conferenceSupervisor: {
-						include: {
-							conference: true
-						}
-					},
-					teamMember: {
-						include: {
-							conference: true
-						}
-					}
+					delegationMemberships: true,
+					singleParticipant: true,
+					conferenceParticipantStatus: true,
+					conferenceSupervisor: true,
+					teamMember: true
 				}
 			});
+		},
+		{
+			response: User
 		}
-		// {
-		// 	response: t.Composite([
-		// 		User,
-		// 		t.Object({
-		// 			delegationMemberships: t.Optional(
-		// 				t.Array(
-		// 					t.Composite([
-		// 						DelegationMember,
-		// 						t.Object({
-		// 							conference: Conference,
-		// 							delegation: Delegation
-		// 						})
-		// 					])
-		// 				)
-		// 			),
-		// 			singleParticipant: t.Optional(
-		// 				t.Array(
-		// 					t.Composite([
-		// 						SingleParticipant,
-		// 						t.Object({
-		// 							conference: Conference
-		// 						})
-		// 					])
-		// 				)
-		// 			),
-		// 			conferenceParticipantStatus: t.Optional(
-		// 				t.Array(
-		// 					t.Composite([
-		// 						ConferenceParticipantStatus,
-		// 						t.Object({
-		// 							conference: Conference
-		// 						})
-		// 					])
-		// 				)
-		// 			),
-		// 			conferenceSupervisor: t.Optional(
-		// 				t.Array(
-		// 					t.Composite([
-		// 						ConferenceSupervisor,
-		// 						t.Object({
-		// 							conference: Conference
-		// 						})
-		// 					])
-		// 				)
-		// 			),
-		// 			teamMember: t.Optional(
-		// 				t.Array(
-		// 					t.Composite([
-		// 						TeamMember,
-		// 						t.Object({
-		// 							conference: Conference
-		// 						})
-		// 					])
-		// 				)
-		// 			)
-		// 		})
-		// 	])
-		// }
 	)
 	.patch(
 		'/user/me',

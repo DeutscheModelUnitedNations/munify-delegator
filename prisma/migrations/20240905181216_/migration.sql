@@ -2,6 +2,9 @@
 CREATE TYPE "ConferenceStatus" AS ENUM ('PRE', 'ACTIVE', 'POST');
 
 -- CreateEnum
+CREATE TYPE "FoodPreference" AS ENUM ('OMNIVORE', 'VEGETARIAN', 'VEGAN');
+
+-- CreateEnum
 CREATE TYPE "AdministrativeStatus" AS ENUM ('DONE', 'PROBLEM', 'PENDING');
 
 -- CreateEnum
@@ -46,7 +49,14 @@ CREATE TABLE "User" (
     "preferred_username" TEXT NOT NULL,
     "birthday" TIMESTAMP(3),
     "phone" TEXT,
-    "address" JSONB NOT NULL,
+    "street" TEXT,
+    "apartment" TEXT,
+    "zip" TEXT,
+    "city" TEXT,
+    "country" TEXT,
+    "gender" TEXT,
+    "pronouns" TEXT,
+    "foodPreference" "FoodPreference",
     "wantsToReceiveGeneralInformation" BOOLEAN NOT NULL DEFAULT false,
     "wantsJoinTeamInformation" BOOLEAN NOT NULL DEFAULT false,
 
@@ -69,7 +79,6 @@ CREATE TABLE "ConferenceParticipantStatus" (
 CREATE TABLE "Nation" (
     "alpha3Code" TEXT NOT NULL,
     "alpha2Code" TEXT NOT NULL,
-    "committeeId" TEXT,
 
     CONSTRAINT "Nation_pkey" PRIMARY KEY ("alpha3Code")
 );
@@ -82,7 +91,7 @@ CREATE TABLE "NonStateActor" (
     "description" TEXT NOT NULL,
     "icon" BYTEA,
     "abbreviation" TEXT NOT NULL,
-    "seatAmount" INTEGER NOT NULL,
+    "seatAmount" INTEGER NOT NULL DEFAULT 2,
 
     CONSTRAINT "NonStateActor_pkey" PRIMARY KEY ("id")
 );
@@ -167,6 +176,12 @@ CREATE TABLE "TeamMember" (
 );
 
 -- CreateTable
+CREATE TABLE "_CommitteeToNation" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "_CustomConferenceRoleToSingleParticipant" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL
@@ -203,6 +218,12 @@ CREATE UNIQUE INDEX "DelegationMember_conferenceId_userId_key" ON "DelegationMem
 CREATE UNIQUE INDEX "ConferenceSupervisor_conferenceId_userId_key" ON "ConferenceSupervisor"("conferenceId", "userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "_CommitteeToNation_AB_unique" ON "_CommitteeToNation"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_CommitteeToNation_B_index" ON "_CommitteeToNation"("B");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_CustomConferenceRoleToSingleParticipant_AB_unique" ON "_CustomConferenceRoleToSingleParticipant"("A", "B");
 
 -- CreateIndex
@@ -222,9 +243,6 @@ ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantS
 
 -- AddForeignKey
 ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantStatus_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Nation" ADD CONSTRAINT "Nation_committeeId_fkey" FOREIGN KEY ("committeeId") REFERENCES "Committee"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "NonStateActor" ADD CONSTRAINT "NonStateActor_conferenceId_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -270,6 +288,12 @@ ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_conferenceId_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_A_fkey" FOREIGN KEY ("A") REFERENCES "Committee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_B_fkey" FOREIGN KEY ("B") REFERENCES "Nation"("alpha3Code") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_A_fkey" FOREIGN KEY ("A") REFERENCES "CustomConferenceRole"("id") ON DELETE CASCADE ON UPDATE CASCADE;

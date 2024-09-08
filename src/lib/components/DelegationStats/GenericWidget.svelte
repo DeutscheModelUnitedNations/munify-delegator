@@ -2,7 +2,7 @@
 	import Wrapper from './Wrapper.svelte';
 
 	interface Props {
-		content: { icon: string; title: string; value?: string; desc: string }[];
+		content: { icon: string; title: string; value?: string | number; desc: string }[];
 	}
 
 	let { content }: Props = $props();

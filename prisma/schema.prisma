@@ -14,6 +14,7 @@ generator prismabox {
   output                      = "./generated/schema"
   inputModel                  = true
   additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
+  allowRecursion              = false
 }
 
 enum ConferenceStatus {
@@ -178,13 +179,9 @@ model Delegation {
 
   /// @prismabox.input.hide
   applied         Boolean           @default(false)
-  /// @prismabox.input.hide
   appliedForRoles RoleApplication[]
-  /// @prismabox.update.input.hide
   school          String
-  /// @prismabox.update.input.hide
   motivation      String
-  /// @prismabox.update.input.hide
   experience      String
 
   /// @prismabox.input.hide
@@ -200,13 +197,17 @@ model RoleApplication {
   rank            Int
   delegation      Delegation?    @relation(fields: [delegationId], references: [id])
   delegationId    String?
+
+  @@unique([delegationId, nationId])
+  @@unique([delegationId, nonStateActorId])
+  @@unique([delegationId, rank])
 }
 
 model DelegationMember {
   id             String     @id @default(nanoid())
   conference     Conference @relation(fields: [conferenceId], references: [id])
   conferenceId   String
-  delegation     Delegation @relation(fields: [delegationId], references: [id])
+  delegation     Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId   String
   user           User       @relation(fields: [userId], references: [id])
   userId         String

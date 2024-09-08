@@ -2,10 +2,10 @@
 	import NavButton from '$lib/components/NavButton.svelte';
 	import { page } from '$app/stores';
 	import type { Snippet } from 'svelte';
-	import type { Conference } from '@prisma/client';
+	import type { ConferencePlain } from '$db/generated/schema/Conference';
 
 	interface Props {
-		conferences: Conference[];
+		conferences: (typeof ConferencePlain)[];
 		children: Snippet;
 	}
 
@@ -48,16 +48,24 @@
 					<div class="h-6" />
 					<p class="text-xs text-gray-500 pb-2">Aktive Konferenzen</p>
 					{#each activeConferences as { id, title }}
-						<NavButton href="/dashboard/{id}" icon="fa-flag" {title} active={path.includes(id)}
+						<NavButton
+							href="/dashboard/{id}"
+							icon="fa-flag"
+							title={title ?? ''}
+							active={path.includes(id)}
 						></NavButton>
 					{/each}
 				{/if}
 
-				{#if preConferences.filter((c) => c.status === 'PRE').length > 0}
+				{#if preConferences.length > 0}
 					<div class="h-6" />
 					<p class="text-xs text-gray-500 pb-2">Bevorstehende Konferenzen</p>
 					{#each preConferences as { id, title }}
-						<NavButton href="/dashboard/{id}" icon="fa-flag" {title} active={path.includes(id)}
+						<NavButton
+							href="/dashboard/{id}"
+							icon="fa-flag"
+							title={title ?? ''}
+							active={path.includes(id)}
 						></NavButton>
 					{/each}
 				{/if}
@@ -66,7 +74,11 @@
 					<div class="h-6" />
 					<p class="text-xs text-gray-500 pb-2">Vergangene Konferenzen</p>
 					{#each pastConferences as { id, title }}
-						<NavButton href="/dashboard/{id}" icon="fa-flag" {title} active={path.includes(id)}
+						<NavButton
+							href="/dashboard/{id}"
+							icon="fa-flag"
+							title={title ?? ''}
+							active={path.includes(id)}
 						></NavButton>
 					{/each}
 				{/if}

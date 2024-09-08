@@ -4,6 +4,9 @@
 	import PreConferenceStage from './DelegationPreConferenceStage.svelte';
 	import RegistrationStage from './DelegationRegistrationStage.svelte';
 	import PostConferenceStage from './DelegationPostConferenceStage.svelte';
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
 	enum STAGE {
 		REGISTRATION = 'REGISTRATION',
@@ -20,7 +23,6 @@
 	const conference = $derived(data?.conferences.find((x) => x.id === data.conferenceId));
 
 	const determinStage = () => {
-		const now = new Date();
 		if (conference) {
 			if (conference.status === 'POST') {
 				return 'POST_CONFERENCE';
@@ -33,15 +35,20 @@
 			// 	return 'PRE_CONFERENCE';
 			// }
 			if (
-				data.userData.delegationMemberships?.find((x) => x.conference.id === data.conferenceId)
-					?.delegation.applied
+				data.userData.delegationMemberships?.find((x) => x.conferenceId === data.conferenceId)
+					?.delegation?.applied
 			) {
 				return 'POST_REGISTRATION';
 			}
 			return 'REGISTRATION';
 		}
-		throw new Error('Conference not found');
 	};
+
+	$effect(() => {
+		if (conference === undefined) {
+			goto('/no-conference');
+		}
+	});
 </script>
 
 <Header title={conference?.title ?? 'Unknown'} />
