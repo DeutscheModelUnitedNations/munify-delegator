@@ -11,7 +11,7 @@
 
 <li>
 	<a {href} class={`flex items-center ${active && 'active'}`}>
-		<i class="fa-{active ? 'solid' : 'duotone'} {icon} w-5" />
+		<i class="fa-{active ? 'solid' : 'duotone'} {icon} w-5"></i>
 		<div>{title}</div>
 	</a>
 </li>

@@ -155,5 +155,14 @@
 	"completeSignupConfirmation": "Möchten Sie die Anmeldung wirklich abschließen? Nach dem Abschluss können Sie keine Änderungen mehr vornehmen.",
 	"completeSignupSuccess": "Anmeldung erfolgreich abgeschlossen",
 	"completeSignupSuccessDescription": "Ihre Anmeldung wurde erfolgreich abgeschlossen. Sie nehmen nun am Auswahlverfahren teil. Das Auswahlverfahren findet nach Ende der Anmeldephase statt und kann einige Zeit in Anspruch nehmen. Sie werden per E-Mail über das Ergebnis informiert. Bitte sehen Sie von Nachfragen ab.",
-	"noDangerZoneOptions": "Da Sie die Online-Anmeldung bereits abgeschlossen haben, können Sie die delegation weder verlassen noch löschen. Bitte wenden Sie sich mit Problemen an die Teilnehmendenbetreuung."
+	"noDangerZoneOptions": "Da Sie die Online-Anmeldung bereits abgeschlossen haben, können Sie die delegation weder verlassen noch löschen. Bitte wenden Sie sich mit Problemen an die Teilnehmendenbetreuung.",
+	"profileSettings": "Profilverwaltung",
+	"logout": "Logout",
+	"activeConferences": "Aktive Konferenzen",
+	"upcomingConferences": "Kommende Konferenzen",
+	"pastConferences": "Vergangene Konferenzen",
+	"myConferences": "Meine Konferenzen",
+	"allConferences": "Alle Konferenzen",
+	"title": "Titel",
+	"location": "Ort"
 }

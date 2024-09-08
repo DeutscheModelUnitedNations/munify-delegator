@@ -293,6 +293,7 @@
 						class="input input-bordered w-full input-sm"
 						value={questionnaireValues.school}
 						oninput={(e) => {
+							// @ts-expect-error
 							questionnaireValues.school = e.target.value;
 						}}
 						disabled={!userIsHeadDelegate || data.delegationData?.applied}
@@ -308,7 +309,10 @@
 						placeholder={m.answerHere()}
 						class="textarea textarea-bordered w-full textarea-sm"
 						value={questionnaireValues.motivation}
-						oninput={(e) => (questionnaireValues.motivation = e.target.value)}
+						oninput={(e) => {
+							// @ts-expect-error
+							questionnaireValues.motivation = e.target.value;
+						}}
 						disabled={!userIsHeadDelegate || data.delegationData?.applied}
 						required
 					></textarea>
@@ -323,7 +327,10 @@
 						placeholder={m.answerHere()}
 						class="textarea textarea-bordered w-full textarea-sm"
 						value={questionnaireValues.experience}
-						oninput={(e) => (questionnaireValues.experience = e.target.value)}
+						oninput={(e) => {
+							// @ts-expect-error
+							questionnaireValues.experience = e.target.value;
+						}}
 						disabled={!userIsHeadDelegate || data.delegationData?.applied}
 						required
 					></textarea>
@@ -395,7 +402,7 @@
 		</div>
 	{:else}
 		<div class="flex flex-col gap-2">
-			{#if data.delegationData.members.length > 1}
+			{#if data.delegationData?.members.length ?? 0 > 1}
 				<button class="btn btn-error" onclick={leaveDelegation}>{m.leaveDelegation()}</button>
 			{/if}
 			{#if userIsHeadDelegate}

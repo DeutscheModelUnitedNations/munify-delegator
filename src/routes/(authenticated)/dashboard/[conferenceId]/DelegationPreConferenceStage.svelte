@@ -6,7 +6,7 @@
 	import CountryStats from '$lib/components/countryStats/CountryStats.svelte';
 </script>
 
-<section class="flex flex-col gap-2">
+<!-- <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">Delegationsstatus</h2>
 	<div class="stats shadow bg-base-200">
 		<RoleWidget countryCode="gb" />
@@ -41,4 +41,4 @@
 <section class="flex flex-col">
 	<h2 class="text-2xl font-bold mb-4">Informationen zu ihrem Land</h2>
 	<CountryStats countryCode="gmb" />
-</section>
+</section> -->

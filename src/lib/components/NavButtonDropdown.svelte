@@ -13,7 +13,7 @@
 <li>
 	<details>
 		<summary>
-			<i class={`fa-duotone ${icon} w-5`} />
+			<i class={`fa-duotone ${icon} w-5`}></i>
 			<div>{title}</div>
 		</summary>
 		<ul>

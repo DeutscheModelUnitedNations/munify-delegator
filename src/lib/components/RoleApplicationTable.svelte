@@ -3,7 +3,7 @@
 	import Flag from '$lib/components/Flag.svelte';
 
 	interface Props {
-		roleApplications: RoleApplication[];
+		roleApplications: any[];
 	}
 
 	let { roleApplications }: Props = $props();

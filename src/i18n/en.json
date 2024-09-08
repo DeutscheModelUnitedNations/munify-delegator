@@ -155,5 +155,14 @@
 	"completeSignupConfirmation": "Do you really want to complete the registration? Once completed, you will not be able to make any changes.",
 	"completeSignupSuccess": "Registration Successfully Completed",
 	"completeSignupSuccessDescription": "Your registration has been successfully completed. You are now participating in the selection process. The selection process will take place after the registration phase ends and may take some time. You will be informed of the results via email. Please refrain from making inquiries.",
-	"noDangerZoneOptions": "Since you already completed the registration, you can neither leave nor delete the delegation. If you experience any trouble, please contact the participant care"
+	"noDangerZoneOptions": "Since you already completed the registration, you can neither leave nor delete the delegation. If you experience any trouble, please contact the participant care",
+	"profileSettings": "Profile Settings",
+	"logout": "Logout",
+	"activeConferences": "Active Conferences",
+	"upcomingConferences": "Upcoming Conferences",
+	"pastConferences": "Past Conferences",
+	"myConferences": "My Conferences",
+	"allConferences": "All Conferences",
+	"title": "Title",
+	"location": "Location"
 }

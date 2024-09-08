@@ -34,9 +34,11 @@
 		return nations()
 			.filter(
 				(nation) =>
-					!data.delegationData.appliedForRoles.find((role) => role.nationId === nation.alpha3Code)
+					!data.delegationData?.appliedForRoles.find((role) => role.nationId === nation.alpha3Code)
 			)
-			.filter((nation) => getNumOfSeatsPerNation(nation) >= data.delegationData?.members.length);
+			.filter(
+				(nation) => getNumOfSeatsPerNation(nation) >= (data.delegationData?.members?.length ?? 0)
+			);
 	});
 
 	let nonStateActors = $derived(() => {
@@ -47,9 +49,9 @@
 		return nonStateActors()
 			.filter(
 				(nsa) =>
-					!data.delegationData.appliedForRoles.find((role) => role.nonStateActorId === nsa.id)
+					!data.delegationData?.appliedForRoles.find((role) => role.nonStateActorId === nsa.id)
 			)
-			.filter((nsa) => nsa.seatAmount >= data.delegationData?.members.length);
+			.filter((nsa) => nsa.seatAmount >= (data.delegationData?.members.length ?? 0));
 	});
 
 	const getNumOfSeatsPerNation = (nation: Nation) => {
@@ -95,19 +97,20 @@
 								<td>
 									<div class="flex items-center gap-4">
 										{#if role.nonStateActor}
-											{#if role.nonStateActors?.icon}
+											<!-- TODO: Enable custom images for NSAs
+											 {#if role.nonStateActors?.icon} 
 												<img
 													src={role.nonStateActor.icon}
 													alt={role.nonStateActor.name}
 													class="w-6 h-6 rounded-full"
 												/>
-											{:else}
-												<Flag nsa size="xs" />
-											{/if}
+											{:else} -->
+											<Flag nsa size="xs" />
+											<!-- {/if} -->
 											<span>{role.nonStateActor.name}</span>
 										{:else}
-											<Flag alpha2Code={role.nation.alpha2Code} size="xs" />
-											<span>{countryCodeToLocalName(role.nation.alpha3Code)}</span>
+											<Flag alpha2Code={role.nation?.alpha2Code} size="xs" />
+											<span>{countryCodeToLocalName(role.nation?.alpha3Code ?? 'Not Found')}</span>
 										{/if}
 									</div>
 								</td>
@@ -116,7 +119,7 @@
 										<td class="text-center"><i class="fa-duotone fa-minus"></i></td>
 									{:else}
 										<td class="text-center">
-											{#if committee.nations.find((c) => c.alpha3Code === role.nation.alpha3Code)}
+											{#if committee.nations.find((c) => c.alpha3Code === role.nation?.alpha3Code)}
 												{#each { length: committee.numOfSeatsPerDelegation } as _}
 													<i class="fa-duotone fa-check"></i>
 												{/each}
@@ -127,7 +130,9 @@
 								<td class="text-center">
 									{role.nonStateActor
 										? role.nonStateActor.seatAmount
-										: getNumOfSeatsPerNation(role.nation)}
+										: role.nation
+											? getNumOfSeatsPerNation(role.nation)
+											: 0}
 								</td>
 								<td>
 									<button
@@ -186,6 +191,7 @@
 								<button
 									class="btn btn-square bg-base-200 btn-sm"
 									onclick={() => {
+										if (!data.delegationData) return;
 										checkForError(
 											api.roleApplication.post({
 												nationId: nation.alpha3Code,
@@ -223,6 +229,7 @@
 									<button
 										class="btn btn-square bg-base-200 btn-sm"
 										onclick={() => {
+											if (!data.delegationData) return;
 											checkForError(
 												api.roleApplication.post({
 													nonStateActorId: nsa.id,

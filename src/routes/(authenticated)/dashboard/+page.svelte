@@ -4,6 +4,7 @@
 	import { type PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,7 +15,7 @@
 	});
 </script>
 
-<Header title="Meine Konferenzen" />
+<Header title={m.myConferences()} />
 <section class="mt-10 flex flex-wrap gap-4">
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
@@ -26,20 +27,20 @@
 			<div
 				class="w-full h-full flex flex-col justify-center items-center border border-primary border-dashed rounded-xl hover:bg-base-100 hover:shadow-lg hover:scale-[101%] transition-all duration-300 ease-in-out p-4"
 			>
-				<i class="fa-duotone fa-plus text-5xl text-primary" />
-				<p class="text-primary text-lg mt-4">Zu Konferenz anmelden</p>
+				<i class="fa-duotone fa-plus text-5xl text-primary"></i>
+				<p class="text-primary text-lg mt-4">{m.signup()}</p>
 			</div>
 		</a>
 	</div>
 </section>
 
 <section class="mt-10">
-	<h2 class="text-2xl font-bold">Alle Konferenzen</h2>
+	<h2 class="text-2xl font-bold">{m.allConferences()}</h2>
 	<table class="table overflow-x-auto">
 		<thead>
 			<tr>
-				<th>Titel</th>
-				<th>Ort</th>
+				<th>{m.title()}</th>
+				<th>{m.location()}</th>
 				<th></th>
 			</tr>
 		</thead>

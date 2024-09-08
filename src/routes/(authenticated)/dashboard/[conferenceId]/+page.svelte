@@ -34,12 +34,6 @@
 			// if () { // TODO logic to determaian if the person has been assigned a role yet
 			// 	return 'PRE_CONFERENCE';
 			// }
-			if (
-				data.userData.delegationMemberships?.find((x) => x.conferenceId === data.conferenceId)
-					?.delegation?.applied
-			) {
-				return 'POST_REGISTRATION';
-			}
 			return 'REGISTRATION';
 		}
 	};

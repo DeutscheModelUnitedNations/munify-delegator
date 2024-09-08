@@ -3,9 +3,11 @@
 	import { page } from '$app/stores';
 	import type { Snippet } from 'svelte';
 	import type { ConferencePlain } from '$db/generated/schema/Conference';
+	import type { Conference } from '@prisma/client';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
-		conferences: (typeof ConferencePlain)[];
+		conferences: any[];
 		children: Snippet;
 	}
 
@@ -45,8 +47,8 @@
 				{/if}
 
 				{#if activeConferences.length > 0}
-					<div class="h-6" />
-					<p class="text-xs text-gray-500 pb-2">Aktive Konferenzen</p>
+					<div class="h-6"></div>
+					<p class="text-xs text-gray-500 pb-2">{m.activeConferences()}</p>
 					{#each activeConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -58,8 +60,8 @@
 				{/if}
 
 				{#if preConferences.length > 0}
-					<div class="h-6" />
-					<p class="text-xs text-gray-500 pb-2">Bevorstehende Konferenzen</p>
+					<div class="h-6"></div>
+					<p class="text-xs text-gray-500 pb-2">{m.upcomingConferences()}</p>
 					{#each preConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -71,8 +73,8 @@
 				{/if}
 
 				{#if pastConferences.length > 0}
-					<div class="h-6" />
-					<p class="text-xs text-gray-500 pb-2">Vergangene Konferenzen</p>
+					<div class="h-6"></div>
+					<p class="text-xs text-gray-500 pb-2">{m.pastConferences()}</p>
 					{#each pastConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -83,9 +85,9 @@
 					{/each}
 				{/if}
 
-				<div class="h-6" />
+				<div class="h-6"></div>
 
-				<NavButton href="/registration" icon="fa-plus" title="Anmeldung"></NavButton>
+				<NavButton href="/registration" icon="fa-plus" title={m.signup()}></NavButton>
 			</ul>
 		</nav>
 		<!-- /sidebar menu -->
