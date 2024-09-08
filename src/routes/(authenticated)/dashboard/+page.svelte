@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Header from '$lib/components/Header.svelte';
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
-	import { type PageData } from './$types';
+	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages.js';
