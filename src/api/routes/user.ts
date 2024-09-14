@@ -88,7 +88,9 @@ export const user = new Elysia({
 			return db.user.findUniqueOrThrow({
 				where: { id: user.sub },
 				include: {
-					delegationMemberships: true,
+					delegationMemberships: {
+						where: permissions.allowDatabaseAccessTo('read').DelegationMember
+					},
 					singleParticipant: true,
 					conferenceParticipantStatus: true,
 					conferenceSupervisor: true,
@@ -98,16 +100,5 @@ export const user = new Elysia({
 		},
 		{
 			response: User
-		}
-	)
-	.patch(
-		'/user/me',
-		async ({ permissions, body }) => {
-			const user = permissions.mustBeLoggedIn();
-			return db.user.update({ where: { id: user.sub }, data: body });
-		},
-		{
-			body: UserPlainInputUpdate,
-			response: UserPlain
 		}
 	);

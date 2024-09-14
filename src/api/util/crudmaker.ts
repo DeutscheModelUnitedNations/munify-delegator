@@ -18,13 +18,14 @@ export namespace CRUDMaker {
 				// @ts-ignore
 				return await db[entity].findMany({
 					where: {
-						...(query ?? {}),
+						// TODO https://github.com/elysiajs/elysia/issues/829
+						// ...(query ?? {}),
 						AND: [permissions.allowDatabaseAccessTo('list')[capitalizeFirstLetterOfUnion(entity)]]
 					}
 				});
 			},
 			{
-				query: t.Optional(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Where`]),
+				// query: t.Optional(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Where`]),
 				response: t.Array(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Plain`])
 			}
 		);

@@ -7,12 +7,14 @@ import { Committee } from '$db/generated/schema/Committee';
 export const committee = new Elysia()
 	.use(permissionsPlugin)
 	.get(
-		'committee',
+		'/committee',
 		async ({ permissions, query }) => {
-			const _user = permissions.mustBeLoggedIn();
+			console.log('query:', query);
+
 			return await db.committee.findMany({
 				where: {
-					conferenceId: query.conferenceId
+					conferenceId: query.conferenceId,
+					AND: [permissions.allowDatabaseAccessTo('list').Committee]
 				},
 				include: {
 					nations: true
@@ -20,11 +22,11 @@ export const committee = new Elysia()
 			});
 		},
 		{
-			query: t.Optional(t.Object({ conferenceId: t.String() })),
+			//TODO
+			// query: t.Optional(t.Partial(t.Object({ conferenceId: t.String() }))),
 			response: t.Array(t.Omit(Committee, ['conference']))
 		}
 	)
-
 	.use(CRUDMaker.getOne('committee'))
 	.use(CRUDMaker.createOne('committee'))
 	.use(CRUDMaker.updateOne('committee'))

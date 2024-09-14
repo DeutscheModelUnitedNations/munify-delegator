@@ -4,8 +4,10 @@ import worldCountries from 'world-countries';
 
 const seedDb = new PrismaClient();
 
+const isDev = process.env.NODE_ENV === 'development';
+
 console.info('Main seeding script');
-console.info('Devmode: ', process.env.DEVMODE === 'true');
+console.info('Devmode: ', isDev);
 console.info('---');
 
 console.info('Creating nations');
@@ -17,6 +19,6 @@ await seedDb.nation.createMany({
 	})
 });
 
-if (process.env.DEVMODE) {
+if (isDev) {
 	await devSeed(seedDb);
 }
