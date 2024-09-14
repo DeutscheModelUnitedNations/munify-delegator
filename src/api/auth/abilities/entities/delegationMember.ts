@@ -12,8 +12,12 @@ export const defineAbilitiesForDelegationMemberEntity = (
 			OR: [
 				{
 					delegation: {
-						members: { some: { user: { id: oidc.user.sub }, isHeadDelegate: true } },
-						supervisors: { some: { user: { id: oidc.user.sub } } }
+						members: { some: { user: { id: user.sub } } }
+					}
+				},
+				{
+					delegation: {
+						supervisors: { some: { user: { id: user.sub } } }
 					}
 				}
 			]

@@ -10,7 +10,7 @@ import type { Capitalize } from '@sinclair/typebox';
 import { defineAbilitiesForDelegationMemberEntity } from './entities/delegationMember';
 import { defineAbilitiesForCommittee } from './entities/committee';
 
-const actions = ['list', 'create', 'read', 'update', 'delete', 'join'] as const;
+const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 /**
