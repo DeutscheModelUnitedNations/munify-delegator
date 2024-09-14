@@ -170,24 +170,24 @@ model SingleParticipant {
 }
 
 model Delegation {
-  id           String             @id @default(nanoid())
-  /// @prismabox.update.input.hide
-  conference   Conference         @relation(fields: [conferenceId], references: [id])
-  conferenceId String
+  id         String @id @default(nanoid())
   /// @prismabox.input.hide
-  entryCode    String             @unique
-  /// @prismabox.input.hide
-  members      DelegationMember[]
+  entryCode  String @unique
+  school     String
+  motivation String
+  experience String
 
   /// @prismabox.input.hide
   applied         Boolean           @default(false)
   appliedForRoles RoleApplication[]
-  school          String
-  motivation      String
-  experience      String
 
+  /// @prismabox.update.input.hide
+  conference   Conference             @relation(fields: [conferenceId], references: [id])
+  conferenceId String
   /// @prismabox.input.hide
-  supervisors ConferenceSupervisor[]
+  members      DelegationMember[]
+  /// @prismabox.input.hide
+  supervisors  ConferenceSupervisor[]
 }
 
 model RoleApplication {
@@ -234,7 +234,6 @@ model ConferenceSupervisor {
 }
 
 enum TeamRole {
-  ADMIN
   PROJECT_MANAGEMENT
   PARTICIPANT_CARE
   MEMBER

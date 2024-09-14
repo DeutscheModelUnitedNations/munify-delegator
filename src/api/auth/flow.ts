@@ -57,8 +57,7 @@ export function startSignin(visitedUrl: URL) {
 		visitedUrl: visitedUrl.toString()
 	};
 	const redirect_uri = client.authorizationUrl({
-		scope:
-			'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:project:roles urn:zitadel:iam:user:metadata',
+		scope: dynamicPrivateConfig.OIDC.SCOPES!,
 		code_challenge,
 		code_challenge_method: 'S256',
 		state: encodeURIComponent(JSON.stringify(state)),

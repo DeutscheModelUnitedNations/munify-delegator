@@ -24,7 +24,8 @@ export namespace CRUDMaker {
 				});
 			},
 			{
-				query: t.Optional(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Where`]),
+				// TODO https://github.com/elysiajs/elysia/issues/829
+				// query: t.Optional(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Where`]),
 				response: t.Array(Schemes[`${capitalizeFirstLetterOfUnion(entity)}Plain`])
 			}
 		);

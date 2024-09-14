@@ -21,7 +21,8 @@ services:
   #  "family_name": "Munify",
   #  "given_name": "Delegator Jr.",
   #  "preferred_username": "delegatoruser_123",
-  #  "locale": "de"
+  #  "locale": "de",
+  #  "urn:zitadel:iam:org:project:275671427955294244:roles": {"admin": {}}
   # }
   # mockoidc:
   #   image: ghcr.io/navikt/mock-oauth2-server:2.1.5
