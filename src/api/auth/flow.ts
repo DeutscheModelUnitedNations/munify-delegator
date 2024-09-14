@@ -58,7 +58,7 @@ export function startSignin(visitedUrl: URL) {
 	};
 	const redirect_uri = client.authorizationUrl({
 		scope:
-			'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:project:roles urn:zitadel:iam:user:metadata',
+			'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:projects:roles urn:zitadel:iam:user:metadata',
 		code_challenge,
 		code_challenge_method: 'S256',
 		state: encodeURIComponent(JSON.stringify(state)),
