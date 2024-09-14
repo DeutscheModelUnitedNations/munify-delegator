@@ -77,7 +77,7 @@
 	const stats = $derived([
 		{
 			icon: 'users',
-			title: 'Mitglieder',
+			title: m.members(),
 			value: data.delegationData?.members?.length,
 			desc: 'in der Delegation'
 		},
