@@ -10,6 +10,7 @@
 	import UdteamUp from '$assets/undraw/team-up.svg';
 	import UdProgress from '$assets/undraw/progress.svg';
 	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
+	import { env } from '$env/dynamic/public';
 
 	const munSh = {
 		name: 'MUN-SH',
@@ -62,10 +63,30 @@
 				<p>{m.homeYourConferencesSub()}</p>
 			</UndrawCard>
 		</section>
-		<section class="flex justify-center items-center">
+		<section class="flex flex-col justify-center items-center gap-4">
 			<div class="alert alert-warning max-ch-md" role="alert">
-				<i class="fas fa-wrench"></i>
-				<span>{m.homeDraftDisclaimer()}</span>
+				<i class="fas fa-wrench text-2xl"></i>
+				<div class="flex flex-col gap-2">
+					<h2 class="font-bold text-xl">{m.homeDraftDisclaimerHeader()}</h2>
+					<p>{m.homeDraftDisclaimer()}</p>
+				</div>
+			</div>
+			<div class="alert alert-info max-ch-md" role="alert">
+				<i class="fas fa-bug text-2xl"></i>
+				<div class="flex flex-col gap-2">
+					<h2 class="font-bold text-xl">{m.feedback()}</h2>
+					<p>{m.homeDraftPleaseHelp()}</p>
+					<a href={env.PUBLIC_FEEDBACK_URL} target="_blank" class="btn btn-outline sm:btn-wide">
+						{m.feedbackBoard()}
+					</a>
+				</div>
+			</div>
+			<div class="alert alert-error max-ch-md" role="alert">
+				<i class="fa-solid fa-message-question text-2xl"></i>
+				<div class="flex flex-col gap-2">
+					<h2 class="font-bold text-xl">{m.homeHelpWithTechnicalIssuesHeadline()}</h2>
+					<p>{@html m.homeHelpWithTechnicalIssues()}</p>
+				</div>
 			</div>
 		</section>
 		<section class="flex flex-col gap-6 items-center">
