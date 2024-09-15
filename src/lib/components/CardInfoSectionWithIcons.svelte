@@ -10,7 +10,7 @@
 
 <div class="grid grid-cols-[auto_1fr] gap-2">
 	{#each items as { fontAwesomeIcon, text, link }}
-		<i class={`fa-duotone ${fontAwesomeIcon}`}></i>
+		<i class={`fa-duotone fa-${fontAwesomeIcon.replace("fa-", "")}`}></i>
 		{#if link}
 			<a href={link} class="hover:underline" target="_blank">{text}</a>
 		{:else}

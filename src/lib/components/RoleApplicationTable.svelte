@@ -27,7 +27,9 @@
 					<td class="w-full">{countryCodeToLocalName(application.nation.alpha2Code, 'de')}</td>
 					<td class="text-center">{application.nation.numOfSeats}</td>
 				{:else if application?.nonStateActor}
-					<td class="text-center"><Flag nsa size="xs" /></td>
+					<td class="text-center"
+						><Flag nsa size="xs" icon={application.nonStateActor.fontAwesomeIcon} /></td
+					>
 					<td class="w-full">{application.nonStateActor.name}</td>
 					<td class="text-center">{application.nonStateActor.seatAmount}</td>
 				{/if}
