@@ -23,10 +23,7 @@
 					<li>
 						<a {href} class="hover:text-primary transition-all duration-300 !no-underline">
 							{#if icon}
-								<i
-									class="fa-solid fa-{icon} {title &&
-										'mr-1'}"
-								></i>
+								<i class="fa-solid fa-{icon} {title && 'mr-1'}"></i>
 							{/if}
 							{title}
 						</a>
