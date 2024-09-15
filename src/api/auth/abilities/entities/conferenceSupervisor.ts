@@ -39,5 +39,12 @@ export const defineAbilitiesForConferenceSupervisor = (
 				}
 			}
 		});
+
+		// supervisors should be able to update/delete themselves
+		can(['update', 'delete'], 'ConferenceSupervisor', {
+			user: {
+				id: user.sub
+			}
+		});
 	}
 };

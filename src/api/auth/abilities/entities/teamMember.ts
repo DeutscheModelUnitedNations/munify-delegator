@@ -13,5 +13,9 @@ export const defineAbilitiesForTeamMember = (
 		can(['read', 'list'], 'TeamMember', {
 			conference: { teamMembers: { some: { user: { id: user.sub } } } }
 		});
+
+		can(['update', 'delete'], 'TeamMember', {
+			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
+		});
 	}
 };

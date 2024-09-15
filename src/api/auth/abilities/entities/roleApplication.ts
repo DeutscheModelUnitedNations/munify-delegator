@@ -38,6 +38,19 @@ export const defineAbilitiesForRoleApplication = (
 			}
 		});
 
+		can(['create', 'update', 'delete'], 'RoleApplication', {
+			delegation: {
+				members: {
+					some: {
+						user: {
+							id: user.sub
+						},
+						isHeadDelegate: true
+					}
+				}
+			}
+		});
+
 		// delegation supervisors can see the applications of their delegations
 		can('read', 'RoleApplication', {
 			delegation: {

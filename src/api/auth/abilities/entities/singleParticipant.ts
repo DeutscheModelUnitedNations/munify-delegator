@@ -27,5 +27,10 @@ export const defineAbilitiesForSingleParticipant = (
 				}
 			}
 		});
+
+		// the user should be able to update/delete their own entities
+		can(['update', 'delete'], 'SingleParticipant', {
+			user: { id: user.sub }
+		});
 	}
 };

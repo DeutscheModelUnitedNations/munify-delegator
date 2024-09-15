@@ -18,8 +18,8 @@ export const defineAbilitiesForDelegationEntity = (
 			supervisors: { some: { user: { id: user.sub } } }
 		});
 
-		// the head delegate of a delegation should be able to update it
-		can('update', 'Delegation', {
+		// the head delegate of a delegation should be able to update/delete it
+		can(['update', 'delete'], 'Delegation', {
 			applied: false,
 			members: { some: { user: { id: user.sub }, isHeadDelegate: true } }
 		});
