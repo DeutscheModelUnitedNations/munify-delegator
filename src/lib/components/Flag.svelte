@@ -5,9 +5,10 @@
 		size?: 'xs' | 'sm' | 'md' | 'lg';
 		alpha2Code?: string;
 		nsa?: boolean;
+		icon?: string;
 	}
 
-	let { size = 'md', alpha2Code, nsa = false }: Props = $props();
+	let { size = 'md', alpha2Code, nsa = false, icon = 'fa-hand-point-up' }: Props = $props();
 
 	const flagClassNames = () => {
 		switch (size) {
@@ -31,10 +32,10 @@
 
 <div
 	class="{flagClassNames()} overflow-hidden shadow flex justify-center items-center {nsa &&
-		'bg-error'}"
+		'bg-base-300'}"
 >
 	{#if nsa}
-		<i class="fa-solid fa-hand-point-up"></i>
+		<i class="fa-solid fa-{icon.replace('fa-', '')}"></i>
 	{:else}
 		<span class="fi fi-{alpha2Code}"></span>
 	{/if}

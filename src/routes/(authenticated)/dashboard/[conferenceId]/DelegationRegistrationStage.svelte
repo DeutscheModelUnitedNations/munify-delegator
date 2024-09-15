@@ -64,7 +64,7 @@
 		},
 		{
 			title: m.todoEnterDelegationPreferences(),
-			completed: data.delegationData.appliedForRoles.length >= 3,
+			completed: data.delegationData.appliedForRoles?.length >= 3,
 			help: m.todoEnterDelegationPreferencesHelp()
 		},
 		{

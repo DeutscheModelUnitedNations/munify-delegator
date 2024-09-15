@@ -37,7 +37,9 @@
 					!data.delegationData?.appliedForRoles.find((role) => role.nationId === nation.alpha3Code)
 			)
 			.filter(
-				(nation) => getNumOfSeatsPerNation(nation) >= (data.delegationData?.members?.length ?? 0)
+				(nation) =>
+					getNumOfSeatsPerNation(nation) >= (data.delegationData?.members?.length ?? 0) &&
+					getNumOfSeatsPerNation(nation) > 1
 			);
 	});
 
@@ -105,7 +107,7 @@
 													class="w-6 h-6 rounded-full"
 												/>
 											{:else} -->
-											<Flag nsa size="xs" />
+											<Flag nsa size="xs" icon={role.nonStateActor.fontAwesomeIcon ?? undefined} />
 											<!-- {/if} -->
 											<span>{role.nonStateActor.name}</span>
 										{:else}
@@ -120,9 +122,11 @@
 									{:else}
 										<td class="text-center">
 											{#if committee.nations.find((c) => c.alpha3Code === role.nation?.alpha3Code)}
-												{#each { length: committee.numOfSeatsPerDelegation } as _}
-													<i class="fa-duotone fa-check"></i>
-												{/each}
+												<div class="tooltip" data-tip={committee.abbreviation}>
+													{#each { length: committee.numOfSeatsPerDelegation } as _}
+														<i class="fa-duotone fa-check"></i>
+													{/each}
+												</div>
 											{/if}
 										</td>
 									{/if}
@@ -134,7 +138,7 @@
 											? getNumOfSeatsPerNation(role.nation)
 											: 0}
 								</td>
-								<td>
+								<td class="flex gap-1">
 									<button
 										class="btn btn-square bg-base-200 btn-sm {index === 0 && 'opacity-10'}"
 										disabled={index === 0}
@@ -161,70 +165,35 @@
 			<div class="flex flex-col gap-4">
 				<h3 class="font-bold text-xl">{m.nationsPool()}</h3>
 				<p class="text-sm">{m.nationsPoolDescription()}</p>
-				<NationsWithCommitteesTable
-					committees={data.committees.map((committee) => ({
-						abbreviation: committee.abbreviation,
-						name: committee.name
-					}))}
-				>
-					{#each nationsPool() as nation}
-						<tr>
-							<td>
-								<div class="flex items-center gap-4">
-									<Flag alpha2Code={nation.alpha2Code} size="xs" />
-									<span>{countryCodeToLocalName(nation.alpha3Code)}</span>
-								</div>
-							</td>
-							{#each data.committees as committee}
-								<td class="text-center">
-									{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
-										{#each { length: committee.numOfSeatsPerDelegation } as _}
-											<i class="fa-duotone fa-check"></i>
-										{/each}
-									{/if}
-								</td>
-							{/each}
-							<td class="text-center">
-								{getNumOfSeatsPerNation(nation)}
-							</td>
-							<td>
-								<button
-									class="btn btn-square bg-base-200 btn-sm"
-									onclick={() => {
-										if (!data.delegationData) return;
-										checkForError(
-											api.roleApplication.post({
-												nationId: nation.alpha3Code,
-												delegationId: data.delegationData.id
-											})
-										);
-										invalidateAll();
-									}}><i class="fa-duotone fa-chevrons-up"></i></button
-								>
-							</td>
-						</tr>
-					{/each}
-				</NationsWithCommitteesTable>
-			</div>
-			<div class="flex flex-col gap-4">
-				<h3 class="font-bold text-xl">{m.nsaPool()}</h3>
-				<p class="text-sm">{m.nsaPoolDescription()}</p>
-
-				<table class="table">
-					<thead>
-						<tr>
-							<th><i class="fa-duotone fa-text"></i></th>
-							<th><i class="fa-duotone fa-info"></i></th>
-							<th class="text-center"><i class="fa-duotone fa-users"></i></th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each nonStateActorsPool() as nsa}
+				<div class="overflow-x-auto">
+					<NationsWithCommitteesTable
+						committees={data.committees.map((committee) => ({
+							abbreviation: committee.abbreviation,
+							name: committee.name
+						}))}
+					>
+						{#each nationsPool() as nation}
 							<tr>
-								<td>{nsa.name}</td>
-								<td><span class="text-sm">{nsa.description}</span></td>
-								<td class="center">{nsa.seatAmount}</td>
+								<td>
+									<div class="flex items-center gap-4">
+										<Flag alpha2Code={nation.alpha2Code} size="xs" />
+										<span>{countryCodeToLocalName(nation.alpha3Code)}</span>
+									</div>
+								</td>
+								{#each data.committees as committee}
+									<td class="text-center">
+										{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
+											<div class="tooltip" data-tip={committee.abbreviation}>
+												{#each { length: committee.numOfSeatsPerDelegation } as _}
+													<i class="fa-duotone fa-check"></i>
+												{/each}
+											</div>
+										{/if}
+									</td>
+								{/each}
+								<td class="text-center">
+									{getNumOfSeatsPerNation(nation)}
+								</td>
 								<td>
 									<button
 										class="btn btn-square bg-base-200 btn-sm"
@@ -232,7 +201,7 @@
 											if (!data.delegationData) return;
 											checkForError(
 												api.roleApplication.post({
-													nonStateActorId: nsa.id,
+													nationId: nation.alpha3Code,
 													delegationId: data.delegationData.id
 												})
 											);
@@ -242,8 +211,48 @@
 								</td>
 							</tr>
 						{/each}
-					</tbody>
-				</table>
+					</NationsWithCommitteesTable>
+				</div>
+			</div>
+			<div class="flex flex-col gap-4">
+				<h3 class="font-bold text-xl">{m.nsaPool()}</h3>
+				<p class="text-sm">{m.nsaPoolDescription()}</p>
+				<div class="overflow-x-auto">
+					<table class="table">
+						<thead>
+							<tr>
+								<th><i class="fa-duotone fa-megaphone"></i></th>
+								<th><i class="fa-duotone fa-info"></i></th>
+								<th class="text-center"><i class="fa-duotone fa-users"></i></th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each nonStateActorsPool() as nsa}
+								<tr>
+									<td>{nsa.name}</td>
+									<td><span class="text-sm">{nsa.description}</span></td>
+									<td class="center">{nsa.seatAmount}</td>
+									<td>
+										<button
+											class="btn btn-square bg-base-200 btn-sm"
+											onclick={() => {
+												if (!data.delegationData) return;
+												checkForError(
+													api.roleApplication.post({
+														nonStateActorId: nsa.id,
+														delegationId: data.delegationData.id
+													})
+												);
+												invalidateAll();
+											}}><i class="fa-duotone fa-chevrons-up"></i></button
+										>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</div>
 		<div class="absolute top-2 right-2">
