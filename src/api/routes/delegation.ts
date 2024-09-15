@@ -267,7 +267,7 @@ export const delegation = new Elysia()
 					where: {
 						conferenceId_userId: {
 							conferenceId: delegation.conferenceId,
-							userId: user.sub
+							userId: user.sub!
 						}
 					}
 				});
@@ -431,7 +431,7 @@ export const delegation = new Elysia()
 					where: {
 						delegationId_userId: {
 							delegationId: delegation.id,
-							userId: user.sub
+							userId: user.sub!
 						}
 					},
 					data: {
@@ -472,7 +472,7 @@ export const delegation = new Elysia()
 					where: {
 						delegationId_userId: {
 							delegationId: delegation.id,
-							userId: user.sub
+							userId: user.sub!
 						}
 					},
 					select: {
@@ -485,7 +485,7 @@ export const delegation = new Elysia()
 				where: {
 					delegationId_userId: {
 						delegationId: delegation.id,
-						userId: user.sub
+						userId: user.sub!
 					}
 				}
 			});
