@@ -21,6 +21,7 @@ const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
 
 export const delegation = new Elysia()
 	.use(CRUDMaker.getAll('delegation'))
+	.use(CRUDMaker.updateOne('delegation'))
 	.use(CRUDMaker.deleteOne('delegation'))
 	.use(permissionsPlugin)
 	.get(

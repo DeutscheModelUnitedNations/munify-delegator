@@ -54,7 +54,7 @@ model Committee {
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
 
-  /// @prismabox.input.hide
+  /// @prismabox.update.input.hide
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
   nations      Nation[]
@@ -96,10 +96,15 @@ model User {
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
 
+  /// @prismabox.input.hide
   delegationMemberships       DelegationMember[]
+  /// @prismabox.input.hide
   conferenceSupervisor        ConferenceSupervisor[]
+  /// @prismabox.input.hide
   conferenceParticipantStatus ConferenceParticipantStatus[]
+  /// @prismabox.input.hide
   teamMember                  TeamMember[]
+  /// @prismabox.input.hide
   singleParticipant           SingleParticipant[]
 }
 
@@ -116,17 +121,20 @@ model ConferenceParticipantStatus {
   paymentStatus      AdministrativeStatus @default(PENDING)
   didAttend          Boolean              @default(false)
 
+  /// @prismabox.update.input.hide
   user         User       @relation(fields: [userId], references: [id])
   userId       String
+  /// @prismabox.update.input.hide
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
 }
 
 model Nation {
-  alpha3Code       String            @id
-  alpha2Code       String            @unique
+  alpha3Code String @id
+  alpha2Code String @unique
   // other properties are fetched from nation databases/libraries which do not want to maintain on our own
   // e.g. localized names, flags, etc.
+
   roleApplications RoleApplication[]
   committees       Committee[]
 }
@@ -139,6 +147,7 @@ model NonStateActor {
   abbreviation    String  @unique
   seatAmount      Int     @default(2)
 
+  /// @prismabox.update.input.hide
   conference       Conference        @relation(fields: [conferenceId], references: [id])
   conferenceId     String
   roleApplications RoleApplication[]
@@ -151,6 +160,7 @@ model CustomConferenceRole {
   description     String
   fontAwesomeIcon String?
 
+  /// @prismabox.update.input.hide
   conference        Conference          @relation(fields: [conferenceId], references: [id])
   conferenceId      String
   singleParticipant SingleParticipant[]
@@ -167,7 +177,9 @@ model SingleParticipant {
   user         User       @relation(fields: [userId], references: [id])
   userId       String
 
-  applied    Boolean @default(false)
+  /// @prismabox.input.hide
+  applied Boolean @default(false)
+
   school     String
   motivation String
   experience String
@@ -184,6 +196,7 @@ model Delegation {
   experience String
   /// wether the delegation has submitted their application
   /// after submitting the entity should not be able to change
+  /// @prismabox.input.hide
   applied    Boolean @default(false)
   // this will always be auto generated
   /// @prismabox.input.hide
@@ -196,6 +209,7 @@ model Delegation {
   members         DelegationMember[]
   /// @prismabox.input.hide
   supervisors     ConferenceSupervisor[]
+  /// @prismabox.input.hide
   appliedForRoles RoleApplication[]
 }
 
@@ -222,10 +236,13 @@ model RoleApplication {
 
 model DelegationMember {
   id             String     @id @default(nanoid())
+  /// @prismabox.update.input.hide
   conference     Conference @relation(fields: [conferenceId], references: [id])
   conferenceId   String
+  /// @prismabox.update.input.hide
   delegation     Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId   String
+  /// @prismabox.update.input.hide
   user           User       @relation(fields: [userId], references: [id])
   userId         String
   isHeadDelegate Boolean
@@ -264,8 +281,10 @@ enum TeamRole {
 
 model TeamMember {
   id           String     @id @default(nanoid())
+  /// @prismabox.update.input.hide
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
+  /// @prismabox.update.input.hide
   user         User       @relation(fields: [userId], references: [id])
   userId       String
   role         TeamRole   @default(MEMBER)
