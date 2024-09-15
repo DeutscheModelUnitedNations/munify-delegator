@@ -384,8 +384,7 @@
 			<TodoTable {todos} />
 			<button
 				class="btn btn-success mt-4"
-				disabled={(todos.filter((x) => x.completed === false).length > 1) ||
-					!userIsHeadDelegate}
+				disabled={todos.filter((x) => x.completed === false).length > 1 || !userIsHeadDelegate}
 				onclick={completeRegistration}
 			>
 				{m.completeSignupButton()}
