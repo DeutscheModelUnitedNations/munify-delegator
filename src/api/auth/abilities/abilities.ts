@@ -7,7 +7,7 @@ import { defineAbilitiesForConference } from './entities/conference';
 import { defineAbilitiesForUserEntity } from './entities/user';
 import { defineAbilitiesForDelegationEntity } from './entities/delegation';
 import type { Capitalize } from '@sinclair/typebox';
-import { defineAbilitiesForDelegationMemberEntity } from './entities/delegationMember';
+import { defineAbilitiesForDelegationMember } from './entities/delegationMember';
 import { defineAbilitiesForCommittee } from './entities/committee';
 
 const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
@@ -68,7 +68,7 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 	defineAbilitiesForCommittee(oidc, builder);
 	defineAbilitiesForUserEntity(oidc, builder);
 	defineAbilitiesForDelegationEntity(oidc, builder);
-	defineAbilitiesForDelegationMemberEntity(oidc, builder);
+	defineAbilitiesForDelegationMember(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

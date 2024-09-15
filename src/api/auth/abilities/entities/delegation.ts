@@ -7,20 +7,34 @@ export const defineAbilitiesForDelegationEntity = (
 	{ can }: AbilityBuilder<AppAbility>
 ) => {
 	if (oidc && oidc.user) {
+		const user = oidc.user;
+
+		// the delegates of a delegation should be able to see it
 		can('read', 'Delegation', {
-			OR: [
-				{
-					members: { some: { user: { id: oidc.user.sub } } }
-				},
-				{
-					supervisors: { some: { user: { id: oidc.user.sub } } }
-				}
-			]
+			members: { some: { user: { id: user.sub } } }
+		});
+		// the supervisors of a delegation should be able to see it
+		can('read', 'Delegation', {
+			supervisors: { some: { user: { id: user.sub } } }
 		});
 
+		// the head delegate of a delegation should be able to update it
 		can('update', 'Delegation', {
 			applied: false,
-			members: { some: { user: { id: oidc.user.sub }, isHeadDelegate: true } }
+			members: { some: { user: { id: user.sub }, isHeadDelegate: true } }
+		});
+
+		// team members should be able to see the delegations of their conferences
+		can(['read', 'list'], 'Delegation', {
+			conference: {
+				teamMembers: {
+					some: {
+						user: {
+							id: user.sub
+						}
+					}
+				}
+			}
 		});
 	}
 };

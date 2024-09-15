@@ -192,13 +192,16 @@ model Delegation {
 
 model RoleApplication {
   id              String         @id @default(nanoid())
+  delegation      Delegation?    @relation(fields: [delegationId], references: [id])
+  delegationId    String?
+  rank            Int
+
+  // only one can be set at a time
+  // the application is either a nation or a nsa
   nation          Nation?        @relation(fields: [nationId], references: [alpha3Code])
   nationId        String?
   nonStateActor   NonStateActor? @relation(fields: [nonStateActorId], references: [id])
   nonStateActorId String?
-  rank            Int
-  delegation      Delegation?    @relation(fields: [delegationId], references: [id])
-  delegationId    String?
 
   @@unique([delegationId, nationId])
   @@unique([delegationId, nonStateActorId])
