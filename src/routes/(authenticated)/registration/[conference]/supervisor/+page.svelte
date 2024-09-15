@@ -6,9 +6,23 @@
 	import { apiClient, checkForError } from '$api/client';
 	import * as m from '$lib/paraglide/messages.js';
 	import { goto } from '$app/navigation';
+	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
+
+	const breadcrumbs = [
+		{ href: '/registration', icon: 'user-plus' },
+		{
+			href: `/registration/${data.conferenceId}`,
+			title: data.conferenceData.title
+		},
+		{
+			href: `/registration/${data.conferenceId}/individual`,
+			title: m.supervisor(),
+			icon: 'chalkboard-user'
+		}
+	];
 
 	let code = $state(data.code ?? '');
 	let delegationPreview = $derived(
@@ -28,6 +42,7 @@
 </script>
 
 <div class="w-full min-h-screen flex flex-col items-center p-4">
+	<RegistrationBreadcrumbs {breadcrumbs} />
 	<main class="w-full h-full flex-1 flex flex-col items-center py-16 text-center">
 		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signupForSupervisors()}</h1>
 		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
@@ -35,6 +50,7 @@
 				<p class="mb-10 max-ch-sm">
 					{m.delegationJoinForSupervisorsDescription()}
 				</p>
+
 				{#if delegationPreview}
 					{#await delegationPreview}
 						<Spinner />
@@ -80,17 +96,15 @@
 						{/if}
 					{/await}
 				{/if}
-				<div class="join">
-					<input
-						type="text"
-						placeholder="Code"
-						bind:value={code}
-						class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
-						oninput={(e: any) => {
-							code = (e.target.value as string).toUpperCase().slice(0, 6);
-						}}
-					/>
-				</div>
+				<input
+					type="text"
+					placeholder="Code"
+					bind:value={code}
+					class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
+					oninput={(e: any) => {
+						code = (e.target.value as string).toUpperCase().slice(0, 6);
+					}}
+				/>
 				<a class="btn btn-warning mt-16" href=".">{m.back()}</a>
 			</div>
 		</div>

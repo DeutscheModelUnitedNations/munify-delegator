@@ -5,9 +5,28 @@
 	import type { SingleParticipant } from '@prisma/client';
 	import { apiClient, checkForError } from '$api/client';
 	import { goto } from '$app/navigation';
+	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
+
+	const breadcrumbs = [
+		{ href: '/registration', icon: 'user-plus' },
+		{
+			href: `/registration/${data.conferenceId}`,
+			title: data.conferenceData.title
+		},
+		{
+			href: `/registration/${data.conferenceId}/individual`,
+			icon: 'square-1'
+		},
+		{
+			href: `/registration/${data.conferenceId}/individual/${data.role.id}`,
+			title: data.role.name,
+			icon: data.role.fontAwesomeIcon?.replace('fa-', '')
+		}
+	];
+
 	let singleParticipant = $state<Pick<SingleParticipant, 'experience' | 'motivation' | 'school'>>({
 		experience: data.existingSingleParticipant?.experience ?? '',
 		motivation: data.existingSingleParticipant?.motivation ?? '',
@@ -37,6 +56,7 @@
 </script>
 
 <div class="w-full min-h-screen flex flex-col items-center p-4">
+	<RegistrationBreadcrumbs {breadcrumbs} />
 	<main class="w-full h-full flex-1 flex flex-col items-center py-16 text-center">
 		<h1 class="text-3xl tracking-wider uppercase mb-3">{data.role.name}</h1>
 		<div
@@ -47,6 +67,7 @@
 			<p class="max-ch-sm">
 				{m.pleaseAnswerTheFollowingQuestions()}
 			</p>
+
 			<form
 				class="contents"
 				onsubmit={(e) => {

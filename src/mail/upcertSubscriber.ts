@@ -8,8 +8,4 @@ const write2File = (data: any, filename: string = 'test.json') => {
 	console.log(`Subscribers written to ${filePath}`);
 };
 
-const listmonk = new Listmonk(
-	'https://listmonk.tolga.casa',
-	'TadeSF',
-	'eefotipahng7laideiph3JiushooSh'
-);
+const listmonk = new Listmonk('://listmonk.my.domain', '', '');

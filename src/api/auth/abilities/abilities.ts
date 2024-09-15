@@ -18,7 +18,7 @@ import { defineAbilitiesForSingleParticipant } from './entities/singleParticipan
 import { defineAbilitiesForTeamMember } from './entities/teamMember';
 import { defineAbilitiesForUserEntity } from './entities/user';
 
-const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
+const actions = ['list', 'create', 'read', 'update', 'delete', 'join'] as const;
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 /**

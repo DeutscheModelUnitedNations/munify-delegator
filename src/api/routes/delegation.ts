@@ -389,7 +389,7 @@ export const delegation = new Elysia()
 					where: {
 						delegationId_userId: {
 							delegationId: delegation.id,
-							userId: user.sub
+							userId: user.sub!
 						}
 					},
 					data: {
