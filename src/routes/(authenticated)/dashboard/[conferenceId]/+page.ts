@@ -12,9 +12,25 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		(x) => x.conferenceId === params.conferenceId
 	);
 
-	const delegationData = delegationMembershipData
-		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
+	const supervisorData = userData.conferenceSupervisor.find(
+		(x) => x.conferenceId === params.conferenceId
+	)
+		? await checkForError(
+				api.conferenceSupervisor.mine({ conferenceId: params.conferenceId }).get()
+			)
 		: undefined;
+
+	async function getSupervisorsDelegationData(data: NonNullable<typeof supervisorData>) {
+		const supervisorsDelegationData = data
+			? await Promise.all(
+					data.delegations.map(async (x) => {
+						return await checkForError(api.delegation({ id: x.id }).get());
+					})
+				)
+			: undefined;
+
+		return supervisorsDelegationData;
+	}
 
 	const committees = await checkForError(
 		api.committee.get({ query: { conferenceId: params.conferenceId } })
@@ -24,11 +40,19 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		api.nonStateActor.get({ query: { conferenceId: params.conferenceId } })
 	);
 
+	const delegationData = delegationMembershipData
+		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
+		: undefined;
+
 	return {
 		conferenceId: params.conferenceId,
 		delegationMembershipData,
 		delegationData,
 		committees,
-		nonStateActors
+		nonStateActors,
+		supervisorData,
+		supervisorsDelegationData: supervisorData
+			? await getSupervisorsDelegationData(supervisorData)
+			: undefined
 	};
 });

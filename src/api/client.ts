@@ -15,7 +15,7 @@ export function apiClient({
 			credentials: 'include'
 		},
 		fetcher: (input: RequestInfo | URL, init?: RequestInit) => {
-			const path = new URL(input.toString()).pathname;
+			const path = input.toString().substring(new URL(input.toString()).origin.length);
 			if (customFetch) {
 				// if we can we want to use the relative path to signal
 				// sveltekit to send along credentials

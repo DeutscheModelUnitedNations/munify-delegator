@@ -64,7 +64,7 @@
 		},
 		{
 			title: m.todoEnterDelegationPreferences(),
-			completed: data.delegationData.appliedForRoles?.length >= 3 ?? undefined,
+			completed: data.delegationData.appliedForRoles.length >= 3,
 			help: m.todoEnterDelegationPreferencesHelp()
 		},
 		{
@@ -77,7 +77,7 @@
 	const stats = $derived([
 		{
 			icon: 'users',
-			title: 'Mitglieder',
+			title: m.members(),
 			value: data.delegationData?.members?.length,
 			desc: 'in der Delegation'
 		},
@@ -384,8 +384,7 @@
 			<TodoTable {todos} />
 			<button
 				class="btn btn-success mt-4"
-				disabled={(todos.filter((x) => x.completed === false).length > 1 ?? true) ||
-					!userIsHeadDelegate}
+				disabled={todos.filter((x) => x.completed === false).length > 1 || !userIsHeadDelegate}
 				onclick={completeRegistration}
 			>
 				{m.completeSignupButton()}

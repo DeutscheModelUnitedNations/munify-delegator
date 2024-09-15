@@ -32,7 +32,7 @@
 	const onPersonalDataFormSubmit = async (e: Event) => {
 		e.preventDefault();
 
-		await api.user.me.patch({
+		await api.user({ id: data.user.sub }).patch({
 			phone,
 			street,
 			apartment,
