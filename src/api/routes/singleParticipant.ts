@@ -1,5 +1,7 @@
-import { PermissionCheckError, permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
+import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
+import { UserFacingError } from '$api/util/logger';
 import { db } from '$db/db';
 import { SingleParticipantInputCreate } from '$db/generated/schema/SingleParticipant';
 import Elysia, { t } from 'elysia';
@@ -15,33 +17,17 @@ export const singleParticipant = new Elysia()
 		'/singleParticipant/add-self-application',
 		async ({ body, permissions }) => {
 			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('create', 'SingleParticipant'));
 
-			// is the user part of a delegation in this conference?
-			const foundMember = await db.delegationMember.findFirst({
-				where: {
+			const { foundDelegationMember, foundSupervisor, foundTeamMember } =
+				await fetchUserParticipations({
 					conferenceId: body.conference.connect.id,
-					user: {
-						id: user.sub
-					}
-				}
-			});
+					userId: user.sub
+				});
 
-			if (foundMember) {
-				throw new PermissionCheckError('You are already a delegation member in this conference');
-			}
-
-			const foundSupervisor = await db.conferenceSupervisor.findFirst({
-				where: {
-					conferenceId: body.conference.connect.id,
-					user: {
-						id: user.sub
-					}
-				}
-			});
-
-			if (foundSupervisor) {
-				throw new PermissionCheckError('You are already a supervisor in this conference');
+			if (foundDelegationMember || foundSupervisor || foundTeamMember) {
+				throw new UserFacingError(
+					"You can't apply as a single participant if you already are a part of this conference!"
+				);
 			}
 
 			return await db.singleParticipant.upsert({

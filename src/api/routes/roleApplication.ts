@@ -10,6 +10,7 @@ import {
 
 export const roleApplication = new Elysia()
 	.use(CRUDMaker.getOne('roleApplication'))
+	.use(CRUDMaker.updateOne('roleApplication'))
 	.use(permissionsPlugin)
 	.get(
 		'/roleApplication',
@@ -45,26 +46,31 @@ export const roleApplication = new Elysia()
 			response: t.Array(t.Omit(RoleApplication, ['delegation']))
 		}
 	)
-	//TODO hier weiter
 	.post(
 		'/roleApplication',
 		async ({ permissions, body }) => {
-			const user = permissions.mustBeLoggedIn();
+			permissions.mustBeLoggedIn();
 
-			const ranks = await db.roleApplication.findMany({
+			// this is for permission checks only
+			await db.delegation.findUniqueOrThrow({
 				where: {
-					delegationId: body.delegationId
-				},
-				select: {
-					rank: true
+					id: body.delegationId,
+					AND: [permissions.allowDatabaseAccessTo('update').Delegation]
 				}
 			});
 
-			const newRank = ranks.length + 1;
+			const amountOfApplications = (
+				await db.roleApplication.aggregate({
+					where: {
+						delegationId: body.delegationId
+					},
+					_count: true
+				})
+			)._count;
 
 			return await db.roleApplication.create({
 				data: {
-					rank: newRank,
+					rank: amountOfApplications + 1,
 					nation: body.nationId
 						? {
 								connect: {
@@ -99,12 +105,10 @@ export const roleApplication = new Elysia()
 	.patch(
 		'/roleApplication/:id/move',
 		async ({ permissions, params, body }) => {
-			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('update', 'RoleApplication'));
-
 			const roleApplication = await db.roleApplication.findUniqueOrThrow({
 				where: {
-					id: params.id
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('update').RoleApplication]
 				}
 			});
 
@@ -148,8 +152,6 @@ export const roleApplication = new Elysia()
 					}
 				});
 			});
-
-			return true;
 		},
 		{
 			params: t.Object({
@@ -160,17 +162,14 @@ export const roleApplication = new Elysia()
 			})
 		}
 	)
-	.use(CRUDMaker.updateOne('roleApplication'))
 	.delete(
 		'/roleApplication/:id',
 		async ({ permissions, params }) => {
-			const _user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('delete', 'RoleApplication'));
-
 			await db.$transaction(async (db) => {
 				const applicationToDelete = await db.roleApplication.findUniqueOrThrow({
 					where: {
-						id: params.id
+						id: params.id,
+						AND: [permissions.allowDatabaseAccessTo('delete').RoleApplication]
 					}
 				});
 
@@ -199,8 +198,6 @@ export const roleApplication = new Elysia()
 					}
 				}
 			});
-
-			return true;
 		},
 		{
 			params: t.Object({
