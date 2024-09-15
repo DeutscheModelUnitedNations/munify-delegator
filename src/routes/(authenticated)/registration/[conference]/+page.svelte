@@ -11,19 +11,28 @@
 
 	import type { PageData } from './$types';
 	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
+	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	const breadcrumbs = [
+		{ href: '/registration', icon: 'user-plus' },
+		{
+			href: `/registration/${data.conferenceId}`,
+			title: data.conferenceData.title
+		}
+	];
 
 	let showAssistent = $state(false);
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
+	<RegistrationBreadcrumbs {breadcrumbs} />
 	<hero class="my-20 text-center">
 		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
 		<p class="max-ch-md">
 			{m.conferenceSignupIntroduction()}
 		</p>
-		<a class="btn btn-warning mt-6" href=".">{m.back()}</a>
 		<div role="alert" class="alert mt-10">
 			<i class="fa-duotone fa-message-question text-xl mx-1"></i>
 			<div class="flex flex-col">

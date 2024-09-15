@@ -2,15 +2,18 @@
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
+	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	const breadcrumbs = [{ href: '/registration', title: m.signup(), icon: 'user-plus' }];
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
+	<RegistrationBreadcrumbs {breadcrumbs} />
 	<hero class="my-20 text-center">
 		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
 		<p>{m.selectConference()}</p>
-		<a class="btn btn-warning mt-6" href=".">{m.back()}</a>
 	</hero>
 
 	<main>

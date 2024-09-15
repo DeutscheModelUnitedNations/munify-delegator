@@ -88,6 +88,7 @@
 				<div class="h-6"></div>
 
 				<NavButton href="/registration" icon="fa-plus" title={m.signup()}></NavButton>
+				<NavButton href="/" icon="fa-house" title={m.home()}></NavButton>
 			</ul>
 		</nav>
 		<!-- /sidebar menu -->

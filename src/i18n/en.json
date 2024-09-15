@@ -8,6 +8,7 @@
 	"noConferenceHeading": "No Conference",
 	"noConferenceText": "It seems like you did not register for a conference yet.",
 	"homeHeroSub": "Central registration platform for DMUN conferences",
+	"home": "Home",
 	"homeRegistration": "Conference registration",
 	"homeRegistrationSub": "Register for the next conference by applying",
 	"homeRegistrationBtn": "To register",
@@ -176,5 +177,18 @@
 	"members": "Members",
 	"inTheDelegation": "in the delegation",
 	"tasks": "Tasks",
-	"done to register": "done to register"
+	"doneToRegister": "done to register",
+	"delegations": "Delegationen",
+	"noDelegationsFound": "No delegations found",
+	"singleParticipants": "Single Participants",
+	"noSingleApplicationTrackingYet": "Status tracking for single applications is not yet available.",
+	"applied": "Applied",
+	"notApplied": "Application not yet submitted",
+	"ownPresence": "Own presence at the conference",
+	"ownPresenceDescription": "Here you can indicate whether you will be present at the conference. This information is important for the conference organizers to plan the conference. If you plan to attend, you too will have to pay the conference fee.",
+	"presentAtConference": "Present at the conference",
+	"willBePresentAtConference": "I will be present at the conference",
+	"willNotBePresentAtConference": "I will not be present at the conference",
+	"registeredAsSupervisor": "You are logged in as a supervisor and can monitor the status of your delegations here. If you want to add more delegations, simply follow the registration process again.",
+	"addAnotherDelegation": "Add another delegation"
 }

@@ -9,7 +9,7 @@ const write2File = (data: any, filename: string = 'test.json') => {
 };
 
 const listmonk = new Listmonk(
-	'https://listmonk.tolga.casa',
-	'TadeSF',
-	'eefotipahng7laideiph3JiushooSh'
+	'://listmonk.my.domain',
+	'',
+	''
 );
