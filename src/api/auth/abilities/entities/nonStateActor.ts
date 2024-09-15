@@ -13,7 +13,7 @@ export const defineAbilitiesForNonStateActor = (
 		const user = oidc.user;
 
 		// only the management of the conference the committee is part of can CUD a nsa
-		can(['create', 'update', 'delete'], 'NonStateActor', {
+		can(['update', 'delete'], 'NonStateActor', {
 			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
 		});
 	}

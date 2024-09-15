@@ -13,7 +13,7 @@ export const defineAbilitiesForCustomConferenceRole = (
 		const user = oidc.user;
 
 		// only the management of the conference the role is part of can CUD a role
-		can(['create', 'update', 'delete'], 'CustomConferenceRole', {
+		can(['update', 'delete'], 'CustomConferenceRole', {
 			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
 		});
 	}

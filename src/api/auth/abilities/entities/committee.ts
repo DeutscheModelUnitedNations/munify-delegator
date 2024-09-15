@@ -13,7 +13,7 @@ export const defineAbilitiesForCommittee = (
 		const user = oidc.user;
 
 		// only the management of the conference the committee is part of can CUD a committee
-		can(['create', 'update', 'delete'], 'Committee', {
+		can(['update', 'delete'], 'Committee', {
 			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
 		});
 	}

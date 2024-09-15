@@ -9,6 +9,15 @@ import {
 import Elysia from 'elysia';
 import { PermissionCheckError } from '../auth/permissions';
 
+/**
+ * An error whose message can be safely exposed to the user
+ */
+export class UserFacingError extends Error {
+	constructor(public message: string) {
+		super(message);
+	}
+}
+
 //TODO see if we still need this when using graphql
 
 export const logger = new Elysia({
@@ -23,7 +32,8 @@ export const logger = new Elysia({
 		PrismaClientInitializationError,
 		PrismaClientValidationError,
 		ForbiddenError,
-		PermissionCheckError
+		PermissionCheckError,
+		UserFacingError
 	})
 	.derive({ as: 'global' }, () => {
 		return {
@@ -63,6 +73,11 @@ export const logger = new Elysia({
 			if (error.code === 'P2025' || error.code === 'P2002') {
 				return error.message;
 			}
+		}
+
+		if (code === 'UserFacingError') {
+			set.status = 'Internal Server Error';
+			return error.message;
 		}
 
 		set.status = 'Internal Server Error';

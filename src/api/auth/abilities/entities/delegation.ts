@@ -2,7 +2,7 @@ import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDCDeriveType } from '$api/auth/oidc';
 
-export const defineAbilitiesForDelegationEntity = (
+export const defineAbilitiesForDelegation = (
 	oidc: OIDCDeriveType,
 	{ can }: AbilityBuilder<AppAbility>
 ) => {

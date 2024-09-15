@@ -38,7 +38,7 @@ export const defineAbilitiesForRoleApplication = (
 			}
 		});
 
-		can(['create', 'update', 'delete'], 'RoleApplication', {
+		can(['update', 'delete'], 'RoleApplication', {
 			delegation: {
 				members: {
 					some: {

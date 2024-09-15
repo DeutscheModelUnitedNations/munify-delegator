@@ -9,19 +9,28 @@ import {
 } from '$db/generated/schema/RoleApplication';
 
 export const roleApplication = new Elysia()
+	.use(CRUDMaker.getOne('roleApplication'))
 	.use(permissionsPlugin)
 	.get(
 		'/roleApplication',
 		async ({ permissions, query }) => {
-			const user = permissions.mustBeLoggedIn();
-
 			const roleApplications = await db.roleApplication.findMany({
 				where: {
-					delegationId: query.delegationId
+					delegationId: query.delegationId,
+					AND: [permissions.allowDatabaseAccessTo('read').RoleApplication]
 				},
 				include: {
-					nation: true,
-					nonStateActor: true,
+					nation: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').Nation]
+						}
+					},
+					nonStateActor: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').NonStateActor]
+						}
+					},
+					//TODO this does not perform an actual permission check on the delegation entity
 					delegation: true
 				},
 				orderBy: {
@@ -32,16 +41,15 @@ export const roleApplication = new Elysia()
 			return roleApplications;
 		},
 		{
-			query: t.Optional(RoleApplicationWhere),
+			query: t.Optional(t.Pick(RoleApplicationWhere, ['delegationId'])),
 			response: t.Array(t.Omit(RoleApplication, ['delegation']))
 		}
 	)
-	.use(CRUDMaker.getOne('roleApplication'))
+	//TODO hier weiter
 	.post(
 		'/roleApplication',
 		async ({ permissions, body }) => {
 			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('create', 'RoleApplication'));
 
 			const ranks = await db.roleApplication.findMany({
 				where: {

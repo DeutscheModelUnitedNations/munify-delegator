@@ -23,6 +23,20 @@ export const defineAbilitiesForDelegationMember = (
 			}
 		});
 
+		// team members should be able to see the delegation members of their conferences
+		can(['read', 'list'], 'DelegationMember', {
+			conference: {
+				teamMembers: {
+					some: {
+						user: {
+							id: user.sub
+						},
+						role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+					}
+				}
+			}
+		});
+
 		// only the head delegate should be able to kick delegates
 		can('delete', 'DelegationMember', {
 			delegation: {
@@ -34,6 +48,13 @@ export const defineAbilitiesForDelegationMember = (
 						}
 					}
 				}
+			}
+		});
+
+		// people are free to leave the delegation on their own
+		can('delete', 'DelegationMember', {
+			user: {
+				id: user.sub
 			}
 		});
 	}

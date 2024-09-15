@@ -5,6 +5,10 @@ import { CustomConferenceRolePlain } from '$db/generated/schema/CustomConference
 import Elysia, { t } from 'elysia';
 
 export const customConferenceRole = new Elysia()
+	.use(CRUDMaker.getOne('customConferenceRole'))
+	.use(CRUDMaker.createOne('customConferenceRole'))
+	.use(CRUDMaker.updateOne('customConferenceRole'))
+	.use(CRUDMaker.deleteOne('customConferenceRole'))
 	.use(permissionsPlugin)
 	.get(
 		'/customConferenceRole',
@@ -20,8 +24,4 @@ export const customConferenceRole = new Elysia()
 			query: t.Optional(t.Object({ conferenceId: t.String() })),
 			response: t.Array(CustomConferenceRolePlain)
 		}
-	)
-	.use(CRUDMaker.getOne('customConferenceRole'))
-	.use(CRUDMaker.createOne('customConferenceRole'))
-	.use(CRUDMaker.updateOne('customConferenceRole'))
-	.use(CRUDMaker.deleteOne('customConferenceRole'));
+	);
