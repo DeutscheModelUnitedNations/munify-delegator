@@ -6,9 +6,23 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import type { Delegation } from '@prisma/client';
 	import { apiClient, checkForError } from '$api/client';
+	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
+
+	const breadcrumbs = [
+		{ href: '/registration', icon: 'user-plus' },
+		{
+			href: `/registration/${data.conferenceId}`,
+			title: data.conferenceData.title
+		},
+		{
+			href: `/registration/${data.conferenceId}/create`,
+			title: m.createDelegation(),
+			icon: 'plus'
+		}
+	];
 
 	let step = $state(1);
 	let delegation = $state<Partial<Delegation>>({});
@@ -53,6 +67,8 @@
 
 <div class="w-full min-h-screen flex flex-col items-center p-4">
 	<header>
+		<RegistrationBreadcrumbs {breadcrumbs} />
+		<div class="h-10"></div>
 		<Steps
 			currentStep={step}
 			steps={[

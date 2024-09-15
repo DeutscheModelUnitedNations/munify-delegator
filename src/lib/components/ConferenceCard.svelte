@@ -45,7 +45,7 @@
 				fontAwesomeIcon: 'fa-calendar',
 				text:
 					start && end
-						? `${start.toLocaleDateString(languageTag(), dateOptions)} - ${end.toLocaleDateString(languageTag(), dateOptions)}`
+						? `${new Date(start).toLocaleDateString(languageTag(), dateOptions)} - ${new Date(end).toLocaleDateString(languageTag(), dateOptions)}`
 						: m.unknownDate()
 			}
 		];

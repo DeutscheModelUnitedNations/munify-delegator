@@ -4,7 +4,7 @@ import { apiClient } from '$api/client';
 
 export const load: PageLoad = async ({ params, fetch, url }) => {
 	//TODO
-	const conferences = await apiClient({ fetch, origin: url.origin }).conference.get({ query: {} });
+	const conferences = await apiClient({ fetch, origin: url.origin }).conference.get();
 
 	return {
 		conferences: [

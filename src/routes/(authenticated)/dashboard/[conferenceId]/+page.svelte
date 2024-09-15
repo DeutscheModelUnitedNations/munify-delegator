@@ -7,6 +7,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import Supervisor from './Supervisor.svelte';
 
 	enum STAGE {
 		REGISTRATION = 'REGISTRATION',
@@ -16,26 +17,40 @@
 		ACTIVE = 'ACTIVE'
 	}
 
+	enum CATEGORY {
+		INDIVIDUAL = 'INDIVIDUAL',
+		DELEGATION = 'DELEGATION',
+		SUPERVISOR = 'SUPERVISOR'
+	}
+
 	let { data }: { data: PageData } = $props();
 
-	let CATEGORY: 'INDIVIDUAL' | 'DELEGATION' | 'SUPERVISOR' = 'DELEGATION';
+	console.log(data);
 
 	const conference = $derived(data?.conferences.find((x) => x.id === data.conferenceId));
 
-	const determinStage = () => {
+	const determinStage: () => STAGE = () => {
 		if (conference) {
 			if (conference.status === 'POST') {
-				return 'POST_CONFERENCE';
+				return STAGE.POST_CONFERENCE;
 			}
 			if (conference.status === 'ACTIVE') {
-				return 'ACTIVE';
+				return STAGE.ACTIVE;
 			}
 			// conference.status is now implicitly 'PRE'
 			// if () { // TODO logic to determaian if the person has been assigned a role yet
 			// 	return 'PRE_CONFERENCE';
 			// }
-			return 'REGISTRATION';
+			return STAGE.REGISTRATION;
 		}
+		throw new Error('Conference not found');
+	};
+
+	const determainCategory = () => {
+		if (data.supervisorData) {
+			return CATEGORY.SUPERVISOR;
+		}
+		return CATEGORY.DELEGATION;
 	};
 
 	$effect(() => {
@@ -47,7 +62,7 @@
 
 <Header title={conference?.title ?? 'Unknown'} />
 <div class="flex flex-col py-10 gap-10">
-	<!-- {#if CATEGORY === 'INDIVIDUAL'}
+	<!-- {#if determainCategory() === 'INDIVIDUAL'}
 		{#if determinStage() === 'REGISTRATION'}
 			#TODO: Implement individual registration stage
 		{:else if determinStage() === 'POST_REGISTRATION'}
@@ -57,25 +72,19 @@
 		{:else if determinStage() === 'POST_CONFERENCE'}
 			#TODO: Implement individual post-conference stage
 		{/if} -->
-	{#if CATEGORY === 'DELEGATION'}
-		{#if determinStage() === 'REGISTRATION'}
+	{#if determainCategory() === CATEGORY.DELEGATION}
+		{#if determinStage() === STAGE.REGISTRATION}
 			<RegistrationStage {data} />
-			<!-- {:else if determinStage() === 'POST_REGISTRATION'}
-			#TODO: Implement delegation post-registration stage
-		{:else if determinStage() === 'PRE_CONFERENCE'}
-			<PreConferenceStage /> -->
-		{:else if determinStage() === 'POST_CONFERENCE'}
+		{:else if determinStage() === STAGE.PRE_CONFERENCE}
+			<PreConferenceStage />
+		{:else if determinStage() === STAGE.POST_CONFERENCE}
 			<PostConferenceStage />
 		{/if}
-	{:else if CATEGORY === 'SUPERVISOR'}
-		{#if determinStage() === 'REGISTRATION'}
-			#TODO: Implement supervisor registration stage
-			<!-- {:else if determinStage() === 'POST_REGISTRATION'}
-			#TODO: Implement supervisor post-registration stage
-		{:else if determinStage() === 'PRE_CONFERENCE'}
-			#TODO: Implement supervisor pre-conference stage -->
-		{:else if determinStage() === 'POST_CONFERENCE'}
+	{:else if determainCategory() === CATEGORY.SUPERVISOR}
+		{#if determinStage() === STAGE.POST_CONFERENCE}
 			#TODO: Implement supervisor post-conference stage
+		{:else}
+			<Supervisor {data} />
 		{/if}
 	{/if}
 </div>

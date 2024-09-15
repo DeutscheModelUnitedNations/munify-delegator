@@ -9,7 +9,14 @@ export const dynamicPrivateConfig = mapEnvToSchema({
 	schema: Type.Object({
 		DATABASE_URL: Type.String(),
 		OIDC: Type.Object({
-			CLIENT_SECRET: Type.Optional(Type.String())
+			CLIENT_SECRET: Type.Optional(Type.String()),
+			SCOPES: Type.Optional(
+				Type.String({
+					default:
+						'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:projects:roles urn:zitadel:iam:user:metadata'
+				})
+			),
+			ROLE_CLAIM: Type.String()
 		}),
 		SECRET: Type.String(),
 		NODE_ENV: Type.Union([

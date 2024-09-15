@@ -48,7 +48,7 @@ export const singleParticipant = new Elysia()
 				where: {
 					conferenceId_userId: {
 						conferenceId: body.conference.connect.id,
-						userId: user.sub
+						userId: user.sub!
 					}
 				},
 				create: {

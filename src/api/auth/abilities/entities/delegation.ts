@@ -10,15 +10,17 @@ export const defineAbilitiesForDelegationEntity = (
 		can('read', 'Delegation', {
 			OR: [
 				{
-					members: { some: { user: { id: oidc.user.sub } } },
+					members: { some: { user: { id: oidc.user.sub } } }
+				},
+				{
 					supervisors: { some: { user: { id: oidc.user.sub } } }
 				}
 			]
 		});
 
-		//TODO: Do we need to thighten permissions here?
-		can('join', 'Delegation', { applied: false });
-
-		// const user = oidc.user;
+		can('update', 'Delegation', {
+			applied: false,
+			members: { some: { user: { id: oidc.user.sub }, isHeadDelegate: true } }
+		});
 	}
 };

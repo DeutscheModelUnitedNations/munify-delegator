@@ -117,6 +117,8 @@ export const delegation = new Elysia()
 			permissions.checkIf((user) => user.can('create', 'Delegation'));
 			// https://github.com/CyberAP/nanoid-dictionary
 
+			//TODO these checks should appear in the abilities
+
 			const foundSupervisor = await db.conferenceSupervisor.findFirst({
 				where: {
 					conferenceId: body.conference.connect.id,
@@ -130,6 +132,21 @@ export const delegation = new Elysia()
 			// we should probably find a way to handle this via the CASL rules?
 			if (foundSupervisor) {
 				throw new PermissionCheckError('You are already a supervisor in this conference');
+			}
+
+			const foundSingleParticipant = await db.singleParticipant.findFirst({
+				where: {
+					user: {
+						id: user.sub
+					},
+					conference: {
+						id: body.conference.connect.id
+					}
+				}
+			});
+
+			if (foundSingleParticipant) {
+				throw new PermissionCheckError('You are already a single participant in this conference');
 			}
 
 			const foundMember = await db.delegationMember.findFirst({
@@ -190,9 +207,37 @@ export const delegation = new Elysia()
 				}
 			});
 
-			await removeTooSmallRoleApplications(delegation.id);
-
 			if (body.joinAsSupervisor) {
+				const foundDelegationMember = await db.delegationMember.findFirst({
+					where: {
+						user: {
+							id: user.sub
+						},
+						conference: {
+							id: delegation.conferenceId
+						}
+					}
+				});
+
+				if (foundDelegationMember) {
+					throw new PermissionCheckError('You are already a delegation member in this conference');
+				}
+
+				const foundSingleParticipant = await db.singleParticipant.findFirst({
+					where: {
+						user: {
+							id: user.sub
+						},
+						conference: {
+							id: delegation.conferenceId
+						}
+					}
+				});
+
+				if (foundSingleParticipant) {
+					throw new PermissionCheckError('You are already a single participant in this conference');
+				}
+
 				await db.conferenceSupervisor.upsert({
 					create: {
 						plansOwnAttendenceAtConference: false,
@@ -222,11 +267,41 @@ export const delegation = new Elysia()
 					where: {
 						conferenceId_userId: {
 							conferenceId: delegation.conferenceId,
-							userId: user.sub
+							userId: user.sub!
 						}
 					}
 				});
 			} else {
+				const foundDelegationMember = await db.delegationMember.findFirst({
+					where: {
+						user: {
+							id: user.sub
+						},
+						conference: {
+							id: delegation.conferenceId
+						}
+					}
+				});
+
+				if (foundDelegationMember) {
+					throw new PermissionCheckError('You are already a delegation member in this conference');
+				}
+
+				const foundSingleParticipant = await db.singleParticipant.findFirst({
+					where: {
+						user: {
+							id: user.sub
+						},
+						conference: {
+							id: delegation.conferenceId
+						}
+					}
+				});
+
+				if (foundSingleParticipant) {
+					throw new PermissionCheckError('You are already a single participant in this conference');
+				}
+
 				await db.delegationMember.create({
 					data: {
 						delegation: {
@@ -248,6 +323,8 @@ export const delegation = new Elysia()
 					}
 				});
 			}
+
+			await removeTooSmallRoleApplications(delegation.id);
 		},
 		{
 			body: t.Composite([
@@ -354,7 +431,7 @@ export const delegation = new Elysia()
 					where: {
 						delegationId_userId: {
 							delegationId: delegation.id,
-							userId: user.sub
+							userId: user.sub!
 						}
 					},
 					data: {
@@ -395,7 +472,7 @@ export const delegation = new Elysia()
 					where: {
 						delegationId_userId: {
 							delegationId: delegation.id,
-							userId: user.sub
+							userId: user.sub!
 						}
 					},
 					select: {
@@ -408,7 +485,7 @@ export const delegation = new Elysia()
 				where: {
 					delegationId_userId: {
 						delegationId: delegation.id,
-						userId: user.sub
+						userId: user.sub!
 					}
 				}
 			});
