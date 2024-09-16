@@ -196,5 +196,7 @@
 	"willNotBePresentAtConference": "Ich werde <strong><u>nicht</u></strong> an der Konferenz teilnehmen.",
 	"presentAtConference": "Anwesend auf der Konferenz",
 	"registeredAsSupervisor": "Sie sind als Betreuer*in angemeldet und können hier den Status ihrer Delegationen überwachen. Wenn Sie weitere Delegationen hinzufügen möchten, folgen Sie einfach erneut dem Anmeldeprozess.",
-	"addAnotherDelegation": "Weitere Delegation hinzufügen"
+	"addAnotherDelegation": "Weitere Delegation hinzufügen",
+	"pronounsHeHim": "er/ihm",
+	"pronounsSheHer": "sie/ihr"
 }
