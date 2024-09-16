@@ -8,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Supervisor from './Supervisor.svelte';
+	import { redirect } from '@sveltejs/kit';
 
 	enum STAGE {
 		REGISTRATION = 'REGISTRATION',
@@ -41,7 +42,12 @@
 			// }
 			return STAGE.REGISTRATION;
 		}
-		throw new Error('Conference not found');
+		if (browser) {
+			goto('/dashboard');
+		} else {
+			redirect(302, '/dashboard');
+		}
+		return STAGE.REGISTRATION;
 	};
 
 	const determineCategory = () => {
