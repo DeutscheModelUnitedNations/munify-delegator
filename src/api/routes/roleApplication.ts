@@ -142,7 +142,7 @@ export const roleApplication = new Elysia()
 						rank: -1
 					}
 				});
-				
+
 				await db.roleApplication.update({
 					where: {
 						id: roleApplication.id
