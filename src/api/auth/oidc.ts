@@ -59,6 +59,9 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 					user
 				);
 			}
+			if (!rolesRaw) {
+				return false;
+			}
 			const roleNames = Object.keys(rolesRaw);
 			return roleNames.includes(role);
 		};
