@@ -197,6 +197,8 @@
 	"willNotBePresentAtConference": "I will not be present at the conference",
 	"registeredAsSupervisor": "You are logged in as a supervisor and can monitor the status of your delegations here. If you want to add more delegations, simply follow the registration process again.",
 	"addAnotherDelegation": "Add another delegation",
+	"rotateCode": "Rotate Code",
+	"codeRotated": "The code has been rotated"
 	"pronounsHeHim": "He/Him",
 	"pronounsSheHer": "She/Her"
 }

@@ -365,7 +365,7 @@ export const delegation = new Elysia()
 			});
 		},
 		{
-			body: t.Object({ newEntryCode: t.Index(Delegation, ['entryCode']) }),
+			body: t.Unknown(),
 			response: DelegationPlain
 		}
 	)

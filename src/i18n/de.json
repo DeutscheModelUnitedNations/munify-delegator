@@ -197,6 +197,8 @@
 	"presentAtConference": "Anwesend auf der Konferenz",
 	"registeredAsSupervisor": "Sie sind als Betreuer*in angemeldet und können hier den Status ihrer Delegationen überwachen. Wenn Sie weitere Delegationen hinzufügen möchten, folgen Sie einfach erneut dem Anmeldeprozess.",
 	"addAnotherDelegation": "Weitere Delegation hinzufügen",
+	"rotateCode": "Code erneuern",
+	"codeRotated": "Code erfolgreich erneuert"
 	"pronounsHeHim": "er/ihm",
 	"pronounsSheHer": "sie/ihr"
 }
