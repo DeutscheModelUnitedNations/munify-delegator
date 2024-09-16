@@ -38,6 +38,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          build-args: |
+            VERSION=${{ github.event.release.tag_name }}
+            SHA=${{ github.sha }}
           flavor: |
             latest=false
           images: |

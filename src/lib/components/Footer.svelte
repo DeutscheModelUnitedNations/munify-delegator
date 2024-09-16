@@ -1,5 +1,6 @@
 <script lang="ts">
 	import dmunLogo from '$assets/logo/dmun_logo.png';
+	import { env } from '$env/dynamic/public';
 </script>
 
 <footer class="footer footer-center bg-base-200 text-base-content rounded-xl p-10 mt-10">
@@ -34,6 +35,12 @@
 		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
 		<p>
 			Copyright © {new Date().getFullYear()} - All right reserved by Deutsche Model United Nations e.V.
+		</p>
+		<p>
+			Version:
+			{env.PUBLIC_VERSION ?? 'nightly'}
+			Sha:
+			{env.PUBLIC_SHA ?? 'unknown'}
 		</p>
 	</aside>
 </footer>
