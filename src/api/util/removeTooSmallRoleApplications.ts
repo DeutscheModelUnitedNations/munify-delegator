@@ -1,6 +1,10 @@
 import { db } from '$db/db';
 
-export async function removeTooSmallRoleApplications(delegationId: string) {
+/**
+ * In case a delegation changes during its existence, we need to check some state throughout the app.
+ * E.g. remove applications for nations/nsa which do not provide enought seats to fit all the delegates.
+ */
+export async function tidyRoleApplications(delegationId: string) {
 	const delegation = await db.delegation.findUniqueOrThrow({
 		where: {
 			id: delegationId

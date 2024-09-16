@@ -84,9 +84,8 @@
 										class="btn btn-primary"
 										onclick={async () => {
 											await checkForError(
-												api.delegation.join.post({
-													entryCode: code,
-													joinAsSupervisor: true
+												api.delegation.supervise.post({
+													entryCode: code
 												})
 											);
 											goto('/dashboard');

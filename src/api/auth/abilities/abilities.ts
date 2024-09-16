@@ -4,13 +4,21 @@ import { dynamicPrivateConfig } from '$config/private';
 import type { OIDCDeriveType } from '../oidc';
 import type { db } from '$db/db';
 import { defineAbilitiesForConference } from './entities/conference';
-import { defineAbilitiesForUserEntity } from './entities/user';
-import { defineAbilitiesForDelegationEntity } from './entities/delegation';
+import { defineAbilitiesForDelegation } from './entities/delegation';
 import type { Capitalize } from '@sinclair/typebox';
-import { defineAbilitiesForDelegationMemberEntity } from './entities/delegationMember';
+import { defineAbilitiesForDelegationMember } from './entities/delegationMember';
 import { defineAbilitiesForCommittee } from './entities/committee';
+import { defineAbilitiesForConferenceParticipantStatus } from './entities/conferenceParticipantStatus';
+import { defineAbilitiesForConferenceSupervisor } from './entities/conferenceSupervisor';
+import { defineAbilitiesForCustomConferenceRole } from './entities/customConferenceRole';
+import { defineAbilitiesForNation } from './entities/nation';
+import { defineAbilitiesForNonStateActor } from './entities/nonStateActor';
+import { defineAbilitiesForRoleApplication } from './entities/roleApplication';
+import { defineAbilitiesForSingleParticipant } from './entities/singleParticipant';
+import { defineAbilitiesForTeamMember } from './entities/teamMember';
+import { defineAbilitiesForUserEntity } from './entities/user';
 
-const actions = ['list', 'create', 'read', 'update', 'delete', 'join'] as const;
+const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 /**
@@ -52,23 +60,31 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 	const builder = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
 	// TODO you can enable this to test requests without permission checks
-	if (dynamicPrivateConfig.NODE_ENV !== 'production' && oidc && oidc.user) {
-		console.info('Development mode: granting all permissions');
-		// https://casl.js.org/v6/en/guide/intro#basics
-		builder.can('manage' as any, 'all' as any);
-	}
+	// if (dynamicPrivateConfig.NODE_ENV !== 'production' && oidc && oidc.user) {
+	// 	console.info('Development mode: granting all permissions');
+	// 	// https://casl.js.org/v6/en/guide/intro#basics
+	// 	builder.can('manage' as any, 'all' as any);
+	// }
 
 	// grant system wide admins all permissions
-	if (oidc && oidc.user && oidc.user.hasRole('admin')) {
-		console.info('Admin granted: ', oidc.user.preferred_username);
-		builder.can('manage' as any, 'all' as any);
-	}
+	// if (oidc && oidc.user && oidc.user.hasRole('admin')) {
+	// 	console.info('Admin granted: ', oidc.user.preferred_username);
+	// 	builder.can('manage' as any, 'all' as any);
+	// }
 
-	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForCommittee(oidc, builder);
+	defineAbilitiesForConference(oidc, builder);
+	defineAbilitiesForConferenceParticipantStatus(oidc, builder);
+	defineAbilitiesForConferenceSupervisor(oidc, builder);
+	defineAbilitiesForCustomConferenceRole(oidc, builder);
+	defineAbilitiesForDelegation(oidc, builder);
+	defineAbilitiesForDelegationMember(oidc, builder);
+	defineAbilitiesForNation(oidc, builder);
+	defineAbilitiesForNonStateActor(oidc, builder);
+	defineAbilitiesForRoleApplication(oidc, builder);
+	defineAbilitiesForSingleParticipant(oidc, builder);
+	defineAbilitiesForTeamMember(oidc, builder);
 	defineAbilitiesForUserEntity(oidc, builder);
-	defineAbilitiesForDelegationEntity(oidc, builder);
-	defineAbilitiesForDelegationMemberEntity(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

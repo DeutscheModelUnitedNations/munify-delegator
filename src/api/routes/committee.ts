@@ -13,7 +13,6 @@ export const committee = new Elysia()
 	.get(
 		'/committee',
 		async ({ query, permissions }) => {
-			console.log('\n', query, '\n');
 			return await db.committee.findMany({
 				where: {
 					conferenceId: query.conferenceId,

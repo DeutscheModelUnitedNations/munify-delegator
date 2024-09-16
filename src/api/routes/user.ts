@@ -1,13 +1,6 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { User, UserPlain, UserPlainInputUpdate } from '$db/generated/schema/User';
-import { Conference } from '$db/generated/schema/Conference';
-import { Delegation } from '$db/generated/schema/Delegation';
-import { DelegationMember } from '$db/generated/schema/DelegationMember';
-import { SingleParticipant } from '$db/generated/schema/SingleParticipant';
-import { ConferenceParticipantStatus } from '$db/generated/schema/ConferenceParticipantStatus';
-import { ConferenceSupervisor } from '$db/generated/schema/ConferenceSupervisor';
-import { TeamMember } from '$db/generated/schema/TeamMember';
+import { User } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
@@ -16,11 +9,38 @@ export const user = new Elysia({
 	normalize: true
 })
 	.use(CRUDMaker.getAll('user'))
-	.use(CRUDMaker.getOne('user'))
 	.use(CRUDMaker.createOne('user'))
 	.use(CRUDMaker.updateOne('user'))
 	.use(CRUDMaker.deleteOne('user'))
 	.use(permissionsPlugin)
+	.get(
+		'/user/:id',
+		async ({ params, permissions }) => {
+			return db.user.findUniqueOrThrow({
+				where: { id: params.id },
+				include: {
+					delegationMemberships: {
+						where: permissions.allowDatabaseAccessTo('read').DelegationMember
+					},
+					singleParticipant: {
+						where: permissions.allowDatabaseAccessTo('read').SingleParticipant
+					},
+					conferenceParticipantStatus: {
+						where: permissions.allowDatabaseAccessTo('read').ConferenceParticipantStatus
+					},
+					conferenceSupervisor: {
+						where: permissions.allowDatabaseAccessTo('read').ConferenceSupervisor
+					},
+					teamMember: {
+						where: permissions.allowDatabaseAccessTo('read').TeamMember
+					}
+				}
+			});
+		},
+		{
+			response: User
+		}
+	)
 	.patch(
 		'/user/upsert-after-login',
 		async ({ permissions }) => {
@@ -69,36 +89,5 @@ export const user = new Elysia({
 		},
 		{
 			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
-		}
-	)
-	.get(
-		'/user/me',
-		async ({ permissions }) => {
-			const user = permissions.mustBeLoggedIn();
-			return db.user.findFirstOrThrow({ where: { id: user.sub } });
-		},
-		{
-			response: UserPlain
-		}
-	)
-	.get(
-		'/user/me',
-		async ({ permissions }) => {
-			const user = permissions.mustBeLoggedIn();
-			return db.user.findUniqueOrThrow({
-				where: { id: user.sub },
-				include: {
-					delegationMemberships: {
-						where: permissions.allowDatabaseAccessTo('read').DelegationMember
-					},
-					singleParticipant: true,
-					conferenceParticipantStatus: true,
-					conferenceSupervisor: true,
-					teamMember: true
-				}
-			});
-		},
-		{
-			response: User
 		}
 	);

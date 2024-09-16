@@ -1,6 +1,8 @@
 import { PermissionCheckError, permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
-import { removeTooSmallRoleApplications } from '$api/util/removeTooSmallRoleApplications';
+import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
+import { UserFacingError } from '$api/util/logger';
+import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
 import { db } from '$db/db';
 import { ConferenceSupervisorPlain } from '$db/generated/schema/ConferenceSupervisor';
 import {
@@ -14,6 +16,7 @@ import { RoleApplication, RoleApplicationPlain } from '$db/generated/schema/Role
 import Elysia, { t } from 'elysia';
 import { customAlphabet } from 'nanoid';
 
+// https://github.com/CyberAP/nanoid-dictionary
 const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
 
 export const delegation = new Elysia()
@@ -24,10 +27,7 @@ export const delegation = new Elysia()
 	.get(
 		'delegation/:id',
 		async ({ permissions, params }) => {
-			const _user = permissions.mustBeLoggedIn();
-
-			await removeTooSmallRoleApplications(params.id);
-
+			//TODO when we want to continue to use such nested objects we should probably switch to GQL
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
 					id: params.id,
@@ -35,8 +35,12 @@ export const delegation = new Elysia()
 				},
 				include: {
 					members: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').DelegationMember]
+						},
 						include: {
 							user: {
+								//TODO this does not perform an actual permission check on the user entity
 								select: {
 									id: true,
 									given_name: true,
@@ -48,14 +52,29 @@ export const delegation = new Elysia()
 						}
 					},
 					appliedForRoles: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').RoleApplication]
+						},
 						include: {
-							nation: true,
-							nonStateActor: true
+							nation: {
+								where: {
+									AND: [permissions.allowDatabaseAccessTo('read').Nation]
+								}
+							},
+							nonStateActor: {
+								where: {
+									AND: [permissions.allowDatabaseAccessTo('read').NonStateActor]
+								}
+							}
 						}
 					},
 					supervisors: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').ConferenceSupervisor]
+						},
 						include: {
 							user: {
+								//TODO this does not perform an actual permission check on the user entity
 								select: {
 									id: true,
 									given_name: true,
@@ -114,53 +133,13 @@ export const delegation = new Elysia()
 		`/delegation`,
 		async ({ permissions, body }) => {
 			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('create', 'Delegation'));
-			// https://github.com/CyberAP/nanoid-dictionary
 
-			//TODO these checks should appear in the abilities
-
-			const foundSupervisor = await db.conferenceSupervisor.findFirst({
-				where: {
-					conferenceId: body.conference.connect.id,
-					user: {
-						id: user.sub
-					}
-				}
+			// if the user somehow is already participating in the conference, throw an error
+			await fetchUserParticipations({
+				conferenceId: body.conference.connect.id,
+				userId: user.sub!,
+				throwIfAnyIsFound: true
 			});
-
-			//TODO these checks appear in multiple handlers (see singleParticipant routes)
-			// we should probably find a way to handle this via the CASL rules?
-			if (foundSupervisor) {
-				throw new PermissionCheckError('You are already a supervisor in this conference');
-			}
-
-			const foundSingleParticipant = await db.singleParticipant.findFirst({
-				where: {
-					user: {
-						id: user.sub
-					},
-					conference: {
-						id: body.conference.connect.id
-					}
-				}
-			});
-
-			if (foundSingleParticipant) {
-				throw new PermissionCheckError('You are already a single participant in this conference');
-			}
-
-			const foundMember = await db.delegationMember.findFirst({
-				where: {
-					conferenceId: body.conference.connect.id,
-					user: {
-						id: user.sub
-					}
-				}
-			});
-
-			if (foundMember) {
-				throw new PermissionCheckError('You are already a delegation member in this conference');
-			}
 
 			return db.$transaction(async (tx) => {
 				const delegation = await tx.delegation.create({
@@ -202,145 +181,123 @@ export const delegation = new Elysia()
 			const user = permissions.mustBeLoggedIn();
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
-					entryCode: body.entryCode,
-					AND: [permissions.allowDatabaseAccessTo('join').Delegation]
+					entryCode: body.entryCode
 				}
 			});
 
-			if (body.joinAsSupervisor) {
-				const foundDelegationMember = await db.delegationMember.findFirst({
-					where: {
-						user: {
-							id: user.sub
-						},
-						conference: {
-							id: delegation.conferenceId
-						}
-					}
-				});
-
-				if (foundDelegationMember) {
-					throw new PermissionCheckError('You are already a delegation member in this conference');
-				}
-
-				const foundSingleParticipant = await db.singleParticipant.findFirst({
-					where: {
-						user: {
-							id: user.sub
-						},
-						conference: {
-							id: delegation.conferenceId
-						}
-					}
-				});
-
-				if (foundSingleParticipant) {
-					throw new PermissionCheckError('You are already a single participant in this conference');
-				}
-
-				await db.conferenceSupervisor.upsert({
-					create: {
-						plansOwnAttendenceAtConference: false,
-						conference: {
-							connect: {
-								id: delegation.conferenceId
-							}
-						},
-						user: {
-							connect: {
-								id: user.sub
-							}
-						},
-						delegations: {
-							connect: {
-								id: delegation.id
-							}
-						}
-					},
-					update: {
-						delegations: {
-							connect: {
-								id: delegation.id
-							}
-						}
-					},
-					where: {
-						conferenceId_userId: {
-							conferenceId: delegation.conferenceId,
-							userId: user.sub!
-						}
-					}
-				});
-			} else {
-				const foundDelegationMember = await db.delegationMember.findFirst({
-					where: {
-						user: {
-							id: user.sub
-						},
-						conference: {
-							id: delegation.conferenceId
-						}
-					}
-				});
-
-				if (foundDelegationMember) {
-					throw new PermissionCheckError('You are already a delegation member in this conference');
-				}
-
-				const foundSingleParticipant = await db.singleParticipant.findFirst({
-					where: {
-						user: {
-							id: user.sub
-						},
-						conference: {
-							id: delegation.conferenceId
-						}
-					}
-				});
-
-				if (foundSingleParticipant) {
-					throw new PermissionCheckError('You are already a single participant in this conference');
-				}
-
-				await db.delegationMember.create({
-					data: {
-						delegation: {
-							connect: {
-								id: delegation.id
-							}
-						},
-						user: {
-							connect: {
-								id: user.sub
-							}
-						},
-						isHeadDelegate: false,
-						conference: {
-							connect: {
-								id: delegation.conferenceId
-							}
-						}
-					}
-				});
+			if (delegation.applied) {
+				throw new PermissionCheckError(
+					'Delegation has already applied, joins are not possible anymore'
+				);
 			}
 
-			await removeTooSmallRoleApplications(delegation.id);
+			// if the user somehow is already participating in the conference, throw an error
+			await fetchUserParticipations({
+				conferenceId: delegation.conferenceId,
+				userId: user.sub,
+				throwIfAnyIsFound: true
+			});
+
+			await db.delegationMember.create({
+				data: {
+					delegation: {
+						connect: {
+							id: delegation.id
+						}
+					},
+					user: {
+						connect: {
+							id: user.sub
+						}
+					},
+					isHeadDelegate: false,
+					conference: {
+						connect: {
+							id: delegation.conferenceId
+						}
+					}
+				}
+			});
+
+			await tidyRoleApplications(delegation.id);
 		},
 		{
-			body: t.Composite([
-				t.Required(t.Pick(DelegationWhereUnique, ['entryCode'])),
-				t.Object({ joinAsSupervisor: t.Boolean({ default: false }) })
-			])
+			body: t.Composite([t.Required(t.Pick(DelegationWhereUnique, ['entryCode']))])
+		}
+	)
+	.post(
+		`/delegation/supervise`,
+		async ({ permissions, body }) => {
+			const user = permissions.mustBeLoggedIn();
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					entryCode: body.entryCode
+				}
+			});
+
+			const participations = await fetchUserParticipations({
+				conferenceId: delegation.conferenceId,
+				userId: user.sub!
+			});
+
+			// if the user somehow is already participating in the conference as something else than a supervisor, throw
+			if (
+				participations.foundDelegationMember ||
+				participations.foundSingleParticipant ||
+				participations.foundTeamMember
+			) {
+				throw new PermissionCheckError(
+					'You are already a participant in this conference, you cannot supervise simultaneously'
+				);
+			}
+
+			await db.conferenceSupervisor.upsert({
+				create: {
+					plansOwnAttendenceAtConference: false,
+					conference: {
+						connect: {
+							id: delegation.conferenceId
+						}
+					},
+					user: {
+						connect: {
+							id: user.sub
+						}
+					},
+					delegations: {
+						connect: {
+							id: delegation.id
+						}
+					}
+				},
+				update: {
+					delegations: {
+						connect: {
+							id: delegation.id
+						}
+					}
+				},
+				where: {
+					conferenceId_userId: {
+						conferenceId: delegation.conferenceId,
+						userId: user.sub
+					}
+				}
+			});
+		},
+		{
+			body: t.Composite([t.Required(t.Pick(DelegationWhereUnique, ['entryCode']))])
 		}
 	)
 	.get(
 		`/delegation/preview`,
 		async ({ permissions, query }) => {
-			permissions.mustBeLoggedIn();
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
 					conferenceId: query.conferenceId,
-					entryCode: query.entryCode
+					entryCode: query.entryCode,
+					// we dont want permission checks here. We carefully choose what to send, see the select statements below
+					// AND: [permissions.allowDatabaseAccessTo('read').Delegation]
 				},
 				include: {
 					conference: {
@@ -358,6 +315,7 @@ export const delegation = new Elysia()
 						include: {
 							user: {
 								select: {
+									//TODO check if this is ok with our privacy policy
 									given_name: true,
 									family_name: true
 								}
@@ -415,11 +373,11 @@ export const delegation = new Elysia()
 		'/delegation/:id/transferHeadDelegateship',
 		async ({ permissions, params, body }) => {
 			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('update', 'Delegation'));
 
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
-					id: params.id
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('update').Delegation]
 				},
 				include: {
 					members: true
@@ -457,51 +415,39 @@ export const delegation = new Elysia()
 			params: t.Object({ id: t.String() })
 		}
 	)
+	//TODO move this to the delegation member routes?
 	.delete('/delegation/:id/leave', async ({ permissions, params }) => {
 		const user = permissions.mustBeLoggedIn();
-		const delegation = await db.delegation.findUniqueOrThrow({
-			where: {
-				id: params.id,
-				AND: [permissions.allowDatabaseAccessTo('delete').Delegation]
-			}
-		});
 
 		await db.$transaction(async (tx) => {
-			const userIsHeadDelegate = (
-				await tx.delegationMember.findUniqueOrThrow({
-					where: {
-						delegationId_userId: {
-							delegationId: delegation.id,
-							userId: user.sub!
-						}
-					},
-					select: {
-						isHeadDelegate: true
-					}
-				})
-			).isHeadDelegate;
-
-			await tx.delegationMember.delete({
+			const deletedMember = await tx.delegationMember.delete({
 				where: {
 					delegationId_userId: {
-						delegationId: delegation.id,
-						userId: user.sub!
-					}
+						delegationId: params.id,
+						userId: user.sub
+					},
+					AND: [permissions.allowDatabaseAccessTo('delete').DelegationMember]
 				}
 			});
 
-			if (userIsHeadDelegate) {
-				const newHeadDelegate = await tx.delegationMember.findFirstOrThrow({
+			if (deletedMember.isHeadDelegate) {
+				const newHeadDelegate = await tx.delegationMember.findFirst({
 					where: {
-						delegationId: delegation.id
-					},
-					select: {
-						id: true
+						delegationId: params.id
 					}
 				});
 
-				console.log(newHeadDelegate);
+				if (!newHeadDelegate) {
+					// if there is no one left in the delegation, close it
+					await tx.delegation.delete({
+						where: {
+							id: params.id
+						}
+					});
+					return;
+				}
 
+				// if there is a new head delegate, congratulations to your promotion!
 				await tx.delegationMember.update({
 					where: {
 						id: newHeadDelegate.id
@@ -513,50 +459,48 @@ export const delegation = new Elysia()
 			}
 		});
 
-		return true;
+		await tidyRoleApplications(params.id);
 	})
-	.patch(
-		'/delegation/:id/completeRegistration',
-		async ({ permissions, params }) => {
-			const user = permissions.mustBeLoggedIn();
-
-			removeTooSmallRoleApplications(params.id);
-
-			const delegation = await db.delegation.findUniqueOrThrow({
-				where: {
-					id: params.id,
-					AND: [permissions.allowDatabaseAccessTo('update').Delegation]
+	.patch('/delegation/:id/completeRegistration', async ({ permissions, params }) => {
+		const delegation = await db.delegation.findUniqueOrThrow({
+			where: {
+				id: params.id,
+				AND: [permissions.allowDatabaseAccessTo('update').Delegation]
+			},
+			include: {
+				members: {
+					where: {
+						AND: [permissions.allowDatabaseAccessTo('read').DelegationMember]
+					}
 				},
-				include: {
-					members: true,
-					appliedForRoles: true
+				appliedForRoles: {
+					where: {
+						AND: [permissions.allowDatabaseAccessTo('read').RoleApplication]
+					}
 				}
-			});
-
-			if (delegation.members.length < 2) {
-				throw new Error('Not enough members');
 			}
+		});
 
-			if (delegation.appliedForRoles.length < 3) {
-				throw new Error('Not enough role applications');
-			}
+		await tidyRoleApplications(params.id);
 
-			if (!delegation.school || !delegation.experience || !delegation.motivation) {
-				throw new Error('Missing information');
-			}
-
-			await db.delegation.update({
-				where: {
-					id: params.id
-				},
-				data: {
-					applied: true
-				}
-			});
-
-			return true;
-		},
-		{
-			params: t.Object({ id: t.String() })
+		if (delegation.members.length < 2) {
+			throw new UserFacingError('Not enough members');
 		}
-	);
+
+		if (delegation.appliedForRoles.length < 3) {
+			throw new UserFacingError('Not enough role applications');
+		}
+
+		if (!delegation.school || !delegation.experience || !delegation.motivation) {
+			throw new UserFacingError('Missing information');
+		}
+
+		await db.delegation.update({
+			where: {
+				id: params.id
+			},
+			data: {
+				applied: true
+			}
+		});
+	});

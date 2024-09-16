@@ -1,6 +1,5 @@
 import { CRUDMaker } from '$api/util/crudmaker';
 import Elysia, { t } from 'elysia';
-import { conferenceSupervisor } from './conferenceSupervisor';
 import { db } from '$db/db';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { ConferencePlain } from '$db/generated/schema/Conference';
@@ -24,7 +23,8 @@ export const conference = new Elysia()
 						{ teamMembers: { some: { userId: user.sub } } },
 						{ singleParticipant: { some: { userId: user.sub } } },
 						{ delegations: { some: { members: { some: { userId: user.sub } } } } }
-					]
+					],
+					AND: [permissions.allowDatabaseAccessTo('list').Conference]
 				}
 			});
 		},

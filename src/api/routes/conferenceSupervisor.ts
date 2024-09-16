@@ -12,6 +12,7 @@ export const conferenceSupervisor = new Elysia()
 	.use(permissionsPlugin)
 	.use(CRUDMaker.getAll('conferenceSupervisor'))
 	.use(CRUDMaker.getOne('conferenceSupervisor'))
+	//TODO these need a rework maybe?
 	.get('/conferenceSupervisor/mine', async ({ permissions }) => {
 		const user = permissions.mustBeLoggedIn();
 		return db.conferenceSupervisor.findMany({

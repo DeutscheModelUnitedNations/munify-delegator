@@ -2,18 +2,19 @@ import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDCDeriveType } from '$api/auth/oidc';
 
-export const defineAbilitiesForCommittee = (
+export const defineAbilitiesForTeamMember = (
 	oidc: OIDCDeriveType,
 	{ can }: AbilityBuilder<AppAbility>
 ) => {
-	// everyone can see a committee
-	can(['list', 'read'], 'Committee');
-
 	if (oidc && oidc.user) {
 		const user = oidc.user;
 
-		// only the management of the conference the committee is part of can CUD a committee
-		can(['update', 'delete'], 'Committee', {
+		// team members should be able to see each other
+		can(['read', 'list'], 'TeamMember', {
+			conference: { teamMembers: { some: { user: { id: user.sub } } } }
+		});
+
+		can(['update', 'delete'], 'TeamMember', {
 			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
 		});
 	}

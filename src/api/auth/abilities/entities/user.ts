@@ -12,80 +12,80 @@ export const defineAbilitiesForUserEntity = (
 
 		//TODO find out if overwriting rules is a thing and if this causes permissions
 		// to not be applied correctly
+
+		// delegates should see each other
 		can(['list', 'read'], 'User', {
-			OR: [
-				// I am a delegation member and want to see the other delegation members
-				{
-					delegationMemberships: {
-						some: {
-							delegation: {
-								members: {
-									some: {
-										user: {
-											id: user.sub
-										}
-									}
+			delegationMemberships: {
+				some: {
+					delegation: {
+						members: {
+							some: {
+								user: {
+									id: user.sub
 								}
 							}
 						}
 					}
-				},
-				// I am a Supervisor and want to see my delegation members
-				{
-					delegationMemberships: {
-						some: {
-							delegation: {
-								supervisors: {
-									some: {
-										user: {
-											id: user.sub
-										}
-									}
+				}
+			}
+		});
+
+		// supervisors should see their delegates
+		can(['list', 'read'], 'User', {
+			delegationMemberships: {
+				some: {
+					delegation: {
+						supervisors: {
+							some: {
+								user: {
+									id: user.sub
 								}
 							}
 						}
 					}
-				},
-				// I am a delegation member and want to see my supervisors
-				{
-					conferenceSupervisor: {
+				}
+			}
+		});
+
+		// delegates should see their supervisors
+		can(['list', 'read'], 'User', {
+			conferenceSupervisor: {
+				some: {
+					delegations: {
 						some: {
-							delegations: {
+							members: {
 								some: {
-									members: {
-										some: {
-											user: {
-												id: user.sub
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				//  I am a Supervisor and want to see other supervisors
-				{
-					conferenceSupervisor: {
-						some: {
-							delegations: {
-								some: {
-									supervisors: {
-										some: {
-											user: {
-												id: user.sub
-											}
-										}
+									user: {
+										id: user.sub
 									}
 								}
 							}
 						}
 					}
 				}
-			]
+			}
 		});
 
-		// I want to see my other team members on my conference
+		// supervisors should see each other
+		can(['list', 'read'], 'User', {
+			conferenceSupervisor: {
+				some: {
+					delegations: {
+						some: {
+							supervisors: {
+								some: {
+									user: {
+										id: user.sub
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+
+		// team members should see each other
 		can(['list', 'read'], 'User', {
 			teamMember: {
 				some: {
@@ -102,81 +102,64 @@ export const defineAbilitiesForUserEntity = (
 			}
 		});
 
+		// team members should see delegates in the conferences they manage
 		can(['list', 'read'], 'User', {
-			OR: [
-				// I am Project Managment or Participant Care and can see every delegate within the conference
-				{
-					delegationMemberships: {
-						some: {
-							conference: {
-								teamMembers: {
-									some: {
-										OR: [
-											{
-												role: 'PROJECT_MANAGEMENT'
-											},
-											{
-												role: 'PARTICIPANT_CARE'
-											}
-										],
-										user: {
-											id: user.sub
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				// I am Project Managment or Participant Care and can see every single participant within the conference
-				{
-					singleParticipant: {
-						some: {
-							conference: {
-								teamMembers: {
-									some: {
-										OR: [
-											{
-												role: 'PROJECT_MANAGEMENT'
-											},
-											{
-												role: 'PARTICIPANT_CARE'
-											}
-										],
-										user: {
-											id: user.sub
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				// I am Project Managment or Participant Care and can see every single supervisor within the conference
-				{
-					conferenceSupervisor: {
-						some: {
-							conference: {
-								teamMembers: {
-									some: {
-										OR: [
-											{
-												role: 'PROJECT_MANAGEMENT'
-											},
-											{
-												role: 'PARTICIPANT_CARE'
-											}
-										],
-										user: {
-											id: user.sub
-										}
-									}
+			delegationMemberships: {
+				some: {
+					conference: {
+						teamMembers: {
+							some: {
+								role: {
+									in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+								},
+								user: {
+									id: user.sub
 								}
 							}
 						}
 					}
 				}
-			]
+			}
+		});
+
+		// team members should see single participants in the conferences they manage
+		can(['list', 'read'], 'User', {
+			singleParticipant: {
+				some: {
+					conference: {
+						teamMembers: {
+							some: {
+								role: {
+									in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+								},
+								user: {
+									id: user.sub
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+
+		// team members should see supervisors in the conferences they manage
+		can(['list', 'read'], 'User', {
+			conferenceSupervisor: {
+				some: {
+					conference: {
+						teamMembers: {
+							some: {
+								role: {
+									in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+								},
+								user: {
+									id: user.sub
+								}
+							}
+						}
+					}
+				}
+			}
 		});
 	}
 };

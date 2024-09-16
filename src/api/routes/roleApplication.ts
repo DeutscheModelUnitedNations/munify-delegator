@@ -9,19 +9,29 @@ import {
 } from '$db/generated/schema/RoleApplication';
 
 export const roleApplication = new Elysia()
+	.use(CRUDMaker.getOne('roleApplication'))
+	.use(CRUDMaker.updateOne('roleApplication'))
 	.use(permissionsPlugin)
 	.get(
 		'/roleApplication',
 		async ({ permissions, query }) => {
-			const user = permissions.mustBeLoggedIn();
-
 			const roleApplications = await db.roleApplication.findMany({
 				where: {
-					delegationId: query.delegationId
+					delegationId: query.delegationId,
+					AND: [permissions.allowDatabaseAccessTo('read').RoleApplication]
 				},
 				include: {
-					nation: true,
-					nonStateActor: true,
+					nation: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').Nation]
+						}
+					},
+					nonStateActor: {
+						where: {
+							AND: [permissions.allowDatabaseAccessTo('read').NonStateActor]
+						}
+					},
+					//TODO this does not perform an actual permission check on the delegation entity
 					delegation: true
 				},
 				orderBy: {
@@ -32,31 +42,35 @@ export const roleApplication = new Elysia()
 			return roleApplications;
 		},
 		{
-			query: t.Optional(RoleApplicationWhere),
+			query: t.Optional(t.Pick(RoleApplicationWhere, ['delegationId'])),
 			response: t.Array(t.Omit(RoleApplication, ['delegation']))
 		}
 	)
-	.use(CRUDMaker.getOne('roleApplication'))
 	.post(
 		'/roleApplication',
 		async ({ permissions, body }) => {
-			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('create', 'RoleApplication'));
+			permissions.mustBeLoggedIn();
 
-			const ranks = await db.roleApplication.findMany({
+			// this is for permission checks only
+			await db.delegation.findUniqueOrThrow({
 				where: {
-					delegationId: body.delegationId
-				},
-				select: {
-					rank: true
+					id: body.delegationId,
+					AND: [permissions.allowDatabaseAccessTo('update').Delegation]
 				}
 			});
 
-			const newRank = ranks.length + 1;
+			const amountOfApplications = (
+				await db.roleApplication.aggregate({
+					where: {
+						delegationId: body.delegationId
+					},
+					_count: true
+				})
+			)._count;
 
 			return await db.roleApplication.create({
 				data: {
-					rank: newRank,
+					rank: amountOfApplications + 1,
 					nation: body.nationId
 						? {
 								connect: {
@@ -91,12 +105,10 @@ export const roleApplication = new Elysia()
 	.patch(
 		'/roleApplication/:id/move',
 		async ({ permissions, params, body }) => {
-			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('update', 'RoleApplication'));
-
 			const roleApplication = await db.roleApplication.findUniqueOrThrow({
 				where: {
-					id: params.id
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('update').RoleApplication]
 				}
 			});
 
@@ -140,8 +152,6 @@ export const roleApplication = new Elysia()
 					}
 				});
 			});
-
-			return true;
 		},
 		{
 			params: t.Object({
@@ -152,17 +162,14 @@ export const roleApplication = new Elysia()
 			})
 		}
 	)
-	.use(CRUDMaker.updateOne('roleApplication'))
 	.delete(
 		'/roleApplication/:id',
 		async ({ permissions, params }) => {
-			const _user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('delete', 'RoleApplication'));
-
 			await db.$transaction(async (db) => {
 				const applicationToDelete = await db.roleApplication.findUniqueOrThrow({
 					where: {
-						id: params.id
+						id: params.id,
+						AND: [permissions.allowDatabaseAccessTo('delete').RoleApplication]
 					}
 				});
 
@@ -191,8 +198,6 @@ export const roleApplication = new Elysia()
 					}
 				}
 			});
-
-			return true;
 		},
 		{
 			params: t.Object({

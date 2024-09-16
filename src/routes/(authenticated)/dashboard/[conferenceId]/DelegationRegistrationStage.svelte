@@ -125,15 +125,13 @@
 		invalidateAll();
 	};
 
-	const removeMember = async (userId: string) => {
+	const removeMember = async (memberId: string) => {
 		if (!data.delegationData) {
 			console.error('Error: Delegation Data not found');
 			return;
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
-		checkForError(
-			api.delegationMember.delete({ userId: userId, delegationId: data.delegationData?.id })
-		);
+		checkForError(api.delegationMember({ id: memberId }).delete());
 		invalidateAll();
 	};
 
@@ -198,7 +196,7 @@
 							<button
 								class="btn btn-error btn-square btn-sm"
 								disabled={member.isHeadDelegate}
-								onclick={() => removeMember(member.user.id)}
+								onclick={() => removeMember(member.id)}
 							>
 								<i class="fa-solid fa-trash"></i>
 							</button>

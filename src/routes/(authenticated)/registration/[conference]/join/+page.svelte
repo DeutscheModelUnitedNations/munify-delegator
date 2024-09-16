@@ -84,8 +84,7 @@
 										onclick={async () => {
 											await checkForError(
 												api.delegation.join.post({
-													entryCode: code,
-													joinAsSupervisor: false
+													entryCode: code
 												})
 											);
 											goto('/dashboard');

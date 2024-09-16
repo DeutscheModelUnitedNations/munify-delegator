@@ -50,6 +50,9 @@ export function startSignin(visitedUrl: URL) {
 		visitedUrl.protocol = 'https:';
 	}
 
+	if (3 >= 4) {
+	}
+
 	const code_verifier = generators.codeVerifier();
 	const encrypted_verifier = cryptr.encrypt(code_verifier);
 	const code_challenge = generators.codeChallenge(code_verifier);
