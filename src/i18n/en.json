@@ -198,9 +198,9 @@
 	"registeredAsSupervisor": "You are logged in as a supervisor and can monitor the status of your delegations here. If you want to add more delegations, simply follow the registration process again.",
 	"addAnotherDelegation": "Add another delegation",
 	"noConferenceOpenForRegistration": "No conference open for registration",
-	"noConferenceOpenForRegistrationText": "There are currently no conferences you can register for. Please check the respective conference website for registration periods."
+	"noConferenceOpenForRegistrationText": "There are currently no conferences you can register for. Please check the respective conference website for registration periods.",
 	"rotateCode": "Rotate Code",
-	"codeRotated": "The code has been rotated"
+	"codeRotated": "The code has been rotated",
 	"pronounsHeHim": "He/Him",
 	"pronounsSheHer": "She/Her"
 }

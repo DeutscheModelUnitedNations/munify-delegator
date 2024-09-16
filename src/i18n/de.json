@@ -198,9 +198,9 @@
 	"registeredAsSupervisor": "Sie sind als Betreuer*in angemeldet und können hier den Status ihrer Delegationen überwachen. Wenn Sie weitere Delegationen hinzufügen möchten, folgen Sie einfach erneut dem Anmeldeprozess.",
 	"addAnotherDelegation": "Weitere Delegation hinzufügen",
 	"noConferenceOpenForRegistration": "Keine Konferenz zur Anmeldung geöffnet",
-	"noConferenceOpenForRegistrationText": "Es gibt derzeit keine Konferenzen, für die Sie sich anmelden können. Bitte informieren Sie sich auf der Website der jeweiligen Konferenz über die Anmeldezeiträume."
+	"noConferenceOpenForRegistrationText": "Es gibt derzeit keine Konferenzen, für die Sie sich anmelden können. Bitte informieren Sie sich auf der Website der jeweiligen Konferenz über die Anmeldezeiträume.",
 	"rotateCode": "Code erneuern",
-	"codeRotated": "Code erfolgreich erneuert"
+	"codeRotated": "Code erfolgreich erneuert",
 	"pronounsHeHim": "er/ihm",
 	"pronounsSheHer": "sie/ihr"
 }
