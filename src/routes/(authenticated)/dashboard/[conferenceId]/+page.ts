@@ -14,11 +14,7 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 
 	const supervisorData = userData.conferenceSupervisor.find(
 		(x) => x.conferenceId === params.conferenceId
-	)
-		? await checkForError(
-				api.conferenceSupervisor.mine({ conferenceId: params.conferenceId }).get()
-			)
-		: undefined;
+	);
 
 	async function getSupervisorsDelegationData(data: NonNullable<typeof supervisorData>) {
 		const supervisorsDelegationData = data
@@ -41,7 +37,13 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 	);
 
 	const delegationData = delegationMembershipData
-		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
+		? await checkForError(
+				api
+					.delegation({
+						id: delegationMembershipData?.delegationId
+					})
+					.get()
+			)
 		: undefined;
 
 	return {

@@ -39,7 +39,7 @@
 		<p>
 			Version:
 			{env.PUBLIC_VERSION ?? 'nightly'}
-			Sha:
+			SHA:
 			{env.PUBLIC_SHA ?? 'unknown'}
 		</p>
 	</aside>

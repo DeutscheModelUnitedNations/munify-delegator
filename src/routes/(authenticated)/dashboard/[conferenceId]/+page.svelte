@@ -44,7 +44,7 @@
 		throw new Error('Conference not found');
 	};
 
-	const determainCategory = () => {
+	const determineCategory = () => {
 		if (data.supervisorData) {
 			return CATEGORY.SUPERVISOR;
 		}
@@ -70,7 +70,7 @@
 		{:else if determinStage() === 'POST_CONFERENCE'}
 			#TODO: Implement individual post-conference stage
 		{/if} -->
-	{#if determainCategory() === CATEGORY.DELEGATION}
+	{#if determineCategory() === CATEGORY.DELEGATION}
 		{#if determinStage() === STAGE.REGISTRATION}
 			<RegistrationStage {data} />
 		{:else if determinStage() === STAGE.PRE_CONFERENCE}
@@ -78,7 +78,7 @@
 		{:else if determinStage() === STAGE.POST_CONFERENCE}
 			<PostConferenceStage />
 		{/if}
-	{:else if determainCategory() === CATEGORY.SUPERVISOR}
+	{:else if determineCategory() === CATEGORY.SUPERVISOR}
 		{#if determinStage() === STAGE.POST_CONFERENCE}
 			#TODO: Implement supervisor post-conference stage
 		{:else}

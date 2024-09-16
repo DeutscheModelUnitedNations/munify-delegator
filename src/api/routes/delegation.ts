@@ -28,7 +28,7 @@ export const delegation = new Elysia()
 		'delegation/:id',
 		async ({ permissions, params }) => {
 			//TODO when we want to continue to use such nested objects we should probably switch to GQL
-			const delegation = await db.delegation.findUniqueOrThrow({
+			return await db.delegation.findUniqueOrThrow({
 				where: {
 					id: params.id,
 					AND: [permissions.allowDatabaseAccessTo('read').Delegation]
@@ -87,8 +87,6 @@ export const delegation = new Elysia()
 					}
 				}
 			});
-
-			return delegation;
 		},
 		{
 			response: t.Composite([
@@ -291,7 +289,7 @@ export const delegation = new Elysia()
 	)
 	.get(
 		`/delegation/preview`,
-		async ({ permissions, query }) => {
+		async ({  query }) => {
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
 					conferenceId: query.conferenceId,
