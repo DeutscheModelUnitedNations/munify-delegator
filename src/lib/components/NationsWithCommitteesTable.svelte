@@ -15,7 +15,7 @@
 			<th><i class="fa-duotone fa-flag"></i></th>
 			{#each committees as committee}
 				<th class="text-center">
-					<div class="tooltip" data-tip={committee.name}>
+					<div class="tooltip tooltip-bottom" data-tip={committee.name}>
 						{committee.abbreviation}
 					</div>
 				</th>
