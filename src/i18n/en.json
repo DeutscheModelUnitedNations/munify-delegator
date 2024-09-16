@@ -196,5 +196,7 @@
 	"willBePresentAtConference": "I will be present at the conference",
 	"willNotBePresentAtConference": "I will not be present at the conference",
 	"registeredAsSupervisor": "You are logged in as a supervisor and can monitor the status of your delegations here. If you want to add more delegations, simply follow the registration process again.",
-	"addAnotherDelegation": "Add another delegation"
+	"addAnotherDelegation": "Add another delegation",
+	"pronounsHeHim": "He/Him",
+	"pronounsSheHer": "She/Her"
 }

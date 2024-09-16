@@ -3,8 +3,16 @@
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
+
+	onMount(() => {
+		if (data.conferences == undefined || data.conferences?.length == 0) {
+			goto('./no-conference');
+		}
+	});
 </script>
 
 <Header title={m.myConferences()} />
