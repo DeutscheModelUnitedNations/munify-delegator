@@ -136,6 +136,15 @@ export const roleApplication = new Elysia()
 			await db.$transaction(async (db) => {
 				await db.roleApplication.update({
 					where: {
+						id: otherRoleApplication.id
+					},
+					data: {
+						rank: -1
+					}
+				});
+				
+				await db.roleApplication.update({
+					where: {
 						id: roleApplication.id
 					},
 					data: {
