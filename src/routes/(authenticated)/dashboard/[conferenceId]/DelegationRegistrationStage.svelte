@@ -108,7 +108,7 @@
 		}
 		if (!confirm(m.deleteDelegationConfirmation())) return;
 		checkForError(api.delegation({ id: data.delegationData?.id }).delete());
-		invalidateAll();
+		invalidateAll().then(() => goto('/dashboard'));
 	};
 
 	const makeHeadDelegate = async (userId: string) => {

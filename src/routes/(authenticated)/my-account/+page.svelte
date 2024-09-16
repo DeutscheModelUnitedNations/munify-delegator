@@ -20,7 +20,10 @@
 	let zip = $state(data.fullUser.zip ?? '');
 	let city = $state(data.fullUser.city ?? '');
 	let country = $state(data.fullUser.country ?? '');
-	let birthday = $state((data.fullUser.birthday as any) ?? new Date().toISOString());
+	let birthday = $state(
+		// TODO ugly type cast for an elysa date problem
+		(data.fullUser.birthday as unknown as string)?.split('T')[0] ?? new Date().toISOString()
+	);
 	let gender = $state(data.fullUser.gender ?? '');
 	let pronouns = $state(data.fullUser.pronouns ?? '');
 	let foodPreference = $state(data.fullUser.foodPreference ?? '');
@@ -28,6 +31,8 @@
 		data.fullUser.wantsToReceiveGeneralInformation ?? false
 	);
 	let wantsJoinTeamInformation = $state(data.fullUser.wantsJoinTeamInformation ?? false);
+
+	let pronounsHaveChanged = $state(false);
 
 	const onPersonalDataFormSubmit = async (e: Event) => {
 		e.preventDefault();
@@ -52,6 +57,28 @@
 		}
 		//TODO notify user of success
 	};
+
+	$effect(() => {
+		if (pronouns !== '' && !pronounsHaveChanged) {
+			pronounsHaveChanged = true;
+		}
+	});
+
+	$effect(() => {
+		if (pronouns === '' && !pronounsHaveChanged) {
+			switch (gender) {
+				case 'm':
+					pronouns = m.pronounsHeHim();
+					break;
+				case 'f':
+					pronouns = m.pronounsSheHer();
+					break;
+				default:
+					pronouns = '';
+					break;
+			}
+		}
+	});
 </script>
 
 {#if data.redirectUrl}
@@ -89,9 +116,9 @@
 					<ProfileInput
 						label={m.phoneNumber()}
 						bind:value={phone}
-						placeholder="+49 1234567890"
+						placeholder="+491234567890"
 						required
-						pattern={`^\+\d{6,14}$`}
+						pattern={`^\\+\\d{1,3}\\d{3,15}$`}
 						defaultValue="+49"
 						type="tel"
 					/>
