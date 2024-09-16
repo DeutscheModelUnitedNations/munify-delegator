@@ -71,23 +71,21 @@ export const user = new Elysia({
 				}
 			});
 
-			//TODO can this be done more elegantly?
-			if (
-				!updatedUser.birthday ||
-				!updatedUser.phone ||
-				!updatedUser.street ||
-				!updatedUser.apartment ||
-				!updatedUser.zip ||
-				!updatedUser.city ||
-				!updatedUser.country ||
-				!updatedUser.gender ||
-				!updatedUser.pronouns ||
-				!updatedUser.foodPreference
-			) {
-				return { userNeedsAdditionalInfo: true };
-			}
+			const requiredFields = [
+				'birthday',
+				'phone',
+				'street',
+				'zip',
+				'city',
+				'country',
+				'gender',
+				'foodPreference'
+			];
 
-			return { userNeedsAdditionalInfo: false };
+			// @ts-expect-error - TS doesn't know about the user object keys
+			const userNeedsAdditionalInfo = requiredFields.some((field) => !updatedUser[field]);
+
+			return { userNeedsAdditionalInfo };
 		},
 		{
 			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
