@@ -29,7 +29,7 @@ export const user = new Elysia({
 						where: permissions.allowDatabaseAccessTo('read').ConferenceParticipantStatus
 					},
 					conferenceSupervisor: {
-						where: permissions.allowDatabaseAccessTo('read').ConferenceSupervisor
+						where: permissions.allowDatabaseAccessTo('read').ConferenceSupervisor,
 					},
 					teamMember: {
 						where: permissions.allowDatabaseAccessTo('read').TeamMember
