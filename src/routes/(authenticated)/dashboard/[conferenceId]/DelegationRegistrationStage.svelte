@@ -243,6 +243,21 @@
 						}}
 						><i class="fa-duotone fa-link text-xl"></i>
 					</button>
+					{#if userIsHeadDelegate}
+						<div class="tooltip" data-tip={m.rotateCode()}>
+							<button
+								class="btn btn-ghost btn-primary btn-square"
+								onclick={async () => {
+									await checkForError(
+										api.delegation({ id: data.delegationData!.id }).resetEntryCode.patch()
+									);
+									invalidateAll();
+									alert(m.codeRotated());
+								}}
+								><i class="fa-duotone fa-rotate text-xl"></i>
+							</button>
+						</div>
+					{/if}
 				</div>
 			</DashboardContentCard>
 		{/if}
