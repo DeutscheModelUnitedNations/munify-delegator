@@ -25,8 +25,6 @@
 
 	let { data }: { data: PageData } = $props();
 
-	console.log(data);
-
 	const conference = $derived(data?.conferences.find((x) => x.id === data.conferenceId));
 
 	const determinStage: () => STAGE = () => {
