@@ -20,7 +20,10 @@
 	let zip = $state(data.fullUser.zip ?? '');
 	let city = $state(data.fullUser.city ?? '');
 	let country = $state(data.fullUser.country ?? '');
-	let birthday = $state((data.fullUser.birthday as any) ?? new Date().toISOString());
+	let birthday = $state(
+		// TODO ugly type cast for an elysa date problem
+		(data.fullUser.birthday as unknown as string)?.split('T')[0] ?? new Date().toISOString()
+	);
 	let gender = $state(data.fullUser.gender ?? '');
 	let pronouns = $state(data.fullUser.pronouns ?? '');
 	let foodPreference = $state(data.fullUser.foodPreference ?? '');
@@ -89,9 +92,9 @@
 					<ProfileInput
 						label={m.phoneNumber()}
 						bind:value={phone}
-						placeholder="+49 1234567890"
+						placeholder="+491234567890"
 						required
-						pattern={`^\+\d{6,14}$`}
+						pattern={`^\\+\\d{1,3}\\d{3,15}$`}
 						defaultValue="+49"
 						type="tel"
 					/>
