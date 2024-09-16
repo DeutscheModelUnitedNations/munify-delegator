@@ -29,6 +29,8 @@
 	);
 	let wantsJoinTeamInformation = $state(data.fullUser.wantsJoinTeamInformation ?? false);
 
+	let pronounsHaveChanged = $state(false);
+
 	const onPersonalDataFormSubmit = async (e: Event) => {
 		e.preventDefault();
 
@@ -52,6 +54,28 @@
 		}
 		//TODO notify user of success
 	};
+
+	$effect(() => {
+		if (pronouns !== '' && !pronounsHaveChanged) {
+			pronounsHaveChanged = true;
+		}
+	});
+
+	$effect(() => {
+		if (pronouns === '' && !pronounsHaveChanged) {
+			switch (gender) {
+				case 'm':
+					pronouns = m.pronounsHeHim();
+					break;
+				case 'f':
+					pronouns = m.pronounsSheHer();
+					break;
+				default:
+					pronouns = '';
+					break;
+			}
+		}
+	});
 </script>
 
 {#if data.redirectUrl}
