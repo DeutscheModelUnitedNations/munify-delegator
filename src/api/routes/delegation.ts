@@ -133,7 +133,6 @@ export const delegation = new Elysia()
 		`/delegation`,
 		async ({ permissions, body }) => {
 			const user = permissions.mustBeLoggedIn();
-			permissions.checkIf((user) => user.can('create', 'Delegation'));
 
 			// if the user somehow is already participating in the conference, throw an error
 			await fetchUserParticipations({
@@ -297,7 +296,8 @@ export const delegation = new Elysia()
 				where: {
 					conferenceId: query.conferenceId,
 					entryCode: query.entryCode,
-					AND: [permissions.allowDatabaseAccessTo('read').Delegation]
+					// we dont want permission checks here. We carefully choose what to send, see the select statements below
+					// AND: [permissions.allowDatabaseAccessTo('read').Delegation]
 				},
 				include: {
 					conference: {
