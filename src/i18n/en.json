@@ -47,7 +47,7 @@
 	"questionnaire": "Fragebogen",
 	"review": "Überprüfen",
 	"invite": "Einladen",
-	"createDelegationProcessExplaination": "<p class='max-ch-md'>Sie sind im Begriff, eine Delegation anzulegen. Nachdem Sie eine Delegation angelegt haben, können Sie Delegationspartner*innen einladen und sich geschlossen als Delegierte auf einen Staat oder als Vertreter*innen einer/eines Nichtstaatlichen Aktuer*in bewerben.</p><p class='max-ch-md'>Sie werden automatisch als Delegationsleiter*in eingetragen. Sie können auch eine betreuende Person eintragen, die Sie bei der Organisation der Delegation unterstützt. </p><p class='max-ch-md'>Bitte beachten Sie, dass Sie sich nicht alleine auf eine Delegation bewerben können. Wenn Sie sich alleine bewerben möchten, schauen Sie <a href='.' class='link underline'>hier</a> nach Einzelplätzen, auf die Sie sich bewerben können. Außerdem hilft Ihnen die Teilnehmendenbetreuung sehr gerne bei der Vermittlung von Delegationspartner*innen. Den Kontakt finden Sie auf der Website der jeweiligen Konferenz. </p>",
+	"createDelegationProcessExplaination": "<p class='max-ch-md'>Sie sind im Begriff, eine Delegation anzulegen. Nachdem Sie eine Delegation angelegt haben, können Sie Delegationspartner*innen einladen und sich geschlossen als Delegierte auf einen Staat oder als Vertreter*innen einer/eines Nichtstaatlichen Aktuer*in bewerben.</p><p class='max-ch-md'>Sie werden automatisch als Delegationsleiter*in eingetragen. Sie können auch eine betreuende Person eintragen, die Sie bei der Organisation der Delegation unterstützt. </p><p class='max-ch-md'>Bitte beachten Sie, dass Sie sich nicht alleine auf eine Delegation bewerben können. Wenn Sie sich alleine bewerben möchten, schauen Sie <a href='./individual' class='link underline'>hier</a> nach Einzelplätzen, auf die Sie sich bewerben können. Außerdem hilft Ihnen die Teilnehmendenbetreuung sehr gerne bei der Vermittlung von Delegationspartner*innen. Den Kontakt finden Sie auf der Website der jeweiligen Konferenz. </p>",
 	"next": "Weiter",
 	"pleaseAnswerTheFollowingQuestions": "Bitte beantworten Sie zunächst die folgenden Fragen. Sie können die Antworten vor der Anmeldung noch ändern.",
 	"whichSchoolDoesYourDelegationComeFrom": "Von welcher Schule / Institution kommen Sie (bzw. die Mehrheit Ihrer Delegation)?",
@@ -197,8 +197,10 @@
 	"willNotBePresentAtConference": "I will not be present at the conference",
 	"registeredAsSupervisor": "You are logged in as a supervisor and can monitor the status of your delegations here. If you want to add more delegations, simply follow the registration process again.",
 	"addAnotherDelegation": "Add another delegation",
+	"noConferenceOpenForRegistration": "No conference open for registration",
+	"noConferenceOpenForRegistrationText": "There are currently no conferences you can register for. Please check the respective conference website for registration periods.",
 	"rotateCode": "Rotate Code",
-	"codeRotated": "The code has been rotated"
+	"codeRotated": "The code has been rotated",
 	"pronounsHeHim": "He/Him",
 	"pronounsSheHer": "She/Her"
 }

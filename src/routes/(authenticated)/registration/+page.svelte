@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
 	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
+	import svgempty from '$assets/undraw/empty_street.svg';
 
 	let { data }: { data: PageData } = $props();
 
@@ -17,12 +18,23 @@
 	</hero>
 
 	<main>
-		<section
-			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flew-wrap"
-		>
-			{#each data.conferences as item}
-				<ConferenceCard {...item} baseSlug="/registration" />
-			{/each}
-		</section>
+		{#if data.conferences.length === 0}
+			<section class="w-full flex flex-col items-center gap-4">
+				<img src={svgempty} alt="Empty" class="w-1/2 mb-10" />
+				<h1 class="text-3xl text-center">{m.noConferenceOpenForRegistration()}</h1>
+				<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
+				<div class="flex gap-4 flex-col md:flex-row-reverse">
+					<a class="btn mt-10" href="/">{m.backToHome()}</a>
+				</div>
+			</section>
+		{:else}
+			<section
+				class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flew-wrap"
+			>
+				{#each data.conferences as item}
+					<ConferenceCard {...item} baseSlug="/registration" />
+				{/each}
+			</section>
+		{/if}
 	</main>
 </div>
