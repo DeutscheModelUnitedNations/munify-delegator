@@ -14,7 +14,7 @@
 				const res = await checkForError(
 					apiClient({
 						origin: $page.url.origin
-					})['refresh-token'].get()
+					})["auth"]['refresh-token'].get()
 				);
 
 				if (res.nextTokenRefreshDue) {

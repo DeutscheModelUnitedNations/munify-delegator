@@ -64,7 +64,7 @@
 	});
 </script>
 
-<Header title={conference?.title ?? 'Unknown'} />
+<Header title={conference?.title ?? 'Unknown'} logoutUrl={data.logoutUrl} />
 <div class="flex flex-col py-10 gap-10">
 	<!-- {#if determainCategory() === 'INDIVIDUAL'}
 		{#if determinStage() === 'REGISTRATION'}

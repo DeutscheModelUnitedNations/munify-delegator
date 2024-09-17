@@ -1,7 +1,9 @@
 <script lang="ts">
 	import ProfileButtonAbsolute from '$lib/components/ProfileButton/ProfileButtonAbsolute.svelte';
-	let { children } = $props();
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
+	let { data, children }: { data: LayoutData, children: Snippet } = $props();
 </script>
 
-<ProfileButtonAbsolute />
+<ProfileButtonAbsolute logoutUrl={data.logoutUrl} />
 {@render children()}
