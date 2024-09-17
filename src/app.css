@@ -10,12 +10,14 @@
 	font-display: swap;
 }
 
-#mermaid .outcome > * {
+root {}
+
+#mermaid .outcome>* {
 	stroke: #000 !important;
 	transition: all 0.3s;
 }
 
-#mermaid .outcome:hover > * {
+#mermaid .outcome:hover>* {
 	stroke: #3d7dd2 !important;
 	transition: all 0.3s;
 }
@@ -37,4 +39,18 @@
 	.print-only {
 		display: block;
 	}
+}
+
+
+/* TOAST Styling */
+._toastContainer {
+	@apply !toast;
+}
+
+._toastItem {
+	@apply !alert !alert-warning !shadow-lg;
+}
+
+._toastBtn {
+	@apply !btn !btn-square !btn-ghost;
 }
