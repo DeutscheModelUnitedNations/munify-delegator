@@ -27,6 +27,7 @@
 	import '@fontsource/vollkorn/900.css';
 	import 'flag-icons/css/flag-icons.min.css';
 	import { onMount, type Snippet } from 'svelte';
+	import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -58,4 +59,5 @@
 
 <ParaglideJS {i18n}>
 	{@render children()}
+	<GlobalErrorToast />
 </ParaglideJS>
