@@ -44,7 +44,10 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
 		: undefined;
 
+	const { logoutUrl } = await checkForError(api.auth['logout-url'].get());
+
 	return {
+		logoutUrl,
 		conferenceId: params.conferenceId,
 		delegationMembershipData,
 		delegationData,
