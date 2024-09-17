@@ -39,7 +39,7 @@ export namespace CRUDMaker {
 				return await db[entity].findUniqueOrThrow({
 					where: {
 						id: params.id,
-						AND: permissions.allowDatabaseAccessTo('read')[capitalizeFirstLetterOfUnion(entity)]
+						AND: [permissions.allowDatabaseAccessTo('read')[capitalizeFirstLetterOfUnion(entity)]]
 					}
 				});
 			},
@@ -76,7 +76,7 @@ export namespace CRUDMaker {
 				return await db[entity].update({
 					where: {
 						id: params.id,
-						AND: permissions.allowDatabaseAccessTo('update')[capitalizeFirstLetterOfUnion(entity)]
+						AND: [permissions.allowDatabaseAccessTo('update')[capitalizeFirstLetterOfUnion(entity)]]
 					},
 					data: body
 				});
@@ -96,7 +96,7 @@ export namespace CRUDMaker {
 				return await db[entity].delete({
 					where: {
 						id: params.id,
-						AND: permissions.allowDatabaseAccessTo('delete')[capitalizeFirstLetterOfUnion(entity)]
+						AND: [permissions.allowDatabaseAccessTo('delete')[capitalizeFirstLetterOfUnion(entity)]]
 					}
 				});
 			},

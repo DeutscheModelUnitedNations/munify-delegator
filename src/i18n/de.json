@@ -202,5 +202,6 @@
 	"rotateCode": "Code erneuern",
 	"codeRotated": "Code erfolgreich erneuert",
 	"pronounsHeHim": "er/ihm",
-	"pronounsSheHer": "sie/ihr"
+	"pronounsSheHer": "sie/ihr",
+	"alreadyAnsweredAllQuestions": "Sie haben bereits alle Fragen beantwortet!"
 }

@@ -64,9 +64,15 @@
 			out:fly={{ x: -50, duration: 300 }}
 			class="flex flex-col gap-4"
 		>
-			<p class="max-ch-sm">
-				{m.pleaseAnswerTheFollowingQuestions()}
-			</p>
+			{#if !data.existingSingleParticipant?.school || !data.existingSingleParticipant?.motivation || !data.existingSingleParticipant?.experience}
+				<p class="max-ch-sm">
+					{m.pleaseAnswerTheFollowingQuestions()}
+				</p>
+			{:else}
+				<p class="max-ch-sm">
+					{m.alreadyAnsweredAllQuestions()}
+				</p>
+			{/if}
 
 			<form
 				class="contents"
@@ -75,42 +81,49 @@
 					submit();
 				}}
 			>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text max-ch-sm text-left"
-							>{m.whichSchoolDoesYourDelegationComeFrom()}</span
-						>
-					</div>
-					<input
-						type="text"
-						placeholder={m.answerHere()}
-						class="input input-bordered w-full"
-						bind:value={singleParticipant.school}
-					/>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text max-ch-sm text-left">{m.whyDoYouWantToJoinTheConference()}</span
-						>
-					</div>
-					<textarea
-						placeholder={m.answerHere()}
-						class="textarea textarea-bordered w-full"
-						bind:value={singleParticipant.motivation}
-					></textarea>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text max-ch-sm text-left"
-							>{m.howMuchExperienceDoesYourDelegationHave()}</span
-						>
-					</div>
-					<textarea
-						placeholder={m.answerHere()}
-						class="textarea textarea-bordered w-full"
-						bind:value={singleParticipant.experience}
-					></textarea>
-				</label>
+				{#if !data.existingSingleParticipant?.school}
+					<label class="form-control w-full">
+						<div class="label">
+							<span class="label-text max-ch-sm text-left"
+								>{m.whichSchoolDoesYourDelegationComeFrom()}</span
+							>
+						</div>
+						<input
+							type="text"
+							placeholder={m.answerHere()}
+							class="input input-bordered w-full"
+							bind:value={singleParticipant.school}
+						/>
+					</label>
+				{/if}
+				{#if !data.existingSingleParticipant?.motivation}
+					<label class="form-control w-full">
+						<div class="label">
+							<span class="label-text max-ch-sm text-left"
+								>{m.whyDoYouWantToJoinTheConference()}</span
+							>
+						</div>
+						<textarea
+							placeholder={m.answerHere()}
+							class="textarea textarea-bordered w-full"
+							bind:value={singleParticipant.motivation}
+						></textarea>
+					</label>
+				{/if}
+				{#if !data.existingSingleParticipant?.experience}
+					<label class="form-control w-full">
+						<div class="label">
+							<span class="label-text max-ch-sm text-left"
+								>{m.howMuchExperienceDoesYourDelegationHave()}</span
+							>
+						</div>
+						<textarea
+							placeholder={m.answerHere()}
+							class="textarea textarea-bordered w-full"
+							bind:value={singleParticipant.experience}
+						></textarea>
+					</label>
+				{/if}
 				<button class="btn btn-lg btn-primary" type="submit">{m.submit()}</button>
 			</form>
 		</div>

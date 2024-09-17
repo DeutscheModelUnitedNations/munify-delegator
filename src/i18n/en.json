@@ -202,5 +202,6 @@
 	"rotateCode": "Rotate Code",
 	"codeRotated": "The code has been rotated",
 	"pronounsHeHim": "He/Him",
-	"pronounsSheHer": "She/Her"
+	"pronounsSheHer": "She/Her",
+	"alreadyAnsweredAllQuestions": "Sie haben bereits alle Fragen beantwortet!"
 }
