@@ -203,5 +203,13 @@
 	"codeRotated": "Code erfolgreich erneuert",
 	"pronounsHeHim": "er/ihm",
 	"pronounsSheHer": "sie/ihr",
-	"alreadyAnsweredAllQuestions": "Sie haben bereits alle Fragen beantwortet!"
+	"alreadyAnsweredAllQuestions": "Sie haben bereits alle Fragen beantwortet!",
+	"cookieNoticeHeading": "Wir verwenden Cookies",
+	"cookieNoticeDescription": "Delegator verwendet technisch notwendige Cookies um das Benutzen der App zu ermöglichen.",
+	"acceptAll": "Alle akzeptieren",
+	"rejectAll": "Alle ablehnen",
+	"managePreferences": "Einstellungen verwalten",
+	"close": "Schließen",
+	"technicalNecessary": "Technisch notwendig",
+	"technicalNecessaryDescription": "Delegator verwendet technisch notwendige Cookies um das Benutzen der App zu ermöglichen."
 }

@@ -170,3 +170,9 @@ export async function validateTokens({
 export function refresh(refresh_token: string) {
 	return client.refresh(refresh_token);
 }
+
+export function getLogoutUrl(visitedUrl: URL) {
+	return client.endSessionUrl({
+		post_logout_redirect_uri: visitedUrl.origin + '/auth/logout-callback'
+	});
+}

@@ -15,7 +15,7 @@
 	});
 </script>
 
-<Header title={m.myConferences()} />
+<Header title={m.myConferences()} logoutUrl={data.logoutUrl} />
 <section class="mt-10 flex flex-wrap gap-4">
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
