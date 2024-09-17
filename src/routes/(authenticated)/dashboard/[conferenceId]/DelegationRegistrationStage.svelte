@@ -79,15 +79,15 @@
 			icon: 'users',
 			title: m.members(),
 			value: data.delegationData?.members?.length,
-			desc: 'in der Delegation'
+			desc: m.inTheDelegation()
 		},
 		{
 			icon: 'list-check',
-			title: 'Aufgaben',
+			title: m.tasks(),
 			value: todos
 				? `${Math.floor((todos.filter((x) => x.completed).length / todos.length) * 100)} %`
 				: undefined,
-			desc: 'für Anmeldung erledigt'
+			desc: m.doneToRegister()
 		}
 	]);
 

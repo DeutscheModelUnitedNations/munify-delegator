@@ -4,6 +4,7 @@
 	import ChatUser from '../ChatUser.svelte';
 	import Choice from '../Choice.svelte';
 	import QuestionFlowState from '../flowEnum';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		advance: (q: QuestionFlowState) => void;
@@ -48,17 +49,11 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>
-		Sehr schön! Der normale Bewerbungsprozess für Delegierte und Vertreter*innen von NAs ist auf
-		Gruppenanmeldungen von mindestens 2 Personen ausgelegt.
-	</p>
-	<p>
-		Wenn Sie keine Personen in Ihrem Umfeld kennen, die mit Ihnen teilnehmen möchten, ist das aber
-		kein größeres Problem.
-	</p>
+	<p>{m.assistantFlowDelegateHavePartners1()}</p>
+	<p>{m.assistantFlowDelegateHavePartners2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>Haben Sie Personen, mit denen Sie eine Gruppe bilden können?</p>
+	<p>{m.assistantFlowDelegateHavePartners3()}</p>
 </ChatBot>
 
 {#if selection == Selection.NONE && mounted}
@@ -66,10 +61,10 @@
 {:else if selection !== Selection.NONE && mounted}
 	<ChatUser>
 		{#if selection === Selection.YES}
-			<p>Ja.</p>
+			<p>{m.yes()}</p>
 		{/if}
 		{#if selection === Selection.NO}
-			<p>Nein, leider nicht.</p>
+			<p>{m.no()}</p>
 		{/if}
 	</ChatUser>
 {/if}
