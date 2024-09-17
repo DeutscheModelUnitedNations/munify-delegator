@@ -4,6 +4,7 @@
 	import ChatUser from '../ChatUser.svelte';
 	import Choice from '../Choice.svelte';
 	import QuestionFlowState from '../flowEnum';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		advance: (q: QuestionFlowState) => void;
@@ -48,15 +49,12 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>Wunderbar! Dann sind Sie hier genau richtig.</p>
-	<p>
-		Da die Anmeldung als Gruppe auch geschlossen stattfinden muss, müssen Sie zunächst klären, ob
-		schon jemand Ihrer Gruppe eine Delegation erstellt hat, der sie beitreten können.
-	</p>
-	<p>Der/die Ersteller*in einer Delegation wird automatisch zur Delegationsleiter*in</p>
+	<p>{m.assistantFlowPartnersCreatedDelegation1()}</p>
+	<p>{m.assistantFlowPartnersCreatedDelegation2()}</p>
+	<p>{m.assistantFlowPartnersCreatedDelegation3()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>Haben sie schon eine*n Delegationsleiter*in, der/die bereits eine Delegation erstellt hat?</p>
+	<p>{m.assistantFlowPartnersCreatedDelegation4()}</p>
 </ChatBot>
 
 {#if selection == Selection.NONE && mounted}
@@ -64,10 +62,10 @@
 {:else if selection !== Selection.NONE && mounted}
 	<ChatUser>
 		{#if selection === Selection.YES}
-			<p>Ja, es gibt bereits eine Delegation.</p>
+			<p>{m.assistantFlowPartnersCreatedDelegationAnswer1()}</p>
 		{/if}
 		{#if selection === Selection.NO}
-			<p>Nein, noch hat niemand eine Delegation erstellt.</p>
+			<p>{m.assistantFlowPartnersCreatedDelegationAnswer2()}</p>
 		{/if}
 	</ChatUser>
 {/if}

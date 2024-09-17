@@ -3,6 +3,7 @@ import { CRUDMaker } from '$api/util/crudmaker';
 import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
 import { UserFacingError } from '$api/util/logger';
 import { db } from '$db/db';
+import { CustomConferenceRolePlain } from '$db/generated/schema/CustomConferenceRole';
 import {
 	SingleParticipantInputCreate,
 	SingleParticipantPlain
@@ -85,4 +86,98 @@ export const singleParticipant = new Elysia()
 		{
 			body: t.Required(t.Omit(SingleParticipantInputCreate, ['applied', 'user']))
 		}
-	);
+	)
+
+	.get(
+		'/singleParticipant/mine/:conferenceId',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+			return await db.singleParticipant.findUniqueOrThrow({
+				where: {
+					conferenceId_userId: {
+						userId: user.sub,
+						conferenceId: params.conferenceId
+					},
+					AND: [permissions.allowDatabaseAccessTo('read').SingleParticipant]
+				},
+				include: {
+					appliedForRoles: true
+				}
+			});
+		},
+		{
+			params: t.Object({
+				conferenceId: t.String()
+			}),
+			response: t.Composite([
+				SingleParticipantPlain,
+				t.Object({ appliedForRoles: t.Array(CustomConferenceRolePlain) })
+			])
+		}
+	)
+
+	.delete(
+		'/singleParticipant/:id/deleteApplication/:roleApplicationId',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			await db.singleParticipant.update({
+				where: {
+					id: params.id,
+					AND: [permissions.allowDatabaseAccessTo('update').SingleParticipant]
+				},
+				data: {
+					appliedForRoles: {
+						disconnect: {
+							id: params.roleApplicationId
+						}
+					}
+				}
+			});
+
+			return { success: true };
+		},
+		{
+			params: t.Object({
+				id: t.String(),
+				roleApplicationId: t.String()
+			})
+		}
+	)
+
+	.patch('/singleParticipant/:id/completeRegistration', async ({ permissions, params }) => {
+		const singleParticipant = await db.singleParticipant.findUniqueOrThrow({
+			where: {
+				id: params.id,
+				AND: [permissions.allowDatabaseAccessTo('update').SingleParticipant]
+			},
+			include: {
+				appliedForRoles: {
+					where: {
+						AND: [permissions.allowDatabaseAccessTo('read').CustomConferenceRole]
+					}
+				}
+			}
+		});
+
+		if (singleParticipant.appliedForRoles.length < 1) {
+			throw new UserFacingError('Not enough role applications');
+		}
+
+		if (
+			!singleParticipant.school ||
+			!singleParticipant.experience ||
+			!singleParticipant.motivation
+		) {
+			throw new UserFacingError('Missing information');
+		}
+
+		await db.singleParticipant.update({
+			where: {
+				id: params.id
+			},
+			data: {
+				applied: true
+			}
+		});
+	});

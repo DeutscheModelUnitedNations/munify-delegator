@@ -4,6 +4,7 @@
 	import ChatUser from '../ChatUser.svelte';
 	import Choice from '../Choice.svelte';
 	import QuestionFlowState from '../flowEnum';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		advance: (q: QuestionFlowState) => void;
@@ -48,14 +49,11 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>Sehr schön! Als Betreuende Person können sie nur bereits erstellte Delegationen überwachen.</p>
-	<p class="text-primary dark:text-warning">
-		Wichtig: Anders als früher müssen Ihre Schüler*innen die Delegation selbst erstellen. Sie können
-		den Delegationen anschließend mit dem Delegationscode als betreuende Person beitreten.
-	</p>
+	<p>{m.assistantFlowSupervisorUsersAlreadyRegistered1()}</p>
+	<p class="text-primary dark:text-warning">{m.assistantFlowSupervisorUsersAlreadyRegistered2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>Haben Ihre Schüler*innen bereits Delegationen erstellt?</p>
+	<p>{m.assistantFlowSupervisorUsersAlreadyRegistered3()}</p>
 </ChatBot>
 
 {#if selection == Selection.NONE && mounted}
@@ -63,10 +61,10 @@
 {:else if selection !== Selection.NONE && mounted}
 	<ChatUser>
 		{#if selection === Selection.YES}
-			<p>Ja, haben sie.</p>
+			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer1()}</p>
 		{/if}
 		{#if selection === Selection.NO}
-			<p>Nein, noch nicht.</p>
+			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer1()}</p>
 		{/if}
 	</ChatUser>
 {/if}
