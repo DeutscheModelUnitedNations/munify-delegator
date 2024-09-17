@@ -1,7 +1,7 @@
-import Elysia, { t } from 'elysia';
+import Elysia from 'elysia';
 import { TokenSet } from 'openid-client';
 import { refresh, tokensCookieName, validateTokens } from './flow';
-import { Parameters, type Static } from '@sinclair/typebox';
+import { Parameters } from '@sinclair/typebox';
 import { dynamicPrivateConfig } from '$config/private';
 import type { oidcRoles } from './abilities/abilities';
 

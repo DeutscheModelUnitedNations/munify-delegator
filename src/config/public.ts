@@ -7,6 +7,8 @@ export const dynamicPublicConfig = mapEnvToSchema({
 	prefix: 'PUBLIC_',
 	separator: '_',
 	schema: Type.Object({
+		VERSION: Type.Optional(Type.String()),
+		SHA: Type.Optional(Type.String()),
 		OIDC: Type.Object({
 			AUTHORITY: Type.String(),
 			CLIENT_ID: Type.String()

@@ -1,8 +1,4 @@
 FROM oven/bun:slim AS base
-ARG VERSION
-ENV PUBLIC_VERSION=$VERSION
-ARG SHA
-ENV PUBLIC_SHA=$SHA
 
 FROM base AS dual
 WORKDIR /temp
@@ -30,6 +26,12 @@ RUN bun run check
 
 FROM base AS release
 WORKDIR /app
+
+ARG VERSION
+ENV PUBLIC_VERSION=$VERSION
+ARG SHA
+ENV PUBLIC_SHA=$SHA
+
 # the runtime dependencies
 COPY --from=builder /app/node_modules ./node_modules/
 # the sveltekit output

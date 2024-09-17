@@ -1,5 +1,6 @@
 <script lang="ts">
 	import dmunLogo from '$assets/logo/dmun_logo.png';
+	import { dynamicPublicConfig } from '$config/public';
 	import { env } from '$env/dynamic/public';
 </script>
 
@@ -34,13 +35,14 @@
 		<p>A Service by</p>
 		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
 		<p>
-			Copyright © {new Date().getFullYear()} - All right reserved by Deutsche Model United Nations e.V.
+			Copyright © {new Date().getFullYear()} - All rights reserved by Deutsche Model United Nations
+			e.V.
 		</p>
 		<p>
 			Version:
-			{env.PUBLIC_VERSION ?? 'nightly'}
+			{dynamicPublicConfig.VERSION ?? 'nightly'}
 			SHA:
-			{env.PUBLIC_SHA ?? 'unknown'}
+			{dynamicPublicConfig.SHA ?? 'unknown'}
 		</p>
 	</aside>
 </footer>
