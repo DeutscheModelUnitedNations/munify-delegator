@@ -40,9 +40,17 @@
 		</p>
 		<p>
 			Version:
-			{dynamicPublicConfig.VERSION ?? 'nightly'}
+			{#if !dynamicPublicConfig.VERSION || dynamicPublicConfig.VERSION.length === 0}
+				nightly
+			{:else}
+				{dynamicPublicConfig.VERSION}
+			{/if}
 			SHA:
-			{dynamicPublicConfig.SHA ?? 'unknown'}
+			{#if !dynamicPublicConfig.SHA || dynamicPublicConfig.SHA.length === 0}
+				unknown
+			{:else}
+				{dynamicPublicConfig.SHA}
+			{/if}
 		</p>
 	</aside>
 </footer>
