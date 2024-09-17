@@ -1,6 +1,7 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from './api';
 import { error } from '@sveltejs/kit';
+import { toast } from '@zerodevx/svelte-toast';
 
 //TODO https://github.com/elysiajs/elysia/discussions/712
 export function apiClient({
@@ -55,6 +56,10 @@ export async function checkForError<T, E>(
 		// 	}
 		// }
 		// throw new Error(JSON.stringify(response.error));
+		// TODO there is probably a more elegant way
+		if (window) {
+			toast.push((response.error as any).message);
+		}
 		error(response.status, response.error as any);
 	}
 	if (response.data === null) {
