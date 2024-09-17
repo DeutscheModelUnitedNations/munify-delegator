@@ -8,4 +8,15 @@ export const auth = new Elysia()
 		response: t.Object({
 			nextTokenRefreshDue: t.Optional(t.Date())
 		})
-	});
+	})
+	.get(
+		'/auth/my-system-roles',
+		({ oidc }) => ({ mySystemRoles: oidc.user?.systemRoleNames ?? [] }),
+		{
+			response: t.Object({
+				mySystemRoles: t.Array(
+					t.Union([t.Literal('admin'), t.Literal('member'), t.Literal('service_user')])
+				)
+			})
+		}
+	);
