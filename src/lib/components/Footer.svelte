@@ -11,7 +11,7 @@
 		<a class="link link-hover" href="/dashboard">{m.dashboard()}</a>
 		<a class="link link-hover" href="/my-account">{m.myAccount()}</a>
 		<a class="link link-hover" href="https://dmun.de/impressum" target="_blank"
-			>{m.imprintAndPrivacy()}</a
+			>{@html m.imprintAndPrivacy()}</a
 		>
 		<a class="link link-hover" href="management">{m.admininstration()}</a>
 	</nav>
