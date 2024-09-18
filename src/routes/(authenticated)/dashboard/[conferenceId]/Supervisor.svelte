@@ -79,14 +79,12 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if data.supervisorsDelegationData && data.supervisorsDelegationData.length > 0}
-		{#each data.supervisorsDelegationData as delegation}
+		{#each data.supervisorsDelegationData as delegation, index}
 			<div
 				tabindex="-1"
-				class="collapse p-4 bg-base-100 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300 shadow-md transition-colors duration-300 {data
-					.supervisorsDelegationData.length === 1
-					? 'collapse-open'
-					: 'collapse-arrow'}"
+				class="collapse p-4 bg-base-100 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300 shadow-md transition-colors duration-300"
 			>
+				<input type="radio" name="supervisor-accordion-1" checked={index === 0} />
 				<div class="collapse-title text-xl text-nowrap font-medium flex flex-col sm:flex-row">
 					<div class="flex items-center mb-6 sm:mb-0">
 						<div>
