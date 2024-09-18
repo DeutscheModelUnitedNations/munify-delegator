@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { goto, invalidateAll } from '$app/navigation';
 	import dmunLogo from '$assets/logo/dmun_logo.png';
 	import { dynamicPublicConfig } from '$config/public';
 	import * as m from '$lib/paraglide/messages.js';
+	import { availableLanguageTags, languageTag, setLanguageTag } from '$lib/paraglide/runtime';
 </script>
 
 <footer class="footer footer-center bg-base-200 text-base-content rounded-xl p-10 mt-10">
@@ -41,6 +43,32 @@
 			Copyright © {new Date().getFullYear() !== 2024 ? '2024–' : ''}{new Date().getFullYear()} - {m.allRightsReservedby()}
 			Deutsche Model United Nations e.V.
 		</p>
+		<div class="my-2 flex">
+			<i class="fa-solid fa-language mr-2"></i>
+			{#each availableLanguageTags as lang, i}
+				{#if languageTag() === lang}
+					<p class="mx-2 font-bold">
+						{lang.toUpperCase()}
+					</p>
+				{:else}
+					<button
+						class="mx-2"
+						onclick={() => {
+							// TODO maybe wait for svelte 5 to make this reactive?
+							setLanguageTag(lang);
+							invalidateAll();
+							document.cookie = 'paraglide:lang=' + lang;
+							document.location.reload();
+						}}
+					>
+						{lang.toUpperCase()}
+					</button>
+				{/if}
+				{#if i < availableLanguageTags.length - 1}
+					|
+				{/if}
+			{/each}
+		</div>
 		<div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
 			<div class="flex flex-col sm:flex-row sm:gap-2">
 				<div>{m.version()}:</div>
