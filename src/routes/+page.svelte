@@ -80,7 +80,12 @@
 				<div class="flex flex-col gap-2">
 					<h2 class="font-bold text-xl">{m.feedback()}</h2>
 					<p>{m.homeDraftPleaseHelp()}</p>
-					<a href={env.PUBLIC_FEEDBACK_URL} target="_blank" class="btn btn-outline sm:btn-wide">
+					<a
+						href={env.PUBLIC_FEEDBACK_URL}
+						target="_blank"
+						class="btn btn-primary shadow-md sm:btn-wide"
+					>
+						<i class="fas fa-bullhorn"></i>
 						{m.feedbackBoard()}
 					</a>
 				</div>
