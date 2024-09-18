@@ -28,6 +28,7 @@
 		"@sinclair/typebox": "^0.33.11",
 		"@sveltejs/kit": "^2.5.27",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.7",
+		"@zerodevx/svelte-toast": "^0.9.5",
 		"autoprefixer": "^10.4.20",
 		"concurrently": "^9.0.1",
 		"convert-iso-codes": "^1.0.9",
@@ -56,6 +57,7 @@
 		"tailwindcss": "^3.4.11",
 		"tslib": "^2.7.0",
 		"typescript": "^5.6.2",
+		"vanilla-cookieconsent": "^3.0.1",
 		"vite": "^5.4.5",
 		"world-countries": "^5.0.0"
 	},

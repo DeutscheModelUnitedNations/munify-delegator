@@ -2,6 +2,7 @@
 	import ChatBot from '../ChatBot.svelte';
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		conferenceId: string;
@@ -20,23 +21,14 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>
-		Dann müssen Sie jetzt Ihre Delegationsleiter*innen (also die jeweiligen Ersteller*innen der
-		Delegation) bitten, Ihnen den Beitrittscode zu geben.
-	</p>
-	<p>Anschließend können Sie sich als Betreuer*in anmelden.</p>
+	<p>{m.assistantFlowFinalSupervisor1()}</p>
+	<p>{m.assistantFlowFinalSupervisor2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>
-		Sie können mehrere Delegationscodes auf einmal angeben und es ist auch auf dem gleichen Weg
-		möglich, weiteren Delegationen nachträglich beizutreten.
-	</p>
+	<p>{m.assistantFlowFinalSupervisor3()}</p>
 </ChatBot>
 <ChatBot delay={2400}>
-	<p>
-		Bei Fragen oder Problemen wenden Sie sich bitte an die Teilnehmendenbetreuung des Projektes. Sie
-		finden die Kontaktdaten auf der Website.
-	</p>
+	<p>{m.assistantFlowFinalSupervisor4()}</p>
 </ChatBot>
 
 <Choice {choices} delay={3400}></Choice>

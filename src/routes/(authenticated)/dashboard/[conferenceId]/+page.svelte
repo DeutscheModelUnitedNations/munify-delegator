@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import Supervisor from './Supervisor.svelte';
 	import { redirect } from '@sveltejs/kit';
+	import SingleParticipantRegistrationStage from './SingleParticipantRegistrationStage.svelte';
 
 	enum STAGE {
 		REGISTRATION = 'REGISTRATION',
@@ -54,6 +55,9 @@
 		if (data.supervisorData) {
 			return CATEGORY.SUPERVISOR;
 		}
+		if (data.singleParticipantData) {
+			return CATEGORY.INDIVIDUAL;
+		}
 		return CATEGORY.DELEGATION;
 	};
 
@@ -64,19 +68,17 @@
 	});
 </script>
 
-<Header title={conference?.title ?? 'Unknown'} />
+<Header title={conference?.title ?? 'Unknown'} logoutUrl={data.logoutUrl} />
 <div class="flex flex-col py-10 gap-10">
-	<!-- {#if determainCategory() === 'INDIVIDUAL'}
-		{#if determinStage() === 'REGISTRATION'}
-			#TODO: Implement individual registration stage
-		{:else if determinStage() === 'POST_REGISTRATION'}
-			#TODO: Implement individual post-registration stage
+	{#if determineCategory() === 'INDIVIDUAL'}
+		{#if determinStage() === 'REGISTRATION' || determinStage() === 'POST_REGISTRATION'}
+			<SingleParticipantRegistrationStage {data} />
 		{:else if determinStage() === 'PRE_CONFERENCE'}
 			#TODO: Implement individual pre-conference stage
 		{:else if determinStage() === 'POST_CONFERENCE'}
 			#TODO: Implement individual post-conference stage
-		{/if} -->
-	{#if determineCategory() === CATEGORY.DELEGATION}
+		{/if}
+	{:else if determineCategory() === CATEGORY.DELEGATION}
 		{#if determinStage() === STAGE.REGISTRATION}
 			<RegistrationStage {data} />
 		{:else if determinStage() === STAGE.PRE_CONFERENCE}

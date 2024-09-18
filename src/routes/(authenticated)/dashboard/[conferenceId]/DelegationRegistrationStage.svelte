@@ -12,6 +12,7 @@
 	import { error } from '@sveltejs/kit';
 	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
+	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
@@ -79,15 +80,15 @@
 			icon: 'users',
 			title: m.members(),
 			value: data.delegationData?.members?.length,
-			desc: 'in der Delegation'
+			desc: m.inTheDelegation()
 		},
 		{
 			icon: 'list-check',
-			title: 'Aufgaben',
+			title: m.tasks(),
 			value: todos
 				? `${Math.floor((todos.filter((x) => x.completed).length / todos.length) * 100)} %`
 				: undefined,
-			desc: 'für Anmeldung erledigt'
+			desc: m.doneToRegister()
 		}
 	]);
 
@@ -122,7 +123,7 @@
 				newHeadDelegateUserId: userId
 			})
 		);
-		invalidateAll();
+		await invalidateAll();
 	};
 
 	const removeMember = async (memberId: string) => {
@@ -132,7 +133,7 @@
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
 		checkForError(api.delegationMember({ id: memberId }).delete());
-		invalidateAll();
+		await invalidateAll();
 	};
 
 	const completeRegistration = async () => {
@@ -142,7 +143,7 @@
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
 		checkForError(api.delegation({ id: data.delegationData.id }).completeRegistration.patch());
-		invalidateAll();
+		await invalidateAll();
 	};
 </script>
 
@@ -184,22 +185,22 @@
 				>
 					{#if userIsHeadDelegate && data.delegationData?.members.length > 1 && !data.delegationData?.applied}
 						<div class="tooltip tooltip-left" data-tip={m.makeHeadDelegate()}>
-							<button
-								class="btn btn-warning btn-square btn-sm"
+							<SquareButtonWithLoadingState
+								cssClass="btn-warning"
+								icon="medal"
+								duotone={false}
 								disabled={member.isHeadDelegate}
-								onclick={() => makeHeadDelegate(member.user.id)}
-							>
-								<i class="fa-solid fa-medal"></i>
-							</button>
+								onClick={async () => makeHeadDelegate(member.user.id)}
+							/>
 						</div>
 						<div class="tooltip tooltip-left" data-tip={m.removeMember()}>
-							<button
-								class="btn btn-error btn-square btn-sm"
+							<SquareButtonWithLoadingState
+								cssClass="btn-error"
+								icon="trash"
+								duotone={false}
 								disabled={member.isHeadDelegate}
-								onclick={() => removeMember(member.id)}
-							>
-								<i class="fa-solid fa-trash"></i>
-							</button>
+								onClick={async () => removeMember(member.id)}
+							/>
 						</div>
 					{/if}
 				</DelegationStatusTableEntry>

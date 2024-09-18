@@ -8,6 +8,15 @@
 	let { data }: { data: PageData } = $props();
 
 	const breadcrumbs = [{ href: '/registration', title: m.signup(), icon: 'user-plus' }];
+
+	const alreadyRegistered = (conferenceId: string) => {
+		if (!data.userData) return false;
+		if (data.userData.delegationMemberships) {
+			return data.userData.delegationMemberships.some(
+				(membership) => membership.conferenceId === conferenceId
+			);
+		}
+	};
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
@@ -32,7 +41,11 @@
 				class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flew-wrap"
 			>
 				{#each data.conferences as item}
-					<ConferenceCard {...item} baseSlug="/registration" />
+					<ConferenceCard
+						{...item}
+						alreadyRegistered={alreadyRegistered(item.id)}
+						baseSlug="/registration"
+					/>
 				{/each}
 			</section>
 		{/if}

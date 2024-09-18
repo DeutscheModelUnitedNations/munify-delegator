@@ -24,6 +24,37 @@
 	];
 
 	let showAssistent = $state(false);
+
+	let delegationBlocked = $derived(() => {
+		if (!data.userData) return false;
+		if (data.userData.singleParticipant.some((p) => p.conferenceId === data.conferenceId)) {
+			return true;
+		}
+		if (data.userData.delegationMemberships.some((d) => d.conferenceId === data.conferenceId)) {
+			return true;
+		}
+		if (data.userData.conferenceSupervisor.some((s) => s.conferenceId === data.conferenceId)) {
+			return true;
+		}
+	});
+	let individualBlocked = $derived(() => {
+		if (!data.userData) return false;
+		if (data.userData.delegationMemberships.some((d) => d.conferenceId === data.conferenceId)) {
+			return true;
+		}
+		if (data.userData.conferenceSupervisor.some((s) => s.conferenceId === data.conferenceId)) {
+			return true;
+		}
+	});
+	let supervisorBlocked = $derived(() => {
+		if (!data.userData) return false;
+		if (data.userData.singleParticipant.some((p) => p.conferenceId === data.conferenceId)) {
+			return true;
+		}
+		if (data.userData.delegationMemberships.some((d) => d.conferenceId === data.conferenceId)) {
+			return true;
+		}
+	});
 </script>
 
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
@@ -58,6 +89,7 @@
 				img={UndrawNew}
 				btnText={m.createDelegation()}
 				btnLink={`${data.conferenceId}/create`}
+				disabled={delegationBlocked()}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -74,6 +106,7 @@
 				img={UndrawTeam}
 				btnText={m.enterCode()}
 				btnLink={`${data.conferenceId}/join`}
+				disabled={delegationBlocked()}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -90,6 +123,7 @@
 				img={UndrawLetter}
 				btnText={m.individualApplication()}
 				btnLink={`${data.conferenceId}/individual`}
+				disabled={individualBlocked()}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -106,6 +140,7 @@
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
 				btnLink={`${data.conferenceId}/supervisor`}
+				disabled={supervisorBlocked()}
 			>
 				<CardInfoSectionWithIcons
 					items={[

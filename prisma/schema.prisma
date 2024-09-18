@@ -216,7 +216,7 @@ model Delegation {
 model RoleApplication {
   id           String     @id @default(nanoid())
   /// @prismabox.update.input.hide
-  delegation   Delegation @relation(fields: [delegationId], references: [id])
+  delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId String
   rank         Int
 

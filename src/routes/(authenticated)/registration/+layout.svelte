@@ -1,7 +1,14 @@
 <script lang="ts">
 	import ProfileButtonAbsolute from '$lib/components/ProfileButton/ProfileButtonAbsolute.svelte';
-	let { children } = $props();
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
+	import * as m from '$lib/paraglide/messages.js';
+	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 </script>
 
-<ProfileButtonAbsolute />
+<svelte:head>
+	<title>MUNify Delegator – {m.registration()}</title>
+</svelte:head>
+
+<ProfileButtonAbsolute logoutUrl={data.logoutUrl} />
 {@render children()}

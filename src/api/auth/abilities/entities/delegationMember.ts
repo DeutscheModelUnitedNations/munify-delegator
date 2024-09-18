@@ -47,7 +47,8 @@ export const defineAbilitiesForDelegationMember = (
 							id: user.sub
 						}
 					}
-				}
+				},
+				applied: false
 			}
 		});
 
@@ -55,6 +56,9 @@ export const defineAbilitiesForDelegationMember = (
 		can('delete', 'DelegationMember', {
 			user: {
 				id: user.sub
+			},
+			delegation: {
+				applied: false
 			}
 		});
 	}
