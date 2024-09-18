@@ -245,6 +245,11 @@
 							<td>{m.userId()}</td>
 							<td>{data.fullUser.id}</td>
 						</tr>
+						<tr>
+							<td class="text-center"><i class="fa-duotone fa-user-lock"></i></td>
+							<td>{m.rights()}</td>
+							<td>{data.mySystemRoles.map((x) => x.toUpperCase()).join(', ')}</td>
+						</tr>
 					</tbody>
 				</table>
 				<a class="btn btn-primary btn-block mt-4" href="https://guard.munify.cloud" target="_blank">

@@ -48,10 +48,9 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 			}
 		}
 
-		const hasRole = (role: (typeof oidcRoles)[number]) => {
-			if (!user) {
-				return false;
-			}
+		const systemRoleNames: (typeof oidcRoles)[number][] = [];
+
+		if (user) {
 			const rolesRaw = user[dynamicPrivateConfig.OIDC.ROLE_CLAIM]!;
 			if (!rolesRaw) {
 				console.warn(
@@ -59,18 +58,21 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 					user
 				);
 			}
-			if (!rolesRaw) {
-				return false;
+			if (rolesRaw) {
+				const roleNames = Object.keys(rolesRaw);
+				systemRoleNames.push(...(roleNames as any));
 			}
-			const roleNames = Object.keys(rolesRaw);
-			return roleNames.includes(role);
+		}
+
+		const hasRole = (role: (typeof systemRoleNames)[number]) => {
+			return systemRoleNames.includes(role);
 		};
 
 		return {
 			oidc: {
 				nextTokenRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined,
 				tokenSet,
-				user: user ? { ...user, hasRole } : undefined
+				user: user ? { ...user, hasRole, systemRoleNames } : undefined
 			}
 		};
 	}
