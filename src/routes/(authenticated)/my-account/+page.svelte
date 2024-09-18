@@ -81,6 +81,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>MUNify Delegator – {m.myAccount()}</title>
+</svelte:head>
+
 {#if data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
