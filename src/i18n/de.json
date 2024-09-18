@@ -163,6 +163,7 @@
 	"email": "E-Mail",
 	"userId": "Benutzer-ID",
 	"edit": "Bearbeiten",
+	"deleteAccountGPDR": "Wenn Sie Ihr Konto DSGVO-konform löschen lassen möchten, wenden Sie sich bitte an die Teilnehmendenbetreuung einer Konferenz oder schreiben Sie eine E-Mail an <a href='mailto:support@dmun.de' class='link underline'>support@dmun.de</a>.",
 	"receiveGeneralInformation": "Allgemeine E-Mails zum Projekt erhalten",
 	"receiveJoinTeamInformation": "E-Mails zum Beitritt ins Team/den Verein erhalten",
 	"activeMembers": "Aktive Mitglieder",

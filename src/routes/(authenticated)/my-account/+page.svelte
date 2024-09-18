@@ -251,6 +251,7 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
+				<p class="text-center mt-6 text-sm max-w-[40ch]">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
 	</div>
