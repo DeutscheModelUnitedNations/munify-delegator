@@ -70,7 +70,7 @@
 		return (
 			nationsPool().length === 0 &&
 			nonStateActorsPool().length === 0 &&
-			data.delegationData?.appliedForRoles === 0
+			data.delegationData?.appliedForRoles.length === 0
 		);
 	});
 
