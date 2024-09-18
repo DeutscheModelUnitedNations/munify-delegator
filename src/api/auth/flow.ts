@@ -172,6 +172,9 @@ export function refresh(refresh_token: string) {
 }
 
 export function getLogoutUrl(visitedUrl: URL) {
+	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+		visitedUrl.protocol = 'https:';
+	}
 	return client.endSessionUrl({
 		post_logout_redirect_uri: visitedUrl.origin + '/auth/logout-callback'
 	});
