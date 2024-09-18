@@ -11,7 +11,7 @@
 		<a class="link link-hover" href="/dashboard">{m.dashboard()}</a>
 		<a class="link link-hover" href="/my-account">{m.myAccount()}</a>
 		<a class="link link-hover" href="https://dmun.de/impressum" target="_blank"
-			>{m.imprintAndPrivacy()}</a
+			>{@html m.imprintAndPrivacy()}</a
 		>
 		<a class="link link-hover" href="management">{m.admininstration()}</a>
 	</nav>
@@ -38,7 +38,7 @@
 		<p>{m.aServiceBy()}</p>
 		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
 		<p>
-			Copyright © {new Date().getFullYear() !== 2024 && '2024–'}{new Date().getFullYear()} - {m.allRightsReservedby()}
+			Copyright © {new Date().getFullYear() !== 2024 ? '2024–' : ''}{new Date().getFullYear()} - {m.allRightsReservedby()}
 			Deutsche Model United Nations e.V.
 		</p>
 		<div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
