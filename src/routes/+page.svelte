@@ -33,6 +33,10 @@
 	};
 </script>
 
+<svelte:head>
+	<title>MUNify Delegator</title>
+</svelte:head>
+
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
 	<hero class="my-20 text-center">
 		<i class="fa-duotone fa-id-card-clip text-6xl text-base-content mb-6"></i>
