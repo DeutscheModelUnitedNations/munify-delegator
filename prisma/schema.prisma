@@ -191,9 +191,9 @@ model SingleParticipant {
 
 model Delegation {
   id         String  @id @default(nanoid())
-  school     String
-  motivation String
-  experience String
+  school     String?
+  motivation String?
+  experience String?
   /// wether the delegation has submitted their application
   /// after submitting the entity should not be able to change
   /// @prismabox.input.hide
