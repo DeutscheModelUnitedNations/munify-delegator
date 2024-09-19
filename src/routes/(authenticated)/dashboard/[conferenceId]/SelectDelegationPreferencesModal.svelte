@@ -9,6 +9,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages.js';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
+	import getNumOfSeatsPerNation from '$lib/helper/getNumOfSeatsPerNation';
 
 	interface Props {
 		open: boolean;
@@ -39,8 +40,9 @@
 			)
 			.filter(
 				(nation) =>
-					getNumOfSeatsPerNation(nation) >= (data.delegationData?.members?.length ?? 0) &&
-					getNumOfSeatsPerNation(nation) > 1
+					getNumOfSeatsPerNation(nation, data.committees) >=
+						(data.delegationData?.members?.length ?? 0) &&
+					getNumOfSeatsPerNation(nation, data.committees) > 1
 			);
 	});
 
@@ -56,15 +58,6 @@
 			)
 			.filter((nsa) => nsa.seatAmount >= (data.delegationData?.members.length ?? 0));
 	});
-
-	const getNumOfSeatsPerNation = (nation: Nation) => {
-		let numOfSeats = 0;
-		data.committees.forEach((committee) => {
-			if (committee.nations.find((c) => c.alpha3Code === nation.alpha3Code))
-				numOfSeats += committee.numOfSeatsPerDelegation;
-		});
-		return numOfSeats;
-	};
 
 	const maxDelegationSizeReached = $derived(() => {
 		return (
@@ -160,7 +153,7 @@
 											{role.nonStateActor
 												? role.nonStateActor.seatAmount
 												: role.nation
-													? getNumOfSeatsPerNation(role.nation)
+													? getNumOfSeatsPerNation(role.nation, data.committees)
 													: 0}
 										</td>
 										<td class="flex gap-1">
@@ -223,7 +216,7 @@
 											</td>
 										{/each}
 										<td class="text-center">
-											{getNumOfSeatsPerNation(nation)}
+											{getNumOfSeatsPerNation(nation, data.committees)}
 										</td>
 										<td>
 											<SquareButtonWithLoadingState
