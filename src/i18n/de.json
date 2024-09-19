@@ -309,5 +309,10 @@
 	"assistantFlowSupervisorUsersAlreadyRegistered2": "Wichtig: Anders als früher müssen Ihre Schüler*innen die Delegation selbst erstellen. Sie können den Delegationen anschließend mit dem Delegationscode als betreuende Person beitreten.",
 	"assistantFlowSupervisorUsersAlreadyRegistered3": "Haben Ihre Schüler*innen bereits Delegationen erstellt?",
 	"assistantFlowSupervisorUsersAlreadyRegisteredAnswer1": "Ja, haben sie.",
-	"assistantFlowSupervisorUsersAlreadyRegisteredAnswer2": "Nein, noch nicht."
+	"assistantFlowSupervisorUsersAlreadyRegisteredAnswer2": "Nein, noch nicht.",
+	"delegationHasAlreadyApplied": "Die Delegation hat ihre Bewerbung bereits abgeschickt.",
+	"youAreAlreadySupervisor": "Sie sind bereits ein Betreuer in dieser Konferenz.",
+	"youAreAlreadySingleParticipant": "Sie sind bereits ein Einzelteilnehmer in dieser Konferenz.",
+	"youAreAlreadyDelegationMember": "Sie sind bereits ein Delegationsmitglied in dieser Konferenz.",
+	"youAreAlreadyTeamMember": "Sie sind bereits ein Team Mitglied in dieser Konferenz."
 }

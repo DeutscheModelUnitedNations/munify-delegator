@@ -1,6 +1,7 @@
 import { PermissionCheckError, permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
+import { languageExtractor } from '$api/util/languageExtractor';
 import { UserFacingError } from '$api/util/logger';
 import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
 import { db } from '$db/db';
@@ -15,6 +16,7 @@ import { DelegationMemberPlain } from '$db/generated/schema/DelegationMember';
 import { RoleApplication, RoleApplicationPlain } from '$db/generated/schema/RoleApplication';
 import Elysia, { t } from 'elysia';
 import { customAlphabet } from 'nanoid';
+import * as m from '$lib/paraglide/messages';
 
 // https://github.com/CyberAP/nanoid-dictionary
 const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
@@ -24,6 +26,7 @@ export const delegation = new Elysia()
 	.use(CRUDMaker.updateOne('delegation'))
 	.use(CRUDMaker.deleteOne('delegation'))
 	.use(permissionsPlugin)
+	.use(languageExtractor)
 	.get(
 		'delegation/:id',
 		async ({ permissions, params }) => {
@@ -131,14 +134,14 @@ export const delegation = new Elysia()
 	)
 	.post(
 		`/delegation`,
-		async ({ permissions, body }) => {
+		async ({ permissions, body, languageTag }) => {
 			const user = permissions.mustBeLoggedIn();
 
 			// if the user somehow is already participating in the conference, throw an error
 			await fetchUserParticipations({
 				conferenceId: body.conference.connect.id,
 				userId: user.sub!,
-				throwIfAnyIsFound: true
+				throwIfAnyIsFound: { languageTag }
 			});
 
 			return db.$transaction(async (tx) => {
@@ -177,7 +180,7 @@ export const delegation = new Elysia()
 	)
 	.post(
 		`/delegation/join`,
-		async ({ permissions, body }) => {
+		async ({ permissions, body, languageTag }) => {
 			const user = permissions.mustBeLoggedIn();
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
@@ -186,16 +189,14 @@ export const delegation = new Elysia()
 			});
 
 			if (delegation.applied) {
-				throw new PermissionCheckError(
-					'Delegation has already applied, joins are not possible anymore'
-				);
+				throw new PermissionCheckError(m.delegationHasAlreadyApplied({}, { languageTag }));
 			}
 
 			// if the user somehow is already participating in the conference, throw an error
 			await fetchUserParticipations({
 				conferenceId: delegation.conferenceId,
 				userId: user.sub,
-				throwIfAnyIsFound: true
+				throwIfAnyIsFound: { languageTag }
 			});
 
 			await db.delegationMember.create({
@@ -227,7 +228,7 @@ export const delegation = new Elysia()
 	)
 	.post(
 		`/delegation/supervise`,
-		async ({ permissions, body }) => {
+		async ({ permissions, body, languageTag }) => {
 			const user = permissions.mustBeLoggedIn();
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
@@ -241,14 +242,14 @@ export const delegation = new Elysia()
 			});
 
 			// if the user somehow is already participating in the conference as something else than a supervisor, throw
-			if (
-				participations.foundDelegationMember ||
-				participations.foundSingleParticipant ||
-				participations.foundTeamMember
-			) {
-				throw new PermissionCheckError(
-					'You are already a participant in this conference, you cannot supervise simultaneously'
-				);
+			if (participations.foundDelegationMember) {
+				throw new PermissionCheckError(m.youAreAlreadyDelegationMember({}, { languageTag }));
+			}
+			if (participations.foundSingleParticipant) {
+				throw new PermissionCheckError(m.youAreAlreadySingleParticipant({}, { languageTag }));
+			}
+			if (participations.foundTeamMember) {
+				throw new PermissionCheckError(m.youAreAlreadyTeamMember({}, { languageTag }));
 			}
 
 			await db.conferenceSupervisor.upsert({
