@@ -52,12 +52,6 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 
 		if (user) {
 			const rolesRaw = user[dynamicPrivateConfig.OIDC.ROLE_CLAIM]!;
-			if (!rolesRaw) {
-				console.warn(
-					'No roles claim in user info. Make sure you have the ROLE_CLAIM configured correctly',
-					user
-				);
-			}
 			if (rolesRaw) {
 				const roleNames = Object.keys(rolesRaw);
 				systemRoleNames.push(...(roleNames as any));
