@@ -309,5 +309,10 @@
 	"assistantFlowSupervisorUsersAlreadyRegistered2": "Important: Unlike before, your students must now create the delegation themselves. You can then join the delegations as a supervisor using the delegation code.",
 	"assistantFlowSupervisorUsersAlreadyRegistered3": "Have your students already created delegations?",
 	"assistantFlowSupervisorUsersAlreadyRegisteredAnswer1": "Yes, they did.",
-	"assistantFlowSupervisorUsersAlreadyRegisteredAnswer2": "No, not yet."
+	"assistantFlowSupervisorUsersAlreadyRegisteredAnswer2": "No, not yet.",
+	"delegationHasAlreadyApplied": "Delegation has already applied, joins are not possible anymore",
+	"youAreAlreadySupervisor": "You are already a supervisor in this conference",
+	"youAreAlreadySingleParticipant": "You are already a single participant in this conference",
+	"youAreAlreadyDelegationMember": "You are already a delegation member in this conference",
+	"youAreAlreadyTeamMember": "You are already a team member in this conference"
 }
