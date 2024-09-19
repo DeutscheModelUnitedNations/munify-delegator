@@ -105,6 +105,8 @@ const conference = await seedDb.conference.create({
 		website: 'https://mun-sh.de',
 		start: '2025-03-06T00:00:00.000Z',
 		end: '2025-03-10T00:00:00.000Z',
+		startRegistration: '2024-09-16T00:00:00.000Z',
+		endRegistration: '2024-10-31T23:59:59.000Z',
 		language: 'Deutsch',
 		status: 'PRE'
 	}
