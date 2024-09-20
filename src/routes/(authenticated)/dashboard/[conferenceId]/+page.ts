@@ -12,6 +12,12 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		(x) => x.conferenceId === params.conferenceId
 	);
 
+	const singleParticipantData = userData.singleParticipant.find(
+		(x) => x.conferenceId === params.conferenceId
+	)
+		? await checkForError(api.singleParticipant.mine({ conferenceId: params.conferenceId }).get())
+		: undefined;
+
 	const supervisorData = userData.conferenceSupervisor.find(
 		(x) => x.conferenceId === params.conferenceId
 	)
@@ -44,7 +50,10 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		? await checkForError(api.delegation({ id: delegationMembershipData?.delegationId }).get())
 		: undefined;
 
+	const { logoutUrl } = await checkForError(api.auth['logout-url'].get());
+
 	return {
+		logoutUrl,
 		conferenceId: params.conferenceId,
 		delegationMembershipData,
 		delegationData,
@@ -53,6 +62,7 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		supervisorData,
 		supervisorsDelegationData: supervisorData
 			? await getSupervisorsDelegationData(supervisorData)
-			: undefined
+			: undefined,
+		singleParticipantData
 	};
 });

@@ -38,3 +38,16 @@
 		display: block;
 	}
 }
+
+/* TOAST Styling */
+._toastContainer {
+	@apply !toast;
+}
+
+._toastItem {
+	@apply !alert !alert-warning !shadow-lg;
+}
+
+._toastBtn {
+	@apply !btn !btn-square !btn-ghost;
+}

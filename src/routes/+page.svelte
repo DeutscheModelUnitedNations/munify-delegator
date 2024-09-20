@@ -33,6 +33,10 @@
 	};
 </script>
 
+<svelte:head>
+	<title>MUNify Delegator</title>
+</svelte:head>
+
 <div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
 	<hero class="my-20 text-center">
 		<i class="fa-duotone fa-id-card-clip text-6xl text-base-content mb-6"></i>
@@ -76,7 +80,12 @@
 				<div class="flex flex-col gap-2">
 					<h2 class="font-bold text-xl">{m.feedback()}</h2>
 					<p>{m.homeDraftPleaseHelp()}</p>
-					<a href={env.PUBLIC_FEEDBACK_URL} target="_blank" class="btn btn-outline sm:btn-wide">
+					<a
+						href={env.PUBLIC_FEEDBACK_URL}
+						target="_blank"
+						class="btn btn-primary shadow-md sm:btn-wide"
+					>
+						<i class="fas fa-bullhorn"></i>
 						{m.feedbackBoard()}
 					</a>
 				</div>

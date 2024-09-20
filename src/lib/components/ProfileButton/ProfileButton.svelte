@@ -1,6 +1,8 @@
-<script>
+<script lang="ts">
 	import { env } from '$env/dynamic/public';
 	import * as m from '$lib/paraglide/messages.js';
+
+	let { logoutUrl }: { logoutUrl: string } = $props();
 </script>
 
 <ul tabindex="-1" class="menu dropdown-content mt-3 w-52 rounded-box bg-base-100 p-2 shadow-2xl">
@@ -11,7 +13,7 @@
 		</a>
 	</li>
 	<li>
-		<a>
+		<a href={logoutUrl}>
 			<i class="fa-duotone fa-sign-out w-4"></i>
 			{m.logout()}
 		</a>

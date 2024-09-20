@@ -1,7 +1,7 @@
-import Elysia, { t } from 'elysia';
+import Elysia from 'elysia';
 import { TokenSet } from 'openid-client';
 import { refresh, tokensCookieName, validateTokens } from './flow';
-import { Parameters, type Static } from '@sinclair/typebox';
+import { Parameters } from '@sinclair/typebox';
 import { dynamicPrivateConfig } from '$config/private';
 import type { oidcRoles } from './abilities/abilities';
 
@@ -48,29 +48,25 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 			}
 		}
 
-		const hasRole = (role: (typeof oidcRoles)[number]) => {
-			if (!user) {
-				return false;
-			}
+		const systemRoleNames: (typeof oidcRoles)[number][] = [];
+
+		if (user) {
 			const rolesRaw = user[dynamicPrivateConfig.OIDC.ROLE_CLAIM]!;
-			if (!rolesRaw) {
-				console.warn(
-					'No roles claim in user info. Make sure you have the ROLE_CLAIM configured correctly',
-					user
-				);
+			if (rolesRaw) {
+				const roleNames = Object.keys(rolesRaw);
+				systemRoleNames.push(...(roleNames as any));
 			}
-			if (!rolesRaw) {
-				return false;
-			}
-			const roleNames = Object.keys(rolesRaw);
-			return roleNames.includes(role);
+		}
+
+		const hasRole = (role: (typeof systemRoleNames)[number]) => {
+			return systemRoleNames.includes(role);
 		};
 
 		return {
 			oidc: {
 				nextTokenRefreshDue: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined,
 				tokenSet,
-				user: user ? { ...user, hasRole } : undefined
+				user: user ? { ...user, hasRole, systemRoleNames } : undefined
 			}
 		};
 	}

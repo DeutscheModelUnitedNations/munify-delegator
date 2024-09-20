@@ -2,6 +2,7 @@
 	import ChatBot from '../ChatBot.svelte';
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		conferenceId: string;
@@ -20,28 +21,14 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>
-		Als Journalist*in oder für andere spezielle Rollen können Sie sich nur als Einzelperson
-		bewerben. Sie finden die Auswahlmöglichkeit für Ihre gewünschte Rolle in der Kategorie <em
-			>Einzelbewerbung</em
-		>.
-	</p>
+	<p>{@html m.assistantFlowFinalIndividual1()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>
-		Wir können Ihnen natürlich nicht garantieren, dass Sie ihre gewünschte Rolle tatsächlich
-		bekommen.
-	</p>
-	<p>
-		Sollten wir Ihren Wunsch bei der Zuteilung nicht berücksichtigen können, wird die
-		Teilnehmendenbetreuung Kontakt aufnehmen und mit Ihnen Alternativen besprechen.
-	</p>
+	<p>{m.assistantFlowFinalIndividual2()}</p>
+	<p>{m.assistantFlowFinalIndividual3()}</p>
 </ChatBot>
 <ChatBot delay={2400}>
-	<p>
-		Bei Fragen oder Problemen wenden Sie sich bitte an die Teilnehmendenbetreuung der Konferenz. Sie
-		finden die Kontaktdaten auf der Website.
-	</p>
+	<p>{m.assistantFlowFinalIndividual4()}</p>
 </ChatBot>
 
 <Choice {choices} delay={3400}></Choice>

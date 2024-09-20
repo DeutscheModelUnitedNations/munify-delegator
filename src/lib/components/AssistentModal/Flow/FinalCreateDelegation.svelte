@@ -2,7 +2,7 @@
 	import ChatBot from '../ChatBot.svelte';
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
-
+	import * as m from '$lib/paraglide/messages.js';
 	interface Props {
 		conferenceId: string;
 	}
@@ -20,20 +20,14 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>Dann müssen Sie jetzt zunächst eine Delegation erstellen.</p>
-	<p>
-		Anschließend können Sie Ihre Mitdelegierten über einen Beitrittscode oder einen magischen Link
-		zur Anmeldung einladen.
-	</p>
+	<p>{m.assistantFlowFinalCreateDelegation1()}</p>
+	<p>{m.assistantFlowFinalCreateDelegation2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
-	<p>Der/die Ersteller*in wird automatisch zur Delegationsleiter*in.</p>
+	<p>{m.assistantFlowFinalCreateDelegation3()}</p>
 </ChatBot>
 <ChatBot delay={2400}>
-	<p>
-		Bei Fragen oder Problemen wenden Sie sich bitte an die Teilnehmendenbetreuung des Projektes. Sie
-		finden die Kontaktdaten auf der Website.
-	</p>
+	<p>{m.assistantFlowFinalCreateDelegation4()}</p>
 </ChatBot>
 
 <Choice {choices} delay={3400}></Choice>

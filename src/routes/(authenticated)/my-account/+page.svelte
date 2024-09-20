@@ -81,6 +81,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>MUNify Delegator – {m.myAccount()}</title>
+</svelte:head>
+
 {#if data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
@@ -241,12 +245,18 @@
 							<td>{m.userId()}</td>
 							<td>{data.fullUser.id}</td>
 						</tr>
+						<tr>
+							<td class="text-center"><i class="fa-duotone fa-user-lock"></i></td>
+							<td>{m.rights()}</td>
+							<td>{data.mySystemRoles.map((x) => x.toUpperCase()).join(', ')}</td>
+						</tr>
 					</tbody>
 				</table>
 				<a class="btn btn-primary btn-block mt-4" href="https://guard.munify.cloud" target="_blank">
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
+				<p class="text-center mt-6 text-sm max-w-[40ch]">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
 	</div>

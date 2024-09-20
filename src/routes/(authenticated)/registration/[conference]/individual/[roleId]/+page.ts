@@ -4,7 +4,7 @@ import type { PageLoad } from './$types';
 
 export const load: PageLoad = loadApiHandler(async ({ api, params, url, parent }) => {
 	const role = await checkForError(api.customConferenceRole({ id: params.roleId }).get());
-	const user = (await parent()).user;
+	const { user } = await parent();
 	const existingSingleParticipant = (
 		await checkForError(
 			api.singleParticipant.get({

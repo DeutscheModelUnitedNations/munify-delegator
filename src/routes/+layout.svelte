@@ -27,6 +27,8 @@
 	import '@fontsource/vollkorn/900.css';
 	import 'flag-icons/css/flag-icons.min.css';
 	import { onMount, type Snippet } from 'svelte';
+	import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
+	import CookieBanner from '$lib/components/CookieBanner.svelte';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -56,6 +58,19 @@
 	});
 </script>
 
+<svelte:head>
+	<title>MUNify Delegator</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+	<link rel="manifest" href="/site.webmanifest" />
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+	<meta name="msapplication-TileColor" content="#ffffff" />
+	<meta name="theme-color" content="#ffffff" />
+</svelte:head>
+
 <ParaglideJS {i18n}>
 	{@render children()}
+	<GlobalErrorToast />
+	<CookieBanner />
 </ParaglideJS>
