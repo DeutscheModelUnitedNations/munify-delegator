@@ -314,5 +314,6 @@
 	"youAreAlreadySupervisor": "Sie sind bereits ein Betreuer in dieser Konferenz.",
 	"youAreAlreadySingleParticipant": "Sie sind bereits ein Einzelteilnehmer in dieser Konferenz.",
 	"youAreAlreadyDelegationMember": "Sie sind bereits ein Delegationsmitglied in dieser Konferenz.",
-	"youAreAlreadyTeamMember": "Sie sind bereits ein Teammitglied in dieser Konferenz."
+	"youAreAlreadyTeamMember": "Sie sind bereits ein Teammitglied in dieser Konferenz.",
+	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!"
 }
