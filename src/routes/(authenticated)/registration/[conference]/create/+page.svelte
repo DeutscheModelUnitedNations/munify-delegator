@@ -32,6 +32,7 @@
 
 	const nextStep = async (create = false) => {
 		if (create) {
+			console.log('Creating delegation', delegation);
 			const createdDelegation = await checkForError(
 				api.delegation.post({
 					conference: {

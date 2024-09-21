@@ -62,7 +62,7 @@
 	<hero class="my-20 text-center">
 		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
 		<p class="max-ch-md">
-			{m.conferenceSignupIntroduction()}
+			{@html m.conferenceSignupIntroduction()}
 		</p>
 		<div role="alert" class="alert mt-10">
 			<i class="fa-duotone fa-message-question text-xl mx-1"></i>
