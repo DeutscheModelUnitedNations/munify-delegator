@@ -64,7 +64,7 @@
 			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer1()}</p>
 		{/if}
 		{#if selection === Selection.NO}
-			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer1()}</p>
+			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer2()}</p>
 		{/if}
 	</ChatUser>
 {/if}
