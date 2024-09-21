@@ -372,7 +372,10 @@
 					{m.noRoleApplications()}
 				</div>
 			{:else}
-				<RoleApplicationTable roleApplications={data.delegationData.appliedForRoles} />
+				<RoleApplicationTable
+					roleApplications={data.delegationData.appliedForRoles}
+					committees={data.committees}
+				/>
 			{/if}
 			{#if !data.delegationData?.applied}
 				<div class="flex-1"></div>
