@@ -192,12 +192,12 @@
 				class="flex flex-col gap-4"
 				onsubmit={(e) => {
 					e.preventDefault();
-					if (!data.delegationData) {
-						console.error('Error: Delegation Data not found');
+					if (!data.singleParticipantData) {
+						console.error('Error: Single Participant Data not found');
 						return;
 					}
 					checkForError(
-						api.delegation({ id: data.delegationData.id }).patch({
+						api.singleParticipant({ id: data.singleParticipantData.id }).patch({
 							school: questionnaireValues.school,
 							motivation: questionnaireValues.motivation,
 							experience: questionnaireValues.experience
