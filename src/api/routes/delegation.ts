@@ -146,7 +146,12 @@ export const delegation = new Elysia()
 
 			return db.$transaction(async (tx) => {
 				const delegation = await tx.delegation.create({
-					data: { ...body, entryCode: makeEntryCode() }
+					data: {
+						conference: body.conference,
+						motivation: body.motivation,
+						school: body.school,
+						entryCode: makeEntryCode()
+					}
 				});
 
 				await tx.delegationMember.create({
@@ -174,7 +179,12 @@ export const delegation = new Elysia()
 			});
 		},
 		{
-			body: DelegationInputCreate,
+			body: t.Object({
+				conference: t.Object({ connect: t.Object({ id: t.String() }) }),
+				motivation: t.Optional(t.String()),
+				school: t.Optional(t.String()),
+				experience: t.Optional(t.String())
+			}),
 			response: DelegationPlain
 		}
 	)
