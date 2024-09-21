@@ -78,9 +78,9 @@ const NSAs = [
 
 const singleRoles = [
 	{
-		name: 'Einzelanmeldung als Delegierte*r',
+		name: 'Einzelanmeldung als Delegierte*r (Nation und NA)',
 		description:
-			'Die Einzelanmeldung als Delegierte*r ermöglicht es dir, an der Konferenz teilzunehmen, ohne anfangs einer Delegation anzugehören.',
+			'Die Einzelanmeldung als Delegierte*r eines Landes/als Vertreter*in einer NA ermöglicht es dir, an der Konferenz teilzunehmen, ohne anfangs einer Delegation anzugehören. Du wirst nach Ende der Anmeldung einer freien Delegation zugeordnet.',
 		fontAwesomeIcon: 'fa-user-tie'
 	},
 	{
@@ -105,8 +105,8 @@ const conference = await seedDb.conference.create({
 		website: 'https://mun-sh.de',
 		start: '2025-03-06T00:00:00.000Z',
 		end: '2025-03-10T00:00:00.000Z',
-		startRegistration: '2024-09-16T00:00:00.000Z',
-		endRegistration: '2024-10-31T23:59:59.000Z',
+		startRegistration: '2024-09-23T00:00:00.000Z',
+		endRegistration: '2024-11-03T23:59:59.000Z',
 		language: 'Deutsch',
 		status: 'PRE'
 	}
