@@ -8,6 +8,7 @@
 	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
 	import TodoTable from '$lib/components/TodoTable.svelte';
 	import { onMount } from 'svelte';
+	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let api = apiClient({ origin: data.url.origin });
@@ -156,14 +157,15 @@
 							<td>{role.description}</td>
 							{#if !data.singleParticipantData?.applied}
 								<td>
-									<button
-										class="btn btn-error btn-square btn-sm"
-										onclick={() => deleteApplication(role.id)}
+									<SquareButtonWithLoadingState
+										cssClass="btn-error {(data.singleParticipantData?.applied ||
+											data.singleParticipantData?.appliedForRoles.length === 1) &&
+											'opacity-10'}"
 										disabled={data.singleParticipantData?.applied ||
 											data.singleParticipantData?.appliedForRoles.length === 1}
-									>
-										<i class="fas fa-trash"></i>
-									</button>
+										icon="trash"
+										onClick={async () => deleteApplication(role.id)}
+									/>
 								</td>
 							{/if}
 						</tr>
@@ -172,6 +174,10 @@
 			</table>
 		</div>
 	</DashboardContentCard>
+	<a class="mt-4 btn btn-wide btn-ghost" href="/registration/{data.conferenceId}/individual">
+		<i class="fa-solid fa-plus"></i>
+		{m.addAnotherApplication()}
+	</a>
 </section>
 
 <section>
