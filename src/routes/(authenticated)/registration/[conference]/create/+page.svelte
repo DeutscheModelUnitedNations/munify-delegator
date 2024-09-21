@@ -163,15 +163,15 @@
 					</tr>
 					<tr>
 						<td>{m.schoolOrInstitution()}</td>
-						<td class="max-ch-sm">{delegation.school}</td>
+						<td class="max-ch-sm">{delegation.school ?? m.willBeSetLater()}</td>
 					</tr>
 					<tr>
 						<td>{m.motivation()}</td>
-						<td class="max-ch-sm">{delegation.motivation}</td>
+						<td class="max-ch-sm">{delegation.motivation ?? m.willBeSetLater()}</td>
 					</tr>
 					<tr>
 						<td>{m.experience()}</td>
-						<td class="max-ch-sm">{delegation.experience}</td>
+						<td class="max-ch-sm">{delegation.experience ?? m.willBeSetLater()}</td>
 					</tr>
 				</ReviewTable>
 				<button class="btn btn-lg btn-primary w-full" onclick={() => nextStep(true)}
