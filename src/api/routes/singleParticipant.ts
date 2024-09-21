@@ -61,7 +61,8 @@ export const singleParticipant = new Elysia()
 					conferenceId_userId: {
 						conferenceId: body.conference.connect.id,
 						userId: user.sub!
-					}
+					},
+					applied: false
 				},
 				create: {
 					...body,
