@@ -314,5 +314,6 @@
 	"youAreAlreadySupervisor": "You are already a supervisor in this conference",
 	"youAreAlreadySingleParticipant": "You are already a single participant in this conference",
 	"youAreAlreadyDelegationMember": "You are already a delegation member in this conference",
-	"youAreAlreadyTeamMember": "You are already a team member in this conference"
+	"youAreAlreadyTeamMember": "You are already a team member in this conference",
+	"yourAccountDataWillBeUpdatedAfterLogin": "The account data updated in GUARD is transferred to DELEGATOR after logging out and in!"
 }
