@@ -29,7 +29,7 @@ const singleRoles = [
 
 const seedDb = new PrismaClient();
 
-console.info('Seeding conference MUN-SH 2025');
+console.info('Seeding conference MUNBW 2025');
 console.info('==============================\n');
 console.info('Creating conference');
 
