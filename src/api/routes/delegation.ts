@@ -148,8 +148,9 @@ export const delegation = new Elysia()
 				const delegation = await tx.delegation.create({
 					data: {
 						conference: body.conference,
-						motivation: body.motivation,
-						school: body.school,
+						motivation: body.motivation ?? '',
+						school: body.school ?? '',
+						experience: body.experience ?? '',
 						entryCode: makeEntryCode()
 					}
 				});
