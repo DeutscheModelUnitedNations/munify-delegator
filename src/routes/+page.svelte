@@ -72,7 +72,7 @@
 				<i class="fas fa-wrench text-2xl"></i>
 				<div class="flex flex-col gap-2">
 					<h2 class="font-bold text-xl">{m.homeDraftDisclaimerHeader()}</h2>
-					<p>{m.homeDraftDisclaimer()}</p>
+					<p>{@html m.homeDraftDisclaimer()}</p>
 				</div>
 			</div>
 			<div class="alert alert-info max-ch-md" role="alert">
