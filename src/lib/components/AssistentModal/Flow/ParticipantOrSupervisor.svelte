@@ -29,7 +29,7 @@
 	const choices = [
 		{
 			icon: 'user-tie',
-			title: 'Teilnehmende*r',
+			title: m.assistantFlowParticipantOrSupervisorAnswer1(),
 			class: 'btn-primary',
 			onClick: () => {
 				selection = Selection.DELEGATE;
@@ -38,7 +38,7 @@
 		},
 		{
 			icon: 'chalkboard-user',
-			title: 'Betreuer*in',
+			title: m.assistantFlowParticipantOrSupervisorAnswer2(),
 			onClick: () => {
 				selection = Selection.SUPERVISOR;
 				advance(QuestionFlowState.Q_SUPERVISOR_USERS_ALREADY_REGISTERED);
