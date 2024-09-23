@@ -20,7 +20,7 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>{m.assistantFlowFinalCreateDelegation1()}</p>
+	<p>{@html m.assistantFlowFinalCreateDelegation1()}</p>
 	<p>{m.assistantFlowFinalCreateDelegation2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
