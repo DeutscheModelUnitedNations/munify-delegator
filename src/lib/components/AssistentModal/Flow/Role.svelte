@@ -32,7 +32,7 @@
 	const choices = [
 		{
 			icon: 'user-tie',
-			title: 'Delegierte*r',
+			title: {m.assistantFlowRoleDelegate1()},
 			onClick: () => {
 				selection = Selection.DELEGATE;
 				advance(QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS);
@@ -40,7 +40,7 @@
 		},
 		{
 			icon: 'megaphone',
-			title: 'Vertreter*in',
+			title: {m.assistantFlowRoleNSA1()},
 			onClick: () => {
 				selection = Selection.NSA;
 				advance(QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS);
@@ -48,7 +48,7 @@
 		},
 		{
 			icon: 'newspaper',
-			title: 'Journalist*in',
+			title: {m.assistantFlowRolePress1()},
 			onClick: () => {
 				selection = Selection.PRESS;
 				advance(QuestionFlowState.FINAL_INDIVIDUAL);
@@ -56,7 +56,7 @@
 		},
 		{
 			icon: 'gavel',
-			title: 'Andere spezielle Rolle',
+			title: {m.assistantFlowRoleOther1()},
 			onClick: () => {
 				selection = Selection.SPECIAL;
 				advance(QuestionFlowState.FINAL_INDIVIDUAL);
@@ -71,10 +71,10 @@
 <ChatBot delay={1400}>
 	<p>{m.assistantFlowRole2()}</p>
 	<Collapse title={m.assistantFlowRoleDelegate1()}>
-		<p>{m.assistantFlowRoleDelegate2()}</p>
+		<p>{@html m.assistantFlowRoleDelegate2()}</p>
 	</Collapse>
 	<Collapse title={m.assistantFlowRoleNSA1()}>
-		<p>{m.assistantFlowRoleNSA2()}</p>
+		<p>{@html m.assistantFlowRoleNSA2()}</p>
 		<p>{m.assistantFlowRoleNSA3()}</p>
 	</Collapse>
 	<Collapse title={m.assistantFlowRolePress1()}>
@@ -82,9 +82,8 @@
 		<p>{m.assistantFlowRolePress3()}</p>
 	</Collapse>
 	<Collapse title={m.assistantFlowRoleOther1()}>
-		<p>{m.assistantFlowRoleOther2()}</p>
-		<p>{@html m.assistantFlowRoleOther3()}</p>
-		<p>{m.assistantFlowRoleOther4()}</p>
+		<p>{@html m.assistantFlowRoleOther2()}</p>
+		<p>{m.assistantFlowRoleOther3()}</p>
 	</Collapse>
 </ChatBot>
 
