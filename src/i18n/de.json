@@ -316,5 +316,8 @@
 	"youAreAlreadySingleParticipant": "Du bist bereits ein Einzelteilnehmer in dieser Konferenz.",
 	"youAreAlreadyDelegationMember": "Du bist bereits ein Delegationsmitglied in dieser Konferenz.",
 	"youAreAlreadyTeamMember": "Du bist bereits ein Teammitglied in dieser Konferenz.",
-	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!"
+	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!",
+	"management": "Verwaltung",
+	"pleaseSelectAConferenceToManage": "Wähle die Konferenz aus, die du verwalten möchtest. Wenn die Konferenz nicht angezeigt wird, lade die Seite neu oder wende dich an einen Administrator.",
+	"manage": "Verwalten"
 }
