@@ -11,7 +11,7 @@ import {
 	generators
 } from 'openid-client';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { PermissionCheckError } from './permissions';
+import { PermissionCheckError } from '$api/util/logger';
 
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';

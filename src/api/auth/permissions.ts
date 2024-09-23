@@ -2,13 +2,7 @@ import Elysia from 'elysia';
 import { type Action, defineAbilitiesForUser } from './abilities/abilities';
 import { oidcPlugin } from './oidc';
 import { accessibleBy } from '@casl/prisma';
-import { logger } from '$api/util/logger';
-
-export class PermissionCheckError extends Error {
-	constructor(public message: string) {
-		super(message);
-	}
-}
+import { logger, PermissionCheckError } from '$api/util/logger';
 
 export const permissionsPlugin = new Elysia({
 	name: 'permissions'

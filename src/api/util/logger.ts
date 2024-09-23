@@ -7,7 +7,16 @@ import {
 	PrismaClientValidationError
 } from '@prisma/client/runtime/library';
 import Elysia from 'elysia';
-import { PermissionCheckError } from '../auth/permissions';
+
+/**
+ * An error that can be thrown when a permission check fails. For the user
+ * this results in a forbidden error.
+ */
+export class PermissionCheckError extends Error {
+	constructor(public message: string) {
+		super(message);
+	}
+}
 
 /**
  * An error whose message can be safely exposed to the user
