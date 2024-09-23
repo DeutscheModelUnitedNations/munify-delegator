@@ -83,7 +83,7 @@
 	</Collapse>
 	<Collapse title={m.assistantFlowRoleOther1()}>
 		<p>{@html m.assistantFlowRoleOther2()}</p>
-		<p>{@html m.assistantFlowRoleOther3()}</p>
+		<p>{m.assistantFlowRoleOther3()}</p>
 	</Collapse>
 </ChatBot>
 
