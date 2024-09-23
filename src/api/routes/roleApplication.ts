@@ -175,7 +175,7 @@ export const roleApplication = new Elysia()
 		'/roleApplication/:id',
 		async ({ permissions, params }) => {
 			await db.$transaction(async (db) => {
-				const applicationToDelete = await db.roleApplication.findUniqueOrThrow({
+				const deletedApplication = await db.roleApplication.delete({
 					where: {
 						id: params.id,
 						AND: [permissions.allowDatabaseAccessTo('delete').RoleApplication]
@@ -184,18 +184,13 @@ export const roleApplication = new Elysia()
 
 				const roleApplicationsOfDelegation = await db.roleApplication.findMany({
 					where: {
-						delegationId: applicationToDelete.delegationId
+						delegationId: deletedApplication.delegationId
 					}
 				});
 
-				await db.roleApplication.delete({
-					where: {
-						id: params.id
-					}
-				});
 
 				for (const ra of roleApplicationsOfDelegation) {
-					if (ra.rank > applicationToDelete.rank) {
+					if (ra.rank > deletedApplication.rank) {
 						await db.roleApplication.update({
 							where: {
 								id: ra.id
