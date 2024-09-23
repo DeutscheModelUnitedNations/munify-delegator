@@ -78,7 +78,7 @@ export const permissionsPlugin = new Elysia({
 	.use(logger)
 	.onAfterHandle({ as: 'global' }, ({ request, path, set, permissions, requestId }) => {
 		if (!permissions?.werePermissionsChecked()) {
-			console.info(
+			console.warn(
 				`[${requestId}]: Permissions were not checked on handler ${request.method} ${path} with status ${set.status}`
 			);
 		}
