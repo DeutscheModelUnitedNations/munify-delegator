@@ -21,7 +21,7 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>{m.assistantFlowFinalJoinDelegation1()}</p>
+	<p>{@html m.assistantFlowFinalJoinDelegation1()}</p>
 	<p>{m.assistantFlowFinalJoinDelegation2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
