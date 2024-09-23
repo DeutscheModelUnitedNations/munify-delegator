@@ -12,7 +12,7 @@
 	const choices = [
 		{
 			icon: 'arrow-right',
-			title: 'Zur Anmeldung',
+			title: {m.createDelegation()},
 			class: 'btn-primary',
 			href: `${conferenceId}/create`
 		}
