@@ -29,7 +29,7 @@
 	const choices = [
 		{
 			icon: 'check',
-			title: 'Ja',
+			title: {m.assistantFlowPartnersCreatedDelegationAnswer1()},
 			class: 'btn-success',
 			onClick: () => {
 				selection = Selection.YES;
@@ -38,7 +38,7 @@
 		},
 		{
 			icon: 'xmark',
-			title: 'Nein',
+			title: {m.assistantFlowPartnersCreatedDelegationAnswer2()},
 			class: 'btn-warning',
 			onClick: () => {
 				selection = Selection.NO;
@@ -49,9 +49,9 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>{m.assistantFlowPartnersCreatedDelegation1()}</p>
+	<p>{@html m.assistantFlowPartnersCreatedDelegation1()}</p>
 	<p>{m.assistantFlowPartnersCreatedDelegation2()}</p>
-	<p>{m.assistantFlowPartnersCreatedDelegation3()}</p>
+	<p>{@html m.assistantFlowPartnersCreatedDelegation3()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
 	<p>{m.assistantFlowPartnersCreatedDelegation4()}</p>
