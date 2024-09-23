@@ -2,6 +2,7 @@ import Elysia from 'elysia';
 import { type Action, defineAbilitiesForUser } from './abilities/abilities';
 import { oidcPlugin } from './oidc';
 import { accessibleBy } from '@casl/prisma';
+import { logger } from '$api/util/logger';
 
 export class PermissionCheckError extends Error {
 	constructor(public message: string) {
@@ -74,8 +75,11 @@ export const permissionsPlugin = new Elysia({
 			}
 		};
 	})
-	.onAfterHandle({ as: 'global' }, ({ permissions, request, path }) => {
+	.use(logger)
+	.onAfterHandle({ as: 'global' }, ({ request, path, set, permissions, requestId }) => {
 		if (!permissions?.werePermissionsChecked()) {
-			console.warn('Permissions were not checked on handler ', request.method, path);
+			console.info(
+				`[${requestId}]: Permissions were not checked on handler ${request.method} ${path} with status ${set.status}`
+			);
 		}
 	});

@@ -303,7 +303,8 @@ export const delegation = new Elysia()
 	)
 	.get(
 		`/delegation/preview`,
-		async ({ query }) => {
+		async ({ query, permissions }) => {
+			permissions.mustBeLoggedIn();
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
 					conferenceId: query.conferenceId,
