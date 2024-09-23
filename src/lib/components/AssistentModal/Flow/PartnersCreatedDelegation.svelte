@@ -29,7 +29,7 @@
 	const choices = [
 		{
 			icon: 'check',
-			title: {m.assistantFlowPartnersCreatedDelegationAnswer1()},
+			title: m.assistantFlowPartnersCreatedDelegationAnswer1(),
 			class: 'btn-success',
 			onClick: () => {
 				selection = Selection.YES;
@@ -38,7 +38,7 @@
 		},
 		{
 			icon: 'xmark',
-			title: {m.assistantFlowPartnersCreatedDelegationAnswer2()},
+			title: m.assistantFlowPartnersCreatedDelegationAnswer2(),
 			class: 'btn-warning',
 			onClick: () => {
 				selection = Selection.NO;

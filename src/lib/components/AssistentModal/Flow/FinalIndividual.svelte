@@ -13,7 +13,7 @@
 	const choices = [
 		{
 			icon: 'arrow-right',
-			title: {m.individualApplication()},
+			title: m.individualApplication(),
 			class: 'btn-primary',
 			href: `${conferenceId}/individual`
 		}

@@ -32,7 +32,7 @@
 	const choices = [
 		{
 			icon: 'user-tie',
-			title: {m.assistantFlowRoleDelegate1()},
+			title: m.assistantFlowRoleDelegate1(),
 			onClick: () => {
 				selection = Selection.DELEGATE;
 				advance(QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS);
@@ -40,7 +40,7 @@
 		},
 		{
 			icon: 'megaphone',
-			title: {m.assistantFlowRoleNSA1()},
+			title: m.assistantFlowRoleNSA1(),
 			onClick: () => {
 				selection = Selection.NSA;
 				advance(QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS);
@@ -48,7 +48,7 @@
 		},
 		{
 			icon: 'newspaper',
-			title: {m.assistantFlowRolePress1()},
+			title: m.assistantFlowRolePress1(),
 			onClick: () => {
 				selection = Selection.PRESS;
 				advance(QuestionFlowState.FINAL_INDIVIDUAL);
@@ -56,7 +56,7 @@
 		},
 		{
 			icon: 'gavel',
-			title: {m.assistantFlowRoleOther1()},
+			title: m.assistantFlowRoleOther1(),
 			onClick: () => {
 				selection = Selection.SPECIAL;
 				advance(QuestionFlowState.FINAL_INDIVIDUAL);

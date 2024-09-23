@@ -12,7 +12,7 @@
 	const choices = [
 		{
 			icon: 'arrow-right',
-			title: {m.createDelegation()},
+			title: m.createDelegation(),
 			class: 'btn-primary',
 			href: `${conferenceId}/create`
 		}

@@ -13,7 +13,7 @@
 	const choices = [
 		{
 			icon: 'arrow-right',
-			title: {m.joinDelegation()},
+			title: m.joinDelegation(),
 			class: 'btn-primary',
 			href: `${conferenceId}/join`
 		}
