@@ -13,7 +13,7 @@
 	const choices = [
 		{
 			icon: 'arrow-right',
-			title: 'Zum Delegationsbeitritt',
+			title: m.joinDelegation(),
 			class: 'btn-primary',
 			href: `${conferenceId}/join`
 		}
@@ -21,7 +21,7 @@
 </script>
 
 <ChatBot delay={400}>
-	<p>{m.assistantFlowFinalJoinDelegation1()}</p>
+	<p>{@html m.assistantFlowFinalJoinDelegation1()}</p>
 	<p>{m.assistantFlowFinalJoinDelegation2()}</p>
 </ChatBot>
 <ChatBot delay={1400}>
