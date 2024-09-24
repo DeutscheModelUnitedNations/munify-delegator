@@ -15,6 +15,7 @@ import { nonStateActor } from './routes/nonStateActor';
 import { roleApplication } from './routes/roleApplication';
 import { singleParticipant } from './routes/singleParticipant';
 import { teamMember } from './routes/teamMember';
+import { tasks } from '../tasks/registerTasks';
 
 // since the type elysia produces is too big and fails the TS compiler, we need to ignore the error
 // this does not affect the eden client
@@ -41,6 +42,8 @@ export const app = new Elysia({
 	.use(singleParticipant)
 	.use(teamMember)
 	.use(user)
+	// tasks
+	.use(tasks)
 	.compile();
 
 export type App = typeof app;
