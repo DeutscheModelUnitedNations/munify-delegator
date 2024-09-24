@@ -1,20 +1,23 @@
-import { error } from '@sveltejs/kit';
+import { checkForError } from '$api/client';
 import type { PageLoad } from './$types';
 import { apiClient } from '$api/client';
 
-export const load: PageLoad = async ({ params, fetch, url }) => {
-	//TODO
-	const conferences = await apiClient({ fetch, origin: url.origin }).conference.get();
+export const load: PageLoad = async ({ params, fetch, url, parent }) => {
+	const { mySystemRoles, teamMemberships } = await parent();
+
+	const conferences = (
+		await checkForError(apiClient({ fetch, origin: url.origin }).conference.get())
+	).filter(
+		(conference) =>
+			mySystemRoles.includes('admin') ||
+			teamMemberships.some(
+				(team) =>
+					team.conferenceId === conference.id &&
+					(team.role === 'PROJECT_MANAGEMENT' || team.role === 'PARTICIPANT_CARE')
+			)
+	);
 
 	return {
-		conferences: [
-			{
-				id: '1',
-				location: 'Kiel',
-				start: new Date('2025-03-01'),
-				end: new Date('2025-03-05'),
-				title: 'MUN-SH 2025'
-			}
-		]
+		conferences
 	};
 };

@@ -53,5 +53,19 @@ services:
 
   #     - SECRET=123
 
+  prisma_studio:
+    image: timothyjmiller/prisma-studio
+    restart: unless-stopped
+    ports:
+      - 5555:5555
+    depends_on:
+      - postgres
+
+    environment:
+      PROJECT_NAME: "MUNify DELEGATOR"
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
+      PRISMA_STUDIO_PORT: 5555
+      POSTGRES_PATH: /postgres
+
 volumes:
   delegator-dev:
