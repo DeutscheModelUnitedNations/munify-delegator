@@ -188,7 +188,6 @@ export const roleApplication = new Elysia()
 					}
 				});
 
-
 				for (const ra of roleApplicationsOfDelegation) {
 					if (ra.rank > deletedApplication.rank) {
 						await db.roleApplication.update({
