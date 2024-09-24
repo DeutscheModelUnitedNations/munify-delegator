@@ -3,7 +3,7 @@
 
 	import type { PageData } from './$types';
 
-	let { data, children }: { data: PageData, children: any } = $props();
+	let { data, children }: { data: PageData; children: any } = $props();
 </script>
 
 <svelte:head>
