@@ -57,9 +57,9 @@ export const logger = new Elysia({
 			`[${requestId}]: Handled request ${request.method} ${path} with status ${set.status}`
 		);
 	})
-	.onError({ as: 'global' }, ({ error, code, path, set, request }) => {
+	.onError({ as: 'global' }, ({ error, code, path, set, request, requestId }) => {
 		console.error(
-			`Error in ${request.method} ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
+			`[${requestId}]: Error in ${request.method} ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
 		);
 
 		// Built-in elysia errors
