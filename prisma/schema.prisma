@@ -36,6 +36,7 @@ model Conference {
   status            ConferenceStatus @default(PRE)
   startRegistration DateTime?
   endRegistration   DateTime?
+  supportEmail      String?
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
