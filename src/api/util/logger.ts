@@ -6,7 +6,9 @@ import {
 	PrismaClientUnknownRequestError,
 	PrismaClientValidationError
 } from '@prisma/client/runtime/library';
-import Elysia from 'elysia';
+import Elysia, { StatusMap } from 'elysia';
+
+import { errors as openidErrors } from 'openid-client';
 
 /**
  * An error that can be thrown when a permission check fails. For the user
@@ -22,7 +24,10 @@ export class PermissionCheckError extends Error {
  * An error whose message can be safely exposed to the user
  */
 export class UserFacingError extends Error {
-	constructor(public message: string) {
+	constructor(
+		public message: string,
+		public status?: keyof StatusMap
+	) {
 		super(message);
 	}
 }
@@ -42,7 +47,8 @@ export const logger = new Elysia({
 		PrismaClientValidationError,
 		ForbiddenError,
 		PermissionCheckError,
-		UserFacingError
+		UserFacingError,
+		...openidErrors
 	})
 	.derive({ as: 'global' }, () => {
 		return {
@@ -72,9 +78,16 @@ export const logger = new Elysia({
 			return `Path ${path} doesn't exist (${error.message})`;
 		}
 
+		// Application errors
+
 		if (code === 'ForbiddenError' || code === 'PermissionCheckError') {
 			set.status = 'Forbidden';
 			return error.message ?? "You don't have permission to do that";
+		}
+
+		if (code === 'OPError' || code === 'RPError') {
+			set.status = 'Unauthorized';
+			return error.message ?? "You are not authorized";
 		}
 
 		//TODO code is not typed correctly for prisma errors?
@@ -85,7 +98,7 @@ export const logger = new Elysia({
 		}
 
 		if (code === 'UserFacingError') {
-			set.status = 'Internal Server Error';
+			set.status = error.status ?? 'Internal Server Error';
 			return error.message;
 		}
 

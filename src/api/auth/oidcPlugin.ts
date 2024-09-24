@@ -4,6 +4,7 @@ import { refresh, tokensCookieName, validateTokens } from './flow';
 import { Parameters } from '@sinclair/typebox';
 import { dynamicPrivateConfig } from '$config/private';
 import type { oidcRoles } from './abilities/abilities';
+import { UserFacingError } from '$api/util/logger';
 
 export type TokenCookieSchemaType = {
 	refresh_token?: string;
@@ -17,14 +18,39 @@ export type TokenCookieSchemaType = {
 
 export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 	{ as: 'global' },
-	async ({ cookie }) => {
-		if (!cookie[tokensCookieName].value) {
+	async ({ cookie, headers }) => {
+		let rawTokenValue: TokenCookieSchemaType | undefined = undefined;
+
+		if (cookie[tokensCookieName].value) {
+			rawTokenValue = JSON.parse(cookie[tokensCookieName].value);
+		} else if (headers['authorization']) {
+			if (!headers['authorization'].startsWith('Bearer ')) {
+				throw new UserFacingError('Invalid authorization header', 'Bad Request');
+			}
+
+			let headerValue: any = headers['authorization'].split(' ')[1];
+
+			// is this base64 encoded?
+			try {
+				headerValue = atob(headerValue);
+			} catch (error) {}
+
+			// is this JSON encoded?
+			try {
+				// if it is, treat it as tokenset
+				rawTokenValue = JSON.parse(headerValue);
+			} catch (error) {
+				// if not, this might be the access token
+				rawTokenValue = { access_token: headerValue };
+			}
+		}
+
+		if (!rawTokenValue) {
 			return { oidc: { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined } };
 		}
-		const parsedCookie: TokenCookieSchemaType = JSON.parse(cookie[tokensCookieName].value);
-		let tokenSet = new TokenSet(parsedCookie);
-		if (tokenSet.expired() && parsedCookie.refresh_token) {
-			tokenSet = await refresh(parsedCookie.refresh_token);
+		let tokenSet = new TokenSet(rawTokenValue);
+		if (tokenSet.expired() && rawTokenValue.refresh_token) {
+			tokenSet = await refresh(rawTokenValue.refresh_token);
 			const cookieValue: TokenCookieSchemaType = {
 				access_token: tokenSet.access_token,
 				expires_at: tokenSet.expires_at,
