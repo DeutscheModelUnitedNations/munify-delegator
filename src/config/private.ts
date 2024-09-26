@@ -25,7 +25,7 @@ export const dynamicPrivateConfig = mapEnvToSchema({
 			Type.Literal('development'),
 			Type.Literal('production'),
 			Type.Literal('test')
-		]),
+		])
 	})
 });
 

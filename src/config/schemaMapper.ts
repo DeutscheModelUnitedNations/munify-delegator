@@ -13,7 +13,7 @@ export function mapEnvToSchema<T extends TSchema>({
 	prefix: string;
 	env: any;
 	separator: string;
-	building: boolean
+	building: boolean;
 }) {
 	// this is run statically sometimes, we dont want this to error during build/prerender
 	if (building) {
