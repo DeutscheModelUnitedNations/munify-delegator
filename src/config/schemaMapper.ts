@@ -1,4 +1,3 @@
-import { building } from '$app/environment';
 import { Value } from '@sinclair/typebox/value';
 import type { TSchema, Static } from '@sinclair/typebox';
 
@@ -7,12 +6,14 @@ export function mapEnvToSchema<T extends TSchema>({
 	env,
 	prefix,
 	schema,
-	separator
+	separator,
+	building
 }: {
 	schema: T;
 	prefix: string;
 	env: any;
 	separator: string;
+	building: boolean;
 }) {
 	// this is run statically sometimes, we dont want this to error during build/prerender
 	if (building) {
@@ -27,7 +28,8 @@ export function mapEnvToSchema<T extends TSchema>({
 				schema: property,
 				prefix: fullKey + separator,
 				env,
-				separator
+				separator,
+				building
 			});
 		} else {
 			const envValue = env[fullKey];

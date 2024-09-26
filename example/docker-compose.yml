@@ -19,6 +19,8 @@ services:
       - postgres
     ports:
       - 3000:3000
+    # if you want to utilize a tasks container you can start the image with this instead
+    # command: ["bun", "tasksMain.js"]
 
     # for config options, please refer to the '/src/config' directory
     # for adapter/hosting options please refer to https://github.com/gornostay25/svelte-adapter-bun?tab=readme-ov-file#desktop_computer-environment-variables
