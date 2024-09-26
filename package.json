@@ -65,8 +65,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check .",
-		"format": "prettier --write .",
-		"sync": "./tasksMain.js"
+		"format": "prettier --write ."
 	},
 	"type": "module"
 }
