@@ -29,6 +29,7 @@
 		"lefthook": "^1.7.15",
 		"mermaid": "^11.2.1",
 		"nanoid": "^5.0.7",
+		"node-schedule": "^2.1.1",
 		"numeral": "^2.0.6",
 		"openid-client": "^5.7.0",
 		"postcss": "^8.4.47",
@@ -43,11 +44,11 @@
 		"svelte-headless-table": "^0.18.2",
 		"tailwindcss": "^3.4.12",
 		"tslib": "^2.7.0",
+		"tsup": "^8.3.0",
 		"typescript": "^5.6.2",
 		"vanilla-cookieconsent": "^3.0.1",
 		"vite": "^5.4.6",
-		"world-countries": "^5.0.0",
-		"node-schedule": "^2.1.1"
+		"world-countries": "^5.0.0"
 	},
 	"prisma": {
 		"seed": "bun run prisma/seed.ts"
