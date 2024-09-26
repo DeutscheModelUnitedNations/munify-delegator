@@ -314,5 +314,16 @@
 	"youAreAlreadySupervisor": "You are already a supervisor in this conference",
 	"youAreAlreadySingleParticipant": "You are already a single participant in this conference",
 	"youAreAlreadyDelegationMember": "You are already a delegation member in this conference",
-	"youAreAlreadyTeamMember": "You are already a team member in this conference"
+	"youAreAlreadyTeamMember": "You are already a team member in this conference",
+	"http400": "An error occurred during the request.",
+	"http403": "You are not authorized to perform this action!",
+	"http404": "The requested page was not found.",
+	"http500": "An internal server error occurred.",
+	"httpGenericError": "An unknown error has occurred.",
+	"administrator": "Administrator",
+	"projectManagement": "Project Management",
+	"participantCare": "Participant Care",
+	"authorization": "Authorization",
+	"open": "Open",
+	"administrationConferenceSelection": "Select the conference you want to manage. If you don't see the conference, refresh the page or contact an administrator."
 }
