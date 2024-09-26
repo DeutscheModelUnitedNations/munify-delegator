@@ -62,7 +62,8 @@
 	"questionnaire": "Fragebogen",
 	"review": "Überprüfen",
 	"invite": "Einladen",
-	"createDelegationProcessExplaination": "<p class='max-ch-md'>Du bist im Begriff, eine Delegation anzulegen. Nachdem du eine Delegation angelegt hast, kanst du Delegationspartner*innen einladen und euch geschlossen als Delegierte auf einen Staat oder als Vertreter*innen einer/eines Nichtstaatlichen Aktuer*in bewerben.</p><p class='max-ch-md'>Du wirst automatisch als Delegationsleiter*in eingetragen. Du kannst auch eine betreuende Person einladen, die sich bei der Organisation der Delegation unterstützt. </p><p class='max-ch-md'>Bitte beachte, dass du sich nicht alleine auf eine Delegation bewerben kannst. Wenn du dich alleine bewerben möchtest, schau <a href='./individual' class='link underline'>hier</a> nach Einzelplätzen, auf die du dich bewerben kannst. Außerdem hilft dir die Teilnehmendenbetreuung sehr gerne bei der Vermittlung von Delegationspartner*innen. Den Kontakt findest du auf der Website der jeweiligen Konferenz. Falls du lediglich eine Delegation betreuen möchtest, selbst jedoch nicht am Konferenzgeschehen teilnimmst, nutze bitte die Betreuungsfunktion anstatt eine Delegation anzulegen! </p>",	"next": "Weiter",
+	"createDelegationProcessExplaination": "<p class='max-ch-md'>Du bist im Begriff, eine Delegation anzulegen. Nachdem du eine Delegation angelegt hast, kanst du Delegationspartner*innen einladen und euch geschlossen als Delegierte auf einen Staat oder als Vertreter*innen einer/eines Nichtstaatlichen Aktuer*in bewerben.</p><p class='max-ch-md'>Du wirst automatisch als Delegationsleiter*in eingetragen. Du kannst auch eine betreuende Person einladen, die sich bei der Organisation der Delegation unterstützt. </p><p class='max-ch-md'>Bitte beachte, dass du sich nicht alleine auf eine Delegation bewerben kannst. Wenn du dich alleine bewerben möchtest, schau <a href='./individual' class='link underline'>hier</a> nach Einzelplätzen, auf die du dich bewerben kannst. Außerdem hilft dir die Teilnehmendenbetreuung sehr gerne bei der Vermittlung von Delegationspartner*innen. Den Kontakt findest du auf der Website der jeweiligen Konferenz. Falls du lediglich eine Delegation betreuen möchtest, selbst jedoch nicht am Konferenzgeschehen teilnimmst, nutze bitte die Betreuungsfunktion anstatt eine Delegation anzulegen! </p>",
+	"next": "Weiter",
 	"pleaseAnswerTheFollowingQuestions": "Bitte beantworte zunächst die folgenden Fragen. Du kannst die Antworten vor der Anmeldung noch ändern.",
 	"whichSchoolDoesYourDelegationComeFrom": "Von welcher Schule / Institution kommst du (bzw. die Mehrheit deiner Delegation)?",
 	"whichSchoolDoYouComeFrom": "Von welcher Schule / Institution kommst du?",
@@ -315,5 +316,16 @@
 	"youAreAlreadySingleParticipant": "Du bist bereits ein Einzelteilnehmer in dieser Konferenz.",
 	"youAreAlreadyDelegationMember": "Du bist bereits ein Delegationsmitglied in dieser Konferenz.",
 	"youAreAlreadyTeamMember": "Du bist bereits ein Teammitglied in dieser Konferenz.",
-	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!"
+	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!",
+	"http400": "Bei der Anfrage ist ein Fehler aufgetreten.",
+	"http403": "Du hast keine Berechtigung für diese Aktion!",
+	"http404": "Die angeforderte Seite wurde nicht gefunden.",
+	"http500": "Es ist ein interner Serverfehler aufgetreten.",
+	"httpGenericError": "Es ist ein unbekannter Fehler aufgetreten.",
+	"administrator": "Administrator",
+	"projectManagement": "Projektleitung",
+	"participantCare": "Teilnehmendenbetreuung",
+	"authorization": "Berechtigung",
+	"open": "Öffnen",
+	"administrationConferenceSelection": "Wähle die Konferenz aus, die du verwalten möchtest. Wenn die Konferenz nicht angezeigt wird, lade die Seite neu oder wende dich an einen Administrator."
 }
