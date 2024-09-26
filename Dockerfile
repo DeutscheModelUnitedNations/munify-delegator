@@ -42,6 +42,8 @@ ENV PUBLIC_SHA=$SHA
 COPY --from=builder /app/node_modules ./node_modules/
 # the sveltekit output
 COPY --from=builder /app/build .
+# the tasks build output
+COPY --from=builder /app/tasksOut .
 # the prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma/
 
