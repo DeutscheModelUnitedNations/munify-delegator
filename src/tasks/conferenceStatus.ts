@@ -2,12 +2,18 @@ import schedule from 'node-schedule';
 import { config } from './config';
 import { tasksDb } from './tasksDb';
 import { IncomingWebhook } from '@slack/webhook';
+import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
+
+const TASK_NAME = 'Conference Status Slack Notification';
+const CRON = '0 * * * * *';
 
 if (config.SLACK_NOTIFICATION_WEBHOOK) {
 	const webhook = new IncomingWebhook(config.SLACK_NOTIFICATION_WEBHOOK!);
 
-	const test = schedule.scheduleJob('0 12,20 * * *', async function () {
-		console.info('Sending Conference Update to Slack');
+	logLoading(TASK_NAME, CRON);
+
+	const test = schedule.scheduleJob({ rule: CRON, tz: 'Etc/GMT-2' }, async function () {
+		logTaskStart(TASK_NAME);
 
 		const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
 			where: {
@@ -395,7 +401,12 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 				console.error(`Slack notification for ${conference.title} errored`, error);
 			}
 		}
+
+		logTaskEnd(TASK_NAME);
 	});
 } else {
-	console.warn('You need to specify the SLACK_NOTIFICATION_WEBHOOK env to use the slack bot!');
+	taskWarning(
+		TASK_NAME,
+		'You need to specify the SLACK_NOTIFICATION_WEBHOOK env to use the slack bot!'
+	);
 }
