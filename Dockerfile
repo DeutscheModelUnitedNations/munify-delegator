@@ -40,6 +40,8 @@ ENV PUBLIC_SHA=$SHA
 
 # the runtime dependencies
 COPY --from=builder /app/node_modules ./node_modules/
+# Change ownership of node_modules to the bun user
+RUN chown -R bun:bun /app/node_modules
 # the sveltekit output
 COPY --from=builder /app/build .
 # the tasks build output
