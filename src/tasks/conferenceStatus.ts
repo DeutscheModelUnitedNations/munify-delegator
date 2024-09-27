@@ -6,7 +6,7 @@ import { IncomingWebhook } from '@slack/webhook';
 if (config.SLACK_NOTIFICATION_WEBHOOK) {
 	const webhook = new IncomingWebhook(config.SLACK_NOTIFICATION_WEBHOOK!);
 
-	const test = schedule.scheduleJob('* * * * *', async function () {
+	const test = schedule.scheduleJob('0 12,20 * * *', async function () {
 		console.info('Sending Conference Update to Slack');
 
 		const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
