@@ -5,7 +5,7 @@ import { IncomingWebhook } from '@slack/webhook';
 import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
 
 const TASK_NAME = 'Conference Status Slack Notification';
-const CRON = '0 * * * * *';
+const CRON = '0 0 9,20 * * *';
 
 if (config.SLACK_NOTIFICATION_WEBHOOK) {
 	const webhook = new IncomingWebhook(config.SLACK_NOTIFICATION_WEBHOOK!);

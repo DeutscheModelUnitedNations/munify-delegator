@@ -1,6 +1,6 @@
 export function logLoading(taskName: string, schedule: string) {
-	console.info(`   Loaded: ${taskName}`);
-	console.info(`     -> Schedule: ${schedule}`);
+	console.info(`Loading Task: ${taskName}`);
+	console.info(`    -> Schedule: ${schedule}`);
 }
 
 export function logTaskStart(taskName: string) {
