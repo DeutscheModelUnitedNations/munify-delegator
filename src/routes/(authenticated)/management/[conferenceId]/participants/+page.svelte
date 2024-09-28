@@ -1,21 +1,16 @@
 <script lang="ts">
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	// import DataTableBody from '$lib/components/DataTable/DataTableBody.svelte';
-	import DataTableHeader from '$lib/components/DataTable/DataTableHeader.svelte';
 	import TableSearch from '$lib/components/DataTable/TableSearch.svelte';
-	import TableSizeControl from '$lib/components/DataTable/TableSizeControl.svelte';
-	import ZebraControl from '$lib/components/DataTable/ZebraControl.svelte';
-	import ExportButtons from '$lib/components/DataTable/ExportButtons.svelte';
 	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import UserDrawer from './UserDrawer.svelte';
-	import SvelteTable, { type TableColumns, type TableColumn } from 'svelte-table';
+	import SvelteTable, { type TableColumns } from 'svelte-table';
 	import type { User } from '@prisma/client';
 	import * as m from '$lib/paraglide/messages';
+	import { getTableSettings } from '$lib/components/DataTable/tableSettings.svelte';
 
 	const { data } = $props();
 
-	let participants = $state(data.participants);
+	let participants = $state<User[]>(data.participants);
 
 	const columns: TableColumns<User> = [
 		{
@@ -47,8 +42,8 @@
 		}
 	];
 
-	let tableSize = $state<'xs' | 'sm' | 'md' | 'lg'>('md');
-	let zebra = $state(true);
+	const { getTableSize, getZebra } = getTableSettings();
+
 	let filterValue = $state<string>(data.idQuery ?? '');
 
 	$effect(() => {
@@ -59,7 +54,7 @@
 					(u.family_name && u.family_name.toLowerCase().includes(search)) ||
 					(u.given_name && u.given_name.toLowerCase().includes(search)) ||
 					(u.city && u.city.toLowerCase().includes(search)) ||
-					(u.id && u.id.toLowerCase().includes(search))
+					(u.id && u.id.toLowerCase().includes(search.toLowerCase()))
 				);
 			});
 		} else {
@@ -83,25 +78,20 @@
 			...participants.map((p) => ({
 				family_name: p.family_name,
 				given_name: p.given_name,
-				conference_age: calculateConferenceAge(new Date(p.birthday)),
-				city: p.city
+				conference_age:
+					(p.birthday && calculateConferenceAge(new Date(p.birthday))?.toString()) ?? 'N/A',
+				city: p.city ?? 'N/A'
 			}))
 		];
 	});
 
-	let drawerUser = $state<User | null>(null);
+	let drawerUser = $state<User | null>(
+		data.idQuery ? participants.find((p) => p.id === data.idQuery) : null
+	);
 </script>
 
-<ManagementHeader title={m.adminUsers()} />
+<ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions />
 <PrintHeader title={m.adminUsers()} globalSearchValue={filterValue ?? undefined} />
-
-<section class="my-10 no-print">
-	<div class="flex flex-wrap gap-4">
-		<ExportButtons exportedData={exportedData()} />
-		<TableSizeControl bind:tableSize />
-		<ZebraControl bind:zebra />
-	</div>
-</section>
 
 <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
 
@@ -110,7 +100,7 @@
 		{columns}
 		rows={participants}
 		rowKey="id"
-		classNameTable="table {zebra && 'table-zebra'} table-{tableSize} table-pin-rows"
+		classNameTable="table {getZebra() && 'table-zebra'} table-{getTableSize()} table-pin-rows"
 		classNameRow="hover:!bg-base-300 cursor-pointer"
 		on:clickRow={(e) => (drawerUser = e.detail.row)}
 		iconAsc="<i class='fa-duotone fa-arrow-down-a-z'></i>"

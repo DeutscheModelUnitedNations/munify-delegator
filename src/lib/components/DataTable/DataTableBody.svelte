@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { Subscribe, Render } from 'svelte-headless-table';
+	import { Subscribe, Render, type TableBodyAttributes, type BodyRow } from 'svelte-headless-table';
+	import type { Readable } from 'svelte/store';
 
 	interface Props {
-		rows: any; // TODO type
+		rows: Readable<BodyRow<{}>[]>; // TODO type
 		children?: any;
-		tableBodyAttrs: any;
+		tableBodyAttrs: Readable<TableBodyAttributes<{}>>;
 	}
 
-	let { rows, children, tableBodyAttrs }: Props = $props();
+	let { rows, tableBodyAttrs }: Props = $props();
 </script>
 
 <tbody {...$tableBodyAttrs}>
 	{#each $rows as row (row.id)}
-		<!-- TODO -->
-		<!-- <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
+		<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
 			<tr {...rowAttrs}>
 				{#each row.cells as cell (cell.id)}
 					<Subscribe attrs={cell.attrs()} let:attrs>
@@ -22,10 +22,7 @@
 						</td>
 					</Subscribe>
 				{/each}
-				{#if children}
-					{@render children()}
-				{/if}
 			</tr>
-		</Subscribe> -->
+		</Subscribe>
 	{/each}
 </tbody>

@@ -15,5 +15,11 @@
 		placeholder="Suchen"
 		oninput={(e: any) => changeSearchValue(e.target.value)}
 	/>
-	<i class="fa-duotone fa-magnifying-glass"></i>
+	{#if searchValue}
+		<button class="btn btn-square btn-ghost btn-sm" onclick={() => changeSearchValue('')}>
+			<i class="fa-duotone fa-times"></i>
+		</button>
+	{:else}
+		<i class="fa-duotone fa-magnifying-glass"></i>
+	{/if}
 </label>

@@ -10,7 +10,50 @@ import Elysia, { t } from 'elysia';
 
 export const conferenceSupervisor = new Elysia()
 	.use(permissionsPlugin)
-	.use(CRUDMaker.getAll('conferenceSupervisor'))
+	.get(
+		'/conferenceSupervisor',
+		async ({ permissions, query }) => {
+			const user = await permissions.mustBeLoggedIn();
+
+			return await db.conferenceSupervisor.findMany({
+				where: {
+					delegations: {
+						some: {
+							id: query.delegationId
+						}
+					}
+				},
+				include: {
+					user: {
+						select: {
+							id: true,
+							given_name: true,
+							family_name: true
+						}
+					}
+				}
+			});
+		},
+		{
+			query: t.Optional(
+				t.Object({
+					delegationId: t.String()
+				})
+			),
+			response: t.Array(
+				t.Composite([
+					ConferenceSupervisorPlain,
+					t.Object({
+						user: t.Object({
+							id: t.String(),
+							given_name: t.String(),
+							family_name: t.String()
+						})
+					})
+				])
+			)
+		}
+	)
 	.use(CRUDMaker.getOne('conferenceSupervisor'))
 	.get(
 		'/conferenceSupervisor/mine/:conferenceId',

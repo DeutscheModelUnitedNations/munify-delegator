@@ -220,6 +220,7 @@
 	"delegations": "Delegationen",
 	"noDelegationsFound": "Keine Delegationen gefunden",
 	"singleParticipants": "Einzelteilnehmer*innen",
+	"singleParticipant": "Einzelteilnehmer*in",
 	"noSingleApplicationTrackingYet": "Die Statusverfolgung von Einzelbewerbungen ist derzeit noch nicht möglich.",
 	"applied": "Angemeldet",
 	"notApplied": "Anmeldung ausstehend",
@@ -352,5 +353,11 @@
 	"plausibilityIncompleteOrInvalidData": "Unvollständige oder ungültige Daten",
 	"plausibilityCategory": "Kategorie",
 	"plausibilityFinding": "Befund",
-	"plausibilityCount": "Anzahl"
+	"plausibilityCount": "Anzahl",
+	"registrationCompleted": "Anmeldung abgeschlossen",
+	"registrationNotCompleted": "Anmeldung noch nicht abgeschlossen",
+	"noSupervisors": "Keine Betreuer*innen",
+	"adminActions": "Aktionen",
+	"revokeApplication": "Bewerbungsstatus zurücksetzen",
+	"settings": "Einstellungen"
 }

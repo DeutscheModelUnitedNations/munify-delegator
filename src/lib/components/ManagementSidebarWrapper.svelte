@@ -18,13 +18,13 @@
 
 <div class="drawer min-h-screen bg-base-100 lg:drawer-open">
 	<input id="my-drawer" type="checkbox" class="drawer-toggle" />
-	<main class="drawer-content p-4 lg:p-10 h-screen overflow-y-auto">
+	<main class="drawer-content p-4 lg:p-10 h-screen overflow-y-auto print:overflow-y-visible">
 		{@render children()}
 	</main>
 	<aside class="drawer-side z-10 lg:drawer-open no-print">
 		<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
 		<!-- sidebar menu -->
-		<nav class="flex min-h-screen w-72 flex-col gap-2 overflow-y-auto bg-base-200 px-6 py-10">
+		<nav class="flex min-h-screen w-72 flex-col gap-2 overflow-y-auto bg-base-200 px-6 py-10 no-print">
 			<div class="mx-4 flex flex-col justify-center">
 				<i class="fa-duotone fa-id-card-clip mb-4 text-3xl"></i>
 				<div class="text-md font-normal">MUNify</div>

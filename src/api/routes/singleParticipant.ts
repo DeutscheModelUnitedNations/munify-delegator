@@ -8,6 +8,7 @@ import {
 	SingleParticipantInputCreate,
 	SingleParticipantPlain
 } from '$db/generated/schema/SingleParticipant';
+import { UserPlain } from '$db/generated/schema/User';
 import Elysia, { t } from 'elysia';
 
 export const singleParticipant = new Elysia()
@@ -24,6 +25,16 @@ export const singleParticipant = new Elysia()
 					conferenceId: query.conferenceId,
 					userId: query.userId,
 					AND: [permissions.allowDatabaseAccessTo('read').SingleParticipant]
+				},
+				include: {
+					user: {
+						select: {
+							id: true,
+							family_name: true,
+							given_name: true
+						}
+					},
+					appliedForRoles: true
 				}
 			});
 		},
@@ -36,7 +47,13 @@ export const singleParticipant = new Elysia()
 					})
 				)
 			),
-			response: t.Array(SingleParticipantPlain)
+			response: t.Array(
+				t.Composite([
+					SingleParticipantPlain,
+					t.Object({ user: t.Pick(UserPlain, ['id', 'family_name', 'given_name']) }),
+					t.Object({ appliedForRoles: t.Array(CustomConferenceRolePlain) })
+				])
+			)
 		}
 	)
 	.post(
@@ -181,4 +198,24 @@ export const singleParticipant = new Elysia()
 				applied: true
 			}
 		});
-	});
+	})
+	.patch(
+		'/singleParticipant/:id/revokeApplication',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			if (!user.systemRoleNames.includes('admin')) return; // TODO add Participant Care and Conference Management roles
+			await db.singleParticipant.update({
+				where: {
+					id: params.id
+				},
+				data: {
+					applied: false
+				}
+			});
+		},
+		{
+			params: t.Object({ id: t.String() }),
+			body: t.Unknown()
+		}
+	);

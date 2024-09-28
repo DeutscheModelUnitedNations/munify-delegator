@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Subscribe, Render } from 'svelte-headless-table';
+	import { Subscribe, Render, type HeaderRow } from 'svelte-headless-table';
+	import type { Readable } from 'svelte/store';
 
 	interface Props {
-		headerRows: any; // TODO type
+		headerRows: Readable<HeaderRow[]>; // TODO type
 		children?: any;
 	}
 
@@ -12,7 +13,7 @@
 <thead>
 	{#each $headerRows as headerRow (headerRow.id)}
 		<!-- TODO -->
-		<!-- <Subscribe rowAttrs={headerRow.attrs()} let:rowAttrs>
+		<Subscribe rowAttrs={headerRow.attrs()} let:rowAttrs>
 			<tr {...rowAttrs}>
 				{#each headerRow.cells as cell (cell.id)}
 					<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
@@ -34,6 +35,6 @@
 					{@render children()}
 				{/if}
 			</tr>
-		</Subscribe> -->
+		</Subscribe>
 	{/each}
 </thead>

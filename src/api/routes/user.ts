@@ -112,13 +112,6 @@ export const user = new Elysia({
 									conferenceId: params.conferenceId
 								}
 							}
-						},
-						{
-							conferenceSupervisor: {
-								some: {
-									conferenceId: params.conferenceId
-								}
-							}
 						}
 					]
 				}

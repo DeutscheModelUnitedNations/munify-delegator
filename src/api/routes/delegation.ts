@@ -22,11 +22,49 @@ import * as m from '$lib/paraglide/messages';
 const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
 
 export const delegation = new Elysia()
-	.use(CRUDMaker.getAll('delegation'))
 	.use(CRUDMaker.updateOne('delegation'))
 	.use(CRUDMaker.deleteOne('delegation'))
 	.use(permissionsPlugin)
 	.use(languageExtractor)
+	.get(
+		'delegation',
+		async ({ permissions, query }) => {
+			permissions.mustBeLoggedIn();
+			return await db.delegation.findMany({
+				where: {
+					conferenceId: query.conferenceId,
+					AND: [permissions.allowDatabaseAccessTo('list').Delegation]
+				},
+				include: {
+					_count: {
+						select: {
+							members: true,
+							supervisors: true,
+							appliedForRoles: true
+						}
+					}
+				},
+				orderBy: {
+					entryCode: 'asc'
+				}
+			});
+		},
+		{
+			query: t.Object({ conferenceId: t.Optional(t.String()) }),
+			response: t.Array(
+				t.Composite([
+					DelegationPlain,
+					t.Object({
+						_count: t.Object({
+							members: t.Number(),
+							supervisors: t.Number(),
+							appliedForRoles: t.Number()
+						})
+					})
+				])
+			)
+		}
+	)
 	.get(
 		'delegation/:id',
 		async ({ permissions, params }) => {
@@ -516,4 +554,24 @@ export const delegation = new Elysia()
 				applied: true
 			}
 		});
-	});
+	})
+	.patch(
+		'/delegation/:id/revokeApplication',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			if (!user.systemRoleNames.includes('admin')) return; // TODO add Participant Care and Conference Management roles
+			await db.delegation.update({
+				where: {
+					id: params.id
+				},
+				data: {
+					applied: false
+				}
+			});
+		},
+		{
+			params: t.Object({ id: t.String() }),
+			body: t.Unknown()
+		}
+	);

@@ -39,11 +39,11 @@
 </script>
 
 <Drawer open={user != null} size="600px" placement="right" on:clickAway={onClose}>
-	<div class="flex flex-col p-10 bg-base-100 h-full gap-8">
+	<div class="flex flex-col p-10 bg-base-100 min-h-full gap-8">
 		<div class="flex flex-col gap-2">
 			<h3 class="text-xl uppercase font-thin">{m.adminUserCard()}</h3>
 			<h2 class="text-3xl font-bold p-2 bg-base-300 rounded-md">
-				{user?.given_name}
+				<span class="capitalize">{user?.given_name}</span>
 				<span class="uppercase">{user?.family_name}</span>
 				{#if user?.pronouns}
 					<span class="text-sm font-normal">({user?.pronouns})</span>
@@ -98,7 +98,10 @@
 								{/if}
 								{user?.zip}
 								{user?.city}
-								(<span class="uppercase">{user?.country}</span>)
+								<br />
+								<span class="uppercase"
+									>{user?.country && user?.country !== '' ? user.country : 'N/A'}</span
+								>
 							</td>
 						{:else}
 							<td>N/A</td>

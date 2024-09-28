@@ -32,7 +32,7 @@ export const roleApplication = new Elysia()
 						}
 					},
 					//TODO this does not perform an actual permission check on the delegation entity
-					delegation: true
+					// delegation: true
 				},
 				orderBy: {
 					rank: 'asc'
@@ -213,4 +213,4 @@ export const roleApplication = new Elysia()
 				id: t.String()
 			})
 		}
-	);
+	)
