@@ -3,4 +3,4 @@
 	import * as m from '$lib/paraglide/messages';
 </script>
 
-<ManagementHeader title={m.adminDelegations()} />
+<ManagementHeader title={m.adminSupervisors()} />

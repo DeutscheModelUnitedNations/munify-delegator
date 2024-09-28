@@ -38,7 +38,7 @@
 			</section>
 		{:else}
 			<section
-				class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flew-wrap"
+				class="flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flex-wrap"
 			>
 				{#each data.conferences as item}
 					<ConferenceCard

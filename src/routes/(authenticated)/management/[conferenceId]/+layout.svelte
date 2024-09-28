@@ -1,10 +1,10 @@
 <script lang="ts">
 	import ManagementSidebarWrapper from '$lib/components/ManagementSidebarWrapper.svelte';
 
-	let { children } = $props();
+	let { children, data } = $props();
 </script>
 
 <!-- TODO -->
-<ManagementSidebarWrapper conferenceId="1">
+<ManagementSidebarWrapper conferenceId={data.conferenceData.id}>
 	{@render children()}
 </ManagementSidebarWrapper>

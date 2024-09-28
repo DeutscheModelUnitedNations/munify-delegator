@@ -4,7 +4,7 @@ import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 import { TeamRole } from '@prisma/client';
 
-export const load: LayoutLoad = loadApiHandler(async ({ api, parent }) => {
+export const load: LayoutLoad = loadApiHandler(async ({ api, parent, url }) => {
 	const { user } = await parent();
 	const { mySystemRoles } = await checkForError(api.auth['my-system-roles'].get());
 	const { teamMember } = await checkForError(api.user({ id: user.sub }).get());
@@ -21,6 +21,7 @@ export const load: LayoutLoad = loadApiHandler(async ({ api, parent }) => {
 
 	return {
 		mySystemRoles,
-		teamMemberships: teamMember
+		teamMemberships: teamMember,
+		url
 	};
 });

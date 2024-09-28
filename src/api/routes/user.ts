@@ -1,6 +1,6 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { User } from '$db/generated/schema/User';
+import { User, UserPlain } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
@@ -89,5 +89,43 @@ export const user = new Elysia({
 		},
 		{
 			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
+		}
+	)
+	.get(
+		'/user/perConference/:conferenceId',
+		async ({ permissions, params }) => {
+			permissions.mustBeLoggedIn();
+
+			const user = await db.user.findMany({
+				where: {
+					OR: [
+						{
+							delegationMemberships: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
+						},
+						{
+							singleParticipant: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
+						},
+						{
+							conferenceSupervisor: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
+						}
+					]
+				}
+			});
+			return user;
+		},
+		{
+			response: t.Array(UserPlain)
 		}
 	);

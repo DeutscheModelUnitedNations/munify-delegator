@@ -2,6 +2,7 @@
 	import NavButton from '$lib/components/NavButton.svelte';
 	import { page } from '$app/stores';
 	import type { Snippet } from 'svelte';
+	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
 		children: Snippet;
@@ -17,7 +18,7 @@
 
 <div class="drawer min-h-screen bg-base-100 lg:drawer-open">
 	<input id="my-drawer" type="checkbox" class="drawer-toggle" />
-	<main class="drawer-content p-4 lg:p-10">
+	<main class="drawer-content p-4 lg:p-10 h-screen overflow-y-auto">
 		{@render children()}
 	</main>
 	<aside class="drawer-side z-10 lg:drawer-open no-print">
@@ -28,20 +29,26 @@
 				<i class="fa-duotone fa-id-card-clip mb-4 text-3xl"></i>
 				<div class="text-md font-normal">MUNify</div>
 				<div class="text-2xl font-bold">DELEGATOR</div>
-				<div class="text-md font-normal">Admintools</div>
+				<div class="text-md font-normal">{m.administrator()}</div>
 			</div>
 			<ul class="menu">
 				<NavButton
 					href="/management/{conferenceId}/configuration"
 					icon="fa-gears"
-					title="Einstellungen"
+					title={m.adminSettings()}
 					active={path.endsWith('configuration')}
 				></NavButton>
 				<NavButton
 					href="/management/{conferenceId}/stats"
 					icon="fa-chart-pie"
-					title="Statistiken"
+					title={m.adminStats()}
 					active={path.endsWith('stats')}
+				></NavButton>
+				<NavButton
+					href="/management/{conferenceId}/plausibility"
+					icon="fa-shield-check"
+					title={m.adminPlausibility()}
+					active={path.endsWith('plausibility')}
 				></NavButton>
 
 				<div class="h-6"></div>
@@ -49,28 +56,35 @@
 				<NavButton
 					href="/management/{conferenceId}/participants"
 					icon="fa-users"
-					title="Teilnehmende"
+					title={m.adminUsers()}
 					active={path.endsWith('participants')}
 				></NavButton>
 
 				<NavButton
 					href="/management/{conferenceId}/delegations"
 					icon="fa-users-viewfinder"
-					title="Delegationen"
+					title={m.adminDelegations()}
 					active={path.endsWith('delegations')}
 				></NavButton>
 
 				<NavButton
 					href="/management/{conferenceId}/individuals"
 					icon="fa-user"
-					title="Einzelteilnehmer"
+					title={m.adminSingleParticipants()}
 					active={path.endsWith('individuals')}
+				></NavButton>
+
+				<NavButton
+					href="/management/{conferenceId}/supervisors"
+					icon="fa-chalkboard-user"
+					title={m.adminSupervisors()}
+					active={path.endsWith('supervisors')}
 				></NavButton>
 
 				<div class="h-6"></div>
 
-				<NavButton href="/management" icon="fa-arrow-left" title="Konferenzauswahl"></NavButton>
-				<NavButton href="/" icon="fa-home" title="Startseite"></NavButton>
+				<NavButton href="/management" icon="fa-arrow-left" title={m.adminConferenceSelection()}></NavButton>
+				<NavButton href="/" icon="fa-home" title={m.home()}></NavButton>
 			</ul>
 		</nav>
 		<!-- /sidebar menu -->

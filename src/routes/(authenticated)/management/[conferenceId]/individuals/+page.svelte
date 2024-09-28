@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
+	import * as m from '$lib/paraglide/messages';
 </script>
 
-<ManagementHeader title="Individuelle Anmeldungen" />
+<ManagementHeader title={m.adminSingleParticipants()} />

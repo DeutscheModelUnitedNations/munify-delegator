@@ -67,5 +67,9 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write ."
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"svelte-drawer-component": "^1.2.2",
+		"svelte-table": "^0.6.3"
+	}
 }
