@@ -171,7 +171,7 @@
 						A(Welche Rolle möchte ich auf der Konferenz einnehmen?):::question
 						
 						A --> Delegate(fa:fa-flag\nDelegierter\neines Landes):::role
-						A --> NSA(fa:fa-megaphone\nNichtstaatliche*r\nAkteur*in):::role
+						A --> NSA(fa:fa-megaphone\nNichtstaatliche&ast;r\nAkteur&ast;in):::role
 						NSA --> B(Habe ich Personen, mit denen\nich mich als Gruppe bewerben kann?):::question
 						Delegate --> B
 
