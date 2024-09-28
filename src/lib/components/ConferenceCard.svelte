@@ -101,13 +101,13 @@
 				text:
 					registrationStatus() === RegistrationStatus.OPEN
 						? m.registrationOpen({
-								date: `${new Date(endRegistration as unknown as string)?.toLocaleDateString(languageTag(), dateOptions) ?? ''}`
+								date: `${new Date(endRegistration as unknown as string)?.toLocaleDateString(languageTag(), dateOptions).replace(" ", "&nbsp;") ?? ''}`
 							})
 						: registrationStatus() === RegistrationStatus.CLOSED
 							? m.registrationClosed()
 							: registrationStatus() === RegistrationStatus.NOT_YET_OPEN
 								? m.registrationNotYetOpen({
-										date: `${new Date(startRegistration as unknown as string)?.toLocaleDateString(languageTag(), dateOptions) ?? ''}`
+										date: `${new Date(startRegistration as unknown as string)?.toLocaleDateString(languageTag(), dateOptions).replace(" ", "&nbsp;") ?? ''}`
 									})
 								: m.unknownRegistrationStatus()
 			}
