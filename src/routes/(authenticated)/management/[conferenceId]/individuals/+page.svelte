@@ -2,7 +2,7 @@
 	import TableSearch from '$lib/components/DataTable/TableSearch.svelte';
 	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
-	import Drawer from './DelegationDrawer.svelte';
+	import Drawer from './IndividualsDrawer.svelte';
 	import SvelteTable, { type TableColumns } from 'svelte-table';
 	import type { SingleParticipant, User, CustomConferenceRole } from '@prisma/client';
 	import * as m from '$lib/paraglide/messages';
@@ -122,7 +122,7 @@
 	);
 </script>
 
-<ManagementHeader title={m.adminSingleParticipants()} exportedData={exportedData()} tableOptions />
+<ManagementHeader title={m.adminSingleParticipants()} exportedData={exportedData()} tableOptions logoutUrl={data.logoutUrl} />
 <PrintHeader title={m.adminSingleParticipants()} globalSearchValue={filterValue ?? undefined} />
 
 <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />

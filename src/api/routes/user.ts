@@ -96,7 +96,7 @@ export const user = new Elysia({
 		async ({ permissions, params }) => {
 			permissions.mustBeLoggedIn();
 
-			const user = await db.user.findMany({
+			return await db.user.findMany({
 				where: {
 					OR: [
 						{
@@ -112,13 +112,55 @@ export const user = new Elysia({
 									conferenceId: params.conferenceId
 								}
 							}
+						},
+						{
+							conferenceSupervisor: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
 						}
 					]
+				},
+				include: {
+					delegationMemberships: {
+						where: {
+							conferenceId: params.conferenceId
+						},
+						select: {
+							id: true,
+							delegationId: true
+						}
+					},
+					singleParticipant: {
+						where: {
+							conferenceId: params.conferenceId
+						},
+						select: {
+							id: true
+						}
+					},
+					conferenceSupervisor: {
+						where: {
+							conferenceId: params.conferenceId
+						},
+						select: {
+							id: true
+						}
+					}
 				}
 			});
-			return user;
 		},
 		{
-			response: t.Array(UserPlain)
+			response: t.Array(
+				t.Composite([
+					UserPlain,
+					t.Object({
+						delegationMemberships: t.Array(t.Object({ id: t.String(), delegationId: t.String() })),
+						singleParticipant: t.Array(t.Object({ id: t.String() })),
+						conferenceSupervisor: t.Array(t.Object({ id: t.String() }))
+					})
+				])
+			)
 		}
 	);

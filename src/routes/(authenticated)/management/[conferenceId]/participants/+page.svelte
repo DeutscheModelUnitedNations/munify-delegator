@@ -4,15 +4,39 @@
 	import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import UserDrawer from './UserDrawer.svelte';
 	import SvelteTable, { type TableColumns } from 'svelte-table';
-	import type { User } from '@prisma/client';
 	import * as m from '$lib/paraglide/messages';
 	import { getTableSettings } from '$lib/components/DataTable/tableSettings.svelte';
+	import type { UserData } from './+page';
+
+	enum ParticipationType {
+		SUPERVISOR = 0,
+		SINGLE_PARTICIPANT = 1,
+		DELEGATION_MEMBER = 2
+	}
 
 	const { data } = $props();
 
-	let participants = $state<User[]>(data.participants);
+	let participants = $state<UserData[]>(data.participants);
 
-	const columns: TableColumns<User> = [
+	const getParticipationType = (u: UserData) => {
+		if (u.conferenceSupervisor?.length > 0) return ParticipationType.SUPERVISOR;
+		if (u.singleParticipant?.length > 0) return ParticipationType.SINGLE_PARTICIPANT;
+		if (u.delegationMemberships?.length > 0) return ParticipationType.DELEGATION_MEMBER;
+		throw new Error('User has no participation type');
+	};
+
+	const localizedParticipationType = (type: ParticipationType) => {
+		switch (type) {
+			case ParticipationType.SUPERVISOR:
+				return m.supervisor();
+			case ParticipationType.SINGLE_PARTICIPANT:
+				return m.singleParticipant();
+			case ParticipationType.DELEGATION_MEMBER:
+				return m.delegationMember();
+		}
+	};
+
+	const columns: TableColumns<UserData> = [
 		{
 			key: 'family_name',
 			title: m.familyName(),
@@ -26,13 +50,36 @@
 			sortable: true
 		},
 		{
+			key: 'participationType',
+			title: m.participationType(),
+			value: (row) => localizedParticipationType(getParticipationType(row)),
+			renderValue: (row) => {
+				switch (getParticipationType(row)) {
+					case ParticipationType.SUPERVISOR:
+						return `<i class="fa-duotone fa-chalkboard-user text-${getTableSize()}"></i>`;
+					case ParticipationType.SINGLE_PARTICIPANT:
+						return `<i class="fa-duotone fa-user text-${getTableSize()}"></i>`;
+					case ParticipationType.DELEGATION_MEMBER:
+						return `<i class="fa-duotone fa-users-viewfinder text-${getTableSize()}"></i>`;
+					default:
+						return 'Error';
+				}
+			},
+			parseHTML: true,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
 			key: 'birthday',
 			title: m.conferenceAge(),
 			value: (row) =>
 				row.birthday && data.conferenceData.end
 					? (calculateConferenceAge(new Date(row.birthday)) ?? 'N/A')
 					: 'N/A',
-			sortable: true
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
 		},
 		{
 			key: 'city',
@@ -78,6 +125,7 @@
 			...participants.map((p) => ({
 				family_name: p.family_name,
 				given_name: p.given_name,
+				participationType: localizedParticipationType(getParticipationType(p)),
 				conference_age:
 					(p.birthday && calculateConferenceAge(new Date(p.birthday))?.toString()) ?? 'N/A',
 				city: p.city ?? 'N/A'
@@ -85,12 +133,12 @@
 		];
 	});
 
-	let drawerUser = $state<User | null>(
+	let drawerUser = $state<UserData | null>(
 		data.idQuery ? participants.find((p) => p.id === data.idQuery) : null
 	);
 </script>
 
-<ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions />
+<ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions logoutUrl={data.logoutUrl} />
 <PrintHeader title={m.adminUsers()} globalSearchValue={filterValue ?? undefined} />
 
 <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />

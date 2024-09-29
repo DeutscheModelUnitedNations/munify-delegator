@@ -12,7 +12,7 @@
 	let { data }: Props = $props();
 </script>
 
-<ManagementHeader title={m.adminPlausibility()} />
+<ManagementHeader title={m.adminPlausibility()} logoutUrl={data.logoutUrl} />
 
 <div class="flex flex-col gap-8 p-10">
 	<div class="flex flex-col gap-2">

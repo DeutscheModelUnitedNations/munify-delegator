@@ -23,4 +23,7 @@
 			</button>
 		</div>
 	</div>
+	<form method="dialog" class="modal-backdrop" onsubmit={() => (confirmDialogOpen = false)}>
+		<button>close</button>
+	</form>
 </dialog>

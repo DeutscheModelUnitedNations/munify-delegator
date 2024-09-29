@@ -24,7 +24,9 @@
 	<aside class="drawer-side z-10 lg:drawer-open no-print">
 		<label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
 		<!-- sidebar menu -->
-		<nav class="flex min-h-screen w-72 flex-col gap-2 overflow-y-auto bg-base-200 px-6 py-10 no-print">
+		<nav
+			class="flex min-h-screen w-72 flex-col gap-2 overflow-y-auto bg-base-200 px-6 py-10 no-print"
+		>
 			<div class="mx-4 flex flex-col justify-center">
 				<i class="fa-duotone fa-id-card-clip mb-4 text-3xl"></i>
 				<div class="text-md font-normal">MUNify</div>
@@ -33,57 +35,76 @@
 			</div>
 			<ul class="menu">
 				<NavButton
-					href="/management/{conferenceId}/configuration"
-					icon="fa-gears"
-					title={m.adminSettings()}
-					active={path.endsWith('configuration')}
-				></NavButton>
-				<NavButton
 					href="/management/{conferenceId}/stats"
 					icon="fa-chart-pie"
 					title={m.adminStats()}
 					active={path.endsWith('stats')}
 				></NavButton>
 				<NavButton
-					href="/management/{conferenceId}/plausibility"
-					icon="fa-shield-check"
-					title={m.adminPlausibility()}
-					active={path.endsWith('plausibility')}
+					href="/management/{conferenceId}/configuration"
+					icon="fa-gears"
+					title={m.adminSettings()}
+					active={path.endsWith('configuration')}
 				></NavButton>
+
+				<li>
+					<details>
+						<summary>
+							<i class="fa-duotone fa-database w-5 text-center"></i>
+							<span>{m.tables()}</span>
+						</summary>
+						<ul>
+							<NavButton
+								href="/management/{conferenceId}/participants"
+								icon="fa-users"
+								title={m.adminUsers()}
+								active={path.endsWith('participants')}
+							></NavButton>
+
+							<NavButton
+								href="/management/{conferenceId}/delegations"
+								icon="fa-users-viewfinder"
+								title={m.adminDelegations()}
+								active={path.endsWith('delegations')}
+							></NavButton>
+
+							<NavButton
+								href="/management/{conferenceId}/individuals"
+								icon="fa-user"
+								title={m.adminSingleParticipants()}
+								active={path.endsWith('individuals')}
+							></NavButton>
+
+							<NavButton
+								href="/management/{conferenceId}/supervisors"
+								icon="fa-chalkboard-user"
+								title={m.adminSupervisors()}
+								active={path.endsWith('supervisors')}
+							></NavButton>
+						</ul>
+					</details>
+				</li>
+				<li>
+					<details>
+						<summary>
+							<i class="fa-duotone fa-wrench w-5 text-center"></i>
+							<span>{m.tools()}</span>
+						</summary>
+						<ul>
+							<NavButton
+								href="/management/{conferenceId}/plausibility"
+								icon="fa-shield-check"
+								title={m.adminPlausibility()}
+								active={path.endsWith('plausibility')}
+							></NavButton>
+						</ul>
+					</details>
+				</li>
 
 				<div class="h-6"></div>
 
-				<NavButton
-					href="/management/{conferenceId}/participants"
-					icon="fa-users"
-					title={m.adminUsers()}
-					active={path.endsWith('participants')}
+				<NavButton href="/management" icon="fa-arrow-left" title={m.adminConferenceSelection()}
 				></NavButton>
-
-				<NavButton
-					href="/management/{conferenceId}/delegations"
-					icon="fa-users-viewfinder"
-					title={m.adminDelegations()}
-					active={path.endsWith('delegations')}
-				></NavButton>
-
-				<NavButton
-					href="/management/{conferenceId}/individuals"
-					icon="fa-user"
-					title={m.adminSingleParticipants()}
-					active={path.endsWith('individuals')}
-				></NavButton>
-
-				<NavButton
-					href="/management/{conferenceId}/supervisors"
-					icon="fa-chalkboard-user"
-					title={m.adminSupervisors()}
-					active={path.endsWith('supervisors')}
-				></NavButton>
-
-				<div class="h-6"></div>
-
-				<NavButton href="/management" icon="fa-arrow-left" title={m.adminConferenceSelection()}></NavButton>
 				<NavButton href="/" icon="fa-home" title={m.home()}></NavButton>
 			</ul>
 		</nav>

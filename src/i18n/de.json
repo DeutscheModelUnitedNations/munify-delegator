@@ -359,5 +359,12 @@
 	"noSupervisors": "Keine Betreuer*innen",
 	"adminActions": "Aktionen",
 	"revokeApplication": "Bewerbungsstatus zurücksetzen",
-	"settings": "Einstellungen"
+	"settings": "Einstellungen",
+	"adminPlansAttendance": "Anwesend",
+	"supervisorPlansOwnAttendance": "Betreuer*in plant eigene Anwesenheit",
+	"supervisorDoesNotPlanOwnAttendance": "Betreuer*in plant nicht bei der Konferenz anwesend zu sein",
+	"participationType": "Teilnahmeart",
+	"delegationMember": "Delegationsmitglied",
+	"tables": "Tabellen",
+	"tools": "Tools"
 }

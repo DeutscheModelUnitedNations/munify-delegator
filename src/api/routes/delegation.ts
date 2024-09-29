@@ -33,6 +33,9 @@ export const delegation = new Elysia()
 			return await db.delegation.findMany({
 				where: {
 					conferenceId: query.conferenceId,
+					supervisors: {
+						some: { id: query.supervisorId }
+					},
 					AND: [permissions.allowDatabaseAccessTo('list').Delegation]
 				},
 				include: {
@@ -50,7 +53,10 @@ export const delegation = new Elysia()
 			});
 		},
 		{
-			query: t.Object({ conferenceId: t.Optional(t.String()) }),
+			query: t.Object({
+				conferenceId: t.Optional(t.String()),
+				supervisorId: t.Optional(t.String())
+			}),
 			response: t.Array(
 				t.Composite([
 					DelegationPlain,

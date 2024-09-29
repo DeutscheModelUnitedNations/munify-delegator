@@ -19,9 +19,12 @@ export const load: LayoutLoad = loadApiHandler(async ({ api, parent, url }) => {
 		error(403, 'Forbidden');
 	}
 
+	const { logoutUrl } = await checkForError(api.auth['logout-url'].get());
+
 	return {
 		mySystemRoles,
 		teamMemberships: teamMember,
-		url
+		url,
+		logoutUrl
 	};
 });

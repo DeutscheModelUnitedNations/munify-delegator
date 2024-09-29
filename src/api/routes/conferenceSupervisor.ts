@@ -17,11 +17,20 @@ export const conferenceSupervisor = new Elysia()
 
 			return await db.conferenceSupervisor.findMany({
 				where: {
-					delegations: {
-						some: {
-							id: query.delegationId
+					OR: [
+						{
+							delegations: {
+								some: {
+									id: query.delegationId
+								}
+							}
+						},
+						{
+							conference: {
+								id: query.conferenceId
+							}
 						}
-					}
+					]
 				},
 				include: {
 					user: {
@@ -30,6 +39,11 @@ export const conferenceSupervisor = new Elysia()
 							given_name: true,
 							family_name: true
 						}
+					},
+					_count: {
+						select: {
+							delegations: true,
+						}
 					}
 				}
 			});
@@ -37,7 +51,8 @@ export const conferenceSupervisor = new Elysia()
 		{
 			query: t.Optional(
 				t.Object({
-					delegationId: t.String()
+					delegationId: t.Optional(t.String()),
+					conferenceId: t.Optional(t.String())
 				})
 			),
 			response: t.Array(
@@ -48,6 +63,11 @@ export const conferenceSupervisor = new Elysia()
 							id: t.String(),
 							given_name: t.String(),
 							family_name: t.String()
+						})
+					}),
+					t.Object({
+						_count: t.Object({
+							delegations: t.Number()
 						})
 					})
 				])
