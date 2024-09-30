@@ -79,6 +79,16 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if data.supervisorsDelegationData && data.supervisorsDelegationData.length > 0}
+		<div class="flex flex-col sm:flex-row gap-2 sm:gap-8">
+			<div class="text-sm">
+				<i class="fa-solid fa-hourglass-half text-warning"></i>
+				<span> = {m.notApplied()}</span>
+			</div>
+			<div class="text-sm">
+				<i class="fa-solid fa-circle-check text-success"></i>
+				<span> = {m.applied()}</span>
+			</div>
+		</div>
 		{#each data.supervisorsDelegationData as delegation, index}
 			<div
 				tabindex="-1"
@@ -91,7 +101,7 @@
 							{#if delegation.applied}
 								<i class="fa-solid fa-circle-check text-success text-3xl"></i>
 							{:else}
-								<i class="fa-solid fa-circle-xmark text-warning text-3xl"></i>
+								<i class="fa-solid fa-hourglass-half text-warning text-3xl"></i>
 							{/if}
 						</div>
 						<div class="divider divider-horizontal"></div>

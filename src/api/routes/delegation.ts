@@ -1,8 +1,8 @@
-import { PermissionCheckError, permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
 import { languageExtractor } from '$api/util/languageExtractor';
-import { UserFacingError } from '$api/util/logger';
+import { PermissionCheckError, UserFacingError } from '$api/util/logger';
 import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
 import { db } from '$db/db';
 import { ConferenceSupervisorPlain } from '$db/generated/schema/ConferenceSupervisor';
@@ -303,7 +303,8 @@ export const delegation = new Elysia()
 	)
 	.get(
 		`/delegation/preview`,
-		async ({ query }) => {
+		async ({ query, permissions }) => {
+			permissions.mustBeLoggedIn();
 			const delegation = await db.delegation.findUniqueOrThrow({
 				where: {
 					conferenceId: query.conferenceId,
