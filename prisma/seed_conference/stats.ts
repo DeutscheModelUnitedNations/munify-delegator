@@ -1,4 +1,4 @@
-import committees from './countries_mun-sh_2025.json';
+import committees from './countries_munbw_2025.json';
 
 const nations = {};
 
@@ -16,6 +16,10 @@ function countNationsOfSizeX(size: number) {
 }
 
 console.info('Nations:', Object.keys(nations).length);
+console.info(
+	'total seats:',
+	Object.values(nations).reduce((acc, x) => acc + x.length, 0)
+);
 console.info('1 seat:', countNationsOfSizeX(1));
 console.info('2 seats:', countNationsOfSizeX(2));
 console.info('3 seats:', countNationsOfSizeX(3));
