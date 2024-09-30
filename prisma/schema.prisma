@@ -55,7 +55,7 @@ model Committee {
   numOfSeatsPerDelegation Int    @default(1)
 
   /// @prismabox.update.input.hide
-  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId String
   nations      Nation[]
 }
@@ -141,16 +141,19 @@ model Nation {
 
 model NonStateActor {
   id              String  @id @default(nanoid())
-  name            String  @unique
+  name            String
   description     String
   fontAwesomeIcon String?
-  abbreviation    String  @unique
+  abbreviation    String
   seatAmount      Int     @default(2)
 
   /// @prismabox.update.input.hide
-  conference       Conference        @relation(fields: [conferenceId], references: [id])
+  conference       Conference        @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId     String
   roleApplications RoleApplication[]
+
+  @@unique([conferenceId, abbreviation])
+  @@unique([conferenceId, name])
 }
 
 // these can be journalists, judges, etc.
@@ -161,7 +164,7 @@ model CustomConferenceRole {
   fontAwesomeIcon String?
 
   /// @prismabox.update.input.hide
-  conference        Conference          @relation(fields: [conferenceId], references: [id])
+  conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
   singleParticipant SingleParticipant[]
 
