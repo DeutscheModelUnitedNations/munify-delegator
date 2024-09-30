@@ -1,11 +1,10 @@
 <script lang="ts">
 	import Drawer from '$lib/components/DataTable/DrawerWrapper.svelte';
-
+	import { DelegationDataItem } from './types.svelte';
 	import { apiClient, checkForError } from '$api/client';
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages';
 	import type {
-		Delegation,
 		DelegationMember,
 		ConferenceSupervisor,
 		RoleApplication,
@@ -14,23 +13,13 @@
 	} from '@prisma/client';
 	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
 
-	type DelegationDataWithCount = Delegation & {
-		_count: {
-			members: number;
-			supervisors: number;
-			appliedForRoles: number;
-		};
-	};
-
 	interface Props {
-		delegation: DelegationDataWithCount | null;
+		delegation: DelegationDataItem | null;
 		onClose: () => void;
 		data: PageData;
 	}
 
 	let { delegation, onClose, data }: Props = $props();
-
-	let api = apiClient({ origin: data.url.origin });
 
 	let roleApplications = $state<
 		| (RoleApplication & {
@@ -65,7 +54,7 @@
 	$effect(() => {
 		roleApplications = null;
 		if (delegation) {
-			checkForError(api.roleApplication.get({ query: { delegationId: delegation.id } })).then(
+			checkForError(data.api.roleApplication.get({ query: { delegationId: delegation.id } })).then(
 				(res) => {
 					roleApplications = res;
 				}
@@ -76,7 +65,7 @@
 	$effect(() => {
 		members = null;
 		if (delegation) {
-			checkForError(api.delegationMember.get({ query: { delegationId: delegation.id } })).then(
+			checkForError(data.api.delegationMember.get({ query: { delegationId: delegation.id } })).then(
 				(res) => {
 					members = res;
 				}
@@ -87,11 +76,11 @@
 	$effect(() => {
 		supervisors = null;
 		if (delegation) {
-			checkForError(api.conferenceSupervisor.get({ query: { delegationId: delegation.id } })).then(
-				(res) => {
-					supervisors = res;
-				}
-			);
+			checkForError(
+				data.api.conferenceSupervisor.get({ query: { delegationId: delegation.id } })
+			).then((res) => {
+				supervisors = res;
+			});
 		}
 	});
 </script>

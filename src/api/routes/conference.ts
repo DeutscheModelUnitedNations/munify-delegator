@@ -5,6 +5,7 @@ import { permissionsPlugin } from '$api/auth/permissions';
 import { ConferencePlain } from '$db/generated/schema/Conference';
 import { UserPlain } from '$db/generated/schema/User';
 import type { User } from '@prisma/client';
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 
 export const conference = new Elysia()
 	.use(permissionsPlugin)
@@ -179,9 +180,10 @@ export const conference = new Elysia()
 	.get(
 		'conference/:id/statistics',
 		async ({ params, permissions }) => {
-			permissions.mustBeLoggedIn();
-
+			const user = permissions.mustBeLoggedIn();
 			const conferenceId = params.id;
+
+			await requireToBeConferenceAdmin({ conferenceId, user });
 
 			const conference = await db.conference.findUniqueOrThrow({
 				where: {

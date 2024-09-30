@@ -4,23 +4,15 @@
 	import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import Drawer from './DelegationDrawer.svelte';
 	import SvelteTable, { type TableColumns } from 'svelte-table';
-	import type { Delegation } from '@prisma/client';
 	import * as m from '$lib/paraglide/messages';
 	import { getTableSettings } from '$lib/components/DataTable/tableSettings.svelte';
-
-	type DelegationDataWithCount = Delegation & {
-		_count: {
-			members: number;
-			supervisors: number;
-			appliedForRoles: number;
-		};
-	};
+	import type { DelegationData, DelegationDataItem } from './types.svelte';
 
 	const { data } = $props();
 
-	let delegations = $state<DelegationDataWithCount[]>(data.delegations);
+	let delegations = $state<DelegationData>(data.delegations);
 
-	const columns: TableColumns<DelegationDataWithCount> = [
+	const columns: TableColumns<DelegationDataItem> = [
 		{
 			key: 'entryCode',
 			title: 'Entry Code',
@@ -117,12 +109,17 @@
 		];
 	});
 
-	let drawerDelegation = $state<DelegationDataWithCount | null>(
+	let drawerDelegation = $state<DelegationDataItem | null>(
 		data.idQuery ? (delegations.find((u) => u.id === data.idQuery) ?? null) : null
 	);
 </script>
 
-<ManagementHeader title={m.adminDelegations()} exportedData={exportedData()} tableOptions logoutUrl={data.logoutUrl} />
+<ManagementHeader
+	title={m.adminDelegations()}
+	exportedData={exportedData()}
+	tableOptions
+	logoutUrl={data.logoutUrl}
+/>
 <PrintHeader title={m.adminDelegations()} globalSearchValue={filterValue ?? undefined} />
 
 <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
