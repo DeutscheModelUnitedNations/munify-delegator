@@ -67,7 +67,7 @@ for (const committeeInput of committees) {
 		try {
 			await seedDb.nation.update({
 				where: {
-					alpha2Code: nationInput.toLowerCase()
+					alpha3Code: nationInput.toLowerCase()
 				},
 				data: {
 					committees: {
