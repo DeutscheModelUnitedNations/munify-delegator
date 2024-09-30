@@ -366,5 +366,7 @@
 	"participationType": "Teilnahmeart",
 	"delegationMember": "Delegationsmitglied",
 	"tables": "Tabellen",
-	"tools": "Tools"
+	"tools": "Tools",
+	"years": "Jahre",
+	"averageAge": "Durchschnittsalter"
 }
