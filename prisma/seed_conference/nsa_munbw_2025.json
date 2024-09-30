@@ -1,37 +1,37 @@
 [
-  {
-    "name": "Greenpeace",
-    "abbreviation": "GP",
-    "seatAmount": 2,
-    "description": "Greenpeace ist eine international agierende und bekannte Nichtregierungsorganisation, welche sich weltweit für Umwelt- und Klimaschutz einsetzt. Sie sind in den Siebzigerjahren durch Aktionen gegen Kernwaffentests und den Walfang bekannt geworden und widmen sich mittlerweile einer Vielzahl an Themen, darunter vor allem der globale Klimawandel und seine Auswirkungen.",
-    "fontAwesomeIcon": "leaf"
-  },
-  {
-    "name": "Ärzt*innen ohne Grenzen",
-    "abbreviation": "AoG",
-    "seatAmount": 2,
-    "description": "Ärzt*innen ohne Grenzen ist eine Hilfsorganisation, welche Menschen medizinische oder humanitäre Hilfe leistet, deren Leben durch Konflikte, Epidemien oder Naturkatastrophen gefährdet sind.",
-    "fontAwesomeIcon": "medkit"
-  },
-  {
-    "name": "Center for Reproductive Rights",
-    "abbreviation": "CRR",
-    "seatAmount": 2,
-    "description": "Das Center for Reproductive Rights ist eine globale Menschenrechtsorganisation von Anwältinnen und Alwälten, die sich für reproduktive Rechte einsetzen. Dazu gehören unter anderem der Zugang zu lebensrettender Geburtshilfe, Empfängnisverhütung und sichere Abtreibungsmöglichkeiten.",
-    "fontAwesomeIcon": "person-pregnant"
-  },
-  {
-    "name": "Human Rights Watch",
-    "abbreviation": "HRW",
-    "seatAmount": 2,
-    "description": "Human Rights Watch ist eine hinternational tätige nichtstaatliche Organisation, die durch Untersuchungen und Öffentlichkeitsarbeit für die Wahrung der Menschenrechte eintritt. Sie konzentrieren sich vor allem auf Recherche und die öffentlichkeitswirksame Berichterstattung über Menschenrechtsverletzungen.",
-    "fontAwesomeIcon": "balance-scale"
-  },
-  {
-    "name": "International Gay and Lesbian Alliance World",
-    "abbrevation": "ILGA World",
-    "seatAmount": 2,
-    "description": "ILGA World ist eine weltweite Organisation, welche sich für die Rechte von lesbischen, schwulen, bisexuellen, trans und queeren Menschen einsetzt und ihren Anliegen mehr Sichtbarkeit verschafft. Dazu gehören beispielsweise Kampagnen für das Recht auf Ehe für alle und gegen die staatliche Kriminalisierung von Homosexualität.",
-    "fontAwesomeIcon": "venus-mars"
-  }
+	{
+		"name": "Greenpeace",
+		"abbreviation": "GP",
+		"seatAmount": 2,
+		"description": "Greenpeace ist eine international agierende und bekannte Nichtregierungsorganisation, welche sich weltweit für Umwelt- und Klimaschutz einsetzt. Sie sind in den Siebzigerjahren durch Aktionen gegen Kernwaffentests und den Walfang bekannt geworden und widmen sich mittlerweile einer Vielzahl an Themen, darunter vor allem der globale Klimawandel und seine Auswirkungen.",
+		"fontAwesomeIcon": "leaf"
+	},
+	{
+		"name": "Ärzt*innen ohne Grenzen",
+		"abbreviation": "AoG",
+		"seatAmount": 2,
+		"description": "Ärzt*innen ohne Grenzen ist eine Hilfsorganisation, welche Menschen medizinische oder humanitäre Hilfe leistet, deren Leben durch Konflikte, Epidemien oder Naturkatastrophen gefährdet sind.",
+		"fontAwesomeIcon": "medkit"
+	},
+	{
+		"name": "Center for Reproductive Rights",
+		"abbreviation": "CRR",
+		"seatAmount": 2,
+		"description": "Das Center for Reproductive Rights ist eine globale Menschenrechtsorganisation von Anwältinnen und Alwälten, die sich für reproduktive Rechte einsetzen. Dazu gehören unter anderem der Zugang zu lebensrettender Geburtshilfe, Empfängnisverhütung und sichere Abtreibungsmöglichkeiten.",
+		"fontAwesomeIcon": "person-pregnant"
+	},
+	{
+		"name": "Human Rights Watch",
+		"abbreviation": "HRW",
+		"seatAmount": 2,
+		"description": "Human Rights Watch ist eine hinternational tätige nichtstaatliche Organisation, die durch Untersuchungen und Öffentlichkeitsarbeit für die Wahrung der Menschenrechte eintritt. Sie konzentrieren sich vor allem auf Recherche und die öffentlichkeitswirksame Berichterstattung über Menschenrechtsverletzungen.",
+		"fontAwesomeIcon": "balance-scale"
+	},
+	{
+		"name": "International Gay and Lesbian Alliance World",
+		"abbrevation": "ILGA World",
+		"seatAmount": 2,
+		"description": "ILGA World ist eine weltweite Organisation, welche sich für die Rechte von lesbischen, schwulen, bisexuellen, trans und queeren Menschen einsetzt und ihren Anliegen mehr Sichtbarkeit verschafft. Dazu gehören beispielsweise Kampagnen für das Recht auf Ehe für alle und gegen die staatliche Kriminalisierung von Homosexualität.",
+		"fontAwesomeIcon": "venus-mars"
+	}
 ]
