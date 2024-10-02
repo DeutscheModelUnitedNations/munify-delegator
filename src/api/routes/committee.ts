@@ -1,4 +1,4 @@
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';

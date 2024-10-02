@@ -1,61 +1,25 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { TokenSet, type TokenSetParameters } from 'openid-client';
 import {
-	validateTokens,
 	codeVerifierCookieName,
-	refresh,
 	startSignin,
-	tokensCookieName
-} from '$api/auth/flow';
-import type { TokenCookieSchemaType } from '$api/auth/oidc';
+} from '$api/auth/oidcFlow';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
+import { checkForError } from '$api/client';
+import { dynamicPrivateConfig } from '$config/private';
 
-//TODO: https://youtu.be/K1Tya6ovVOI?si=HFPf8-z_L9ppiTqc&t=903
+//TODO: investiagte this
+// https://youtu.be/K1Tya6ovVOI?si=HFPf8-z_L9ppiTqc&t=903
 // we should not use load functions for authentication
-// instead we should use server hooks to protect routes based on the url
-export const load: LayoutServerLoad = async ({ cookies, url }) => {
-	// are we signed in?
-	const existingTokens = cookies.get(tokensCookieName);
-	if (existingTokens) {
-		let tokenSet = new TokenSet(JSON.parse(existingTokens));
+// instead we should use server hooks to protect routes based on the url?
 
-		if (tokenSet.expired() && tokenSet.refresh_token) {
-			tokenSet = await refresh(tokenSet.refresh_token);
+//TODO best would be to put all this logic in an elysia handler
+export const load: LayoutServerLoad = loadApiHandler(async ({ api, url, cookies }) => {
+	const { nextTokenRefreshDue, user } = await checkForError(api.auth['refresh-user'].get());
 
-			const cookieValue: TokenCookieSchemaType = {
-				access_token: tokenSet.access_token,
-				expires_at: tokenSet.expires_at,
-				id_token: tokenSet.id_token,
-				refresh_token: tokenSet.refresh_token,
-				scope: tokenSet.scope,
-				session_state: tokenSet.session_state,
-				token_type: tokenSet.token_type
-			};
-
-			cookies.set(tokensCookieName, JSON.stringify(cookieValue), {
-				//TODO investigate if we can use 'strict' here somehow
-				// we need lax to allow the token to be sent with redirect from the auth provider
-				sameSite: 'lax',
-				path: '/',
-				expires: tokenSet.expires_at ? new Date(tokenSet.expires_at * 1000) : undefined
-			});
-		}
-
-		if (tokenSet.access_token) {
-			const user = await validateTokens({
-				access_token: tokenSet.access_token,
-				id_token: tokenSet.id_token
-			});
-			return {
-				user,
-				nextTokenRefreshDue:
-					tokenSet.expires_at && tokenSet.refresh_token
-						? new Date(tokenSet.expires_at * 1000)
-						: undefined
-			};
-		}
+	if (user) {
+		return { nextTokenRefreshDue, user };
 	}
-	// if not, start the signin process
 
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
 	const { encrypted_verifier, redirect_uri } = startSignin(url);
@@ -63,8 +27,10 @@ export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	cookies.set(codeVerifierCookieName, encrypted_verifier, {
 		sameSite: 'lax',
 		maxAge: 60 * 5,
-		path: '/'
+		path: '/',
+		secure: true,
+		httpOnly: true
 	});
 
 	redirect(302, redirect_uri);
-};
+});

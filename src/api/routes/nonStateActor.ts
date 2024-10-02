@@ -1,8 +1,6 @@
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
-import { db } from '$db/db';
-import { NonStateActorPlain } from '$db/generated/schema/NonStateActor';
-import Elysia, { t } from 'elysia';
+import Elysia from 'elysia';
 
 export const nonStateActor = new Elysia()
 	.use(permissionsPlugin)

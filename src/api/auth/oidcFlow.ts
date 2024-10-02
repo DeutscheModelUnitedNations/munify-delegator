@@ -6,12 +6,24 @@ import {
 	type BaseClient,
 	Issuer,
 	type TokenSetParameters,
-	type UnknownObject,
-	type UserinfoResponse,
 	generators
 } from 'openid-client';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { PermissionCheckError } from '$api/util/logger';
+
+export type OIDCUser = {
+	sub: string;
+	email: string;
+	preferred_username: string;
+	family_name: string;
+	given_name: string;
+
+	[key: string]: unknown;
+};
+
+export function isValidOIDCUser(user: any): user is OIDCUser {
+	return user.sub && user.email && user.preferred_username && user.family_name && user.given_name;
+}
 
 export const codeVerifierCookieName = 'code_verifier';
 export const tokensCookieName = 'token_set';
@@ -100,70 +112,57 @@ export async function resolveSignin(visitedUrl: URL, encrypted_verifier: string)
 export async function validateTokens({
 	access_token,
 	id_token
-}: Pick<TokenSetParameters, 'access_token' | 'id_token'>): Promise<
-	UserinfoResponse<UnknownObject, UnknownObject>
-> {
+}: Pick<TokenSetParameters, 'access_token' | 'id_token'>): Promise<OIDCUser> {
 	if (!access_token) throw new PermissionCheckError('No access token provided');
 
 	try {
 		if (!jwks) throw new Error('No jwks available');
 		if (!id_token) throw new Error('No id_token available');
 
-		const accessTokenValue = (
-			await jwtVerify(access_token, jwks, {
+		const [accessTokenValue, idTokenValue] = await Promise.all([
+			jwtVerify(access_token, jwks, {
+				issuer: client.issuer.metadata.issuer,
+				audience: client.metadata.client_id
+			}),
+			jwtVerify(id_token, jwks, {
 				issuer: client.issuer.metadata.issuer,
 				audience: client.metadata.client_id
 			})
-		).payload;
+		]);
 
-		const idTokenValue = (
-			await jwtVerify(id_token, jwks, {
-				issuer: client.issuer.metadata.issuer,
-				audience: client.metadata.client_id
-			})
-		).payload;
-
-		if (!accessTokenValue.sub) {
+		if (!accessTokenValue.payload.sub) {
 			throw new PermissionCheckError('No subject in access token');
 		}
 
-		if (!idTokenValue.sub) {
+		if (!idTokenValue.payload.sub) {
 			throw new PermissionCheckError('No subject in id token');
 		}
 
-		if (accessTokenValue.sub !== idTokenValue.sub) {
+		if (accessTokenValue.payload.sub !== idTokenValue.payload.sub) {
 			throw new PermissionCheckError('Subject in access token and id token do not match');
 		}
 
 		// some basic fields which we want to be present
 		// if the id token is configured in a way that it does not contain these fields
 		// we instead want to use the userinfo endpoint
-		if (!idTokenValue.email) {
-			throw new Error('No email in id token');
+		if (!isValidOIDCUser(idTokenValue.payload)) {
+			throw new Error('Not all fields in id token are present');
 		}
 
-		if (!idTokenValue.preferred_username) {
-			throw new Error('No preferred_username in id token');
-		}
-
-		if (!idTokenValue.family_name) {
-			throw new Error('No family_name in id token');
-		}
-
-		if (!idTokenValue.given_name) {
-			throw new Error('No given_name in id token');
-		}
-
-		return {
-			sub: accessTokenValue.sub,
-			...idTokenValue
-		};
+		return idTokenValue.payload;
 	} catch (error: any) {
 		console.warn(
 			'Failed to verify tokens locally, falling back to less performant info fetch:',
 			error.message
 		);
-		return await client.userinfo(access_token);
+
+		const remoteUserInfo = await client.userinfo(access_token);
+
+		if (!isValidOIDCUser(remoteUserInfo)) {
+			throw new Error('Not all fields in remoteUserInfo token are present');
+		}
+
+		return remoteUserInfo;
 	}
 }
 

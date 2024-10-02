@@ -1,6 +1,6 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
-import type { OIDCDeriveType } from '$api/auth/oidc';
+import type { OIDCDeriveType } from '$api/auth/oidcPlugin';
 
 export const defineAbilitiesForConferenceSupervisor = (
 	oidc: OIDCDeriveType,

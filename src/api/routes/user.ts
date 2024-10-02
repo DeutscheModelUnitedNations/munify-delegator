@@ -1,7 +1,7 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
 import { User } from '$db/generated/schema/User';
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
 
