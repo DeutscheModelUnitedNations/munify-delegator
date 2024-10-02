@@ -5,6 +5,7 @@ import { Parameters } from '@sinclair/typebox';
 import { dynamicPrivateConfig } from '$config/private';
 import type { oidcRoles } from './abilities/abilities';
 import { UserFacingError } from '$api/util/logger';
+import { logger } from '$api/util/logger';
 
 export type TokenCookieSchemaType = {
 	refresh_token?: string;
@@ -16,51 +17,30 @@ export type TokenCookieSchemaType = {
 	session_state?: string;
 };
 
-export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
+export const oidcPlugin = new Elysia({ name: 'oidc' }).use(logger).derive(
 	{ as: 'global' },
-	async ({ cookie, headers }) => {
-		let rawTokenValue: TokenCookieSchemaType | undefined = undefined;
-
-		if (cookie[tokensCookieName].value) {
-			rawTokenValue = JSON.parse(cookie[tokensCookieName].value);
-		} else if (headers['authorization']) {
-			if (!headers['authorization'].startsWith('Bearer ')) {
-				throw new UserFacingError('Invalid authorization header', 'Bad Request');
-			}
-
-			let headerValue: any = headers['authorization'].split(' ')[1];
-
-			// is this base64 encoded?
-			try {
-				headerValue = atob(headerValue);
-			} catch (error) {}
-
-			// is this JSON encoded?
-			try {
-				// if it is, treat it as tokenset
-				rawTokenValue = JSON.parse(headerValue);
-			} catch (error) {
-				// if not, this might be the access token
-				rawTokenValue = { access_token: headerValue };
-			}
-		}
-
-		if (!rawTokenValue) {
+	async ({ cookie, requestId }) => {
+		if (!cookie[tokensCookieName].value) {
 			return { oidc: { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined } };
 		}
-		let tokenSet = new TokenSet(rawTokenValue);
-		if (tokenSet.expired() && rawTokenValue.refresh_token) {
-			tokenSet = await refresh(rawTokenValue.refresh_token);
-			const cookieValue: TokenCookieSchemaType = {
-				access_token: tokenSet.access_token,
-				expires_at: tokenSet.expires_at,
-				id_token: tokenSet.id_token,
-				refresh_token: tokenSet.refresh_token,
-				scope: tokenSet.scope,
-				session_state: tokenSet.session_state,
-				token_type: tokenSet.token_type
-			};
-			cookie[tokensCookieName].value = JSON.stringify(cookieValue);
+		const parsedCookie: TokenCookieSchemaType = JSON.parse(cookie[tokensCookieName].value);
+		let tokenSet = new TokenSet(parsedCookie);
+		if (tokenSet.expired() && parsedCookie.refresh_token) {
+			try {
+				tokenSet = await refresh(parsedCookie.refresh_token);
+				const cookieValue: TokenCookieSchemaType = {
+					access_token: tokenSet.access_token,
+					expires_at: tokenSet.expires_at,
+					id_token: tokenSet.id_token,
+					refresh_token: tokenSet.refresh_token,
+					scope: tokenSet.scope,
+					session_state: tokenSet.session_state,
+					token_type: tokenSet.token_type
+				};
+				cookie[tokensCookieName].value = JSON.stringify(cookieValue);
+			} catch (error) {
+				console.warn(`[${requestId}]: Failed to refresh tokens`, error);
+			}
 		}
 		let user: Awaited<ReturnType<typeof validateTokens>> | undefined = undefined;
 		if (tokenSet.access_token) {
@@ -70,7 +50,7 @@ export const oidcPlugin = new Elysia({ name: 'oidc' }).derive(
 					id_token: tokenSet.id_token
 				});
 			} catch (error) {
-				console.warn('Failed to retrieve user info from tokens', error);
+				console.warn(`[${requestId}]: Failed to retrieve user info from tokens`, error);
 			}
 		}
 
