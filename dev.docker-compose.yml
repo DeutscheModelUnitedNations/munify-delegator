@@ -24,17 +24,17 @@ services:
   #  "locale": "de",
   #  "urn:zitadel:iam:org:project:275671427955294244:roles": {"admin": {}}
   # }
-  mockoidc:
-    image: ghcr.io/navikt/mock-oauth2-server:2.1.5
-    ports:
-      - 8080:8080
-    environment:
-      JSON_CONFIG: >
-        {
-          "interactiveLogin": true,
-          "httpServer": "NettyWrapper",
-          "tokenCallbacks": []
-        }
+  # mockoidc:
+  #   image: ghcr.io/navikt/mock-oauth2-server:2.1.5
+  #   ports:
+  #     - 8080:8080
+  #   environment:
+  #     JSON_CONFIG: >
+  #       {
+  #         "interactiveLogin": true,
+  #         "httpServer": "NettyWrapper",
+  #         "tokenCallbacks": []
+  #       }
 
   # app:
   #   image: munifydelegator
@@ -52,6 +52,20 @@ services:
   #     # - PUBLIC_OIDC_CLIENT_ID=275671515582758948@dev
 
   #     - SECRET=123
+
+  prisma_studio:
+    image: timothyjmiller/prisma-studio
+    restart: unless-stopped
+    ports:
+      - 5555:5555
+    depends_on:
+      - postgres
+
+    environment:
+      PROJECT_NAME: 'MUNify DELEGATOR'
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
+      PRISMA_STUDIO_PORT: 5555
+      POSTGRES_PATH: /postgres
 
 volumes:
   delegator-dev:

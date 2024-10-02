@@ -37,8 +37,14 @@
 					title="Einstellungen"
 					active={path.endsWith('configuration')}
 				></NavButton>
+				<NavButton
+					href="/management/{conferenceId}/stats"
+					icon="fa-chart-pie"
+					title="Statistiken"
+					active={path.endsWith('stats')}
+				></NavButton>
 
-				<div class="h-6" />
+				<div class="h-6"></div>
 
 				<NavButton
 					href="/management/{conferenceId}/participants"
@@ -60,6 +66,11 @@
 					title="Einzelteilnehmer"
 					active={path.endsWith('individuals')}
 				></NavButton>
+
+				<div class="h-6"></div>
+
+				<NavButton href="/management" icon="fa-arrow-left" title="Konferenzauswahl"></NavButton>
+				<NavButton href="/" icon="fa-home" title="Startseite"></NavButton>
 			</ul>
 		</nav>
 		<!-- /sidebar menu -->

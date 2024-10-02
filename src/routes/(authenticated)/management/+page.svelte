@@ -1,19 +1,69 @@
 <script lang="ts">
-	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 	import type { PageData } from './$types';
+	import * as m from '$lib/paraglide/messages.js';
+	import { TeamRole } from '@prisma/client';
+
+	enum GlobalRole {
+		ADMIN = 'ADMIN'
+	}
+
+	type AuthorizationRole = GlobalRole | TeamRole;
 
 	let { data }: { data: PageData } = $props();
+
+	const getAuthorizationRole = (conferenceId: string) => {
+		const teamMembership = data.teamMemberships.find((x) => x.conferenceId === conferenceId);
+		if (teamMembership) {
+			return teamMembership.role as TeamRole;
+		}
+
+		if (data.mySystemRoles.includes('admin')) {
+			return GlobalRole.ADMIN;
+		}
+
+		return null;
+	};
+
+	const getAuthorizationRoleString = (conferenceId: string) => {
+		const role = getAuthorizationRole(conferenceId);
+		switch (role) {
+			case GlobalRole.ADMIN:
+				return m.administrator();
+			case TeamRole.PROJECT_MANAGEMENT:
+				return m.projectManagement();
+			case TeamRole.PARTICIPANT_CARE:
+				return m.participantCare();
+		}
+	};
 </script>
 
 <div class="w-full flex flex-col items-center gap-4 p-10">
-	<h1 class="text-2xl font-bold">Verwaltung</h1>
+	<h1 class="text-2xl font-bold">{m.admininstration()}</h1>
 	<p class="text-center max-ch-md">
-		Wähle die Konferenz aus, die du verwalten möchtest. Wenn die Konferenz nicht angezeigt wird,
-		lade die Seite neu oder wende dich an einen Administrator.
+		{m.administrationConferenceSelection()}
 	</p>
-	<div class="flex flex-wrap justify-center gap-4">
-		{#each data.conferences as conference}
-			<ConferenceCard {...conference} baseSlug="/management" btnText="Verwalten" />
-		{/each}
+	<div class="flex justify-center">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>{m.name()}</th>
+					<th>{m.authorization()}</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.conferences as conference}
+					<tr>
+						<td>{conference.title}</td>
+						<td>{getAuthorizationRoleString(conference.id)}</td>
+						<td>
+							<a class="btn" href={`management/${conference.id}`}
+								>{m.open()}<i class="fa-duotone fa-arrow-right"></i></a
+							>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
 </div>
