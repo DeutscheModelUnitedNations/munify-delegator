@@ -18,7 +18,11 @@ export type OIDCUser = {
 	family_name: string;
 	given_name: string;
 
-	[key: string]: unknown;
+	// non checked fields
+	locale?: string;
+	phone?: string;
+
+	[key: string]: any;
 };
 
 export function isValidOIDCUser(user: any): user is OIDCUser {

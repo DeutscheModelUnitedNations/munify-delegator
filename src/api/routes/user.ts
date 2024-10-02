@@ -59,7 +59,7 @@ export const user = new Elysia({
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
 					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE,
-					phone: (user as any)['phone'] ? (user as any)['phone'] : undefined
+					phone: user.phone
 				},
 				update: {
 					email: user.email,
@@ -67,7 +67,7 @@ export const user = new Elysia({
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
 					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE,
-					phone: (user as any)['phone'] ? (user as any)['phone'] : undefined
+					phone: user.phone
 				}
 			});
 
