@@ -26,7 +26,7 @@
 		}
 
 		// refresh the token 10 seconds before expiry
-		runTokenRefresh(data.nextTokenRefreshDue.getTime() - Date.now() - 10 * 1000);
+		runTokenRefresh(new Date(data.nextTokenRefreshDue).getTime() - Date.now() - 10 * 1000);
 
 		return () => clearTimeout(timeout);
 	});

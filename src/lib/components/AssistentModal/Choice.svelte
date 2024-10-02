@@ -50,7 +50,7 @@
 					if (btn.onClick) {
 						btn.onClick();
 					} else {
-						console.log('No onClick handler provided');
+						console.warn('No onClick handler provided');
 					}
 				}}
 			>
