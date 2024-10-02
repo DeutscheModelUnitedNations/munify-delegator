@@ -2,12 +2,7 @@ import { building } from '$app/environment';
 import { dynamicPrivateConfig } from '$config/private';
 import { dynamicPublicConfig } from '$config/public';
 import Cryptr from 'cryptr';
-import {
-	type BaseClient,
-	Issuer,
-	type TokenSetParameters,
-	generators
-} from 'openid-client';
+import { type BaseClient, Issuer, type TokenSetParameters, generators } from 'openid-client';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { PermissionCheckError } from '$api/util/logger';
 

@@ -37,20 +37,22 @@
 	const onPersonalDataFormSubmit = async (e: Event) => {
 		e.preventDefault();
 
-		await checkForError(api.user({ id: data.user.sub }).patch({
-			phone,
-			street,
-			apartment,
-			zip,
-			city,
-			country,
-			birthday: birthday as any,
-			gender,
-			pronouns,
-			foodPreference: foodPreference as any,
-			wantsToReceiveGeneralInformation,
-			wantsJoinTeamInformation
-		}));
+		await checkForError(
+			api.user({ id: data.user.sub }).patch({
+				phone,
+				street,
+				apartment,
+				zip,
+				city,
+				country,
+				birthday: birthday as any,
+				gender,
+				pronouns,
+				foodPreference: foodPreference as any,
+				wantsToReceiveGeneralInformation,
+				wantsJoinTeamInformation
+			})
+		);
 
 		if (data.redirectUrl) {
 			goto(data.redirectUrl);

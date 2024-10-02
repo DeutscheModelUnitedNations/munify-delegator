@@ -3,7 +3,7 @@ import type { App } from './api';
 import { error } from '@sveltejs/kit';
 import { toast } from '@zerodevx/svelte-toast';
 import { goto } from '$app/navigation';
-import { browser } from '$app/environment'; 
+import { browser } from '$app/environment';
 
 //TODO https://github.com/elysiajs/elysia/discussions/712
 export function apiClient({

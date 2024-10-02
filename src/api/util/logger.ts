@@ -87,7 +87,7 @@ export const logger = new Elysia({
 
 		if (code === 'OPError' || code === 'RPError') {
 			set.status = 'Unauthorized';
-			return error.message ?? "You are not authorized";
+			return error.message ?? 'You are not authorized';
 		}
 
 		//TODO code is not typed correctly for prisma errors?

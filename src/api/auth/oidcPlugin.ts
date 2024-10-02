@@ -62,8 +62,8 @@ export const oidcPlugin = new Elysia({ name: 'oidc' })
 		}
 
 		cookie[tokensCookieName].expires = tokenSet.expires_at
-					? new Date(tokenSet.expires_at * 1000)
-					: undefined;
+			? new Date(tokenSet.expires_at * 1000)
+			: undefined;
 
 		let user: Awaited<ReturnType<typeof validateTokens>> | undefined = undefined;
 		if (tokenSet.access_token) {

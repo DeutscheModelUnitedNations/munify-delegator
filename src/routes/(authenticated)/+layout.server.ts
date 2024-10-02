@@ -1,9 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import {
-	codeVerifierCookieName,
-	startSignin,
-} from '$api/auth/oidcFlow';
+import { codeVerifierCookieName, startSignin } from '$api/auth/oidcFlow';
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import { checkForError } from '$api/client';
 import { dynamicPrivateConfig } from '$config/private';
