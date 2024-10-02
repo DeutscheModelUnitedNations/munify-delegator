@@ -9,6 +9,8 @@ import {
 import Elysia, { StatusMap } from 'elysia';
 
 import { errors as openidErrors } from 'openid-client';
+import { languageExtractor } from './languageExtractor';
+import * as m from '$lib/paraglide/messages';
 
 /**
  * An error that can be thrown when a permission check fails. For the user
@@ -37,6 +39,7 @@ export class UserFacingError extends Error {
 export const logger = new Elysia({
 	name: 'logger'
 })
+	.use(languageExtractor)
 	// these are errors which can occur in the app
 	// we can register them here to gain type safety in our onError handler
 	.error({
@@ -63,7 +66,7 @@ export const logger = new Elysia({
 			`[${requestId}]: Handled request ${request.method} ${path} with status ${set.status}`
 		);
 	})
-	.onError({ as: 'global' }, ({ error, code, path, set, request, requestId }) => {
+	.onError({ as: 'global' }, ({ error, code, path, set, request, requestId, languageTag }) => {
 		console.error(
 			`[${requestId}]: Error in ${request.method} ${path}: ${code} ${error.message}. Thrown at ${error.stack}. \n ${JSON.stringify(error)}`
 		);
@@ -75,19 +78,22 @@ export const logger = new Elysia({
 		}
 
 		if (code === 'NOT_FOUND') {
-			return `Path ${path} doesn't exist (${error.message})`;
+			return m.pathDoesNotExist({ path, error: error.message }, { languageTag });
 		}
 
 		// Application errors
 
 		if (code === 'ForbiddenError' || code === 'PermissionCheckError') {
 			set.status = 'Forbidden';
-			return error.message ?? "You don't have permission to do that";
+			return m.forbidden(
+				{ error: error.message ?? "You don't have permission to do that" },
+				{ languageTag }
+			);
 		}
 
 		if (code === 'OPError' || code === 'RPError') {
 			set.status = 'Unauthorized';
-			return error.message ?? 'You are not authorized';
+			return m.unauthorized({ error: error.message ?? 'You are unauthorized' }, { languageTag });
 		}
 
 		//TODO code is not typed correctly for prisma errors?
@@ -103,5 +109,5 @@ export const logger = new Elysia({
 		}
 
 		set.status = 'Internal Server Error';
-		return 'Internal server error';
+		return m.internalServerError();
 	});

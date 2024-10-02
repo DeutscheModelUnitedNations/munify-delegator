@@ -37,6 +37,7 @@ export const oidcPlugin = new Elysia({ name: 'oidc' })
 	.derive({ as: 'global' }, async ({ cookie, requestId }) => {
 		cookie[tokensCookieName].httpOnly = true;
 		cookie[tokensCookieName].secure = true;
+		cookie[tokensCookieName].sameSite = "strict";
 
 		if (!cookie[tokensCookieName].value) {
 			return { oidc: { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined } };
