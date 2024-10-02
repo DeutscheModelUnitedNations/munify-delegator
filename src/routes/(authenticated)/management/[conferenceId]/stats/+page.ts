@@ -3,6 +3,7 @@ import type { PageLoad } from './$types';
 import { checkForError } from '$api/client';
 
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
+import { setStats } from './stats.svelte';
 
 export const load: PageLoad = loadApiHandler(async ({ params, api }) => {
 	if (params.conferenceId === undefined) error(404, 'Not found');
@@ -11,8 +12,9 @@ export const load: PageLoad = loadApiHandler(async ({ params, api }) => {
 		api.conference({ id: params.conferenceId }).statistics.get()
 	);
 
+	setStats(statistics);
+
 	return {
-		conferenceId: params.conferenceId,
-		statistics
+		conferenceId: params.conferenceId
 	};
 });

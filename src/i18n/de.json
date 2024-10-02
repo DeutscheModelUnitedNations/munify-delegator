@@ -368,5 +368,14 @@
 	"tables": "Tabellen",
 	"tools": "Tools",
 	"years": "Jahre",
-	"averageAge": "Durchschnittsalter"
+	"averageAgeOnlyApplied": "Konferenz-Altersdurchschnitt (nur angemeldete)",
+	"registrationDistribution": "Verteilung der Anmeldungen",
+	"registrationsTotal": "Anmeldungen gesamt",
+	"registrationApplied": "Angemeldet",
+	"registrationNotApplied": "Nicht angemeldet",
+	"daysUntilConference": "Tage bis zur Konferenz",
+	"daysUntilEndRegistration": "Tage bis Anmeldeschluss",
+	"historyComparison": "Historienvergleich",
+	"historyComparisonDescription": "Die Statistikübersicht verfügt über die Möglichkeit, Anmeldestatistiken lokal auf Ihrem Gerät für spätere Vergleiche zu speichern. Dies geschieht automatisch, in du dich einloggst. Pro Tag wird ein neuer Datensatz erstellt. Die Daten werden lokal auf deinem Gerät gespeichert und nicht an die Server übertragen.<br>Der jeweils letzte Datensatz wird standardmäßig angezeigt. Du kannst jedoch hier auch ältere Datensätze auswählen, um sie mit dem aktuellen Stand zu vergleichen.",
+	"noHistory": "Keine Historie vorhanden"
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Drawer from '$lib/components/DataTable/DrawerWrapper.svelte';
-	import { DelegationDataItem } from './types.svelte';
+	import type { DelegationDataItem } from './types.svelte';
 	import { apiClient, checkForError } from '$api/client';
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages';

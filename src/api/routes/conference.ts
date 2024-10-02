@@ -208,7 +208,7 @@ export const conference = new Elysia()
 
 			// Registration statistics
 
-			const delegatations = await db.delegation.findMany({
+			const delegations = await db.delegation.findMany({
 				where: {
 					conferenceId
 				},
@@ -253,46 +253,50 @@ export const conference = new Elysia()
 				}
 			});
 
-			const delegationsApplied = delegatations.filter((d) => d.applied).length;
-			const delegationsNotApplied = delegatations.length - delegationsApplied;
-			const delegationsWithSupervisor = delegatations.reduce((acc, d) => {
+			const delegationsApplied = delegations.filter((d) => d.applied).length;
+			const delegationsNotApplied = delegations.length - delegationsApplied;
+			const delegationsWithSupervisor = delegations.reduce((acc, d) => {
 				if (!d._count.supervisors) return acc;
 				return acc + 1;
 			}, 0);
-			const delegationMembersApplied = delegatations.reduce((acc, d) => {
+			const delegationMembersApplied = delegations.reduce((acc, d) => {
 				if (!d.applied) return acc;
 				return acc + d._count.members;
 			}, 0);
 			const delegationMembersNotApplied =
-				delegatations.reduce((acc, d) => acc + d._count.members, 0) - delegationMembersApplied;
+				delegations.reduce((acc, d) => acc + d._count.members, 0) - delegationMembersApplied;
 			const singleParticipantsApplied = singleParticipants.filter((sp) => sp.applied).length;
 			const singleParticipantsNotApplied = singleParticipants.length - singleParticipantsApplied;
 			const singleParticipantsByRole = roles.map((role) => ({
 				role: role.name,
 				fontAwesomeIcon: role.fontAwesomeIcon || undefined,
+				total: role.singleParticipant.length,
 				applied: role.singleParticipant.filter((sp) => sp.applied).length,
-				notApplied:
-					role.singleParticipant.length - role.singleParticipant.filter((sp) => sp.applied).length
+				notApplied: role.singleParticipant.filter((sp) => !sp.applied).length
 			}));
 			const totalApplied = delegationMembersApplied + singleParticipantsApplied;
 			const totalNotApplied =
-				delegatations.reduce((acc, d) => acc + d._count.members, 0) +
+				delegations.reduce((acc, d) => acc + d._count.members, 0) +
 				singleParticipants.length -
 				totalApplied;
 
 			const registrationStatistics = {
+				total: totalApplied + totalNotApplied,
 				notApplied: totalNotApplied,
 				applied: totalApplied,
-				delegatations: {
+				delegations: {
+					total: delegationsNotApplied + delegationsApplied,
 					notApplied: delegationsNotApplied,
 					applied: delegationsApplied,
 					withSupervisor: delegationsWithSupervisor
 				},
 				delegationMembers: {
+					total: delegationMembersNotApplied + delegationMembersApplied,
 					notApplied: delegationMembersNotApplied,
 					applied: delegationMembersApplied
 				},
 				singleParticipants: {
+					total: singleParticipantsNotApplied + singleParticipantsApplied,
 					notApplied: singleParticipantsNotApplied,
 					applied: singleParticipantsApplied,
 					byRole: singleParticipantsByRole
@@ -305,8 +309,17 @@ export const conference = new Elysia()
 			const usersBirthdays = await db.user.findMany({
 				where: {
 					OR: [
-						{ singleParticipant: { some: { conferenceId } } },
-						{ delegationMemberships: { some: { conferenceId } } }
+						{ singleParticipant: { some: { conferenceId, applied: true } } },
+						{
+							delegationMemberships: {
+								some: {
+									conferenceId,
+									delegation: {
+										applied: true
+									}
+								}
+							}
+						}
 					]
 				},
 				select: {
@@ -353,24 +366,29 @@ export const conference = new Elysia()
 					daysUntilEndRegistration: t.Optional(t.Number())
 				}),
 				registered: t.Object({
+					total: t.Number(),
 					notApplied: t.Number(),
 					applied: t.Number(),
-					delegatations: t.Object({
+					delegations: t.Object({
+						total: t.Number(),
 						notApplied: t.Number(),
 						applied: t.Number(),
 						withSupervisor: t.Number()
 					}),
 					delegationMembers: t.Object({
+						total: t.Number(),
 						notApplied: t.Number(),
 						applied: t.Number()
 					}),
 					singleParticipants: t.Object({
+						total: t.Number(),
 						notApplied: t.Number(),
 						applied: t.Number(),
 						byRole: t.Array(
 							t.Object({
 								role: t.String(),
 								fontAwesomeIcon: t.Optional(t.String()),
+								total: t.Number(),
 								notApplied: t.Number(),
 								applied: t.Number()
 							})

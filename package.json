@@ -25,6 +25,7 @@
 		"convert-iso-codes": "^1.0.10",
 		"cryptr": "^6.3.0",
 		"daisyui": "^4.12.10",
+		"date-fns": "^4.1.0",
 		"elysia": "^1.1.13",
 		"esbuild": "^0.23.1",
 		"flag-icons": "^7.2.3",

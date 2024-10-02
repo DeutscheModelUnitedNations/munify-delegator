@@ -5,6 +5,7 @@
 		formatter?: (v: number, l: string | undefined) => string;
 		wrapperClass?: string;
 		elementClass?: string;
+		showLabels?: boolean;
 	}
 
 	const defaultFormatter = (v: number, l: string | undefined) => {
@@ -19,7 +20,8 @@
 		labels,
 		formatter = defaultFormatter,
 		wrapperClass,
-		elementClass
+		elementClass,
+		showLabels = true
 	}: Props = $props();
 
 	const max = $derived(() => Math.max(...values));
@@ -31,9 +33,13 @@
 <div class="w-full h-full min-h-28 flex items-end gap-1 px-4 pb-4 {wrapperClass}">
 	{#each values as value, i}
 		<div
-			class="w-full bg-base-200 rounded-md tooltip {elementClass}"
+			class="w-full bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 rounded-md tooltip {elementClass} transition-color duration-300"
 			style="height: {length(value)}%;"
 			data-tip={formatter(value, (labels && labels[i]) || undefined)}
-		></div>
+		>
+			{#if showLabels && labels && length(value) > 40}
+				<div class="text-base-content text-sm">{labels[i]}</div>
+			{/if}
+		</div>
 	{/each}
 </div>

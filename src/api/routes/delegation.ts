@@ -1,6 +1,6 @@
 import { permissionsPlugin } from '$api/auth/permissions';
 import { CRUDMaker } from '$api/util/crudmaker';
-import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
+import { fetchUserParticipations } from '$api/auth/helper/fetchUserParticipations';
 import { languageExtractor } from '$api/util/languageExtractor';
 import { PermissionCheckError, UserFacingError } from '$api/util/logger';
 import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
