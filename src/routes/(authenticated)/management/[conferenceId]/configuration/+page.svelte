@@ -7,6 +7,7 @@
 	import { conferenceForm } from './conferenceForm.svelte';
 	import Input from './Input.svelte';
 	import FileInput from './FileInput.svelte';
+	import { ConferenceStatus } from '@prisma/client';
 
 	let { data } = $props();
 
@@ -23,6 +24,7 @@
 		getImage,
 		getConferenceStartRegistration,
 		getConferenceEndRegistration,
+		getConferenceStatus,
 
 		setConferenceTitle,
 		setConferenceLongTitle,
@@ -33,7 +35,8 @@
 		setConferenceEnd,
 		setImage,
 		setConferenceStartRegistration,
-		setConferenceEndRegistration
+		setConferenceEndRegistration,
+		setConferenceStatus
 	} = conferenceForm();
 
 	onMount(() => {
@@ -42,11 +45,6 @@
 </script>
 
 <ManagementHeader title={m.adminSettings()} fontAwesomeIcon="fa-gears" />
-
-<pre>
-	{JSON.stringify(data.conferenceData, null, 2)}
-</pre>
-
 <section class="flex flex-col gap-10 mt-10">
 	<div class="card bg-base-200 shadow-sm max-w-lg">
 		<div class="card-body">
@@ -99,6 +97,29 @@
 					/>
 				</div>
 				<FileInput label={m.conferenceImage()} file={getImage()} changeFile={setImage} />
+				<label class="form-control w-full">
+					<span class="label-text">{m.conferenceStatus()}</span>
+					<select
+						class="input input-bordered {data.conferenceData.status !== getConferenceStatus() &&
+							'input-success border-4'}"
+						value={getConferenceStatus()}
+						onchange={(e) => {
+							setConferenceStatus(
+								((e.target as HTMLSelectElement)?.value as ConferenceStatus) || 'PRE'
+							);
+						}}
+					>
+						<option value="PRE" selected={getConferenceStatus() === 'PRE'}>
+							{m.conferenceStatusPre()}
+						</option>
+						<option value="ACTIVE" selected={getConferenceStatus() === 'ACTIVE'}>
+							{m.conferenceStatusActive()}
+						</option>
+						<option value="POST" selected={getConferenceStatus() === 'POST'}>
+							{m.conferenceStatusPost()}
+						</option>
+					</select>
+				</label>
 
 				<h2 class="card-title mt-10 mb-4">{m.conferenceRegistrationSettings()}</h2>
 				<DatePicker
@@ -120,7 +141,7 @@
 					includeTime
 				/>
 
-				<button class="btn btn-primary w-full">{m.save()}</button>
+				<button class="btn btn-primary w-full mt-10">{m.save()}</button>
 			</form>
 		</div>
 	</div>

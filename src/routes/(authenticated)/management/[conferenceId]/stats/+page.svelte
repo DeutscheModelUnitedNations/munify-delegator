@@ -24,9 +24,6 @@
 
 	let stats = getStats();
 
-	$inspect(getHistory());
-	$inspect(getSelectedHistory());
-
 	onMount(() => {
 		// look for history in local storage
 		const history: StatsTypeHistoryEntry[] = JSON.parse(

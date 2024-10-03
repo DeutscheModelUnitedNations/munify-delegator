@@ -1,7 +1,7 @@
 import { invalidateAll } from '$app/navigation';
 import { getApi } from '$lib/global/apiState.svelte';
 import type { Conference, ConferenceStatus } from '@prisma/client';
-import { format } from 'date-fns';
+import * as m from '$lib/paraglide/messages';
 
 const DATE_FORMAT = 'dd.MM.yyyy';
 
@@ -20,6 +20,7 @@ let conferenceStatus = $state<ConferenceStatus>('PRE');
 export function conferenceForm() {
 	const submit = async (e: Event, conferenceId: string) => {
 		e.preventDefault();
+		if (!confirm(m.conferenceDataSavingPrompt())) return;
 		await getApi()
 			.conference({ id: conferenceId })
 			.patch({
@@ -32,17 +33,13 @@ export function conferenceForm() {
 				end: conferenceEnd ? conferenceEnd : null,
 				startRegistration: conferenceStartRegistration ? conferenceStartRegistration : null,
 				endRegistration: conferenceEndRegistration ? conferenceEndRegistration : null,
-				image: conferenceImage ? conferenceImage : null,
+				imageDataUrl: conferenceImage ? conferenceImage : null,
 				status: conferenceStatus
 			});
 		invalidateAll();
 	};
 
-	const setAllFromConferenceData = (
-		conferenceData: Omit<Conference, 'image'> & {
-			image: Uint8Array | null | undefined;
-		}
-	) => {
+	const setAllFromConferenceData = (conferenceData: Conference) => {
 		setConferenceTitle(conferenceData.title);
 		setConferenceLongTitle(conferenceData.longTitle);
 		setConferenceLocation(conferenceData.location);
@@ -52,6 +49,7 @@ export function conferenceForm() {
 		setConferenceEnd(conferenceData.end);
 		setConferenceStartRegistration(conferenceData.startRegistration);
 		setConferenceEndRegistration(conferenceData.endRegistration);
+		setImage(conferenceData.imageDataUrl);
 	};
 
 	const getConferenceTitle = () => {

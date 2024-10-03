@@ -23,16 +23,20 @@
 		}
 		return (dateString && format(new Date(dateString), 'dd.MM.yyyy')) || '';
 	};
-
-	$inspect(pickedDate);
 </script>
 
 <DatePicker
 	bind:isOpen
 	startDate={pickedDate}
 	enableFutureDates
-	enablePastDates={false}
-	onDayClick={(e) => setPickedDate(new Date(e.startDate))}
+	enablePastDates
+	onDayClick={(e) => {
+		console.log(e);
+		const date = new Date(e.startDate);
+		const time = e.startDateTime ?? '00:00';
+		console.log(`${format(date, 'yyyy-MM-dd')}T${time}`);
+		setPickedDate(new Date(`${format(date, 'yyyy-MM-dd')}T${time}`));
+	}}
 	includeFont={false}
 	showTimePicker={includeTime}
 >
@@ -43,9 +47,10 @@
 			placeholder={m.selectADate()}
 			value={pickedDate ? formatDate(pickedDate) : ''}
 			onclick={toggleDatePicker}
+			onchange={(e) => setPickedDate(new Date(e.target.value))}
 			class="input input-bordered {initialDate &&
 				pickedDate &&
-				format(initialDate, 'yyyyMMdd') !== format(pickedDate, 'yyyyMMdd') &&
+				format(initialDate, 'yyyyMMddHHmm') !== format(pickedDate, 'yyyyMMddHHmm') &&
 				'input-success border-4'}"
 		/>
 	</label>

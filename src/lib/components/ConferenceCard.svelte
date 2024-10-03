@@ -14,7 +14,7 @@
 		startRegistration?: Date | null;
 		endRegistration?: Date | null;
 		website?: string | null;
-		image?: Uint8Array | null;
+		imageDataUrl?: string | null;
 		title: string;
 		baseSlug: string;
 		btnText?: string;
@@ -23,7 +23,7 @@
 
 	let {
 		id,
-		image,
+		imageDataUrl,
 		language,
 		title,
 		location,
@@ -66,18 +66,6 @@
 
 		return RegistrationStatus.UNKNOWN;
 	};
-
-	let imageSrc = $state<string>();
-	onMount(() => {
-		if (image) {
-			const blob = new Blob([image], { type: 'image/jpeg' });
-			imageSrc = URL.createObjectURL(blob);
-
-			return () => {
-				URL.revokeObjectURL(imageSrc as string);
-			};
-		}
-	});
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
@@ -126,7 +114,7 @@
 >
 	<figure class="relative">
 		<img
-			src={defaultImage}
+			src={imageDataUrl ? imageDataUrl : defaultImage}
 			alt="Conference"
 			class={alreadyRegistered ? 'saturate-0 brightness-150 contrast-50 blur-sm scale-110' : ''}
 		/>

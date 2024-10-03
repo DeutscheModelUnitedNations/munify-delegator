@@ -40,7 +40,10 @@
 			<section
 				class="flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flex-wrap"
 			>
-				{#each data.conferences as item}
+				{#each data.conferences.sort((a, b) => {
+					if (!a.start || !b.start) return 0;
+					return new Date(a.start).getTime() - new Date(b.start).getTime();
+				}) as item}
 					<ConferenceCard
 						{...item}
 						alreadyRegistered={alreadyRegistered(item.id)}

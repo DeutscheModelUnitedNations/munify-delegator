@@ -12,11 +12,15 @@
 	<span class="label-text">{label}</span>
 	<input
 		type="file"
-		class="file-input file-input-bordered w-full {file != undefined && 'input-success border-4'}"
+		class="file-input file-input-bordered w-full"
 		accept=".png, .jpg, .jpeg, .tiff, .webp"
 		multiple={false}
 		onchange={(e) => {
 			const reader = new FileReader();
+			if (e.target?.files[0].size > 1000000) {
+				alert('File size must be less than 1MB');
+				return;
+			}
 			reader.onload = (e) => {
 				const result = e.target?.result;
 				changeFile(result as string);
@@ -27,4 +31,8 @@
 	/>
 </label>
 
-<img src={file ? file : ''} alt="Preview" class="mt-2" />
+<div class="max-w-xs rounded-lg shadow-lg overflow-hidden">
+	{#if file}
+		<img src={file} alt="Preview" />
+	{/if}
+</div>
