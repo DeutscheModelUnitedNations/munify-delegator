@@ -25,6 +25,7 @@
 		"concurrently": "^9.0.1",
 		"convert-iso-codes": "^1.0.10",
 		"cryptr": "^6.3.0",
+		"csv-stringify": "^6.5.1",
 		"daisyui": "^4.12.10",
 		"date-fns": "^4.1.0",
 		"elysia": "^1.1.13",
