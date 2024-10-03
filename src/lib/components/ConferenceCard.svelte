@@ -79,7 +79,11 @@
 				fontAwesomeIcon: 'fa-calendar',
 				text:
 					start && end
-						? `${new Date(start).toLocaleDateString(languageTag(), dateOptions)} - ${new Date(end).toLocaleDateString(languageTag(), dateOptions)}`
+						? `<span class="whitespace-nowrap">
+								${new Date(start).toLocaleDateString(languageTag(), dateOptions)}
+							</span> - <span class="whitespace-nowrap">
+							${new Date(end).toLocaleDateString(languageTag(), dateOptions)}
+							</span>`
 						: m.unknownDate()
 			},
 			{ fontAwesomeIcon: 'fa-map-marker-alt', text: location ?? m.unknownLocation() },
