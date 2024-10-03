@@ -9,7 +9,8 @@ export default {
 			sans: ['Outfit', 'system-ui', 'sans-serif'],
 			serif: ['Vollkorn', 'ui-serif', 'Georgia', 'serif'],
 			mono: ['Roboto Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-			fa: ['FontAwesome']
+			fa: ['FontAwesome'],
+			handwriting: ['Nothing You Could Do', 'cursive', 'sans-serif']
 		},
 		colors: {
 			primary: {

@@ -25,6 +25,7 @@
 	import '@fontsource/vollkorn/700.css';
 	import '@fontsource/vollkorn/800.css';
 	import '@fontsource/vollkorn/900.css';
+	import '@fontsource/nothing-you-could-do/400.css';
 	import 'flag-icons/css/flag-icons.min.css';
 	import { onMount, type Snippet } from 'svelte';
 	import GlobalErrorToast from '$lib/components/ErrorToast.svelte';

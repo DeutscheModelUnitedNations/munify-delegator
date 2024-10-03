@@ -2,6 +2,7 @@
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import Arrow from '$assets/hand-drawn-arrow.svg';
 
 	import * as m from '$lib/paraglide/messages.js';
 
@@ -9,7 +10,6 @@
 	import BWLogo from '$assets/logo/munbw_logo.png';
 	import UdteamUp from '$assets/undraw/team-up.svg';
 	import UdProgress from '$assets/undraw/progress.svg';
-	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
 	import { env } from '$env/dynamic/public';
 
 	const munSh = {
@@ -31,6 +31,18 @@
 		website: 'https://munbw.de',
 		logo: BWLogo
 	};
+
+	let { data } = $props();
+
+	const openRegistrations = $derived(() => {
+		return data.conferences.filter((c) => {
+			if (!c.startRegistration || !c.endRegistration) return false;
+			return (
+				new Date(c.startRegistration).getTime() < new Date().getTime() &&
+				new Date(c.endRegistration).getTime() > new Date().getTime()
+			);
+		});
+	});
 </script>
 
 <svelte:head>
@@ -47,7 +59,7 @@
 
 	<main class="flex flex-col gap-20">
 		<section
-			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-10"
+			class="w-full grid grid-cols-1 md:grid-cols-2 place-items-center md:place-items-stretch gap-x-10 gap-y-4"
 		>
 			<UndrawCard
 				title={m.homeRegistration()}
@@ -66,7 +78,22 @@
 			>
 				<p>{m.homeYourConferencesSub()}</p>
 			</UndrawCard>
+
+			{#if openRegistrations().length > 0}
+				<div class="flex flex-col justify-center items-center row-start-2 mb-8">
+					<img src={Arrow} alt="Arrow" class="w-16 h-16 mx-auto -rotate-90" />
+					<h2 class="text-2xl font-bold text-primary font-handwriting text-center">
+						{m.ongoingRegistrationPhases()}
+					</h2>
+					{#each openRegistrations() as conference}
+						<p class="text-lg text-center font-handwriting">
+							{conference.title}
+						</p>
+					{/each}
+				</div>
+			{/if}
 		</section>
+
 		<section class="flex flex-col justify-center items-center gap-4">
 			<div class="alert alert-warning max-ch-md" role="alert">
 				<i class="fas fa-wrench text-2xl"></i>
