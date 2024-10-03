@@ -1,7 +1,7 @@
 import { CRUDMaker } from '$api/util/crudmaker';
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { ConferencePlain } from '$db/generated/schema/Conference';
 import { UserPlain } from '$db/generated/schema/User';
 import type { User } from '@prisma/client';

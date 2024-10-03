@@ -1,5 +1,5 @@
 import type { AllEntityNames } from '$api/auth/abilities/abilities';
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { db } from '$db/db';
 import * as Schemes from '$db/generated/schema/barrel';
 import Elysia, { t } from 'elysia';

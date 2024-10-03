@@ -390,5 +390,9 @@
 	"conferenceImage": "Konferenzbild",
 	"conferenceRegistrationSettings": "Einstellungen zur Anmeldephase",
 	"conferenceStartRegistration": "Start der Anmeldung",
-	"conferenceEndRegistration": "Ende der Anmeldung"
+	"conferenceEndRegistration": "Ende der Anmeldung",
+	"pathDoesNotExist": "Der Pfad {path} konnte nicht gefunden werden ({error})",
+	"forbidden": "Zugriff verweigert. Bitte lade ggf. die Seite neu! ({error})",
+	"unauthorized": "Unauthorisiert. Bitte lade ggf. die Seite neu! ({error})",
+	"internalServerError": "Interner Serverfehler."
 }

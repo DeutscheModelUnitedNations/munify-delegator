@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { apiClient } from '$api/client.js';
+	import { apiClient, checkForError } from '$api/client.js';
 	import { goto } from '$app/navigation';
 	import Checkbox from '$lib/components/Checkbox.svelte';
 	import Footer from '$lib/components/Footer.svelte';
@@ -37,20 +37,22 @@
 	const onPersonalDataFormSubmit = async (e: Event) => {
 		e.preventDefault();
 
-		await api.user({ id: data.user.sub }).patch({
-			phone,
-			street,
-			apartment,
-			zip,
-			city,
-			country,
-			birthday: birthday as any,
-			gender,
-			pronouns,
-			foodPreference: foodPreference as any,
-			wantsToReceiveGeneralInformation,
-			wantsJoinTeamInformation
-		});
+		await checkForError(
+			api.user({ id: data.user.sub }).patch({
+				phone,
+				street,
+				apartment,
+				zip,
+				city,
+				country,
+				birthday: birthday as any,
+				gender,
+				pronouns,
+				foodPreference: foodPreference as any,
+				wantsToReceiveGeneralInformation,
+				wantsJoinTeamInformation
+			})
+		);
 
 		if (data.redirectUrl) {
 			goto(data.redirectUrl);
