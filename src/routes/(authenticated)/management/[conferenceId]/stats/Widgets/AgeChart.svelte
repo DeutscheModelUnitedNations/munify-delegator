@@ -11,7 +11,7 @@
 >
 	<div class="card-body pb-0 mb-4">
 		<h3 class="text-xs">{m.averageAgeOnlyApplied()}</h3>
-		<h2 class="card-title">{stats?.age.average ?? "0"} {m.years()}</h2>
+		<h2 class="card-title">{stats?.age.average ?? '0'} {m.years()}</h2>
 	</div>
 	{#if stats?.age}
 		<ChartBar

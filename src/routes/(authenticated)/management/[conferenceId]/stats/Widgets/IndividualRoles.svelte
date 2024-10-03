@@ -34,7 +34,8 @@
 					{#each stats?.registered.singleParticipants.byRole ?? [] as role, i}
 						<tr>
 							<td>
-								<i class="fa-duotone fa-{role.fontAwesomeIcon?.replace('fa-', '')} mr-2 text-lg"></i>
+								<i class="fa-duotone fa-{role.fontAwesomeIcon?.replace('fa-', '')} mr-2 text-lg"
+								></i>
 								{role.role}
 							</td>
 							<td
