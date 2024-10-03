@@ -131,12 +131,10 @@ export function conferenceForm() {
 	};
 
 	const getConferenceEndRegistration = () => {
-		console.log(conferenceEndRegistration);
 		return conferenceEndRegistration;
 	};
 
 	const setConferenceEndRegistration = (value: string | Date | null | undefined) => {
-		console.log(`newValue ${value}`);
 		if (!!value) {
 			conferenceEndRegistration = new Date(value);
 		} else {
