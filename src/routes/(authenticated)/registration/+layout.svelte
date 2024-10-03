@@ -10,5 +10,5 @@
 	<title>MUNify Delegator – {m.registration()}</title>
 </svelte:head>
 
-<ProfileButtonAbsolute logoutUrl={data.logoutUrl} />
+<ProfileButtonAbsolute />
 {@render children()}

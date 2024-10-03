@@ -16,7 +16,11 @@
 		oninput={(e: any) => changeSearchValue(e.target.value)}
 	/>
 	{#if searchValue}
-		<button class="btn btn-square btn-ghost btn-sm" onclick={() => changeSearchValue('')}>
+		<button
+			class="btn btn-square btn-ghost btn-sm"
+			onclick={() => changeSearchValue('')}
+			aria-label="Reset search"
+		>
 			<i class="fa-duotone fa-times"></i>
 		</button>
 	{:else}

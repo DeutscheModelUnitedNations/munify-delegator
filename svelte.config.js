@@ -31,11 +31,6 @@ const config = {
 			$db: 'prisma',
 			$config: 'src/config'
 		}
-	},
-
-	// This is needed for being able to recognize .svelte files in svelte-headless-table package for some reason
-	optimizeDeps: {
-		exclude: ['Render']
 	}
 };
 

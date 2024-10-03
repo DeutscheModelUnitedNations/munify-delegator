@@ -3,7 +3,7 @@ import type { languageTag } from '$lib/paraglide/runtime';
 import type { Conference, User } from '@prisma/client';
 import * as m from '$lib/paraglide/messages';
 import { PermissionCheckError } from '$api/util/logger';
-import type { OIDCDeriveType } from '$api/auth/oidc';
+import type { OIDCDeriveType } from '$api/auth/oidcPlugin';
 
 /**
  * This helper

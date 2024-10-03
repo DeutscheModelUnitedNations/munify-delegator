@@ -17,7 +17,9 @@
 		multiple={false}
 		onchange={(e) => {
 			const reader = new FileReader();
-			if (e.target?.files[0].size > 1000000) {
+			const input = e.target as HTMLInputElement;
+			if (!input?.files?.[0]) return;
+			if (input?.files?.[0].size ?? 0 > 1000000) {
 				alert('File size must be less than 1MB');
 				return;
 			}
@@ -25,8 +27,7 @@
 				const result = e.target?.result;
 				changeFile(result as string);
 			};
-			reader.readAsDataURL(e.target?.files?.[0]);
-			// reader.readAsArrayBuffer(e.target?.files?.[0]);
+			reader.readAsDataURL(input?.files?.[0]);
 		}}
 	/>
 </label>

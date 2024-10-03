@@ -45,7 +45,11 @@
 	};
 </script>
 
-<button class="btn btn-square btn-ghost" onclick={() => (confirmDialogOpen = true)}>
+<button
+	class="btn btn-square btn-ghost"
+	onclick={() => (confirmDialogOpen = true)}
+	aria-label="Export"
+>
 	<i class="fa-duotone fa-file-export text-xl"></i>
 </button>
 
@@ -57,20 +61,20 @@
 			exportieren möchtest?
 		</p>
 		<div class="modal-action justify-between">
-			<button class="btn btn-error" onclick={() => (confirmDialogOpen = false)}>
+			<button class="btn btn-error" onclick={() => (confirmDialogOpen = false)} aria-label="Exit">
 				<i class="fas fa-xmark"></i>
 			</button>
 			<div class="flex gap-2">
-				<button class="btn btn-primary" onclick={exportPdf}>
+				<button class="btn btn-primary" onclick={exportPdf} aria-label="Print">
 					<div class="flex items-center gap-3">
 						<i class="fas fa-print text-xl"></i>
 						<i class="fas fa-file-pdf text-xl"></i>
 					</div>
 				</button>
-				<button class="btn btn-primary w-16" onclick={exportCsv}>
+				<button class="btn btn-primary w-16" onclick={exportCsv} aria-label="Export CSV">
 					<i class="fas fa-file-csv text-xl"></i>
 				</button>
-				<button class="btn btn-primary w-16" onclick={exportJson}>
+				<button class="btn btn-primary w-16" onclick={exportJson} aria-label="Export JSON">
 					<i class="fas fa-file-code text-xl"></i>
 				</button>
 			</div>

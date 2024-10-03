@@ -17,19 +17,19 @@
 	</nav>
 	<nav>
 		<div class="grid grid-flow-col gap-4" id="socials">
-			<a href="https://www.instagram.com/dmun_ev/">
+			<a href="https://www.instagram.com/dmun_ev/" aria-label="Instagram">
 				<i class="fa-brands fa-instagram text-3xl"></i>
 			</a>
-			<a href="https://x.com/DMUN_eV">
+			<a href="https://x.com/DMUN_eV" aria-label="X / Twitter">
 				<i class="fa-brands fa-x-twitter text-3xl"></i>
 			</a>
-			<a href="https://www.facebook.com/deutschemodelunitednations/">
+			<a href="https://www.facebook.com/deutschemodelunitednations/" aria-label="Facebook">
 				<i class="fa-brands fa-facebook text-3xl"></i>
 			</a>
-			<a href="https://www.youtube.com/user/DeutscheMUNeV">
+			<a href="https://www.youtube.com/user/DeutscheMUNeV" aria-label="YouTube">
 				<i class="fa-brands fa-youtube text-3xl"></i>
 			</a>
-			<a href="https://github.com/deutschemodelunitednations">
+			<a href="https://github.com/deutschemodelunitednations" aria-label="GitHub">
 				<i class="fa-brands fa-github text-3xl"></i>
 			</a>
 		</div>

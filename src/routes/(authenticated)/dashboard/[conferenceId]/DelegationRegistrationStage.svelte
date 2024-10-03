@@ -234,6 +234,7 @@
 							navigator.clipboard.writeText(data.delegationData?.entryCode as string);
 							alert(m.codeCopied());
 						}}
+						aria-label="Copy entry code"
 						><i class="fa-duotone fa-clipboard text-xl"></i>
 					</button>
 					<button
@@ -242,6 +243,7 @@
 							navigator.clipboard.writeText(referralLink as string);
 							alert(m.linkCopied());
 						}}
+						aria-label="Copy referral link"
 						><i class="fa-duotone fa-link text-xl"></i>
 					</button>
 					{#if userIsHeadDelegate}
@@ -255,6 +257,7 @@
 									invalidateAll();
 									alert(m.codeRotated());
 								}}
+								aria-label="Rotate entry code"
 								><i class="fa-duotone fa-rotate text-xl"></i>
 							</button>
 						</div>

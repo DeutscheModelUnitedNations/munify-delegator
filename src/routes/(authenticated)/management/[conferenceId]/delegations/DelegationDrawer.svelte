@@ -12,6 +12,7 @@
 		NonStateActor
 	} from '@prisma/client';
 	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
+	import { getApi } from '$lib/global/apiState.svelte';
 
 	interface Props {
 		delegation: DelegationDataItem | null;
@@ -263,10 +264,10 @@
 		<button
 			class="btn"
 			onclick={async () => {
-				if (!confirm('Willst du wirklich den Einladecode rotieren?')) return;
-				await checkForError(api.delegation({ id: delegation!.id }).resetEntryCode.patch());
+				if (!confirm(m.confirmRotateCode())) return;
+				await checkForError(getApi().delegation({ id: delegation!.id }).resetEntryCode.patch());
 				// TODO: Fix this, so that the page does not need to be reloaded. invalidateAll() does not work.
-				alert('Neuladen der Seite erforderlich, um die Änderungen zu sehen.');
+				alert(m.reloadToSeeChanges());
 			}}
 		>
 			<i class="fa-duotone fa-arrow-rotate-left"></i>
@@ -276,10 +277,12 @@
 			<button
 				class="btn"
 				onclick={async () => {
-					if (!confirm('Willst du wirklich den Bewerbungsstatus zurücksetzen?')) return;
-					await checkForError(api.delegation({ id: delegation!.id }).revokeApplication.patch());
+					if (!confirm(m.confirmRevokeApplication())) return;
+					await checkForError(
+						getApi().delegation({ id: delegation!.id }).revokeApplication.patch()
+					);
 					// TODO: Fix this, so that the page does not need to be reloaded. invalidateAll() does not work.
-					alert('Neuladen der Seite erforderlich, um die Änderungen zu sehen.');
+					alert(m.reloadToSeeChanges());
 				}}
 			>
 				<i class="fa-duotone fa-file-slash"></i>

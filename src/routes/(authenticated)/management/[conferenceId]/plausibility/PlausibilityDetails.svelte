@@ -19,11 +19,11 @@
 					{#each items as user}
 						<tr>
 							<td>{user.given_name} <span class="uppercase">{user.family_name}</span></td>
-							<td
-								><a href={`${link}${user.id}`} class="btn btn-sm"
-									><i class="fa-duotone fa-arrow-up-right-from-square"></i></a
-								></td
-							>
+							<td>
+								<a href={`${link}${user.id}`} class="btn btn-sm" aria-label="Details">
+									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+								</a>
+							</td>
 						</tr>
 					{/each}
 				</tbody>

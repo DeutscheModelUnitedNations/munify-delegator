@@ -30,7 +30,7 @@
 	startDate={pickedDate}
 	enableFutureDates
 	enablePastDates
-	onDayClick={(e) => {
+	onDayClick={(e: { startDate: number; startDateTime: string }) => {
 		const date = new Date(e.startDate);
 		const time = e.startDateTime ?? '00:00';
 		setPickedDate(new Date(`${format(date, 'yyyy-MM-dd')}T${time}`));
@@ -48,7 +48,11 @@
 			onclick={toggleDatePicker}
 			onchange={(e) => {
 				setPickedDate(
-					parse(e.target?.value, includeTime ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy', new Date())
+					parse(
+						(e.target as HTMLInputElement)?.value,
+						includeTime ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy',
+						new Date()
+					)
 				);
 			}}
 			class="input input-bordered {initialDate &&

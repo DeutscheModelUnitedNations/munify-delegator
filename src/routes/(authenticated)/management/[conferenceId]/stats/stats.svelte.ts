@@ -50,7 +50,7 @@ export interface ByRole {
 }
 
 export interface Age {
-	average: number;
+	average?: number;
 	distribution: { [x: string]: number };
 }
 

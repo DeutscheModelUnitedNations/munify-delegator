@@ -116,7 +116,9 @@
 								</tr>
 							{/each}
 						{:else}
-							<p>{m.noDelegationsFound()}</p>
+							<tr>
+								<td>{m.noDelegationsFound()}</td>
+							</tr>
 						{/if}
 					{/await}
 				</tbody>

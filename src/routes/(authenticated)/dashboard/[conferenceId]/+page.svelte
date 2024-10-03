@@ -6,7 +6,6 @@
 	import PostConferenceStage from './DelegationPostConferenceStage.svelte';
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import Supervisor from './Supervisor.svelte';
 	import { redirect } from '@sveltejs/kit';
 	import SingleParticipantRegistrationStage from './SingleParticipantRegistrationStage.svelte';
@@ -68,7 +67,7 @@
 	});
 </script>
 
-<Header title={conference?.title ?? 'Unknown'} logoutUrl={data.logoutUrl} />
+<Header title={conference?.title ?? 'Unknown'} />
 <div class="flex flex-col py-10 gap-10">
 	{#if determineCategory() === 'INDIVIDUAL'}
 		{#if determinStage() === 'REGISTRATION' || determinStage() === 'POST_REGISTRATION'}
