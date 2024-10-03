@@ -20,6 +20,6 @@
 	<div class="stat">
 		<div class="stat-figure"><i class="fa-duotone fa-check-to-slot text-3xl"></i></div>
 		<div class="stat-title">{m.daysUntilEndRegistration()}</div>
-		<div class="stat-value">{stats?.countdowns.daysUntilEndRegistration}</div>
+		<div class="stat-value">{stats?.countdowns.daysUntilEndRegistration || "–"}</div>
 	</div>
 </section>

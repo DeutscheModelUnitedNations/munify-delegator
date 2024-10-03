@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { DatePicker } from '@svelte-plugins/datepicker';
-	import { format } from 'date-fns';
+	import { format, parse } from 'date-fns';
 	import * as m from '$lib/paraglide/messages';
 
 	interface Props {
@@ -31,10 +31,8 @@
 	enableFutureDates
 	enablePastDates
 	onDayClick={(e) => {
-		console.log(e);
 		const date = new Date(e.startDate);
 		const time = e.startDateTime ?? '00:00';
-		console.log(`${format(date, 'yyyy-MM-dd')}T${time}`);
 		setPickedDate(new Date(`${format(date, 'yyyy-MM-dd')}T${time}`));
 	}}
 	includeFont={false}
@@ -44,10 +42,15 @@
 		<span class="label-text">{label}</span>
 		<input
 			type="text"
+			pattern={includeTime ? '\\d{2}.\\d{2}.\\d{4} \\d{2}:\\d{2}' : '\\d{2}.\\d{2}.\\d{4}'}
 			placeholder={m.selectADate()}
 			value={pickedDate ? formatDate(pickedDate) : ''}
 			onclick={toggleDatePicker}
-			onchange={(e) => setPickedDate(new Date(e.target.value))}
+			onchange={(e) => {
+				setPickedDate(
+					parse(e.target?.value, includeTime ? 'dd.MM.yyyy HH:mm' : 'dd.MM.yyyy', new Date())
+				);
+			}}
 			class="input input-bordered {initialDate &&
 				pickedDate &&
 				format(initialDate, 'yyyyMMddHHmm') !== format(pickedDate, 'yyyyMMddHHmm') &&

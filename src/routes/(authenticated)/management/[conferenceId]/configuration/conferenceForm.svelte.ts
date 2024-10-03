@@ -97,7 +97,7 @@ export function conferenceForm() {
 	};
 
 	const setConferenceStart = (value: string | Date | null | undefined) => {
-		if (value !== null && value !== undefined) {
+		if (!!value) {
 			conferenceStart = new Date(value);
 			conferenceStart.setHours(12, 0, 0, 0); // To prevent timezone issues
 		} else {
@@ -110,7 +110,7 @@ export function conferenceForm() {
 	};
 
 	const setConferenceEnd = (value: string | Date | null | undefined) => {
-		if (value !== null && value !== undefined) {
+		if (!!value) {
 			conferenceEnd = new Date(value);
 			conferenceEnd.setHours(12, 0, 0, 0); // To prevent timezone issues
 		} else {
@@ -123,7 +123,7 @@ export function conferenceForm() {
 	};
 
 	const setConferenceStartRegistration = (value: string | Date | null | undefined) => {
-		if (value !== null && value !== undefined) {
+		if (!!value) {
 			conferenceStartRegistration = new Date(value);
 		} else {
 			conferenceStartRegistration = undefined;
@@ -131,11 +131,13 @@ export function conferenceForm() {
 	};
 
 	const getConferenceEndRegistration = () => {
+		console.log(conferenceEndRegistration);
 		return conferenceEndRegistration;
 	};
 
 	const setConferenceEndRegistration = (value: string | Date | null | undefined) => {
-		if (value !== null && value !== undefined) {
+		console.log(`newValue ${value}`);
+		if (!!value) {
 			conferenceEndRegistration = new Date(value);
 		} else {
 			conferenceEndRegistration = undefined;

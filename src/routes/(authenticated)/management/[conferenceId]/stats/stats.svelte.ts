@@ -57,6 +57,7 @@ export interface Age {
 export interface StatsTypeHistoryEntry {
 	stats: StatsType;
 	timestamp: string;
+	conferenceId: string;
 }
 
 // Stats Store

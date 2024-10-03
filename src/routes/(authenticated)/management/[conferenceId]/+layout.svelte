@@ -14,7 +14,6 @@
 	});
 </script>
 
-<!-- TODO -->
 <ManagementSidebarWrapper conferenceId={data.conferenceData.id}>
 	{@render children()}
 </ManagementSidebarWrapper>

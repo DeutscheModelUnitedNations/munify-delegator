@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
+
 	interface Props {
 		values: number[];
 		labels?: string[];
@@ -31,15 +33,23 @@
 </script>
 
 <div class="w-full h-full min-h-28 flex items-end gap-1 px-4 pb-4 {wrapperClass}">
-	{#each values as value, i}
-		<div
-			class="w-full bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 rounded-md tooltip {elementClass} transition-color duration-300"
-			style="height: {length(value)}%;"
-			data-tip={formatter(value, (labels && labels[i]) || undefined)}
-		>
-			{#if showLabels && labels && length(value) > 40}
-				<div class="text-base-content text-sm">{labels[i]}</div>
-			{/if}
+	{#if max() === 0 || values.length === 0}
+		<div class="w-full h-full flex flex-col justify-center items-center text-sm">
+			<i class="fas fa-chart-simple opacity-50 text-3xl"></i><span>
+				{m.notEnoughData()}
+			</span>
 		</div>
-	{/each}
+	{:else}
+		{#each values as value, i}
+			<div
+				class="w-full bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 rounded-md tooltip {elementClass} transition-color duration-300"
+				style="height: {length(value)}%;"
+				data-tip={formatter(value, (labels && labels[i]) || undefined)}
+			>
+				{#if showLabels && labels && length(value) > 40}
+					<div class="text-base-content text-sm">{labels[i]}</div>
+				{/if}
+			</div>
+		{/each}
+	{/if}
 </div>

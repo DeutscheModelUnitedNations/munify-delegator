@@ -33,7 +33,10 @@
 				<tbody>
 					{#each stats?.registered.singleParticipants.byRole ?? [] as role, i}
 						<tr>
-							<td>{role.role}</td>
+							<td>
+								<i class="fa-duotone fa-{role.fontAwesomeIcon?.replace('fa-', '')} mr-2 text-lg"></i>
+								{role.role}
+							</td>
 							<td
 								class="{getFilter() === 'all' &&
 									'bg-base-300'} transition-all duration-500 text-center"

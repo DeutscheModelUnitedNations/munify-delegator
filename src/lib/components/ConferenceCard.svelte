@@ -112,7 +112,7 @@
 <div
 	class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl hover:scale-[1.01] transition-all duration-300"
 >
-	<figure class="relative">
+	<figure class="relative aspect-video">
 		<img
 			src={imageDataUrl ? imageDataUrl : defaultImage}
 			alt="Conference"
@@ -127,7 +127,7 @@
 	<div class="card-body">
 		<h2 class="card-title mb-2">{title}</h2>
 		<CardInfoSectionWithIcons items={cardInfoItems()} />
-		<div class="card-actions justify-end mt-4">
+		<div class="card-actions h-full items-end justify-end mt-4">
 			{#if registrationStatus() === RegistrationStatus.OPEN && !alreadyRegistered}
 				<a href={`${baseSlug}/${id}`} class="btn btn-primary">
 					{btnText ?? m.signup()}

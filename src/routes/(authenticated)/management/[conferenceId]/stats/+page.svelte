@@ -30,16 +30,29 @@
 			localStorage.getItem('statsHistory') ?? '[]'
 		);
 
-		if (!history.find((x) => x.timestamp === format(Date.now(), 'yyyy-MM-dd')) && stats) {
-			history.unshift({ stats, timestamp: format(Date.now(), 'yyyy-MM-dd') });
+		if (
+			!history.find(
+				(x) =>
+					`${x.timestamp}_${x.conferenceId}` ===
+					`${format(Date.now(), 'yyyy-MM-dd')}_${data.conferenceId}`
+			) &&
+			stats
+		) {
+			history.unshift({
+				stats,
+				timestamp: format(Date.now(), 'yyyy-MM-dd'),
+				conferenceId: data.conferenceId
+			});
 		}
 		setHistory(history);
 
+		localStorage.setItem('statsHistory', JSON.stringify(history));
+
+		// After updating the history in the local storage, we can filter for the history of that conference
+		setHistory(history.filter((x) => x.conferenceId === data.conferenceId));
 		setSelectedHistory(
 			history.find((x) => x.timestamp !== format(Date.now(), 'yyyy-MM-dd'))?.timestamp
 		);
-
-		localStorage.setItem('statsHistory', JSON.stringify(history));
 	});
 </script>
 

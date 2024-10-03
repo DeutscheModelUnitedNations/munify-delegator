@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
+
 	interface Props {
 		values: number[];
 		icons?: string[];
@@ -37,24 +39,32 @@
 <div
 	class="w-full h-full min-h-28 flex {vertical ? 'flex-col' : 'flex-row'} gap-1 p-4 {wrapperClass}"
 >
-	{#each values as value, i}
-		<div
-			class="{vertical
-				? 'w-full'
-				: 'h-full'} min-w-10 min-h-14 flex justify-center items-center bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 tooltip {elementClass} transition-color duration-300 {vertical
-				? 'first:rounded-t-md last:rounded-b-md'
-				: 'first:rounded-l-md last:rounded-r-md'}"
-			style={vertical ? `height: ${length(value)}%;` : `width: ${length(value)}%;`}
-			data-tip={formatter(value, (labels && labels[i]) || undefined)}
-		>
-			<div class="flex flex-col justify-center items-center gap-1">
-				{#if icons}
-					<i class="fas fa-{icons[i].replace('fa-', '')} text-base-content"></i>
-				{/if}
-				{#if percentage}
-					<div class="text-base-content text-sm">{length(value)}%</div>
-				{/if}
-			</div>
+	{#if max() === 0}
+		<div class="w-full h-full flex flex-col justify-center items-center text-sm">
+			<i class="fas fa-chart-pie opacity-50 text-3xl"></i><span>
+				{m.notEnoughData()}
+			</span>
 		</div>
-	{/each}
+	{:else}
+		{#each values as value, i}
+			<div
+				class="{vertical
+					? 'w-full'
+					: 'h-full'} min-w-10 min-h-14 flex justify-center items-center bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 tooltip {elementClass} transition-color duration-300 {vertical
+					? 'first:rounded-t-md last:rounded-b-md'
+					: 'first:rounded-l-md last:rounded-r-md'}"
+				style={vertical ? `height: ${length(value)}%;` : `width: ${length(value)}%;`}
+				data-tip={formatter(value, (labels && labels[i]) || undefined)}
+			>
+				<div class="flex flex-col justify-center items-center gap-1">
+					{#if icons}
+						<i class="fas fa-{icons[i].replace('fa-', '')} text-base-content"></i>
+					{/if}
+					{#if percentage}
+						<div class="text-base-content text-sm">{length(value)}%</div>
+					{/if}
+				</div>
+			</div>
+		{/each}
+	{/if}
 </div>

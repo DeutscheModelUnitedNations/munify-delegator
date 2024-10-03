@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
+
 	interface Props {
 		currentValue?: number;
 		historicValue?: number;
@@ -40,7 +42,7 @@
 
 <div class="stat-desc">
 	{#if historicValue === undefined || currentValue === undefined}
-		<p>Keine historischen Daten verfügbar</p>
+		<span>–</span>
 	{:else}
 		<span class={getFontClass()}>
 			<i class="fa-solid {getFontAwesomeIcon()}"></i>

@@ -339,9 +339,14 @@ export const conference = new Elysia()
 					return Math.floor(age / (1000 * 60 * 60 * 24 * 365));
 				});
 
-			const averageAge = parseFloat(
-				(agesAtConference.reduce((acc, age) => acc + age, 0) / agesAtConference.length).toFixed(1)
-			);
+			const averageAge =
+				agesAtConference && agesAtConference.length !== 0
+					? parseFloat(
+							(
+								agesAtConference.reduce((acc, age) => acc + age, 0) / agesAtConference.length
+							).toFixed(1)
+						)
+					: undefined;
 			const ageDistribution: Record<string, number> = {};
 			for (let i = 10; i <= 25; i++) {
 				if (!agesAtConference.includes(i)) continue;
@@ -397,7 +402,7 @@ export const conference = new Elysia()
 					supervisors: t.Number()
 				}),
 				age: t.Object({
-					average: t.Number(),
+					average: t.Optional(t.Number()),
 					distribution: t.Record(t.String(), t.Number())
 				})
 			})

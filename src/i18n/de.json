@@ -396,6 +396,7 @@
 	"conferenceStatusActive": "Aktive Konferenz",
 	"conferenceStatusPost": "Nach der Konferenz",
 	"conferenceDataSavingPrompt": "Bist du sicher, dass du die Änderungen speichern möchtest? Alle grün markierten Felder werden verändert.",
+	"notEnoughData": "Nicht genügend Daten",
 	"pathDoesNotExist": "Der Pfad {path} konnte nicht gefunden werden ({error})",
 	"forbidden": "Zugriff verweigert. Bitte lade ggf. die Seite neu! ({error})",
 	"unauthorized": "Unauthorisiert. Bitte lade ggf. die Seite neu! ({error})",
