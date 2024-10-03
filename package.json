@@ -14,6 +14,7 @@
 		"@prisma/client": "^5.19.1",
 		"@sinclair/typebox": "^0.33.12",
 		"@slack/webhook": "^7.0.3",
+		"@svelte-plugins/datepicker": "^1.0.9",
 		"@sveltejs/kit": "^2.5.28",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.7",
 		"@types/node-schedule": "^2.1.7",
@@ -47,7 +48,9 @@
 		"svelte-adapter-bun": "^0.5.2",
 		"svelte-chartjs": "^3.1.5",
 		"svelte-check": "^4.0.2",
+		"svelte-drawer-component": "^1.2.2",
 		"svelte-headless-table": "^0.18.2",
+		"svelte-table": "^0.6.3",
 		"tailwindcss": "^3.4.12",
 		"tslib": "^2.7.0",
 		"tsup": "^8.3.0",
@@ -71,9 +74,5 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write ."
 	},
-	"type": "module",
-	"dependencies": {
-		"svelte-drawer-component": "^1.2.2",
-		"svelte-table": "^0.6.3"
-	}
+	"type": "module"
 }

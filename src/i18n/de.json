@@ -377,5 +377,18 @@
 	"daysUntilEndRegistration": "Tage bis Anmeldeschluss",
 	"historyComparison": "Historienvergleich",
 	"historyComparisonDescription": "Die Statistikübersicht verfügt über die Möglichkeit, Anmeldestatistiken lokal auf Ihrem Gerät für spätere Vergleiche zu speichern. Dies geschieht automatisch, in du dich einloggst. Pro Tag wird ein neuer Datensatz erstellt. Die Daten werden lokal auf deinem Gerät gespeichert und nicht an die Server übertragen.<br>Der jeweils letzte Datensatz wird standardmäßig angezeigt. Du kannst jedoch hier auch ältere Datensätze auswählen, um sie mit dem aktuellen Stand zu vergleichen.",
-	"noHistory": "Keine Historie vorhanden"
+	"noHistory": "Keine Historie vorhanden",
+	"conferenceSettings": "Konferenzeinstellungen",
+	"conferenceTitle": "Konferenzname",
+	"conferenceLongTitle": "Voller Name",
+	"conferenceLocation": "Ort",
+	"conferenceLanguage": "Konferenzsprache",
+	"conferenceWebsite": "Website",
+	"conferenceStart": "Startdatum",
+	"conferenceEnd": "Enddatum",
+	"selectADate": "Datum auswählen",
+	"conferenceImage": "Konferenzbild",
+	"conferenceRegistrationSettings": "Einstellungen zur Anmeldephase",
+	"conferenceStartRegistration": "Start der Anmeldung",
+	"conferenceEndRegistration": "Ende der Anmeldung"
 }
