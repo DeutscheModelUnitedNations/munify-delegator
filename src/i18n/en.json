@@ -82,6 +82,8 @@
 	"orShareThisCode": "Or share with them the following code, which they can use to log in to this website (the code is also valid for supervisors):",
 	"inviteMorePeople": "Invite more people",
 	"inviteMorePeopleDescription": "Invite additional members to your delegation. The minimum required number of members is 2.",
+	"inviteMorePeopleButAlreadyApplied": "Invite Supervisors",
+	"inviteMorePeopleButAlreadyAppliedDescription": "You have already applied for the delegation. You can still invite supervisors to your delegation here.",
 	"linkCopied": "Link copied",
 	"codeCopied": "Code copied",
 	"toDashboard": "To the dashboard",

@@ -83,6 +83,8 @@
 	"orShareThisCode": "Oder teile folgenden Code, mit dem sie sich auf dieser Website anmelden können (der Code gilt auch für Betreuer*innen):",
 	"inviteMorePeople": "Mehr Menschen einladen",
 	"inviteMorePeopleDescription": "Lade bitte weitere Mitglieder in deine Delegation ein. Die Delegation benötigt mindestens 2 Mitglieder.",
+	"inviteMorePeopleButAlreadyApplied": "Betreuende einladen",
+	"inviteMorePeopleButAlreadyAppliedDescription": "Die Anmeldung ist bereits abgeschlossen, aber du kannst trotzdem über den Code noch Betreuer*innen einladen, falls du dies nicht schon getan hast.",
 	"linkCopied": "Link kopiert",
 	"codeCopied": "Code kopiert",
 	"toDashboard": "Zum Dashboard",

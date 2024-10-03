@@ -219,24 +219,28 @@
 				{/each}
 			</DelegationStatusTableWrapper>
 		{/if}
-		{#if !data.delegationData?.applied}
-			<DashboardContentCard
-				title={m.inviteMorePeople()}
-				description={m.inviteMorePeopleDescription()}
-			>
-				<div class="flex items-center bg-base-200 dark:bg-base-300 rounded-lg mt-4 p-2 pl-4 gap-2">
-					<p class="overflow-x-auto uppercase font-mono text-xl tracking-[0.6rem]">
-						{data.delegationData?.entryCode}
-					</p>
-					<button
-						class="btn btn-ghost btn-primary btn-square"
-						onclick={() => {
-							navigator.clipboard.writeText(data.delegationData?.entryCode as string);
-							alert(m.codeCopied());
-						}}
-						aria-label="Copy entry code"
-						><i class="fa-duotone fa-clipboard text-xl"></i>
-					</button>
+		<DashboardContentCard
+			title={!data.delegationData?.applied
+				? m.inviteMorePeople()
+				: m.inviteMorePeopleButAlreadyApplied()}
+			description={!data.delegationData?.applied
+				? m.inviteMorePeopleDescription()
+				: m.inviteMorePeopleButAlreadyAppliedDescription()}
+		>
+			<div class="flex items-center bg-base-200 dark:bg-base-300 rounded-lg mt-4 p-2 pl-4 gap-2">
+				<p class="overflow-x-auto uppercase font-mono text-xl tracking-[0.6rem]">
+					{data.delegationData?.entryCode}
+				</p>
+				<button
+					class="btn btn-ghost btn-primary btn-square"
+					onclick={() => {
+						navigator.clipboard.writeText(data.delegationData?.entryCode as string);
+						alert(m.codeCopied());
+					}}
+					aria-label="Copy entry code"
+					><i class="fa-duotone fa-clipboard text-xl"></i>
+				</button>
+				{#if !data.delegationData?.applied}
 					<button
 						class="btn btn-ghost btn-primary btn-square"
 						onclick={() => {
@@ -262,9 +266,9 @@
 							</button>
 						</div>
 					{/if}
-				</div>
-			</DashboardContentCard>
-		{/if}
+				{/if}
+			</div>
+		</DashboardContentCard>
 	{:else}
 		<div class="skeleton w-full h-60"></div>
 	{/if}
