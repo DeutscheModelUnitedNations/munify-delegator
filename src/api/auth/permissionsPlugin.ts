@@ -1,6 +1,6 @@
 import Elysia from 'elysia';
 import { type Action, defineAbilitiesForUser } from './abilities/abilities';
-import { oidcPlugin } from './oidc';
+import { oidcPlugin } from './oidcPlugin';
 import { accessibleBy } from '@casl/prisma';
 import { logger, PermissionCheckError } from '$api/util/logger';
 

@@ -1,6 +1,6 @@
 import { CRUDMaker } from '$api/util/crudmaker';
 import Elysia, { t } from 'elysia';
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 
 export const delegationMember = new Elysia()
 	.use(permissionsPlugin)

@@ -1,7 +1,7 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
 import { User } from '$db/generated/schema/User';
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
 
@@ -59,7 +59,7 @@ export const user = new Elysia({
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
 					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE,
-					phone: (user as any)['phone'] ? (user as any)['phone'] : undefined
+					phone: user.phone
 				},
 				update: {
 					email: user.email,
@@ -67,7 +67,7 @@ export const user = new Elysia({
 					given_name: user.given_name,
 					preferred_username: user.preferred_username,
 					locale: user.locale ?? dynamicPublicConfig.DEFAULT_LOCALE,
-					phone: (user as any)['phone'] ? (user as any)['phone'] : undefined
+					phone: user.phone
 				}
 			});
 

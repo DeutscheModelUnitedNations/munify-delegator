@@ -1,4 +1,4 @@
-import { permissionsPlugin } from '$api/auth/permissions';
+import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
 import { languageExtractor } from '$api/util/languageExtractor';

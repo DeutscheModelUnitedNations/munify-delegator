@@ -1,15 +1,34 @@
 import Elysia, { t } from 'elysia';
-import { oidcPlugin } from '$api/auth/oidc';
-import { getLogoutUrl } from '$api/auth/flow';
+import { oidcPlugin } from '$api/auth/oidcPlugin';
+import { getLogoutUrl } from '$api/auth/oidcFlow';
 
 export const auth = new Elysia()
 	.use(oidcPlugin)
 	// the refresh is done automatically by the oidc derive
-	.get('/auth/refresh-token', ({ oidc }) => ({ nextTokenRefreshDue: oidc.nextTokenRefreshDue }), {
-		response: t.Object({
-			nextTokenRefreshDue: t.Optional(t.Date())
-		})
-	})
+	.get(
+		'/auth/refresh-user',
+		({ oidc }) => ({ nextTokenRefreshDue: oidc.nextTokenRefreshDue, user: oidc.user }),
+		{
+			response: t.Object({
+				nextTokenRefreshDue: t.Optional(t.Date()),
+				user: t.Optional(
+					t.Composite([
+						t.Partial(
+							t.Object({
+								email: t.String(),
+								preferred_username: t.String(),
+								family_name: t.String(),
+								given_name: t.String()
+							})
+						),
+						t.Object({
+							sub: t.String()
+						})
+					])
+				)
+			})
+		}
+	)
 	.get(
 		'/auth/my-system-roles',
 		({ oidc }) => ({ mySystemRoles: oidc.user?.systemRoleNames ?? [] }),

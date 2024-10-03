@@ -14,7 +14,7 @@
 				const res = await checkForError(
 					apiClient({
 						origin: $page.url.origin
-					})['auth']['refresh-token'].get()
+					})['auth']['refresh-user'].get()
 				);
 
 				if (res.nextTokenRefreshDue) {
@@ -26,7 +26,7 @@
 		}
 
 		// refresh the token 10 seconds before expiry
-		runTokenRefresh(data.nextTokenRefreshDue.getTime() - Date.now() - 10 * 1000);
+		runTokenRefresh(new Date(data.nextTokenRefreshDue).getTime() - Date.now() - 10 * 1000);
 
 		return () => clearTimeout(timeout);
 	});
