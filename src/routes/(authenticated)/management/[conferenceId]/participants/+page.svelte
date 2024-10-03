@@ -138,7 +138,12 @@
 	);
 </script>
 
-<ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions logoutUrl={data.logoutUrl} />
+<ManagementHeader
+	title={m.adminUsers()}
+	exportedData={exportedData()}
+	tableOptions
+	logoutUrl={data.logoutUrl}
+/>
 <PrintHeader title={m.adminUsers()} globalSearchValue={filterValue ?? undefined} />
 
 <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />

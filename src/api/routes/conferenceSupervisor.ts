@@ -42,7 +42,7 @@ export const conferenceSupervisor = new Elysia()
 					},
 					_count: {
 						select: {
-							delegations: true,
+							delegations: true
 						}
 					}
 				}

@@ -99,8 +99,8 @@
 			class="btn"
 			href={`/management/${data.conferenceData.id}/participants?id=${singleParticipant?.user.id}`}
 		>
-		{m.adminUserCard()}
-		<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+			{m.adminUserCard()}
+			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 		</a>
 		{#if singleParticipant?.applied}
 			<button

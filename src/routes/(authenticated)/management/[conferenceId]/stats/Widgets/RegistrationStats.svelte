@@ -7,7 +7,9 @@
 
 	let stats = getStats();
 
-	let selectedHistory = $derived(() => getHistory()?.find((x) => x.timestamp === getSelectedHistory()));
+	let selectedHistory = $derived(() =>
+		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
+	);
 
 	let { getFilteredValue } = registrationFilter();
 </script>

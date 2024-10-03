@@ -6,7 +6,9 @@
 	let stats = getStats();
 </script>
 
-<section class="card grow col-span-2 md:col-span-12 bg-primary text-primary-content shadow-sm xl:col-span-6">
+<section
+	class="card grow col-span-2 md:col-span-12 bg-primary text-primary-content shadow-sm xl:col-span-6"
+>
 	<div class="card-body pb-0 mb-4">
 		<h3 class="text-xs">{m.averageAgeOnlyApplied()}</h3>
 		<h2 class="card-title">{stats?.age.average} {m.years()}</h2>
