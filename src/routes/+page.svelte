@@ -44,7 +44,8 @@
 				);
 			})
 			.sort(
-				(a, b) => new Date(b.startRegistration!).getTime() - new Date(a.startRegistration!).getTime()
+				(a, b) =>
+					new Date(b.startRegistration!).getTime() - new Date(a.startRegistration!).getTime()
 			);
 	});
 </script>
