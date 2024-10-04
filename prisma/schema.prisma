@@ -126,6 +126,8 @@ model Nation {
 
   roleApplications RoleApplication[]
   committees       Committee[]
+
+  assignedDelegations Delegation[]
 }
 
 model NonStateActor {
@@ -140,6 +142,8 @@ model NonStateActor {
   conferenceId     String
   roleApplications RoleApplication[]
 
+  assignedDelegations Delegation[]
+
   @@unique([conferenceId, abbreviation])
   @@unique([conferenceId, name])
 }
@@ -151,11 +155,23 @@ model CustomConferenceRole {
   description     String
   fontAwesomeIcon String?
 
-  conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  conferenceId      String
-  singleParticipant SingleParticipant[]
+  conference              Conference               @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId            String
+  singleParticipant       SingleParticipant[]
+  assignedConferenceRoles AssignedConferenceRole[]
 
   @@unique([conferenceId, name])
+}
+
+model AssignedConferenceRole {
+  id                     String               @id @default(nanoid())
+  customConferenceRole   CustomConferenceRole @relation(fields: [customConferenceRoleId], references: [id])
+  customConferenceRoleId String
+
+  singleParticipant   SingleParticipant @relation(fields: [singleParticipantId], references: [id])
+  singleParticipantId String            @unique
+
+  details String?
 }
 
 model SingleParticipant {
@@ -171,7 +187,8 @@ model SingleParticipant {
   motivation String?
   experience String?
 
-  appliedForRoles CustomConferenceRole[]
+  appliedForRoles        CustomConferenceRole[]
+  assignedConferenceRole AssignedConferenceRole?
 
   @@unique([conferenceId, userId])
 }
@@ -192,6 +209,14 @@ model Delegation {
   members         DelegationMember[]
   supervisors     ConferenceSupervisor[]
   appliedForRoles RoleApplication[]
+
+  /// @prismabox.input.hide
+  assignedNation           Nation? @relation(fields: [assignedNationAlpha3Code], references: [alpha3Code])
+  assignedNationAlpha3Code String?
+
+  /// @prismabox.input.hide
+  assignedNonStateActor   NonStateActor? @relation(fields: [assignedNonStateActorId], references: [id])
+  assignedNonStateActorId String?
 }
 
 model RoleApplication {
@@ -222,6 +247,8 @@ model DelegationMember {
   userId         String
   isHeadDelegate Boolean
 
+  postAssignmentConferenceSupervisors ConferenceSupervisor[]
+
   // users can only be once in this delegation
   @@unique([delegationId, userId])
   // users can only be in one delegation per conference
@@ -241,6 +268,12 @@ model ConferenceSupervisor {
   // this also never will be set directly but via a check of the entry code for delegations
   // therefore no update/create call ever should include this
   delegations  Delegation[]
+
+  // after assignment the supervisors lose their delegation access and gain a member access
+  // this is for pricacy reasons since the assignment process might add user which are not
+  // related to the supervisor in any way to a delegation they are supervising
+  // which would render their data open to read for a completely unknown person
+  postAssignmentDelegeationMembers DelegationMember[]
 
   @@unique([conferenceId, userId])
 }
