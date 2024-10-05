@@ -31,6 +31,23 @@
 		website: 'https://munbw.de',
 		logo: BWLogo
 	};
+
+	let { data } = $props();
+
+	const openRegistrations = $derived(() => {
+		return data.conferences
+			.filter((c) => {
+				if (!c.startRegistration || !c.endRegistration) return false;
+				return (
+					new Date(c.startRegistration).getTime() < new Date().getTime() &&
+					new Date(c.endRegistration).getTime() > new Date().getTime()
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(b.startRegistration!).getTime() - new Date(a.startRegistration!).getTime()
+			);
+	});
 </script>
 
 <svelte:head>
@@ -56,6 +73,16 @@
 				btnLink="/registration"
 			>
 				<p>{m.homeRegistrationSub()}</p>
+				{#if openRegistrations().length > 0}
+					<ul class="live-list mt-2">
+						{#each openRegistrations() as conference}
+							<li>
+								<span></span>
+								{conference.title}
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</UndrawCard>
 
 			<UndrawCard
@@ -144,3 +171,44 @@
 	</main>
 	<Footer />
 </div>
+
+<style lang="postcss">
+	.live-list {
+		list-style: none;
+		@apply mt-4;
+	}
+
+	.live-list li {
+		position: relative;
+
+		@apply pl-6 mx-2 my-1;
+	}
+
+	.live-list span {
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 10px; /* Size of the dot */
+		height: 10px; /* Size of the dot */
+		background-color: green; /* Dot color */
+		border-radius: 50%; /* Make it a circle */
+		box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); /* Initial glow */
+		animation: pulsate 1.5s infinite; /* Animation */
+	}
+
+	@keyframes pulsate {
+		0% {
+			box-shadow: 0 0 3px rgba(0, 115, 0, 0.2);
+			transform: translateY(-50%) scale(1);
+		}
+		50% {
+			box-shadow: 0 0 10px rgb(0, 115, 0); /* Glow effect */
+			transform: translateY(-50%) scale(1.1); /* Slightly enlarge */
+		}
+		100% {
+			box-shadow: 0 0 5px rgba(0, 115, 0, 0.2);
+			transform: translateY(-50%) scale(1);
+		}
+	}
+</style>
