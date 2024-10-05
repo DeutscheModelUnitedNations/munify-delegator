@@ -1,9 +1,10 @@
 import Elysia, { t } from 'elysia';
 import { db } from '$db/db';
-import { User } from '$db/generated/schema/User';
+import { User, UserPlain } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 
 export const user = new Elysia({
 	normalize: true
@@ -89,5 +90,80 @@ export const user = new Elysia({
 		},
 		{
 			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
+		}
+	)
+	.get(
+		'/user/perConference/:conferenceId',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			await requireToBeConferenceAdmin({ conferenceId: params.conferenceId, user: user });
+
+			return await db.user.findMany({
+				where: {
+					OR: [
+						{
+							delegationMemberships: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
+						},
+						{
+							singleParticipant: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
+						},
+						{
+							conferenceSupervisor: {
+								some: {
+									conferenceId: params.conferenceId
+								}
+							}
+						}
+					]
+				},
+				include: {
+					delegationMemberships: {
+						where: {
+							conferenceId: params.conferenceId
+						},
+						select: {
+							id: true,
+							delegationId: true
+						}
+					},
+					singleParticipant: {
+						where: {
+							conferenceId: params.conferenceId
+						},
+						select: {
+							id: true
+						}
+					},
+					conferenceSupervisor: {
+						where: {
+							conferenceId: params.conferenceId
+						},
+						select: {
+							id: true
+						}
+					}
+				}
+			});
+		},
+		{
+			response: t.Array(
+				t.Composite([
+					UserPlain,
+					t.Object({
+						delegationMemberships: t.Array(t.Object({ id: t.String(), delegationId: t.String() })),
+						singleParticipant: t.Array(t.Object({ id: t.String() })),
+						conferenceSupervisor: t.Array(t.Object({ id: t.String() }))
+					})
+				])
+			)
 		}
 	);

@@ -110,15 +110,12 @@
 			"GHA",
 			"KEN",
 			"MDG",
-			"MDG",
 			"MUS",
-			"MAR",
 			"MOZ",
 			"NAM",
 			"NER",
 			"NGA",
 			"SYC",
-			"SLE",
 			"ZAF",
 			"SDN",
 			"CAF",
@@ -213,7 +210,7 @@
 			"LBN",
 			"MMR",
 			"MDV",
-			"COR",
+			"KOR",
 			"VNM",
 			"BGR",
 			"EST",
@@ -276,6 +273,29 @@
 			"TUR",
 			"USA",
 			"GBR"
+		]
+	},
+	{
+		"name": "Internationaler Gerichtshof",
+		"abbreviation": "IGH",
+		"nations": [
+			"KEN",
+			"TGO",
+			"UGA",
+			"IND",
+			"MMR",
+			"KOR",
+			"CZE",
+			"UKR",
+			"ARG",
+			"CHL",
+			"JAM",
+			"CUB",
+			"MEX",
+			"FRA",
+			"IRL",
+			"SWE",
+			"USA"
 		]
 	}
 ]

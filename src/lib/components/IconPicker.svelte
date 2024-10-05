@@ -67,7 +67,7 @@
 		<div class="flex justify-between flex-wrap max-w-80 max-h-44 overflow-auto">
 			{#each sortedIcons as icon}
 				<li>
-					<button onclick={() => (selectedIcon = icon.fontAwesomeIcon)}>
+					<button onclick={() => (selectedIcon = icon.fontAwesomeIcon)} aria-label="Select icon">
 						<i class="flex fa-duotone {icon.fontAwesomeIcon} text-2xl"></i>
 					</button>
 				</li>

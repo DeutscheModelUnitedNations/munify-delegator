@@ -95,7 +95,7 @@
 	</aside>
 </div>
 
-<style>
+<style lang="postcss">
 	i {
 		@apply w-4;
 	}

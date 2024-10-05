@@ -32,14 +32,19 @@
 				<td>{todo.title}</td>
 				<td>
 					{#if todo.helpLink}
-						<a href={todo.helpLink} target="_blank" class="btn btn-circle btn-sm">
+						<a
+							href={todo.helpLink}
+							target="_blank"
+							class="btn btn-circle btn-sm"
+							aria-label="Help-Link"
+						>
 							<i class="fad fa-question"></i>
 						</a>
 					{:else if todo.help}
 						<div class="tooltip tooltip-left" data-tip={todo.help}>
-							<button class="btn btn-circle btn-sm cursor-help"
-								><i class="fad fa-question"></i></button
-							>
+							<button class="btn btn-circle btn-sm cursor-help" aria-label="Help">
+								<i class="fad fa-question"></i>
+							</button>
 						</div>
 					{/if}
 				</td>

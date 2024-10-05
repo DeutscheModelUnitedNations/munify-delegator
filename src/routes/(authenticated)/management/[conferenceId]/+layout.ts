@@ -9,6 +9,7 @@ export const load: LayoutLoad = loadApiHandler(async ({ params, api, parent }) =
 	const { user } = await parent();
 	const { mySystemRoles } = await checkForError(api.auth['my-system-roles'].get());
 	const { teamMember } = await checkForError(api.user({ id: user.sub }).get());
+	const conferenceData = await checkForError(api.conference({ id: conferenceId }).get());
 
 	// Conference-specific role-based access control
 	if (
@@ -24,6 +25,7 @@ export const load: LayoutLoad = loadApiHandler(async ({ params, api, parent }) =
 
 	return {
 		mySystemRoles,
-		teamMemberships: teamMember
+		teamMemberships: teamMember,
+		conferenceData
 	};
 });

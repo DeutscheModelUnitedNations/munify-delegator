@@ -1,3 +1,4 @@
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { db } from '$db/db';
@@ -10,7 +11,72 @@ import Elysia, { t } from 'elysia';
 
 export const conferenceSupervisor = new Elysia()
 	.use(permissionsPlugin)
-	.use(CRUDMaker.getAll('conferenceSupervisor'))
+	.get(
+		'/conferenceSupervisor',
+		async ({ permissions, query }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			return await db.conferenceSupervisor.findMany({
+				where: {
+					OR: [
+						{
+							delegations: {
+								some: {
+									id: query.delegationId
+								}
+							}
+						},
+						{
+							conference: {
+								id: query.conferenceId
+							}
+						}
+					]
+				},
+				include: {
+					user: {
+						select: {
+							id: true,
+							given_name: true,
+							family_name: true
+						}
+					},
+					_count: {
+						select: {
+							delegations: true
+						}
+					}
+				}
+			});
+		},
+		{
+			query: t.Optional(
+				t.Partial(
+					t.Object({
+						delegationId: t.String(),
+						conferenceId: t.String()
+					})
+				)
+			),
+			response: t.Array(
+				t.Composite([
+					ConferenceSupervisorPlain,
+					t.Object({
+						user: t.Object({
+							id: t.String(),
+							given_name: t.String(),
+							family_name: t.String()
+						})
+					}),
+					t.Object({
+						_count: t.Object({
+							delegations: t.Number()
+						})
+					})
+				])
+			)
+		}
+	)
 	.use(CRUDMaker.getOne('conferenceSupervisor'))
 	.get(
 		'/conferenceSupervisor/mine/:conferenceId',

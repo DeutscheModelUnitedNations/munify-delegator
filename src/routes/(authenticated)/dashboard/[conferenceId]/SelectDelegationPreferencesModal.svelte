@@ -303,7 +303,8 @@
 				class="btn btn-circle btn-ghost"
 				onclick={() => {
 					onClose();
-				}}><i class="fa-solid fa-xmark"></i></button
+				}}
+				aria-label="Close"><i class="fa-solid fa-xmark"></i></button
 			>
 		</div>
 	</div>

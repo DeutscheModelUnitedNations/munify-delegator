@@ -8,5 +8,15 @@
 		"prefix": "<ir",
 		"body": "<i class=\"fa-duotone fa-$1\"></i>",
 		"description": "Font Awesome Icon Regular"
+	},
+	"i18n Import": {
+		"prefix": "i18n",
+		"body": "import * as m from '$lib/paraglide/messages';",
+		"description": "Import i18n messages"
+	},
+	"i18n": {
+		"prefix": "m",
+		"body": "{m.$1()}",
+		"description": "i18n message"
 	}
 }

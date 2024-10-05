@@ -14,7 +14,7 @@
 		startRegistration?: Date | null;
 		endRegistration?: Date | null;
 		website?: string | null;
-		image?: Uint8Array | null;
+		imageDataUrl?: string | null;
 		title: string;
 		baseSlug: string;
 		btnText?: string;
@@ -23,7 +23,7 @@
 
 	let {
 		id,
-		image,
+		imageDataUrl,
 		language,
 		title,
 		location,
@@ -67,18 +67,6 @@
 		return RegistrationStatus.UNKNOWN;
 	};
 
-	let imageSrc = $state<string>();
-	onMount(() => {
-		if (image) {
-			const blob = new Blob([image], { type: 'image/jpeg' });
-			imageSrc = URL.createObjectURL(blob);
-
-			return () => {
-				URL.revokeObjectURL(imageSrc as string);
-			};
-		}
-	});
-
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
 		month: 'long',
@@ -91,7 +79,11 @@
 				fontAwesomeIcon: 'fa-calendar',
 				text:
 					start && end
-						? `${new Date(start).toLocaleDateString(languageTag(), dateOptions)} - ${new Date(end).toLocaleDateString(languageTag(), dateOptions)}`
+						? `<span class="whitespace-nowrap">
+								${new Date(start).toLocaleDateString(languageTag(), dateOptions)}
+							</span> - <span class="whitespace-nowrap">
+							${new Date(end).toLocaleDateString(languageTag(), dateOptions)}
+							</span>`
 						: m.unknownDate()
 			},
 			{ fontAwesomeIcon: 'fa-map-marker-alt', text: location ?? m.unknownLocation() },
@@ -124,9 +116,9 @@
 <div
 	class="carousel-item card bg-base-100 dark:bg-base-200 max-w-96 w-[90%] shadow-xl hover:scale-[1.01] transition-all duration-300"
 >
-	<figure class="relative">
+	<figure class="relative aspect-video">
 		<img
-			src={defaultImage}
+			src={imageDataUrl ? imageDataUrl : defaultImage}
 			alt="Conference"
 			class={alreadyRegistered ? 'saturate-0 brightness-150 contrast-50 blur-sm scale-110' : ''}
 		/>
@@ -139,7 +131,7 @@
 	<div class="card-body">
 		<h2 class="card-title mb-2">{title}</h2>
 		<CardInfoSectionWithIcons items={cardInfoItems()} />
-		<div class="card-actions justify-end mt-4">
+		<div class="card-actions h-full items-end justify-end mt-4">
 			{#if registrationStatus() === RegistrationStatus.OPEN && !alreadyRegistered}
 				<a href={`${baseSlug}/${id}`} class="btn btn-primary">
 					{btnText ?? m.signup()}

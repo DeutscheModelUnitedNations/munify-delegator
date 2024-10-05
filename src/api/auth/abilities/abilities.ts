@@ -67,10 +67,10 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 	// }
 
 	// grant system wide admins all permissions
-	// if (oidc && oidc.user && oidc.user.hasRole('admin')) {
-	// 	console.info('Admin granted: ', oidc.user.preferred_username);
-	// 	builder.can('manage' as any, 'all' as any);
-	// }
+	if (oidc && oidc.user && oidc.user.hasRole('admin')) {
+		console.info('Admin granted: ', oidc.user.preferred_username);
+		builder.can('manage' as any, 'all' as any);
+	}
 
 	defineAbilitiesForCommittee(oidc, builder);
 	defineAbilitiesForConference(oidc, builder);

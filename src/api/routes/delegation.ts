@@ -1,6 +1,6 @@
 import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
-import { fetchUserParticipations } from '$api/util/fetchUserParticipations';
+import { fetchUserParticipations } from '$api/auth/helper/fetchUserParticipations';
 import { languageExtractor } from '$api/util/languageExtractor';
 import { PermissionCheckError, UserFacingError } from '$api/util/logger';
 import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
@@ -17,16 +17,61 @@ import { RoleApplication, RoleApplicationPlain } from '$db/generated/schema/Role
 import Elysia, { t } from 'elysia';
 import { customAlphabet } from 'nanoid';
 import * as m from '$lib/paraglide/messages';
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 
 // https://github.com/CyberAP/nanoid-dictionary
 const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
 
 export const delegation = new Elysia()
-	.use(CRUDMaker.getAll('delegation'))
 	.use(CRUDMaker.updateOne('delegation'))
 	.use(CRUDMaker.deleteOne('delegation'))
 	.use(permissionsPlugin)
 	.use(languageExtractor)
+	.get(
+		'delegation',
+		async ({ permissions, query }) => {
+			permissions.mustBeLoggedIn();
+			return await db.delegation.findMany({
+				where: {
+					conferenceId: query.conferenceId,
+					supervisors: {
+						some: { id: query.supervisorId }
+					},
+					AND: [permissions.allowDatabaseAccessTo('list').Delegation]
+				},
+				include: {
+					_count: {
+						select: {
+							members: true,
+							supervisors: true,
+							appliedForRoles: true
+						}
+					}
+				},
+				orderBy: {
+					entryCode: 'asc'
+				}
+			});
+		},
+		{
+			query: t.Object({
+				conferenceId: t.Optional(t.String()),
+				supervisorId: t.Optional(t.String())
+			}),
+			response: t.Array(
+				t.Composite([
+					DelegationPlain,
+					t.Object({
+						_count: t.Object({
+							members: t.Number(),
+							supervisors: t.Number(),
+							appliedForRoles: t.Number()
+						})
+					})
+				])
+			)
+		}
+	)
 	.get(
 		'delegation/:id',
 		async ({ permissions, params }) => {
@@ -516,4 +561,25 @@ export const delegation = new Elysia()
 				applied: true
 			}
 		});
-	});
+	})
+	.patch(
+		'/delegation/:id/revokeApplication',
+		async ({ permissions, params }) => {
+			const user = permissions.mustBeLoggedIn();
+
+			await requireToBeConferenceAdmin({ conferenceId: params.id, user });
+
+			await db.delegation.update({
+				where: {
+					id: params.id
+				},
+				data: {
+					applied: false
+				}
+			});
+		},
+		{
+			params: t.Object({ id: t.String() }),
+			body: t.Unknown()
+		}
+	);
