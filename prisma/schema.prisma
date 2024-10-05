@@ -32,7 +32,7 @@ model Conference {
   location          String?
   language          String?
   website           String?
-  image             Bytes?
+  imageDataUrl      String?
   status            ConferenceStatus @default(PRE)
   startRegistration DateTime?
   endRegistration   DateTime?

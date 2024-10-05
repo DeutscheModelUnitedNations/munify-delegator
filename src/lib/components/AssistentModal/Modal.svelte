@@ -77,11 +77,12 @@
 		</div>
 		<div class="fixed top-6 right-6">
 			<form method="dialog">
-				<button class="btn btn-circle btn-sm" onclick={onClose}>
+				<button class="btn btn-circle btn-sm" onclick={onClose} aria-label="Close">
 					<i class="fas fa-xmark"></i>
 				</button>
 			</form>
 		</div>
 	</div>
-	<button class="modal-backdrop hover:cursor-not-allowed" onclick={onClose}></button>
+	<button class="modal-backdrop hover:cursor-not-allowed" onclick={onClose} aria-label="Close"
+	></button>
 </dialog>

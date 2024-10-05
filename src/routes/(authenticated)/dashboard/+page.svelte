@@ -15,7 +15,7 @@
 	});
 </script>
 
-<Header title={m.myConferences()} logoutUrl={data.logoutUrl} />
+<Header title={m.myConferences()} />
 <section class="mt-10 flex flex-wrap gap-4">
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
@@ -50,10 +50,15 @@
 					<td>{conference.title}</td>
 					<td>{conference.location}</td>
 					<td class="flex gap-2">
-						<a class="btn btn-sm btn-circle" href={conference.website} target="_blank">
+						<a
+							class="btn btn-sm btn-circle"
+							href={conference.website}
+							target="_blank"
+							aria-label="Website"
+						>
 							<i class="fa-duotone fa-info"></i>
 						</a>
-						<a class="btn btn-sm btn-circle" href="/dashboard/{conference.id}">
+						<a class="btn btn-sm btn-circle" href="/dashboard/{conference.id}" aria-label="Details">
 							<i class="fa-duotone fa-arrow-right"></i>
 						</a>
 					</td>

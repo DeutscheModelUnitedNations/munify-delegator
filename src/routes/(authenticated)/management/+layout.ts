@@ -4,7 +4,7 @@ import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 import { TeamRole } from '@prisma/client';
 
-export const load: LayoutLoad = loadApiHandler(async ({ api, parent }) => {
+export const load: LayoutLoad = loadApiHandler(async ({ api, parent, url }) => {
 	const { user } = await parent();
 	const { mySystemRoles } = await checkForError(api.auth['my-system-roles'].get());
 	const { teamMember } = await checkForError(api.user({ id: user.sub }).get());
@@ -19,8 +19,12 @@ export const load: LayoutLoad = loadApiHandler(async ({ api, parent }) => {
 		error(403, 'Forbidden');
 	}
 
+	const { logoutUrl } = await checkForError(api.auth['logout-url'].get());
+
 	return {
 		mySystemRoles,
-		teamMemberships: teamMember
+		teamMemberships: teamMember,
+		url,
+		logoutUrl
 	};
 });

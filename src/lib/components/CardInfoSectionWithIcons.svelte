@@ -14,7 +14,7 @@
 		{#if link}
 			<a href={link} class="hover:underline" target="_blank">{text}</a>
 		{:else}
-			<p>{text}</p>
+			<p>{@html text}</p>
 		{/if}
 	{/each}
 </div>

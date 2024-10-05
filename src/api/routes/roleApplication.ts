@@ -30,9 +30,9 @@ export const roleApplication = new Elysia()
 						where: {
 							AND: [permissions.allowDatabaseAccessTo('read').NonStateActor]
 						}
-					},
+					}
 					//TODO this does not perform an actual permission check on the delegation entity
-					delegation: true
+					// delegation: true
 				},
 				orderBy: {
 					rank: 'asc'

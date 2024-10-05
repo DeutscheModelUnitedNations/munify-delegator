@@ -1,9 +1,7 @@
 <script lang="ts">
-	interface Props {
-		zebra: boolean;
-	}
+	import { getTableSettings } from './tableSettings.svelte';
 
-	let { zebra = $bindable(true) }: Props = $props();
+	const { getZebra, setZebra } = getTableSettings();
 </script>
 
 <div class="card bg-base-100 dark:bg-base-200 shadow-md p-4">
@@ -12,9 +10,9 @@
 		<input
 			type="checkbox"
 			class="toggle"
-			checked={zebra}
+			checked={getZebra()}
 			onchange={(e: any) => {
-				zebra = e.target.checked;
+				setZebra(e.target.checked);
 			}}
 		/>
 	</div>

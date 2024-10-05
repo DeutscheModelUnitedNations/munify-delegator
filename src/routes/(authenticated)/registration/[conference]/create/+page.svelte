@@ -202,6 +202,7 @@
 							navigator.clipboard.writeText(referralLink);
 							alert(m.linkCopied());
 						}}
+						aria-label="Copy referral link"
 						><i class="fa-duotone fa-clipboard text-xl"></i>
 					</button>
 				</div>
@@ -218,6 +219,7 @@
 							navigator.clipboard.writeText(delegation.entryCode as string);
 							alert(m.codeCopied());
 						}}
+						aria-label="Copy entry code"
 						><i class="fa-duotone fa-clipboard text-xl"></i>
 					</button>
 				</div>

@@ -15,9 +15,9 @@
 		<div class="breadcrumbs text-xs overflow-hidden">
 			<ul>
 				<li>
-					<a href="/" class="!no-underline">
-						<i class="fa-solid fa-house hover:text-primary transition-all duration-300"></i></a
-					>
+					<a href="/" class="!no-underline" aria-label="Zurück zur Startseite">
+						<i class="fa-solid fa-house hover:text-primary transition-all duration-300"></i>
+					</a>
 				</li>
 				{#each breadcrumbs as { title, href, icon }}
 					<li>

@@ -82,5 +82,6 @@
 			"path": "/workspaces/munify/.vscode/macros.ts",
 			"name": "OpenI18n"
 		}
-	]
+	],
+	"css.customData": [".vscode/tailwind.json"]
 }
