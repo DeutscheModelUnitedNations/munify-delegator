@@ -134,7 +134,8 @@
 				{#if user?.singleParticipant && user?.singleParticipant.length > 0 && user?.singleParticipant[0]}
 					<a
 						class="btn"
-						href="/management/{data.conferenceData.id}/individuals?id={user.singleParticipant[0]}"
+						href="/management/{data.conferenceData.id}/individuals?id={user.singleParticipant[0]
+							.id}"
 					>
 						{m.individualApplication()}
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
