@@ -48,7 +48,8 @@
 <section class="flex flex-col gap-10 mt-10">
 	<div class="card bg-base-200 shadow-sm max-w-lg">
 		<div class="card-body">
-			<h2 class="card-title mb-4">{m.conferenceSettings()}</h2>
+			<h2 class="card-title">{m.conferenceSettings()}</h2>
+			<p class="text-sm mb-4">{@html m.conferenceSettingsDescription()}</p>
 			<form class="flex flex-col gap-4" onsubmit={(e) => submit(e, data.conferenceId)}>
 				<Input
 					label={m.conferenceTitle()}
