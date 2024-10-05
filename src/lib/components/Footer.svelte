@@ -36,7 +36,7 @@
 	</nav>
 	<aside>
 		<p>{m.aServiceBy()}</p>
-		<enhanced:img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
+		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
 		<p>
 			Copyright © {new Date().getFullYear() !== 2024 ? '2024–' : ''}{new Date().getFullYear()} - {m.allRightsReservedby()}
 			Deutsche Model United Nations e.V.

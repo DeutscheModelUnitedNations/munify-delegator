@@ -130,7 +130,7 @@
 			<div class="flex flex-col md:flex-row gap-4">
 				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
 					<figure class="bg-base-300 flex justify-center items-center p-6 h-60">
-						<enhanced:img src={munSh.logo} alt="Conference" class="h-full" />
+						<img src={munSh.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
 						<h2 class="card-title">{munSh.name}</h2>
@@ -147,7 +147,7 @@
 				</div>
 				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
 					<figure class="bg-base-300 flex justify-center items-center p-6 h-60">
-						<enhanced:img src={munBw.logo} alt="Conference" class="h-full" />
+						<img src={munBw.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
 						<h2 class="card-title">{munBw.name}</h2>
