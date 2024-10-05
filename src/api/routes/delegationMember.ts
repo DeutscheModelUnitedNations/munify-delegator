@@ -9,7 +9,7 @@ export const delegationMember = new Elysia()
 	.get(
 		'/delegationMember',
 		async ({ permissions, query }) => {
-			const user = await permissions.mustBeLoggedIn();
+			const user = permissions.mustBeLoggedIn();
 
 			return await db.delegationMember.findMany({
 				where: {

@@ -17,6 +17,7 @@ import { RoleApplication, RoleApplicationPlain } from '$db/generated/schema/Role
 import Elysia, { t } from 'elysia';
 import { customAlphabet } from 'nanoid';
 import * as m from '$lib/paraglide/messages';
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 
 // https://github.com/CyberAP/nanoid-dictionary
 const makeEntryCode = customAlphabet('6789BCDFGHJKLMNPQRTW', 6);
@@ -566,7 +567,8 @@ export const delegation = new Elysia()
 		async ({ permissions, params }) => {
 			const user = permissions.mustBeLoggedIn();
 
-			if (!user.systemRoleNames.includes('admin')) return; // TODO add Participant Care and Conference Management roles
+			await requireToBeConferenceAdmin({ conferenceId: params.id, user });
+
 			await db.delegation.update({
 				where: {
 					id: params.id

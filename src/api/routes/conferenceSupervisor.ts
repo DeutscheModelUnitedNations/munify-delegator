@@ -1,3 +1,4 @@
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { db } from '$db/db';
@@ -13,7 +14,7 @@ export const conferenceSupervisor = new Elysia()
 	.get(
 		'/conferenceSupervisor',
 		async ({ permissions, query }) => {
-			const user = await permissions.mustBeLoggedIn();
+			const user = permissions.mustBeLoggedIn();
 
 			return await db.conferenceSupervisor.findMany({
 				where: {
@@ -50,10 +51,12 @@ export const conferenceSupervisor = new Elysia()
 		},
 		{
 			query: t.Optional(
-				t.Object({
-					delegationId: t.Optional(t.String()),
-					conferenceId: t.Optional(t.String())
-				})
+				t.Partial(
+					t.Object({
+						delegationId: t.String(),
+						conferenceId: t.String()
+					})
+				)
 			),
 			response: t.Array(
 				t.Composite([

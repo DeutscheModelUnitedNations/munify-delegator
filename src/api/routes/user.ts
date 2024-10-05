@@ -4,6 +4,7 @@ import { User, UserPlain } from '$db/generated/schema/User';
 import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 
 export const user = new Elysia({
 	normalize: true
@@ -94,7 +95,9 @@ export const user = new Elysia({
 	.get(
 		'/user/perConference/:conferenceId',
 		async ({ permissions, params }) => {
-			permissions.mustBeLoggedIn();
+			const user = permissions.mustBeLoggedIn();
+
+			await requireToBeConferenceAdmin({ conferenceId: params.conferenceId, user: user });
 
 			return await db.user.findMany({
 				where: {

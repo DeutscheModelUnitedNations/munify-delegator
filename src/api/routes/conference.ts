@@ -37,8 +37,12 @@ export const conference = new Elysia()
 	)
 	.get(
 		'conference/:id/plausibility',
-		async ({ params }) => {
+		async ({ params, permissions }) => {
+			const user = permissions.mustBeLoggedIn();
 			const conferenceId = params.id;
+
+			await requireToBeConferenceAdmin({ conferenceId, user });
+
 			const findings: {
 				userFindings: {
 					tooYoungUsers: User[];

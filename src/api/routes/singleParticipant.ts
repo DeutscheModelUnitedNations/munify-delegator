@@ -10,6 +10,7 @@ import {
 } from '$db/generated/schema/SingleParticipant';
 import { UserPlain } from '$db/generated/schema/User';
 import Elysia, { t } from 'elysia';
+import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 
 export const singleParticipant = new Elysia()
 	.use(CRUDMaker.getOne('singleParticipant'))
@@ -204,7 +205,8 @@ export const singleParticipant = new Elysia()
 		async ({ permissions, params }) => {
 			const user = permissions.mustBeLoggedIn();
 
-			if (!user.systemRoleNames.includes('admin')) return; // TODO add Participant Care and Conference Management roles
+			await requireToBeConferenceAdmin({ conferenceId: params.id, user });
+
 			await db.singleParticipant.update({
 				where: {
 					id: params.id
@@ -215,7 +217,6 @@ export const singleParticipant = new Elysia()
 			});
 		},
 		{
-			params: t.Object({ id: t.String() }),
-			body: t.Unknown()
+			params: t.Object({ id: t.String() })
 		}
 	);

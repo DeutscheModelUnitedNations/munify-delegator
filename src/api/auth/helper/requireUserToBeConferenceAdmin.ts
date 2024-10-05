@@ -6,7 +6,7 @@ import { PermissionCheckError } from '$api/util/logger';
 import type { OIDCDeriveType } from '$api/auth/oidcPlugin';
 
 /**
- * This helper
+ * This helper function checks if the user is a conference admin or global admin.
  */
 export async function requireToBeConferenceAdmin({
 	conferenceId,
