@@ -7,7 +7,7 @@
 	import { conferenceForm } from './conferenceForm.svelte';
 	import Input from './Input.svelte';
 	import FileInput from './FileInput.svelte';
-	import { ConferenceStatus } from '@prisma/client';
+	import type { ConferenceStatus } from '@prisma/client';
 
 	let { data } = $props();
 

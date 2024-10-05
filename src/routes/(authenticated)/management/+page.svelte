@@ -1,24 +1,17 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
-	import { TeamRole } from '@prisma/client';
-
-	enum GlobalRole {
-		ADMIN = 'ADMIN'
-	}
-
-	type AuthorizationRole = GlobalRole | TeamRole;
 
 	let { data }: { data: PageData } = $props();
 
 	const getAuthorizationRole = (conferenceId: string) => {
 		const teamMembership = data.teamMemberships.find((x) => x.conferenceId === conferenceId);
 		if (teamMembership) {
-			return teamMembership.role as TeamRole;
+			return teamMembership.role;
 		}
 
 		if (data.mySystemRoles.includes('admin')) {
-			return GlobalRole.ADMIN;
+			return 'ADMIN';
 		}
 
 		return null;
@@ -27,11 +20,11 @@
 	const getAuthorizationRoleString = (conferenceId: string) => {
 		const role = getAuthorizationRole(conferenceId);
 		switch (role) {
-			case GlobalRole.ADMIN:
+			case 'ADMIN':
 				return m.administrator();
-			case TeamRole.PROJECT_MANAGEMENT:
+			case 'PROJECT_MANAGEMENT':
 				return m.projectManagement();
-			case TeamRole.PARTICIPANT_CARE:
+			case 'PARTICIPANT_CARE':
 				return m.participantCare();
 		}
 	};

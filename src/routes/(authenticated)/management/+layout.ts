@@ -2,7 +2,6 @@ import { checkForError } from '$api/client';
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
-import { TeamRole } from '@prisma/client';
 
 export const load: LayoutLoad = loadApiHandler(async ({ api, parent, url }) => {
 	const { user } = await parent();
@@ -13,7 +12,7 @@ export const load: LayoutLoad = loadApiHandler(async ({ api, parent, url }) => {
 	if (
 		!mySystemRoles.includes('admin') &&
 		!teamMember.some(
-			(team) => team.role === TeamRole.PROJECT_MANAGEMENT || team.role === TeamRole.PARTICIPANT_CARE
+			(team) => team.role === 'PROJECT_MANAGEMENT' || team.role === 'PARTICIPANT_CARE'
 		)
 	) {
 		error(403, 'Forbidden');
