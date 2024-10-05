@@ -36,6 +36,8 @@ model Conference {
   status            ConferenceStatus @default(PRE)
   startRegistration DateTime?
   endRegistration   DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
@@ -53,6 +55,8 @@ model Committee {
   name                    String
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 
   /// @prismabox.update.input.hide
   conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
@@ -96,6 +100,9 @@ model User {
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   /// @prismabox.input.hide
   delegationMemberships       DelegationMember[]
   /// @prismabox.input.hide
@@ -121,6 +128,9 @@ model ConferenceParticipantStatus {
   paymentStatus      AdministrativeStatus @default(PENDING)
   didAttend          Boolean              @default(false)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   /// @prismabox.update.input.hide
   user         User       @relation(fields: [userId], references: [id])
   userId       String
@@ -135,6 +145,9 @@ model Nation {
   // other properties are fetched from nation databases/libraries which do not want to maintain on our own
   // e.g. localized names, flags, etc.
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   roleApplications RoleApplication[]
   committees       Committee[]
 }
@@ -146,6 +159,9 @@ model NonStateActor {
   fontAwesomeIcon String?
   abbreviation    String
   seatAmount      Int     @default(2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// @prismabox.update.input.hide
   conference       Conference        @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
@@ -162,6 +178,9 @@ model CustomConferenceRole {
   name            String
   description     String
   fontAwesomeIcon String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// @prismabox.update.input.hide
   conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
@@ -189,6 +208,9 @@ model SingleParticipant {
 
   appliedForRoles CustomConferenceRole[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([conferenceId, userId])
 }
 
@@ -204,6 +226,9 @@ model Delegation {
   // this will always be auto generated
   /// @prismabox.input.hide
   entryCode  String  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// @prismabox.update.input.hide
   conference      Conference             @relation(fields: [conferenceId], references: [id])
@@ -222,6 +247,9 @@ model RoleApplication {
   delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId String
   rank         Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // only one can be set at a time
   // the application is either a nation or a nsa
@@ -250,6 +278,9 @@ model DelegationMember {
   userId         String
   isHeadDelegate Boolean
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // users can only be once in this delegation
   @@unique([delegationId, userId])
   // users can only be in one delegation per conference
@@ -273,6 +304,9 @@ model ConferenceSupervisor {
   /// @prismabox.input.hide
   delegations  Delegation[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([conferenceId, userId])
 }
 
@@ -291,6 +325,9 @@ model TeamMember {
   user         User       @relation(fields: [userId], references: [id])
   userId       String
   role         TeamRole   @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([conferenceId, userId])
 }
