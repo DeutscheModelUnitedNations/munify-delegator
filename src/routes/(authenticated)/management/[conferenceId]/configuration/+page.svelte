@@ -80,22 +80,18 @@
 					stateValue={getConferenceWebsite()}
 					changeValue={setConferenceWebsite}
 				/>
-				<div class="flex flex-col sm:flex-row gap-4 w-full justify-between">
-					<DatePicker
-						label={m.conferenceStart()}
-						initialDate={data.conferenceData.start
-							? new Date(data.conferenceData.start)
-							: undefined}
-						pickedDate={getConferenceStart()}
-						setPickedDate={setConferenceStart}
-					/>
-					<DatePicker
-						label={m.conferenceEnd()}
-						initialDate={data.conferenceData.end ? new Date(data.conferenceData.end) : undefined}
-						pickedDate={getConferenceEnd()}
-						setPickedDate={setConferenceEnd}
-					/>
-				</div>
+				<DatePicker
+					label={m.conferenceStart()}
+					initialDate={data.conferenceData.start ? new Date(data.conferenceData.start) : undefined}
+					pickedDate={getConferenceStart()}
+					setPickedDate={setConferenceStart}
+				/>
+				<DatePicker
+					label={m.conferenceEnd()}
+					initialDate={data.conferenceData.end ? new Date(data.conferenceData.end) : undefined}
+					pickedDate={getConferenceEnd()}
+					setPickedDate={setConferenceEnd}
+				/>
 				<FileInput label={m.conferenceImage()} file={getImage()} changeFile={setImage} />
 				<label class="form-control w-full">
 					<span class="label-text">{m.conferenceStatus()}</span>
