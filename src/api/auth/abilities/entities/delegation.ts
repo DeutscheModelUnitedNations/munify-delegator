@@ -1,6 +1,7 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDCDeriveType } from '$api/auth/oidcPlugin';
+import { conference } from '$lib/paraglide/messages';
 
 export const defineAbilitiesForDelegation = (
 	oidc: OIDCDeriveType,
@@ -22,6 +23,20 @@ export const defineAbilitiesForDelegation = (
 		can(['update', 'delete'], 'Delegation', {
 			applied: false,
 			members: { some: { user: { id: user.sub }, isHeadDelegate: true } }
+		});
+
+		// project management and partiticipant care team members should be able to see the delegations of their conferences
+		can(['list', 'read', 'update'], 'Delegation', {
+			conference: {
+				teamMembers: {
+					some: {
+						user: {
+							id: user.sub
+						},
+						OR: [{ role: 'PROJECT_MANAGEMENT' }, { role: 'PARTICIPANT_CARE' }]
+					}
+				}
+			}
 		});
 
 		// team members should be able to see the delegations of their conferences

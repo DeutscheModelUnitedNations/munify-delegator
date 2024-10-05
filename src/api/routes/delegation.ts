@@ -567,7 +567,13 @@ export const delegation = new Elysia()
 		async ({ permissions, params }) => {
 			const user = permissions.mustBeLoggedIn();
 
-			await requireToBeConferenceAdmin({ conferenceId: params.id, user });
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					id: params.id
+				}
+			});
+
+			await requireToBeConferenceAdmin({ conferenceId: delegation.conferenceId, user });
 
 			await db.delegation.update({
 				where: {
@@ -579,7 +585,6 @@ export const delegation = new Elysia()
 			});
 		},
 		{
-			params: t.Object({ id: t.String() }),
-			body: t.Unknown()
+			params: t.Object({ id: t.String() })
 		}
 	);
