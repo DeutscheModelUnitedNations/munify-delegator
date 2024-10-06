@@ -19,8 +19,8 @@
 			const reader = new FileReader();
 			const input = e.target as HTMLInputElement;
 			if (!input?.files?.[0]) return;
-			if (input?.files?.[0].size ?? 0 > 1000000) {
-				alert('File size must be less than 1MB');
+			if ((input?.files?.[0].size ?? 0) > 100000) {
+				alert(`File size must be less than 100kB (${input?.files?.[0].size} bytes)`);
 				return;
 			}
 			reader.onload = (e) => {

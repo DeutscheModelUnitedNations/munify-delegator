@@ -30,15 +30,9 @@ export const delegation = new Elysia()
 	.get(
 		'delegation',
 		async ({ permissions, query }) => {
-			permissions.mustBeLoggedIn();
-			return await db.delegation.findMany({
-				where: {
-					conferenceId: query.conferenceId,
-					supervisors: {
-						some: { id: query.supervisorId }
-					},
-					AND: [permissions.allowDatabaseAccessTo('list').Delegation]
-				},
+			const user = permissions.mustBeLoggedIn();
+
+			const commonQueryParams = {
 				include: {
 					_count: {
 						select: {
@@ -47,10 +41,32 @@ export const delegation = new Elysia()
 							appliedForRoles: true
 						}
 					}
-				},
-				orderBy: {
-					entryCode: 'asc'
 				}
+			};
+
+			if (query.conferenceId) {
+				await requireToBeConferenceAdmin({ conferenceId: query.conferenceId, user });
+
+				return await db.delegation.findMany({
+					where: {
+						conferenceId: query.conferenceId,
+						AND: [permissions.allowDatabaseAccessTo('list').Delegation]
+					},
+					...commonQueryParams,
+					orderBy: {
+						entryCode: 'asc'
+					}
+				});
+			}
+
+			return await db.delegation.findMany({
+				where: {
+					supervisors: {
+						some: { id: query.supervisorId }
+					},
+					AND: [permissions.allowDatabaseAccessTo('list').Delegation]
+				},
+				...commonQueryParams
 			});
 		},
 		{
@@ -567,7 +583,13 @@ export const delegation = new Elysia()
 		async ({ permissions, params }) => {
 			const user = permissions.mustBeLoggedIn();
 
-			await requireToBeConferenceAdmin({ conferenceId: params.id, user });
+			const delegation = await db.delegation.findUniqueOrThrow({
+				where: {
+					id: params.id
+				}
+			});
+
+			await requireToBeConferenceAdmin({ conferenceId: delegation.conferenceId, user });
 
 			await db.delegation.update({
 				where: {
@@ -579,7 +601,6 @@ export const delegation = new Elysia()
 			});
 		},
 		{
-			params: t.Object({ id: t.String() }),
-			body: t.Unknown()
+			params: t.Object({ id: t.String() })
 		}
 	);

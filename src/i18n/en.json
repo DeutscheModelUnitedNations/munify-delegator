@@ -379,6 +379,7 @@
 	"historyComparisonDescription": "The statistics overview has the ability to save statistics locally on your device for later comparison. This happens automatically when you access this page. A new record is created every day. The data is stored locally on your device and is not transferred to the servers.<br> The most recent record is displayed by default. However, you can also select older records here to compare them with the current status.",
 	"noHistory": "No history available",
 	"conferenceSettings": "Conference Settings",
+	"conferenceSettingsDescription": "You need to be <em>Project Management</em> to change the conference settings.",
 	"conferenceTitle": "Conference Name",
 	"conferenceLongTitle": "Full Name",
 	"conferenceLocation": "Location",

@@ -205,7 +205,13 @@ export const singleParticipant = new Elysia()
 		async ({ permissions, params }) => {
 			const user = permissions.mustBeLoggedIn();
 
-			await requireToBeConferenceAdmin({ conferenceId: params.id, user });
+			const singleParticipant = await db.singleParticipant.findUniqueOrThrow({
+				where: {
+					id: params.id
+				}
+			});
+
+			await requireToBeConferenceAdmin({ conferenceId: singleParticipant.conferenceId, user });
 
 			await db.singleParticipant.update({
 				where: {

@@ -381,6 +381,7 @@
 	"historyComparisonDescription": "Die Statistikübersicht verfügt über die Möglichkeit, Anmeldestatistiken lokal auf Ihrem Gerät für spätere Vergleiche zu speichern. Dies geschieht automatisch, in du diese Seite aufrufst. Pro Tag wird ein neuer Datensatz erstellt. Die Daten werden lokal auf deinem Gerät gespeichert und nicht an die Server übertragen.<br>Der jeweils letzte Datensatz wird standardmäßig angezeigt. Du kannst jedoch hier auch ältere Datensätze auswählen, um sie mit dem aktuellen Stand zu vergleichen.",
 	"noHistory": "Keine Historie vorhanden",
 	"conferenceSettings": "Konferenzeinstellungen",
+	"conferenceSettingsDescription": "Du musst <span class=\"underline\">Projektleitung</span> oder <span class=\"underline\">Administrator</span> sein, um diese Einstellungen ändern zu können.",
 	"conferenceTitle": "Konferenzname",
 	"conferenceLongTitle": "Voller Name",
 	"conferenceLocation": "Ort",

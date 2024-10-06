@@ -16,23 +16,7 @@ export const conferenceSupervisor = new Elysia()
 		async ({ permissions, query }) => {
 			const user = permissions.mustBeLoggedIn();
 
-			return await db.conferenceSupervisor.findMany({
-				where: {
-					OR: [
-						{
-							delegations: {
-								some: {
-									id: query.delegationId
-								}
-							}
-						},
-						{
-							conference: {
-								id: query.conferenceId
-							}
-						}
-					]
-				},
+			const commonQueryParams = {
 				include: {
 					user: {
 						select: {
@@ -47,6 +31,24 @@ export const conferenceSupervisor = new Elysia()
 						}
 					}
 				}
+			};
+
+			if (query.conferenceId) {
+				return await db.conferenceSupervisor.findMany({
+					where: { conferenceId: query.conferenceId },
+					...commonQueryParams
+				});
+			}
+
+			return await db.conferenceSupervisor.findMany({
+				where: {
+					delegations: {
+						some: {
+							id: query.delegationId
+						}
+					}
+				},
+				...commonQueryParams
 			});
 		},
 		{
