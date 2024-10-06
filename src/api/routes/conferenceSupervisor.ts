@@ -33,7 +33,8 @@ export const conferenceSupervisor = new Elysia()
 				}
 			};
 
-			if (query.conferenceId) {
+			if (query.conferenceId && !query.delegationId) {
+				requireToBeConferenceAdmin({ conferenceId: query.conferenceId, user });
 				return await db.conferenceSupervisor.findMany({
 					where: { conferenceId: query.conferenceId },
 					...commonQueryParams

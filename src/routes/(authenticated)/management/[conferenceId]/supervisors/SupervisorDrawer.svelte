@@ -17,25 +17,12 @@
 
 	let api = apiClient({ origin: data.url.origin });
 
-	// let delegations = $state<Delegation[] | null>(null);
-
 	const getDelegations = () =>
 		checkForError(
 			api.delegation.get({
-				query: { conferenceId: supervisor?.conferenceId, supervisorId: supervisor?.id }
+				query: { supervisorId: supervisor?.id }
 			})
 		);
-
-	// $effect(() => {
-	// 		checkForError(
-	// 			api.delegation.get({
-	// 				query: { conferenceId: supervisor.conferenceId, supervisorId: supervisor.id }
-	// 			})
-	// 		).then((res) => {
-	// 			delegations = res;
-	// 		});
-	// 	}
-	// });
 </script>
 
 <Drawer open={supervisor != null} {onClose}>
