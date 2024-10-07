@@ -29,4 +29,4 @@ const brandExtension = Prisma.defineExtension((client) => {
 
 export const db = new PrismaClient({
 	datasourceUrl: dynamicPrivateConfig.DATABASE_URL
-}).$extends(brandExtension);
+}).$extends(brandExtension) as unknown as PrismaClient;
