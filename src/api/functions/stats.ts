@@ -1,6 +1,12 @@
 import type { PrismaClient } from '@prisma/client';
 
-export async function conferenceStats(db: PrismaClient, conferenceId: string) {
+export async function conferenceStats({
+	db,
+	conferenceId
+}: {
+	db: PrismaClient;
+	conferenceId: string;
+}) {
 	const conference = await db.conference.findUniqueOrThrow({
 		where: {
 			id: conferenceId

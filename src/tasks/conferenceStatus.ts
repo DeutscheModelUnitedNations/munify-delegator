@@ -53,6 +53,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 	logLoading(TASK_NAME, CRON);
 
 	const _conferenceStatusSlackNotifiaction = schedule.scheduleJob(
+		// TODO: we should allow passing the TZ via env var to the container
 		{ rule: CRON, tz: 'Etc/GMT-2' },
 		async function () {
 			logTaskStart(TASK_NAME);
@@ -69,10 +70,10 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 			});
 
 			for (const conference of conferencesWithOpenRegistration) {
-				const { countdowns, registrationStatistics: rs } = await conferenceStats(
-					tasksDb,
-					conference.id
-				);
+				const { countdowns, registrationStatistics: rs } = await conferenceStats({
+					db: tasksDb,
+					conferenceId: conference.id
+				});
 
 				// import historic stats from file
 				const hs: typeof rs | undefined = readHistoricStats(conference.id);

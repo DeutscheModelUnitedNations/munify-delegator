@@ -190,10 +190,10 @@ export const conference = new Elysia()
 
 			await requireToBeConferenceAdmin({ conferenceId, user });
 
-			const { countdowns, registrationStatistics, ageStatistics } = await conferenceStats(
-				db as unknown as PrismaClient, // TODO @m1212e how do I type the fn param properly, so that I don't need to cast here?
+			const { countdowns, registrationStatistics, ageStatistics } = await conferenceStats({
+				db,
 				conferenceId
-			);
+			});
 
 			return {
 				countdowns,
