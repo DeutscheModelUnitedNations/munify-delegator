@@ -202,7 +202,10 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 											{
 												type: 'text',
 												style: { code: true, bold: true },
-												text: formatHistoricComparison(hs?.delegations.total, rs.delegations.total)
+												text: formatHistoricComparison(
+													hs?.delegationMembers.total,
+													rs.delegationMembers.total
+												)
 											},
 											{
 												type: 'text',
@@ -211,10 +214,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 											{
 												type: 'text',
 												style: { code: true, bold: true },
-												text: formatHistoricComparison(
-													hs?.delegationMembers.total,
-													rs.delegationMembers.total
-												)
+												text: formatHistoricComparison(hs?.delegations.total, rs.delegations.total)
 											},
 											{
 												type: 'text',
@@ -233,8 +233,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 												type: 'text',
 												style: { code: true },
 												text: formatHistoricComparison(
-													hs?.delegations.notApplied,
-													rs.delegations.notApplied
+													hs?.delegationMembers.notApplied,
+													rs.delegationMembers.notApplied
 												)
 											},
 											{
@@ -245,8 +245,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 												type: 'text',
 												style: { code: true },
 												text: formatHistoricComparison(
-													hs?.delegationMembers.notApplied,
-													rs.delegationMembers.notApplied
+													hs?.delegations.notApplied,
+													rs.delegations.notApplied
 												)
 											},
 											{
@@ -266,8 +266,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 												type: 'text',
 												style: { code: true },
 												text: formatHistoricComparison(
-													hs?.delegations.applied,
-													rs.delegations.applied
+													hs?.delegationMembers.applied,
+													rs.delegationMembers.applied
 												)
 											},
 											{
@@ -278,8 +278,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 												type: 'text',
 												style: { code: true },
 												text: formatHistoricComparison(
-													hs?.delegationMembers.applied,
-													rs.delegationMembers.applied
+													hs?.delegations.applied,
+													rs.delegations.applied
 												)
 											},
 											{
