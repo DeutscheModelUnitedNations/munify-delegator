@@ -1,6 +1,8 @@
 import Elysia, { t } from 'elysia';
 import { oidcPlugin } from '$api/auth/oidcPlugin';
-import { getLogoutUrl } from '$api/auth/oidcFlow';
+import { fetchUserInfoFromIssuer, getLogoutUrl } from '$api/auth/oidcFlow';
+import { UserFacingError } from '$api/util/logger';
+import { db } from '$db/db';
 
 export const auth = new Elysia()
 	.use(oidcPlugin)
@@ -44,4 +46,24 @@ export const auth = new Elysia()
 		response: t.Object({
 			logoutUrl: t.String()
 		})
+	})
+	.post('/auth/trigger-user-data-refresh', async ({ oidc }) => {
+		if (!oidc.tokenSet?.access_token) {
+			throw new UserFacingError('No access token provided');
+		}
+		const issuerUserData = await fetchUserInfoFromIssuer(oidc.tokenSet?.access_token);
+
+		await db.user.update({
+			where: {
+				id: issuerUserData.sub
+			},
+			data: {
+				email: issuerUserData.email ?? undefined,
+				family_name: issuerUserData.family_name ?? undefined,
+				given_name: issuerUserData.given_name ?? undefined,
+				preferred_username: issuerUserData.preferred_username ?? undefined,
+				locale: issuerUserData.locale ?? undefined,
+				phone: issuerUserData.phone as string ?? undefined
+			}
+		});
 	});
