@@ -80,7 +80,7 @@ export const user = new Elysia({
 				'city',
 				'country',
 				'gender',
-				'foodPreference',
+				'foodPreference'
 			];
 
 			const userNeedsAdditionalInfo = requiredFields.some((field) => !updatedUser[field]);

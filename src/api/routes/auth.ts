@@ -63,7 +63,7 @@ export const auth = new Elysia()
 				given_name: issuerUserData.given_name ?? undefined,
 				preferred_username: issuerUserData.preferred_username ?? undefined,
 				locale: issuerUserData.locale ?? undefined,
-				phone: issuerUserData.phone as string ?? undefined
+				phone: (issuerUserData.phone as string) ?? undefined
 			}
 		});
 	});
