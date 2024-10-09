@@ -58,7 +58,7 @@
 		if (data.redirectUrl) {
 			goto(data.redirectUrl);
 		}
-		toast.push(m.saved() + " ✅");
+		toast.push(m.saved() + ' ✅');
 	};
 
 	$effect(() => {

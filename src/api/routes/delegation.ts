@@ -6,10 +6,7 @@ import { PermissionCheckError, UserFacingError } from '$api/util/logger';
 import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
 import { db } from '$db/db';
 import { ConferenceSupervisorPlain } from '$db/generated/schema/ConferenceSupervisor';
-import {
-	DelegationPlain,
-	DelegationWhereUnique
-} from '$db/generated/schema/Delegation';
+import { DelegationPlain, DelegationWhereUnique } from '$db/generated/schema/Delegation';
 import { DelegationMemberPlain } from '$db/generated/schema/DelegationMember';
 import { RoleApplication, RoleApplicationPlain } from '$db/generated/schema/RoleApplication';
 import Elysia, { t } from 'elysia';
