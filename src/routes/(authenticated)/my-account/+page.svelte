@@ -58,6 +58,7 @@
 		if (data.redirectUrl) {
 			goto(data.redirectUrl);
 		}
+		// TODO we could use a fa icon instead of the emoji here
 		toast.push(m.saved() + ' ✅');
 	};
 
