@@ -3,7 +3,7 @@ import { config } from './config';
 import { tasksDb } from './tasksDb';
 import { IncomingWebhook } from '@slack/webhook';
 import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
-import { conferenceStats } from '$api/functions/stats';
+import { conferenceStats } from '$api/services/stats';
 import fs from 'fs';
 
 // GLOBALS

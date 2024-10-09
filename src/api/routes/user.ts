@@ -5,6 +5,8 @@ import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { CRUDMaker } from '$api/util/crudmaker';
 import { dynamicPublicConfig } from '$config/public';
 import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
+import { userDataCompleteCheck } from '$api/services/userDataComplete';
+import { languageExtractor } from '$api/util/languageExtractor';
 
 export const user = new Elysia({
 	normalize: true
@@ -14,6 +16,7 @@ export const user = new Elysia({
 	.use(CRUDMaker.updateOne('user'))
 	.use(CRUDMaker.deleteOne('user'))
 	.use(permissionsPlugin)
+	.use(languageExtractor)
 	.get(
 		'/user/:id',
 		async ({ params, permissions }) => {
@@ -40,6 +43,18 @@ export const user = new Elysia({
 		},
 		{
 			response: User
+		}
+	)
+	.get(
+		'/user/:id/is-data-complete',
+		async ({ params, permissions, languageTag }) => {
+			const user = await db.user.findUniqueOrThrow({
+				where: { id: params.id, AND: [permissions.allowDatabaseAccessTo('read').User] }
+			});
+			return userDataCompleteCheck(user, languageTag);
+		},
+		{
+			response: t.Array(t.String())
 		}
 	)
 	.patch(
@@ -72,20 +87,7 @@ export const user = new Elysia({
 				}
 			});
 
-			const requiredFields: (keyof typeof updatedUser)[] = [
-				'birthday',
-				'phone',
-				'street',
-				'zip',
-				'city',
-				'country',
-				'gender',
-				'foodPreference'
-			];
-
-			const userNeedsAdditionalInfo = requiredFields.some((field) => !updatedUser[field]);
-
-			return { userNeedsAdditionalInfo };
+			return { userNeedsAdditionalInfo: userDataCompleteCheck(updatedUser, 'de').length > 0 };
 		},
 		{
 			response: t.Object({ userNeedsAdditionalInfo: t.Boolean() })
