@@ -1,7 +1,7 @@
 import schedule from 'node-schedule';
 import { config } from './config';
 import { tasksDb } from './tasksDb';
-import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
+import { logLoading, logTaskEnd, logTaskStart, taskError, taskWarning } from './logs';
 import { listmonkClient } from './apis/listmonk/listmonkClient';
 import lodash from 'lodash';
 import type {
@@ -270,7 +270,7 @@ const _ = schedule.scheduleJob(
 	async function () {
 		const startTime = logTaskStart(TASK_NAME);
 		if (!config.LISTMONK_API_URL || config.LISTMONK_API_URL === '') {
-			taskWarning(TASK_NAME, 'Listmonk API URL is not set. Aborting task.');
+			taskError(TASK_NAME, 'Listmonk API URL is not set. Aborting task.');
 			return;
 		}
 
@@ -303,7 +303,11 @@ const _ = schedule.scheduleJob(
 			}
 		});
 		if (listsResponse.error) {
-			taskWarning(TASK_NAME, `Failed to fetch lists from Listmonk. Aborting task.`);
+			taskError(
+				TASK_NAME,
+				`Failed to fetch lists from Listmonk. Aborting task.`,
+				(listsResponse as any).error
+			);
 			return;
 		}
 		const lists = listsResponse.data.data?.results;
@@ -321,7 +325,11 @@ const _ = schedule.scheduleJob(
 					}
 				});
 				if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
-					taskWarning(TASK_NAME, `Failed to create list ${listName} (global). Aborting task.`);
+					taskError(
+						TASK_NAME,
+						`Failed to create list ${listName} (global). Aborting task.`,
+						res.error ? (res as any).error : undefined
+					);
 					return;
 				}
 				const resData = res.data.data;
@@ -360,9 +368,10 @@ const _ = schedule.scheduleJob(
 						}
 					});
 					if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
-						taskWarning(
+						taskError(
 							TASK_NAME,
-							`Failed to create list ${list} for conference ${conference.title}. Aborting task.`
+							`Failed to create list ${list} for conference ${conference.title}. Aborting task.`,
+							res.error ? (res as any).error : undefined
 						);
 						return;
 					}
