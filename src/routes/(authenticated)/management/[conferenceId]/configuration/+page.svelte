@@ -88,7 +88,7 @@
 				<Textarea
 					label={m.conferenceInfo()}
 					initialValue={data.conferenceData.info}
-					stateValue={getConferenceInfo() ?? ""}
+					stateValue={getConferenceInfo() ?? ''}
 					changeValue={setConferenceInfo}
 				/>
 				<DatePicker
