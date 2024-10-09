@@ -7,8 +7,6 @@ import { tidyRoleApplications } from '$api/util/removeTooSmallRoleApplications';
 import { db } from '$db/db';
 import { ConferenceSupervisorPlain } from '$db/generated/schema/ConferenceSupervisor';
 import {
-	Delegation,
-	DelegationInputCreate,
 	DelegationPlain,
 	DelegationWhereUnique
 } from '$db/generated/schema/Delegation';

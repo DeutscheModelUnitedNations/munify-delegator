@@ -8,6 +8,7 @@
 	import addressCountries from '$lib/helper/addressCountries.js';
 	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName.js';
 	import * as m from '$lib/paraglide/messages.js';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let { data } = $props();
 	// TODO form validation
@@ -57,7 +58,7 @@
 		if (data.redirectUrl) {
 			goto(data.redirectUrl);
 		}
-		//TODO notify user of success
+		toast.push(m.saved() + " ✅");
 	};
 
 	$effect(() => {
