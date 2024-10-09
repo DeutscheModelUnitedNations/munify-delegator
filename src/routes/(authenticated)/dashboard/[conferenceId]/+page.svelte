@@ -67,7 +67,7 @@
 	});
 </script>
 
-<Header title={conference?.title ?? 'Unknown'} info={conference?.info ?? ''} />
+<Header title={conference?.title ?? 'Unknown'} info={conference?.info} />
 <div class="flex flex-col py-10 gap-10">
 	{#if determineCategory() === 'INDIVIDUAL'}
 		{#if determinStage() === 'REGISTRATION' || determinStage() === 'POST_REGISTRATION'}
