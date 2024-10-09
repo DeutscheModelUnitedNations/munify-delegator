@@ -1,4 +1,4 @@
-Genertate the API documentation for Listmonk
+Generate the API documentation for Listmonk
 
 ```bash
 cd src/tasks/apis/listmonk
