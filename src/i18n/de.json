@@ -320,7 +320,6 @@
 	"youAreAlreadySingleParticipant": "Du bist bereits ein Einzelteilnehmer in dieser Konferenz.",
 	"youAreAlreadyDelegationMember": "Du bist bereits ein Delegationsmitglied in dieser Konferenz.",
 	"youAreAlreadyTeamMember": "Du bist bereits ein Teammitglied in dieser Konferenz.",
-	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!",
 	"http400": "Bei der Anfrage ist ein Fehler aufgetreten.",
 	"http403": "Du hast keine Berechtigung für diese Aktion!",
 	"http404": "Die angeforderte Seite wurde nicht gefunden.",

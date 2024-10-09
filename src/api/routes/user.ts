@@ -72,7 +72,7 @@ export const user = new Elysia({
 				}
 			});
 
-			const requiredFields = [
+			const requiredFields: (keyof typeof updatedUser)[] = [
 				'birthday',
 				'phone',
 				'street',
@@ -83,7 +83,6 @@ export const user = new Elysia({
 				'foodPreference'
 			];
 
-			// @ts-expect-error - TS doesn't know about the user object keys
 			const userNeedsAdditionalInfo = requiredFields.some((field) => !updatedUser[field]);
 
 			return { userNeedsAdditionalInfo };

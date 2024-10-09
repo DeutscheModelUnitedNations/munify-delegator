@@ -177,3 +177,7 @@ export function getLogoutUrl(visitedUrl: URL) {
 		post_logout_redirect_uri: visitedUrl.origin + '/auth/logout-callback'
 	});
 }
+
+export function fetchUserInfoFromIssuer(access_token: string) {
+	return client.userinfo(access_token);
+}
