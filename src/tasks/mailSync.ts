@@ -10,7 +10,8 @@ import type {
 	ConferenceSupervisor,
 	Delegation,
 	DelegationMember,
-	SingleParticipant
+	SingleParticipant,
+	TeamMember
 } from '@prisma/client';
 
 // GLOBALS
@@ -29,7 +30,8 @@ const requiredListsPerConference = [
 	// 'DELEGATION_MEMBERS',
 	// 'SINGLE_PARTICIPANTS',
 	// 'HEAD_DELEGATES',
-	'SUPERVISORS'
+	'SUPERVISORS',
+	'TEAM'
 ] as const;
 
 // TYPES
@@ -44,6 +46,9 @@ interface User extends BaseUser {
 		conference: Conference;
 	})[];
 	conferenceSupervisor: (ConferenceSupervisor & {
+		conference: Conference;
+	})[];
+	teamMember: (TeamMember & {
 		conference: Conference;
 	})[];
 }
@@ -65,7 +70,13 @@ export interface Attribs {
 	conferences: {
 		id: string;
 		title: string;
-		role: 'DELEGATE' | 'SINGLE_PARTICIPANT' | 'SUPERVISOR';
+		role:
+			| 'DELEGATE'
+			| 'SINGLE_PARTICIPANT'
+			| 'SUPERVISOR'
+			| 'PARTICIPANT_CARE'
+			| 'PROJECT_MANAGEMENT'
+			| 'MEMBER'; // Team Member
 	}[];
 }
 
@@ -166,6 +177,11 @@ async function getUsers(): Promise<User[]> {
 				include: {
 					conference: true
 				}
+			},
+			teamMember: {
+				include: {
+					conference: true
+				}
 			}
 		}
 	});
@@ -178,6 +194,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	};
 
 	const lists: string[] = [];
+
+	// Assign Lists based on Roles at Conferences
 
 	for (const dm of user.delegationMemberships) {
 		attribs.conferences.push({
@@ -224,12 +242,35 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 		lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
 	}
 
+	// Assign Global Lists based on User Preferences
+
 	if (user.wantsToReceiveGeneralInformation) {
 		lists.push(createGlobalList('DMUN_NEWSLETTER'));
 	}
 
 	if (user.wantsJoinTeamInformation) {
 		lists.push(createGlobalList('DMUN_TEAM_TENDERS'));
+	}
+
+	// Assign all conference Lists to Team Members
+
+	for (const tm of user.teamMember) {
+		attribs.conferences.push({
+			id: tm.conferenceId,
+			title: tm.conference.title,
+			role: tm.role
+		});
+		// Default Team list for all Team Members
+		lists.push(createListName(tm.conference.title, tm.conferenceId, 'TEAM'));
+		if (tm.role === 'PARTICIPANT_CARE' || tm.role === 'PROJECT_MANAGEMENT') {
+			// Project Management and Participant Care get all lists for the conference
+			// This is usefull to make sure which information reaches which subscriber (control)
+			lists.push(createListName(tm.conference.title, tm.conferenceId, 'REGISTRATION_COMPLETED'));
+			lists.push(
+				createListName(tm.conference.title, tm.conferenceId, 'REGISTRATION_NOT_COMPLETED')
+			);
+			lists.push(createListName(tm.conference.title, tm.conferenceId, 'SUPERVISORS'));
+		}
 	}
 
 	return {
