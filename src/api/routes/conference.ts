@@ -4,7 +4,7 @@ import { db } from '$db/db';
 import { permissionsPlugin } from '$api/auth/permissionsPlugin';
 import { ConferencePlain } from '$db/generated/schema/Conference';
 import { UserPlain } from '$db/generated/schema/User';
-import type { PrismaClient, User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
 import { conferenceStats } from '$api/functions/stats';
 

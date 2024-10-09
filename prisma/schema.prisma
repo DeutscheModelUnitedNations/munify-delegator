@@ -36,6 +36,7 @@ model Conference {
   status            ConferenceStatus @default(PRE)
   startRegistration DateTime?
   endRegistration   DateTime?
+  info                    String?
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
@@ -49,10 +50,10 @@ model Conference {
 }
 
 model Committee {
-  id                      String @id @default(nanoid())
+  id                      String  @id @default(nanoid())
   name                    String
   abbreviation            String
-  numOfSeatsPerDelegation Int    @default(1)
+  numOfSeatsPerDelegation Int     @default(1)
 
   /// @prismabox.update.input.hide
   conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)

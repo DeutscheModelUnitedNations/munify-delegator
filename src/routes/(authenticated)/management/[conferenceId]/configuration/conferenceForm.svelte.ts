@@ -16,6 +16,7 @@ let conferenceStartRegistration = $state<Date | undefined>(undefined);
 let conferenceEndRegistration = $state<Date | undefined>(undefined);
 let conferenceImage = $state<string | null | undefined>(null);
 let conferenceStatus = $state<ConferenceStatus>('PRE');
+let conferenceInfo = $state<string | null>(null);
 
 export function conferenceForm() {
 	const submit = async (e: Event, conferenceId: string) => {
@@ -34,7 +35,8 @@ export function conferenceForm() {
 				startRegistration: conferenceStartRegistration ? conferenceStartRegistration : null,
 				endRegistration: conferenceEndRegistration ? conferenceEndRegistration : null,
 				imageDataUrl: conferenceImage ? conferenceImage : null,
-				status: conferenceStatus
+				status: conferenceStatus,
+				info: conferenceInfo
 			});
 		invalidateAll();
 	};
@@ -50,6 +52,7 @@ export function conferenceForm() {
 		setConferenceStartRegistration(conferenceData.startRegistration);
 		setConferenceEndRegistration(conferenceData.endRegistration);
 		setImage(conferenceData.imageDataUrl);
+		setConferenceInfo(conferenceData.info);
 	};
 
 	const getConferenceTitle = () => {
@@ -94,6 +97,10 @@ export function conferenceForm() {
 
 	const getConferenceStart = () => {
 		return conferenceStart;
+	};
+
+	const getConferenceInfo = () => {
+		return conferenceInfo;
 	};
 
 	const setConferenceStart = (value: string | Date | null | undefined) => {
@@ -158,6 +165,10 @@ export function conferenceForm() {
 		conferenceStatus = value;
 	};
 
+	const setConferenceInfo = (value: string | null) => {
+		conferenceInfo = value;
+	};
+
 	return {
 		submit,
 		setAllFromConferenceData,
@@ -182,6 +193,8 @@ export function conferenceForm() {
 		getImage,
 		setImage,
 		getConferenceStatus,
-		setConferenceStatus
+		setConferenceStatus,
+		setConferenceInfo,
+		getConferenceInfo
 	};
 }

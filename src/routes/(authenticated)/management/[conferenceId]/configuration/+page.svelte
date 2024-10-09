@@ -1,13 +1,15 @@
 <script lang="ts">
 	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import { format } from 'date-fns';
 	import DatePicker from './DatePicker.svelte';
 	import { onMount } from 'svelte';
 	import { conferenceForm } from './conferenceForm.svelte';
 	import Input from './Input.svelte';
 	import FileInput from './FileInput.svelte';
 	import type { ConferenceStatus } from '@prisma/client';
+	import Textarea from './Textarea.svelte';
+
+	//TODO https://github.com/DeutscheModelUnitedNations/munify-delegator/issues/125
 
 	let { data } = $props();
 
@@ -25,6 +27,7 @@
 		getConferenceStartRegistration,
 		getConferenceEndRegistration,
 		getConferenceStatus,
+		getConferenceInfo,
 
 		setConferenceTitle,
 		setConferenceLongTitle,
@@ -36,7 +39,8 @@
 		setImage,
 		setConferenceStartRegistration,
 		setConferenceEndRegistration,
-		setConferenceStatus
+		setConferenceStatus,
+		setConferenceInfo
 	} = conferenceForm();
 
 	onMount(() => {
@@ -80,6 +84,12 @@
 					initialValue={data.conferenceData.website}
 					stateValue={getConferenceWebsite()}
 					changeValue={setConferenceWebsite}
+				/>
+				<Textarea
+					label={m.conferenceInfo()}
+					initialValue={data.conferenceData.info}
+					stateValue={getConferenceInfo() ?? ""}
+					changeValue={setConferenceInfo}
 				/>
 				<DatePicker
 					label={m.conferenceStart()}
