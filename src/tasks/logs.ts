@@ -6,11 +6,14 @@ export function logLoading(taskName: string, schedule: string) {
 export function logTaskStart(taskName: string) {
 	console.info(`Started Task: ${taskName}`);
 	console.info('----');
+	return new Date().getTime();
 }
 
-export function logTaskEnd(taskName: string) {
+export function logTaskEnd(taskName: string, startTime?: number) {
 	console.info('----');
-	console.info(`Finished Task: ${taskName}`);
+	console.info(
+		`Finished Task: ${taskName} ${startTime ? `(in ${new Date().getTime() - startTime}ms)` : ''}`
+	);
 }
 
 export function taskWarning(taskName: string, message: string) {

@@ -56,7 +56,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 		// TODO: we should allow passing the TZ via env var to the container
 		{ rule: CRON, tz: 'Etc/GMT-2' },
 		async function () {
-			logTaskStart(TASK_NAME);
+			const startTime = logTaskStart(TASK_NAME);
 
 			const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
 				where: {
@@ -498,7 +498,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 				}
 			}
 
-			logTaskEnd(TASK_NAME);
+			logTaskEnd(TASK_NAME, startTime);
 		}
 	);
 } else {

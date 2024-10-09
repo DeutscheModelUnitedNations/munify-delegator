@@ -13,5 +13,6 @@ console.info('Loading tasks...');
 
 // Register Tasks here by importing them
 import './conferenceStatus';
+import './mailSync';
 
 console.info('Finished loading tasks.');
