@@ -9,6 +9,7 @@
 	import Supervisor from './Supervisor.svelte';
 	import { redirect } from '@sveltejs/kit';
 	import SingleParticipantRegistrationStage from './SingleParticipantRegistrationStage.svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	enum STAGE {
 		REGISTRATION = 'REGISTRATION',
@@ -67,7 +68,16 @@
 	});
 </script>
 
-<Header title={conference?.title ?? 'Unknown'} info={conference?.info} />
+<Header title={conference?.title ?? 'Unknown'} />
+{#if conference && conference.info}
+	<div class="collapse bg-base-200 mt-4">
+		<input type="checkbox" value="true" />
+		<div class="collapse-title text-xl font-medium">{m.conferenceInfo()}</div>
+		<div class="collapse-content">
+			<p>{conference?.info}</p>
+		</div>
+	</div>
+{/if}
 <div class="flex flex-col py-10 gap-10">
 	{#if determineCategory() === 'INDIVIDUAL'}
 		{#if determinStage() === 'REGISTRATION' || determinStage() === 'POST_REGISTRATION'}
