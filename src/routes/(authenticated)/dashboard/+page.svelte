@@ -20,7 +20,7 @@
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
 	>
-		{#each data.conferences.filter((x) => x.status === 'PRE' || x.status === 'ACTIVE') as conference}
+		{#each data.conferences.filter((x) => x.status === 'SIGNUP' || x.status === 'ACTIVE') as conference}
 			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
 		{/each}
 		<a href="/registration" class="carousel-item max-w-96 w-[90%]">

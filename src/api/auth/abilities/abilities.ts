@@ -28,7 +28,6 @@ export const oidcRoles = ['admin', 'member', 'service_user'] as const;
  * - `read`: Read a single entity
  * - `create`: Create a new entity
  * - `update`: Update an entity
- * - `status-update`: Update the status of an entity (non critical data, such as state of debate for committees)
  * - `delete`: Delete an entity
  */
 export type Action = (typeof actions)[number];

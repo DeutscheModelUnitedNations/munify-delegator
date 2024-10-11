@@ -102,11 +102,11 @@
 						value={getConferenceStatus()}
 						onchange={(e) => {
 							setConferenceStatus(
-								((e.target as HTMLSelectElement)?.value as ConferenceStatus) || 'PRE'
+								((e.target as HTMLSelectElement)?.value as ConferenceStatus) || 'SIGNUP'
 							);
 						}}
 					>
-						<option value="PRE" selected={getConferenceStatus() === 'PRE'}>
+						<option value="SIGNUP" selected={getConferenceStatus() === 'SIGNUP'}>
 							{m.conferenceStatusPre()}
 						</option>
 						<option value="ACTIVE" selected={getConferenceStatus() === 'ACTIVE'}>

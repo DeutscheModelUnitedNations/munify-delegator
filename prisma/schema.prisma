@@ -17,14 +17,8 @@ generator prismabox {
   allowRecursion              = false
 }
 
-enum ConferenceStatus {
-  PRE
-  ACTIVE
-  POST
-}
-
 model Conference {
-  id                String           @id @default(nanoid())
+  id                String    @id @default(nanoid())
   title             String
   longTitle         String?
   start             DateTime?
@@ -33,9 +27,10 @@ model Conference {
   language          String?
   website           String?
   imageDataUrl      String?
-  status            ConferenceStatus @default(PRE)
-  startRegistration DateTime?
-  endRegistration   DateTime?
+  startRegistration DateTime
+  startAssignment   DateTime
+  startConference   DateTime
+  endConference   DateTime
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]

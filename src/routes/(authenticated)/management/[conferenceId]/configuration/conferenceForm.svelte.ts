@@ -15,7 +15,7 @@ let conferenceEnd = $state<Date | undefined>(undefined);
 let conferenceStartRegistration = $state<Date | undefined>(undefined);
 let conferenceEndRegistration = $state<Date | undefined>(undefined);
 let conferenceImage = $state<string | null | undefined>(null);
-let conferenceStatus = $state<ConferenceStatus>('PRE');
+let conferenceStatus = $state<ConferenceStatus>('SIGNUP');
 
 export function conferenceForm() {
 	const submit = async (e: Event, conferenceId: string) => {
