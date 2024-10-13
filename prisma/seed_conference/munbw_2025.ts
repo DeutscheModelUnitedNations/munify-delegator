@@ -43,10 +43,11 @@ const conference = await seedDb.conference.create({
 		website: 'https://munbw.de',
 		start: '2025-05-29T00:00:00.000Z',
 		end: '2025-06-02T00:00:00.000Z',
-		startRegistration: '2024-10-01T00:00:00.000Z',
-		endRegistration: '2024-12-31T23:59:59.000Z',
 		language: 'Deutsch',
-		status: 'PRE'
+		startRegistration: new Date('2024-10-01T00:00:00.000Z'),
+		startAssignment: new Date('2024-11-30T00:00:00.000Z'),
+		startConference: new Date('2025-05-29T00:00:00.000Z'),
+		endConference: new Date('2025-06-02T00:00:00.000Z')
 	}
 });
 console.info("Creating conference's committees");

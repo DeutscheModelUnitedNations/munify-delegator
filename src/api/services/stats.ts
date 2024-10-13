@@ -19,8 +19,8 @@ export async function conferenceStats({
 	const daysUntilConference = conference.start
 		? Math.floor((conference.start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 		: undefined;
-	const daysUntilEndRegistration = conference.endRegistration
-		? Math.floor((conference.endRegistration.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+	const daysUntilEndRegistration = conference.startAssignment
+		? Math.floor((conference.startAssignment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 		: undefined;
 
 	const countdowns = {

@@ -63,7 +63,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 					startRegistration: {
 						lte: new Date()
 					},
-					endRegistration: {
+					startAssignment: {
 						gte: new Date()
 					}
 				}
@@ -107,8 +107,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 										elements: [
 											{
 												type: 'text',
-												text: conference.endRegistration
-													? `Anmeldung noch ${countdowns.daysUntilEndRegistration} Tage offen (bis ${formatConferenceDate(conference.endRegistration)})`
+												text: conference.startAssignment
+													? `Anmeldung noch ${countdowns.daysUntilEndRegistration} Tage offen (bis ${formatConferenceDate(conference.startAssignment)})`
 													: 'Kein Anmeldeschluss festgelegt'
 											}
 										]

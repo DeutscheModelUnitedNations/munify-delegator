@@ -1,13 +1,12 @@
 import { checkForError } from '$api/client';
 import type { PageLoad } from './$types';
 import { apiClient } from '$api/client';
+import { loadApiHandler } from '$lib/helper/loadApiHandler';
 
-export const load: PageLoad = async ({ params, fetch, url, parent }) => {
+export const load: PageLoad = loadApiHandler(async ({ params, fetch, url, parent }) => {
 	const { mySystemRoles, teamMemberships } = await parent();
 
-	const conferences = (
-		await checkForError(apiClient({ fetch, origin: url.origin }).conference.get())
-	).filter(
+	const conferences = (await checkForError(api.conference.get())).filter(
 		(conference) =>
 			mySystemRoles.includes('admin') ||
 			teamMemberships.some(
@@ -20,4 +19,4 @@ export const load: PageLoad = async ({ params, fetch, url, parent }) => {
 	return {
 		conferences
 	};
-};
+});

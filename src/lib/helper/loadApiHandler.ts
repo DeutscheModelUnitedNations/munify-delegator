@@ -8,7 +8,7 @@ import { apiClient } from '$api/client';
 export const loadApiHandler =
 	<Ret, InputParameters extends { fetch: typeof fetch; url: URL }>(
 		caller: (
-			parameters: Omit<InputParameters, 'fetch'> & { api: ReturnType<typeof apiClient> }
+			parameters: InputParameters & { api: ReturnType<typeof apiClient> }
 		) => Ret
 	): ((p: InputParameters) => Ret) =>
 	(p: InputParameters): Ret => {
