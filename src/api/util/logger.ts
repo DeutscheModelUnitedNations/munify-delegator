@@ -85,6 +85,21 @@ export const logger = new Elysia({
 
 		if (code === 'ForbiddenError' || code === 'PermissionCheckError') {
 			set.status = 'Forbidden';
+			if(code === "ForbiddenError"){
+				console.error(
+					`[${requestId}]: Forbidden error {
+    ability: ${error.ability},
+    action: ${error.action}
+    cause: ${error.cause}
+    field: ${error.field}
+    message: ${error.message}
+    name: ${error.name}
+    stack: ${error.stack}
+    subject: ${error.subject}
+    subjectType: ${error.subjectType}
+}`
+				);
+			}
 			return m.forbidden(
 				{ error: error.message ?? "You don't have permission to do that" },
 				{ languageTag }
