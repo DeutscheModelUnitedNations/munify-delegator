@@ -387,6 +387,7 @@
 	"conferenceLocation": "Ort",
 	"conferenceLanguage": "Konferenzsprache",
 	"conferenceWebsite": "Website",
+	"conferenceInfo": "Konferenzinfo",
 	"conferenceStart": "Startdatum",
 	"conferenceEnd": "Enddatum",
 	"selectADate": "Datum auswählen",
