@@ -111,11 +111,13 @@ export const logger = new Elysia({
 			return m.unauthorized({ error: error.message ?? 'You are unauthorized' }, { languageTag });
 		}
 
-		//TODO code is not typed correctly for prisma errors?
-		if (code === 'PrismaClientKnownRequestError') {
-			if (error.code === 'P2025' || error.code === 'P2002') {
-				return error.message;
-			}
+		if ((error as PrismaClientKnownRequestError).code === 'P2002') {
+			return error.message;
+		}
+
+		if ((error as PrismaClientKnownRequestError).code === 'P2025') {
+			set.status = 'Not Found';
+			return m.notFoundOrNoAccess({ languageTag });
 		}
 
 		if (code === 'UserFacingError') {

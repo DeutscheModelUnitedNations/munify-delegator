@@ -409,5 +409,6 @@
 	"internalServerError": "Interner Serverfehler.",
 	"valueCannotBeEmpty": "Der angegebene Wert für {field} kann nicht leer sein.",
 	"valueTooShort": "Der angegebene Wert für {field} ist zu kurz.",
-	"pleaseFillOutYourProfileCorrectly": "Bitte stelle sicher, dass <b><a href='/my-account'>dein Profil</a></b> korrekt ausgefüllt ist."
+	"pleaseFillOutYourProfileCorrectly": "Bitte stelle sicher, dass <b><a href='/my-account'>dein Profil</a></b> korrekt ausgefüllt ist.",
+	"notFoundOrNoAccess": "Die Angeforderten Daten konnten nicht gefunden werden oder du bist nicht berechtigt sie zu sehen!"
 }
