@@ -1,5 +1,5 @@
 import Elysia from 'elysia';
-import { type Action, defineAbilitiesForUser } from './abilities/abilities';
+import { type Action, AllEntityNameValues, defineAbilitiesForUser } from './abilities/abilities';
 import { oidcPlugin } from './oidcPlugin';
 import { accessibleBy } from '@casl/prisma';
 import { logger, PermissionCheckError } from '$api/util/logger';
@@ -33,8 +33,16 @@ export const permissionsPlugin = new Elysia({
 					try {
 						return accessibleBy(abilities, action);
 					} catch (error) {
-						if ((error as ForbiddenError<any>).message.startsWith("It's not allowed to run ")) {
-							return { id: 'THIS_CHAR~WILL_NEVER_APPEAR_AS_ID_CHAR' };
+						//TODO this is not a nice solution
+						if ((error as ForbiddenError<any>).message.startsWith("It's not allowed to run")) {
+							const dummy = { id: 'THIS_CHAR~WILL_NEVER_APPEAR_AS_ID_CHAR' };
+							const values = AllEntityNameValues.map(
+								(k) => k[0].toUpperCase() + k.slice(1).toLowerCase()
+							) as Capitalize<(typeof AllEntityNameValues)[number]>[];
+
+							const ret: ReturnType<typeof accessibleBy> = {} as any;
+							values.forEach((v) => (ret[v] = dummy));
+							return ret;
 						}
 						throw error;
 					}
