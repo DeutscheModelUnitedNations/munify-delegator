@@ -3,16 +3,9 @@
 	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { hasConferenceEnded } from '$lib/helper/conferenceStateHelper';
 
 	let { data }: { data: PageData } = $props();
-
-	onMount(() => {
-		if (data.conferences == undefined || data.conferences?.length == 0) {
-			goto('./no-conference');
-		}
-	});
 </script>
 
 <Header title={m.myConferences()} />
@@ -20,8 +13,8 @@
 	<div
 		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
 	>
-		{#each data.conferences.filter((x) => x.status === 'SIGNUP' || x.status === 'ACTIVE') as conference}
-			<ConferenceCard {...conference} btnText="Zur Konferenz" baseSlug="/dashboard" />
+		{#each data.myConferences.filter((conference) => !hasConferenceEnded(conference)) as conference}
+			<ConferenceCard {...conference} btnText={m.toConference()} baseSlug="/dashboard" />
 		{/each}
 		<a href="/registration" class="carousel-item max-w-96 w-[90%]">
 			<div
@@ -45,7 +38,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each data.conferences ?? [] as conference}
+			{#each data.myConferences ?? [] as conference}
 				<tr>
 					<td>{conference.title}</td>
 					<td>{conference.location}</td>

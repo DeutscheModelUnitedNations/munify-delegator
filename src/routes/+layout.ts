@@ -11,6 +11,7 @@ export const load: LayoutLoad = loadApiHandler(async ({ api }) => {
 	setLogoutUrl(logoutUrl);
 
 	return {
-		api
+		api,
+		logoutUrl
 	};
 });

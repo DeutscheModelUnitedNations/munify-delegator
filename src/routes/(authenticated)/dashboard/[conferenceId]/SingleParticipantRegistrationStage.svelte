@@ -9,9 +9,9 @@
 	import TodoTable from '$lib/components/TodoTable.svelte';
 	import { onMount } from 'svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
+	import { getApi } from '$lib/global/apiState.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let api = apiClient({ origin: data.url.origin });
 
 	let questionnaireValues = $state({
 		school: '',
@@ -34,7 +34,7 @@
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
 		checkForError(
-			api.singleParticipant({ id: data.singleParticipantData!.id }).completeRegistration.patch({})
+			getApi().singleParticipant({ id: data.singleParticipantData!.id }).completeRegistration.patch({})
 		);
 		invalidateAll();
 	};
@@ -45,7 +45,7 @@
 			return;
 		}
 		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
-		checkForError(api.singleParticipant({ id: data.singleParticipantData.id }).delete());
+		checkForError(getApi().singleParticipant({ id: data.singleParticipantData.id }).delete());
 		invalidateAll().then(() => {
 			goto('/dashboard');
 		});
@@ -58,7 +58,7 @@
 		}
 		if (!confirm(m.deleteApplicationConfirmation())) return;
 		checkForError(
-			api
+			getApi()
 				.singleParticipant({ id: data.singleParticipantData.id })
 				.deleteApplication({ roleApplicationId: id })
 				.delete()
@@ -197,7 +197,7 @@
 						return;
 					}
 					checkForError(
-						api.singleParticipant({ id: data.singleParticipantData.id }).patch({
+						getApi().singleParticipant({ id: data.singleParticipantData.id }).patch({
 							school: questionnaireValues.school,
 							motivation: questionnaireValues.motivation,
 							experience: questionnaireValues.experience

@@ -1,12 +1,11 @@
 import { checkForError } from '$api/client';
 import type { PageLoad } from './$types';
-import { apiClient } from '$api/client';
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
 
-export const load: PageLoad = loadApiHandler(async ({ params, fetch, url, parent }) => {
+export const load: PageLoad = loadApiHandler(async ({ api, parent }) => {
 	const { mySystemRoles, teamMemberships } = await parent();
 
-	const conferences = (await checkForError(api.conference.get())).filter(
+	const conferences = (await checkForError(api.conference.get({ query: {} }))).filter(
 		(conference) =>
 			mySystemRoles.includes('admin') ||
 			teamMemberships.some(

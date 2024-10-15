@@ -13,9 +13,9 @@
 	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
+	import { getApi } from '$lib/global/apiState.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let api = apiClient({ origin: data.url.origin });
 
 	if (!data.delegationData) {
 		error(404, 'Delegation not found');
@@ -98,7 +98,7 @@
 			return;
 		}
 		if (!confirm(m.leaveDelegationConfirmation())) return;
-		checkForError(api.delegation({ id: data.delegationData?.id }).leave.delete());
+		checkForError(getApi().delegation({ id: data.delegationData?.id }).leave.delete());
 		invalidateAll();
 	};
 
@@ -108,7 +108,7 @@
 			return;
 		}
 		if (!confirm(m.deleteDelegationConfirmation())) return;
-		checkForError(api.delegation({ id: data.delegationData?.id }).delete());
+		checkForError(getApi().delegation({ id: data.delegationData?.id }).delete());
 		invalidateAll().then(() => goto('/dashboard'));
 	};
 
@@ -119,7 +119,7 @@
 		}
 		if (!confirm(m.makeHeadDelegateConfirmation())) return;
 		checkForError(
-			api.delegation({ id: data.delegationData.id }).transferHeadDelegateship.patch({
+			getApi().delegation({ id: data.delegationData.id }).transferHeadDelegateship.patch({
 				newHeadDelegateUserId: userId
 			})
 		);
@@ -132,7 +132,7 @@
 			return;
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
-		checkForError(api.delegationMember({ id: memberId }).delete());
+		checkForError(getApi().delegationMember({ id: memberId }).delete());
 		await invalidateAll();
 	};
 
@@ -142,7 +142,7 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		checkForError(api.delegation({ id: data.delegationData.id }).completeRegistration.patch());
+		checkForError(getApi().delegation({ id: data.delegationData.id }).completeRegistration.patch());
 		await invalidateAll();
 	};
 </script>
@@ -256,7 +256,7 @@
 								class="btn btn-ghost btn-primary btn-square"
 								onclick={async () => {
 									await checkForError(
-										api.delegation({ id: data.delegationData!.id }).resetEntryCode.patch()
+										getApi().delegation({ id: data.delegationData!.id }).resetEntryCode.patch()
 									);
 									invalidateAll();
 									alert(m.codeRotated());
@@ -293,7 +293,7 @@
 						return;
 					}
 					checkForError(
-						api.delegation({ id: data.delegationData.id }).patch({
+						getApi().delegation({ id: data.delegationData.id }).patch({
 							school: questionnaireValues.school,
 							motivation: questionnaireValues.motivation,
 							experience: questionnaireValues.experience

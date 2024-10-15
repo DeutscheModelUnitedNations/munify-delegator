@@ -18,11 +18,9 @@ generator prismabox {
 }
 
 model Conference {
-  id                String    @id @default(nanoid())
+  id                String   @id @default(nanoid())
   title             String
   longTitle         String?
-  start             DateTime?
-  end               DateTime?
   location          String?
   language          String?
   website           String?
@@ -30,7 +28,7 @@ model Conference {
   startRegistration DateTime
   startAssignment   DateTime
   startConference   DateTime
-  endConference   DateTime
+  endConference     DateTime
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]

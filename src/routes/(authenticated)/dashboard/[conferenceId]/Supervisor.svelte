@@ -5,10 +5,9 @@
 	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
 	import { apiClient, checkForError } from '$api/client';
 	import { invalidateAll } from '$app/navigation';
+	import { getApi } from '$lib/global/apiState.svelte';
 
 	let { data }: { data: PageData } = $props();
-
-	let api = apiClient({ origin: data.url.origin });
 
 	const stats = $derived([
 		{
@@ -35,7 +34,7 @@
 	const handlePresenceChange = async (e: Event) => {
 		if (!data.supervisorData) return;
 		await checkForError(
-			api.conferenceSupervisor({ id: data.supervisorData.id }).patch({
+			getApi().conferenceSupervisor({ id: data.supervisorData.id }).patch({
 				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
 			})
 		);

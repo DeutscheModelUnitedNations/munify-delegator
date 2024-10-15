@@ -3,10 +3,10 @@ import type { PageLoad } from './$types';
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
 import { checkForError } from '$api/client';
 
-export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }) => {
+export const load: PageLoad = loadApiHandler(async ({ params, api, parent }) => {
 	if (params.conferenceId === undefined) error(404, 'Not found');
-
-	const userData = (await parent()).userData;
+	const userId = (await parent()).user.sub;
+	const userData = await checkForError(api.user({ id: userId }).get());
 
 	const delegationMembershipData = userData.delegationMemberships?.find(
 		(x) => x.conferenceId === params.conferenceId
@@ -63,6 +63,6 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, url, parent }
 		supervisorsDelegationData: supervisorData
 			? await getSupervisorsDelegationData(supervisorData)
 			: undefined,
-		singleParticipantData
+		singleParticipantData,
 	};
 });

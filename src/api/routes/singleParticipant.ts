@@ -20,7 +20,7 @@ export const singleParticipant = new Elysia()
 	.use(permissionsPlugin)
 	.get(
 		`/singleParticipant`,
-		async ({ permissions, params, query }) => {
+		async ({ permissions, query }) => {
 			return await db.singleParticipant.findMany({
 				where: {
 					conferenceId: query.conferenceId,

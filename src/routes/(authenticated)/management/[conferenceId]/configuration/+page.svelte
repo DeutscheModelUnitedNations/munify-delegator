@@ -2,15 +2,19 @@
 	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import * as m from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import FormInput from '$lib/components/forms/FormInput.svelte';
+	import FormTextInput from '$lib/components/forms/FormTextInput.svelte';
 	import Form from '$lib/components/forms/Form.svelte';
 	import { typebox } from 'sveltekit-superforms/adapters';
-	import { ConferencePlainInputUpdate } from '$db/generated/schema/Conference';
+	import FormFileDataUrlInput from '$lib/components/forms/FormFileDataURLInput.svelte';
+	import { conferenceConfigFormSchema } from './schema';
 
 	let { data } = $props();
-	const form = superForm(data.form, {
-		validators: typebox(ConferencePlainInputUpdate)
-	});
+	let form = $state(
+		superForm(data.form, {
+			validators: typebox(conferenceConfigFormSchema),
+			resetForm: false
+		})
+	);
 </script>
 
 <ManagementHeader title={m.adminSettings()} fontAwesomeIcon="fa-gears" />
@@ -20,37 +24,13 @@
 			<h2 class="card-title">{m.conferenceSettings()}</h2>
 			<p class="text-sm mb-4">{@html m.conferenceSettingsDescription()}</p>
 			<Form {form}>
-				<FormInput fieldLabel={m.conferenceTitle()} fieldName="title" type="text" {form} />
-				<!-- <Input
-					label={m.conferenceTitle()}
-					initialValue={data.conferenceData.title}
-					stateValue={getConferenceTitle()}
-					changeValue={setConferenceTitle}
-				/>
-				<Input
-					label={m.conferenceLongTitle()}
-					initialValue={data.conferenceData.longTitle}
-					stateValue={getConferenceLongTitle()}
-					changeValue={setConferenceLongTitle}
-				/>
-				<Input
-					label={m.conferenceLocation()}
-					initialValue={data.conferenceData.location}
-					stateValue={getConferenceLocation()}
-					changeValue={setConferenceLocation}
-				/>
-				<Input
-					label={m.conferenceLanguage()}
-					initialValue={data.conferenceData.language}
-					stateValue={getConferenceLanguage()}
-					changeValue={setConferenceLanguage}
-				/>
-				<Input
-					label={m.conferenceWebsite()}
-					initialValue={data.conferenceData.website}
-					stateValue={getConferenceWebsite()}
-					changeValue={setConferenceWebsite}
-				/>
+				<FormTextInput fieldName="title" fieldLabel={m.conferenceTitle()} {form} />
+				<FormTextInput fieldName="longTitle" fieldLabel={m.conferenceLongTitle()} {form} />
+				<FormTextInput fieldName="location" fieldLabel={m.conferenceLocation()} {form} />
+				<FormTextInput fieldName="language" fieldLabel={m.conferenceLanguage()} {form} />
+				<FormTextInput fieldName="website" fieldLabel={m.conferenceWebsite()} {form} />
+				<!-- <FormFileDataUrlInput fieldName="imageDataUrl" fieldLabel={m.conferenceImage()} {form} /> -->
+				<!-- 
 				<FileInput label={m.conferenceImage()} file={getImage()} changeFile={setImage} />
 				<h2 class="card-title mt-10 mb-4">{m.conferenceTimeSettings()}</h2>
 				<DatePicker

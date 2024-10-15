@@ -96,8 +96,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 										elements: [
 											{
 												type: 'text',
-												text: conference.start
-													? `Noch ${countdowns.daysUntilConference} Tage bis zur Konferenz (Start am ${formatConferenceDate(conference.start)})`
+												text: conference.startConference
+													? `Noch ${countdowns.daysUntilConference} Tage bis zur Konferenz (Start am ${formatConferenceDate(conference.startConference)})`
 													: 'Kein Konferenzdatum festgelegt'
 											}
 										]

@@ -2,7 +2,6 @@
 	import type { Snippet } from 'svelte';
 	import FormSubmitButton from './FormSubmitButton.svelte';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import { type Writable } from 'svelte/store';
 	interface Props {
 		children: Snippet;
 		class?: string;
@@ -13,7 +12,7 @@
 	let { message, enhance } = form;
 </script>
 
-<form class="flex flex-col gap-4 {class_}" method="post" use:enhance>
+<form class="flex flex-col gap-4 {class_}" method="post" enctype="multipart/form-data" use:enhance>
 	{@render children()}
 	{#if $message}
 		<p class="text-sm">{$message}</p>

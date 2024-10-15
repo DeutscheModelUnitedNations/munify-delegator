@@ -11,29 +11,40 @@ import { userDataCompleteCheck } from '$api/services/userDataComplete';
 
 export const conference = new Elysia()
 	.use(permissionsPlugin)
-	.use(CRUDMaker.getAll('conference'))
 	.use(CRUDMaker.getOne('conference'))
 	.use(CRUDMaker.createOne('conference'))
 	.use(CRUDMaker.updateOne('conference'))
 	.use(CRUDMaker.deleteOne('conference'))
 	.get(
-		'my-conferences',
-		async ({ permissions }) => {
-			const user = permissions.mustBeLoggedIn();
+		'/conference',
+		async ({ permissions, query }) => {
+			let userId: string | undefined = undefined;
+			try {
+				userId = permissions.mustBeLoggedIn().sub;
+			} catch (error) {}
+
+			if (query.participating && !userId) {
+				// in case the user wants their participating conferences
+				// and is not logged in we just want to throw an error
+				permissions.mustBeLoggedIn();
+			}
 
 			return await db.conference.findMany({
 				where: {
-					OR: [
-						{ conferenceSupervisors: { some: { userId: user.sub } } },
-						{ teamMembers: { some: { userId: user.sub } } },
-						{ singleParticipant: { some: { userId: user.sub } } },
-						{ delegations: { some: { members: { some: { userId: user.sub } } } } }
-					],
+					OR: query.participating
+						? [
+								{ conferenceSupervisors: { some: { userId } } },
+								{ teamMembers: { some: { userId } } },
+								{ singleParticipant: { some: { userId } } },
+								{ delegations: { some: { members: { some: { userId } } } } }
+							]
+						: undefined,
 					AND: [permissions.allowDatabaseAccessTo('list').Conference]
 				}
 			});
 		},
 		{
+			query: t.Partial(t.Object({ participating: t.Boolean() })),
 			response: t.Array(ConferencePlain)
 		}
 	)

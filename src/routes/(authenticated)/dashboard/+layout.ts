@@ -1,16 +1,17 @@
 import { checkForError } from '$api/client';
 import { loadApiHandler } from '$lib/helper/loadApiHandler';
+import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 
-export const load: LayoutLoad = loadApiHandler(async ({ api, url, parent }) => {
-	const { user } = await parent();
-	const userData = await checkForError(api.user({ id: user.sub }).get());
+export const load: LayoutLoad = loadApiHandler(async ({ api, url }) => {
+	const myConferences = await checkForError(api.conference.get({ query: { participating: true } }));
 
-	const conferences = await checkForError(api['my-conferences'].get());
+	if (myConferences.length === 0) {
+		throw redirect(303, '/dashboard/no-conference');
+	}
 
 	return {
-		userData,
-		conferences,
+		myConferences,
 		url
 	};
 });

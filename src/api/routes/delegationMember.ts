@@ -9,11 +9,12 @@ export const delegationMember = new Elysia()
 	.get(
 		'/delegationMember',
 		async ({ permissions, query }) => {
-			const user = permissions.mustBeLoggedIn();
-
 			return await db.delegationMember.findMany({
 				where: {
-					delegationId: query.delegationId
+					delegationId: query.delegationId,
+					conferenceId: query.conferenceId,
+					userId: query.userId,
+					AND: [permissions.allowDatabaseAccessTo('read').DelegationMember]
 				},
 				include: {
 					user: {
@@ -28,9 +29,13 @@ export const delegationMember = new Elysia()
 		},
 		{
 			query: t.Optional(
-				t.Object({
-					delegationId: t.String()
-				})
+				t.Partial(
+					t.Object({
+						delegationId: t.String(),
+						conferenceId: t.String(),
+						userId: t.String()
+					})
+				)
 			),
 			response: t.Array(
 				t.Composite([

@@ -4,25 +4,26 @@
 	interface Props {
 		fieldName: string;
 		fieldLabel: string;
-		type: 'text';
 		form: SuperForm<A, B>;
 	}
 
-	let { type, form, fieldLabel, fieldName }: Props = $props();
+	let { form, fieldLabel, fieldName }: Props = $props();
 	let { form: formData, constraints, errors } = form;
+
 </script>
 
 <label for={fieldName} class="form-control w-full">
 	<span class="label-text">{fieldLabel}</span>
 	<input
-		{type}
+		type="text"
 		class="input input-bordered"
 		bind:value={$formData[fieldName]}
 		name={fieldName}
 		aria-invalid={($errors as any)[fieldName] ? 'true' : undefined}
 		{...($constraints as any)[fieldName]}
 	/>
-	{#if ($errors as any)[fieldName]}<span class="text-error">{($errors as any)[fieldName]}</span>{/if}
+	{#if ($errors as any)[fieldName]}<span class="text-error">{($errors as any)[fieldName]}</span
+		>{/if}
 </label>
 
 <!-- {initialValue !== stateValue && 'input-success border-4'} -->
