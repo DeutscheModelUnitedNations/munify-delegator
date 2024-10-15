@@ -3,6 +3,7 @@ import { type Action, defineAbilitiesForUser } from './abilities/abilities';
 import { oidcPlugin } from './oidcPlugin';
 import { accessibleBy } from '@casl/prisma';
 import { logger, PermissionCheckError } from '$api/util/logger';
+import type { ForbiddenError } from '@casl/ability';
 
 export const permissionsPlugin = new Elysia({
 	name: 'permissions'
@@ -29,7 +30,14 @@ export const permissionsPlugin = new Elysia({
 				 */
 				allowDatabaseAccessTo: (action: Action = 'read') => {
 					hasBeenCalled = true;
-					return accessibleBy(abilities, action);
+					try {
+						return accessibleBy(abilities, action);
+					} catch (error) {
+						if ((error as ForbiddenError<any>).message.startsWith("It's not allowed to run ")) {
+							return { id: 'THIS_CHAR~WILL_NEVER_APPEAR_AS_ID_CHAR' };
+						}
+						throw error;
+					}
 				},
 				/**
 				 * Utility that raises and error if the permissions check fails.
