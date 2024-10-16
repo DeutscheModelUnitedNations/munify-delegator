@@ -1,7 +1,7 @@
 import { build } from 'tsup';
 import { join } from 'node:path';
 import { exists, rm, mkdir } from 'node:fs/promises';
-import packagejson from './package.json';
+import packagejson from '../old/package.json';
 
 const rootDir = import.meta.dirname;
 const outDir = join(rootDir, 'tasksOut');
