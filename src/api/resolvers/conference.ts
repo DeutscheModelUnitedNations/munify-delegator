@@ -9,6 +9,6 @@ schemabuilder.queryFields((t) => {
 		test2: t.field({
 			resolve: async () => 'hello',
 			type: 'String'
-		}),
+		})
 	};
 });

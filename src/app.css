@@ -45,7 +45,7 @@
 }
 
 ._toastItem {
-	@apply !alert !alert-warning !shadow-lg !text-wrap;
+	@apply !alert !alert-warning !text-wrap !shadow-lg;
 }
 
 ._toastBtn {
