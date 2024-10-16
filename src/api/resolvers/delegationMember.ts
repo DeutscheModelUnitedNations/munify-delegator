@@ -14,7 +14,7 @@ builder.prismaObject('DelegationMember', {
 		isHeadDelegate: t.field(DelegationMemberIsHeadDelegateFieldObject),
 		conference: t.relation('conference'),
 		delegation: t.relation('delegation'),
-		user: t.relation('user'),
+		user: t.relation('user')
 	})
 });
 
