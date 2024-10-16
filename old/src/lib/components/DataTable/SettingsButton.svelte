@@ -21,9 +21,9 @@
 			<TableSizeControl />
 			<ZebraControl />
 		</div>
-		<div class="absolute top-2 right-2">
+		<div class="absolute right-2 top-2">
 			<button
-				class="btn btn-ghost btn-square"
+				class="btn btn-square btn-ghost"
 				onclick={() => (confirmDialogOpen = false)}
 				aria-label="Close"
 			>

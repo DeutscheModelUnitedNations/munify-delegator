@@ -2,4 +2,4 @@
 	import * as m from '$lib/paraglide/messages';
 </script>
 
-<button class="btn btn-primary w-full mt-10">{m.save()}</button>
+<button class="btn btn-primary mt-10 w-full">{m.save()}</button>

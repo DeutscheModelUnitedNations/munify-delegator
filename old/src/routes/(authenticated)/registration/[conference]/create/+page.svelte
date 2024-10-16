@@ -65,7 +65,7 @@
 	};
 </script>
 
-<div class="w-full min-h-screen flex flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<header>
 		<RegistrationBreadcrumbs {breadcrumbs} />
 		<div class="h-10"></div>
@@ -79,8 +79,8 @@
 			]}
 		/>
 	</header>
-	<main class="w-full h-full flex-1 flex flex-col items-center py-16 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.createDelegation()}</h1>
+	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
+		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.createDelegation()}</h1>
 		{#if step === 1}
 			<div
 				in:fly={{ x: 50, duration: 300, delay: 300 }}
@@ -88,7 +88,7 @@
 				class="flex flex-col gap-6"
 			>
 				{@html m.createDelegationProcessExplaination()}
-				<button class="btn btn-lg btn-primary" onclick={() => nextStep()}>{m.next()}</button>
+				<button class="btn btn-primary btn-lg" onclick={() => nextStep()}>{m.next()}</button>
 				<a class="btn btn-warning" href=".">{m.back()}</a>
 			</div>
 		{:else if step === 2}
@@ -109,7 +109,7 @@
 				>
 					<label class="form-control w-full">
 						<div class="label">
-							<span class="label-text max-ch-sm text-left"
+							<span class="label-text text-left max-ch-sm"
 								>{m.whichSchoolDoesYourDelegationComeFrom()}</span
 							>
 						</div>
@@ -122,7 +122,7 @@
 					</label>
 					<label class="form-control w-full">
 						<div class="label">
-							<span class="label-text max-ch-sm text-left"
+							<span class="label-text text-left max-ch-sm"
 								>{m.whyDoYouWantToJoinTheConference()}</span
 							>
 						</div>
@@ -134,7 +134,7 @@
 					</label>
 					<label class="form-control w-full">
 						<div class="label">
-							<span class="label-text max-ch-sm text-left"
+							<span class="label-text text-left max-ch-sm"
 								>{m.howMuchExperienceDoesYourDelegationHave()}</span
 							>
 						</div>
@@ -144,7 +144,7 @@
 							oninput={(e: any) => (delegation.experience = e.target!.value)}
 						></textarea>
 					</label>
-					<button class="btn btn-lg btn-primary" type="submit">{m.next()}</button>
+					<button class="btn btn-primary btn-lg" type="submit">{m.next()}</button>
 				</form>
 				<button class="btn btn-warning" onclick={prevStep}>{m.back()}</button>
 			</div>
@@ -152,7 +152,7 @@
 			<div
 				in:fly={{ x: 50, duration: 300, delay: 300 }}
 				out:fly={{ x: -50, duration: 300 }}
-				class="flex flex-col gap-4 items-center"
+				class="flex flex-col items-center gap-4"
 			>
 				<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
 
@@ -174,7 +174,7 @@
 						<td class="max-ch-sm">{delegation.experience ?? m.willBeSetLater()}</td>
 					</tr>
 				</ReviewTable>
-				<button class="btn btn-lg btn-primary w-full" onclick={() => nextStep(true)}
+				<button class="btn btn-primary btn-lg w-full" onclick={() => nextStep(true)}
 					>{m.createDelegation()}</button
 				>
 				<button class="btn btn-warning w-full" onclick={prevStep}>{m.back()}</button>
@@ -183,7 +183,7 @@
 			<div
 				in:fly={{ x: 50, duration: 300, delay: 300 }}
 				out:fly={{ x: -50, duration: 300 }}
-				class="flex flex-col gap-4 items-center w-full sm:w-auto"
+				class="flex w-full flex-col items-center gap-4 sm:w-auto"
 			>
 				<div role="alert" class="alert alert-success flex justify-center">
 					<i class="fas fa-check"></i>
@@ -192,7 +192,7 @@
 				<p class="max-ch-sm">
 					{m.nowYouCanInvitePeople()}
 				</p>
-				<div class="flex items-center border-2 border-dashed border-primary rounded-lg p-2 w-full">
+				<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
 					<p class="flex-1 overflow-x-auto">
 						{referralLink}
 					</p>
@@ -209,8 +209,8 @@
 				<p class="max-ch-sm">
 					{m.orShareThisCode()}
 				</p>
-				<div class="flex items-center border-2 border-dashed border-primary rounded-lg p-2 w-full">
-					<p class="flex-1 overflow-x-auto uppercase font-mono text-xl tracking-[0.6rem]">
+				<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
+					<p class="flex-1 overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
 						{delegation?.entryCode}
 					</p>
 					<button
@@ -223,7 +223,7 @@
 						><i class="fa-duotone fa-clipboard text-xl"></i>
 					</button>
 				</div>
-				<a class="btn btn-lg btn-primary w-full mt-10" href="/dashboard">{m.toDashboard()}</a>
+				<a class="btn btn-primary btn-lg mt-10 w-full" href="/dashboard">{m.toDashboard()}</a>
 			</div>
 		{/if}
 	</main>

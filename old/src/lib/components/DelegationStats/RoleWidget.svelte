@@ -16,7 +16,7 @@
 			<Flag alpha2Code={countryCode} size="md" />
 		</div>
 		<div class="stat-title">Sie vertreten</div>
-		<div class="stat-value text-2xl sm:text-4xl sm:w-auto overflow-ellipsis text-wrap">
+		<div class="stat-value overflow-ellipsis text-wrap text-2xl sm:w-auto sm:text-4xl">
 			{countryCodeToLocalName(countryCode)}
 		</div>
 	</div>

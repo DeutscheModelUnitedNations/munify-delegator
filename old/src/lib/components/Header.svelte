@@ -4,7 +4,7 @@
 	let { title }: { title: string } = $props();
 </script>
 
-<div class="navbar bg-base-200 px-4 py-2 rounded-2xl shadow-lg gap-2">
+<div class="navbar gap-2 rounded-2xl bg-base-200 px-4 py-2 shadow-lg">
 	<label for="my-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden">
 		<i class="fa-solid fa-bars text-xl"></i>
 	</label>

@@ -18,7 +18,7 @@
 </script>
 
 <section
-	class="col-span-2 md:col-span-8 xl:col-span-6 stats stats-vertical xl:stats-horizontal bg-base-200 shadow-sm"
+	class="stats stats-vertical col-span-2 bg-base-200 shadow-sm xl:stats-horizontal md:col-span-8 xl:col-span-6"
 >
 	<div class="stat">
 		<div class="stat-figure xl:hidden"><i class="fa-duotone fa-sigma text-3xl"></i></div>
@@ -49,7 +49,7 @@
 	</div>
 </section>
 <section
-	class="col-span-2 md:col-span-4 xl:col-span-6 card grow bg-primary text-primary-content shadow-sm"
+	class="card col-span-2 grow bg-primary text-primary-content shadow-sm md:col-span-4 xl:col-span-6"
 >
 	{#if stats?.registered}
 		<div class="hidden md:contents xl:hidden">

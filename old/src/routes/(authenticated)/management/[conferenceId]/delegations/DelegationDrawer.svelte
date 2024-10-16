@@ -88,8 +88,8 @@
 
 <Drawer open={delegation != null} {onClose}>
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl uppercase font-thin">{m.delegation()}</h3>
-		<h2 class="text-3xl font-bold p-2 bg-base-300 rounded-md">
+		<h3 class="text-xl font-thin uppercase">{m.delegation()}</h3>
+		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
 			{delegation?.entryCode}
 		</h2>
 		<h3 class="text-sm font-thin">{delegation?.id}</h3>
@@ -144,7 +144,7 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-flag text-lg"></i></td>
 					<td>
-						<span class="bg-base-300 py-[2px] px-3 mr-1 rounded-md"
+						<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
 							>{delegation?._count.appliedForRoles}</span
 						>
 						{#if roleApplications}

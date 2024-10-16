@@ -227,12 +227,12 @@
 				? m.inviteMorePeopleDescription()
 				: m.inviteMorePeopleButAlreadyAppliedDescription()}
 		>
-			<div class="flex items-center bg-base-200 dark:bg-base-300 rounded-lg mt-4 p-2 pl-4 gap-2">
-				<p class="overflow-x-auto uppercase font-mono text-xl tracking-[0.6rem]">
+			<div class="mt-4 flex items-center gap-2 rounded-lg bg-base-200 p-2 pl-4 dark:bg-base-300">
+				<p class="overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
 					{data.delegationData?.entryCode}
 				</p>
 				<button
-					class="btn btn-ghost btn-primary btn-square"
+					class="btn btn-square btn-ghost btn-primary"
 					onclick={() => {
 						navigator.clipboard.writeText(data.delegationData?.entryCode as string);
 						alert(m.codeCopied());
@@ -242,7 +242,7 @@
 				</button>
 				{#if !data.delegationData?.applied}
 					<button
-						class="btn btn-ghost btn-primary btn-square"
+						class="btn btn-square btn-ghost btn-primary"
 						onclick={() => {
 							navigator.clipboard.writeText(referralLink as string);
 							alert(m.linkCopied());
@@ -253,7 +253,7 @@
 					{#if userIsHeadDelegate}
 						<div class="tooltip" data-tip={m.rotateCode()}>
 							<button
-								class="btn btn-ghost btn-primary btn-square"
+								class="btn btn-square btn-ghost btn-primary"
 								onclick={async () => {
 									await checkForError(
 										getApi().delegation({ id: data.delegationData!.id }).resetEntryCode.patch()
@@ -270,13 +270,13 @@
 			</div>
 		</DashboardContentCard>
 	{:else}
-		<div class="skeleton w-full h-60"></div>
+		<div class="skeleton h-60 w-full"></div>
 	{/if}
 </section>
 
 <section>
-	<h2 class="text-2xl font-bold mb-2">{m.application()}</h2>
-	<div class="flex flex-col md:flex-row gap-4 mb-4">
+	<h2 class="mb-2 text-2xl font-bold">{m.application()}</h2>
+	<div class="mb-4 flex flex-col gap-4 md:flex-row">
 		<DashboardContentCard
 			title={m.informationAndMotivation()}
 			description={userIsHeadDelegate
@@ -304,14 +304,14 @@
 			>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text max-ch-sm text-left"
+						<span class="label-text text-left max-ch-sm"
 							>{m.whichSchoolDoesYourDelegationComeFrom()}</span
 						>
 					</div>
 					<input
 						type="text"
 						placeholder={m.answerHere()}
-						class="input input-bordered w-full input-sm"
+						class="input input-sm input-bordered w-full"
 						value={questionnaireValues.school}
 						oninput={(e) => {
 							// @ts-expect-error
@@ -323,12 +323,12 @@
 				</label>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text max-ch-sm text-left">{m.whyDoYouWantToJoinTheConference()}</span
+						<span class="label-text text-left max-ch-sm">{m.whyDoYouWantToJoinTheConference()}</span
 						>
 					</div>
 					<textarea
 						placeholder={m.answerHere()}
-						class="textarea textarea-bordered w-full textarea-sm"
+						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.motivation}
 						oninput={(e) => {
 							// @ts-expect-error
@@ -340,13 +340,13 @@
 				</label>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text max-ch-sm text-left"
+						<span class="label-text text-left max-ch-sm"
 							>{m.howMuchExperienceDoesYourDelegationHave()}</span
 						>
 					</div>
 					<textarea
 						placeholder={m.answerHere()}
-						class="textarea textarea-bordered w-full textarea-sm"
+						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.experience}
 						oninput={(e) => {
 							// @ts-expect-error
@@ -372,7 +372,7 @@
 			class="flex-1"
 		>
 			{#if !data.delegationData?.appliedForRoles}
-				<div class="skeleton w-full h-60"></div>
+				<div class="skeleton h-60 w-full"></div>
 			{:else if data.delegationData.appliedForRoles.length === 0}
 				<div class="alert alert-warning">
 					<i class="fas fa-exclamation-triangle text-3xl"></i>
@@ -417,7 +417,7 @@
 	{/if}
 </section>
 <section>
-	<h2 class="text-2xl font-bold mb-4">{m.dangerZone()}</h2>
+	<h2 class="mb-4 text-2xl font-bold">{m.dangerZone()}</h2>
 	{#if data.delegationData?.applied}
 		<div class="alert alert-info">
 			<i class="fas fa-exclamation-triangle text-3xl"></i>
@@ -436,10 +436,10 @@
 		</div>
 	{/if}
 
-	<p class="text-xs mt-10">
+	<p class="mt-10 text-xs">
 		{@html m.delegationIdForSupport()}
 		{#if data.delegationData}
-			<span class="font-mono p-1 bg-base-200 rounded-sm">{data.delegationData.id}</span>
+			<span class="rounded-sm bg-base-200 p-1 font-mono">{data.delegationData.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

@@ -12,7 +12,7 @@
 	);
 </script>
 
-<section class="col-span-2 md:col-span-12 xl:col-span-9 card bg-base-200 shadow-sm">
+<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12 xl:col-span-9">
 	<div class="card-body">
 		<div class="overflow-x-auto">
 			<table class="table">
@@ -40,9 +40,9 @@
 							</td>
 							<td
 								class="{getFilter() === 'all' &&
-									'bg-base-300'} transition-all duration-500 text-center"
+									'bg-base-300'} text-center transition-all duration-500"
 							>
-								<span class="font-bold text-lg">
+								<span class="text-lg font-bold">
 									{role.total}
 								</span>
 								{#if selectedHistory()}
@@ -55,9 +55,9 @@
 							</td>
 							<td
 								class="{getFilter() === 'applied' &&
-									'bg-base-300'} transition-all duration-500 text-center"
+									'bg-base-300'} text-center transition-all duration-500"
 							>
-								<span class="font-bold text-lg">
+								<span class="text-lg font-bold">
 									{role.applied}
 								</span>
 								{#if selectedHistory()}
@@ -70,9 +70,9 @@
 							</td>
 							<td
 								class="{getFilter() === 'notApplied' &&
-									'bg-base-300'} transition-all duration-500 text-center"
+									'bg-base-300'} text-center transition-all duration-500"
 							>
-								<span class="font-bold text-lg">
+								<span class="text-lg font-bold">
 									{role.notApplied}
 								</span>
 								{#if selectedHistory()}

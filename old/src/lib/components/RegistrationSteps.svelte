@@ -10,7 +10,7 @@
 	let { steps, currentStep = 1 }: Props = $props();
 </script>
 
-<div class="p-4 bg-base-100 shadow-lg rounded-2xl min-w-60">
+<div class="min-w-60 rounded-2xl bg-base-100 p-4 shadow-lg">
 	<ul class="steps">
 		{#each steps as step, i}
 			<li

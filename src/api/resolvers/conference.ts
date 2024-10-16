@@ -28,4 +28,3 @@ schemabuilder.queryFields((t) => ({
 		]
 	})
 }));
-	

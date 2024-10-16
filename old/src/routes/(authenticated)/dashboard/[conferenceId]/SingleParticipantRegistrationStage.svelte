@@ -34,7 +34,9 @@
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
 		checkForError(
-			getApi().singleParticipant({ id: data.singleParticipantData!.id }).completeRegistration.patch({})
+			getApi()
+				.singleParticipant({ id: data.singleParticipantData!.id })
+				.completeRegistration.patch({})
 		);
 		invalidateAll();
 	};
@@ -132,7 +134,7 @@
 </section>
 
 <section>
-	<h2 class="text-2xl font-bold mb-2">{m.roleApplications()}</h2>
+	<h2 class="mb-2 text-2xl font-bold">{m.roleApplications()}</h2>
 	<DashboardContentCard>
 		<div class="overflow-x-auto">
 			<table class="table">
@@ -174,15 +176,15 @@
 			</table>
 		</div>
 	</DashboardContentCard>
-	<a class="mt-4 btn btn-wide btn-ghost" href="/registration/{data.conferenceId}/individual">
+	<a class="btn btn-ghost btn-wide mt-4" href="/registration/{data.conferenceId}/individual">
 		<i class="fa-solid fa-plus"></i>
 		{m.addAnotherApplication()}
 	</a>
 </section>
 
 <section>
-	<h2 class="text-2xl font-bold mb-2">{m.application()}</h2>
-	<div class="flex flex-col md:flex-row gap-4 mb-4">
+	<h2 class="mb-2 text-2xl font-bold">{m.application()}</h2>
+	<div class="mb-4 flex flex-col gap-4 md:flex-row">
 		<DashboardContentCard
 			title={m.informationAndMotivation()}
 			description={m.informationAndMotivationDescriptionHeadDelegate()}
@@ -208,12 +210,12 @@
 			>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text max-ch-sm text-left">{m.whichSchoolDoYouComeFrom()}</span>
+						<span class="label-text text-left max-ch-sm">{m.whichSchoolDoYouComeFrom()}</span>
 					</div>
 					<input
 						type="text"
 						placeholder={m.answerHere()}
-						class="input input-bordered w-full input-sm"
+						class="input input-sm input-bordered w-full"
 						value={questionnaireValues.school}
 						oninput={(e) => {
 							// @ts-expect-error
@@ -225,13 +227,13 @@
 				</label>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text max-ch-sm text-left"
+						<span class="label-text text-left max-ch-sm"
 							>{m.whyDoYouWantToJoinTheConferenceSingleParticipant()}</span
 						>
 					</div>
 					<textarea
 						placeholder={m.answerHere()}
-						class="textarea textarea-bordered w-full textarea-sm"
+						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.motivation}
 						oninput={(e) => {
 							// @ts-expect-error
@@ -243,13 +245,13 @@
 				</label>
 				<label class="form-control w-full">
 					<div class="label">
-						<span class="label-text max-ch-sm text-left"
+						<span class="label-text text-left max-ch-sm"
 							>{m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}</span
 						>
 					</div>
 					<textarea
 						placeholder={m.answerHere()}
-						class="textarea textarea-bordered w-full textarea-sm"
+						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.experience}
 						oninput={(e) => {
 							// @ts-expect-error
@@ -285,7 +287,7 @@
 	{/if}
 </section>
 <section>
-	<h2 class="text-2xl font-bold mb-4">{m.dangerZone()}</h2>
+	<h2 class="mb-4 text-2xl font-bold">{m.dangerZone()}</h2>
 	{#if data.singleParticipantData?.applied}
 		<div class="alert alert-info">
 			<i class="fas fa-exclamation-triangle text-3xl"></i>
@@ -299,10 +301,10 @@
 		</div>
 	{/if}
 
-	<p class="text-xs mt-10">
+	<p class="mt-10 text-xs">
 		{@html m.singleParticipantsIdForSupport()}
 		{#if data.singleParticipantData}
-			<span class="font-mono p-1 bg-base-200 rounded-sm">{data.singleParticipantData.id}</span>
+			<span class="rounded-sm bg-base-200 p-1 font-mono">{data.singleParticipantData.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

@@ -14,7 +14,7 @@
 </script>
 
 <section
-	class="card grow col-span-2 md:col-span-8 xl:col-span-3 row-span-1 xl:row-span-3 bg-primary text-primary-content shadow-sm"
+	class="card col-span-2 row-span-1 grow bg-primary text-primary-content shadow-sm md:col-span-8 xl:col-span-3 xl:row-span-3"
 >
 	{#if stats?.registered}
 		<div class="hidden xl:contents">

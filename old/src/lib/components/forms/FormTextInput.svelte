@@ -9,7 +9,6 @@
 
 	let { form, fieldLabel, fieldName }: Props = $props();
 	let { form: formData, constraints, errors } = form;
-
 </script>
 
 <label for={fieldName} class="form-control w-full">

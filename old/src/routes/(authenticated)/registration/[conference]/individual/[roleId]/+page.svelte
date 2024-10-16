@@ -55,10 +55,10 @@
 	}
 </script>
 
-<div class="w-full min-h-screen flex flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<RegistrationBreadcrumbs {breadcrumbs} />
-	<main class="w-full h-full flex-1 flex flex-col items-center py-16 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{data.role.name}</h1>
+	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
+		<h1 class="mb-3 text-3xl uppercase tracking-wider">{data.role.name}</h1>
 		<div
 			in:fly={{ x: 50, duration: 300, delay: 300 }}
 			out:fly={{ x: -50, duration: 300 }}
@@ -84,7 +84,7 @@
 				{#if !data.existingSingleParticipant?.school}
 					<label class="form-control w-full">
 						<div class="label">
-							<span class="label-text max-ch-sm text-left"
+							<span class="label-text text-left max-ch-sm"
 								>{m.whichSchoolDoesYourDelegationComeFrom()}</span
 							>
 						</div>
@@ -99,7 +99,7 @@
 				{#if !data.existingSingleParticipant?.motivation}
 					<label class="form-control w-full">
 						<div class="label">
-							<span class="label-text max-ch-sm text-left"
+							<span class="label-text text-left max-ch-sm"
 								>{m.whyDoYouWantToJoinTheConference()}</span
 							>
 						</div>
@@ -113,7 +113,7 @@
 				{#if !data.existingSingleParticipant?.experience}
 					<label class="form-control w-full">
 						<div class="label">
-							<span class="label-text max-ch-sm text-left"
+							<span class="label-text text-left max-ch-sm"
 								>{m.howMuchExperienceDoesYourDelegationHave()}</span
 							>
 						</div>
@@ -124,7 +124,7 @@
 						></textarea>
 					</label>
 				{/if}
-				<button class="btn btn-lg btn-primary" type="submit">{m.submit()}</button>
+				<button class="btn btn-primary btn-lg" type="submit">{m.submit()}</button>
 			</form>
 		</div>
 	</main>

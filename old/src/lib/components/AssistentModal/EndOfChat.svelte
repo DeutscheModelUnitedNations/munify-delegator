@@ -22,7 +22,7 @@
 
 <div
 	id={randId}
-	class="flex gap-3 justify-center items-center text-success pb-4"
+	class="flex items-center justify-center gap-3 pb-4 text-success"
 	in:fly={{ y: 0, duration: 300, delay }}
 >
 	<i class="fa-solid fa-circle-check"></i>

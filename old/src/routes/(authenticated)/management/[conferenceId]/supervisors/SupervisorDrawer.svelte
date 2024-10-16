@@ -27,8 +27,8 @@
 
 <Drawer open={supervisor != null} {onClose}>
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl uppercase font-thin">{m.supervisor()}</h3>
-		<h2 class="text-3xl font-bold p-2 bg-base-300 rounded-md">
+		<h3 class="text-xl font-thin uppercase">{m.supervisor()}</h3>
+		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
 			{supervisor?.user?.given_name}
 			<span class="uppercase">{supervisor?.user?.family_name}</span>
 		</h2>

@@ -20,17 +20,17 @@
 	];
 </script>
 
-<div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
+<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<RegistrationBreadcrumbs {breadcrumbs} />
 	<hero class="my-20 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.individualApplication()}</h1>
+		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.individualApplication()}</h1>
 		<p class="max-ch-md">
 			{m.individualApplicationDescription2()}
 		</p>
 	</hero>
 
 	<main>
-		<section class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+		<section class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each data.availableCustomConferenceRoles as { description, fontAwesomeIcon, id, name }}
 				<PlainCard
 					title={name}

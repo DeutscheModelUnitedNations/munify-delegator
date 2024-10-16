@@ -32,7 +32,7 @@
 	/>
 </label>
 
-<div class="max-w-xs rounded-lg shadow-lg overflow-hidden">
+<div class="max-w-xs overflow-hidden rounded-lg shadow-lg">
 	{#if file}
 		<img src={file} alt="Preview" />
 	{/if}

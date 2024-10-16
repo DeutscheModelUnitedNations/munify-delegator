@@ -10,7 +10,7 @@
 <section>
 	<RoleWidget countryCode="de" />
 </section>
-<section class="flex gap-4 flex-col md:flex-row flex-wrap">
+<section class="flex flex-col flex-wrap gap-4 md:flex-row">
 	<UndrawCard
 		title="Feedback"
 		img="/undraw/feedback.svg"

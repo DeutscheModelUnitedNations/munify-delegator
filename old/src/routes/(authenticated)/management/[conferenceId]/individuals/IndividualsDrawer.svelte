@@ -23,8 +23,8 @@
 
 <Drawer open={singleParticipant != null} {onClose}>
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl uppercase font-thin">{m.singleParticipant()}</h3>
-		<h2 class="text-3xl font-bold p-2 bg-base-300 rounded-md">
+		<h3 class="text-xl font-thin uppercase">{m.singleParticipant()}</h3>
+		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
 			{singleParticipant?.user?.given_name}
 			<span class="uppercase">{singleParticipant?.user?.family_name}</span>
 		</h2>
@@ -75,7 +75,7 @@
 					<td class="text-center"><i class="fa-duotone fa-check-to-slot text-lg"></i></td>
 					<td>
 						<div class="flex items-center gap-2">
-							<div class="bg-base-300 py-[2px] px-3 rounded-md h-full">
+							<div class="h-full rounded-md bg-base-300 px-3 py-[2px]">
 								{singleParticipant?.appliedForRoles.length}
 							</div>
 							<div class="flex flex-col">

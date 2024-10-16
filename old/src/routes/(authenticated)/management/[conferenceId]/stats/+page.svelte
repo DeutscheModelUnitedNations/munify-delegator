@@ -58,7 +58,7 @@
 
 <ManagementHeader title={m.adminStats()} fontAwesomeIcon="fa-chart-pie" />
 
-<div class="grid grid-cols-2 md:grid-cols-12 mt-10 gap-10">
+<div class="mt-10 grid grid-cols-2 gap-10 md:grid-cols-12">
 	<DaysUntil />
 	<AppliedChartAndStats />
 	<AgeChart />
@@ -66,7 +66,7 @@
 	<DistributionChart />
 	<RegistrationStats />
 	<IndividualRoles />
-	<section class="col-span-2 md:col-span-12 card bg-base-200 shadow-sm">
+	<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12">
 		<div class="card-body">
 			<h3 class="text-xl font-bold">{m.historyComparison()}</h3>
 			<p>{@html m.historyComparisonDescription()}</p>

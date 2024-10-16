@@ -11,17 +11,17 @@
 </script>
 
 <div class="flex justify-center">
-	<div class="card bg-base-100 hover:bg-base-200 transition-all duration-300 px-4 py-1 w-fit mt-4">
-		<div class="breadcrumbs text-xs overflow-hidden">
+	<div class="card mt-4 w-fit bg-base-100 px-4 py-1 transition-all duration-300 hover:bg-base-200">
+		<div class="breadcrumbs overflow-hidden text-xs">
 			<ul>
 				<li>
 					<a href="/" class="!no-underline" aria-label="Zurück zur Startseite">
-						<i class="fa-solid fa-house hover:text-primary transition-all duration-300"></i>
+						<i class="fa-solid fa-house transition-all duration-300 hover:text-primary"></i>
 					</a>
 				</li>
 				{#each breadcrumbs as { title, href, icon }}
 					<li>
-						<a {href} class="hover:text-primary transition-all duration-300 !no-underline">
+						<a {href} class="!no-underline transition-all duration-300 hover:text-primary">
 							{#if icon}
 								<i class="fa-solid fa-{icon} {title && 'mr-1'}"></i>
 							{/if}

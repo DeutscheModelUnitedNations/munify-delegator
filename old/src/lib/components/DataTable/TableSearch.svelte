@@ -7,7 +7,7 @@
 	let { searchValue, changeSearchValue }: Props = $props();
 </script>
 
-<label class="input input-bordered flex items-center gap-2 mt-6 no-print">
+<label class="no-print input input-bordered mt-6 flex items-center gap-2">
 	<input
 		type="text"
 		class="grow"

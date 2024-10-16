@@ -18,11 +18,11 @@
 </script>
 
 <ManagementHeader title={m.adminSettings()} fontAwesomeIcon="fa-gears" />
-<section class="flex flex-col gap-10 mt-10">
-	<div class="card bg-base-200 shadow-sm max-w-lg">
+<section class="mt-10 flex flex-col gap-10">
+	<div class="card max-w-lg bg-base-200 shadow-sm">
 		<div class="card-body">
 			<h2 class="card-title">{m.conferenceSettings()}</h2>
-			<p class="text-sm mb-4">{@html m.conferenceSettingsDescription()}</p>
+			<p class="mb-4 text-sm">{@html m.conferenceSettingsDescription()}</p>
 			<Form {form}>
 				<FormTextInput fieldName="title" fieldLabel={m.conferenceTitle()} {form} />
 				<FormTextInput fieldName="longTitle" fieldLabel={m.conferenceLongTitle()} {form} />

@@ -34,9 +34,11 @@
 	const handlePresenceChange = async (e: Event) => {
 		if (!data.supervisorData) return;
 		await checkForError(
-			getApi().conferenceSupervisor({ id: data.supervisorData.id }).patch({
-				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
-			})
+			getApi()
+				.conferenceSupervisor({ id: data.supervisorData.id })
+				.patch({
+					plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
+				})
 		);
 		invalidateAll();
 	};
@@ -55,7 +57,7 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.ownPresence()}</h2>
 	<p class="text-sm">{m.ownPresenceDescription()}</p>
-	<div class="card p-6 shadow-md max-w-80 bg-base-100 dark:bg-base-200">
+	<div class="card max-w-80 bg-base-100 p-6 shadow-md dark:bg-base-200">
 		<div class="form-control">
 			<label class="label cursor-pointer">
 				<span class="label-text">{m.presentAtConference()}</span>
@@ -68,7 +70,7 @@
 			</label>
 		</div>
 	</div>
-	<p class="text-xs text-gray-500">
+	<p class="text-gray-500 text-xs">
 		{@html data.supervisorData?.plansOwnAttendenceAtConference
 			? m.willBePresentAtConference()
 			: m.willNotBePresentAtConference()}
@@ -78,7 +80,7 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if data.supervisorsDelegationData && data.supervisorsDelegationData.length > 0}
-		<div class="flex flex-col sm:flex-row gap-2 sm:gap-8">
+		<div class="flex flex-col gap-2 sm:flex-row sm:gap-8">
 			<div class="text-sm">
 				<i class="fa-solid fa-hourglass-half text-warning"></i>
 				<span> = {m.notApplied()}</span>
@@ -91,22 +93,22 @@
 		{#each data.supervisorsDelegationData as delegation, index}
 			<div
 				tabindex="-1"
-				class="collapse p-4 bg-base-100 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300 shadow-md transition-colors duration-300"
+				class="collapse bg-base-100 p-4 shadow-md transition-colors duration-300 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300"
 			>
 				<input type="radio" name="supervisor-accordion-1" checked={index === 0} />
-				<div class="collapse-title text-xl text-nowrap font-medium flex flex-col sm:flex-row">
-					<div class="flex items-center mb-6 sm:mb-0">
+				<div class="collapse-title flex flex-col text-nowrap text-xl font-medium sm:flex-row">
+					<div class="mb-6 flex items-center sm:mb-0">
 						<div>
 							{#if delegation.applied}
-								<i class="fa-solid fa-circle-check text-success text-3xl"></i>
+								<i class="fa-solid fa-circle-check text-3xl text-success"></i>
 							{:else}
-								<i class="fa-solid fa-hourglass-half text-warning text-3xl"></i>
+								<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
 							{/if}
 						</div>
 						<div class="divider divider-horizontal"></div>
 						<div><i class="fa-duotone fa-fingerprint mr-4"></i>{delegation.entryCode}</div>
 					</div>
-					<div class="divider hidden sm:flex divider-horizontal"></div>
+					<div class="divider divider-horizontal hidden sm:flex"></div>
 					<div class="flex items-center">
 						<div><i class="fa-duotone fa-users mr-4"></i>{delegation.members.length}</div>
 						<div class="divider divider-horizontal"></div>
@@ -119,9 +121,9 @@
 					</div>
 				</div>
 				<div class="collapse-content overflow-x-auto">
-					<div class="mt-10 text-sm grid grid-cols-[1fr] sm:grid-cols-[auto_1fr] gap-x-4">
+					<div class="mt-10 grid grid-cols-[1fr] gap-x-4 text-sm sm:grid-cols-[auto_1fr]">
 						<div class="font-bold">{m.members()}</div>
-						<div class="w-full mb-4">
+						<div class="mb-4 w-full">
 							{delegation.members.map((x) => getName(x.user)).join(', ')}
 						</div>
 						<div class="font-bold">{m.supervisors()}</div>
@@ -165,7 +167,7 @@
 			{m.noDelegationsFound()}
 		</div>
 	{/if}
-	<a class="mt-4 btn btn-wide btn-ghost" href="/registration/{data.conferenceId}/supervisor">
+	<a class="btn btn-ghost btn-wide mt-4" href="/registration/{data.conferenceId}/supervisor">
 		<i class="fa-solid fa-plus"></i>
 		{m.addAnotherDelegation()}
 	</a>

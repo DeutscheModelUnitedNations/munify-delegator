@@ -12,9 +12,9 @@
 </script>
 
 <Drawer {open} size="600px" placement="right" on:clickAway={onClose}>
-	<div class="flex flex-col p-10 bg-base-100 min-h-full gap-8">
+	<div class="flex min-h-full flex-col gap-8 bg-base-100 p-10">
 		{@render children()}
-		<button class="btn absolute top-4 right-4" onclick={onClose} aria-label="Close">
+		<button class="btn absolute right-4 top-4" onclick={onClose} aria-label="Close">
 			<i class="fa-duotone fa-xmark"></i>
 		</button>
 	</div>

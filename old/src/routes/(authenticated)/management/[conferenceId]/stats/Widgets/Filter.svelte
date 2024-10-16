@@ -5,9 +5,9 @@
 	let { getFilter, setFilter } = registrationFilter();
 </script>
 
-<section class="col-span-2 md:col-span-4 xl:col-span-3 card bg-base-200 grow shadow-sm">
-	<div class="card-body justify-center items-center">
-		<div class="flex flex-col justify-start items-start">
+<section class="card col-span-2 grow bg-base-200 shadow-sm md:col-span-4 xl:col-span-3">
+	<div class="card-body items-center justify-center">
+		<div class="flex flex-col items-start justify-start">
 			<label class="label cursor-pointer">
 				<input
 					type="radio"

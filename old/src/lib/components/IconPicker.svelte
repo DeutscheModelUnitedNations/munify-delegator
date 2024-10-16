@@ -60,15 +60,15 @@
 
 		{m.pickIcon()}</summary
 	>
-	<ul class="menu dropdown-content bg-base-200 rounded-md z-[1] p-6 shadow">
-		<label class="input input-bordered flex items-center gap-2 mb-3">
+	<ul class="menu dropdown-content z-[1] rounded-md bg-base-200 p-6 shadow">
+		<label class="input input-bordered mb-3 flex items-center gap-2">
 			<input bind:value={searchTerm} type="text" class="grow" placeholder={m.search()} />
 		</label>
-		<div class="flex justify-between flex-wrap max-w-80 max-h-44 overflow-auto">
+		<div class="flex max-h-44 max-w-80 flex-wrap justify-between overflow-auto">
 			{#each sortedIcons as icon}
 				<li>
 					<button onclick={() => (selectedIcon = icon.fontAwesomeIcon)} aria-label="Select icon">
-						<i class="flex fa-duotone {icon.fontAwesomeIcon} text-2xl"></i>
+						<i class="fa-duotone flex {icon.fontAwesomeIcon} text-2xl"></i>
 					</button>
 				</li>
 			{/each}

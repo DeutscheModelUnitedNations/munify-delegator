@@ -17,7 +17,7 @@ const config = {
 			$assets: 'src/assets',
 			$db: 'prisma',
 			$config: 'src/config',
-			$houdini: './$houdini',
+			$houdini: './$houdini'
 		}
 	}
 };

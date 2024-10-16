@@ -3,7 +3,6 @@
 	import * as m from '$lib/paraglide/messages.js';
 
 	let { data, children } = $props();
-
 </script>
 
 <svelte:head>

@@ -34,7 +34,7 @@
 			<div class="mx-4 flex flex-col justify-center">
 				<i class="fa-duotone fa-id-card-clip mb-4 text-3xl"></i>
 				<div class="text-md font-[#000] font-normal">MUNify</div>
-				<div class="text-2xl font-[#000] font-bold">DELEGATOR</div>
+				<div class="font-[#000] text-2xl font-bold">DELEGATOR</div>
 			</div>
 			<ul class="menu">
 				{#if conferences.length > 1}
@@ -48,7 +48,7 @@
 
 				{#if activeConferences.length > 0}
 					<div class="h-6"></div>
-					<p class="text-xs text-gray-500 pb-2">{m.activeConferences()}</p>
+					<p class="text-gray-500 pb-2 text-xs">{m.activeConferences()}</p>
 					{#each activeConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -61,7 +61,7 @@
 
 				{#if preConferences.length > 0}
 					<div class="h-6"></div>
-					<p class="text-xs text-gray-500 pb-2">{m.upcomingConferences()}</p>
+					<p class="text-gray-500 pb-2 text-xs">{m.upcomingConferences()}</p>
 					{#each preConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -74,7 +74,7 @@
 
 				{#if pastConferences.length > 0}
 					<div class="h-6"></div>
-					<p class="text-xs text-gray-500 pb-2">{m.pastConferences()}</p>
+					<p class="text-gray-500 pb-2 text-xs">{m.pastConferences()}</p>
 					{#each pastConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"

@@ -9,6 +9,6 @@
 	let { className, children }: Props = $props();
 </script>
 
-<div class="stats stats-vertical sm:stats-horizontal shadow {className} bg-base-200">
+<div class="stats stats-vertical shadow sm:stats-horizontal {className} bg-base-200">
 	{@render children()}
 </div>

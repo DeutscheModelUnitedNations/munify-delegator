@@ -93,9 +93,9 @@
 	<div class="backdrop"></div>
 {/if}
 
-<div class="w-full flex flex-col items-center p-4 sm:p-10">
-	<section class="text-center max-ch-md mt-10 z-20">
-		<i class="fa-duotone fa-user text-5xl mb-3"></i>
+<div class="flex w-full flex-col items-center p-4 sm:p-10">
+	<section class="z-20 mt-10 text-center max-ch-md">
+		<i class="fa-duotone fa-user mb-3 text-5xl"></i>
 		<h1 class="text-2xl font-bold">{m.myAccount()}</h1>
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
@@ -113,12 +113,12 @@
 			</div>
 		{/if}
 	</section>
-	<div class="flex gap-10 flex-wrap justify-center items-start mt-10">
+	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
 		<div
-			class="card max-w-80 sm:max-w-full sm:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl z-20 {data.redirectUrl &&
+			class="card z-20 max-w-80 bg-base-100 shadow-xl sm:min-w-96 sm:max-w-full dark:bg-base-200 {data.redirectUrl &&
 				'highlight-card'}"
 		>
-			<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
+			<div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 				<div class="card-title block text-center">{m.personalData()}</div>
 				<form class="flex flex-col gap-4" onsubmit={onPersonalDataFormSubmit}>
 					<ProfileInput
@@ -213,7 +213,7 @@
 			</div>
 		</div>
 
-		<div class="card w-full md:w-auto md:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl">
+		<div class="card w-full bg-base-100 shadow-xl md:w-auto md:min-w-96 dark:bg-base-200">
 			<div class="card-body">
 				<div class="card-title block text-center">{m.loginInformation()}</div>
 				<table class="table">
@@ -260,7 +260,7 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
-				<p class="text-center mt-6 text-sm max-w-[40ch]">{@html m.deleteAccountGPDR()}</p>
+				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
 	</div>

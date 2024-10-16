@@ -11,17 +11,17 @@
 <Header title={m.myConferences()} />
 <section class="mt-10 flex flex-wrap gap-4">
 	<div
-		class="carousel carousel-center bg-base-200 dark:bg-base-300 shadow-inner rounded-box w-full space-x-6 p-6"
+		class="carousel carousel-center w-full space-x-6 rounded-box bg-base-200 p-6 shadow-inner dark:bg-base-300"
 	>
 		{#each data.myConferences.filter((conference) => !hasConferenceEnded(conference)) as conference}
 			<ConferenceCard {...conference} btnText={m.toConference()} baseSlug="/dashboard" />
 		{/each}
-		<a href="/registration" class="carousel-item max-w-96 w-[90%]">
+		<a href="/registration" class="carousel-item w-[90%] max-w-96">
 			<div
-				class="w-full h-full flex flex-col justify-center items-center border border-primary border-dashed rounded-xl hover:bg-base-100 hover:shadow-lg hover:scale-[101%] transition-all duration-300 ease-in-out p-4"
+				class="flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed border-primary p-4 transition-all duration-300 ease-in-out hover:scale-[101%] hover:bg-base-100 hover:shadow-lg"
 			>
 				<i class="fa-duotone fa-plus text-5xl text-primary"></i>
-				<p class="text-primary text-lg mt-4">{m.signup()}</p>
+				<p class="mt-4 text-lg text-primary">{m.signup()}</p>
 			</div>
 		</a>
 	</div>
@@ -44,14 +44,14 @@
 					<td>{conference.location}</td>
 					<td class="flex gap-2">
 						<a
-							class="btn btn-sm btn-circle"
+							class="btn btn-circle btn-sm"
 							href={conference.website}
 							target="_blank"
 							aria-label="Website"
 						>
 							<i class="fa-duotone fa-info"></i>
 						</a>
-						<a class="btn btn-sm btn-circle" href="/dashboard/{conference.id}" aria-label="Details">
+						<a class="btn btn-circle btn-sm" href="/dashboard/{conference.id}" aria-label="Details">
 							<i class="fa-duotone fa-arrow-right"></i>
 						</a>
 					</td>

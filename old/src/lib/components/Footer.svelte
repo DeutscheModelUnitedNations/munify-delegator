@@ -4,16 +4,16 @@
 	import * as m from '$lib/paraglide/messages.js';
 </script>
 
-<footer class="footer footer-center bg-base-200 text-base-content rounded-xl p-10 mt-10">
-	<nav class="flex flex-wrap flex-col justify-center md:flex-row gap-4">
-		<a class="link link-hover" href="/">{m.home()}</a>
-		<a class="link link-hover" href="/registration">{m.registration()}</a>
-		<a class="link link-hover" href="/dashboard">{m.dashboard()}</a>
-		<a class="link link-hover" href="/my-account">{m.myAccount()}</a>
-		<a class="link link-hover" href="https://dmun.de/impressum" target="_blank"
+<footer class="footer footer-center mt-10 rounded-xl bg-base-200 p-10 text-base-content">
+	<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
+		<a class="link-hover link" href="/">{m.home()}</a>
+		<a class="link-hover link" href="/registration">{m.registration()}</a>
+		<a class="link-hover link" href="/dashboard">{m.dashboard()}</a>
+		<a class="link-hover link" href="/my-account">{m.myAccount()}</a>
+		<a class="link-hover link" href="https://dmun.de/impressum" target="_blank"
 			>{@html m.imprintAndPrivacy()}</a
 		>
-		<a class="link link-hover" href="management">{m.admininstration()}</a>
+		<a class="link-hover link" href="management">{m.admininstration()}</a>
 	</nav>
 	<nav>
 		<div class="grid grid-flow-col gap-4" id="socials">
@@ -36,12 +36,12 @@
 	</nav>
 	<aside>
 		<p>{m.aServiceBy()}</p>
-		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:invert dark:hue-rotate-180" />
+		<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:hue-rotate-180 dark:invert" />
 		<p>
 			Copyright © {new Date().getFullYear() !== 2024 ? '2024–' : ''}{new Date().getFullYear()} - {m.allRightsReservedby()}
 			Deutsche Model United Nations e.V.
 		</p>
-		<div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
+		<div class="flex flex-col gap-4 sm:flex-row sm:gap-8">
 			<div class="flex flex-col sm:flex-row sm:gap-2">
 				<div>{m.version()}:</div>
 				<div class="font-mono">
@@ -52,9 +52,9 @@
 					{/if}
 				</div>
 			</div>
-			<div class="flex flex-col sm:flex-row sm:gap-2 max-w-[15ch] md:max-w-max">
+			<div class="flex max-w-[15ch] flex-col sm:flex-row sm:gap-2 md:max-w-max">
 				<div>{m.sha()}:</div>
-				<div class="overflow-ellipsis overflow-hidden font-mono">
+				<div class="overflow-hidden overflow-ellipsis font-mono">
 					{#if !dynamicPublicConfig.SHA || dynamicPublicConfig.SHA.length === 0}
 						unknown
 					{:else}

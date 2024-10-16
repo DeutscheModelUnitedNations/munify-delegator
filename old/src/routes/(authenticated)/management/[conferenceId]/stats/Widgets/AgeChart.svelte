@@ -7,9 +7,9 @@
 </script>
 
 <section
-	class="card grow col-span-2 md:col-span-12 bg-primary text-primary-content shadow-sm xl:col-span-6"
+	class="card col-span-2 grow bg-primary text-primary-content shadow-sm md:col-span-12 xl:col-span-6"
 >
-	<div class="card-body pb-0 mb-4">
+	<div class="card-body mb-4 pb-0">
 		<h3 class="text-xs">{m.averageAgeOnlyApplied()}</h3>
 		<h2 class="card-title">{stats?.age.average ?? '0'} {m.years()}</h2>
 	</div>

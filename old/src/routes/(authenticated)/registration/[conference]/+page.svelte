@@ -57,15 +57,15 @@
 	});
 </script>
 
-<div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
+<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<RegistrationBreadcrumbs {breadcrumbs} />
 	<hero class="my-20 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
+		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.signup()}</h1>
 		<p class="max-ch-md">
 			{@html m.conferenceSignupIntroduction()}
 		</p>
 		<div role="alert" class="alert mt-10">
-			<i class="fa-duotone fa-message-question text-xl mx-1"></i>
+			<i class="fa-duotone fa-message-question mx-1 text-xl"></i>
 			<div class="flex flex-col">
 				<div class="font-bold tracking-wider">{m.signUpAssistant()}</div>
 				<div class="max-ch-sm">
@@ -73,7 +73,7 @@
 				</div>
 			</div>
 			<div>
-				<button class="btn btn-sm btn-primary" onclick={() => (showAssistent = true)}
+				<button class="btn btn-primary btn-sm" onclick={() => (showAssistent = true)}
 					>{m.openAssistant()}</button
 				>
 			</div>
@@ -82,7 +82,7 @@
 
 	<main>
 		<section
-			class="w-full flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flex-wrap"
+			class="flex w-full flex-col flex-wrap items-center justify-center gap-8 md:flex-row md:items-stretch"
 		>
 			<UndrawCard
 				title={m.createDelegation()}
@@ -153,10 +153,10 @@
 			</UndrawCard>
 		</section>
 		<section class="mt-20 text-center">
-			<h2 class="text-2xl font-bold mb-2">Wie bewerbe ich mich?</h2>
+			<h2 class="mb-2 text-2xl font-bold">Wie bewerbe ich mich?</h2>
 			<p class="mb-4">Das folgende Diagramm stellt dar, wie Sie sich auf welche Rolle bewerben.</p>
 			<div
-				class="mx-auto card bg-[#f6f7fb] shadow-lg p-4 w-full max-w-[1000px] flex justify-center items-center"
+				class="card mx-auto flex w-full max-w-[1000px] items-center justify-center bg-[#f6f7fb] p-4 shadow-lg"
 			>
 				<MermaidWrapper
 					diagram={`\

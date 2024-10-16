@@ -41,10 +41,10 @@
 	);
 </script>
 
-<div class="w-full min-h-screen flex flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<RegistrationBreadcrumbs {breadcrumbs} />
-	<main class="w-full h-full flex-1 flex flex-col items-center py-16 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.joinDelegation()}</h1>
+	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
+		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.joinDelegation()}</h1>
 		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
 			<div class="flex flex-col items-center">
 				<p class="mb-10 max-ch-sm">
@@ -56,7 +56,7 @@
 					{:then delegation}
 						{#if delegation}
 							<div
-								class="flex flex-col items-center mb-10"
+								class="mb-10 flex flex-col items-center"
 								in:fly={{ x: 50, duration: 300, delay: 300 }}
 								out:fly={{ x: 50, duration: 300 }}
 							>
@@ -78,7 +78,7 @@
 										<td>{delegation.memberCount}</td>
 									</tr>
 								</ReviewTable>
-								<div class="flex flex-col-reverse sm:flex-row justify-between mt-4 gap-4 sm:gap-10">
+								<div class="mt-4 flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-10">
 									<button
 										class="btn btn-primary"
 										onclick={async () => {
@@ -99,7 +99,7 @@
 					type="text"
 					placeholder="Code"
 					bind:value={code}
-					class="input input-bordered input-lg w-full max-w-xs tracking-[0.8rem] uppercase join-item font-mono"
+					class="input input-lg join-item input-bordered w-full max-w-xs font-mono uppercase tracking-[0.8rem]"
 					oninput={(e: any) => {
 						code = (e.target.value as string).toUpperCase().slice(0, 6);
 					}}

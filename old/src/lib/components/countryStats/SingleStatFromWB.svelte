@@ -27,7 +27,7 @@
 	});
 </script>
 
-<div class="stats shadow bg-base-200">
+<div class="stats bg-base-200 shadow">
 	<div class="stat">
 		<div class="stat-figure text-primary">
 			<i class="fa-duotone fa-{icon} text-3xl"></i>
@@ -36,7 +36,7 @@
 		{#if value}
 			<div class="stat-value">{value}</div>
 		{:else}
-			<div class="stat-value skeleton h-8 my-1 w-20"></div>
+			<div class="stat-value skeleton my-1 h-8 w-20"></div>
 		{/if}
 		{#if desc}
 			<div class="stat-desc">{desc}</div>

@@ -34,13 +34,13 @@
 	});
 </script>
 
-<dialog id="assistent_modal" class="modal modal-open modal-bottom sm:modal-middle h-screen">
-	<div class="modal-box h-full overflow-x-hidden overflow-y-auto">
+<dialog id="assistent_modal" class="modal modal-open modal-bottom h-screen sm:modal-middle">
+	<div class="modal-box h-full overflow-y-auto overflow-x-hidden">
 		<h3 class="text-lg font-bold">
 			<i class="fa-duotone fa-message-question mr-2"></i>
 			Anmeldeassistent
 		</h3>
-		<div class="flex flex-col gap-4 my-8">
+		<div class="my-8 flex flex-col gap-4">
 			{#if isActive(QuestionFlowState.Q_PARTICIPANT_OR_SUPERVISOR)}
 				<ParticipantOrSupervisor advance={add}></ParticipantOrSupervisor>
 			{/if}
@@ -75,7 +75,7 @@
 				<FinalJoinDelegation {conferenceId}></FinalJoinDelegation>
 			{/if}
 		</div>
-		<div class="fixed top-6 right-6">
+		<div class="fixed right-6 top-6">
 			<form method="dialog">
 				<button class="btn btn-circle btn-sm" onclick={onClose} aria-label="Close">
 					<i class="fas fa-xmark"></i>

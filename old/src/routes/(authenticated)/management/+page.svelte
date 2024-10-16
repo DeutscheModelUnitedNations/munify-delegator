@@ -30,7 +30,7 @@
 	};
 </script>
 
-<div class="w-full flex flex-col items-center gap-4 p-10">
+<div class="flex w-full flex-col items-center gap-4 p-10">
 	<h1 class="text-2xl font-bold">{m.admininstration()}</h1>
 	<p class="text-center max-ch-md">
 		{m.administrationConferenceSelection()}

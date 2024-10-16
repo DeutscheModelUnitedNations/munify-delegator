@@ -6,7 +6,7 @@
 </script>
 
 <section
-	class="col-span-2 sm:col-span-1 md:col-span-6 stats stats-vertical xl:stats-horizontal bg-base-200 shadow-sm"
+	class="stats stats-vertical col-span-2 bg-base-200 shadow-sm xl:stats-horizontal sm:col-span-1 md:col-span-6"
 >
 	<div class="stat">
 		<div class="stat-figure"><i class="fa-duotone fa-hourglass-clock text-3xl"></i></div>
@@ -15,7 +15,7 @@
 	</div>
 </section>
 <section
-	class="col-span-2 sm:col-span-1 md:col-span-6 stats stats-vertical xl:stats-horizontal bg-base-200 shadow-sm"
+	class="stats stats-vertical col-span-2 bg-base-200 shadow-sm xl:stats-horizontal sm:col-span-1 md:col-span-6"
 >
 	<div class="stat">
 		<div class="stat-figure"><i class="fa-duotone fa-check-to-slot text-3xl"></i></div>

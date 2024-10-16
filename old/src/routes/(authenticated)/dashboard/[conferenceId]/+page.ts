@@ -63,6 +63,6 @@ export const load: PageLoad = loadApiHandler(async ({ params, api, parent }) => 
 		supervisorsDelegationData: supervisorData
 			? await getSupervisorsDelegationData(supervisorData)
 			: undefined,
-		singleParticipantData,
+		singleParticipantData
 	};
 });

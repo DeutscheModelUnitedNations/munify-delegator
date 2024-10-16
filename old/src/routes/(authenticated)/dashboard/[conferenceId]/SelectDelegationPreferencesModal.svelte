@@ -91,7 +91,7 @@
 				</div>
 			{:else}
 				<div class="flex flex-col gap-4">
-					<h3 class="font-bold text-xl">{m.yourPreferences()}</h3>
+					<h3 class="text-xl font-bold">{m.yourPreferences()}</h3>
 					<p class="text-sm">{m.yourPreferencesDescription()}</p>
 					{#if !data.delegationData?.appliedForRoles || data.delegationData.appliedForRoles.length === 0}
 						<div class="alert alert-warning">
@@ -186,7 +186,7 @@
 
 				<div class="collapse collapse-arrow bg-base-200">
 					<input type="checkbox" />
-					<div class="collapse-title font-bold text-xl">{m.nationsPool()}</div>
+					<div class="collapse-title text-xl font-bold">{m.nationsPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
 						<p class="text-sm">{m.nationsPoolDescription()}</p>
 						<div class="overflow-x-auto">
@@ -248,7 +248,7 @@
 				</div>
 				<div class="collapse collapse-arrow bg-base-200">
 					<input type="checkbox" />
-					<div class="collapse-title font-bold text-xl">{m.nsaPool()}</div>
+					<div class="collapse-title text-xl font-bold">{m.nsaPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
 						<p class="text-sm">{m.nsaPoolDescription()}</p>
 						<div class="overflow-x-auto">
@@ -298,7 +298,7 @@
 				</div>
 			{/if}
 		</div>
-		<div class="absolute top-2 right-2">
+		<div class="absolute right-2 top-2">
 			<button
 				class="btn btn-circle btn-ghost"
 				onclick={() => {
