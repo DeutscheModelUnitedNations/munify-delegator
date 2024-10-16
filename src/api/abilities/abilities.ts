@@ -18,7 +18,7 @@ import { defineAbilitiesForUserEntity } from './entities/user';
 import type { OIDC } from '$api/context/oidc';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
+const actions = ['list', 'read', 'update', 'delete'] as const;
 
 /**
  * Actions which can be run on entities in the system:

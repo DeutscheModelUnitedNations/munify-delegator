@@ -4,7 +4,10 @@
 	import { type PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
+	let { ConferenceQuery } = $state(data);
 </script>
 
-{m.RegistrationNotPossible()}
-{languageTag()}
+<!-- {m.RegistrationNotPossible()}
+{languageTag()} -->
+
+{$ConferenceQuery.data?.findManyConferences.map((x) => x.title).join(', ')}

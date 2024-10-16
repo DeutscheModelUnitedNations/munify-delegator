@@ -4,9 +4,11 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { context } from '$api/context/context';
 
 builder.queryType({});
-// builder.mutationType({});
+builder.mutationType({});
 
 import './conference';
+import './committee';
+import './user';
 
 export const yogaInstance = createYoga<RequestEvent>({
 	schema: builder.toSchema(),

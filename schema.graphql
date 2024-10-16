@@ -133,6 +133,7 @@ input CommitteeWhereUniqueInput {
 
 type Conference {
   id: ID!
+  title: String!
 }
 
 input ConferenceCreateInput {
