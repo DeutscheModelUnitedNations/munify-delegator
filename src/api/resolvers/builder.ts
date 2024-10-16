@@ -9,13 +9,16 @@ import TracingPlugin, { wrapResolver, isRootField } from '@pothos/plugin-tracing
 import type { Scalars } from 'prisma-generator-pothos-codegen';
 import type { Prisma } from '@prisma/client';
 import { type Context } from '$api/context/context';
+import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 
 export const builder = new SchemaBuilder<{
 	Context: Context;
 	Scalars: Scalars<Prisma.Decimal, Prisma.InputJsonValue | null, Prisma.InputJsonValue>;
 	PrismaTypes: PrismaTypes;
+	DefaultFieldNullability: false;
 }>({
-	plugins: [PrismaPlugin, PrismaUtils, ComplexityPlugin, TracingPlugin],
+	defaultFieldNullability: false,
+	plugins: [PrismaPlugin, PrismaUtils, ComplexityPlugin, TracingPlugin, SimpleObjectsPlugin],
 	prisma: {
 		client: db,
 		exposeDescriptions: true,

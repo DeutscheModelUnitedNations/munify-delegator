@@ -23,8 +23,12 @@ import {
 	UserWantsToReceiveGeneralInformationFieldObject,
 	UserWantsJoinTeamInformationFieldObject
 } from '$db/generated/graphql/User';
+import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
+import { db } from '$db/db';
+import { configPublic } from '$config/public';
+import { userDataCompleteCheck } from '$api/services/userDataComplete';
 
-builder.prismaObject('User', {
+export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
 		id: t.field(UserIdFieldObject),
 		email: t.field(UserEmailFieldObject),
@@ -148,6 +152,63 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('delete').User]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+const UpsertSelfResult = builder
+	.objectRef<{
+		userNeedsAdditionalInfo: boolean;
+	}>('UpsertSelfResult')
+	.implement({
+		fields: (t) => ({
+			userNeedsAdditionalInfo: t.exposeBoolean('userNeedsAdditionalInfo')
+		})
+	});
+
+builder.mutationFields((t) => {
+	return {
+		upsertSelf: t.field({
+			type: UpsertSelfResult,
+			resolve: async (root, args, ctx) => {
+				const user = ctx.permissions.mustBeLoggedIn();
+				if (ctx.oidc.tokenSet?.access_token === undefined) {
+					throw new Error('No access token provided');
+				}
+				const issuerUserData = await fetchUserInfoFromIssuer(ctx.oidc.tokenSet?.access_token);
+
+				if (
+					!issuerUserData.email ||
+					!issuerUserData.family_name ||
+					!issuerUserData.given_name ||
+					!issuerUserData.preferred_username
+				) {
+					throw new Error('OIDC result is missing required fields!');
+				}
+
+				const updatedUser = await db.user.upsert({
+					where: { id: issuerUserData.sub },
+					create: {
+						id: issuerUserData.sub,
+						email: issuerUserData.email,
+						family_name: issuerUserData.family_name,
+						given_name: issuerUserData.given_name,
+						preferred_username: issuerUserData.preferred_username,
+						locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
+						phone: (issuerUserData as any).phone ?? user.phone
+					},
+					update: {
+						email: issuerUserData.email,
+						family_name: issuerUserData.family_name,
+						given_name: issuerUserData.given_name,
+						preferred_username: issuerUserData.preferred_username,
+						locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
+						phone: issuerUserData.phone ?? user.phone
+					}
+				});
+
+				return { userNeedsAdditionalInfo: userDataCompleteCheck(updatedUser, 'de').length > 0 };
 			}
 		})
 	};

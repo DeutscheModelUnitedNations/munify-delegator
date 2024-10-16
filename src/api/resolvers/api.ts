@@ -6,8 +6,17 @@ import { context } from '$api/context/context';
 builder.queryType({});
 builder.mutationType({});
 
-import './conference';
 import './committee';
+import './conference';
+import './conferenceSupervisorRole';
+import './customConferenceRole';
+import './delegation';
+import './delegationMember';
+import './nation';
+import './nonStateActor';
+import './roleApplication';
+import './singleParticipant';
+import './teamMember';
 import './user';
 
 export const yogaInstance = createYoga<RequestEvent>({
