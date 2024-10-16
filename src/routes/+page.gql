@@ -1,6 +1,6 @@
 query ConferenceQuery {
-  findManyConferences {
-    id
-    title
-  }
+	findManyConferences {
+		id
+		title
+	}
 }

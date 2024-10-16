@@ -14,5 +14,5 @@ export const yogaInstance = createYoga<RequestEvent>({
 	schema: builder.toSchema(),
 	graphqlEndpoint: '/api/graphql',
 	fetchAPI: { Response },
-	context,
+	context
 });

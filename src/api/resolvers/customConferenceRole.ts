@@ -15,13 +15,13 @@ builder.prismaObject('CustomConferenceRole', {
 		id: t.field(CustomConferenceRoleIdFieldObject),
 		name: t.field(CustomConferenceRoleNameFieldObject),
 		description: t.field(CustomConferenceRoleDescriptionFieldObject),
-		fontAwesomeIcon: t.field(CustomConferenceRoleFontAwesomeIconFieldObject),
-	// 	conference: t.relation('conference'),
-	// 	roleApplications: t.relation('roleApplications', {
-	// 		query: (_args, ctx) => ({
-	// 			where: ctx.permissions.allowDatabaseAccessTo('list').RoleApplication
-	// 		})
-	// 	})
+		fontAwesomeIcon: t.field(CustomConferenceRoleFontAwesomeIconFieldObject)
+		// 	conference: t.relation('conference'),
+		// 	roleApplications: t.relation('roleApplications', {
+		// 		query: (_args, ctx) => ({
+		// 			where: ctx.permissions.allowDatabaseAccessTo('list').RoleApplication
+		// 		})
+		// 	})
 	})
 });
 
