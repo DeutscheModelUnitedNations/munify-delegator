@@ -1,0 +1,14 @@
+"""
+Indicates exactly one field must be supplied and this field must not be `null`.
+"""
+directive @oneOf on INPUT_OBJECT
+
+"""Long necks, cool patterns, taller than you."""
+type Giraffe {
+  heightInMeters: Float
+  name: String
+}
+
+type Query {
+  giraffes: [Giraffe!]
+}

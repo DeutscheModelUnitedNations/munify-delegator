@@ -1,3 +1,8 @@
 {
-	"recommendations": ["rioukkevin.vscode-git-commit", "inlang.vs-code-extension"]
+	"recommendations": [
+		"rioukkevin.vscode-git-commit",
+		"inlang.vs-code-extension",
+		"graphql.vscode-graphql",
+		"prisma.prisma"
+	]
 }
