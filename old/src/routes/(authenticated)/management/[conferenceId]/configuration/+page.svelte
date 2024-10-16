@@ -11,7 +11,7 @@
 	let { data } = $props();
 	let form = $state(
 		superForm(data.form, {
-			validators: typebox(conferenceConfigFormSchema),
+			// validators: typebox(conferenceConfigFormSchema),
 			resetForm: false
 		})
 	);

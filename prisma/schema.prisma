@@ -7,16 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator prismabox {
-  provider                    = "prismabox"
-  typeboxImportVariableName   = "t"
-  typeboxImportDependencyName = "elysia"
-  output                      = "./generated/schema"
-  inputModel                  = true
-  additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
-  allowRecursion              = false
-}
-
 model Conference {
   id                String   @id @default(nanoid())
   title             String

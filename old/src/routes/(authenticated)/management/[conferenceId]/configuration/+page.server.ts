@@ -14,7 +14,9 @@ export const load: PageServerLoad = loadApiHandler(async ({ api, params }) => {
 	if (params.conferenceId === undefined) error(404, 'Not found');
 	const conference = await checkForError(api.conference({ id: params.conferenceId }).get());
 	Value.Clean(conferenceConfigFormSchema, conference);
-	const form = await superValidate(conference, typebox(conferenceConfigFormSchema));
+	const form = await superValidate(conference, typebox(conferenceConfigFormSchema), {
+		strict: true
+	});
 
 	return {
 		form
@@ -23,7 +25,9 @@ export const load: PageServerLoad = loadApiHandler(async ({ api, params }) => {
 
 export const actions = {
 	default: loadApiHandler(async ({ api, params, request }) => {
-		const form = await superValidate(request, typebox(conferenceConfigFormSchema));
+		const form = await superValidate(request, typebox(conferenceConfigFormSchema), {
+			strict: true
+		});
 
 		if (!form.valid) {
 			return fail(400, { form });

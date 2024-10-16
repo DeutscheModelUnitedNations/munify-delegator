@@ -1,8 +1,8 @@
 import { Type } from '@sinclair/typebox';
 
 export const conferenceConfigFormSchema = Type.Object({
-	title: Type.String({error: "dwaaw"}),
-	longTitle: Type.String(),
+	title: Type.String(),
+	longTitle: Type.String({}),
 	location: Type.String(),
 	language: Type.String(),
 	website: Type.String(),
