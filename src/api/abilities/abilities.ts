@@ -1,11 +1,9 @@
 import { type PureAbility, AbilityBuilder } from '@casl/ability';
 import { createPrismaAbility, type PrismaQuery } from '@casl/prisma';
-import { dynamicPrivateConfig } from '$config/private';
-import type { OIDCDeriveType } from '../oidcPlugin';
+import { configPrivate } from '$config/private';
 import type { db } from '$db/db';
 import { defineAbilitiesForConference } from './entities/conference';
 import { defineAbilitiesForDelegation } from './entities/delegation';
-import type { Capitalize } from '@sinclair/typebox';
 import { defineAbilitiesForDelegationMember } from './entities/delegationMember';
 import { defineAbilitiesForCommittee } from './entities/committee';
 import { defineAbilitiesForConferenceParticipantStatus } from './entities/conferenceParticipantStatus';
@@ -17,18 +15,13 @@ import { defineAbilitiesForRoleApplication } from './entities/roleApplication';
 import { defineAbilitiesForSingleParticipant } from './entities/singleParticipant';
 import { defineAbilitiesForTeamMember } from './entities/teamMember';
 import { defineAbilitiesForUserEntity } from './entities/user';
+import type { OIDC } from '$api/context/oidc';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'create', 'read', 'update', 'delete'] as const;
-export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 /**
  * Actions which can be run on entities in the system:
- *
- * - `list`: List all entities of a type
- * - `read`: Read a single entity
- * - `create`: Create a new entity
- * - `update`: Update an entity
- * - `delete`: Delete an entity
  */
 export type Action = (typeof actions)[number];
 
@@ -55,11 +48,11 @@ export type AppAbility = PureAbility<
 	PrismaQuery
 >;
 
-export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
+export const defineAbilitiesForUser = (oidc: OIDC) => {
 	const builder = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
 	// TODO you can enable this to test requests without permission checks
-	if (dynamicPrivateConfig.NODE_ENV !== 'production' && oidc && oidc.user) {
+	if (configPrivate.NODE_ENV !== 'production' && oidc && oidc.user) {
 		console.info('Development mode: granting all permissions');
 		// https://casl.js.org/v6/en/guide/intro#basics
 		builder.can('manage' as any, 'all' as any);

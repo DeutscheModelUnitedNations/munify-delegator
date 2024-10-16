@@ -1,30 +1,25 @@
-import { schemabuilder } from './builder';
+import { builder } from './builder';
+import { ConferenceIdFieldObject, findManyConferenceQueryObject } from '$db/generated/graphql/Conference';
 
-interface Giraffe {
-	name: string;
-	heightInMeters: number;
-}
-
-const GiraffeRef = schemabuilder.objectRef<Giraffe>('Giraffe').implement({
-	description: 'Long necks, cool patterns, taller than you.',
+builder.prismaObject('Conference', {
 	fields: (t) => ({
-		name: t.exposeString('name'),
-		heightInMeters: t.exposeFloat('heightInMeters')
+		id: t.field(ConferenceIdFieldObject)
 	})
 });
 
-schemabuilder.queryFields((t) => ({
-	giraffes: t.field({
-		type: [GiraffeRef],
-		resolve: () => [
-			{
-				name: 'Jeff',
-				heightInMeters: 1.7
-			},
-			{
-				name: 'Jeff2',
-				heightInMeters: 1.7
-			}
-		]
-	})
-}));
+builder.queryFields((t) => {
+  const field = findManyConferenceQueryObject(t);
+  return {
+    findManyConferences: t.prismaField({
+      ...field,
+      resolve: (query, root, args, ctx, info) => {
+        args.where = {
+          ...args.where,
+          AND: [ctx.permissions.allowDatabaseAccessTo("read").Conference],
+        };
+
+        return field.resolve(query, root, args, ctx, info);
+      },
+    }),
+  };
+});

@@ -1,10 +1,11 @@
 import { building } from '$app/environment';
-import { dynamicPrivateConfig } from '$config/private';
-import { dynamicPublicConfig } from '$config/public';
+import { configPrivate } from '$config/private';
+import { configPublic } from '$config/public';
 import Cryptr from 'cryptr';
 import { type BaseClient, Issuer, type TokenSetParameters, generators } from 'openid-client';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { PermissionCheckError } from '$api/util/logger';
+
+export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 export type OIDCUser = {
 	sub: string;
@@ -19,6 +20,12 @@ export type OIDCUser = {
 
 	[key: string]: any;
 };
+
+export class PermissionCheckError extends Error {
+	constructor(message: string) {
+		super(message);
+	}
+}
 
 export function isValidOIDCUser(user: any): user is OIDCUser {
 	return user.sub && user.email && user.preferred_username && user.family_name && user.given_name;
@@ -37,13 +44,13 @@ const { client, cryptr, jwks } = await (async () => {
 			cryptr: undefined as unknown as Cryptr
 		};
 	}
-	const issuer = await Issuer.discover(dynamicPublicConfig.OIDC.AUTHORITY);
+	const issuer = await Issuer.discover(configPublic.PUBLIC_OIDC_AUTHORITY);
 	const client = new issuer.Client({
-		client_id: dynamicPublicConfig.OIDC.CLIENT_ID,
-		token_endpoint_auth_method: dynamicPrivateConfig.OIDC.CLIENT_SECRET ? undefined : 'none',
-		client_secret: dynamicPrivateConfig.OIDC.CLIENT_SECRET
+		client_id: configPublic.PUBLIC_OIDC_CLIENT_ID,
+		token_endpoint_auth_method: configPrivate.OIDC_CLIENT_SECRET ? undefined : 'none',
+		client_secret: configPrivate.OIDC_CLIENT_SECRET
 	});
-	const cryptr = new Cryptr(dynamicPrivateConfig.OIDC.CLIENT_SECRET ?? dynamicPrivateConfig.SECRET);
+	const cryptr = new Cryptr(configPrivate.OIDC_CLIENT_SECRET ?? configPrivate.SECRET);
 	const jwks = issuer.metadata.jwks_uri
 		? await createRemoteJWKSet(new URL(issuer.metadata.jwks_uri))
 		: undefined;
@@ -57,11 +64,8 @@ type OIDCFlowState = {
 
 export function startSignin(visitedUrl: URL) {
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
-	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
-	}
-
-	if (3 >= 4) {
 	}
 
 	const code_verifier = generators.codeVerifier();
@@ -71,7 +75,7 @@ export function startSignin(visitedUrl: URL) {
 		visitedUrl: visitedUrl.toString()
 	};
 	const redirect_uri = client.authorizationUrl({
-		scope: dynamicPrivateConfig.OIDC.SCOPES!,
+		scope: configPrivate.OIDC_SCOPES!,
 		code_challenge,
 		code_challenge_method: 'S256',
 		state: encodeURIComponent(JSON.stringify(state)),
@@ -86,12 +90,13 @@ export function startSignin(visitedUrl: URL) {
 
 export async function resolveSignin(visitedUrl: URL, encrypted_verifier: string) {
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
-	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
 	}
 	const path = visitedUrl.toString().split('?')[0];
 	const urlParameters = new URLSearchParams(visitedUrl.toString().split('?')[1]);
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const parameters: any = {};
 
 	for (const [key, value] of urlParameters.entries()) {
@@ -170,7 +175,7 @@ export function refresh(refresh_token: string) {
 }
 
 export function getLogoutUrl(visitedUrl: URL) {
-	if (dynamicPrivateConfig.NODE_ENV === 'production') {
+	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
 	}
 	return client.endSessionUrl({

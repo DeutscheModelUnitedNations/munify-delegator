@@ -3,12 +3,2080 @@ Indicates exactly one field must be supplied and this field must not be `null`.
 """
 directive @oneOf on INPUT_OBJECT
 
-"""Long necks, cool patterns, taller than you."""
-type Giraffe {
-  heightInMeters: Float
-  name: String
+enum AdministrativeStatus {
+  DONE
+  PENDING
+  PROBLEM
+}
+
+"""Batch payloads from prisma."""
+type BatchPayload {
+  """Prisma Batch Payload"""
+  count: Int!
+}
+
+input BoolFieldUpdateOperationsInput {
+  set: Boolean
+}
+
+input BoolFilter {
+  equals: Boolean
+  not: NestedBoolFilter
+}
+
+input BoolWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedBoolFilter
+  _min: NestedBoolFilter
+  equals: Boolean
+  not: NestedBoolWithAggregatesFilter
+}
+
+input CommitteeCreateInput {
+  abbreviation: String!
+  conferenceId: String!
+  id: String
+  name: String!
+  nations: NationCreateNestedManyWithoutCommitteesInput
+  numOfSeatsPerDelegation: Int
+}
+
+input CommitteeCreateNestedManyWithoutConferenceInput {
+  connect: [CommitteeWhereUniqueInput!]
+}
+
+input CommitteeCreateNestedManyWithoutNationsInput {
+  connect: [CommitteeWhereUniqueInput!]
+}
+
+input CommitteeListRelationFilter {
+  every: CommitteeWhereInput
+  none: CommitteeWhereInput
+  some: CommitteeWhereInput
+}
+
+input CommitteeOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input CommitteeOrderByWithRelationInput {
+  abbreviation: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  id: SortOrder
+  name: SortOrder
+  nations: NationOrderByRelationAggregateInput
+  numOfSeatsPerDelegation: SortOrder
+}
+
+enum CommitteeScalarFieldEnum {
+  abbreviation
+  conferenceId
+  id
+  name
+  numOfSeatsPerDelegation
+}
+
+input CommitteeUpdateInput {
+  abbreviation: StringFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  nations: NationUpdateManyWithoutCommitteesNestedInput
+  numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+}
+
+input CommitteeUpdateManyMutationInput {
+  abbreviation: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+}
+
+input CommitteeUpdateManyWithoutConferenceNestedInput {
+  connect: [CommitteeWhereUniqueInput!]
+  disconnect: [CommitteeWhereUniqueInput!]
+  set: [CommitteeWhereUniqueInput!]
+}
+
+input CommitteeUpdateManyWithoutNationsNestedInput {
+  connect: [CommitteeWhereUniqueInput!]
+  disconnect: [CommitteeWhereUniqueInput!]
+  set: [CommitteeWhereUniqueInput!]
+}
+
+input CommitteeWhereInput {
+  AND: [CommitteeWhereInput!]
+  NOT: [CommitteeWhereInput!]
+  OR: [CommitteeWhereInput!]
+  abbreviation: StringFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  id: StringFilter
+  name: StringFilter
+  nations: NationListRelationFilter
+  numOfSeatsPerDelegation: IntFilter
+}
+
+input CommitteeWhereUniqueInput {
+  AND: [CommitteeWhereInput!]
+  NOT: [CommitteeWhereInput!]
+  OR: [CommitteeWhereInput!]
+  abbreviation: StringFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  id: String
+  name: StringFilter
+  nations: NationListRelationFilter
+  numOfSeatsPerDelegation: IntFilter
+}
+
+type Conference {
+  id: ID!
+}
+
+input ConferenceCreateInput {
+  DelegationMember: DelegationMemberCreateNestedManyWithoutConferenceInput
+  committees: CommitteeCreateNestedManyWithoutConferenceInput
+  conferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutConferenceInput
+  conferenceUserStatus: ConferenceParticipantStatusCreateNestedManyWithoutConferenceInput
+  delegations: DelegationCreateNestedManyWithoutConferenceInput
+  endConference: DateTime!
+  id: String
+  imageDataUrl: String
+  individualApplicationOptions: CustomConferenceRoleCreateNestedManyWithoutConferenceInput
+  language: String
+  location: String
+  longTitle: String
+  nonStateActors: NonStateActorCreateNestedManyWithoutConferenceInput
+  singleParticipant: SingleParticipantCreateNestedManyWithoutConferenceInput
+  startAssignment: DateTime!
+  startConference: DateTime!
+  startRegistration: DateTime!
+  teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
+  title: String!
+  website: String
+}
+
+input ConferenceOrderByWithRelationInput {
+  DelegationMember: DelegationMemberOrderByRelationAggregateInput
+  committees: CommitteeOrderByRelationAggregateInput
+  conferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
+  conferenceUserStatus: ConferenceParticipantStatusOrderByRelationAggregateInput
+  delegations: DelegationOrderByRelationAggregateInput
+  endConference: SortOrder
+  id: SortOrder
+  imageDataUrl: SortOrder
+  individualApplicationOptions: CustomConferenceRoleOrderByRelationAggregateInput
+  language: SortOrder
+  location: SortOrder
+  longTitle: SortOrder
+  nonStateActors: NonStateActorOrderByRelationAggregateInput
+  singleParticipant: SingleParticipantOrderByRelationAggregateInput
+  startAssignment: SortOrder
+  startConference: SortOrder
+  startRegistration: SortOrder
+  teamMembers: TeamMemberOrderByRelationAggregateInput
+  title: SortOrder
+  website: SortOrder
+}
+
+input ConferenceParticipantStatusCreateInput {
+  conferenceId: String!
+  didAttend: Boolean
+  id: String
+  paymentStatus: AdministrativeStatus
+  postalRegistration: AdministrativeStatus
+  userId: String!
+}
+
+input ConferenceParticipantStatusCreateNestedManyWithoutConferenceInput {
+  connect: [ConferenceParticipantStatusWhereUniqueInput!]
+}
+
+input ConferenceParticipantStatusCreateNestedManyWithoutUserInput {
+  connect: [ConferenceParticipantStatusWhereUniqueInput!]
+}
+
+input ConferenceParticipantStatusListRelationFilter {
+  every: ConferenceParticipantStatusWhereInput
+  none: ConferenceParticipantStatusWhereInput
+  some: ConferenceParticipantStatusWhereInput
+}
+
+input ConferenceParticipantStatusOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input ConferenceParticipantStatusOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  didAttend: SortOrder
+  id: SortOrder
+  paymentStatus: SortOrder
+  postalRegistration: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum ConferenceParticipantStatusScalarFieldEnum {
+  conferenceId
+  didAttend
+  id
+  paymentStatus
+  postalRegistration
+  userId
+}
+
+input ConferenceParticipantStatusUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  didAttend: BoolFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
+  postalRegistration: EnumAdministrativeStatusFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input ConferenceParticipantStatusUpdateManyMutationInput {
+  didAttend: BoolFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
+  postalRegistration: EnumAdministrativeStatusFieldUpdateOperationsInput
+}
+
+input ConferenceParticipantStatusUpdateManyWithoutConferenceNestedInput {
+  connect: [ConferenceParticipantStatusWhereUniqueInput!]
+  disconnect: [ConferenceParticipantStatusWhereUniqueInput!]
+  set: [ConferenceParticipantStatusWhereUniqueInput!]
+}
+
+input ConferenceParticipantStatusUpdateManyWithoutUserNestedInput {
+  connect: [ConferenceParticipantStatusWhereUniqueInput!]
+  disconnect: [ConferenceParticipantStatusWhereUniqueInput!]
+  set: [ConferenceParticipantStatusWhereUniqueInput!]
+}
+
+input ConferenceParticipantStatusWhereInput {
+  AND: [ConferenceParticipantStatusWhereInput!]
+  NOT: [ConferenceParticipantStatusWhereInput!]
+  OR: [ConferenceParticipantStatusWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  didAttend: BoolFilter
+  id: StringFilter
+  paymentStatus: EnumAdministrativeStatusFilter
+  postalRegistration: EnumAdministrativeStatusFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input ConferenceParticipantStatusWhereUniqueInput {
+  AND: [ConferenceParticipantStatusWhereInput!]
+  NOT: [ConferenceParticipantStatusWhereInput!]
+  OR: [ConferenceParticipantStatusWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  didAttend: BoolFilter
+  id: String
+  paymentStatus: EnumAdministrativeStatusFilter
+  postalRegistration: EnumAdministrativeStatusFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input ConferenceRelationFilter {
+  is: ConferenceWhereInput
+  isNot: ConferenceWhereInput
+}
+
+enum ConferenceScalarFieldEnum {
+  endConference
+  id
+  imageDataUrl
+  language
+  location
+  longTitle
+  startAssignment
+  startConference
+  startRegistration
+  title
+  website
+}
+
+input ConferenceSupervisorConferenceIdUserIdCompoundUniqueInput {
+  conferenceId: String!
+  userId: String!
+}
+
+input ConferenceSupervisorCreateInput {
+  conferenceId: String!
+  delegations: DelegationCreateNestedManyWithoutSupervisorsInput
+  id: String
+  plansOwnAttendenceAtConference: Boolean!
+  userId: String!
+}
+
+input ConferenceSupervisorCreateNestedManyWithoutConferenceInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorCreateNestedManyWithoutDelegationsInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorCreateNestedManyWithoutUserInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorListRelationFilter {
+  every: ConferenceSupervisorWhereInput
+  none: ConferenceSupervisorWhereInput
+  some: ConferenceSupervisorWhereInput
+}
+
+input ConferenceSupervisorOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input ConferenceSupervisorOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  delegations: DelegationOrderByRelationAggregateInput
+  id: SortOrder
+  plansOwnAttendenceAtConference: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum ConferenceSupervisorScalarFieldEnum {
+  conferenceId
+  id
+  plansOwnAttendenceAtConference
+  userId
+}
+
+input ConferenceSupervisorUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  delegations: DelegationUpdateManyWithoutSupervisorsNestedInput
+  id: StringFieldUpdateOperationsInput
+  plansOwnAttendenceAtConference: BoolFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input ConferenceSupervisorUpdateManyMutationInput {
+  id: StringFieldUpdateOperationsInput
+  plansOwnAttendenceAtConference: BoolFieldUpdateOperationsInput
+}
+
+input ConferenceSupervisorUpdateManyWithoutConferenceNestedInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+  disconnect: [ConferenceSupervisorWhereUniqueInput!]
+  set: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorUpdateManyWithoutDelegationsNestedInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+  disconnect: [ConferenceSupervisorWhereUniqueInput!]
+  set: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorUpdateManyWithoutUserNestedInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+  disconnect: [ConferenceSupervisorWhereUniqueInput!]
+  set: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorWhereInput {
+  AND: [ConferenceSupervisorWhereInput!]
+  NOT: [ConferenceSupervisorWhereInput!]
+  OR: [ConferenceSupervisorWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  delegations: DelegationListRelationFilter
+  id: StringFilter
+  plansOwnAttendenceAtConference: BoolFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input ConferenceSupervisorWhereUniqueInput {
+  AND: [ConferenceSupervisorWhereInput!]
+  NOT: [ConferenceSupervisorWhereInput!]
+  OR: [ConferenceSupervisorWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_userId: ConferenceSupervisorConferenceIdUserIdCompoundUniqueInput
+  delegations: DelegationListRelationFilter
+  id: String
+  plansOwnAttendenceAtConference: BoolFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input ConferenceUpdateInput {
+  DelegationMember: DelegationMemberUpdateManyWithoutConferenceNestedInput
+  committees: CommitteeUpdateManyWithoutConferenceNestedInput
+  conferenceSupervisors: ConferenceSupervisorUpdateManyWithoutConferenceNestedInput
+  conferenceUserStatus: ConferenceParticipantStatusUpdateManyWithoutConferenceNestedInput
+  delegations: DelegationUpdateManyWithoutConferenceNestedInput
+  endConference: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  imageDataUrl: NullableStringFieldUpdateOperationsInput
+  individualApplicationOptions: CustomConferenceRoleUpdateManyWithoutConferenceNestedInput
+  language: NullableStringFieldUpdateOperationsInput
+  location: NullableStringFieldUpdateOperationsInput
+  longTitle: NullableStringFieldUpdateOperationsInput
+  nonStateActors: NonStateActorUpdateManyWithoutConferenceNestedInput
+  singleParticipant: SingleParticipantUpdateManyWithoutConferenceNestedInput
+  startAssignment: DateTimeFieldUpdateOperationsInput
+  startConference: DateTimeFieldUpdateOperationsInput
+  startRegistration: DateTimeFieldUpdateOperationsInput
+  teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
+  title: StringFieldUpdateOperationsInput
+  website: NullableStringFieldUpdateOperationsInput
+}
+
+input ConferenceUpdateManyMutationInput {
+  endConference: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  imageDataUrl: NullableStringFieldUpdateOperationsInput
+  language: NullableStringFieldUpdateOperationsInput
+  location: NullableStringFieldUpdateOperationsInput
+  longTitle: NullableStringFieldUpdateOperationsInput
+  startAssignment: DateTimeFieldUpdateOperationsInput
+  startConference: DateTimeFieldUpdateOperationsInput
+  startRegistration: DateTimeFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  website: NullableStringFieldUpdateOperationsInput
+}
+
+input ConferenceWhereInput {
+  AND: [ConferenceWhereInput!]
+  DelegationMember: DelegationMemberListRelationFilter
+  NOT: [ConferenceWhereInput!]
+  OR: [ConferenceWhereInput!]
+  committees: CommitteeListRelationFilter
+  conferenceSupervisors: ConferenceSupervisorListRelationFilter
+  conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  delegations: DelegationListRelationFilter
+  endConference: DateTimeFilter
+  id: StringFilter
+  imageDataUrl: StringNullableFilter
+  individualApplicationOptions: CustomConferenceRoleListRelationFilter
+  language: StringNullableFilter
+  location: StringNullableFilter
+  longTitle: StringNullableFilter
+  nonStateActors: NonStateActorListRelationFilter
+  singleParticipant: SingleParticipantListRelationFilter
+  startAssignment: DateTimeFilter
+  startConference: DateTimeFilter
+  startRegistration: DateTimeFilter
+  teamMembers: TeamMemberListRelationFilter
+  title: StringFilter
+  website: StringNullableFilter
+}
+
+input ConferenceWhereUniqueInput {
+  AND: [ConferenceWhereInput!]
+  DelegationMember: DelegationMemberListRelationFilter
+  NOT: [ConferenceWhereInput!]
+  OR: [ConferenceWhereInput!]
+  committees: CommitteeListRelationFilter
+  conferenceSupervisors: ConferenceSupervisorListRelationFilter
+  conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  delegations: DelegationListRelationFilter
+  endConference: DateTimeFilter
+  id: String
+  imageDataUrl: StringNullableFilter
+  individualApplicationOptions: CustomConferenceRoleListRelationFilter
+  language: StringNullableFilter
+  location: StringNullableFilter
+  longTitle: StringNullableFilter
+  nonStateActors: NonStateActorListRelationFilter
+  singleParticipant: SingleParticipantListRelationFilter
+  startAssignment: DateTimeFilter
+  startConference: DateTimeFilter
+  startRegistration: DateTimeFilter
+  teamMembers: TeamMemberListRelationFilter
+  title: StringFilter
+  website: StringNullableFilter
+}
+
+input CustomConferenceRoleConferenceIdNameCompoundUniqueInput {
+  conferenceId: String!
+  name: String!
+}
+
+input CustomConferenceRoleCreateInput {
+  conferenceId: String!
+  description: String!
+  fontAwesomeIcon: String
+  id: String
+  name: String!
+  singleParticipant: SingleParticipantCreateNestedManyWithoutAppliedForRolesInput
+}
+
+input CustomConferenceRoleCreateNestedManyWithoutConferenceInput {
+  connect: [CustomConferenceRoleWhereUniqueInput!]
+}
+
+input CustomConferenceRoleCreateNestedManyWithoutSingleParticipantInput {
+  connect: [CustomConferenceRoleWhereUniqueInput!]
+}
+
+input CustomConferenceRoleListRelationFilter {
+  every: CustomConferenceRoleWhereInput
+  none: CustomConferenceRoleWhereInput
+  some: CustomConferenceRoleWhereInput
+}
+
+input CustomConferenceRoleOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input CustomConferenceRoleOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  description: SortOrder
+  fontAwesomeIcon: SortOrder
+  id: SortOrder
+  name: SortOrder
+  singleParticipant: SingleParticipantOrderByRelationAggregateInput
+}
+
+enum CustomConferenceRoleScalarFieldEnum {
+  conferenceId
+  description
+  fontAwesomeIcon
+  id
+  name
+}
+
+input CustomConferenceRoleUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  singleParticipant: SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput
+}
+
+input CustomConferenceRoleUpdateManyMutationInput {
+  description: StringFieldUpdateOperationsInput
+  fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+}
+
+input CustomConferenceRoleUpdateManyWithoutConferenceNestedInput {
+  connect: [CustomConferenceRoleWhereUniqueInput!]
+  disconnect: [CustomConferenceRoleWhereUniqueInput!]
+  set: [CustomConferenceRoleWhereUniqueInput!]
+}
+
+input CustomConferenceRoleUpdateManyWithoutSingleParticipantNestedInput {
+  connect: [CustomConferenceRoleWhereUniqueInput!]
+  disconnect: [CustomConferenceRoleWhereUniqueInput!]
+  set: [CustomConferenceRoleWhereUniqueInput!]
+}
+
+input CustomConferenceRoleWhereInput {
+  AND: [CustomConferenceRoleWhereInput!]
+  NOT: [CustomConferenceRoleWhereInput!]
+  OR: [CustomConferenceRoleWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  description: StringFilter
+  fontAwesomeIcon: StringNullableFilter
+  id: StringFilter
+  name: StringFilter
+  singleParticipant: SingleParticipantListRelationFilter
+}
+
+input CustomConferenceRoleWhereUniqueInput {
+  AND: [CustomConferenceRoleWhereInput!]
+  NOT: [CustomConferenceRoleWhereInput!]
+  OR: [CustomConferenceRoleWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_name: CustomConferenceRoleConferenceIdNameCompoundUniqueInput
+  description: StringFilter
+  fontAwesomeIcon: StringNullableFilter
+  id: String
+  name: StringFilter
+  singleParticipant: SingleParticipantListRelationFilter
+}
+
+scalar DateTime
+
+input DateTimeFieldUpdateOperationsInput {
+  set: DateTime
+}
+
+input DateTimeFilter {
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeFilter
+  notIn: [DateTime!]
+}
+
+input DateTimeNullableFilter {
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeNullableFilter
+  notIn: [DateTime!]
+}
+
+input DateTimeNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedDateTimeNullableFilter
+  _min: NestedDateTimeNullableFilter
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeNullableWithAggregatesFilter
+  notIn: [DateTime!]
+}
+
+input DateTimeWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedDateTimeFilter
+  _min: NestedDateTimeFilter
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeWithAggregatesFilter
+  notIn: [DateTime!]
+}
+
+input DelegationCreateInput {
+  applied: Boolean
+  appliedForRoles: RoleApplicationCreateNestedManyWithoutDelegationInput
+  conferenceId: String!
+  entryCode: String!
+  experience: String
+  id: String
+  members: DelegationMemberCreateNestedManyWithoutDelegationInput
+  motivation: String
+  school: String
+  supervisors: ConferenceSupervisorCreateNestedManyWithoutDelegationsInput
+}
+
+input DelegationCreateNestedManyWithoutConferenceInput {
+  connect: [DelegationWhereUniqueInput!]
+}
+
+input DelegationCreateNestedManyWithoutSupervisorsInput {
+  connect: [DelegationWhereUniqueInput!]
+}
+
+input DelegationListRelationFilter {
+  every: DelegationWhereInput
+  none: DelegationWhereInput
+  some: DelegationWhereInput
+}
+
+input DelegationMemberConferenceIdUserIdCompoundUniqueInput {
+  conferenceId: String!
+  userId: String!
+}
+
+input DelegationMemberCreateInput {
+  conferenceId: String!
+  delegationId: String!
+  id: String
+  isHeadDelegate: Boolean!
+  userId: String!
+}
+
+input DelegationMemberCreateNestedManyWithoutConferenceInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberCreateNestedManyWithoutDelegationInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberCreateNestedManyWithoutUserInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberDelegationIdUserIdCompoundUniqueInput {
+  delegationId: String!
+  userId: String!
+}
+
+input DelegationMemberListRelationFilter {
+  every: DelegationMemberWhereInput
+  none: DelegationMemberWhereInput
+  some: DelegationMemberWhereInput
+}
+
+input DelegationMemberOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input DelegationMemberOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  delegation: DelegationOrderByWithRelationInput
+  delegationId: SortOrder
+  id: SortOrder
+  isHeadDelegate: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum DelegationMemberScalarFieldEnum {
+  conferenceId
+  delegationId
+  id
+  isHeadDelegate
+  userId
+}
+
+input DelegationMemberUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  delegationId: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  isHeadDelegate: BoolFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input DelegationMemberUpdateManyMutationInput {
+  id: StringFieldUpdateOperationsInput
+  isHeadDelegate: BoolFieldUpdateOperationsInput
+}
+
+input DelegationMemberUpdateManyWithoutConferenceNestedInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+  disconnect: [DelegationMemberWhereUniqueInput!]
+  set: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberUpdateManyWithoutDelegationNestedInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+  disconnect: [DelegationMemberWhereUniqueInput!]
+  set: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberUpdateManyWithoutUserNestedInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+  disconnect: [DelegationMemberWhereUniqueInput!]
+  set: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberWhereInput {
+  AND: [DelegationMemberWhereInput!]
+  NOT: [DelegationMemberWhereInput!]
+  OR: [DelegationMemberWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  delegation: DelegationWhereInput
+  delegationId: StringFilter
+  id: StringFilter
+  isHeadDelegate: BoolFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input DelegationMemberWhereUniqueInput {
+  AND: [DelegationMemberWhereInput!]
+  NOT: [DelegationMemberWhereInput!]
+  OR: [DelegationMemberWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_userId: DelegationMemberConferenceIdUserIdCompoundUniqueInput
+  delegation: DelegationWhereInput
+  delegationId: StringFilter
+  delegationId_userId: DelegationMemberDelegationIdUserIdCompoundUniqueInput
+  id: String
+  isHeadDelegate: BoolFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input DelegationOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input DelegationOrderByWithRelationInput {
+  applied: SortOrder
+  appliedForRoles: RoleApplicationOrderByRelationAggregateInput
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  entryCode: SortOrder
+  experience: SortOrder
+  id: SortOrder
+  members: DelegationMemberOrderByRelationAggregateInput
+  motivation: SortOrder
+  school: SortOrder
+  supervisors: ConferenceSupervisorOrderByRelationAggregateInput
+}
+
+input DelegationRelationFilter {
+  is: DelegationWhereInput
+  isNot: DelegationWhereInput
+}
+
+enum DelegationScalarFieldEnum {
+  applied
+  conferenceId
+  entryCode
+  experience
+  id
+  motivation
+  school
+}
+
+input DelegationUpdateInput {
+  applied: BoolFieldUpdateOperationsInput
+  appliedForRoles: RoleApplicationUpdateManyWithoutDelegationNestedInput
+  conferenceId: StringFieldUpdateOperationsInput
+  entryCode: StringFieldUpdateOperationsInput
+  experience: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  members: DelegationMemberUpdateManyWithoutDelegationNestedInput
+  motivation: NullableStringFieldUpdateOperationsInput
+  school: NullableStringFieldUpdateOperationsInput
+  supervisors: ConferenceSupervisorUpdateManyWithoutDelegationsNestedInput
+}
+
+input DelegationUpdateManyMutationInput {
+  applied: BoolFieldUpdateOperationsInput
+  entryCode: StringFieldUpdateOperationsInput
+  experience: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  motivation: NullableStringFieldUpdateOperationsInput
+  school: NullableStringFieldUpdateOperationsInput
+}
+
+input DelegationUpdateManyWithoutConferenceNestedInput {
+  connect: [DelegationWhereUniqueInput!]
+  disconnect: [DelegationWhereUniqueInput!]
+  set: [DelegationWhereUniqueInput!]
+}
+
+input DelegationUpdateManyWithoutSupervisorsNestedInput {
+  connect: [DelegationWhereUniqueInput!]
+  disconnect: [DelegationWhereUniqueInput!]
+  set: [DelegationWhereUniqueInput!]
+}
+
+input DelegationWhereInput {
+  AND: [DelegationWhereInput!]
+  NOT: [DelegationWhereInput!]
+  OR: [DelegationWhereInput!]
+  applied: BoolFilter
+  appliedForRoles: RoleApplicationListRelationFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  entryCode: StringFilter
+  experience: StringNullableFilter
+  id: StringFilter
+  members: DelegationMemberListRelationFilter
+  motivation: StringNullableFilter
+  school: StringNullableFilter
+  supervisors: ConferenceSupervisorListRelationFilter
+}
+
+input DelegationWhereUniqueInput {
+  AND: [DelegationWhereInput!]
+  NOT: [DelegationWhereInput!]
+  OR: [DelegationWhereInput!]
+  applied: BoolFilter
+  appliedForRoles: RoleApplicationListRelationFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  entryCode: String
+  experience: StringNullableFilter
+  id: String
+  members: DelegationMemberListRelationFilter
+  motivation: StringNullableFilter
+  school: StringNullableFilter
+  supervisors: ConferenceSupervisorListRelationFilter
+}
+
+input EnumAdministrativeStatusFieldUpdateOperationsInput {
+  set: AdministrativeStatus
+}
+
+input EnumAdministrativeStatusFilter {
+  equals: AdministrativeStatus
+  in: [AdministrativeStatus!]
+  not: AdministrativeStatus
+  notIn: [AdministrativeStatus!]
+}
+
+input EnumAdministrativeStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumAdministrativeStatusFilter
+  _min: NestedEnumAdministrativeStatusFilter
+  equals: AdministrativeStatus
+  in: [AdministrativeStatus!]
+  not: AdministrativeStatus
+  notIn: [AdministrativeStatus!]
+}
+
+input EnumFoodPreferenceNullableFilter {
+  equals: FoodPreference
+  in: [FoodPreference!]
+  not: FoodPreference
+  notIn: [FoodPreference!]
+}
+
+input EnumFoodPreferenceNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumFoodPreferenceNullableFilter
+  _min: NestedEnumFoodPreferenceNullableFilter
+  equals: FoodPreference
+  in: [FoodPreference!]
+  not: FoodPreference
+  notIn: [FoodPreference!]
+}
+
+input EnumTeamRoleFieldUpdateOperationsInput {
+  set: TeamRole
+}
+
+input EnumTeamRoleFilter {
+  equals: TeamRole
+  in: [TeamRole!]
+  not: TeamRole
+  notIn: [TeamRole!]
+}
+
+input EnumTeamRoleWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumTeamRoleFilter
+  _min: NestedEnumTeamRoleFilter
+  equals: TeamRole
+  in: [TeamRole!]
+  not: TeamRole
+  notIn: [TeamRole!]
+}
+
+enum FoodPreference {
+  OMNIVORE
+  VEGAN
+  VEGETARIAN
+}
+
+input IntFieldUpdateOperationsInput {
+  decrement: Int
+  divide: Int
+  increment: Int
+  multiply: Int
+  set: Int
+}
+
+input IntFilter {
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntFilter
+  notIn: [Int!]
+}
+
+input IntWithAggregatesFilter {
+  _avg: NestedFloatFilter
+  _count: NestedIntFilter
+  _max: NestedIntFilter
+  _min: NestedIntFilter
+  _sum: NestedIntFilter
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntWithAggregatesFilter
+  notIn: [Int!]
+}
+
+input NationCreateInput {
+  alpha2Code: String!
+  alpha3Code: String!
+  committees: CommitteeCreateNestedManyWithoutNationsInput
+  roleApplications: RoleApplicationCreateNestedManyWithoutNationInput
+}
+
+input NationCreateNestedManyWithoutCommitteesInput {
+  connect: [NationWhereUniqueInput!]
+}
+
+input NationListRelationFilter {
+  every: NationWhereInput
+  none: NationWhereInput
+  some: NationWhereInput
+}
+
+input NationNullableRelationFilter {
+  is: NationWhereInput
+  isNot: NationWhereInput
+}
+
+input NationOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input NationOrderByWithRelationInput {
+  alpha2Code: SortOrder
+  alpha3Code: SortOrder
+  committees: CommitteeOrderByRelationAggregateInput
+  roleApplications: RoleApplicationOrderByRelationAggregateInput
+}
+
+enum NationScalarFieldEnum {
+  alpha2Code
+  alpha3Code
+}
+
+input NationUpdateInput {
+  alpha2Code: StringFieldUpdateOperationsInput
+  alpha3Code: StringFieldUpdateOperationsInput
+  committees: CommitteeUpdateManyWithoutNationsNestedInput
+  roleApplications: RoleApplicationUpdateManyWithoutNationNestedInput
+}
+
+input NationUpdateManyMutationInput {
+  alpha2Code: StringFieldUpdateOperationsInput
+  alpha3Code: StringFieldUpdateOperationsInput
+}
+
+input NationUpdateManyWithoutCommitteesNestedInput {
+  connect: [NationWhereUniqueInput!]
+  disconnect: [NationWhereUniqueInput!]
+  set: [NationWhereUniqueInput!]
+}
+
+input NationWhereInput {
+  AND: [NationWhereInput!]
+  NOT: [NationWhereInput!]
+  OR: [NationWhereInput!]
+  alpha2Code: StringFilter
+  alpha3Code: StringFilter
+  committees: CommitteeListRelationFilter
+  roleApplications: RoleApplicationListRelationFilter
+}
+
+input NationWhereUniqueInput {
+  AND: [NationWhereInput!]
+  NOT: [NationWhereInput!]
+  OR: [NationWhereInput!]
+  alpha2Code: String
+  alpha3Code: String
+  committees: CommitteeListRelationFilter
+  roleApplications: RoleApplicationListRelationFilter
+}
+
+input NestedBoolFilter {
+  equals: Boolean
+  not: NestedBoolFilter
+}
+
+input NestedBoolWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedBoolFilter
+  _min: NestedBoolFilter
+  equals: Boolean
+  not: NestedBoolWithAggregatesFilter
+}
+
+input NestedDateTimeFilter {
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeFilter
+  notIn: [DateTime!]
+}
+
+input NestedDateTimeNullableFilter {
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeNullableFilter
+  notIn: [DateTime!]
+}
+
+input NestedDateTimeNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedDateTimeNullableFilter
+  _min: NestedDateTimeNullableFilter
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeNullableWithAggregatesFilter
+  notIn: [DateTime!]
+}
+
+input NestedDateTimeWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedDateTimeFilter
+  _min: NestedDateTimeFilter
+  equals: DateTime
+  gt: DateTime
+  gte: DateTime
+  in: [DateTime!]
+  lt: DateTime
+  lte: DateTime
+  not: NestedDateTimeWithAggregatesFilter
+  notIn: [DateTime!]
+}
+
+input NestedEnumAdministrativeStatusFilter {
+  equals: AdministrativeStatus
+  in: [AdministrativeStatus!]
+  not: AdministrativeStatus
+  notIn: [AdministrativeStatus!]
+}
+
+input NestedEnumAdministrativeStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumAdministrativeStatusFilter
+  _min: NestedEnumAdministrativeStatusFilter
+  equals: AdministrativeStatus
+  in: [AdministrativeStatus!]
+  not: AdministrativeStatus
+  notIn: [AdministrativeStatus!]
+}
+
+input NestedEnumFoodPreferenceNullableFilter {
+  equals: FoodPreference
+  in: [FoodPreference!]
+  not: FoodPreference
+  notIn: [FoodPreference!]
+}
+
+input NestedEnumFoodPreferenceNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumFoodPreferenceNullableFilter
+  _min: NestedEnumFoodPreferenceNullableFilter
+  equals: FoodPreference
+  in: [FoodPreference!]
+  not: FoodPreference
+  notIn: [FoodPreference!]
+}
+
+input NestedEnumTeamRoleFilter {
+  equals: TeamRole
+  in: [TeamRole!]
+  not: TeamRole
+  notIn: [TeamRole!]
+}
+
+input NestedEnumTeamRoleWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumTeamRoleFilter
+  _min: NestedEnumTeamRoleFilter
+  equals: TeamRole
+  in: [TeamRole!]
+  not: TeamRole
+  notIn: [TeamRole!]
+}
+
+input NestedFloatFilter {
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatFilter
+  notIn: [Float!]
+}
+
+input NestedIntFilter {
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntFilter
+  notIn: [Int!]
+}
+
+input NestedIntNullableFilter {
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntNullableFilter
+  notIn: [Int!]
+}
+
+input NestedIntWithAggregatesFilter {
+  _avg: NestedFloatFilter
+  _count: NestedIntFilter
+  _max: NestedIntFilter
+  _min: NestedIntFilter
+  _sum: NestedIntFilter
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntWithAggregatesFilter
+  notIn: [Int!]
+}
+
+input NestedStringFilter {
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  not: NestedStringFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input NestedStringNullableFilter {
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  not: NestedStringNullableFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input NestedStringNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedStringNullableFilter
+  _min: NestedStringNullableFilter
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  not: NestedStringNullableWithAggregatesFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input NestedStringWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedStringFilter
+  _min: NestedStringFilter
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  not: NestedStringWithAggregatesFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input NonStateActorConferenceIdAbbreviationCompoundUniqueInput {
+  abbreviation: String!
+  conferenceId: String!
+}
+
+input NonStateActorConferenceIdNameCompoundUniqueInput {
+  conferenceId: String!
+  name: String!
+}
+
+input NonStateActorCreateInput {
+  abbreviation: String!
+  conferenceId: String!
+  description: String!
+  fontAwesomeIcon: String
+  id: String
+  name: String!
+  roleApplications: RoleApplicationCreateNestedManyWithoutNonStateActorInput
+  seatAmount: Int
+}
+
+input NonStateActorCreateNestedManyWithoutConferenceInput {
+  connect: [NonStateActorWhereUniqueInput!]
+}
+
+input NonStateActorListRelationFilter {
+  every: NonStateActorWhereInput
+  none: NonStateActorWhereInput
+  some: NonStateActorWhereInput
+}
+
+input NonStateActorNullableRelationFilter {
+  is: NonStateActorWhereInput
+  isNot: NonStateActorWhereInput
+}
+
+input NonStateActorOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input NonStateActorOrderByWithRelationInput {
+  abbreviation: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  description: SortOrder
+  fontAwesomeIcon: SortOrder
+  id: SortOrder
+  name: SortOrder
+  roleApplications: RoleApplicationOrderByRelationAggregateInput
+  seatAmount: SortOrder
+}
+
+enum NonStateActorScalarFieldEnum {
+  abbreviation
+  conferenceId
+  description
+  fontAwesomeIcon
+  id
+  name
+  seatAmount
+}
+
+input NonStateActorUpdateInput {
+  abbreviation: StringFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  roleApplications: RoleApplicationUpdateManyWithoutNonStateActorNestedInput
+  seatAmount: IntFieldUpdateOperationsInput
+}
+
+input NonStateActorUpdateManyMutationInput {
+  abbreviation: StringFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  seatAmount: IntFieldUpdateOperationsInput
+}
+
+input NonStateActorUpdateManyWithoutConferenceNestedInput {
+  connect: [NonStateActorWhereUniqueInput!]
+  disconnect: [NonStateActorWhereUniqueInput!]
+  set: [NonStateActorWhereUniqueInput!]
+}
+
+input NonStateActorWhereInput {
+  AND: [NonStateActorWhereInput!]
+  NOT: [NonStateActorWhereInput!]
+  OR: [NonStateActorWhereInput!]
+  abbreviation: StringFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  description: StringFilter
+  fontAwesomeIcon: StringNullableFilter
+  id: StringFilter
+  name: StringFilter
+  roleApplications: RoleApplicationListRelationFilter
+  seatAmount: IntFilter
+}
+
+input NonStateActorWhereUniqueInput {
+  AND: [NonStateActorWhereInput!]
+  NOT: [NonStateActorWhereInput!]
+  OR: [NonStateActorWhereInput!]
+  abbreviation: StringFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_abbreviation: NonStateActorConferenceIdAbbreviationCompoundUniqueInput
+  conferenceId_name: NonStateActorConferenceIdNameCompoundUniqueInput
+  description: StringFilter
+  fontAwesomeIcon: StringNullableFilter
+  id: String
+  name: StringFilter
+  roleApplications: RoleApplicationListRelationFilter
+  seatAmount: IntFilter
+}
+
+input NullableDateTimeFieldUpdateOperationsInput {
+  set: DateTime
+}
+
+input NullableEnumFoodPreferenceFieldUpdateOperationsInput {
+  set: FoodPreference
+}
+
+input NullableStringFieldUpdateOperationsInput {
+  set: String
+}
+
+enum NullsOrder {
+  first
+  last
 }
 
 type Query {
-  giraffes: [Giraffe!]
+  findManyConferences(cursor: ConferenceWhereUniqueInput, distinct: [ConferenceScalarFieldEnum!], orderBy: [ConferenceOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceWhereInput): [Conference!]!
+}
+
+enum QueryMode {
+  default
+  insensitive
+}
+
+input RoleApplicationCreateInput {
+  delegationId: String!
+  id: String
+  nationId: String
+  nonStateActorId: String
+  rank: Int!
+}
+
+input RoleApplicationCreateNestedManyWithoutDelegationInput {
+  connect: [RoleApplicationWhereUniqueInput!]
+}
+
+input RoleApplicationCreateNestedManyWithoutNationInput {
+  connect: [RoleApplicationWhereUniqueInput!]
+}
+
+input RoleApplicationCreateNestedManyWithoutNonStateActorInput {
+  connect: [RoleApplicationWhereUniqueInput!]
+}
+
+input RoleApplicationDelegationIdNationIdCompoundUniqueInput {
+  delegationId: String!
+  nationId: String!
+}
+
+input RoleApplicationDelegationIdNonStateActorIdCompoundUniqueInput {
+  delegationId: String!
+  nonStateActorId: String!
+}
+
+input RoleApplicationDelegationIdRankCompoundUniqueInput {
+  delegationId: String!
+  rank: Int!
+}
+
+input RoleApplicationListRelationFilter {
+  every: RoleApplicationWhereInput
+  none: RoleApplicationWhereInput
+  some: RoleApplicationWhereInput
+}
+
+input RoleApplicationOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input RoleApplicationOrderByWithRelationInput {
+  delegation: DelegationOrderByWithRelationInput
+  delegationId: SortOrder
+  id: SortOrder
+  nation: NationOrderByWithRelationInput
+  nationId: SortOrder
+  nonStateActor: NonStateActorOrderByWithRelationInput
+  nonStateActorId: SortOrder
+  rank: SortOrder
+}
+
+enum RoleApplicationScalarFieldEnum {
+  delegationId
+  id
+  nationId
+  nonStateActorId
+  rank
+}
+
+input RoleApplicationUpdateInput {
+  delegationId: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  nationId: NullableStringFieldUpdateOperationsInput
+  nonStateActorId: NullableStringFieldUpdateOperationsInput
+  rank: IntFieldUpdateOperationsInput
+}
+
+input RoleApplicationUpdateManyMutationInput {
+  id: StringFieldUpdateOperationsInput
+  rank: IntFieldUpdateOperationsInput
+}
+
+input RoleApplicationUpdateManyWithoutDelegationNestedInput {
+  connect: [RoleApplicationWhereUniqueInput!]
+  disconnect: [RoleApplicationWhereUniqueInput!]
+  set: [RoleApplicationWhereUniqueInput!]
+}
+
+input RoleApplicationUpdateManyWithoutNationNestedInput {
+  connect: [RoleApplicationWhereUniqueInput!]
+  disconnect: [RoleApplicationWhereUniqueInput!]
+  set: [RoleApplicationWhereUniqueInput!]
+}
+
+input RoleApplicationUpdateManyWithoutNonStateActorNestedInput {
+  connect: [RoleApplicationWhereUniqueInput!]
+  disconnect: [RoleApplicationWhereUniqueInput!]
+  set: [RoleApplicationWhereUniqueInput!]
+}
+
+input RoleApplicationWhereInput {
+  AND: [RoleApplicationWhereInput!]
+  NOT: [RoleApplicationWhereInput!]
+  OR: [RoleApplicationWhereInput!]
+  delegation: DelegationWhereInput
+  delegationId: StringFilter
+  id: StringFilter
+  nation: NationWhereInput
+  nationId: StringNullableFilter
+  nonStateActor: NonStateActorWhereInput
+  nonStateActorId: StringNullableFilter
+  rank: IntFilter
+}
+
+input RoleApplicationWhereUniqueInput {
+  AND: [RoleApplicationWhereInput!]
+  NOT: [RoleApplicationWhereInput!]
+  OR: [RoleApplicationWhereInput!]
+  delegation: DelegationWhereInput
+  delegationId: StringFilter
+  delegationId_nationId: RoleApplicationDelegationIdNationIdCompoundUniqueInput
+  delegationId_nonStateActorId: RoleApplicationDelegationIdNonStateActorIdCompoundUniqueInput
+  delegationId_rank: RoleApplicationDelegationIdRankCompoundUniqueInput
+  id: String
+  nation: NationWhereInput
+  nationId: StringNullableFilter
+  nonStateActor: NonStateActorWhereInput
+  nonStateActorId: StringNullableFilter
+  rank: IntFilter
+}
+
+input SingleParticipantConferenceIdUserIdCompoundUniqueInput {
+  conferenceId: String!
+  userId: String!
+}
+
+input SingleParticipantCreateInput {
+  applied: Boolean
+  appliedForRoles: CustomConferenceRoleCreateNestedManyWithoutSingleParticipantInput
+  conferenceId: String!
+  experience: String!
+  id: String
+  motivation: String!
+  school: String!
+  userId: String!
+}
+
+input SingleParticipantCreateNestedManyWithoutAppliedForRolesInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantCreateNestedManyWithoutConferenceInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantCreateNestedManyWithoutUserInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantListRelationFilter {
+  every: SingleParticipantWhereInput
+  none: SingleParticipantWhereInput
+  some: SingleParticipantWhereInput
+}
+
+input SingleParticipantOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input SingleParticipantOrderByWithRelationInput {
+  applied: SortOrder
+  appliedForRoles: CustomConferenceRoleOrderByRelationAggregateInput
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  experience: SortOrder
+  id: SortOrder
+  motivation: SortOrder
+  school: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum SingleParticipantScalarFieldEnum {
+  applied
+  conferenceId
+  experience
+  id
+  motivation
+  school
+  userId
+}
+
+input SingleParticipantUpdateInput {
+  applied: BoolFieldUpdateOperationsInput
+  appliedForRoles: CustomConferenceRoleUpdateManyWithoutSingleParticipantNestedInput
+  conferenceId: StringFieldUpdateOperationsInput
+  experience: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  motivation: StringFieldUpdateOperationsInput
+  school: StringFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input SingleParticipantUpdateManyMutationInput {
+  applied: BoolFieldUpdateOperationsInput
+  experience: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  motivation: StringFieldUpdateOperationsInput
+  school: StringFieldUpdateOperationsInput
+}
+
+input SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+  disconnect: [SingleParticipantWhereUniqueInput!]
+  set: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantUpdateManyWithoutConferenceNestedInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+  disconnect: [SingleParticipantWhereUniqueInput!]
+  set: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantUpdateManyWithoutUserNestedInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+  disconnect: [SingleParticipantWhereUniqueInput!]
+  set: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantWhereInput {
+  AND: [SingleParticipantWhereInput!]
+  NOT: [SingleParticipantWhereInput!]
+  OR: [SingleParticipantWhereInput!]
+  applied: BoolFilter
+  appliedForRoles: CustomConferenceRoleListRelationFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  experience: StringFilter
+  id: StringFilter
+  motivation: StringFilter
+  school: StringFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input SingleParticipantWhereUniqueInput {
+  AND: [SingleParticipantWhereInput!]
+  NOT: [SingleParticipantWhereInput!]
+  OR: [SingleParticipantWhereInput!]
+  applied: BoolFilter
+  appliedForRoles: CustomConferenceRoleListRelationFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_userId: SingleParticipantConferenceIdUserIdCompoundUniqueInput
+  experience: StringFilter
+  id: String
+  motivation: StringFilter
+  school: StringFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+enum SortOrder {
+  asc
+  desc
+}
+
+input StringFieldUpdateOperationsInput {
+  set: String
+}
+
+input StringFilter {
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  mode: QueryMode
+  not: NestedStringFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input StringNullableFilter {
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  mode: QueryMode
+  not: NestedStringNullableFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input StringNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedStringNullableFilter
+  _min: NestedStringNullableFilter
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  mode: QueryMode
+  not: NestedStringNullableWithAggregatesFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input StringWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedStringFilter
+  _min: NestedStringFilter
+  contains: String
+  endsWith: String
+  equals: String
+  gt: String
+  gte: String
+  in: [String!]
+  lt: String
+  lte: String
+  mode: QueryMode
+  not: NestedStringWithAggregatesFilter
+  notIn: [String!]
+  startsWith: String
+}
+
+input TeamMemberConferenceIdUserIdCompoundUniqueInput {
+  conferenceId: String!
+  userId: String!
+}
+
+input TeamMemberCreateInput {
+  conferenceId: String!
+  id: String
+  role: TeamRole
+  userId: String!
+}
+
+input TeamMemberCreateNestedManyWithoutConferenceInput {
+  connect: [TeamMemberWhereUniqueInput!]
+}
+
+input TeamMemberCreateNestedManyWithoutUserInput {
+  connect: [TeamMemberWhereUniqueInput!]
+}
+
+input TeamMemberListRelationFilter {
+  every: TeamMemberWhereInput
+  none: TeamMemberWhereInput
+  some: TeamMemberWhereInput
+}
+
+input TeamMemberOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input TeamMemberOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  id: SortOrder
+  role: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum TeamMemberScalarFieldEnum {
+  conferenceId
+  id
+  role
+  userId
+}
+
+input TeamMemberUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  role: EnumTeamRoleFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input TeamMemberUpdateManyMutationInput {
+  id: StringFieldUpdateOperationsInput
+  role: EnumTeamRoleFieldUpdateOperationsInput
+}
+
+input TeamMemberUpdateManyWithoutConferenceNestedInput {
+  connect: [TeamMemberWhereUniqueInput!]
+  disconnect: [TeamMemberWhereUniqueInput!]
+  set: [TeamMemberWhereUniqueInput!]
+}
+
+input TeamMemberUpdateManyWithoutUserNestedInput {
+  connect: [TeamMemberWhereUniqueInput!]
+  disconnect: [TeamMemberWhereUniqueInput!]
+  set: [TeamMemberWhereUniqueInput!]
+}
+
+input TeamMemberWhereInput {
+  AND: [TeamMemberWhereInput!]
+  NOT: [TeamMemberWhereInput!]
+  OR: [TeamMemberWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  id: StringFilter
+  role: EnumTeamRoleFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input TeamMemberWhereUniqueInput {
+  AND: [TeamMemberWhereInput!]
+  NOT: [TeamMemberWhereInput!]
+  OR: [TeamMemberWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_userId: TeamMemberConferenceIdUserIdCompoundUniqueInput
+  id: String
+  role: EnumTeamRoleFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+enum TeamRole {
+  MEMBER
+  PARTICIPANT_CARE
+  PROJECT_MANAGEMENT
+}
+
+enum TransactionIsolationLevel {
+  ReadCommitted
+  ReadUncommitted
+  RepeatableRead
+  Serializable
+}
+
+input UserCreateInput {
+  apartment: String
+  birthday: DateTime
+  city: String
+  conferenceParticipantStatus: ConferenceParticipantStatusCreateNestedManyWithoutUserInput
+  conferenceSupervisor: ConferenceSupervisorCreateNestedManyWithoutUserInput
+  country: String
+  delegationMemberships: DelegationMemberCreateNestedManyWithoutUserInput
+  email: String!
+  family_name: String!
+  foodPreference: FoodPreference
+  gender: String
+  given_name: String!
+  id: String
+  locale: String!
+  phone: String
+  preferred_username: String!
+  pronouns: String
+  singleParticipant: SingleParticipantCreateNestedManyWithoutUserInput
+  street: String
+  teamMember: TeamMemberCreateNestedManyWithoutUserInput
+  wantsJoinTeamInformation: Boolean
+  wantsToReceiveGeneralInformation: Boolean
+  zip: String
+}
+
+input UserOrderByWithRelationInput {
+  apartment: SortOrder
+  birthday: SortOrder
+  city: SortOrder
+  conferenceParticipantStatus: ConferenceParticipantStatusOrderByRelationAggregateInput
+  conferenceSupervisor: ConferenceSupervisorOrderByRelationAggregateInput
+  country: SortOrder
+  delegationMemberships: DelegationMemberOrderByRelationAggregateInput
+  email: SortOrder
+  family_name: SortOrder
+  foodPreference: SortOrder
+  gender: SortOrder
+  given_name: SortOrder
+  id: SortOrder
+  locale: SortOrder
+  phone: SortOrder
+  preferred_username: SortOrder
+  pronouns: SortOrder
+  singleParticipant: SingleParticipantOrderByRelationAggregateInput
+  street: SortOrder
+  teamMember: TeamMemberOrderByRelationAggregateInput
+  wantsJoinTeamInformation: SortOrder
+  wantsToReceiveGeneralInformation: SortOrder
+  zip: SortOrder
+}
+
+input UserRelationFilter {
+  is: UserWhereInput
+  isNot: UserWhereInput
+}
+
+enum UserScalarFieldEnum {
+  apartment
+  birthday
+  city
+  country
+  email
+  family_name
+  foodPreference
+  gender
+  given_name
+  id
+  locale
+  phone
+  preferred_username
+  pronouns
+  street
+  wantsJoinTeamInformation
+  wantsToReceiveGeneralInformation
+  zip
+}
+
+input UserUpdateInput {
+  apartment: NullableStringFieldUpdateOperationsInput
+  birthday: NullableDateTimeFieldUpdateOperationsInput
+  city: NullableStringFieldUpdateOperationsInput
+  conferenceParticipantStatus: ConferenceParticipantStatusUpdateManyWithoutUserNestedInput
+  conferenceSupervisor: ConferenceSupervisorUpdateManyWithoutUserNestedInput
+  country: NullableStringFieldUpdateOperationsInput
+  delegationMemberships: DelegationMemberUpdateManyWithoutUserNestedInput
+  email: StringFieldUpdateOperationsInput
+  family_name: StringFieldUpdateOperationsInput
+  foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
+  gender: NullableStringFieldUpdateOperationsInput
+  given_name: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  locale: StringFieldUpdateOperationsInput
+  phone: NullableStringFieldUpdateOperationsInput
+  preferred_username: StringFieldUpdateOperationsInput
+  pronouns: NullableStringFieldUpdateOperationsInput
+  singleParticipant: SingleParticipantUpdateManyWithoutUserNestedInput
+  street: NullableStringFieldUpdateOperationsInput
+  teamMember: TeamMemberUpdateManyWithoutUserNestedInput
+  wantsJoinTeamInformation: BoolFieldUpdateOperationsInput
+  wantsToReceiveGeneralInformation: BoolFieldUpdateOperationsInput
+  zip: NullableStringFieldUpdateOperationsInput
+}
+
+input UserUpdateManyMutationInput {
+  apartment: NullableStringFieldUpdateOperationsInput
+  birthday: NullableDateTimeFieldUpdateOperationsInput
+  city: NullableStringFieldUpdateOperationsInput
+  country: NullableStringFieldUpdateOperationsInput
+  email: StringFieldUpdateOperationsInput
+  family_name: StringFieldUpdateOperationsInput
+  foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
+  gender: NullableStringFieldUpdateOperationsInput
+  given_name: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  locale: StringFieldUpdateOperationsInput
+  phone: NullableStringFieldUpdateOperationsInput
+  preferred_username: StringFieldUpdateOperationsInput
+  pronouns: NullableStringFieldUpdateOperationsInput
+  street: NullableStringFieldUpdateOperationsInput
+  wantsJoinTeamInformation: BoolFieldUpdateOperationsInput
+  wantsToReceiveGeneralInformation: BoolFieldUpdateOperationsInput
+  zip: NullableStringFieldUpdateOperationsInput
+}
+
+input UserWhereInput {
+  AND: [UserWhereInput!]
+  NOT: [UserWhereInput!]
+  OR: [UserWhereInput!]
+  apartment: StringNullableFilter
+  birthday: DateTimeNullableFilter
+  city: StringNullableFilter
+  conferenceParticipantStatus: ConferenceParticipantStatusListRelationFilter
+  conferenceSupervisor: ConferenceSupervisorListRelationFilter
+  country: StringNullableFilter
+  delegationMemberships: DelegationMemberListRelationFilter
+  email: StringFilter
+  family_name: StringFilter
+  foodPreference: EnumFoodPreferenceNullableFilter
+  gender: StringNullableFilter
+  given_name: StringFilter
+  id: StringFilter
+  locale: StringFilter
+  phone: StringNullableFilter
+  preferred_username: StringFilter
+  pronouns: StringNullableFilter
+  singleParticipant: SingleParticipantListRelationFilter
+  street: StringNullableFilter
+  teamMember: TeamMemberListRelationFilter
+  wantsJoinTeamInformation: BoolFilter
+  wantsToReceiveGeneralInformation: BoolFilter
+  zip: StringNullableFilter
+}
+
+input UserWhereUniqueInput {
+  AND: [UserWhereInput!]
+  NOT: [UserWhereInput!]
+  OR: [UserWhereInput!]
+  apartment: StringNullableFilter
+  birthday: DateTimeNullableFilter
+  city: StringNullableFilter
+  conferenceParticipantStatus: ConferenceParticipantStatusListRelationFilter
+  conferenceSupervisor: ConferenceSupervisorListRelationFilter
+  country: StringNullableFilter
+  delegationMemberships: DelegationMemberListRelationFilter
+  email: StringFilter
+  family_name: StringFilter
+  foodPreference: EnumFoodPreferenceNullableFilter
+  gender: StringNullableFilter
+  given_name: StringFilter
+  id: String
+  locale: StringFilter
+  phone: StringNullableFilter
+  preferred_username: StringFilter
+  pronouns: StringNullableFilter
+  singleParticipant: SingleParticipantListRelationFilter
+  street: StringNullableFilter
+  teamMember: TeamMemberListRelationFilter
+  wantsJoinTeamInformation: BoolFilter
+  wantsToReceiveGeneralInformation: BoolFilter
+  zip: StringNullableFilter
 }

@@ -1,9 +1,9 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
-import type { OIDCDeriveType } from '$api/auth/oidcPlugin';
+import type { OIDC } from '$api/context/oidc';
 
 export const defineAbilitiesForNonStateActor = (
-	oidc: OIDCDeriveType,
+	oidc: OIDC,
 	{ can }: AbilityBuilder<AppAbility>
 ) => {
 	// everyone can see a nsa

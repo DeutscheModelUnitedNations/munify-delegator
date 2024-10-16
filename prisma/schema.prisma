@@ -7,6 +7,16 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator pothos {
+  provider    = "prisma-pothos-types"
+  prismaUtils = "true"
+}
+
+generator pothosCrud {
+  provider            = "prisma-generator-pothos-codegen"
+  generatorConfigPath = "./pothos.config.ts"
+}
+
 model Conference {
   id                String   @id @default(nanoid())
   title             String

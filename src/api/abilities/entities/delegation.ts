@@ -1,10 +1,9 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
-import type { OIDCDeriveType } from '$api/auth/oidcPlugin';
-import { conference } from '$lib/paraglide/messages';
+import type { OIDC } from '$api/context/oidc';
 
 export const defineAbilitiesForDelegation = (
-	oidc: OIDCDeriveType,
+	oidc: OIDC,
 	{ can }: AbilityBuilder<AppAbility>
 ) => {
 	if (oidc && oidc.user) {
