@@ -1,6 +1,9 @@
-query ConferenceQuery {
+query ConferencesPreview {
 	findManyConferences {
-		id
+		startRegistration
+		startAssignment
+		location
 		title
+		id
 	}
 }

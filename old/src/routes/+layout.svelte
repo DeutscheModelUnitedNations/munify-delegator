@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { ParaglideJS } from '@inlang/paraglide-sveltekit';
 	import { i18n } from '$lib/i18n';
+	import { onMount, type Snippet } from 'svelte';
+	import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
+	import CookieBanner from '$lib/components/CookieBanner.svelte';
 
 	import '../app.css';
 	import '@fontsource/outfit/100.css';
@@ -26,9 +29,6 @@
 	import '@fontsource/vollkorn/800.css';
 	import '@fontsource/vollkorn/900.css';
 	import 'flag-icons/css/flag-icons.min.css';
-	import { onMount, type Snippet } from 'svelte';
-	import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
-	import CookieBanner from '$lib/components/CookieBanner.svelte';
 
 	let { children }: { children: Snippet } = $props();
 

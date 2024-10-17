@@ -1106,6 +1106,8 @@ input IntWithAggregatesFilter {
 type Mutation {
   createOneDelegation(conferenceId: String!, experience: String!, motivation: String!, school: String!): Delegation!
   createOneDelegationMember(entryCode: String!): DelegationMember!
+  createOneRoleApplication(delegationId: String!, nationId: String, nonStateActorId: String): RoleApplication!
+  createOneSingleParticipant(conferenceId: String!, experience: String!, motivation: String!, school: String!): SingleParticipant!
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   deleteOneConference(where: ConferenceWhereUniqueInput!): Conference
   deleteOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
@@ -1119,17 +1121,18 @@ type Mutation {
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
+  swapRoleApplicationRanks(firstRoleApplicationId: String!, secondRoleApplicationId: String!): RoleApplicationRankSwapResult!
   updateOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   updateOneConference(where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
   updateOneConferenceSupervisor(where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
-  updateOneDelegation(apply: Boolean, newHeadDelegateUserId: String, resetEntryCode: Boolean, where: DelegationWhereUniqueInput!): Delegation
+  updateOneDelegation(applied: Boolean, newHeadDelegateUserId: String, resetEntryCode: Boolean, where: DelegationWhereUniqueInput!): Delegation
   updateOneDelegationMember(where: DelegationMemberWhereUniqueInput!): DelegationMember
   updateOneNation(where: NationWhereUniqueInput!): Nation
   updateOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
-  updateOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
+  updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [String!]!, unApplyForRolesIdList: [String!]!, where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(where: UserWhereUniqueInput!): User
   upsertOneConferenceSupervisor(entryCode: String!): ConferenceSupervisor!
@@ -1707,6 +1710,10 @@ input RoleApplicationOrderByWithRelationInput {
   nonStateActor: NonStateActorOrderByWithRelationInput
   nonStateActorId: SortOrder
   rank: SortOrder
+}
+
+type RoleApplicationRankSwapResult {
+  ok: Boolean!
 }
 
 enum RoleApplicationScalarFieldEnum {

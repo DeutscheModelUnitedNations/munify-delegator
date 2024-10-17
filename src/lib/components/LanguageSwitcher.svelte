@@ -4,12 +4,18 @@
 	import { page } from '$app/stores';
 </script>
 
-{#each availableLanguageTags as lang}
-	<a
-		href={i18n.route($page.url.pathname)}
-		hreflang={lang}
-		aria-current={lang === languageTag() ? 'page' : undefined}
-	>
-		{lang}
-	</a>
-{/each}
+<span class="flex">
+	{#each availableLanguageTags as lang, i}
+		<a
+			class={languageTag() === lang ? 'font-bold' : ''}
+			href={i18n.route($page.url.pathname)}
+			hreflang={lang}
+			aria-current={lang === languageTag() ? 'page' : undefined}
+		>
+			{lang.toUpperCase()}
+		</a>
+		{#if availableLanguageTags.length > i + 1}
+			|
+		{/if}
+	{/each}
+</span>

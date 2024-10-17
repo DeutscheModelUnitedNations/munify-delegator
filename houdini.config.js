@@ -6,7 +6,20 @@ const config = {
 		url: 'http://localhost:5173/api/graphql'
 	},
 	plugins: {
-		'houdini-svelte': {}
+		'houdini-svelte': {
+			// forceRunesMode: true
+		}
+	},
+	scalars: {
+		DateTime: {
+			type: 'Date',
+			unmarshal(val) {
+				return val ? new Date(val) : null;
+			},
+			marshal(date) {
+				return date && date.getTime();
+			}
+		}
 	}
 };
 
