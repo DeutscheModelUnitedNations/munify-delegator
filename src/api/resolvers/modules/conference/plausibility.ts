@@ -1,5 +1,5 @@
 import { db } from '$db/db';
-import { builder } from '../builder';
+import { builder } from '../../builder';
 import type { User } from '@prisma/client';
 import { GQLUser } from '../user';
 import { userDataCompleteCheck } from '$api/services/userDataComplete';

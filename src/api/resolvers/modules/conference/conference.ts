@@ -1,4 +1,4 @@
-import { builder } from '../builder';
+import { builder } from '../../builder';
 import {
 	ConferenceEndConferenceFieldObject,
 	ConferenceIdFieldObject,
@@ -117,7 +117,7 @@ builder.queryFields((t) => {
 // 	return {
 // 		createOneConference: t.prismaField({
 // 			...field,
-// 			args: { ...field.args, token: t.arg.string({ required: true }) },
+
 // 			resolve: async (query, root, args, ctx, info) => {
 // 				// TODO check permissions
 
@@ -132,6 +132,7 @@ builder.mutationFields((t) => {
 	return {
 		updateOneConference: t.prismaField({
 			...field,
+			args: { where: field.args.where },
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,

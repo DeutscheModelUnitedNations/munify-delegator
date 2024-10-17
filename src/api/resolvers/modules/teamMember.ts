@@ -1,4 +1,4 @@
-import { builder } from './builder';
+import { builder } from '../builder';
 import {
 	deleteOneTeamMemberMutationObject,
 	findManyTeamMemberQueryObject,
@@ -56,7 +56,7 @@ builder.queryFields((t) => {
 // 	return {
 // 		createOneTeamMember: t.prismaField({
 // 			...field,
-// 			args: { ...field.args, token: t.arg.string({ required: true }) },
+
 // 			resolve: async (query, root, args, ctx, info) => {
 // 				//TODO check permissions
 
@@ -71,6 +71,7 @@ builder.mutationFields((t) => {
 	return {
 		updateOneTeamMember: t.prismaField({
 			...field,
+			args: { where: field.args.where },
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,

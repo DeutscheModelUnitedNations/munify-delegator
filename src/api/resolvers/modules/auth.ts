@@ -1,5 +1,5 @@
 import { getLogoutUrl, oidcRoles } from '$api/services/OIDC';
-import { builder } from './builder';
+import { builder } from '../builder';
 
 const OIDCRolesEnum = builder.enumType('OIDCRolesEnum', {
 	values: oidcRoles

@@ -16,12 +16,8 @@ export async function conferenceStats({
 	// Countdowns
 
 	const now = new Date();
-	const daysUntilConference = conference.startConference
-		? Math.floor((conference.startConference.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-		: undefined;
-	const daysUntilEndRegistration = conference.startAssignment
-		? Math.floor((conference.startAssignment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-		: undefined;
+	const daysUntilConference = Math.floor((conference.startConference.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+	const daysUntilEndRegistration = Math.floor((conference.startAssignment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
 	const countdowns = {
 		daysUntilConference,
@@ -166,7 +162,7 @@ export async function conferenceStats({
 			? parseFloat(
 					(agesAtConference.reduce((acc, age) => acc + age, 0) / agesAtConference.length).toFixed(1)
 				)
-			: undefined;
+			: 0;
 	const ageDistribution: Record<string, number> = {};
 	for (let i = 10; i <= 25; i++) {
 		if (!agesAtConference.includes(i)) continue;

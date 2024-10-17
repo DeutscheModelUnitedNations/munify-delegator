@@ -1,8 +1,7 @@
 import { db } from '$db/db';
-import type { languageTag } from '$lib/paraglide/runtime';
+import { languageTag } from '$lib/paraglide/runtime';
 import type { Conference, User } from '@prisma/client';
 import * as m from '$lib/paraglide/messages';
-import { PermissionCheckError } from '$api/util/logger';
 
 /**
  * This helper fetches user participations in a conference. Fetched entities include
@@ -13,11 +12,11 @@ import { PermissionCheckError } from '$api/util/logger';
 export async function fetchUserParticipations({
 	conferenceId,
 	userId,
-	throwIfAnyIsFound
+	throwIfAnyIsFound = false
 }: {
 	conferenceId: Conference['id'];
 	userId: User['id'];
-	throwIfAnyIsFound?: { languageTag: ReturnType<typeof languageTag> };
+	throwIfAnyIsFound?: boolean;
 }) {
 	const [foundSupervisor, foundSingleParticipant, foundDelegationMember, foundTeamMember] =
 		await Promise.all([
@@ -55,28 +54,28 @@ export async function fetchUserParticipations({
 			})
 		]);
 
-	if (throwIfAnyIsFound?.languageTag) {
+	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw new PermissionCheckError(
-				m.youAreAlreadySupervisor({}, { languageTag: throwIfAnyIsFound.languageTag })
+			throw new Error(
+				m.youAreAlreadySupervisor({}, { languageTag: languageTag() })
 			);
 		}
 
 		if (foundSingleParticipant) {
-			throw new PermissionCheckError(
-				m.youAreAlreadySingleParticipant({}, { languageTag: throwIfAnyIsFound.languageTag })
+			throw new Error(
+				m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() })
 			);
 		}
 
 		if (foundDelegationMember) {
-			throw new PermissionCheckError(
-				m.youAreAlreadyDelegationMember({}, { languageTag: throwIfAnyIsFound.languageTag })
+			throw new Error(
+				m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() })
 			);
 		}
 
 		if (foundTeamMember) {
-			throw new PermissionCheckError(
-				m.youAreAlreadyTeamMember({}, { languageTag: throwIfAnyIsFound.languageTag })
+			throw new Error(
+				m.youAreAlreadyTeamMember({}, { languageTag: languageTag() })
 			);
 		}
 	}

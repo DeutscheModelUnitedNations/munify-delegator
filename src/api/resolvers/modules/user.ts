@@ -1,4 +1,4 @@
-import { builder } from './builder';
+import { builder } from '../builder';
 import {
 	UserEmailFieldObject,
 	UserIdFieldObject,
@@ -115,7 +115,7 @@ builder.queryFields((t) => {
 // 	return {
 // 		createOneUser: t.prismaField({
 // 			...field,
-// 			args: { ...field.args, token: t.arg.string({ required: true }) },
+
 // 			resolve: async (query, root, args, ctx, info) => {
 // 				//TODO check permissions
 
@@ -130,6 +130,7 @@ builder.mutationFields((t) => {
 	return {
 		updateOneUser: t.prismaField({
 			...field,
+			args: { where: field.args.where },
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,
@@ -157,22 +158,16 @@ builder.mutationFields((t) => {
 	};
 });
 
-const UpsertSelfResult = builder
-	.objectRef<{
-		userNeedsAdditionalInfo: boolean;
-	}>('UpsertSelfResult')
-	.implement({
-		fields: (t) => ({
-			userNeedsAdditionalInfo: t.exposeBoolean('userNeedsAdditionalInfo')
-		})
-	});
-
 builder.mutationFields((t) => {
 	return {
 		upsertSelf: t.field({
-			type: UpsertSelfResult,
+			type: builder.simpleObject('UpsertSelfResult', {
+				fields: (t) => ({
+					userNeedsAdditionalInfo: t.boolean()
+				})
+			}),
 			resolve: async (root, args, ctx) => {
-				const user = ctx.permissions.mustBeLoggedIn();
+				const user = ctx.permissions.getLoggedInUserOrThrow();
 				if (ctx.oidc.tokenSet?.access_token === undefined) {
 					throw new Error('No access token provided');
 				}

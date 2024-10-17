@@ -1,4 +1,4 @@
-import { builder } from './builder';
+import { builder } from '../builder';
 import {
 	deleteOneNonStateActorMutationObject,
 	findManyNonStateActorQueryObject,
@@ -68,7 +68,7 @@ builder.queryFields((t) => {
 // 	return {
 // 		createOneNonStateActor: t.prismaField({
 // 			...field,
-// 			args: { ...field.args, token: t.arg.string({ required: true }) },
+
 // 			resolve: async (query, root, args, ctx, info) => {
 // 				//TODO check permissions
 
@@ -83,6 +83,7 @@ builder.mutationFields((t) => {
 	return {
 		updateOneNonStateActor: t.prismaField({
 			...field,
+			args: { where: field.args.where },
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,

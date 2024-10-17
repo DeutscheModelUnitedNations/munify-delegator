@@ -1,4 +1,4 @@
-import { builder } from './builder';
+import { builder } from '../builder';
 import {
 	deleteOneCustomConferenceRoleMutationObject,
 	findManyCustomConferenceRoleQueryObject,
@@ -64,7 +64,7 @@ builder.queryFields((t) => {
 // 	return {
 // 		createOneCustomConferenceRole: t.prismaField({
 // 			...field,
-// 			args: { ...field.args, token: t.arg.string({ required: true }) },
+
 // 			resolve: async (query, root, args, ctx, info) => {
 // 				//TODO check permissions
 

@@ -16,8 +16,11 @@ export const builder = new SchemaBuilder<{
 	Scalars: Scalars<Prisma.Decimal, Prisma.InputJsonValue | null, Prisma.InputJsonValue>;
 	PrismaTypes: PrismaTypes;
 	DefaultFieldNullability: false;
+	DefaultArgumentNullability: false;
+	DefaultInputFieldRequiredness: true;
 }>({
 	defaultFieldNullability: false,
+	defaultInputFieldRequiredness: true,
 	plugins: [PrismaPlugin, PrismaUtils, ComplexityPlugin, TracingPlugin, SimpleObjectsPlugin],
 	prisma: {
 		client: db,

@@ -51,7 +51,7 @@ export function permissions(oidc: OIDC) {
 				}
 			}
 		},
-		mustBeLoggedIn: () => {
+		getLoggedInUserOrThrow: () => {
 			hasBeenCalled = true;
 			if (!oidc || !oidc.user) {
 				throw new PermissionCheckError('Permission check failed.');

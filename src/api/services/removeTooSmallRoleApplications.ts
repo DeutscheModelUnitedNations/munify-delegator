@@ -1,15 +1,15 @@
 import { db } from '$db/db';
+import type { Prisma } from '@prisma/client';
 
 /**
  * In case a delegation changes during its existence, we need to check some state throughout the app.
  * E.g. remove applications for nations/nsa which do not provide enought seats to fit all the delegates.
  */
-export async function tidyRoleApplications(delegationId: string) {
+export async function tidyRoleApplications(delegationWhere: Prisma.DelegationWhereUniqueInput) {
 	const delegation = await db.delegation.findUniqueOrThrow({
-		where: {
-			id: delegationId
-		},
+		where: delegationWhere,
 		select: {
+			id: true,
 			members: true,
 			conferenceId: true,
 			appliedForRoles: {
@@ -61,7 +61,7 @@ export async function tidyRoleApplications(delegationId: string) {
 
 	await db.roleApplication.deleteMany({
 		where: {
-			delegationId,
+			delegationId: delegation.id,
 			nationId: {
 				in: nationIds
 			}
@@ -80,7 +80,7 @@ export async function tidyRoleApplications(delegationId: string) {
 
 	await db.roleApplication.deleteMany({
 		where: {
-			delegationId,
+			delegationId: delegation.id,
 			nonStateActorId: {
 				in: nonStateActorIds
 			}
