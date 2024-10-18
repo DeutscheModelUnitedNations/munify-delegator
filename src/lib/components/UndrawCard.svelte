@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
@@ -8,10 +7,9 @@
 		btnText: string;
 		btnLink: string;
 		disabled?: boolean;
-		children: Snippet;
 	}
 
-	let { title, img, btnText, btnLink, disabled, children }: Props = $props();
+	let { title, img, btnText, btnLink, disabled }: Props = $props();
 </script>
 
 <div
@@ -30,7 +28,7 @@
 	<div class="card-body">
 		<h2 class="card-title">{title}</h2>
 		<div class="flex-1">
-			{@render children()}
+			<slot />
 		</div>
 		<div class="card-actions mt-4 justify-end">
 			{#if !disabled}

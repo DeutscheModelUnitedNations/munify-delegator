@@ -2,7 +2,19 @@ import { building } from '$app/environment';
 import { configPrivate } from '$config/private';
 import { configPublic } from '$config/public';
 import Cryptr from 'cryptr';
-import { type BaseClient, Issuer, type TokenSetParameters, generators } from 'openid-client';
+import {
+	authorizationCodeGrant,
+	buildAuthorizationUrl,
+	buildEndSessionUrl,
+	calculatePKCECodeChallenge,
+	discovery,
+	fetchUserInfo,
+	randomPKCECodeVerifier,
+	randomState,
+	refreshTokenGrant,
+	tokenIntrospection,
+	type TokenEndpointResponse
+} from 'openid-client';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
@@ -21,129 +33,127 @@ export type OIDCUser = {
 	[key: string]: any;
 };
 
-export class PermissionCheckError extends Error {
-	constructor(message: string) {
-		super(message);
-	}
-}
+type OIDCFlowState = {
+	visitedUrl: string;
+	random: string;
+};
 
 export function isValidOIDCUser(user: any): user is OIDCUser {
 	return user.sub && user.email && user.preferred_username && user.family_name && user.given_name;
 }
 
 export const codeVerifierCookieName = 'code_verifier';
+export const oidcStateCookieName = 'oidc_state';
 export const tokensCookieName = 'token_set';
 
-const { client, cryptr, jwks } = await (async () => {
+const { config, cryptr, jwks } = await (async () => {
 	// this runs statically butwe don't have access to the dynamic config values at build time
 	// so we need to return dummy values
 	if (building) {
 		return {
-			issuer: null as unknown as Issuer<BaseClient>,
-			client: undefined as unknown as BaseClient,
+			config: undefined as unknown as Awaited<ReturnType<typeof discovery>>,
+			jwks: undefined as unknown as Awaited<ReturnType<typeof createRemoteJWKSet>> | undefined,
 			cryptr: undefined as unknown as Cryptr
 		};
 	}
-	const issuer = await Issuer.discover(configPublic.PUBLIC_OIDC_AUTHORITY);
-	const client = new issuer.Client({
-		client_id: configPublic.PUBLIC_OIDC_CLIENT_ID,
-		token_endpoint_auth_method: configPrivate.OIDC_CLIENT_SECRET ? undefined : 'none',
-		client_secret: configPrivate.OIDC_CLIENT_SECRET
-	});
+	const config = await discovery(
+		new URL(configPublic.PUBLIC_OIDC_AUTHORITY),
+		configPublic.PUBLIC_OIDC_CLIENT_ID,
+		{
+			client_secret: configPrivate.OIDC_CLIENT_SECRET,
+			token_endpoint_auth_method: configPrivate.OIDC_CLIENT_SECRET ? undefined : 'none'
+		}
+	);
 	const cryptr = new Cryptr(configPrivate.OIDC_CLIENT_SECRET ?? configPrivate.SECRET);
-	const jwks = issuer.metadata.jwks_uri
-		? await createRemoteJWKSet(new URL(issuer.metadata.jwks_uri))
-		: undefined;
+	const jwks_uri = config.serverMetadata().jwks_uri;
+	const jwks = jwks_uri ? await createRemoteJWKSet(new URL(jwks_uri)) : undefined;
 
-	return { issuer, client, cryptr, jwks };
+	return { config, cryptr, jwks };
 })();
 
-type OIDCFlowState = {
-	visitedUrl: string;
-};
-
-export function startSignin(visitedUrl: URL) {
+export async function startSignin(visitedUrl: URL) {
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
 	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
 	}
 
-	const code_verifier = generators.codeVerifier();
+	const code_verifier = randomPKCECodeVerifier();
 	const encrypted_verifier = cryptr.encrypt(code_verifier);
-	const code_challenge = generators.codeChallenge(code_verifier);
+	const code_challenge = await calculatePKCECodeChallenge(code_verifier);
 	const state: OIDCFlowState = {
-		visitedUrl: visitedUrl.toString()
+		visitedUrl: visitedUrl.toString(),
+		random: randomState()
 	};
-	const redirect_uri = client.authorizationUrl({
-		scope: configPrivate.OIDC_SCOPES!,
+	const serialized_state = JSON.stringify(state);
+	const encrypted_state = cryptr.encrypt(serialized_state);
+
+	const parameters: Record<string, string> = {
+		redirect_uri: visitedUrl.origin + '/auth/login-callback',
+		scope: configPrivate.OIDC_SCOPES,
 		code_challenge,
 		code_challenge_method: 'S256',
-		state: encodeURIComponent(JSON.stringify(state)),
-		redirect_uri: visitedUrl.origin + '/auth/login-callback'
-	});
+		state: serialized_state
+	};
+
+	const redirect_uri = buildAuthorizationUrl(config, parameters);
 
 	return {
 		encrypted_verifier,
-		redirect_uri
+		redirect_uri,
+		encrypted_state
 	};
 }
 
-export async function resolveSignin(visitedUrl: URL, encrypted_verifier: string) {
+export async function resolveSignin(
+	visitedUrl: URL,
+	encrypted_verifier: string,
+	encrypted_state: string
+) {
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
 	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
 	}
-	const path = visitedUrl.toString().split('?')[0];
-	const urlParameters = new URLSearchParams(visitedUrl.toString().split('?')[1]);
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const parameters: any = {};
-
-	for (const [key, value] of urlParameters.entries()) {
-		parameters[key] = value;
-	}
-
-	const state = JSON.parse(decodeURIComponent(parameters.state)) as OIDCFlowState;
-	parameters.state = undefined;
-
-	const tokenSet = await client.callback(path, parameters, {
-		code_verifier: cryptr.decrypt(encrypted_verifier)
+	const verifier = cryptr.decrypt(encrypted_verifier);
+	const state = JSON.parse(cryptr.decrypt(encrypted_state)) as OIDCFlowState;
+	const tokens = await authorizationCodeGrant(config, visitedUrl, {
+		pkceCodeVerifier: verifier,
+		expectedState: JSON.stringify(state)
 	});
+	(state as any).random = undefined;
+	const strippedState: Omit<OIDCFlowState, 'random'> = { ...state };
 
-	return { tokenSet, state };
+	return { tokens, state: strippedState };
 }
 
 export async function validateTokens({
 	access_token,
 	id_token
-}: Pick<TokenSetParameters, 'access_token' | 'id_token'>): Promise<OIDCUser> {
-	if (!access_token) throw new PermissionCheckError('No access token provided');
-
+}: Pick<TokenEndpointResponse, 'access_token' | 'id_token'>): Promise<OIDCUser> {
 	try {
 		if (!jwks) throw new Error('No jwks available');
 		if (!id_token) throw new Error('No id_token available');
 
 		const [accessTokenValue, idTokenValue] = await Promise.all([
 			jwtVerify(access_token, jwks, {
-				issuer: client.issuer.metadata.issuer,
-				audience: client.metadata.client_id
+				issuer: config.serverMetadata().issuer,
+				audience: configPublic.PUBLIC_OIDC_CLIENT_ID
 			}),
 			jwtVerify(id_token, jwks, {
-				issuer: client.issuer.metadata.issuer,
-				audience: client.metadata.client_id
+				issuer: config.serverMetadata().issuer,
+				audience: configPublic.PUBLIC_OIDC_CLIENT_ID
 			})
 		]);
 
 		if (!accessTokenValue.payload.sub) {
-			throw new PermissionCheckError('No subject in access token');
+			throw new Error('No subject in access token');
 		}
 
 		if (!idTokenValue.payload.sub) {
-			throw new PermissionCheckError('No subject in id token');
+			throw new Error('No subject in id token');
 		}
 
 		if (accessTokenValue.payload.sub !== idTokenValue.payload.sub) {
-			throw new PermissionCheckError('Subject in access token and id token do not match');
+			throw new Error('Subject in access token and id token do not match');
 		}
 
 		// some basic fields which we want to be present
@@ -160,7 +170,7 @@ export async function validateTokens({
 			error.message
 		);
 
-		const remoteUserInfo = await client.userinfo(access_token);
+		const remoteUserInfo = await tokenIntrospection(config, access_token);
 
 		if (!isValidOIDCUser(remoteUserInfo)) {
 			throw new Error('Not all fields in remoteUserInfo token are present');
@@ -171,18 +181,18 @@ export async function validateTokens({
 }
 
 export function refresh(refresh_token: string) {
-	return client.refresh(refresh_token);
+	return refreshTokenGrant(config, refresh_token);
 }
 
 export function getLogoutUrl(visitedUrl: URL) {
 	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
 	}
-	return client.endSessionUrl({
+	return buildEndSessionUrl(config, {
 		post_logout_redirect_uri: visitedUrl.origin + '/auth/logout-callback'
 	});
 }
 
-export function fetchUserInfoFromIssuer(access_token: string) {
-	return client.userinfo(access_token);
+export function fetchUserInfoFromIssuer(access_token: string, expectedSubject: string) {
+	return fetchUserInfo(config, access_token, expectedSubject);
 }

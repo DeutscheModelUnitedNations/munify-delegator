@@ -2,10 +2,7 @@ import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDC } from '$api/context/oidc';
 
-export const defineAbilitiesForTeamMember = (
-	oidc: OIDC,
-	{ can }: AbilityBuilder<AppAbility>
-) => {
+export const defineAbilitiesForTeamMember = (oidc: OIDC, { can }: AbilityBuilder<AppAbility>) => {
 	if (oidc && oidc.user) {
 		const user = oidc.user;
 

@@ -26,7 +26,7 @@ import {
 import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
 import { configPublic } from '$config/public';
-import { userDataCompleteCheck } from '$api/services/userDataComplete';
+import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -130,12 +130,36 @@ builder.mutationFields((t) => {
 	return {
 		updateOneUser: t.prismaField({
 			...field,
-			args: { where: field.args.where },
+			args: {
+				where: field.args.where,
+				data: t.arg({
+					type: t.builder.inputType('UserUpdateDataInput', {
+						fields: (t) => ({
+							birthday: t.field({ type: 'DateTime' }),
+							phone: t.string(),
+							street: t.string(),
+							apartment: t.string({ required: false }),
+							zip: t.string(),
+							city: t.string(),
+							country: t.string(),
+							gender: t.string(),
+							pronouns: t.string(),
+							foodPreference: t.string(),
+							wantsToReceiveGeneralInformation: t.boolean({
+								required: false
+							}),
+							wantsJoinTeamInformation: t.boolean({ required: false })
+						})
+					})
+				})
+			},
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
 				};
+				console.log(args);
+				
 				return field.resolve(query, root, args, ctx, info);
 			}
 		})
@@ -171,7 +195,10 @@ builder.mutationFields((t) => {
 				if (ctx.oidc.tokenSet?.access_token === undefined) {
 					throw new Error('No access token provided');
 				}
-				const issuerUserData = await fetchUserInfoFromIssuer(ctx.oidc.tokenSet?.access_token);
+				const issuerUserData = await fetchUserInfoFromIssuer(
+					ctx.oidc.tokenSet?.access_token,
+					user.sub
+				);
 
 				if (
 					!issuerUserData.email ||
@@ -199,11 +226,11 @@ builder.mutationFields((t) => {
 						given_name: issuerUserData.given_name,
 						preferred_username: issuerUserData.preferred_username,
 						locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-						phone: issuerUserData.phone ?? user.phone
+						phone: (issuerUserData as any).phone ?? user.phone
 					}
 				});
 
-				return { userNeedsAdditionalInfo: userDataCompleteCheck(updatedUser, 'de').length > 0 };
+				return { userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success };
 			}
 		})
 	};

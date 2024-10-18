@@ -1,4 +1,4 @@
-<script lang="ts" generics="A extends Record<string, unknown>, B">
+<!-- <script lang="ts" generics="A extends Record<string, unknown>, B">
 	import { type SuperForm } from 'sveltekit-superforms';
 
 	interface Props {
@@ -42,6 +42,6 @@
 	/>
 	{#if ($errors as any)[fieldName]}<span class="text-error">{($errors as any)[fieldName]}</span
 		>{/if}
-</label>
+</label> -->
 
 <!-- {initialValue !== stateValue && 'input-success border-4'} -->

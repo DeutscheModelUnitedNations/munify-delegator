@@ -2,7 +2,7 @@ import { db } from '$db/db';
 import { builder } from '../../builder';
 import type { User } from '@prisma/client';
 import { GQLUser } from '../user';
-import { userDataCompleteCheck } from '$api/services/userDataComplete';
+import { userFormSchema } from '../../../../routes/(authenticated)/my-account/form-schema';
 
 const PlausibilityResult = builder
 	.objectRef<{
@@ -125,7 +125,7 @@ builder.queryFields((t) => {
 							AND: [ctx.permissions.allowDatabaseAccessTo('list').User]
 						}
 					})
-				).filter((u) => userDataCompleteCheck(u, 'de').length === 0);
+				).filter((u) => !userFormSchema.safeParse(u).success);
 
 				return {
 					tooYoungUsers,

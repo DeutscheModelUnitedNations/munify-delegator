@@ -8,14 +8,14 @@
 		form: SuperForm<A, B>;
 	}
 
-	let { class: class_, children, form }: Props = $props();
-	let { message, enhance } = form;
+	let { class: class_, form }: Props = $props();
+	let { message, enhance, allErrors } = $derived(form);
 </script>
 
 <form class="flex flex-col gap-4 {class_}" method="post" enctype="multipart/form-data" use:enhance>
-	{@render children()}
+	<slot />
 	{#if $message}
 		<p class="text-sm">{$message}</p>
 	{/if}
-	<FormSubmitButton />
+	<FormSubmitButton disabled={$allErrors.length > 0} />
 </form>

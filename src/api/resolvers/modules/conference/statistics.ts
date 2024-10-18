@@ -89,7 +89,7 @@ builder.queryFields((t) => {
 		getConferenceStatistics: t.field({
 			type: StatisticsResult,
 			args: {
-				conferenceId: t.arg.string()
+				conferenceId: t.arg.id()
 			},
 			resolve: async (root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();

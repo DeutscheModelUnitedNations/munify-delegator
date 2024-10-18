@@ -71,7 +71,7 @@ builder.mutationFields((t) => {
 		createOneSingleParticipant: t.prismaField({
 			...field,
 			args: {
-				conferenceId: t.arg.string(),
+				conferenceId: t.arg.id(),
 				motivation: t.arg.string(),
 				experience: t.arg.string(),
 				school: t.arg.string()
@@ -113,8 +113,8 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				where: field.args.where,
-				applyForRolesIdList: t.arg.stringList(),
-				unApplyForRolesIdList: t.arg.stringList(),
+				applyForRolesIdList: t.arg.idList(),
+				unApplyForRolesIdList: t.arg.idList(),
 				applied: t.arg.boolean({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {

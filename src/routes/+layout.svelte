@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { ParaglideJS } from '@inlang/paraglide-sveltekit';
 	import { i18n } from '$lib/i18n';
+	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import Footer from './Footer.svelte';
-	import { onMount, type Snippet } from 'svelte';
+	import { SvelteToast } from '@zerodevx/svelte-toast';
+
 	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
 	// import CookieBanner from '$lib/components/CookieBanner.svelte';
 
@@ -35,8 +37,6 @@
 
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
-
-	// let { children }: { children: Snippet } = $props();
 </script>
 
 <svelte:head>
@@ -51,6 +51,8 @@
 </svelte:head>
 
 <ParaglideJS {i18n}>
+	<SvelteToast options={{}} />
+	<CookieBanner />
 	<!-- {@render children()} -->
 	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
 	<slot />

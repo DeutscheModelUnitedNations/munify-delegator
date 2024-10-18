@@ -84,7 +84,7 @@ builder.mutationFields((t) => {
 		createOneDelegation: t.prismaField({
 			...field,
 			args: {
-				conferenceId: t.arg.string(),
+				conferenceId: t.arg.id(),
 				motivation: t.arg.string(),
 				school: t.arg.string(),
 				experience: t.arg.string()
@@ -151,7 +151,7 @@ builder.mutationFields((t) => {
 			args: {
 				where: field.args.where,
 				resetEntryCode: t.arg.boolean({ required: false }),
-				newHeadDelegateUserId: t.arg.string({ required: false }),
+				newHeadDelegateUserId: t.arg.id({ required: false }),
 				applied: t.arg.boolean({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {

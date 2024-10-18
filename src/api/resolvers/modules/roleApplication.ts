@@ -61,9 +61,9 @@ builder.mutationFields((t) => {
 		createOneRoleApplication: t.prismaField({
 			...field,
 			args: {
-				delegationId: t.arg.string(),
-				nonStateActorId: t.arg.string({ required: false }),
-				nationId: t.arg.string({ required: false })
+				delegationId: t.arg.id(),
+				nonStateActorId: t.arg.id({ required: false }),
+				nationId: t.arg.id({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
 				if (!args.nationId && !args.nonStateActorId) {
@@ -130,8 +130,8 @@ builder.mutationFields((t) => {
 				})
 			}),
 			args: {
-				firstRoleApplicationId: t.arg.string({ required: true }),
-				secondRoleApplicationId: t.arg.string({ required: true })
+				firstRoleApplicationId: t.arg.id({ required: true }),
+				secondRoleApplicationId: t.arg.id({ required: true })
 			},
 			resolve: async (root, args, ctx) => {
 				await db.$transaction(async (tx) => {
