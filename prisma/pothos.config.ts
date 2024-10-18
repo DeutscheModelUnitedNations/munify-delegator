@@ -32,7 +32,7 @@ module.exports = {
 	global: {
 		builderLocation: 'src/api/resolvers/builder',
 		replacer: (input) => {
-      //TODO https://github.com/Cauen/prisma-generator-pothos-codegen/issues/76
+			//TODO https://github.com/Cauen/prisma-generator-pothos-codegen/issues/76
 			return input
 				.replaceAll(
 					`import {

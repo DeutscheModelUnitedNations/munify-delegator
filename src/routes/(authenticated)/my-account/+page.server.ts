@@ -45,7 +45,7 @@ export const load: PageLoad = async (event) => {
 	}
 
 	const form = await superValidate(nullFieldsToUndefined(fullUser), zod(userFormSchema));
-	
+
 	return {
 		form,
 		redirectUrl: event.url.searchParams.get('redirect') || null,
@@ -71,7 +71,7 @@ export const actions = {
 		await userMutation.mutate(
 			{
 				data: {
-					...form.data,
+					...form.data
 				},
 				where: {
 					id: userId
@@ -79,7 +79,6 @@ export const actions = {
 			},
 			{ event }
 		);
-
 
 		// Display a success status message
 		return message(form, m.saved());

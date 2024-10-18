@@ -1,4 +1,4 @@
-import { graphql } from "$houdini";
+import { graphql } from '$houdini';
 
 export const fastUserQuery = graphql(`
 	query OfflineUser {

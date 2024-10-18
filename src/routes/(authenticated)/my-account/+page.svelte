@@ -8,9 +8,11 @@
 	// import { toast } from '@zerodevx/svelte-toast';
 
 	let { data } = $props();
-	let form = superForm(data.form, { resetForm: false,
+	let form = superForm(data.form, {
+		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(userFormSchema) });
+		validators: zod(userFormSchema)
+	});
 
 	// if (data.redirectUrl) {
 	// 	goto(data.redirectUrl);

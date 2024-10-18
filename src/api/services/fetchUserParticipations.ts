@@ -56,27 +56,19 @@ export async function fetchUserParticipations({
 
 	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw new Error(
-				m.youAreAlreadySupervisor({}, { languageTag: languageTag() })
-			);
+			throw new Error(m.youAreAlreadySupervisor({}, { languageTag: languageTag() }));
 		}
 
 		if (foundSingleParticipant) {
-			throw new Error(
-				m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() })
-			);
+			throw new Error(m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() }));
 		}
 
 		if (foundDelegationMember) {
-			throw new Error(
-				m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() })
-			);
+			throw new Error(m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() }));
 		}
 
 		if (foundTeamMember) {
-			throw new Error(
-				m.youAreAlreadyTeamMember({}, { languageTag: languageTag() })
-			);
+			throw new Error(m.youAreAlreadyTeamMember({}, { languageTag: languageTag() }));
 		}
 	}
 

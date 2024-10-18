@@ -16,8 +16,12 @@ export async function conferenceStats({
 	// Countdowns
 
 	const now = new Date();
-	const daysUntilConference = Math.floor((conference.startConference.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-	const daysUntilEndRegistration = Math.floor((conference.startAssignment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+	const daysUntilConference = Math.floor(
+		(conference.startConference.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+	);
+	const daysUntilEndRegistration = Math.floor(
+		(conference.startAssignment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+	);
 
 	const countdowns = {
 		daysUntilConference,
