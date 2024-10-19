@@ -40,7 +40,7 @@
 	let isOpen = $state(false);
 
 	const stringifyDate = (input: Date) => {
-		return new Date(input).toLocaleDateString();
+		return new Date(input).toLocaleDateString(languageTag())
 	};
 
 	let startDate = $state<Date>($formData[name] as Date);
@@ -117,37 +117,45 @@
 		<span class="flex w-full items-center">
 			<label class="form-control w-full" for={name}>
 				<span class="label-text mb-1">{label}</span>
-				<input
-					{name}
-					type="text"
-					placeholder={m.selectADate()}
-					class="input input-bordered w-full cursor-pointer"
-					aria-label="Start date"
-					bind:value={startDateString}
-					onchange={alignDatesFromString}
-					onclick={toggleOpen}
-					aria-invalid={startErrors ? 'true' : undefined}
-					lang={languageTag()}
-					{...startConstraints}
-				/>
+				<span class="relative">
+					<i class="fa-solid fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
+					<input
+						{name}
+						id={name}
+						type="text"
+						placeholder={m.selectADate()}
+						class="input input-bordered w-full cursor-pointer"
+						aria-label="Start date"
+						bind:value={startDateString}
+						onchange={alignDatesFromString}
+						onclick={toggleOpen}
+						aria-invalid={startErrors ? 'true' : undefined}
+						lang={languageTag()}
+						{...startConstraints}
+					/>
+				</span>
 			</label>
 			{#if isRange}
 				<span class="mx-3"> {m.until()} </span>
 				<label class="form-control w-full" for={name}>
 					<span class="label-text">{label}</span>
-					<input
-						{name}
-						type="text"
-						placeholder={m.selectAnEndDate()}
-						class="input input-bordered w-full cursor-pointer"
-						aria-label="End date"
-						bind:value={endDateString}
-						onchange={alignDatesFromString}
-						onclick={toggleOpen}
-						aria-invalid={endErrors ? 'true' : undefined}
-						lang={languageTag()}
-						{...endConstraints}
-					/>
+					<span class="relative">
+						<i class="fa-solid fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
+						<input
+							{name}
+							id={endName}
+							type="text"
+							placeholder={m.selectAnEndDate()}
+							class="input input-bordered w-full cursor-pointer"
+							aria-label="End date"
+							bind:value={endDateString}
+							onchange={alignDatesFromString}
+							onclick={toggleOpen}
+							aria-invalid={endErrors ? 'true' : undefined}
+							lang={languageTag()}
+							{...endConstraints}
+						/>
+					</span>
 				</label>
 			{/if}
 		</span>

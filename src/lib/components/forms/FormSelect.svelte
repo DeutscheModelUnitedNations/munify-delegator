@@ -25,6 +25,7 @@
 		class="select select-bordered"
 		{placeholder}
 		{name}
+		id={name}
 		bind:value={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
 		{...constraints}

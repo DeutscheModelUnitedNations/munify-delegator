@@ -416,5 +416,8 @@
 	"userNotFound": "Benutzer nicht gefunden",
 	"until": "bis",
 	"pleaseEnterAValidPhoneNumber": "Bitte gib eine gültige Telefonnummer (inklusive Landesvorwahl) ein.",
-	"noStatement": "Keine Angabe"
+	"noStatement": "Keine Angabe",
+	"pleaseEnterAZipCpode": "Bitte gib eine gültige Postleitzahl ein.",
+	"dateMustBeBefore": "Das Datum muss vor dem {date} liegen.",
+	"atLeastXChars": "Mindestens {amount} Zeichen notwendig.",
 }

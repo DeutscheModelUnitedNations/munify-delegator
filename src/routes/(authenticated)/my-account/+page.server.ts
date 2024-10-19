@@ -2,7 +2,7 @@ import type { PageLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { userFormSchema } from './form-schema';
-import { graphql } from '$houdini';
+import { graphql, redirect } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
 import * as m from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
@@ -79,6 +79,11 @@ export const actions = {
 			},
 			{ event }
 		);
+
+		const redirectUrl = event.url.searchParams.get('redirect');
+		if (redirectUrl) {
+			return redirect(302, redirectUrl);
+		}
 
 		// Display a success status message
 		return message(form, m.saved());

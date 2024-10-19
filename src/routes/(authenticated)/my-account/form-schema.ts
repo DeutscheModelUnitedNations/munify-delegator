@@ -1,19 +1,30 @@
 import valiator from 'validator';
 import { z } from 'zod';
 import * as m from '$lib/paraglide/messages.js';
+import { languageTag } from '$lib/paraglide/runtime';
+
+// must be at least 13 years old
+const birthdayMaxDate = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);
 
 export const userFormSchema = z.object({
-	// must be at least 13 years old
-	birthday: z.date().min(new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000)),
-	phone: z
-		.string()
-		.refine((s) => valiator.isMobilePhone(s, "any", { strictMode: true }), {
-			message: m.pleaseEnterAValidPhoneNumber()
-		}),
-	street: z.string().min(3),
+	birthday: z.date().max(birthdayMaxDate, {
+		message: m.dateMustBeBefore({
+			date: birthdayMaxDate.toLocaleDateString(languageTag())
+		})
+	}),
+	phone: z.string().refine((s) => valiator.isMobilePhone(s, 'any', { strictMode: true }), {
+		message: m.pleaseEnterAValidPhoneNumber()
+	}),
+	street: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
 	apartment: z.string().optional(),
-	zip: z.string().min(4),
-	city: z.string().min(3),
+	zip: z.string().refine((s) => valiator.isPostalCode(s, 'any'), {
+		message: m.pleaseEnterAZipCpode()
+	}),
+	city: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
 	country: z.string().refine(valiator.isISO31661Alpha2),
 	gender: z
 		.string()

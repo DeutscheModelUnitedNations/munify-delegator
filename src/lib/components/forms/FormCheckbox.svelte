@@ -4,33 +4,26 @@
 
 	interface Props {
 		name: string;
-		label?: string;
-		placeholder?: string;
+		label: string;
 		form: SuperForm<A, B>;
 	}
 
-	let { form, label, name, placeholder }: Props = $props();
+	let { form, label, name }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
 </script>
 
-<label for={name} class="form-control w-full">
-	{#if label}
-		<span class="label-text mb-2">{label}</span>
-	{/if}
+<label for={name} class="flex w-full items-center cursor-pointer">
 	<input
-		{placeholder}
-		type="text"
-		class="input input-bordered"
+		type="checkbox"
+		class="checkbox"
 		{name}
 		id={name}
-		bind:value={$formData[name]}
+		bind:checked={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
 		{...constraints}
 	/>
-
-	<FormFieldErrors {errors} />
+	<span class="label-text ml-3">{label}</span>
 </label>
-
-<!-- {initialValue !== stateValue && 'input-success border-4'} -->
+<FormFieldErrors {errors} />

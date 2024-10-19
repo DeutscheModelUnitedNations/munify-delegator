@@ -158,7 +158,6 @@ builder.mutationFields((t) => {
 					...args.where,
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
 				};
-				console.log(args);
 
 				return field.resolve(query, root, args, ctx, info);
 			}

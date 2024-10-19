@@ -5,6 +5,7 @@ import { IncomingWebhook } from '@slack/webhook';
 import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
 import { conferenceStats } from '$api/services/stats';
 import fs from 'fs';
+import { languageTag } from '$lib/paraglide/runtime';
 
 // GLOBALS
 
@@ -14,7 +15,7 @@ const CRON = '0 0 9,20 * * *';
 // HELPER FUNCTIONS
 
 function formatConferenceDate(date: Date) {
-	return date.toLocaleDateString('de', { day: '2-digit', month: '2-digit', year: 'numeric' });
+	return date.toLocaleDateString(languageTag(), { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function formatHistoricComparison(historicStat: number | undefined, currentStat: number) {

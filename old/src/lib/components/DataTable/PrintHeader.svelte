@@ -10,7 +10,7 @@
 <div class="print-only my-10">
 	<h1 class="text-2xl font-bold">{title}</h1>
 	<h2 class="text-lg">
-		Erstellt am {new Date().toLocaleDateString()} um {new Date().toLocaleTimeString()}
+		Erstellt am {new Date().toLocaleDateString(languageTag())} um {new Date().toLocaleTimeString()}
 	</h2>
 	<h3 class="text-xs">Export aus MUNify Delegator</h3>
 

@@ -89,7 +89,7 @@
 					<td><i class="fa-duotone fa-birthday-cake text-lg"></i></td>
 					{#if user?.birthday}
 						<td>
-							{new Date(user?.birthday!).toLocaleDateString('de', {
+							{new Date(user?.birthday!).toLocaleDateString(languageTag(), {
 								year: 'numeric',
 								month: 'long',
 								day: 'numeric'

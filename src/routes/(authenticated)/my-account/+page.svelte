@@ -8,20 +8,14 @@
 	import FormSelect from '$lib/components/forms/FormSelect.svelte';
 	import { translatedCountryCodeFormOptions } from '$lib/services/addressCountries.svelte.js';
 	import FormDateTimeInput from '$lib/components/forms/FormDateTimeInput.svelte';
-	// import { toast } from '@zerodevx/svelte-toast';
+	import FormCheckbox from '$lib/components/forms/FormCheckbox.svelte';
 
 	let { data } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
-		validationMethod: "oninput",
+		validationMethod: 'oninput',
 		validators: zod(userFormSchema)
 	});
-
-	// if (data.redirectUrl) {
-	// 	goto(data.redirectUrl);
-	// }
-	// TODO we could use a fa icon instead of the emoji here
-	// toast.push(m.saved() + ' ✅');
 
 	//TODO pronoun prefill
 </script>
@@ -89,6 +83,26 @@
 						name="pronouns"
 						placeholder={m.pronounsSheHer()}
 						label={m.pronouns()}
+					/>
+					<FormSelect
+						{form}
+						name="foodPreference"
+						label={m.diet()}
+						options={[
+							{ value: 'VEGAN', label: m.vegan() },
+							{ value: 'VEGETARIAN', label: m.vegetarian() },
+							{ value: 'OMNIVORE', label: m.omnivore() }
+						]}
+					/>
+					<FormCheckbox
+						{form}
+						name="wantsToReceiveGeneralInformation"
+						label={m.receiveGeneralInformation()}
+					/>
+					<FormCheckbox
+						{form}
+						name="wantsJoinTeamInformation"
+						label={m.receiveJoinTeamInformation()}
 					/>
 				</Form>
 			</div>
