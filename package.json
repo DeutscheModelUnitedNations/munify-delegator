@@ -27,6 +27,7 @@
 		"@pothos/plugin-prisma-utils": "^1.2.0",
 		"@pothos/plugin-simple-objects": "^4.1.0",
 		"@pothos/plugin-tracing": "^1.1.0",
+		"@svelte-plugins/datepicker": "^1.0.9",
 		"@sveltejs/adapter-auto": "^3.2.5",
 		"@sveltejs/kit": "^2.7.1",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.8",
@@ -60,6 +61,7 @@
 		"typescript-eslint": "^8.10.0",
 		"vanilla-cookieconsent": "^3.0.1",
 		"vite": "^5.4.9",
+		"world-countries": "^5.0.0",
 		"zod": "^3.23.8"
 	},
 	"type": "module",

@@ -7,9 +7,10 @@
 		label?: string;
 		placeholder?: string;
 		form: SuperForm<A, B>;
+		options: { value: string; label: string }[];
 	}
 
-	let { form, label, name, placeholder }: Props = $props();
+	let { form, label, name, placeholder, options }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
@@ -19,17 +20,22 @@
 	{#if label}
 		<span class="label-text mb-2">{label}</span>
 	{/if}
-	<input
+
+	<select
+		class="select select-bordered"
 		{placeholder}
-		type="text"
-		class="input input-bordered"
 		{name}
 		bind:value={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
 		{...constraints}
-	/>
+	>
+		<option disabled selected={!$formData[name]} value={null}>{placeholder}</option>
+		{#each options as option}
+			<option value={option.value} selected={option.value === $formData[name]}
+				>{option.label}</option
+			>
+		{/each}
+	</select>
 
 	<FormFieldErrors {errors} />
 </label>
-
-<!-- {initialValue !== stateValue && 'input-success border-4'} -->

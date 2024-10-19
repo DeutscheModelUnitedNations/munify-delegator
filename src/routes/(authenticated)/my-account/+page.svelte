@@ -5,14 +5,19 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
+	import FormSelect from '$lib/components/forms/FormSelect.svelte';
+	import { translatedCountryCodeFormOptions } from '$lib/services/addressCountries.svelte.js';
+	import FormDateTimeInput from '$lib/components/forms/FormDateTimeInput.svelte';
+	import SuperDebug from 'sveltekit-superforms';
 	// import { toast } from '@zerodevx/svelte-toast';
 
 	let { data } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
-		validationMethod: 'oninput',
 		validators: zod(userFormSchema)
 	});
+
+	let formsub = form.form;
 
 	// if (data.redirectUrl) {
 	// 	goto(data.redirectUrl);
@@ -30,7 +35,7 @@
 {#if data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
-
+<SuperDebug data={$formsub} />
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
 	<section class="z-20 mt-10 text-center max-ch-md">
 		<i class="fa-duotone fa-user mb-3 text-5xl"></i>
@@ -59,8 +64,18 @@
 			<div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 				<div class="card-title block text-center">{m.personalData()}</div>
 				<Form {form}>
-					<FormTextInput {form} name="city" label={m.city()} />
-					<!-- <FormTextInput {form} name="phone" label={m.phoneNumber()} /> -->
+					<FormTextInput {form} name="phone" label={m.phoneNumber()} placeholder="+49 123456789" />
+					<FormTextInput {form} name="street" label={m.address()} placeholder={m.street()} />
+					<FormTextInput {form} name="apartment" placeholder={m.streetAddition()} />
+					<FormTextInput {form} name="zip" placeholder={m.zipCode()} />
+					<FormTextInput {form} name="city" placeholder={m.city()} />
+					<FormSelect
+						{form}
+						name="country"
+						placeholder={m.pleaseSelectCountry()}
+						options={translatedCountryCodeFormOptions}
+					/>
+					<FormDateTimeInput {form} name="birthday" />
 				</Form>
 			</div>
 		</div>

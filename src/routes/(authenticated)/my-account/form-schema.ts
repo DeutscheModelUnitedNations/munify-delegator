@@ -3,13 +3,13 @@ import { z } from 'zod';
 
 export const userFormSchema = z.object({
 	// must be at least 13 years old
-	birthday: z.date().max(new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000)),
+	birthday: z.date().min(new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000)),
 	phone: z.string().refine(valiator.isMobilePhone),
 	street: z.string().min(3),
 	apartment: z.string().optional(),
 	zip: z.string().min(4),
 	city: z.string().min(3),
-	country: z.string().refine(valiator.isISO31661Alpha3),
+	country: z.string().refine(valiator.isISO31661Alpha2),
 	gender: z
 		.string()
 		.min(1)

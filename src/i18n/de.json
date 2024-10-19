@@ -390,6 +390,7 @@
 	"conferenceStart": "Konferenz Startdatum",
 	"conferenceEnd": "Konferenz Enddatum",
 	"selectADate": "Datum auswählen",
+	"selectAnEndDate": "End-Datum auswählen",
 	"conferenceImage": "Konferenzbild",
 	"conferenceTimeSettings": "Einstellung der Konferenzphasen",
 	"conferenceStartRegistration": "Start der Anmeldung",
@@ -412,5 +413,6 @@
 	"pleaseFillOutYourProfileCorrectly": "Bitte stelle sicher, dass <b><a href='/my-account'>dein Profil</a></b> korrekt ausgefüllt ist.",
 	"changesSuccessful": "Die Änderungen wurden erfolgreich gespeichert.",
 	"toConference": "Zur Konferenz",
-	"userNotFound": "Benutzer nicht gefunden"
+	"userNotFound": "Benutzer nicht gefunden",
+	"until": "bis"
 }
