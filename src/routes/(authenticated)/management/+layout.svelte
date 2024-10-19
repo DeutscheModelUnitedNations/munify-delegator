@@ -1,8 +1,8 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import { setAuthHeader } from '$lib/services/authenticatedHeaderStatus.svelte';
+	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 
-	setAuthHeader({
+	setHeaderStatus({
 		label: m.admininstration(),
 		faIcon: 'fa-bars-progress'
 	});
@@ -12,4 +12,4 @@
 	<title>MUNify Delegator - {m.admininstration()}</title>
 </svelte:head>
 
-	<slot />
+<slot />

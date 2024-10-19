@@ -458,6 +458,19 @@ input ConferenceSupervisorWhereUniqueInput {
   userId: StringFilter
 }
 
+input ConferenceUpdateDataInput {
+  endConference: DateTime!
+  imageDataUrl: String
+  language: String
+  location: String
+  longTitle: String
+  startAssignment: DateTime!
+  startConference: DateTime!
+  startRegistration: DateTime!
+  title: String!
+  website: String
+}
+
 input ConferenceUpdateInput {
   committees: CommitteeUpdateManyWithoutConferenceNestedInput
   conferenceSupervisors: ConferenceSupervisorUpdateManyWithoutConferenceNestedInput
@@ -1123,7 +1136,7 @@ type Mutation {
   deleteOneUser(where: UserWhereUniqueInput!): User
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   updateOneCommittee(where: CommitteeWhereUniqueInput!): Committee
-  updateOneConference(where: ConferenceWhereUniqueInput!): Conference
+  updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
   updateOneConferenceSupervisor(where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole

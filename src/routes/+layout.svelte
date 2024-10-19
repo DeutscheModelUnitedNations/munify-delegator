@@ -53,7 +53,7 @@
 <ParaglideJS {i18n}>
 	<SvelteToast options={{}} />
 	<CookieBanner />
-	<div class="h-screen flex">
+	<div class="flex min-h-screen">
 		<!-- {@render children()} -->
 		<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
 		<slot />

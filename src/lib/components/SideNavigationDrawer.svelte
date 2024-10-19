@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
-	import { setAuthHeader } from '$lib/services/authenticatedHeaderStatus.svelte';
+	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import NavMenu from './NavMenu/NavMenu.svelte';
 	import NavMenuButton from './NavMenu/NavMenuButton.svelte';
 
@@ -54,7 +54,7 @@
 					class="flex items-center"
 					onclick={() => {
 						expanded = !expanded;
-						setAuthHeader({
+						setHeaderStatus({
 							openNavCallback: () => {
 								expanded = !expanded;
 							}

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { setAuthHeader } from '$lib/services/authenticatedHeaderStatus.svelte';
+	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import * as m from '$lib/paraglide/messages.js';
 
-	setAuthHeader({
+	setHeaderStatus({
 		label: m.settings(),
 		faIcon: 'fa-cog'
 	});

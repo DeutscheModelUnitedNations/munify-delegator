@@ -132,7 +132,35 @@ builder.mutationFields((t) => {
 	return {
 		updateOneConference: t.prismaField({
 			...field,
-			args: { where: field.args.where },
+			args: {
+				where: field.args.where,
+				data: t.arg({
+					type: t.builder.inputType('ConferenceUpdateDataInput', {
+						fields: (t) => ({
+							title: t.string(),
+							longTitle: t.string({
+								required: false
+							}),
+							location: t.string({
+								required: false
+							}),
+							language: t.string({
+								required: false
+							}),
+							website: t.string({
+								required: false
+							}),
+							imageDataUrl: t.string({
+								required: false
+							}),
+							startRegistration: t.field({ type: 'DateTime' }),
+							startAssignment: t.field({ type: 'DateTime' }),
+							startConference: t.field({ type: 'DateTime' }),
+							endConference: t.field({ type: 'DateTime' })
+						})
+					})
+				})
+			},
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,

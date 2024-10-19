@@ -2,7 +2,7 @@
 	import { configPublic } from '$config/public';
 	import { graphql } from '$houdini';
 	import * as m from '$lib/paraglide/messages.js';
-	import { authHeaderState } from '$lib/services/authenticatedHeaderStatus.svelte';
+	import { headerState } from '$lib/services/authenticatedHeaderStatus.svelte';
 
 	//TODO
 	// import ExportButtons from '$lib/components/DataTable/ExportButtons.svelte';
@@ -19,24 +19,24 @@
 	<div
 		class="no-print navbar mb-4 justify-between gap-0 rounded-2xl bg-base-200 px-4 py-2 shadow-lg sm:gap-2"
 	>
-	{#if authHeaderState.openNavCallback !== undefined}
-		<button
-			class="sm:hidden"
-			aria-label="Toggle navigation menu"
-			on:click={() => {
-				authHeaderState.openNavCallback();
-				authHeaderState.openNavCallback = undefined;
-			}}
-		>
-			<i class="fa-duotone fa-bars mr-3 text-xl"></i>
-		</button>
-	{/if}
+		{#if headerState.openNavCallback !== undefined}
+			<button
+				class="sm:hidden"
+				aria-label="Toggle navigation menu"
+				on:click={() => {
+					headerState.openNavCallback();
+					headerState.openNavCallback = undefined;
+				}}
+			>
+				<i class="fa-duotone fa-bars mr-3 text-xl"></i>
+			</button>
+		{/if}
 		<div>
-			{#if authHeaderState.faIcon !== ''}
-				<i class="fa-duotone {authHeaderState.faIcon} mr-3 text-xl"></i>
+			{#if headerState.faIcon !== ''}
+				<i class="fa-duotone {headerState.faIcon} mr-3 text-xl"></i>
 			{/if}
-			{#if authHeaderState.label !== ''}
-				<h1 class="text-xl font-semibold">{authHeaderState.label}</h1>
+			{#if headerState.label !== ''}
+				<h1 class="text-xl font-semibold">{headerState.label}</h1>
 			{/if}
 		</div>
 		<div class="dropdown dropdown-end z-10">

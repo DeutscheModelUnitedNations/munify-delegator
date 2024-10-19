@@ -9,7 +9,7 @@
 	}
 
 	let { class: class_, form }: Props = $props();
-	let { message, enhance, allErrors } = $derived(form);
+	let { message, enhance, allErrors, submitting } = $derived(form);
 </script>
 
 <form class="flex flex-col gap-4 {class_}" method="post" enctype="multipart/form-data" use:enhance>
@@ -17,5 +17,5 @@
 	{#if $message}
 		<p class="text-sm">{$message}</p>
 	{/if}
-	<FormSubmitButton disabled={$allErrors.length > 0} />
+	<FormSubmitButton disabled={$allErrors.length > 0} loading={$submitting} />
 </form>

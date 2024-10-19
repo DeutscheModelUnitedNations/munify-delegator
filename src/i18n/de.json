@@ -421,5 +421,8 @@
 	"dateMustBeBefore": "Das Datum muss vor dem {date} liegen.",
 	"atLeastXChars": "Mindestens {amount} Zeichen notwendig.",
 	"noResults": "Keine Ergebnisse",
-	"noDataAvailable": "Keine Daten verfügbar"
+	"noDataAvailable": "Keine Daten verfügbar",
+	"pleaseEnterAValidWebsite": "Bitte gib eine gültige Website ein.",
+	"pleaseEnterAValidDate": "Bitte gib ein gültiges Datum ein.",
+	"notFound": "Nicht gefunden"
 }

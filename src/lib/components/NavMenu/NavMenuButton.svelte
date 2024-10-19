@@ -15,7 +15,7 @@
 		if (active !== undefined) {
 			return active;
 		} else if (browser) {
-			return $page.url.pathname.replaceAll('.', '').endsWith(href);
+			return $page.url.pathname.endsWith(href);
 		} else {
 			return false;
 		}
@@ -23,8 +23,13 @@
 </script>
 
 <li class="w-full overflow-hidden" {title}>
-	<a {href} class="flex w-full items-center justify-center px-0" aria-label="Toggle menu expand state">
-		<i class="fa-{showAsActive() ? 'solid' : 'duotone'} {icon} fa-duotone ml-2 w-5 text-center"></i>
+	<a
+		{href}
+		class="flex w-full items-center justify-center px-0 {showAsActive() ? 'active' : ''}"
+		aria-label="Toggle menu expand state"
+	>
+		<i class="fa-{showAsActive() ? 'solid ' : 'duotone'} {icon} fa-duotone ml-2 w-5 text-center"
+		></i>
 		<p class="overflow-hidden duration-300 {small ? 'w-0' : 'w-full pl-1'}">{title}</p>
 	</a>
 </li>
