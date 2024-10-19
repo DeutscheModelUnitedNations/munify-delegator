@@ -9,7 +9,7 @@ import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
 
 const userQuery = graphql(`
-	query FullUser($id: String!) {
+	query FullUserMyAccountQuery($id: String!) {
 		findUniqueUser(where: { id: $id }) {
 			birthday
 			phone

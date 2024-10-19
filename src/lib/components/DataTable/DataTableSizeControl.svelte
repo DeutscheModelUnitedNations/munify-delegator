@@ -1,5 +1,5 @@
-<script lang="ts">
-	import { getTableSettings } from './tableSettings.svelte';
+<!-- <script lang="ts">
+	import { getTableSettings } from './dataTableSettings.svelte';
 
 	const { getTableSize, setTableSize } = getTableSettings();
 
@@ -55,4 +55,4 @@
 			<i class="fas fa-plus"></i>
 		</div>
 	</div>
-</div>
+</div> -->

@@ -53,8 +53,10 @@
 <ParaglideJS {i18n}>
 	<SvelteToast options={{}} />
 	<CookieBanner />
-	<!-- {@render children()} -->
-	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
-	<slot />
+	<div class="min-h-screen flex">
+		<!-- {@render children()} -->
+		<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
+		<slot />
+	</div>
 	<Footer />
 </ParaglideJS>

@@ -1,9 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import { type PageData } from './$houdini';
-	// import UndrawCard from '$lib/components/UndrawCard.svelte';
-	// import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
-
 	import SHLogo from '$assets/logo/mun-sh_logo.png';
 	import BWLogo from '$assets/logo/munbw_logo.png';
 	import UdteamUp from '$assets/undraw/team-up.svg';

@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	interface Props {
 		searchValue: string;
 		changeSearchValue: (value: string) => void;
@@ -26,4 +26,4 @@
 	{:else}
 		<i class="fa-duotone fa-magnifying-glass"></i>
 	{/if}
-</label>
+</label> -->

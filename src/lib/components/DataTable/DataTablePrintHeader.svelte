@@ -1,4 +1,6 @@
-<script lang="ts">
+<!-- <script lang="ts">
+	import { languageTag } from "$lib/paraglide/runtime";
+
 	interface Props {
 		title: string;
 		globalSearchValue?: string;
@@ -25,4 +27,4 @@
 			werden sollte, die dazu berechtigt sind.
 		</p>
 	</div>
-</div>
+</div> -->

@@ -47,6 +47,10 @@
 					active={path.endsWith('configuration')}
 				></NavButton>
 
+				<NavMenuDetails>
+					
+				</NavMenuDetails>
+
 				<li>
 					<details>
 						<summary>

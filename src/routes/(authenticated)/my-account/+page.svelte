@@ -1,16 +1,17 @@
 <script lang="ts">
-	import Form from '$lib/components/forms/Form.svelte';
-	import FormTextInput from '$lib/components/forms/FormTextInput.svelte';
+	import Form from '$lib/components/Form/Form.svelte';
+	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import * as m from '$lib/paraglide/messages.js';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
-	import FormSelect from '$lib/components/forms/FormSelect.svelte';
+	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import { translatedCountryCodeFormOptions } from '$lib/services/addressCountries.svelte.js';
-	import FormDateTimeInput from '$lib/components/forms/FormDateTimeInput.svelte';
-	import FormCheckbox from '$lib/components/forms/FormCheckbox.svelte';
+	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
+	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import type { PageData } from './$types';
 
-	let { data } = $props();
+	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',

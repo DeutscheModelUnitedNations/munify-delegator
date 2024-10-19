@@ -1,6 +1,6 @@
-<script lang="ts">
-	import TableSizeControl from './TableSizeControl.svelte';
-	import ZebraControl from './ZebraControl.svelte';
+<!-- <script lang="ts">
+	import TableSizeControl from './DataTableSizeControl.svelte';
+	import ZebraControl from './DataTableZebraControl.svelte';
 	import * as m from '$lib/paraglide/messages';
 
 	let confirmDialogOpen = $state(false);
@@ -34,4 +34,4 @@
 	<form method="dialog" class="modal-backdrop" onsubmit={() => (confirmDialogOpen = false)}>
 		<button>close</button>
 	</form>
-</dialog>
+</dialog> -->

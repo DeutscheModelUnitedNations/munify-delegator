@@ -420,4 +420,5 @@
 	"pleaseEnterAZipCpode": "Bitte gib eine gültige Postleitzahl ein.",
 	"dateMustBeBefore": "Das Datum muss vor dem {date} liegen.",
 	"atLeastXChars": "Mindestens {amount} Zeichen notwendig.",
+	"noResults": "Keine Ergebnisse"
 }

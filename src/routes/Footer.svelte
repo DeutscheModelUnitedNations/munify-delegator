@@ -6,7 +6,7 @@
 </script>
 
 <div class="w-full p-4">
-	<footer class="footer footer-center mt-10 rounded-xl bg-base-200 p-10 text-base-content">
+	<footer class="footer footer-center mt-3 rounded-xl bg-base-200 p-10 text-base-content">
 		<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
 			<a class="link-hover link" href="/">{m.home()}</a>
 			<a class="link-hover link" href="/registration">{m.registration()}</a>
@@ -15,7 +15,7 @@
 			<a class="link-hover link" href="https://dmun.de/impressum" target="_blank"
 				>{@html m.imprintAndPrivacy()}</a
 			>
-			<a class="link-hover link" href="management">{m.admininstration()}</a>
+			<a class="link-hover link" href="/management">{m.admininstration()}</a>
 		</nav>
 		<LanguageSwitcher />
 		<nav>

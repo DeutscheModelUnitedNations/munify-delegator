@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	interface Props {
 		exportedData: Record<string, string>[];
@@ -30,8 +30,6 @@
 		const data = exportedData;
 		// header
 		const csv = data.map((row) => Object.values(row));
-
-		console.log(csv);
 
 		const blob = new Blob([stringify(csv, { header: true, columns: Object.keys(data[0]) })], {
 			type: 'text/csv'
@@ -80,4 +78,4 @@
 			</div>
 		</div>
 	</div>
-</dialog>
+</dialog> -->

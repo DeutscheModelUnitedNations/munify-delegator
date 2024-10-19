@@ -21,7 +21,7 @@ builder.queryFields((t) => {
 	return {
 		logoutUrl: t.string({
 			resolve: (root, args, ctx) => {
-				return getLogoutUrl(ctx.url);
+				return getLogoutUrl(ctx.url).toString();
 			}
 		})
 	};

@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	interface Props {
 		tableAttrs: any;
 		tableSize: 'xs' | 'sm' | 'md' | 'lg';
@@ -6,9 +6,9 @@
 		children: any;
 	}
 
-	let { tableAttrs, tableSize, zebra, children }: Props = $props();
+	let { tableAttrs, tableSize, zebra }: Props = $props();
 </script>
 
 <table {...tableAttrs} class="table {zebra && 'table-zebra'} table-{tableSize} table-pin-rows">
-	{@render children()}
-</table>
+	<slot />
+</table> -->
