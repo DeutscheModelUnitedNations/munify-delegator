@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import { setAuthHeader } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import NavMenu from './NavMenu/NavMenu.svelte';
 	import NavMenuButton from './NavMenu/NavMenuButton.svelte';
 
@@ -16,7 +17,7 @@
 	<div
 		class="flex flex-col justify-between overflow-hidden rounded-xl bg-base-200 duration-300 {expanded
 			? 'h-full w-60'
-			: 'h-16 w-16 items-center sm:h-full'}"
+			: 'h-0 w-0 items-center sm:h-full sm:w-16'}"
 	>
 		<div class="flex-col {expanded ? 'px-6 pt-4' : 'hidden items-center p-1 sm:flex'}">
 			<div class="flex flex-col justify-center">
@@ -51,7 +52,14 @@
 			<li class="mt-3 flex {expanded ? 'w-5' : 'w-full'} items-center">
 				<button
 					class="flex items-center"
-					onclick={() => (expanded = !expanded)}
+					onclick={() => {
+						expanded = !expanded;
+						setAuthHeader({
+							openNavCallback: () => {
+								expanded = !expanded;
+							}
+						});
+					}}
 					aria-label="Toggle menu expand state"
 				>
 					<i class="fa-duotone fa-bars w-5 text-center {expanded ? 'rotate-180' : ''} duration-300"

@@ -1,9 +1,21 @@
-export const authHeaderState = $state<{ faIcon: string; label: string }>({
+export const authHeaderState = $state<{
+	faIcon: string;
+	label: string;
+	openNavCallback: (() => void) | undefined;
+}>({
 	faIcon: '',
-	label: ''
+	label: '',
+	openNavCallback: undefined
 });
 
-export function setAuthHeader(newValue: typeof authHeaderState) {
-	authHeaderState.faIcon = newValue.faIcon;
-	authHeaderState.label = newValue.label;
+export function setAuthHeader(newValue: Partial<typeof authHeaderState>) {
+	if (newValue.faIcon) {
+		authHeaderState.faIcon = newValue.faIcon;
+	}
+	if (newValue.label) {
+		authHeaderState.label = newValue.label;
+	}
+	if (newValue.openNavCallback) {
+		authHeaderState.openNavCallback = newValue.openNavCallback;
+	}
 }

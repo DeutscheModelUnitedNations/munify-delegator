@@ -19,15 +19,26 @@
 	<div
 		class="no-print navbar mb-4 justify-between gap-0 rounded-2xl bg-base-200 px-4 py-2 shadow-lg sm:gap-2"
 	>
-  <div>
-  {#if authHeaderState}
-	<i class="fa-duotone {authHeaderState.faIcon} text-xl mr-3"></i>
-	<h1 class="text-xl font-semibold">{authHeaderState.label}</h1>
-     {/if}
-  </div>
-		<label for="my-drawer" class="btn btn-square btn-ghost drawer-button lg:hidden">
-			<i class="fa-solid fa-bars text-xl"></i>
-		</label>
+	{#if authHeaderState.openNavCallback !== undefined}
+		<button
+			class="sm:hidden"
+			aria-label="Toggle navigation menu"
+			on:click={() => {
+				authHeaderState.openNavCallback();
+				authHeaderState.openNavCallback = undefined;
+			}}
+		>
+			<i class="fa-duotone fa-bars mr-3 text-xl"></i>
+		</button>
+	{/if}
+		<div>
+			{#if authHeaderState.faIcon !== ''}
+				<i class="fa-duotone {authHeaderState.faIcon} mr-3 text-xl"></i>
+			{/if}
+			{#if authHeaderState.label !== ''}
+				<h1 class="text-xl font-semibold">{authHeaderState.label}</h1>
+			{/if}
+		</div>
 		<div class="dropdown dropdown-end z-10">
 			<div tabindex="-1" class="btn btn-square btn-ghost">
 				<i class="fa-duotone fa-user text-xl"></i>
