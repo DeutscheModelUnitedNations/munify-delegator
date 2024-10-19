@@ -1,8 +1,8 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import { getStats } from '../stats.svelte';
-
-	let stats = getStats();
+	import type { PageData } from '../$types';
+	let { data }: { data: PageData } = $props();
+	let stats = $derived(data.stats);
 </script>
 
 <section
@@ -20,6 +20,6 @@
 	<div class="stat">
 		<div class="stat-figure"><i class="fa-duotone fa-check-to-slot text-3xl"></i></div>
 		<div class="stat-title">{m.daysUntilEndRegistration()}</div>
-		<div class="stat-value">{stats?.countdowns.daysUntilEndRegistration || '–'}</div>
+		<div class="stat-value">{stats?.countdowns.daysUntilEndRegistration || '-'}</div>
 	</div>
 </section>

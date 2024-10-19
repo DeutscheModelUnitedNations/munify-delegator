@@ -1,9 +1,10 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import { getStats, registrationFilter, getHistory, getSelectedHistory } from '../stats.svelte';
+	import { registrationFilter, getHistory, getSelectedHistory } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
-
-	let stats = getStats();
+	import type { PageData } from '../$types';
+	let { data }: { data: PageData } = $props();
+	let stats = $derived(data.stats);
 
 	let { getFilter } = registrationFilter();
 

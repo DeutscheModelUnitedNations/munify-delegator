@@ -1,10 +1,11 @@
 <script lang="ts">
-	import StackChart from '$lib/components/Charts/StackChart.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import { getHistory, getStats, getSelectedHistory } from '../stats.svelte';
+	import { getHistory, getSelectedHistory } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
-
-	let stats = getStats();
+	import StackChart from '$lib/components/Charts/StackChart.svelte';
+	import type { PageData } from '../$types';
+	let { data }: { data: PageData } = $props();
+	let stats = $derived(data.stats);
 
 	const stackChartProps = {
 		values: [stats!.registered.applied, stats!.registered.notApplied],
@@ -59,6 +60,6 @@
 			<StackChart {...stackChartProps} />
 		</div>
 	{:else}
-		<p>Keine Daten verfügbar</p>
+		<p>{m.noDataAvailable()}</p>
 	{/if}
 </section>

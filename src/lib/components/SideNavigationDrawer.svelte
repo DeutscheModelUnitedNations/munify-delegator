@@ -12,7 +12,7 @@
 	let { expanded = $bindable(true), subtitle, navigateBackHref }: Props = $props();
 </script>
 
-<div class="p-2">
+<div class="pl-2 pr-4">
 	<div
 		class="flex flex-col justify-between overflow-hidden rounded-xl bg-base-200 duration-300 {expanded
 			? 'h-full w-60'

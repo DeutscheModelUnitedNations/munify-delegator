@@ -60,18 +60,6 @@ export interface StatsTypeHistoryEntry {
 	conferenceId: string;
 }
 
-// Stats Store
-
-let stats = $state<StatsType | null>();
-
-export function getStats() {
-	return stats;
-}
-
-export function setStats(newStats: StatsType) {
-	stats = newStats;
-}
-
 // Filter (by applied, not applied)
 
 let filter = $state<'all' | 'applied' | 'notApplied'>('all');

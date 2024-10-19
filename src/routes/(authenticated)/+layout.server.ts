@@ -1,6 +1,4 @@
-// import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from '../$houdini';
-import { graphql } from '$houdini';
 import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
 import { redirect } from '@sveltejs/kit';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import StackChart from '$lib/components/Charts/StackChart.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import { getStats, registrationFilter } from '../stats.svelte';
-
-	let stats = getStats();
+	import { registrationFilter } from '../stats.svelte';
+	import type { PageData } from '../$types';
+	let { data }: { data: PageData } = $props();
+	let stats = $derived(data.stats);
 
 	let { getFilteredValue } = registrationFilter();
 
@@ -16,14 +17,14 @@
 <section
 	class="card col-span-2 row-span-1 grow bg-primary text-primary-content shadow-sm md:col-span-8 xl:col-span-3 xl:row-span-3"
 >
-	{#if stats?.registered}
+	{#if stats.registered}
 		<div class="hidden xl:contents">
 			<StackChart
 				{...chartProps}
 				values={[
-					getFilteredValue(stats!.registered.delegationMembers)!,
-					getFilteredValue(stats!.registered.singleParticipants)!,
-					stats!.registered.supervisors
+					getFilteredValue(stats.registered.delegationMembers),
+					getFilteredValue(stats.registered.singleParticipants),
+					stats.registered.supervisors
 				]}
 				vertical
 			/>
@@ -32,13 +33,13 @@
 			<StackChart
 				{...chartProps}
 				values={[
-					getFilteredValue(stats!.registered.delegationMembers)!,
-					getFilteredValue(stats!.registered.singleParticipants)!,
-					stats!.registered.supervisors
+					getFilteredValue(stats.registered.delegationMembers),
+					getFilteredValue(stats.registered.singleParticipants),
+					stats.registered.supervisors
 				]}
 			/>
 		</div>
 	{:else}
-		<p>Keine Daten verfügbar</p>
+		<p>{m.noDataAvailable()}</p>
 	{/if}
 </section>

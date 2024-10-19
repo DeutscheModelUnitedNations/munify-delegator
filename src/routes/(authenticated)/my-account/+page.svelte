@@ -21,17 +21,11 @@
 	//TODO pronoun prefill
 </script>
 
-<svelte:head>
-	<title>MUNify Delegator - {m.myAccount()}</title>
-</svelte:head>
-
 {#if data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
 	<section class="z-20 mt-10 text-center max-ch-md">
-		<i class="fa-duotone fa-user mb-3 text-5xl"></i>
-		<h1 class="text-2xl font-bold">{m.myAccount()}</h1>
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
 		<!-- If this is set we are likely to call this via the registration flow

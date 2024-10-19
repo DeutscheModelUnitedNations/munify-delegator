@@ -4,9 +4,9 @@
 	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
+	import type { LayoutData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data }: { data: LayoutData } = $props();
 	let navbarExpanded = $state(true);
 </script>
 
@@ -60,3 +60,7 @@
 		</NavMenuDetails>
 	</NavMenu>
 </SideNavigationDrawer>
+
+<div class="flex h-full w-full px-3">
+	<slot />
+</div>

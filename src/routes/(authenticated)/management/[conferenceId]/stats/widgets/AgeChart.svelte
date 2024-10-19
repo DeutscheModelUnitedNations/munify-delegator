@@ -1,9 +1,10 @@
 <script lang="ts">
 	import ChartBar from '$lib/components/Charts/ChartBar.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import { getStats } from '../stats.svelte';
-
-	let stats = getStats();
+	import type { PageData } from '../$types';
+	let { data }: { data: PageData } = $props();
+	let stats = $derived(data.stats);
+	
 </script>
 
 <section
@@ -22,6 +23,6 @@
 			}}
 		/>
 	{:else}
-		<p>Keine Daten verfügbar</p>
+		<p>{m.noDataAvailable()}</p>
 	{/if}
 </section>

@@ -1,28 +1,23 @@
 <script lang="ts">
-	import IndividualRoles from './Widgets/IndividualRoles.svelte';
-
-	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import * as m from '$lib/paraglide/messages';
+	import DaysUntil from './widgets/DaysUntil.svelte';
+	import type { PageData } from './$types';
+	import AppliedChartAndStats from './widgets/AppliedChartAndStats.svelte';
+	import AgeChart from './widgets/AgeChart.svelte';
+	import Filter from './widgets/Filter.svelte';
+	import DistributionChart from './widgets/DistributionChart.svelte';
+	import RegistrationStats from './widgets/RegistrationStats.svelte';
+	import IndividualRoles from './widgets/IndividualRoles.svelte';
+	import { format } from 'date-fns';
 	import { onMount } from 'svelte';
 	import {
 		getHistory,
 		getSelectedHistory,
-		getStats,
-		registrationFilter,
 		setHistory,
 		setSelectedHistory,
 		type StatsTypeHistoryEntry
 	} from './stats.svelte';
-	import AgeChart from './Widgets/AgeChart.svelte';
-	import AppliedChartAndStats from './Widgets/AppliedChartAndStats.svelte';
-	import DaysUntil from './Widgets/DaysUntil.svelte';
-	import DistributionChart from './Widgets/DistributionChart.svelte';
-	import Filter from './Widgets/Filter.svelte';
-	import RegistrationStats from './Widgets/RegistrationStats.svelte';
-	import { format } from 'date-fns';
-	let { data } = $props();
-
-	let stats = getStats();
+	let { data }: { data: PageData } = $props();
 
 	onMount(() => {
 		// look for history in local storage
@@ -36,10 +31,10 @@
 					`${x.timestamp}_${x.conferenceId}` ===
 					`${format(Date.now(), 'yyyy-MM-dd')}_${data.conferenceId}`
 			) &&
-			stats
+			data.stats
 		) {
 			history.unshift({
-				stats,
+				stats: data.stats,
 				timestamp: format(Date.now(), 'yyyy-MM-dd'),
 				conferenceId: data.conferenceId
 			});
@@ -54,25 +49,24 @@
 			history.find((x) => x.timestamp !== format(Date.now(), 'yyyy-MM-dd'))?.timestamp
 		);
 	});
+	// <ManagementHeader title={m.adminStats()} fontAwesomeIcon="fa-chart-pie" />
 </script>
 
-<ManagementHeader title={m.adminStats()} fontAwesomeIcon="fa-chart-pie" />
-
-<div class="mt-10 grid grid-cols-2 gap-10 md:grid-cols-12">
-	<DaysUntil />
-	<AppliedChartAndStats />
-	<AgeChart />
+<div class="grid grid-cols-2 gap-10 md:grid-cols-12">
+	<DaysUntil {data} />
+	<AppliedChartAndStats {data} />
+	<AgeChart {data} />
 	<Filter />
-	<DistributionChart />
-	<RegistrationStats />
-	<IndividualRoles />
+	<DistributionChart {data} />
+	<RegistrationStats {data} />
+	<IndividualRoles {data} />
 	<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12">
 		<div class="card-body">
 			<h3 class="text-xl font-bold">{m.historyComparison()}</h3>
 			<p>{@html m.historyComparisonDescription()}</p>
 			<select
 				class="select select-bordered w-full max-w-xs"
-				onchange={(e) => setSelectedHistory((e.target as HTMLSelectElement)?.value)}
+				onchange={(e) => setSelectedHistory(e.target?.value)}
 			>
 				{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}
 					<option selected={timestamp === getSelectedHistory()}>
