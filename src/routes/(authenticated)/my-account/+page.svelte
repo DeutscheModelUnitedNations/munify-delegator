@@ -8,16 +8,14 @@
 	import FormSelect from '$lib/components/forms/FormSelect.svelte';
 	import { translatedCountryCodeFormOptions } from '$lib/services/addressCountries.svelte.js';
 	import FormDateTimeInput from '$lib/components/forms/FormDateTimeInput.svelte';
-	import SuperDebug from 'sveltekit-superforms';
 	// import { toast } from '@zerodevx/svelte-toast';
 
 	let { data } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
+		validationMethod: "oninput",
 		validators: zod(userFormSchema)
 	});
-
-	let formsub = form.form;
 
 	// if (data.redirectUrl) {
 	// 	goto(data.redirectUrl);
@@ -35,7 +33,6 @@
 {#if data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
-<SuperDebug data={$formsub} />
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
 	<section class="z-20 mt-10 text-center max-ch-md">
 		<i class="fa-duotone fa-user mb-3 text-5xl"></i>
@@ -75,7 +72,24 @@
 						placeholder={m.pleaseSelectCountry()}
 						options={translatedCountryCodeFormOptions}
 					/>
-					<FormDateTimeInput {form} name="birthday" />
+					<FormDateTimeInput {form} name="birthday" label={m.birthDate()} />
+					<FormSelect
+						{form}
+						name="gender"
+						label={m.gender()}
+						options={[
+							{ value: 'm', label: m.male() },
+							{ value: 'f', label: m.female() },
+							{ value: 'd', label: m.diverse() },
+							{ value: 'n', label: m.noStatement() }
+						]}
+					/>
+					<FormTextInput
+						{form}
+						name="pronouns"
+						placeholder={m.pronounsSheHer()}
+						label={m.pronouns()}
+					/>
 				</Form>
 			</div>
 		</div>

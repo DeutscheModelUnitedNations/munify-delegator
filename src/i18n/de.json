@@ -414,5 +414,7 @@
 	"changesSuccessful": "Die Änderungen wurden erfolgreich gespeichert.",
 	"toConference": "Zur Konferenz",
 	"userNotFound": "Benutzer nicht gefunden",
-	"until": "bis"
+	"until": "bis",
+	"pleaseEnterAValidPhoneNumber": "Bitte gib eine gültige Telefonnummer (inklusive Landesvorwahl) ein.",
+	"noStatement": "Keine Angabe"
 }

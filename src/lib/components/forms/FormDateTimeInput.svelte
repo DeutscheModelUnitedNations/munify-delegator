@@ -116,7 +116,7 @@
 	>
 		<span class="flex w-full items-center">
 			<label class="form-control w-full" for={name}>
-				<span class="label-text">{label}</span>
+				<span class="label-text mb-1">{label}</span>
 				<input
 					{name}
 					type="text"
