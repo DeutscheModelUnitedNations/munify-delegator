@@ -424,5 +424,7 @@
 	"noDataAvailable": "Keine Daten verfügbar",
 	"pleaseEnterAValidWebsite": "Bitte gib eine gültige Website ein.",
 	"pleaseEnterAValidDate": "Bitte gib ein gültiges Datum ein.",
-	"notFound": "Nicht gefunden"
+	"notFound": "Nicht gefunden",
+	"statistics": "Statistiken",
+	"participants": "Teilnehmende"
 }

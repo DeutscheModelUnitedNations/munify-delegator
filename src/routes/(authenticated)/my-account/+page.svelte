@@ -61,7 +61,12 @@
 						placeholder={m.pleaseSelectCountry()}
 						options={translatedCountryCodeFormOptions}
 					/>
-					<FormDateTimeInput {form} name="birthday" label={m.birthDate()} />
+					<FormDateTimeInput
+						{form}
+						name="birthday"
+						defaultYear={Date.now() - 13 * 365 * 24 * 60 * 60 * 1000}
+						label={m.birthDate()}
+					/>
 					<FormSelect
 						{form}
 						name="gender"

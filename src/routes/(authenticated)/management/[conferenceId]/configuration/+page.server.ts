@@ -60,7 +60,6 @@ export const load: PageLoad = async (event) => {
 export const actions = {
 	default: async (event) => {
 		const form = await superValidate(event.request, zod(conferenceSettingsFormSchema));
-
 		if (!form.valid) {
 			return fail(400, { form });
 		}

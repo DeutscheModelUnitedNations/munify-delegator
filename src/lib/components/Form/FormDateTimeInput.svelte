@@ -32,15 +32,14 @@
 		showTimePicker = false,
 		enableFutureDates = true,
 		enablePastDates = true,
-		// 13 years ago
-		defaultYear = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()
+		defaultYear = new Date().getFullYear()
 	}: Props = $props();
 
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let isOpen = $state(false);
 
 	const stringifyDate = (input: Date) => {
-		return new Date(input).toLocaleDateString(languageTag())
+		return new Date(input).toLocaleDateString(languageTag());
 	};
 
 	let startDate = $state<Date>($formData[name] as Date);
@@ -58,9 +57,11 @@
 		// @ts-ignore
 		$formData[name] = startDate;
 
-		endDate = new Date(endDateString);
-		// @ts-ignore
-		$formData[endName] = endDate;
+		if (endName) {
+			endDate = new Date(endDateString);
+			// @ts-ignore
+			$formData[endName] = endDate;
+		}
 	};
 
 	const alignDatesFromDatepicker = (e: any) => {
@@ -74,25 +75,27 @@
 			...eventStartDateTime.split(':').map(Number)
 		);
 
-		const eventEndDate = new Date(e.startDate);
-		const eventEndDateTime = e.startDateTime;
-
-		const composedEventEndDate = new Date(
-			eventEndDate.getFullYear(),
-			eventEndDate.getMonth(),
-			eventEndDate.getDate(),
-			...eventEndDateTime.split(':').map(Number)
-		);
-
 		startDate = composedEventStartDate;
 		startDateString = stringifyDate(startDate);
 		// @ts-ignore
 		$formData[name] = startDate;
 
-		endDate = composedEventEndDate;
-		endDateString = stringifyDate(endDate);
-		// @ts-ignore
-		$formData[endName] = endDate;
+		if (endName) {
+			const eventEndDate = new Date(e.startDate);
+			const eventEndDateTime = e.startDateTime;
+
+			const composedEventEndDate = new Date(
+				eventEndDate.getFullYear(),
+				eventEndDate.getMonth(),
+				eventEndDate.getDate(),
+				...eventEndDateTime.split(':').map(Number)
+			);
+
+			endDate = composedEventEndDate;
+			endDateString = stringifyDate(endDate);
+			// @ts-ignore
+			$formData[endName] = endDate;
+		}
 	};
 
 	const toggleOpen = (e: any) => {

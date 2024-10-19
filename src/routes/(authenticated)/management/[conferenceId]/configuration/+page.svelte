@@ -8,6 +8,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
+	import SuperDebug from 'sveltekit-superforms';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -17,7 +18,7 @@
 	});
 	let formData = form.form;
 </script>
-
+<SuperDebug data={$formData} />
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 	<Form {form}>
 		<FormTextInput
@@ -43,7 +44,7 @@
 		{#if $formData.imageDataUrl}
 			<img src={$formData.imageDataUrl} class="h-64" alt="Preview of the file you selected" />
 		{/if}
-		<FormFileDataURLInput {form} name="imageDataUrl" label={m.conferenceImage()} accept="image/*" />
+		<!-- <FormFileDataURLInput {form} name="imageDataUrl" label={m.conferenceImage()} accept="image/*" /> -->
 		<FormDateTimeInput {form} name="startRegistration" label={m.conferenceStartRegistration()} />
 		<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
