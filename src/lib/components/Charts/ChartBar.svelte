@@ -26,14 +26,14 @@
 		showLabels = true
 	}: Props = $props();
 
-	const max = $derived(() => Math.max(...values));
+	const max = $derived.by(() => Math.max(...values));
 	const length = (v: number) => {
-		return Math.ceil((v / max()) * 100);
+		return Math.ceil((v / max) * 100);
 	};
 </script>
 
 <div class="flex h-full min-h-28 w-full items-end gap-1 px-4 pb-4 {wrapperClass}">
-	{#if max() === 0 || values.length === 0}
+	{#if max === 0 || values.length === 0}
 		<div class="flex h-full w-full flex-col items-center justify-center text-sm">
 			<i class="fas fa-chart-simple text-3xl opacity-50"></i><span>
 				{m.notEnoughData()}

@@ -8,7 +8,7 @@
 
 	let { getFilter } = registrationFilter();
 
-	let selectedHistory = $derived(() =>
+	let selectedHistory = $derived.by(() =>
 		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
 	);
 </script>
@@ -46,10 +46,10 @@
 								<span class="text-lg font-bold">
 									{role.total}
 								</span>
-								{#if selectedHistory()}
+								{#if selectedHistory}
 									<StatsDesc
 										currentValue={role.total}
-										historicValue={selectedHistory()?.stats.registered.singleParticipants.byRole[i]
+										historicValue={selectedHistory?.stats.registered.singleParticipants.byRole[i]
 											.total}
 									/>
 								{/if}
@@ -61,10 +61,10 @@
 								<span class="text-lg font-bold">
 									{role.applied}
 								</span>
-								{#if selectedHistory()}
+								{#if selectedHistory}
 									<StatsDesc
 										currentValue={role.applied}
-										historicValue={selectedHistory()?.stats.registered.singleParticipants.byRole[i]
+										historicValue={selectedHistory?.stats.registered.singleParticipants.byRole[i]
 											.applied}
 									/>
 								{/if}
@@ -76,10 +76,10 @@
 								<span class="text-lg font-bold">
 									{role.notApplied}
 								</span>
-								{#if selectedHistory()}
+								{#if selectedHistory}
 									<StatsDesc
 										currentValue={role.notApplied}
-										historicValue={selectedHistory()?.stats.registered.singleParticipants.byRole[i]
+										historicValue={selectedHistory?.stats.registered.singleParticipants.byRole[i]
 											.notApplied}
 									/>
 								{/if}

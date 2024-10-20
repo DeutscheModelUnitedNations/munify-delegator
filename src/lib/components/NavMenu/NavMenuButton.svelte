@@ -11,7 +11,7 @@
 	}
 
 	let { title, href, icon, active, small = false }: Props = $props();
-	let showAsActive = $derived(() => {
+	let showAsActive = $derived.by(() => {
 		if (active !== undefined) {
 			return active;
 		} else if (browser) {
@@ -25,11 +25,10 @@
 <li class="w-full overflow-hidden" {title}>
 	<a
 		{href}
-		class="flex w-full items-center justify-center px-0 {showAsActive() ? 'active' : ''}"
+		class="flex w-full items-center justify-center px-0 {showAsActive ? 'active' : ''}"
 		aria-label="Toggle menu expand state"
 	>
-		<i class="fa-{showAsActive() ? 'solid ' : 'duotone'} {icon} fa-duotone ml-2 w-5 text-center"
-		></i>
+		<i class="fa-{showAsActive ? 'solid ' : 'duotone'} {icon} fa-duotone ml-2 w-5 text-center"></i>
 		<p class="overflow-hidden duration-300 {small ? 'w-0' : 'w-full pl-1'}">{title}</p>
 	</a>
 </li>

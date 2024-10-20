@@ -7,7 +7,7 @@ const config = {
 	},
 	plugins: {
 		'houdini-svelte': {
-			// forceRunesMode: true
+			forceRunesMode: true
 		}
 	},
 	scalars: {

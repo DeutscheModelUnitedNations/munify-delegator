@@ -30,16 +30,16 @@
 		vertical = false
 	}: Props = $props();
 
-	const max = $derived(() => values.reduce((a, b) => a + b, 0));
+	const max = $derived.by(() => values.reduce((a, b) => a + b, 0));
 	const length = (v: number) => {
-		return Math.round((v / max()) * 100);
+		return Math.round((v / max) * 100);
 	};
 </script>
 
 <div
 	class="flex h-full min-h-28 w-full {vertical ? 'flex-col' : 'flex-row'} gap-1 p-4 {wrapperClass}"
 >
-	{#if max() === 0}
+	{#if max === 0}
 		<div class="flex h-full w-full flex-col items-center justify-center text-sm">
 			<i class="fas fa-chart-pie text-3xl opacity-50"></i><span>
 				{m.notEnoughData()}

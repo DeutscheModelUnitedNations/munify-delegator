@@ -13,7 +13,7 @@
 		labels: [m.registrationApplied(), m.registrationNotApplied()]
 	};
 
-	let selectedHistory = $derived(() =>
+	let selectedHistory = $derived.by(() =>
 		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
 	);
 </script>
@@ -27,7 +27,7 @@
 		<div class="stat-value">{stats?.registered.total}</div>
 		<StatsDesc
 			currentValue={stats?.registered.total}
-			historicValue={selectedHistory()?.stats.registered.total}
+			historicValue={selectedHistory?.stats.registered.total}
 		/>
 	</div>
 	<div class="stat">
@@ -36,7 +36,7 @@
 		<div class="stat-value">{stats?.registered.applied}</div>
 		<StatsDesc
 			currentValue={stats?.registered.applied}
-			historicValue={selectedHistory()?.stats.registered.applied}
+			historicValue={selectedHistory?.stats.registered.applied}
 		/>
 	</div>
 	<div class="stat">
@@ -45,7 +45,7 @@
 		<div class="stat-value">{stats?.registered.notApplied}</div>
 		<StatsDesc
 			currentValue={stats?.registered.notApplied}
-			historicValue={selectedHistory()?.stats.registered.notApplied}
+			historicValue={selectedHistory?.stats.registered.notApplied}
 		/>
 	</div>
 </section>

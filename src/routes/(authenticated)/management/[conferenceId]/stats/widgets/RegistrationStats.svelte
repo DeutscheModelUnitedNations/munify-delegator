@@ -6,7 +6,7 @@
 	let { data }: { data: PageData } = $props();
 	let stats = $derived(data.stats);
 
-	let selectedHistory = $derived(() =>
+	let selectedHistory = $derived.by(() =>
 		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
 	);
 
@@ -22,7 +22,7 @@
 		<div class="stat-value">{getFilteredValue(stats?.registered.delegations)}</div>
 		<StatsDesc
 			currentValue={getFilteredValue(stats?.registered.delegations)}
-			historicValue={getFilteredValue(selectedHistory()?.stats.registered.delegations)}
+			historicValue={getFilteredValue(selectedHistory?.stats.registered.delegations)}
 		/>
 	</div>
 	<div class="stat">
@@ -31,7 +31,7 @@
 		<div class="stat-value">{getFilteredValue(stats?.registered.delegationMembers)}</div>
 		<StatsDesc
 			currentValue={getFilteredValue(stats?.registered.delegationMembers)}
-			historicValue={getFilteredValue(selectedHistory()?.stats.registered.delegationMembers)}
+			historicValue={getFilteredValue(selectedHistory?.stats.registered.delegationMembers)}
 		/>
 	</div>
 	<div class="stat">
@@ -40,7 +40,7 @@
 		<div class="stat-value">{getFilteredValue(stats?.registered.singleParticipants)}</div>
 		<StatsDesc
 			currentValue={getFilteredValue(stats?.registered.singleParticipants)}
-			historicValue={getFilteredValue(selectedHistory()?.stats.registered.singleParticipants)}
+			historicValue={getFilteredValue(selectedHistory?.stats.registered.singleParticipants)}
 		/>
 	</div>
 
@@ -52,7 +52,7 @@
 		<div class="stat-value">{stats?.registered.supervisors}</div>
 		<StatsDesc
 			currentValue={stats?.registered.supervisors}
-			historicValue={selectedHistory()?.stats.registered.supervisors}
+			historicValue={selectedHistory?.stats.registered.supervisors}
 		/>
 	</div>
 </section>

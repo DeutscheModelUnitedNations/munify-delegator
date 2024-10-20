@@ -3,14 +3,23 @@
 	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import NavMenu from './NavMenu/NavMenu.svelte';
 	import NavMenuButton from './NavMenu/NavMenuButton.svelte';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		expanded?: boolean;
 		subtitle?: string;
 		navigateBackHref?: string;
+		enableDefaultNavigationButtons?: boolean;
+		children?: Snippet;
 	}
 
-	let { expanded = $bindable(true), subtitle, navigateBackHref }: Props = $props();
+	let {
+		expanded = $bindable(true),
+		subtitle,
+		navigateBackHref,
+		enableDefaultNavigationButtons = true,
+		children
+	}: Props = $props();
 </script>
 
 <div class="pl-2 pr-4">
@@ -33,39 +42,42 @@
 				{/if}
 			</div>
 			<div class={expanded ? 'mt-8 ' : 'hidden sm:flex'}>
-				<slot />
+				{@render children()}
 			</div>
 		</div>
 
-		<NavMenu small={!expanded}>
-			<div class={expanded ? 'px-3' : 'hidden sm:block'}>
-				{#if navigateBackHref}
-					<NavMenuButton
-						href={navigateBackHref}
-						icon="fa-arrow-left"
-						title={m.back()}
-						small={!expanded}
-					/>
-				{/if}
-				<NavMenuButton href="/" icon="fa-home" title={m.home()} small={!expanded} />
-			</div>
-			<li class="mt-3 flex {expanded ? 'w-5' : 'w-full'} items-center">
-				<button
-					class="flex items-center"
-					onclick={() => {
-						expanded = !expanded;
-						setHeaderStatus({
-							openNavCallback: () => {
-								expanded = !expanded;
-							}
-						});
-					}}
-					aria-label="Toggle menu expand state"
-				>
-					<i class="fa-duotone fa-bars w-5 text-center {expanded ? 'rotate-180' : ''} duration-300"
-					></i>
-				</button>
-			</li>
-		</NavMenu>
+		{#if enableDefaultNavigationButtons}
+			<NavMenu small={!expanded}>
+				<div class={expanded ? 'px-3' : 'hidden sm:block'}>
+					{#if navigateBackHref}
+						<NavMenuButton
+							href={navigateBackHref}
+							icon="fa-arrow-left"
+							title={m.back()}
+							small={!expanded}
+						/>
+					{/if}
+					<NavMenuButton href="/" icon="fa-home" title={m.home()} small={!expanded} />
+				</div>
+				<li class="mt-3 flex {expanded ? 'w-5' : 'w-full'} items-center">
+					<button
+						class="flex items-center"
+						onclick={() => {
+							expanded = !expanded;
+							setHeaderStatus({
+								openNavCallback: () => {
+									expanded = !expanded;
+								}
+							});
+						}}
+						aria-label="Toggle menu expand state"
+					>
+						<i
+							class="fa-duotone fa-bars w-5 text-center {expanded ? 'rotate-180' : ''} duration-300"
+						></i>
+					</button>
+				</li>
+			</NavMenu>
+		{/if}
 	</div>
 </div>
