@@ -65,10 +65,12 @@
 		"vanilla-cookieconsent": "^3.0.1",
 		"vite": "^5.4.9",
 		"world-countries": "^5.0.0",
-		"zod": "^3.23.8"
+		"zod": "^3.23.8",
+		"codenamize-ts": "0.0.7"
 	},
 	"type": "module",
 	"dependencies": {
+		"@faker-js/faker": "^9.0.3",
 		"fuse.js": "^7.0.0",
 		"validator": "^13.12.0"
 	}
