@@ -85,7 +85,7 @@ export const logger = new Elysia({
 
 		if (code === 'ForbiddenError' || code === 'PermissionCheckError') {
 			set.status = 'Forbidden';
-			if(code === "ForbiddenError"){
+			if (code === 'ForbiddenError') {
 				console.error(
 					`[${requestId}]: Forbidden error {
     ability: ${error.ability},
