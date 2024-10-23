@@ -37,7 +37,7 @@ builder.queryFields((t) => {
 		conferencePlausibility: t.field({
 			type: PlausibilityResult,
 			args: {
-				conferenceId: t.arg.id({ required: true })
+				conferenceId: t.arg.string({ required: true })
 			},
 			resolve: async (root, args, ctx) => {
 				const tooYoungUsers = await db.user.findMany({

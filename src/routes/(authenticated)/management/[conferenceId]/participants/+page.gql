@@ -1,4 +1,4 @@
-query ConferenceParticipantsByParticipationTypeQuery($conferenceId: String!) {
+query ConferencePlausibilityQuery($conferenceId: String!) {
 	findUniqueConference(where: { id: $conferenceId }) {
 		endConference
 	}

@@ -1638,7 +1638,7 @@ type PlausibilityResult {
 }
 
 type Query {
-  conferencePlausibility(conferenceId: ID!): PlausibilityResult!
+  conferencePlausibility(conferenceId: String!): PlausibilityResult!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
   findManyConferenceParticipantStatuss(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
   findManyConferenceSupervisors(cursor: ConferenceSupervisorWhereUniqueInput, distinct: [ConferenceSupervisorScalarFieldEnum!], orderBy: [ConferenceSupervisorOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceSupervisorWhereInput): [ConferenceSupervisor!]!
