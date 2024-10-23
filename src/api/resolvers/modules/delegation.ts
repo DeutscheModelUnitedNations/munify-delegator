@@ -172,16 +172,18 @@ builder.mutationFields((t) => {
 				if (args.applied !== undefined && args.applied !== null) {
 					await tidyRoleApplications({ id: delegation.id });
 
-					if (delegation.members.length < 2) {
-						throw new Error('Not enough members');
-					}
+					if (args.applied) {
+						if (delegation.members.length < 2) {
+							throw new Error('Not enough members');
+						}
 
-					if (delegation.appliedForRoles.length < 3) {
-						throw new Error('Not enough role applications');
-					}
+						if (delegation.appliedForRoles.length < 3) {
+							throw new Error('Not enough role applications');
+						}
 
-					if (!delegation.school || !delegation.experience || !delegation.motivation) {
-						throw new Error('Missing information');
+						if (!delegation.school || !delegation.experience || !delegation.motivation) {
+							throw new Error('Missing information');
+						}
 					}
 
 					await db.delegation.update({

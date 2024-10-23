@@ -106,6 +106,8 @@
 
 <span>
 	<DatePicker
+		{startDate}
+		{endDate}
 		bind:isOpen
 		{enableFutureDates}
 		{enablePastDates}

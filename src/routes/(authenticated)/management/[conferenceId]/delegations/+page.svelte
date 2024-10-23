@@ -1,0 +1,98 @@
+<script lang="ts">
+	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
+	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
+	import { type TableColumns } from 'svelte-table';
+	import * as m from '$lib/paraglide/messages';
+	import type { PageData } from './$houdini';
+	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
+	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import DelegationDrawer from './DelegationDrawer.svelte';
+
+	const { data }: { data: PageData } = $props();
+	const queryData = $derived(data.ConferenceDelegationsQuery);
+	const delegations = $derived($queryData?.data?.findManyDelegations ?? []);
+	const { getTableSize } = getTableSettings();
+
+	const columns: TableColumns<(typeof delegations)[number]> = [
+		{
+			key: 'entryCode',
+			title: 'Entry Code',
+			value: (row) => row.entryCode,
+			class: 'font-mono'
+		},
+		{
+			key: 'applied',
+			title: 'Applied',
+			value: (row) => (row.applied ? 1 : 0),
+			renderValue: (row) =>
+				row.applied
+					? `<i class="fa-solid fa-circle-check text-success text-${getTableSize()}"></i>`
+					: `<i class="fa-solid fa-hourglass-half text-warning text-${getTableSize()}"></i>`,
+			parseHTML: true,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
+			key: 'school',
+			title: m.schoolOrInstitution(),
+			value: (row) => row.school ?? 'N/A',
+			sortable: true,
+			class: 'max-w-[30ch] truncate'
+		},
+		{
+			key: 'members',
+			title: m.members(),
+			value: (row) => row.members.length,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
+			key: 'supervisors',
+			title: m.supervisors(),
+			value: (row) => row.supervisors.length,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
+			key: 'appliedForRoles',
+			title: m.roleApplications(),
+			value: (row) => row.appliedForRoles.length,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
+			key: 'motivation',
+			title: m.motivation(),
+			value: (row) => row.motivation ?? 'N/A',
+			class: 'max-w-[20ch] truncate'
+		},
+		{
+			key: 'experience',
+			title: m.experience(),
+			value: (row) => row.experience ?? 'N/A',
+			class: 'max-w-[20ch] truncate'
+		}
+	];
+
+	let selectedDelegationRow = $state<(typeof delegations)[number]>();
+	// TODO export data
+</script>
+
+<DataTable
+	{columns}
+	rows={delegations}
+	enableSearch={true}
+	queryParamKey="filter"
+	rowSelected={(row) => {
+		selectedDelegationRow = row;
+	}}
+/>
+
+{#if selectedDelegationRow}
+	<DelegationDrawer
+		delegationId={selectedDelegationRow.id}
+		conferenceId={data.conferenceId}
+		open={selectedDelegationRow !== undefined}
+		onClose={() => (selectedDelegationRow = undefined)}
+	/>
+{/if}

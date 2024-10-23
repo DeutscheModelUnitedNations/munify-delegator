@@ -6,7 +6,7 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { translatedCountryCodeFormOptions } from '$lib/services/addressCountries.svelte.js';
+	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$types';
@@ -59,13 +59,13 @@
 						{form}
 						name="country"
 						placeholder={m.pleaseSelectCountry()}
-						options={translatedCountryCodeFormOptions}
+						options={translatedNationCodeAddressFormOptions}
 					/>
 					<FormDateTimeInput
 						{form}
 						name="birthday"
-						defaultYear={Date.now() - 13 * 365 * 24 * 60 * 60 * 1000}
 						label={m.birthDate()}
+						defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
 					/>
 					<FormSelect
 						{form}

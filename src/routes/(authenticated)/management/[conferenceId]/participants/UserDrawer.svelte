@@ -13,7 +13,7 @@
 		open?: boolean;
 		onClose?: () => void;
 	}
-	let { user = $bindable(), conferenceId, open = $bindable(false), onClose }: Props = $props();
+	let { user, conferenceId, open = $bindable(false), onClose }: Props = $props();
 
 	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
 		return {

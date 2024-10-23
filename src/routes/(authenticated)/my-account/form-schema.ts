@@ -12,9 +12,13 @@ export const userFormSchema = z.object({
 			date: birthdayMaxDate.toLocaleDateString(languageTag())
 		})
 	}),
-	phone: z.string().refine((s) => valiator.isMobilePhone(s, 'any', { strictMode: true }), {
-		message: m.pleaseEnterAValidPhoneNumber()
-	}),
+	phone: z
+		.string()
+		.transform((s) => s.replaceAll(' ', ''))
+		.transform((s) => s.replaceAll('-', ''))
+		.refine((s) => valiator.isMobilePhone(s, 'any', { strictMode: true }), {
+			message: m.pleaseEnterAValidPhoneNumber()
+		}),
 	street: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
