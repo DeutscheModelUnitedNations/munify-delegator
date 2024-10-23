@@ -3,6 +3,7 @@ import { configPrivate } from '$config/private';
 import { configPublic } from '$config/public';
 import Cryptr from 'cryptr';
 import {
+	allowInsecureRequests,
 	authorizationCodeGrant,
 	buildAuthorizationUrl,
 	buildEndSessionUrl,
@@ -56,12 +57,20 @@ const { config, cryptr, jwks } = await (async () => {
 			cryptr: undefined as unknown as Cryptr
 		};
 	}
+	const execute = [];
+	if (configPrivate.NODE_ENV === 'development') {
+		execute.push(allowInsecureRequests);
+	}
 	const config = await discovery(
 		new URL(configPublic.PUBLIC_OIDC_AUTHORITY),
 		configPublic.PUBLIC_OIDC_CLIENT_ID,
 		{
 			client_secret: configPrivate.OIDC_CLIENT_SECRET,
 			token_endpoint_auth_method: configPrivate.OIDC_CLIENT_SECRET ? undefined : 'none'
+		},
+		undefined,
+		{
+			execute
 		}
 	);
 	const cryptr = new Cryptr(configPrivate.OIDC_CLIENT_SECRET ?? configPrivate.SECRET);
