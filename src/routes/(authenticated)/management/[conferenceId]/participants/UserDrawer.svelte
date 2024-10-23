@@ -178,7 +178,7 @@
 				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/individuals?id={$userQuery.data
+						href="/management/{conferenceId}/individuals?filter={$userQuery.data
 							?.findManySingleParticipants[0].id}"
 					>
 						{m.individualApplication()}
@@ -187,7 +187,7 @@
 				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/delegations?id={$userQuery.data
+						href="/management/{conferenceId}/delegations?filter={$userQuery.data
 							?.findManyDelegationMembers[0].delegation.id}"
 					>
 						{m.delegation()}
@@ -196,7 +196,7 @@
 				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/supervisors?id={$userQuery.data
+						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
 							?.findManyConferenceSupervisors[0].id}"
 					>
 						{m.supervisor()}

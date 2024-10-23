@@ -165,7 +165,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/participants?id={member.user.id}"
+									href="/management/{conferenceId}/participants?filter={member.user.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -212,7 +212,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/supervisors?id={supervisor.id}"
+									href="/management/{conferenceId}/supervisors?filter={supervisor.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>

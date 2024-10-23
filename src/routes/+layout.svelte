@@ -37,6 +37,12 @@
 
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
+
+	interface Props {
+		children: Snippet;
+	}
+
+	let { children }: Props = $props();
 </script>
 
 <svelte:head>
@@ -56,7 +62,7 @@
 	<div class="flex min-h-screen">
 		<!-- {@render children()} -->
 		<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
-		<slot />
+		{@render children()}
 	</div>
 	<Footer />
 </ParaglideJS>

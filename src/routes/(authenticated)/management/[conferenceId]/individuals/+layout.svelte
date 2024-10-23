@@ -10,13 +10,13 @@
 	let { children }: Props = $props();
 
 	setHeaderStatus({
-		label: m.delegations(),
-		faIcon: 'fa-flag-swallowtail'
+		label: m.singleParticipants(),
+		faIcon: 'fa-user-bounty-hunter'
 	});
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator - {m.delegations()}</title>
+	<title>MUNify Delegator - {m.singleParticipants()}</title>
 </svelte:head>
 
 {@render children()}

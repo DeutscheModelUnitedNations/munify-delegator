@@ -1145,7 +1145,7 @@ type Mutation {
   updateOneNation(where: NationWhereUniqueInput!): Nation
   updateOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
-  updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!]!, unApplyForRolesIdList: [ID!]!, where: SingleParticipantWhereUniqueInput!): SingleParticipant
+  updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   upsertOneConferenceSupervisor(entryCode: String!): ConferenceSupervisor!

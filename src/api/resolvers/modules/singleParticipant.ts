@@ -113,8 +113,8 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				where: field.args.where,
-				applyForRolesIdList: t.arg.idList(),
-				unApplyForRolesIdList: t.arg.idList(),
+				applyForRolesIdList: t.arg.idList({required: false}),
+				unApplyForRolesIdList: t.arg.idList({required: false}),
 				applied: t.arg.boolean({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
