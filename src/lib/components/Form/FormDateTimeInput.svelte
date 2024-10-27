@@ -1,167 +1,135 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { type SuperForm } from 'sveltekit-superforms';
-	import FormFieldErrors from './FormFieldErrors.svelte';
+	import { type SuperForm, dateProxy } from 'sveltekit-superforms';
 	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { languageTag } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages.js';
+	import { isMobileOrTablet } from '$lib/services/detectMobile';
+	import { onMount } from 'svelte';
 
-	//TODO we should consider using native date inputs on mobile devices
+	// Dates and Date pickers in JS are a mess. I tried around a lot of things with this
+	// but all of non native inputs break acceissibility. According to this suggestion
+	// hiding the native input and displaying a formatted string is the best solution:
+	// https://stackoverflow.com/a/31162426/11988368
 
 	interface Props {
 		name: string;
-		endName?: string;
 		label?: string;
 		form: SuperForm<A, B>;
-		isRange?: boolean;
-		isMultipane?: boolean;
+		enableTime?: boolean;
 		showYearControls?: boolean;
-		showTimePicker?: boolean;
 		enableFutureDates?: boolean;
 		enablePastDates?: boolean;
 		defaultYear?: number;
+		isMultipane?: boolean;
 	}
 
 	let {
 		form,
 		label,
 		name,
-		endName,
-		isRange = false,
-		isMultipane = false,
 		showYearControls = true,
-		showTimePicker = false,
+		enableTime = false,
 		enableFutureDates = true,
 		enablePastDates = true,
-		defaultYear = new Date().getFullYear()
+		defaultYear = new Date().getFullYear(),
+		isMultipane = false
 	}: Props = $props();
 
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
-	let isOpen = $state(false);
+	let format: 'datetime-local' | 'date' = enableTime ? 'datetime-local' : 'date';
 
-	const stringifyDate = (input: Date) => {
-		return new Date(input).toLocaleDateString(languageTag());
-	};
+	let isNonNativeDatepickerOpen = $state(false);
 
-	let startDate = $state<Date>($formData[name] as Date);
-	let startDateString = $state<string>(stringifyDate($formData[name] as Date));
-	let startErrors = $derived(($formErrors as any)[name] ?? []);
-	let startConstraints = $derived(($formConstraints as any)[name]);
-
-	let endDate = $state<Date>(endName ? ($formData[endName] as Date) : new Date());
-	let endDateString = $state<string>(endName ? stringifyDate($formData[endName] as Date) : '');
-	let endErrors = $derived((endName ? ($formErrors as any)[endName] : []) ?? []);
-	let endConstraints = $derived(endName ? ($formConstraints as any)[endName] : []);
-
-	const alignDatesFromString = () => {
-		startDate = new Date(startDateString);
-		// @ts-ignore
-		$formData[name] = startDate;
-
-		if (endName) {
-			endDate = new Date(endDateString);
-			// @ts-ignore
-			$formData[endName] = endDate;
+	const proxyDate = dateProxy(form, name as any, { format });
+	let errors = $derived(($formErrors as any)[name]);
+	let constraints = $derived(($formConstraints as any)[name]);
+	let nativeDateInput = $state<HTMLInputElement>();
+	let localizedDateString = $derived.by(() => {
+		if (!$proxyDate) return m.selectADate();
+		const date = new Date($proxyDate);
+		if (enableTime) {
+			return date.toLocaleDateString(languageTag(), {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: 'numeric',
+				second: 'numeric'
+			});
+		} else {
+			return date.toLocaleDateString(languageTag(), {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric'
+			});
 		}
-	};
+	});
 
-	const alignDatesFromDatepicker = (e: any) => {
-		const eventStartDate = new Date(e.startDate);
-		const timeNumbers = e.startDateTime.split(':').map(Number) as number[];
-		eventStartDate.setHours(
-			timeNumbers.at(0) ?? 0,
-			timeNumbers.at(1) ?? 0,
-			timeNumbers.at(2) ?? 0,
-			timeNumbers.at(3) ?? 0
-		);
-		
-		startDate = eventStartDate;
-		startDateString = stringifyDate(startDate);
-		// @ts-ignore
-		$formData[name] = startDate;
+	function open() {
+		//TODO we disable the non native datepicker for now since it returns timestamps in
+		// a different timezone which js misinterprets when running the following line
+		// we should consider another datepicker
+		// if (isMobileOrTablet()) {
+		if (!nativeDateInput) throw new Error('Native date input not found');
+		nativeDateInput.showPicker();
+		// } else {
+		// 	isNonNativeDatepickerOpen = true;
+		// }
+	}
 
-		if (endName) {
-			const eventEndDate = new Date(e.endDate);
-			const timeNumbers = e.endDateTime.split(':').map(Number) as number[];
-			eventEndDate.setHours(
+	function nonNativeDatePickEvent(e) {
+		const newDate = new Date(e.startDate);
+		if (enableTime) {
+			const timeNumbers = e.startDateTime.split(':').map(Number) as number[];
+			newDate.setHours(
 				timeNumbers.at(0) ?? 0,
 				timeNumbers.at(1) ?? 0,
 				timeNumbers.at(2) ?? 0,
 				timeNumbers.at(3) ?? 0
 			);
-
-			endDate = eventEndDate;
-			endDateString = stringifyDate(endDate);
-			// @ts-ignore
-			$formData[endName] = endDate;
 		}
-	};
 
-	const toggleOpen = (e: any) => {
-		// e?.preventDefault();
-		isOpen = !isOpen;
-	};
+		proxyDate.set(newDate.toISOString());
+	}
 </script>
 
-<span>
-	<DatePicker
-		{startDate}
-		{endDate}
-		bind:isOpen
-		{enableFutureDates}
-		{enablePastDates}
-		{showTimePicker}
-		{isRange}
-		{isMultipane}
-		{showYearControls}
-		{defaultYear}
-		includeFont={false}
-		onDayClick={alignDatesFromDatepicker}
-	>
-		<span class="flex w-full items-center">
-			<label class="form-control w-full" for={name}>
-				<span class="label-text mb-1">{label}</span>
-				<span class="relative">
-					<i class="fa-solid fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
-					<input
-						{name}
-						id={name}
-						type="text"
-						placeholder={m.selectADate()}
-						class="input input-bordered w-full cursor-pointer"
-						aria-label="Start date"
-						bind:value={startDateString}
-						onchange={alignDatesFromString}
-						onclick={toggleOpen}
-						aria-invalid={startErrors ? 'true' : undefined}
-						lang={languageTag()}
-						{...startConstraints}
-					/>
-				</span>
-			</label>
-			{#if isRange}
-				<span class="mx-3"> {m.until()} </span>
-				<label class="form-control w-full" for={name}>
-					<span class="label-text">{label}</span>
-					<span class="relative">
-						<i class="fa-solid fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
-						<input
-							{name}
-							id={endName}
-							type="text"
-							placeholder={m.selectAnEndDate()}
-							class="input input-bordered w-full cursor-pointer"
-							aria-label="End date"
-							bind:value={endDateString}
-							onchange={alignDatesFromString}
-							onclick={toggleOpen}
-							aria-invalid={endErrors ? 'true' : undefined}
-							lang={languageTag()}
-							{...endConstraints}
-						/>
-					</span>
-				</label>
-			{/if}
-		</span>
-	</DatePicker>
-	<FormFieldErrors errors={[...startErrors, ...endErrors]} />
-</span>
+<DatePicker
+	onDayClick={nonNativeDatePickEvent}
+	startDate={new Date($proxyDate)}
+	bind:isOpen={isNonNativeDatepickerOpen}
+	{enableFutureDates}
+	{enablePastDates}
+	{isMultipane}
+	{showYearControls}
+	{defaultYear}
+	showTimePicker={enableTime}
+	isRange={false}
+	includeFont={false}
+>
+	<label class="form-control w-full" for={name}>
+		{label}
+		<div class="relative">
+			<input
+				{name}
+				type={format}
+				id={name}
+				bind:value={$proxyDate}
+				placeholder={m.selectADate()}
+				aria-invalid={errors ? 'true' : undefined}
+				class="input input-bordered w-full"
+				lang={languageTag()}
+				{...constraints}
+				bind:this={nativeDateInput}
+			/>
+			<div
+				aria-hidden={true}
+				onclick={open}
+				onkeydown={open}
+				class="input input-bordered absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
+			>
+				{localizedDateString}
+			</div>
+			<i class="fa-duotone fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
+		</div>
+	</label>
+</DatePicker>
