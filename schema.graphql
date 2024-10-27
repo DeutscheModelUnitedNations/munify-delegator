@@ -459,15 +459,15 @@ input ConferenceSupervisorWhereUniqueInput {
 }
 
 input ConferenceUpdateDataInput {
-  endConference: DateTime!
+  endConference: DateTime
   image: File
   language: String
   location: String
   longTitle: String
-  startAssignment: DateTime!
-  startConference: DateTime!
-  startRegistration: DateTime!
-  title: String!
+  startAssignment: DateTime
+  startConference: DateTime
+  startRegistration: DateTime
+  title: String
   website: String
 }
 

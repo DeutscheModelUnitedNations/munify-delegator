@@ -8,9 +8,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
-
-  // import SuperDebug from 'sveltekit-superforms';
-
+  import SuperDebug from 'sveltekit-superforms';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -19,10 +17,9 @@
 		validators: zod(conferenceSettingsFormSchema)
 	});
 	let formData = $derived(form.form);
-	$inspect(typeof $formData["image"]);
 </script>
 
-<!-- <SuperDebug data={$formData} /> -->
+<SuperDebug data={$formData} />
 
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 	<Form {form}>

@@ -66,32 +66,30 @@
 
 	const alignDatesFromDatepicker = (e: any) => {
 		const eventStartDate = new Date(e.startDate);
-		const eventStartDateTime = e.startDateTime;
-
-		const composedEventStartDate = new Date(
-			eventStartDate.getFullYear(),
-			eventStartDate.getMonth(),
-			eventStartDate.getDate(),
-			...eventStartDateTime.split(':').map(Number)
+		const timeNumbers = e.startDateTime.split(':').map(Number) as number[];
+		eventStartDate.setHours(
+			timeNumbers.at(0) ?? 0,
+			timeNumbers.at(1) ?? 0,
+			timeNumbers.at(2) ?? 0,
+			timeNumbers.at(3) ?? 0
 		);
-
-		startDate = composedEventStartDate;
+		
+		startDate = eventStartDate;
 		startDateString = stringifyDate(startDate);
 		// @ts-ignore
 		$formData[name] = startDate;
 
 		if (endName) {
-			const eventEndDate = new Date(e.startDate);
-			const eventEndDateTime = e.startDateTime;
-
-			const composedEventEndDate = new Date(
-				eventEndDate.getFullYear(),
-				eventEndDate.getMonth(),
-				eventEndDate.getDate(),
-				...eventEndDateTime.split(':').map(Number)
+			const eventEndDate = new Date(e.endDate);
+			const timeNumbers = e.endDateTime.split(':').map(Number) as number[];
+			eventEndDate.setHours(
+				timeNumbers.at(0) ?? 0,
+				timeNumbers.at(1) ?? 0,
+				timeNumbers.at(2) ?? 0,
+				timeNumbers.at(3) ?? 0
 			);
 
-			endDate = composedEventEndDate;
+			endDate = eventEndDate;
 			endDateString = stringifyDate(endDate);
 			// @ts-ignore
 			$formData[endName] = endDate;

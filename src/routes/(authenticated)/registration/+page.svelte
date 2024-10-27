@@ -8,7 +8,7 @@
 	let conferenceQuery = $derived(data.ConferenceOpenForRegistrationQuery);
 	let conferences = $derived($conferenceQuery?.data?.findManyConferences ?? []);
 
-	function alreadRegistered(conferenceId: string) {
+	function alreadyRegistered(conferenceId: string) {
 		if (
 			$conferenceQuery.data?.findManySingleParticipants.find(
 				(x) => x.conference.id === conferenceId
@@ -49,7 +49,7 @@
 				{#each conferences as conference}
 					<ConferenceCard
 						{conference}
-						alreadyRegistered={alreadRegistered(conference.id)}
+						alreadyRegistered={alreadyRegistered(conference.id)}
 						baseSlug="/registration"
 					/>
 				{/each}

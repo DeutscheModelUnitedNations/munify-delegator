@@ -10,7 +10,7 @@
 		conference: Pick<
 			Conference,
 			| 'id'
-			| 'imageDataUrl'
+			| 'imageDataURL'
 			| 'language'
 			| 'title'
 			| 'location'
@@ -34,6 +34,8 @@
 			return 'NOT_YET_OPEN';
 		}
 
+		console.log(conference.startAssignment);
+		
 		if (new Date().getTime() > new Date(conference.startAssignment).getTime()) {
 			return 'CLOSED';
 		}
@@ -100,7 +102,7 @@
 >
 	<figure class="relative aspect-video">
 		<img
-			src={conference.imageDataUrl ? conference.imageDataUrl : defaultImage}
+			src={conference.imageDataURL ? conference.imageDataURL : defaultImage}
 			alt="Conference"
 			class={alreadyRegistered ? 'scale-110 blur-sm brightness-150 contrast-50 saturate-0' : ''}
 		/>

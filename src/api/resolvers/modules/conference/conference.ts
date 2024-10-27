@@ -139,7 +139,9 @@ builder.mutationFields((t) => {
 				data: t.arg({
 					type: t.builder.inputType('ConferenceUpdateDataInput', {
 						fields: (t) => ({
-							title: t.string(),
+							title: t.string({
+								required: false
+							}),
 							longTitle: t.string({
 								required: false
 							}),
@@ -156,10 +158,10 @@ builder.mutationFields((t) => {
 								type: 'File',
 								required: false
 							}),
-							startRegistration: t.field({ type: 'DateTime' }),
-							startAssignment: t.field({ type: 'DateTime' }),
-							startConference: t.field({ type: 'DateTime' }),
-							endConference: t.field({ type: 'DateTime' })
+							startRegistration: t.field({ type: 'DateTime', required: false }),
+							startAssignment: t.field({ type: 'DateTime', required: false }),
+							startConference: t.field({ type: 'DateTime', required: false }),
+							endConference: t.field({ type: 'DateTime', required: false })
 						})
 					})
 				})
@@ -170,14 +172,19 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
 				};
 
-				const dataURL = args.data.image ? await toDataURL(args.data.image) : undefined;
+				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				delete args.data.image;
 
 				return await db.conference.update({
 					where: args.where,
 					data: {
 						...args.data,
-						imageDataURL: dataURL
+						imageDataURL: dataURL,
+						title: args.data.title ?? undefined,
+						startRegistration: args.data.startRegistration ?? undefined,
+						startAssignment: args.data.startAssignment ?? undefined,
+						startConference: args.data.startConference ?? undefined,
+						endConference: args.data.endConference ?? undefined
 					},
 					...query
 				});
