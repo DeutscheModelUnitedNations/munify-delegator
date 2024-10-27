@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { fail, message, superValidate } from 'sveltekit-superforms';
+import { fail, message, superValidate, withFiles } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
@@ -19,7 +19,7 @@ const conferenceQuery = graphql(`
 			title
 			website
 			endConference
-			imageDataUrl
+			imageDataURL
 			language
 		}
 	}
@@ -48,13 +48,11 @@ export const load: PageLoad = async (event) => {
 	}
 
 	const form = await superValidate(
-		nullFieldsToUndefined(conference),
+		nullFieldsToUndefined(conference) as any,
 		zod(conferenceSettingsFormSchema)
 	);
 
-	return {
-		form
-	};
+	return { form, imageDataURL: conference.imageDataURL };
 };
 
 export const actions = {

@@ -148,7 +148,7 @@ type Conference {
   delegations: [Delegation!]!
   endConference: DateTime!
   id: ID!
-  imageDataUrl: String
+  imageDataURL: String
   individualApplicationOptions: [CustomConferenceRole!]!
   language: String
   location: String
@@ -171,7 +171,7 @@ input ConferenceCreateInput {
   delegations: DelegationCreateNestedManyWithoutConferenceInput
   endConference: DateTime!
   id: String
-  imageDataUrl: String
+  imageDataURL: String
   individualApplicationOptions: CustomConferenceRoleCreateNestedManyWithoutConferenceInput
   language: String
   location: String
@@ -194,7 +194,7 @@ input ConferenceOrderByWithRelationInput {
   delegations: DelegationOrderByRelationAggregateInput
   endConference: SortOrder
   id: SortOrder
-  imageDataUrl: SortOrder
+  imageDataURL: SortOrder
   individualApplicationOptions: CustomConferenceRoleOrderByRelationAggregateInput
   language: SortOrder
   location: SortOrder
@@ -329,7 +329,7 @@ input ConferenceRelationFilter {
 enum ConferenceScalarFieldEnum {
   endConference
   id
-  imageDataUrl
+  imageDataURL
   language
   location
   longTitle
@@ -460,7 +460,7 @@ input ConferenceSupervisorWhereUniqueInput {
 
 input ConferenceUpdateDataInput {
   endConference: DateTime!
-  imageDataUrl: String
+  image: File
   language: String
   location: String
   longTitle: String
@@ -479,7 +479,7 @@ input ConferenceUpdateInput {
   delegations: DelegationUpdateManyWithoutConferenceNestedInput
   endConference: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  imageDataUrl: NullableStringFieldUpdateOperationsInput
+  imageDataURL: NullableStringFieldUpdateOperationsInput
   individualApplicationOptions: CustomConferenceRoleUpdateManyWithoutConferenceNestedInput
   language: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
@@ -497,7 +497,7 @@ input ConferenceUpdateInput {
 input ConferenceUpdateManyMutationInput {
   endConference: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  imageDataUrl: NullableStringFieldUpdateOperationsInput
+  imageDataURL: NullableStringFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
@@ -519,7 +519,7 @@ input ConferenceWhereInput {
   delegations: DelegationListRelationFilter
   endConference: DateTimeFilter
   id: StringFilter
-  imageDataUrl: StringNullableFilter
+  imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
   language: StringNullableFilter
   location: StringNullableFilter
@@ -545,7 +545,7 @@ input ConferenceWhereUniqueInput {
   delegations: DelegationListRelationFilter
   endConference: DateTimeFilter
   id: String
-  imageDataUrl: StringNullableFilter
+  imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
   language: StringNullableFilter
   location: StringNullableFilter
@@ -1074,6 +1074,8 @@ input EnumTeamRoleWithAggregatesFilter {
   not: TeamRole
   notIn: [TeamRole!]
 }
+
+scalar File
 
 enum FoodPreference {
   OMNIVORE

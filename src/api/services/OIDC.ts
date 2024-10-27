@@ -48,7 +48,7 @@ export const oidcStateCookieName = 'oidc_state';
 export const tokensCookieName = 'token_set';
 
 const { config, cryptr, jwks } = await (async () => {
-	// this runs statically butwe don't have access to the dynamic config values at build time
+	// this runs statically but we don't have access to the dynamic config values at build time
 	// so we need to return dummy values
 	if (building) {
 		return {

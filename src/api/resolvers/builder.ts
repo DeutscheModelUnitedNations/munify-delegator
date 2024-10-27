@@ -13,7 +13,12 @@ import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 
 export const builder = new SchemaBuilder<{
 	Context: Context;
-	Scalars: Scalars<Prisma.Decimal, Prisma.InputJsonValue | null, Prisma.InputJsonValue>;
+	Scalars: Scalars<Prisma.Decimal, Prisma.InputJsonValue | null, Prisma.InputJsonValue> & {
+		File: {
+			Input: File;
+			Output: never;
+		};
+	};
 	PrismaTypes: PrismaTypes;
 	DefaultFieldNullability: false;
 	DefaultArgumentNullability: false;
@@ -54,3 +59,9 @@ export const builder = new SchemaBuilder<{
 if (dev) {
 	import('./api');
 }
+
+builder.scalarType('File', {
+	serialize: async () => {
+		throw new Error('File type cannot be serialized');
+	}
+});
