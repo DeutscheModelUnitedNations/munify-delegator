@@ -50,6 +50,11 @@ COPY --from=builder /app/tasksOut .
 # the prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma/
 
+# Make a folder called /app/ephemeralData
+RUN mkdir /app/ephemeralData
+# Change ownership to the bun user
+RUN chown -R bun:bun /app/ephemeralData
+
 ENV NODE_ENV=production
 USER bun
 EXPOSE 3000/tcp
