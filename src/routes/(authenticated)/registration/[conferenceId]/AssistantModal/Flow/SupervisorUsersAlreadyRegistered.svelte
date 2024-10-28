@@ -10,15 +10,11 @@
 		advance: (q: QuestionFlowState) => void;
 	}
 
-	enum Selection {
-		NONE,
-		YES,
-		NO
-	}
+	const Selections = ['NONE', 'YES', 'NO'] as const;
 
 	let { advance }: Props = $props();
 
-	let selection: Selection | undefined = $state(Selection.NONE);
+	let selection: typeof Selections[number] | undefined = $state("NONE");
 
 	let mounted = $state(false);
 
@@ -32,7 +28,7 @@
 			title: 'Ja',
 			class: 'btn-success',
 			onClick: () => {
-				selection = Selection.YES;
+				selection = "YES";
 				advance(QuestionFlowState.FINAL_SUPERVISOR);
 			}
 		},
@@ -41,7 +37,7 @@
 			title: 'Nein',
 			class: 'btn-warning',
 			onClick: () => {
-				selection = Selection.NO;
+				selection = "NO";
 				advance(QuestionFlowState.FINAL_SUPERVISOR_ANSWER_WAIT);
 			}
 		}
@@ -56,14 +52,14 @@
 	<p>{m.assistantFlowSupervisorUsersAlreadyRegistered3()}</p>
 </ChatBot>
 
-{#if selection == Selection.NONE && mounted}
+{#if selection == "NONE" && mounted}
 	<Choice {choices} delay={2400}></Choice>
-{:else if selection !== Selection.NONE && mounted}
+{:else if selection !== "NONE" && mounted}
 	<ChatUser>
-		{#if selection === Selection.YES}
+		{#if selection === "YES"}
 			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer1()}</p>
 		{/if}
-		{#if selection === Selection.NO}
+		{#if selection === "NO"}
 			<p>{m.assistantFlowSupervisorUsersAlreadyRegisteredAnswer2()}</p>
 		{/if}
 	</ChatUser>

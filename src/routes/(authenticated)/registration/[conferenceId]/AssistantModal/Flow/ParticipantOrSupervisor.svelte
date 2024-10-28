@@ -10,15 +10,11 @@
 		advance: (q: QuestionFlowState) => void;
 	}
 
-	enum Selection {
-		NONE,
-		DELEGATE,
-		SUPERVISOR
-	}
+	const Selections = ['NONE', 'DELEGATE', 'SUPERVISOR'] as const;
 
 	let { advance }: Props = $props();
 
-	let selection: Selection | undefined = $state(Selection.NONE);
+	let selection: typeof Selections[number] | undefined = $state("NONE");
 
 	let mounted = $state(false);
 
@@ -32,7 +28,7 @@
 			title: m.assistantFlowParticipantOrSupervisorAnswer1(),
 			class: 'btn-primary',
 			onClick: () => {
-				selection = Selection.DELEGATE;
+				selection = "DELEGATE";
 				advance(QuestionFlowState.Q_ROLE);
 			}
 		},
@@ -40,7 +36,7 @@
 			icon: 'chalkboard-user',
 			title: m.assistantFlowParticipantOrSupervisorAnswer2(),
 			onClick: () => {
-				selection = Selection.SUPERVISOR;
+				selection = "SUPERVISOR";
 				advance(QuestionFlowState.Q_SUPERVISOR_USERS_ALREADY_REGISTERED);
 			}
 		}
@@ -54,14 +50,14 @@
 	<p>{m.assistantFlowParticipantOrSupervisor2()}</p>
 </ChatBot>
 
-{#if selection == Selection.NONE && mounted}
+{#if selection == "NONE" && mounted}
 	<Choice {choices} delay={2000}></Choice>
-{:else if selection !== Selection.NONE && mounted}
+{:else if selection !== "NONE" && mounted}
 	<ChatUser>
-		{#if selection === Selection.DELEGATE}
+		{#if selection === "DELEGATE"}
 			<p>{m.assistantFlowParticipantOrSupervisorAnswer1()}</p>
 		{/if}
-		{#if selection === Selection.SUPERVISOR}
+		{#if selection === "SUPERVISOR"}
 			<p>{m.assistantFlowParticipantOrSupervisorAnswer2()}</p>
 		{/if}
 	</ChatUser>

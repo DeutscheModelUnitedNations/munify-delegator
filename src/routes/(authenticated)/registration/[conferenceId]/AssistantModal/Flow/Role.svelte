@@ -11,17 +11,17 @@
 		advance: (q: QuestionFlowState) => void;
 	}
 
-	enum Selection {
-		NONE,
-		DELEGATE,
-		NSA,
-		PRESS,
-		SPECIAL
-	}
+	const Selections = [
+		"NONE",
+		"DELEGATE",
+		"NSA",
+		"PRESS",
+		"SPECIAL"
+	] as const
 
 	let { advance }: Props = $props();
 
-	let selection: Selection | undefined = $state(Selection.NONE);
+	let selection: typeof Selections[number] | undefined = $state("NONE");
 
 	let mounted = $state(false);
 
@@ -34,7 +34,7 @@
 			icon: 'user-tie',
 			title: m.assistantFlowRoleDelegate1(),
 			onClick: () => {
-				selection = Selection.DELEGATE;
+				selection = "DELEGATE";
 				advance(QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS);
 			}
 		},
@@ -42,15 +42,15 @@
 			icon: 'megaphone',
 			title: m.assistantFlowRoleNSA1(),
 			onClick: () => {
-				selection = Selection.NSA;
+				selection = "NSA";
 				advance(QuestionFlowState.Q_DELEGATE_HAVE_PARTNERS);
 			}
 		},
 		{
 			icon: 'newspaper',
-			title: m.assistantFlowRolePress1(),
+			title: m.journalist(),
 			onClick: () => {
-				selection = Selection.PRESS;
+				selection = "PRESS";
 				advance(QuestionFlowState.FINAL_INDIVIDUAL);
 			}
 		},
@@ -58,7 +58,7 @@
 			icon: 'gavel',
 			title: m.assistantFlowRoleOther1(),
 			onClick: () => {
-				selection = Selection.SPECIAL;
+				selection = "SPECIAL";
 				advance(QuestionFlowState.FINAL_INDIVIDUAL);
 			}
 		}
@@ -77,7 +77,7 @@
 		<p>{@html m.assistantFlowRoleNSA2()}</p>
 		<p>{m.assistantFlowRoleNSA3()}</p>
 	</Collapse>
-	<Collapse title={m.assistantFlowRolePress1()}>
+	<Collapse title={m.journalist()}>
 		<p>{m.assistantFlowRolePress2()}</p>
 		<p>{m.assistantFlowRolePress3()}</p>
 	</Collapse>
@@ -87,20 +87,20 @@
 	</Collapse>
 </ChatBot>
 
-{#if selection == Selection.NONE && mounted}
+{#if selection == "NONE" && mounted}
 	<Choice {choices} delay={2000}></Choice>
-{:else if selection !== Selection.NONE && mounted}
+{:else if selection !== "NONE" && mounted}
 	<ChatUser>
-		{#if selection === Selection.DELEGATE}
+		{#if selection === "DELEGATE"}
 			<p>{m.assistantFlowRoleAnswer1()}</p>
 		{/if}
-		{#if selection === Selection.NSA}
+		{#if selection === "NSA"}
 			<p>{m.assistantFlowRoleAnswer2()}</p>
 		{/if}
-		{#if selection === Selection.PRESS}
+		{#if selection === "PRESS"}
 			<p>{m.assistantFlowRoleAnswer3()}</p>
 		{/if}
-		{#if selection === Selection.SPECIAL}
+		{#if selection === "SPECIAL"}
 			<p>{m.assistantFlowRoleAnswer4()}</p>
 		{/if}
 	</ChatUser>
