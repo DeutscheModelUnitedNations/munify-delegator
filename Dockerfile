@@ -52,7 +52,7 @@ COPY --from=builder /app/prisma ./prisma/
 # Make a folder called /app/ephemeralData
 RUN mkdir /app/ephemeralData
 # Change ownership to the bun user
-RUN chown -R bun:bun /app/node_modules /app/build /app/tasksOut /app/prisma /app/ephemeralData
+RUN chown -R bun:bun /app/node_modules /app/prisma /app/ephemeralData
 
 ENV NODE_ENV=production
 USER bun
