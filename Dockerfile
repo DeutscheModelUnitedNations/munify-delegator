@@ -40,8 +40,6 @@ ENV PUBLIC_SHA=$SHA
 
 # the runtime dependencies
 COPY --from=builder /app/node_modules ./node_modules/
-# Change ownership to the bun user
-RUN chown -R bun:bun /app/node_modules /app/build /app/tasksOut /app/prisma
 
 # the sveltekit output
 COPY --from=builder /app/build .
@@ -50,10 +48,11 @@ COPY --from=builder /app/tasksOut .
 # the prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma/
 
+
 # Make a folder called /app/ephemeralData
 RUN mkdir /app/ephemeralData
 # Change ownership to the bun user
-RUN chown -R bun:bun /app/ephemeralData
+RUN chown -R bun:bun /app/node_modules /app/build /app/tasksOut /app/prisma /app/ephemeralData
 
 ENV NODE_ENV=production
 USER bun
