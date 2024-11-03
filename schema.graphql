@@ -1143,7 +1143,6 @@ type Mutation {
   updateOneConferenceSupervisor(where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   updateOneDelegation(applied: Boolean, newHeadDelegateUserId: ID, resetEntryCode: Boolean, where: DelegationWhereUniqueInput!): Delegation
-  updateOneDelegationMember(where: DelegationMemberWhereUniqueInput!): DelegationMember
   updateOneNation(where: NationWhereUniqueInput!): Nation
   updateOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication

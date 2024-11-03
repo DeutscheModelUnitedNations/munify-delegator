@@ -1,11 +1,13 @@
 import { HoudiniClient } from '$houdini';
 import { error } from '@sveltejs/kit';
+import { toast } from '@zerodevx/svelte-toast';
 
 export default new HoudiniClient({
 	url: 'http://localhost:5173/api/graphql',
 	throwOnError: {
 		operations: ['mutation', 'subscription'],
 		error: (errors, ctx) => {
+			toast.push(errors.at(0).message);
 			error(500, errors.map((err) => err.message).join('. ') + ` (${ctx.artifact.name})`);
 		}
 	},

@@ -10,13 +10,13 @@
 	let { children }: Props = $props();
 
 	setHeaderStatus({
-		label: m.myAccount(),
-		faIcon: 'fa-user'
+		label: m.dashboard(),
+		faIcon: 'fa-sparkles'
 	});
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator - {m.myAccount()}</title>
+	<title>MUNify Delegator - {m.dashboard()}</title>
 </svelte:head>
 
 {@render children()}

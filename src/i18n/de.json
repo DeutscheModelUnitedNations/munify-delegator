@@ -445,5 +445,8 @@
 	"notEnoughMembers": "Nicht genügend Mitglieder",
 	"notEnoughtRoleApplications": "Nicht genügend Bewerbungen",
 	"missingInformation": "Fehlende Informationen",
-	"youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference": "Du kannst nicht als Einzelteilnehmer*in auf der Konferenz bewerben, da du bereits angemeldet bist."
+	"youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference": "Du kannst nicht als Einzelteilnehmer*in auf der Konferenz bewerben, da du bereits angemeldet bist.",
+	"whichSchoolAreYouFrom": "Von welcher Schule / Institution kommst du?",
+	"singleApplicationMotivation": "Warum bewirbst du dich bei der Konferenz?",
+	"singleApplicationExperience": "Wie viel Erfahrung hast du mit politischen Planspielen wie Model United Nations?"
 }

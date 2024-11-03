@@ -102,7 +102,7 @@
 				title={m.joinDelegation()}
 				img={UndrawTeam}
 				btnText={m.enterCode()}
-				btnLink={`${data.conferenceId}/join`}
+				btnLink={`${data.conferenceId}/join-delegation`}
 				disabled={delegationBlocked()}
 			>
 				<CardInfoSectionWithIcons
@@ -136,7 +136,7 @@
 				title={m.supervisor()}
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
-				btnLink={`${data.conferenceId}/supervisor`}
+				btnLink={`${data.conferenceId}/join-delegation-supervisor`}
 				disabled={supervisorBlocked()}
 			>
 				<CardInfoSectionWithIcons
@@ -194,9 +194,9 @@
 						linkStyle default stroke-width:3px;
 
 						click E "/registration/${data.conferenceId}/create-delegation"
-						click D "/registration/${data.conferenceId}/join"
+						click D "/registration/${data.conferenceId}/join-delegation"
 						click Individual "/registration/${data.conferenceId}/individual"
-						click G "/registration/${data.conferenceId}/supervisor"
+						click G "/registration/${data.conferenceId}/join-delegation-supervisor"
 				`}
 				></MermaidWrapper>
 			</div>

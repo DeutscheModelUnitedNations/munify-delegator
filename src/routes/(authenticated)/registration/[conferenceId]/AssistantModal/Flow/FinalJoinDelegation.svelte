@@ -15,7 +15,7 @@
 			icon: 'arrow-right',
 			title: m.joinDelegation(),
 			class: 'btn-primary',
-			href: `${conferenceId}/join`
+			href: `${conferenceId}/join-delegation`
 		}
 	];
 </script>

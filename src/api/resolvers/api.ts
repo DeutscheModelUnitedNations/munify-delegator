@@ -22,10 +22,14 @@ import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';
 import './modules/user';
+import { maskError } from './errors';
 
 export const yogaInstance = createYoga<RequestEvent>({
 	schema: builder.toSchema(),
 	graphqlEndpoint: '/api/graphql',
 	fetchAPI: { Response },
+	maskedErrors: {
+		maskError
+	},
 	context
 });

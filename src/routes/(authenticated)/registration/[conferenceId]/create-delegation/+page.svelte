@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Steps from '$lib/components/Steps.svelte';
 	import * as m from '$lib/paraglide/messages.js';
-	import type { PageData, ActionData } from './$houdini';
+	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
@@ -38,7 +38,7 @@
 
 	let entryCode = $derived<string | undefined>(undefined);
 	let referralLink = $derived(
-		`${data.origin}/registration/${data.conferenceId}/join?code=${entryCode}`
+		`${data.origin}/registration/${data.conferenceId}/join-delegation?code=${entryCode}`
 	);
 </script>
 

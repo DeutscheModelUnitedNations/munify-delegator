@@ -15,6 +15,7 @@ import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 import * as m from '$lib/paraglide/messages';
+import { individualApplicationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/individual/[roleId]/form-schema';
 
 builder.prismaObject('SingleParticipant', {
 	fields: (t) => ({
@@ -81,6 +82,8 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
+				individualApplicationFormSchema.parse({ ...args, conferenceId: undefined });
+
 				const { foundDelegationMember, foundSupervisor, foundTeamMember } =
 					await fetchUserParticipations({
 						conferenceId: args.conferenceId,
@@ -115,8 +118,8 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				where: field.args.where,
-				applyForRolesIdList: t.arg.idList({required: false}),
-				unApplyForRolesIdList: t.arg.idList({required: false}),
+				applyForRolesIdList: t.arg.idList({ required: false }),
+				unApplyForRolesIdList: t.arg.idList({ required: false }),
 				applied: t.arg.boolean({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
@@ -144,7 +147,8 @@ builder.mutationFields((t) => {
 					if (
 						!singleParticipant.school ||
 						!singleParticipant.experience ||
-						!singleParticipant.motivation
+						!singleParticipant.motivation ||
+						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 					) {
 						throw new GraphQLError(m.missingInformation());
 					}
