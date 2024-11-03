@@ -1,11 +1,27 @@
-<script lang="ts">
+<script lang="ts" generics="A extends Record<string, unknown>, B">
 	import * as m from '$lib/paraglide/messages';
 	import Spinner from '../Spinner.svelte';
+	import type { SuperForm } from 'sveltekit-superforms';
 
-	let { disabled, loading }: { disabled: boolean; loading: boolean } = $props();
+	interface Props {
+		disabled: boolean;
+		loading: boolean;
+		form: SuperForm<A, B>;
+	}
+
+	let { disabled, loading, form }: Props = $props();
+	let { validateForm } = $derived(form);
 </script>
 
-<button disabled={disabled || loading} class="btn btn-primary mt-10 w-full"
+<button
+	onclick={async (e) => {
+		const val = await validateForm({ update: true });
+		if (!val.valid) {
+			e.preventDefault();
+		}
+	}}
+	disabled={disabled || loading}
+	class="btn btn-primary mt-10 w-full"
 	>{m.save()}
 
 	{#if loading}

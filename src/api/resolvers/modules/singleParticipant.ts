@@ -13,6 +13,8 @@ import {
 } from '$db/generated/graphql/SingleParticipant';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
+import { GraphQLError } from 'graphql';
+import * as m from '$lib/paraglide/messages';
 
 builder.prismaObject('SingleParticipant', {
 	fields: (t) => ({
@@ -86,8 +88,8 @@ builder.mutationFields((t) => {
 					});
 
 				if (foundDelegationMember || foundSupervisor || foundTeamMember) {
-					throw new Error(
-						"You can't apply as a single participant if you already are a part of this conference!"
+					throw new GraphQLError(
+						m.youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference()
 					);
 				}
 
@@ -136,7 +138,7 @@ builder.mutationFields((t) => {
 					});
 
 					if (singleParticipant.appliedForRoles.length < 1) {
-						throw new Error('Not enough role applications');
+						throw new GraphQLError(m.notEnoughtRoleApplications());
 					}
 
 					if (
@@ -144,7 +146,7 @@ builder.mutationFields((t) => {
 						!singleParticipant.experience ||
 						!singleParticipant.motivation
 					) {
-						throw new Error('Missing information');
+						throw new GraphQLError(m.missingInformation());
 					}
 				}
 

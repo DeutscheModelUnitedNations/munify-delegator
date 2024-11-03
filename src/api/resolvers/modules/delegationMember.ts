@@ -13,6 +13,7 @@ import * as m from '$lib/paraglide/messages';
 import { languageTag } from '$lib/paraglide/runtime';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
+import { GraphQLError } from 'graphql';
 
 builder.prismaObject('DelegationMember', {
 	fields: (t) => ({
@@ -75,7 +76,7 @@ builder.mutationFields((t) => {
 				});
 
 				if (delegation.applied) {
-					throw new Error(m.delegationHasAlreadyApplied({}, { languageTag: languageTag() }));
+					throw new GraphQLError(m.delegationHasAlreadyApplied());
 				}
 
 				// if the user somehow is already participating in the conference, throw an error

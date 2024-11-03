@@ -158,7 +158,7 @@
 	"vegetarian": "Vegetarisch",
 	"omnivore": "Omnivor",
 	"save": "Speichern",
-	"saved": "Gespeichert",
+	"saved": "Gespeichert ✅",
 	"saveAndContinue": "Speichern und weiter",
 	"loginInformation": "Anmeldeinformationen",
 	"loginName": "Anmeldename",
@@ -441,5 +441,9 @@
 	"specialRole": "Spezielle Rolle",
 	"didMyStudentsAlreadyCreateADelegation": "Haben meine Schüler*innen\nschon eine oder mehrere\nDelegationen erstellt?",
 	"waitForSignupOfMyStudents": "Auf Anmeldung\nIhrer Schüler*innen\nwarten",
-	"signupAsSupervisor": "Anmeldung als\nBetreuer*in"
+	"signupAsSupervisor": "Anmeldung als\nBetreuer*in",
+	"notEnoughMembers": "Nicht genügend Mitglieder",
+	"notEnoughtRoleApplications": "Nicht genügend Bewerbungen",
+	"missingInformation": "Fehlende Informationen",
+	"youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference": "Du kannst nicht als Einzelteilnehmer*in auf der Konferenz bewerben, da du bereits angemeldet bist."
 }

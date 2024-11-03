@@ -14,7 +14,7 @@
 			icon: 'arrow-right',
 			title: m.createDelegation(),
 			class: 'btn-primary',
-			href: `${conferenceId}/create`
+			href: `${conferenceId}/create-delegation`
 		}
 	];
 </script>

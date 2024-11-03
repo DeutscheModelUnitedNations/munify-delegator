@@ -27,6 +27,8 @@ import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
+import { z } from 'zod';
+import { GraphQLError } from 'graphql';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -159,6 +161,7 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
 				};
 
+				userFormSchema.parse(args.data);
 				return field.resolve(query, root, args, ctx, info);
 			}
 		})
@@ -192,7 +195,7 @@ builder.mutationFields((t) => {
 			resolve: async (root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				if (ctx.oidc.tokenSet?.access_token === undefined) {
-					throw new Error('No access token provided');
+					throw new GraphQLError('No access token provided');
 				}
 				const issuerUserData = await fetchUserInfoFromIssuer(
 					ctx.oidc.tokenSet?.access_token,
@@ -205,7 +208,7 @@ builder.mutationFields((t) => {
 					!issuerUserData.given_name ||
 					!issuerUserData.preferred_username
 				) {
-					throw new Error('OIDC result is missing required fields!');
+					throw new GraphQLError('OIDC result is missing required fields!');
 				}
 
 				const updatedUser = await db.user.upsert({

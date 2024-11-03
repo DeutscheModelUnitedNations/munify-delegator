@@ -18,6 +18,7 @@ import {
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
+import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 
 builder.prismaObject('Conference', {
 	fields: (t) => ({
@@ -171,6 +172,8 @@ builder.mutationFields((t) => {
 					...args.where,
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
 				};
+
+				conferenceSettingsFormSchema.parse(args.data);
 
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				delete args.data.image;

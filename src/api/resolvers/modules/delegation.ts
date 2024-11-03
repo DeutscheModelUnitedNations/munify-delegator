@@ -16,6 +16,9 @@ import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
+import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
+import { GraphQLError } from 'graphql';
+import * as m from '$lib/paraglide/messages';
 
 builder.prismaObject('Delegation', {
 	fields: (t) => ({
@@ -91,6 +94,8 @@ builder.mutationFields((t) => {
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				createDelegationFormSchema.parse({ ...args, conferenceId: undefined });
 
 				// if the user somehow is already participating in the conference, throw an error
 				await fetchUserParticipations({
@@ -174,15 +179,15 @@ builder.mutationFields((t) => {
 
 					if (args.applied) {
 						if (delegation.members.length < 2) {
-							throw new Error('Not enough members');
+							throw new GraphQLError(m.notEnoughMembers());
 						}
 
 						if (delegation.appliedForRoles.length < 3) {
-							throw new Error('Not enough role applications');
+							throw new GraphQLError(m.notEnoughtRoleApplications());
 						}
 
 						if (!delegation.school || !delegation.experience || !delegation.motivation) {
-							throw new Error('Missing information');
+							throw new GraphQLError(m.missingInformation());
 						}
 					}
 

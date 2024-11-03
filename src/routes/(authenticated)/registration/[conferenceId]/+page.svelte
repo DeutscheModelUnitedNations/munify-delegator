@@ -85,7 +85,7 @@
 				title={m.createDelegation()}
 				img={UndrawNew}
 				btnText={m.createDelegation()}
-				btnLink={`${data.conferenceId}/create`}
+				btnLink={`${data.conferenceId}/create-delegation`}
 				disabled={delegationBlocked()}
 			>
 				<CardInfoSectionWithIcons
@@ -193,7 +193,7 @@
 
 						linkStyle default stroke-width:3px;
 
-						click E "/registration/${data.conferenceId}/create"
+						click E "/registration/${data.conferenceId}/create-delegation"
 						click D "/registration/${data.conferenceId}/join"
 						click Individual "/registration/${data.conferenceId}/individual"
 						click G "/registration/${data.conferenceId}/supervisor"

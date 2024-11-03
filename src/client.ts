@@ -6,7 +6,7 @@ export default new HoudiniClient({
 	throwOnError: {
 		operations: ['mutation', 'subscription'],
 		error: (errors, ctx) => {
-			error(500, `(${ctx.artifact.name}): ` + errors.map((err) => err.message).join('. ') + '.');
+			error(500, errors.map((err) => err.message).join('. ') + ` (${ctx.artifact.name})`);
 		}
 	},
 
