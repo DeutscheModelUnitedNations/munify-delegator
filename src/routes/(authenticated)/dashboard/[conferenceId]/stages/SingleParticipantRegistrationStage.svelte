@@ -1,18 +1,29 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData } from '../$houdini';
 	import * as m from '$lib/paraglide/messages.js';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
-	import { apiClient, checkForError } from '$api/client';
-	import { goto, invalidateAll } from '$app/navigation';
-	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
-	import TodoTable from '$lib/components/TodoTable.svelte';
-	import { onMount } from 'svelte';
+	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import { getApi } from '$lib/global/apiState.svelte';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { graphql } from '$houdini';
+	import type { StoresValues } from 'svelte/store';
 
-	let { data }: { data: PageData } = $props();
+	let {
+		data
+	}: {
+		data: Pick<
+			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
+			'findUniqueConference' | 'findUniqueSingleParticipant'
+		> &
+			Pick<PageData, 'user'>;
+	} = $props();
 
+	let singleParticipant = $derived(data.findUniqueSingleParticipant!);
+	let conference = $derived(data.findUniqueConference!);
+
+	//TODO: We should use forms for this
 	let questionnaireValues = $state({
 		school: '',
 		motivation: '',
@@ -21,51 +32,78 @@
 
 	onMount(async () => {
 		questionnaireValues = {
-			school: data.singleParticipantData?.school ?? '',
-			motivation: data.singleParticipantData?.motivation ?? '',
-			experience: data.singleParticipantData?.experience ?? ''
+			school: singleParticipant.school ?? '',
+			motivation: singleParticipant.motivation ?? '',
+			experience: singleParticipant.experience ?? ''
 		};
 	});
 
+	const updateMutation = graphql(`
+		mutation UpdateSingleParticipantMutation(
+			$where: SingleParticipantWhereUniqueInput!
+			$applied: Boolean
+			$applyForRolesIdList: [ID!]
+			$unApplyForRolesIdList: [ID!]
+			$experience: String
+			$school: String
+			$motivation: String
+		) {
+			updateOneSingleParticipant(
+				where: $where
+				applied: $applied
+				applyForRolesIdList: $applyForRolesIdList
+				experience: $experience
+				school: $school
+				motivation: $motivation
+				unApplyForRolesIdList: $unApplyForRolesIdList
+			) {
+				id
+			}
+		}
+	`);
+
+	const deleteMutation = graphql(`
+		mutation DeleteSingleParticipantMutation($where: SingleParticipantWhereUniqueInput!) {
+			deleteOneSingleParticipant(where: $where) {
+				id
+			}
+		}
+	`);
+
 	const completeRegistration = async () => {
-		if (!data.singleParticipantData) {
-			console.error('Error: singleParticipantData not found');
+		if (!singleParticipant) {
+			console.error('Error: singleParticipant not found');
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		checkForError(
-			getApi()
-				.singleParticipant({ id: data.singleParticipantData!.id })
-				.completeRegistration.patch({})
-		);
-		invalidateAll();
-	};
-
-	const deleteAllApplications = async () => {
-		if (!data.singleParticipantData) {
-			console.error('Error: singleParticipantData not found');
-			return;
-		}
-		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
-		checkForError(getApi().singleParticipant({ id: data.singleParticipantData.id }).delete());
-		invalidateAll().then(() => {
-			goto('/dashboard');
+		await updateMutation.mutate({
+			where: { id: singleParticipant.id },
+			applied: true
 		});
 	};
 
+	const deleteAllApplications = async () => {
+		if (!singleParticipant) {
+			console.error('Error: singleParticipant not found');
+			return;
+		}
+		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
+
+		await updateMutation.mutate({
+			where: { id: singleParticipant.id },
+			unApplyForRolesIdList: singleParticipant.appliedForRoles.map((role) => role.id)
+		});
+		goto('/dashboard');
+	};
+
 	const deleteApplication = async (id: string) => {
-		if (!data.singleParticipantData) {
-			console.error('Error: singleParticipantData not found');
+		if (!singleParticipant) {
+			console.error('Error: singleParticipant not found');
 			return;
 		}
 		if (!confirm(m.deleteApplicationConfirmation())) return;
-		checkForError(
-			getApi()
-				.singleParticipant({ id: data.singleParticipantData.id })
-				.deleteApplication({ roleApplicationId: id })
-				.delete()
-		);
-		invalidateAll();
+		await deleteMutation.mutate({ where: { id } });
+		goto('/dashboard');
 	};
 
 	let todos = $derived([
@@ -77,14 +115,14 @@
 		{
 			title: m.todoAnswerQuestionaire(),
 			completed:
-				!!data.singleParticipantData?.school &&
-				!!data.singleParticipantData?.motivation &&
-				!!data.singleParticipantData?.experience,
+				!!singleParticipant.school &&
+				!!singleParticipant.motivation &&
+				!!singleParticipant.experience,
 			help: m.todoAnswerQuestionaireHelp()
 		},
 		{
 			title: m.todoCompleteSignup(),
-			completed: data.singleParticipantData?.applied,
+			completed: singleParticipant.applied,
 			help: m.todoCompleteSignupHelp()
 		}
 	]);
@@ -93,7 +131,7 @@
 		{
 			icon: 'check-to-slot',
 			title: m.roleApplications(),
-			value: data.singleParticipantData?.appliedForRoles?.length,
+			value: singleParticipant.appliedForRoles?.length,
 			desc: m.atThisConference()
 		},
 		{
@@ -107,7 +145,7 @@
 	]);
 </script>
 
-{#if !data.singleParticipantData?.applied}
+{#if !singleParticipant.applied}
 	<section role="alert" class="alert alert-warning w-full">
 		<i class="fas fa-exclamation-triangle text-3xl"></i>
 		<div class="flex flex-col">
@@ -146,7 +184,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.singleParticipantData!.appliedForRoles as role}
+					{#each singleParticipant!.appliedForRoles as role}
 						<tr>
 							<td>
 								<div class="flex items-center gap-4">
@@ -157,14 +195,14 @@
 								</div>
 							</td>
 							<td>{role.description}</td>
-							{#if !data.singleParticipantData?.applied}
+							{#if !singleParticipant.applied}
 								<td>
 									<SquareButtonWithLoadingState
-										cssClass="btn-error {(data.singleParticipantData?.applied ||
-											data.singleParticipantData?.appliedForRoles.length === 1) &&
+										cssClass="btn-error {(singleParticipant.applied ||
+											singleParticipant.appliedForRoles.length === 1) &&
 											'opacity-10'}"
-										disabled={data.singleParticipantData?.applied ||
-											data.singleParticipantData?.appliedForRoles.length === 1}
+										disabled={singleParticipant.applied ||
+											singleParticipant.appliedForRoles.length === 1}
 										icon="trash"
 										onClick={async () => deleteApplication(role.id)}
 									/>
@@ -176,7 +214,7 @@
 			</table>
 		</div>
 	</DashboardContentCard>
-	<a class="btn btn-ghost btn-wide mt-4" href="/registration/{data.conferenceId}/individual">
+	<a class="btn btn-ghost btn-wide mt-4" href="/registration/{conference.id}/individual">
 		<i class="fa-solid fa-plus"></i>
 		{m.addAnotherApplication()}
 	</a>
@@ -192,20 +230,18 @@
 		>
 			<form
 				class="flex flex-col gap-4"
-				onsubmit={(e) => {
+				onsubmit={async (e) => {
 					e.preventDefault();
-					if (!data.singleParticipantData) {
+					if (!singleParticipant) {
 						console.error('Error: Single Participant Data not found');
 						return;
 					}
-					checkForError(
-						getApi().singleParticipant({ id: data.singleParticipantData.id }).patch({
-							school: questionnaireValues.school,
-							motivation: questionnaireValues.motivation,
-							experience: questionnaireValues.experience
-						})
-					);
-					invalidateAll();
+					await updateMutation.mutate({
+						where: { id: singleParticipant.id },
+						school: questionnaireValues.school,
+						motivation: questionnaireValues.motivation,
+						experience: questionnaireValues.experience
+					});
 				}}
 			>
 				<label class="form-control w-full">
@@ -221,7 +257,7 @@
 							// @ts-expect-error
 							questionnaireValues.school = e.target.value;
 						}}
-						disabled={data.singleParticipantData?.applied}
+						disabled={singleParticipant.applied}
 						required
 					/>
 				</label>
@@ -239,7 +275,7 @@
 							// @ts-expect-error
 							questionnaireValues.motivation = e.target.value;
 						}}
-						disabled={data.singleParticipantData?.applied}
+						disabled={singleParticipant.applied}
 						required
 					></textarea>
 				</label>
@@ -257,12 +293,13 @@
 							// @ts-expect-error
 							questionnaireValues.experience = e.target.value;
 						}}
-						disabled={data.singleParticipantData?.applied}
+						disabled={singleParticipant.applied}
 						required
 					></textarea>
 				</label>
 				<div class="flex-1"></div>
-				{#if !data.delegationData?.applied}
+				<!-- this was data.delegationData previously, is this correct? -->
+				{#if !singleParticipant.applied}
 					<button class="btn btn-primary" type="submit">
 						{m.save()}
 					</button>
@@ -270,7 +307,7 @@
 			</form>
 		</DashboardContentCard>
 	</div>
-	{#if !data.singleParticipantData?.applied}
+	{#if !singleParticipant.applied}
 		<DashboardContentCard
 			title={m.completeSignup()}
 			description={m.completeSignupDescriptionHeadDelegate()}
@@ -288,7 +325,7 @@
 </section>
 <section>
 	<h2 class="mb-4 text-2xl font-bold">{m.dangerZone()}</h2>
-	{#if data.singleParticipantData?.applied}
+	{#if singleParticipant.applied}
 		<div class="alert alert-info">
 			<i class="fas fa-exclamation-triangle text-3xl"></i>
 			<p>{m.noDangerZoneOptionsSingleParticipants()}</p>
@@ -303,8 +340,8 @@
 
 	<p class="mt-10 text-xs">
 		{@html m.singleParticipantsIdForSupport()}
-		{#if data.singleParticipantData}
-			<span class="rounded-sm bg-base-200 p-1 font-mono">{data.singleParticipantData.id}</span>
+		{#if singleParticipant}
+			<span class="rounded-sm bg-base-200 p-1 font-mono">{singleParticipant.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

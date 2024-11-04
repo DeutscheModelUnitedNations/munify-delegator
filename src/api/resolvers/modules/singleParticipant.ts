@@ -118,6 +118,9 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				where: field.args.where,
+				school: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false }),
+				motivation: t.arg.string({ required: false }),
 				applyForRolesIdList: t.arg.idList({ required: false }),
 				unApplyForRolesIdList: t.arg.idList({ required: false }),
 				applied: t.arg.boolean({ required: false })
@@ -158,6 +161,9 @@ builder.mutationFields((t) => {
 					...query,
 					where: args.where,
 					data: {
+						school: args.school ?? undefined,
+						experience: args.experience ?? undefined,
+						motivation: args.motivation ?? undefined,
 						appliedForRoles: {
 							connect: args.applyForRolesIdList
 								? args.applyForRolesIdList.map((id) => ({ id }))

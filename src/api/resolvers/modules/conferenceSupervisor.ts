@@ -87,10 +87,14 @@ builder.mutationFields((t) => {
 
 				// if the user somehow is already participating in the conference as something else than a supervisor, throw
 				if (participations.foundDelegationMember) {
-					throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() }));
+					throw new GraphQLError(
+						m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() })
+					);
 				}
 				if (participations.foundSingleParticipant) {
-					throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() }));
+					throw new GraphQLError(
+						m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() })
+					);
 				}
 				if (participations.foundTeamMember) {
 					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: languageTag() }));
@@ -140,7 +144,19 @@ builder.mutationFields((t) => {
 	return {
 		updateOneConferenceSupervisor: t.prismaField({
 			...field,
-			args: { where: field.args.where },
+			args: {
+				where: field.args.where,
+
+				data: t.arg({
+					type: t.builder.inputType('ConferenceSupervisorUpdateDataInput', {
+						fields: (t) => ({
+							plansOwnAttendenceAtConference: t.boolean({
+								required: false
+							}),
+						})
+					})
+				})
+			},
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
 					...args.where,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
-	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
 	import Wrapper from './Wrapper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Props {
 		countryCode: string;
@@ -17,7 +17,7 @@
 		</div>
 		<div class="stat-title">Sie vertreten</div>
 		<div class="stat-value overflow-ellipsis text-wrap text-2xl sm:w-auto sm:text-4xl">
-			{countryCodeToLocalName(countryCode)}
+			{getFullTranslatedCountryNameFromISO3Code(countryCode)}
 		</div>
 	</div>
 </Wrapper>

@@ -157,7 +157,10 @@ builder.mutationFields((t) => {
 				where: field.args.where,
 				resetEntryCode: t.arg.boolean({ required: false }),
 				newHeadDelegateUserId: t.arg.id({ required: false }),
-				applied: t.arg.boolean({ required: false })
+				applied: t.arg.boolean({ required: false }),
+				school: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false }),
+				motivation: t.arg.string({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
 				args.where = {
@@ -203,6 +206,20 @@ builder.mutationFields((t) => {
 						},
 						data: {
 							applied: args.applied
+						}
+					});
+				}
+
+				if (args.school || args.experience || args.motivation) {
+					await db.delegation.update({
+						where: {
+							id: delegation.id,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+						},
+						data: {
+							school: args.school ?? undefined,
+							experience: args.experience ?? undefined,
+							motivation: args.motivation ?? undefined
 						}
 					});
 				}

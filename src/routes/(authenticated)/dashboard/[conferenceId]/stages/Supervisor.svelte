@@ -1,45 +1,74 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData } from '../$houdini';
 	import * as m from '$lib/paraglide/messages.js';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
-	import { apiClient, checkForError } from '$api/client';
-	import { invalidateAll } from '$app/navigation';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { graphql } from '$houdini';
+	import type { StoresValues } from 'svelte/store';
 
-	let { data }: { data: PageData } = $props();
+	// TODO these components need some refactoring
+	let {
+		data
+	}: {
+		data: Pick<
+			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
+			'findUniqueConference' | 'findUniqueConferenceSupervisor'
+		> &
+			Pick<PageData, 'user'>;
+	} = $props();
 
-	let api = apiClient({ origin: data.url.origin });
+	let supervisor = $derived(data.findUniqueConferenceSupervisor!);
+	let conference = $derived(data.findUniqueConference!);
 
 	const stats = $derived([
 		{
 			icon: 'flag',
-			title: 'Delegationen',
-			value: data.supervisorsDelegationData?.length,
-			desc: 'in der Konferenz'
+			title: m.delegations(),
+			value: supervisor.delegations.length,
+			desc: m.inTheConference()
 		},
 		{
 			icon: 'users',
-			title: 'Mitglieder',
-			value: data.supervisorsDelegationData?.reduce((acc, cur) => acc + cur.members.length, 0),
-			desc: 'in allen Delegationen'
+			title: m.members(),
+			value: supervisor.delegations.reduce((acc, cur) => acc + cur.members.length, 0),
+			desc: m.inAllDelegations()
 		}
 	]);
 
-	const getName = (user: any, shortenGiven = false) => {
+	const getName = (
+		user: NonNullable<(typeof supervisor)>['delegations'][0]['members'][0]['user'],
+		shortenGiven = false
+	) => {
 		if (shortenGiven) {
 			return `${user.given_name.charAt(0)}. ${user.family_name}`;
 		}
 		return `${user.given_name} ${user.family_name}`;
 	};
 
+	const updateQuery = graphql(`
+		mutation SupervisorAttendanceChangeMutation(
+			$where: ConferenceSupervisorWhereUniqueInput!
+			$data: ConferenceSupervisorUpdateDataInput!
+		) {
+			updateOneConferenceSupervisor(where: $where, data: $data) {
+				id
+				plansOwnAttendenceAtConference
+			}
+		}
+	`);
+
 	const handlePresenceChange = async (e: Event) => {
-		if (!data.supervisorData) return;
-		await checkForError(
-			api.conferenceSupervisor({ id: data.supervisorData.id }).patch({
+		updateQuery.mutate({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conference.id,
+					userId: data.user.sub
+				}
+			},
+			data: {
 				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
-			})
-		);
-		invalidateAll();
+			}
+		});
 	};
 </script>
 
@@ -56,21 +85,21 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.ownPresence()}</h2>
 	<p class="text-sm">{m.ownPresenceDescription()}</p>
-	<div class="card p-6 shadow-md max-w-80 bg-base-100 dark:bg-base-200">
+	<div class="card max-w-80 bg-base-100 p-6 shadow-md dark:bg-base-200">
 		<div class="form-control">
 			<label class="label cursor-pointer">
 				<span class="label-text">{m.presentAtConference()}</span>
 				<input
 					type="checkbox"
 					class="toggle toggle-success"
-					checked={data.supervisorData?.plansOwnAttendenceAtConference}
+					checked={supervisor.plansOwnAttendenceAtConference}
 					onchange={handlePresenceChange}
 				/>
 			</label>
 		</div>
 	</div>
-	<p class="text-xs text-gray-500">
-		{@html data.supervisorData?.plansOwnAttendenceAtConference
+	<p class="text-gray-500 text-xs">
+		{@html supervisor.plansOwnAttendenceAtConference
 			? m.willBePresentAtConference()
 			: m.willNotBePresentAtConference()}
 	</p>
@@ -78,8 +107,8 @@
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
-	{#if data.supervisorsDelegationData && data.supervisorsDelegationData.length > 0}
-		<div class="flex flex-col sm:flex-row gap-2 sm:gap-8">
+	{#if supervisor && supervisor.delegations.length > 0}
+		<div class="flex flex-col gap-2 sm:flex-row sm:gap-8">
 			<div class="text-sm">
 				<i class="fa-solid fa-hourglass-half text-warning"></i>
 				<span> = {m.notApplied()}</span>
@@ -89,40 +118,40 @@
 				<span> = {m.applied()}</span>
 			</div>
 		</div>
-		{#each data.supervisorsDelegationData as delegation, index}
+		{#each supervisor.delegations as delegation, index}
 			<div
 				tabindex="-1"
-				class="collapse p-4 bg-base-100 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300 shadow-md transition-colors duration-300"
+				class="collapse bg-base-100 p-4 shadow-md transition-colors duration-300 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300"
 			>
 				<input type="radio" name="supervisor-accordion-1" checked={index === 0} />
-				<div class="collapse-title text-xl text-nowrap font-medium flex flex-col sm:flex-row">
-					<div class="flex items-center mb-6 sm:mb-0">
+				<div class="collapse-title flex flex-col text-nowrap text-xl font-medium sm:flex-row">
+					<div class="mb-6 flex items-center sm:mb-0">
 						<div>
 							{#if delegation.applied}
-								<i class="fa-solid fa-circle-check text-success text-3xl"></i>
+								<i class="fa-solid fa-circle-check text-3xl text-success"></i>
 							{:else}
-								<i class="fa-solid fa-hourglass-half text-warning text-3xl"></i>
+								<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
 							{/if}
 						</div>
 						<div class="divider divider-horizontal"></div>
 						<div><i class="fa-duotone fa-fingerprint mr-4"></i>{delegation.entryCode}</div>
 					</div>
-					<div class="divider hidden sm:flex divider-horizontal"></div>
+					<div class="divider divider-horizontal hidden sm:flex"></div>
 					<div class="flex items-center">
 						<div><i class="fa-duotone fa-users mr-4"></i>{delegation.members.length}</div>
 						<div class="divider divider-horizontal"></div>
 						<div>
 							<i class="fa-duotone fa-medal mr-4"></i>{getName(
-								delegation?.members.find((x) => x.isHeadDelegate)?.user,
+								delegation?.members.find((x) => x.isHeadDelegate)?.user!,
 								true
 							)}
 						</div>
 					</div>
 				</div>
 				<div class="collapse-content overflow-x-auto">
-					<div class="mt-10 text-sm grid grid-cols-[1fr] sm:grid-cols-[auto_1fr] gap-x-4">
+					<div class="mt-10 grid grid-cols-[1fr] gap-x-4 text-sm sm:grid-cols-[auto_1fr]">
 						<div class="font-bold">{m.members()}</div>
-						<div class="w-full mb-4">
+						<div class="mb-4 w-full">
 							{delegation.members.map((x) => getName(x.user)).join(', ')}
 						</div>
 						<div class="font-bold">{m.supervisors()}</div>
@@ -148,7 +177,9 @@
 									<div class="flex gap-2">
 										<div class="badge bg-base-300">
 											{roleApplication.nation
-												? countryCodeToLocalName(roleApplication.nation.alpha3Code)
+												? getFullTranslatedCountryNameFromISO3Code(
+														roleApplication.nation.alpha3Code
+													)
 												: roleApplication.nonStateActor?.name}
 										</div>
 									</div>
@@ -166,7 +197,7 @@
 			{m.noDelegationsFound()}
 		</div>
 	{/if}
-	<a class="mt-4 btn btn-wide btn-ghost" href="/registration/{data.conferenceId}/supervisor">
+	<a class="btn btn-ghost btn-wide mt-4" href="/registration/{conference.id}/supervisor">
 		<i class="fa-solid fa-plus"></i>
 		{m.addAnotherDelegation()}
 	</a>

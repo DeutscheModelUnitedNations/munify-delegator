@@ -1,7 +1,5 @@
 query ConferenceOpenForRegistrationQuery($userId: String!) {
-	findManyConferences(orderBy: [ {
-     startConference: asc
-  }]) {
+	findManyConferences(orderBy: [{ startConference: asc }]) {
 		id
 		location
 		longTitle
@@ -16,12 +14,12 @@ query ConferenceOpenForRegistrationQuery($userId: String!) {
 	}
 	findManyDelegationMembers(where: { userId: { equals: $userId } }) {
 		conference {
-      id
-    }
+			id
+		}
 	}
 	findManySingleParticipants(where: { userId: { equals: $userId } }) {
 		conference {
-      id
-    }
+			id
+		}
 	}
 }

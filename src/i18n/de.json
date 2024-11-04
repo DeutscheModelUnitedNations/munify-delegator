@@ -448,5 +448,7 @@
 	"youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference": "Du kannst nicht als Einzelteilnehmer*in auf der Konferenz bewerben, da du bereits angemeldet bist.",
 	"whichSchoolAreYouFrom": "Von welcher Schule / Institution kommst du?",
 	"singleApplicationMotivation": "Warum bewirbst du dich bei der Konferenz?",
-	"singleApplicationExperience": "Wie viel Erfahrung hast du mit politischen Planspielen wie Model United Nations?"
+	"singleApplicationExperience": "Wie viel Erfahrung hast du mit politischen Planspielen wie Model United Nations?",
+	"inAllDelegations": "In allen Delegationen",
+	"inTheConference": "In der Konferenz"
 }

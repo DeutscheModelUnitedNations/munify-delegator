@@ -1,34 +1,41 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import type { PageData } from './$types';
-	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
+	import type { PageData } from '../$houdini';
 	import Flag from '$lib/components/Flag.svelte';
-	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
-	import type { Nation, NonStateActor } from '@prisma/client';
-	import { apiClient, checkForError } from '$api/client';
+	import type { Nation } from '@prisma/client';
 	import { invalidateAll } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages.js';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import getNumOfSeatsPerNation from '$lib/helper/getNumOfSeatsPerNation';
+	import type { StoresValues } from 'svelte/store';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
+	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
+	import { graphql } from '$houdini';
 
 	interface Props {
 		open: boolean;
 		onClose: () => void;
-		data: PageData;
+		data: Pick<
+			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
+			'findUniqueConference' | 'findUniqueDelegationMember'
+		>;
 	}
 
 	let { open, onClose, data }: Props = $props();
-	let api = apiClient({ origin: data.url.origin });
+
+	let delegationMember = $derived(data.findUniqueDelegationMember!);
+	let conference = $derived(data.findUniqueConference!);
 
 	let nations = $derived(() => {
 		const nations = new Array<Nation>();
-		data.committees.forEach((committee) => {
+		conference.committees.forEach((committee) => {
 			committee.nations.forEach((nation) => {
 				if (!nations.find((n) => n.alpha3Code === nation.alpha3Code)) nations.push(nation);
 			});
 		});
 		return nations.sort((a, b) =>
-			countryCodeToLocalName(a.alpha3Code).localeCompare(countryCodeToLocalName(b.alpha3Code))
+			getFullTranslatedCountryNameFromISO3Code(a.alpha3Code).localeCompare(
+				getFullTranslatedCountryNameFromISO3Code(b.alpha3Code)
+			)
 		);
 	});
 
@@ -36,45 +43,79 @@
 		return nations()
 			.filter(
 				(nation) =>
-					!data.delegationData?.appliedForRoles.find((role) => role.nationId === nation.alpha3Code)
+					!delegationMember.delegation.appliedForRoles.find(
+						(role) => role.nation.alpha3Code === nation.alpha3Code
+					)
 			)
 			.filter(
 				(nation) =>
-					getNumOfSeatsPerNation(nation, data.committees) >=
-						(data.delegationData?.members?.length ?? 0) &&
-					getNumOfSeatsPerNation(nation, data.committees) > 1
+					getNumOfSeatsPerNation(nation, conference.committees) >=
+						(delegationMember.delegation?.members?.length ?? 0) &&
+					getNumOfSeatsPerNation(nation, conference.committees) > 1
 			);
 	});
 
 	let nonStateActors = $derived(() => {
-		return data.nonStateActors || [];
+		return conference.nonStateActors || [];
 	});
 
 	let nonStateActorsPool = $derived(() => {
 		return nonStateActors()
 			.filter(
 				(nsa) =>
-					!data.delegationData?.appliedForRoles.find((role) => role.nonStateActorId === nsa.id)
+					!delegationMember.delegation?.appliedForRoles.find(
+						(role) => role.nonStateActor.id === nsa.id
+					)
 			)
-			.filter((nsa) => nsa.seatAmount >= (data.delegationData?.members.length ?? 0));
+			.filter((nsa) => nsa.seatAmount >= (delegationMember.delegation?.members.length ?? 0));
 	});
 
 	const maxDelegationSizeReached = $derived(() => {
 		return (
 			nationsPool().length === 0 &&
 			nonStateActorsPool().length === 0 &&
-			data.delegationData?.appliedForRoles.length === 0
+			delegationMember.delegation?.appliedForRoles.length === 0
 		);
 	});
 
-	const moveEntry = async (id: string, direction: 'up' | 'down') => {
-		checkForError(api.roleApplication({ id }).move.patch({ direction }));
-		await invalidateAll();
+	const deleteEntryMutation = graphql(`
+		mutation DeleteRoleApplicationMutation($where: RoleApplicationWhereUniqueInput!) {
+			deleteOneRoleApplication(where: $where) {
+				id
+			}
+		}
+	`);
+
+	const swapEntryMutation = graphql(`
+		mutation SwapRoleApplicationRanksMutation($a: ID!, $b: ID!) {
+			swapRoleApplicationRanks(firstRoleApplicationId: $a, secondRoleApplicationId: $b) {
+				ok
+			}
+		}
+	`);
+
+	const createEntryMutation = graphql(`
+		mutation CreateRoleApplicationRanksMutation(
+			$delegationId: ID!
+			$nonStateActorId: ID
+			$nationId: ID
+		) {
+			createOneRoleApplication(
+				delegationId: $delegationId
+				nationId: $nationId
+				nonStateActorId: $nonStateActorId
+			) {
+				id
+			}
+		}
+	`);
+
+	const swapEntry = async (firstId: string, secondId: string) => {
+		swapEntryMutation.mutate({ a: firstId, b: secondId });
 	};
 
 	const deleteEntry = async (id: string) => {
-		checkForError(api.roleApplication({ id }).delete());
-		await invalidateAll();
+		await deleteEntryMutation.mutate({ where: { id } });
 	};
 </script>
 
@@ -93,7 +134,7 @@
 				<div class="flex flex-col gap-4">
 					<h3 class="text-xl font-bold">{m.yourPreferences()}</h3>
 					<p class="text-sm">{m.yourPreferencesDescription()}</p>
-					{#if !data.delegationData?.appliedForRoles || data.delegationData.appliedForRoles.length === 0}
+					{#if !delegationMember.delegation?.appliedForRoles || delegationMember.delegation.appliedForRoles.length === 0}
 						<div class="alert alert-warning">
 							<i class="fas fa-triangle-exclamation"></i>
 							<p>{m.noPreferencesSet()}</p>
@@ -101,12 +142,12 @@
 					{:else}
 						<div class="overflow-x-auto">
 							<NationsWithCommitteesTable
-								committees={data.committees.map((committee) => ({
+								committees={conference.committees.map((committee) => ({
 									abbreviation: committee.abbreviation,
 									name: committee.name
 								}))}
 							>
-								{#each data.delegationData.appliedForRoles.sort((a, b) => a.rank - b.rank) as role, index}
+								{#each delegationMember.delegation.appliedForRoles.sort((a, b) => a.rank - b.rank) as role, index}
 									<tr>
 										<td>
 											<div class="flex items-center gap-4">
@@ -129,12 +170,14 @@
 												{:else}
 													<Flag alpha2Code={role.nation?.alpha2Code} size="xs" />
 													<span
-														>{countryCodeToLocalName(role.nation?.alpha3Code ?? 'Not Found')}</span
+														>{getFullTranslatedCountryNameFromISO3Code(
+															role.nation?.alpha3Code ?? 'Not Found'
+														)}</span
 													>
 												{/if}
 											</div>
 										</td>
-										{#each data.committees as committee}
+										{#each conference.committees as committee}
 											{#if role.nonStateActor}
 												<td class="text-center"><i class="fa-duotone fa-minus"></i></td>
 											{:else}
@@ -153,7 +196,7 @@
 											{role.nonStateActor
 												? role.nonStateActor.seatAmount
 												: role.nation
-													? getNumOfSeatsPerNation(role.nation, data.committees)
+													? getNumOfSeatsPerNation(role.nation, conference.committees)
 													: 0}
 										</td>
 										<td class="flex gap-1">
@@ -161,14 +204,24 @@
 												cssClass="bg-base-200 {index === 0 && 'opacity-10'}"
 												disabled={index === 0}
 												icon="chevron-up"
-												onClick={async () => moveEntry(role.id, 'up')}
+												onClick={async () => {
+													const previous = delegationMember.delegation.appliedForRoles.sort(
+														(a, b) => a.rank - b.rank
+													)[index - 1];
+													swapEntry(role.id, previous.id);
+												}}
 											/>
 											<SquareButtonWithLoadingState
 												cssClass="bg-base-200 {index ===
-													data.delegationData.appliedForRoles.length - 1 && 'opacity-10'}"
-												disabled={index === data.delegationData.appliedForRoles.length - 1}
+													delegationMember.delegation.appliedForRoles.length - 1 && 'opacity-10'}"
+												disabled={index === delegationMember.delegation.appliedForRoles.length - 1}
 												icon="chevron-down"
-												onClick={async () => moveEntry(role.id, 'down')}
+												onClick={async () => {
+													const next = delegationMember.delegation.appliedForRoles.sort(
+														(a, b) => a.rank - b.rank
+													)[index + 1];
+													swapEntry(role.id, next.id);
+												}}
 											/>
 											<SquareButtonWithLoadingState
 												cssClass="text-error"
@@ -191,7 +244,7 @@
 						<p class="text-sm">{m.nationsPoolDescription()}</p>
 						<div class="overflow-x-auto">
 							<NationsWithCommitteesTable
-								committees={data.committees.map((committee) => ({
+								committees={conference.committees.map((committee) => ({
 									abbreviation: committee.abbreviation,
 									name: committee.name
 								}))}
@@ -201,10 +254,10 @@
 										<td>
 											<div class="flex items-center gap-4">
 												<Flag alpha2Code={nation.alpha2Code} size="xs" />
-												<span>{countryCodeToLocalName(nation.alpha3Code)}</span>
+												<span>{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}</span>
 											</div>
 										</td>
-										{#each data.committees as committee}
+										{#each conference.committees as committee}
 											<td class="text-center">
 												{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
 													<div class="tooltip" data-tip={committee.abbreviation}>
@@ -216,21 +269,18 @@
 											</td>
 										{/each}
 										<td class="text-center">
-											{getNumOfSeatsPerNation(nation, data.committees)}
+											{getNumOfSeatsPerNation(nation, conference.committees)}
 										</td>
 										<td>
 											<SquareButtonWithLoadingState
 												icon="fa-chevrons-up"
 												cssClass="bg-base-300"
 												onClick={async () => {
-													if (!data.delegationData) return;
-													checkForError(
-														api.roleApplication.post({
-															nationId: nation.alpha3Code,
-															delegationId: data.delegationData.id
-														})
-													);
-													await invalidateAll();
+													if (!delegationMember.delegation) return;
+													await createEntryMutation.mutate({
+														nationId: nation.alpha3Code,
+														delegationId: delegationMember.delegation.id
+													});
 												}}
 											/>
 										</td>
@@ -272,14 +322,11 @@
 													icon="fa-chevrons-up"
 													cssClass="bg-base-300"
 													onClick={async () => {
-														if (!data.delegationData) return;
-														checkForError(
-															api.roleApplication.post({
-																nonStateActorId: nsa.id,
-																delegationId: data.delegationData.id
-															})
-														);
-														await invalidateAll();
+														if (!delegationMember.delegation) return;
+														await createEntryMutation.mutate({
+															nonStateActorId: nsa.id,
+															delegationId: delegationMember.delegation.id
+														});
 													}}
 												/>
 											</td>

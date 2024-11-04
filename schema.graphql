@@ -400,6 +400,10 @@ enum ConferenceSupervisorScalarFieldEnum {
   userId
 }
 
+input ConferenceSupervisorUpdateDataInput {
+  plansOwnAttendenceAtConference: Boolean
+}
+
 input ConferenceSupervisorUpdateInput {
   conferenceId: StringFieldUpdateOperationsInput
   delegations: DelegationUpdateManyWithoutSupervisorsNestedInput
@@ -1140,13 +1144,13 @@ type Mutation {
   updateOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
-  updateOneConferenceSupervisor(where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
+  updateOneConferenceSupervisor(data: ConferenceSupervisorUpdateDataInput!, where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
-  updateOneDelegation(applied: Boolean, newHeadDelegateUserId: ID, resetEntryCode: Boolean, where: DelegationWhereUniqueInput!): Delegation
+  updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
   updateOneNation(where: NationWhereUniqueInput!): Nation
   updateOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
-  updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
+  updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   upsertOneConferenceSupervisor(entryCode: String!): ConferenceSupervisor!
