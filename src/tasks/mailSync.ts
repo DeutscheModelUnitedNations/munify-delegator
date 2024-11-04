@@ -337,10 +337,9 @@ const _ = schedule.scheduleJob(
 
 		const listsResponse = await listmonkClient.GET('/lists', {
 			params: {
-				// TODO fix once listmonk has corrected the query params
-				// @ts-ignore – https://github.com/knadh/listmonk/issues/2077
-				query: '[global]',
-				per_page: 1000
+				query: {
+					per_page: 500
+				}
 			}
 		});
 		if (listsResponse.error) {
@@ -489,8 +488,7 @@ const _ = schedule.scheduleJob(
 				body: {
 					email: u.email,
 					name: `${u.given_name} ${u.family_name}`,
-					// @ts-ignore – Listmonk API is not typed correctly
-					attribs: subscriberObj.attribs,
+					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id)
 				}
 			});
@@ -538,8 +536,7 @@ const _ = schedule.scheduleJob(
 				body: {
 					email: u.email,
 					name: `${u.given_name} ${u.family_name}`,
-					// @ts-ignore – Listmonk API is not typed correctly
-					attribs: subscriberObj.attribs,
+					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id),
 					preconfirm_subscriptions: true
 				}

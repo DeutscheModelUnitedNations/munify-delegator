@@ -74,5 +74,3 @@ export function slackNotification(blocks: IncomingWebhookSendArguments['blocks']
 		});
 	}
 }
-
-taskError('logs', 'This is a test error message');
