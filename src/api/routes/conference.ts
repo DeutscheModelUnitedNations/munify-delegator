@@ -6,7 +6,8 @@ import { ConferencePlain } from '$db/generated/schema/Conference';
 import { UserPlain } from '$db/generated/schema/User';
 import type { PrismaClient, User } from '@prisma/client';
 import { requireToBeConferenceAdmin } from '$api/auth/helper/requireUserToBeConferenceAdmin';
-import { conferenceStats } from '$api/functions/stats';
+import { conferenceStats } from '$api/services/stats';
+import { userDataCompleteCheck } from '$api/services/userDataComplete';
 
 export const conference = new Elysia()
 	.use(permissionsPlugin)
@@ -146,27 +147,9 @@ export const conference = new Elysia()
 					]
 				}
 			});
-			findings.userFindings.dataMissing = dataMissing.filter((u) => {
-				if (
-					!u.birthday ||
-					!u.email ||
-					!u.phone ||
-					!u.street ||
-					!u.city ||
-					!u.zip ||
-					!u.country ||
-					!u.foodPreference
-				)
-					return true;
-				// Too short names
-				if (u.given_name.length < 3) return true;
-				if (u.family_name.length < 3) return true;
-				// Too short phone number
-				if (u.phone.length < 5) return true;
-				// Too short street name
-				if (u.street.length < 5) return true;
-				return false;
-			});
+			findings.userFindings.dataMissing = dataMissing.filter(
+				(u) => userDataCompleteCheck(u, 'de').length > 0
+			);
 
 			return findings;
 		},

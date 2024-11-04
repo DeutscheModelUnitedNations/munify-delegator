@@ -8,6 +8,7 @@
 	import addressCountries from '$lib/helper/addressCountries.js';
 	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName.js';
 	import * as m from '$lib/paraglide/messages.js';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let { data } = $props();
 	// TODO form validation
@@ -57,7 +58,8 @@
 		if (data.redirectUrl) {
 			goto(data.redirectUrl);
 		}
-		//TODO notify user of success
+		// TODO we could use a fa icon instead of the emoji here
+		toast.push(m.saved() + ' ✅');
 	};
 
 	$effect(() => {
@@ -259,9 +261,6 @@
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
 				<p class="text-center mt-6 text-sm max-w-[40ch]">{@html m.deleteAccountGPDR()}</p>
-				<p class="text-center mt-6 text-sm max-w-[40ch]">
-					{@html m.yourAccountDataWillBeUpdatedAfterLogin()}
-				</p>
 			</div>
 		</div>
 	</div>

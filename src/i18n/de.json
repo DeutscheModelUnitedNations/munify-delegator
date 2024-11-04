@@ -158,6 +158,7 @@
 	"vegetarian": "Vegetarisch",
 	"omnivore": "Omnivor",
 	"save": "Speichern",
+	"saved": "Gespeichert",
 	"saveAndContinue": "Speichern und weiter",
 	"loginInformation": "Anmeldeinformationen",
 	"loginName": "Anmeldename",
@@ -320,7 +321,6 @@
 	"youAreAlreadySingleParticipant": "Du bist bereits ein Einzelteilnehmer in dieser Konferenz.",
 	"youAreAlreadyDelegationMember": "Du bist bereits ein Delegationsmitglied in dieser Konferenz.",
 	"youAreAlreadyTeamMember": "Du bist bereits ein Teammitglied in dieser Konferenz.",
-	"yourAccountDataWillBeUpdatedAfterLogin": "Die in GUARD aktualisierten Account Daten werden nach einem Aus- und Einloggen in DELEGATOR übernommen!",
 	"http400": "Bei der Anfrage ist ein Fehler aufgetreten.",
 	"http403": "Du hast keine Berechtigung für diese Aktion!",
 	"http404": "Die angeforderte Seite wurde nicht gefunden.",
@@ -406,5 +406,8 @@
 	"pathDoesNotExist": "Der Pfad {path} konnte nicht gefunden werden ({error})",
 	"forbidden": "Zugriff verweigert. Bitte lade ggf. die Seite neu! ({error})",
 	"unauthorized": "Unauthorisiert. Bitte lade ggf. die Seite neu! ({error})",
-	"internalServerError": "Interner Serverfehler."
+	"internalServerError": "Interner Serverfehler.",
+	"valueCannotBeEmpty": "Der angegebene Wert für {field} kann nicht leer sein.",
+	"valueTooShort": "Der angegebene Wert für {field} ist zu kurz.",
+	"pleaseFillOutYourProfileCorrectly": "Bitte stelle sicher, dass <b><a href='/my-account'>dein Profil</a></b> korrekt ausgefüllt ist."
 }

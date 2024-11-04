@@ -3,7 +3,7 @@ import { config } from './config';
 import { tasksDb } from './tasksDb';
 import { IncomingWebhook } from '@slack/webhook';
 import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
-import { conferenceStats } from '$api/functions/stats';
+import { conferenceStats } from '$api/services/stats';
 import fs from 'fs';
 
 // GLOBALS
@@ -36,10 +36,10 @@ function readHistoricStats(conferenceId: string) {
 
 function writeHistoricStats(conferenceId: string, stats: Record<string, any>) {
 	try {
-		if (!fs.existsSync('./empheralData')) {
-			fs.mkdirSync('./empheralData');
+		if (!fs.existsSync('./ephemeralData')) {
+			fs.mkdirSync('./ephemeralData');
 		}
-		fs.writeFileSync(`./empheralData/${conferenceId}.json`, JSON.stringify(stats));
+		fs.writeFileSync(`./ephemeralData/${conferenceId}.json`, JSON.stringify(stats));
 	} catch (error) {
 		console.error("Couldn't save stats to file", error);
 	}

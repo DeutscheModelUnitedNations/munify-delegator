@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { apiClient, checkForError } from '$api/client.js';
 	import { page } from '$app/stores';
+	import { getApi } from '$lib/global/apiState.svelte.js';
+	import { toast } from '@zerodevx/svelte-toast';
 	import { onMount } from 'svelte';
+	import * as m from '$lib/paraglide/messages.js';
 
 	let { children, data } = $props();
 
@@ -27,6 +30,18 @@
 
 		// refresh the token 10 seconds before expiry
 		runTokenRefresh(new Date(data.nextTokenRefreshDue).getTime() - Date.now() - 10 * 1000);
+
+		(async () => {
+			const errors = await checkForError(
+				getApi().user({ id: data.user.sub })['is-data-complete'].get()
+			);
+			if (errors.length > 0) {
+				toast.push({
+					msg: m.pleaseFillOutYourProfileCorrectly() + ' ' + errors[0],
+					duration: 10000
+				});
+			}
+		})();
 
 		return () => clearTimeout(timeout);
 	});
