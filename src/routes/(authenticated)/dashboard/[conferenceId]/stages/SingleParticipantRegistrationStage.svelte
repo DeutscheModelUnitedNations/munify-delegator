@@ -13,10 +13,7 @@
 	let {
 		data
 	}: {
-		data: Pick<
-			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
-			'findUniqueConference' | 'findUniqueSingleParticipant'
-		> &
+		data: NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']> &
 			Pick<PageData, 'user'>;
 	} = $props();
 
