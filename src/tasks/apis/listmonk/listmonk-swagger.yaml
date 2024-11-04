@@ -5,7 +5,7 @@ servers:
     url: http://localhost:9000/api
 
 info:
-  version: "4.0.0"
+  version: '4.0.0'
   title: Listmonk
   description: The API collection for listmonk
   license:
@@ -64,7 +64,7 @@ paths:
       description: healthcheck endpoint
       operationId: getHealthCheck
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -81,7 +81,7 @@ paths:
       description: returns general server config.
       operationId: getServerConfig
       responses:
-        "200":
+        '200':
           description: A server config object
           content:
             application/json:
@@ -89,9 +89,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/ServerConfig"
+                    $ref: '#/components/schemas/ServerConfig'
 
-  "/lang/{lang}":
+  '/lang/{lang}':
     get:
       tags:
         - Miscellaneous
@@ -105,7 +105,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: requested language pack
           content:
             application/json:
@@ -113,7 +113,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/LanguagePack"
+                    $ref: '#/components/schemas/LanguagePack'
 
   /dashboard/charts:
     get:
@@ -122,7 +122,7 @@ paths:
       description: returns chart data points to render on the dashboard.
       operationId: getDashboardCharts
       responses:
-        "200":
+        '200':
           description: chart data points
           content:
             application/json:
@@ -130,7 +130,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/DashboardChart"
+                    $ref: '#/components/schemas/DashboardChart'
 
   /dashboard/counts:
     get:
@@ -139,7 +139,7 @@ paths:
       description: returns stats counts to show on the dashboard
       operationId: getDashboardCounts
       responses:
-        "200":
+        '200':
           description: stat counts
           content:
             application/json:
@@ -147,7 +147,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/DashboardCount"
+                    $ref: '#/components/schemas/DashboardCount'
 
   /settings:
     get:
@@ -156,7 +156,7 @@ paths:
       description: returns settings from DB
       operationId: getSettings
       responses:
-        "200":
+        '200':
           description: settings object
           content:
             application/json:
@@ -164,7 +164,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Settings"
+                    $ref: '#/components/schemas/Settings'
 
     put:
       tags:
@@ -176,9 +176,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Settings"
+              $ref: '#/components/schemas/Settings'
       responses:
-        "200":
+        '200':
           description: updated settings object
           content:
             application/json:
@@ -199,9 +199,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SMTPTest"
+              $ref: '#/components/schemas/SMTPTest'
       responses:
-        "200":
+        '200':
           description: updated SMTP test settings
           content:
             application/json:
@@ -218,7 +218,7 @@ paths:
       description: restarts the app
       operationId: reloadApp
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -235,7 +235,7 @@ paths:
       description: returns the log entries stored in the log buffer
       operationId: getLogs
       responses:
-        "200":
+        '200':
           description: stored log entries
           content:
             application/json:
@@ -273,7 +273,7 @@ paths:
             type: string
 
       responses:
-        "200":
+        '200':
           description: subscribers list
           content:
             application/json:
@@ -286,7 +286,7 @@ paths:
                       results:
                         type: array
                         items:
-                          $ref: "#/components/schemas/Subscriber"
+                          $ref: '#/components/schemas/Subscriber'
                       query:
                         type: string
                       total:
@@ -306,10 +306,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewSubscriber"
+              $ref: '#/components/schemas/NewSubscriber'
 
       responses:
-        "200":
+        '200':
           description: subscriber object
           content:
             application/json:
@@ -317,7 +317,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Subscriber"
+                    $ref: '#/components/schemas/Subscriber'
 
     delete:
       description: handles subscribers deletion
@@ -332,7 +332,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -342,7 +342,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/{id}":
+  '/subscribers/{id}':
     get:
       description: handles the retrieval of a single subscriber by ID.
       operationId: getSubscriberById
@@ -357,7 +357,7 @@ paths:
             type: integer
 
       responses:
-        "200":
+        '200':
           description: gets a single subscriber.
           content:
             application/json:
@@ -365,7 +365,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Subscriber"
+                    $ref: '#/components/schemas/Subscriber'
 
     put:
       description: modify subscriber data
@@ -384,9 +384,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateSubscriber"
+              $ref: '#/components/schemas/UpdateSubscriber'
       responses:
-        "200":
+        '200':
           description: returns updated subscriber.
           content:
             application/json:
@@ -394,7 +394,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Subscriber"
+                    $ref: '#/components/schemas/Subscriber'
 
     delete:
       description: handles subscriber deletion based on id
@@ -410,7 +410,7 @@ paths:
             type: integer
 
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -431,9 +431,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -443,7 +443,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/lists/{id}":
+  '/subscribers/lists/{id}':
     put:
       description: handles bulk addition or removal of subscribers for a specified list id
       operationId: manageSubscriberListById
@@ -454,7 +454,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
       parameters:
         - in: path
           name: id
@@ -464,7 +464,7 @@ paths:
             type: integer
             format: int32
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -474,7 +474,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/blocklist":
+  '/subscribers/blocklist':
     put:
       description: handles blocklisting of subscriber list
       operationId: manageBlocklistBySubscriberList
@@ -485,9 +485,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -497,7 +497,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/{id}/blocklist":
+  '/subscribers/{id}/blocklist':
     put:
       description: handles the blocklisting of one or more subscribers.
       operationId: manageBlocklistSubscribersById
@@ -508,7 +508,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
       parameters:
         - in: path
           name: id
@@ -519,7 +519,7 @@ paths:
             format: int32
 
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -529,7 +529,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/{id}/export":
+  '/subscribers/{id}/export':
     get:
       description: retrieves a subscriber's profile
       operationId: exportSubscriberDataByID
@@ -543,7 +543,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           headers:
             Cache-Control:
               schema:
@@ -557,9 +557,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SubscriberData"
+                $ref: '#/components/schemas/SubscriberData'
 
-  "/subscribers/{id}/bounces":
+  '/subscribers/{id}/bounces':
     get:
       description: retrieves a subscriber's bounce records
       operationId: getSubscriberBouncesById
@@ -573,7 +573,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: list of bounce records of a subscriber
           content:
             application/json:
@@ -583,7 +583,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Bounce"
+                      $ref: '#/components/schemas/Bounce'
 
     delete:
       description: deletes a subscriber's bounce records
@@ -598,7 +598,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -608,7 +608,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/{id}/optin":
+  '/subscribers/{id}/optin':
     post:
       description: sends an optin confirmation e-mail to a subscriber.
       operationId: subscriberSendOptinById
@@ -622,7 +622,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -632,7 +632,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/query/delete":
+  '/subscribers/query/delete':
     post:
       description: bulk deletes based on an arbitrary SQL expression.
       operationId: deleteSubscriberByQuery
@@ -646,10 +646,10 @@ paths:
               type: string
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
 
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -659,7 +659,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/query/blocklist":
+  '/subscribers/query/blocklist':
     put:
       description: bulk blocklists subscribers based on an arbitrary SQL expression.
       operationId: blocklistSubscribersQuery
@@ -673,10 +673,10 @@ paths:
               type: string
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
 
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -686,7 +686,7 @@ paths:
                   data:
                     type: boolean
 
-  "/subscribers/query/lists":
+  '/subscribers/query/lists':
     put:
       description: bulk adds/removes/unsubscribes subscribers from one or more lists based on an arbitrary SQL expression.
       operationId: manageSubscriberListsByQuery
@@ -700,10 +700,10 @@ paths:
               type: string
           application/json:
             schema:
-              $ref: "#/components/schemas/SubscriberQueryRequest"
+              $ref: '#/components/schemas/SubscriberQueryRequest'
 
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -750,7 +750,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: list of bounce records
           content:
             application/json:
@@ -763,7 +763,7 @@ paths:
                       results:
                         type: array
                         items:
-                          $ref: "#/components/schemas/Bounce"
+                          $ref: '#/components/schemas/Bounce'
                       query:
                         type: string
                       total:
@@ -789,7 +789,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -799,7 +799,7 @@ paths:
                   data:
                     type: boolean
 
-  "/bounces/{id}":
+  '/bounces/{id}':
     get:
       description: handles retrieval of bounce record by id
       operationId: getBounceById
@@ -813,7 +813,7 @@ paths:
       tags:
         - Bounces
       responses:
-        "200":
+        '200':
           description: bounce object
           content:
             application/json:
@@ -821,7 +821,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Bounce"
+                    $ref: '#/components/schemas/Bounce'
 
     delete:
       description: handles bounce deletion, either a single one (ID in the URI), or a list.
@@ -836,7 +836,7 @@ paths:
       tags:
         - Bounces
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -883,7 +883,7 @@ paths:
           schema:
             type: boolean
       responses:
-        "200":
+        '200':
           description: list of metadata
           content:
             application/json:
@@ -896,7 +896,7 @@ paths:
                       results:
                         type: array
                         items:
-                          $ref: "#/components/schemas/List"
+                          $ref: '#/components/schemas/List'
                       total:
                         type: integer
                       per_page:
@@ -914,9 +914,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewList"
+              $ref: '#/components/schemas/NewList'
       responses:
-        "200":
+        '200':
           description: updated list object
           content:
             application/json:
@@ -924,9 +924,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/List"
+                    $ref: '#/components/schemas/List'
 
-  "/lists/{list_id}":
+  '/lists/{list_id}':
     get:
       description: retrieves lists with additional metadata like subscriber counts. This may be slow.
       operationId: getListById
@@ -941,7 +941,7 @@ paths:
             type: integer
 
       responses:
-        "200":
+        '200':
           description: list object
           content:
             application/json:
@@ -949,7 +949,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/List"
+                    $ref: '#/components/schemas/List'
     put:
       description: handles list modification
       operationId: updateListById
@@ -967,9 +967,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/List"
+              $ref: '#/components/schemas/List'
       responses:
-        "200":
+        '200':
           description: updated list object
           content:
             application/json:
@@ -977,7 +977,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/List"
+                    $ref: '#/components/schemas/List'
     delete:
       description: handles list deletion, either a single one (ID in the URI), or a list.
       operationId: deleteListById
@@ -992,7 +992,7 @@ paths:
             type: integer
 
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -1009,7 +1009,7 @@ paths:
       tags:
         - Import
       responses:
-        "200":
+        '200':
           description: import status
           content:
             application/json:
@@ -1017,7 +1017,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/ImportStatus"
+                    $ref: '#/components/schemas/ImportStatus'
 
     post:
       description: handles the uploading and bulk importing of a ZIP file of one or more CSV files.
@@ -1036,7 +1036,7 @@ paths:
                 file:
                   type: string
       responses:
-        "200":
+        '200':
           description: updated import status
           content:
             application/json:
@@ -1044,7 +1044,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/ImportStatus"
+                    $ref: '#/components/schemas/ImportStatus'
 
     delete:
       description: sends a stop signal to the importer.
@@ -1052,7 +1052,7 @@ paths:
       tags:
         - Import
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1060,7 +1060,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/ImportStatus"
+                    $ref: '#/components/schemas/ImportStatus'
 
   /import/subscribers/logs:
     get:
@@ -1069,7 +1069,7 @@ paths:
       tags:
         - Import
       responses:
-        "200":
+        '200':
           description: import statistics
           content:
             application/json:
@@ -1128,7 +1128,7 @@ paths:
       tags:
         - Campaigns
       responses:
-        "200":
+        '200':
           description: list of campaigns
           content:
             application/json:
@@ -1141,7 +1141,7 @@ paths:
                       results:
                         type: array
                         items:
-                          $ref: "#/components/schemas/Campaign"
+                          $ref: '#/components/schemas/Campaign'
                       query:
                         type: string
                       total:
@@ -1161,10 +1161,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CampaignRequest"
+              $ref: '#/components/schemas/CampaignRequest'
 
       responses:
-        "200":
+        '200':
           description: new campaign object
           content:
             application/json:
@@ -1172,9 +1172,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/CampaignUpdate"
+                    $ref: '#/components/schemas/CampaignUpdate'
 
-  "/campaigns/{id}":
+  '/campaigns/{id}':
     get:
       description: handles retrieval of campaigns.
       operationId: getCampaignById
@@ -1194,7 +1194,7 @@ paths:
           schema:
             type: boolean
       responses:
-        "200":
+        '200':
           description: campaign object
           content:
             application/json:
@@ -1202,7 +1202,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Campaign"
+                    $ref: '#/components/schemas/Campaign'
 
     put:
       description: handle updation of campaign
@@ -1221,9 +1221,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CampaignRequest"
+              $ref: '#/components/schemas/CampaignRequest'
       responses:
-        "200":
+        '200':
           description: updated campaign object
           content:
             application/json:
@@ -1231,7 +1231,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/CampaignUpdate"
+                    $ref: '#/components/schemas/CampaignUpdate'
 
     delete:
       description: deletes specified campaign
@@ -1246,7 +1246,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -1263,7 +1263,7 @@ paths:
       tags:
         - Campaigns
       responses:
-        "200":
+        '200':
           description: list of stats for given set of campaign ids
           content:
             application/json:
@@ -1273,9 +1273,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/CampaignStats"
+                      $ref: '#/components/schemas/CampaignStats'
 
-  "/campaigns/analytics/{type}":
+  '/campaigns/analytics/{type}':
     get:
       description: retrieves view counts for a campaign.
       operationId: getCampaignAnalytics
@@ -1307,7 +1307,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: list of stats for given set of campaign ids
           content:
             application/json:
@@ -1317,9 +1317,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/CampaignAnalyticsCount"
+                      $ref: '#/components/schemas/CampaignAnalyticsCount'
 
-  "/campaigns/{id}/preview":
+  '/campaigns/{id}/preview':
     get:
       description: renders the HTML preview of a campaign body
       operationId: previewCampaignById
@@ -1344,7 +1344,7 @@ paths:
                   description: template id
                   type: integer
       responses:
-        "200":
+        '200':
           description: HTML Preview of requested campaign
           content:
             text/html:
@@ -1382,7 +1382,7 @@ paths:
                   description: template body
                   type: string
       responses:
-        "200":
+        '200':
           description: HTML Preview of requested campaign
           content:
             text/html:
@@ -1390,7 +1390,7 @@ paths:
                 type: string
                 example: <h3>Hi John!</h3>This is a   e-mail campaign. Your second name is Doe and you are from Bengaluru
 
-  "/campaigns/{id}/text":
+  '/campaigns/{id}/text':
     post:
       description: renders the HTML preview of a campaign body
       operationId: previewCampaignTextById
@@ -1421,7 +1421,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: response
           content:
             text/html:
@@ -1429,7 +1429,7 @@ paths:
                 type: string
                 example: <h3>Hi John!</h3><p>This is a test e-mail campaign. Your second name is Doe and you are from Bengaluru</p>
 
-  "/campaigns/{id}/status":
+  '/campaigns/{id}/status':
     put:
       description: handles campaign status modification
       operationId: updateCampaignStatusById
@@ -1453,7 +1453,7 @@ paths:
                   type: string
                   enum: [scheduled, running, paused, cancelled]
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1461,9 +1461,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Campaign"
+                    $ref: '#/components/schemas/Campaign'
 
-  "/campaigns/{id}/archive":
+  '/campaigns/{id}/archive':
     put:
       description: handles campaign status modification
       operationId: updateCampaignArchiveById
@@ -1490,7 +1490,7 @@ paths:
                 archive_meta:
                   type: object
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1500,7 +1500,7 @@ paths:
                   data:
                     type: boolean
 
-  "/campaigns/{id}/content":
+  '/campaigns/{id}/content':
     post:
       description: handles campaign content (body) format conversions.
       operationId: createCampaignContentById
@@ -1511,7 +1511,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CampaignContentRequest"
+              $ref: '#/components/schemas/CampaignContentRequest'
       parameters:
         - in: path
           name: id
@@ -1521,7 +1521,7 @@ paths:
             type: integer
 
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1531,7 +1531,7 @@ paths:
                   data:
                     type: string
 
-  "/campaigns/{id}/test":
+  '/campaigns/{id}/test':
     post:
       description: handles sending of campaign message to arbitrary subscribers for testing
       operationId: testCampaignById
@@ -1557,9 +1557,9 @@ paths:
                   type: integer
           application/json:
             schema:
-              $ref: "#/components/schemas/CampaignRequest"
+              $ref: '#/components/schemas/CampaignRequest'
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1569,14 +1569,14 @@ paths:
                   data:
                     type: boolean
 
-  "/media":
+  '/media':
     get:
       description: handles retrieval of uploaded media.
       operationId: getMedia
       tags:
         - Media
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1586,7 +1586,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/MediaFileObject"
+                      $ref: '#/components/schemas/MediaFileObject'
     post:
       description: handles media file uploads.
       operationId: uploadMedia
@@ -1600,7 +1600,7 @@ paths:
               type: string
               format: binary
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1608,9 +1608,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/MediaFileObject"
+                    $ref: '#/components/schemas/MediaFileObject'
 
-  "/media/{id}":
+  '/media/{id}':
     get:
       description: handles retrieval of uploaded media.
       operationId: getMediaById
@@ -1624,7 +1624,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1632,7 +1632,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/MediaFileObject"
+                    $ref: '#/components/schemas/MediaFileObject'
 
     delete:
       description: handles deletion of uploaded media.
@@ -1647,7 +1647,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1671,7 +1671,7 @@ paths:
           schema:
             type: boolean
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1681,9 +1681,9 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Template"
+                      $ref: '#/components/schemas/Template'
 
-  "/templates/{id}":
+  '/templates/{id}':
     get:
       description: handles retrieval of templates
       operationId: getTemplateById
@@ -1703,7 +1703,7 @@ paths:
           schema:
             type: boolean
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1711,7 +1711,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: "#/components/schemas/Template"
+                    $ref: '#/components/schemas/Template'
 
     delete:
       description: handles deletion of templates
@@ -1727,7 +1727,7 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1758,7 +1758,7 @@ paths:
                   description: template body
                   type: string
       responses:
-        "200":
+        '200':
           description: response
           content:
             text/html:
@@ -1766,7 +1766,7 @@ paths:
                 type: string
                 example: <p>Hi there</p>
 
-  "/templates/{id}/preview":
+  '/templates/{id}/preview':
     get:
       description: renders the HTML preview of a template.
       operationId: previewTemplateById
@@ -1794,7 +1794,7 @@ paths:
             type: integer
           description: The id value of the template you want to get.
       responses:
-        "200":
+        '200':
           description: response
           content:
             text/html:
@@ -1802,7 +1802,7 @@ paths:
                 type: string
                 example: <p>Hi there</p>
 
-  "/templates/{id}/default":
+  '/templates/{id}/default':
     put:
       description: handles template modification.
       operationId: updateTemplateById
@@ -1816,12 +1816,12 @@ paths:
           schema:
             type: integer
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Template"
+                $ref: '#/components/schemas/Template'
 
   /tx:
     post:
@@ -1834,9 +1834,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TransactionalMessage"
+              $ref: '#/components/schemas/TransactionalMessage'
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -1846,7 +1846,7 @@ paths:
                   data:
                     type: boolean
 
-  "/maintenance/subscribers/{type}":
+  '/maintenance/subscribers/{type}':
     delete:
       description: garbage collects (deletes) orphaned or blocklisted subscribers.
       operationId: deleteGCSubscribers
@@ -1860,7 +1860,7 @@ paths:
             type: string
           required: true
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1873,7 +1873,7 @@ paths:
                       count:
                         type: integer
 
-  "/maintenance/analytics/{type}":
+  '/maintenance/analytics/{type}':
     delete:
       description: garbage collects (deletes) campaign analytics.
       operationId: deleteCampaignAnalyticsByType
@@ -1898,7 +1898,7 @@ paths:
             type: string
           required: true
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1908,7 +1908,7 @@ paths:
                   data:
                     type: boolean
 
-  "/maintenance/subscriptions/unconfirmed":
+  '/maintenance/subscriptions/unconfirmed':
     delete:
       description: garbage collects (deletes) orphaned or blocklisted subscribers.
       operationId: deleteUnconfirmedSubscriptions
@@ -1926,7 +1926,7 @@ paths:
                   type: string
                   format: date
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1939,14 +1939,14 @@ paths:
                       count:
                         type: integer
 
-  "/public/lists":
+  '/public/lists':
     get:
       description: returns the list of public lists with minimal fields
       operationId: getPublicLists
       tags:
         - Public
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -1960,7 +1960,7 @@ paths:
                     name:
                       type: string
 
-  "/public/subscription":
+  '/public/subscription':
     post:
       description: handles subscription requests coming from public API calls.
       operationId: handlePublicSubscription
@@ -1983,7 +1983,7 @@ paths:
                     type: string
 
       responses:
-        "200":
+        '200':
           description: response
           content:
             application/json:
@@ -3389,7 +3389,7 @@ components:
         smtp:
           type: array
           items:
-            $ref: "#/components/schemas/SMTPSettings"
+            $ref: '#/components/schemas/SMTPSettings'
         messengers:
           type: array
           items:
@@ -3417,7 +3417,7 @@ components:
         bounce.mailboxes:
           type: array
           items:
-            $ref: "#/components/schemas/MailBoxBounces"
+            $ref: '#/components/schemas/MailBoxBounces'
         appearance.admin.custom_css:
           type: string
         appearance.admin.custom_js:
@@ -3475,11 +3475,11 @@ components:
         profile:
           type: array
           items:
-            $ref: "#/components/schemas/SubscriberProfile"
+            $ref: '#/components/schemas/SubscriberProfile'
         subscriptions:
           type: array
           items:
-            $ref: "#/components/schemas/Subscriptions"
+            $ref: '#/components/schemas/Subscriptions'
         campaign_views:
           type: array
           items:
