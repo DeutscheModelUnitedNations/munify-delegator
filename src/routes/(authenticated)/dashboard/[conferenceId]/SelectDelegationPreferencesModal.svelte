@@ -22,7 +22,9 @@
 
 	let nations = $derived(() => {
 		const nations = new Array<Nation>();
+		// @ts-ignore TODO remove after the API rework
 		data.committees.forEach((committee) => {
+			// @ts-ignore TODO remove after the API rework
 			committee.nations.forEach((nation) => {
 				if (!nations.find((n) => n.alpha3Code === nation.alpha3Code)) nations.push(nation);
 			});
@@ -36,6 +38,7 @@
 		return nations()
 			.filter(
 				(nation) =>
+					// @ts-ignore TODO remove after the API rework
 					!data.delegationData?.appliedForRoles.find((role) => role.nationId === nation.alpha3Code)
 			)
 			.filter(
@@ -51,12 +54,17 @@
 	});
 
 	let nonStateActorsPool = $derived(() => {
-		return nonStateActors()
-			.filter(
-				(nsa) =>
-					!data.delegationData?.appliedForRoles.find((role) => role.nonStateActorId === nsa.id)
-			)
-			.filter((nsa) => nsa.seatAmount >= (data.delegationData?.members.length ?? 0));
+		return (
+			nonStateActors()
+				.filter(
+					// @ts-ignore TODO remove after the API rework
+					(nsa) =>
+						// @ts-ignore TODO remove after the API rework
+						!data.delegationData?.appliedForRoles.find((role) => role.nonStateActorId === nsa.id)
+				)
+				// @ts-ignore TODO remove after the API rework
+				.filter((nsa) => nsa.seatAmount >= (data.delegationData?.members.length ?? 0))
+		);
 	});
 
 	const maxDelegationSizeReached = $derived(() => {
@@ -101,12 +109,16 @@
 					{:else}
 						<div class="overflow-x-auto">
 							<NationsWithCommitteesTable
-								committees={data.committees.map((committee) => ({
-									abbreviation: committee.abbreviation,
-									name: committee.name
-								}))}
+								committees={data.committees.map(
+									// @ts-ignore TODO remove after the API rework
+									(committee) => ({
+										abbreviation: committee.abbreviation,
+										name: committee.name
+									})
+								)}
 							>
-								{#each data.delegationData.appliedForRoles.sort((a, b) => a.rank - b.rank) as role, index}
+								{#each data.delegationData.appliedForRoles.sort(// @ts-ignore TODO remove after the API rework
+									(a, b) => a.rank - b.rank) as role, index}
 									<tr>
 										<td>
 											<div class="flex items-center gap-4">
@@ -139,7 +151,8 @@
 												<td class="text-center"><i class="fa-duotone fa-minus"></i></td>
 											{:else}
 												<td class="text-center">
-													{#if committee.nations.find((c) => c.alpha3Code === role.nation?.alpha3Code)}
+													{#if committee.nations.find(// @ts-ignore TODO remove after the API rework
+														(c) => c.alpha3Code === role.nation?.alpha3Code)}
 														<div class="tooltip" data-tip={committee.abbreviation}>
 															{#each { length: committee.numOfSeatsPerDelegation } as _}
 																<i class="fa-duotone fa-check"></i>
@@ -191,10 +204,13 @@
 						<p class="text-sm">{m.nationsPoolDescription()}</p>
 						<div class="overflow-x-auto">
 							<NationsWithCommitteesTable
-								committees={data.committees.map((committee) => ({
-									abbreviation: committee.abbreviation,
-									name: committee.name
-								}))}
+								committees={data.committees.map(
+									// @ts-ignore TODO remove after the API rework
+									(committee) => ({
+										abbreviation: committee.abbreviation,
+										name: committee.name
+									})
+								)}
 							>
 								{#each nationsPool() as nation}
 									<tr>
@@ -206,7 +222,8 @@
 										</td>
 										{#each data.committees as committee}
 											<td class="text-center">
-												{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
+												{#if committee.nations.find(// @ts-ignore TODO remove after the API rework
+													(c) => c.alpha3Code === nation.alpha3Code)}
 													<div class="tooltip" data-tip={committee.abbreviation}>
 														{#each { length: committee.numOfSeatsPerDelegation } as _}
 															<i class="fa-duotone fa-check"></i>
