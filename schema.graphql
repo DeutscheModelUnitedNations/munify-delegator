@@ -1126,7 +1126,7 @@ type Mutation {
   createOneDelegation(conferenceId: ID!, experience: String!, motivation: String!, school: String!): Delegation!
   createOneDelegationMember(entryCode: String!): DelegationMember!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
-  createOneSingleParticipant(conferenceId: ID!, experience: String!, motivation: String!, school: String!): SingleParticipant!
+  createOneSingleParticipant(conferenceId: ID!, experience: String!, motivation: String!, roleId: ID!, school: String!): SingleParticipant!
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   deleteOneConference(where: ConferenceWhereUniqueInput!): Conference
   deleteOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus

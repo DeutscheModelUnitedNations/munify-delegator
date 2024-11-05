@@ -55,6 +55,10 @@
 				unApplyForRolesIdList: $unApplyForRolesIdList
 			) {
 				id
+				applied
+				appliedForRoles {
+					id
+				}
 			}
 		}
 	`);
@@ -86,9 +90,8 @@
 		}
 		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
 
-		await updateMutation.mutate({
-			where: { id: singleParticipant.id },
-			unApplyForRolesIdList: singleParticipant.appliedForRoles.map((role) => role.id)
+		await deleteMutation.mutate({
+			where: { id: singleParticipant.id }
 		});
 		goto('/dashboard');
 	};
@@ -99,7 +102,10 @@
 			return;
 		}
 		if (!confirm(m.deleteApplicationConfirmation())) return;
-		await deleteMutation.mutate({ where: { id } });
+		await updateMutation.mutate({
+			where: { id: singleParticipant.id },
+			unApplyForRolesIdList: [id]
+		});
 		goto('/dashboard');
 	};
 
@@ -140,6 +146,7 @@
 			desc: m.doneToRegister()
 		}
 	]);
+	$inspect(singleParticipant);
 </script>
 
 {#if !singleParticipant.applied}

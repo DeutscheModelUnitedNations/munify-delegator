@@ -7,7 +7,7 @@
   import RoleApplicationTable from './RoleApplicationTable.svelte';
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages.js';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
@@ -51,7 +51,7 @@
 	const userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
 
 	let referralLink = $derived(
-		`${$page.url.origin}/registration/${conference.id}/join?code=${delegationMember.delegation.entryCode}`
+		`${$page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
 	);
 
 	let todos = $derived([
@@ -124,6 +124,10 @@
 		mutation MakeHeadDelegateMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
 			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
 				id
+				members {
+					id
+					isHeadDelegate
+				}
 			}
 		}
 	`);
@@ -140,6 +144,7 @@
 		mutation ResetEntryCodeMutation($where: DelegationWhereUniqueInput!) {
 			updateOneDelegation(where: $where, resetEntryCode: true) {
 				id
+				entryCode
 			}
 		}
 	`);
@@ -169,6 +174,8 @@
 		}
 		if (!confirm(m.leaveDelegationConfirmation())) return;
 		await deleteMemberMutation.mutate({ where: { id: delegationMember.id } });
+		await invalidateAll();
+		goto('/dashboard');
 	};
 
 	const deleteDelegation = async () => {
@@ -178,6 +185,7 @@
 		}
 		if (!confirm(m.deleteDelegationConfirmation())) return;
 		await deleteDelegationMutation.mutate({ where: { id: delegationMember.delegation.id } });
+		await invalidateAll();
 		goto('/dashboard');
 	};
 

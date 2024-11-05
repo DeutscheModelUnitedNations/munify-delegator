@@ -14,6 +14,9 @@
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod(createDelegationFormSchema),
+		onError(e) {
+			toast.push(e.result.error.message);
+		},
 		onResult({ result }) {
 			switch (result.type) {
 				case 'success':

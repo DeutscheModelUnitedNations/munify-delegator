@@ -24,17 +24,88 @@ services:
   #  "locale": "de",
   #  "urn:zitadel:iam:org:project:275671427955294244:roles": {"admin": {}}
   # }
-  # mockoidc:
-  #   image: ghcr.io/navikt/mock-oauth2-server:2.1.5
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     JSON_CONFIG: >
-  #       {
-  #         "interactiveLogin": true,
-  #         "httpServer": "NettyWrapper",
-  #         "tokenCallbacks": []
-  #       }
+  oidc-server-mock:
+    image: ghcr.io/soluto/oidc-server-mock:latest
+    ports:
+      - '4011:80'
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      SERVER_OPTIONS_INLINE: |
+        {
+          "AccessTokenJwtType": "JWT",
+          "Discovery": {
+            "ShowKeySet": true
+          },
+          "Authentication": {
+            "CookieSameSiteMode": "Lax",
+            "CheckSessionCookieSameSiteMode": "Lax"
+          }
+        }
+      LOGIN_OPTIONS_INLINE: |
+        {
+          "AllowRememberLogin": true
+        }
+      LOGOUT_OPTIONS_INLINE: |
+        {
+          "AutomaticRedirectAfterSignOut": true
+        }
+      API_SCOPES_INLINE: |
+        - Name: some-app-scope-1
+        - Name: some-app-scope-2
+      API_RESOURCES_INLINE: |
+        - Name: some-app
+          Scopes:
+            - some-app-scope-1
+            - some-app-scope-2
+      USERS_CONFIGURATION_INLINE: |
+        [
+          {
+            "SubjectId":"1",
+            "Username":"delegatoruser_123",
+            "Password":"pwd",
+            "Claims": [
+              {
+                "Type": "family_name",
+                "Value": "Tailor",
+                "ValueType": "string"
+              },
+              {
+                "Type": "given_name",
+                "Value": "Sam",
+                "ValueType": "string"
+              },
+              {
+                "Type": "email",
+                "Value": "sam.tailor@gmail.com",
+                "ValueType": "string"
+              },
+              {
+                "Type": "preferred_username",
+                "Value": "samtailor1",
+                "ValueType": "string"
+              },
+              {
+                "Type": "locale",
+                "Value": "de",
+                "ValueType": "string"
+              },
+              {
+                "Type": "urn:zitadel:iam:org:project:275671427955294244:roles",
+                "Value": "{\"admin\": {}}",
+                "ValueType": "json"
+              }
+            ]
+          }
+        ]
+      CLIENTS_CONFIGURATION_PATH: /tmp/config/mock-oidc-clients-config.json
+      ASPNET_SERVICES_OPTIONS_INLINE: |
+        { 
+          "ForwardedHeadersOptions": { 
+            "ForwardedHeaders" : "All"
+          }
+        }
+    volumes:
+      - ./mock-oidc-clients-config.json:/tmp/config/mock-oidc-clients-config.json:ro
 
   # app:
   #   image: munifydelegator

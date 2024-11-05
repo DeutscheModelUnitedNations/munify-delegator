@@ -7,25 +7,14 @@
 	import { individualApplicationFormSchema } from './form-schema';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import { toast } from '@zerodevx/svelte-toast';
-	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod(individualApplicationFormSchema),
-		onResult({ result }) {
-			switch (result.type) {
-				case 'success':
-					goto('/dashboard');
-					break;
-
-				case 'error':
-					toast.push(result.error.message);
-					break;
-				default:
-					throw new Error('Unknown result type');
-			}
+		onError(e) {
+			toast.push(e.result.error.message);
 		}
 	});
 	let step = $state(0);
@@ -35,6 +24,15 @@
 	let validateForm = $derived(form.validateForm);
 	let isTainted = $derived(form.isTainted);
 	let role = $derived(data.role);
+
+	// skip the fill out step if the user already provided all the information
+	if (
+		$formdata.experience.length > 0 &&
+		$formdata.motivation.length > 0 &&
+		$formdata.school.length > 0
+	) {
+		step = 1;
+	}
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">

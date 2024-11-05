@@ -33,7 +33,8 @@ export const load: PageLoad = async (event) => {
 	const data = await event.parent();
 	const conferencesQuery = await myConferences.fetch({
 		variables: { userId: data.user.sub, now: new Date(Date.now()) },
-		event
+		event,
+		blocking: true
 	});
 	const conferences = conferencesQuery.data?.findManyConferences ?? [];
 

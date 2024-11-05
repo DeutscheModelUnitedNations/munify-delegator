@@ -2,7 +2,7 @@ import type { PageLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
-import { type Actions } from '@sveltejs/kit';
+import { redirect, type Actions } from '@sveltejs/kit';
 import * as m from '$lib/paraglide/messages';
 import { individualApplicationFormSchema } from './form-schema';
 
@@ -12,12 +12,14 @@ const createSingleParticipant = graphql(`
 		$motivation: String!
 		$experience: String!
 		$school: String!
+		$roleId: ID!
 	) {
 		createOneSingleParticipant(
 			conferenceId: $conferenceId
 			experience: $experience
 			motivation: $motivation
 			school: $school
+			roleId: $roleId
 		) {
 			id
 		}
@@ -25,7 +27,11 @@ const createSingleParticipant = graphql(`
 `);
 
 const singleParticipantAndRoleQuery = graphql(`
-	query FindExistingSingleParticipantAndRoleQuery($conferenceId: String!, $userId: String!, $roleId: String!) {
+	query FindExistingSingleParticipantAndRoleQuery(
+		$conferenceId: String!
+		$userId: String!
+		$roleId: String!
+	) {
 		findUniqueSingleParticipant(
 			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
 		) {
@@ -50,7 +56,8 @@ export const load: PageLoad = async (event) => {
 			roleId: event.params.roleId,
 			conferenceId: event.params.conferenceId,
 			userId: user.sub
-		}
+		},
+		blocking: true
 	});
 
 	const form = await superValidate(
@@ -75,10 +82,12 @@ export const actions = {
 		await createSingleParticipant.mutate(
 			{
 				...form.data,
-				conferenceId: event.params.conferenceId!
+				conferenceId: event.params.conferenceId!,
+				roleId: event.params.roleId!
 			},
 			{ event }
 		);
-		return { form: message(form, m.saved()) };
+		redirect(302, `/dashboard`);
+		return message(form, m.saved());
 	}
 } satisfies Actions;

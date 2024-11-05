@@ -4,6 +4,7 @@
 	import SingleParticipantRegistrationStage from './stages/SingleParticipantRegistrationStage.svelte';
 	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -16,7 +17,7 @@
 
 <div class="flex w-full flex-col items-center px-4">
 	{#if $conferenceQuery.fetching}
-	<Spinner />
+		<Spinner />
 	{:else}
 		<div class="flex flex-col gap-10 py-10">
 			{#if conferenceQueryData?.findUniqueSingleParticipant}
@@ -45,6 +46,8 @@
 		#TODO: Implement supervisor post-conference stage
 		{:else}
 		{/if} -->
+			{:else}
+				<NoConferenceIndicator />
 			{/if}
 		</div>
 	{/if}

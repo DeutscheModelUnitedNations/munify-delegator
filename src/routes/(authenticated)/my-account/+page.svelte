@@ -10,12 +10,16 @@
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$types';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(userFormSchema)
+		validators: zod(userFormSchema),
+		onError(e) {
+			toast.push(e.result.error.message);
+		}
 	});
 
 	//TODO pronoun prefill

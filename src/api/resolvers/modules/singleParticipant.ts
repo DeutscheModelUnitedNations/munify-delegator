@@ -77,7 +77,8 @@ builder.mutationFields((t) => {
 				conferenceId: t.arg.id(),
 				motivation: t.arg.string(),
 				experience: t.arg.string(),
-				school: t.arg.string()
+				school: t.arg.string(),
+				roleId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
@@ -96,6 +97,39 @@ builder.mutationFields((t) => {
 					);
 				}
 
+				// this resolver might also be called if the user already is applied as a single participant
+				// we want to make it behave smoothly and therefore allow updating the single participant instead
+				const found = await db.singleParticipant.findUnique({
+					where: {
+						conferenceId_userId: {
+							userId: user.sub,
+							conferenceId: args.conferenceId
+						}
+					}
+				});
+				if (found) {
+					return await db.singleParticipant.update({
+						...query,
+						where: {
+							id: found.id,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').SingleParticipant]
+						},
+						data: {
+							motivation: args.motivation,
+							experience: args.experience,
+							school: args.school,
+							appliedForRoles: {
+								connect: {
+									//TODO we should add a conferenceId restraint on all connects to prevent cross
+									// conference relations
+									id: args.roleId,
+									conferenceId: args.conferenceId
+								}
+							}
+						}
+					});
+				}
+
 				return await db.singleParticipant.create({
 					...query,
 					data: {
@@ -103,7 +137,15 @@ builder.mutationFields((t) => {
 						motivation: args.motivation,
 						experience: args.experience,
 						school: args.school,
-						userId: user.sub!
+						userId: user.sub!,
+						appliedForRoles: {
+							connect: {
+								//TODO we should add a conferenceId restraint on all connects to prevent cross
+								// conference relations
+								id: args.roleId,
+								conferenceId: args.conferenceId
+							}
+						}
 					}
 				});
 			}
@@ -145,15 +187,6 @@ builder.mutationFields((t) => {
 
 					if (singleParticipant.appliedForRoles.length < 1) {
 						throw new GraphQLError(m.notEnoughtRoleApplications());
-					}
-
-					if (
-						!singleParticipant.school ||
-						!singleParticipant.experience ||
-						!singleParticipant.motivation ||
-						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
-					) {
-						throw new GraphQLError(m.missingInformation());
 					}
 				}
 

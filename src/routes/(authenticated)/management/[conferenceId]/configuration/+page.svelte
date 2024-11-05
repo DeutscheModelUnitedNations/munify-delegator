@@ -8,12 +8,16 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(conferenceSettingsFormSchema)
+		validators: zod(conferenceSettingsFormSchema),
+		onError(e) {
+			toast.push(e.result.error.message);
+		}
 	});
 	let formData = $derived(form.form);
 </script>
