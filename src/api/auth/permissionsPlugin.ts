@@ -1,8 +1,9 @@
 import Elysia from 'elysia';
-import { type Action, defineAbilitiesForUser } from './abilities/abilities';
+import { type Action, AllEntityNameValues, defineAbilitiesForUser } from './abilities/abilities';
 import { oidcPlugin } from './oidcPlugin';
 import { accessibleBy } from '@casl/prisma';
 import { logger, PermissionCheckError } from '$api/util/logger';
+import type { ForbiddenError } from '@casl/ability';
 
 export const permissionsPlugin = new Elysia({
 	name: 'permissions'
@@ -29,7 +30,22 @@ export const permissionsPlugin = new Elysia({
 				 */
 				allowDatabaseAccessTo: (action: Action = 'read') => {
 					hasBeenCalled = true;
-					return accessibleBy(abilities, action);
+					try {
+						return accessibleBy(abilities, action);
+					} catch (error) {
+						//TODO this is not a nice solution
+						if ((error as ForbiddenError<any>).message.startsWith("It's not allowed to run")) {
+							const dummy = { id: 'THIS_CHAR~WILL_NEVER_APPEAR_AS_ID_CHAR' };
+							const values = AllEntityNameValues.map(
+								(k) => k[0].toUpperCase() + k.slice(1).toLowerCase()
+							) as Capitalize<(typeof AllEntityNameValues)[number]>[];
+
+							const ret: ReturnType<typeof accessibleBy> = {} as any;
+							values.forEach((v) => (ret[v] = dummy));
+							return ret;
+						}
+						throw error;
+					}
 				},
 				/**
 				 * Utility that raises and error if the permissions check fails.

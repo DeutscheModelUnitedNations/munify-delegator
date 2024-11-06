@@ -2,7 +2,7 @@ import { type PureAbility, AbilityBuilder } from '@casl/ability';
 import { createPrismaAbility, type PrismaQuery } from '@casl/prisma';
 import { dynamicPrivateConfig } from '$config/private';
 import type { OIDCDeriveType } from '../oidcPlugin';
-import type { db } from '$db/db';
+import { db } from '$db/db';
 import { defineAbilitiesForConference } from './entities/conference';
 import { defineAbilitiesForDelegation } from './entities/delegation';
 import type { Capitalize } from '@sinclair/typebox';
@@ -43,6 +43,9 @@ type TaggedSubjects<T extends Record<string, Record<string, unknown>>> =
 type OmitDollarPrefixed<T> = T extends `$${string}` ? never : T;
 type OmitSymbol<T> = T extends symbol ? never : T;
 export type AllEntityNames = OmitSymbol<OmitDollarPrefixed<keyof typeof db>>;
+export const AllEntityNameValues = Object.keys(db)
+	.filter((k) => !k.startsWith('__'))
+	.filter((k) => !k.startsWith('$')) as AllEntityNames[];
 
 export type AppAbility = PureAbility<
 	[
@@ -67,10 +70,10 @@ export const defineAbilitiesForUser = (oidc: OIDCDeriveType) => {
 	// }
 
 	// grant system wide admins all permissions
-	if (oidc && oidc.user && oidc.user.hasRole('admin')) {
-		console.info('Admin granted: ', oidc.user.preferred_username);
-		builder.can('manage' as any, 'all' as any);
-	}
+	// if (oidc && oidc.user && oidc.user.hasRole('admin')) {
+	// 	console.info('Admin granted: ', oidc.user.preferred_username);
+	// 	builder.can('manage' as any, 'all' as any);
+	// }
 
 	defineAbilitiesForCommittee(oidc, builder);
 	defineAbilitiesForConference(oidc, builder);
