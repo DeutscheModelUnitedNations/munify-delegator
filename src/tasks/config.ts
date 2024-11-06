@@ -13,6 +13,10 @@ export const config = mapEnvToSchema({
 		// 	Type.Literal('production'),
 		// 	Type.Literal('test')
 		// ]),
-		SLACK_NOTIFICATION_WEBHOOK: Type.Optional(Type.String())
+		SLACK_ERROR_WEBHOOK: Type.Optional(Type.String()),
+		SLACK_NOTIFICATION_WEBHOOK: Type.Optional(Type.String()),
+		LISTMONK_API_URL: Type.String(),
+		LISTMONK_API_USER: Type.String(),
+		LISTMONK_API_KEY: Type.String()
 	})
 });
