@@ -205,15 +205,15 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 		});
 		if (dm.delegation.applied) {
 			lists.push(
+				createListName(dm.delegation.conference.title, dm.conferenceId, 'REGISTRATION_COMPLETED')
+			);
+		} else {
+			lists.push(
 				createListName(
 					dm.delegation.conference.title,
 					dm.conferenceId,
 					'REGISTRATION_NOT_COMPLETED'
 				)
-			);
-		} else {
-			lists.push(
-				createListName(dm.delegation.conference.title, dm.conferenceId, 'REGISTRATION_COMPLETED')
 			);
 		}
 	}
