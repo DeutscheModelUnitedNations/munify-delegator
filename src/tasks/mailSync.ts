@@ -17,7 +17,7 @@ import type {
 // GLOBALS
 
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
-const CRON = '0 */2 * * * *';
+const CRON = '0 */15 * * * *';
 
 const requiredListsGlobal = ['DMUN_NEWSLETTER', 'DMUN_TEAM_TENDERS'];
 
