@@ -11,7 +11,6 @@
 	import RoleApplicationTable from '$lib/components/RoleApplicationTable.svelte';
 	import { error } from '@sveltejs/kit';
 	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
-	// @ts-ignore TODO remove after the API rework
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 
