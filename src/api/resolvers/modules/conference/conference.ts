@@ -2,7 +2,7 @@ import { builder } from '../../builder';
 import {
 	ConferenceEndConferenceFieldObject,
 	ConferenceIdFieldObject,
-	ConferenceImageDataUrlFieldObject,
+	ConferenceImageDataURLFieldObject,
 	ConferenceLanguageFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
@@ -16,6 +16,9 @@ import {
 	findUniqueConferenceQueryObject,
 	updateOneConferenceMutationObject
 } from '$db/generated/graphql/Conference';
+import { toDataURL } from '$api/services/fileToDataURL';
+import { db } from '$db/db';
+import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 
 builder.prismaObject('Conference', {
 	fields: (t) => ({
@@ -25,7 +28,7 @@ builder.prismaObject('Conference', {
 		location: t.field(ConferenceLocationFieldObject),
 		language: t.field(ConferenceLanguageFieldObject),
 		website: t.field(ConferenceWebsiteFieldObject),
-		imageDataUrl: t.field(ConferenceImageDataUrlFieldObject),
+		imageDataURL: t.field(ConferenceImageDataURLFieldObject),
 		startRegistration: t.field(ConferenceStartRegistrationFieldObject),
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
@@ -120,7 +123,7 @@ builder.queryFields((t) => {
 
 // 			resolve: async (query, root, args, ctx, info) => {
 // 				// TODO check permissions
-
+// when creating, take note of the file mappings for the image! See the update mutation for details on how to implement
 // 				return field.resolve(query, root, args, ctx, info);
 // 			}
 // 		})
@@ -137,7 +140,9 @@ builder.mutationFields((t) => {
 				data: t.arg({
 					type: t.builder.inputType('ConferenceUpdateDataInput', {
 						fields: (t) => ({
-							title: t.string(),
+							title: t.string({
+								required: false
+							}),
 							longTitle: t.string({
 								required: false
 							}),
@@ -150,23 +155,42 @@ builder.mutationFields((t) => {
 							website: t.string({
 								required: false
 							}),
-							imageDataUrl: t.string({
+							image: t.field({
+								type: 'File',
 								required: false
 							}),
-							startRegistration: t.field({ type: 'DateTime' }),
-							startAssignment: t.field({ type: 'DateTime' }),
-							startConference: t.field({ type: 'DateTime' }),
-							endConference: t.field({ type: 'DateTime' })
+							startRegistration: t.field({ type: 'DateTime', required: false }),
+							startAssignment: t.field({ type: 'DateTime', required: false }),
+							startConference: t.field({ type: 'DateTime', required: false }),
+							endConference: t.field({ type: 'DateTime', required: false })
 						})
 					})
 				})
 			},
-			resolve: (query, root, args, ctx, info) => {
+			resolve: async (query, root, args, ctx) => {
 				args.where = {
 					...args.where,
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
 				};
-				return field.resolve(query, root, args, ctx, info);
+
+				conferenceSettingsFormSchema.parse(args.data);
+
+				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
+				delete args.data.image;
+
+				return await db.conference.update({
+					where: args.where,
+					data: {
+						...args.data,
+						imageDataURL: dataURL,
+						title: args.data.title ?? undefined,
+						startRegistration: args.data.startRegistration ?? undefined,
+						startAssignment: args.data.startAssignment ?? undefined,
+						startConference: args.data.startConference ?? undefined,
+						endConference: args.data.endConference ?? undefined
+					},
+					...query
+				});
 			}
 		})
 	};

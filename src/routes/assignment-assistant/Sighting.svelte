@@ -10,7 +10,6 @@
 	} from './applications.svelte';
 	import StarRating from '$lib/components/StarRating.svelte';
 	import { RoleCategory } from './roles.svelte';
-
 </script>
 
 <TextPreview>

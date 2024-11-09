@@ -1,6 +1,13 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
+	import type { Snippet } from 'svelte';
+
+	interface Props {
+		children: Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	setHeaderStatus({
 		label: m.admininstration(),
@@ -12,4 +19,4 @@
 	<title>MUNify Delegator - {m.admininstration()}</title>
 </svelte:head>
 
-<slot />
+{@render children()}

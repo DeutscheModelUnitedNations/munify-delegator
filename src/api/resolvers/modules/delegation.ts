@@ -16,6 +16,9 @@ import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
+import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
+import { GraphQLError } from 'graphql';
+import * as m from '$lib/paraglide/messages';
 
 builder.prismaObject('Delegation', {
 	fields: (t) => ({
@@ -92,6 +95,8 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
+				createDelegationFormSchema.parse({ ...args, conferenceId: undefined });
+
 				// if the user somehow is already participating in the conference, throw an error
 				await fetchUserParticipations({
 					conferenceId: args.conferenceId,
@@ -152,7 +157,10 @@ builder.mutationFields((t) => {
 				where: field.args.where,
 				resetEntryCode: t.arg.boolean({ required: false }),
 				newHeadDelegateUserId: t.arg.id({ required: false }),
-				applied: t.arg.boolean({ required: false })
+				applied: t.arg.boolean({ required: false }),
+				school: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false }),
+				motivation: t.arg.string({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
 				args.where = {
@@ -172,16 +180,23 @@ builder.mutationFields((t) => {
 				if (args.applied !== undefined && args.applied !== null) {
 					await tidyRoleApplications({ id: delegation.id });
 
-					if (delegation.members.length < 2) {
-						throw new Error('Not enough members');
-					}
+					if (args.applied) {
+						if (delegation.members.length < 2) {
+							throw new GraphQLError(m.notEnoughMembers());
+						}
 
-					if (delegation.appliedForRoles.length < 3) {
-						throw new Error('Not enough role applications');
-					}
+						if (delegation.appliedForRoles.length < 3) {
+							throw new GraphQLError(m.notEnoughtRoleApplications());
+						}
 
-					if (!delegation.school || !delegation.experience || !delegation.motivation) {
-						throw new Error('Missing information');
+						if (
+							!delegation.school ||
+							!delegation.experience ||
+							!delegation.motivation ||
+							!createDelegationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+						) {
+							throw new GraphQLError(m.missingInformation());
+						}
 					}
 
 					await db.delegation.update({
@@ -191,6 +206,20 @@ builder.mutationFields((t) => {
 						},
 						data: {
 							applied: args.applied
+						}
+					});
+				}
+
+				if (args.school || args.experience || args.motivation) {
+					await db.delegation.update({
+						where: {
+							id: delegation.id,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+						},
+						data: {
+							school: args.school ?? undefined,
+							experience: args.experience ?? undefined,
+							motivation: args.motivation ?? undefined
 						}
 					});
 				}

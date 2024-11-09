@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { oidcRoles, refresh, validateTokens } from '$api/services/OIDC';
 import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
+import { GraphQLError } from 'graphql';
 
 const TokenCookieSchema = z
 	.object({
@@ -50,7 +51,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 
 	if (!user) {
 		try {
-			if (!tokenSet.refresh_token) throw new Error('No refresh token available');
+			if (!tokenSet.refresh_token) throw new GraphQLError('No refresh token available');
 			const refreshed = await refresh(tokenSet.refresh_token);
 			const cookieValue: TokenCookieSchemaType = {
 				access_token: refreshed.access_token,

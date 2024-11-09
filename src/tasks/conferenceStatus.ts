@@ -15,7 +15,11 @@ const CRON = '0 0 9,20 * * *';
 // HELPER FUNCTIONS
 
 function formatConferenceDate(date: Date) {
-	return date.toLocaleDateString(languageTag(), { day: '2-digit', month: '2-digit', year: 'numeric' });
+	return date.toLocaleDateString(languageTag(), {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric'
+	});
 }
 
 function formatHistoricComparison(historicStat: number | undefined, currentStat: number) {

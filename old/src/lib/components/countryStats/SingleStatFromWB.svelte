@@ -29,7 +29,7 @@
 
 <div class="stats bg-base-200 shadow">
 	<div class="stat">
-		<div class="stat-figure text-primary">
+		<div class="text-primary stat-figure">
 			<i class="fa-duotone fa-{icon} text-3xl"></i>
 		</div>
 		<div class="stat-title">{title}</div>

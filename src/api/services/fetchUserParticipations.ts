@@ -2,6 +2,7 @@ import { db } from '$db/db';
 import { languageTag } from '$lib/paraglide/runtime';
 import type { Conference, User } from '@prisma/client';
 import * as m from '$lib/paraglide/messages';
+import { GraphQLError } from 'graphql';
 
 /**
  * This helper fetches user participations in a conference. Fetched entities include
@@ -56,19 +57,19 @@ export async function fetchUserParticipations({
 
 	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw new Error(m.youAreAlreadySupervisor({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadySupervisor({}, { languageTag: languageTag() }));
 		}
 
 		if (foundSingleParticipant) {
-			throw new Error(m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() }));
 		}
 
 		if (foundDelegationMember) {
-			throw new Error(m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() }));
 		}
 
 		if (foundTeamMember) {
-			throw new Error(m.youAreAlreadyTeamMember({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: languageTag() }));
 		}
 	}
 

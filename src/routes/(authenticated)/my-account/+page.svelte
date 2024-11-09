@@ -6,16 +6,20 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { translatedCountryCodeFormOptions } from '$lib/services/addressCountries.svelte.js';
+	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$types';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(userFormSchema)
+		validators: zod(userFormSchema),
+		onError(e) {
+			toast.push(e.result.error.message);
+		}
 	});
 
 	//TODO pronoun prefill
@@ -59,13 +63,13 @@
 						{form}
 						name="country"
 						placeholder={m.pleaseSelectCountry()}
-						options={translatedCountryCodeFormOptions}
+						options={translatedNationCodeAddressFormOptions}
 					/>
 					<FormDateTimeInput
 						{form}
 						name="birthday"
-						defaultYear={Date.now() - 13 * 365 * 24 * 60 * 60 * 1000}
 						label={m.birthDate()}
+						defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
 					/>
 					<FormSelect
 						{form}

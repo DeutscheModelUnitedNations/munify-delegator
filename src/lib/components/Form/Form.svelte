@@ -6,16 +6,23 @@
 		children: Snippet;
 		class?: string;
 		form: SuperForm<A, B>;
+		showSubmitButton?: boolean;
 	}
 
-	let { class: class_, form }: Props = $props();
-	let { message, enhance, allErrors, submitting } = $derived(form);
+	let { class: class_, form, children, showSubmitButton = true }: Props = $props();
+	let { message, enhance, allErrors, submitting, tainted, isTainted } = $derived(form);
 </script>
 
 <form class="flex flex-col gap-4 {class_}" method="post" enctype="multipart/form-data" use:enhance>
-	<slot />
+	{@render children()}
 	{#if $message}
-		<p class="text-sm">{$message}</p>
+		<p class="text mt-5 font-bold">{$message}</p>
 	{/if}
-	<FormSubmitButton disabled={$allErrors.length > 0} loading={$submitting} />
+	{#if showSubmitButton}
+		<FormSubmitButton
+			{form}
+			disabled={$allErrors.length > 0 || !isTainted($tainted)}
+			loading={$submitting}
+		/>
+	{/if}
 </form>

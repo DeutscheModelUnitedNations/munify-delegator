@@ -4,8 +4,8 @@
 		"allowJs": true,
 		"checkJs": true,
 		"module": "ESNext", // or "CommonJS"
-    "target": "ESNext", // or "ES6"
-    "allowSyntheticDefaultImports": true, // This should be true as well
+		"target": "ESNext", // or "ES6"
+		"allowSyntheticDefaultImports": true, // This should be true as well
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,

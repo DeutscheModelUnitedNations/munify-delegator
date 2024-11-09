@@ -10,6 +10,7 @@ import {
 } from '$db/generated/graphql/RoleApplication';
 import { findUniqueDelegationQueryArgs } from '$db/generated/graphql/Delegation/queries/findUnique.base';
 import { db } from '$db/db';
+import { GraphQLError } from 'graphql';
 
 builder.prismaObject('RoleApplication', {
 	fields: (t) => ({
@@ -67,11 +68,11 @@ builder.mutationFields((t) => {
 			},
 			resolve: async (query, root, args, ctx) => {
 				if (!args.nationId && !args.nonStateActorId) {
-					throw new Error('Either nationId or nonStateActorId must be provided');
+					throw new GraphQLError('Either nationId or nonStateActorId must be provided');
 				}
 
 				if (args.nationId && args.nonStateActorId) {
-					throw new Error('Only one of nationId or nonStateActorId can be provided');
+					throw new GraphQLError('Only one of nationId or nonStateActorId can be provided');
 				}
 
 				// this is for permission checks only

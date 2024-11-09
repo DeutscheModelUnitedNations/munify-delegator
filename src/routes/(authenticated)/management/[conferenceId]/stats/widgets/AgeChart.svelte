@@ -4,11 +4,10 @@
 	import type { PageData } from '../$types';
 	let { data }: { data: PageData } = $props();
 	let stats = $derived(data.stats);
-	
 </script>
 
 <section
-	class="card col-span-2 grow bg-primary text-primary-content shadow-sm md:col-span-12 xl:col-span-6"
+	class="bg-primary card col-span-2 grow text-primary-content shadow-sm md:col-span-12 xl:col-span-6"
 >
 	<div class="card-body mb-4 pb-0">
 		<h3 class="text-xs">{m.averageAgeOnlyApplied()}</h3>

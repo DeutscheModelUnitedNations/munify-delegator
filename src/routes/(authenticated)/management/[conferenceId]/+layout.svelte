@@ -4,9 +4,10 @@
 	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import * as m from '$lib/paraglide/messages';
+	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 
-	let { data }: { data: LayoutData } = $props();
+	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 	let navbarExpanded = $state(true);
 </script>
 
@@ -62,5 +63,5 @@
 </SideNavigationDrawer>
 
 <div class="flex h-full w-full px-3">
-	<slot />
+	{@render children()}
 </div>

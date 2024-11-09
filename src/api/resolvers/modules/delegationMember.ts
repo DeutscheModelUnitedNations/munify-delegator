@@ -4,15 +4,14 @@ import {
 	findManyDelegationMemberQueryObject,
 	findUniqueDelegationMemberQueryObject,
 	DelegationMemberIdFieldObject,
-	updateOneDelegationMemberMutationObject,
 	DelegationMemberIsHeadDelegateFieldObject,
 	createOneDelegationMemberMutationObject
 } from '$db/generated/graphql/DelegationMember';
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
-import { languageTag } from '$lib/paraglide/runtime';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
+import { GraphQLError } from 'graphql';
 
 builder.prismaObject('DelegationMember', {
 	fields: (t) => ({
@@ -75,7 +74,7 @@ builder.mutationFields((t) => {
 				});
 
 				if (delegation.applied) {
-					throw new Error(m.delegationHasAlreadyApplied({}, { languageTag: languageTag() }));
+					throw new GraphQLError(m.delegationHasAlreadyApplied());
 				}
 
 				// if the user somehow is already participating in the conference, throw an error
@@ -107,7 +106,7 @@ builder.mutationFields((t) => {
 					}
 				});
 
-				await tidyRoleApplications(delegation.id);
+				await tidyRoleApplications({ id: delegation.id });
 
 				return ret;
 			}
@@ -115,22 +114,22 @@ builder.mutationFields((t) => {
 	};
 });
 
-builder.mutationFields((t) => {
-	const field = updateOneDelegationMemberMutationObject(t);
-	return {
-		updateOneDelegationMember: t.prismaField({
-			...field,
-			args: { where: field.args.where },
-			resolve: (query, root, args, ctx, info) => {
-				args.where = {
-					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
-				};
-				return field.resolve(query, root, args, ctx, info);
-			}
-		})
-	};
-});
+// builder.mutationFields((t) => {
+// 	const field = updateOneDelegationMemberMutationObject(t);
+// 	return {
+// 		updateOneDelegationMember: t.prismaField({
+// 			...field,
+// 			args: { where: field.args.where },
+// 			resolve: (query, root, args, ctx, info) => {
+// 				args.where = {
+// 					...args.where,
+// 					AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
+// 				};
+// 				return field.resolve(query, root, args, ctx, info);
+// 			}
+// 		})
+// 	};
+// });
 
 builder.mutationFields((t) => {
 	const field = deleteOneDelegationMemberMutationObject(t);

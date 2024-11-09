@@ -30,7 +30,10 @@ export const conferenceSettingsFormSchema = z.object({
 			message: m.pleaseEnterAValidWebsite()
 		})
 		.optional(),
-	imageDataUrl: z.string().optional(),
+	image: z
+		.instanceof(File)
+		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
+		.optional(),
 	startRegistration: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),

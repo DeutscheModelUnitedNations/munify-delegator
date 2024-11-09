@@ -1,0 +1,148 @@
+<script lang="ts">
+	import * as m from '$lib/paraglide/messages';
+	import Drawer from '$lib/components/Drawer.svelte';
+	import { graphql } from '$houdini';
+	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
+	import { error } from '@sveltejs/kit';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { singleParticipantResetMutation } from './individualsResetMutation';
+
+	interface Props {
+		conferenceId: string;
+		singleParticipantId: string;
+		open?: boolean;
+		onClose?: () => void;
+	}
+	let { singleParticipantId, open = $bindable(false), onClose, conferenceId }: Props = $props();
+
+	export const _SingleParticipantDrawerQueryVariables: SingleParticipantDrawerQueryVariables =
+		() => {
+			return {
+				singleParticipantId: singleParticipantId
+			};
+		};
+
+	const singleParticipantQuery = graphql(`
+		query SingleParticipantDrawerQuery($singleParticipantId: String!) @load {
+			findUniqueSingleParticipant(where: { id: $singleParticipantId }) {
+				id
+				applied
+				school
+				motivation
+				experience
+				user {
+					id
+					given_name
+					family_name
+				}
+				appliedForRoles {
+					name
+					fontAwesomeIcon
+				}
+			}
+		}
+	`);
+</script>
+
+<Drawer bind:open {onClose}>
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-thin uppercase">{m.singleParticipant()}</h3>
+		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
+			{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.given_name}
+			<span class="uppercase"
+				>{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.family_name}</span
+			>
+		</h2>
+		<h3 class="text-sm font-thin">
+			{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.id}
+		</h3>
+	</div>
+
+	{#if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
+		<div class="alert alert-success">
+			<i class="fas fa-check"></i>
+			{m.registrationCompleted()}
+		</div>
+	{:else}
+		<div class="alert alert-warning">
+			<i class="fas fa-hourglass-half"></i>
+			{m.registrationNotCompleted()}
+		</div>
+	{/if}
+
+	<div class="flex flex-col">
+		<h3 class="text-xl font-bold">{m.adminUserCardDetails()}</h3>
+		<table class="table">
+			<thead>
+				<tr>
+					<th></th>
+					<th class="w-full"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
+					<td>
+						{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.school}
+					</td>
+				</tr>
+				<tr>
+					<td class="text-center"><i class="fa-duotone fa-fire-flame-curved text-lg"></i></td>
+					<td>
+						{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.motivation}
+					</td>
+				</tr>
+				<tr>
+					<td class="text-center"><i class="fa-duotone fa-compass text-lg"></i></td>
+					<td>
+						{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.experience}
+					</td>
+				</tr>
+				<tr>
+					<td class="text-center"><i class="fa-duotone fa-check-to-slot text-lg"></i></td>
+					<td>
+						<div class="flex items-center gap-2">
+							<div class="h-full rounded-md bg-base-300 px-3 py-[2px]">
+								{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles.length}
+							</div>
+							<div class="flex flex-col">
+								{#each $singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles ?? [] as role}
+									<div>
+										<i class="fa-duotone fa-{(role?.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
+										{role.name}
+									</div>
+								{/each}
+							</div>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
+		<a
+			class="btn"
+			href={`/management/${conferenceId}/participants?filter=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id}`}
+		>
+			{m.adminUserCard()}
+			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+		</a>
+		{#if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
+			<button
+				class="btn"
+				onclick={async () => {
+					if (!confirm('Willst du wirklich den Bewerbungsstatus zurücksetzen?')) return;
+					await singleParticipantResetMutation.mutate({
+						singleParticipantId: $singleParticipantQuery?.data?.findUniqueSingleParticipant?.id!,
+						applied: false
+					});
+				}}
+			>
+				{m.revokeApplication()}
+				<i class="fa-duotone fa-file-slash"></i>
+			</button>
+		{/if}
+	</div>
+</Drawer>

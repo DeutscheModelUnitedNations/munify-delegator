@@ -13,6 +13,9 @@ import {
 } from '$db/generated/graphql/SingleParticipant';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
+import { GraphQLError } from 'graphql';
+import * as m from '$lib/paraglide/messages';
+import { individualApplicationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/individual/[roleId]/form-schema';
 
 builder.prismaObject('SingleParticipant', {
 	fields: (t) => ({
@@ -74,10 +77,13 @@ builder.mutationFields((t) => {
 				conferenceId: t.arg.id(),
 				motivation: t.arg.string(),
 				experience: t.arg.string(),
-				school: t.arg.string()
+				school: t.arg.string(),
+				roleId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				individualApplicationFormSchema.parse({ ...args, conferenceId: undefined });
 
 				const { foundDelegationMember, foundSupervisor, foundTeamMember } =
 					await fetchUserParticipations({
@@ -86,9 +92,42 @@ builder.mutationFields((t) => {
 					});
 
 				if (foundDelegationMember || foundSupervisor || foundTeamMember) {
-					throw new Error(
-						"You can't apply as a single participant if you already are a part of this conference!"
+					throw new GraphQLError(
+						m.youCantApplyAsSingleParticipantAsYouAreAlreadyAppliedInTheConference()
 					);
+				}
+
+				// this resolver might also be called if the user already is applied as a single participant
+				// we want to make it behave smoothly and therefore allow updating the single participant instead
+				const found = await db.singleParticipant.findUnique({
+					where: {
+						conferenceId_userId: {
+							userId: user.sub,
+							conferenceId: args.conferenceId
+						}
+					}
+				});
+				if (found) {
+					return await db.singleParticipant.update({
+						...query,
+						where: {
+							id: found.id,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').SingleParticipant]
+						},
+						data: {
+							motivation: args.motivation,
+							experience: args.experience,
+							school: args.school,
+							appliedForRoles: {
+								connect: {
+									//TODO we should add a conferenceId restraint on all connects to prevent cross
+									// conference relations
+									id: args.roleId,
+									conferenceId: args.conferenceId
+								}
+							}
+						}
+					});
 				}
 
 				return await db.singleParticipant.create({
@@ -98,7 +137,15 @@ builder.mutationFields((t) => {
 						motivation: args.motivation,
 						experience: args.experience,
 						school: args.school,
-						userId: user.sub!
+						userId: user.sub!,
+						appliedForRoles: {
+							connect: {
+								//TODO we should add a conferenceId restraint on all connects to prevent cross
+								// conference relations
+								id: args.roleId,
+								conferenceId: args.conferenceId
+							}
+						}
 					}
 				});
 			}
@@ -113,8 +160,11 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				where: field.args.where,
-				applyForRolesIdList: t.arg.idList(),
-				unApplyForRolesIdList: t.arg.idList(),
+				school: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false }),
+				motivation: t.arg.string({ required: false }),
+				applyForRolesIdList: t.arg.idList({ required: false }),
+				unApplyForRolesIdList: t.arg.idList({ required: false }),
 				applied: t.arg.boolean({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
@@ -136,15 +186,7 @@ builder.mutationFields((t) => {
 					});
 
 					if (singleParticipant.appliedForRoles.length < 1) {
-						throw new Error('Not enough role applications');
-					}
-
-					if (
-						!singleParticipant.school ||
-						!singleParticipant.experience ||
-						!singleParticipant.motivation
-					) {
-						throw new Error('Missing information');
+						throw new GraphQLError(m.notEnoughtRoleApplications());
 					}
 				}
 
@@ -152,6 +194,9 @@ builder.mutationFields((t) => {
 					...query,
 					where: args.where,
 					data: {
+						school: args.school ?? undefined,
+						experience: args.experience ?? undefined,
+						motivation: args.motivation ?? undefined,
 						appliedForRoles: {
 							connect: args.applyForRolesIdList
 								? args.applyForRolesIdList.map((id) => ({ id }))
