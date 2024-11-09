@@ -6,12 +6,12 @@
 	let { data }: { data: PageData } = $props();
 	let query = $derived(data.BaseAssignmentDataQuery);
 	let delegations = $derived($query.data?.findManyDelegations);
+	let conference = $derived($query.data?.findUniqueConference);
 </script>
 
 {#if $query.fetching}
 	<Spinner />
 {:else}
-	{#each delegations! as delegation}
-		{JSON.stringify(delegation)}
-	{/each}
+	{JSON.stringify(delegations)}
+  {JSON.stringify(conference)}
 {/if}
