@@ -97,7 +97,7 @@ export async function startSignin(visitedUrl: URL) {
 	const encrypted_state = cryptr.encrypt(serialized_state);
 
 	const parameters: Record<string, string> = {
-		redirect_uri: visitedUrl.origin + '/auth/login-callback',
+		redirect_uri: `${visitedUrl.origin}/auth/login-callback`,
 		scope: configPrivate.OIDC_SCOPES,
 		code_challenge,
 		code_challenge_method: 'S256',

@@ -22,14 +22,14 @@ export const userFormSchema = z.object({
 	street: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
-	apartment: z.string().optional(),
+	apartment: z.string().nullable().optional(),
 	zip: z.string().refine((s) => valiator.isPostalCode(s, 'any'), {
 		message: m.pleaseEnterAZipCpode()
 	}),
 	city: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
-	country: z.string().refine(valiator.isISO31661Alpha2),
+	country: z.string().refine(valiator.isISO31661Alpha3),
 	gender: z
 		.string()
 		.min(1)
