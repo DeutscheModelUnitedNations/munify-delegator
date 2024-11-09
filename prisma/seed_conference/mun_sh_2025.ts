@@ -103,8 +103,6 @@ const conference = await seedDb.conference.create({
 		longTitle: 'Model United Nations Schleswig-Holstein 2025',
 		location: 'Kiel',
 		website: 'https://mun-sh.de',
-		start: '2025-03-06T00:00:00.000Z',
-		end: '2025-03-10T00:00:00.000Z',
 		language: 'Deutsch',
 		startRegistration: new Date('2024-10-01T00:00:00.000Z'),
 		startAssignment: new Date('2024-11-03T00:00:00.000Z'),
