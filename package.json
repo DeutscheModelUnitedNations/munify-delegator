@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
-		"dev:server": "vite",
+		"dev:server": "svelte-kit sync && vite",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
 		"build": "vite build",
 		"preview": "vite preview",
