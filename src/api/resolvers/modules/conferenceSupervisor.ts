@@ -6,7 +6,9 @@ import {
 	ConferenceSupervisorIdFieldObject,
 	updateOneConferenceSupervisorMutationObject,
 	ConferenceSupervisorPlansOwnAttendenceAtConferenceFieldObject,
-	createOneConferenceSupervisorMutationObject
+	createOneConferenceSupervisorMutationObject,
+	ConferenceSupervisorConferenceFieldObject,
+	ConferenceSupervisorUserFieldObject
 } from '$db/generated/graphql/ConferenceSupervisor';
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
@@ -20,8 +22,8 @@ builder.prismaObject('ConferenceSupervisor', {
 		plansOwnAttendenceAtConference: t.field(
 			ConferenceSupervisorPlansOwnAttendenceAtConferenceFieldObject
 		),
-		conference: t.relation('conference'),
-		user: t.relation('user'),
+		conference: t.relation('conference', ConferenceSupervisorConferenceFieldObject),
+		user: t.relation('user', ConferenceSupervisorUserFieldObject),
 		delegations: t.relation('delegations', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').Delegation

@@ -4,6 +4,7 @@ import {
 	findManyNonStateActorQueryObject,
 	findUniqueNonStateActorQueryObject,
 	NonStateActorAbbreviationFieldObject,
+	NonStateActorConferenceFieldObject,
 	NonStateActorDescriptionFieldObject,
 	NonStateActorFontAwesomeIconFieldObject,
 	NonStateActorIdFieldObject,
@@ -20,7 +21,7 @@ builder.prismaObject('NonStateActor', {
 		fontAwesomeIcon: t.field(NonStateActorFontAwesomeIconFieldObject),
 		abbreviation: t.field(NonStateActorAbbreviationFieldObject),
 		seatAmount: t.field(NonStateActorSeatAmountFieldObject),
-		conference: t.relation('conference'),
+		conference: t.relation('conference', NonStateActorConferenceFieldObject),
 		roleApplications: t.relation('roleApplications', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').RoleApplication

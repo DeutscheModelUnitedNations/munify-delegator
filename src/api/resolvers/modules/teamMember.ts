@@ -3,17 +3,19 @@ import {
 	deleteOneTeamMemberMutationObject,
 	findManyTeamMemberQueryObject,
 	findUniqueTeamMemberQueryObject,
+	TeamMemberConferenceFieldObject,
 	TeamMemberIdFieldObject,
 	TeamMemberRoleFieldObject,
-	updateOneTeamMemberMutationObject
+	updateOneTeamMemberMutationObject,
+	TeamMemberUserFieldObject
 } from '$db/generated/graphql/TeamMember';
 
 builder.prismaObject('TeamMember', {
 	fields: (t) => ({
 		id: t.field(TeamMemberIdFieldObject),
 		role: t.field(TeamMemberRoleFieldObject),
-		conference: t.relation('conference'),
-		user: t.relation('user')
+		conference: t.relation('conference', TeamMemberConferenceFieldObject),
+		user: t.relation('user', TeamMemberUserFieldObject)
 	})
 });
 

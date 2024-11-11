@@ -7,7 +7,8 @@ import {
 	CustomConferenceRoleFontAwesomeIconFieldObject,
 	CustomConferenceRoleIdFieldObject,
 	CustomConferenceRoleNameFieldObject,
-	updateOneCustomConferenceRoleMutationObject
+	updateOneCustomConferenceRoleMutationObject,
+	CustomConferenceRoleConferenceFieldObject
 } from '$db/generated/graphql/CustomConferenceRole';
 
 builder.prismaObject('CustomConferenceRole', {
@@ -16,7 +17,7 @@ builder.prismaObject('CustomConferenceRole', {
 		name: t.field(CustomConferenceRoleNameFieldObject),
 		description: t.field(CustomConferenceRoleDescriptionFieldObject),
 		fontAwesomeIcon: t.field(CustomConferenceRoleFontAwesomeIconFieldObject),
-		conference: t.relation('conference'),
+		conference: t.relation('conference', CustomConferenceRoleConferenceFieldObject),
 		singleParticipant: t.relation('singleParticipant', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant

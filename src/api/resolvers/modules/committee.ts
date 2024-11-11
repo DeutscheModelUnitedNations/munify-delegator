@@ -1,6 +1,7 @@
 import { builder } from '../builder';
 import {
 	CommitteeAbbreviationFieldObject,
+	CommitteeConferenceFieldObject,
 	CommitteeIdFieldObject,
 	CommitteeNameFieldObject,
 	CommitteeNumOfSeatsPerDelegationFieldObject,
@@ -16,7 +17,7 @@ builder.prismaObject('Committee', {
 		name: t.field(CommitteeNameFieldObject),
 		abbreviation: t.field(CommitteeAbbreviationFieldObject),
 		numOfSeatsPerDelegation: t.field(CommitteeNumOfSeatsPerDelegationFieldObject),
-		conference: t.relation('conference'),
+		conference: t.relation('conference', CommitteeConferenceFieldObject),
 		nations: t.relation('nations', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').Nation
