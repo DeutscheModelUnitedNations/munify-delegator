@@ -14,7 +14,7 @@
 	let constraints = $derived(($formConstraints as any)[name]);
 </script>
 
-<label for={name} class="flex w-full items-center cursor-pointer">
+<label for={name} class="flex w-full cursor-pointer items-center">
 	<input
 		type="checkbox"
 		class="checkbox"

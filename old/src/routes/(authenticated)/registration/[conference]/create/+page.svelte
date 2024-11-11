@@ -192,7 +192,7 @@
 				<p class="max-ch-sm">
 					{m.nowYouCanInvitePeople()}
 				</p>
-				<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
+				<div class="border-primary flex w-full items-center rounded-lg border-2 border-dashed p-2">
 					<p class="flex-1 overflow-x-auto">
 						{referralLink}
 					</p>
@@ -209,7 +209,7 @@
 				<p class="max-ch-sm">
 					{m.orShareThisCode()}
 				</p>
-				<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
+				<div class="border-primary flex w-full items-center rounded-lg border-2 border-dashed p-2">
 					<p class="flex-1 overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
 						{delegation?.entryCode}
 					</p>

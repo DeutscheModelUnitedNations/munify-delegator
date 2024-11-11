@@ -16,12 +16,12 @@
 			<ul>
 				<li>
 					<a href="/" class="!no-underline" aria-label="Zurück zur Startseite">
-						<i class="fa-solid fa-house transition-all duration-300 hover:text-primary"></i>
+						<i class="fa-solid fa-house hover:text-primary transition-all duration-300"></i>
 					</a>
 				</li>
 				{#each breadcrumbs as { title, href, icon }}
 					<li>
-						<a {href} class="!no-underline transition-all duration-300 hover:text-primary">
+						<a {href} class="hover:text-primary !no-underline transition-all duration-300">
 							{#if icon}
 								<i class="fa-solid fa-{icon} {title && 'mr-1'}"></i>
 							{/if}

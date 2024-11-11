@@ -35,8 +35,8 @@
 					{/each}
 				</tbody>
 			</table>
-			{:else}
-				{m.noResults()}
+		{:else}
+			{m.noResults()}
 		{/if}
 	</div>
 </div>

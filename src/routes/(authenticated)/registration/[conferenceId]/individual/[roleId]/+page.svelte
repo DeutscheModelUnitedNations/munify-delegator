@@ -76,7 +76,7 @@
 		<div class="flex flex-col items-center gap-4 {step !== 1 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
 
-			<div class="dark:stroke-slate-300 rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200">
+			<div class="rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200 dark:stroke-slate-300">
 				<div class="overflow-x-auto">
 					<table class="table">
 						<tbody>

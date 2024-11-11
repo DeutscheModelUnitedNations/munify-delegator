@@ -20,7 +20,7 @@ const config = {
 				return date && date.getTime();
 			}
 		}
-	},
+	}
 };
 
 export default config;

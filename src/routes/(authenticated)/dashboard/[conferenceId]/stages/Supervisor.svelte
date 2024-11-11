@@ -36,7 +36,7 @@
 	]);
 
 	const getName = (
-		user: NonNullable<(typeof supervisor)>['delegations'][0]['members'][0]['user'],
+		user: NonNullable<typeof supervisor>['delegations'][0]['members'][0]['user'],
 		shortenGiven = false
 	) => {
 		if (shortenGiven) {
@@ -98,7 +98,7 @@
 			</label>
 		</div>
 	</div>
-	<p class="text-gray-500 text-xs">
+	<p class="text-xs text-gray-500">
 		{@html supervisor.plansOwnAttendenceAtConference
 			? m.willBePresentAtConference()
 			: m.willNotBePresentAtConference()}

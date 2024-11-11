@@ -19,6 +19,10 @@
 		<p class="text mt-5 font-bold">{$message}</p>
 	{/if}
 	{#if showSubmitButton}
-		<FormSubmitButton {form} disabled={$allErrors.length > 0 || !isTainted($tainted)} loading={$submitting} />
+		<FormSubmitButton
+			{form}
+			disabled={$allErrors.length > 0 || !isTainted($tainted)}
+			loading={$submitting}
+		/>
 	{/if}
 </form>

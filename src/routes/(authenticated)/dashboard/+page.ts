@@ -18,13 +18,13 @@ const myConferences = graphql(`
 			title
 			location
 			website
-      longTitle
-      language
-      imageDataURL
-      startRegistration
-      startAssignment
-      startConference
-      endConference
+			longTitle
+			language
+			imageDataURL
+			startRegistration
+			startAssignment
+			startConference
+			endConference
 		}
 	}
 `);

@@ -35,7 +35,7 @@
 		}
 
 		console.log(conference.startAssignment);
-		
+
 		if (new Date().getTime() > new Date(conference.startAssignment).getTime()) {
 			return 'CLOSED';
 		}

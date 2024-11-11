@@ -1,6 +1,6 @@
 export enum RoleCategory {
-  DELEGATON,
-  SINGLE
+	DELEGATON,
+	SINGLE
 }
 
 interface Role {

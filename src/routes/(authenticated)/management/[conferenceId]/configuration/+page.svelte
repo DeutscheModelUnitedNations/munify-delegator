@@ -22,7 +22,6 @@
 	let formData = $derived(form.form);
 </script>
 
-
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 	<Form {form}>
 		<FormTextInput
@@ -46,7 +45,11 @@
 		<FormTextInput {form} name="language" placeholder={'Deutsch'} label={m.conferenceLanguage()} />
 		<FormTextInput {form} name="website" placeholder={'mun-sh.de'} label={m.conferenceWebsite()} />
 		{#if $formData.image || data.imageDataURL}
-			<img src={$formData.image ? URL.createObjectURL($formData.image) : data.imageDataURL} class="h-64 w-64" alt="Preview of the file you selected" />
+			<img
+				src={$formData.image ? URL.createObjectURL($formData.image) : data.imageDataURL}
+				class="h-64 w-64"
+				alt="Preview of the file you selected"
+			/>
 		{/if}
 		<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
 		<FormDateTimeInput {form} name="startRegistration" label={m.conferenceStartRegistration()} />

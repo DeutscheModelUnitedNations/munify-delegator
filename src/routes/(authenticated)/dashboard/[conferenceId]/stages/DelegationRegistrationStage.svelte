@@ -4,7 +4,7 @@
 	import DelegationStatusTableWrapper from '$lib/components/Dashboard/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/Dashboard/DelegationStatusTable/Entry.svelte';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
-  import RoleApplicationTable from './RoleApplicationTable.svelte';
+	import RoleApplicationTable from './RoleApplicationTable.svelte';
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
 	import { onMount } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -15,7 +15,7 @@
 	import type { StoresValues } from 'svelte/store';
 	import { page } from '$app/stores';
 
-  //TODO we should split this up/refactor this
+	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?
 
 	let {
@@ -509,9 +509,7 @@
 	<p class="mt-10 text-xs">
 		{@html m.delegationIdForSupport()}
 		{#if delegationMember.delegation}
-			<span class="rounded-sm bg-base-200 p-1 font-mono"
-				>{delegationMember.delegation.id}</span
-			>
+			<span class="rounded-sm bg-base-200 p-1 font-mono">{delegationMember.delegation.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

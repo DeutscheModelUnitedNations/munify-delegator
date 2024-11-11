@@ -70,7 +70,7 @@
 			</label>
 		</div>
 	</div>
-	<p class="text-gray-500 text-xs">
+	<p class="text-xs text-gray-500">
 		{@html data.supervisorData?.plansOwnAttendenceAtConference
 			? m.willBePresentAtConference()
 			: m.willNotBePresentAtConference()}

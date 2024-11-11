@@ -11,11 +11,11 @@
 
 	let { data }: Props = $props();
 	let plausibilityQuery = $derived(data.PlausibilityQuery);
-  let plausibility = $derived($plausibilityQuery.data?.conferencePlausibility);
+	let plausibility = $derived($plausibilityQuery.data?.conferencePlausibility);
 
-  if(!plausibility) {
-    error(404, 'Could not find plausibility data');
-  }
+	if (!plausibility) {
+		error(404, 'Could not find plausibility data');
+	}
 </script>
 
 <div class="flex flex-col gap-8 p-10">

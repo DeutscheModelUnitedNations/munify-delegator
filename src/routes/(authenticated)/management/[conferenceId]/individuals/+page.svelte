@@ -92,7 +92,7 @@
 
 {#if selectedParticipantRow}
 	<IndividualDrawer
-	singleParticipantId={selectedParticipantRow.id}
+		singleParticipantId={selectedParticipantRow.id}
 		conferenceId={data.conferenceId}
 		open={selectedParticipantRow !== undefined}
 		onClose={() => (selectedParticipantRow = undefined)}

@@ -48,7 +48,7 @@
 
 				{#if activeConferences.length > 0}
 					<div class="h-6"></div>
-					<p class="text-gray-500 pb-2 text-xs">{m.activeConferences()}</p>
+					<p class="pb-2 text-xs text-gray-500">{m.activeConferences()}</p>
 					{#each activeConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -61,7 +61,7 @@
 
 				{#if preConferences.length > 0}
 					<div class="h-6"></div>
-					<p class="text-gray-500 pb-2 text-xs">{m.upcomingConferences()}</p>
+					<p class="pb-2 text-xs text-gray-500">{m.upcomingConferences()}</p>
 					{#each preConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"
@@ -74,7 +74,7 @@
 
 				{#if pastConferences.length > 0}
 					<div class="h-6"></div>
-					<p class="text-gray-500 pb-2 text-xs">{m.pastConferences()}</p>
+					<p class="pb-2 text-xs text-gray-500">{m.pastConferences()}</p>
 					{#each pastConferences as { id, title }}
 						<NavButton
 							href="/dashboard/{id}"

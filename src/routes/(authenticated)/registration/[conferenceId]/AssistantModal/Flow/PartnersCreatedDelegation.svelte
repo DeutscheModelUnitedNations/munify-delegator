@@ -14,7 +14,7 @@
 
 	let { advance }: Props = $props();
 
-	let selection: typeof Selections[number] | undefined = $state("NONE");
+	let selection: (typeof Selections)[number] | undefined = $state('NONE');
 
 	let mounted = $state(false);
 
@@ -28,7 +28,7 @@
 			title: m.assistantFlowPartnersCreatedDelegationAnswer1(),
 			class: 'btn-success',
 			onClick: () => {
-				selection = "YES";
+				selection = 'YES';
 				advance(QuestionFlowState.FINAL_JOIN_DELEGATION);
 			}
 		},
@@ -37,7 +37,7 @@
 			title: m.assistantFlowPartnersCreatedDelegationAnswer2(),
 			class: 'btn-warning',
 			onClick: () => {
-				selection = "NO";
+				selection = 'NO';
 				advance(QuestionFlowState.FINAL_CREATE_DELEGATION);
 			}
 		}
@@ -53,14 +53,14 @@
 	<p>{m.assistantFlowPartnersCreatedDelegation4()}</p>
 </ChatBot>
 
-{#if selection == "NONE" && mounted}
+{#if selection == 'NONE' && mounted}
 	<Choice {choices} delay={2400}></Choice>
-{:else if selection !== "NONE" && mounted}
+{:else if selection !== 'NONE' && mounted}
 	<ChatUser>
-		{#if selection === "YES"}
+		{#if selection === 'YES'}
 			<p>{m.assistantFlowPartnersCreatedDelegationAnswer1()}</p>
 		{/if}
-		{#if selection === "NO"}
+		{#if selection === 'NO'}
 			<p>{m.assistantFlowPartnersCreatedDelegationAnswer2()}</p>
 		{/if}
 	</ChatUser>

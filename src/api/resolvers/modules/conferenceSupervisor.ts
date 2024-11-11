@@ -154,7 +154,7 @@ builder.mutationFields((t) => {
 						fields: (t) => ({
 							plansOwnAttendenceAtConference: t.boolean({
 								required: false
-							}),
+							})
 						})
 					})
 				})

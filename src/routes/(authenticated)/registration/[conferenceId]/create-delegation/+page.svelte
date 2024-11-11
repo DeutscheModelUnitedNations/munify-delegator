@@ -20,7 +20,7 @@
 		onResult({ result }) {
 			switch (result.type) {
 				case 'success':
-          entryCode = result.data?.delegation?.entryCode
+					entryCode = result.data?.delegation?.entryCode;
 					step++;
 					break;
 
@@ -28,7 +28,7 @@
 					toast.push(result.error.message);
 					break;
 				default:
-          throw new Error('Unknown result type');
+					throw new Error('Unknown result type');
 			}
 		}
 	});
@@ -103,7 +103,7 @@
 		<div class="flex flex-col items-center gap-4 {step !== 2 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
 
-			<div class="dark:stroke-slate-300 rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200">
+			<div class="rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200 dark:stroke-slate-300">
 				<div class="overflow-x-auto">
 					<table class="table">
 						<tbody>
@@ -137,7 +137,7 @@
 		<p class="max-ch-sm">
 			{m.nowYouCanInvitePeople()}
 		</p>
-		<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
+		<div class="border-primary flex w-full items-center rounded-lg border-2 border-dashed p-2">
 			<p class="flex-1 overflow-x-auto">
 				{referralLink}
 			</p>
@@ -154,7 +154,7 @@
 		<p class="max-ch-sm">
 			{m.orShareThisCode()}
 		</p>
-		<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
+		<div class="border-primary flex w-full items-center rounded-lg border-2 border-dashed p-2">
 			<p class="flex-1 overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
 				{entryCode}
 			</p>

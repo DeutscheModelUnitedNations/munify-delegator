@@ -109,7 +109,7 @@ builder.mutationFields((t) => {
 					}
 				});
 
-				await tidyRoleApplications({id: delegation.id});
+				await tidyRoleApplications({ id: delegation.id });
 
 				return ret;
 			}
