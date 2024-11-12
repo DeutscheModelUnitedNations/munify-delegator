@@ -190,6 +190,18 @@ builder.mutationFields((t) => {
 					if (singleParticipant.appliedForRoles.length < 1) {
 						throw new GraphQLError(m.notEnoughtRoleApplications());
 					}
+
+					if (
+						!singleParticipant.school ||
+						singleParticipant.school.length === 0 ||
+						!singleParticipant.experience ||
+						singleParticipant.experience.length === 0 ||
+						!singleParticipant.motivation ||
+						singleParticipant.motivation.length === 0 ||
+						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+					) {
+						throw new GraphQLError(m.missingInformation());
+					}
 				}
 
 				return await db.singleParticipant.update({

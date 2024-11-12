@@ -192,8 +192,11 @@ builder.mutationFields((t) => {
 
 						if (
 							!delegation.school ||
+							delegation.school.length === 0 ||
 							!delegation.experience ||
+							delegation.experience.length === 0 ||
 							!delegation.motivation ||
+							delegation.motivation.length === 0 ||
 							!createDelegationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 						) {
 							throw new GraphQLError(m.missingInformation());
