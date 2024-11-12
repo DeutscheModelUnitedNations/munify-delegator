@@ -5,10 +5,12 @@ import {
 	findManySingleParticipantQueryObject,
 	findUniqueSingleParticipantQueryObject,
 	SingleParticipantAppliedFieldObject,
+	SingleParticipantConferenceFieldObject,
 	SingleParticipantExperienceFieldObject,
 	SingleParticipantIdFieldObject,
 	SingleParticipantMotivationFieldObject,
 	SingleParticipantSchoolFieldObject,
+	SingleParticipantUserFieldObject,
 	updateOneSingleParticipantMutationObject
 } from '$db/generated/graphql/SingleParticipant';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
@@ -24,8 +26,8 @@ builder.prismaObject('SingleParticipant', {
 		school: t.field(SingleParticipantSchoolFieldObject),
 		motivation: t.field(SingleParticipantMotivationFieldObject),
 		experience: t.field(SingleParticipantExperienceFieldObject),
-		conference: t.relation('conference'),
-		user: t.relation('user'),
+		conference: t.relation('conference', SingleParticipantConferenceFieldObject),
+		user: t.relation('user', SingleParticipantUserFieldObject),
 		appliedForRoles: t.relation('appliedForRoles', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').CustomConferenceRole

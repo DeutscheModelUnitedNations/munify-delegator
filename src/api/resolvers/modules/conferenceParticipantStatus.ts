@@ -7,7 +7,9 @@ import {
 	updateOneConferenceParticipantStatusMutationObject,
 	ConferenceParticipantStatusPostalRegistrationFieldObject,
 	ConferenceParticipantStatusPaymentStatusFieldObject,
-	ConferenceParticipantStatusDidAttendFieldObject
+	ConferenceParticipantStatusDidAttendFieldObject,
+	ConferenceParticipantStatusUserFieldObject,
+	ConferenceParticipantStatusConferenceFieldObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 
 builder.prismaObject('ConferenceParticipantStatus', {
@@ -16,8 +18,8 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		postalRegistration: t.field(ConferenceParticipantStatusPostalRegistrationFieldObject),
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
-		user: t.relation('user'),
-		conference: t.relation('conference')
+		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),
+		conference: t.relation('conference', ConferenceParticipantStatusConferenceFieldObject)
 	})
 });
 

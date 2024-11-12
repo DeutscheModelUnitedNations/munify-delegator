@@ -4,11 +4,13 @@ import {
 	deleteOneRoleApplicationMutationObject,
 	findManyRoleApplicationQueryObject,
 	findUniqueRoleApplicationQueryObject,
+	RoleApplicationDelegationFieldObject,
 	RoleApplicationIdFieldObject,
+	RoleApplicationNationFieldObject,
+	RoleApplicationNonStateActorFieldObject,
 	RoleApplicationRankFieldObject,
 	updateOneRoleApplicationMutationObject
 } from '$db/generated/graphql/RoleApplication';
-import { findUniqueDelegationQueryArgs } from '$db/generated/graphql/Delegation/queries/findUnique.base';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 
@@ -16,9 +18,9 @@ builder.prismaObject('RoleApplication', {
 	fields: (t) => ({
 		id: t.field(RoleApplicationIdFieldObject),
 		rank: t.field(RoleApplicationRankFieldObject),
-		delegation: t.relation('delegation'),
-		nation: t.relation('nation'),
-		nonStateActor: t.relation('nonStateActor')
+		delegation: t.relation('delegation', RoleApplicationDelegationFieldObject),
+		nation: t.relation('nation', RoleApplicationNationFieldObject),
+		nonStateActor: t.relation('nonStateActor', RoleApplicationNonStateActorFieldObject)
 	})
 });
 

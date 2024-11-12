@@ -5,7 +5,10 @@ import {
 	findUniqueDelegationMemberQueryObject,
 	DelegationMemberIdFieldObject,
 	DelegationMemberIsHeadDelegateFieldObject,
-	createOneDelegationMemberMutationObject
+	createOneDelegationMemberMutationObject,
+	DelegationMemberConferenceFieldObject,
+	DelegationMemberDelegationFieldObject,
+	DelegationMemberUserFieldObject
 } from '$db/generated/graphql/DelegationMember';
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
@@ -17,9 +20,9 @@ builder.prismaObject('DelegationMember', {
 	fields: (t) => ({
 		id: t.field(DelegationMemberIdFieldObject),
 		isHeadDelegate: t.field(DelegationMemberIsHeadDelegateFieldObject),
-		conference: t.relation('conference'),
-		delegation: t.relation('delegation'),
-		user: t.relation('user')
+		conference: t.relation('conference', DelegationMemberConferenceFieldObject),
+		delegation: t.relation('delegation', DelegationMemberDelegationFieldObject),
+		user: t.relation('user', DelegationMemberUserFieldObject)
 	})
 });
 

@@ -10,7 +10,8 @@ import {
 	DelegationSchoolFieldObject,
 	updateOneDelegationMutationObject,
 	DelegationEntryCodeFieldObject,
-	createOneDelegationMutationObject
+	createOneDelegationMutationObject,
+	DelegationConferenceFieldObject
 } from '$db/generated/graphql/Delegation';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
@@ -28,7 +29,7 @@ builder.prismaObject('Delegation', {
 		motivation: t.field(DelegationMotivationFieldObject),
 		experience: t.field(DelegationExperienceFieldObject),
 		entryCode: t.field(DelegationEntryCodeFieldObject),
-		conference: t.relation('conference'),
+		conference: t.relation('conference', DelegationConferenceFieldObject),
 		members: t.relation('members', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember

@@ -51,7 +51,11 @@ const statsQuery = graphql(`
 
 export const load: PageLoad = async (event) => {
 	const conferenceId = event.params.conferenceId;
-	const { data } = await statsQuery.fetch({ event, variables: { conferenceID: conferenceId } });
+	const { data } = await statsQuery.fetch({
+		event,
+		variables: { conferenceID: conferenceId },
+		blocking: true
+	});
 
 	if (!data) {
 		throw error(404, 'Data not found');

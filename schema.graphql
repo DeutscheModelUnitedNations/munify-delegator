@@ -1685,8 +1685,8 @@ enum QueryMode {
 type RoleApplication {
   delegation: Delegation!
   id: ID!
-  nation: Nation!
-  nonStateActor: NonStateActor!
+  nation: Nation
+  nonStateActor: NonStateActor
   rank: Int!
 }
 

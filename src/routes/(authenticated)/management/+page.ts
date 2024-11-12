@@ -47,7 +47,8 @@ export const load: PageLoad = async (event) => {
 		// in case we are a privileged user => display all conferences where thats the case
 		const { data } = await conferencesWhereImMoreThanMember.fetch({
 			event,
-			variables: { myUserId: user.sub }
+			variables: { myUserId: user.sub },
+			blocking: true
 		});
 		const queriedConfernces = data?.findManyConferences;
 		return {
