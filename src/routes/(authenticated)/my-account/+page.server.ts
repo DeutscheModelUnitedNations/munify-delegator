@@ -37,7 +37,7 @@ const userMutation = graphql(`
 
 export const load: PageLoad = async (event) => {
 	const { user } = await event.parent();
-	const { data } = await userQuery.fetch({ event, variables: { id: user.sub } });
+	const { data } = await userQuery.fetch({ event, variables: { id: user.sub }, blocking: true });
 	const fullUser = data?.findUniqueUser;
 
 	if (!fullUser) {
@@ -62,7 +62,7 @@ export const actions = {
 		}
 
 		// since we are in a form action we need to re-fetch who we are
-		const { data } = await fastUserQuery.fetch({ event });
+		const { data } = await fastUserQuery.fetch({ event, blocking: true });
 		const userId = data?.offlineUserRefresh.user?.sub;
 		if (!userId) {
 			return message(form, m.userNotFound());
