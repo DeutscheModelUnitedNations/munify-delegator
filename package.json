@@ -1,18 +1,6 @@
 {
 	"name": "munify-delegator",
 	"version": "0.0.1",
-	"private": true,
-	"scripts": {
-		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
-		"dev:server": "svelte-kit sync && vite",
-		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
-		"build": "vite build",
-		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
-	},
 	"devDependencies": {
 		"@casl/ability": "^6.7.2",
 		"@casl/prisma": "^1.5.0",
@@ -72,6 +60,18 @@
 		"zod": "^3.23.8",
 		"codenamize-ts": "1.0.2",
 		"@faker-js/faker": "^9.2.0"
+	},
+	"private": true,
+	"scripts": {
+		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
+		"dev:server": "svelte-kit sync && vite",
+		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write ."
 	},
 	"type": "module"
 }

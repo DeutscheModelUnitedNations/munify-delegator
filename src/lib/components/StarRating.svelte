@@ -2,9 +2,10 @@
 	interface Props {
 		rating: number;
 		changeRating: (rating: number) => void;
+		deleteRating?: () => void;
 	}
 
-	let { rating, changeRating }: Props = $props();
+	let { rating, changeRating, deleteRating }: Props = $props();
 
 	const getEvaluationColor: (evaluation: number) => string = (evaluation) => {
 		if (evaluation < 1.5) return 'text-red-500';
@@ -15,6 +16,9 @@
 </script>
 
 <div class="flex text-xl">
+	{#if rating}
+		<i class="fas fa-times cursor-pointer text-md mr-2 text-base-300 hover:text-red-500" onclick={deleteRating}></i>
+	{/if}
 	{#each { length: Math.floor(rating) } as _, i}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
