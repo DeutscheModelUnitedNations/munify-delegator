@@ -7,14 +7,14 @@
 		title: string;
 	}
 
-	let { steps, currentStep = 1 }: Props = $props();
+	let { steps, currentStep = 0 }: Props = $props();
 </script>
 
 <div class="min-w-60 rounded-2xl bg-base-100 p-4 shadow-lg">
 	<ul class="steps">
 		{#each steps as step, i}
 			<li
-				class="step {i + 1 <= currentStep && 'step-primary'} {i + 2 <= currentStep &&
+				class="step {i <= currentStep && 'step-primary'} {i + 1 <= currentStep &&
 					'check'} mx-2 text-xs sm:text-base"
 			>
 				{step.title}
