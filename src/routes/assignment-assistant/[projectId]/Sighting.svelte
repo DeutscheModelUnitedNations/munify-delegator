@@ -63,7 +63,7 @@
 								addNote(application.id, note ?? '');
 							}}
 						>
-							<i class="fas fa-memo-circle-info"></i>
+							<i class="fas fa-sticky-note"></i>
 						</button>
 					</div>
 					<div class="tooltip" data-tip="Highlight">
@@ -93,7 +93,7 @@
 
 			{#if application.note}
 				<div class="alert alert-info mt-4">
-					<i class="fas fa-memo-circle-info"></i>
+					<i class="fas fa-sticky-note"></i>
 					{application.note}
 				</div>
 			{/if}

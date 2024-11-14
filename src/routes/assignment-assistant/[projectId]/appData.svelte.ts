@@ -40,7 +40,7 @@ export interface IndividualApplicationOption {
 	fontAwesomeIcon: string | null;
 }
 
-export interface Delegation extends SightingProps {
+export interface Delegation extends SightingProps, DelegationAssignment, NSAAssignment {
 	id: string;
 	motivation: string;
 	experience: string;
@@ -114,6 +114,14 @@ export interface SightingProps {
 	note?: string;
 }
 
+export interface DelegationAssignment {
+	assignedNation?: Nation;
+}
+
+export interface NSAAssignment {
+	assignedNSA: NonStateActor;
+}
+
 let allProjects: Project[] = $state([]);
 let selectedProject: Project | undefined = $state();
 
@@ -141,6 +149,56 @@ export const getApplications = () => {
 	const project = getProject();
 	if (!project) return [];
 	return [...project.data.delegations, ...project.data.singleParticipants];
+};
+
+export const getDelegationApplications = () => {
+	const project = getProject();
+	if (!project) return [];
+	return project.data.delegations.filter((x) => !x.disqualified);
+};
+
+export const getDelegationApplication = (id: string) => {
+	return getDelegationApplications().find((delegation) => delegation.id === id);
+};
+
+export const getSingleApplications = () => {
+	const project = getProject();
+	if (!project) return [];
+	return project.data.singleParticipants;
+};
+
+export const getNations: () => {
+	nation: Nation;
+	seats: number;
+	committees: string[];
+}[] = () => {
+	const project = getProject();
+	if (!project) return [];
+	let role: { nation: Nation; seats: number; committees: string[] }[] = [];
+	project.data.conference.committees.forEach((committee) => {
+		committee.nations.forEach((nation) => {
+			let entry = role.find((role) => role.nation.alpha2Code === nation.alpha2Code);
+			if (entry) {
+				entry.seats += committee.numOfSeatsPerDelegation;
+				entry.committees = [committee.abbreviation, ...entry.committees];
+			} else {
+				role.push({
+					nation,
+					seats: committee.numOfSeatsPerDelegation,
+					committees: [committee.abbreviation]
+				});
+			}
+		});
+	});
+	return role;
+};
+
+export const getRemainingSeats = (nation: Nation) => {
+	const delegations = getDelegationApplications().filter(
+		(x) => x.assignedNation?.alpha2Code === nation.alpha2Code
+	);
+	const seats = getNations().find((x) => x.nation.alpha2Code === nation.alpha2Code)?.seats;
+	return seats ? seats - delegations.reduce((acc, x) => acc + x.members.length, 0) : 0;
 };
 
 export const getMoreInfoLink = (id: string) => {
@@ -189,5 +247,38 @@ export const toggleDisqualifyApplication = (id: string) => {
 	if (application) {
 		application.disqualified = !application.disqualified;
 	}
+	saveProjects();
+};
+
+export const assignNationToDelegation = (delegationId: string, alpha3Code: string) => {
+	const delegation = getDelegationApplications().find(
+		(delegation) => delegation.id === delegationId
+	);
+	const nation = getNations().find((nation) => nation.nation.alpha3Code === alpha3Code)?.nation;
+	if (delegation) {
+		(delegation as DelegationAssignment).assignedNation = nation;
+	}
+	saveProjects();
+};
+
+export const unassignNationFromDelegation = (delegationId: string) => {
+	const delegation = getDelegationApplications().find(
+		(delegation) => delegation.id === delegationId
+	);
+	if (delegation) {
+		(delegation as DelegationAssignment).assignedNation = undefined;
+	}
+	saveProjects();
+};
+
+export const resetSeatCategory = (seats: number) => {
+	const nations = getNations()
+		.filter((x) => x.seats === seats)
+		.map((x) => x.nation);
+	getDelegationApplications().forEach((delegation) => {
+		if (delegation.members.length === seats) {
+			unassignNationFromDelegation(delegation.id);
+		}
+	});
 	saveProjects();
 };

@@ -5,6 +5,9 @@
 	import Sighting from './Sighting.svelte';
 	import type { PageData } from './$types';
 	import { loadProjects } from './appData.svelte';
+	import Weighting from './Weighting.svelte';
+	import Assignment from './Assignment.svelte';
+	import Summary from './Assignment.svelte';
 
 	interface Props {
 		data: PageData;
@@ -12,7 +15,7 @@
 
 	let { data }: Props = $props();
 
-	let tab = $state(0);
+	let tab = $state(2);
 
 	onMount(() => {
 		console.log(data)
@@ -38,8 +41,15 @@
 	{/if}
 
 	{#if tab === 1}
-		<h1>Step 2</h1>
-		<button onclick={() => (tab = 0)}>Back</button>
+		<Weighting />
+	{/if}
+
+	{#if tab === 2}
+		<Assignment />
+	{/if}
+
+	{#if tab === 3}
+		<Summary />
 	{/if}
 </main>
 

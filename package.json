@@ -73,5 +73,9 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write ."
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@thisux/sveltednd": "^0.0.16",
+		"munkres-algorithm": "^1.0.2"
+	}
 }
