@@ -9,9 +9,9 @@ import { individualApplicationFormSchema } from './form-schema';
 const createSingleParticipant = graphql(`
 	mutation IndividualApplicationFromFormMutation(
 		$conferenceId: ID!
-		$motivation: String!
-		$experience: String!
-		$school: String!
+		$motivation: String
+		$experience: String
+		$school: String
 		$roleId: ID!
 	) {
 		createOneSingleParticipant(

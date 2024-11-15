@@ -9,9 +9,9 @@ import { createDelegationFormSchema } from './form-schema';
 const createDelegation = graphql(`
 	mutation CreateDelegationFromFormMutation(
 		$conferenceId: ID!
-		$motivation: String!
-		$experience: String!
-		$school: String!
+		$motivation: String
+		$experience: String
+		$school: String
 	) {
 		createOneDelegation(
 			conferenceId: $conferenceId

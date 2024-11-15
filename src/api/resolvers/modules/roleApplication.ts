@@ -8,13 +8,12 @@ import {
 	RoleApplicationIdFieldObject,
 	RoleApplicationNationFieldObject,
 	RoleApplicationNonStateActorFieldObject,
-	RoleApplicationRankFieldObject,
-	updateOneRoleApplicationMutationObject
+	RoleApplicationRankFieldObject
 } from '$db/generated/graphql/RoleApplication';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 
-builder.prismaObject('RoleApplication', {
+const RoleApplicationObject = builder.prismaObject('RoleApplication', {
 	fields: (t) => ({
 		id: t.field(RoleApplicationIdFieldObject),
 		rank: t.field(RoleApplicationRankFieldObject),
@@ -126,10 +125,16 @@ builder.mutationFields((t) => {
 
 builder.mutationFields((t) => {
 	return {
+		// TODO this should return the adjusted data so the client can show it automatically
 		swapRoleApplicationRanks: t.field({
 			type: t.builder.simpleObject('RoleApplicationRankSwapResult', {
 				fields: (t) => ({
-					ok: t.boolean()
+					firstRoleApplication: t.field({
+						type: RoleApplicationObject
+					}),
+					secpndRoleApplication: t.field({
+						type: RoleApplicationObject
+					})
 				})
 			}),
 			args: {
@@ -137,7 +142,7 @@ builder.mutationFields((t) => {
 				secondRoleApplicationId: t.arg.id({ required: true })
 			},
 			resolve: async (root, args, ctx) => {
-				await db.$transaction(async (tx) => {
+				return await db.$transaction(async (tx) => {
 					const [firstRoleApplication, secondRoleApplication] = await Promise.all([
 						tx.roleApplication.findUniqueOrThrow({
 							where: {
@@ -163,7 +168,7 @@ builder.mutationFields((t) => {
 						}
 					});
 
-					await tx.roleApplication.update({
+					const fullSecondRoleApplication = await tx.roleApplication.update({
 						where: {
 							id: args.secondRoleApplicationId,
 							AND: [ctx.permissions.allowDatabaseAccessTo('update').RoleApplication]
@@ -173,7 +178,7 @@ builder.mutationFields((t) => {
 						}
 					});
 
-					await tx.roleApplication.update({
+					const fullFirstRoleApplication = await tx.roleApplication.update({
 						where: {
 							id: args.firstRoleApplicationId,
 							AND: [ctx.permissions.allowDatabaseAccessTo('update').RoleApplication]
@@ -182,32 +187,33 @@ builder.mutationFields((t) => {
 							rank: secondRoleApplication.rank
 						}
 					});
+
+					return {
+						firstRoleApplication: fullFirstRoleApplication,
+						secpndRoleApplication: fullSecondRoleApplication
+					};
 				});
-
-				return {
-					ok: true
-				};
 			}
 		})
 	};
 });
 
-builder.mutationFields((t) => {
-	const field = updateOneRoleApplicationMutationObject(t);
-	return {
-		updateOneRoleApplication: t.prismaField({
-			...field,
-			args: { where: field.args.where },
-			resolve: (query, root, args, ctx, info) => {
-				args.where = {
-					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('update').RoleApplication]
-				};
-				return field.resolve(query, root, args, ctx, info);
-			}
-		})
-	};
-});
+// builder.mutationFields((t) => {
+// 	const field = updateOneRoleApplicationMutationObject(t);
+// 	return {
+// 		updateOneRoleApplication: t.prismaField({
+// 			...field,
+// 			args: { where: field.args.where },
+// 			resolve: (query, root, args, ctx, info) => {
+// 				args.where = {
+// 					...args.where,
+// 					AND: [ctx.permissions.allowDatabaseAccessTo('update').RoleApplication]
+// 				};
+// 				return field.resolve(query, root, args, ctx, info);
+// 			}
+// 		})
+// 	};
+// });
 
 builder.mutationFields((t) => {
 	const field = deleteOneRoleApplicationMutationObject(t);
@@ -241,6 +247,19 @@ builder.mutationFields((t) => {
 								}
 							});
 						}
+					}
+
+					// re fetch potentially changed relations of the deleted application since state might have changed
+					if (query.include?.delegation) {
+						const eQuery =
+							typeof query.include?.delegation === 'boolean' ? {} : query.include.delegation;
+
+						(deletedApplication as any)['delegation'] = await db.delegation.findUniqueOrThrow({
+							where: {
+								id: deletedApplication.delegationId
+							},
+							...eQuery
+						});
 					}
 
 					return deletedApplication;

@@ -82,6 +82,17 @@
 		mutation DeleteRoleApplicationMutation($where: RoleApplicationWhereUniqueInput!) {
 			deleteOneRoleApplication(where: $where) {
 				id
+				delegation {
+					members {
+						id
+						delegation {
+							appliedForRoles {
+								id
+								rank
+							}
+						}
+					}
+				}
 			}
 		}
 	`);
@@ -89,7 +100,14 @@
 	const swapEntryMutation = graphql(`
 		mutation SwapRoleApplicationRanksMutation($a: ID!, $b: ID!) {
 			swapRoleApplicationRanks(firstRoleApplicationId: $a, secondRoleApplicationId: $b) {
-				ok
+				firstRoleApplication {
+					id
+					rank
+				}
+				secpndRoleApplication {
+					id
+					rank
+				}
 			}
 		}
 	`);
@@ -106,12 +124,18 @@
 				nonStateActorId: $nonStateActorId
 			) {
 				id
+				delegation {
+					appliedForRoles {
+						id
+						rank
+					}
+				}
 			}
 		}
 	`);
 
 	const swapEntry = async (firstId: string, secondId: string) => {
-		swapEntryMutation.mutate({ a: firstId, b: secondId });
+		await swapEntryMutation.mutate({ a: firstId, b: secondId });
 	};
 
 	const deleteEntry = async (id: string) => {
@@ -281,6 +305,7 @@
 														nationId: nation.alpha3Code,
 														delegationId: delegationMember.delegation.id
 													});
+													await invalidateAll();
 												}}
 											/>
 										</td>

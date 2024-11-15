@@ -27,9 +27,9 @@
 
 	// skip the fill out step if the user already provided all the information
 	if (
-		$formdata.experience.length > 0 &&
-		$formdata.motivation.length > 0 &&
-		$formdata.school.length > 0
+		($formdata.experience?.length ?? 0) > 0 &&
+		($formdata.motivation?.length ?? 0) > 0 &&
+		($formdata.school?.length ?? 0) > 0
 	) {
 		step = 1;
 	}

@@ -5,6 +5,7 @@
 	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states

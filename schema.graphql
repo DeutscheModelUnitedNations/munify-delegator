@@ -1123,10 +1123,10 @@ input IntWithAggregatesFilter {
 }
 
 type Mutation {
-  createOneDelegation(conferenceId: ID!, experience: String!, motivation: String!, school: String!): Delegation!
+  createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(entryCode: String!): DelegationMember!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
-  createOneSingleParticipant(conferenceId: ID!, experience: String!, motivation: String!, roleId: ID!, school: String!): SingleParticipant!
+  createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   deleteOneConference(where: ConferenceWhereUniqueInput!): Conference
   deleteOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
@@ -1149,7 +1149,6 @@ type Mutation {
   updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
   updateOneNation(where: NationWhereUniqueInput!): Nation
   updateOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
-  updateOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
@@ -1747,7 +1746,8 @@ input RoleApplicationOrderByWithRelationInput {
 }
 
 type RoleApplicationRankSwapResult {
-  ok: Boolean!
+  firstRoleApplication: RoleApplication!
+  secpndRoleApplication: RoleApplication!
 }
 
 enum RoleApplicationScalarFieldEnum {
@@ -1824,10 +1824,10 @@ type SingleParticipant {
   applied: Boolean!
   appliedForRoles: [CustomConferenceRole!]!
   conference: Conference!
-  experience: String!
+  experience: String
   id: ID!
-  motivation: String!
-  school: String!
+  motivation: String
+  school: String
   user: User!
 }
 
@@ -1840,10 +1840,10 @@ input SingleParticipantCreateInput {
   applied: Boolean
   appliedForRoles: CustomConferenceRoleCreateNestedManyWithoutSingleParticipantInput
   conferenceId: String!
-  experience: String!
+  experience: String
   id: String
-  motivation: String!
-  school: String!
+  motivation: String
+  school: String
   userId: String!
 }
 
@@ -1896,19 +1896,19 @@ input SingleParticipantUpdateInput {
   applied: BoolFieldUpdateOperationsInput
   appliedForRoles: CustomConferenceRoleUpdateManyWithoutSingleParticipantNestedInput
   conferenceId: StringFieldUpdateOperationsInput
-  experience: StringFieldUpdateOperationsInput
+  experience: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  motivation: StringFieldUpdateOperationsInput
-  school: StringFieldUpdateOperationsInput
+  motivation: NullableStringFieldUpdateOperationsInput
+  school: NullableStringFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
 
 input SingleParticipantUpdateManyMutationInput {
   applied: BoolFieldUpdateOperationsInput
-  experience: StringFieldUpdateOperationsInput
+  experience: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  motivation: StringFieldUpdateOperationsInput
-  school: StringFieldUpdateOperationsInput
+  motivation: NullableStringFieldUpdateOperationsInput
+  school: NullableStringFieldUpdateOperationsInput
 }
 
 input SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput {
@@ -1937,10 +1937,10 @@ input SingleParticipantWhereInput {
   appliedForRoles: CustomConferenceRoleListRelationFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
-  experience: StringFilter
+  experience: StringNullableFilter
   id: StringFilter
-  motivation: StringFilter
-  school: StringFilter
+  motivation: StringNullableFilter
+  school: StringNullableFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -1954,10 +1954,10 @@ input SingleParticipantWhereUniqueInput {
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   conferenceId_userId: SingleParticipantConferenceIdUserIdCompoundUniqueInput
-  experience: StringFilter
+  experience: StringNullableFilter
   id: String
-  motivation: StringFilter
-  school: StringFilter
+  motivation: StringNullableFilter
+  school: StringNullableFilter
   user: UserWhereInput
   userId: StringFilter
 }

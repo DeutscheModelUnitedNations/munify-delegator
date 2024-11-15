@@ -89,9 +89,9 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				conferenceId: t.arg.id(),
-				motivation: t.arg.string(),
-				school: t.arg.string(),
-				experience: t.arg.string()
+				motivation: t.arg.string({ required: false }),
+				school: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
