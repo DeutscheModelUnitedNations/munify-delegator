@@ -62,7 +62,8 @@
 		<div class="flex flex-col gap-6 text-center {step !== 0 ? 'hidden' : ''}">
 			<h1 class="text-3xl uppercase tracking-wider">{m.createDelegation()}</h1>
 			{@html m.createDelegationProcessExplaination()}
-			<button class="btn btn-primary btn-lg" onclick={() => step++}>{m.next()}</button>
+			<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}>{m.next()}</button
+			>
 			<a class="btn btn-warning" href=".">{m.back()}</a>
 		</div>
 		<div class="flex flex-col gap-4 {step !== 1 ? 'hidden' : ''}">
@@ -90,7 +91,7 @@
 			<button
 				class="btn btn-primary btn-lg"
 				type="button"
-				disabled={$allErrors.length > 0 || !isTainted($tainted)}
+				disabled={$allErrors.length > 0}
 				onclick={async () => {
 					const val = await validateForm({ update: true });
 					if (val.valid) {
@@ -98,7 +99,7 @@
 					}
 				}}>{m.next()}</button
 			>
-			<button class="btn btn-warning" onclick={() => step--}>{m.back()}</button>
+			<button class="btn btn-warning" type="button" onclick={() => step--}>{m.back()}</button>
 		</div>
 		<div class="flex flex-col items-center gap-4 {step !== 2 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
@@ -143,6 +144,7 @@
 			</p>
 			<button
 				class="btn btn-ghost btn-primary"
+				type="button"
 				onclick={() => {
 					navigator.clipboard.writeText(referralLink);
 					alert(m.linkCopied());
@@ -160,6 +162,7 @@
 			</p>
 			<button
 				class="btn btn-ghost btn-primary"
+				type="button"
 				onclick={() => {
 					navigator.clipboard.writeText(entryCode as string);
 					alert(m.codeCopied());
