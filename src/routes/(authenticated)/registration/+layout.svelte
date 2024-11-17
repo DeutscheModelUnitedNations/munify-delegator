@@ -8,11 +8,6 @@
 	}
 
 	let { children }: Props = $props();
-
-	setHeaderStatus({
-		label: m.signup(),
-		faIcon: 'fa-arrow-right-to-bracket'
-	});
 </script>
 
 <svelte:head>

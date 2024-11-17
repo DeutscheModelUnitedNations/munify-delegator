@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.supervisors(),
-		faIcon: 'fa-hands-holding-heart'
-	});
 </script>
 
 <svelte:head>

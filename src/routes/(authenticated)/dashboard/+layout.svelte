@@ -28,10 +28,6 @@
 
 	let navbarExpanded = $state(true);
 
-	setHeaderStatus({
-		label: m.dashboard(),
-		faIcon: 'fa-sparkles'
-	});
 </script>
 
 <svelte:head>

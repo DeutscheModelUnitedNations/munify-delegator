@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.delegations(),
-		faIcon: 'fa-flag-swallowtail'
-	});
 </script>
 
 <svelte:head>
