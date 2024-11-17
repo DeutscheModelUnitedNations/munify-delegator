@@ -27,19 +27,71 @@
 	const breadcrumbs: { [key: string]: LocalizedBreadcrumb } = {
 		management: {
 			translation: m.admininstration(),
-			icon: 'fa-bars-progress'
+			icon: 'bars-progress'
 		},
 		conferenceId: {
 			translation: m.conference(),
-			icon: 'fa-flag'
+			icon: 'flag'
 		},
 		delegations: {
 			translation: m.delegations(),
-			icon: 'fa-users-viewfinder'
+			icon: 'users-viewfinder'
 		},
 		dashboard: {
 			translation: m.dashboard(),
-			icon: 'fa-chart-pie'
+			icon: 'chart-pie'
+		},
+		registration: {
+			translation: m.registration(),
+			icon: 'envelope'
+		},
+		stats: {
+			translation: m.statistics(),
+			icon: 'chart-simple'
+		},
+		'create-delegation': {
+			translation: m.createDelegation(),
+			icon: 'plus'
+		},
+		'join-delegation': {
+			translation: m.joinDelegation(),
+			icon: 'arrow-right-to-arc'
+		},
+		individual: {
+			translation: m.individualApplication(),
+			icon: 'dice-one'
+		},
+		roleId: {
+			translation: m.role(),
+			icon: 'gavel'
+		},
+		'join-delegation-supervisor': {
+			translation: m.supervisor(),
+			icon: 'eye'
+		},
+		'my-account': {
+			translation: m.myAccount(),
+			icon: 'user'
+		},
+		configuration: {
+			translation: m.settings(),
+			icon: 'gears'
+		},
+		participants: {
+			translation: m.participants(),
+			icon: 'users'
+		},
+		individuals: {
+			translation: m.singleParticipants(),
+			icon: 'user'
+		},
+		supervisors: {
+			translation: m.supervisors(),
+			icon: 'eye'
+		},
+		plausibility: {
+			translation: m.adminPlausibility(),
+			icon: 'question'
 		}
 	};
 
@@ -49,7 +101,7 @@
 			console.warn(`Breadcrumb not found: ${segment.key}`);
 			return {
 				translation: segment.key,
-				icon: 'fa-question'
+				icon: 'question'
 			};
 		}
 
@@ -57,7 +109,9 @@
 			switch (segment.key) {
 				case 'conferenceId':
 					breadcrumb.delayedLabel = (async () => {
-            //TODO we could probably load this data serverside
+						//TODO we could probably load this data serverside
+						// although this would prevent computational breadcrumbs which depend on client side data
+						// it's alright for now I guess
 						if (browser) {
 							const r = await conferenceTitleQuery.fetch({
 								variables: { conferenceId: segment.value }
@@ -90,14 +144,17 @@ import path via the parameter! -->
 >
 	{#snippet pathSnippet(pathSegment: PathSegment<Parameters, boolean>)}
 		<a href={pathSegment.href}>
-			<i class="fa-duotone {getBreadcrumb(pathSegment).icon}"></i>
+			<i class="fa-duotone fa-{getBreadcrumb(pathSegment).icon}"></i>
 			<p class="ml-2">
 				{#if getBreadcrumb(pathSegment).delayedLabel}
-					<!-- content here -->
 					{#await getBreadcrumb(pathSegment).delayedLabel}
-						{getBreadcrumb(pathSegment).translation}
+						<span>
+							{getBreadcrumb(pathSegment).translation}
+						</span>
 					{:then value}
-						{value ?? getBreadcrumb(pathSegment).translation}
+						<span>
+							{value ?? getBreadcrumb(pathSegment).translation}
+						</span>
 					{/await}
 				{:else}
 					{getBreadcrumb(pathSegment).translation}

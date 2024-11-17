@@ -71,7 +71,7 @@
 					}
 				}}>{m.next()}</button
 			>
-			<button class="btn btn-warning" type="button" onclick={() => step--}>{m.back()}</button>
+			<a class="btn btn-warning" type="button" href=".">{m.back()}</a>
 		</div>
 		<div class="flex flex-col items-center gap-4 {step !== 1 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>

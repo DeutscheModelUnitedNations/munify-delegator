@@ -38,16 +38,19 @@
 		/**
 		 * How to render a delimeter between the path segments
 		 */
-		delimeterSnippet?: Snippet | "disabled";
+		delimeterSnippet?: Snippet | 'disabled';
 	}
 
 	let {
 		availableLanguageTags = [],
-		currentUrl = $page.url,
+		currentUrl: currentUrlParam,
 		importObject,
 		pathSnippet = defaultPathSnippet,
 		delimeterSnippet = defaultDelimeterSnippet
 	}: Props = $props();
+
+	// default params are not reactive, thatswhy the extra statement
+	const currentUrl = $derived(currentUrlParam ?? $page.url);
 
 	/**
 	 * At compile time we check for the dir structure to determine which path
@@ -112,7 +115,9 @@
 		staticPaths: StaticPathSegmentInfo[][]
 	): StaticPathSegmentInfo[] {
 		// we iteratively filter this variable to circle the possible matches closer each time
-		let staticPathsFiltered = staticPaths;
+		let staticPathsFiltered = staticPaths.filter(
+			(staticPath) => staticPath.length === pathSegments.length
+		);
 		let index = 0;
 
 		for (const pathSegment of pathSegments) {
@@ -133,13 +138,6 @@
 				return currentLevelStaticSegment.key === pathSegment;
 			});
 			index++;
-		}
-
-		// in case we have multiple matches, we want the shortes one to be picked
-		// since it's the closest to out current path
-		if (staticPathsFiltered.length > 1) {
-			staticPathsFiltered = staticPathsFiltered.sort((a, b) => a.length - b.length);
-			staticPathsFiltered = [staticPathsFiltered[0]];
 		}
 
 		return staticPathsFiltered[0];
@@ -195,7 +193,7 @@
 		{#each currentPath as pathSegment, i}
 			<li class="breadcrumb">
 				{@render pathSnippet(pathSegment)}
-				{#if delimeterSnippet !== "disabled" && i !== currentPath.length - 1}
+				{#if delimeterSnippet !== 'disabled' && i !== currentPath.length - 1}
 					<span class="breadcrumb-delimeter">
 						{@render delimeterSnippet()}
 					</span>
