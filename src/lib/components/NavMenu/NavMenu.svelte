@@ -2,11 +2,10 @@
 	import type { Snippet } from 'svelte';
 
 	interface Props {
-		small?: boolean;
 		children: Snippet;
 	}
 
-	let { small = false, children }: Props = $props();
+	let { children }: Props = $props();
 </script>
 
 <ul class="menu px-0">

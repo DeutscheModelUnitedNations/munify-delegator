@@ -63,7 +63,7 @@
 			<button
 				class="btn btn-primary btn-lg"
 				type="button"
-				disabled={$allErrors.length > 0 || !isTainted($tainted)}
+				disabled={$allErrors.length > 0}
 				onclick={async () => {
 					const val = await validateForm({ update: true });
 					if (val.valid) {

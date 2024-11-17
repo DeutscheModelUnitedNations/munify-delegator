@@ -15,7 +15,7 @@
 	`);
 </script>
 
-<div class="w-full p-2">
+<div class="w-full p-4">
 	<div
 		class="no-print navbar mb-4 justify-between gap-0 rounded-2xl bg-base-200 px-4 py-2 shadow-lg sm:gap-2"
 	>
@@ -24,7 +24,9 @@
 				class="sm:hidden"
 				aria-label="Toggle navigation menu"
 				on:click={() => {
-					headerState.openNavCallback();
+					if (headerState.openNavCallback) {
+						headerState.openNavCallback();
+					}
 					headerState.openNavCallback = undefined;
 				}}
 			>

@@ -12,43 +12,43 @@
 </script>
 
 <SideNavigationDrawer navigateBackHref="/management" bind:expanded={navbarExpanded}>
-	<NavMenu small={!navbarExpanded}>
+	<NavMenu>
 		<NavMenuButton
 			href={`/management/${data.conferenceId}/stats`}
 			icon="fa-chart-pie"
 			title={m.adminStats()}
-			small={!navbarExpanded}
+			bind:expanded={navbarExpanded}
 		/>
 		<NavMenuButton
 			href={`/management/${data.conferenceId}/configuration`}
 			icon="fa-gears"
 			title={m.settings()}
-			small={!navbarExpanded}
+			bind:expanded={navbarExpanded}
 		/>
 		<NavMenuDetails title={m.tables()} icon="fa-database" small={!navbarExpanded}>
 			<NavMenuButton
 				href="/management/{data.conferenceId}/participants"
 				icon="fa-users"
 				title={m.adminUsers()}
-				small={!navbarExpanded}
+				bind:expanded={navbarExpanded}
 			/>
 			<NavMenuButton
 				href="/management/{data.conferenceId}/delegations"
 				icon="fa-users-viewfinder"
 				title={m.adminDelegations()}
-				small={!navbarExpanded}
+				bind:expanded={navbarExpanded}
 			/>
 			<NavMenuButton
 				href="/management/{data.conferenceId}/individuals"
 				icon="fa-user"
 				title={m.adminSingleParticipants()}
-				small={!navbarExpanded}
+				bind:expanded={navbarExpanded}
 			/>
 			<NavMenuButton
 				href="/management/{data.conferenceId}/supervisors"
 				icon="fa-chalkboard-user"
 				title={m.adminSupervisors()}
-				small={!navbarExpanded}
+				bind:expanded={navbarExpanded}
 			/>
 		</NavMenuDetails>
 		<NavMenuDetails title={m.tools()} icon="fa-wrench" small={!navbarExpanded}>
@@ -56,7 +56,7 @@
 				href="/management/{data.conferenceId}/plausibility"
 				icon="fa-shield-check"
 				title={m.adminPlausibility()}
-				small={!navbarExpanded}
+				bind:expanded={navbarExpanded}
 			/>
 		</NavMenuDetails>
 	</NavMenu>

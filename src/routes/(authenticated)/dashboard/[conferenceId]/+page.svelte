@@ -20,7 +20,7 @@
 	{#if $conferenceQuery.fetching}
 		<Spinner />
 	{:else}
-		<div class="flex flex-col gap-10 py-10">
+		<div class="flex flex-col gap-10">
 			{#if conferenceQueryData?.findUniqueSingleParticipant}
 				{#if Date.now() > conference!.startRegistration.getTime() && Date.now() < conference!.startAssignment.getTime()}
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
