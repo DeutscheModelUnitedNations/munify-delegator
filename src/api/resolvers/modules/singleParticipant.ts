@@ -183,7 +183,8 @@ builder.mutationFields((t) => {
 								where: {
 									AND: [ctx.permissions.allowDatabaseAccessTo('read').CustomConferenceRole]
 								}
-							}
+							},
+							conference: true
 						}
 					});
 
@@ -201,6 +202,10 @@ builder.mutationFields((t) => {
 						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 					) {
 						throw new GraphQLError(m.missingInformation());
+					}
+
+					if(Date.now() > singleParticipant.conference.startAssignment.getTime()) {
+						throw new GraphQLError(m.applicationTimeframeClosed());
 					}
 				}
 

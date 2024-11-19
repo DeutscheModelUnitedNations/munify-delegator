@@ -174,7 +174,8 @@ builder.mutationFields((t) => {
 					where: args.where,
 					include: {
 						...query.include,
-						members: true
+						members: true,
+						conference: true
 					}
 				});
 
@@ -200,6 +201,10 @@ builder.mutationFields((t) => {
 							!createDelegationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 						) {
 							throw new GraphQLError(m.missingInformation());
+						}
+
+						if (Date.now() > delegation.conference.startAssignment.getTime()) {
+							throw new GraphQLError(m.applicationTimeframeClosed());
 						}
 					}
 
