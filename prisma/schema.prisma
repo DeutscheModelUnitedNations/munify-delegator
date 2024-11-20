@@ -158,9 +158,9 @@ model SingleParticipant {
 
   applied Boolean @default(false)
 
-  school     String
-  motivation String
-  experience String
+  school     String?
+  motivation String?
+  experience String?
 
   appliedForRoles CustomConferenceRole[]
 

@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.adminPlausibility(),
-		faIcon: 'fa-magnifying-glass'
-	});
 </script>
 
 <svelte:head>

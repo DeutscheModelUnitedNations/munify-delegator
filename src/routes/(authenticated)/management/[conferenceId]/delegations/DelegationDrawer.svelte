@@ -181,7 +181,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
 
-		{#if $delegationQuery.data?.findUniqueDelegation?.supervisors.length}
+		{#if !$delegationQuery.data?.findUniqueDelegation?.supervisors || $delegationQuery.data?.findUniqueDelegation?.supervisors.length === 0}
 			<div class="alert alert-info">
 				<i class="fa-solid fa-user-slash"></i>
 				{m.noSupervisors()}

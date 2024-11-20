@@ -7,7 +7,7 @@ const myConferences = graphql(`
 		findManyConferences(
 			where: {
 				OR: [
-					{ teamMembers: { some: { userId: { equals: $userId } } } }
+					{ conferenceSupervisors: { some: { userId: { equals: $userId } } } }
 					{ delegationMembers: { some: { userId: { equals: $userId } } } }
 					{ singleParticipants: { some: { userId: { equals: $userId } } } }
 				]

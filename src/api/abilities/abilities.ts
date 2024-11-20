@@ -52,11 +52,11 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	const builder = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
 	// TODO you can enable this to test requests without permission checks
-	if (configPrivate.NODE_ENV !== 'production' && oidc && oidc.user) {
-		console.info('Development mode: granting all permissions');
-		// https://casl.js.org/v6/en/guide/intro#basics
-		builder.can('manage' as any, 'all' as any);
-	}
+	// if (configPrivate.NODE_ENV !== 'production' && oidc && oidc.user) {
+	// 	console.info('Development mode: granting all permissions');
+	// 	// https://casl.js.org/v6/en/guide/intro#basics
+	// 	builder.can('manage' as any, 'all' as any);
+	// }
 
 	// grant system wide admins all permissions
 	if (oidc && oidc.user && oidc.user.hasRole('admin')) {

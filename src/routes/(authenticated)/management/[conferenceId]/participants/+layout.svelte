@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.participants(),
-		faIcon: 'fa-person'
-	});
 </script>
 
 <svelte:head>

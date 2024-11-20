@@ -312,6 +312,8 @@ export const translatedNationCodeAddressFormOptions = $state(
 export const getFullTranslatedCountryNameFromISO3Code = (isoCode: string) => {
 	const found = NationIso3ToLocalNamesMap.get(isoCode.toUpperCase());
 	if (found) return found[languageTag()];
+	console.log(NationIso3ToLocalNamesMap);
+	
 	console.warn('Could not translate country code', isoCode);
 	return 'N/A';
 };

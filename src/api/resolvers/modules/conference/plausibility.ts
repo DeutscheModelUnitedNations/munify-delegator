@@ -100,10 +100,7 @@ builder.queryFields((t) => {
 					where: {
 						AND: [
 							{
-								OR: [
-									{ singleParticipant: { some: { conferenceId: args.conferenceId } } },
-									{ delegationMemberships: { some: { conferenceId: args.conferenceId } } }
-								]
+								OR: [{ conferenceSupervisor: { some: { conferenceId: args.conferenceId } } }]
 							},
 							{
 								birthday: { gt: new Date(new Date().getFullYear() - 21, 0, 1) }
@@ -121,7 +118,6 @@ builder.queryFields((t) => {
 								{ delegationMemberships: { some: { conferenceId: args.conferenceId } } },
 								{ conferenceSupervisor: { some: { conferenceId: args.conferenceId } } }
 							],
-
 							AND: [ctx.permissions.allowDatabaseAccessTo('list').User]
 						}
 					})

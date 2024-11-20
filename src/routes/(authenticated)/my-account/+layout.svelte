@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.myAccount(),
-		faIcon: 'fa-user'
-	});
 </script>
 
 <svelte:head>

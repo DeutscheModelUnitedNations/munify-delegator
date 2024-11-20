@@ -34,7 +34,7 @@ export const load: PageLoad = async (event) => {
 	// if we are a system admin
 	if (user.myOIDCRoles.includes('admin')) {
 		// in case we are an admin => display all conferences
-		const { data } = await allConferenceQuery.fetch({ event });
+		const { data } = await allConferenceQuery.fetch({ event, blocking: true });
 		const queriedConfernces = data?.findManyConferences;
 		return {
 			conferences: queriedConfernces?.map((c) => ({
@@ -43,20 +43,20 @@ export const load: PageLoad = async (event) => {
 				myMembership: 'SYSTEM_ADMIN'
 			}))
 		};
-	} else {
-		// in case we are a privileged user => display all conferences where thats the case
-		const { data } = await conferencesWhereImMoreThanMember.fetch({
-			event,
-			variables: { myUserId: user.sub },
-			blocking: true
-		});
-		const queriedConfernces = data?.findManyConferences;
-		return {
-			conferences: queriedConfernces?.map((c) => ({
-				id: c.id,
-				title: c.title,
-				myMembership: c.teamMembers.find((m) => m.user.id === user.sub)?.role
-			}))
-		};
 	}
+
+	// in case we are a privileged user => display all conferences where thats the case
+	const { data } = await conferencesWhereImMoreThanMember.fetch({
+		event,
+		variables: { myUserId: user.sub },
+		blocking: true
+	});
+	const queriedConfernces = data?.findManyConferences;
+	return {
+		conferences: queriedConfernces?.map((c) => ({
+			id: c.id,
+			title: c.title,
+			myMembership: c.teamMembers.find((m) => m.user.id === user.sub)?.role
+		}))
+	};
 };

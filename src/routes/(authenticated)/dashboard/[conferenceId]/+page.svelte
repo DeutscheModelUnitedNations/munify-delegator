@@ -5,6 +5,7 @@
 	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -19,7 +20,7 @@
 	{#if $conferenceQuery.fetching}
 		<Spinner />
 	{:else}
-		<div class="flex flex-col gap-10 py-10">
+		<div class="flex flex-col gap-10">
 			{#if conferenceQueryData?.findUniqueSingleParticipant}
 				{#if Date.now() > conference!.startRegistration.getTime() && Date.now() < conference!.startAssignment.getTime()}
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />

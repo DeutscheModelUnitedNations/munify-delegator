@@ -89,9 +89,9 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				conferenceId: t.arg.id(),
-				motivation: t.arg.string(),
-				school: t.arg.string(),
-				experience: t.arg.string()
+				motivation: t.arg.string({ required: false }),
+				school: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
@@ -174,7 +174,8 @@ builder.mutationFields((t) => {
 					where: args.where,
 					include: {
 						...query.include,
-						members: true
+						members: true,
+						conference: true
 					}
 				});
 
@@ -192,11 +193,18 @@ builder.mutationFields((t) => {
 
 						if (
 							!delegation.school ||
+							delegation.school.length === 0 ||
 							!delegation.experience ||
+							delegation.experience.length === 0 ||
 							!delegation.motivation ||
+							delegation.motivation.length === 0 ||
 							!createDelegationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 						) {
 							throw new GraphQLError(m.missingInformation());
+						}
+
+						if (Date.now() > delegation.conference.startAssignment.getTime()) {
+							throw new GraphQLError(m.applicationTimeframeClosed());
 						}
 					}
 

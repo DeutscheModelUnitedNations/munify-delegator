@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.admininstration(),
-		faIcon: 'fa-bars-progress'
-	});
 </script>
 
 <svelte:head>

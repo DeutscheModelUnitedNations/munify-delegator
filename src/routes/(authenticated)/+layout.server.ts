@@ -9,7 +9,7 @@ import { fastUserQuery } from '$lib/queries/fastUserQuery';
 // instead we should use server hooks to protect routes based on the url?
 
 export const load: LayoutServerLoad = async (event) => {
-	const { data } = await fastUserQuery.fetch({ event });
+	const { data } = await fastUserQuery.fetch({ event, blocking: true });
 
 	if (data?.offlineUserRefresh.user) {
 		return {

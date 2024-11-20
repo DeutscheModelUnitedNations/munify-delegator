@@ -27,9 +27,9 @@
 
 	// skip the fill out step if the user already provided all the information
 	if (
-		$formdata.experience.length > 0 &&
-		$formdata.motivation.length > 0 &&
-		$formdata.school.length > 0
+		($formdata.experience?.length ?? 0) > 0 &&
+		($formdata.motivation?.length ?? 0) > 0 &&
+		($formdata.school?.length ?? 0) > 0
 	) {
 		step = 1;
 	}
@@ -63,7 +63,7 @@
 			<button
 				class="btn btn-primary btn-lg"
 				type="button"
-				disabled={$allErrors.length > 0 || !isTainted($tainted)}
+				disabled={$allErrors.length > 0}
 				onclick={async () => {
 					const val = await validateForm({ update: true });
 					if (val.valid) {
@@ -71,7 +71,7 @@
 					}
 				}}>{m.next()}</button
 			>
-			<button class="btn btn-warning" onclick={() => step--}>{m.back()}</button>
+			<a class="btn btn-warning" type="button" href=".">{m.back()}</a>
 		</div>
 		<div class="flex flex-col items-center gap-4 {step !== 1 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>

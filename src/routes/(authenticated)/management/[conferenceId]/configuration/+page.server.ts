@@ -39,7 +39,8 @@ const conferenceUpdate = graphql(`
 export const load: PageLoad = async (event) => {
 	const { data } = await conferenceQuery.fetch({
 		event,
-		variables: { id: event.params.conferenceId }
+		variables: { id: event.params.conferenceId },
+		blocking: true
 	});
 	const conference = data?.findUniqueConference;
 

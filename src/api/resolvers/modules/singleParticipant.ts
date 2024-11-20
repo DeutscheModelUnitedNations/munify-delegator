@@ -77,9 +77,9 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				conferenceId: t.arg.id(),
-				motivation: t.arg.string(),
-				experience: t.arg.string(),
-				school: t.arg.string(),
+				motivation: t.arg.string({ required: false }),
+				experience: t.arg.string({ required: false }),
+				school: t.arg.string({ required: false }),
 				roleId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
@@ -117,9 +117,9 @@ builder.mutationFields((t) => {
 							AND: [ctx.permissions.allowDatabaseAccessTo('update').SingleParticipant]
 						},
 						data: {
-							motivation: args.motivation,
-							experience: args.experience,
-							school: args.school,
+							motivation: args.motivation ?? undefined,
+							experience: args.experience ?? undefined,
+							school: args.school ?? undefined,
 							appliedForRoles: {
 								connect: {
 									//TODO we should add a conferenceId restraint on all connects to prevent cross
@@ -136,9 +136,9 @@ builder.mutationFields((t) => {
 					...query,
 					data: {
 						conferenceId: args.conferenceId,
-						motivation: args.motivation,
-						experience: args.experience,
-						school: args.school,
+						motivation: args.motivation ?? undefined,
+						experience: args.experience ?? undefined,
+						school: args.school ?? undefined,
 						userId: user.sub!,
 						appliedForRoles: {
 							connect: {
@@ -183,12 +183,29 @@ builder.mutationFields((t) => {
 								where: {
 									AND: [ctx.permissions.allowDatabaseAccessTo('read').CustomConferenceRole]
 								}
-							}
+							},
+							conference: true
 						}
 					});
 
 					if (singleParticipant.appliedForRoles.length < 1) {
 						throw new GraphQLError(m.notEnoughtRoleApplications());
+					}
+
+					if (
+						!singleParticipant.school ||
+						singleParticipant.school.length === 0 ||
+						!singleParticipant.experience ||
+						singleParticipant.experience.length === 0 ||
+						!singleParticipant.motivation ||
+						singleParticipant.motivation.length === 0 ||
+						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+					) {
+						throw new GraphQLError(m.missingInformation());
+					}
+
+					if(Date.now() > singleParticipant.conference.startAssignment.getTime()) {
+						throw new GraphQLError(m.applicationTimeframeClosed());
 					}
 				}
 

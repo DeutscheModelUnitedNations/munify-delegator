@@ -20,6 +20,11 @@ const config = {
 				return date && date.getTime();
 			}
 		}
+	},
+	types: {
+		Nation: {
+			keys: ['alpha3Code', 'alpha2Code']
+		}
 	}
 };
 

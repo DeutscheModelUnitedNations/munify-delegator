@@ -8,11 +8,6 @@
 	}
 
 	let { children }: Props = $props();
-
-	setHeaderStatus({
-		label: m.singleParticipants(),
-		faIcon: 'fa-user-bounty-hunter'
-	});
 </script>
 
 <svelte:head>

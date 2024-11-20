@@ -9,10 +9,6 @@
 
 	let { children }: Props = $props();
 
-	setHeaderStatus({
-		label: m.statistics(),
-		faIcon: 'fa-chart-simple'
-	});
 </script>
 
 <svelte:head>

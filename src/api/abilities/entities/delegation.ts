@@ -21,7 +21,7 @@ export const defineAbilitiesForDelegation = (oidc: OIDC, { can }: AbilityBuilder
 			members: { some: { user: { id: user.sub }, isHeadDelegate: true } }
 		});
 
-		// project management and partiticipant care team members should be able to see the delegations of their conferences
+		// project management and partiticipant care team members should be able to see/edit the delegations of their conferences
 		can(['list', 'read', 'update'], 'Delegation', {
 			conference: {
 				teamMembers: {

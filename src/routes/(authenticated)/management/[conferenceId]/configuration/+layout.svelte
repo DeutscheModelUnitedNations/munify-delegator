@@ -7,11 +7,6 @@
 	}
 
 	let { children }: Props = $props();
-
-	setHeaderStatus({
-		label: m.settings(),
-		faIcon: 'fa-cog'
-	});
 </script>
 
 <svelte:head>

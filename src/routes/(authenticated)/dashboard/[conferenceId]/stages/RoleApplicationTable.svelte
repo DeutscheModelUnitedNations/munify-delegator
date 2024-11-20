@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
-	import type { Nation } from '@prisma/client';
+	import type { Nation, RoleApplication } from '@prisma/client';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
 
@@ -22,13 +22,13 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each roleApplications as application, index}
+		{#each roleApplications.sort((a, b) => a.rank - b.rank) as application, index}
 			<tr>
 				<td class="text-center">{index + 1}</td>
 				{#if application?.nation}
 					<td class="text-center"><Flag alpha2Code={application.nation.alpha2Code} size="xs" /></td>
 					<td class="w-full"
-						>{getFullTranslatedCountryNameFromISO3Code(application.nation.alpha2Code)}</td
+						>{getFullTranslatedCountryNameFromISO3Code(application.nation.alpha3Code)}</td
 					>
 					<td class="text-center">{getNumOfSeatsPerNation(application.nation, committees)}</td>
 				{:else if application?.nonStateActor}
