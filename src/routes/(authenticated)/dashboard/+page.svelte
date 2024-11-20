@@ -6,7 +6,7 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<div class=" w-full px-3">
+<div class=" w-full">
 	<section class="mt-10 flex flex-wrap gap-4">
 		<div
 			class="carousel carousel-center w-full space-x-6 rounded-box bg-base-200 p-6 shadow-inner dark:bg-base-300"

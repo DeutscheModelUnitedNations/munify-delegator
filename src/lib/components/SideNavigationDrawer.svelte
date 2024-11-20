@@ -48,7 +48,7 @@
 	></button>
 {/if}
 
-<div class="fixed left-0 top-0 z-20 h-full py-4 pl-2 pr-4 sm:static sm:h-auto sm:py-0">
+<div class="fixed left-0 top-0 z-20 h-full py-4 pl-3 sm:static sm:h-auto sm:py-0 sm:pl-0">
 	<div
 		class="relative flex flex-col overflow-hidden rounded-xl bg-base-200 duration-300 {expanded
 			? 'h-full w-60 shadow sm:shadow-none'

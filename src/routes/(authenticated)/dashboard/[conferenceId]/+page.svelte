@@ -16,7 +16,7 @@
 	let conference = $derived(conferenceQueryData?.findUniqueConference);
 </script>
 
-<div class="flex w-full flex-col items-center px-4">
+<div class="flex w-full flex-col items-center">
 	{#if $conferenceQuery.fetching}
 		<Spinner />
 	{:else}

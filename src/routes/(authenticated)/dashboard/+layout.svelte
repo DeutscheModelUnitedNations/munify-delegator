@@ -93,4 +93,6 @@
 	</NavMenu>
 </SideNavigationDrawer>
 
-{@render children()}
+<div class="sm: pl-4 flex w-full">
+	{@render children()}
+</div>
