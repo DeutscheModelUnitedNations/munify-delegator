@@ -58,6 +58,12 @@
 				title={m.adminPlausibility()}
 				bind:expanded={navbarExpanded}
 			/>
+			<NavMenuButton
+				href="/management/{data.conferenceId}/assignment"
+				icon="fa-shuffle"
+				title={m.adminAssignment()}
+				small={!navbarExpanded}
+			/>
 		</NavMenuDetails>
 	</NavMenu>
 </SideNavigationDrawer>
