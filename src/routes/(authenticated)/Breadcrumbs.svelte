@@ -141,6 +141,7 @@ import path via the parameter! -->
 	importObject={import.meta.glob('./**/+page.svelte')}
 	availableLanguageTags={availableLanguageTags as any as string[]}
 	delimeterSnippet="disabled"
+	homePath="/"
 >
 	{#snippet pathSnippet(pathSegment: PathSegment<Parameters, boolean>)}
 		<a href={pathSegment.href}>

@@ -32,6 +32,10 @@
 		/// located in the file system tree!
 		readonly importObject: Record<string, () => Promise<unknown>>;
 		/**
+		 * The path to the home page
+		 */
+		readonly homePath?: string;
+		/**
 		 * How to render a path segment
 		 */
 		pathSnippet?: Snippet<[PathSegment<Parameter, boolean>]>;
@@ -45,6 +49,7 @@
 		availableLanguageTags = [],
 		currentUrl: currentUrlParam,
 		importObject,
+		homePath,
 		pathSnippet = defaultPathSnippet,
 		delimeterSnippet = defaultDelimeterSnippet
 	}: Props = $props();
@@ -185,11 +190,18 @@
 {/snippet}
 
 {#snippet defaultDelimeterSnippet()}
-	>
+	&gt;
 {/snippet}
 
 <div class="breadcrumbs">
 	<ul>
+		{#if homePath}
+			<li class="breadcrumb">
+				<a href={homePath} aria-label="Homepage">
+					<i class="fa-duotone fa-home w-5 text-center"></i>
+				</a>
+			</li>
+		{/if}
 		{#each currentPath as pathSegment, i}
 			<li class="breadcrumb">
 				{@render pathSnippet(pathSegment)}
