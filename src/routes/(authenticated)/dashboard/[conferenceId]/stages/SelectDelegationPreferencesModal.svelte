@@ -206,7 +206,8 @@
 												<td class="text-center"><i class="fa-duotone fa-minus"></i></td>
 											{:else}
 												<td class="text-center">
-													{#if committee.nations.find((c) => c.alpha3Code === role.nation?.alpha3Code)}
+													{#if committee.nations.find(// @ts-ignore TODO remove after the API rework
+														(c) => c.alpha3Code === role.nation?.alpha3Code)}
 														<div class="tooltip" data-tip={committee.abbreviation}>
 															{#each { length: committee.numOfSeatsPerDelegation } as _}
 																<i class="fa-duotone fa-check"></i>
@@ -283,7 +284,8 @@
 										</td>
 										{#each conference.committees as committee}
 											<td class="text-center">
-												{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
+												{#if committee.nations.find(// @ts-ignore TODO remove after the API rework
+													(c) => c.alpha3Code === nation.alpha3Code)}
 													<div class="tooltip" data-tip={committee.abbreviation}>
 														{#each { length: committee.numOfSeatsPerDelegation } as _}
 															<i class="fa-duotone fa-check"></i>

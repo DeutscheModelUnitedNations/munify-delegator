@@ -41,10 +41,10 @@ function readHistoricStats(conferenceId: string) {
 
 function writeHistoricStats(conferenceId: string, stats: Record<string, any>) {
 	try {
-		if (!fs.existsSync('./empheralData')) {
-			fs.mkdirSync('./empheralData');
+		if (!fs.existsSync('./ephemeralData')) {
+			fs.mkdirSync('./ephemeralData');
 		}
-		fs.writeFileSync(`./empheralData/${conferenceId}.json`, JSON.stringify(stats));
+		fs.writeFileSync(`./ephemeralData/${conferenceId}.json`, JSON.stringify(stats));
 	} catch (error) {
 		console.error("Couldn't save stats to file", error);
 	}
@@ -61,7 +61,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 		// TODO: we should allow passing the TZ via env var to the container
 		{ rule: CRON, tz: 'Etc/GMT-2' },
 		async function () {
-			logTaskStart(TASK_NAME);
+			const startTime = logTaskStart(TASK_NAME);
 
 			const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
 				where: {
@@ -503,7 +503,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 				}
 			}
 
-			logTaskEnd(TASK_NAME);
+			logTaskEnd(TASK_NAME, startTime);
 		}
 	);
 } else {
