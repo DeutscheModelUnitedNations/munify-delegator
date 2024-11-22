@@ -25,6 +25,7 @@ model Conference {
   language          String?
   website           String?
   imageDataURL      String?
+  info              String?
   startRegistration DateTime
   startAssignment   DateTime
   startConference   DateTime

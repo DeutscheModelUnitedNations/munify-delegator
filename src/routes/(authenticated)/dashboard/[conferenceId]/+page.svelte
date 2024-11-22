@@ -5,7 +5,7 @@
 	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import { invalidateAll } from '$app/navigation';
+	import * as m from '$lib/paraglide/messages.js';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -21,6 +21,19 @@
 		<Spinner />
 	{:else}
 		<div class="flex flex-col gap-10">
+			<!-- TODO add "new" badge if content of this changes -->
+			{#if $conferenceQuery.data?.findUniqueConference?.info}
+				<section role="contentinfo" class="alert alert-info w-full">
+					<i class="fas fa-info text-3xl"></i>
+					<div class="flex flex-col">
+						<p class="font-bold">{m.infos()}</p>
+						<p class="mt-2">
+							{$conferenceQuery.data?.findUniqueConference?.info}
+						</p>
+					</div>
+				</section>
+			{/if}
+
 			{#if conferenceQueryData?.findUniqueSingleParticipant}
 				{#if Date.now() > conference!.startRegistration.getTime() && Date.now() < conference!.startAssignment.getTime()}
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />

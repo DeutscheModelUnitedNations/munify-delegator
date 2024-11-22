@@ -6,6 +6,7 @@ export const conferenceSettingsFormSchema = z.object({
 	title: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
+	info: z.string().optional().nullable(),
 	longTitle: z
 		.string()
 		.min(5, {

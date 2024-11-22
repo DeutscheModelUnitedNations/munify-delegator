@@ -2,6 +2,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 	findUniqueConference(where: { id: $conferenceId }) {
 		id
 		title
+		info
 		startRegistration
 		startConference
 		startAssignment

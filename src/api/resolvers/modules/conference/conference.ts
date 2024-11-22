@@ -3,6 +3,7 @@ import {
 	ConferenceEndConferenceFieldObject,
 	ConferenceIdFieldObject,
 	ConferenceImageDataURLFieldObject,
+	ConferenceInfoFieldObject,
 	ConferenceLanguageFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
@@ -24,6 +25,7 @@ builder.prismaObject('Conference', {
 	fields: (t) => ({
 		id: t.field(ConferenceIdFieldObject),
 		title: t.field(ConferenceTitleFieldObject),
+		info: t.field(ConferenceInfoFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
 		location: t.field(ConferenceLocationFieldObject),
 		language: t.field(ConferenceLanguageFieldObject),
@@ -143,6 +145,9 @@ builder.mutationFields((t) => {
 							title: t.string({
 								required: false
 							}),
+							info: t.string({
+								required: false
+							}),
 							longTitle: t.string({
 								required: false
 							}),
@@ -176,7 +181,7 @@ builder.mutationFields((t) => {
 				conferenceSettingsFormSchema.parse(args.data);
 
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
-				delete args.data.image;
+				args.data.image = undefined;
 
 				return await db.conference.update({
 					where: args.where,
@@ -184,6 +189,7 @@ builder.mutationFields((t) => {
 						...args.data,
 						imageDataURL: dataURL,
 						title: args.data.title ?? undefined,
+						info: args.data.info ?? undefined,
 						startRegistration: args.data.startRegistration ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
 						startConference: args.data.startConference ?? undefined,

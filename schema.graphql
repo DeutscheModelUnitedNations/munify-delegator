@@ -150,6 +150,7 @@ type Conference {
   id: ID!
   imageDataURL: String
   individualApplicationOptions: [CustomConferenceRole!]!
+  info: String
   language: String
   location: String
   longTitle: String
@@ -173,6 +174,7 @@ input ConferenceCreateInput {
   id: String
   imageDataURL: String
   individualApplicationOptions: CustomConferenceRoleCreateNestedManyWithoutConferenceInput
+  info: String
   language: String
   location: String
   longTitle: String
@@ -196,6 +198,7 @@ input ConferenceOrderByWithRelationInput {
   id: SortOrder
   imageDataURL: SortOrder
   individualApplicationOptions: CustomConferenceRoleOrderByRelationAggregateInput
+  info: SortOrder
   language: SortOrder
   location: SortOrder
   longTitle: SortOrder
@@ -330,6 +333,7 @@ enum ConferenceScalarFieldEnum {
   endConference
   id
   imageDataURL
+  info
   language
   location
   longTitle
@@ -465,6 +469,7 @@ input ConferenceSupervisorWhereUniqueInput {
 input ConferenceUpdateDataInput {
   endConference: DateTime
   image: File
+  info: String
   language: String
   location: String
   longTitle: String
@@ -485,6 +490,7 @@ input ConferenceUpdateInput {
   id: StringFieldUpdateOperationsInput
   imageDataURL: NullableStringFieldUpdateOperationsInput
   individualApplicationOptions: CustomConferenceRoleUpdateManyWithoutConferenceNestedInput
+  info: NullableStringFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
@@ -502,6 +508,7 @@ input ConferenceUpdateManyMutationInput {
   endConference: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   imageDataURL: NullableStringFieldUpdateOperationsInput
+  info: NullableStringFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
@@ -525,6 +532,7 @@ input ConferenceWhereInput {
   id: StringFilter
   imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
+  info: StringNullableFilter
   language: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
@@ -551,6 +559,7 @@ input ConferenceWhereUniqueInput {
   id: String
   imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
+  info: StringNullableFilter
   language: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter

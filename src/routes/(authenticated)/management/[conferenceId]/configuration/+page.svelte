@@ -43,6 +43,7 @@
 			label={m.conferenceLocation()}
 		/>
 		<FormTextInput {form} name="language" placeholder={'Deutsch'} label={m.conferenceLanguage()} />
+		<FormTextInput {form} name="info" placeholder={'Info...'} label={m.infos()} />
 		<FormTextInput {form} name="website" placeholder={'mun-sh.de'} label={m.conferenceWebsite()} />
 		{#if $formData.image || data.imageDataURL}
 			<img
