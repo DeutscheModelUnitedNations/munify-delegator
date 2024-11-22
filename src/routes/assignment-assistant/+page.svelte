@@ -108,7 +108,11 @@
 							<td>{project.fileName}</td>
 							<td>{project.created}</td>
 							<td class="flex gap-2">
-								<button class="btn btn-error btn-sm" onclick={() => deleteProject(project.id)} aria-label="Delete">
+								<button
+									class="btn btn-error btn-sm"
+									onclick={() => deleteProject(project.id)}
+									aria-label="Delete"
+								>
 									<i class="fas fa-trash"></i>
 								</button>
 								<a class="btn btn-primary btn-sm" href={`/assignment-assistant/${project.id}`}>

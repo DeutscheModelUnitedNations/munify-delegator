@@ -5,7 +5,6 @@
 	import { headerState } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import Breadcrumbs from './Breadcrumbs.svelte';
 
-
 	//TODO
 	// import ExportButtons from '$lib/components/DataTable/ExportButtons.svelte';
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
@@ -37,7 +36,7 @@
 		{/if}
 
 		<Breadcrumbs />
-		
+
 		<div class="dropdown dropdown-end z-10">
 			<div tabindex="-1" class="btn btn-square btn-ghost">
 				<i class="fa-duotone fa-user text-xl"></i>

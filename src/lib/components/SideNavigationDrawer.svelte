@@ -23,8 +23,8 @@
 	}: Props = $props();
 
 	onMount(() => {
-		if(isMobileOrTablet()) {
-			expanded = false
+		if (isMobileOrTablet()) {
+			expanded = false;
 		}
 	});
 

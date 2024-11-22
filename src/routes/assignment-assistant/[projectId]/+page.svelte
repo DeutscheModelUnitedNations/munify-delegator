@@ -18,7 +18,7 @@
 	let tab = $state(2);
 
 	onMount(() => {
-		console.log(data)
+		console.log(data);
 		loadProjects(data.projectId);
 	});
 </script>

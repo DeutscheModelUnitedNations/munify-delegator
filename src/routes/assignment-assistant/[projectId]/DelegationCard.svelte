@@ -19,7 +19,8 @@
 			? `bg-info`
 			: 'bg-base-300'} {!application.appliedForRoles
 		.map((x) => (x.nation ? x.nation.alpha3Code : x.nonStateActor?.abbreviation))
-		.includes(application.assignedNation?.alpha3Code ?? '') || !application.assignedNation && 'border-2 border-error'}"
+		.includes(application.assignedNation?.alpha3Code ?? '') ||
+		(!application.assignedNation && 'border-2 border-error')}"
 >
 	<p class="text-xs font-bold">{codenamize(application.id)}</p>
 	<StarRating rating={application.evaluation ?? getWeights().nullRating} size="xs" />

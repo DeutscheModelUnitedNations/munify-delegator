@@ -15,7 +15,7 @@ import {
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
-	updateOneConferenceMutationObject,
+	updateOneConferenceMutationObject
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';

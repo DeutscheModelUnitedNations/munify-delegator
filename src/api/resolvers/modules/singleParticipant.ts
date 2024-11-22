@@ -204,7 +204,7 @@ builder.mutationFields((t) => {
 						throw new GraphQLError(m.missingInformation());
 					}
 
-					if(Date.now() > singleParticipant.conference.startAssignment.getTime()) {
+					if (Date.now() > singleParticipant.conference.startAssignment.getTime()) {
 						throw new GraphQLError(m.applicationTimeframeClosed());
 					}
 				}

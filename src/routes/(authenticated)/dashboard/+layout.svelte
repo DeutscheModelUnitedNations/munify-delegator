@@ -27,7 +27,6 @@
 	let pastConferences = $derived(conferences?.filter((c) => c.endConference < new Date()));
 
 	let navbarExpanded = $state(true);
-
 </script>
 
 <svelte:head>
@@ -93,6 +92,6 @@
 	</NavMenu>
 </SideNavigationDrawer>
 
-<div class="sm: pl-4 flex w-full">
+<div class="sm: flex w-full pl-4">
 	{@render children()}
 </div>

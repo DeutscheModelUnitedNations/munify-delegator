@@ -9,9 +9,9 @@ interface Role {
 
 export interface DelegationRole extends Role {
 	numOfSeats: number;
-  category: RoleCategory.DELEGATON;
+	category: RoleCategory.DELEGATON;
 }
 
 export interface SingleRole extends Role {
-  category: RoleCategory.SINGLE;
+	category: RoleCategory.SINGLE;
 }
