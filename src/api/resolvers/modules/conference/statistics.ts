@@ -68,13 +68,13 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 		age: t.field({
 			type: builder.simpleObject('StatisticsResultRegisteredAge', {
 				fields: (t) => ({
-					average: t.int(),
+					average: t.float(),
 					distribution: t.field({
 						type: [
 							builder.simpleObject('StatisticsResultRegisteredAgeDistribution', {
 								fields: (t) => ({
 									key: t.string(),
-									value: t.int()
+									value: t.float()
 								})
 							})
 						]
