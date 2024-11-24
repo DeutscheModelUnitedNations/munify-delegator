@@ -18,6 +18,7 @@ export interface Conference {
 	id: string;
 	title: string;
 	committees: Committee[];
+	nonStateActors: NonStateActor[];
 	individualApplicationOptions: IndividualApplicationOption[];
 }
 
@@ -49,6 +50,8 @@ export interface Delegation extends SightingProps, DelegationAssignment, NSAAssi
 	members: Member[];
 	supervisors: Supervisor[];
 	user: never;
+	splittedFrom: string | undefined;
+	splittedInto: string[] | undefined;
 }
 
 export interface AppliedForDelegationRole {
@@ -87,7 +90,7 @@ export interface Supervisor {
 	user: User;
 }
 
-export interface SingleParticipant extends SightingProps {
+export interface SingleParticipant extends SightingProps, SingleAssignment {
 	id: string;
 	motivation: string;
 	school: string;
@@ -96,6 +99,8 @@ export interface SingleParticipant extends SightingProps {
 	appliedForRoles: AppliedForSingleRole[];
 	supervisors: never;
 	members: never;
+	splittedFrom: never;
+	splittedInto: never;
 }
 
 export interface AppliedForSingleRole {
@@ -119,7 +124,11 @@ export interface DelegationAssignment {
 }
 
 export interface NSAAssignment {
-	assignedNSA: NonStateActor;
+	assignedNSA?: NonStateActor;
+}
+
+export interface SingleAssignment {
+	assignedRole?: IndividualApplicationOption;
 }
 
 let allProjects: Project[] = $state([]);
@@ -167,6 +176,12 @@ export const getSingleApplications = () => {
 	return project.data.singleParticipants;
 };
 
+export const getSingleRoles = () => {
+	const project = getProject();
+	if (!project) return [];
+	return project.data.conference.individualApplicationOptions;
+};
+
 export const getNations: () => {
 	nation: Nation;
 	seats: number;
@@ -193,11 +208,26 @@ export const getNations: () => {
 	return role;
 };
 
-export const getRemainingSeats = (nation: Nation) => {
-	const delegations = getDelegationApplications().filter(
-		(x) => x.assignedNation?.alpha2Code === nation.alpha2Code
-	);
-	const seats = getNations().find((x) => x.nation.alpha2Code === nation.alpha2Code)?.seats;
+export const getNSAs: () => NonStateActor[] = () => {
+	const project = getProject();
+	if (!project) return [];
+	return project.data.conference.nonStateActors;
+};
+
+export const getRemainingSeats = (assignment: Nation | NonStateActor) => {
+	const delegations = getDelegationApplications().filter((x) => {
+		const isNation = 'alpha2Code' in assignment;
+		if (isNation) {
+			return x.assignedNation?.alpha2Code === assignment.alpha2Code;
+		}
+		return x.assignedNSA?.id === assignment.id;
+	});
+	let seats = getNations().find(
+		(x) => x.nation.alpha2Code === (assignment as Nation).alpha2Code
+	)?.seats;
+	if (!seats) {
+		seats = getNSAs().find((x) => x.id === (assignment as NonStateActor).id)?.seatAmount;
+	}
 	return seats ? seats - delegations.reduce((acc, x) => acc + x.members.length, 0) : 0;
 };
 
@@ -261,24 +291,106 @@ export const assignNationToDelegation = (delegationId: string, alpha3Code: strin
 	saveProjects();
 };
 
-export const unassignNationFromDelegation = (delegationId: string) => {
+export const assignNSAToDelegation = (delegationId: string, nsaId: string) => {
+	const delegation = getDelegationApplications().find(
+		(delegation) => delegation.id === delegationId
+	);
+	const nsa = getNSAs().find((nsa) => nsa.id === nsaId);
+	if (!nsa) return;
+	if (delegation) {
+		(delegation as NSAAssignment).assignedNSA = nsa;
+	}
+	saveProjects();
+};
+
+export const unassignNationOrNSAFromDelegation = (delegationId: string) => {
 	const delegation = getDelegationApplications().find(
 		(delegation) => delegation.id === delegationId
 	);
 	if (delegation) {
 		(delegation as DelegationAssignment).assignedNation = undefined;
+		(delegation as NSAAssignment).assignedNSA = undefined;
 	}
 	saveProjects();
 };
 
 export const resetSeatCategory = (seats: number) => {
-	const nations = getNations()
-		.filter((x) => x.seats === seats)
-		.map((x) => x.nation);
 	getDelegationApplications().forEach((delegation) => {
-		if (delegation.members.length === seats) {
-			unassignNationFromDelegation(delegation.id);
+		if (
+			getNations().find(
+				(nation) =>
+					nation.nation.alpha3Code === delegation.assignedNation?.alpha3Code &&
+					nation.seats === seats
+			) ||
+			getNSAs().find((nsa) => nsa.id === delegation.assignedNSA?.id && nsa.seatAmount === seats)
+		) {
+			unassignNationOrNSAFromDelegation(delegation.id);
 		}
 	});
+	saveProjects();
+};
+
+export const splitDelegation = (delegationId: string, buckets: Member[][]) => {
+	const delegation = getDelegationApplications().find(
+		(delegation) => delegation.id === delegationId
+	);
+	if (!delegation) return;
+	const splittedInto = buckets.map((bucket) => {
+		const newDelegation = { ...delegation };
+		newDelegation.id = Math.round(Math.random() * 1000000).toString();
+		newDelegation.members = bucket;
+		newDelegation.splittedFrom = delegation.id;
+		return newDelegation;
+	});
+	delegation.splittedInto = splittedInto.map((x) => x.id);
+	delegation.disqualified = true;
+	splittedInto.forEach((x) => {
+		selectedProject?.data.delegations.push(x);
+	});
+	saveProjects();
+};
+
+export const convertSingleToDelegation = (singleId: string) => {
+	const single = getSingleApplications().find((single) => single.id === singleId);
+	if (!single) return;
+	const newDelegation: Delegation = {
+		id: single.id,
+		motivation: single.motivation,
+		experience: single.experience,
+		school: single.school,
+		members: [
+			{
+				id: Math.round(Math.random() * 1000000).toString(),
+				isHeadDelegate: true,
+				user: single.user
+			}
+		],
+		appliedForRoles: [],
+		supervisors: [],
+		splittedFrom: undefined,
+		splittedInto: undefined,
+		user: undefined as never
+	};
+	selectedProject?.data.delegations.push(newDelegation);
+	selectedProject!.data.singleParticipants = selectedProject!.data.singleParticipants.filter(
+		(x) => x.id !== singleId
+	);
+	saveProjects();
+};
+
+export const assignSingleRole = (singleId: string, roleId: string) => {
+	const single = getSingleApplications().find((single) => single.id === singleId);
+	const role = getSingleRoles().find((role) => role.id === roleId);
+	if (single && role) {
+		single.assignedRole = role;
+	}
+	saveProjects();
+};
+
+export const unassignSingleRole = (singleId: string) => {
+	const single = getSingleApplications().find((single) => single.id === singleId);
+	if (single) {
+		single.assignedRole = undefined;
+	}
 	saveProjects();
 };

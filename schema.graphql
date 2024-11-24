@@ -1824,10 +1824,10 @@ type SingleParticipant {
   applied: Boolean!
   appliedForRoles: [CustomConferenceRole!]!
   conference: Conference!
-  experience: String
+  experience: String!
   id: ID!
-  motivation: String
-  school: String
+  motivation: String!
+  school: String!
   user: User!
 }
 
@@ -1840,10 +1840,10 @@ input SingleParticipantCreateInput {
   applied: Boolean
   appliedForRoles: CustomConferenceRoleCreateNestedManyWithoutSingleParticipantInput
   conferenceId: String!
-  experience: String
+  experience: String!
   id: String
-  motivation: String
-  school: String
+  motivation: String!
+  school: String!
   userId: String!
 }
 
@@ -1896,19 +1896,19 @@ input SingleParticipantUpdateInput {
   applied: BoolFieldUpdateOperationsInput
   appliedForRoles: CustomConferenceRoleUpdateManyWithoutSingleParticipantNestedInput
   conferenceId: StringFieldUpdateOperationsInput
-  experience: NullableStringFieldUpdateOperationsInput
+  experience: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  motivation: NullableStringFieldUpdateOperationsInput
-  school: NullableStringFieldUpdateOperationsInput
+  motivation: StringFieldUpdateOperationsInput
+  school: StringFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
 
 input SingleParticipantUpdateManyMutationInput {
   applied: BoolFieldUpdateOperationsInput
-  experience: NullableStringFieldUpdateOperationsInput
+  experience: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  motivation: NullableStringFieldUpdateOperationsInput
-  school: NullableStringFieldUpdateOperationsInput
+  motivation: StringFieldUpdateOperationsInput
+  school: StringFieldUpdateOperationsInput
 }
 
 input SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput {
@@ -1937,10 +1937,10 @@ input SingleParticipantWhereInput {
   appliedForRoles: CustomConferenceRoleListRelationFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
-  experience: StringNullableFilter
+  experience: StringFilter
   id: StringFilter
-  motivation: StringNullableFilter
-  school: StringNullableFilter
+  motivation: StringFilter
+  school: StringFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -1954,10 +1954,10 @@ input SingleParticipantWhereUniqueInput {
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   conferenceId_userId: SingleParticipantConferenceIdUserIdCompoundUniqueInput
-  experience: StringNullableFilter
+  experience: StringFilter
   id: String
-  motivation: StringNullableFilter
-  school: StringNullableFilter
+  motivation: StringFilter
+  school: StringFilter
   user: UserWhereInput
   userId: StringFilter
 }

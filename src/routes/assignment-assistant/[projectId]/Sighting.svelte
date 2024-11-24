@@ -80,6 +80,7 @@
 					<div class="tooltip" data-tip="Disqualify">
 						<button
 							class="btn btn-square {application.disqualified && 'btn-error'}"
+							disabled={!!application.splittedInto}
 							onclick={() => {
 								toggleDisqualifyApplication(application.id);
 							}}
@@ -106,6 +107,24 @@
 					</tr>
 				</thead>
 				<tbody>
+					{#if application.splittedInto || application.splittedFrom}
+						<tr>
+							<td class="text-center"><i class="fa-duotone fa-code-branch text-lg"></i></td>
+							<td>
+								{#if application.splittedInto}
+									Wurde zerteilt in:
+									<ul class="ml-6 list-disc">
+										{#each application.splittedInto as x}
+											<li>{codenamize(x)}</li>
+										{/each}
+									</ul>
+								{/if}
+								{#if application.splittedFrom}
+									<p>Wurde zerteilt von: {codenamize(application.splittedFrom)}</p>
+								{/if}
+							</td>
+						</tr>
+					{/if}
 					{#if application.user}
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-user text-lg"></i></td>
