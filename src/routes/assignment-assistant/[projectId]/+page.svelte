@@ -7,7 +7,7 @@
 	import { loadProjects } from './appData.svelte';
 	import Weighting from './Weighting.svelte';
 	import Assignment from './Assignment.svelte';
-	import Summary from './Assignment.svelte';
+	import Summary from './Summary.svelte';
 	import Singles from './Singles.svelte';
 
 	interface Props {
@@ -16,7 +16,7 @@
 
 	let { data }: Props = $props();
 
-	let tab = $state(2);
+	let tab = $state(0);
 
 	onMount(() => {
 		console.log(data);

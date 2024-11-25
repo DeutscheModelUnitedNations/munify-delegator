@@ -7,7 +7,6 @@
 		getNations,
 		getNSAs,
 		getRemainingSeats,
-		getSingleRoles,
 		resetSeatCategory,
 		unassignNationOrNSAFromDelegation,
 		type Nation,
@@ -17,10 +16,9 @@
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import NationCard from './NationCard.svelte';
 	import { autoAssign } from './autoAssign.svelte';
-	import { onMount } from 'svelte';
 	import SizeTabs from './SizeTabs.svelte';
 	import PartitionModal from './PartitionModal.svelte';
-	import SingleParticipantCard from './SingleParticipantCard.svelte';
+	import TextPreview from '$lib/components/TextPreview.svelte';
 
 	let dragging = $state(false);
 	let optionsModalOpen = $state<string | undefined>(undefined);
@@ -117,7 +115,34 @@
 	};
 </script>
 
-<div class="flex w-full gap-6">
+<TextPreview>
+	<h2>Delegationszuteilung</h2>
+	<p>
+		Hier kann nun die eigentliche Delegationszuteilung durchgeführt werden. Die Delegationszuteilung
+		erfolgt entweder automatisiert, indem auf den "Auto-Zuteilung"-Button in der jeweiligen
+		Größenkategorie geklickt wird, oder manuell per Drag-and-Drop.
+	</p>
+	<p>
+		<strong>
+			Es ist unbedingt sinnvoll, bei der automatischen Zuteilung mit der größten Delegationsgröße
+			anzufangen!
+		</strong>
+		Das hat den einfachen Grund, dass die kleineren Delegationen sonst nach oben auffüllen und ggf. den
+		größeren Delegationen die Plätze wegnehmen.
+	</p>
+	<p>
+		Delegationen können in mehrere kleinere Delegationen aufgeteilt werden, indem sie auf das
+		Zerteilen-Symbol am unteren Bildschirmrand gezogen werden. Es ist auch möglich, Delegationen
+		zusammenzuführen, indem sie auf das selbe Rollen-Feld gezogen werden (vorausgesetzt, es ist
+		genug Platz in der Delegation vorhanden – für NAs gibt es keine Obergrenze).
+	</p>
+	<p>
+		Delegationen, die ihren Wunsch nicht erfüllt bekommen haben, werden mit einem roten Schatten
+		unterlegt.
+	</p>
+</TextPreview>
+
+<div class="mt-10 flex w-full gap-6">
 	<div class="flex w-1/2 flex-1 flex-col justify-start">
 		<SizeTabs
 			tab={nationTab}
@@ -256,7 +281,7 @@
 		<div
 			class="flex h-full w-full flex-1 items-center justify-center gap-4 rounded-lg border-2 border-dashed border-white"
 		>
-			<i class="fas fa-code-branch text-4xl text-white"></i>
+			<i class="fas fa-split text-4xl text-white"></i>
 		</div>
 	</div>
 </div>

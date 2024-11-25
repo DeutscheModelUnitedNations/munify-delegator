@@ -73,7 +73,7 @@
 			class="tooltip"
 			data-tip={application.members
 				.map((x) => `${x.user.given_name} ${x.user.family_name}`)
-				.join(', ')}
+				.join(',')}
 		>
 			<i class="fas fa-users"></i>
 		</div>
@@ -89,7 +89,7 @@
 		{/if}
 		{#if application.splittedFrom}
 			<div class="tooltip" data-tip={`Zerteilt von ${codenamize(application.splittedFrom)}`}>
-				<i class="fas fa-code-branch"></i>
+				<i class="fas fa-split"></i>
 			</div>
 		{/if}
 	</div>

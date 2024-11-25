@@ -7,7 +7,13 @@
 	$inspect(expanded);
 </script>
 
-<div class={expanded ? '' : 'row'} onclick={() => (expanded = true)}>
+<div
+	role="none"
+	class={expanded
+		? ''
+		: 'relative max-h-40 cursor-pointer overflow-hidden text-ellipsis before:absolute before:left-0 before:top-0 before:h-full before:w-full before:bg-gradient-to-b before:from-transparent before:to-base-100'}
+	onclick={() => (expanded = true)}
+>
 	<div class="prose">
 		{@render children()}
 	</div>
@@ -17,23 +23,3 @@
 		Weniger anzeigen
 	</button>
 {/if}
-
-<style>
-	.row {
-		max-height: 8rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		content: '';
-		position: relative;
-		cursor: pointer;
-	}
-	.row::before {
-		content: '';
-		width: 100%;
-		height: 100%;
-		position: absolute;
-		left: 0;
-		top: 0;
-		background: linear-gradient(transparent 2rem, white);
-	}
-</style>

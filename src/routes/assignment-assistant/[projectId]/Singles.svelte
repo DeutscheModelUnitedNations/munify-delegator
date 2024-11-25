@@ -26,16 +26,22 @@
 			assignSingleRole(draggedItem.id, targetContainer.split('-')[1]);
 		}
 	}
+
+	let getNumAssignmentsForRole = (role: string) =>
+		getSingleApplications().filter((x) => x.assignedRole?.id === role).length;
 </script>
 
 <TextPreview>
 	<h2>Behandlung der Einzelteilnehmenden</h2>
 	<p>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-		labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-		laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-		voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat
-		non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		In diesem Abschnitt können vor der eigentlichen Zuteilung die Einzelteilnehmenden behandelt
+		werden. Der Einzelteilnehmenden-Pool enthält alle noch nicht zugeordneten Einzelteilnehmenden.
+		Diese können per Drag-and-Drop in die entsprechenden Rollen verschoben werden.
+	</p>
+	<p>
+		Es ist auch möglich, Einzelteilnehmenden zur Delegation zu konvertieren. So können diese in der
+		Delegationszuteilung direkt berücksichtigt und automatisch zugeteilt werden. Daher ist es
+		sinnvoll, die Zuteilung der Einzelteilnehmenden vor der Delegationszuteilung durchzuführen.
 	</p>
 </TextPreview>
 
@@ -59,7 +65,7 @@
 	{#each getSingleRoles() as role}
 		{#if !role.name.toLowerCase().startsWith('einzel')}
 			<div class="flex flex-col gap-4 rounded-lg bg-base-200 p-4 shadow-lg">
-				<h2 class="text-xl font-bold">{role.name}</h2>
+				<h2 class="text-xl font-bold">{role.name} ({getNumAssignmentsForRole(role.id)})</h2>
 				<div class="flex flex-wrap gap-2">
 					{#each getSingleApplications().filter((x) => x.assignedRole?.id === role.id) as application}
 						<div
