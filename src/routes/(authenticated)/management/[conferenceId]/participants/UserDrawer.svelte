@@ -4,8 +4,6 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
-	import { error } from '@sveltejs/kit';
-	import Spinner from '$lib/components/Spinner.svelte';
 
 	interface Props {
 		user: UserRowData;
@@ -22,7 +20,8 @@
 		};
 	};
 
-	const userQuery = graphql(`
+	//TODO the types are broken here?
+	const userQuery: any = graphql(`
 		query UserDrawerQuery($userId: String!, $conferenceId: String!) @load {
 			findUniqueUser(where: { id: $userId }) {
 				id

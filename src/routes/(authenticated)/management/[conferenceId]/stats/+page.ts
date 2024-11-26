@@ -57,6 +57,8 @@ export const load: PageLoad = async (event) => {
 		blocking: true
 	});
 
+	console.log(data);
+
 	if (!data) {
 		throw error(404, 'Data not found');
 	}

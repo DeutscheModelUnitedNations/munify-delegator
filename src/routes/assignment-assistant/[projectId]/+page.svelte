@@ -7,7 +7,8 @@
 	import { loadProjects } from './appData.svelte';
 	import Weighting from './Weighting.svelte';
 	import Assignment from './Assignment.svelte';
-	import Summary from './Assignment.svelte';
+	import Summary from './Summary.svelte';
+	import Singles from './Singles.svelte';
 
 	interface Props {
 		data: PageData;
@@ -15,7 +16,7 @@
 
 	let { data }: Props = $props();
 
-	let tab = $state(2);
+	let tab = $state(0);
 
 	onMount(() => {
 		console.log(data);
@@ -27,12 +28,13 @@
 	<Tabs>
 		<Tab active={tab === 0} title="Sichtung" icon="eye" onclick={() => (tab = 0)} />
 		<Tab active={tab === 1} title="Gewichtung" icon="balance-scale" onclick={() => (tab = 1)} />
-		<Tab active={tab === 2} title="Zuweisung" icon="hand-point-right" onclick={() => (tab = 2)} />
+		<Tab active={tab === 2} title="Singles" icon="user-tie" onclick={() => (tab = 2)} />
+		<Tab active={tab === 3} title="Zuweisung" icon="split" onclick={() => (tab = 3)} />
 		<Tab
-			active={tab === 3}
+			active={tab === 4}
 			title="Zusammenfassung"
 			icon="clipboard-list"
-			onclick={() => (tab = 3)}
+			onclick={() => (tab = 4)}
 		/>
 	</Tabs>
 
@@ -45,10 +47,14 @@
 	{/if}
 
 	{#if tab === 2}
-		<Assignment />
+		<Singles />
 	{/if}
 
 	{#if tab === 3}
+		<Assignment />
+	{/if}
+
+	{#if tab === 4}
 		<Summary />
 	{/if}
 </main>
