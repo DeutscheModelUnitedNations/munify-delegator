@@ -154,6 +154,12 @@ export const getProject = () => {
 	return selectedProject;
 };
 
+export const getConference: () => Conference | undefined = () => {
+	const project = getProject();
+	if (!project) return undefined;
+	return project.data.conference;
+};
+
 export const getApplications = () => {
 	const project = getProject();
 	if (!project) return [];
