@@ -65,3 +65,9 @@ builder.scalarType('File', {
 		throw new Error('File type cannot be serialized');
 	}
 });
+
+builder.scalarType('Unknown', {
+	serialize: async () => {
+		throw new Error('Unknown type cannot be serialized');
+	}
+});
