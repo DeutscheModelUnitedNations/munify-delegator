@@ -429,7 +429,6 @@ export const unassignSingleRole = (singleId: string) => {
 	saveProjects();
 };
 
-
 // const sendAssigmentDataMutation = graphql(`
 // 	mutation SendAssignmentDataMutation($where: ConferenceWhereUniqueInput, $data: Json!) {
 // 		sendAssignmentData(where: $where, data: $data) {
