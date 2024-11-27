@@ -1,6 +1,6 @@
 query ConferencesPreview {
 	findManyConferences {
-		startRegistration
+		state
 		startAssignment
 		location
 		title

@@ -9,6 +9,7 @@
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
 	import { toast } from '@zerodevx/svelte-toast';
+	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -53,9 +54,35 @@
 			/>
 		{/if}
 		<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
-		<FormDateTimeInput {form} name="startRegistration" label={m.conferenceStartRegistration()} />
 		<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+		<FormSelect
+			{form}
+			name="state"
+			label={m.conferenceStatus()}
+			options={[
+				{
+					label: m.conferenceStatusPre(),
+					value: 'PRE'
+				},
+				{
+					label: m.conferenceStatusParticipantRegistration(),
+					value: 'PARTICIPANT_REGISTRATION'
+				},
+				{
+					label: m.conferenceStatusPreparation(),
+					value: 'PREPARATION'
+				},
+				{
+					label: m.conferenceStatusActive(),
+					value: 'ACTIVE'
+				},
+				{
+					label: m.conferenceStatusPost(),
+					value: 'POST'
+				}
+			]}
+		/>
 	</Form>
 </div>

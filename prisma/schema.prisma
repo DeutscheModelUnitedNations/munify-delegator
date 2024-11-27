@@ -17,8 +17,16 @@ generator pothosCrud {
   generatorConfigPath = "./pothos.config.ts"
 }
 
+enum ConferenceState {
+  PRE // the conference is created but applying is not possible yet
+  PARTICIPANT_REGISTRATION // applications are open
+  PREPARATION // preparation starts, e.g. participants can assign in the given boundaries what they want to do (e.g. head delegate decides who is going into which committee)
+  ACTIVE // the conference is currently running
+  POST // the conference is over and things like downloading the participation certificate are possible
+}
+
 model Conference {
-  id                String   @id @default(nanoid())
+  id                String          @id @default(nanoid())
   title             String
   longTitle         String?
   location          String?
@@ -26,7 +34,7 @@ model Conference {
   website           String?
   imageDataURL      String?
   info              String?
-  startRegistration DateTime
+  state             ConferenceState @default(PRE)
   startAssignment   DateTime
   startConference   DateTime
   endConference     DateTime

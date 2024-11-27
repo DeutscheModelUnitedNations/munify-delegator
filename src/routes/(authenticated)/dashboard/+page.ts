@@ -21,7 +21,7 @@ const myConferences = graphql(`
 			longTitle
 			language
 			imageDataURL
-			startRegistration
+			state
 			startAssignment
 			startConference
 			endConference

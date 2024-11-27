@@ -19,7 +19,7 @@
 			| 'longTitle'
 			| 'startAssignment'
 			| 'startConference'
-			| 'startRegistration'
+			| 'state'
 		>;
 
 		baseSlug: string;
@@ -30,7 +30,7 @@
 	let { conference, baseSlug, btnText, alreadyRegistered }: ConferenceCardProps = $props();
 
 	let registrationStatus: 'OPEN' | 'CLOSED' | 'NOT_YET_OPEN' | 'UNKNOWN' = $derived.by(() => {
-		if (new Date().getTime() < new Date(conference.startRegistration).getTime()) {
+		if (conference.state === 'PRE') {
 			return 'NOT_YET_OPEN';
 		}
 
@@ -41,7 +41,7 @@
 		}
 
 		if (
-			new Date().getTime() >= new Date(conference.startRegistration).getTime() &&
+			conference.state === 'PARTICIPANT_REGISTRATION' &&
 			new Date().getTime() <= new Date(conference.startAssignment).getTime()
 		) {
 			return 'OPEN';
@@ -78,9 +78,7 @@
 						: registrationStatus === 'CLOSED'
 							? m.registrationClosed()
 							: registrationStatus === 'NOT_YET_OPEN'
-								? m.registrationNotYetOpen({
-										date: `${new Date(conference.startRegistration as unknown as string)?.toLocaleDateString(languageTag(), dateOptions) ?? ''}`
-									})
+								? m.registrationNotYetOpen()
 								: m.unknownRegistrationStatus()
 			}
 		];

@@ -15,7 +15,7 @@ const conferenceQuery = graphql(`
 			longTitle
 			startAssignment
 			startConference
-			startRegistration
+			state
 			title
 			website
 			endConference

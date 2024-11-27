@@ -5,7 +5,7 @@ query ConferenceOpenForRegistrationQuery($userId: String!) {
 		longTitle
 		startAssignment
 		startConference
-		startRegistration
+		state
 		title
 		website
 		endConference

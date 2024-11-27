@@ -35,7 +35,7 @@
 			{/if}
 
 			{#if conferenceQueryData?.findUniqueSingleParticipant}
-				{#if Date.now() > conference!.startRegistration.getTime() && Date.now() < conference!.startAssignment.getTime()}
+				{#if conference!.state === 'PARTICIPANT_REGISTRATION' && Date.now() < conference!.startAssignment.getTime()}
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if Date.now() > conference!.startAssignment.getTime() && Date.now() < conference!.startConference.getTime()}
 					#TODO: Implement individual assignment stage
@@ -45,7 +45,7 @@
 					#TODO: Implement individual post conference stage
 				{/if}
 			{:else if conferenceQueryData?.findUniqueDelegationMember}
-				{#if Date.now() > conference!.startRegistration.getTime() && Date.now() < conference!.startAssignment.getTime()}
+				{#if conference!.state === 'PARTICIPANT_REGISTRATION' && Date.now() < conference!.startAssignment.getTime()}
 					<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if Date.now() > conference!.startAssignment.getTime() && Date.now() < conference!.startConference.getTime()}
 					<!-- <PreConferenceStage /> -->

@@ -42,7 +42,6 @@ const conference = await seedDb.conference.create({
 		location: 'Stuttgart',
 		website: 'https://munbw.de',
 		language: 'Deutsch',
-		startRegistration: new Date('2024-10-01T00:00:00.000Z'),
 		startAssignment: new Date('2024-11-30T00:00:00.000Z'),
 		startConference: new Date('2025-05-29T00:00:00.000Z'),
 		endConference: new Date('2025-06-02T00:00:00.000Z')
