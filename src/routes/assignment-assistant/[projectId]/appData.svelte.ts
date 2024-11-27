@@ -429,10 +429,21 @@ export const unassignSingleRole = (singleId: string) => {
 	saveProjects();
 };
 
-// const sendAssigmentDataMutation = graphql(`
-// 	mutation SendAssignmentDataMutation($where: ConferenceWhereUniqueInput, $data: Json!) {
-// 		sendAssignmentData(where: $where, data: $data) {
-// 			success
-// 		}
-// 	}
-// `);
+const sendAssigmentDataMutation = graphql(`
+	mutation SendAssignmentDataMutation($where: ConferenceWhereUniqueInput!, $data: JSONObject!) {
+		sendAssignmentData(data: $data, where: $where) {
+			success
+		}
+	}
+`);
+
+export const sendAssignmentData = async (id: string, data: Project) => {
+	const req = await sendAssigmentDataMutation.mutate({
+		where: { id },
+		data
+	});
+
+	if (!req.data?.sendAssignmentData.success) {
+		throw new Error('Failed to send assignment data');
+	}
+};

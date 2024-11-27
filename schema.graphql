@@ -1160,6 +1160,8 @@ input IntWithAggregatesFilter {
   notIn: [Int!]
 }
 
+scalar JSONObject
+
 type Mutation {
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(entryCode: String!): DelegationMember!
@@ -1178,6 +1180,7 @@ type Mutation {
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
+  sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   updateOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
@@ -1873,6 +1876,10 @@ input RoleApplicationWhereUniqueInput {
   nonStateActor: NonStateActorWhereInput
   nonStateActorId: StringNullableFilter
   rank: IntFilter
+}
+
+type SetAssignmentDataResult {
+  success: Boolean!
 }
 
 type SingleParticipant {

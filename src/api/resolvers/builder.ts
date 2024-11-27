@@ -18,10 +18,10 @@ export const builder = new SchemaBuilder<{
 			Input: File;
 			Output: never;
 		};
-		// JSONObject: {
-		// 	Input: any;
-		// 	Output: any;
-		// };
+		JSONObject: {
+			Input: any;
+			Output: any;
+		};
 	};
 	PrismaTypes: PrismaTypes;
 	DefaultFieldNullability: false;
@@ -70,17 +70,17 @@ builder.scalarType('File', {
 	}
 });
 
-// builder.scalarType('JSONObject', {
-// 	serialize: (value) => {
-// 			return value;
-// 	},
+builder.scalarType('JSONObject', {
+	serialize: (value) => {
+			return value;
+	},
 
-// 	parseValue: (value: any) => {
-// 			if (value !== null && value !== undefined) {
-// 					return value;
-// 			}
-// 			else {
-// 					throw new Error('JSONObject cannot represent non-object value: ' + value);
-// 			}
-// 	}
-// })
+	parseValue: (value: any) => {
+			if (value !== null && value !== undefined) {
+					return value;
+			}
+			else {
+					throw new Error('JSONObject cannot represent non-object value: ' + value);
+			}
+	}
+})

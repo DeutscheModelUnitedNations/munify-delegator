@@ -5,40 +5,40 @@ import { ProjectSchema } from '../../../routes/assignment-assistant/[projectId]/
 import { builder } from '../builder';
 import * as m from '$lib/paraglide/messages';
 
-// builder.mutationFields((t) => {
-// 	return {
-// 		sendAssignmentData: t.field({
-// 			type: t.builder.simpleObject('SetAssignmentDataResult', {
-// 				fields: (t) => ({
-// 					success: t.boolean()
-// 				})
-// 			}),
-// 			args: {
-// 				...findUniqueConferenceQueryArgs,
-// 				data: t.arg({ type: 'JSONObject' })
-// 			},
-// 			resolve: (root, args, ctx) => {
-// 				const conference = db.conference.findUniqueOrThrow({
-// 					where: {
-// 						...args.where,
-// 						AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
-// 					}
-// 				});
+builder.mutationFields((t) => {
+	return {
+		sendAssignmentData: t.field({
+			type: t.builder.simpleObject('SetAssignmentDataResult', {
+				fields: (t) => ({
+					success: t.boolean()
+				})
+			}),
+			args: {
+				...findUniqueConferenceQueryArgs,
+				data: t.arg({ type: 'JSONObject' })
+			},
+			resolve: (root, args, ctx) => {
+				const conference = db.conference.findUniqueOrThrow({
+					where: {
+						...args.where,
+						AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
+					}
+				});
 
-// 				if (!args.data) {
-// 					throw new GraphQLError(m.plausibilityIncompleteOrInvalidData());
-// 				}
+				if (!args.data) {
+					throw new GraphQLError(m.plausibilityIncompleteOrInvalidData());
+				}
 
-// 				const data = ProjectSchema.parse(args.data);
+				const data = ProjectSchema.parse(args.data);
 
-// 				db.$transaction(async (tx) => {
-// 					// TODO implement
-// 				});
+				db.$transaction(async (tx) => {
+					// TODO implement
+				});
 
-// 				return {
-// 					success: true
-// 				};
-// 			}
-// 		})
-// 	};
-// });
+				return {
+					success: true
+				};
+			}
+		})
+	};
+});
