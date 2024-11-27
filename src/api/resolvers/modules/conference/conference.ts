@@ -9,7 +9,7 @@ import {
 	ConferenceLongTitleFieldObject,
 	ConferenceStartAssignmentFieldObject,
 	ConferenceStartConferenceFieldObject,
-	ConferenceStartRegistrationFieldObject,
+	ConferenceStateFieldObject,
 	ConferenceTitleFieldObject,
 	ConferenceWebsiteFieldObject,
 	deleteOneConferenceMutationObject,
@@ -20,6 +20,7 @@ import {
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
+import { ConferenceState } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('Conference', {
 	fields: (t) => ({
@@ -31,7 +32,7 @@ builder.prismaObject('Conference', {
 		language: t.field(ConferenceLanguageFieldObject),
 		website: t.field(ConferenceWebsiteFieldObject),
 		imageDataURL: t.field(ConferenceImageDataURLFieldObject),
-		startRegistration: t.field(ConferenceStartRegistrationFieldObject),
+		state: t.field(ConferenceStateFieldObject),
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
 		endConference: t.field(ConferenceEndConferenceFieldObject),
@@ -164,7 +165,7 @@ builder.mutationFields((t) => {
 								type: 'File',
 								required: false
 							}),
-							startRegistration: t.field({ type: 'DateTime', required: false }),
+							state: t.field({ type: ConferenceState, required: false }),
 							startAssignment: t.field({ type: 'DateTime', required: false }),
 							startConference: t.field({ type: 'DateTime', required: false }),
 							endConference: t.field({ type: 'DateTime', required: false })
@@ -190,7 +191,7 @@ builder.mutationFields((t) => {
 						imageDataURL: dataURL,
 						title: args.data.title ?? undefined,
 						info: args.data.info ?? undefined,
-						startRegistration: args.data.startRegistration ?? undefined,
+						state: args.data.state ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
 						startConference: args.data.startConference ?? undefined,
 						endConference: args.data.endConference ?? undefined

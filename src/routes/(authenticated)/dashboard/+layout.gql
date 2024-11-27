@@ -13,6 +13,6 @@ query GetMyActiveConferencesQuery($userId: String!) {
 		startConference
 		endConference
 		startAssignment
-		startRegistration
+		state
 	}
 }

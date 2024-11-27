@@ -35,9 +35,6 @@ export const conferenceSettingsFormSchema = z.object({
 		.instanceof(File)
 		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
 		.optional(),
-	startRegistration: z.date({
-		message: m.pleaseEnterAValidDate()
-	}),
 	startAssignment: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),
@@ -46,5 +43,12 @@ export const conferenceSettingsFormSchema = z.object({
 	}),
 	endConference: z.date({
 		message: m.pleaseEnterAValidDate()
-	})
+	}),
+	state: z.union([
+		z.literal('PRE'),
+		z.literal('PARTICIPANT_REGISTRATION'),
+		z.literal('PREPARATION'),
+		z.literal('ACTIVE'),
+		z.literal('POST')
+	])
 });

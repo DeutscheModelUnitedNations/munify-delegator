@@ -158,7 +158,7 @@ type Conference {
   singleParticipants: [SingleParticipant!]!
   startAssignment: DateTime!
   startConference: DateTime!
-  startRegistration: DateTime!
+  state: ConferenceState!
   teamMembers: [TeamMember!]!
   title: String!
   website: String
@@ -182,7 +182,7 @@ input ConferenceCreateInput {
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
   startAssignment: DateTime!
   startConference: DateTime!
-  startRegistration: DateTime!
+  state: ConferenceState
   teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
   title: String!
   website: String
@@ -206,7 +206,7 @@ input ConferenceOrderByWithRelationInput {
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
   startAssignment: SortOrder
   startConference: SortOrder
-  startRegistration: SortOrder
+  state: SortOrder
   teamMembers: TeamMemberOrderByRelationAggregateInput
   title: SortOrder
   website: SortOrder
@@ -339,9 +339,17 @@ enum ConferenceScalarFieldEnum {
   longTitle
   startAssignment
   startConference
-  startRegistration
+  state
   title
   website
+}
+
+enum ConferenceState {
+  ACTIVE
+  PARTICIPANT_REGISTRATION
+  POST
+  PRE
+  PREPARATION
 }
 
 type ConferenceSupervisor {
@@ -475,7 +483,7 @@ input ConferenceUpdateDataInput {
   longTitle: String
   startAssignment: DateTime
   startConference: DateTime
-  startRegistration: DateTime
+  state: ConferenceState
   title: String
   website: String
 }
@@ -498,7 +506,7 @@ input ConferenceUpdateInput {
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
-  startRegistration: DateTimeFieldUpdateOperationsInput
+  state: EnumConferenceStateFieldUpdateOperationsInput
   teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
   title: StringFieldUpdateOperationsInput
   website: NullableStringFieldUpdateOperationsInput
@@ -514,7 +522,7 @@ input ConferenceUpdateManyMutationInput {
   longTitle: NullableStringFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
-  startRegistration: DateTimeFieldUpdateOperationsInput
+  state: EnumConferenceStateFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   website: NullableStringFieldUpdateOperationsInput
 }
@@ -540,7 +548,7 @@ input ConferenceWhereInput {
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
-  startRegistration: DateTimeFilter
+  state: EnumConferenceStateFilter
   teamMembers: TeamMemberListRelationFilter
   title: StringFilter
   website: StringNullableFilter
@@ -567,7 +575,7 @@ input ConferenceWhereUniqueInput {
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
-  startRegistration: DateTimeFilter
+  state: EnumConferenceStateFilter
   teamMembers: TeamMemberListRelationFilter
   title: StringFilter
   website: StringNullableFilter
@@ -1050,6 +1058,27 @@ input EnumAdministrativeStatusWithAggregatesFilter {
   notIn: [AdministrativeStatus!]
 }
 
+input EnumConferenceStateFieldUpdateOperationsInput {
+  set: ConferenceState
+}
+
+input EnumConferenceStateFilter {
+  equals: ConferenceState
+  in: [ConferenceState!]
+  not: ConferenceState
+  notIn: [ConferenceState!]
+}
+
+input EnumConferenceStateWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumConferenceStateFilter
+  _min: NestedEnumConferenceStateFilter
+  equals: ConferenceState
+  in: [ConferenceState!]
+  not: ConferenceState
+  notIn: [ConferenceState!]
+}
+
 input EnumFoodPreferenceNullableFilter {
   equals: FoodPreference
   in: [FoodPreference!]
@@ -1326,6 +1355,23 @@ input NestedEnumAdministrativeStatusWithAggregatesFilter {
   in: [AdministrativeStatus!]
   not: AdministrativeStatus
   notIn: [AdministrativeStatus!]
+}
+
+input NestedEnumConferenceStateFilter {
+  equals: ConferenceState
+  in: [ConferenceState!]
+  not: ConferenceState
+  notIn: [ConferenceState!]
+}
+
+input NestedEnumConferenceStateWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumConferenceStateFilter
+  _min: NestedEnumConferenceStateFilter
+  equals: ConferenceState
+  in: [ConferenceState!]
+  not: ConferenceState
+  notIn: [ConferenceState!]
 }
 
 input NestedEnumFoodPreferenceNullableFilter {

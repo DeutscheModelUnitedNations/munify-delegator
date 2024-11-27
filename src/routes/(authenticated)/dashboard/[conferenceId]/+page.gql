@@ -3,7 +3,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 		id
 		title
 		info
-		startRegistration
+		state
 		startConference
 		startAssignment
 		endConference
