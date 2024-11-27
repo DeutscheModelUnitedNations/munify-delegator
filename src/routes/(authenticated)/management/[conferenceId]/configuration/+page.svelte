@@ -57,7 +57,7 @@
 		<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
-		<!-- <FormSelect
+		<FormSelect
 			{form}
 			name="state"
 			label={m.conferenceStatus()}
@@ -83,6 +83,6 @@
 					value: 'POST'
 				}
 			]}
-		/> -->
+		/>
 	</Form>
 </div>
