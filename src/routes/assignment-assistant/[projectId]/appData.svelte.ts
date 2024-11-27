@@ -1,135 +1,162 @@
 import { goto } from '$app/navigation';
 import { RAW_DATA_KEY } from '../local_storage_keys';
+import { z } from 'zod';
 
-interface Project {
-	id: string;
-	created: string;
-	fileName: string;
-	data: ProjectData;
-}
+export const NationSchema = z.object({
+	alpha2Code: z.string(),
+	alpha3Code: z.string()
+});
 
-interface ProjectData {
-	conference: Conference;
-	delegations: Delegation[];
-	singleParticipants: SingleParticipant[];
-}
+export const CommitteeSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	abbreviation: z.string(),
+	numOfSeatsPerDelegation: z.number(),
+	nations: z.array(NationSchema)
+});
 
-export interface Conference {
-	id: string;
-	title: string;
-	committees: Committee[];
-	nonStateActors: NonStateActor[];
-	individualApplicationOptions: IndividualApplicationOption[];
-}
+export const IndividualApplicationOptionSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	fontAwesomeIcon: z.string().nullable()
+});
 
-export interface Committee {
-	id: string;
-	name: string;
-	abbreviation: string;
-	numOfSeatsPerDelegation: number;
-	nations: Nation[];
-}
+export const NonStateActorSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	abbreviation: z.string(),
+	fontAwesomeIcon: z.string().nullable(),
+	seatAmount: z.number()
+});
 
-export interface Nation {
-	alpha2Code: string;
-	alpha3Code: string;
-}
+export const AppliedForDelegationRoleSchema = z.object({
+	id: z.string(),
+	rank: z.number(),
+	nation: NationSchema.optional(),
+	nonStateActor: NonStateActorSchema.optional(),
+	fontAwesomeIcon: z.never(),
+	name: z.never()
+});
 
-export interface IndividualApplicationOption {
-	id: string;
-	name: string;
-	fontAwesomeIcon: string | null;
-}
+export const UserSchema = z.object({
+	id: z.string(),
+	family_name: z.string(),
+	given_name: z.string(),
+	birthday: z.string().optional()
+});
 
-export interface Delegation extends SightingProps, DelegationAssignment, NSAAssignment {
-	id: string;
-	motivation: string;
-	experience: string;
-	school: string;
-	appliedForRoles: AppliedForDelegationRole[];
-	members: Member[];
-	supervisors: Supervisor[];
-	user: never;
-	splittedFrom: string | undefined;
-	splittedInto: string[] | undefined;
-}
+export const MemberSchema = z.object({
+	id: z.string(),
+	isHeadDelegate: z.boolean(),
+	user: UserSchema
+});
 
-export interface AppliedForDelegationRole {
-	id: string;
-	rank: number;
-	nation?: Nation;
-	nonStateActor?: NonStateActor;
-	fontAwesomeIcon: never;
-	name: never;
-}
+export const SupervisorSchema = z.object({
+	id: z.string(),
+	delegations: z.array(z.object({ id: z.string() })),
+	user: UserSchema
+});
 
-export interface NonStateActor {
-	id: string;
-	name: string;
-	abbreviation: string;
-	fontAwesomeIcon: string | null;
-	seatAmount: number;
-}
+export const AppliedForSingleRoleSchema = z.object({
+	id: z.string(),
+	fontAwesomeIcon: z.string().nullable(),
+	name: z.string(),
+	rank: z.never(),
+	nation: z.never(),
+	nonStateActor: z.never()
+});
 
-export interface Member {
-	id: string;
-	isHeadDelegate: boolean;
-	user: User;
-}
+export const SightingPropsSchema = z.object({
+	evaluation: z.number().optional(),
+	flagged: z.boolean().optional(),
+	disqualified: z.boolean().optional(),
+	note: z.string().optional()
+});
 
-export interface User {
-	id: string;
-	family_name: string;
-	given_name: string;
-	birthday?: string;
-}
+export const DelegationAssignmentSchema = z.object({
+	assignedNation: NationSchema.optional()
+});
 
-export interface Supervisor {
-	id: string;
-	delegations: { id: string }[];
-	user: User;
-}
+export const NSAAssignmentSchema = z.object({
+	assignedNSA: NonStateActorSchema.optional()
+});
 
-export interface SingleParticipant extends SightingProps, SingleAssignment {
-	id: string;
-	motivation: string;
-	school: string;
-	experience: string;
-	user: User;
-	appliedForRoles: AppliedForSingleRole[];
-	supervisors: never;
-	members: never;
-	splittedFrom: never;
-	splittedInto: never;
-}
+export const SingleAssignmentSchema = z.object({
+	assignedRole: IndividualApplicationOptionSchema.optional()
+});
 
-export interface AppliedForSingleRole {
-	id: string;
-	fontAwesomeIcon: string | null;
-	name: string;
-	rank: never;
-	nation?: never;
-	nonStateActor?: never;
-}
+export const ConferenceSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	committees: z.array(CommitteeSchema),
+	nonStateActors: z.array(NonStateActorSchema),
+	individualApplicationOptions: z.array(IndividualApplicationOptionSchema)
+});
 
-export interface SightingProps {
-	evaluation?: number;
-	flagged?: boolean;
-	disqualified?: boolean;
-	note?: string;
-}
+export const DelegationSchema = z
+	.object({
+		id: z.string(),
+		motivation: z.string(),
+		experience: z.string(),
+		school: z.string(),
+		appliedForRoles: z.array(AppliedForDelegationRoleSchema),
+		members: z.array(MemberSchema),
+		supervisors: z.array(SupervisorSchema),
+		user: z.never(),
+		splittedFrom: z.string().optional(),
+		splittedInto: z.array(z.string()).optional()
+	})
+	.merge(SightingPropsSchema)
+	.merge(DelegationAssignmentSchema)
+	.merge(NSAAssignmentSchema);
 
-export interface DelegationAssignment {
-	assignedNation?: Nation;
-}
+export const SingleParticipantSchema = z
+	.object({
+		id: z.string(),
+		motivation: z.string(),
+		school: z.string(),
+		experience: z.string(),
+		user: UserSchema,
+		appliedForRoles: z.array(AppliedForSingleRoleSchema),
+		supervisors: z.never(),
+		members: z.never(),
+		splittedFrom: z.never(),
+		splittedInto: z.never()
+	})
+	.merge(SightingPropsSchema)
+	.merge(SingleAssignmentSchema);
 
-export interface NSAAssignment {
-	assignedNSA?: NonStateActor;
-}
+export const ProjectDataSchema = z.object({
+	conference: ConferenceSchema,
+	delegations: z.array(DelegationSchema),
+	singleParticipants: z.array(SingleParticipantSchema)
+});
 
-export interface SingleAssignment {
-	assignedRole?: IndividualApplicationOption;
-}
+export const ProjectSchema = z.object({
+	id: z.string(),
+	created: z.string(),
+	fileName: z.string(),
+	data: ProjectDataSchema
+});
+
+export type Nation = z.infer<typeof NationSchema>;
+export type Committee = z.infer<typeof CommitteeSchema>;
+export type IndividualApplicationOption = z.infer<typeof IndividualApplicationOptionSchema>;
+export type NonStateActor = z.infer<typeof NonStateActorSchema>;
+export type AppliedForDelegationRole = z.infer<typeof AppliedForDelegationRoleSchema>;
+export type Delegation = z.infer<typeof DelegationSchema>;
+export type AppliedForSingleRole = z.infer<typeof AppliedForSingleRoleSchema>;
+export type SingleParticipant = z.infer<typeof SingleParticipantSchema>;
+export type User = z.infer<typeof UserSchema>;
+export type Member = z.infer<typeof MemberSchema>;
+export type Supervisor = z.infer<typeof SupervisorSchema>;
+export type SightingProps = z.infer<typeof SightingPropsSchema>;
+export type DelegationAssignment = z.infer<typeof DelegationAssignmentSchema>;
+export type NSAAssignment = z.infer<typeof NSAAssignmentSchema>;
+export type SingleAssignment = z.infer<typeof SingleAssignmentSchema>;
+export type Conference = z.infer<typeof ConferenceSchema>;
+export type ProjectData = z.infer<typeof ProjectDataSchema>;
+export type Project = z.infer<typeof ProjectSchema>;
 
 let allProjects: Project[] = $state([]);
 let selectedProject: Project | undefined = $state();
@@ -195,10 +222,10 @@ export const getNations: () => {
 }[] = () => {
 	const project = getProject();
 	if (!project) return [];
-	let role: { nation: Nation; seats: number; committees: string[] }[] = [];
+	const role: { nation: Nation; seats: number; committees: string[] }[] = [];
 	project.data.conference.committees.forEach((committee) => {
 		committee.nations.forEach((nation) => {
-			let entry = role.find((role) => role.nation.alpha2Code === nation.alpha2Code);
+			const entry = role.find((role) => role.nation.alpha2Code === nation.alpha2Code);
 			if (entry) {
 				entry.seats += committee.numOfSeatsPerDelegation;
 				entry.committees = [committee.abbreviation, ...entry.committees];
@@ -257,7 +284,7 @@ export const evaluateApplication = (id: string, evaluation: number) => {
 export const addNote = (id: string, note: string) => {
 	const application = getApplications().find((application) => application.id === id);
 	if (application) {
-		note ? (application.note = note) : (application.note = undefined);
+		application.note = note ?? undefined;
 	}
 	saveProjects();
 };
