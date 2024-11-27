@@ -9,7 +9,7 @@
 	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
-	import type { PageData } from './$types';
+	import type { PageData } from './$houdini';
 	import { toast } from '@zerodevx/svelte-toast';
 
 	let { data }: { data: PageData } = $props();

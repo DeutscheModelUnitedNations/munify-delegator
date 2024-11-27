@@ -15,8 +15,8 @@
 	</div>
 	{#if stats?.age}
 		<ChartBar
-			values={Object.values(stats?.age.distribution)}
-			labels={Object.keys(stats?.age.distribution)}
+			values={Object.values(stats?.age.distribution.map((x) => x.value))}
+			labels={Object.keys(stats?.age.distribution.map((x) => x.key))}
 			formatter={(v, l) => {
 				return `${v}x ${l} ${m.years()}`;
 			}}

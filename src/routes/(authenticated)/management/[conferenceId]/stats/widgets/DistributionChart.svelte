@@ -22,8 +22,8 @@
 			<StackChart
 				{...chartProps}
 				values={[
-					getFilteredValue(stats.registered.delegationMembers),
-					getFilteredValue(stats.registered.singleParticipants),
+					getFilteredValue(stats.registered.delegationMembers)!,
+					getFilteredValue(stats.registered.singleParticipants)!,
 					stats.registered.supervisors
 				]}
 				vertical
@@ -33,8 +33,8 @@
 			<StackChart
 				{...chartProps}
 				values={[
-					getFilteredValue(stats.registered.delegationMembers),
-					getFilteredValue(stats.registered.singleParticipants),
+					getFilteredValue(stats.registered.delegationMembers)!,
+					getFilteredValue(stats.registered.singleParticipants)!,
 					stats.registered.supervisors
 				]}
 			/>

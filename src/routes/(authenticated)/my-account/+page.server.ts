@@ -1,4 +1,4 @@
-import type { PageLoad } from './$types';
+import type { PageServerLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { userFormSchema } from './form-schema';
@@ -35,7 +35,7 @@ const userMutation = graphql(`
 	}
 `);
 
-export const load: PageLoad = async (event) => {
+export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
 	const { data } = await userQuery.fetch({ event, variables: { id: user.sub }, blocking: true });
 	const fullUser = data?.findUniqueUser;

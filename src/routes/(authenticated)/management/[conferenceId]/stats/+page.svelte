@@ -66,7 +66,7 @@
 			<p>{@html m.historyComparisonDescription()}</p>
 			<select
 				class="select select-bordered w-full max-w-xs"
-				onchange={(e) => setSelectedHistory(e.target?.value)}
+				onchange={(e) => setSelectedHistory((e.target as any)?.value)}
 			>
 				{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}
 					<option selected={timestamp === getSelectedHistory()}>

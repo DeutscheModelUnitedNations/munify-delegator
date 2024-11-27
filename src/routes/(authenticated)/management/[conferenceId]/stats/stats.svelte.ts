@@ -43,7 +43,7 @@ export interface SingleParticipants {
 
 export interface ByRole {
 	role: string;
-	fontAwesomeIcon?: string | undefined;
+	fontAwesomeIcon?: string | undefined | null;
 	total: number;
 	applied: number;
 	notApplied: number;
@@ -51,7 +51,7 @@ export interface ByRole {
 
 export interface Age {
 	average?: number;
-	distribution: { [x: string]: number };
+	distribution: { key: string; value: number }[];
 }
 
 export interface StatsTypeHistoryEntry {
