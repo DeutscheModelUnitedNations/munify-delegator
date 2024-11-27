@@ -4,4 +4,4 @@ pre-commit:
     format:
       run: bunx prettier --ignore-unknown --write "{staged_files}"
     lint:
-      run: bunx eslint "{staged_files}"
+      run: bunx eslint "{staged_files}""
