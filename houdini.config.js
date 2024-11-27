@@ -21,7 +21,7 @@ const config = {
 			}
 		},
 		JSONObject: {
-			type: "JSONObject",
+			type: 'JSONObject',
 			unmarshal(val) {
 				return JSON.parse(val);
 			},
