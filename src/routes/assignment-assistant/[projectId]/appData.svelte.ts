@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation';
+import { graphql } from '$houdini';
 import { RAW_DATA_KEY } from '../local_storage_keys';
 import { z } from 'zod';
 
@@ -427,3 +428,12 @@ export const unassignSingleRole = (singleId: string) => {
 	}
 	saveProjects();
 };
+
+
+// const sendAssigmentDataMutation = graphql(`
+// 	mutation SendAssignmentDataMutation($where: ConferenceWhereUniqueInput, $data: Json!) {
+// 		sendAssignmentData(where: $where, data: $data) {
+// 			success
+// 		}
+// 	}
+// `);

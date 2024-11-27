@@ -22,6 +22,7 @@ import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';
 import './modules/user';
+import './modules/assignments';
 import { maskError } from './errors';
 
 export const yogaInstance = createYoga<RequestEvent>({
