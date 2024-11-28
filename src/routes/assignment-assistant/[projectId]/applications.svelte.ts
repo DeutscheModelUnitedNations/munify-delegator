@@ -1,5 +1,6 @@
 import codenamize from '$lib/services/codenamize';
-import type { DelegationRole, RoleCategory, SingleRole } from './roles.svelte';
+import { RoleCategory } from './roles.svelte';
+import type { DelegationRole, SingleRole } from './roles.svelte';
 
 export interface Application {
 	id: string;
@@ -25,7 +26,7 @@ export interface DelegationApplication extends Application {
 
 export interface SingleApplication extends Application {}
 
-let applications = $state<Application[]>([]);
+const applications = $state<Application[]>([]);
 
 export const getApplications: () => (DelegationApplication | SingleApplication)[] = () => {
 	return applications;
@@ -62,7 +63,7 @@ export const addApplication = ({
 		assignedRole: null
 	};
 
-	if (category === 'Delegation' && number) {
+	if (category === RoleCategory.DELEGATON && number) {
 		(application as DelegationApplication).members = number;
 	}
 	applications.push(application);

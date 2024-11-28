@@ -1,4 +1,4 @@
-import type { PageLoad } from './$types';
+import type { PageServerLoad } from './$houdini';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
@@ -25,7 +25,7 @@ const createDelegation = graphql(`
 	}
 `);
 
-export const load: PageLoad = async (event) => {
+export const load: PageServerLoad = async (event) => {
 	const form = await superValidate(zod(createDelegationFormSchema));
 	return { form, conferenceId: event.params.conferenceId, origin: event.url.origin };
 };

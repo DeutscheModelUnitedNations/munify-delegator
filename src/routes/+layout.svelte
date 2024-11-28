@@ -37,6 +37,7 @@
 
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		children: Snippet;

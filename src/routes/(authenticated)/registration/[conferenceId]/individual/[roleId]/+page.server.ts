@@ -1,4 +1,4 @@
-import type { PageLoad } from './$types';
+import type { PageServerLoad } from './$houdini';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
@@ -47,7 +47,7 @@ const singleParticipantAndRoleQuery = graphql(`
 	}
 `);
 
-export const load: PageLoad = async (event) => {
+export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
 
 	const found = await singleParticipantAndRoleQuery.fetch({
@@ -68,7 +68,7 @@ export const load: PageLoad = async (event) => {
 		form,
 		conferenceId: event.params.conferenceId,
 		origin: event.url.origin,
-		role: found.data?.findUniqueCustomConferenceRole!
+		role: found.data!.findUniqueCustomConferenceRole!
 	};
 };
 

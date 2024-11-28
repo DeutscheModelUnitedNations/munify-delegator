@@ -79,22 +79,22 @@ builder.queryFields((t) => {
 // 	};
 // });
 
-builder.mutationFields((t) => {
-	const field = updateOneNonStateActorMutationObject(t);
-	return {
-		updateOneNonStateActor: t.prismaField({
-			...field,
-			args: { where: field.args.where },
-			resolve: (query, root, args, ctx, info) => {
-				args.where = {
-					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('update').NonStateActor]
-				};
-				return field.resolve(query, root, args, ctx, info);
-			}
-		})
-	};
-});
+// builder.mutationFields((t) => {
+// 	const field = updateOneNonStateActorMutationObject(t);
+// 	return {
+// 		updateOneNonStateActor: t.prismaField({
+// 			...field,
+// 			args: { where: field.args.where },
+// 			resolve: (query, root, args, ctx, info) => {
+// 				args.where = {
+// 					...args.where,
+// 					AND: [ctx.permissions.allowDatabaseAccessTo('update').NonStateActor]
+// 				};
+// 				return field.resolve(query, root, args, ctx, info);
+// 			}
+// 		})
+// 	};
+// });
 
 builder.mutationFields((t) => {
 	const field = deleteOneNonStateActorMutationObject(t);

@@ -37,7 +37,7 @@
 	"unknownLanguage": "Language unknown",
 	"registrationOpen": "Registration open until <span class=\"whitespace-nowrap\">{date}</span>",
 	"registrationClosed": "Registration closed",
-	"registrationNotYetOpen": "Registration starts on <span class=\"whitespace-nowrap\">{date}</span>",
+	"registrationNotYetOpen": "Registration starts soon!",
 	"unknownRegistrationStatus": "Registration status unknown",
 	"alreadRegistered": "Already registered",
 	"RegistrationNotPossible": "Registration not possible",

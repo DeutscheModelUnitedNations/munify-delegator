@@ -7,7 +7,7 @@
 		onClose?: () => void;
 		placement?: 'left' | 'right' | 'top' | 'bottom';
 		size?: string;
-		children?: Snippet;
+		children: Snippet;
 	}
 
 	let {

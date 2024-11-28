@@ -9,4 +9,4 @@ const schema = z.object({
 	LISTMONK_API_KEY: z.string()
 });
 
-export const configPrivate = schema.parse(process.env);
+export const config = schema.parse(process.env);

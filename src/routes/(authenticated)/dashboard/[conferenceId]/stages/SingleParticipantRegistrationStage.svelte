@@ -8,7 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { graphql } from '$houdini';
-	import type { StoresValues } from 'svelte/store';
+	import type { StoresValues } from '$lib/services/storeExtractorType';
 
 	let {
 		data

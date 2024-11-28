@@ -1,4 +1,4 @@
-import type { LayoutServerLoad } from '../$houdini';
+import type { LayoutServerLoad } from './$types';
 import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
 import { redirect } from '@sveltejs/kit';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
