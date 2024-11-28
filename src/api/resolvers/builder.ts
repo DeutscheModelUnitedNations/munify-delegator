@@ -5,11 +5,18 @@ import PrismaPlugin from '@pothos/plugin-prisma';
 import PrismaUtils from '@pothos/plugin-prisma-utils';
 import type PrismaTypes from '@pothos/plugin-prisma/generated';
 import ComplexityPlugin from '@pothos/plugin-complexity';
-import TracingPlugin, { wrapResolver, isRootField } from '@pothos/plugin-tracing';
+import TracingPlugin, { isRootField } from '@pothos/plugin-tracing';
+import { createOpenTelemetryWrapper } from '@pothos/tracing-opentelemetry';
 import type { Scalars } from 'prisma-generator-pothos-codegen';
 import type { Prisma } from '@prisma/client';
 import { type Context } from '$api/context/context';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
+import { tracer } from './tracer';
+
+const createSpan = createOpenTelemetryWrapper(tracer, {
+	includeSource: true,
+	includeArgs: true
+});
 
 export const builder = new SchemaBuilder<{
 	Context: Context;
@@ -48,13 +55,8 @@ export const builder = new SchemaBuilder<{
 		}
 	},
 	tracing: {
-		// Enable tracing for rootFields by default, other fields need to opt in
 		default: (config) => isRootField(config),
-		// Log resolver execution duration
-		wrap: (resolver, _options, config) =>
-			wrapResolver(resolver, (_error, duration) => {
-				console.info(`Executed resolver ${config.parentType}.${config.name} in ${duration}ms`);
-			})
+		wrap: (resolver, options) => createSpan(resolver, options)
 	}
 });
 

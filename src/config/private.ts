@@ -11,7 +11,11 @@ const schema = z.object({
 		),
 	OIDC_ROLE_CLAIM: z.string(),
 	SECRET: z.string(),
-	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')])
+	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
+	OTEL_SERVICE_NAME: z.string().default("MUNIFY-DELEGATOR"),
+	OTEL_SERVICE_VERSION: z.optional(z.string()),
+	OTEL_ENDPOINT_URL: z.optional(z.string()),
+	OTEL_AUTHORIZATION_HEADER: z.optional(z.string())
 });
 
 export const configPrivate = schema.parse(env);

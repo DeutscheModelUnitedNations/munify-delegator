@@ -24,6 +24,7 @@ import './modules/teamMember';
 import './modules/user';
 import './modules/assignments';
 import { maskError } from './errors';
+import { graphqlYogaTracerPlugin } from './tracer';
 
 export const yogaInstance = createYoga<RequestEvent>({
 	schema: builder.toSchema(),
@@ -32,5 +33,6 @@ export const yogaInstance = createYoga<RequestEvent>({
 	maskedErrors: {
 		maskError
 	},
-	context
+	context,
+	plugins: [graphqlYogaTracerPlugin]
 });

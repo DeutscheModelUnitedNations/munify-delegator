@@ -1182,16 +1182,11 @@ type Mutation {
   deleteOneUser(where: UserWhereUniqueInput!): User
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
-  updateOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
-  updateOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
   updateOneConferenceSupervisor(data: ConferenceSupervisorUpdateDataInput!, where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
-  updateOneNation(where: NationWhereUniqueInput!): Nation
-  updateOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
-  updateOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   upsertOneConferenceSupervisor(entryCode: String!): ConferenceSupervisor!
   upsertSelf: UpsertSelfResult!
