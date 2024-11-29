@@ -85,23 +85,23 @@ services:
   #     POSTGRES_PATH: /postgres
 
   # web dashboard available at http://localhost:16686
-  jaeger:
-    image: jaegertracing/jaeger
-    ports:
-      - '5778:5778'
-      - '16686:16686'
-      - '4317:4317'
-      - '4318:4318'
-      - '14250:14250'
-      - '14268:14268'
-      - '9411:9411'
-    command:
-      [
-        '--set',
-        'receivers.otlp.protocols.http.endpoint=0.0.0.0:4318',
-        '--set',
-        'receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317'
-      ]
+  # jaeger:
+  #   image: jaegertracing/jaeger
+  #   ports:
+  #     - '5778:5778'
+  #     - '16686:16686'
+  #     - '4317:4317'
+  #     - '4318:4318'
+  #     - '14250:14250'
+  #     - '14268:14268'
+  #     - '9411:9411'
+  #   command:
+  #     [
+  #       '--set',
+  #       'receivers.otlp.protocols.http.endpoint=0.0.0.0:4318',
+  #       '--set',
+  #       'receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317'
+  #     ]
 
 volumes:
   delegator-dev:
