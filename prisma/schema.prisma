@@ -171,7 +171,7 @@ model AssignedConferenceRole {
   singleParticipant   SingleParticipant @relation(fields: [singleParticipantId], references: [id])
   singleParticipantId String            @unique
 
-  details String?
+  details String? /// For example the country of an IGH judge
 }
 
 model SingleParticipant {

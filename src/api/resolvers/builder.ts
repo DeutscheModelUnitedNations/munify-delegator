@@ -72,12 +72,12 @@ builder.scalarType('File', {
 
 builder.scalarType('JSONObject', {
 	serialize: (value) => {
-		return value;
+		return JSON.stringify(value);
 	},
 
 	parseValue: (value: any) => {
 		if (value !== null && value !== undefined) {
-			return value;
+			return JSON.parse(value);
 		} else {
 			throw new Error('JSONObject cannot represent non-object value: ' + value);
 		}
