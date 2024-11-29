@@ -34,5 +34,5 @@ export const yogaInstance = createYoga<RequestEvent>({
 	maskedErrors: {
 		maskError
 	},
-	context,
+	context
 });
