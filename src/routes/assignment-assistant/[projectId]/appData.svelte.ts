@@ -437,9 +437,9 @@ const sendAssigmentDataMutation = graphql(`
 	}
 `);
 
-export const sendAssignmentData = async (id: string, data: Project) => {
+export const sendAssignmentData = async (conferenceId: string, data: Project) => {
 	const req = await sendAssigmentDataMutation.mutate({
-		where: { id },
+		where: { id: conferenceId },
 		data
 	});
 
