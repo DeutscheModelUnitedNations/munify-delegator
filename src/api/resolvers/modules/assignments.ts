@@ -9,6 +9,27 @@ import {
 import { builder } from '../builder';
 import * as m from '$lib/paraglide/messages';
 import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
+import {
+	AssignedConferenceRoleCustomConferenceRoleFieldObject,
+	AssignedConferenceRoleDetailsFieldObject,
+	AssignedConferenceRoleIdFieldObject,
+	AssignedConferenceRoleSingleParticipantFieldObject
+} from '$db/generated/graphql/AssignedConferenceRole';
+
+builder.prismaObject('AssignedConferenceRole', {
+	fields: (t) => ({
+		id: t.field(AssignedConferenceRoleIdFieldObject),
+		details: t.field(AssignedConferenceRoleDetailsFieldObject),
+		customConferenceRole: t.relation(
+			'customConferenceRole',
+			AssignedConferenceRoleCustomConferenceRoleFieldObject
+		),
+		singleParticipant: t.relation(
+			'singleParticipant',
+			AssignedConferenceRoleSingleParticipantFieldObject
+		)
+	})
+});
 
 function getNations(committees: Committee[]): {
 	nation: Nation;

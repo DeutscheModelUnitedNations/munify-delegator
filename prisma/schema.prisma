@@ -165,10 +165,10 @@ model CustomConferenceRole {
 
 model AssignedConferenceRole {
   id                     String               @id @default(nanoid())
-  customConferenceRole   CustomConferenceRole @relation(fields: [customConferenceRoleId], references: [id])
+  customConferenceRole   CustomConferenceRole @relation(fields: [customConferenceRoleId], references: [id], onDelete: Cascade)
   customConferenceRoleId String
 
-  singleParticipant   SingleParticipant @relation(fields: [singleParticipantId], references: [id])
+  singleParticipant   SingleParticipant @relation(fields: [singleParticipantId], references: [id], onDelete: Cascade)
   singleParticipantId String            @unique
 
   details String? /// For example the country of an IGH judge
