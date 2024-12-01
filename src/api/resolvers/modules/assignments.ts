@@ -9,27 +9,6 @@ import {
 import { builder } from '../builder';
 import * as m from '$lib/paraglide/messages';
 import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
-import {
-	AssignedConferenceRoleCustomConferenceRoleFieldObject,
-	AssignedConferenceRoleDetailsFieldObject,
-	AssignedConferenceRoleIdFieldObject,
-	AssignedConferenceRoleSingleParticipantFieldObject
-} from '$db/generated/graphql/AssignedConferenceRole';
-
-builder.prismaObject('AssignedConferenceRole', {
-	fields: (t) => ({
-		id: t.field(AssignedConferenceRoleIdFieldObject),
-		details: t.field(AssignedConferenceRoleDetailsFieldObject),
-		customConferenceRole: t.relation(
-			'customConferenceRole',
-			AssignedConferenceRoleCustomConferenceRoleFieldObject
-		),
-		singleParticipant: t.relation(
-			'singleParticipant',
-			AssignedConferenceRoleSingleParticipantFieldObject
-		)
-	})
-});
 
 function getNations(committees: Committee[]): {
 	nation: Nation;
@@ -132,12 +111,20 @@ builder.mutationFields((t) => {
 					// Assignment Single Participants
 					for (const participant of data.singleParticipants) {
 						if (!participant.assignedRole) continue;
-						await tx.assignedConferenceRole.create({
+						await tx.singleParticipant.update({
+							where: {
+								id: participant.id
+							},
 							data: {
-								singleParticipantId: participant.id,
-								customConferenceRoleId: participant.assignedRole.id
+								assignedRoleId: participant.assignedRole.id
 							}
 						});
+						// await tx.assignedConferenceRole.create({
+						// 	data: {
+						// 		singleParticipantId: participant.id,
+						// 		customConferenceRoleId: participant.assignedRole.id
+						// 	}
+						// });
 					}
 
 					// Assignment Nations

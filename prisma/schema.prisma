@@ -155,25 +155,12 @@ model CustomConferenceRole {
   description     String
   fontAwesomeIcon String?
 
-  conference              Conference               @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  conferenceId            String
-  singleParticipant       SingleParticipant[]
-  assignedConferenceRoles AssignedConferenceRole[]
+  conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId      String
+  singleParticipant SingleParticipant[]
 
+  singleParticipantAssignments SingleParticipant[] @relation("assignment")
   @@unique([conferenceId, name])
-}
-
-model AssignedConferenceRole {
-  id String @id @default(nanoid())
-
-  customConferenceRole   CustomConferenceRole @relation(fields: [customConferenceRoleId], references: [id], onDelete: Cascade)
-  customConferenceRoleId String
-
-  singleParticipant   SingleParticipant @relation(fields: [singleParticipantId], references: [id], onDelete: Cascade)
-  singleParticipantId String            @unique
-
-  /// For example the country of an IGH judge
-  details String?
 }
 
 model SingleParticipant {
@@ -189,8 +176,12 @@ model SingleParticipant {
   motivation String?
   experience String?
 
-  appliedForRoles        CustomConferenceRole[]
-  assignedConferenceRole AssignedConferenceRole?
+  /// For example the country of an IGH judge
+  assignmentDetails String?
+  assignedRole CustomConferenceRole? @relation(name: "assignment", fields: [assignedRoleId], references: [id])
+  assignedRoleId String?
+
+  appliedForRoles CustomConferenceRole[]
 
   @@unique([conferenceId, userId])
 }
