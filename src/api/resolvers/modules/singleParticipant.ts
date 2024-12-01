@@ -5,6 +5,7 @@ import {
 	findManySingleParticipantQueryObject,
 	findUniqueSingleParticipantQueryObject,
 	SingleParticipantAppliedFieldObject,
+	SingleParticipantAssignedConferenceRoleFieldObject,
 	SingleParticipantConferenceFieldObject,
 	SingleParticipantExperienceFieldObject,
 	SingleParticipantIdFieldObject,
@@ -32,7 +33,11 @@ builder.prismaObject('SingleParticipant', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').CustomConferenceRole
 			})
-		})
+		}),
+		assignedConferenceRole: t.relation(
+			'assignedConferenceRole',
+			SingleParticipantAssignedConferenceRoleFieldObject
+		)
 	})
 });
 
