@@ -142,24 +142,59 @@ builder.mutationFields((t) => {
 						)?.sort((a, b) => a.members.length - b.members.length);
 
 						// pick the first (largest) delegation as primary delegation
-						const primaryDelegation = delegationsDB[0];
+						const primaryDelegation = delegationsDB.at(0);
 
 						// gather all other user-ids to fill the primary delegation
 						const newUserIds = assignedDelegations
 							.flatMap((x) => x.members.map((y) => y.user.id))
-							.filter((x) => !primaryDelegation.members.some((y) => y.userId === x));
+							.filter((x) => !primaryDelegation?.members.some((y) => y.userId === x));
 
 						// gather all supervisors to fill the primary delegation
 						const newSupervisorIds = assignedDelegations
 							.flatMap((x) => x.supervisors.map((y) => y.user.id))
-							.filter((x) => !primaryDelegation.supervisors.some((y) => y.userId === x));
+							.filter((x) => !primaryDelegation?.supervisors.some((y) => y.userId === x));
+
+						// delete all other delegations
+						if (primaryDelegation) {
+							await tx.delegation.deleteMany({
+								where: {
+									AND: [
+										{
+											members: {
+												some: {
+													userId: {
+														in: newUserIds
+													}
+												}
+											}
+										},
+										{
+											conferenceId: {
+												equals: primaryDelegation?.conferenceId
+											}
+										}
+									]
+								}
+							});
+						}
+
+						// delete all other single participants (they were converted to delegations with just one member)
+						await tx.singleParticipant.deleteMany({
+							where: {
+								id: {
+									// The frontend delivers single participants, that have been converted to delegations
+									// with the same id. Therefore, we can search for the delegation id instead of the single participant id.
+									in: assignedDelegations.map((x) => x.id)
+								}
+							}
+						});
 
 						// assign the nation to the primary delegation and update the members and supervisors
-						await tx.delegation.update({
+						await tx.delegation.upsert({
 							where: {
-								id: primaryDelegation.id
+								id: primaryDelegation?.id
 							},
-							data: {
+							update: {
 								assignedNation: {
 									connect: {
 										alpha2Code: nation.nation.alpha2Code
@@ -167,7 +202,7 @@ builder.mutationFields((t) => {
 								},
 								members: {
 									create: newUserIds.map((x, i) => ({
-										conferenceId: primaryDelegation.conferenceId,
+										conferenceId: primaryDelegation!.conferenceId,
 										userId: x,
 										isHeadDelegate: false
 									}))
@@ -175,41 +210,34 @@ builder.mutationFields((t) => {
 								supervisors: {
 									connect: newSupervisorIds.map((x) => ({
 										conferenceId_userId: {
-											conferenceId: primaryDelegation.conferenceId,
+											conferenceId: primaryDelegation!.conferenceId,
 											userId: x
 										}
 									}))
 								}
-							}
-						});
-
-						// delete all other delegations
-						await tx.delegation.deleteMany({
-							where: {
-								AND: [
-									{
-										members: {
-											some: {
-												userId: {
-													in: newUserIds
-												}
-											}
+							},
+							create: {
+								applied: true,
+								conferenceId: data.conference.id,
+								entryCode: makeDelegationEntryCode(),
+								assignedNationAlpha3Code: nation.nation.alpha3Code,
+								experience: assignedDelegations[0].experience,
+								motivation: assignedDelegations[0].motivation,
+								school: assignedDelegations[0].school,
+								members: {
+									create: newUserIds.map((x, i) => ({
+										conferenceId: data.conference.id,
+										userId: x,
+										isHeadDelegate: i === 0
+									}))
+								},
+								supervisors: {
+									connect: newSupervisorIds.map((x) => ({
+										conferenceId_userId: {
+											conferenceId: data.conference.id,
+											userId: x
 										}
-									},
-									{
-										conferenceId: {
-											equals: primaryDelegation.conferenceId
-										}
-									}
-								]
-							}
-						});
-
-						// delete all other single participants (they were converted to delegations with just one member)
-						await tx.singleParticipant.deleteMany({
-							where: {
-								id: {
-									in: assignedDelegations.map((x) => x.id)
+									}))
 								}
 							}
 						});
@@ -237,24 +265,59 @@ builder.mutationFields((t) => {
 						)?.sort((a, b) => a.members.length - b.members.length);
 
 						// pick the first (largest) delegation as primary delegation
-						const primaryDelegation = delegationsDB[0];
+						const primaryDelegation = delegationsDB.at(0);
 
 						// gather all other user-ids to fill the primary delegation
 						const newUserIds = assignedDelegations
 							.flatMap((x) => x.members.map((y) => y.user.id))
-							.filter((x) => !primaryDelegation.members.some((y) => y.userId === x));
+							.filter((x) => !primaryDelegation?.members.some((y) => y.userId === x));
 
 						// gather all supervisors to fill the primary delegation
 						const newSupervisorIds = assignedDelegations
 							.flatMap((x) => x.supervisors.map((y) => y.user.id))
-							.filter((x) => !primaryDelegation.supervisors.some((y) => y.userId === x));
+							.filter((x) => !primaryDelegation?.supervisors.some((y) => y.userId === x));
+
+						// delete all other delegations
+						if (primaryDelegation) {
+							await db.delegation.deleteMany({
+								where: {
+									AND: [
+										{
+											members: {
+												some: {
+													userId: {
+														in: newUserIds
+													}
+												}
+											}
+										},
+										{
+											conferenceId: {
+												equals: primaryDelegation.conferenceId
+											}
+										}
+									]
+								}
+							});
+						}
+
+						// delete all other single participants (they were converted to delegations with just one member)
+						await db.singleParticipant.deleteMany({
+							where: {
+								id: {
+									// The frontend delivers single participants, that have been converted to delegations
+									// with the same id. Therefore, we can search for the delegation id instead of the single participant id.
+									in: assignedDelegations.map((x) => x.id)
+								}
+							}
+						});
 
 						// assign the nsa to the primary delegation and update the members and supervisors
-						await db.delegation.update({
+						await db.delegation.upsert({
 							where: {
-								id: primaryDelegation.id
+								id: primaryDelegation?.id
 							},
-							data: {
+							update: {
 								assignedNonStateActor: {
 									connect: {
 										id: nsa.id
@@ -262,7 +325,7 @@ builder.mutationFields((t) => {
 								},
 								members: {
 									create: newUserIds.map((x, i) => ({
-										conferenceId: primaryDelegation.conferenceId,
+										conferenceId: primaryDelegation!.conferenceId,
 										userId: x,
 										isHeadDelegate: false
 									}))
@@ -270,33 +333,35 @@ builder.mutationFields((t) => {
 								supervisors: {
 									connect: newSupervisorIds.map((x) => ({
 										conferenceId_userId: {
-											conferenceId: primaryDelegation.conferenceId,
+											conferenceId: primaryDelegation!.conferenceId,
 											userId: x
 										}
 									}))
 								}
-							}
-						});
-
-						// delete all other delegations
-						await db.delegation.deleteMany({
-							where: {
-								AND: [
-									{
-										members: {
-											some: {
-												userId: {
-													in: newUserIds
-												}
-											}
+							},
+							create: {
+								applied: true,
+								conferenceId: data.conference.id,
+								entryCode: makeDelegationEntryCode(),
+								experience: assignedDelegations[0].experience,
+								motivation: assignedDelegations[0].motivation,
+								school: assignedDelegations[0].school,
+								assignedNonStateActorId: nsa.id,
+								members: {
+									create: newUserIds.map((x, i) => ({
+										conferenceId: data.conference.id,
+										userId: x,
+										isHeadDelegate: i === 0
+									}))
+								},
+								supervisors: {
+									connect: newSupervisorIds.map((x) => ({
+										conferenceId_userId: {
+											conferenceId: data.conference.id,
+											userId: x
 										}
-									},
-									{
-										conferenceId: {
-											equals: primaryDelegation.conferenceId
-										}
-									}
-								]
+									}))
+								}
 							}
 						});
 					}
