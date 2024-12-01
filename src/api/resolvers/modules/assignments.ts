@@ -76,30 +76,45 @@ builder.mutationFields((t) => {
 							}
 						});
 
-						const childDelegationsDB = await tx.delegation.createManyAndReturn({
-							data: childDelegations.map((childDelegation) => ({
-								conferenceId: parentDelegationDB.conferenceId,
-								entryCode: makeDelegationEntryCode(),
-								applied: true,
-								school: parentDelegationDB.school,
-								motivation: parentDelegationDB.motivation,
-								experience: parentDelegationDB.experience,
-								supervisors: {
-									connect: parentDelegationDB.supervisors.map((x) => ({
-										id: x.id
-									}))
-								},
-								members: {
-									create: childDelegation.members.map((member, i) => ({
-										conferenceId: parentDelegationDB.conferenceId,
-										userId: member.user.id,
-										isHeadDelegate: childDelegation.members.some((x) => x.isHeadDelegate)
-											? member.isHeadDelegate
-											: i === 0
-									}))
+						const childDelegationsDB = [];
+
+						for (const childDelegation of childDelegations) {
+							const childDelegationDB = await tx.delegation.create({
+								data: {
+									conferenceId: parentDelegationDB.conferenceId,
+									entryCode: makeDelegationEntryCode(),
+									applied: true,
+									school: parentDelegationDB.school,
+									motivation: parentDelegationDB.motivation,
+									experience: parentDelegationDB.experience,
+									supervisors:
+										parentDelegationDB.supervisors.length > 0
+											? {
+													connect: parentDelegationDB.supervisors.map((supervisor) => ({
+														conferenceId_userId: {
+															conferenceId: parentDelegationDB.conferenceId,
+															userId: supervisor.userId
+														}
+													}))
+												}
+											: undefined,
+									members:
+										childDelegation.members.length > 0
+											? {
+													create: childDelegation.members.map((member, i) => ({
+														conferenceId: parentDelegationDB.conferenceId,
+														userId: member.user.id,
+														isHeadDelegate: childDelegation.members.some((x) => x.isHeadDelegate)
+															? member.isHeadDelegate
+															: i === 0
+													}))
+												}
+											: undefined
 								}
-							}))
-						});
+							});
+
+							childDelegationsDB.push(childDelegationDB);
+						}
 
 						childDelegations.forEach((childDelegation, i) => {
 							// necessary to find the correct entity of the newly
@@ -119,12 +134,6 @@ builder.mutationFields((t) => {
 								assignedRoleId: participant.assignedRole.id
 							}
 						});
-						// await tx.assignedConferenceRole.create({
-						// 	data: {
-						// 		singleParticipantId: participant.id,
-						// 		customConferenceRoleId: participant.assignedRole.id
-						// 	}
-						// });
 					}
 
 					// Assignment Nations
@@ -178,7 +187,7 @@ builder.mutationFields((t) => {
 										},
 										{
 											conferenceId: {
-												equals: primaryDelegation?.conferenceId
+												equals: data.conference.id
 											}
 										}
 									]
@@ -200,7 +209,7 @@ builder.mutationFields((t) => {
 						// assign the nation to the primary delegation and update the members and supervisors
 						await tx.delegation.upsert({
 							where: {
-								id: primaryDelegation?.id
+								id: primaryDelegation?.id ?? ''
 							},
 							update: {
 								assignedNation: {
@@ -210,19 +219,22 @@ builder.mutationFields((t) => {
 								},
 								members: {
 									create: newUserIds.map((x, i) => ({
-										conferenceId: primaryDelegation!.conferenceId,
+										conferenceId: data.conference.id,
 										userId: x,
 										isHeadDelegate: false
 									}))
 								},
-								supervisors: {
-									connect: newSupervisorIds.map((x) => ({
-										conferenceId_userId: {
-											conferenceId: primaryDelegation!.conferenceId,
-											userId: x
-										}
-									}))
-								}
+								supervisors:
+									newSupervisorIds.length > 0
+										? {
+												connect: newSupervisorIds.map((x) => ({
+													conferenceId_userId: {
+														conferenceId: data.conference.id,
+														userId: x
+													}
+												}))
+											}
+										: undefined
 							},
 							create: {
 								applied: true,
@@ -232,13 +244,16 @@ builder.mutationFields((t) => {
 								experience: assignedDelegations[0].experience,
 								motivation: assignedDelegations[0].motivation,
 								school: assignedDelegations[0].school,
-								members: {
-									create: newUserIds.map((x, i) => ({
-										conferenceId: data.conference.id,
-										userId: x,
-										isHeadDelegate: i === 0
-									}))
-								},
+								members:
+									newUserIds.length > 0
+										? {
+												create: newUserIds.map((x, i) => ({
+													conferenceId: data.conference.id,
+													userId: x,
+													isHeadDelegate: i === 0
+												}))
+											}
+										: undefined,
 								supervisors: {
 									connect: newSupervisorIds.map((x) => ({
 										conferenceId_userId: {
@@ -286,7 +301,7 @@ builder.mutationFields((t) => {
 							.filter((x) => !primaryDelegation?.supervisors.some((y) => y.userId === x));
 
 						// delete all other delegations
-						if (primaryDelegation) {
+						if (primaryDelegation && newUserIds.length > 0) {
 							await db.delegation.deleteMany({
 								where: {
 									AND: [
@@ -301,7 +316,7 @@ builder.mutationFields((t) => {
 										},
 										{
 											conferenceId: {
-												equals: primaryDelegation.conferenceId
+												equals: data.conference.id
 											}
 										}
 									]
@@ -331,21 +346,27 @@ builder.mutationFields((t) => {
 										id: nsa.id
 									}
 								},
-								members: {
-									create: newUserIds.map((x, i) => ({
-										conferenceId: primaryDelegation!.conferenceId,
-										userId: x,
-										isHeadDelegate: false
-									}))
-								},
-								supervisors: {
-									connect: newSupervisorIds.map((x) => ({
-										conferenceId_userId: {
-											conferenceId: primaryDelegation!.conferenceId,
-											userId: x
-										}
-									}))
-								}
+								members:
+									newUserIds.length > 0
+										? {
+												create: newUserIds.map((x, i) => ({
+													conferenceId: data.conference.id,
+													userId: x,
+													isHeadDelegate: false
+												}))
+											}
+										: undefined,
+								supervisors:
+									newSupervisorIds.length > 0
+										? {
+												connect: newSupervisorIds.map((x) => ({
+													conferenceId_userId: {
+														conferenceId: data.conference.id,
+														userId: x
+													}
+												}))
+											}
+										: undefined
 							},
 							create: {
 								applied: true,
