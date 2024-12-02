@@ -44,7 +44,9 @@
 
 	let fuse = $derived(
 		new Fuse(rows, {
-			keys: [...columns.map((c) => c.key.toString()), 'id']
+			keys: [...columns.map((c) => c.key.toString()), 'id'],
+			threshold: 0.4,
+			minMatchCharLength: 2
 		})
 	);
 	let searchedColumns = $derived(
