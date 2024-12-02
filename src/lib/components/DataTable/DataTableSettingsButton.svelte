@@ -1,4 +1,4 @@
-<!-- <script lang="ts">
+<script lang="ts">
 	import TableSizeControl from './DataTableSizeControl.svelte';
 	import ZebraControl from './DataTableZebraControl.svelte';
 	import * as m from '$lib/paraglide/messages';
@@ -17,7 +17,7 @@
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
 	<div class="modal-box relative">
 		<h3 class="text-xl font-bold">{m.settings()}</h3>
-		<div class="flex flex-wrap gap-2">
+		<div class="flex flex-wrap gap-2 py-5">
 			<TableSizeControl />
 			<ZebraControl />
 		</div>
@@ -32,6 +32,6 @@
 		</div>
 	</div>
 	<form method="dialog" class="modal-backdrop" onsubmit={() => (confirmDialogOpen = false)}>
-		<button>close</button>
+		<button>{m.close()}</button>
 	</form>
-</dialog> -->
+</dialog>

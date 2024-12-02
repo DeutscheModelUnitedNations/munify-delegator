@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import DataTableSettingsButton from './DataTableSettingsButton.svelte';
 
 	interface Props {
 		columns: TableColumns<RowData>;
@@ -66,22 +67,25 @@
 </script>
 
 <div class="w-full">
-	{#if enableSearch}
-		<label class="no-print input input-bordered mt-6 flex items-center gap-2">
-			<input type="text" class="grow" bind:value={searchPattern} placeholder={m.search()} />
-			{#if searchPattern !== ''}
-				<button
-					class="btn btn-square btn-ghost btn-sm"
-					onclick={() => (searchPattern = '')}
-					aria-label="Reset search"
-				>
-					<i class="fa-duotone fa-times"></i>
-				</button>
-			{:else}
-				<i class="fa-duotone fa-magnifying-glass"></i>
-			{/if}
-		</label>
-	{/if}
+	<div class="mt-6 flex w-full items-center">
+		{#if enableSearch}
+			<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
+				<input type="text" class="grow" bind:value={searchPattern} placeholder={m.search()} />
+				{#if searchPattern !== ''}
+					<button
+						class="btn btn-square btn-ghost btn-sm"
+						onclick={() => (searchPattern = '')}
+						aria-label="Reset search"
+					>
+						<i class="fa-duotone fa-times"></i>
+					</button>
+				{:else}
+					<i class="fa-duotone fa-magnifying-glass"></i>
+				{/if}
+			</label>
+		{/if}
+		<DataTableSettingsButton />
+	</div>
 
 	<div class="svelte-table-wrapper mt-4 w-full overflow-x-auto transition-all duration-300">
 		<SvelteTable

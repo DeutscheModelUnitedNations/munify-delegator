@@ -458,5 +458,6 @@
 	"singleApplicationExperience": "Wie viel Erfahrung hast du mit politischen Planspielen wie Model United Nations?",
 	"inAllDelegations": "In allen Delegationen",
 	"inTheConference": "In der Konferenz",
-	"applicationTimeframeClosed": "Der Anmeldezeitraum ist geschlossen."
+	"applicationTimeframeClosed": "Der Anmeldezeitraum ist geschlossen.",
+	"tableSize": "Tabellengröße"
 }
