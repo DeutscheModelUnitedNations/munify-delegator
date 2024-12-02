@@ -203,11 +203,9 @@ model Delegation {
   supervisors     ConferenceSupervisor[]
   appliedForRoles RoleApplication[]
 
-  /// @prismabox.input.hide
   assignedNation           Nation? @relation(fields: [assignedNationAlpha3Code], references: [alpha3Code])
   assignedNationAlpha3Code String?
 
-  /// @prismabox.input.hide
   assignedNonStateActor   NonStateActor? @relation(fields: [assignedNonStateActorId], references: [id])
   assignedNonStateActorId String?
 }
