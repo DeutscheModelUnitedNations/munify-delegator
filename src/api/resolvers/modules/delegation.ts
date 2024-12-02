@@ -33,7 +33,10 @@ builder.prismaObject('Delegation', {
 		entryCode: t.field(DelegationEntryCodeFieldObject),
 		conference: t.relation('conference', DelegationConferenceFieldObject),
 		assignedNation: t.relation('assignedNation', DelegationAssignedNationFieldObject),
-		assignedNonStateActor: t.relation('assignedNonStateActor', DelegationAssignedNonStateActorFieldObject),
+		assignedNonStateActor: t.relation(
+			'assignedNonStateActor',
+			DelegationAssignedNonStateActorFieldObject
+		),
 		members: t.relation('members', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
