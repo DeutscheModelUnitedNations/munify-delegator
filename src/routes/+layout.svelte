@@ -38,12 +38,38 @@
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
 	import type { Snippet } from 'svelte';
+	import { browser } from '$app/environment';
 
 	interface Props {
 		children: Snippet;
 	}
 
 	let { children }: Props = $props();
+
+	const changeFaDuotoneTheme = () => {
+		const r = document.querySelector(':root');
+		if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+			(r as any)?.style.setProperty('--fa-primary-color', '#b1cbed');
+			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
+			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
+		} else {
+			(r as any)?.style.setProperty('--fa-primary-color', '#000000');
+			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
+			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
+		}
+
+		//--fa-primary-opacity: 1;
+		// --fa-secondary-color: #3d7dd2;
+		// --fa-secondary-opacity: 1;
+	};
+
+	if (browser) {
+		changeFaDuotoneTheme();
+		const colorSchemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		colorSchemeMediaQuery.addEventListener('change', changeFaDuotoneTheme);
+	}
 </script>
 
 <svelte:head>
