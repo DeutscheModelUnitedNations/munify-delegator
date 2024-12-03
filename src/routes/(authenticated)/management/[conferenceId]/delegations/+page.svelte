@@ -14,9 +14,12 @@
 	const delegations = $derived(
 		$queryData?.data?.findManyDelegations.map((d) => ({
 			...d,
-			nationOrNSA: d.assignedNation?.alpha3Code
-				? getFullTranslatedCountryNameFromISO3Code(d.assignedNation?.alpha3Code)
-				: (d.assignedNonStateActor?.name ?? 'N/A')
+			assignedNation: d.assignedNation
+				? {
+						...d.assignedNation,
+						name: getFullTranslatedCountryNameFromISO3Code(d.assignedNation.alpha3Code)
+					}
+				: undefined
 		})) ?? []
 	);
 	const { getTableSize } = getTableSettings();
@@ -44,15 +47,12 @@
 			key: 'role',
 			title: m.role(),
 			parseHTML: true,
-			value: (row) =>
-				row.assignedNation
-					? getFullTranslatedCountryNameFromISO3Code(row.assignedNation!.alpha3Code)
-					: (row.assignedNonStateActor?.name ?? ''),
+			value: (row) => row.assignedNation?.name ?? row.assignedNonStateActor?.name ?? 'N/A',
 			renderValue: (row) =>
 				row.assignedNation
-					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
+					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNation.name}"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
 					: row.assignedNonStateActor &&
-						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300"><span class="fas fa-${row.assignedNonStateActor?.fontAwesomeIcon?.replace('fa-', '')}"></span></div>`,
+						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNonStateActor.name}"><span class="fas fa-${row.assignedNonStateActor?.fontAwesomeIcon?.replace('fa-', '')}"></span></div>`,
 			sortable: true,
 			class: 'text-center'
 		},
@@ -94,12 +94,6 @@
 			key: 'experience',
 			title: m.experience(),
 			value: (row) => row.experience ?? 'N/A',
-			class: 'max-w-[20ch] truncate'
-		},
-		{
-			key: 'nationOrNSA',
-			title: m.nationOrNSA(),
-			value: (row) => row.nationOrNSA,
 			class: 'max-w-[20ch] truncate'
 		}
 	];
