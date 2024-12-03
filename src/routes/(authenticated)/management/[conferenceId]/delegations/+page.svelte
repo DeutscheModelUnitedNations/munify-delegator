@@ -7,10 +7,18 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceDelegationsQuery);
-	const delegations = $derived($queryData?.data?.findManyDelegations ?? []);
+	const delegations = $derived(
+		$queryData?.data?.findManyDelegations.map((d) => ({
+			...d,
+			nation: d.assignedNation?.alpha3Code
+				? getFullTranslatedCountryNameFromISO3Code(d.assignedNation?.alpha3Code)
+				: 'N/A'
+		})) ?? []
+	);
 	const { getTableSize } = getTableSettings();
 
 	const columns: TableColumns<(typeof delegations)[number]> = [
@@ -70,6 +78,12 @@
 			key: 'experience',
 			title: m.experience(),
 			value: (row) => row.experience ?? 'N/A',
+			class: 'max-w-[20ch] truncate'
+		},
+		{
+			key: 'nation',
+			title: m.nation(),
+			value: (row) => row.nation,
 			class: 'max-w-[20ch] truncate'
 		}
 	];

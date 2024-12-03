@@ -4,6 +4,9 @@ query ConferenceDelegationsQuery($conferenceId: String!) {
 		entryCode
 		applied
 		school
+		assignedNation {
+			alpha3Code
+		}
 		members {
 			id
 		}
