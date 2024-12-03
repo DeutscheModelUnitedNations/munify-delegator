@@ -784,11 +784,7 @@ type Delegation {
   """
   applied: Boolean!
   appliedForRoles: [RoleApplication!]!
-
-  """@prismabox.input.hide"""
   assignedNation: Nation
-
-  """@prismabox.input.hide"""
   assignedNonStateActor: NonStateActor
   conference: Conference!
   entryCode: String!

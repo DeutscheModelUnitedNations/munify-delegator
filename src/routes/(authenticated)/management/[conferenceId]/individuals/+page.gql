@@ -8,6 +8,11 @@ query ConferenceSingleParticipantsQuery($conferenceId: String!) {
 			fontAwesomeIcon
 			name
 		}
+		assignedRole {
+			id
+			fontAwesomeIcon
+			name
+		}
 		motivation
 		experience
 		user {

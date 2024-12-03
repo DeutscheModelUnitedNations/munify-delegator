@@ -57,8 +57,11 @@
 		});
 
 		if (!req.data?.sendAssignmentData.success) {
+			alert('Failed to send assignment data');
 			throw new Error('Failed to send assignment data');
 		}
+
+		alert('Assignment data successfully applied');
 	};
 
 	const downloadCurrentRegistrationData = () => {

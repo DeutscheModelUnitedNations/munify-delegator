@@ -41,6 +41,22 @@
 			class: 'text-center'
 		},
 		{
+			key: 'role',
+			title: m.role(),
+			parseHTML: true,
+			value: (row) =>
+				row.assignedNation
+					? getFullTranslatedCountryNameFromISO3Code(row.assignedNation!.alpha3Code)
+					: (row.assignedNonStateActor?.name ?? ''),
+			renderValue: (row) =>
+				row.assignedNation
+					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
+					: row.assignedNonStateActor &&
+						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300"><span class="fas fa-${row.assignedNonStateActor?.fontAwesomeIcon?.replace('fa-', '')}"></span></div>`,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
 			key: 'school',
 			title: m.schoolOrInstitution(),
 			value: (row) => row.school ?? 'N/A',
