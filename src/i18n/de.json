@@ -465,5 +465,6 @@
 	"thisExportContainsSensitiveData": "Bitte beachte, dass dieser Export sensible Daten enthält und nur an Personen weitergegeben werden sollte, die dazu berechtigt sind.",
 	"exportFrom": "Export aus {appName}",
 	"createdOn": "Erstellt am {date} um {time}",
-	"nation": "Nation"
+	"nation": "Nation",
+	"nationOrNSA": "Nation/NSA"
 }

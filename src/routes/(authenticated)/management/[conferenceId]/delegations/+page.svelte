@@ -14,9 +14,9 @@
 	const delegations = $derived(
 		$queryData?.data?.findManyDelegations.map((d) => ({
 			...d,
-			nation: d.assignedNation?.alpha3Code
+			nationOrNSA: d.assignedNation?.alpha3Code
 				? getFullTranslatedCountryNameFromISO3Code(d.assignedNation?.alpha3Code)
-				: 'N/A'
+				: (d.assignedNonStateActor?.name ?? 'N/A')
 		})) ?? []
 	);
 	const { getTableSize } = getTableSettings();
@@ -81,9 +81,9 @@
 			class: 'max-w-[20ch] truncate'
 		},
 		{
-			key: 'nation',
-			title: m.nation(),
-			value: (row) => row.nation,
+			key: 'nationOrNSA',
+			title: m.nationOrNSA(),
+			value: (row) => row.nationOrNSA,
 			class: 'max-w-[20ch] truncate'
 		}
 	];
