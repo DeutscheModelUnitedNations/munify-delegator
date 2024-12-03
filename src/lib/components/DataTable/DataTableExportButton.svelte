@@ -1,4 +1,5 @@
-<!-- <script lang="ts">
+<script lang="ts">
+	import * as m from '$lib/paraglide/messages';
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	interface Props {
 		exportedData: Record<string, string>[];
@@ -53,10 +54,9 @@
 
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
 	<div class="modal-box">
-		<h3 class="text-lg font-bold">Bist du sicher?</h3>
+		<h3 class="text-lg font-bold">{m.areYouSure()}</h3>
 		<p class="py-4">
-			Die Daten enthalten möglicherweise sensible Informationen. Bist du sicher, dass du die Daten
-			exportieren möchtest?
+			{m.areYouSureYouWantToExport()}
 		</p>
 		<div class="modal-action justify-between">
 			<button class="btn btn-error" onclick={() => (confirmDialogOpen = false)} aria-label="Exit">
@@ -78,4 +78,4 @@
 			</div>
 		</div>
 	</div>
-</dialog> -->
+</dialog>

@@ -90,5 +90,8 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write ."
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"csv-stringify": "^6.5.2"
+	}
 }

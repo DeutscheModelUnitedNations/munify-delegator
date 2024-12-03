@@ -7,6 +7,8 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import DataTableSettingsButton from './DataTableSettingsButton.svelte';
+	import PrintHeader from './DataTablePrintHeader.svelte';
+	import ExportButton from './DataTableExportButton.svelte';
 
 	interface Props {
 		columns: TableColumns<RowData>;
@@ -14,6 +16,7 @@
 		enableSearch?: boolean;
 		searchPattern?: string;
 		queryParamKey?: string;
+		title?: string;
 		rowSelected?: (row: RowData) => void;
 	}
 
@@ -23,6 +26,7 @@
 		enableSearch = true,
 		searchPattern = $bindable(''),
 		queryParamKey,
+		title = $page.url.pathname.split('/').pop()!,
 		rowSelected
 	}: Props = $props();
 	const { getTableSize, getZebra } = getTableSettings();
@@ -87,7 +91,10 @@
 			</label>
 		{/if}
 		<DataTableSettingsButton />
+		<ExportButton exportedData={rows} />
 	</div>
+
+	<PrintHeader {title} {searchPattern} />
 
 	<div class="svelte-table-wrapper mt-4 w-full overflow-x-auto transition-all duration-300">
 		<SvelteTable

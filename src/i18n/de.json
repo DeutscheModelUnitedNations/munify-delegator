@@ -459,5 +459,10 @@
 	"inAllDelegations": "In allen Delegationen",
 	"inTheConference": "In der Konferenz",
 	"applicationTimeframeClosed": "Der Anmeldezeitraum ist geschlossen.",
-	"tableSize": "Tabellengröße"
+	"tableSize": "Tabellengröße",
+	"areYouSure": "Bist du sicher?",
+	"areYouSureYouWantToExport": "Die Daten enthalten möglicherweise sensible Informationen. Bist du sicher, dass du die Daten exportieren möchtest?",
+	"thisExportContainsSensitiveData": "Bitte beachte, dass dieser Export sensible Daten enthält und nur an Personen weitergegeben werden sollte, die dazu berechtigt sind.",
+	"exportFrom": "Export aus {appName}",
+	"createdOn": "Erstellt am {date} um {time}"
 }
