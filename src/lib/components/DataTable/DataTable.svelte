@@ -17,6 +17,7 @@
 		searchPattern?: string;
 		queryParamKey?: string;
 		title?: string;
+		additionallyIndexedKeys?: string[];
 		rowSelected?: (row: RowData) => void;
 	}
 
@@ -26,6 +27,7 @@
 		enableSearch = true,
 		searchPattern = $bindable(''),
 		queryParamKey,
+		additionallyIndexedKeys = [],
 		title = $page.url.pathname.split('/').pop()!,
 		rowSelected
 	}: Props = $props();
@@ -48,7 +50,7 @@
 
 	let fuse = $derived(
 		new Fuse(rows, {
-			keys: [...columns.map((c) => c.key.toString()), 'id'],
+			keys: [...columns.map((c) => c.key.toString()), 'id', ...additionallyIndexedKeys],
 			threshold: 0.4,
 			minMatchCharLength: 2
 		})

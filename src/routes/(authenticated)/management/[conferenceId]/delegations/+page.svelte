@@ -106,6 +106,7 @@
 	{columns}
 	rows={delegations}
 	enableSearch={true}
+	additionallyIndexedKeys={['assignedNation.name']}
 	queryParamKey="filter"
 	rowSelected={(row) => {
 		selectedDelegationRow = row;
