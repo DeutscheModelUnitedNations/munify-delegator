@@ -2,14 +2,17 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import type { Nation, NonStateActor } from '@prisma/client';
+	import type { Committee, Nation, NonStateActor } from '@prisma/client';
+	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		country: Nation | null | undefined;
+		committees: Omit<Committee, 'conferenceId'>[] | null | undefined;
 		nonStateActor: Omit<NonStateActor, 'conferenceId'> | null | undefined;
 	}
 
-	let { country, nonStateActor }: Props = $props();
+	let { country, nonStateActor, committees }: Props = $props();
+	$inspect(committees);
 </script>
 
 <Wrapper className="w-full">
@@ -28,6 +31,19 @@
 				{nonStateActor.name}
 			{:else if country}
 				{getFullTranslatedCountryNameFromISO3Code(country.alpha3Code)}
+			{/if}
+		</div>
+		<div class="stat-desc mt-2 flex flex-col gap-1">
+			{#if committees && committees.length > 0}
+				{#each committees as committee}
+					<div class="badge">
+						{committee.name}{committee.numOfSeatsPerDelegation !== 1
+							? ` (${committee.numOfSeatsPerDelegation}x)`
+							: ''}
+					</div>
+				{/each}
+			{:else if nonStateActor}
+				<div class="badge">{nonStateActor.seatAmount} {m.seats()}</div>
 			{/if}
 		</div>
 	</div>

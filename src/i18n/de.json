@@ -466,5 +466,6 @@
 	"exportFrom": "Export aus {appName}",
 	"createdOn": "Erstellt am {date} um {time}",
 	"nation": "Nation",
-	"nationOrNSA": "Nation/NSA"
+	"nationOrNSA": "Nation/NSA",
+	"seats": "Plätze",
 }
