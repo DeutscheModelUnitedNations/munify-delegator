@@ -76,7 +76,7 @@ builder.mutationFields((t) => {
 							}
 						});
 
-						const childDelegationsDB = [];
+						const childDelegationsDB: Awaited<ReturnType<typeof tx.delegation.create>>[] = [];
 
 						for (const childDelegation of childDelegations) {
 							const childDelegationDB = await tx.delegation.create({
