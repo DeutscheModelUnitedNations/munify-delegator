@@ -42,8 +42,8 @@ export const AppliedForDelegationRoleSchema = z.object({
 export const UserSchema = z.object({
 	id: z.string(),
 	family_name: z.string(),
-	given_name: z.string(),
-	birthday: z.string().nullish()
+	given_name: z.string()
+	// birthday: z.string().nullish()
 });
 
 export const MemberSchema = z.object({
@@ -114,9 +114,9 @@ export const DelegationSchema = z
 export const SingleParticipantSchema = z
 	.object({
 		id: z.string(),
-		motivation: z.string(),
-		school: z.string(),
-		experience: z.string(),
+		motivation: z.string().nullish(),
+		school: z.string().nullish(),
+		experience: z.string().nullish(),
 		user: UserSchema,
 		appliedForRoles: z.array(AppliedForSingleRoleSchema),
 		supervisors: z.undefined(),

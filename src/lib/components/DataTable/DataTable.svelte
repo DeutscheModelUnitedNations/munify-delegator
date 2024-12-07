@@ -93,7 +93,7 @@
 			</label>
 		{/if}
 		<DataTableSettingsButton />
-		<ExportButton exportedData={rows} />
+		<ExportButton exportedData={rows as any} />
 	</div>
 
 	<PrintHeader {title} {searchPattern} />
