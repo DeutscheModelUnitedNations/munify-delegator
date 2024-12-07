@@ -49,7 +49,6 @@
 					#TODO: Implement individual post conference stage
 				{/if}
 			{:else if conferenceQueryData?.findUniqueDelegationMember?.id}
-				Test
 				{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 					<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if conference!.state === 'PREPARATION'}

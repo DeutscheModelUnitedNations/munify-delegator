@@ -406,5 +406,6 @@
 	"confirmRotateCode": "Are you sure you want to renew the invitation code?",
 	"reloadToSeeChanges": "Reload the page to see the changes.",
 	"notEnoughData": "Insufficient data",
-	"changesSuccessful": "The changes were saved successfully."
+	"changesSuccessful": "The changes were saved successfully.",
+	"seats": "Seats"
 }
