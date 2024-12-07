@@ -54,19 +54,31 @@ ALTER TABLE "TeamMember" DROP CONSTRAINT "TeamMember_conferenceId_fkey";
 -- DropForeignKey
 ALTER TABLE "TeamMember" DROP CONSTRAINT "TeamMember_userId_fkey";
 
+ALTER TABLE "Conference" ADD COLUMN "endConference" TIMESTAMP(3),
+ADD COLUMN     "startAssignment" TIMESTAMP(3) NOT NULL,
+ADD COLUMN     "startConference" TIMESTAMP(3) NOT NULL,
+ADD COLUMN     "state" "ConferenceState" NOT NULL DEFAULT 'PRE',
+ADD COLUMN     "imageDataURL" TEXT,
+ADD COLUMN     "info" TEXT;
+
+UPDATE "Conference"
+SET
+  "endConference" = "end",
+  "startConference" = "start",
+  "startAssignment" = "startRegistration";
+
+ALTER TABLE "Conference"
+  ALTER COLUMN "startConference" SET NOT NULL,
+  ALTER COLUMN "startAssignment" SET NOT NULL,
+  ALTER COLUMN "endConference" SET NOT NULL;
+
 -- AlterTable
 ALTER TABLE "Conference" DROP COLUMN "end",
 DROP COLUMN "endRegistration",
 DROP COLUMN "imageDataUrl",
 DROP COLUMN "start",
 DROP COLUMN "startRegistration",
-DROP COLUMN "status",
-ADD COLUMN     "endConference" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "imageDataURL" TEXT,
-ADD COLUMN     "info" TEXT,
-ADD COLUMN     "startAssignment" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "startConference" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "state" "ConferenceState" NOT NULL DEFAULT 'PRE';
+DROP COLUMN "status";
 
 -- AlterTable
 ALTER TABLE "Delegation" ADD COLUMN     "assignedNationAlpha3Code" TEXT,
