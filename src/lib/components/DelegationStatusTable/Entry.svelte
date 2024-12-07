@@ -50,7 +50,7 @@
 		><span class="mr-2">{name}</span>
 		{#if headDelegate}
 			<div class="tooltip" data-tip={m.headDelegate()}>
-				<i class="ml-2 fa-duotone fa-medal"></i>
+				<i class="fa-duotone fa-medal ml-2"></i>
 			</div>
 		{/if}
 	</td>
@@ -71,11 +71,11 @@
 		<td class="text-center">
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>
 				{#if mailStatus === 'completed'}
-					<i class="text-xl fas fa-circle-check text-success"></i>
+					<i class="fas fa-circle-check text-xl text-success"></i>
 				{:else if mailStatus === 'error'}
-					<i class="text-xl fas fa-triangle-exclamation text-warning"></i>
+					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
 				{:else}
-					<i class="text-xl fas fa-octagon-xmark text-error"></i>
+					<i class="fas fa-octagon-xmark text-xl text-error"></i>
 				{/if}
 			</div>
 		</td>
@@ -84,11 +84,11 @@
 		<td class="text-center">
 			<div class="tooltip" data-tip={getPaymentStatusTooltip()}>
 				{#if paymentStatus === 'completed'}
-					<i class="text-xl fas fa-circle-check text-success"></i>
+					<i class="fas fa-circle-check text-xl text-success"></i>
 				{:else if paymentStatus === 'error'}
-					<i class="text-xl fas fa-triangle-exclamation text-warning"></i>
+					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
 				{:else}
-					<i class="text-xl fas fa-octagon-xmark text-error"></i>
+					<i class="fas fa-octagon-xmark text-xl text-error"></i>
 				{/if}
 			</div>
 		</td>
