@@ -2,9 +2,14 @@
   Warnings:
 
   - You are about to drop the column `end` on the `Conference` table. All the data in the column will be lost.
+  - You are about to drop the column `endRegistration` on the `Conference` table. All the data in the column will be lost.
   - You are about to drop the column `imageDataUrl` on the `Conference` table. All the data in the column will be lost.
   - You are about to drop the column `start` on the `Conference` table. All the data in the column will be lost.
   - You are about to drop the column `startRegistration` on the `Conference` table. All the data in the column will be lost.
+  - You are about to drop the column `status` on the `Conference` table. All the data in the column will be lost.
+  - Added the required column `endConference` to the `Conference` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `startAssignment` to the `Conference` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `startConference` to the `Conference` table without a default value. This is not possible if the table is not empty.
 
 */
 -- CreateEnum
@@ -50,11 +55,17 @@ ALTER TABLE "TeamMember" DROP CONSTRAINT "TeamMember_conferenceId_fkey";
 ALTER TABLE "TeamMember" DROP CONSTRAINT "TeamMember_userId_fkey";
 
 -- AlterTable
-ALTER TABLE "Conference" RENAME COLUMN "end" TO "endConference",
-RENAME COLUMN "start" TO "startConference",
-RENAME COLUMN "imageDataUrl" TO "imageDataURL",
+ALTER TABLE "Conference" DROP COLUMN "end",
+DROP COLUMN "endRegistration",
+DROP COLUMN "imageDataUrl",
+DROP COLUMN "start",
 DROP COLUMN "startRegistration",
+DROP COLUMN "status",
+ADD COLUMN     "endConference" TIMESTAMP(3) NOT NULL,
+ADD COLUMN     "imageDataURL" TEXT,
 ADD COLUMN     "info" TEXT,
+ADD COLUMN     "startAssignment" TIMESTAMP(3) NOT NULL,
+ADD COLUMN     "startConference" TIMESTAMP(3) NOT NULL,
 ADD COLUMN     "state" "ConferenceState" NOT NULL DEFAULT 'PRE';
 
 -- AlterTable
@@ -67,6 +78,9 @@ ADD COLUMN     "assignmentDetails" TEXT,
 ALTER COLUMN "school" DROP NOT NULL,
 ALTER COLUMN "motivation" DROP NOT NULL,
 ALTER COLUMN "experience" DROP NOT NULL;
+
+-- DropEnum
+DROP TYPE "ConferenceStatus";
 
 -- CreateTable
 CREATE TABLE "_ConferenceSupervisorToDelegationMember" (
