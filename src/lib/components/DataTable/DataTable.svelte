@@ -60,7 +60,6 @@
 	);
 
 	onMount(() => {
-		// svelte-ignore state_referenced_locally
 		if (
 			searchedColumns.length === 1 &&
 			queryParamKey &&

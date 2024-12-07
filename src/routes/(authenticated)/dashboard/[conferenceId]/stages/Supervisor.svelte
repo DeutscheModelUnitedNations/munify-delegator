@@ -142,7 +142,7 @@
 						<div class="divider divider-horizontal"></div>
 						<div>
 							<i class="fa-duotone fa-medal mr-4"></i>{getName(
-								delegation?.members.find((x) => x.isHeadDelegate)?.user!,
+								delegation!.members.find((x) => x.isHeadDelegate)!.user!,
 								true
 							)}
 						</div>

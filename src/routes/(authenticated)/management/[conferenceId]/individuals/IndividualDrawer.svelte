@@ -135,7 +135,7 @@
 				onclick={async () => {
 					if (!confirm('Willst du wirklich den Bewerbungsstatus zurücksetzen?')) return;
 					await singleParticipantResetMutation.mutate({
-						singleParticipantId: $singleParticipantQuery?.data?.findUniqueSingleParticipant?.id!,
+						singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
 						applied: false
 					});
 				}}

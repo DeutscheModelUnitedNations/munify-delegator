@@ -24,6 +24,7 @@ export interface DelegationApplication extends Application {
 	members: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SingleApplication extends Application {}
 
 const applications = $state<Application[]>([]);
