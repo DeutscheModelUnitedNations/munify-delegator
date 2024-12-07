@@ -26,7 +26,7 @@
 </script>
 
 <section class="flex flex-col gap-4">
-	<h2 class="text-2xl font-bold">Delegationsstatus</h2>
+	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
 	<div class="stats bg-base-200 shadow">
 		<RoleWidget
 			country={data.findUniqueDelegationMember?.delegation.assignedNation}
@@ -45,7 +45,7 @@
 </section>
 
 <section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">Delegationsmitglieder</h2>
+	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
 	<!-- <DelegationStatusTableWrapper withCommittee withMailStatus withPaymentStatus> -->
 	<DelegationStatusTableWrapper>
 		{#each data.findUniqueDelegationMember?.delegation.members ?? [] as member}
@@ -56,16 +56,29 @@
 			/>
 		{/each}
 	</DelegationStatusTableWrapper>
+	{#if data.findUniqueDelegationMember?.delegation.supervisors.length ?? 0 > 0}
+		<DelegationStatusTableWrapper
+			title={m.supervisors()}
+			description={m.supervisorDelegationDescription()}
+		>
+			{#each data.findUniqueDelegationMember?.delegation.supervisors ?? [] as supervisor}
+				<DelegationStatusTableEntry
+					name={`${supervisor.user.given_name} ${supervisor.user.family_name}`}
+					pronouns={supervisor.user.pronouns ?? ''}
+				/>
+			{/each}
+		</DelegationStatusTableWrapper>
+	{/if}
 </section>
 <section class="flex flex-col">
 	{#if data.findUniqueDelegationMember?.delegation.assignedNation}
-		<h2 class="mb-4 text-2xl font-bold">Informationen zu ihrem Land</h2>
+		<h2 class="mb-4 text-2xl font-bold">{m.informationOnYourCountry()}</h2>
 		<CountryStats
 			countryCode={data.findUniqueDelegationMember?.delegation.assignedNation?.alpha3Code}
 		/>
 	{:else if data.findUniqueDelegationMember?.delegation.assignedNonStateActor}
 		{@const nsa = data.findUniqueDelegationMember?.delegation.assignedNonStateActor}
-		<h2 class="mb-4 text-2xl font-bold">Informationen zu ihrer Organisation</h2>
+		<h2 class="mb-4 text-2xl font-bold">{m.informationOnYourNSA()}</h2>
 		<div class="prose">
 			<h3 class="font-bold">{nsa.name}</h3>
 			<p>{nsa.description}</p>

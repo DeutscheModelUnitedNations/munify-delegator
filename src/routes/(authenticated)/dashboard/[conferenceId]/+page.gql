@@ -96,6 +96,18 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 			school
 			motivation
 			experience
+			assignedNation {
+				alpha3Code
+				alpha2Code
+			}
+			assignedNonStateActor {
+				id
+				abbreviation
+				name
+				description
+				fontAwesomeIcon
+				seatAmount
+			}
 			appliedForRoles {
 				id
 				nonStateActor {
@@ -139,6 +151,18 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 			name
 			description
 			fontAwesomeIcon
+		}
+		assignedRole {
+			id
+			name
+			description
+			fontAwesomeIcon
+		}
+		user {
+			id
+			given_name
+			family_name
+			pronouns
 		}
 	}
 }

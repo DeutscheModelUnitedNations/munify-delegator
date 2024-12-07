@@ -468,4 +468,8 @@
 	"nation": "Nation",
 	"nationOrNSA": "Nation/NSA",
 	"seats": "Plätze",
+	"informationOnYourCountry": "Informationen zu deinem Land",
+	"informationOnYourNSA": "Informationen zu deinem nichtstaatlichen Akteur",
+	"youWillRepresent": "Du vertrittst",
+	"status": "Status"
 }

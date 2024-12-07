@@ -407,5 +407,9 @@
 	"reloadToSeeChanges": "Reload the page to see the changes.",
 	"notEnoughData": "Insufficient data",
 	"changesSuccessful": "The changes were saved successfully.",
-	"seats": "Seats"
+	"seats": "Seats",
+	"informationOnYourCountry": "Information on your country",
+	"informationOnYourNSA": "Information on your NSA",
+	"youWillRepresent": "You will represent",
+	"status": "Status"
 }
