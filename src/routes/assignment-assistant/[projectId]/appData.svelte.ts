@@ -33,8 +33,8 @@ export const NonStateActorSchema = z.object({
 export const AppliedForDelegationRoleSchema = z.object({
 	id: z.string(),
 	rank: z.number(),
-	nation: NationSchema.optional().nullable(),
-	nonStateActor: NonStateActorSchema.optional().nullable(),
+	nation: NationSchema.nullish(),
+	nonStateActor: NonStateActorSchema.nullish(),
 	fontAwesomeIcon: z.undefined(),
 	name: z.undefined()
 });
@@ -43,7 +43,7 @@ export const UserSchema = z.object({
 	id: z.string(),
 	family_name: z.string(),
 	given_name: z.string(),
-	birthday: z.string().optional().nullable()
+	birthday: z.string().nullish()
 });
 
 export const MemberSchema = z.object({
@@ -68,22 +68,22 @@ export const AppliedForSingleRoleSchema = z.object({
 });
 
 export const SightingPropsSchema = z.object({
-	evaluation: z.number().optional().nullable(),
-	flagged: z.boolean().optional().nullable(),
-	disqualified: z.boolean().optional().nullable(),
-	note: z.string().optional().nullable()
+	evaluation: z.number().nullish(),
+	flagged: z.boolean().nullish(),
+	disqualified: z.boolean().nullish(),
+	note: z.string().nullish()
 });
 
 export const DelegationAssignmentSchema = z.object({
-	assignedNation: NationSchema.optional().nullable()
+	assignedNation: NationSchema.nullish()
 });
 
 export const NSAAssignmentSchema = z.object({
-	assignedNSA: NonStateActorSchema.optional().nullable()
+	assignedNSA: NonStateActorSchema.nullish()
 });
 
 export const SingleAssignmentSchema = z.object({
-	assignedRole: IndividualApplicationOptionSchema.optional().nullable()
+	assignedRole: IndividualApplicationOptionSchema.nullish()
 });
 
 export const ConferenceSchema = z.object({
@@ -97,15 +97,15 @@ export const ConferenceSchema = z.object({
 export const DelegationSchema = z
 	.object({
 		id: z.string(),
-		motivation: z.string(),
-		experience: z.string(),
-		school: z.string(),
+		motivation: z.string().nullish(),
+		experience: z.string().nullish(),
+		school: z.string().nullish(),
 		appliedForRoles: z.array(AppliedForDelegationRoleSchema),
 		members: z.array(MemberSchema),
 		supervisors: z.array(SupervisorSchema),
 		user: z.undefined(),
-		splittedFrom: z.string().optional().nullable(),
-		splittedInto: z.array(z.string()).optional().nullable()
+		splittedFrom: z.string().nullish(),
+		splittedInto: z.array(z.string()).nullish()
 	})
 	.merge(SightingPropsSchema)
 	.merge(DelegationAssignmentSchema)
