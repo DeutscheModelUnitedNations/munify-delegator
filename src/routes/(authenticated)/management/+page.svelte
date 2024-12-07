@@ -1,62 +1,42 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
-	import * as m from '$lib/paraglide/messages.js';
 
 	let { data }: { data: PageData } = $props();
-
-	const getAuthorizationRole = (conferenceId: string) => {
-		const teamMembership = data.teamMemberships.find((x) => x.conferenceId === conferenceId);
-		if (teamMembership) {
-			return teamMembership.role;
-		}
-
-		if (data.mySystemRoles.includes('admin')) {
-			return 'ADMIN';
-		}
-
-		return null;
-	};
-
-	const getAuthorizationRoleString = (conferenceId: string) => {
-		const role = getAuthorizationRole(conferenceId);
-		switch (role) {
-			case 'ADMIN':
-				return m.administrator();
-			case 'PROJECT_MANAGEMENT':
-				return m.projectManagement();
-			case 'PARTICIPANT_CARE':
-				return m.participantCare();
-		}
-	};
+	let { conferences } = $derived(data);
 </script>
 
-<div class="w-full flex flex-col items-center gap-4 p-10">
+<div class="flex w-full flex-col items-center gap-4 p-10">
 	<h1 class="text-2xl font-bold">{m.admininstration()}</h1>
 	<p class="text-center max-ch-md">
 		{m.administrationConferenceSelection()}
 	</p>
 	<div class="flex justify-center">
-		<table class="table">
-			<thead>
-				<tr>
-					<th>{m.name()}</th>
-					<th>{m.authorization()}</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.conferences as conference}
+		{#if conferences && conferences.length > 0}
+			<table class="table">
+				<thead>
 					<tr>
-						<td>{conference.title}</td>
-						<td>{getAuthorizationRoleString(conference.id)}</td>
-						<td>
-							<a class="btn" href={`management/${conference.id}`}
-								>{m.open()}<i class="fa-duotone fa-arrow-right"></i></a
-							>
-						</td>
+						<th>{m.name()}</th>
+						<th>{m.authorization()}</th>
+						<th></th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each conferences as conference}
+						<tr>
+							<td>{conference.title}</td>
+							<td>{conference.myMembership}</td>
+							<td>
+								<a class="btn" href={`management/${conference.id}`}
+									>{m.open()}<i class="fa-duotone fa-arrow-right"></i></a
+								>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{:else}
+			{m.noResults()}
+		{/if}
 	</div>
 </div>

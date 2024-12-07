@@ -1,0 +1,144 @@
+query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
+	findUniqueConference(where: { id: $conferenceId }) {
+		id
+		title
+		info
+		state
+		startConference
+		startAssignment
+		endConference
+		committees {
+			id
+			abbreviation
+			name
+			nations {
+				alpha3Code
+				alpha2Code
+			}
+			numOfSeatsPerDelegation
+		}
+		nonStateActors {
+			id
+			name
+			seatAmount
+			description
+		}
+	}
+
+	findUniqueDelegationMember(
+		where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
+	) {
+		id
+		isHeadDelegate
+		delegation {
+			id
+			entryCode
+			school
+			experience
+			motivation
+			applied
+			members {
+				id
+				isHeadDelegate
+				user {
+					id
+					pronouns
+					family_name
+					given_name
+				}
+			}
+			assignedNation {
+				alpha3Code
+				alpha2Code
+			}
+			assignedNonStateActor {
+				id
+				abbreviation
+				name
+				description
+				fontAwesomeIcon
+				seatAmount
+			}
+			appliedForRoles {
+				id
+				rank
+				nonStateActor {
+					id
+					fontAwesomeIcon
+					name
+					seatAmount
+					description
+				}
+				nation {
+					alpha3Code
+					alpha2Code
+				}
+			}
+			supervisors {
+				id
+				user {
+					given_name
+					family_name
+					pronouns
+				}
+			}
+		}
+	}
+	findUniqueConferenceSupervisor(
+		where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
+	) {
+		id
+		plansOwnAttendenceAtConference
+		delegations {
+			id
+			applied
+			entryCode
+			school
+			motivation
+			experience
+			appliedForRoles {
+				id
+				nonStateActor {
+					id
+					name
+				}
+				nation {
+					alpha3Code
+					alpha2Code
+				}
+			}
+			supervisors {
+				id
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
+			members {
+				id
+				isHeadDelegate
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
+		}
+	}
+	findUniqueSingleParticipant(
+		where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
+	) {
+		id
+		school
+		motivation
+		experience
+		applied
+		appliedForRoles {
+			id
+			name
+			description
+			fontAwesomeIcon
+		}
+	}
+}

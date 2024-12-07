@@ -1,50 +1,23 @@
 <script lang="ts">
-	import { apiClient, checkForError } from '$api/client.js';
-	import { page } from '$app/stores';
-	import { getApi } from '$lib/global/apiState.svelte.js';
-	import { toast } from '@zerodevx/svelte-toast';
-	import { onMount } from 'svelte';
+	import { configPublic } from '$config/public';
+	import { graphql } from '$houdini';
 	import * as m from '$lib/paraglide/messages.js';
+	import type { Snippet } from 'svelte';
+	import AuthenticatedHeader from './AuthenticatedHeader.svelte';
 
-	let { children, data } = $props();
+	// import ExportButtons from '$lib/components/DataTable/ExportButtons.svelte';
+	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
-	onMount(() => {
-		if (!data.nextTokenRefreshDue) return;
-		let timeout: any;
+	interface Props {
+		children: Snippet;
+	}
 
-		function runTokenRefresh(nextDueDuration: number) {
-			timeout = setTimeout(async () => {
-				const res = await checkForError(
-					apiClient({
-						origin: $page.url.origin
-					})['auth']['refresh-user'].get()
-				);
-
-				if (res.nextTokenRefreshDue) {
-					// run next again 10 seconds before next expiry
-					//TODO https://github.com/elysiajs/eden/issues/104
-					runTokenRefresh(new Date(res.nextTokenRefreshDue).getTime() - Date.now() - 10 * 1000);
-				}
-			}, nextDueDuration);
-		}
-
-		// refresh the token 10 seconds before expiry
-		runTokenRefresh(new Date(data.nextTokenRefreshDue).getTime() - Date.now() - 10 * 1000);
-
-		(async () => {
-			const errors = await checkForError(
-				getApi().user({ id: data.user.sub })['is-data-complete'].get()
-			);
-			if (errors.length > 0) {
-				toast.push({
-					msg: m.pleaseFillOutYourProfileCorrectly() + ' ' + errors[0],
-					duration: 10000
-				});
-			}
-		})();
-
-		return () => clearTimeout(timeout);
-	});
+	let { children }: Props = $props();
 </script>
 
-{@render children()}
+<div class="flex h-full w-full flex-col">
+	<AuthenticatedHeader />
+	<div class="flex h-full w-full px-4">
+		{@render children()}
+	</div>
+</div>

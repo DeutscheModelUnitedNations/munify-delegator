@@ -146,7 +146,7 @@ async function getSubscribers<T>(perPage: number): Promise<T[]> {
 		}
 
 		// Append the current page's entries to the allEntries array
-		allEntries = [...allEntries, ...res.data.data?.results] as T[];
+		allEntries = [...allEntries, ...(res.data.data?.results ?? [])] as T[];
 
 		// Update total entries and current page
 		totalEntries = res.data.data.total;

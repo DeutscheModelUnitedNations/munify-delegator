@@ -1,6 +1,6 @@
 {
 	"files.eol": "\n",
-	"vscodeGitCommit.template": ["{prefix} ({scope}): {message}", "branch: {branch}"],
+	"vscodeGitCommit.template": ["{prefix}: {message}"],
 	"[javascript]": {},
 	"editor.codeActionsOnSave": {},
 	"vscodeGitCommit.variables": {

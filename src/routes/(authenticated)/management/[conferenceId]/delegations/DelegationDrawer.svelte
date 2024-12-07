@@ -1,101 +1,105 @@
 <script lang="ts">
-	import Drawer from '$lib/components/DataTable/DrawerWrapper.svelte';
-	import type { DelegationDataItem } from './types.svelte';
-	import { apiClient, checkForError } from '$api/client';
-	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages';
-	import type {
-		DelegationMember,
-		ConferenceSupervisor,
-		RoleApplication,
-		Nation,
-		NonStateActor
-	} from '@prisma/client';
-	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName';
-	import { getApi } from '$lib/global/apiState.svelte';
+	import Drawer from '$lib/components/Drawer.svelte';
+	import { graphql } from '$houdini';
+	import type { DelegationDrawerQueryVariables } from './$houdini';
+	import { error } from '@sveltejs/kit';
+	import { delegaitonResetMutation } from './delegationResetMutation';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { find } from 'lodash';
+	import Flag from '$lib/components/Flag.svelte';
 
 	interface Props {
-		delegation: DelegationDataItem | null;
-		onClose: () => void;
-		data: PageData;
+		conferenceId: string;
+		delegationId: string;
+		open?: boolean;
+		onClose?: () => void;
 	}
+	let { delegationId, open = $bindable(false), onClose, conferenceId }: Props = $props();
 
-	let { delegation, onClose, data }: Props = $props();
+	export const _DelegationDrawerQueryVariables: DelegationDrawerQueryVariables = () => {
+		console.log(delegationId);
 
-	let roleApplications = $state<
-		| (RoleApplication & {
-				nation: Nation | null;
-				nonStateActor: NonStateActor | null;
-		  })[]
-		| null
-	>(null);
+		return {
+			delegationId: delegationId
+		};
+	};
 
-	let members = $state<
-		| (DelegationMember & {
-				user: {
-					id: string;
-					given_name: string;
-					family_name: string;
-				};
-		  })[]
-		| null
-	>(null);
-
-	let supervisors = $state<
-		| (ConferenceSupervisor & {
-				user: {
-					id: string;
-					given_name: string;
-					family_name: string;
-				};
-		  })[]
-		| null
-	>(null);
-
-	$effect(() => {
-		roleApplications = null;
-		if (delegation) {
-			checkForError(data.api.roleApplication.get({ query: { delegationId: delegation.id } })).then(
-				(res) => {
-					roleApplications = res;
+	const delegationQuery = graphql(`
+		query DelegationDrawerQuery($delegationId: String!) @load {
+			findUniqueDelegation(where: { id: $delegationId }) {
+				applied
+				entryCode
+				school
+				motivation
+				experience
+				members {
+					isHeadDelegate
+					user {
+						id
+						given_name
+						family_name
+					}
 				}
-			);
-		}
-	});
-
-	$effect(() => {
-		members = null;
-		if (delegation) {
-			checkForError(data.api.delegationMember.get({ query: { delegationId: delegation.id } })).then(
-				(res) => {
-					members = res;
+				appliedForRoles {
+					nonStateActor {
+						name
+					}
+					nation {
+						alpha3Code
+					}
 				}
-			);
+				supervisors {
+					id
+					plansOwnAttendenceAtConference
+					user {
+						given_name
+						family_name
+					}
+				}
+				assignedNation {
+					alpha2Code
+					alpha3Code
+				}
+				assignedNonStateActor {
+					id
+					abbreviation
+					name
+					fontAwesomeIcon
+				}
+			}
 		}
-	});
-
-	$effect(() => {
-		supervisors = null;
-		if (delegation) {
-			checkForError(
-				data.api.conferenceSupervisor.get({ query: { delegationId: delegation.id } })
-			).then((res) => {
-				supervisors = res;
-			});
-		}
-	});
+	`);
 </script>
 
-<Drawer open={delegation != null} {onClose}>
+<Drawer bind:open {onClose}>
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl uppercase font-thin">{m.delegation()}</h3>
-		<h2 class="text-3xl font-bold p-2 bg-base-300 rounded-md">
-			{delegation?.entryCode}
+		<h3 class="text-xl font-thin uppercase">{m.delegation()}</h3>
+		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
+			{$delegationQuery.data?.findUniqueDelegation?.entryCode}
 		</h2>
-		<h3 class="text-sm font-thin">{delegation?.id}</h3>
+		<h3 class="text-sm font-thin">{delegationId}</h3>
 	</div>
 
-	{#if delegation?.applied}
+	{#if $delegationQuery.data?.findUniqueDelegation?.assignedNation}
+		<div class="alert">
+			<Flag alpha2Code={$delegationQuery.data?.findUniqueDelegation?.assignedNation.alpha2Code} />
+			<h3 class="text-xl font-bold">
+				{getFullTranslatedCountryNameFromISO3Code(
+					$delegationQuery.data?.findUniqueDelegation?.assignedNation.alpha3Code
+				)}
+			</h3>
+		</div>
+	{:else if $delegationQuery.data?.findUniqueDelegation?.assignedNonStateActor}
+		<div class="alert">
+			<Flag
+				nsa
+				icon={$delegationQuery.data?.findUniqueDelegation?.assignedNonStateActor.fontAwesomeIcon ??
+					'fa-hand-point-up'}
+			/>
+			{$delegationQuery.data?.findUniqueDelegation?.assignedNonStateActor.name}
+		</div>
+	{:else if $delegationQuery.data?.findUniqueDelegation?.applied}
 		<div class="alert alert-success">
 			<i class="fas fa-check"></i>
 			{m.registrationCompleted()}
@@ -120,44 +124,40 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-qrcode text-lg"></i></td>
 					<td class="font-mono">
-						{delegation?.entryCode}
+						{$delegationQuery.data?.findUniqueDelegation?.entryCode}
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
 					<td>
-						{delegation?.school}
+						{$delegationQuery.data?.findUniqueDelegation?.school}
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-fire-flame-curved text-lg"></i></td>
 					<td>
-						{delegation?.motivation}
+						{$delegationQuery.data?.findUniqueDelegation?.motivation}
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-compass text-lg"></i></td>
 					<td>
-						{delegation?.experience}
+						{$delegationQuery.data?.findUniqueDelegation?.experience}
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-flag text-lg"></i></td>
 					<td>
-						<span class="bg-base-300 py-[2px] px-3 mr-1 rounded-md"
-							>{delegation?._count.appliedForRoles}</span
+						<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
+							>{$delegationQuery.data?.findUniqueDelegation?.appliedForRoles.length}</span
 						>
-						{#if roleApplications}
-							{roleApplications
-								.map((x) => {
-									if (x.nation) return countryCodeToLocalName(x.nation.alpha3Code);
-									if (x.nonStateActor) return x.nonStateActor.name;
-									return 'N/A';
-								})
-								.join(', ')}
-						{:else}
-							<div class="loading loading-dots loading-xs"></div>
-						{/if}
+						{$delegationQuery.data?.findUniqueDelegation?.appliedForRoles
+							.map((x) => {
+								if (x.nation) return getFullTranslatedCountryNameFromISO3Code(x.nation.alpha3Code);
+								if (x.nonStateActor) return x.nonStateActor.name;
+								return 'N/A';
+							})
+							.join(', ')}
 					</td>
 				</tr>
 			</tbody>
@@ -166,9 +166,7 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.delegationMembers()}</h3>
-		{#if !members}
-			<div class="skeleton h-12"></div>
-		{:else if members.length === 0}
+		{#if $delegationQuery.data?.findUniqueDelegation?.members.length === 0}
 			<div class="alert alert-warning">
 				<i class="fa-solid fa-info-circle"></i>
 				{m.noMembersFound()}
@@ -183,7 +181,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each members as member}
+					{#each $delegationQuery.data?.findUniqueDelegation?.members ?? [] as member}
 						<tr>
 							<td>
 								{#if member.isHeadDelegate}
@@ -197,7 +195,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{data.conferenceData.id}/participants?id={member.user.id}"
+									href="/management/{conferenceId}/participants?filter={member.user.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -213,9 +211,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
 
-		{#if !supervisors}
-			<div class="skeleton h-12"></div>
-		{:else if supervisors.length === 0}
+		{#if !$delegationQuery.data?.findUniqueDelegation?.supervisors || $delegationQuery.data?.findUniqueDelegation?.supervisors.length === 0}
 			<div class="alert alert-info">
 				<i class="fa-solid fa-user-slash"></i>
 				{m.noSupervisors()}
@@ -230,7 +226,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each supervisors! as supervisor}
+					{#each $delegationQuery.data?.findUniqueDelegation?.supervisors ?? [] as supervisor}
 						<tr>
 							<td>
 								{#if supervisor.plansOwnAttendenceAtConference}
@@ -246,7 +242,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{data.conferenceData.id}/supervisors?id={supervisor.id}"
+									href="/management/{conferenceId}/supervisors?filter={supervisor.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -265,24 +261,21 @@
 			class="btn"
 			onclick={async () => {
 				if (!confirm(m.confirmRotateCode())) return;
-				await checkForError(getApi().delegation({ id: delegation!.id }).resetEntryCode.patch());
-				// TODO: Fix this, so that the page does not need to be reloaded. invalidateAll() does not work.
-				alert(m.reloadToSeeChanges());
+				await delegaitonResetMutation.mutate({ delegationId, resetEntryCode: true });
 			}}
 		>
 			<i class="fa-duotone fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
-		{#if delegation?.applied}
+		{#if $delegationQuery.data?.findUniqueDelegation?.applied}
 			<button
 				class="btn"
 				onclick={async () => {
 					if (!confirm(m.confirmRevokeApplication())) return;
-					await checkForError(
-						getApi().delegation({ id: delegation!.id }).revokeApplication.patch()
-					);
-					// TODO: Fix this, so that the page does not need to be reloaded. invalidateAll() does not work.
-					alert(m.reloadToSeeChanges());
+					await delegaitonResetMutation.mutate({
+						delegationId,
+						applied: $delegationQuery.data?.findUniqueDelegation?.applied
+					});
 				}}
 			>
 				<i class="fa-duotone fa-file-slash"></i>

@@ -1,52 +1,55 @@
 <script lang="ts">
-	import ConferenceCard from '$lib/components/ConferenceCard.svelte';
-	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
-	import RegistrationBreadcrumbs from '$lib/components/RegistrationBreadcrumbs.svelte';
+	import type { PageData } from './$houdini';
 	import svgempty from '$assets/undraw/empty_street.svg';
+	import ConferenceCard from '$lib/components/ConferenceCard/ConferenceCard.svelte';
 
 	let { data }: { data: PageData } = $props();
+	let conferenceQuery = $derived(data.ConferenceOpenForRegistrationQuery);
+	let conferences = $derived($conferenceQuery?.data?.findManyConferences ?? []);
 
-	const breadcrumbs = [{ href: '/registration', title: m.signup(), icon: 'user-plus' }];
-
-	const alreadyRegistered = (conferenceId: string) => {
-		if (!data.userData) return false;
-		if (data.userData.delegationMemberships) {
-			return data.userData.delegationMemberships.some(
-				(membership) => membership.conferenceId === conferenceId
-			);
+	function alreadyRegistered(conferenceId: string) {
+		if (
+			$conferenceQuery.data?.findManySingleParticipants.find(
+				(x) => x.conference.id === conferenceId
+			)
+		) {
+			return true;
 		}
-	};
+
+		if (
+			$conferenceQuery.data?.findManyDelegationMembers.find((x) => x.conference.id === conferenceId)
+		) {
+			return true;
+		}
+
+		return false;
+	}
 </script>
 
-<div class="w-full min-h-screen bg-light-blue-500 flex flex-col items-center p-4">
-	<RegistrationBreadcrumbs {breadcrumbs} />
+<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="text-3xl tracking-wider uppercase mb-3">{m.signup()}</h1>
 		<p>{m.selectConference()}</p>
 	</hero>
 
 	<main>
-		{#if data.conferences.length === 0}
-			<section class="w-full flex flex-col items-center gap-4">
-				<img src={svgempty} alt="Empty" class="w-1/2 mb-10" />
-				<h1 class="text-3xl text-center">{m.noConferenceOpenForRegistration()}</h1>
-				<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
-				<div class="flex gap-4 flex-col md:flex-row-reverse">
+		{#if conferences.length === 0}
+			<section class="flex w-full flex-col items-center gap-4">
+				<img src={svgempty} alt="Empty" class="mb-10 w-1/2" />
+				<h1 class="text-center text-3xl">{m.noConferenceOpenForRegistration()}</h1>
+				<p class="text-center max-ch-md">{m.noConferenceOpenForRegistrationText()}</p>
+				<div class="flex flex-col gap-4 md:flex-row-reverse">
 					<a class="btn mt-10" href="/">{m.backToHome()}</a>
 				</div>
 			</section>
 		{:else}
 			<section
-				class="flex flex-col md:flex-row justify-center items-center md:items-stretch gap-8 flex-wrap"
+				class="flex flex-col flex-wrap items-center justify-center gap-8 md:flex-row md:items-stretch"
 			>
-				{#each data.conferences.sort((a, b) => {
-					if (!a.start || !b.start) return 0;
-					return new Date(a.start).getTime() - new Date(b.start).getTime();
-				}) as item}
+				{#each conferences as conference}
 					<ConferenceCard
-						{...item}
-						alreadyRegistered={alreadyRegistered(item.id)}
+						{conference}
+						alreadyRegistered={alreadyRegistered(conference.id)}
 						baseSlug="/registration"
 					/>
 				{/each}

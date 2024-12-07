@@ -3,7 +3,7 @@
 
 	interface Props {
 		headline: string;
-		items: User[];
+		items: Partial<User>[];
 	}
 
 	let { headline, items }: Props = $props();
@@ -13,9 +13,9 @@
 	<td>{headline}</td>
 	<td>
 		{#if items.length > 0}
-			<i class="fas fa-circle-xmark text-error text-xl"></i>
+			<i class="fas fa-circle-xmark text-xl text-error"></i>
 		{:else}
-			<i class="fas fa-circle-check text-success text-xl"></i>
+			<i class="fas fa-circle-check text-xl text-success"></i>
 		{/if}
 	</td>
 	<td>{items.length}</td>

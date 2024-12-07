@@ -17,14 +17,14 @@
 </script>
 
 <div
-	class="card bg-base-100 dark:bg-base-200 max-w-96 shadow-lg hover:scale-[1.01] transition-all duration-300"
+	class="card max-w-96 bg-base-100 shadow-lg transition-all duration-300 hover:scale-[1.01] dark:bg-base-200"
 >
 	<div class="card-body">
 		<h1 class="card-title">{title}</h1>
 		<div class="flex-1">
 			<CardInfoSectionWithIcons items={infoItems()} />
 		</div>
-		<div class="card-actions justify-end mt-4">
+		<div class="card-actions mt-4 justify-end">
 			<a class="btn btn-primary" href={link}>{btnText}</a>
 		</div>
 	</div>

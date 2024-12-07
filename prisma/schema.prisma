@@ -7,35 +7,37 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator prismabox {
-  provider                    = "prismabox"
-  typeboxImportVariableName   = "t"
-  typeboxImportDependencyName = "elysia"
-  output                      = "./generated/schema"
-  inputModel                  = true
-  additionalFieldsPlain       = ["__typename: t.Optional(t.String())"]
-  allowRecursion              = false
+generator pothos {
+  provider    = "prisma-pothos-types"
+  prismaUtils = "true"
 }
 
-enum ConferenceStatus {
-  PRE
-  ACTIVE
-  POST
+generator pothosCrud {
+  provider            = "prisma-generator-pothos-codegen"
+  generatorConfigPath = "./pothos.config.ts"
+}
+
+enum ConferenceState {
+  PRE // the conference is created but applying is not possible yet
+  PARTICIPANT_REGISTRATION // applications are open
+  PREPARATION // preparation starts, e.g. participants can assign in the given boundaries what they want to do (e.g. head delegate decides who is going into which committee)
+  ACTIVE // the conference is currently running
+  POST // the conference is over and things like downloading the participation certificate are possible
 }
 
 model Conference {
-  id                String           @id @default(nanoid())
-  title             String
-  longTitle         String?
-  start             DateTime?
-  end               DateTime?
-  location          String?
-  language          String?
-  website           String?
-  imageDataUrl      String?
-  status            ConferenceStatus @default(PRE)
-  startRegistration DateTime?
-  endRegistration   DateTime?
+  id              String          @id @default(nanoid())
+  title           String
+  longTitle       String?
+  location        String?
+  language        String?
+  website         String?
+  imageDataURL    String?
+  info            String?
+  state           ConferenceState @default(PRE)
+  startAssignment DateTime
+  startConference DateTime
+  endConference   DateTime
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
@@ -44,8 +46,8 @@ model Conference {
   conferenceUserStatus         ConferenceParticipantStatus[]
   teamMembers                  TeamMember[]
   committees                   Committee[]
-  singleParticipant            SingleParticipant[]
-  DelegationMember             DelegationMember[]
+  singleParticipants           SingleParticipant[]
+  delegationMembers            DelegationMember[]
 }
 
 model Committee {
@@ -54,7 +56,6 @@ model Committee {
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
 
-  /// @prismabox.update.input.hide
   conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId String
   nations      Nation[]
@@ -70,15 +71,10 @@ model User {
   id String @id @default(nanoid())
 
   // these are OIDC fields and only will be updated by the issuer in the login flow
-  /// @prismabox.input.hide
   email              String
-  /// @prismabox.input.hide
   family_name        String
-  /// @prismabox.input.hide
   given_name         String
-  /// @prismabox.input.hide
   locale             String
-  /// @prismabox.input.hide
   preferred_username String
 
   // custom data fields
@@ -96,15 +92,10 @@ model User {
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
 
-  /// @prismabox.input.hide
   delegationMemberships       DelegationMember[]
-  /// @prismabox.input.hide
   conferenceSupervisor        ConferenceSupervisor[]
-  /// @prismabox.input.hide
   conferenceParticipantStatus ConferenceParticipantStatus[]
-  /// @prismabox.input.hide
   teamMember                  TeamMember[]
-  /// @prismabox.input.hide
   singleParticipant           SingleParticipant[]
 }
 
@@ -121,11 +112,9 @@ model ConferenceParticipantStatus {
   paymentStatus      AdministrativeStatus @default(PENDING)
   didAttend          Boolean              @default(false)
 
-  /// @prismabox.update.input.hide
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
   userId       String
-  /// @prismabox.update.input.hide
-  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
 }
 
@@ -137,6 +126,8 @@ model Nation {
 
   roleApplications RoleApplication[]
   committees       Committee[]
+
+  assignedDelegations Delegation[]
 }
 
 model NonStateActor {
@@ -147,10 +138,11 @@ model NonStateActor {
   abbreviation    String
   seatAmount      Int     @default(2)
 
-  /// @prismabox.update.input.hide
   conference       Conference        @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId     String
   roleApplications RoleApplication[]
+
+  assignedDelegations Delegation[]
 
   @@unique([conferenceId, abbreviation])
   @@unique([conferenceId, name])
@@ -163,29 +155,31 @@ model CustomConferenceRole {
   description     String
   fontAwesomeIcon String?
 
-  /// @prismabox.update.input.hide
   conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
   singleParticipant SingleParticipant[]
 
+  singleParticipantAssignments SingleParticipant[] @relation("assignment")
   @@unique([conferenceId, name])
 }
 
 model SingleParticipant {
   id           String     @id @default(nanoid())
-  /// @prismabox.update.input.hide
-  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
-  /// @prismabox.update.input.hide
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
   userId       String
 
-  /// @prismabox.input.hide
   applied Boolean @default(false)
 
-  school     String
-  motivation String
-  experience String
+  school     String?
+  motivation String?
+  experience String?
+
+  /// For example the country of an IGH judge
+  assignmentDetails String?
+  assignedRole CustomConferenceRole? @relation(name: "assignment", fields: [assignedRoleId], references: [id])
+  assignedRoleId String?
 
   appliedForRoles CustomConferenceRole[]
 
@@ -199,37 +193,34 @@ model Delegation {
   experience String?
   /// wether the delegation has submitted their application
   /// after submitting the entity should not be able to change
-  /// @prismabox.input.hide
   applied    Boolean @default(false)
   // this will always be auto generated
-  /// @prismabox.input.hide
   entryCode  String  @unique
 
-  /// @prismabox.update.input.hide
-  conference      Conference             @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference      Conference             @relation(fields: [conferenceId], references: [id])
   conferenceId    String
-  /// @prismabox.input.hide
   members         DelegationMember[]
-  /// @prismabox.input.hide
   supervisors     ConferenceSupervisor[]
-  /// @prismabox.input.hide
   appliedForRoles RoleApplication[]
+
+  assignedNation           Nation? @relation(fields: [assignedNationAlpha3Code], references: [alpha3Code])
+  assignedNationAlpha3Code String?
+
+  assignedNonStateActor   NonStateActor? @relation(fields: [assignedNonStateActorId], references: [id])
+  assignedNonStateActorId String?
 }
 
 model RoleApplication {
   id           String     @id @default(nanoid())
-  /// @prismabox.update.input.hide
   delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId String
   rank         Int
 
   // only one can be set at a time
   // the application is either a nation or a nsa
-  /// @prismabox.update.input.hide
-  nation          Nation?        @relation(fields: [nationId], references: [alpha3Code], onDelete: Cascade)
+  nation          Nation?        @relation(fields: [nationId], references: [alpha3Code])
   nationId        String?
-  /// @prismabox.update.input.hide
-  nonStateActor   NonStateActor? @relation(fields: [nonStateActorId], references: [id], onDelete: Cascade)
+  nonStateActor   NonStateActor? @relation(fields: [nonStateActorId], references: [id])
   nonStateActorId String?
 
   @@unique([delegationId, nationId])
@@ -239,16 +230,15 @@ model RoleApplication {
 
 model DelegationMember {
   id             String     @id @default(nanoid())
-  /// @prismabox.update.input.hide
-  conference     Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference     Conference @relation(fields: [conferenceId], references: [id])
   conferenceId   String
-  /// @prismabox.update.input.hide
   delegation     Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId   String
-  /// @prismabox.update.input.hide
-  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id])
   userId         String
   isHeadDelegate Boolean
+
+  postAssignmentConferenceSupervisors ConferenceSupervisor[]
 
   // users can only be once in this delegation
   @@unique([delegationId, userId])
@@ -262,16 +252,19 @@ model ConferenceSupervisor {
 
   // since this entity can be edited by the users themselves we
   // want to prevent the following fields to ever show up in input models 
-  /// @prismabox.input.hide
-  conference   Conference   @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference   Conference   @relation(fields: [conferenceId], references: [id])
   conferenceId String
-  /// @prismabox.input.hide
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
   userId       String
   // this also never will be set directly but via a check of the entry code for delegations
   // therefore no update/create call ever should include this
-  /// @prismabox.input.hide
   delegations  Delegation[]
+
+  // after assignment the supervisors lose their delegation access and gain a member access
+  // this is for pricacy reasons since the assignment process might add user which are not
+  // related to the supervisor in any way to a delegation they are supervising
+  // which would render their data open to read for a completely unknown person
+  postAssignmentDelegeationMembers DelegationMember[]
 
   @@unique([conferenceId, userId])
 }
@@ -284,11 +277,9 @@ enum TeamRole {
 
 model TeamMember {
   id           String     @id @default(nanoid())
-  /// @prismabox.update.input.hide
-  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
-  /// @prismabox.update.input.hide
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
   userId       String
   role         TeamRole   @default(MEMBER)
 

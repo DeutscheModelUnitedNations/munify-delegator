@@ -1,0 +1,36 @@
+query ConferenceDelegationsQuery($conferenceId: String!) {
+	findManyDelegations(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		entryCode
+		applied
+		school
+		assignedNation {
+			alpha3Code
+		}
+		assignedNonStateActor {
+			name
+		}
+		members {
+			id
+		}
+		supervisors {
+			id
+		}
+		appliedForRoles {
+			id
+		}
+		motivation
+		experience
+		assignedNation {
+			alpha2Code
+			alpha3Code
+		}
+		assignedNonStateActor {
+			id
+			abbreviation
+			name
+			description
+			fontAwesomeIcon
+		}
+	}
+}

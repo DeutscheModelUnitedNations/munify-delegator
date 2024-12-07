@@ -1,8 +1,17 @@
 <script lang="ts">
 	import { ParaglideJS } from '@inlang/paraglide-sveltekit';
 	import { i18n } from '$lib/i18n';
+	import CookieBanner from '$lib/components/CookieBanner.svelte';
+	import Footer from './Footer.svelte';
+	import { SvelteToast } from '@zerodevx/svelte-toast';
 
+	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
+	// import CookieBanner from '$lib/components/CookieBanner.svelte';
+
+	// global stylesheet
 	import '../app.css';
+
+	// various fonts
 	import '@fontsource/outfit/100.css';
 	import '@fontsource/outfit/200.css';
 	import '@fontsource/outfit/300.css';
@@ -25,12 +34,17 @@
 	import '@fontsource/vollkorn/700.css';
 	import '@fontsource/vollkorn/800.css';
 	import '@fontsource/vollkorn/900.css';
-	import 'flag-icons/css/flag-icons.min.css';
-	import { onMount, type Snippet } from 'svelte';
-	import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
-	import CookieBanner from '$lib/components/CookieBanner.svelte';
 
-	let { children }: { children: Snippet } = $props();
+	// flag icons
+	import 'flag-icons/css/flag-icons.min.css';
+	import type { Snippet } from 'svelte';
+	import { browser } from '$app/environment';
+
+	interface Props {
+		children: Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	const changeFaDuotoneTheme = () => {
 		const r = document.querySelector(':root');
@@ -51,11 +65,11 @@
 		// --fa-secondary-opacity: 1;
 	};
 
-	onMount(() => {
+	if (browser) {
 		changeFaDuotoneTheme();
 		const colorSchemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		colorSchemeMediaQuery.addEventListener('change', changeFaDuotoneTheme);
-	});
+	}
 </script>
 
 <svelte:head>
@@ -70,7 +84,12 @@
 </svelte:head>
 
 <ParaglideJS {i18n}>
-	{@render children()}
-	<GlobalErrorToast />
+	<SvelteToast options={{}} />
 	<CookieBanner />
+	<div class="flex min-h-screen">
+		<!-- {@render children()} -->
+		<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
+		{@render children()}
+	</div>
+	<Footer />
 </ParaglideJS>

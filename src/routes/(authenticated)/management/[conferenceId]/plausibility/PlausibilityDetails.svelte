@@ -3,7 +3,7 @@
 
 	interface Props {
 		headline: string;
-		items: User[];
+		items: Pick<User, 'family_name' | 'given_name' | 'id'>[];
 		link: string;
 	}
 

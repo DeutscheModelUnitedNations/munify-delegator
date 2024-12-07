@@ -103,12 +103,10 @@ const conference = await seedDb.conference.create({
 		longTitle: 'Model United Nations Schleswig-Holstein 2025',
 		location: 'Kiel',
 		website: 'https://mun-sh.de',
-		start: '2025-03-06T00:00:00.000Z',
-		end: '2025-03-10T00:00:00.000Z',
-		startRegistration: '2024-09-23T00:00:00.000Z',
-		endRegistration: '2024-11-03T23:59:59.000Z',
 		language: 'Deutsch',
-		status: 'PRE'
+		startAssignment: new Date('2024-11-03T00:00:00.000Z'),
+		startConference: new Date('2025-03-06T00:00:00.000Z'),
+		endConference: new Date('2025-03-10T00:00:00.000Z')
 	}
 });
 console.info("Creating conference's committees");

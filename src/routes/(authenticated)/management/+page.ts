@@ -1,23 +1,62 @@
-import { checkForError } from '$api/client';
+import { graphql } from '$houdini';
+import { allConferenceQuery } from '$lib/queries/allConferences';
 import type { PageLoad } from './$types';
-import { apiClient } from '$api/client';
 
-export const load: PageLoad = async ({ params, fetch, url, parent }) => {
-	const { mySystemRoles, teamMemberships } = await parent();
+const conferencesWhereImMoreThanMember = graphql(`
+	query ConferencesWhereImMoreThanMember($myUserId: String!) {
+		findManyConferences(
+			where: {
+				teamMembers: {
+					some: {
+						role: { in: [PROJECT_MANAGEMENT, PARTICIPANT_CARE] }
+						userId: { equals: $myUserId }
+					}
+				}
+			}
+		) {
+			id
+			title
+			teamMembers {
+				id
+				role
+				user {
+					id
+				}
+			}
+		}
+	}
+`);
 
-	const conferences = (
-		await checkForError(apiClient({ fetch, origin: url.origin }).conference.get())
-	).filter(
-		(conference) =>
-			mySystemRoles.includes('admin') ||
-			teamMemberships.some(
-				(team) =>
-					team.conferenceId === conference.id &&
-					(team.role === 'PROJECT_MANAGEMENT' || team.role === 'PARTICIPANT_CARE')
-			)
-	);
+export const load: PageLoad = async (event) => {
+	const { user } = await event.parent();
 
+	// we want the conferences to appear either if we are a privileged user on that conference or
+	// if we are a system admin
+	if (user.myOIDCRoles.includes('admin')) {
+		// in case we are an admin => display all conferences
+		const { data } = await allConferenceQuery.fetch({ event, blocking: true });
+		const queriedConfernces = data?.findManyConferences;
+		return {
+			conferences: queriedConfernces?.map((c) => ({
+				id: c.id,
+				title: c.title,
+				myMembership: 'SYSTEM_ADMIN'
+			}))
+		};
+	}
+
+	// in case we are a privileged user => display all conferences where thats the case
+	const { data } = await conferencesWhereImMoreThanMember.fetch({
+		event,
+		variables: { myUserId: user.sub },
+		blocking: true
+	});
+	const queriedConfernces = data?.findManyConferences;
 	return {
-		conferences
+		conferences: queriedConfernces?.map((c) => ({
+			id: c.id,
+			title: c.title,
+			myMembership: c.teamMembers.find((m) => m.user.id === user.sub)?.role
+		}))
 	};
 };

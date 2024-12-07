@@ -1,0 +1,23 @@
+query ConferenceSingleParticipantsQuery($conferenceId: String!) {
+	findManySingleParticipants(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		applied
+		school
+		appliedForRoles {
+			id
+			fontAwesomeIcon
+			name
+		}
+		assignedRole {
+			id
+			fontAwesomeIcon
+			name
+		}
+		motivation
+		experience
+		user {
+			family_name
+			given_name
+		}
+	}
+}

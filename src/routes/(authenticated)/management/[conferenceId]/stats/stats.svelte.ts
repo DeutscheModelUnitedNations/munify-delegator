@@ -43,7 +43,7 @@ export interface SingleParticipants {
 
 export interface ByRole {
 	role: string;
-	fontAwesomeIcon?: string | undefined;
+	fontAwesomeIcon?: string | undefined | null;
 	total: number;
 	applied: number;
 	notApplied: number;
@@ -51,25 +51,13 @@ export interface ByRole {
 
 export interface Age {
 	average?: number;
-	distribution: { [x: string]: number };
+	distribution: { key: string; value: number }[];
 }
 
 export interface StatsTypeHistoryEntry {
 	stats: StatsType;
 	timestamp: string;
 	conferenceId: string;
-}
-
-// Stats Store
-
-let stats = $state<StatsType | null>();
-
-export function getStats() {
-	return stats;
-}
-
-export function setStats(newStats: StatsType) {
-	stats = newStats;
 }
 
 // Filter (by applied, not applied)

@@ -1,26 +1,11 @@
-import adapter from 'svelte-adapter-bun';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import adapter from 'svelte-adapter-bun';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
 	// for more information about preprocessors
-	preprocess: vitePreprocess({
-		script: true
-	}),
-
-	vitePlugin: {
-		dynamicCompileOptions({ filename }) {
-			if (filename.includes('node_modules')) {
-				return { runes: undefined }; // or false, check what works
-			}
-		}
-	},
-
-	compilerOptions: {
-		runes: true
-	},
-
+	preprocess: vitePreprocess(),
 	kit: {
 		adapter: adapter({
 			dynamic_origin: true
@@ -29,7 +14,8 @@ const config = {
 			$api: 'src/api',
 			$assets: 'src/assets',
 			$db: 'prisma',
-			$config: 'src/config'
+			$config: 'src/config',
+			$houdini: './$houdini'
 		}
 	}
 };

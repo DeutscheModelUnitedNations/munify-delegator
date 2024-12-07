@@ -1,18 +1,19 @@
 <script lang="ts">
-	import TableSearch from '$lib/components/DataTable/TableSearch.svelte';
-	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
-	import Drawer from './SupervisorDrawer.svelte';
-	import SvelteTable, { type TableColumns } from 'svelte-table';
-	import type { ConferenceSupervisorData } from './+page.ts';
+	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
+	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
+	import { type TableColumns } from 'svelte-table';
 	import * as m from '$lib/paraglide/messages';
-	import { getTableSettings } from '$lib/components/DataTable/tableSettings.svelte';
+	import type { PageData } from './$houdini';
+	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
+	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import IndividualDrawer from './SupervisorDrawer.svelte';
 
-	const { data } = $props();
+	const { data }: { data: PageData } = $props();
+	const queryData = $derived(data.ConferenceSupervisorsQuery);
+	const supervisors = $derived($queryData?.data?.findManyConferenceSupervisors ?? []);
+	const { getTableSize } = getTableSettings();
 
-	let supervisors = $state<ConferenceSupervisorData[]>(data.supervisors);
-
-	const columns: TableColumns<ConferenceSupervisorData> = [
+	const columns: TableColumns<(typeof supervisors)[number]> = [
 		{
 			key: 'name',
 			title: m.name(),
@@ -38,65 +39,32 @@
 		{
 			key: 'delegations',
 			title: m.adminDelegations(),
-			value: (row) => row._count.delegations,
+			value: (row) => row.delegations.length,
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'
 		}
 	];
 
-	const { getTableSize, getZebra } = getTableSettings();
-
-	let filterValue = $state<string>(data.idQuery ?? '');
-
-	$effect(() => {
-		if (filterValue !== '') {
-			supervisors = data.supervisors.filter((u) => {
-				const search = filterValue!.toLowerCase();
-				return (
-					(u.id && u.id.toLowerCase().includes(search)) ||
-					(u.user.given_name && u.user.given_name.toLowerCase().includes(search)) ||
-					(u.user.family_name && u.user.family_name.toLowerCase().includes(search))
-				);
-			});
-		} else {
-			supervisors = data.supervisors;
-		}
-	});
-
-	const exportedData = $derived(() => {
-		return [
-			...supervisors.map((p) => ({
-				name: `${p.user.family_name} ${p.user.given_name}`,
-				plansAttendance: p.plansOwnAttendenceAtConference ? 'Yes' : 'No',
-				delegations: p._count.delegations.toString()
-			}))
-		];
-	});
-
-	let supervisor = $state<ConferenceSupervisorData | null>(
-		data.idQuery ? (supervisors.find((u) => u.id === data.idQuery) ?? null) : null
-	);
+	let selectedSupervisorRow = $state<(typeof supervisors)[number]>();
+	// TODO export data
 </script>
 
-<ManagementHeader title={m.adminSupervisors()} exportedData={exportedData()} tableOptions />
-<PrintHeader title={m.adminSupervisors()} globalSearchValue={filterValue ?? undefined} />
+<DataTable
+	{columns}
+	rows={supervisors}
+	enableSearch={true}
+	queryParamKey="filter"
+	rowSelected={(row) => {
+		selectedSupervisorRow = row;
+	}}
+/>
 
-<TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
-
-<div class="mt-4 overflow-x-auto">
-	<SvelteTable
-		{columns}
-		rows={supervisors}
-		rowKey="id"
-		classNameTable="table {getZebra() && 'table-zebra'} table-{getTableSize()} table-pin-rows"
-		classNameRow="hover:!bg-base-300 cursor-pointer"
-		on:clickRow={(e) => (supervisor = e.detail.row)}
-		iconAsc="<i class='fa-duotone fa-arrow-down-a-z'></i>"
-		iconDesc="<i class='fa-duotone fa-arrow-down-z-a'></i>"
-		iconSortable="<i class='fa-solid fa-sort'></i>"
-		sortBy="name"
+{#if selectedSupervisorRow}
+	<IndividualDrawer
+		supervisorId={selectedSupervisorRow.id}
+		conferenceId={data.conferenceId}
+		open={selectedSupervisorRow !== undefined}
+		onClose={() => (selectedSupervisorRow = undefined)}
 	/>
-</div>
-
-<Drawer {supervisor} onClose={() => (supervisor = null)} {data} />
+{/if}

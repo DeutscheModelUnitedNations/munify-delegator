@@ -1,0 +1,13 @@
+query ConferenceSupervisorsQuery($conferenceId: String!) {
+	findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		plansOwnAttendenceAtConference
+		user {
+			family_name
+			given_name
+		}
+		delegations {
+			id
+		}
+	}
+}
