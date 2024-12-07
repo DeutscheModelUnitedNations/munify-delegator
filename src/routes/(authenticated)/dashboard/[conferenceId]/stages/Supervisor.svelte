@@ -4,7 +4,7 @@
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { graphql } from '$houdini';
-	import type { StoresValues } from 'svelte/store';
+	import type { StoresValues } from '$lib/services/storeExtractorType';
 
 	// TODO these components need some refactoring
 	let {
@@ -169,7 +169,7 @@
 						<div class="font-bold">{m.experience()}</div>
 						<div class="mb-4">{delegation.experience}</div>
 						<div class="font-bold">{m.motivation()}</div>
-						<div class="mb-4">{delegation.experience}</div>
+						<div class="mb-4">{delegation.motivation}</div>
 						<div class="font-bold">{m.delegationPreferences()}</div>
 						<div class="flex flex-wrap gap-1">
 							{#if delegation.appliedForRoles.length > 0}

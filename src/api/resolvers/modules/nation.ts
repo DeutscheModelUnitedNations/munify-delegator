@@ -74,22 +74,22 @@ builder.queryFields((t) => {
 // 	};
 // });
 
-builder.mutationFields((t) => {
-	const field = updateOneNationMutationObject(t);
-	return {
-		updateOneNation: t.prismaField({
-			...field,
-			args: { where: field.args.where },
-			resolve: (query, root, args, ctx, info) => {
-				args.where = {
-					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('update').Nation]
-				};
-				return field.resolve(query, root, args, ctx, info);
-			}
-		})
-	};
-});
+// builder.mutationFields((t) => {
+// 	const field = updateOneNationMutationObject(t);
+// 	return {
+// 		updateOneNation: t.prismaField({
+// 			...field,
+// 			args: { where: field.args.where },
+// 			resolve: (query, root, args, ctx, info) => {
+// 				args.where = {
+// 					...args.where,
+// 					AND: [ctx.permissions.allowDatabaseAccessTo('update').Nation]
+// 				};
+// 				return field.resolve(query, root, args, ctx, info);
+// 			}
+// 		})
+// 	};
+// });
 
 builder.mutationFields((t) => {
 	const field = deleteOneNationMutationObject(t);

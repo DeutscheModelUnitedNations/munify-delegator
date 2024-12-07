@@ -1,5 +1,5 @@
-import type { PageLoad } from './$types';
-import { fail, message, superValidate, withFiles } from 'sveltekit-superforms';
+import type { PageServerLoad } from './$types';
+import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
@@ -15,7 +15,7 @@ const conferenceQuery = graphql(`
 			longTitle
 			startAssignment
 			startConference
-			startRegistration
+			state
 			title
 			website
 			endConference
@@ -36,7 +36,7 @@ const conferenceUpdate = graphql(`
 	}
 `);
 
-export const load: PageLoad = async (event) => {
+export const load: PageServerLoad = async (event) => {
 	const { data } = await conferenceQuery.fetch({
 		event,
 		variables: { id: event.params.conferenceId },

@@ -65,8 +65,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 
 			const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
 				where: {
-					startRegistration: {
-						lte: new Date()
+					state: {
+						equals: 'PARTICIPANT_REGISTRATION'
 					},
 					startAssignment: {
 						gte: new Date()

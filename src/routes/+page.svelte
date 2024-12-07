@@ -36,13 +36,12 @@
 		$ConferencesPreview.data?.findManyConferences
 			.filter((c) => {
 				return (
-					new Date(c.startRegistration).getTime() < new Date().getTime() &&
+					c.state === 'PARTICIPANT_REGISTRATION' &&
 					new Date(c.startAssignment).getTime() > new Date().getTime()
 				);
 			})
 			.sort(
-				(a, b) =>
-					new Date(b.startRegistration!).getTime() - new Date(a.startRegistration!).getTime()
+				(a, b) => new Date(b.startAssignment!).getTime() - new Date(a.startAssignment!).getTime()
 			) ?? []
 	);
 </script>

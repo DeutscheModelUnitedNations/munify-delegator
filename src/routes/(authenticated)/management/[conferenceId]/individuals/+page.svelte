@@ -36,7 +36,7 @@
 			class: 'text-center'
 		},
 		{
-			key: 'roles',
+			key: 'roleApplications',
 			title: m.roleApplications(),
 			renderValue: (row) => {
 				if (row.appliedForRoles.length === 0) return 'N/A';
@@ -54,6 +54,16 @@
 			},
 			parseHTML: true,
 			class: 'text-center'
+		},
+		{
+			key: 'role',
+			title: m.role(),
+			parseHTML: true,
+			renderValue: (row) => `
+						<div class="tooltip" data-tip="${row?.assignedRole?.name}">
+						<i class="fa-duotone fa-${row?.assignedRole?.fontAwesomeIcon?.replace('fa-', '')} text-${getTableSize()}"></i>
+						</div>
+				`
 		},
 		{
 			key: 'school',

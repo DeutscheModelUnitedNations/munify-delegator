@@ -77,7 +77,7 @@
 		// }
 	}
 
-	function nonNativeDatePickEvent(e) {
+	function nonNativeDatePickEvent(e: any) {
 		const newDate = new Date(e.startDate);
 		if (enableTime) {
 			const timeNumbers = e.startDateTime.split(':').map(Number) as number[];

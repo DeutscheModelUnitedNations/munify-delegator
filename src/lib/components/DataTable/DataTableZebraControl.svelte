@@ -1,4 +1,4 @@
-<!-- <script lang="ts">
+<script lang="ts">
 	import { getTableSettings } from './dataTableSettings.svelte';
 
 	const { getZebra, setZebra } = getTableSettings();
@@ -16,4 +16,4 @@
 			}}
 		/>
 	</div>
-</div> -->
+</div>

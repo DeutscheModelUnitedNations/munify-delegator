@@ -5,11 +5,11 @@
 	import { invalidateAll } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages.js';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import type { StoresValues } from 'svelte/store';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
 	import { graphql } from '$houdini';
+	import type { StoresValues } from '$lib/services/storeExtractorType';
 
 	interface Props {
 		open: boolean;
@@ -44,7 +44,7 @@
 			.filter(
 				(nation) =>
 					!delegationMember.delegation.appliedForRoles.find(
-						(role) => role.nation.alpha3Code === nation.alpha3Code
+						(role) => role.nation?.alpha3Code === nation.alpha3Code
 					)
 			)
 			.filter(
@@ -64,7 +64,7 @@
 			.filter(
 				(nsa) =>
 					!delegationMember.delegation?.appliedForRoles.find(
-						(role) => role.nonStateActor.id === nsa.id
+						(role) => role.nonStateActor?.id === nsa.id
 					)
 			)
 			.filter((nsa) => nsa.seatAmount >= (delegationMember.delegation?.members.length ?? 0));

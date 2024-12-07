@@ -5,6 +5,8 @@ import {
 	findManySingleParticipantQueryObject,
 	findUniqueSingleParticipantQueryObject,
 	SingleParticipantAppliedFieldObject,
+	SingleParticipantAssignedRoleFieldObject,
+	SingleParticipantAssignmentDetailsFieldObject,
 	SingleParticipantConferenceFieldObject,
 	SingleParticipantExperienceFieldObject,
 	SingleParticipantIdFieldObject,
@@ -24,10 +26,12 @@ builder.prismaObject('SingleParticipant', {
 		id: t.field(SingleParticipantIdFieldObject),
 		applied: t.field(SingleParticipantAppliedFieldObject),
 		school: t.field(SingleParticipantSchoolFieldObject),
+		assignmentDetails: t.field(SingleParticipantAssignmentDetailsFieldObject),
 		motivation: t.field(SingleParticipantMotivationFieldObject),
 		experience: t.field(SingleParticipantExperienceFieldObject),
 		conference: t.relation('conference', SingleParticipantConferenceFieldObject),
 		user: t.relation('user', SingleParticipantUserFieldObject),
+		assignedRole: t.relation('assignedRole', SingleParticipantAssignedRoleFieldObject),
 		appliedForRoles: t.relation('appliedForRoles', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').CustomConferenceRole

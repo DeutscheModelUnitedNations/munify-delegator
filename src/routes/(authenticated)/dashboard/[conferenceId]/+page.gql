@@ -3,7 +3,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 		id
 		title
 		info
-		startRegistration
+		state
 		startConference
 		startAssignment
 		endConference
@@ -46,6 +46,18 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 					family_name
 					given_name
 				}
+			}
+			assignedNation {
+				alpha3Code
+				alpha2Code
+			}
+			assignedNonStateActor {
+				id
+				abbreviation
+				name
+				description
+				fontAwesomeIcon
+				seatAmount
 			}
 			appliedForRoles {
 				id

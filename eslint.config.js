@@ -28,5 +28,11 @@ export default tseslint.config(
 	},
 	{
 		ignores: ['build/', '.svelte-kit/', 'dist/']
+	},
+	{
+		rules: {
+			'@typescript-eslint/no-explicit-any': 'warn',
+			'@typescript-eslint/no-unused-vars': 'warn'
+		}
 	}
 );

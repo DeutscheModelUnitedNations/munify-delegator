@@ -1,4 +1,5 @@
-<!-- <script lang="ts">
+<script lang="ts">
+	import * as m from '$lib/paraglide/messages';
 	import { getTableSettings } from './dataTableSettings.svelte';
 
 	const { getTableSize, setTableSize } = getTableSettings();
@@ -20,7 +21,7 @@
 </script>
 
 <div class="card bg-base-100 p-4 shadow-md dark:bg-base-200">
-	<div class="card-title">Tabellengröße</div>
+	<div class="card-title">{m.tableSize()}</div>
 	<div class="card-body">
 		<input
 			type="range"
@@ -55,4 +56,4 @@
 			<i class="fas fa-plus"></i>
 		</div>
 	</div>
-</div> -->
+</div>

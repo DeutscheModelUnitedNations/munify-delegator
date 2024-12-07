@@ -12,8 +12,8 @@
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
 	import { graphql } from '$houdini';
-	import type { StoresValues } from 'svelte/store';
 	import { page } from '$app/stores';
+	import type { StoresValues } from '$lib/services/storeExtractorType';
 
 	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?

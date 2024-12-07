@@ -104,7 +104,6 @@ const conference = await seedDb.conference.create({
 		location: 'Kiel',
 		website: 'https://mun-sh.de',
 		language: 'Deutsch',
-		startRegistration: new Date('2024-10-01T00:00:00.000Z'),
 		startAssignment: new Date('2024-11-03T00:00:00.000Z'),
 		startConference: new Date('2025-03-06T00:00:00.000Z'),
 		endConference: new Date('2025-03-10T00:00:00.000Z')

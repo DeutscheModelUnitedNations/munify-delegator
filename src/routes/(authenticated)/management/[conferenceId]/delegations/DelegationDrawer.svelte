@@ -6,6 +6,8 @@
 	import { error } from '@sveltejs/kit';
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { find } from 'lodash';
+	import Flag from '$lib/components/Flag.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -55,6 +57,16 @@
 						family_name
 					}
 				}
+				assignedNation {
+					alpha2Code
+					alpha3Code
+				}
+				assignedNonStateActor {
+					id
+					abbreviation
+					name
+					fontAwesomeIcon
+				}
 			}
 		}
 	`);
@@ -69,7 +81,25 @@
 		<h3 class="text-sm font-thin">{delegationId}</h3>
 	</div>
 
-	{#if $delegationQuery.data?.findUniqueDelegation?.applied}
+	{#if $delegationQuery.data?.findUniqueDelegation?.assignedNation}
+		<div class="alert">
+			<Flag alpha2Code={$delegationQuery.data?.findUniqueDelegation?.assignedNation.alpha2Code} />
+			<h3 class="text-xl font-bold">
+				{getFullTranslatedCountryNameFromISO3Code(
+					$delegationQuery.data?.findUniqueDelegation?.assignedNation.alpha3Code
+				)}
+			</h3>
+		</div>
+	{:else if $delegationQuery.data?.findUniqueDelegation?.assignedNonStateActor}
+		<div class="alert">
+			<Flag
+				nsa
+				icon={$delegationQuery.data?.findUniqueDelegation?.assignedNonStateActor.fontAwesomeIcon ??
+					'fa-hand-point-up'}
+			/>
+			{$delegationQuery.data?.findUniqueDelegation?.assignedNonStateActor.name}
+		</div>
+	{:else if $delegationQuery.data?.findUniqueDelegation?.applied}
 		<div class="alert alert-success">
 			<i class="fas fa-check"></i>
 			{m.registrationCompleted()}

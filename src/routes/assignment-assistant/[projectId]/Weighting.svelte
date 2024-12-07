@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { getWeights, setNonWishMalus, setNullRating, setRatingFactor } from './weights.svelte';
 </script>
 
@@ -38,7 +38,7 @@
 		value={getWeights().nullRating}
 		class="range"
 		step="0.5"
-		onchange={(e) => {
+		onchange={(e: any) => {
 			setNullRating(e.target.value);
 		}}
 	/>
@@ -67,7 +67,7 @@
 		max="99"
 		value={getWeights().ratingFactor}
 		pattern="\d*"
-		onchange={(e) => {
+		onchange={(e: any) => {
 			setRatingFactor(e.target.value);
 		}}
 	/>
@@ -96,7 +96,7 @@
 		max="99"
 		value={getWeights().markBonus}
 		pattern="\d*"
-		onchange={(e) => {
+		onchange={(e: any) => {
 			setRatingFactor(e.target.value);
 		}}
 	/>
@@ -120,7 +120,7 @@
 		max="0"
 		value={getWeights().nonWishMalus}
 		pattern="\d*"
-		oninput={(e) => {
+		oninput={(e: any) => {
 			setNonWishMalus(e.target.value);
 		}}
 	/>

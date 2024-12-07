@@ -62,7 +62,7 @@
 				href="/management/{data.conferenceId}/assignment"
 				icon="fa-shuffle"
 				title={m.adminAssignment()}
-				small={!navbarExpanded}
+				expanded={navbarExpanded}
 			/>
 		</NavMenuDetails>
 	</NavMenu>

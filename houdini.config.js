@@ -19,6 +19,15 @@ const config = {
 			marshal(date) {
 				return date && date.getTime();
 			}
+		},
+		JSONObject: {
+			type: 'JSONObject',
+			unmarshal(val) {
+				return JSON.parse(val);
+			},
+			marshal(val) {
+				return JSON.stringify(val);
+			}
 		}
 	},
 	types: {

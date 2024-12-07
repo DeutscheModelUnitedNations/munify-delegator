@@ -1,7 +1,7 @@
 pre-commit:
-  parallel: true
+  # parallel: true
   commands:
-    format:
-      run: bunx prettier --ignore-unknown --write "{staged_files}"
     lint:
       run: bunx eslint "{staged_files}"
+    format:
+      run: bunx prettier --ignore-unknown --write "{staged_files}"

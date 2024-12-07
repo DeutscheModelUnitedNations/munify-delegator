@@ -17,19 +17,27 @@ generator pothosCrud {
   generatorConfigPath = "./pothos.config.ts"
 }
 
+enum ConferenceState {
+  PRE // the conference is created but applying is not possible yet
+  PARTICIPANT_REGISTRATION // applications are open
+  PREPARATION // preparation starts, e.g. participants can assign in the given boundaries what they want to do (e.g. head delegate decides who is going into which committee)
+  ACTIVE // the conference is currently running
+  POST // the conference is over and things like downloading the participation certificate are possible
+}
+
 model Conference {
-  id                String   @id @default(nanoid())
-  title             String
-  longTitle         String?
-  location          String?
-  language          String?
-  website           String?
-  imageDataURL      String?
-  info              String?
-  startRegistration DateTime
-  startAssignment   DateTime
-  startConference   DateTime
-  endConference     DateTime
+  id              String          @id @default(nanoid())
+  title           String
+  longTitle       String?
+  location        String?
+  language        String?
+  website         String?
+  imageDataURL    String?
+  info            String?
+  state           ConferenceState @default(PRE)
+  startAssignment DateTime
+  startConference DateTime
+  endConference   DateTime
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
@@ -118,6 +126,8 @@ model Nation {
 
   roleApplications RoleApplication[]
   committees       Committee[]
+
+  assignedDelegations Delegation[]
 }
 
 model NonStateActor {
@@ -131,6 +141,8 @@ model NonStateActor {
   conference       Conference        @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId     String
   roleApplications RoleApplication[]
+
+  assignedDelegations Delegation[]
 
   @@unique([conferenceId, abbreviation])
   @@unique([conferenceId, name])
@@ -147,6 +159,7 @@ model CustomConferenceRole {
   conferenceId      String
   singleParticipant SingleParticipant[]
 
+  singleParticipantAssignments SingleParticipant[] @relation("assignment")
   @@unique([conferenceId, name])
 }
 
@@ -162,6 +175,11 @@ model SingleParticipant {
   school     String?
   motivation String?
   experience String?
+
+  /// For example the country of an IGH judge
+  assignmentDetails String?
+  assignedRole CustomConferenceRole? @relation(name: "assignment", fields: [assignedRoleId], references: [id])
+  assignedRoleId String?
 
   appliedForRoles CustomConferenceRole[]
 
@@ -184,6 +202,12 @@ model Delegation {
   members         DelegationMember[]
   supervisors     ConferenceSupervisor[]
   appliedForRoles RoleApplication[]
+
+  assignedNation           Nation? @relation(fields: [assignedNationAlpha3Code], references: [alpha3Code])
+  assignedNationAlpha3Code String?
+
+  assignedNonStateActor   NonStateActor? @relation(fields: [assignedNonStateActorId], references: [id])
+  assignedNonStateActorId String?
 }
 
 model RoleApplication {
@@ -214,6 +238,8 @@ model DelegationMember {
   userId         String
   isHeadDelegate Boolean
 
+  postAssignmentConferenceSupervisors ConferenceSupervisor[]
+
   // users can only be once in this delegation
   @@unique([delegationId, userId])
   // users can only be in one delegation per conference
@@ -233,6 +259,12 @@ model ConferenceSupervisor {
   // this also never will be set directly but via a check of the entry code for delegations
   // therefore no update/create call ever should include this
   delegations  Delegation[]
+
+  // after assignment the supervisors lose their delegation access and gain a member access
+  // this is for pricacy reasons since the assignment process might add user which are not
+  // related to the supervisor in any way to a delegation they are supervising
+  // which would render their data open to read for a completely unknown person
+  postAssignmentDelegeationMembers DelegationMember[]
 
   @@unique([conferenceId, userId])
 }

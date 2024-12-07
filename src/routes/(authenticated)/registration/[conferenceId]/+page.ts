@@ -3,8 +3,8 @@ import type { ConferenceRegistrationQueryVariables } from './$houdini';
 export const _ConferenceRegistrationQueryVariables: ConferenceRegistrationQueryVariables = async (
 	event
 ) => {
-	const userId = await event.parent();
+	const { user } = await event.parent();
 	return {
-		userId
+		userId: user.sub
 	};
 };

@@ -22,7 +22,7 @@ export const userFormSchema = z.object({
 	street: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
-	apartment: z.string().nullable().optional(),
+	apartment: z.string().nullish(),
 	zip: z.string().refine((s) => valiator.isPostalCode(s, 'any'), {
 		message: m.pleaseEnterAZipCpode()
 	}),
