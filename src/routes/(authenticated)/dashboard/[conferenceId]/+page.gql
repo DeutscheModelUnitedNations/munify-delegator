@@ -47,6 +47,18 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 					given_name
 				}
 			}
+			assignedNation {
+				alpha3Code
+				alpha2Code
+			}
+			assignedNonStateActor {
+				id
+				abbreviation
+				name
+				description
+				fontAwesomeIcon
+				seatAmount
+			}
 			appliedForRoles {
 				id
 				rank

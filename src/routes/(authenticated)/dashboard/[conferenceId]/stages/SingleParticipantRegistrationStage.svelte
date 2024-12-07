@@ -146,7 +146,6 @@
 			desc: m.doneToRegister()
 		}
 	]);
-	$inspect(singleParticipant);
 </script>
 
 {#if !singleParticipant.applied}

@@ -3,8 +3,6 @@
 
 	let { children }: { children: Snippet } = $props();
 	let expanded = $state(false);
-
-	$inspect(expanded);
 </script>
 
 <div
