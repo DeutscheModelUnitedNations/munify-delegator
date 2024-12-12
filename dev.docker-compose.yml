@@ -15,6 +15,67 @@ services:
     volumes:
       - delegator-dev:/var/lib/postgresql/data
 
+  prisma_studio:
+    image: timothyjmiller/prisma-studio
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - '5555:5555'
+    environment:
+      PROJECT_NAME: 'MUNify DELEGATOR'
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
+      PRISMA_STUDIO_PORT: 5555
+      POSTGRES_PATH: /postgres
+
+  oidc-server-mock:
+    image: xdevsoftware/oidc-server-mock
+    container_name: oidc-server-mock
+    ports:
+      - '8080:8080'
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      SERVER_OPTIONS_INLINE: |
+        {
+          "AccessTokenJwtType": "JWT",
+          "Discovery": {
+            "ShowKeySet": true
+          },
+          "Authentication": {
+            "CookieSameSiteMode": "Lax",
+            "CheckSessionCookieSameSiteMode": "Lax"
+          }
+        }
+      LOGIN_OPTIONS_INLINE: |
+        {
+          "AllowRememberLogin": true
+        }
+      LOGOUT_OPTIONS_INLINE: |
+        {
+          "AutomaticRedirectAfterSignOut": true
+        }
+      API_SCOPES_INLINE: |
+        - Name: address
+        - Name: family_name
+        - Name: gender
+        - Name: given_name
+        - Name: locale
+        - Name: name
+        - Name: phone
+        - Name: preferred_username
+        - Name: "urn:zitadel:iam:org:projects:roles"
+        - Name: "urn:zitadel:iam:user:metadata"
+      USERS_CONFIGURATION_PATH: /tmp/config/users-config.json
+      CLIENTS_CONFIGURATION_PATH: /tmp/config/clients-config.json
+      ASPNET_SERVICES_OPTIONS_INLINE: |
+        { 
+          "ForwardedHeadersOptions": { 
+            "ForwardedHeaders" : "All"
+          }
+        }
+    volumes:
+      - ./mock-oidc:/tmp/config:ro
+
   # When using the mock server this can be helpful to paste into the form to create a valid token with claims etc.
   # {
   #  "email": "my@mail.com",
@@ -24,34 +85,34 @@ services:
   #  "locale": "de",
   #  "urn:zitadel:iam:org:project:275671427955294244:roles": {"admin": {}}
   # }
-  mockoidc:
-    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
-    ports:
-      - 8080:8080
-    environment:
-      JSON_CONFIG: >
-        {
-          "interactiveLogin": true,
-          "httpServer": "NettyWrapper",
-          "tokenCallbacks": [
-              {
-                "issuerId": "issuer1",
-                "tokenExpiry": 120,
-                "requestMappings": [
-                  {
-                    "requestParam": "code",
-                    "match": "code1",
-                    "claims": {
-                      "sub": "subByCode",
-                      "aud": [
-                          "audByCode"
-                      ]
-                    }
-                  }
-                ]
-              }
-          ]
-        }
+  # mockoidc:
+  #   image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+  #   ports:
+  #     - 8080:8080
+  #   environment:
+  #     JSON_CONFIG: >
+  #       {
+  #         "interactiveLogin": true,
+  #         "httpServer": "NettyWrapper",
+  #         "tokenCallbacks": [
+  #             {
+  #               "issuerId": "issuer1",
+  #               "tokenExpiry": 120,
+  #               "requestMappings": [
+  #                 {
+  #                   "requestParam": "code",
+  #                   "match": "code1",
+  #                   "claims": {
+  #                     "sub": "subByCode",
+  #                     "aud": [
+  #                         "audByCode"
+  #                     ]
+  #                   }
+  #                 }
+  #               ]
+  #             }
+  #         ]
+  #       }
   # app:
   #   image: munifydelegator
   #   depends_on:

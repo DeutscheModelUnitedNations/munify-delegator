@@ -1,0 +1,59 @@
+[
+  {
+    "SubjectId": "1",
+    "Username": "TadeSF",
+    "Password": "pwd",
+    "Claims": [
+      {
+        "Type": "address",
+        "Value": "address",
+        "ValueType": "string"
+      },
+      {
+        "Type": "family_name",
+        "Value": "family_name",
+        "ValueType": "string"
+      },
+      {
+        "Type": "gender",
+        "Value": "m",
+        "ValueType": "string"
+      },
+      {
+        "Type": "given_name",
+        "Value": "given_name",
+        "ValueType": "string"
+      },
+      {
+        "Type": "locale",
+        "Value": "de",
+        "ValueType": "string"
+      },
+      {
+        "Type": "name",
+        "Value": "Admin",
+        "ValueType": "string"
+      },
+      {
+        "Type": "phone",
+        "Value": "phone",
+        "ValueType": "string"
+      },
+      {
+        "Type": "preferred_username",
+        "Value": "Admin",
+        "ValueType": "string"
+      },
+      {
+        "Type": "urn:zitadel:iam:org:projects:roles",
+        "Value": "Admin",
+        "ValueType": "string"
+      },
+      {
+        "Type": "urn:zitadel:iam:user:metadata",
+        "Value": "metadata",
+        "ValueType": "string"
+      }
+    ]
+  }
+]

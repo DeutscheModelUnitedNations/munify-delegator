@@ -1,0 +1,37 @@
+[
+  {
+    "ClientId": "delegator",
+    "Description": "Delegator Client",
+    "AllowedGrantTypes": [
+      "authorization_code"
+    ],
+    "RequirePkce": true,
+    "RequireClientSecret": false,
+    "AllowAccessTokensViaBrowser": true,
+    "AllowOfflineAccess": true,
+    "RedirectUris": [
+      "http://localhost:5173/auth/login-callback"
+    ],
+    "PostLogoutRedirectUris": [
+      "http://localhost:5173/auth/logout-callback"
+    ],
+    "AllowedScopes": [
+      "openid",
+      "profile",
+      "email",
+      "address",
+      "family_name",
+      "gender",
+      "given_name",
+      "locale",
+      "name",
+      "phone",
+      "preferred_username",
+      "urn:zitadel:iam:org:projects:roles",
+      "urn:zitadel:iam:user:metadata"
+    ],
+    "ClientClaimsPrefix": "",
+    "IdentityTokenLifetime": 3600,
+    "AccessTokenLifetime": 3600
+  }
+]
