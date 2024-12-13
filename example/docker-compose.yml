@@ -14,7 +14,7 @@ services:
       - delegator:/var/lib/postgresql/data
 
   delegator:
-    image: deutschemodelunitednations/delegator:latest
+    image: delegator:latest
     depends_on:
       - postgres
     ports:
@@ -23,7 +23,6 @@ services:
     # command: ["bun", "tasksMain.js"]
 
     # for config options, please refer to the '/src/config' directory
-    # for adapter/hosting options please refer to https://github.com/gornostay25/svelte-adapter-bun?tab=readme-ov-file#desktop_computer-environment-variables
     environment:
       # - PORT=3000
       # - HOST=0.0.0.0
