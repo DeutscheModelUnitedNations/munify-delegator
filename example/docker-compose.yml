@@ -30,8 +30,7 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
       # change this to something long, secure and truly random
       - SECRET=123
-      # if your setup supports PROTOCOL_HEADER or HOST_HEADER you don't need to set these
-      # please see the adapter/hosting options for more information
+      # change this to where the app is located at. E.g. https://delegator.munify.cloud
       - ORIGIN=https://{your orign}
 
       # variables which are exposed to the client must be prefixed with PUBLIC_

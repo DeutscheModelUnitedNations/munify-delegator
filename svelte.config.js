@@ -8,7 +8,7 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		adapter: adapter({
-			dynamic_origin: true
+			// dynamic_origin: true
 		}),
 		alias: {
 			$api: 'src/api',
