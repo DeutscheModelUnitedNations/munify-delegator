@@ -59,8 +59,8 @@ async function main() {
 	console.log('Translations added successfully!');
 
 	// Ask if the user wants to add another translation
-	const response = await askQuestion('Do you want to add another translation? (y/N): ');
-	return response.toLowerCase() === 'y';
+	const response = await askQuestion('Do you want to add another translation? (Y/n): ');
+	return !(response.toLowerCase() === 'n');
 }
 
 let continueLoop = true;
