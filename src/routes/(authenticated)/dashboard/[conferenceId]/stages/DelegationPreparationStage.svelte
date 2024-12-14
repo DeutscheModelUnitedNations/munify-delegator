@@ -15,6 +15,15 @@
 			Pick<PageData, 'user'>;
 	} = $props();
 
+	const currentTasks = $derived({
+		committeeAssignmentAlert:
+			!!data.findUniqueDelegationMember?.delegation.assignedNation &&
+			!!data.findUniqueDelegationMember?.delegation.members.every(
+				(member) => !member.assignedCommittee
+			)
+		// Add more tasks here
+	});
+
 	const delegationStats = $derived([
 		{
 			icon: 'users',
@@ -24,6 +33,31 @@
 		}
 	]);
 </script>
+
+{#if Object.values(currentTasks).some((task) => task)}
+	<section class="flex flex-col gap-4">
+		<h2 class="text-2xl font-bold">{m.currentTasks()}</h2>
+		{#if currentTasks.committeeAssignmentAlert}
+			<div class="alert alert-info">
+				<i class="fas fa-arrows-turn-to-dots mx-4 text-3xl"></i>
+				<div class="flex flex-col">
+					<h3 class="text-xl font-bold">{m.committeeAssignment()}</h3>
+					{#if data.findUniqueDelegationMember!.isHeadDelegate}
+						<p>{@html m.committeeAssignmentAlertDescription()}</p>
+						<a
+							class="btn btn-primary mt-4 max-w-sm"
+							href="./{data.findUniqueConference?.id}/committeeAssignment"
+						>
+							{m.assignCommittees()}
+						</a>
+					{:else}
+						<p>{m.committeeAssignmentAlertDescriptionNonHeadDelegate()}</p>
+					{/if}
+				</div>
+			</div>
+		{/if}
+	</section>
+{/if}
 
 <section class="flex flex-col gap-4">
 	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
@@ -46,13 +80,15 @@
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
-	<!-- <DelegationStatusTableWrapper withCommittee withMailStatus withPaymentStatus> -->
-	<DelegationStatusTableWrapper>
+	<!-- <DelegationStatusTableWrapper withEmail withCommittee withMailStatus withPaymentStatus> -->
+	<DelegationStatusTableWrapper withEmail withCommittee>
 		{#each data.findUniqueDelegationMember?.delegation.members ?? [] as member}
 			<DelegationStatusTableEntry
 				name={`${member.user.given_name} ${member.user.family_name}`}
 				pronouns={member.user.pronouns ?? ''}
 				headDelegate={member.isHeadDelegate}
+				email={member.user.email}
+				committee={member.assignedCommittee?.abbreviation ?? ''}
 			/>
 		{/each}
 	</DelegationStatusTableWrapper>
@@ -60,11 +96,13 @@
 		<DelegationStatusTableWrapper
 			title={m.supervisors()}
 			description={m.supervisorDelegationDescription()}
+			withEmail
 		>
 			{#each data.findUniqueDelegationMember?.delegation.supervisors ?? [] as supervisor}
 				<DelegationStatusTableEntry
 					name={`${supervisor.user.given_name} ${supervisor.user.family_name}`}
 					pronouns={supervisor.user.pronouns ?? ''}
+					email={supervisor.user.email}
 				/>
 			{/each}
 		</DelegationStatusTableWrapper>

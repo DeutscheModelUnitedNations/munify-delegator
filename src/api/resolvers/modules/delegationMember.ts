@@ -8,7 +8,9 @@ import {
 	createOneDelegationMemberMutationObject,
 	DelegationMemberConferenceFieldObject,
 	DelegationMemberDelegationFieldObject,
-	DelegationMemberUserFieldObject
+	DelegationMemberUserFieldObject,
+	DelegationMemberAssignedCommitteeFieldObject,
+	updateManyDelegationMemberMutationObject
 } from '$db/generated/graphql/DelegationMember';
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
@@ -22,7 +24,8 @@ builder.prismaObject('DelegationMember', {
 		isHeadDelegate: t.field(DelegationMemberIsHeadDelegateFieldObject),
 		conference: t.relation('conference', DelegationMemberConferenceFieldObject),
 		delegation: t.relation('delegation', DelegationMemberDelegationFieldObject),
-		user: t.relation('user', DelegationMemberUserFieldObject)
+		user: t.relation('user', DelegationMemberUserFieldObject),
+		assignedCommittee: t.relation('assignedCommittee', DelegationMemberAssignedCommitteeFieldObject)
 	})
 });
 
@@ -133,6 +136,76 @@ builder.mutationFields((t) => {
 // 		})
 // 	};
 // });
+
+// mutation to update many delegation members to assign them to different committees
+builder.mutationFields((t) => {
+	return {
+		assignCommitteesToDelegationMembers: t.prismaField({
+			type: ['DelegationMember'],
+			args: {
+				assignments: t.arg({
+					type: [
+						t.builder.inputType('updateManyDelegationMemberInputTypeArrayValue', {
+							fields: (t) => ({
+								delegationMemberId: t.string(),
+								committeeId: t.string()
+							})
+						})
+					],
+					required: true
+				})
+			},
+			resolve: (query, root, args, ctx, info) => {
+				return db.$transaction((tx) => {
+					return Promise.all(
+						args.assignments.map(async (data) => {
+							const requestedCommittee = await tx.committee.findUniqueOrThrow({
+								where: {
+									id: data.committeeId
+								},
+								include: {
+									nations: true
+								}
+							});
+
+							const requestedDelegationMember = await tx.delegationMember.findUniqueOrThrow({
+								where: {
+									id: data.delegationMemberId
+								},
+								include: {
+									delegation: true
+								}
+							});
+
+							if (requestedCommittee.conferenceId !== requestedDelegationMember.conferenceId) {
+								throw new GraphQLError(m.committeeDoesNotBelongToConferenceError());
+							}
+
+							if (
+								!requestedCommittee.nations
+									.map((n) => n.alpha3Code)
+									.includes(requestedDelegationMember.delegation.assignedNationAlpha3Code || '')
+							) {
+								throw new GraphQLError(m.committeeDoesNotBelongToConferenceError());
+							}
+
+							return await tx.delegationMember.update({
+								...query,
+								where: {
+									id: data.delegationMemberId,
+									AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
+								},
+								data: {
+									assignedCommitteeId: data.committeeId
+								}
+							});
+						})
+					);
+				});
+			}
+		})
+	};
+});
 
 builder.mutationFields((t) => {
 	const field = deleteOneDelegationMemberMutationObject(t);

@@ -56,9 +56,10 @@ model Committee {
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
 
-  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
-  conferenceId String
-  nations      Nation[]
+  conference        Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId      String
+  nations           Nation[]
+  delegationMembers DelegationMember[]
 }
 
 enum FoodPreference {
@@ -160,6 +161,7 @@ model CustomConferenceRole {
   singleParticipant SingleParticipant[]
 
   singleParticipantAssignments SingleParticipant[] @relation("assignment")
+
   @@unique([conferenceId, name])
 }
 
@@ -178,8 +180,8 @@ model SingleParticipant {
 
   /// For example the country of an IGH judge
   assignmentDetails String?
-  assignedRole CustomConferenceRole? @relation(name: "assignment", fields: [assignedRoleId], references: [id])
-  assignedRoleId String?
+  assignedRole      CustomConferenceRole? @relation(name: "assignment", fields: [assignedRoleId], references: [id])
+  assignedRoleId    String?
 
   appliedForRoles CustomConferenceRole[]
 
@@ -229,14 +231,16 @@ model RoleApplication {
 }
 
 model DelegationMember {
-  id             String     @id @default(nanoid())
-  conference     Conference @relation(fields: [conferenceId], references: [id])
-  conferenceId   String
-  delegation     Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
-  delegationId   String
-  user           User       @relation(fields: [userId], references: [id])
-  userId         String
-  isHeadDelegate Boolean
+  id                  String     @id @default(nanoid())
+  conference          Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId        String
+  delegation          Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
+  delegationId        String
+  user                User       @relation(fields: [userId], references: [id])
+  userId              String
+  isHeadDelegate      Boolean
+  assignedCommittee   Committee? @relation(fields: [assignedCommitteeId], references: [id])
+  assignedCommitteeId String?
 
   postAssignmentConferenceSupervisors ConferenceSupervisor[]
 

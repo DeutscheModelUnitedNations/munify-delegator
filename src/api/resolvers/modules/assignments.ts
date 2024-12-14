@@ -336,63 +336,68 @@ builder.mutationFields((t) => {
 						});
 
 						// assign the nsa to the primary delegation and update the members and supervisors
-						await db.delegation.upsert({
-							where: {
-								id: primaryDelegation?.id
-							},
-							update: {
-								assignedNonStateActor: {
-									connect: {
-										id: nsa.id
-									}
+						if (primaryDelegation?.id) {
+							await db.delegation.update({
+								where: {
+									id: primaryDelegation?.id
 								},
-								members:
-									newUserIds.length > 0
-										? {
-												create: newUserIds.map((x, i) => ({
-													conferenceId: data.conference.id,
-													userId: x,
-													isHeadDelegate: false
-												}))
-											}
-										: undefined,
-								supervisors:
-									newSupervisorIds.length > 0
-										? {
-												connect: newSupervisorIds.map((x) => ({
-													conferenceId_userId: {
-														conferenceId: data.conference.id,
-														userId: x
-													}
-												}))
-											}
-										: undefined
-							},
-							create: {
-								applied: true,
-								conferenceId: data.conference.id,
-								entryCode: makeDelegationEntryCode(),
-								experience: assignedDelegations[0].experience,
-								motivation: assignedDelegations[0].motivation,
-								school: assignedDelegations[0].school,
-								assignedNonStateActorId: nsa.id,
-								members: {
-									create: newUserIds.map((x, i) => ({
-										conferenceId: data.conference.id,
-										userId: x,
-										isHeadDelegate: i === 0
-									}))
-								},
-								supervisors: {
-									connect: newSupervisorIds.map((x) => ({
-										conferenceId_userId: {
-											conferenceId: data.conference.id,
-											userId: x
+								data: {
+									assignedNonStateActor: {
+										connect: {
+											id: nsa.id
 										}
-									}))
+									},
+									members:
+										newUserIds.length > 0
+											? {
+													create: newUserIds.map((x, i) => ({
+														conferenceId: data.conference.id,
+														userId: x,
+														isHeadDelegate: false
+													}))
+												}
+											: undefined,
+									supervisors:
+										newSupervisorIds.length > 0
+											? {
+													connect: newSupervisorIds.map((x) => ({
+														conferenceId_userId: {
+															conferenceId: data.conference.id,
+															userId: x
+														}
+													}))
+												}
+											: undefined
 								}
-							}
-						});
+							});
+						} else {
+							await db.delegation.create({
+								data: {
+									applied: true,
+									conferenceId: data.conference.id,
+									entryCode: makeDelegationEntryCode(),
+									experience: assignedDelegations[0].experience,
+									motivation: assignedDelegations[0].motivation,
+									school: assignedDelegations[0].school,
+									assignedNonStateActorId: nsa.id,
+									members: {
+										create: newUserIds.map((x, i) => ({
+											conferenceId: data.conference.id,
+											userId: x,
+											isHeadDelegate: i === 0
+										}))
+									},
+									supervisors: {
+										connect: newSupervisorIds.map((x) => ({
+											conferenceId_userId: {
+												conferenceId: data.conference.id,
+												userId: x
+											}
+										}))
+									}
+								}
+							});
+						}
 					}
 				});
 

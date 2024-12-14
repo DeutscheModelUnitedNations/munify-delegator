@@ -411,5 +411,22 @@
 	"informationOnYourCountry": "Information on your country",
 	"informationOnYourNSA": "Information on your NSA",
 	"youWillRepresent": "You will represent",
-	"status": "Status"
+	"status": "Status",
+	"committeeDoesNotBelongToConferenceError": "Error: The committee does not belong to the conference.",
+	"currentTasks": "Current Tasks",
+	"committeeAssignment": "Committee Assignment",
+	"committeeAssignmentAlertDescription": "As the head delegate, you must timely make the committee assignments. This will determine who among your delegation will represent your state in which committee. Please coordinate with your fellow delegates and make a joint decision that you can then enter.<br>The assignment cannot be changed later!",
+	"committeeAssignmentAlertDescriptionNonHeadDelegate": "Your head delegate must timely make the committee assignments. This will determine who among you will represent your state in which committee. Please coordinate with each other and make a joint decision that your head delegate can then enter.",
+	"assignCommittees": "Assign Committees",
+	"theFollowingCommitteesAreAssignable": "The following committees are assignable",
+	"seat": "Seat",
+	"pleaseAssignAllMembers": "Please assigne all delegation members to a committee!",
+	"failedToAssignCommittees": "Something went wrong: Failed to assign committees. Try again or contact support!",
+	"committeesSucessfullyAssigned": "Committees successfully assigned",
+	"personalStatus": "Personal Status",
+	"personalStatusUnderDevelopment": "Personal status overview still under development",
+	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly.",
+	"applicationRejected": "Application Rejected",
+	"applicationRejectedText": "We are sad to inform you, that you cannot participate at this conference. This is either because you did not complete the registration in time, there were too many applications for the conference or due to individual reasons. If you have any questions, please contact the participant care.",
+	"onlyHeadDelegateCanAssignCommittees": "Only the head delegate can assign committees."
 }

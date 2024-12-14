@@ -44,7 +44,7 @@ export const builder = new SchemaBuilder<{
 		limit: {
 			complexity: 5000,
 			depth: 10,
-			breadth: 130
+			breadth: 141
 		}
 	},
 	tracing: {

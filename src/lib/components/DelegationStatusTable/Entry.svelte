@@ -5,6 +5,7 @@
 	interface Props {
 		name: string;
 		pronouns: string;
+		email?: string;
 		headDelegate?: boolean;
 		committee?: string;
 		mailStatus?: 'completed' | 'error' | 'incomplete';
@@ -15,6 +16,7 @@
 	let {
 		name,
 		pronouns,
+		email,
 		headDelegate = false,
 		committee,
 		mailStatus,
@@ -67,6 +69,15 @@
 			{/if}
 		</td>
 	{/if}
+
+	{#if email}
+		<td>
+			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label="E-Mail">
+				<i class="fa-duotone fa-envelope"></i>
+			</a>
+		</td>
+	{/if}
+
 	{#if mailStatus}
 		<td class="text-center">
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>

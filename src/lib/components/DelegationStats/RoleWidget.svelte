@@ -35,7 +35,7 @@
 				{customConferenceRole.name}
 			{/if}
 		</div>
-		<div class="stat-desc mt-2 flex flex-col gap-1">
+		<div class="stat-desc mt-2 flex flex-wrap gap-1">
 			{#if committees && committees.length > 0}
 				{#each committees as committee}
 					<div class="badge">
