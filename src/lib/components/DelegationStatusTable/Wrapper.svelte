@@ -6,6 +6,7 @@
 	interface Props {
 		title?: string;
 		description?: string;
+		withEmail?: boolean;
 		withCommittee?: boolean;
 		withMailStatus?: boolean;
 		withPaymentStatus?: boolean;
@@ -15,6 +16,7 @@
 	let {
 		title,
 		description,
+		withEmail = false,
 		withCommittee = false,
 		withMailStatus = false,
 		withPaymentStatus = false,
@@ -30,6 +32,9 @@
 				<th>{m.pronouns()}</th>
 				{#if withCommittee}
 					<th>{m.committee()}</th>
+				{/if}
+				{#if withEmail}
+					<th>{m.email()}</th>
 				{/if}
 				{#if withMailStatus}
 					<th class="text-center">

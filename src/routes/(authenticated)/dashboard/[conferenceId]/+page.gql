@@ -30,6 +30,11 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 	) {
 		id
 		isHeadDelegate
+		assignedCommittee {
+			id
+			abbreviation
+			name
+		}
 		delegation {
 			id
 			entryCode
@@ -45,6 +50,12 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 					pronouns
 					family_name
 					given_name
+					email
+				}
+				assignedCommittee {
+					id
+					abbreviation
+					name
 				}
 			}
 			assignedNation {
@@ -80,6 +91,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 					given_name
 					family_name
 					pronouns
+					email
 				}
 			}
 		}
@@ -96,6 +108,18 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 			school
 			motivation
 			experience
+			assignedNation {
+				alpha3Code
+				alpha2Code
+			}
+			assignedNonStateActor {
+				id
+				abbreviation
+				name
+				description
+				fontAwesomeIcon
+				seatAmount
+			}
 			appliedForRoles {
 				id
 				nonStateActor {
@@ -113,6 +137,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 					id
 					given_name
 					family_name
+					email
 				}
 			}
 			members {
@@ -139,6 +164,18 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 			name
 			description
 			fontAwesomeIcon
+		}
+		assignedRole {
+			id
+			name
+			description
+			fontAwesomeIcon
+		}
+		user {
+			id
+			given_name
+			family_name
+			pronouns
 		}
 	}
 }

@@ -24,7 +24,7 @@ export const defineAbilitiesForDelegationMember = (
 		});
 
 		// team members should be able to see the delegation members of their conferences
-		can(['read', 'list'], 'DelegationMember', {
+		can(['read', 'list', 'update'], 'DelegationMember', {
 			conference: {
 				teamMembers: {
 					some: {
@@ -59,6 +59,31 @@ export const defineAbilitiesForDelegationMember = (
 			},
 			delegation: {
 				applied: false
+			}
+		});
+
+		can('update', 'DelegationMember', {
+			user: {
+				id: user.sub
+			},
+			delegation: {
+				AND: [
+					{
+						members: {
+							some: {
+								isHeadDelegate: true,
+								userId: user.sub
+							}
+						}
+					},
+					{
+						members: {
+							every: {
+								assignedCommitteeId: null
+							}
+						}
+					}
+				]
 			}
 		});
 	}

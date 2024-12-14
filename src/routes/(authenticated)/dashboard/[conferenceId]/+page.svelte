@@ -8,6 +8,8 @@
 	import Spinner from '$lib/components/Spinner.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import * as m from '$lib/paraglide/messages.js';
+	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
+	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -16,8 +18,6 @@
 	let conferenceQuery = $derived(data.MyConferenceparticipationQuery);
 	let conferenceQueryData = $derived($conferenceQuery.data);
 	let conference = $derived(conferenceQueryData?.findUniqueConference);
-
-	$inspect(conferenceQueryData);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -41,23 +41,32 @@
 			{#if conferenceQueryData?.findUniqueSingleParticipant?.id}
 				{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
-				{:else if conference!.state === 'PREPARATION'}
-					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
-				{:else if conference!.state === 'ACTIVE'}
-					#TODO: Implement individual on conference stage
-				{:else if conference!.state === 'POST'}
-					#TODO: Implement individual post conference stage
+				{:else if conferenceQueryData?.findUniqueSingleParticipant?.assignedRole}
+					{#if conference!.state === 'PREPARATION'}
+						<ConferenceStatusWidget />
+						<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
+					{:else if conference!.state === 'ACTIVE'}
+						#TODO: Implement individual on conference stage
+					{:else if conference!.state === 'POST'}
+						#TODO: Implement individual post conference stage
+					{/if}
+				{:else}
+					<ApplicationRejected />
 				{/if}
 			{:else if conferenceQueryData?.findUniqueDelegationMember?.id}
-				Test
 				{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 					<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
-				{:else if conference!.state === 'PREPARATION'}
-					<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
-				{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}
-					#TODO: Implement individual on conference stage
-				{:else if Date.now() > conference!.endConference.getTime()}
-					<!-- <PostConferenceStage /> -->
+				{:else if !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNation || !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor}
+					{#if conference!.state === 'PREPARATION'}
+						<ConferenceStatusWidget />
+						<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
+					{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}
+						#TODO: Implement individual on conference stage
+					{:else if Date.now() > conference!.endConference.getTime()}
+						<!-- <PostConferenceStage /> -->
+					{/if}
+				{:else}
+					<ApplicationRejected />
 				{/if}
 			{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
 				<Supervisor data={{ ...conferenceQueryData, user: data.user }} />

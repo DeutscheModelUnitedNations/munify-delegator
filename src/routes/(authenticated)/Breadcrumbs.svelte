@@ -92,6 +92,10 @@
 		plausibility: {
 			translation: m.adminPlausibility(),
 			icon: 'question'
+		},
+		committeeAssignment: {
+			translation: m.committeeAssignment(),
+			icon: 'arrows-turn-to-dots'
 		}
 	};
 

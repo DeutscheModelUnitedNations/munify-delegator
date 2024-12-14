@@ -6,6 +6,7 @@
 	import { error } from '@sveltejs/kit';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { singleParticipantResetMutation } from './individualsResetMutation';
+	import Flag from '$lib/components/Flag.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -39,6 +40,11 @@
 					name
 					fontAwesomeIcon
 				}
+				assignedRole {
+					id
+					name
+					fontAwesomeIcon
+				}
 			}
 		}
 	`);
@@ -58,7 +64,18 @@
 		</h3>
 	</div>
 
-	{#if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
+	{#if $singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole}
+		<div class="alert">
+			<Flag
+				nsa
+				icon={$singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole
+					.fontAwesomeIcon ?? 'fa-hand-point-up'}
+			/>
+			<h3 class="text-xl font-bold">
+				{$singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole.name}
+			</h3>
+		</div>
+	{:else if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
 		<div class="alert alert-success">
 			<i class="fas fa-check"></i>
 			{m.registrationCompleted()}
