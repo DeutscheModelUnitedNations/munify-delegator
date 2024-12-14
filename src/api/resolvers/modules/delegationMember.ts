@@ -9,8 +9,7 @@ import {
 	DelegationMemberConferenceFieldObject,
 	DelegationMemberDelegationFieldObject,
 	DelegationMemberUserFieldObject,
-	DelegationMemberAssignedCommitteeFieldObject,
-	updateManyDelegationMemberMutationObject
+	DelegationMemberAssignedCommitteeFieldObject
 } from '$db/generated/graphql/DelegationMember';
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
@@ -155,9 +154,9 @@ builder.mutationFields((t) => {
 					required: true
 				})
 			},
-			resolve: (query, root, args, ctx, info) => {
-				return db.$transaction((tx) => {
-					return Promise.all(
+			resolve: async (query, root, args, ctx) => {
+				return db.$transaction(async (tx) => {
+					await Promise.all(
 						args.assignments.map(async (data) => {
 							const requestedCommittee = await tx.committee.findUniqueOrThrow({
 								where: {
@@ -190,7 +189,6 @@ builder.mutationFields((t) => {
 							}
 
 							return await tx.delegationMember.update({
-								...query,
 								where: {
 									id: data.delegationMemberId,
 									AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
@@ -201,6 +199,11 @@ builder.mutationFields((t) => {
 							});
 						})
 					);
+
+					return tx.delegationMember.findMany({
+						...query,
+						where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
+					});
 				});
 			}
 		})
