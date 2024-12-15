@@ -30,7 +30,7 @@ done
 
 # Restore the database from the backup file
 echo "Restoring the database from the backup file..."
-docker exec -i delegator-postgres-1 psql -U postgres -d postgres <$POSTGRES_BACKUP_FILE
+docker exec -i postgres-dev-delegator psql -U postgres -d postgres <$POSTGRES_BACKUP_FILE
 
 # Apply latest migrations
 echo "Applying latest migrations..."
