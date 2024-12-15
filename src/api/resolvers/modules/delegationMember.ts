@@ -197,7 +197,7 @@ builder.mutationFields((t) => {
 
 							return await tx.delegationMember.update({
 								where: {
-									id: member.id,
+									id: member.id
 								},
 								data: {
 									assignedCommitteeId: data.committeeId
