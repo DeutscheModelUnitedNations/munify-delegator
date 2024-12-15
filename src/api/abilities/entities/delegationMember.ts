@@ -63,9 +63,6 @@ export const defineAbilitiesForDelegationMember = (
 		});
 
 		can('update', 'DelegationMember', {
-			user: {
-				id: user.sub
-			},
 			delegation: {
 				AND: [
 					{
