@@ -188,10 +188,16 @@ builder.mutationFields((t) => {
 								throw new GraphQLError(m.committeeDoesNotBelongToConferenceError());
 							}
 
-							return await tx.delegationMember.update({
+							const member = await tx.delegationMember.findUniqueOrThrow({
 								where: {
 									id: data.delegationMemberId,
 									AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
+								}
+							});
+
+							return await tx.delegationMember.update({
+								where: {
+									id: member.id,
 								},
 								data: {
 									assignedCommitteeId: data.committeeId

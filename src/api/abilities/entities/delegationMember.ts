@@ -64,23 +64,15 @@ export const defineAbilitiesForDelegationMember = (
 
 		can('update', 'DelegationMember', {
 			delegation: {
-				AND: [
-					{
-						members: {
-							some: {
-								isHeadDelegate: true,
-								userId: user.sub
-							}
-						}
+				members: {
+					some: {
+						isHeadDelegate: true,
+						userId: user.sub
 					},
-					{
-						members: {
-							every: {
-								assignedCommitteeId: null
-							}
-						}
+					every: {
+						assignedCommitteeId: null
 					}
-				]
+				}
 			}
 		});
 	}
