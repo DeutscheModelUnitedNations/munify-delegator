@@ -15,6 +15,8 @@
 	import DelegationCard from './DelegationCard.svelte';
 	import NationCard from './NationCard.svelte';
 
+	const project = $derived(getProject());
+
 	const getRejections = $derived(() =>
 		getDelegationApplications().filter(
 			(x) => (x.disqualified || (!x.assignedNation && !x.assignedNSA)) && !x.splittedInto
@@ -95,7 +97,8 @@
 	</p>
 	<p>
 		Wenn du mit den Zuteilungen zufrieden bist, kannst du die Zuteilungen abschließen, indem du die
-		Datei ein letztes Mal exportierst und anschließend im Admin-Bereich wieder importierst.
+		Datei ein letztes Mal über den Button oben rechts exportierst und anschließend im Admin-Bereich
+		wieder importierst.
 	</p>
 </TextPreview>
 
@@ -171,4 +174,10 @@
 			{/each}
 		</div>
 	</div>
+
+	{#if project}
+		<a class="btn btn-primary" href={'/management/' + project.data.conference.id + '/assignment'}
+			>Zurück zur Admin Oberfläche</a
+		>
+	{/if}
 </div>
