@@ -25,16 +25,21 @@
 		baseSlug: string;
 		btnText?: string;
 		alreadyRegistered?: boolean;
+		alwaysEnableButton?: boolean;
 	}
 
-	let { conference, baseSlug, btnText, alreadyRegistered }: ConferenceCardProps = $props();
+	let {
+		conference,
+		baseSlug,
+		btnText,
+		alreadyRegistered,
+		alwaysEnableButton = false
+	}: ConferenceCardProps = $props();
 
 	let registrationStatus: 'OPEN' | 'CLOSED' | 'NOT_YET_OPEN' | 'UNKNOWN' = $derived.by(() => {
 		if (conference.state === 'PRE') {
 			return 'NOT_YET_OPEN';
 		}
-
-		console.log(conference.startAssignment);
 
 		if (new Date().getTime() > new Date(conference.startAssignment).getTime()) {
 			return 'CLOSED';
@@ -114,14 +119,14 @@
 		<h2 class="card-title mb-2">{conference.title}</h2>
 		<CardInfoSectionWithIcons items={cardInfoItems()} />
 		<div class="card-actions mt-4 h-full items-end justify-end">
-			{#if registrationStatus === 'OPEN' && !alreadyRegistered}
+			{#if (registrationStatus === 'OPEN' && !alreadyRegistered) || alwaysEnableButton}
 				<a href={`${baseSlug}/${conference.id}`} class="btn btn-primary">
 					{btnText ?? m.signup()}
 					<i class="fas fa-arrow-right"></i>
 				</a>
 			{:else}
 				<button class="btn" disabled>
-					{m.signup()}
+					{btnText ?? m.signup()}
 					<i class="fas fa-arrow-right"></i>
 				</button>
 			{/if}

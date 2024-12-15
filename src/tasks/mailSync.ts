@@ -224,7 +224,10 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 				createListName(dm.delegation.conference.title, dm.conferenceId, 'DELEGATION_MEMBERS_NSA')
 			);
 		}
-		if (dm.isHeadDelegate) {
+		if (
+			dm.isHeadDelegate &&
+			(dm.delegation.assignedNationAlpha3Code || dm.delegation.assignedNonStateActorId)
+		) {
 			lists.push(createListName(dm.delegation.conference.title, dm.conferenceId, 'HEAD_DELEGATES'));
 		}
 		if (dm.delegation.applied) {

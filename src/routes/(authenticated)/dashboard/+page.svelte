@@ -12,7 +12,12 @@
 			class="carousel carousel-center w-full space-x-6 rounded-box bg-base-200 p-6 shadow-inner dark:bg-base-300"
 		>
 			{#each data.conferences as conference}
-				<ConferenceCard {conference} btnText={m.toConference()} baseSlug="/dashboard" />
+				<ConferenceCard
+					{conference}
+					alwaysEnableButton
+					btnText={m.toConference()}
+					baseSlug="/dashboard"
+				/>
 			{/each}
 			<a href="/registration" class="carousel-item w-[90%] max-w-96">
 				<div
