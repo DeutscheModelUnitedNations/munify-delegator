@@ -2,7 +2,7 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import prisInstru from '@prisma/instrumentation';
+// import prisInstru from '@prisma/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import { configPrivate } from '$config/private';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -52,9 +52,9 @@ registerInstrumentations({
 	tracerProvider: provider,
 	instrumentations: [
 		new HttpInstrumentation(),
-		new prisInstru.PrismaInstrumentation({
-			middleware: true
-		})
+		// new prisInstru.PrismaInstrumentation({
+		// 	middleware: true
+		// })
 	]
 });
 
