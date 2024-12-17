@@ -51,7 +51,7 @@ const provider = new NodeTracerProvider({
 registerInstrumentations({
 	tracerProvider: provider,
 	instrumentations: [
-		new HttpInstrumentation(),
+		new HttpInstrumentation()
 		// new prisInstru.PrismaInstrumentation({
 		// 	middleware: true
 		// })
