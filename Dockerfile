@@ -59,4 +59,4 @@ ENV NODE_ENV=production
 USER bun
 EXPOSE 3000/tcp
 # HEALTHCHECK --interval=15s --timeout=10s --retries=3 CMD curl -f http://0.0.0.0:3000/api/health/ready || exit 1
-CMD bunx prisma migrate deploy && bun run start
+CMD bunx prisma migrate deploy && bun ./index.js

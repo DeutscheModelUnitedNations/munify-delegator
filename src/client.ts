@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import { toast } from '@zerodevx/svelte-toast';
 
 export default new HoudiniClient({
-	url: 'http://localhost:5173/api/graphql',
+	url: '/api/graphql',
 	throwOnError: {
 		operations: ['mutation', 'subscription'],
 		error: (errors, ctx) => {

@@ -7,10 +7,21 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceDelegationsQuery);
-	const delegations = $derived($queryData?.data?.findManyDelegations ?? []);
+	const delegations = $derived(
+		$queryData?.data?.findManyDelegations.map((d) => ({
+			...d,
+			assignedNation: d.assignedNation
+				? {
+						...d.assignedNation,
+						name: getFullTranslatedCountryNameFromISO3Code(d.assignedNation.alpha3Code)
+					}
+				: undefined
+		})) ?? []
+	);
 	const { getTableSize } = getTableSettings();
 
 	const columns: TableColumns<(typeof delegations)[number]> = [
@@ -29,6 +40,19 @@
 					? `<i class="fa-solid fa-circle-check text-success text-${getTableSize()}"></i>`
 					: `<i class="fa-solid fa-hourglass-half text-warning text-${getTableSize()}"></i>`,
 			parseHTML: true,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
+			key: 'role',
+			title: m.role(),
+			parseHTML: true,
+			value: (row) => row.assignedNation?.name ?? row.assignedNonStateActor?.name ?? 'N/A',
+			renderValue: (row) =>
+				row.assignedNation
+					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNation.name}"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
+					: row.assignedNonStateActor &&
+						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNonStateActor.name}"><span class="fas fa-${row.assignedNonStateActor?.fontAwesomeIcon?.replace('fa-', '')}"></span></div>`,
 			sortable: true,
 			class: 'text-center'
 		},
@@ -82,6 +106,7 @@
 	{columns}
 	rows={delegations}
 	enableSearch={true}
+	additionallyIndexedKeys={['assignedNation.name']}
 	queryParamKey="filter"
 	rowSelected={(row) => {
 		selectedDelegationRow = row;

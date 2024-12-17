@@ -92,6 +92,10 @@
 		plausibility: {
 			translation: m.adminPlausibility(),
 			icon: 'question'
+		},
+		committeeAssignment: {
+			translation: m.committeeAssignment(),
+			icon: 'arrows-turn-to-dots'
 		}
 	};
 
@@ -116,10 +120,10 @@
 							const r = await conferenceTitleQuery.fetch({
 								variables: { conferenceId: segment.value }
 							});
-							return r.data?.findUniqueConference?.title ?? segment.key;
+							return r.data?.findUniqueConference?.title ?? breadcrumb.translation;
 						}
 
-						return segment.key;
+						return breadcrumb.translation;
 					})();
 					break;
 				case 'roleId':
@@ -130,7 +134,6 @@
 					break;
 			}
 		}
-		conferenceTitleQuery;
 		return breadcrumb;
 	}
 </script>
@@ -144,7 +147,7 @@ import path via the parameter! -->
 	homePath="/"
 >
 	{#snippet pathSnippet(pathSegment: PathSegment<Parameters, boolean>)}
-		<a href={pathSegment.href}>
+		<a class="btn btn-ghost btn-sm" href={pathSegment.href}>
 			<i class="fa-duotone fa-{getBreadcrumb(pathSegment).icon}"></i>
 			<p class="ml-2">
 				{#if getBreadcrumb(pathSegment).delayedLabel}

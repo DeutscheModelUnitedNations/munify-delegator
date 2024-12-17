@@ -196,12 +196,12 @@
 								</td>
 							</tr>
 						{/if}
-						{#if application.supervisors?.length > 0}
+						{#if application.supervisors && application.supervisors.length > 0}
 							<tr>
 								<td class="text-center"><i class="fa-duotone fa-chalkboard-user text-lg"></i></td>
 								<td>
 									<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
-										>{application.supervisors.length}</span
+										>{application.supervisors?.length}</span
 									>
 									{application.supervisors
 										.map((x) => {

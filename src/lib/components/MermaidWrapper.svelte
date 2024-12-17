@@ -16,7 +16,9 @@
 	}
 
 	$effect(() => {
-		diagram && renderDiagram();
+		if (diagram) {
+			renderDiagram();
+		}
 	});
 </script>
 

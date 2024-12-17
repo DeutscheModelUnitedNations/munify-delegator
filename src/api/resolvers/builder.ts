@@ -51,7 +51,7 @@ export const builder = new SchemaBuilder<{
 		limit: {
 			complexity: 5000,
 			depth: 10,
-			breadth: 100
+			breadth: 141
 		}
 	},
 	tracing: {
@@ -74,12 +74,12 @@ builder.scalarType('File', {
 
 builder.scalarType('JSONObject', {
 	serialize: (value) => {
-		return value;
+		return JSON.stringify(value);
 	},
 
 	parseValue: (value: any) => {
 		if (value !== null && value !== undefined) {
-			return value;
+			return JSON.parse(value);
 		} else {
 			throw new Error('JSONObject cannot represent non-object value: ' + value);
 		}

@@ -1,3 +1,4 @@
+import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { z } from 'zod';
 
@@ -18,4 +19,4 @@ const schema = z.object({
 	OTEL_AUTHORIZATION_HEADER: z.optional(z.string())
 });
 
-export const configPrivate = schema.parse(env);
+export const configPrivate = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

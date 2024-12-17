@@ -33,6 +33,6 @@ export async function requireToBeConferenceAdmin({
 		}
 	});
 
-	if (!!conferenceAdminUser) return;
+	if (conferenceAdminUser) return;
 	throw new Error('User is not a conference admin');
 }

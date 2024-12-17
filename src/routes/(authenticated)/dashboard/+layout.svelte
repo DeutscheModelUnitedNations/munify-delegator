@@ -18,7 +18,6 @@
 	let { children, data }: Props = $props();
 	let myConferenceQuery = $derived(data.GetMyActiveConferencesQuery);
 	let conferences = $derived($myConferenceQuery.data?.findManyConferences);
-	$inspect($myConferenceQuery);
 
 	let upcomingConferences = $derived(conferences?.filter((c) => c.startConference > new Date()));
 	let activeConferences = $derived(

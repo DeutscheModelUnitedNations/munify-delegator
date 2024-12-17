@@ -11,7 +11,9 @@ import {
 	updateOneDelegationMutationObject,
 	DelegationEntryCodeFieldObject,
 	createOneDelegationMutationObject,
-	DelegationConferenceFieldObject
+	DelegationConferenceFieldObject,
+	DelegationAssignedNationFieldObject,
+	DelegationAssignedNonStateActorFieldObject
 } from '$db/generated/graphql/Delegation';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
@@ -30,6 +32,11 @@ builder.prismaObject('Delegation', {
 		experience: t.field(DelegationExperienceFieldObject),
 		entryCode: t.field(DelegationEntryCodeFieldObject),
 		conference: t.relation('conference', DelegationConferenceFieldObject),
+		assignedNation: t.relation('assignedNation', DelegationAssignedNationFieldObject),
+		assignedNonStateActor: t.relation(
+			'assignedNonStateActor',
+			DelegationAssignedNonStateActorFieldObject
+		),
 		members: t.relation('members', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember

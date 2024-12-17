@@ -33,17 +33,17 @@ export const NonStateActorSchema = z.object({
 export const AppliedForDelegationRoleSchema = z.object({
 	id: z.string(),
 	rank: z.number(),
-	nation: NationSchema.optional(),
-	nonStateActor: NonStateActorSchema.optional(),
-	fontAwesomeIcon: z.never(),
-	name: z.never()
+	nation: NationSchema.nullish(),
+	nonStateActor: NonStateActorSchema.nullish(),
+	fontAwesomeIcon: z.undefined(),
+	name: z.undefined()
 });
 
 export const UserSchema = z.object({
 	id: z.string(),
 	family_name: z.string(),
-	given_name: z.string(),
-	birthday: z.string().optional()
+	given_name: z.string()
+	// birthday: z.string().nullish()
 });
 
 export const MemberSchema = z.object({
@@ -62,28 +62,28 @@ export const AppliedForSingleRoleSchema = z.object({
 	id: z.string(),
 	fontAwesomeIcon: z.string().nullable(),
 	name: z.string(),
-	rank: z.never(),
-	nation: z.never(),
-	nonStateActor: z.never()
+	rank: z.undefined(),
+	nation: z.undefined(),
+	nonStateActor: z.undefined()
 });
 
 export const SightingPropsSchema = z.object({
-	evaluation: z.number().optional(),
-	flagged: z.boolean().optional(),
-	disqualified: z.boolean().optional(),
-	note: z.string().optional()
+	evaluation: z.number().nullish(),
+	flagged: z.boolean().nullish(),
+	disqualified: z.boolean().nullish(),
+	note: z.string().nullish()
 });
 
 export const DelegationAssignmentSchema = z.object({
-	assignedNation: NationSchema.optional()
+	assignedNation: NationSchema.nullish()
 });
 
 export const NSAAssignmentSchema = z.object({
-	assignedNSA: NonStateActorSchema.optional()
+	assignedNSA: NonStateActorSchema.nullish()
 });
 
 export const SingleAssignmentSchema = z.object({
-	assignedRole: IndividualApplicationOptionSchema.optional()
+	assignedRole: IndividualApplicationOptionSchema.nullish()
 });
 
 export const ConferenceSchema = z.object({
@@ -97,15 +97,15 @@ export const ConferenceSchema = z.object({
 export const DelegationSchema = z
 	.object({
 		id: z.string(),
-		motivation: z.string(),
-		experience: z.string(),
-		school: z.string(),
+		motivation: z.string().nullish(),
+		experience: z.string().nullish(),
+		school: z.string().nullish(),
 		appliedForRoles: z.array(AppliedForDelegationRoleSchema),
 		members: z.array(MemberSchema),
 		supervisors: z.array(SupervisorSchema),
-		user: z.never(),
-		splittedFrom: z.string().optional(),
-		splittedInto: z.array(z.string()).optional()
+		user: z.undefined(),
+		splittedFrom: z.string().nullish(),
+		splittedInto: z.array(z.string()).nullish()
 	})
 	.merge(SightingPropsSchema)
 	.merge(DelegationAssignmentSchema)
@@ -114,15 +114,15 @@ export const DelegationSchema = z
 export const SingleParticipantSchema = z
 	.object({
 		id: z.string(),
-		motivation: z.string(),
-		school: z.string(),
-		experience: z.string(),
+		motivation: z.string().nullish(),
+		school: z.string().nullish(),
+		experience: z.string().nullish(),
 		user: UserSchema,
 		appliedForRoles: z.array(AppliedForSingleRoleSchema),
-		supervisors: z.never(),
-		members: z.never(),
-		splittedFrom: z.never(),
-		splittedInto: z.never()
+		supervisors: z.undefined(),
+		members: z.undefined(),
+		splittedFrom: z.undefined(),
+		splittedInto: z.undefined()
 	})
 	.merge(SightingPropsSchema)
 	.merge(SingleAssignmentSchema);
@@ -427,23 +427,4 @@ export const unassignSingleRole = (singleId: string) => {
 		single.assignedRole = undefined;
 	}
 	saveProjects();
-};
-
-const sendAssigmentDataMutation = graphql(`
-	mutation SendAssignmentDataMutation($where: ConferenceWhereUniqueInput!, $data: JSONObject!) {
-		sendAssignmentData(data: $data, where: $where) {
-			success
-		}
-	}
-`);
-
-export const sendAssignmentData = async (id: string, data: Project) => {
-	const req = await sendAssigmentDataMutation.mutate({
-		where: { id },
-		data
-	});
-
-	if (!req.data?.sendAssignmentData.success) {
-		throw new Error('Failed to send assignment data');
-	}
 };

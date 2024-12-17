@@ -1,6 +1,5 @@
 import { type PureAbility, AbilityBuilder } from '@casl/ability';
 import { createPrismaAbility, type PrismaQuery } from '@casl/prisma';
-import { configPrivate } from '$config/private';
 import type { db } from '$db/db';
 import { defineAbilitiesForConference } from './entities/conference';
 import { defineAbilitiesForDelegation } from './entities/delegation';

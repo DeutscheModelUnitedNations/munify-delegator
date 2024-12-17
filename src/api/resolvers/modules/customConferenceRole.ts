@@ -22,6 +22,11 @@ builder.prismaObject('CustomConferenceRole', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant
 			})
+		}),
+		singleParticipantAssignments: t.relation('singleParticipantAssignments', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant
+			})
 		})
 	})
 });

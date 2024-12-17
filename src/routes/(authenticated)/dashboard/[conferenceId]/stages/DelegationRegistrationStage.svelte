@@ -48,7 +48,7 @@
 		};
 	});
 
-	const userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
+	let userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
 
 	let referralLink = $derived(
 		`${$page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
@@ -383,8 +383,7 @@
 						placeholder={m.answerHere()}
 						class="input input-sm input-bordered w-full"
 						value={questionnaireValues.school}
-						oninput={(e) => {
-							// @ts-expect-error
+						oninput={(e: any) => {
 							questionnaireValues.school = e.target.value;
 						}}
 						disabled={!userIsHeadDelegate || delegationMember.delegation?.applied}
@@ -400,8 +399,7 @@
 						placeholder={m.answerHere()}
 						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.motivation}
-						oninput={(e) => {
-							// @ts-expect-error
+						oninput={(e: any) => {
 							questionnaireValues.motivation = e.target.value;
 						}}
 						disabled={!userIsHeadDelegate || delegationMember.delegation?.applied}
@@ -418,8 +416,7 @@
 						placeholder={m.answerHere()}
 						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.experience}
-						oninput={(e) => {
-							// @ts-expect-error
+						oninput={(e: any) => {
 							questionnaireValues.experience = e.target.value;
 						}}
 						disabled={!userIsHeadDelegate || delegationMember.delegation?.applied}
@@ -463,7 +460,7 @@
 						delegationPreferencesModalOpen = true;
 					}}
 				>
-					{true ? m.setDelegationPreferences() : m.changeDelegationPreferences()}</button
+					{m.setDelegationPreferences()}</button
 				>
 			{/if}
 		</DashboardContentCard>

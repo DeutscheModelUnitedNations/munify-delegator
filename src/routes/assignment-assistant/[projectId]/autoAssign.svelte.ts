@@ -26,7 +26,7 @@ export const autoAssign = (seatNumber: number) => {
 
 	// --- HUNGARIAN ALGORITHM ---
 	// Step 1: Make a matrix of the costs of assigning each delegation to each nation
-	let matrix: number[][] = [];
+	const matrix: number[][] = [];
 	for (const application of unassignedApplicationsWithXSeats) {
 		const row: number[] = [];
 		for (const nation of unassignedNations) {

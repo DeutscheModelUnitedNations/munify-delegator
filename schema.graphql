@@ -44,6 +44,7 @@ type Committee {
 input CommitteeCreateInput {
   abbreviation: String!
   conferenceId: String!
+  delegationMembers: DelegationMemberCreateNestedManyWithoutAssignedCommitteeInput
   id: String
   name: String!
   nations: NationCreateNestedManyWithoutCommitteesInput
@@ -64,6 +65,11 @@ input CommitteeListRelationFilter {
   some: CommitteeWhereInput
 }
 
+input CommitteeNullableRelationFilter {
+  is: CommitteeWhereInput
+  isNot: CommitteeWhereInput
+}
+
 input CommitteeOrderByRelationAggregateInput {
   _count: SortOrder
 }
@@ -72,6 +78,7 @@ input CommitteeOrderByWithRelationInput {
   abbreviation: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
+  delegationMembers: DelegationMemberOrderByRelationAggregateInput
   id: SortOrder
   name: SortOrder
   nations: NationOrderByRelationAggregateInput
@@ -89,6 +96,7 @@ enum CommitteeScalarFieldEnum {
 input CommitteeUpdateInput {
   abbreviation: StringFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
+  delegationMembers: DelegationMemberUpdateManyWithoutAssignedCommitteeNestedInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
   nations: NationUpdateManyWithoutCommitteesNestedInput
@@ -121,6 +129,7 @@ input CommitteeWhereInput {
   abbreviation: StringFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  delegationMembers: DelegationMemberListRelationFilter
   id: StringFilter
   name: StringFilter
   nations: NationListRelationFilter
@@ -134,6 +143,7 @@ input CommitteeWhereUniqueInput {
   abbreviation: StringFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  delegationMembers: DelegationMemberListRelationFilter
   id: String
   name: StringFilter
   nations: NationListRelationFilter
@@ -370,6 +380,7 @@ input ConferenceSupervisorCreateInput {
   delegations: DelegationCreateNestedManyWithoutSupervisorsInput
   id: String
   plansOwnAttendenceAtConference: Boolean!
+  postAssignmentDelegeationMembers: DelegationMemberCreateNestedManyWithoutPostAssignmentConferenceSupervisorsInput
   userId: String!
 }
 
@@ -378,6 +389,10 @@ input ConferenceSupervisorCreateNestedManyWithoutConferenceInput {
 }
 
 input ConferenceSupervisorCreateNestedManyWithoutDelegationsInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+}
+
+input ConferenceSupervisorCreateNestedManyWithoutPostAssignmentDelegeationMembersInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
 }
 
@@ -401,6 +416,7 @@ input ConferenceSupervisorOrderByWithRelationInput {
   delegations: DelegationOrderByRelationAggregateInput
   id: SortOrder
   plansOwnAttendenceAtConference: SortOrder
+  postAssignmentDelegeationMembers: DelegationMemberOrderByRelationAggregateInput
   user: UserOrderByWithRelationInput
   userId: SortOrder
 }
@@ -421,6 +437,7 @@ input ConferenceSupervisorUpdateInput {
   delegations: DelegationUpdateManyWithoutSupervisorsNestedInput
   id: StringFieldUpdateOperationsInput
   plansOwnAttendenceAtConference: BoolFieldUpdateOperationsInput
+  postAssignmentDelegeationMembers: DelegationMemberUpdateManyWithoutPostAssignmentConferenceSupervisorsNestedInput
   userId: StringFieldUpdateOperationsInput
 }
 
@@ -441,6 +458,12 @@ input ConferenceSupervisorUpdateManyWithoutDelegationsNestedInput {
   set: [ConferenceSupervisorWhereUniqueInput!]
 }
 
+input ConferenceSupervisorUpdateManyWithoutPostAssignmentDelegeationMembersNestedInput {
+  connect: [ConferenceSupervisorWhereUniqueInput!]
+  disconnect: [ConferenceSupervisorWhereUniqueInput!]
+  set: [ConferenceSupervisorWhereUniqueInput!]
+}
+
 input ConferenceSupervisorUpdateManyWithoutUserNestedInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
   disconnect: [ConferenceSupervisorWhereUniqueInput!]
@@ -456,6 +479,7 @@ input ConferenceSupervisorWhereInput {
   delegations: DelegationListRelationFilter
   id: StringFilter
   plansOwnAttendenceAtConference: BoolFilter
+  postAssignmentDelegeationMembers: DelegationMemberListRelationFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -470,6 +494,7 @@ input ConferenceSupervisorWhereUniqueInput {
   delegations: DelegationListRelationFilter
   id: String
   plansOwnAttendenceAtConference: BoolFilter
+  postAssignmentDelegeationMembers: DelegationMemberListRelationFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -588,6 +613,7 @@ type CustomConferenceRole {
   id: ID!
   name: String!
   singleParticipant: [SingleParticipant!]!
+  singleParticipantAssignments: [SingleParticipant!]!
 }
 
 input CustomConferenceRoleConferenceIdNameCompoundUniqueInput {
@@ -602,6 +628,7 @@ input CustomConferenceRoleCreateInput {
   id: String
   name: String!
   singleParticipant: SingleParticipantCreateNestedManyWithoutAppliedForRolesInput
+  singleParticipantAssignments: SingleParticipantCreateNestedManyWithoutAssignedRoleInput
 }
 
 input CustomConferenceRoleCreateNestedManyWithoutConferenceInput {
@@ -618,6 +645,11 @@ input CustomConferenceRoleListRelationFilter {
   some: CustomConferenceRoleWhereInput
 }
 
+input CustomConferenceRoleNullableRelationFilter {
+  is: CustomConferenceRoleWhereInput
+  isNot: CustomConferenceRoleWhereInput
+}
+
 input CustomConferenceRoleOrderByRelationAggregateInput {
   _count: SortOrder
 }
@@ -630,6 +662,7 @@ input CustomConferenceRoleOrderByWithRelationInput {
   id: SortOrder
   name: SortOrder
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
+  singleParticipantAssignments: SingleParticipantOrderByRelationAggregateInput
 }
 
 enum CustomConferenceRoleScalarFieldEnum {
@@ -647,6 +680,7 @@ input CustomConferenceRoleUpdateInput {
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
   singleParticipant: SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput
+  singleParticipantAssignments: SingleParticipantUpdateManyWithoutAssignedRoleNestedInput
 }
 
 input CustomConferenceRoleUpdateManyMutationInput {
@@ -679,6 +713,7 @@ input CustomConferenceRoleWhereInput {
   id: StringFilter
   name: StringFilter
   singleParticipant: SingleParticipantListRelationFilter
+  singleParticipantAssignments: SingleParticipantListRelationFilter
 }
 
 input CustomConferenceRoleWhereUniqueInput {
@@ -693,6 +728,7 @@ input CustomConferenceRoleWhereUniqueInput {
   id: String
   name: StringFilter
   singleParticipant: SingleParticipantListRelationFilter
+  singleParticipantAssignments: SingleParticipantListRelationFilter
 }
 
 scalar DateTime
@@ -758,6 +794,8 @@ type Delegation {
   """
   applied: Boolean!
   appliedForRoles: [RoleApplication!]!
+  assignedNation: Nation
+  assignedNonStateActor: NonStateActor
   conference: Conference!
   entryCode: String!
   experience: String
@@ -771,6 +809,8 @@ type Delegation {
 input DelegationCreateInput {
   applied: Boolean
   appliedForRoles: RoleApplicationCreateNestedManyWithoutDelegationInput
+  assignedNationAlpha3Code: String
+  assignedNonStateActorId: String
   conferenceId: String!
   entryCode: String!
   experience: String
@@ -779,6 +819,14 @@ input DelegationCreateInput {
   motivation: String
   school: String
   supervisors: ConferenceSupervisorCreateNestedManyWithoutDelegationsInput
+}
+
+input DelegationCreateNestedManyWithoutAssignedNationInput {
+  connect: [DelegationWhereUniqueInput!]
+}
+
+input DelegationCreateNestedManyWithoutAssignedNonStateActorInput {
+  connect: [DelegationWhereUniqueInput!]
 }
 
 input DelegationCreateNestedManyWithoutConferenceInput {
@@ -796,6 +844,7 @@ input DelegationListRelationFilter {
 }
 
 type DelegationMember {
+  assignedCommittee: Committee
   conference: Conference!
   delegation: Delegation!
   id: ID!
@@ -809,11 +858,17 @@ input DelegationMemberConferenceIdUserIdCompoundUniqueInput {
 }
 
 input DelegationMemberCreateInput {
+  assignedCommitteeId: String
   conferenceId: String!
   delegationId: String!
   id: String
   isHeadDelegate: Boolean!
+  postAssignmentConferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutPostAssignmentDelegeationMembersInput
   userId: String!
+}
+
+input DelegationMemberCreateNestedManyWithoutAssignedCommitteeInput {
+  connect: [DelegationMemberWhereUniqueInput!]
 }
 
 input DelegationMemberCreateNestedManyWithoutConferenceInput {
@@ -821,6 +876,10 @@ input DelegationMemberCreateNestedManyWithoutConferenceInput {
 }
 
 input DelegationMemberCreateNestedManyWithoutDelegationInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberCreateNestedManyWithoutPostAssignmentConferenceSupervisorsInput {
   connect: [DelegationMemberWhereUniqueInput!]
 }
 
@@ -844,17 +903,21 @@ input DelegationMemberOrderByRelationAggregateInput {
 }
 
 input DelegationMemberOrderByWithRelationInput {
+  assignedCommittee: CommitteeOrderByWithRelationInput
+  assignedCommitteeId: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   delegation: DelegationOrderByWithRelationInput
   delegationId: SortOrder
   id: SortOrder
   isHeadDelegate: SortOrder
+  postAssignmentConferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
   user: UserOrderByWithRelationInput
   userId: SortOrder
 }
 
 enum DelegationMemberScalarFieldEnum {
+  assignedCommitteeId
   conferenceId
   delegationId
   id
@@ -863,16 +926,24 @@ enum DelegationMemberScalarFieldEnum {
 }
 
 input DelegationMemberUpdateInput {
+  assignedCommitteeId: NullableStringFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
   delegationId: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   isHeadDelegate: BoolFieldUpdateOperationsInput
+  postAssignmentConferenceSupervisors: ConferenceSupervisorUpdateManyWithoutPostAssignmentDelegeationMembersNestedInput
   userId: StringFieldUpdateOperationsInput
 }
 
 input DelegationMemberUpdateManyMutationInput {
   id: StringFieldUpdateOperationsInput
   isHeadDelegate: BoolFieldUpdateOperationsInput
+}
+
+input DelegationMemberUpdateManyWithoutAssignedCommitteeNestedInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+  disconnect: [DelegationMemberWhereUniqueInput!]
+  set: [DelegationMemberWhereUniqueInput!]
 }
 
 input DelegationMemberUpdateManyWithoutConferenceNestedInput {
@@ -882,6 +953,12 @@ input DelegationMemberUpdateManyWithoutConferenceNestedInput {
 }
 
 input DelegationMemberUpdateManyWithoutDelegationNestedInput {
+  connect: [DelegationMemberWhereUniqueInput!]
+  disconnect: [DelegationMemberWhereUniqueInput!]
+  set: [DelegationMemberWhereUniqueInput!]
+}
+
+input DelegationMemberUpdateManyWithoutPostAssignmentConferenceSupervisorsNestedInput {
   connect: [DelegationMemberWhereUniqueInput!]
   disconnect: [DelegationMemberWhereUniqueInput!]
   set: [DelegationMemberWhereUniqueInput!]
@@ -897,12 +974,15 @@ input DelegationMemberWhereInput {
   AND: [DelegationMemberWhereInput!]
   NOT: [DelegationMemberWhereInput!]
   OR: [DelegationMemberWhereInput!]
+  assignedCommittee: CommitteeWhereInput
+  assignedCommitteeId: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   delegation: DelegationWhereInput
   delegationId: StringFilter
   id: StringFilter
   isHeadDelegate: BoolFilter
+  postAssignmentConferenceSupervisors: ConferenceSupervisorListRelationFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -911,6 +991,8 @@ input DelegationMemberWhereUniqueInput {
   AND: [DelegationMemberWhereInput!]
   NOT: [DelegationMemberWhereInput!]
   OR: [DelegationMemberWhereInput!]
+  assignedCommittee: CommitteeWhereInput
+  assignedCommitteeId: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   conferenceId_userId: DelegationMemberConferenceIdUserIdCompoundUniqueInput
@@ -919,6 +1001,7 @@ input DelegationMemberWhereUniqueInput {
   delegationId_userId: DelegationMemberDelegationIdUserIdCompoundUniqueInput
   id: String
   isHeadDelegate: BoolFilter
+  postAssignmentConferenceSupervisors: ConferenceSupervisorListRelationFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -930,6 +1013,10 @@ input DelegationOrderByRelationAggregateInput {
 input DelegationOrderByWithRelationInput {
   applied: SortOrder
   appliedForRoles: RoleApplicationOrderByRelationAggregateInput
+  assignedNation: NationOrderByWithRelationInput
+  assignedNationAlpha3Code: SortOrder
+  assignedNonStateActor: NonStateActorOrderByWithRelationInput
+  assignedNonStateActorId: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   entryCode: SortOrder
@@ -961,6 +1048,8 @@ input DelegationRelationFilter {
 
 enum DelegationScalarFieldEnum {
   applied
+  assignedNationAlpha3Code
+  assignedNonStateActorId
   conferenceId
   entryCode
   experience
@@ -972,6 +1061,8 @@ enum DelegationScalarFieldEnum {
 input DelegationUpdateInput {
   applied: BoolFieldUpdateOperationsInput
   appliedForRoles: RoleApplicationUpdateManyWithoutDelegationNestedInput
+  assignedNationAlpha3Code: NullableStringFieldUpdateOperationsInput
+  assignedNonStateActorId: NullableStringFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
   entryCode: StringFieldUpdateOperationsInput
   experience: NullableStringFieldUpdateOperationsInput
@@ -989,6 +1080,18 @@ input DelegationUpdateManyMutationInput {
   id: StringFieldUpdateOperationsInput
   motivation: NullableStringFieldUpdateOperationsInput
   school: NullableStringFieldUpdateOperationsInput
+}
+
+input DelegationUpdateManyWithoutAssignedNationNestedInput {
+  connect: [DelegationWhereUniqueInput!]
+  disconnect: [DelegationWhereUniqueInput!]
+  set: [DelegationWhereUniqueInput!]
+}
+
+input DelegationUpdateManyWithoutAssignedNonStateActorNestedInput {
+  connect: [DelegationWhereUniqueInput!]
+  disconnect: [DelegationWhereUniqueInput!]
+  set: [DelegationWhereUniqueInput!]
 }
 
 input DelegationUpdateManyWithoutConferenceNestedInput {
@@ -1009,6 +1112,10 @@ input DelegationWhereInput {
   OR: [DelegationWhereInput!]
   applied: BoolFilter
   appliedForRoles: RoleApplicationListRelationFilter
+  assignedNation: NationWhereInput
+  assignedNationAlpha3Code: StringNullableFilter
+  assignedNonStateActor: NonStateActorWhereInput
+  assignedNonStateActorId: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   entryCode: StringFilter
@@ -1026,6 +1133,10 @@ input DelegationWhereUniqueInput {
   OR: [DelegationWhereInput!]
   applied: BoolFilter
   appliedForRoles: RoleApplicationListRelationFilter
+  assignedNation: NationWhereInput
+  assignedNationAlpha3Code: StringNullableFilter
+  assignedNonStateActor: NonStateActorWhereInput
+  assignedNonStateActorId: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   entryCode: String
@@ -1163,6 +1274,7 @@ input IntWithAggregatesFilter {
 scalar JSONObject
 
 type Mutation {
+  assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(entryCode: String!): DelegationMember!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
@@ -1202,6 +1314,7 @@ type Nation {
 input NationCreateInput {
   alpha2Code: String!
   alpha3Code: String!
+  assignedDelegations: DelegationCreateNestedManyWithoutAssignedNationInput
   committees: CommitteeCreateNestedManyWithoutNationsInput
   roleApplications: RoleApplicationCreateNestedManyWithoutNationInput
 }
@@ -1228,6 +1341,7 @@ input NationOrderByRelationAggregateInput {
 input NationOrderByWithRelationInput {
   alpha2Code: SortOrder
   alpha3Code: SortOrder
+  assignedDelegations: DelegationOrderByRelationAggregateInput
   committees: CommitteeOrderByRelationAggregateInput
   roleApplications: RoleApplicationOrderByRelationAggregateInput
 }
@@ -1240,6 +1354,7 @@ enum NationScalarFieldEnum {
 input NationUpdateInput {
   alpha2Code: StringFieldUpdateOperationsInput
   alpha3Code: StringFieldUpdateOperationsInput
+  assignedDelegations: DelegationUpdateManyWithoutAssignedNationNestedInput
   committees: CommitteeUpdateManyWithoutNationsNestedInput
   roleApplications: RoleApplicationUpdateManyWithoutNationNestedInput
 }
@@ -1261,6 +1376,7 @@ input NationWhereInput {
   OR: [NationWhereInput!]
   alpha2Code: StringFilter
   alpha3Code: StringFilter
+  assignedDelegations: DelegationListRelationFilter
   committees: CommitteeListRelationFilter
   roleApplications: RoleApplicationListRelationFilter
 }
@@ -1271,6 +1387,7 @@ input NationWhereUniqueInput {
   OR: [NationWhereInput!]
   alpha2Code: String
   alpha3Code: String
+  assignedDelegations: DelegationListRelationFilter
   committees: CommitteeListRelationFilter
   roleApplications: RoleApplicationListRelationFilter
 }
@@ -1540,6 +1657,7 @@ input NonStateActorConferenceIdNameCompoundUniqueInput {
 
 input NonStateActorCreateInput {
   abbreviation: String!
+  assignedDelegations: DelegationCreateNestedManyWithoutAssignedNonStateActorInput
   conferenceId: String!
   description: String!
   fontAwesomeIcon: String
@@ -1570,6 +1688,7 @@ input NonStateActorOrderByRelationAggregateInput {
 
 input NonStateActorOrderByWithRelationInput {
   abbreviation: SortOrder
+  assignedDelegations: DelegationOrderByRelationAggregateInput
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   description: SortOrder
@@ -1592,6 +1711,7 @@ enum NonStateActorScalarFieldEnum {
 
 input NonStateActorUpdateInput {
   abbreviation: StringFieldUpdateOperationsInput
+  assignedDelegations: DelegationUpdateManyWithoutAssignedNonStateActorNestedInput
   conferenceId: StringFieldUpdateOperationsInput
   description: StringFieldUpdateOperationsInput
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
@@ -1621,6 +1741,7 @@ input NonStateActorWhereInput {
   NOT: [NonStateActorWhereInput!]
   OR: [NonStateActorWhereInput!]
   abbreviation: StringFilter
+  assignedDelegations: DelegationListRelationFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   description: StringFilter
@@ -1636,6 +1757,7 @@ input NonStateActorWhereUniqueInput {
   NOT: [NonStateActorWhereInput!]
   OR: [NonStateActorWhereInput!]
   abbreviation: StringFilter
+  assignedDelegations: DelegationListRelationFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   conferenceId_abbreviation: NonStateActorConferenceIdAbbreviationCompoundUniqueInput
@@ -1880,6 +2002,10 @@ type SetAssignmentDataResult {
 type SingleParticipant {
   applied: Boolean!
   appliedForRoles: [CustomConferenceRole!]!
+  assignedRole: CustomConferenceRole
+
+  """For example the country of an IGH judge"""
+  assignmentDetails: String
   conference: Conference!
   experience: String
   id: ID!
@@ -1896,6 +2022,8 @@ input SingleParticipantConferenceIdUserIdCompoundUniqueInput {
 input SingleParticipantCreateInput {
   applied: Boolean
   appliedForRoles: CustomConferenceRoleCreateNestedManyWithoutSingleParticipantInput
+  assignedRoleId: String
+  assignmentDetails: String
   conferenceId: String!
   experience: String
   id: String
@@ -1905,6 +2033,10 @@ input SingleParticipantCreateInput {
 }
 
 input SingleParticipantCreateNestedManyWithoutAppliedForRolesInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantCreateNestedManyWithoutAssignedRoleInput {
   connect: [SingleParticipantWhereUniqueInput!]
 }
 
@@ -1929,6 +2061,9 @@ input SingleParticipantOrderByRelationAggregateInput {
 input SingleParticipantOrderByWithRelationInput {
   applied: SortOrder
   appliedForRoles: CustomConferenceRoleOrderByRelationAggregateInput
+  assignedRole: CustomConferenceRoleOrderByWithRelationInput
+  assignedRoleId: SortOrder
+  assignmentDetails: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   experience: SortOrder
@@ -1941,6 +2076,8 @@ input SingleParticipantOrderByWithRelationInput {
 
 enum SingleParticipantScalarFieldEnum {
   applied
+  assignedRoleId
+  assignmentDetails
   conferenceId
   experience
   id
@@ -1952,6 +2089,8 @@ enum SingleParticipantScalarFieldEnum {
 input SingleParticipantUpdateInput {
   applied: BoolFieldUpdateOperationsInput
   appliedForRoles: CustomConferenceRoleUpdateManyWithoutSingleParticipantNestedInput
+  assignedRoleId: NullableStringFieldUpdateOperationsInput
+  assignmentDetails: NullableStringFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
   experience: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
@@ -1962,6 +2101,7 @@ input SingleParticipantUpdateInput {
 
 input SingleParticipantUpdateManyMutationInput {
   applied: BoolFieldUpdateOperationsInput
+  assignmentDetails: NullableStringFieldUpdateOperationsInput
   experience: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   motivation: NullableStringFieldUpdateOperationsInput
@@ -1969,6 +2109,12 @@ input SingleParticipantUpdateManyMutationInput {
 }
 
 input SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+  disconnect: [SingleParticipantWhereUniqueInput!]
+  set: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantUpdateManyWithoutAssignedRoleNestedInput {
   connect: [SingleParticipantWhereUniqueInput!]
   disconnect: [SingleParticipantWhereUniqueInput!]
   set: [SingleParticipantWhereUniqueInput!]
@@ -1992,6 +2138,9 @@ input SingleParticipantWhereInput {
   OR: [SingleParticipantWhereInput!]
   applied: BoolFilter
   appliedForRoles: CustomConferenceRoleListRelationFilter
+  assignedRole: CustomConferenceRoleWhereInput
+  assignedRoleId: StringNullableFilter
+  assignmentDetails: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   experience: StringNullableFilter
@@ -2008,6 +2157,9 @@ input SingleParticipantWhereUniqueInput {
   OR: [SingleParticipantWhereInput!]
   applied: BoolFilter
   appliedForRoles: CustomConferenceRoleListRelationFilter
+  assignedRole: CustomConferenceRoleWhereInput
+  assignedRoleId: StringNullableFilter
+  assignmentDetails: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   conferenceId_userId: SingleParticipantConferenceIdUserIdCompoundUniqueInput
@@ -2494,4 +2646,9 @@ input UserWhereUniqueInput {
   wantsJoinTeamInformation: BoolFilter
   wantsToReceiveGeneralInformation: BoolFilter
   zip: StringNullableFilter
+}
+
+input updateManyDelegationMemberInputTypeArrayValue {
+  committeeId: String!
+  delegationMemberId: String!
 }

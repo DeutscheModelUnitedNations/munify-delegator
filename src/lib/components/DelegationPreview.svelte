@@ -29,7 +29,7 @@
 		}
 	`);
 
-	let delegation = $derived($delegationQuery.data?.previewDelegation!);
+	let delegation = $derived($delegationQuery.data!.previewDelegation!);
 </script>
 
 {#if $delegationQuery.fetching}

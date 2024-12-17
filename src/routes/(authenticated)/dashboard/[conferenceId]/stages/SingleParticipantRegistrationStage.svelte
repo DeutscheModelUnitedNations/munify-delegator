@@ -146,7 +146,6 @@
 			desc: m.doneToRegister()
 		}
 	]);
-	$inspect(singleParticipant);
 </script>
 
 {#if !singleParticipant.applied}
@@ -257,8 +256,7 @@
 						placeholder={m.answerHere()}
 						class="input input-sm input-bordered w-full"
 						value={questionnaireValues.school}
-						oninput={(e) => {
-							// @ts-expect-error
+						oninput={(e: any) => {
 							questionnaireValues.school = e.target.value;
 						}}
 						disabled={singleParticipant.applied}
@@ -275,8 +273,7 @@
 						placeholder={m.answerHere()}
 						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.motivation}
-						oninput={(e) => {
-							// @ts-expect-error
+						oninput={(e: any) => {
 							questionnaireValues.motivation = e.target.value;
 						}}
 						disabled={singleParticipant.applied}
@@ -293,8 +290,7 @@
 						placeholder={m.answerHere()}
 						class="textarea textarea-bordered textarea-sm w-full"
 						value={questionnaireValues.experience}
-						oninput={(e) => {
-							// @ts-expect-error
+						oninput={(e: any) => {
 							questionnaireValues.experience = e.target.value;
 						}}
 						disabled={singleParticipant.applied}

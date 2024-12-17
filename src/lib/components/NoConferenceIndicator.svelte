@@ -3,7 +3,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 </script>
 
-<main class="flex flex-col items-center justify-center gap-10 p-4">
+<main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-10 p-4">
 	<img src={svgempty} alt="Empty" class="w-1/2" />
 	<h1 class="text-center text-3xl">{m.noConferenceHeading()}</h1>
 	<p>{m.noConferenceText()}</p>

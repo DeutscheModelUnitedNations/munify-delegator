@@ -24,12 +24,12 @@ const requiredListsGlobal = ['DMUN_NEWSLETTER', 'DMUN_TEAM_TENDERS'];
 const requiredListsPerConference = [
 	'REGISTRATION_NOT_COMPLETED',
 	'REGISTRATION_COMPLETED',
+	'DELEGATION_MEMBERS_NATIONS',
+	'DELEGATION_MEMBERS_NSA',
+	'SINGLE_PARTICIPANTS',
+	'HEAD_DELEGATES',
 	// "NO_POSTAL_REGISTRATION",
 	// "NO_PAYMENT",
-	// 'ALL_PARTICIPANTS',
-	// 'DELEGATION_MEMBERS',
-	// 'SINGLE_PARTICIPANTS',
-	// 'HEAD_DELEGATES',
 	'SUPERVISORS',
 	'TEAM'
 ] as const;
@@ -47,6 +47,7 @@ interface User extends BaseUser {
 	})[];
 	conferenceSupervisor: (ConferenceSupervisor & {
 		conference: Conference;
+		delegations: Delegation[];
 	})[];
 	teamMember: (TeamMember & {
 		conference: Conference;
@@ -71,12 +72,14 @@ export interface Attribs {
 		id: string;
 		title: string;
 		role:
-			| 'DELEGATE'
+			| 'DELEGATE_NATION'
+			| 'DELEGATE_NSA'
 			| 'SINGLE_PARTICIPANT'
 			| 'SUPERVISOR'
 			| 'PARTICIPANT_CARE'
 			| 'PROJECT_MANAGEMENT'
-			| 'MEMBER'; // Team Member
+			| 'MEMBER' // Team Member
+			| undefined;
 	}[];
 }
 
@@ -175,7 +178,8 @@ async function getUsers(): Promise<User[]> {
 			},
 			conferenceSupervisor: {
 				include: {
-					conference: true
+					conference: true,
+					delegations: true
 				}
 			},
 			teamMember: {
@@ -201,8 +205,31 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 		attribs.conferences.push({
 			id: dm.conferenceId,
 			title: dm.delegation.conference.title,
-			role: 'DELEGATE'
+			role: dm.delegation.assignedNationAlpha3Code
+				? 'DELEGATE_NATION'
+				: dm.delegation.assignedNonStateActorId
+					? 'DELEGATE_NSA'
+					: undefined
 		});
+		if (dm.delegation.assignedNationAlpha3Code) {
+			lists.push(
+				createListName(
+					dm.delegation.conference.title,
+					dm.conferenceId,
+					'DELEGATION_MEMBERS_NATIONS'
+				)
+			);
+		} else if (dm.delegation.assignedNonStateActorId) {
+			lists.push(
+				createListName(dm.delegation.conference.title, dm.conferenceId, 'DELEGATION_MEMBERS_NSA')
+			);
+		}
+		if (
+			dm.isHeadDelegate &&
+			(dm.delegation.assignedNationAlpha3Code || dm.delegation.assignedNonStateActorId)
+		) {
+			lists.push(createListName(dm.delegation.conference.title, dm.conferenceId, 'HEAD_DELEGATES'));
+		}
 		if (dm.delegation.applied) {
 			lists.push(
 				createListName(dm.delegation.conference.title, dm.conferenceId, 'REGISTRATION_COMPLETED')
@@ -224,6 +251,9 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 			title: sp.conference.title,
 			role: 'SINGLE_PARTICIPANT'
 		});
+		if (sp.assignedRoleId) {
+			lists.push(createListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS'));
+		}
 		if (sp.applied) {
 			lists.push(createListName(sp.conference.title, sp.conferenceId, 'REGISTRATION_COMPLETED'));
 		} else {
@@ -239,7 +269,20 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 			title: cs.conference.title,
 			role: 'SUPERVISOR'
 		});
-		lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
+		if (cs.conference.state === 'PARTICIPANT_REGISTRATION') {
+			if (cs.delegations.some((d) => d.applied)) {
+				lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
+			}
+			if (cs.delegations.some((d) => !d.applied)) {
+				lists.push(
+					createListName(cs.conference.title, cs.conferenceId, 'REGISTRATION_NOT_COMPLETED')
+				);
+			}
+		} else {
+			if (cs.delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId)) {
+				lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
+			}
+		}
 	}
 
 	// Assign Global Lists based on User Preferences

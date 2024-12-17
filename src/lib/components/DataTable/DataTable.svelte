@@ -6,6 +6,9 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import DataTableSettingsButton from './DataTableSettingsButton.svelte';
+	import PrintHeader from './DataTablePrintHeader.svelte';
+	import ExportButton from './DataTableExportButton.svelte';
 
 	interface Props {
 		columns: TableColumns<RowData>;
@@ -13,6 +16,8 @@
 		enableSearch?: boolean;
 		searchPattern?: string;
 		queryParamKey?: string;
+		title?: string;
+		additionallyIndexedKeys?: string[];
 		rowSelected?: (row: RowData) => void;
 	}
 
@@ -22,6 +27,8 @@
 		enableSearch = true,
 		searchPattern = $bindable(''),
 		queryParamKey,
+		additionallyIndexedKeys = [],
+		title = $page.url.pathname.split('/').pop()!,
 		rowSelected
 	}: Props = $props();
 	const { getTableSize, getZebra } = getTableSettings();
@@ -43,7 +50,9 @@
 
 	let fuse = $derived(
 		new Fuse(rows, {
-			keys: [...columns.map((c) => c.key.toString()), 'id']
+			keys: [...columns.map((c) => c.key.toString()), 'id', ...additionallyIndexedKeys],
+			threshold: 0.4,
+			minMatchCharLength: 2
 		})
 	);
 	let searchedColumns = $derived(
@@ -51,7 +60,6 @@
 	);
 
 	onMount(() => {
-		// svelte-ignore state_referenced_locally
 		if (
 			searchedColumns.length === 1 &&
 			queryParamKey &&
@@ -66,22 +74,28 @@
 </script>
 
 <div class="w-full">
-	{#if enableSearch}
-		<label class="no-print input input-bordered mt-6 flex items-center gap-2">
-			<input type="text" class="grow" bind:value={searchPattern} placeholder={m.search()} />
-			{#if searchPattern !== ''}
-				<button
-					class="btn btn-square btn-ghost btn-sm"
-					onclick={() => (searchPattern = '')}
-					aria-label="Reset search"
-				>
-					<i class="fa-duotone fa-times"></i>
-				</button>
-			{:else}
-				<i class="fa-duotone fa-magnifying-glass"></i>
-			{/if}
-		</label>
-	{/if}
+	<div class="mt-6 flex w-full items-center">
+		{#if enableSearch}
+			<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
+				<input type="text" class="grow" bind:value={searchPattern} placeholder={m.search()} />
+				{#if searchPattern !== ''}
+					<button
+						class="btn btn-square btn-ghost btn-sm"
+						onclick={() => (searchPattern = '')}
+						aria-label="Reset search"
+					>
+						<i class="fa-duotone fa-times"></i>
+					</button>
+				{:else}
+					<i class="fa-duotone fa-magnifying-glass"></i>
+				{/if}
+			</label>
+		{/if}
+		<DataTableSettingsButton />
+		<ExportButton exportedData={rows as any} />
+	</div>
+
+	<PrintHeader {title} {searchPattern} />
 
 	<div class="svelte-table-wrapper mt-4 w-full overflow-x-auto transition-all duration-300">
 		<SvelteTable

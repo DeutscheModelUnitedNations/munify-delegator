@@ -7,14 +7,14 @@
 		id: string;
 		fileName: string;
 		created: string;
-		data: {};
+		data: Record<string, any>;
 	}[] = $state([]);
 
 	let files: FileList | undefined = $state();
 	let content:
 		| {
 				fileName: string;
-				data: {};
+				data: Record<string, any>;
 		  }
 		| undefined = $state();
 
