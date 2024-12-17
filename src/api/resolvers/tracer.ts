@@ -37,8 +37,9 @@ if (exporter) {
 	} else {
 		processors.push(new BatchSpanProcessor(exporter));
 	}
+} else {
+	console.info('No OTEL exporter configured, this is fine if you are not using OTEL');
 }
-
 const provider = new NodeTracerProvider({
 	spanProcessors: processors,
 	resource: new Resource({
