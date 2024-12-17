@@ -78,7 +78,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 
 	const OIDCRoleNames: (typeof oidcRoles)[number][] = [];
 
-	if (user) {
+	if (user && configPrivate.OIDC_ROLE_CLAIM) {
 		const rolesRaw = user[configPrivate.OIDC_ROLE_CLAIM]!;
 		if (rolesRaw) {
 			const roleNames = Object.keys(rolesRaw);
