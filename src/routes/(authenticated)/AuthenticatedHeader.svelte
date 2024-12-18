@@ -10,7 +10,7 @@
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
 	export const logoutUrlQuery = graphql(`
-		query LogoutUrlQuery {
+		query LogoutUrlQuery @load {
 			logoutUrl
 		}
 	`);
@@ -52,7 +52,10 @@
 					</a>
 				</li>
 				<li>
-					<a href={$logoutUrlQuery.data?.logoutUrl}>
+					<a
+						class={$logoutUrlQuery.data?.logoutUrl ? '' : 'disabled'}
+						href={$logoutUrlQuery.data?.logoutUrl}
+					>
 						<i class="fa-duotone fa-sign-out w-4"></i>
 						{m.logout()}
 					</a>
