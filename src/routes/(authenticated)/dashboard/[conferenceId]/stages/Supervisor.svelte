@@ -5,8 +5,8 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { graphql } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
-	import { sortBy } from 'lodash';
 	import Flag from '$lib/components/Flag.svelte';
+	import ConferenceStatusWidget from '../ConferenceStatusWidget.svelte';
 
 	// TODO these components need some refactoring
 	let {
@@ -103,6 +103,7 @@
 					class="toggle toggle-success"
 					checked={supervisor.plansOwnAttendenceAtConference}
 					onchange={handlePresenceChange}
+					disabled={conference.state !== 'PARTICIPANT_REGISTRATION'}
 				/>
 			</label>
 		</div>
@@ -113,6 +114,10 @@
 			: m.willNotBePresentAtConference()}
 	</p>
 </section>
+
+{#if supervisor.plansOwnAttendenceAtConference}
+	<ConferenceStatusWidget />
+{/if}
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
@@ -228,7 +233,7 @@
 							<div class="font-bold">{m.delegationPreferences()}</div>
 							<div class="flex flex-wrap gap-1">
 								{#if delegation.appliedForRoles.length > 0}
-									{#each sortBy(delegation.appliedForRoles, (x) => x.rank) as roleApplication}
+									{#each delegation.appliedForRoles.sort((x) => x.rank) as roleApplication}
 										<div class="flex gap-2">
 											<div class="badge bg-base-300">
 												{roleApplication.nation
