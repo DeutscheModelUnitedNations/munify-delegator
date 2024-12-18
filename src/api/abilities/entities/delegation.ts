@@ -7,11 +7,11 @@ export const defineAbilitiesForDelegation = (oidc: OIDC, { can }: AbilityBuilder
 		const user = oidc.user;
 
 		// the delegates of a delegation should be able to see it
-		can('read', 'Delegation', {
+		can(['list', 'read'], 'Delegation', {
 			members: { some: { user: { id: user.sub } } }
 		});
 		// the supervisors of a delegation should be able to see it
-		can('read', 'Delegation', {
+		can(['list', 'read'], 'Delegation', {
 			supervisors: { some: { user: { id: user.sub } } }
 		});
 
