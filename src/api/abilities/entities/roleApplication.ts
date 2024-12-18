@@ -26,7 +26,7 @@ export const defineAbilitiesForRoleApplication = (
 		});
 
 		// delegation members can see the applications of their delegations
-		can('read', 'RoleApplication', {
+		can(['read', 'list'], 'RoleApplication', {
 			delegation: {
 				members: {
 					some: {
@@ -52,7 +52,7 @@ export const defineAbilitiesForRoleApplication = (
 		});
 
 		// delegation supervisors can see the applications of their delegations
-		can('read', 'RoleApplication', {
+		can(['read', 'list'], 'RoleApplication', {
 			delegation: {
 				supervisors: {
 					some: {

@@ -76,22 +76,17 @@ builder.mutationFields((t) => {
 					throw new GraphQLError('Only one of nationId or nonStateActorId can be provided');
 				}
 
-				// this is for permission checks only
-				await db.delegation.findUniqueOrThrow({
+				const delegation = await db.delegation.findUniqueOrThrow({
 					where: {
 						id: args.delegationId,
 						AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+					},
+					include: {
+						appliedForRoles: true
 					}
 				});
 
-				const amountOfApplications = (
-					await db.roleApplication.aggregate({
-						where: {
-							delegationId: args.delegationId
-						},
-						_count: true
-					})
-				)._count;
+				const amountOfApplications = delegation.appliedForRoles.length;
 
 				return await db.roleApplication.create({
 					...query,
@@ -113,7 +108,7 @@ builder.mutationFields((t) => {
 							: undefined,
 						delegation: {
 							connect: {
-								id: args.delegationId
+								id: delegation.id
 							}
 						}
 					}
