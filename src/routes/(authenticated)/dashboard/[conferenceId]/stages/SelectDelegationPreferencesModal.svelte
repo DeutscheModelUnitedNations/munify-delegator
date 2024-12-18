@@ -128,6 +128,10 @@
 					appliedForRoles {
 						id
 						rank
+						nonStateActor {
+							name
+							fontAwesomeIcon
+						}
 					}
 				}
 			}
