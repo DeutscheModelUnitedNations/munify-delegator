@@ -105,7 +105,6 @@ builder.queryFields((t) => {
 					...args.where,
 					AND: [ctx.permissions.allowDatabaseAccessTo('read').User]
 				};
-
 				return field.resolve(query, root, args, ctx, info);
 			}
 		})

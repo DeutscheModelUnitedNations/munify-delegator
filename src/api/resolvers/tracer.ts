@@ -8,14 +8,34 @@ import { configPrivate } from '$config/private';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { trace } from '@opentelemetry/api';
 import type { Plugin } from 'graphql-yoga';
+
 import {
 	SimpleSpanProcessor,
 	BatchSpanProcessor,
-	type SpanProcessor
+	type SpanProcessor,
+	type SpanExporter,
+	type ReadableSpan
 } from '@opentelemetry/sdk-trace-base';
 import { configPublic } from '$config/public';
 import { AttributeNames, SpanNames } from '@pothos/tracing-opentelemetry';
 import { print } from 'graphql';
+
+class PrettyConsoleSpanExporter implements SpanExporter {
+	export(spans: ReadableSpan[], resultCallback: (result: any) => void): void {
+		for (const span of spans) {
+			if (span.name === 'graphql.resolve') {
+				console.info(
+					`[${span.attributes['oidc.user.email'] ?? 'anonymous'}] ${span.attributes['graphql.field.name']}: ${span.attributes['graphql.field.args']}`
+				);
+			}
+		}
+		resultCallback({ code: 0 });
+	}
+
+	shutdown(): Promise<void> {
+		return Promise.resolve();
+	}
+}
 
 const headers: Record<string, string> = {};
 
@@ -38,7 +58,9 @@ if (exporter) {
 		processors.push(new BatchSpanProcessor(exporter));
 	}
 } else {
-	console.info('No OTEL exporter configured, this is fine if you are not using OTEL');
+	console.info('No OTEL exporter configured, using console.');
+	const consoleExporter = new PrettyConsoleSpanExporter();
+	processors.push(new SimpleSpanProcessor(consoleExporter));
 }
 const provider = new NodeTracerProvider({
 	spanProcessors: processors,
@@ -65,8 +87,8 @@ export const tracer = trace.getTracer('graphql');
 
 export const graphqlYogaTracerPlugin: Plugin = {
 	onExecute: ({ setExecuteFn, executeFn }) => {
-		setExecuteFn((options) =>
-			tracer.startActiveSpan(
+		setExecuteFn((options) => {
+			return tracer.startActiveSpan(
 				SpanNames.EXECUTE,
 				{
 					attributes: {
@@ -86,7 +108,7 @@ export const graphqlYogaTracerPlugin: Plugin = {
 						span.end();
 					}
 				}
-			)
-		);
+			);
+		});
 	}
 };

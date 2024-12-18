@@ -15,7 +15,12 @@ import { tracer } from './tracer';
 
 const createSpan = createOpenTelemetryWrapper(tracer, {
 	includeSource: true,
-	includeArgs: true
+	includeArgs: true,
+	onSpan(span, options, parent, args, context, info) {
+		if ((context as any)?.oidc?.user) {
+			span.setAttributes({ 'oidc.user.email': (context as any).oidc.user.email });
+		}
+	}
 });
 
 export const builder = new SchemaBuilder<{
