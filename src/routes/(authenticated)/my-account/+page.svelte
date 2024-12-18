@@ -159,7 +159,7 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
-				<!-- <p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p> -->
+				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
 	</div>
