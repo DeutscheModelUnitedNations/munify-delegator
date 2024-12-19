@@ -133,7 +133,7 @@
 				description={m.committeeAssignmentAlertDescriptionSupervisor()}
 			/>
 		{/if}
-		{#if data.findUniqueConference?.info}
+		{#if conference.info}
 			<TaskAlertCard
 				faIcon="fa-info"
 				title={m.conferenceInfo()}
@@ -154,7 +154,6 @@
 		{/if}
 	</TasksWrapper>
 {/if}
-
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if supervisor && supervisor.delegations.length > 0}
