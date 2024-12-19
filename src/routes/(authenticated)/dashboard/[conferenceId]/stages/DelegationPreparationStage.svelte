@@ -7,6 +7,7 @@
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import type { PageData } from '../$houdini';
 	import * as m from '$lib/paraglide/messages.js';
+	import TaskAlertCard from '$lib/components/TaskAlertCard.svelte';
 
 	let {
 		data
@@ -38,23 +39,25 @@
 	<section class="flex flex-col gap-4">
 		<h2 class="text-2xl font-bold">{m.currentTasks()}</h2>
 		{#if currentTasks.committeeAssignmentAlert}
-			<div class="alert alert-info">
-				<i class="fas fa-arrows-turn-to-dots mx-4 text-3xl"></i>
-				<div class="flex flex-col">
-					<h3 class="text-xl font-bold">{m.committeeAssignment()}</h3>
-					{#if data.findUniqueDelegationMember!.isHeadDelegate}
-						<p>{@html m.committeeAssignmentAlertDescription()}</p>
-						<a
-							class="btn btn-primary mt-4 max-w-sm"
-							href="./{data.findUniqueConference?.id}/committeeAssignment"
-						>
-							{m.assignCommittees()}
-						</a>
-					{:else}
-						<p>{m.committeeAssignmentAlertDescriptionNonHeadDelegate()}</p>
-					{/if}
-				</div>
-			</div>
+			<TaskAlertCard
+				severity="info"
+				faIcon="fa-arrows-turn-to-dots"
+				title={m.committeeAssignment()}
+				description={data.findUniqueDelegationMember!.isHeadDelegate
+					? m.committeeAssignmentAlertDescription()
+					: m.committeeAssignmentAlertDescriptionNonHeadDelegate()}
+				btnText={data.findUniqueDelegationMember!.isHeadDelegate ? m.assignCommittees() : undefined}
+				btnLink={data.findUniqueDelegationMember!.isHeadDelegate
+					? `./${data.findUniqueConference?.id}/committeeAssignment`
+					: undefined}
+			/>
+			<TaskAlertCard
+				faIcon="fa-book-bookmark"
+				title={m.preparation()}
+				description={m.preparationDescription()}
+				btnText={m.goToPreparation()}
+				btnLink={'preparation-link'}
+			/>
 		{/if}
 	</section>
 {/if}
