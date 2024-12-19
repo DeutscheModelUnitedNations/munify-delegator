@@ -24,9 +24,10 @@
 
 <div class="alert alert-{severity}">
 	<i
-		class="{severity !== "default"
-			? 'fas'
-			: 'fa-duotone'} fa-{faIcon.replace('fa-', '')} mx-4 text-3xl"
+		class="{severity !== 'default' ? 'fas' : 'fa-duotone'} fa-{faIcon.replace(
+			'fa-',
+			''
+		)} mx-4 text-3xl"
 	></i>
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{title}</h3>
