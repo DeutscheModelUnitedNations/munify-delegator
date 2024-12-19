@@ -5,6 +5,7 @@ import {
 	ConferenceImageDataURLFieldObject,
 	ConferenceInfoFieldObject,
 	ConferenceLanguageFieldObject,
+	ConferenceLinkToPreparationGuideFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
 	ConferenceStartAssignmentFieldObject,
@@ -27,6 +28,7 @@ builder.prismaObject('Conference', {
 		id: t.field(ConferenceIdFieldObject),
 		title: t.field(ConferenceTitleFieldObject),
 		info: t.field(ConferenceInfoFieldObject),
+		linkToPreparationGuide: t.field(ConferenceLinkToPreparationGuideFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
 		location: t.field(ConferenceLocationFieldObject),
 		language: t.field(ConferenceLanguageFieldObject),
@@ -147,6 +149,9 @@ builder.mutationFields((t) => {
 								required: false
 							}),
 							info: t.string({
+								required: false
+							}),
+							linkToPreparationGuide: t.string({
 								required: false
 							}),
 							longTitle: t.string({

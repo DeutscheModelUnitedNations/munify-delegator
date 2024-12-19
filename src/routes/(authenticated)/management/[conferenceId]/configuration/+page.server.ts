@@ -16,11 +16,12 @@ const conferenceQuery = graphql(`
 			startAssignment
 			startConference
 			state
-			title
 			website
 			endConference
 			imageDataURL
 			language
+			linkToPreparationGuide
+			info
 		}
 	}
 `);

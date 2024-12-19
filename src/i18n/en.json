@@ -428,5 +428,14 @@
 	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly.",
 	"applicationRejected": "Application Rejected",
 	"applicationRejectedText": "We are sad to inform you, that you cannot participate at this conference. This is either because you did not complete the registration in time, there were too many applications for the conference or due to individual reasons. If you have any questions, please contact the participant care.",
-	"onlyHeadDelegateCanAssignCommittees": "Only the head delegate can assign committees."
+	"onlyHeadDelegateCanAssignCommittees": "Only the head delegate can assign committees.",
+	"preparation": "Preparation",
+	"preparationDescription": "To be able to take part in the debates, you need to prepare for your role, your committee and your topics. This includes writing position and working papers. You can find out what these papers look like, where to submit them, preparatory texts on the topics and more information by clicking on the button below.",
+	"goToPreparation": "Open Preparation Hub",
+	"committeeAssignmentAlertDescriptionSupervisor": "Your Head Delegates must now specify, who will represent their country in which committe. If you see this task, at least one of your delegations hasn't finished assigning their committees.",
+	"preparationGuide": "Link to the preparation guide",
+	"conferenceInfo": "Conference Information",
+	"conferenceInfoDescription": "Lies dir die aktuellen Konferenzinformationen aufmerksam durch und schaue immer mal wieder nach, ob es Neuigkeiten gibt.",
+	"goToConferenceInfo": "Access Information Page",
+	"preview": "Preview"
 }

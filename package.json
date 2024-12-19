@@ -101,5 +101,8 @@
 		"format": "prettier --write .",
 		"add-translation": "bun run add_new_translation.ts"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"svelte-markdown": "^0.4.1"
+	}
 }

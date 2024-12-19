@@ -3,6 +3,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 		id
 		title
 		info
+		linkToPreparationGuide
 		state
 		startConference
 		startAssignment
