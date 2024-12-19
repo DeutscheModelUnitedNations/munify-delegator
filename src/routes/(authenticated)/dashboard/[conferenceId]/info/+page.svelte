@@ -8,7 +8,7 @@
 </script>
 
 <div class="flex w-full flex-col gap-4">
-	<div class="flex gap-2 items-center">
+	<div class="flex items-center gap-2">
 		<a class="btn btn-square btn-ghost" aria-label="back" href="./">
 			<i class="fas fa-arrow-left"></i>
 		</a>

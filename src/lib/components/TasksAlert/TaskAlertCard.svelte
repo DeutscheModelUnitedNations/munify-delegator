@@ -27,7 +27,7 @@
 		class="{severity !== 'default' ? 'fas' : 'fa-duotone'} fa-{faIcon.replace(
 			'fa-',
 			''
-		)} mx-4 text-3xl w-12 text-center"
+		)} mx-4 w-12 text-center text-3xl"
 	></i>
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{title}</h3>
