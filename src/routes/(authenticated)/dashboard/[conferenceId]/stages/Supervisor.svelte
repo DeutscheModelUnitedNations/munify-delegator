@@ -123,6 +123,25 @@
 
 {#if conference.state !== 'PARTICIPANT_REGISTRATION'}
 	<TasksWrapper>
+		{#if supervisor.delegations
+			.flatMap((x) => x.members.map((y) => y.assignedCommittee))
+			.some((x) => !x)}
+			<TaskAlertCard
+				severity={'warning'}
+				faIcon="fa-arrows-turn-to-dots"
+				title={m.committeeAssignment()}
+				description={m.committeeAssignmentAlertDescriptionSupervisor()}
+			/>
+		{/if}
+		{#if data.findUniqueConference?.info}
+			<TaskAlertCard
+				faIcon="fa-info"
+				title={m.conferenceInfo()}
+				description={m.conferenceInfoDescription()}
+				btnText={m.goToConferenceInfo()}
+				btnLink={`./${data.findUniqueConference?.id}/info`}
+			/>
+		{/if}
 		{#if conference.linkToPreparationGuide}
 			<TaskAlertCard
 				faIcon="fa-book-bookmark"

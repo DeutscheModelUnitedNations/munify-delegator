@@ -508,6 +508,7 @@ input ConferenceUpdateDataInput {
   image: File
   info: String
   language: String
+  linkToPreparationGuide: String
   location: String
   longTitle: String
   startAssignment: DateTime

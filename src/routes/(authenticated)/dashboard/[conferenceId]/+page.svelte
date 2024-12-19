@@ -26,18 +26,6 @@
 	{:else}
 		<div class="flex w-full flex-col gap-10">
 			<!-- TODO add "new" badge if content of this changes -->
-			{#if $conferenceQuery.data?.findUniqueConference?.info}
-				<section role="contentinfo" class="alert alert-info w-full">
-					<i class="fas fa-info text-3xl"></i>
-					<div class="flex flex-col">
-						<p class="font-bold">{m.infos()}</p>
-						<p class="mt-2">
-							{$conferenceQuery.data?.findUniqueConference?.info}
-						</p>
-					</div>
-				</section>
-			{/if}
-
 			{#if conferenceQueryData?.findUniqueSingleParticipant?.id}
 				{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />

@@ -151,6 +151,9 @@ builder.mutationFields((t) => {
 							info: t.string({
 								required: false
 							}),
+							linkToPreparationGuide: t.string({
+								required: false
+							}),
 							longTitle: t.string({
 								required: false
 							}),

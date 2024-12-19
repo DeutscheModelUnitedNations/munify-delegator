@@ -42,6 +42,15 @@
 				: undefined}
 		/>
 	{/if}
+	{#if data.findUniqueConference?.info}
+		<TaskAlertCard
+			faIcon="fa-info-circle"
+			title={m.conferenceInfo()}
+			description={m.conferenceInfoDescription()}
+			btnText={m.goToConferenceInfo()}
+			btnLink={`./${data.findUniqueConference?.id}/info`}
+		/>
+	{/if}
 	{#if data.findUniqueConference?.linkToPreparationGuide}
 		<TaskAlertCard
 			faIcon="fa-book-bookmark"
