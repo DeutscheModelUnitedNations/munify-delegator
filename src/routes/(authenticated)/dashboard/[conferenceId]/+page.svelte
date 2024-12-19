@@ -24,7 +24,7 @@
 	{#if $conferenceQuery.fetching}
 		<Spinner />
 	{:else}
-		<div class="flex flex-col gap-10">
+		<div class="flex w-full flex-col gap-10">
 			<!-- TODO add "new" badge if content of this changes -->
 			{#if $conferenceQuery.data?.findUniqueConference?.info}
 				<section role="contentinfo" class="alert alert-info w-full">
@@ -69,7 +69,11 @@
 					<ApplicationRejected />
 				{/if}
 			{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
-				<Supervisor data={{ ...conferenceQueryData, user: data.user }} />
+				{#if conference!.state !== 'PARTICIPANT_REGISTRATION' && conferenceQueryData.findUniqueConferenceSupervisor.delegations.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0}
+					<Supervisor data={{ ...conferenceQueryData, user: data.user }} />
+				{:else}
+					<ApplicationRejected />
+				{/if}
 			{:else}
 				<NoConferenceIndicator />
 			{/if}

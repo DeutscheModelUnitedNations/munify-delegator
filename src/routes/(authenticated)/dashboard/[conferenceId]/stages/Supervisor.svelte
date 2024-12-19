@@ -5,6 +5,8 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { graphql } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
+	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 
 	// TODO these components need some refactoring
 	let {
@@ -104,6 +106,21 @@
 			: m.willNotBePresentAtConference()}
 	</p>
 </section>
+
+{#if conference.state !== 'PARTICIPANT_REGISTRATION'}
+	<TasksWrapper>
+		{#if conference.linkToPreparationGuide}
+			<TaskAlertCard
+				faIcon="fa-book-bookmark"
+				title={m.preparation()}
+				description={m.preparationDescription()}
+				btnText={m.goToPreparation()}
+				btnLink={conference.linkToPreparationGuide}
+				btnExternal
+			/>
+		{/if}
+	</TasksWrapper>
+{/if}
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>

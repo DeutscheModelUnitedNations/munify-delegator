@@ -7,7 +7,8 @@
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import type { PageData } from '../$houdini';
 	import * as m from '$lib/paraglide/messages.js';
-	import TaskAlertCard from '$lib/components/TaskAlertCard.svelte';
+	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
+	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 
 	let {
 		data
@@ -15,15 +16,6 @@
 		data: NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']> &
 			Pick<PageData, 'user'>;
 	} = $props();
-
-	const currentTasks = $derived({
-		committeeAssignmentAlert:
-			!!data.findUniqueDelegationMember?.delegation.assignedNation &&
-			!!data.findUniqueDelegationMember?.delegation.members.every(
-				(member) => !member.assignedCommittee
-			)
-		// Add more tasks here
-	});
 
 	const delegationStats = $derived([
 		{
@@ -35,32 +27,32 @@
 	]);
 </script>
 
-{#if Object.values(currentTasks).some((task) => task)}
-	<section class="flex flex-col gap-4">
-		<h2 class="text-2xl font-bold">{m.currentTasks()}</h2>
-		{#if currentTasks.committeeAssignmentAlert}
-			<TaskAlertCard
-				severity="info"
-				faIcon="fa-arrows-turn-to-dots"
-				title={m.committeeAssignment()}
-				description={data.findUniqueDelegationMember!.isHeadDelegate
-					? m.committeeAssignmentAlertDescription()
-					: m.committeeAssignmentAlertDescriptionNonHeadDelegate()}
-				btnText={data.findUniqueDelegationMember!.isHeadDelegate ? m.assignCommittees() : undefined}
-				btnLink={data.findUniqueDelegationMember!.isHeadDelegate
-					? `./${data.findUniqueConference?.id}/committeeAssignment`
-					: undefined}
-			/>
-			<TaskAlertCard
-				faIcon="fa-book-bookmark"
-				title={m.preparation()}
-				description={m.preparationDescription()}
-				btnText={m.goToPreparation()}
-				btnLink={'preparation-link'}
-			/>
-		{/if}
-	</section>
-{/if}
+<TasksWrapper>
+	{#if !!data.findUniqueDelegationMember?.delegation.assignedNation && !!data.findUniqueDelegationMember?.delegation.members.every((member) => !member.assignedCommittee)}
+		<TaskAlertCard
+			severity={data.findUniqueDelegationMember!.isHeadDelegate ? 'warning' : 'info'}
+			faIcon="fa-arrows-turn-to-dots"
+			title={m.committeeAssignment()}
+			description={data.findUniqueDelegationMember!.isHeadDelegate
+				? m.committeeAssignmentAlertDescription()
+				: m.committeeAssignmentAlertDescriptionNonHeadDelegate()}
+			btnText={data.findUniqueDelegationMember!.isHeadDelegate ? m.assignCommittees() : undefined}
+			btnLink={data.findUniqueDelegationMember!.isHeadDelegate
+				? `./${data.findUniqueConference?.id}/committeeAssignment`
+				: undefined}
+		/>
+	{/if}
+	{#if data.findUniqueConference?.linkToPreparationGuide}
+		<TaskAlertCard
+			faIcon="fa-book-bookmark"
+			title={m.preparation()}
+			description={m.preparationDescription()}
+			btnText={m.goToPreparation()}
+			btnLink={data.findUniqueConference?.linkToPreparationGuide}
+			btnExternal
+		/>
+	{/if}
+</TasksWrapper>
 
 <section class="flex flex-col gap-4">
 	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>

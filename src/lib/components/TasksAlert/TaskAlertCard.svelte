@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { includes } from 'lodash';
-
 	interface Props {
 		severity?: 'default' | 'info' | 'success' | 'warning' | 'error';
 		faIcon: string;
@@ -8,6 +6,7 @@
 		description: string;
 		btnText?: string;
 		btnLink?: string;
+		btnExternal?: boolean;
 		btnOnClick?: () => void;
 	}
 
@@ -17,6 +16,7 @@
 		description,
 		btnText,
 		btnLink,
+		btnExternal,
 		btnOnClick,
 		faIcon
 	}: Props = $props();
@@ -48,6 +48,7 @@
 						? 'btn-primary'
 						: `btn-neutral`} mt-4 max-w-sm"
 					href={btnLink}
+					target={btnExternal ? '_blank' : undefined}
 				>
 					{btnText}
 				</a>
