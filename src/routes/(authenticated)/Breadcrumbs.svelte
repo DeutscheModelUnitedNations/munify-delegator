@@ -96,6 +96,14 @@
 		committeeAssignment: {
 			translation: m.committeeAssignment(),
 			icon: 'arrows-turn-to-dots'
+		},
+		payment: {
+			translation: m.payment(),
+			icon: 'hand-holding-circle-dollar'
+		},
+		postalRegistration: {
+			translation: m.postalRegistration(),
+			icon: 'envelopes-bulk'
 		}
 	};
 

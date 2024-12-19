@@ -428,5 +428,13 @@
 	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly.",
 	"applicationRejected": "Application Rejected",
 	"applicationRejectedText": "We are sad to inform you, that you cannot participate at this conference. This is either because you did not complete the registration in time, there were too many applications for the conference or due to individual reasons. If you have any questions, please contact the participant care.",
-	"onlyHeadDelegateCanAssignCommittees": "Only the head delegate can assign committees."
+	"onlyHeadDelegateCanAssignCommittees": "Only the head delegate can assign committees.",
+	"payment": "Fee Payment",
+	"postalRegistration": "Postal Registration",
+	"personalStatusDescription": "Here you can track your registration status. This lists all formal stepts you have to prepare for the conference in order to attend. You cannot participate without this checklist complete!",
+	"takeAction": "Take Action",
+	"userAgreement": "Participation Agreement",
+	"guardianAgreement": "Guardian Agreement",
+	"mediaAgreement": "Media Usage Agreement",
+	"paymentDescription": "You can pay the participation fee just for yourself, or transfer it collectively for your delegation or even for several delegations or individual participants."
 }

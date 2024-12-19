@@ -43,7 +43,7 @@
 					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if conferenceQueryData?.findUniqueSingleParticipant?.assignedRole}
 					{#if conference!.state === 'PREPARATION'}
-						<ConferenceStatusWidget />
+						<ConferenceStatusWidget conferenceId={conference!.id} userId={data.user.sub} />
 						<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 					{:else if conference!.state === 'ACTIVE'}
 						#TODO: Implement individual on conference stage
@@ -58,7 +58,7 @@
 					<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNation || !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor}
 					{#if conference!.state === 'PREPARATION'}
-						<ConferenceStatusWidget />
+						<ConferenceStatusWidget conferenceId={conference!.id} userId={data.user.sub} />
 						<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 					{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}
 						#TODO: Implement individual on conference stage
