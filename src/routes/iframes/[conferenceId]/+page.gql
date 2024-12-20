@@ -1,0 +1,35 @@
+query ConferenceRolesQueryForIframe($conferenceId: String!) @blocking {
+	findUniqueConference(where: { id: $conferenceId }) {
+		id
+		title
+		longTitle
+		startConference
+		endConference
+	}
+	findManyNations(where: { committees: { some: { conferenceId: { equals: $conferenceId } } } }) {
+		alpha2Code
+		alpha3Code
+		committees {
+			id
+			numOfSeatsPerDelegation
+		}
+	}
+	findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		name
+		abbreviation
+		numOfSeatsPerDelegation
+	}
+	findManyNonStateActors(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		name
+		abbreviation
+		fontAwesomeIcon
+		seatAmount
+	}
+	findManyCustomConferenceRoles(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		name
+		fontAwesomeIcon
+	}
+}

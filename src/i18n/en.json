@@ -437,5 +437,7 @@
 	"conferenceInfo": "Conference Information",
 	"conferenceInfoDescription": "Lies dir die aktuellen Konferenzinformationen aufmerksam durch und schaue immer mal wieder nach, ob es Neuigkeiten gibt.",
 	"goToConferenceInfo": "Access Information Page",
-	"preview": "Preview"
+	"preview": "Preview",
+	"otherRoles": "Single Application Roles",
+	"roleOverview": "Role Overview"
 }
