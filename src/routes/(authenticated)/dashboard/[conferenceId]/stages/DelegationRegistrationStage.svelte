@@ -200,6 +200,8 @@
 			where: { id: delegationMember.delegation.id },
 			userId
 		});
+		cache.reset();
+		await invalidateAll();
 	};
 
 	const removeMember = async (memberId: string) => {

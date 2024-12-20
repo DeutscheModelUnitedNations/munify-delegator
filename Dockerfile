@@ -1,4 +1,4 @@
-FROM oven/bun:slim AS base
+FROM oven/bun:1.1.40-slim AS base
 
 FROM base AS dual
 WORKDIR /temp
