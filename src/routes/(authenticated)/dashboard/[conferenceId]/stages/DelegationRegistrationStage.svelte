@@ -14,6 +14,7 @@
 	import { graphql } from '$houdini';
 	import { page } from '$app/stores';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import { cache } from '$houdini';
 
 	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?
@@ -208,6 +209,8 @@
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
 		await deleteMemberMutation.mutate({ where: { id: memberId } });
+		cache.reset();
+		await invalidateAll();
 	};
 
 	const completeRegistration = async () => {
@@ -217,6 +220,8 @@
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
 		await applyMutation.mutate({ where: { id: delegationMember.delegation.id } });
+		cache.reset();
+		await invalidateAll();
 	};
 </script>
 

@@ -25,6 +25,12 @@
 			title={m.settings()}
 			bind:expanded={navbarExpanded}
 		/>
+		<NavMenuButton
+			href={`/management/${data.conferenceId}/seats`}
+			icon="fa-chair-office"
+			title={m.seats()}
+			bind:expanded={navbarExpanded}
+		/>
 		<NavMenuDetails title={m.tables()} icon="fa-database" small={!navbarExpanded}>
 			<NavMenuButton
 				href="/management/{data.conferenceId}/participants"

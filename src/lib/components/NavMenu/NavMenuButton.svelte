@@ -36,7 +36,7 @@
 		class="flex w-full items-center justify-center p-2 {showAsActive ? 'active' : ''}"
 		aria-label="Toggle menu expand state"
 	>
-		<i class="fa-{showAsActive ? 'solid ' : 'duotone'} {icon} fa-duotone ml-2 w-5 text-center"></i>
+		<i class="{showAsActive ? 'fas ' : 'fa-duotone'} {icon} ml-2 w-5 text-center"></i>
 		<p class="overflow-hidden duration-300 {expanded ? 'h-5 w-full pl-1' : 'h-0 w-0'}">{title}</p>
 	</a>
 </li>
