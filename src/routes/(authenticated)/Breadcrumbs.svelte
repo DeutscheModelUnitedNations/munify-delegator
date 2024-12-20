@@ -96,6 +96,10 @@
 		committeeAssignment: {
 			translation: m.committeeAssignment(),
 			icon: 'arrows-turn-to-dots'
+		},
+		info: {
+			translation: m.infos(),
+			icon: 'info'
 		}
 	};
 

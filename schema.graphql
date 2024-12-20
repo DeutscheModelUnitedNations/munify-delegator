@@ -162,6 +162,7 @@ type Conference {
   individualApplicationOptions: [CustomConferenceRole!]!
   info: String
   language: String
+  linkToPreparationGuide: String
   location: String
   longTitle: String
   nonStateActors: [NonStateActor!]!
@@ -186,6 +187,7 @@ input ConferenceCreateInput {
   individualApplicationOptions: CustomConferenceRoleCreateNestedManyWithoutConferenceInput
   info: String
   language: String
+  linkToPreparationGuide: String
   location: String
   longTitle: String
   nonStateActors: NonStateActorCreateNestedManyWithoutConferenceInput
@@ -210,6 +212,7 @@ input ConferenceOrderByWithRelationInput {
   individualApplicationOptions: CustomConferenceRoleOrderByRelationAggregateInput
   info: SortOrder
   language: SortOrder
+  linkToPreparationGuide: SortOrder
   location: SortOrder
   longTitle: SortOrder
   nonStateActors: NonStateActorOrderByRelationAggregateInput
@@ -345,6 +348,7 @@ enum ConferenceScalarFieldEnum {
   imageDataURL
   info
   language
+  linkToPreparationGuide
   location
   longTitle
   startAssignment
@@ -504,6 +508,7 @@ input ConferenceUpdateDataInput {
   image: File
   info: String
   language: String
+  linkToPreparationGuide: String
   location: String
   longTitle: String
   startAssignment: DateTime
@@ -525,6 +530,7 @@ input ConferenceUpdateInput {
   individualApplicationOptions: CustomConferenceRoleUpdateManyWithoutConferenceNestedInput
   info: NullableStringFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
+  linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   nonStateActors: NonStateActorUpdateManyWithoutConferenceNestedInput
@@ -543,6 +549,7 @@ input ConferenceUpdateManyMutationInput {
   imageDataURL: NullableStringFieldUpdateOperationsInput
   info: NullableStringFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
+  linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
@@ -567,6 +574,7 @@ input ConferenceWhereInput {
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
   info: StringNullableFilter
   language: StringNullableFilter
+  linkToPreparationGuide: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
   nonStateActors: NonStateActorListRelationFilter
@@ -594,6 +602,7 @@ input ConferenceWhereUniqueInput {
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
   info: StringNullableFilter
   language: StringNullableFilter
+  linkToPreparationGuide: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
   nonStateActors: NonStateActorListRelationFilter

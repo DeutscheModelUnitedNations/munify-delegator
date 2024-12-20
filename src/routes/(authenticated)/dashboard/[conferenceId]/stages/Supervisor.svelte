@@ -5,6 +5,8 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { graphql } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
+	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import ConferenceStatusWidget from '../ConferenceStatusWidget.svelte';
 
@@ -119,6 +121,39 @@
 	<ConferenceStatusWidget />
 {/if}
 
+{#if conference.state !== 'PARTICIPANT_REGISTRATION'}
+	<TasksWrapper>
+		{#if supervisor.delegations
+			.flatMap((x) => x.members.map((y) => y.assignedCommittee))
+			.some((x) => !x)}
+			<TaskAlertCard
+				severity={'warning'}
+				faIcon="fa-arrows-turn-to-dots"
+				title={m.committeeAssignment()}
+				description={m.committeeAssignmentAlertDescriptionSupervisor()}
+			/>
+		{/if}
+		{#if conference.info}
+			<TaskAlertCard
+				faIcon="fa-info"
+				title={m.conferenceInfo()}
+				description={m.conferenceInfoDescription()}
+				btnText={m.goToConferenceInfo()}
+				btnLink={`./${data.findUniqueConference?.id}/info`}
+			/>
+		{/if}
+		{#if conference.linkToPreparationGuide}
+			<TaskAlertCard
+				faIcon="fa-book-bookmark"
+				title={m.preparation()}
+				description={m.preparationDescription()}
+				btnText={m.goToPreparation()}
+				btnLink={conference.linkToPreparationGuide}
+				btnExternal
+			/>
+		{/if}
+	</TasksWrapper>
+{/if}
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if supervisor && supervisor.delegations.length > 0}

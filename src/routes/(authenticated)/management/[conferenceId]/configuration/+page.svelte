@@ -10,6 +10,8 @@
 	import { conferenceSettingsFormSchema } from './form-schema';
 	import { toast } from '@zerodevx/svelte-toast';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -21,6 +23,8 @@
 		}
 	});
 	let formData = $derived(form.form);
+
+	let infoPreviewModalOpen = $state(false);
 </script>
 
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
@@ -44,7 +48,6 @@
 			label={m.conferenceLocation()}
 		/>
 		<FormTextInput {form} name="language" placeholder={'Deutsch'} label={m.conferenceLanguage()} />
-		<FormTextInput {form} name="info" placeholder={'Info...'} label={m.infos()} />
 		<FormTextInput {form} name="website" placeholder={'mun-sh.de'} label={m.conferenceWebsite()} />
 		{#if $formData.image || data.imageDataURL}
 			<img
@@ -84,5 +87,37 @@
 				}
 			]}
 		/>
+		<div class="flex w-full items-center gap-2">
+			<FormTextArea {form} name="info" placeholder={'Info...'} label={m.infos()} />
+			<button
+				class="btn btn-primary h-full"
+				onclick={(e) => {
+					e.preventDefault();
+					infoPreviewModalOpen = !infoPreviewModalOpen;
+				}}
+			>
+				{m.preview()}
+			</button>
+		</div>
+		<FormTextInput
+			{form}
+			name="linkToPreparationGuide"
+			placeholder={'https://path-to-your-guide.com'}
+			label={m.preparationGuide()}
+		/>
 	</Form>
 </div>
+
+{#if infoPreviewModalOpen}
+	<dialog class="modal modal-open">
+		<div class="prose modal-box bg-base-200">
+			<Markdown source={$formData.info ?? ''} />
+		</div>
+		<button
+			class="modal-backdrop"
+			onclick={() => (infoPreviewModalOpen = false)}
+			aria-label="Close modal"
+		>
+		</button>
+	</dialog>
+{/if}

@@ -489,5 +489,14 @@
 	"personalStatusUnderDevelopmentDescription": "Die persönliche Statusübersicht für die postalische Anmeldung sowie die Beitragszahlung befinden sich aktuell noch in der Entwicklung. Bitte beachtet die Informationen, die euch die Teilnehmendenbetreeung per E-Mail zusendet.",
 	"applicationRejected": "Anmeldung Abgelehnt",
 	"applicationRejectedText": "Leider konnten wir dich nicht zur Konferenz zulassen. Entweder wurde die Anmeldung nicht abgeschlossen, es gab zu viele Anmeldungen für die Konferenz oder es hat individuelle Gründe. Bei Fragen wende dich gerne an die Teilnehmendenbetreuung.",
-	"onlyHeadDelegateCanAssignCommittees": "Nur die Delegationsleitung kann Gremien zuweisen."
+	"onlyHeadDelegateCanAssignCommittees": "Nur die Delegationsleitung kann Gremien zuweisen.",
+	"preparation": "Inhaltliche Vorbereitung",
+	"preparationDescription": "Um an den Debatten teilnehmen zu können, musst du dich auf deine Rolle, dein Gremium und deine Themen vorbereiten. Dazu gehört, dass du Positions- und Arbeitspapiere schreibst. Wie diese Papiere aussehen, wo sie einzureichen sind sowie Vorbereitungstexte zu den Themen und weitere Informationen erfährst du, wenn du auf den folgenden Button klickst.",
+	"goToPreparation": "Vorbereitungsmaterialien öffnen",
+	"committeeAssignmentAlertDescriptionSupervisor": "Ihre Delegationsleiter*innen müssen nun angeben, wer ihr Land in welchem Gremium vertreten soll. Wenn Sie diese Aufgabe sehen, ist mindestens eine Ihrer Delegationen noch nicht fertig mit der Zuweisung ihrer Gremiums.",
+	"preparationGuide": "Link zur Inhaltlichen Vorbereitung",
+	"conferenceInfo": "Aktuelles zur Konferenz",
+	"conferenceInfoDescription": "Bleib über alles konferenzrelevante auf dem Laufenden, indem du dir die aktuellen Konferenzinformationen durchliest und schaue immer mal wieder nach, ob neue Inhalte hinzugefügt wurden.",
+	"goToConferenceInfo": "Zur Informationsseite",
+	"preview": "Vorschau"
 }

@@ -27,18 +27,19 @@ enum ConferenceState {
 }
 
 model Conference {
-  id              String          @id @default(nanoid())
-  title           String
-  longTitle       String?
-  location        String?
-  language        String?
-  website         String?
-  imageDataURL    String?
-  info            String?
-  state           ConferenceState @default(PRE)
-  startAssignment DateTime
-  startConference DateTime
-  endConference   DateTime
+  id                     String          @id @default(nanoid())
+  title                  String
+  longTitle              String?
+  location               String?
+  language               String?
+  website                String?
+  imageDataURL           String?
+  info                   String?
+  linkToPreparationGuide String?
+  state                  ConferenceState @default(PRE)
+  startAssignment        DateTime
+  startConference        DateTime
+  endConference          DateTime
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
