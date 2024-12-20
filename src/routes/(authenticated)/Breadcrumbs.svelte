@@ -93,6 +93,10 @@
 			translation: m.adminPlausibility(),
 			icon: 'question'
 		},
+		seats: {
+			translation: m.seats(),
+			icon: 'chair-office'
+		},
 		committeeAssignment: {
 			translation: m.committeeAssignment(),
 			icon: 'arrows-turn-to-dots'
