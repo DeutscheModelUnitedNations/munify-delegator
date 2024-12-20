@@ -498,5 +498,7 @@
 	"conferenceInfo": "Aktuelles zur Konferenz",
 	"conferenceInfoDescription": "Bleib über alles konferenzrelevante auf dem Laufenden, indem du dir die aktuellen Konferenzinformationen durchliest und schaue immer mal wieder nach, ob neue Inhalte hinzugefügt wurden.",
 	"goToConferenceInfo": "Zur Informationsseite",
-	"preview": "Vorschau"
+	"preview": "Vorschau",
+	"nsaSeats": "Sitze von Nichtstaatlichen Akteuren",
+	"nationSeats": "Sitze von Ländern"
 }

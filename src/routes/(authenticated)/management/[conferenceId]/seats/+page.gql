@@ -40,4 +40,11 @@ query SeatsQuery($conferenceId: String!) @blocking {
 			name
 		}
 	}
+	findManyNonStateActors(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		name
+		abbreviation
+		fontAwesomeIcon
+		seatAmount
+	}
 }
