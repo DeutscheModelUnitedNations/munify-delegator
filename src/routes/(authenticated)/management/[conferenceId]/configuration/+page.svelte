@@ -11,7 +11,7 @@
 	import { toast } from '@zerodevx/svelte-toast';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import SvelteMarkdown from 'svelte-markdown';
+	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -111,7 +111,7 @@
 {#if infoPreviewModalOpen}
 	<dialog class="modal modal-open">
 		<div class="prose modal-box bg-base-200">
-			<SvelteMarkdown source={$formData.info ?? ''} />
+			<Markdown source={$formData.info ?? ''} />
 		</div>
 		<button
 			class="modal-backdrop"

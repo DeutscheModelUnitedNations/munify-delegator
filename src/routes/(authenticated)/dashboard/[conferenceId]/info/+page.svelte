@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SvelteMarkdown from 'svelte-markdown';
 	import type { PageData } from './$houdini';
 	import * as m from '$lib/paraglide/messages.js';
+	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let conferenceData = $derived(data.conferenceInfoQuery);
@@ -15,6 +15,6 @@
 		<h1 class="text-2xl font-bold">{m.conferenceInfo()}</h1>
 	</div>
 	<div class="prose w-full rounded-2xl bg-base-200 p-4">
-		<SvelteMarkdown source={$conferenceData.data?.findUniqueConference?.info ?? ''} />
+		<Markdown source={$conferenceData.data?.findUniqueConference?.info ?? ''} />
 	</div>
 </div>
