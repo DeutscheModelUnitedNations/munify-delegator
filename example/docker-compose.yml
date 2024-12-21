@@ -14,7 +14,8 @@ services:
       - delegator:/var/lib/postgresql/data
 
   delegator:
-    image: deutschemodelunitednations/delegator:latest
+    # image: deutschemodelunitednations/delegator:latest
+    image: delegator:latest
     depends_on:
       - postgres
     ports:
