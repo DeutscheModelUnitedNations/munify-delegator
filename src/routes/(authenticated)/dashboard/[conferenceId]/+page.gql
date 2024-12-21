@@ -3,6 +3,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 		id
 		title
 		info
+		linkToPreparationGuide
 		state
 		startConference
 		startAssignment
@@ -122,6 +123,7 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 			}
 			appliedForRoles {
 				id
+				rank
 				nonStateActor {
 					id
 					name
@@ -143,6 +145,11 @@ query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 			members {
 				id
 				isHeadDelegate
+				assignedCommittee {
+					id
+					abbreviation
+					name
+				}
 				user {
 					id
 					given_name

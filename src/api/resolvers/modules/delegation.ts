@@ -182,7 +182,8 @@ builder.mutationFields((t) => {
 					include: {
 						...query.include,
 						members: true,
-						conference: true
+						conference: true,
+						appliedForRoles: true
 					}
 				});
 
@@ -190,11 +191,11 @@ builder.mutationFields((t) => {
 					await tidyRoleApplications({ id: delegation.id });
 
 					if (args.applied) {
-						if (delegation.members.length < 2) {
+						if (!delegation.members?.length || delegation.members.length < 2) {
 							throw new GraphQLError(m.notEnoughMembers());
 						}
 
-						if (delegation.appliedForRoles.length < 3) {
+						if (!delegation.appliedForRoles?.length || delegation.appliedForRoles.length < 3) {
 							throw new GraphQLError(m.notEnoughtRoleApplications());
 						}
 

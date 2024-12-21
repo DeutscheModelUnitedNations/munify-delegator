@@ -5,6 +5,10 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { graphql } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
+	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
+	import Flag from '$lib/components/Flag.svelte';
+	import ConferenceStatusWidget from '../ConferenceStatusWidget.svelte';
 
 	// TODO these components need some refactoring
 	let {
@@ -17,8 +21,13 @@
 			Pick<PageData, 'user'>;
 	} = $props();
 
-	let supervisor = $derived(data.findUniqueConferenceSupervisor!);
 	let conference = $derived(data.findUniqueConference!);
+	let supervisor = $derived(data.findUniqueConferenceSupervisor!);
+	let delegations = $derived(
+		conference.state === 'PARTICIPANT_REGISTRATION'
+			? supervisor.delegations
+			: supervisor.delegations.filter((x) => x.assignedNation || x.assignedNonStateActor)
+	);
 
 	const stats = $derived([
 		{
@@ -72,10 +81,12 @@
 	};
 </script>
 
-<section class="alert alert-info">
-	<i class="fa-solid fa-circle-info text-xl"></i>
-	{m.registeredAsSupervisor()}
-</section>
+{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+	<section class="alert alert-info">
+		<i class="fa-solid fa-circle-info text-xl"></i>
+		{m.registeredAsSupervisor()}
+	</section>
+{/if}
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.overview()}</h2>
@@ -94,6 +105,7 @@
 					class="toggle toggle-success"
 					checked={supervisor.plansOwnAttendenceAtConference}
 					onchange={handlePresenceChange}
+					disabled={conference.state !== 'PARTICIPANT_REGISTRATION'}
 				/>
 			</label>
 		</div>
@@ -105,20 +117,59 @@
 	</p>
 </section>
 
+{#if supervisor.plansOwnAttendenceAtConference}
+	<ConferenceStatusWidget />
+{/if}
+
+{#if conference.state !== 'PARTICIPANT_REGISTRATION'}
+	<TasksWrapper>
+		{#if supervisor.delegations
+			.flatMap((x) => x.members.map((y) => y.assignedCommittee))
+			.some((x) => !x)}
+			<TaskAlertCard
+				severity={'warning'}
+				faIcon="fa-arrows-turn-to-dots"
+				title={m.committeeAssignment()}
+				description={m.committeeAssignmentAlertDescriptionSupervisor()}
+			/>
+		{/if}
+		{#if conference.info}
+			<TaskAlertCard
+				faIcon="fa-info"
+				title={m.conferenceInfo()}
+				description={m.conferenceInfoDescription()}
+				btnText={m.goToConferenceInfo()}
+				btnLink={`./${data.findUniqueConference?.id}/info`}
+			/>
+		{/if}
+		{#if conference.linkToPreparationGuide}
+			<TaskAlertCard
+				faIcon="fa-book-bookmark"
+				title={m.preparation()}
+				description={m.preparationDescription()}
+				btnText={m.goToPreparation()}
+				btnLink={conference.linkToPreparationGuide}
+				btnExternal
+			/>
+		{/if}
+	</TasksWrapper>
+{/if}
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if supervisor && supervisor.delegations.length > 0}
-		<div class="flex flex-col gap-2 sm:flex-row sm:gap-8">
-			<div class="text-sm">
-				<i class="fa-solid fa-hourglass-half text-warning"></i>
-				<span> = {m.notApplied()}</span>
+		{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+			<div class="flex flex-col gap-2 sm:flex-row sm:gap-8">
+				<div class="text-sm">
+					<i class="fa-solid fa-hourglass-half text-warning"></i>
+					<span> = {m.notApplied()}</span>
+				</div>
+				<div class="text-sm">
+					<i class="fa-solid fa-circle-check text-success"></i>
+					<span> = {m.applied()}</span>
+				</div>
 			</div>
-			<div class="text-sm">
-				<i class="fa-solid fa-circle-check text-success"></i>
-				<span> = {m.applied()}</span>
-			</div>
-		</div>
-		{#each supervisor.delegations as delegation, index}
+		{/if}
+		{#each delegations as delegation, index}
 			<div
 				tabindex="-1"
 				class="collapse bg-base-100 p-4 shadow-md transition-colors duration-300 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300"
@@ -127,10 +178,19 @@
 				<div class="collapse-title flex flex-col text-nowrap text-xl font-medium sm:flex-row">
 					<div class="mb-6 flex items-center sm:mb-0">
 						<div>
-							{#if delegation.applied}
-								<i class="fa-solid fa-circle-check text-3xl text-success"></i>
+							{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+								{#if delegation.applied}
+									<i class="fa-solid fa-circle-check text-3xl text-success"></i>
+								{:else}
+									<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
+								{/if}
 							{:else}
-								<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
+								<Flag
+									size="sm"
+									alpha2Code={delegation.assignedNation?.alpha2Code}
+									nsa={!!delegation.assignedNonStateActor}
+									icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+								/>
 							{/if}
 						</div>
 						<div class="divider divider-horizontal"></div>
@@ -151,42 +211,78 @@
 				<div class="collapse-content overflow-x-auto">
 					<div class="mt-10 grid grid-cols-[1fr] gap-x-4 text-sm sm:grid-cols-[auto_1fr]">
 						<div class="font-bold">{m.members()}</div>
-						<div class="mb-4 w-full">
-							{delegation.members.map((x) => getName(x.user)).join(', ')}
+						<div class="mb-4 flex flex-wrap gap-1">
+							{#each delegation.members as member}
+								<span class="badge badge-primary">
+									{getName(member.user)}
+									{#if member.assignedCommittee}
+										<span class="tooltip" data-tip={member.assignedCommittee?.name}>
+											{member.assignedCommittee?.abbreviation}
+										</span>
+									{/if}
+								</span>
+							{/each}
 						</div>
 						<div class="font-bold">{m.supervisors()}</div>
-						<div class="mb-4">{delegation.supervisors.map((x) => getName(x.user)).join(', ')}</div>
-						<div class="font-bold">{m.delegationStatus()}</div>
-						<div class="mb-4">
-							{#if delegation.applied}
-								<span class="badge badge-success">{m.applied()}</span>
-							{:else}
-								<span class="badge badge-warning">{m.notApplied()}</span>
-							{/if}
+						<div class="mb-4 flex flex-wrap gap-1">
+							{#each delegation.supervisors as supervisor}
+								<span class="badge badge-secondary">{getName(supervisor.user)}</span>
+							{/each}
 						</div>
+						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+							<div class="font-bold">{m.delegationStatus()}</div>
+							<div class="mb-4">
+								{#if delegation.applied}
+									<span class="badge badge-success">{m.applied()}</span>
+								{:else}
+									<span class="badge badge-warning">{m.notApplied()}</span>
+								{/if}
+							</div>
+						{:else}
+							<div class="font-bold">{m.role()}</div>
+							<div class="mb-4">
+								{delegation.assignedNation
+									? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+									: delegation.assignedNonStateActor?.name}
+							</div>
+							{#if delegation.assignedNation}
+								<div class="font-bold">{m.committee()}</div>
+								<div class="mb-4">
+									<ul class="list-inside list-disc">
+										{#each conference.committees
+											.filter( (x) => x.nations.some((y) => y.alpha3Code === delegation.assignedNation!.alpha3Code) )
+											.map((x) => `${x.name} (${x.abbreviation})`) as committee}
+											<li>{committee}</li>
+										{/each}
+									</ul>
+								</div>
+							{/if}
+						{/if}
 						<div class="font-bold">{m.schoolOrInstitution()}</div>
 						<div class="mb-4">{delegation.school}</div>
 						<div class="font-bold">{m.experience()}</div>
 						<div class="mb-4">{delegation.experience}</div>
 						<div class="font-bold">{m.motivation()}</div>
 						<div class="mb-4">{delegation.motivation}</div>
-						<div class="font-bold">{m.delegationPreferences()}</div>
-						<div class="flex flex-wrap gap-1">
-							{#if delegation.appliedForRoles.length > 0}
-								{#each delegation.appliedForRoles as roleApplication}
-									<div class="flex gap-2">
-										<div class="badge bg-base-300">
-											{roleApplication.nation
-												? getFullTranslatedCountryNameFromISO3Code(
-														roleApplication.nation.alpha3Code
-													)
-												: roleApplication.nonStateActor?.name}
+						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+							<div class="font-bold">{m.delegationPreferences()}</div>
+							<div class="flex flex-wrap gap-1">
+								{#if delegation.appliedForRoles.length > 0}
+									{#each delegation.appliedForRoles.sort((x) => x.rank) as roleApplication}
+										<div class="flex gap-2">
+											<div class="badge bg-base-300">
+												{roleApplication.nation
+													? getFullTranslatedCountryNameFromISO3Code(
+															roleApplication.nation.alpha3Code
+														)
+													: roleApplication.nonStateActor?.name}
+											</div>
 										</div>
-									</div>
-								{/each}
-							{:else}{m.noRoleApplications()}
-							{/if}
-						</div>
+									{/each}
+								{:else}{m.noRoleApplications()}
+								{/if}
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -197,13 +293,15 @@
 			{m.noDelegationsFound()}
 		</div>
 	{/if}
-	<a
-		class="btn btn-ghost btn-wide mt-4"
-		href="/registration/{conference.id}/join-delegation-supervisor"
-	>
-		<i class="fa-solid fa-plus"></i>
-		{m.addAnotherDelegation()}
-	</a>
+	{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+		<a
+			class="btn btn-ghost btn-wide mt-4"
+			href="/registration/{conference.id}/join-delegation-supervisor"
+		>
+			<i class="fa-solid fa-plus"></i>
+			{m.addAnotherDelegation()}
+		</a>
+	{/if}
 </section>
 
 <section class="flex flex-col gap-2">

@@ -40,6 +40,11 @@
 						given_name
 						family_name
 					}
+					assignedCommittee {
+						id
+						abbreviation
+						name
+					}
 				}
 				appliedForRoles {
 					nonStateActor {
@@ -178,6 +183,7 @@
 						<th></th>
 						<th class="w-full"></th>
 						<th></th>
+						<th></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -191,6 +197,13 @@
 							<td>
 								<span class="capitalize">{member.user.given_name}</span>
 								<span class="uppercase">{member.user.family_name}</span>
+							</td>
+							<td>
+								{#if member.assignedCommittee}
+									<span class="text-xs">{member.assignedCommittee.abbreviation}</span>
+								{:else}
+									<i class="fa-duotone fa-dash"></i>
+								{/if}
 							</td>
 							<td>
 								<a

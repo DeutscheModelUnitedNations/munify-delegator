@@ -1,6 +1,7 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDC } from '$api/context/oidc';
+import { supervisor } from '$lib/paraglide/messages';
 
 export const defineAbilitiesForConferenceSupervisor = (
 	oidc: OIDC,
@@ -19,6 +20,21 @@ export const defineAbilitiesForConferenceSupervisor = (
 						},
 						role: {
 							in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+						}
+					}
+				}
+			}
+		});
+
+		// other supervisors should be able to see the supervisors of their delegations
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			delegations: {
+				some: {
+					supervisors: {
+						some: {
+							user: {
+								id: user.sub
+							}
 						}
 					}
 				}
