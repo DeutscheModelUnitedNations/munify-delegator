@@ -51,7 +51,8 @@
 	let fuse = $derived(
 		new Fuse(rows, {
 			keys: [...columns.map((c) => c.key.toString()), 'id', ...additionallyIndexedKeys],
-			threshold: 0.4,
+			shouldSort: true,
+			threshold: 0.2,
 			minMatchCharLength: 2
 		})
 	);

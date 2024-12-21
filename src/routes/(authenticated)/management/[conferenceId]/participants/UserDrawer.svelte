@@ -4,6 +4,7 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
+	import { find } from 'lodash';
 
 	interface Props {
 		user: UserRowData;
@@ -35,6 +36,7 @@
 				zip
 				country
 				foodPreference
+				gender
 			}
 			findManyDelegationMembers(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
@@ -81,7 +83,7 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td><i class="fa-duotone fa-phone text-lg"></i></td>
+					<td class="text-center"><i class="fa-duotone fa-phone text-lg"></i></td>
 					{#if $userQuery.data?.findUniqueUser?.phone}
 						<td class="font-mono">
 							<a
@@ -95,7 +97,7 @@
 					{/if}
 				</tr>
 				<tr>
-					<td><i class="fa-duotone fa-envelope text-lg"></i></td>
+					<td class="text-center"><i class="fa-duotone fa-envelope text-lg"></i></td>
 					<td class="font-mono">
 						<a
 							class="cursor-pointer rounded-md bg-base-300 px-2 py-1 hover:underline"
@@ -106,7 +108,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td><i class="fa-duotone fa-house text-lg"></i></td>
+					<td class="text-center"><i class="fa-duotone fa-house text-lg"></i></td>
 					{#if $userQuery.data?.findUniqueUser?.street}
 						<td>
 							{$userQuery.data?.findUniqueUser?.street}
@@ -130,7 +132,23 @@
 					{/if}
 				</tr>
 				<tr>
-					<td><i class="fa-duotone fa-birthday-cake text-lg"></i></td>
+					<td class="text-center text-lg">
+						{#if $userQuery.data?.findUniqueUser?.gender === 'f'}
+							<i class="fa-duotone fa-venus"></i>
+						{:else if $userQuery.data?.findUniqueUser?.gender === 'm'}
+							<i class="fa-duotone fa-mars"></i>
+						{:else if $userQuery.data?.findUniqueUser?.gender === 'd'}
+							<i class="fa-duotone fa-question"></i>
+						{:else}
+							<i class="fa-duotone fa-dash"></i>
+						{/if}
+					</td>
+					<td>
+						{$userQuery.data?.findUniqueUser?.pronouns}
+					</td>
+				</tr>
+				<tr>
+					<td class="text-center"><i class="fa-duotone fa-birthday-cake text-lg"></i></td>
 					{#if user?.birthday}
 						<td>
 							{new Date(user!.birthday!).toLocaleDateString('de', {
