@@ -39,7 +39,7 @@
 		</nav>
 		<aside>
 			<p>{m.aServiceBy()}</p>
-			<a href="https://dmun.de" target="_blank" class="hover:scale-105 transition-all duration-300">
+			<a href="https://dmun.de" target="_blank" class="transition-all duration-300 hover:scale-105">
 				<img src={dmunLogo} alt="DMUN Logo" class="w-40 dark:hue-rotate-180 dark:invert" />
 			</a>
 			<p>
