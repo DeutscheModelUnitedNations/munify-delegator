@@ -15,7 +15,6 @@ services:
 
   delegator:
     # image: deutschemodelunitednations/delegator:latest
-    image: delegator:latest
     depends_on:
       - postgres
     ports:
