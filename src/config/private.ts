@@ -1,32 +1,22 @@
-import { Type } from '@sinclair/typebox';
-import { mapEnvToSchema } from './schemaMapper';
-import { env } from '$env/dynamic/private';
 import { building } from '$app/environment';
+import { env } from '$env/dynamic/private';
+import { z } from 'zod';
 
-export const dynamicPrivateConfig = mapEnvToSchema({
-	env,
-	prefix: '',
-	separator: '_',
-	building,
-	schema: Type.Object({
-		DATABASE_URL: Type.String(),
-		OIDC: Type.Object({
-			CLIENT_SECRET: Type.Optional(Type.String()),
-			SCOPES: Type.Optional(
-				Type.String({
-					default:
-						'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:projects:roles urn:zitadel:iam:user:metadata'
-				})
-			),
-			ROLE_CLAIM: Type.String()
-		}),
-		SECRET: Type.String(),
-		NODE_ENV: Type.Union([
-			Type.Literal('development'),
-			Type.Literal('production'),
-			Type.Literal('test')
-		])
-	})
+const schema = z.object({
+	DATABASE_URL: z.string(),
+	OIDC_CLIENT_SECRET: z.optional(z.string()),
+	OIDC_SCOPES: z
+		.string()
+		.default(
+			'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:projects:roles urn:zitadel:iam:user:metadata'
+		),
+	OIDC_ROLE_CLAIM: z.string().nullish(),
+	SECRET: z.string(),
+	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
+	OTEL_SERVICE_NAME: z.string().default('MUNIFY-DELEGATOR'),
+	OTEL_SERVICE_VERSION: z.optional(z.string()),
+	OTEL_ENDPOINT_URL: z.optional(z.string()),
+	OTEL_AUTHORIZATION_HEADER: z.optional(z.string())
 });
 
-console.info(`Loaded dynamic private config in ${dynamicPrivateConfig.NODE_ENV} mode`);
+export const configPrivate = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

@@ -5,6 +5,7 @@
 	interface Props {
 		name: string;
 		pronouns: string;
+		email?: string;
 		headDelegate?: boolean;
 		committee?: string;
 		mailStatus?: 'completed' | 'error' | 'incomplete';
@@ -15,6 +16,7 @@
 	let {
 		name,
 		pronouns,
+		email,
 		headDelegate = false,
 		committee,
 		mailStatus,
@@ -50,7 +52,7 @@
 		><span class="mr-2">{name}</span>
 		{#if headDelegate}
 			<div class="tooltip" data-tip={m.headDelegate()}>
-				<i class="ml-2 fa-duotone fa-medal"></i>
+				<i class="fa-duotone fa-medal ml-2"></i>
 			</div>
 		{/if}
 	</td>
@@ -67,15 +69,24 @@
 			{/if}
 		</td>
 	{/if}
+
+	{#if email}
+		<td>
+			<a class="btn btn-ghost btn-sm" href={`mailto:${email}`} aria-label="E-Mail">
+				<i class="fa-duotone fa-envelope"></i>
+			</a>
+		</td>
+	{/if}
+
 	{#if mailStatus}
 		<td class="text-center">
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>
 				{#if mailStatus === 'completed'}
-					<i class="text-xl fas fa-circle-check text-success"></i>
+					<i class="fas fa-circle-check text-xl text-success"></i>
 				{:else if mailStatus === 'error'}
-					<i class="text-xl fas fa-triangle-exclamation text-warning"></i>
+					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
 				{:else}
-					<i class="text-xl fas fa-octagon-xmark text-error"></i>
+					<i class="fas fa-octagon-xmark text-xl text-error"></i>
 				{/if}
 			</div>
 		</td>
@@ -84,11 +95,11 @@
 		<td class="text-center">
 			<div class="tooltip" data-tip={getPaymentStatusTooltip()}>
 				{#if paymentStatus === 'completed'}
-					<i class="text-xl fas fa-circle-check text-success"></i>
+					<i class="fas fa-circle-check text-xl text-success"></i>
 				{:else if paymentStatus === 'error'}
-					<i class="text-xl fas fa-triangle-exclamation text-warning"></i>
+					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
 				{:else}
-					<i class="text-xl fas fa-octagon-xmark text-error"></i>
+					<i class="fas fa-octagon-xmark text-xl text-error"></i>
 				{/if}
 			</div>
 		</td>

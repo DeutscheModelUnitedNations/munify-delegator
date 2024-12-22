@@ -1,95 +1,70 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import Header from '$lib/components/Header.svelte';
-	import PreConferenceStage from './DelegationPreConferenceStage.svelte';
-	import RegistrationStage from './DelegationRegistrationStage.svelte';
-	import PostConferenceStage from './DelegationPostConferenceStage.svelte';
-	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
-	import Supervisor from './Supervisor.svelte';
-	import { redirect } from '@sveltejs/kit';
-	import SingleParticipantRegistrationStage from './SingleParticipantRegistrationStage.svelte';
+	import type { PageData } from './$houdini';
+	import Supervisor from './stages/Supervisor.svelte';
+	import SingleParticipantRegistrationStage from './stages/SingleParticipantRegistrationStage.svelte';
+	import SingleParticipantPreparationStage from './stages/SingleParticipantPreparationStage.svelte';
+	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
+	import DelegationPreparationStage from './stages/DelegationPreparationStage.svelte';
+	import Spinner from '$lib/components/Spinner.svelte';
+	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
+	import * as m from '$lib/paraglide/messages.js';
+	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
+	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 
-	enum STAGE {
-		REGISTRATION = 'REGISTRATION',
-		POST_REGISTRATION = 'POST_REGISTRATION',
-		PRE_CONFERENCE = 'PRE_CONFERENCE',
-		POST_CONFERENCE = 'POST_CONFERENCE',
-		ACTIVE = 'ACTIVE'
-	}
-
-	enum CATEGORY {
-		INDIVIDUAL = 'INDIVIDUAL',
-		DELEGATION = 'DELEGATION',
-		SUPERVISOR = 'SUPERVISOR'
-	}
+	// the app needs some proper loading states!
+	//TODO https://houdinigraphql.com/guides/loading-states
 
 	let { data }: { data: PageData } = $props();
-
-	const conference = $derived(data?.conferences.find((x) => x.id === data.conferenceId));
-
-	const determinStage: () => STAGE = () => {
-		if (conference) {
-			if (conference.status === 'POST') {
-				return STAGE.POST_CONFERENCE;
-			}
-			if (conference.status === 'ACTIVE') {
-				return STAGE.ACTIVE;
-			}
-			// conference.status is now implicitly 'PRE'
-			// if () { // TODO logic to determaian if the person has been assigned a role yet
-			// 	return 'PRE_CONFERENCE';
-			// }
-			return STAGE.REGISTRATION;
-		}
-		if (browser) {
-			goto('/dashboard');
-		} else {
-			redirect(302, '/dashboard');
-		}
-		return STAGE.REGISTRATION;
-	};
-
-	const determineCategory = () => {
-		if (data.supervisorData) {
-			return CATEGORY.SUPERVISOR;
-		}
-		if (data.singleParticipantData) {
-			return CATEGORY.INDIVIDUAL;
-		}
-		return CATEGORY.DELEGATION;
-	};
-
-	$effect(() => {
-		if (conference === undefined) {
-			goto('/no-conference');
-		}
-	});
+	let conferenceQuery = $derived(data.MyConferenceparticipationQuery);
+	let conferenceQueryData = $derived($conferenceQuery.data);
+	let conference = $derived(conferenceQueryData?.findUniqueConference);
 </script>
 
-<Header title={conference?.title ?? 'Unknown'} />
-<div class="flex flex-col py-10 gap-10">
-	{#if determineCategory() === 'INDIVIDUAL'}
-		{#if determinStage() === 'REGISTRATION' || determinStage() === 'POST_REGISTRATION'}
-			<SingleParticipantRegistrationStage {data} />
-		{:else if determinStage() === 'PRE_CONFERENCE'}
-			#TODO: Implement individual pre-conference stage
-		{:else if determinStage() === 'POST_CONFERENCE'}
-			#TODO: Implement individual post-conference stage
-		{/if}
-	{:else if determineCategory() === CATEGORY.DELEGATION}
-		{#if determinStage() === STAGE.REGISTRATION}
-			<RegistrationStage {data} />
-		{:else if determinStage() === STAGE.PRE_CONFERENCE}
-			<PreConferenceStage />
-		{:else if determinStage() === STAGE.POST_CONFERENCE}
-			<PostConferenceStage />
-		{/if}
-	{:else if determineCategory() === CATEGORY.SUPERVISOR}
-		{#if determinStage() === STAGE.POST_CONFERENCE}
-			#TODO: Implement supervisor post-conference stage
-		{:else}
-			<Supervisor {data} />
-		{/if}
+<div class="flex w-full flex-col items-center">
+	{#if $conferenceQuery.fetching}
+		<Spinner />
+	{:else}
+		<div class="flex w-full flex-col gap-10">
+			<!-- TODO add "new" badge if content of this changes -->
+			{#if conferenceQueryData?.findUniqueSingleParticipant?.id}
+				{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
+					<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
+				{:else if conferenceQueryData?.findUniqueSingleParticipant?.assignedRole}
+					{#if conference!.state === 'PREPARATION'}
+						<ConferenceStatusWidget />
+						<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
+					{:else if conference!.state === 'ACTIVE'}
+						#TODO: Implement individual on conference stage
+					{:else if conference!.state === 'POST'}
+						#TODO: Implement individual post conference stage
+					{/if}
+				{:else}
+					<ApplicationRejected />
+				{/if}
+			{:else if conferenceQueryData?.findUniqueDelegationMember?.id}
+				{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
+					<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
+				{:else if !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNation || !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor}
+					{#if conference!.state === 'PREPARATION'}
+						<ConferenceStatusWidget />
+						<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
+					{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}
+						#TODO: Implement individual on conference stage
+					{:else if Date.now() > conference!.endConference.getTime()}
+						<!-- <PostConferenceStage /> -->
+					{/if}
+				{:else}
+					<ApplicationRejected />
+				{/if}
+			{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
+				{#if conference!.state !== 'PARTICIPANT_REGISTRATION' && conferenceQueryData.findUniqueConferenceSupervisor.delegations.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0}
+					<Supervisor data={{ ...conferenceQueryData, user: data.user }} />
+				{:else}
+					<ApplicationRejected />
+				{/if}
+			{:else}
+				<NoConferenceIndicator />
+			{/if}
+		</div>
 	{/if}
 </div>

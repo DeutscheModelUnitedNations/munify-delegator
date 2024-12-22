@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres
+    container_name: postgres-dev-delegator
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -15,6 +16,19 @@ services:
     volumes:
       - delegator-dev:/var/lib/postgresql/data
 
+  prisma_studio:
+    image: timothyjmiller/prisma-studio
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - '5555:5555'
+    environment:
+      PROJECT_NAME: 'MUNify DELEGATOR'
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
+      PRISMA_STUDIO_PORT: 5555
+      POSTGRES_PATH: /postgres
+
   # When using the mock server this can be helpful to paste into the form to create a valid token with claims etc.
   # {
   #  "email": "my@mail.com",
@@ -24,17 +38,34 @@ services:
   #  "locale": "de",
   #  "urn:zitadel:iam:org:project:275671427955294244:roles": {"admin": {}}
   # }
-  # mockoidc:
-  #   image: ghcr.io/navikt/mock-oauth2-server:2.1.5
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     JSON_CONFIG: >
-  #       {
-  #         "interactiveLogin": true,
-  #         "httpServer": "NettyWrapper",
-  #         "tokenCallbacks": []
-  #       }
+  mockoidc:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    ports:
+      - 8080:8080
+    environment:
+      JSON_CONFIG: >
+        {
+          "interactiveLogin": true,
+          "httpServer": "NettyWrapper",
+          "tokenCallbacks": [
+              {
+                "issuerId": "issuer1",
+                "tokenExpiry": 120,
+                "requestMappings": [
+                  {
+                    "requestParam": "code",
+                    "match": "code1",
+                    "claims": {
+                      "sub": "subByCode",
+                      "aud": [
+                          "audByCode"
+                      ]
+                    }
+                  }
+                ]
+              }
+          ]
+        }
 
   # app:
   #   image: munifydelegator
@@ -53,19 +84,38 @@ services:
 
   #     - SECRET=123
 
-  prisma_studio:
-    image: timothyjmiller/prisma-studio
-    restart: unless-stopped
-    ports:
-      - 5555:5555
-    depends_on:
-      - postgres
+  # prisma_studio:
+  #   image: timothyjmiller/prisma-studio
+  #   restart: unless-stopped
+  #   ports:
+  #     - 5555:5555
+  #   depends_on:
+  #     - postgres
 
-    environment:
-      PROJECT_NAME: 'MUNify DELEGATOR'
-      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
-      PRISMA_STUDIO_PORT: 5555
-      POSTGRES_PATH: /postgres
+  #   environment:
+  #     PROJECT_NAME: 'MUNify DELEGATOR'
+  #     POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
+  #     PRISMA_STUDIO_PORT: 5555
+  #     POSTGRES_PATH: /postgres
+
+  # web dashboard available at http://localhost:16686
+  # jaeger:
+  #   image: jaegertracing/jaeger
+  #   ports:
+  #     - '5778:5778'
+  #     - '16686:16686'
+  #     - '4317:4317'
+  #     - '4318:4318'
+  #     - '14250:14250'
+  #     - '14268:14268'
+  #     - '9411:9411'
+  #   command:
+  #     [
+  #       '--set',
+  #       'receivers.otlp.protocols.http.endpoint=0.0.0.0:4318',
+  #       '--set',
+  #       'receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317'
+  #     ]
 
 volumes:
   delegator-dev:

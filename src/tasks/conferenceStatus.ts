@@ -5,6 +5,7 @@ import { IncomingWebhook } from '@slack/webhook';
 import { logLoading, logTaskEnd, logTaskStart, taskWarning } from './logs';
 import { conferenceStats } from '$api/services/stats';
 import fs from 'fs';
+import { languageTag } from '$lib/paraglide/runtime';
 
 // GLOBALS
 
@@ -14,7 +15,11 @@ const CRON = '0 0 9,20 * * *';
 // HELPER FUNCTIONS
 
 function formatConferenceDate(date: Date) {
-	return date.toLocaleDateString('de', { day: '2-digit', month: '2-digit', year: 'numeric' });
+	return date.toLocaleDateString(languageTag(), {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric'
+	});
 }
 
 function formatHistoricComparison(historicStat: number | undefined, currentStat: number) {
@@ -60,10 +65,10 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 
 			const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
 				where: {
-					startRegistration: {
-						lte: new Date()
+					state: {
+						equals: 'PARTICIPANT_REGISTRATION'
 					},
-					endRegistration: {
+					startAssignment: {
 						gte: new Date()
 					}
 				}
@@ -96,8 +101,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 										elements: [
 											{
 												type: 'text',
-												text: conference.start
-													? `Noch ${countdowns.daysUntilConference} Tage bis zur Konferenz (Start am ${formatConferenceDate(conference.start)})`
+												text: conference.startConference
+													? `Noch ${countdowns.daysUntilConference} Tage bis zur Konferenz (Start am ${formatConferenceDate(conference.startConference)})`
 													: 'Kein Konferenzdatum festgelegt'
 											}
 										]
@@ -107,8 +112,8 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 										elements: [
 											{
 												type: 'text',
-												text: conference.endRegistration
-													? `Anmeldung noch ${countdowns.daysUntilEndRegistration} Tage offen (bis ${formatConferenceDate(conference.endRegistration)})`
+												text: conference.startAssignment
+													? `Anmeldung noch ${countdowns.daysUntilEndRegistration} Tage offen (bis ${formatConferenceDate(conference.startAssignment)})`
 													: 'Kein Anmeldeschluss festgelegt'
 											}
 										]

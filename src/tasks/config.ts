@@ -1,22 +1,12 @@
-import { mapEnvToSchema } from '$config/schemaMapper';
-import { Type } from '@sinclair/typebox';
+import { z } from 'zod';
 
-export const config = mapEnvToSchema({
-	env: process.env,
-	prefix: '',
-	separator: '_',
-	building: false,
-	schema: Type.Object({
-		DATABASE_URL: Type.String(),
-		// NODE_ENV: Type.Union([
-		// 	Type.Literal('development'),
-		// 	Type.Literal('production'),
-		// 	Type.Literal('test')
-		// ]),
-		SLACK_ERROR_WEBHOOK: Type.Optional(Type.String()),
-		SLACK_NOTIFICATION_WEBHOOK: Type.Optional(Type.String()),
-		LISTMONK_API_URL: Type.String(),
-		LISTMONK_API_USER: Type.String(),
-		LISTMONK_API_KEY: Type.String()
-	})
+const schema = z.object({
+	DATABASE_URL: z.string(),
+	SLACK_NOTIFICATION_WEBHOOK: z.string().optional(),
+	SLACK_ERROR_WEBHOOK: z.string().optional(),
+	LISTMONK_API_URL: z.string(),
+	LISTMONK_API_USER: z.string(),
+	LISTMONK_API_KEY: z.string()
 });
+
+export const config = schema.parse(process.env);

@@ -6,6 +6,7 @@
 	interface Props {
 		title?: string;
 		description?: string;
+		withEmail?: boolean;
 		withCommittee?: boolean;
 		withMailStatus?: boolean;
 		withPaymentStatus?: boolean;
@@ -15,6 +16,7 @@
 	let {
 		title,
 		description,
+		withEmail = false,
 		withCommittee = false,
 		withMailStatus = false,
 		withPaymentStatus = false,
@@ -31,17 +33,20 @@
 				{#if withCommittee}
 					<th>{m.committee()}</th>
 				{/if}
+				{#if withEmail}
+					<th>{m.email()}</th>
+				{/if}
 				{#if withMailStatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Postialische Anmeldung">
-							<i class="text-xl fa-duotone fa-envelope-open-text"></i>
+							<i class="fa-duotone fa-envelope-open-text text-xl"></i>
 						</div>
 					</th>
 				{/if}
 				{#if withPaymentStatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Beitragszahlung">
-							<i class="text-xl fa-duotone fa-money-bill-transfer"></i>
+							<i class="fa-duotone fa-money-bill-transfer text-xl"></i>
 						</div>
 					</th>
 				{/if}

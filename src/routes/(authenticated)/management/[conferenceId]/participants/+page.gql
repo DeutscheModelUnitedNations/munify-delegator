@@ -1,0 +1,32 @@
+query ConferenceParticipantsByParticipationTypeQuery($conferenceId: String!) {
+	findUniqueConference(where: { id: $conferenceId }) {
+		endConference
+	}
+	findManyDelegationMembers(where: { conferenceId: { equals: $conferenceId } }) {
+		user {
+			id
+			given_name
+			family_name
+			city
+			birthday
+		}
+	}
+	findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
+		user {
+			id
+			given_name
+			family_name
+			city
+			birthday
+		}
+	}
+	findManySingleParticipants(where: { conferenceId: { equals: $conferenceId } }) {
+		user {
+			id
+			given_name
+			family_name
+			city
+			birthday
+		}
+	}
+}

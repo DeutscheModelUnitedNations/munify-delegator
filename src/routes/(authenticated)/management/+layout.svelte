@@ -1,13 +1,16 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import * as m from '$lib/paraglide/messages';
+	import type { Snippet } from 'svelte';
 
-	import type { PageData } from './$types';
+	interface Props {
+		children: Snippet;
+	}
 
-	let { data, children }: { data: PageData; children: any } = $props();
+	let { children }: Props = $props();
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator – {m.admininstration()}</title>
+	<title>MUNify Delegator - {m.admininstration()}</title>
 </svelte:head>
 
 {@render children()}

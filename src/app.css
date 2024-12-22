@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
 @font-face {
 	font-family: 'FontAwesome';
@@ -45,7 +45,7 @@
 }
 
 ._toastItem {
-	@apply !alert !alert-warning !shadow-lg !text-wrap;
+	@apply !alert !alert-warning !text-wrap !shadow-lg;
 }
 
 ._toastBtn {

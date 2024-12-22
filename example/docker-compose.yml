@@ -23,15 +23,13 @@ services:
     # command: ["bun", "tasksMain.js"]
 
     # for config options, please refer to the '/src/config' directory
-    # for adapter/hosting options please refer to https://github.com/gornostay25/svelte-adapter-bun?tab=readme-ov-file#desktop_computer-environment-variables
     environment:
       # - PORT=3000
       # - HOST=0.0.0.0
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
       # change this to something long, secure and truly random
       - SECRET=123
-      # if your setup supports PROTOCOL_HEADER or HOST_HEADER you don't need to set these
-      # please see the adapter/hosting options for more information
+      # change this to where the app is located at. E.g. https://delegator.munify.cloud
       - ORIGIN=https://{your orign}
 
       # variables which are exposed to the client must be prefixed with PUBLIC_

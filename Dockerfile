@@ -1,4 +1,4 @@
-FROM oven/bun:slim AS base
+FROM oven/bun:1.1.40-slim AS base
 
 FROM base AS dual
 WORKDIR /temp
@@ -20,6 +20,7 @@ RUN  bun install --frozen-lockfile
 # we need to generate prisma files before building to prevent type errors
 COPY ./prisma/migrations ./prisma/migrations/
 COPY ./prisma/schema.prisma ./prisma/schema.prisma
+COPY ./prisma/pothos.config.ts ./prisma/pothos.config.ts
 RUN bunx prisma generate
 
 COPY . .
@@ -58,4 +59,4 @@ ENV NODE_ENV=production
 USER bun
 EXPOSE 3000/tcp
 # HEALTHCHECK --interval=15s --timeout=10s --retries=3 CMD curl -f http://0.0.0.0:3000/api/health/ready || exit 1
-CMD bunx prisma migrate deploy && bun run start
+CMD bunx prisma migrate deploy && bun ./index.js

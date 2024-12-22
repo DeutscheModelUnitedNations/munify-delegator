@@ -1,16 +1,11 @@
-import { checkForError } from '$api/client';
-import { loadApiHandler } from '$lib/helper/loadApiHandler';
-import type { LayoutLoad } from './$types';
+import type { GetMyActiveConferencesQueryVariables } from './$houdini';
 
-export const load: LayoutLoad = loadApiHandler(async ({ api, url, parent }) => {
-	const { user } = await parent();
-	const userData = await checkForError(api.user({ id: user.sub }).get());
-
-	const conferences = await checkForError(api['my-conferences'].get());
+export const _GetMyActiveConferencesQueryVariables: GetMyActiveConferencesQueryVariables = async (
+	event
+) => {
+	const { user } = await event.parent();
 
 	return {
-		userData,
-		conferences,
-		url
+		userId: user.sub
 	};
-});
+};

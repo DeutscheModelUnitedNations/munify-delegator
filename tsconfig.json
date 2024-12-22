@@ -3,41 +3,22 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": true,
+		"module": "ESNext", // or "CommonJS"
+		"target": "ESNext", // or "ES6"
+		"allowSyntheticDefaultImports": true, // This should be true as well
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		"moduleResolution": "bundler"
-	},
-	"exclude": [
-		// TODO - These Paths should be deleted after finishing the API rework
-		"src/routes/(authenticated)/registration/[conference]/+page.svelte",
-		"src/routes/(authenticated)/registration/+page.svelte",
-		"src/routes/(authenticated)/my-account/+page.svelte",
-		"src/routes/(authenticated)/management/[conferenceId]/supervisors/+page.svelte",
-		"src/routes/(authenticated)/management/[conferenceId]/individuals/+page.svelte",
-		"src/routes/(authenticated)/management/[conferenceId]/delegations/+page.svelte",
-		"src/routes/(authenticated)/management/+page.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/+page.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/Supervisor.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/Supervisor.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/Supervisor.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/Supervisor.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/Supervisor.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/Supervisor.svelte",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/SelectDelegationPreferencesModal.svelte",
-		"src/routes/(authenticated)/dashboard/+page.svelte",
-		"src/routes/+page.svelte",
-		"src/routes/(authenticated)/management/[conferenceId]/+layout.ts",
-		"src/routes/(authenticated)/management/+page.ts",
-		"src/routes/(authenticated)/dashboard/[conferenceId]/+page.ts",
-		"src/routes/(authenticated)/management/+layout.ts"
-	]
-	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
-	// except $lib which is handled by https://kit.svelte.dev/docs/configuration#files
-	//
-	// If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
-	// from the referenced tsconfig.json - TypeScript does not merge them in
+		"moduleResolution": "bundler",
+		"plugins": [
+			{
+				"name": "@0no-co/graphqlsp",
+				"schema": "./src/lib/gqlClient/schema.gql"
+			}
+		],
+		"rootDirs": [".", "./.svelte-kit/types", "./$houdini/types"]
+	}
 }

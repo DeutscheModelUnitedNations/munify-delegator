@@ -1,18 +1,30 @@
 <script lang="ts">
-	import TableSearch from '$lib/components/DataTable/TableSearch.svelte';
-	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
-	import Drawer from './DelegationDrawer.svelte';
-	import SvelteTable, { type TableColumns } from 'svelte-table';
+	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
+	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
+	import { type TableColumns } from 'svelte-table';
 	import * as m from '$lib/paraglide/messages';
-	import { getTableSettings } from '$lib/components/DataTable/tableSettings.svelte';
-	import type { DelegationData, DelegationDataItem } from './types.svelte';
+	import type { PageData } from './$houdini';
+	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
+	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import DelegationDrawer from './DelegationDrawer.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
-	const { data } = $props();
+	const { data }: { data: PageData } = $props();
+	const queryData = $derived(data.ConferenceDelegationsQuery);
+	const delegations = $derived(
+		$queryData?.data?.findManyDelegations.map((d) => ({
+			...d,
+			assignedNation: d.assignedNation
+				? {
+						...d.assignedNation,
+						name: getFullTranslatedCountryNameFromISO3Code(d.assignedNation.alpha3Code)
+					}
+				: undefined
+		})) ?? []
+	);
+	const { getTableSize } = getTableSettings();
 
-	let delegations = $state<DelegationData>(data.delegations);
-
-	const columns: TableColumns<DelegationDataItem> = [
+	const columns: TableColumns<(typeof delegations)[number]> = [
 		{
 			key: 'entryCode',
 			title: 'Entry Code',
@@ -32,6 +44,19 @@
 			class: 'text-center'
 		},
 		{
+			key: 'role',
+			title: m.role(),
+			parseHTML: true,
+			value: (row) => row.assignedNation?.name ?? row.assignedNonStateActor?.name ?? 'N/A',
+			renderValue: (row) =>
+				row.assignedNation
+					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNation.name}"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
+					: row.assignedNonStateActor &&
+						`<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNonStateActor.name}"><span class="fas fa-${row.assignedNonStateActor?.fontAwesomeIcon?.replace('fa-', '')}"></span></div>`,
+			sortable: true,
+			class: 'text-center'
+		},
+		{
 			key: 'school',
 			title: m.schoolOrInstitution(),
 			value: (row) => row.school ?? 'N/A',
@@ -41,21 +66,21 @@
 		{
 			key: 'members',
 			title: m.members(),
-			value: (row) => row._count.members,
+			value: (row) => row.members.length,
 			sortable: true,
 			class: 'text-center'
 		},
 		{
 			key: 'supervisors',
 			title: m.supervisors(),
-			value: (row) => row._count.supervisors,
+			value: (row) => row.supervisors.length,
 			sortable: true,
 			class: 'text-center'
 		},
 		{
 			key: 'appliedForRoles',
 			title: m.roleApplications(),
-			value: (row) => row._count.appliedForRoles,
+			value: (row) => row.appliedForRoles.length,
 			sortable: true,
 			class: 'text-center'
 		},
@@ -73,65 +98,26 @@
 		}
 	];
 
-	const { getTableSize, getZebra } = getTableSettings();
-
-	let filterValue = $state<string>(data.idQuery ?? '');
-
-	$effect(() => {
-		if (filterValue !== '') {
-			delegations = data.delegations.filter((u) => {
-				const search = filterValue!.toLowerCase();
-				return (
-					(u.entryCode && u.entryCode.toLowerCase().includes(search)) ||
-					(u.school && u.school.toLowerCase().includes(search)) ||
-					(u.motivation && u.motivation.toLowerCase().includes(search)) ||
-					(u.experience && u.experience.toLowerCase().includes(search)) ||
-					(u.id && u.id.toLowerCase().includes(search))
-				);
-			});
-		} else {
-			delegations = data.delegations;
-		}
-	});
-
-	const exportedData = $derived(() => {
-		return [
-			...delegations.map((p) => ({
-				'Entry Code': p.entryCode,
-				Applied: p.applied ? 'Yes' : 'No',
-				School: p.school ?? 'N/A',
-				Members: p._count.members.toString(),
-				Supervisors: p._count.supervisors.toString(),
-				Roles: p._count.appliedForRoles.toString(),
-				Motivation: p.motivation ?? 'N/A',
-				Experience: p.experience ?? 'N/A'
-			}))
-		];
-	});
-
-	let drawerDelegation = $state<DelegationDataItem | null>(
-		data.idQuery ? (delegations.find((u) => u.id === data.idQuery) ?? null) : null
-	);
+	let selectedDelegationRow = $state<(typeof delegations)[number]>();
+	// TODO export data
 </script>
 
-<ManagementHeader title={m.adminDelegations()} exportedData={exportedData()} tableOptions />
-<PrintHeader title={m.adminDelegations()} globalSearchValue={filterValue ?? undefined} />
+<DataTable
+	{columns}
+	rows={delegations}
+	enableSearch={true}
+	additionallyIndexedKeys={['assignedNation.name']}
+	queryParamKey="filter"
+	rowSelected={(row) => {
+		selectedDelegationRow = row;
+	}}
+/>
 
-<TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
-
-<div class="mt-4 overflow-x-auto">
-	<SvelteTable
-		{columns}
-		rows={delegations}
-		rowKey="id"
-		classNameTable="table {getZebra() && 'table-zebra'} table-{getTableSize()} table-pin-rows"
-		classNameRow="hover:!bg-base-300 cursor-pointer"
-		on:clickRow={(e) => (drawerDelegation = e.detail.row)}
-		iconAsc="<i class='fa-duotone fa-arrow-down-a-z'></i>"
-		iconDesc="<i class='fa-duotone fa-arrow-down-z-a'></i>"
-		iconSortable="<i class='fa-solid fa-sort'></i>"
-		sortBy="family_name"
+{#if selectedDelegationRow}
+	<DelegationDrawer
+		delegationId={selectedDelegationRow.id}
+		conferenceId={data.conferenceId}
+		open={selectedDelegationRow !== undefined}
+		onClose={() => (selectedDelegationRow = undefined)}
 	/>
-</div>
-
-<Drawer delegation={drawerDelegation} onClose={() => (drawerDelegation = null)} {data} />
+{/if}

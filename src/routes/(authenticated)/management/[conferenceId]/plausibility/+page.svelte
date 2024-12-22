@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
+	import { error } from '@sveltejs/kit';
+	import type { PageData } from './$houdini';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';
 	import PlausibilityOverviewItem from './PlausibilityOverviewItem.svelte';
 
@@ -10,9 +10,13 @@
 	}
 
 	let { data }: Props = $props();
-</script>
+	let plausibilityQuery = $derived(data.PlausibilityQuery);
+	let plausibility = $derived($plausibilityQuery.data?.conferencePlausibility);
 
-<ManagementHeader title={m.adminPlausibility()} />
+	if (!plausibility) {
+		error(404, 'Could not find plausibility data');
+	}
+</script>
 
 <div class="flex flex-col gap-8 p-10">
 	<div class="flex flex-col gap-2">
@@ -29,23 +33,23 @@
 				<tbody>
 					<PlausibilityOverviewItem
 						headline={m.plausibilityTooYoung()}
-						items={data.plausibility.userFindings.tooYoungUsers}
+						items={plausibility.tooYoungUsers}
 					/>
 					<PlausibilityOverviewItem
 						headline={m.plausibilityTooOld()}
-						items={data.plausibility.userFindings.tooOldUsers}
+						items={plausibility.tooOldUsers}
 					/>
 					<PlausibilityOverviewItem
 						headline={m.plausibilityShouldBeSupervisor()}
-						items={data.plausibility.userFindings.shouldBeSupervisor}
+						items={plausibility.shouldBeSupervisor}
 					/>
 					<PlausibilityOverviewItem
 						headline={m.plausibilityShouldNotBeSupervisor()}
-						items={data.plausibility.userFindings.shouldNotBeSupervisor}
+						items={plausibility.shouldNotBeSupervisor}
 					/>
 					<PlausibilityOverviewItem
 						headline={m.plausibilityIncompleteOrInvalidData()}
-						items={data.plausibility.userFindings.dataMissing}
+						items={plausibility.dataMissing}
 					/>
 				</tbody>
 			</table>
@@ -53,27 +57,27 @@
 	</div>
 	<PlausibilityDetails
 		headline={m.plausibilityTooYoung()}
-		items={data.plausibility.userFindings.tooYoungUsers}
-		link="/management/{data.conferenceId}/participants?id="
+		items={plausibility.tooYoungUsers}
+		link="/management/{data.conferenceId}/participants?filter="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityTooOld()}
-		items={data.plausibility.userFindings.tooOldUsers}
-		link="/management/{data.conferenceId}/participants?id="
+		items={plausibility.tooOldUsers}
+		link="/management/{data.conferenceId}/participants?filter="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldBeSupervisor()}
-		items={data.plausibility.userFindings.shouldBeSupervisor}
-		link="/management/{data.conferenceId}/participants?id="
+		items={plausibility.shouldBeSupervisor}
+		link="/management/{data.conferenceId}/participants?filter="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldNotBeSupervisor()}
-		items={data.plausibility.userFindings.shouldNotBeSupervisor}
-		link="/management/{data.conferenceId}/participants?id="
+		items={plausibility.shouldNotBeSupervisor}
+		link="/management/{data.conferenceId}/participants?filter="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityIncompleteOrInvalidData()}
-		items={data.plausibility.userFindings.dataMissing}
-		link="/management/{data.conferenceId}/participants?id="
+		items={plausibility.dataMissing}
+		link="/management/{data.conferenceId}/participants?filter="
 	/>
 </div>

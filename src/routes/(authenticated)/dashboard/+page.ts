@@ -1,17 +1,48 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { checkForError } from '$api/client';
-import { loadApiHandler } from '$lib/helper/loadApiHandler';
+import { graphql } from '$houdini';
 
-export const load: PageLoad = loadApiHandler(async ({ api, url, parent }) => {
-	const data = await parent();
+const myConferences = graphql(`
+	query MyConferencesQuery($userId: String!, $now: DateTime!) {
+		findManyConferences(
+			where: {
+				OR: [
+					{ conferenceSupervisors: { some: { userId: { equals: $userId } } } }
+					{ delegationMembers: { some: { userId: { equals: $userId } } } }
+					{ singleParticipants: { some: { userId: { equals: $userId } } } }
+				]
+				AND: [{ startConference: { lt: $now } }]
+			}
+		) {
+			id
+			title
+			location
+			website
+			longTitle
+			language
+			imageDataURL
+			state
+			startAssignment
+			startConference
+			endConference
+		}
+	}
+`);
 
-	if (data.conferences.length === 1) {
-		redirect(303, `/dashboard/${data.conferences[0].id}`);
+export const load: PageLoad = async (event) => {
+	const data = await event.parent();
+	const conferencesQuery = await myConferences.fetch({
+		variables: { userId: data.user.sub, now: new Date(Date.now()) },
+		event,
+		blocking: true
+	});
+	const conferences = conferencesQuery.data?.findManyConferences ?? [];
+
+	if (conferences.length === 1) {
+		redirect(303, `/dashboard/${conferences[0].id}`);
 	}
 
-	const { logoutUrl } = await checkForError(api.auth['logout-url'].get());
 	return {
-		logoutUrl
+		conferences
 	};
-});
+};

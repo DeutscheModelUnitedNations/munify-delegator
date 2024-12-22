@@ -1,102 +1,35 @@
 <script lang="ts">
-	import { apiClient, checkForError } from '$api/client.js';
-	import { goto } from '$app/navigation';
-	import Checkbox from '$lib/components/Checkbox.svelte';
-	import Footer from '$lib/components/Footer.svelte';
-	import ProfileInput from '$lib/components/ProfileInput.svelte';
-	import ProfileSelect from '$lib/components/ProfileSelect.svelte';
-	import addressCountries from '$lib/helper/addressCountries.js';
-	import countryCodeToLocalName from '$lib/helper/countryCodeToLocalName.js';
+	import Form from '$lib/components/Form/Form.svelte';
+	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import * as m from '$lib/paraglide/messages.js';
+	import { superForm } from 'sveltekit-superforms';
+	import { zod } from 'sveltekit-superforms/adapters';
+	import { userFormSchema } from './form-schema.js';
+	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
+	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
+	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import type { PageData } from './$houdini';
 	import { toast } from '@zerodevx/svelte-toast';
 
-	let { data } = $props();
-	// TODO form validation
-	// we should resort to some form library here
-	let api = apiClient({ origin: data.url.origin });
-
-	let phone = $state(data.fullUser.phone ?? '');
-	let street = $state(data.fullUser.street ?? '');
-	let apartment = $state(data.fullUser.apartment ?? '');
-	let zip = $state(data.fullUser.zip ?? '');
-	let city = $state(data.fullUser.city ?? '');
-	let country = $state(data.fullUser.country ?? '');
-	let birthday = $state(
-		// TODO ugly type cast for an elysa date problem
-		(data.fullUser.birthday as unknown as string)?.split('T')[0] ?? new Date().toISOString()
-	);
-	let gender = $state(data.fullUser.gender ?? '');
-	let pronouns = $state(data.fullUser.pronouns ?? '');
-	let foodPreference = $state(data.fullUser.foodPreference ?? '');
-	let wantsToReceiveGeneralInformation = $state(
-		data.fullUser.wantsToReceiveGeneralInformation ?? false
-	);
-	let wantsJoinTeamInformation = $state(data.fullUser.wantsJoinTeamInformation ?? false);
-
-	let pronounsHaveChanged = $state(false);
-
-	const onPersonalDataFormSubmit = async (e: Event) => {
-		e.preventDefault();
-
-		await checkForError(
-			api.user({ id: data.user.sub }).patch({
-				phone,
-				street,
-				apartment,
-				zip,
-				city,
-				country,
-				birthday: birthday as any,
-				gender,
-				pronouns,
-				foodPreference: foodPreference as any,
-				wantsToReceiveGeneralInformation,
-				wantsJoinTeamInformation
-			})
-		);
-
-		if (data.redirectUrl) {
-			goto(data.redirectUrl);
-		}
-		// TODO we could use a fa icon instead of the emoji here
-		toast.push(m.saved() + ' ✅');
-	};
-
-	$effect(() => {
-		if (pronouns !== '' && !pronounsHaveChanged) {
-			pronounsHaveChanged = true;
+	let { data }: { data: PageData } = $props();
+	let form = superForm(data.form, {
+		resetForm: false,
+		validationMethod: 'oninput',
+		validators: zod(userFormSchema),
+		onError(e) {
+			toast.push(e.result.error.message);
 		}
 	});
 
-	$effect(() => {
-		if (pronouns === '' && !pronounsHaveChanged) {
-			switch (gender) {
-				case 'm':
-					pronouns = m.pronounsHeHim();
-					break;
-				case 'f':
-					pronouns = m.pronounsSheHer();
-					break;
-				default:
-					pronouns = '';
-					break;
-			}
-		}
-	});
+	//TODO pronoun prefill
 </script>
-
-<svelte:head>
-	<title>MUNify Delegator – {m.myAccount()}</title>
-</svelte:head>
 
 {#if data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
-
-<div class="w-full flex flex-col items-center p-4 sm:p-10">
-	<section class="text-center max-ch-md mt-10 z-20">
-		<i class="fa-duotone fa-user text-5xl mb-3"></i>
-		<h1 class="text-2xl font-bold">{m.myAccount()}</h1>
+<div class="flex w-full flex-col items-center p-4 sm:p-10">
+	<section class="z-20 mt-10 text-center max-ch-md">
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
 		<!-- If this is set we are likely to call this via the registration flow
@@ -113,107 +46,73 @@
 			</div>
 		{/if}
 	</section>
-	<div class="flex gap-10 flex-wrap justify-center items-start mt-10">
+	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
 		<div
-			class="card max-w-80 sm:max-w-full sm:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl z-20 {data.redirectUrl &&
+			class="card z-20 max-w-80 bg-base-100 shadow-xl sm:min-w-96 sm:max-w-full dark:bg-base-200 {data.redirectUrl &&
 				'highlight-card'}"
 		>
-			<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
+			<div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 				<div class="card-title block text-center">{m.personalData()}</div>
-				<form class="flex flex-col gap-4" onsubmit={onPersonalDataFormSubmit}>
-					<ProfileInput
-						label={m.phoneNumber()}
-						bind:value={phone}
-						placeholder="+491234567890"
-						required
-						pattern={`^\\+\\d{1,3}\\d{3,15}$`}
-						defaultValue="+49"
-						type="tel"
-					/>
-					<ProfileInput bind:value={street} label={m.address()} placeholder={m.street()} required />
-					<ProfileInput bind:value={apartment} placeholder={m.streetAddition()} />
-					<ProfileInput bind:value={zip} placeholder={m.zipCode()} required />
-					<ProfileInput bind:value={city} placeholder={m.city()} required />
-					<ProfileSelect
-						bind:value={country}
+				<Form {form}>
+					<FormTextInput {form} name="phone" label={m.phoneNumber()} placeholder="+49 123456789" />
+					<FormTextInput {form} name="street" label={m.address()} placeholder={m.street()} />
+					<FormTextInput {form} name="apartment" placeholder={m.streetAddition()} />
+					<FormTextInput {form} name="zip" placeholder={m.zipCode()} />
+					<FormTextInput {form} name="city" placeholder={m.city()} />
+					<FormSelect
+						{form}
+						name="country"
 						placeholder={m.pleaseSelectCountry()}
-						options={addressCountries
-							.map((c) => ({ value: c.iso_code, label: countryCodeToLocalName(c.iso_code, 'de') })) // TODO Add locale
-							.sort((a, b) => a.label.localeCompare(b.label))}
-						required
+						options={translatedNationCodeAddressFormOptions}
 					/>
-					<!-- TODO seems to be broken -->
-					<ProfileInput
-						bind:value={birthday}
+					<FormDateTimeInput
+						{form}
+						name="birthday"
 						label={m.birthDate()}
-						placeholder={m.birthDate()}
-						required
-						type="date"
-						pattern="^[0-3]\d[\.[0-1]\d\.\d{4}$"
-						max={new Date(
-							new Date().getFullYear() - 10,
-							new Date().getMonth(),
-							new Date().getDate()
-						)
-							.toISOString()
-							.split('T')[0]}
+						defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
 					/>
-					<ProfileSelect
-						bind:value={gender}
+					<FormSelect
+						{form}
+						name="gender"
 						label={m.gender()}
-						placeholder={m.pleaseSelect()}
 						options={[
 							{ value: 'm', label: m.male() },
 							{ value: 'f', label: m.female() },
 							{ value: 'd', label: m.diverse() },
-							{ value: 'n', label: m.unspecified() }
+							{ value: 'n', label: m.noStatement() }
 						]}
-						required
 					/>
-
-					<ProfileInput
-						bind:value={pronouns}
+					<FormTextInput
+						{form}
+						name="pronouns"
+						placeholder={m.pronounsSheHer()}
 						label={m.pronouns()}
-						placeholder={m.pronounsExample()}
-						required
 					/>
-
-					<ProfileSelect
-						bind:value={foodPreference}
+					<FormSelect
+						{form}
+						name="foodPreference"
 						label={m.diet()}
-						placeholder={m.pleaseSelect()}
 						options={[
 							{ value: 'VEGAN', label: m.vegan() },
 							{ value: 'VEGETARIAN', label: m.vegetarian() },
 							{ value: 'OMNIVORE', label: m.omnivore() }
 						]}
-						required
 					/>
-
-					<Checkbox
-						bind:checked={wantsToReceiveGeneralInformation}
+					<FormCheckbox
+						{form}
+						name="wantsToReceiveGeneralInformation"
 						label={m.receiveGeneralInformation()}
 					/>
-
-					<Checkbox
-						bind:checked={wantsJoinTeamInformation}
+					<FormCheckbox
+						{form}
+						name="wantsJoinTeamInformation"
 						label={m.receiveJoinTeamInformation()}
 					/>
-
-					<button class="btn btn-primary btn-block mt-4" type="submit">
-						{#if !data.redirectUrl}
-							{m.save()}
-							<i class="fas fa-save"></i>
-						{:else}
-							{m.saveAndContinue()}
-							<i class="fas fa-arrow-right"></i>
-						{/if}
-					</button>
-				</form>
+				</Form>
 			</div>
 		</div>
 
-		<div class="card w-full md:w-auto md:min-w-96 bg-base-100 dark:bg-base-200 shadow-xl">
+		<div class="card w-full bg-base-100 shadow-xl md:w-auto md:min-w-96 dark:bg-base-200">
 			<div class="card-body">
 				<div class="card-title block text-center">{m.loginInformation()}</div>
 				<table class="table">
@@ -221,7 +120,7 @@
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-envelope"></i></td>
 							<td>{m.email()}</td>
-							<td>{data.fullUser.email}</td>
+							<td>{data.user.email}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-key"></i></td>
@@ -237,22 +136,22 @@
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-text"></i></td>
 							<td>{m.firstName()}</td>
-							<td>{data.fullUser.given_name}</td>
+							<td>{data.user.given_name}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-text"></i></td>
 							<td>{m.lastName()}</td>
-							<td>{data.fullUser.family_name}</td>
+							<td>{data.user.family_name}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-binary"></i></td>
 							<td>{m.userId()}</td>
-							<td>{data.fullUser.id}</td>
+							<td>{data.user.sub}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-user-lock"></i></td>
 							<td>{m.rights()}</td>
-							<td>{data.mySystemRoles.map((x) => x.toUpperCase()).join(', ')}</td>
+							<td>{data.user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -260,11 +159,10 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
-				<p class="text-center mt-6 text-sm max-w-[40ch]">{@html m.deleteAccountGPDR()}</p>
+				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
 	</div>
-	<Footer />
 </div>
 
 <style>
@@ -277,6 +175,8 @@
 	.backdrop {
 		content: '';
 		position: fixed;
+		left: 0;
+		top: 0;
 		width: 100vw;
 		height: 100vh;
 		background-color: rgba(0, 0, 0, 0.1);
