@@ -4,9 +4,9 @@ import type { PageLoad } from './$types';
 
 export const load: PageLoad = loadApiHandler(async ({ url, api, parent }) => {
 	const { user } = await parent();
-	let redirectUrl = url.searchParams.get('redirect');
+	let redirectUrl = url.searchParams.get('redirect')|| undefined
 	if (redirectUrl && new URL(redirectUrl).host !== url.host) {
-		redirectUrl = null;
+		redirectUrl = undefined;
 	}
 	await api.auth['trigger-user-data-refresh'].post();
 	const fullUser = await checkForError(api.user({ id: user.sub }).get());
