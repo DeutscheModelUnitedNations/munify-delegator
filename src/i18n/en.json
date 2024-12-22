@@ -447,5 +447,17 @@
 	"goToConferenceInfo": "Access Information Page",
 	"preview": "Preview",
 	"nsaSeats": "Non State Actor Seats",
-	"nationSeats": "Nation Seats"
+	"nationSeats": "Nation Seats",
+	"ibanMustBe22Characters": "IBAN must be 22 characters without spaces",
+	"pleaseEnterAValidIBAN": "IBAN is not valid",
+	"bicMustBe8Characters": "BIC must have 8 characters",
+	"currencyMustBe3Characters": "Currency must be 3 Letter Acronym, e.g. 'EUR'",
+	"bankingInformation": "Banking Information",
+	"postalInformation": "Postal Information",
+	"bankName": "Bank Name",
+	"iban": "IBAN",
+	"bic": "BIC",
+	"accountHolder": "Account Holder",
+	"currency": "Currency",
+	"fee": "Fee"
 }

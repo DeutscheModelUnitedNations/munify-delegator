@@ -1,4 +1,5 @@
 import valiator from 'validator';
+import IBAN from 'iban';
 import { z } from 'zod';
 import * as m from '$lib/paraglide/messages.js';
 
@@ -51,5 +52,35 @@ export const conferenceSettingsFormSchema = z.object({
 		z.literal('PREPARATION'),
 		z.literal('ACTIVE'),
 		z.literal('POST')
-	])
+	]),
+	feeAmount: z.number().optional(),
+	accountHolder: z.string().optional(),
+	iban: z
+		.string()
+		.length(22, {
+			message: m.ibanMustBe22Characters()
+		})
+		.refine((iban) => IBAN.isValid(iban), {
+			message: m.pleaseEnterAValidIBAN()
+		})
+		.optional(),
+	bic: z
+		.string()
+		.length(8, {
+			message: m.bicMustBe8Characters()
+		})
+		.optional(),
+	bankName: z.string().optional(),
+	currency: z.string().length(3, {
+		message: m.currencyMustBe3Characters()
+	}).optional(),
+	postalName: z.string().optional(),
+	postalStreet: z.string().optional(),
+	postalApartment: z.string().optional(),
+	postalZip: z.string().optional(),
+	postalCity: z.string().optional(),
+	postalCountry: z.string().optional(),
+	termsAndConditionsContent: z.string().optional(),
+	guardianConsentContent: z.string().optional(),
+	mediaConsentContent: z.string().optional()
 });

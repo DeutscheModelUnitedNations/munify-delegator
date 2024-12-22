@@ -505,5 +505,17 @@
 	"goToConferenceInfo": "Zur Informationsseite",
 	"preview": "Vorschau",
 	"nsaSeats": "Sitze von Nichtstaatlichen Akteuren",
-	"nationSeats": "Sitze von Ländern"
+	"nationSeats": "Sitze von Ländern",
+	"ibanMustBe22Characters": "IBAN muss 22 Zeichen ohne Leerzeichen haben",
+	"pleaseEnterAValidIBAN": "IBAN ist ungültig",
+	"bicMustBe8Characters": "BIC muss 8 Zeichen haben",
+	"currencyMustBe3Characters": "Währung muss 3 Zeichen haben, z.B. 'EUR'",
+	"bankingInformation": "Überweisungsinformationen",
+	"postalInformation": "Postalische Informationen",
+	"bankName": "Name der Bank",
+	"iban": "IBAN",
+	"bic": "BIC",
+	"accountHolder": "Kontoinhaber*in",
+	"currency": "Währung",
+	"fee": "Teilnahmebeitrag"
 }
