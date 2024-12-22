@@ -46,6 +46,14 @@ export const load: PageServerLoad = async (event) => {
 
 	const form = await superValidate(nullFieldsToUndefined(fullUser), zod(userFormSchema));
 
+	const eventUrl = event.url;
+
+	let redirectUrl = eventUrl.searchParams.get('redirect') || undefined;
+
+	if (redirectUrl && new URL(redirectUrl).host !== eventUrl.host) {
+		redirectUrl = undefined;
+	}
+
 	return {
 		form,
 		redirectUrl: event.url.searchParams.get('redirect') || null,
