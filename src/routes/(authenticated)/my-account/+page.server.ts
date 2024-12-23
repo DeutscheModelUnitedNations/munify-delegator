@@ -56,7 +56,7 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		form,
-		redirectUrl: event.url.searchParams.get('redirect') || null,
+		redirectUrl,
 		user
 	};
 };
