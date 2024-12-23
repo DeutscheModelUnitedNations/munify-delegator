@@ -57,7 +57,7 @@
 					<ApplicationRejected />
 				{/if}
 			{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
-				{#if conference!.state !== 'PARTICIPANT_REGISTRATION' && conferenceQueryData.findUniqueConferenceSupervisor.delegations.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0}
+				{#if conference!.state === 'PARTICIPANT_REGISTRATION' || conferenceQueryData.findUniqueConferenceSupervisor.delegations.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0}
 					<Supervisor data={{ ...conferenceQueryData, user: data.user }} />
 				{:else}
 					<ApplicationRejected />
