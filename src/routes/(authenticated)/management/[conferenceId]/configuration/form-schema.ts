@@ -71,9 +71,12 @@ export const conferenceSettingsFormSchema = z.object({
 		})
 		.optional(),
 	bankName: z.string().optional(),
-	currency: z.string().length(3, {
-		message: m.currencyMustBe3Characters()
-	}).optional(),
+	currency: z
+		.string()
+		.length(3, {
+			message: m.currencyMustBe3Characters()
+		})
+		.optional(),
 	postalName: z.string().optional(),
 	postalStreet: z.string().optional(),
 	postalApartment: z.string().optional(),

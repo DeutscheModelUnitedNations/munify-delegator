@@ -40,7 +40,7 @@ builder.queryFields((t) => {
 builder.queryFields((t) => {
 	const field = findUniquePaymentTransactionQueryObject(t);
 	return {
-		findUniqueNation: t.prismaField({
+		findUniquePaymentTransaction: t.prismaField({
 			...field,
 			resolve: (query, root, args, ctx, info) => {
 				args.where = {
