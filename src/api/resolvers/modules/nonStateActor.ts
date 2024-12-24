@@ -10,7 +10,6 @@ import {
 	NonStateActorIdFieldObject,
 	NonStateActorNameFieldObject,
 	NonStateActorSeatAmountFieldObject,
-	updateOneNonStateActorMutationObject
 } from '$db/generated/graphql/NonStateActor';
 
 builder.prismaObject('NonStateActor', {
