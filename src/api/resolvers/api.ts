@@ -20,6 +20,7 @@ import './modules/delegation';
 import './modules/delegationMember';
 import './modules/nation';
 import './modules/nonStateActor';
+import './modules/paymentTransaction';
 import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';
