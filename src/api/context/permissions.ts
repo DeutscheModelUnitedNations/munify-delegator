@@ -32,7 +32,7 @@ export function permissions(oidc: OIDC) {
 			return accessibleBy(abilities, action);
 		},
 		/**
-		 * Utility that raises and error if the permissions check fails.
+		 * Utility that raises an error if the permissions check fails.
 		 * Allows for readable flow of permission checks which resemble natural language like this:
 		 *
 		 * ```ts

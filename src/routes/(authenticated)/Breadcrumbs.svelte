@@ -112,6 +112,10 @@
 		postalRegistration: {
 			translation: m.postalRegistration(),
 			icon: 'envelopes-bulk'
+		},
+		"create-conference": {
+			translation: m.createNewConference(),
+			icon: 'plus'
 		}
 	};
 

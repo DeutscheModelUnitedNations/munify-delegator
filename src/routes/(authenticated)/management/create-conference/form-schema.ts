@@ -3,7 +3,36 @@ import IBAN from 'iban';
 import { z } from 'zod';
 import * as m from '$lib/paraglide/messages.js';
 
-export const conferenceSettingsFormSchema = z.object({
+const committeeCreationSchema = z.object({
+	name: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
+	abbreviation: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
+	numOfSeatsPerDelegation: z.number().min(1, {
+		message: m.atLeastNumber({ amount: 1 })
+	}),
+	representedNationsAlpha3Codes: z.array(z.string().refine(valiator.isISO31661Alpha3))
+});
+
+const nsaCreationSchema = z.object({
+	name: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
+	abbreviation: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
+	description: z.string().min(3, {
+		message: m.atLeastXChars({ amount: 3 })
+	}),
+	fontAwesomeIcon: z.string().nullish(),
+	seatAmount: z.number().min(1, {
+		message: m.atLeastNumber({ amount: 1 })
+	})
+});
+
+export const conferenceCreationFormSchema = z.object({
 	title: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
@@ -46,13 +75,6 @@ export const conferenceSettingsFormSchema = z.object({
 	endConference: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),
-	state: z.union([
-		z.literal('PRE'),
-		z.literal('PARTICIPANT_REGISTRATION'),
-		z.literal('PREPARATION'),
-		z.literal('ACTIVE'),
-		z.literal('POST')
-	]),
 	feeAmount: z.number().optional(),
 	accountHolder: z.string().optional(),
 	iban: z
@@ -85,5 +107,11 @@ export const conferenceSettingsFormSchema = z.object({
 	postalCountry: z.string().optional(),
 	termsAndConditionsContent: z.string().optional(),
 	guardianConsentContent: z.string().optional(),
-	mediaConsentContent: z.string().optional()
+	mediaConsentContent: z.string().optional(),
+	committees: z.array(committeeCreationSchema).min(1, {
+		message: m.atLeastNumber({ amount: 1 })
+	}),
+	nonStateActors: z.array(nsaCreationSchema).min(1, {
+		message: m.atLeastNumber({ amount: 1 })
+	})
 });

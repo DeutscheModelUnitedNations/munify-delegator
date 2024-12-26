@@ -427,6 +427,7 @@
 	"pleaseEnterAZipCpode": "Bitte gib eine gültige Postleitzahl ein.",
 	"dateMustBeBefore": "Das Datum muss vor dem {date} liegen.",
 	"atLeastXChars": "Mindestens {amount} Zeichen notwendig.",
+	"atLeastNumber": "Minimum von {amount} notwendig.",
 	"noResults": "Keine Ergebnisse",
 	"noDataAvailable": "Keine Daten verfügbar",
 	"pleaseEnterAValidWebsite": "Bitte gib eine gültige Website ein.",
@@ -517,5 +518,6 @@
 	"bic": "BIC",
 	"accountHolder": "Kontoinhaber*in",
 	"currency": "Währung",
-	"fee": "Teilnahmebeitrag"
+	"fee": "Teilnahmebeitrag",
+	"createNewConference": "Neue Konferenz erstellen"
 }

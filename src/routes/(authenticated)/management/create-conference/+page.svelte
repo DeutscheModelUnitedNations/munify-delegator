@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormFileInput from '$lib/components/Form/FormFile.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
@@ -7,7 +7,7 @@
 	import type { PageData } from './$types';
 	import * as m from '$lib/paraglide/messages.js';
 	import Form from '$lib/components/Form/Form.svelte';
-	import { conferenceCreationFormSchema } from './form-schema';
+	import { conferenceSettingsFormSchema } from './form-schema';
 	import { toast } from '@zerodevx/svelte-toast';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
@@ -17,7 +17,7 @@
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(conferenceCreationFormSchema),
+		validators: zod(conferenceSettingsFormSchema),
 		onError(e) {
 			toast.push(e.result.error.message);
 		}
@@ -129,4 +129,4 @@
 		>
 		</button>
 	</dialog>
-{/if}
+{/if} -->

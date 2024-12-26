@@ -39,4 +39,8 @@
 			{m.noResults()}
 		{/if}
 	</div>
+	<a class="btn" href="/management/create-conference">
+		<i class="fa-solid fa-plus"></i>
+		{m.createNewConference()}
+	</a>
 </div>

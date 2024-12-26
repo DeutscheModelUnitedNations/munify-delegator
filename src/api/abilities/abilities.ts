@@ -18,7 +18,7 @@ import type { OIDC } from '$api/context/oidc';
 import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransaction';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ['list', 'read', 'update', 'delete'] as const;
+const actions = ['create', 'list', 'read', 'update', 'delete'] as const;
 
 /**
  * Actions which can be run on entities in the system:

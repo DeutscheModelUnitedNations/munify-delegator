@@ -27,6 +27,7 @@ import {
 	ConferenceTermsAndConditionsContentFieldObject,
 	ConferenceTitleFieldObject,
 	ConferenceWebsiteFieldObject,
+	createOneConferenceMutationObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
@@ -36,6 +37,7 @@ import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 import { ConferenceState } from '$db/generated/graphql/inputs';
+import { conferenceCreationFormSchema } from '../../../../routes/(authenticated)/management/create-conference/form-schema';
 
 builder.prismaObject('Conference', {
 	fields: (t) => ({
@@ -154,20 +156,156 @@ builder.queryFields((t) => {
 	};
 });
 
-// builder.mutationFields((t) => {
-// 	const field = createOneConferenceMutationObject(t);
-// 	return {
-// 		createOneConference: t.prismaField({
-// 			...field,
+builder.mutationFields((t) => {
+	const field = createOneConferenceMutationObject(t);
+	return {
+		createOneConference: t.prismaField({
+			...field,
+			args: {
+				data: t.arg({
+					type: t.builder.inputType('ConferenceCreateDataInput', {
+						fields: (t) => ({
+							title: t.string(),
+							longTitle: t.string({
+								required: false
+							}),
+							location: t.string({
+								required: false
+							}),
+							language: t.string({
+								required: false
+							}),
+							website: t.string({
+								required: false
+							}),
+							image: t.field({
+								type: 'File',
+								required: false
+							}),
+							info: t.string({
+								required: false
+							}),
+							linkToPreparationGuide: t.string({
+								required: false
+							}),
+							startAssignment: t.field({ type: 'DateTime' }),
+							startConference: t.field({ type: 'DateTime' }),
+							endConference: t.field({ type: 'DateTime' }),
+							feeAmount: t.float({
+								required: false
+							}),
+							accountHolder: t.string({
+								required: false
+							}),
+							iban: t.string({
+								required: false
+							}),
+							bic: t.string({
+								required: false
+							}),
+							bankName: t.string({
+								required: false
+							}),
+							currency: t.string({
+								required: false
+							}),
+							postalName: t.string({
+								required: false
+							}),
+							postalStreet: t.string({
+								required: false
+							}),
+							postalApartment: t.string({
+								required: false
+							}),
+							postalZip: t.string({
+								required: false
+							}),
+							postalCity: t.string({
+								required: false
+							}),
+							postalCountry: t.string({
+								required: false
+							}),
+							termsAndConditionsContent: t.string({
+								required: false
+							}),
+							guardianConsentContent: t.string({
+								required: false
+							}),
+							mediaConsentContent: t.string({
+								required: false
+							}),
+							committees: t.field({
+								type: [
+									t.builder.inputType('CommitteeCreateDataInput', {
+										fields: (t) => ({
+											name: t.string(),
+											abbreviation: t.string(),
+											numOfSeatsPerDelegation: t.int(),
+											representedNationsAlpha3Codes: t.stringList()
+										})
+									})
+								]
+							}),
+							nonStateActors: t.field({
+								type: [
+									t.builder.inputType('NonStateActorCreateDataInput', {
+										fields: (t) => ({
+											name: t.string(),
+											abbreviation: t.string(),
+											description: t.string(),
+											fontAwesomeIcon: t.string({ required: false }),
+											seatAmount: t.int()
+										})
+									})
+								]
+							})
+						})
+					})
+				})
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+				ctx.permissions.checkIf((user) => user.can('create', 'Conference'));
+				const data = conferenceCreationFormSchema.parse(args.data);
 
-// 			resolve: async (query, root, args, ctx, info) => {
-// 				// TODO check permissions
-// when creating, take note of the file mappings for the image! See the update mutation for details on how to implement
-// 				return field.resolve(query, root, args, ctx, info);
-// 			}
-// 		})
-// 	};
-// });
+				const dataURL = data.image ? await toDataURL(data.image) : data.image;
+				data.image = undefined;
+
+				const fieldData = {
+					...data,
+					imageDataURL: dataURL,
+					nonStateActors: undefined,
+					committees: undefined
+				};
+
+				return await db.conference.create({
+					data: {
+						...fieldData,
+						nonStateActors: {
+							createMany: {
+								data: data.nonStateActors
+							}
+						},
+						committees: {
+							createMany: {
+								data: data.committees
+							}
+						},
+						teamMembers: {
+							create: {
+								role: 'PROJECT_MANAGEMENT',
+								userId: user.sub
+							}
+						}
+					},
+					...query
+				});
+			}
+		})
+	};
+});
 
 builder.mutationFields((t) => {
 	const field = updateOneConferenceMutationObject(t);
