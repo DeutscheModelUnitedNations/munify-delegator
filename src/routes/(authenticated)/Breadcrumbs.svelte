@@ -113,7 +113,7 @@
 			translation: m.postalRegistration(),
 			icon: 'envelopes-bulk'
 		},
-		"create-conference": {
+		'create-conference': {
 			translation: m.createNewConference(),
 			icon: 'plus'
 		}
