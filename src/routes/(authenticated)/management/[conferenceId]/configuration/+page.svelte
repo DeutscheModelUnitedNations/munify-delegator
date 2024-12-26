@@ -25,6 +25,29 @@
 	let formData = $derived(form.form);
 
 	let infoPreviewModalOpen = $state(false);
+
+	const conferenceStateOptions = [
+		{
+			label: m.conferenceStatusPre(),
+			value: 'PRE'
+		},
+		{
+			label: m.conferenceStatusParticipantRegistration(),
+			value: 'PARTICIPANT_REGISTRATION'
+		},
+		{
+			label: m.conferenceStatusPreparation(),
+			value: 'PREPARATION'
+		},
+		{
+			label: m.conferenceStatusActive(),
+			value: 'ACTIVE'
+		},
+		{
+			label: m.conferenceStatusPost(),
+			value: 'POST'
+		}
+	];
 </script>
 
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
@@ -60,33 +83,7 @@
 		<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
-		<FormSelect
-			{form}
-			name="state"
-			label={m.conferenceStatus()}
-			options={[
-				{
-					label: m.conferenceStatusPre(),
-					value: 'PRE'
-				},
-				{
-					label: m.conferenceStatusParticipantRegistration(),
-					value: 'PARTICIPANT_REGISTRATION'
-				},
-				{
-					label: m.conferenceStatusPreparation(),
-					value: 'PREPARATION'
-				},
-				{
-					label: m.conferenceStatusActive(),
-					value: 'ACTIVE'
-				},
-				{
-					label: m.conferenceStatusPost(),
-					value: 'POST'
-				}
-			]}
-		/>
+		<FormSelect {form} name="state" label={m.conferenceStatus()} options={conferenceStateOptions} />
 		<div class="flex w-full items-center gap-2">
 			<FormTextArea {form} name="info" placeholder={'Info...'} label={m.infos()} />
 			<button
@@ -105,6 +102,18 @@
 			placeholder={'https://path-to-your-guide.com'}
 			label={m.preparationGuide()}
 		/>
+		<h3 class="text-lg font-bold">{m.bankingInformation()}</h3>
+		<FormTextInput {form} name="fee" placeholder={'75,00'} label={m.fee()} />
+		<FormTextInput {form} name="bankName" placeholder={'Bank Name'} label={m.bankName()} />
+		<FormTextInput {form} name="iban" placeholder={'DE12345678901234567890'} label={m.iban()} />
+		<FormTextInput {form} name="bic" placeholder={'ABCDEFGH'} label={m.bic()} />
+		<FormTextInput
+			{form}
+			name="accountHolder"
+			placeholder={'Max Mustermann'}
+			label={m.accountHolder()}
+		/>
+		<FormTextInput {form} name="currency" placeholder={'EUR'} label={m.currency()} />
 	</Form>
 </div>
 

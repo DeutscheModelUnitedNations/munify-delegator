@@ -4,18 +4,21 @@ import {
 	findManyConferenceParticipantStatusQueryObject,
 	findUniqueConferenceParticipantStatusQueryObject,
 	ConferenceParticipantStatusIdFieldObject,
-	updateOneConferenceParticipantStatusMutationObject,
-	ConferenceParticipantStatusPostalRegistrationFieldObject,
 	ConferenceParticipantStatusPaymentStatusFieldObject,
 	ConferenceParticipantStatusDidAttendFieldObject,
 	ConferenceParticipantStatusUserFieldObject,
-	ConferenceParticipantStatusConferenceFieldObject
+	ConferenceParticipantStatusConferenceFieldObject,
+	ConferenceParticipantStatusTermsAndConditionsFieldObject,
+	ConferenceParticipantStatusGuardianConsentFieldObject,
+	ConferenceParticipantStatusMediaConsentFieldObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 
 builder.prismaObject('ConferenceParticipantStatus', {
 	fields: (t) => ({
 		id: t.field(ConferenceParticipantStatusIdFieldObject),
-		postalRegistration: t.field(ConferenceParticipantStatusPostalRegistrationFieldObject),
+		termsAndConditions: t.field(ConferenceParticipantStatusTermsAndConditionsFieldObject),
+		guardianConsent: t.field(ConferenceParticipantStatusGuardianConsentFieldObject),
+		mediaConsent: t.field(ConferenceParticipantStatusMediaConsentFieldObject),
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
 		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),

@@ -41,6 +41,25 @@ model Conference {
   startConference        DateTime
   endConference          DateTime
 
+  /// Payment and Postal information
+  feeAmount       Float?
+  accountHolder   String?
+  iban            String?
+  bic             String?
+  bankName        String?
+  currency        String? @default("EUR")
+  postalName      String?
+  postalStreet    String?
+  postalApartment String?
+  postalZip       String?
+  postalCity      String?
+  postalCountry   String?
+
+  /// Legal document content
+  termsAndConditionsContent String?
+  guardianConsentContent    String?
+  mediaConsentContent       String?
+
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
   nonStateActors               NonStateActor[]
@@ -50,6 +69,7 @@ model Conference {
   committees                   Committee[]
   singleParticipants           SingleParticipant[]
   delegationMembers            DelegationMember[]
+  paymentTransactions          PaymentTransaction[]
 }
 
 model Committee {
@@ -100,6 +120,7 @@ model User {
   conferenceParticipantStatus ConferenceParticipantStatus[]
   teamMember                  TeamMember[]
   singleParticipant           SingleParticipant[]
+  paymentTransactions         PaymentTransaction[]
 }
 
 enum AdministrativeStatus {
@@ -111,7 +132,9 @@ enum AdministrativeStatus {
 // administrative status of a user in a conference, used for storing e.g. payment status, postal application status, etc.
 model ConferenceParticipantStatus {
   id                 String               @id @default(nanoid())
-  postalRegistration AdministrativeStatus @default(PENDING)
+  termsAndConditions AdministrativeStatus @default(PENDING)
+  guardianConsent    AdministrativeStatus @default(PENDING)
+  mediaConsent       AdministrativeStatus @default(PENDING)
   paymentStatus      AdministrativeStatus @default(PENDING)
   didAttend          Boolean              @default(false)
 
@@ -119,6 +142,17 @@ model ConferenceParticipantStatus {
   userId       String
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
+}
+
+model PaymentTransaction {
+  id           String     @id @default(nanoid())
+  amount       Float
+  createdAt    DateTime   @default(now())
+  recievedAt   DateTime?
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
 }
 
 model Nation {

@@ -151,12 +151,21 @@ input CommitteeWhereUniqueInput {
 }
 
 type Conference {
+  accountHolder: String
+  bankName: String
+  bic: String
   committees: [Committee!]!
   conferenceSupervisors: [ConferenceSupervisor!]!
   conferenceUserStatus: [ConferenceParticipantStatus!]!
+  currency: String
   delegationMembers: [DelegationMember!]!
   delegations: [Delegation!]!
   endConference: DateTime!
+
+  """Payment and Postal information"""
+  feeAmount: Float
+  guardianConsentContent: String
+  iban: String
   id: ID!
   imageDataURL: String
   individualApplicationOptions: [CustomConferenceRole!]!
@@ -165,23 +174,41 @@ type Conference {
   linkToPreparationGuide: String
   location: String
   longTitle: String
+  mediaConsentContent: String
   nonStateActors: [NonStateActor!]!
+  paymentTransactions: [PaymentTransaction!]!
+  postalApartment: String
+  postalCity: String
+  postalCountry: String
+  postalName: String
+  postalStreet: String
+  postalZip: String
   singleParticipants: [SingleParticipant!]!
   startAssignment: DateTime!
   startConference: DateTime!
   state: ConferenceState!
   teamMembers: [TeamMember!]!
+
+  """Legal document content"""
+  termsAndConditionsContent: String
   title: String!
   website: String
 }
 
 input ConferenceCreateInput {
+  accountHolder: String
+  bankName: String
+  bic: String
   committees: CommitteeCreateNestedManyWithoutConferenceInput
   conferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutConferenceInput
   conferenceUserStatus: ConferenceParticipantStatusCreateNestedManyWithoutConferenceInput
+  currency: String
   delegationMembers: DelegationMemberCreateNestedManyWithoutConferenceInput
   delegations: DelegationCreateNestedManyWithoutConferenceInput
   endConference: DateTime!
+  feeAmount: Float
+  guardianConsentContent: String
+  iban: String
   id: String
   imageDataURL: String
   individualApplicationOptions: CustomConferenceRoleCreateNestedManyWithoutConferenceInput
@@ -190,23 +217,39 @@ input ConferenceCreateInput {
   linkToPreparationGuide: String
   location: String
   longTitle: String
+  mediaConsentContent: String
   nonStateActors: NonStateActorCreateNestedManyWithoutConferenceInput
+  paymentTransactions: PaymentTransactionCreateNestedManyWithoutConferenceInput
+  postalApartment: String
+  postalCity: String
+  postalCountry: String
+  postalName: String
+  postalStreet: String
+  postalZip: String
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
   startAssignment: DateTime!
   startConference: DateTime!
   state: ConferenceState
   teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
+  termsAndConditionsContent: String
   title: String!
   website: String
 }
 
 input ConferenceOrderByWithRelationInput {
+  accountHolder: SortOrder
+  bankName: SortOrder
+  bic: SortOrder
   committees: CommitteeOrderByRelationAggregateInput
   conferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
   conferenceUserStatus: ConferenceParticipantStatusOrderByRelationAggregateInput
+  currency: SortOrder
   delegationMembers: DelegationMemberOrderByRelationAggregateInput
   delegations: DelegationOrderByRelationAggregateInput
   endConference: SortOrder
+  feeAmount: SortOrder
+  guardianConsentContent: SortOrder
+  iban: SortOrder
   id: SortOrder
   imageDataURL: SortOrder
   individualApplicationOptions: CustomConferenceRoleOrderByRelationAggregateInput
@@ -215,12 +258,21 @@ input ConferenceOrderByWithRelationInput {
   linkToPreparationGuide: SortOrder
   location: SortOrder
   longTitle: SortOrder
+  mediaConsentContent: SortOrder
   nonStateActors: NonStateActorOrderByRelationAggregateInput
+  paymentTransactions: PaymentTransactionOrderByRelationAggregateInput
+  postalApartment: SortOrder
+  postalCity: SortOrder
+  postalCountry: SortOrder
+  postalName: SortOrder
+  postalStreet: SortOrder
+  postalZip: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
   startAssignment: SortOrder
   startConference: SortOrder
   state: SortOrder
   teamMembers: TeamMemberOrderByRelationAggregateInput
+  termsAndConditionsContent: SortOrder
   title: SortOrder
   website: SortOrder
 }
@@ -228,18 +280,22 @@ input ConferenceOrderByWithRelationInput {
 type ConferenceParticipantStatus {
   conference: Conference!
   didAttend: Boolean!
+  guardianConsent: AdministrativeStatus!
   id: ID!
+  mediaConsent: AdministrativeStatus!
   paymentStatus: AdministrativeStatus!
-  postalRegistration: AdministrativeStatus!
+  termsAndConditions: AdministrativeStatus!
   user: User!
 }
 
 input ConferenceParticipantStatusCreateInput {
   conferenceId: String!
   didAttend: Boolean
+  guardianConsent: AdministrativeStatus
   id: String
+  mediaConsent: AdministrativeStatus
   paymentStatus: AdministrativeStatus
-  postalRegistration: AdministrativeStatus
+  termsAndConditions: AdministrativeStatus
   userId: String!
 }
 
@@ -265,9 +321,11 @@ input ConferenceParticipantStatusOrderByWithRelationInput {
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   didAttend: SortOrder
+  guardianConsent: SortOrder
   id: SortOrder
+  mediaConsent: SortOrder
   paymentStatus: SortOrder
-  postalRegistration: SortOrder
+  termsAndConditions: SortOrder
   user: UserOrderByWithRelationInput
   userId: SortOrder
 }
@@ -275,26 +333,32 @@ input ConferenceParticipantStatusOrderByWithRelationInput {
 enum ConferenceParticipantStatusScalarFieldEnum {
   conferenceId
   didAttend
+  guardianConsent
   id
+  mediaConsent
   paymentStatus
-  postalRegistration
+  termsAndConditions
   userId
 }
 
 input ConferenceParticipantStatusUpdateInput {
   conferenceId: StringFieldUpdateOperationsInput
   didAttend: BoolFieldUpdateOperationsInput
+  guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  mediaConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
-  postalRegistration: EnumAdministrativeStatusFieldUpdateOperationsInput
+  termsAndConditions: EnumAdministrativeStatusFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
 
 input ConferenceParticipantStatusUpdateManyMutationInput {
   didAttend: BoolFieldUpdateOperationsInput
+  guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  mediaConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
-  postalRegistration: EnumAdministrativeStatusFieldUpdateOperationsInput
+  termsAndConditions: EnumAdministrativeStatusFieldUpdateOperationsInput
 }
 
 input ConferenceParticipantStatusUpdateManyWithoutConferenceNestedInput {
@@ -316,9 +380,11 @@ input ConferenceParticipantStatusWhereInput {
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   didAttend: BoolFilter
+  guardianConsent: EnumAdministrativeStatusFilter
   id: StringFilter
+  mediaConsent: EnumAdministrativeStatusFilter
   paymentStatus: EnumAdministrativeStatusFilter
-  postalRegistration: EnumAdministrativeStatusFilter
+  termsAndConditions: EnumAdministrativeStatusFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -330,9 +396,11 @@ input ConferenceParticipantStatusWhereUniqueInput {
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   didAttend: BoolFilter
+  guardianConsent: EnumAdministrativeStatusFilter
   id: String
+  mediaConsent: EnumAdministrativeStatusFilter
   paymentStatus: EnumAdministrativeStatusFilter
-  postalRegistration: EnumAdministrativeStatusFilter
+  termsAndConditions: EnumAdministrativeStatusFilter
   user: UserWhereInput
   userId: StringFilter
 }
@@ -343,7 +411,14 @@ input ConferenceRelationFilter {
 }
 
 enum ConferenceScalarFieldEnum {
+  accountHolder
+  bankName
+  bic
+  currency
   endConference
+  feeAmount
+  guardianConsentContent
+  iban
   id
   imageDataURL
   info
@@ -351,9 +426,17 @@ enum ConferenceScalarFieldEnum {
   linkToPreparationGuide
   location
   longTitle
+  mediaConsentContent
+  postalApartment
+  postalCity
+  postalCountry
+  postalName
+  postalStreet
+  postalZip
   startAssignment
   startConference
   state
+  termsAndConditionsContent
   title
   website
 }
@@ -504,27 +587,49 @@ input ConferenceSupervisorWhereUniqueInput {
 }
 
 input ConferenceUpdateDataInput {
+  accountHolder: String
+  bankName: String
+  bic: String
+  currency: String
   endConference: DateTime
+  feeAmount: Float
+  guardianConsentContent: String
+  iban: String
   image: File
   info: String
   language: String
   linkToPreparationGuide: String
   location: String
   longTitle: String
+  mediaConsentContent: String
+  postalApartment: String
+  postalCity: String
+  postalCountry: String
+  postalName: String
+  postalStreet: String
+  postalZip: String
   startAssignment: DateTime
   startConference: DateTime
   state: ConferenceState
+  termsAndConditionsContent: String
   title: String
   website: String
 }
 
 input ConferenceUpdateInput {
+  accountHolder: NullableStringFieldUpdateOperationsInput
+  bankName: NullableStringFieldUpdateOperationsInput
+  bic: NullableStringFieldUpdateOperationsInput
   committees: CommitteeUpdateManyWithoutConferenceNestedInput
   conferenceSupervisors: ConferenceSupervisorUpdateManyWithoutConferenceNestedInput
   conferenceUserStatus: ConferenceParticipantStatusUpdateManyWithoutConferenceNestedInput
+  currency: NullableStringFieldUpdateOperationsInput
   delegationMembers: DelegationMemberUpdateManyWithoutConferenceNestedInput
   delegations: DelegationUpdateManyWithoutConferenceNestedInput
   endConference: DateTimeFieldUpdateOperationsInput
+  feeAmount: NullableFloatFieldUpdateOperationsInput
+  guardianConsentContent: NullableStringFieldUpdateOperationsInput
+  iban: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   imageDataURL: NullableStringFieldUpdateOperationsInput
   individualApplicationOptions: CustomConferenceRoleUpdateManyWithoutConferenceNestedInput
@@ -533,18 +638,34 @@ input ConferenceUpdateInput {
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
+  mediaConsentContent: NullableStringFieldUpdateOperationsInput
   nonStateActors: NonStateActorUpdateManyWithoutConferenceNestedInput
+  paymentTransactions: PaymentTransactionUpdateManyWithoutConferenceNestedInput
+  postalApartment: NullableStringFieldUpdateOperationsInput
+  postalCity: NullableStringFieldUpdateOperationsInput
+  postalCountry: NullableStringFieldUpdateOperationsInput
+  postalName: NullableStringFieldUpdateOperationsInput
+  postalStreet: NullableStringFieldUpdateOperationsInput
+  postalZip: NullableStringFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
   teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
+  termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   website: NullableStringFieldUpdateOperationsInput
 }
 
 input ConferenceUpdateManyMutationInput {
+  accountHolder: NullableStringFieldUpdateOperationsInput
+  bankName: NullableStringFieldUpdateOperationsInput
+  bic: NullableStringFieldUpdateOperationsInput
+  currency: NullableStringFieldUpdateOperationsInput
   endConference: DateTimeFieldUpdateOperationsInput
+  feeAmount: NullableFloatFieldUpdateOperationsInput
+  guardianConsentContent: NullableStringFieldUpdateOperationsInput
+  iban: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   imageDataURL: NullableStringFieldUpdateOperationsInput
   info: NullableStringFieldUpdateOperationsInput
@@ -552,9 +673,17 @@ input ConferenceUpdateManyMutationInput {
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
+  mediaConsentContent: NullableStringFieldUpdateOperationsInput
+  postalApartment: NullableStringFieldUpdateOperationsInput
+  postalCity: NullableStringFieldUpdateOperationsInput
+  postalCountry: NullableStringFieldUpdateOperationsInput
+  postalName: NullableStringFieldUpdateOperationsInput
+  postalStreet: NullableStringFieldUpdateOperationsInput
+  postalZip: NullableStringFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
+  termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   website: NullableStringFieldUpdateOperationsInput
 }
@@ -563,12 +692,19 @@ input ConferenceWhereInput {
   AND: [ConferenceWhereInput!]
   NOT: [ConferenceWhereInput!]
   OR: [ConferenceWhereInput!]
+  accountHolder: StringNullableFilter
+  bankName: StringNullableFilter
+  bic: StringNullableFilter
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
   conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
   delegations: DelegationListRelationFilter
   endConference: DateTimeFilter
+  feeAmount: FloatNullableFilter
+  guardianConsentContent: StringNullableFilter
+  iban: StringNullableFilter
   id: StringFilter
   imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
@@ -577,12 +713,21 @@ input ConferenceWhereInput {
   linkToPreparationGuide: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
+  mediaConsentContent: StringNullableFilter
   nonStateActors: NonStateActorListRelationFilter
+  paymentTransactions: PaymentTransactionListRelationFilter
+  postalApartment: StringNullableFilter
+  postalCity: StringNullableFilter
+  postalCountry: StringNullableFilter
+  postalName: StringNullableFilter
+  postalStreet: StringNullableFilter
+  postalZip: StringNullableFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
   state: EnumConferenceStateFilter
   teamMembers: TeamMemberListRelationFilter
+  termsAndConditionsContent: StringNullableFilter
   title: StringFilter
   website: StringNullableFilter
 }
@@ -591,12 +736,19 @@ input ConferenceWhereUniqueInput {
   AND: [ConferenceWhereInput!]
   NOT: [ConferenceWhereInput!]
   OR: [ConferenceWhereInput!]
+  accountHolder: StringNullableFilter
+  bankName: StringNullableFilter
+  bic: StringNullableFilter
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
   conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
   delegations: DelegationListRelationFilter
   endConference: DateTimeFilter
+  feeAmount: FloatNullableFilter
+  guardianConsentContent: StringNullableFilter
+  iban: StringNullableFilter
   id: String
   imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
@@ -605,12 +757,21 @@ input ConferenceWhereUniqueInput {
   linkToPreparationGuide: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
+  mediaConsentContent: StringNullableFilter
   nonStateActors: NonStateActorListRelationFilter
+  paymentTransactions: PaymentTransactionListRelationFilter
+  postalApartment: StringNullableFilter
+  postalCity: StringNullableFilter
+  postalCountry: StringNullableFilter
+  postalName: StringNullableFilter
+  postalStreet: StringNullableFilter
+  postalZip: StringNullableFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
   state: EnumConferenceStateFilter
   teamMembers: TeamMemberListRelationFilter
+  termsAndConditionsContent: StringNullableFilter
   title: StringFilter
   website: StringNullableFilter
 }
@@ -1239,6 +1400,68 @@ input EnumTeamRoleWithAggregatesFilter {
 
 scalar File
 
+input FloatFieldUpdateOperationsInput {
+  decrement: Float
+  divide: Float
+  increment: Float
+  multiply: Float
+  set: Float
+}
+
+input FloatFilter {
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatFilter
+  notIn: [Float!]
+}
+
+input FloatNullableFilter {
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatNullableFilter
+  notIn: [Float!]
+}
+
+input FloatNullableWithAggregatesFilter {
+  _avg: NestedFloatNullableFilter
+  _count: NestedIntNullableFilter
+  _max: NestedFloatNullableFilter
+  _min: NestedFloatNullableFilter
+  _sum: NestedFloatNullableFilter
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatNullableWithAggregatesFilter
+  notIn: [Float!]
+}
+
+input FloatWithAggregatesFilter {
+  _avg: NestedFloatFilter
+  _count: NestedIntFilter
+  _max: NestedFloatFilter
+  _min: NestedFloatFilter
+  _sum: NestedFloatFilter
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatWithAggregatesFilter
+  notIn: [Float!]
+}
+
 enum FoodPreference {
   OMNIVORE
   VEGAN
@@ -1543,6 +1766,49 @@ input NestedFloatFilter {
   notIn: [Float!]
 }
 
+input NestedFloatNullableFilter {
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatNullableFilter
+  notIn: [Float!]
+}
+
+input NestedFloatNullableWithAggregatesFilter {
+  _avg: NestedFloatNullableFilter
+  _count: NestedIntNullableFilter
+  _max: NestedFloatNullableFilter
+  _min: NestedFloatNullableFilter
+  _sum: NestedFloatNullableFilter
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatNullableWithAggregatesFilter
+  notIn: [Float!]
+}
+
+input NestedFloatWithAggregatesFilter {
+  _avg: NestedFloatFilter
+  _count: NestedIntFilter
+  _max: NestedFloatFilter
+  _min: NestedFloatFilter
+  _sum: NestedFloatFilter
+  equals: Float
+  gt: Float
+  gte: Float
+  in: [Float!]
+  lt: Float
+  lte: Float
+  not: NestedFloatWithAggregatesFilter
+  notIn: [Float!]
+}
+
 input NestedIntFilter {
   equals: Int
   gt: Int
@@ -1787,6 +2053,14 @@ input NullableEnumFoodPreferenceFieldUpdateOperationsInput {
   set: FoodPreference
 }
 
+input NullableFloatFieldUpdateOperationsInput {
+  decrement: Float
+  divide: Float
+  increment: Float
+  multiply: Float
+  set: Float
+}
+
 input NullableStringFieldUpdateOperationsInput {
   set: String
 }
@@ -1817,6 +2091,118 @@ type OfflineUserRefresh {
   user: OfflineUser
 }
 
+type PaymentTransaction {
+  amount: Float!
+  conference: Conference!
+  createdAt: DateTime!
+  id: ID!
+  receivedAt: DateTime!
+  user: User!
+}
+
+input PaymentTransactionCreateInput {
+  amount: Float!
+  conferenceId: String!
+  createdAt: DateTime
+  id: String
+  recievedAt: DateTime
+  userId: String!
+}
+
+input PaymentTransactionCreateNestedManyWithoutConferenceInput {
+  connect: [PaymentTransactionWhereUniqueInput!]
+}
+
+input PaymentTransactionCreateNestedManyWithoutUserInput {
+  connect: [PaymentTransactionWhereUniqueInput!]
+}
+
+input PaymentTransactionListRelationFilter {
+  every: PaymentTransactionWhereInput
+  none: PaymentTransactionWhereInput
+  some: PaymentTransactionWhereInput
+}
+
+input PaymentTransactionOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input PaymentTransactionOrderByWithRelationInput {
+  amount: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  id: SortOrder
+  recievedAt: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum PaymentTransactionScalarFieldEnum {
+  amount
+  conferenceId
+  createdAt
+  id
+  recievedAt
+  userId
+}
+
+input PaymentTransactionUpdateInput {
+  amount: FloatFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  recievedAt: NullableDateTimeFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input PaymentTransactionUpdateManyMutationInput {
+  amount: FloatFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  recievedAt: NullableDateTimeFieldUpdateOperationsInput
+}
+
+input PaymentTransactionUpdateManyWithoutConferenceNestedInput {
+  connect: [PaymentTransactionWhereUniqueInput!]
+  disconnect: [PaymentTransactionWhereUniqueInput!]
+  set: [PaymentTransactionWhereUniqueInput!]
+}
+
+input PaymentTransactionUpdateManyWithoutUserNestedInput {
+  connect: [PaymentTransactionWhereUniqueInput!]
+  disconnect: [PaymentTransactionWhereUniqueInput!]
+  set: [PaymentTransactionWhereUniqueInput!]
+}
+
+input PaymentTransactionWhereInput {
+  AND: [PaymentTransactionWhereInput!]
+  NOT: [PaymentTransactionWhereInput!]
+  OR: [PaymentTransactionWhereInput!]
+  amount: FloatFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  id: StringFilter
+  recievedAt: DateTimeNullableFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input PaymentTransactionWhereUniqueInput {
+  AND: [PaymentTransactionWhereInput!]
+  NOT: [PaymentTransactionWhereInput!]
+  OR: [PaymentTransactionWhereInput!]
+  amount: FloatFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  id: String
+  recievedAt: DateTimeNullableFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
 type PlausibilityResult {
   dataMissing: [User!]!
   shouldBeSupervisor: [User!]!
@@ -1836,6 +2222,7 @@ type Query {
   findManyDelegations(cursor: DelegationWhereUniqueInput, distinct: [DelegationScalarFieldEnum!], orderBy: [DelegationOrderByWithRelationInput!], skip: Int, take: Int, where: DelegationWhereInput): [Delegation!]!
   findManyNations(cursor: NationWhereUniqueInput, distinct: [NationScalarFieldEnum!], orderBy: [NationOrderByWithRelationInput!], skip: Int, take: Int, where: NationWhereInput): [Nation!]!
   findManyNonStateActors(cursor: NonStateActorWhereUniqueInput, distinct: [NonStateActorScalarFieldEnum!], orderBy: [NonStateActorOrderByWithRelationInput!], skip: Int, take: Int, where: NonStateActorWhereInput): [NonStateActor!]!
+  findManyPaymentTransactions(cursor: PaymentTransactionWhereUniqueInput, distinct: [PaymentTransactionScalarFieldEnum!], orderBy: [PaymentTransactionOrderByWithRelationInput!], skip: Int, take: Int, where: PaymentTransactionWhereInput): [PaymentTransaction!]!
   findManyRoleApplications(cursor: RoleApplicationWhereUniqueInput, distinct: [RoleApplicationScalarFieldEnum!], orderBy: [RoleApplicationOrderByWithRelationInput!], skip: Int, take: Int, where: RoleApplicationWhereInput): [RoleApplication!]!
   findManySingleParticipants(cursor: SingleParticipantWhereUniqueInput, distinct: [SingleParticipantScalarFieldEnum!], orderBy: [SingleParticipantOrderByWithRelationInput!], skip: Int, take: Int, where: SingleParticipantWhereInput): [SingleParticipant!]!
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
@@ -1849,6 +2236,7 @@ type Query {
   findUniqueDelegationMember(where: DelegationMemberWhereUniqueInput!): DelegationMember
   findUniqueNation(where: NationWhereUniqueInput!): Nation
   findUniqueNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
+  findUniquePaymentTransaction(where: PaymentTransactionWhereUniqueInput!): PaymentTransaction
   findUniqueRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   findUniqueSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
@@ -2474,6 +2862,7 @@ input UserCreateInput {
   given_name: String!
   id: String
   locale: String!
+  paymentTransactions: PaymentTransactionCreateNestedManyWithoutUserInput
   phone: String
   preferred_username: String!
   pronouns: String
@@ -2500,6 +2889,7 @@ input UserOrderByWithRelationInput {
   given_name: SortOrder
   id: SortOrder
   locale: SortOrder
+  paymentTransactions: PaymentTransactionOrderByRelationAggregateInput
   phone: SortOrder
   preferred_username: SortOrder
   pronouns: SortOrder
@@ -2567,6 +2957,7 @@ input UserUpdateInput {
   given_name: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   locale: StringFieldUpdateOperationsInput
+  paymentTransactions: PaymentTransactionUpdateManyWithoutUserNestedInput
   phone: NullableStringFieldUpdateOperationsInput
   preferred_username: StringFieldUpdateOperationsInput
   pronouns: NullableStringFieldUpdateOperationsInput
@@ -2617,6 +3008,7 @@ input UserWhereInput {
   given_name: StringFilter
   id: StringFilter
   locale: StringFilter
+  paymentTransactions: PaymentTransactionListRelationFilter
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
@@ -2646,6 +3038,7 @@ input UserWhereUniqueInput {
   given_name: StringFilter
   id: String
   locale: StringFilter
+  paymentTransactions: PaymentTransactionListRelationFilter
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
