@@ -65,7 +65,7 @@ input CommitteeListRelationFilter {
   some: CommitteeWhereInput
 }
 
-input CommitteeNullableRelationFilter {
+input CommitteeNullableScalarRelationFilter {
   is: CommitteeWhereInput
   isNot: CommitteeWhereInput
 }
@@ -405,11 +405,6 @@ input ConferenceParticipantStatusWhereUniqueInput {
   userId: StringFilter
 }
 
-input ConferenceRelationFilter {
-  is: ConferenceWhereInput
-  isNot: ConferenceWhereInput
-}
-
 enum ConferenceScalarFieldEnum {
   accountHolder
   bankName
@@ -439,6 +434,11 @@ enum ConferenceScalarFieldEnum {
   termsAndConditionsContent
   title
   website
+}
+
+input ConferenceScalarRelationFilter {
+  is: ConferenceWhereInput
+  isNot: ConferenceWhereInput
 }
 
 enum ConferenceState {
@@ -815,7 +815,7 @@ input CustomConferenceRoleListRelationFilter {
   some: CustomConferenceRoleWhereInput
 }
 
-input CustomConferenceRoleNullableRelationFilter {
+input CustomConferenceRoleNullableScalarRelationFilter {
   is: CustomConferenceRoleWhereInput
   isNot: CustomConferenceRoleWhereInput
 }
@@ -1211,11 +1211,6 @@ type DelegationPreview {
   school: String
 }
 
-input DelegationRelationFilter {
-  is: DelegationWhereInput
-  isNot: DelegationWhereInput
-}
-
 enum DelegationScalarFieldEnum {
   applied
   assignedNationAlpha3Code
@@ -1226,6 +1221,11 @@ enum DelegationScalarFieldEnum {
   id
   motivation
   school
+}
+
+input DelegationScalarRelationFilter {
+  is: DelegationWhereInput
+  isNot: DelegationWhereInput
 }
 
 input DelegationUpdateInput {
@@ -1561,7 +1561,7 @@ input NationListRelationFilter {
   some: NationWhereInput
 }
 
-input NationNullableRelationFilter {
+input NationNullableScalarRelationFilter {
   is: NationWhereInput
   isNot: NationWhereInput
 }
@@ -1952,7 +1952,7 @@ input NonStateActorListRelationFilter {
   some: NonStateActorWhereInput
 }
 
-input NonStateActorNullableRelationFilter {
+input NonStateActorNullableScalarRelationFilter {
   is: NonStateActorWhereInput
   isNot: NonStateActorWhereInput
 }
@@ -2901,11 +2901,6 @@ input UserOrderByWithRelationInput {
   zip: SortOrder
 }
 
-input UserRelationFilter {
-  is: UserWhereInput
-  isNot: UserWhereInput
-}
-
 enum UserScalarFieldEnum {
   apartment
   birthday
@@ -2925,6 +2920,11 @@ enum UserScalarFieldEnum {
   wantsJoinTeamInformation
   wantsToReceiveGeneralInformation
   zip
+}
+
+input UserScalarRelationFilter {
+  is: UserWhereInput
+  isNot: UserWhereInput
 }
 
 input UserUpdateDataInput {
