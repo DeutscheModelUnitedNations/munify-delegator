@@ -104,6 +104,14 @@
 		info: {
 			translation: m.infos(),
 			icon: 'info'
+		},
+		payment: {
+			translation: m.payment(),
+			icon: 'hand-holding-circle-dollar'
+		},
+		postalRegistration: {
+			translation: m.postalRegistration(),
+			icon: 'envelopes-bulk'
 		}
 	};
 
