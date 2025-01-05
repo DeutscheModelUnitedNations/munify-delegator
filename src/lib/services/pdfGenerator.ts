@@ -141,7 +141,7 @@ async function createMultiPagePDF(data: DocumentData): Promise<Uint8Array> {
 }
 
 // Example usage
-async function generateSamplePDF(): Promise<void> {
+export async function generateSamplePDF(): Promise<void> {
 	const sampleData: DocumentData = {
 		title: 'Sample Multi-Page Document',
 		author: 'John Doe',

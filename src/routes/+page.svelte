@@ -8,6 +8,7 @@
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import { configPublic } from '$config/public';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import { generateSamplePDF } from '$lib/services/pdfGenerator';
 
 	const munSh = {
 		name: 'MUN-SH',
@@ -53,6 +54,8 @@
 		<h1 class="text-4xl font-bold uppercase tracking-widest text-base-content">Delegator</h1>
 		<p class="mt-4 text-lg text-base-content">{m.homeHeroSub()}</p>
 	</hero>
+	<button class="bg-orange-500 p-4 text-lg" onclick={() => generateSamplePDF()}>generate Pdf</button
+	>
 
 	<main class="flex flex-col gap-20">
 		<section
