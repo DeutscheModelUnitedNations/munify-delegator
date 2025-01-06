@@ -13,8 +13,7 @@
 	let {
 		data
 	}: {
-		data: NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']> &
-			Pick<PageData, 'user'>;
+		data: PageData['conferenceQueryData'] & Pick<PageData, 'user'>;
 	} = $props();
 
 	const delegationStats = $derived([

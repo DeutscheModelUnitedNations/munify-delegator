@@ -21,7 +21,7 @@
 
 	let paymentFor = $derived(users.map((x) => x.id));
 
-	const createPaymentTransaction = graphql`
+	const createPaymentTransaction = graphql(`
 		mutation CreateOnePaymentTransactionMutation(
 			$conferenceId: ID!
 			$userId: ID!
@@ -35,10 +35,15 @@
 				id
 			}
 		}
-	`;
+	`);
 
 	async function generateReference() {
 		referenceLoading = true;
+
+		if (!conferencePaymentData) {
+			console.error('No conference payment data found');
+			return;
+		}
 
 		const paymentTransaction = await createPaymentTransaction.mutate({
 			conferenceId: conferencePaymentData?.id,
@@ -46,7 +51,7 @@
 			paymentFor: paymentFor
 		});
 
-		reference = paymentTransaction.data.createOnePaymentTransaction.id;
+		reference = paymentTransaction.data?.createOnePaymentTransaction.id;
 		referenceLoading = false;
 	}
 </script>
@@ -72,7 +77,7 @@
 			></i>{m.generateReference()}
 		</button>
 	{:else}
-		<div class="flex w-full flex-col items-start gap-14 xl:flex-row mt-10">
+		<div class="mt-10 flex w-full flex-col items-start gap-14 xl:flex-row">
 			<div
 				class="grid w-full grid-cols-1 items-center justify-center gap-4 sm:grid-cols-[auto,1fr]"
 			>

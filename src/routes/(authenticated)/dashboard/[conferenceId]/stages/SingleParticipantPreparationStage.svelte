@@ -11,8 +11,7 @@
 	let {
 		data
 	}: {
-		data: NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']> &
-			Pick<PageData, 'user'>;
+		data: NonNullable<PageData['conferenceQueryData']> & Pick<PageData, 'user'>;
 	} = $props();
 
 	const user = $derived(data.findUniqueSingleParticipant?.user);

@@ -1,15 +1,16 @@
 <script lang="ts">
+	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import StatusCube from '$lib/components/StatusCubes/StatusCube.svelte';
 	import * as m from '$lib/paraglide/messages.js';
 
 	interface Props {
 		conferenceId: string;
 		userId: string;
+		status?: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		ofAgeAtConference: boolean;
 	}
 
-	let { conferenceId, userId }: Props = $props();
-
-	let loading = $state(true);
+	let { conferenceId, status, userId, ofAgeAtConference }: Props = $props();
 </script>
 
 <section class="flex flex-col gap-4">
@@ -17,10 +18,28 @@
 	<p>{m.personalStatusDescription()}</p>
 	<div class="mt-4 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 		<StatusCube status="DONE" task={m.registration()} faIcon="user-plus" />
-		<StatusCube status="PROBLEM" task={m.payment()} faIcon="hand-holding-circle-dollar" />
-		<StatusCube status="PENDING" task={m.userAgreement()} faIcon="file-contract" />
-		<StatusCube status="PENDING" task={m.guardianAgreement()} faIcon="family" />
-		<StatusCube status="PENDING" task={m.mediaAgreement()} faIcon="photo-film" />
+		<StatusCube
+			status={status?.paymentStatus ?? 'PENDING'}
+			task={m.payment()}
+			faIcon="hand-holding-circle-dollar"
+		/>
+		<StatusCube
+			status={status?.termsAndConditions ?? 'PENDING'}
+			task={m.userAgreement()}
+			faIcon="file-contract"
+		/>
+		{#if !ofAgeAtConference}
+			<StatusCube
+				status={status?.guardianConsent ?? 'PENDING'}
+				task={m.guardianAgreement()}
+				faIcon="family"
+			/>
+		{/if}
+		<StatusCube
+			status={status?.mediaConsent ?? 'PENDING'}
+			task={m.mediaAgreement()}
+			faIcon="photo-film"
+		/>
 	</div>
 	<div class="text-sm">
 		<h4 class="font-bold">{m.statusLegend()}</h4>
@@ -29,15 +48,24 @@
 		<p><i class="fas fa-circle-check"></i> = {m.statusLegendDone()}</p>
 	</div>
 
-	<h3 class="text-lg font-bold">{m.takeAction()}</h3>
-	<div class="flex w-full flex-col gap-4 md:flex-row">
-		<a href="./{conferenceId}/payment" class="btn btn-primary btn-lg w-full md:w-auto">
-			<i class="fas fa-hand-holding-circle-dollar"></i>
-			<h4>{m.payment()}</h4>
-		</a>
-		<a href="./{conferenceId}/postalRegistration" class="btn btn-primary btn-lg w-full md:w-auto">
-			<i class="fas fa-envelopes-bulk"></i>
-			<h4>{m.postalRegistration()}</h4>
-		</a>
-	</div>
+	{#if status?.paymentStatus !== 'DONE' || status?.termsAndConditions !== 'DONE' || (!ofAgeAtConference && status?.guardianConsent !== 'DONE') || status?.mediaConsent !== 'DONE'}
+		<h3 class="text-lg font-bold">{m.takeAction()}</h3>
+		<div class="flex w-full flex-col gap-4 md:flex-row">
+			{#if status?.paymentStatus !== 'DONE'}
+				<a href="./{conferenceId}/payment" class="btn btn-primary btn-lg w-full md:w-auto">
+					<i class="fas fa-hand-holding-circle-dollar"></i>
+					<h4>{m.payment()}</h4>
+				</a>
+			{/if}
+			{#if status?.termsAndConditions !== 'DONE' || (!ofAgeAtConference && status?.guardianConsent !== 'DONE') || status?.mediaConsent !== 'DONE'}
+				<a
+					href="./{conferenceId}/postalRegistration"
+					class="btn btn-primary btn-lg w-full md:w-auto"
+				>
+					<i class="fas fa-envelopes-bulk"></i>
+					<h4>{m.postalRegistration()}</h4>
+				</a>
+			{/if}
+		</div>
+	{/if}
 </section>

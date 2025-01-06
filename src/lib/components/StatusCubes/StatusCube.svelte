@@ -31,7 +31,7 @@
 		<p class="text-center text-sm font-bold">{task}</p>
 	</div>
 	<div
-		class="absolute right-0 top-0 z-50 flex h-12 w-12 -translate-y-4 translate-x-4 items-center justify-center rounded-full shadow-md {getColor(
+		class="absolute right-0 top-0 z-[2] flex h-12 w-12 -translate-y-4 translate-x-4 items-center justify-center rounded-full shadow-md {getColor(
 			status
 		)}"
 	>

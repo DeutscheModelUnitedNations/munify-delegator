@@ -18,8 +18,12 @@
 		class="input input-bordered flex-1"
 		{value}
 		readonly
-		onfocus={(e) => e.target.select()}
-		onclick={(e) => e.target.select()}
+		onfocus={(e) =>
+			// @ts-expect-error select is a valid method
+			e.target.select()}
+		onclick={(e) =>
+			// @ts-expect-error select is a valid method
+			e.target.select()}
 	/>
 	<div class="tooltip tooltip-left" data-tip={m.copy()}>
 		<button

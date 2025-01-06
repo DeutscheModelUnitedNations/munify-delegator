@@ -6,8 +6,7 @@
 	let { data }: { data: PageData } = $props();
 	let conferencePaymentDataQuery = $derived(data.PaymentLayoutQuery);
 	let conferencePaymentData = $derived($conferencePaymentDataQuery.data?.findUniqueConference);
-	let conferenceQuery = $derived(data.MyConferenceparticipationQuery);
-	let conferenceQueryData = $derived($conferenceQuery.data);
+	let conferenceQueryData = $derived(data.conferenceQueryData);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -15,11 +14,11 @@
 	<p>{m.singlePaymentDescription()}</p>
 
 	<ReferenceMaker
-		users={conferenceQueryData.findUniqueDelegationMember.delegation.members.map((member) => ({
+		users={conferenceQueryData?.findUniqueDelegationMember?.delegation.members.map((member) => ({
 			id: member.user.id,
 			family_name: member.user.family_name,
 			given_name: member.user.given_name
-		}))}
+		})) ?? []}
 		ownUserId={data.user.sub}
 		{conferencePaymentData}
 	/>

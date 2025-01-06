@@ -548,5 +548,6 @@
 	"reason": "Verwendungszweck",
 	"amount": "Betrag",
 	"transactionDetails": "Überweisungsdaten",
-	"groupPaymentNotYetImplemented": "Das Bezahlverfahren für Gruppen ist leider noch nicht fertig. Bitte wenden Sie sich für Gruppenzahlungen direkt  an die Teilnehmendenbetreuung, die Ihnen händisch eine Referenz für den Verwendungszweck erstellt. Bitte teile der Teilnehmendenbetreuung mit, für welche Teilnehmende du den Beitrag zahlen möchtest."
+	"groupPaymentNotYetImplemented": "Das Bezahlverfahren für Gruppen ist leider noch nicht fertig. Bitte wenden Sie sich für Gruppenzahlungen direkt  an die Teilnehmendenbetreuung, die Ihnen händisch eine Referenz für den Verwendungszweck erstellt. Bitte teile der Teilnehmendenbetreuung mit, für welche Teilnehmende du den Beitrag zahlen möchtest.",
+	"postalRegistrationNotYetImplemented": "Für die Postalische Anmeldung gibt es noch keine individuelle Generierungsmöglichkeit für PDFs. Die Teilnehmendenbetreeung hat per E-Mail Informationen verschickt, wie die postalische Anmeldung dieses Jahr ablaufen soll. Bitte wende dich bei Unklarheiten an die Teilnehmendenbetreeung."
 }

@@ -3,7 +3,11 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { graphql } from '$houdini';
+	import {
+		graphql,
+		type MyConferenceparticipationQuery$result,
+		type OfflineUser$result
+	} from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
@@ -12,17 +16,17 @@
 
 	// TODO these components need some refactoring
 	let {
-		data
+		user,
+		conferenceData,
+		ofAgeAtConference
 	}: {
-		data: Pick<
-			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
-			'findUniqueConference' | 'findUniqueConferenceSupervisor'
-		> &
-			Pick<PageData, 'user'>;
+		user: PageData['user'];
+		conferenceData: MyConferenceparticipationQuery$result;
+		ofAgeAtConference: boolean;
 	} = $props();
 
-	let conference = $derived(data.findUniqueConference!);
-	let supervisor = $derived(data.findUniqueConferenceSupervisor!);
+	let conference = $derived(conferenceData.findUniqueConference!);
+	let supervisor = $derived(conferenceData.findUniqueConferenceSupervisor!);
 	let delegations = $derived(
 		conference.state === 'PARTICIPANT_REGISTRATION'
 			? supervisor.delegations
@@ -71,7 +75,7 @@
 			where: {
 				conferenceId_userId: {
 					conferenceId: conference.id,
-					userId: data.user.sub
+					userId: user.sub
 				}
 			},
 			data: {
@@ -118,7 +122,7 @@
 </section>
 
 {#if supervisor.plansOwnAttendenceAtConference}
-	<ConferenceStatusWidget />
+	<ConferenceStatusWidget conferenceId={conference!.id} userId={user.sub} {ofAgeAtConference} />
 {/if}
 
 {#if conference.state !== 'PARTICIPANT_REGISTRATION'}
@@ -139,7 +143,7 @@
 				title={m.conferenceInfo()}
 				description={m.conferenceInfoDescription()}
 				btnText={m.goToConferenceInfo()}
-				btnLink={`./${data.findUniqueConference?.id}/info`}
+				btnLink={`./${conferenceData.findUniqueConference?.id}/info`}
 			/>
 		{/if}
 		{#if conference.linkToPreparationGuide}
@@ -216,7 +220,7 @@
 								<span class="badge badge-primary">
 									{getName(member.user)}
 									{#if member.assignedCommittee}
-										<span class="tooltip" data-tip={member.assignedCommittee?.name}>
+										<span class="tooltip ml-2" data-tip={member.assignedCommittee?.name}>
 											{member.assignedCommittee?.abbreviation}
 										</span>
 									{/if}

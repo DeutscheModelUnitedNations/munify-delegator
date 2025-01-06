@@ -4,6 +4,11 @@
 	import singlePayment from '$assets/undraw/single_payment.svg';
 	import delegationPayment from '$assets/undraw/delegation_payment.svg';
 	import groupPayment from '$assets/undraw/group_payment.svg';
+	import { type PageData } from './$houdini';
+
+	let { data }: { data: PageData } = $props();
+
+	let isDelegation = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -24,7 +29,7 @@
 			btnText={m.delegationPaymentBtn()}
 			btnLink="./payment/delegation"
 			img={delegationPayment}
-			disabled={false}
+			disabled={!isDelegation}
 			disabledText={m.paymentMethodNotAvailable()}
 		>
 			<p>{m.delegationPaymentDescription()}</p>

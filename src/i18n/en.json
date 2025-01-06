@@ -490,5 +490,6 @@
 	"reason": "Reason",
 	"amount": "Amount",
 	"transactionDetails": "Transaction Details",
-	"groupPaymentNotYetImplemented": "Unfortunately, the payment process for groups is not yet complete. For group payments, please contact the participant support team directly, who will manually create a reference for the intended purpose. Please let the participant support team know which participants you would like to pay the fee for."
+	"groupPaymentNotYetImplemented": "Unfortunately, the payment process for groups is not yet complete. For group payments, please contact the participant support team directly, who will manually create a reference for the intended purpose. Please let the participant support team know which participants you would like to pay the fee for.",
+	"postalRegistrationNotYetImplemented": "There is no option to generate PDFs individually for postal registration yet. The participant support team has sent out information by email about how postal registration will work this year. If you have any questions, please contact the participant support team."
 }
