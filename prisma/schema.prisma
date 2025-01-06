@@ -115,12 +115,13 @@ model User {
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
 
-  delegationMemberships       DelegationMember[]
-  conferenceSupervisor        ConferenceSupervisor[]
-  conferenceParticipantStatus ConferenceParticipantStatus[]
-  teamMember                  TeamMember[]
-  singleParticipant           SingleParticipant[]
-  paymentTransactions         PaymentTransaction[]
+  delegationMemberships         DelegationMember[]
+  conferenceSupervisor          ConferenceSupervisor[]
+  conferenceParticipantStatus   ConferenceParticipantStatus[]
+  teamMember                    TeamMember[]
+  singleParticipant             SingleParticipant[]
+  ownPaymentTransactions        PaymentTransaction[]
+  paymentTransactionsReferences UserReferenceInPaymentTransaction[]
 }
 
 enum AdministrativeStatus {
@@ -145,14 +146,23 @@ model ConferenceParticipantStatus {
 }
 
 model PaymentTransaction {
-  id           String     @id @default(nanoid())
+  id           String                              @id /// do not use nanoid here since we need an id that is suitable for the reason field in SEPA transaction
   amount       Float
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime                            @default(now())
   recievedAt   DateTime?
-  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conference   Conference                          @relation(fields: [conferenceId], references: [id])
   conferenceId String
-  user         User       @relation(fields: [userId], references: [id])
+  user         User                                @relation(fields: [userId], references: [id])
   userId       String
+  paymentFor   UserReferenceInPaymentTransaction[]
+}
+
+model UserReferenceInPaymentTransaction {
+  id                   String             @id @default(nanoid())
+  paymentTransaction   PaymentTransaction @relation(fields: [paymentTransactionId], references: [id])
+  paymentTransactionId String
+  user                 User               @relation(fields: [userId], references: [id])
+  userId               String
 }
 
 model Nation {

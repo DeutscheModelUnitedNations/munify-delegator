@@ -15,12 +15,18 @@
 <section class="flex flex-col gap-4">
 	<h2 class="text-2xl font-bold">{m.personalStatus()}</h2>
 	<p>{m.personalStatusDescription()}</p>
-	<div class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
+	<div class="mt-4 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 		<StatusCube status="DONE" task={m.registration()} faIcon="user-plus" />
 		<StatusCube status="PROBLEM" task={m.payment()} faIcon="hand-holding-circle-dollar" />
 		<StatusCube status="PENDING" task={m.userAgreement()} faIcon="file-contract" />
 		<StatusCube status="PENDING" task={m.guardianAgreement()} faIcon="family" />
 		<StatusCube status="PENDING" task={m.mediaAgreement()} faIcon="photo-film" />
+	</div>
+	<div class="text-sm">
+		<h4 class="font-bold">{m.statusLegend()}</h4>
+		<p><i class="fas fa-seal-exclamation"></i> = {m.statusLegendPending()}</p>
+		<p><i class="fas fa-message-exclamation"></i> = {m.statusLegendProblem()}</p>
+		<p><i class="fas fa-circle-check"></i> = {m.statusLegendDone()}</p>
 	</div>
 
 	<h3 class="text-lg font-bold">{m.takeAction()}</h3>

@@ -22,6 +22,12 @@ const conferenceQuery = graphql(`
 			language
 			linkToPreparationGuide
 			info
+			feeAmount
+			bic
+			currency
+			bankName
+			iban
+			accountHolder
 		}
 	}
 `);

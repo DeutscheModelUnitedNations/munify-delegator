@@ -6,20 +6,41 @@
 	}
 
 	let { status, task, faIcon }: Props = $props();
+
+	const getColor = (status: string) => {
+		switch (status) {
+			case 'DONE':
+				return 'bg-success dark:text-base-300';
+			case 'PROBLEM':
+				return 'bg-error dark:text-base-300';
+			case 'PENDING':
+				return 'bg-warning dark:text-base-300';
+			default:
+				return 'bg-base-200 dark:text-base-300';
+		}
+	};
 </script>
 
-<div class="flex w-full flex-col items-center justify-center rounded-lg bg-base-200 p-6">
-	<div class="flex h-16 flex-col items-center gap-1">
-		<i class="fa-duotone fa-{faIcon.replace('fa-', '')}"></i>
+<div
+	class="relative flex w-full flex-col items-center justify-center rounded-lg p-6 {getColor(
+		status
+	)}"
+>
+	<div class="flex flex-col items-center gap-1">
+		<i class="fas fa-{faIcon.replace('fa-', '')} text-2xl"></i>
 		<p class="text-center text-sm font-bold">{task}</p>
 	</div>
-	<div class="mt-2 flex gap-1">
+	<div
+		class="absolute right-0 top-0 z-50 flex h-12 w-12 -translate-y-4 translate-x-4 items-center justify-center rounded-full shadow-md {getColor(
+			status
+		)}"
+	>
 		{#if status === 'DONE'}
-			<i class="fas fa-circle-check text-3xl text-success"></i>
+			<i class="fas fa-circle-check text-3xl"></i>
 		{:else if status === 'PENDING'}
-			<i class="fas fa-octagon-xmark text-3xl text-error"></i>
+			<i class="fas fa-seal-exclamation text-3xl"></i>
 		{:else}
-			<i class="fas fa-triangle-exclamation text-3xl text-warning"></i>
+			<i class="fas fa-message-exclamation text-2xl"></i>
 		{/if}
 	</div>
 </div>

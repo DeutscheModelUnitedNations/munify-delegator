@@ -103,7 +103,7 @@
 			label={m.preparationGuide()}
 		/>
 		<h3 class="text-lg font-bold">{m.bankingInformation()}</h3>
-		<FormTextInput {form} name="fee" placeholder={'75,00'} label={m.fee()} />
+		<FormTextInput {form} name="feeAmount" placeholder={'75,00'} label={m.fee()} type="number" />
 		<FormTextInput {form} name="bankName" placeholder={'Bank Name'} label={m.bankName()} />
 		<FormTextInput {form} name="iban" placeholder={'DE12345678901234567890'} label={m.iban()} />
 		<FormTextInput {form} name="bic" placeholder={'ABCDEFGH'} label={m.bic()} />

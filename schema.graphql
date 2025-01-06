@@ -1509,6 +1509,7 @@ type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(entryCode: String!): DelegationMember!
+  createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
@@ -2095,6 +2096,10 @@ type PaymentTransaction {
   amount: Float!
   conference: Conference!
   createdAt: DateTime!
+
+  """
+  do not use nanoid here since we need an id that is suitable for the reason field in SEPA transaction
+  """
   id: ID!
   receivedAt: DateTime!
   user: User!
@@ -2104,7 +2109,8 @@ input PaymentTransactionCreateInput {
   amount: Float!
   conferenceId: String!
   createdAt: DateTime
-  id: String
+  id: String!
+  paymentFor: UserReferenceInPaymentTransactionCreateNestedManyWithoutPaymentTransactionInput
   recievedAt: DateTime
   userId: String!
 }
@@ -2133,9 +2139,15 @@ input PaymentTransactionOrderByWithRelationInput {
   conferenceId: SortOrder
   createdAt: SortOrder
   id: SortOrder
+  paymentFor: UserReferenceInPaymentTransactionOrderByRelationAggregateInput
   recievedAt: SortOrder
   user: UserOrderByWithRelationInput
   userId: SortOrder
+}
+
+input PaymentTransactionRelationFilter {
+  is: PaymentTransactionWhereInput
+  isNot: PaymentTransactionWhereInput
 }
 
 enum PaymentTransactionScalarFieldEnum {
@@ -2152,6 +2164,7 @@ input PaymentTransactionUpdateInput {
   conferenceId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  paymentFor: UserReferenceInPaymentTransactionUpdateManyWithoutPaymentTransactionNestedInput
   recievedAt: NullableDateTimeFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
@@ -2184,6 +2197,7 @@ input PaymentTransactionWhereInput {
   conferenceId: StringFilter
   createdAt: DateTimeFilter
   id: StringFilter
+  paymentFor: UserReferenceInPaymentTransactionListRelationFilter
   recievedAt: DateTimeNullableFilter
   user: UserWhereInput
   userId: StringFilter
@@ -2198,6 +2212,7 @@ input PaymentTransactionWhereUniqueInput {
   conferenceId: StringFilter
   createdAt: DateTimeFilter
   id: String
+  paymentFor: UserReferenceInPaymentTransactionListRelationFilter
   recievedAt: DateTimeNullableFilter
   user: UserWhereInput
   userId: StringFilter
@@ -2862,7 +2877,8 @@ input UserCreateInput {
   given_name: String!
   id: String
   locale: String!
-  paymentTransactions: PaymentTransactionCreateNestedManyWithoutUserInput
+  ownPaymentTransactions: PaymentTransactionCreateNestedManyWithoutUserInput
+  paymentTransactionsReferences: UserReferenceInPaymentTransactionCreateNestedManyWithoutUserInput
   phone: String
   preferred_username: String!
   pronouns: String
@@ -2889,7 +2905,8 @@ input UserOrderByWithRelationInput {
   given_name: SortOrder
   id: SortOrder
   locale: SortOrder
-  paymentTransactions: PaymentTransactionOrderByRelationAggregateInput
+  ownPaymentTransactions: PaymentTransactionOrderByRelationAggregateInput
+  paymentTransactionsReferences: UserReferenceInPaymentTransactionOrderByRelationAggregateInput
   phone: SortOrder
   preferred_username: SortOrder
   pronouns: SortOrder
@@ -2899,6 +2916,88 @@ input UserOrderByWithRelationInput {
   wantsJoinTeamInformation: SortOrder
   wantsToReceiveGeneralInformation: SortOrder
   zip: SortOrder
+}
+
+input UserReferenceInPaymentTransactionCreateInput {
+  id: String
+  paymentTransactionId: String!
+  userId: String!
+}
+
+input UserReferenceInPaymentTransactionCreateNestedManyWithoutPaymentTransactionInput {
+  connect: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+}
+
+input UserReferenceInPaymentTransactionCreateNestedManyWithoutUserInput {
+  connect: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+}
+
+input UserReferenceInPaymentTransactionListRelationFilter {
+  every: UserReferenceInPaymentTransactionWhereInput
+  none: UserReferenceInPaymentTransactionWhereInput
+  some: UserReferenceInPaymentTransactionWhereInput
+}
+
+input UserReferenceInPaymentTransactionOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input UserReferenceInPaymentTransactionOrderByWithRelationInput {
+  id: SortOrder
+  paymentTransaction: PaymentTransactionOrderByWithRelationInput
+  paymentTransactionId: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum UserReferenceInPaymentTransactionScalarFieldEnum {
+  id
+  paymentTransactionId
+  userId
+}
+
+input UserReferenceInPaymentTransactionUpdateInput {
+  id: StringFieldUpdateOperationsInput
+  paymentTransactionId: StringFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input UserReferenceInPaymentTransactionUpdateManyMutationInput {
+  id: StringFieldUpdateOperationsInput
+}
+
+input UserReferenceInPaymentTransactionUpdateManyWithoutPaymentTransactionNestedInput {
+  connect: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+  disconnect: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+  set: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+}
+
+input UserReferenceInPaymentTransactionUpdateManyWithoutUserNestedInput {
+  connect: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+  disconnect: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+  set: [UserReferenceInPaymentTransactionWhereUniqueInput!]
+}
+
+input UserReferenceInPaymentTransactionWhereInput {
+  AND: [UserReferenceInPaymentTransactionWhereInput!]
+  NOT: [UserReferenceInPaymentTransactionWhereInput!]
+  OR: [UserReferenceInPaymentTransactionWhereInput!]
+  id: StringFilter
+  paymentTransaction: PaymentTransactionWhereInput
+  paymentTransactionId: StringFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input UserReferenceInPaymentTransactionWhereUniqueInput {
+  AND: [UserReferenceInPaymentTransactionWhereInput!]
+  NOT: [UserReferenceInPaymentTransactionWhereInput!]
+  OR: [UserReferenceInPaymentTransactionWhereInput!]
+  id: String
+  paymentTransaction: PaymentTransactionWhereInput
+  paymentTransactionId: StringFilter
+  user: UserWhereInput
+  userId: StringFilter
 }
 
 input UserRelationFilter {
@@ -2957,7 +3056,8 @@ input UserUpdateInput {
   given_name: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   locale: StringFieldUpdateOperationsInput
-  paymentTransactions: PaymentTransactionUpdateManyWithoutUserNestedInput
+  ownPaymentTransactions: PaymentTransactionUpdateManyWithoutUserNestedInput
+  paymentTransactionsReferences: UserReferenceInPaymentTransactionUpdateManyWithoutUserNestedInput
   phone: NullableStringFieldUpdateOperationsInput
   preferred_username: StringFieldUpdateOperationsInput
   pronouns: NullableStringFieldUpdateOperationsInput
@@ -3008,7 +3108,8 @@ input UserWhereInput {
   given_name: StringFilter
   id: StringFilter
   locale: StringFilter
-  paymentTransactions: PaymentTransactionListRelationFilter
+  ownPaymentTransactions: PaymentTransactionListRelationFilter
+  paymentTransactionsReferences: UserReferenceInPaymentTransactionListRelationFilter
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
@@ -3038,7 +3139,8 @@ input UserWhereUniqueInput {
   given_name: StringFilter
   id: String
   locale: StringFilter
-  paymentTransactions: PaymentTransactionListRelationFilter
+  ownPaymentTransactions: PaymentTransactionListRelationFilter
+  paymentTransactionsReferences: UserReferenceInPaymentTransactionListRelationFilter
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter

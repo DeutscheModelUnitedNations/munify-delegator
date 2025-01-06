@@ -1,0 +1,13 @@
+query PaymentLayoutQuery($conferenceId: String!) {
+	findUniqueConference(where: { id: $conferenceId }) {
+		id
+		title
+		longTitle
+		accountHolder
+		feeAmount
+		iban
+		bic
+		bankName
+		currency
+	}
+}

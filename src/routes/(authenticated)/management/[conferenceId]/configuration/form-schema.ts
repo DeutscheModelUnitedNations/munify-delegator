@@ -53,21 +53,32 @@ export const conferenceSettingsFormSchema = z.object({
 		z.literal('ACTIVE'),
 		z.literal('POST')
 	]),
-	feeAmount: z.number().optional(),
+	feeAmount: z
+		.number()
+		.positive({
+			message: m.pleaseEnterAPositiveNumber()
+		})
+		.multipleOf(0.01, {
+			message: m.pleaseEnterAValidAmount()
+		})
+		.optional(),
 	accountHolder: z.string().optional(),
 	iban: z
 		.string()
-		.length(22, {
-			message: m.ibanMustBe22Characters()
-		})
+		.regex(
+			/^[A-Z]{2}[0-9]{2}[\s]{0,1}[0-9]{4}[\s]{0,1}[0-9]{4}[\s]{0,1}[0-9]{4}[\s]{0,1}[0-9]{4}[\s]{0,1}[0-9]{2}$/,
+			{
+				message: m.ibanMustBe22Characters()
+			}
+		)
 		.refine((iban) => IBAN.isValid(iban), {
 			message: m.pleaseEnterAValidIBAN()
 		})
 		.optional(),
 	bic: z
 		.string()
-		.length(8, {
-			message: m.bicMustBe8Characters()
+		.regex(/^[A-Z]{4}-?[A-Z]{2}-?[A-Z0-9]{2}-?[A-Z0-9]{3}$/, {
+			message: m.pleaseEnterAValidBIC()
 		})
 		.optional(),
 	bankName: z.string().optional(),
