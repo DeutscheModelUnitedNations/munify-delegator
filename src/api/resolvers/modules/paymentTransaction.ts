@@ -82,6 +82,8 @@ builder.mutationFields((t) => {
 				paymentFor: t.arg.idList()
 			},
 			resolve: async (query, root, args, ctx) => {
+				const _user = ctx.permissions.getLoggedInUserOrThrow();
+				
 				const conference = await db.conference.findUnique({
 					where: { id: args.conferenceId }
 				});
