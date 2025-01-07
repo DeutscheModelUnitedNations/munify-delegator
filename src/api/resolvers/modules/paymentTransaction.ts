@@ -6,6 +6,7 @@ import {
 	PaymentTransactionConferenceFieldObject,
 	PaymentTransactionCreatedAtFieldObject,
 	PaymentTransactionIdFieldObject,
+	PaymentTransactionRecievedAtFieldObject,
 	PaymentTransactionUserFieldObject
 } from '$db/generated/graphql/PaymentTransaction';
 import { db } from '$db/db';
@@ -17,7 +18,7 @@ builder.prismaObject('PaymentTransaction', {
 		id: t.field(PaymentTransactionIdFieldObject),
 		amount: t.field(PaymentTransactionAmountFieldObject),
 		createdAt: t.field(PaymentTransactionCreatedAtFieldObject),
-		receivedAt: t.field(PaymentTransactionCreatedAtFieldObject),
+		recievedAt: t.field(PaymentTransactionRecievedAtFieldObject),
 		conference: t.relation('conference', PaymentTransactionConferenceFieldObject),
 		user: t.relation('user', PaymentTransactionUserFieldObject)
 	})

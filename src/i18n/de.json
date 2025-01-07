@@ -549,5 +549,13 @@
 	"amount": "Betrag",
 	"transactionDetails": "Überweisungsdaten",
 	"groupPaymentNotYetImplemented": "Das Bezahlverfahren für Gruppen ist leider noch nicht fertig. Bitte wenden Sie sich für Gruppenzahlungen direkt  an die Teilnehmendenbetreuung, die Ihnen händisch eine Referenz für den Verwendungszweck erstellt. Bitte teile der Teilnehmendenbetreuung mit, für welche Teilnehmende du den Beitrag zahlen möchtest.",
-	"postalRegistrationNotYetImplemented": "Für die Postalische Anmeldung gibt es noch keine individuelle Generierungsmöglichkeit für PDFs. Die Teilnehmendenbetreeung hat per E-Mail Informationen verschickt, wie die postalische Anmeldung dieses Jahr ablaufen soll. Bitte wende dich bei Unklarheiten an die Teilnehmendenbetreeung."
+	"postalRegistrationNotYetImplemented": "Für die Postalische Anmeldung gibt es noch keine individuelle Generierungsmöglichkeit für PDFs. Die Teilnehmendenbetreeung hat per E-Mail Informationen verschickt, wie die postalische Anmeldung dieses Jahr ablaufen soll. Bitte wende dich bei Unklarheiten an die Teilnehmendenbetreeung.",
+	"paymentAdminDescription": "Hier kann der Kassenwart die Zahlungsreferenzen durchsuchen und den status der Beitragszahlung von Teilnehmenden ändern.",
+	"referenceSearch": "Referenzsuche",
+	"waitingForYourInput": "Warte auf deine Eingabe...",
+	"noPaymentFound": "Keine Überweisung mit dieser Referenz gefunden",
+	"paymentRecieved": "Der Beitrag wurde bereits als am {date} bezahlt markiert!",
+	"referencedUsers": "Referenzierte Teilnehmende",
+	"markAsProblem": "Als Problem markieren",
+	"markAsRecieved": "Als Erhalten markieren"
 }

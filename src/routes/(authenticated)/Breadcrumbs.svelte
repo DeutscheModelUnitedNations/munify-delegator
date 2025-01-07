@@ -124,6 +124,10 @@
 		single: {
 			translation: m.singlePayment(),
 			icon: 'user'
+		},
+		payments: {
+			translation: m.payment(),
+			icon: 'money-bill-transfer'
 		}
 	};
 

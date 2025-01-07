@@ -2101,7 +2101,7 @@ type PaymentTransaction {
   do not use nanoid here since we need an id that is suitable for the reason field in SEPA transaction
   """
   id: ID!
-  receivedAt: DateTime!
+  recievedAt: DateTime
   user: User!
 }
 
