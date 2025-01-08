@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Breadcrumbs from '../../lib/components/Breadcrumbs.svelte';
-	import type { PathSegment } from '../../lib/components/Breadcrumbs.svelte';
+	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
+	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { availableLanguageTags } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages.js';
 	import { graphql } from '$houdini';
@@ -104,6 +104,14 @@
 		info: {
 			translation: m.infos(),
 			icon: 'info'
+		},
+		payment: {
+			translation: m.payment(),
+			icon: 'hand-holding-circle-dollar'
+		},
+		postalRegistration: {
+			translation: m.postalRegistration(),
+			icon: 'envelopes-bulk'
 		}
 	};
 
