@@ -6,9 +6,10 @@
 		name: string;
 		label: string;
 		form: SuperForm<A, B>;
+		disabled?: boolean;
 	}
 
-	let { form, label, name }: Props = $props();
+	let { form, label, name, disabled }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
@@ -23,6 +24,7 @@
 		bind:checked={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
 		{...constraints}
+		{disabled}
 	/>
 	<span class="label-text ml-3">{label}</span>
 </label>

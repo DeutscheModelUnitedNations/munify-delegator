@@ -7,9 +7,10 @@
 		label?: string;
 		placeholder?: string;
 		form: SuperForm<A, B>;
+		type?: string;
 	}
 
-	let { form, label, name, placeholder }: Props = $props();
+	let { form, label, name, placeholder, type = 'text' }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
@@ -21,7 +22,7 @@
 	{/if}
 	<input
 		{placeholder}
-		type="text"
+		{type}
 		class="input input-bordered"
 		{name}
 		id={name}

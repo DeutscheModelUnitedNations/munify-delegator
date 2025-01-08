@@ -15,6 +15,7 @@ import { defineAbilitiesForSingleParticipant } from './entities/singleParticipan
 import { defineAbilitiesForTeamMember } from './entities/teamMember';
 import { defineAbilitiesForUserEntity } from './entities/user';
 import type { OIDC } from '$api/context/oidc';
+import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransaction';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete'] as const;
@@ -72,6 +73,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForDelegationMember(oidc, builder);
 	defineAbilitiesForNation(oidc, builder);
 	defineAbilitiesForNonStateActor(oidc, builder);
+	defineAbilitiesForPaymentTransaction(oidc, builder);
 	defineAbilitiesForRoleApplication(oidc, builder);
 	defineAbilitiesForSingleParticipant(oidc, builder);
 	defineAbilitiesForTeamMember(oidc, builder);

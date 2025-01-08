@@ -9,8 +9,7 @@ import {
 	NonStateActorFontAwesomeIconFieldObject,
 	NonStateActorIdFieldObject,
 	NonStateActorNameFieldObject,
-	NonStateActorSeatAmountFieldObject,
-	updateOneNonStateActorMutationObject
+	NonStateActorSeatAmountFieldObject
 } from '$db/generated/graphql/NonStateActor';
 
 builder.prismaObject('NonStateActor', {

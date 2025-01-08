@@ -8,10 +8,11 @@
 		btnText: string;
 		btnLink: string;
 		disabled?: boolean;
-		children: Snippet;
+		disabledText?: string;
+		children?: Snippet;
 	}
 
-	let { title, img, btnText, btnLink, disabled, children }: Props = $props();
+	let { title, img, btnText, btnLink, disabled, disabledText, children }: Props = $props();
 </script>
 
 <div
@@ -23,14 +24,16 @@
 		<img src={img} alt="Illustration" class="h-full w-full {disabled && 'blur-sm'}" />
 		{#if disabled}
 			<div class="absolute flex items-center justify-center">
-				<div class="badge badge-lg">{m.RegistrationNotPossible()}</div>
+				<div class="badge badge-lg">{disabledText ?? m.RegistrationNotPossible()}</div>
 			</div>
 		{/if}
 	</figure>
 	<div class="card-body">
 		<h2 class="card-title">{title}</h2>
 		<div class="flex-1">
-			{@render children()}
+			{#if children}
+				{@render children()}
+			{/if}
 		</div>
 		<div class="card-actions mt-4 justify-end">
 			{#if !disabled}

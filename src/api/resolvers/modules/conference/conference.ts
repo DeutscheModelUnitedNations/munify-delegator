@@ -1,6 +1,13 @@
 import { builder } from '../../builder';
 import {
+	ConferenceAccountHolderFieldObject,
+	ConferenceBankNameFieldObject,
+	ConferenceBicFieldObject,
+	ConferenceCurrencyFieldObject,
 	ConferenceEndConferenceFieldObject,
+	ConferenceFeeAmountFieldObject,
+	ConferenceGuardianConsentContentFieldObject,
+	ConferenceIbanFieldObject,
 	ConferenceIdFieldObject,
 	ConferenceImageDataURLFieldObject,
 	ConferenceInfoFieldObject,
@@ -8,10 +15,20 @@ import {
 	ConferenceLinkToPreparationGuideFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
+	ConferenceMediaConsentContentFieldObject,
+	ConferencePostalApartmentFieldObject,
+	ConferencePostalCityFieldObject,
+	ConferencePostalCountryFieldObject,
+	ConferencePostalNameFieldObject,
+	ConferencePostalStreetFieldObject,
+	ConferencePostalZipFieldObject,
 	ConferenceStartAssignmentFieldObject,
 	ConferenceStartConferenceFieldObject,
 	ConferenceStateFieldObject,
+	ConferenceTermsAndConditionsContentFieldObject,
 	ConferenceTitleFieldObject,
+	ConferenceUnlockPaymentsFieldObject,
+	ConferenceUnlockPostalsFieldObject,
 	ConferenceWebsiteFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
@@ -38,6 +55,28 @@ builder.prismaObject('Conference', {
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
 		endConference: t.field(ConferenceEndConferenceFieldObject),
+		unlockPayments: t.field(ConferenceUnlockPaymentsFieldObject),
+		unlockPostals: t.field(ConferenceUnlockPostalsFieldObject),
+		feeAmount: t.float(ConferenceFeeAmountFieldObject),
+		accountHolder: t.string(ConferenceAccountHolderFieldObject),
+		iban: t.string(ConferenceIbanFieldObject),
+		bic: t.string(ConferenceBicFieldObject),
+		bankName: t.string(ConferenceBankNameFieldObject),
+		currency: t.string(ConferenceCurrencyFieldObject),
+		postalName: t.string(ConferencePostalNameFieldObject),
+		postalStreet: t.string(ConferencePostalStreetFieldObject),
+		postalApartment: t.string(ConferencePostalApartmentFieldObject),
+		postalZip: t.string(ConferencePostalZipFieldObject),
+		postalCity: t.string(ConferencePostalCityFieldObject),
+		postalCountry: t.string(ConferencePostalCountryFieldObject),
+		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
+		guardianConsentContent: t.string(ConferenceGuardianConsentContentFieldObject),
+		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
+		paymentTransactions: t.relation('paymentTransactions', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').PaymentTransaction
+			})
+		}),
 		individualApplicationOptions: t.relation('individualApplicationOptions', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').CustomConferenceRole
@@ -173,7 +212,58 @@ builder.mutationFields((t) => {
 							state: t.field({ type: ConferenceState, required: false }),
 							startAssignment: t.field({ type: 'DateTime', required: false }),
 							startConference: t.field({ type: 'DateTime', required: false }),
-							endConference: t.field({ type: 'DateTime', required: false })
+							endConference: t.field({ type: 'DateTime', required: false }),
+							unlockPayments: t.boolean({
+								required: false
+							}),
+							unlockPostals: t.boolean({
+								required: false
+							}),
+							feeAmount: t.float({
+								required: false
+							}),
+							accountHolder: t.string({
+								required: false
+							}),
+							iban: t.string({
+								required: false
+							}),
+							bic: t.string({
+								required: false
+							}),
+							bankName: t.string({
+								required: false
+							}),
+							currency: t.string({
+								required: false
+							}),
+							postalName: t.string({
+								required: false
+							}),
+							postalStreet: t.string({
+								required: false
+							}),
+							postalApartment: t.string({
+								required: false
+							}),
+							postalZip: t.string({
+								required: false
+							}),
+							postalCity: t.string({
+								required: false
+							}),
+							postalCountry: t.string({
+								required: false
+							}),
+							termsAndConditionsContent: t.string({
+								required: false
+							}),
+							guardianConsentContent: t.string({
+								required: false
+							}),
+							mediaConsentContent: t.string({
+								required: false
+							})
 						})
 					})
 				})
@@ -199,7 +289,11 @@ builder.mutationFields((t) => {
 						state: args.data.state ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
 						startConference: args.data.startConference ?? undefined,
-						endConference: args.data.endConference ?? undefined
+						endConference: args.data.endConference ?? undefined,
+						unlockPayments:
+							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
+						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
+						postalApartment: args.data.postalApartment ?? null
 					},
 					...query
 				});
