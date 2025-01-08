@@ -143,7 +143,10 @@ builder.mutationFields((t) => {
 				assignedStatus: t.arg({
 					type: AdministrativeStatus
 				}),
-				recievedAt: t.arg.string()
+				recievedAt: t.arg({
+					type: 'DateTime',
+					required: false
+				})
 			},
 			resolve: async (query, root, args, ctx) => {
 				const transaction = await db.paymentTransaction.findUniqueOrThrow({
@@ -173,7 +176,7 @@ builder.mutationFields((t) => {
 						await tx.paymentTransaction.update({
 							where: { id: args.id },
 							data: {
-								recievedAt: args.recievedAt
+								recievedAt: args.recievedAt || undefined
 							}
 						});
 					}

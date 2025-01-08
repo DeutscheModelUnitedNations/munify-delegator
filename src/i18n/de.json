@@ -558,5 +558,7 @@
 	"referencedUsers": "Referenzierte Teilnehmende",
 	"markAsProblem": "Als Problem markieren",
 	"markAsRecieved": "Als Erhalten markieren",
-	"attendance": "Anwesenheit"
+	"attendance": "Anwesenheit",
+	"enterDateOfdateReceipt": "Empfangsdatum eingeben",
+	"recievedDate": "Empfangen am"
 }

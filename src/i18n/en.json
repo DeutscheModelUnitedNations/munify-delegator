@@ -500,5 +500,7 @@
 	"referencedUsers": "Referenced Users",
 	"markAsProblem": "Mark as Problem",
 	"markAsRecieved": "Mark as Recieved",
-	"attendance": "Attendance"
+	"attendance": "Attendance",
+	"enterDateOfdateReceipt": "Enter Date of Receipt",
+	"recievedDate": "Revieved at"
 }

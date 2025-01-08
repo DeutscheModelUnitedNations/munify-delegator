@@ -11,7 +11,7 @@ export const load: LayoutLoad = async (event) => {
 		blocking: true
 	});
 
-	console.log(data)
+	console.log(data);
 
 	return {
 		conferenceQueryData: data,

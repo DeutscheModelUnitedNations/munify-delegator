@@ -4,10 +4,11 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
-	import StatusWidget from './StatusWidget.svelte';
-	import StatusWidgetBoolean from './StatusWidgetBoolean.svelte';
+	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		user: UserRowData;
@@ -66,15 +67,17 @@
 				mediaConsent
 				paymentStatus
 				didAttend
-				conference {
-					startConference
-				}
+			}
+			findUniqueConference(where: { id: $conferenceId }) {
+				startConference
 			}
 		}
 	`);
 
 	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
-	const ofAge = $derived(ofAgeAtConference(status?.conference?.startConference, user.birthday));
+	const ofAge = $derived(
+		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
+	);
 
 	const changeParticipantStatus = graphql(`
 		mutation changeParticipantStatusMutation(
@@ -97,6 +100,11 @@
 			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
 			data
 		});
+		if (!$userQuery?.data?.findUniqueConferenceParticipantStatus){
+			// TODO houdini is somehow not fetching the newly created status without manually reloading the whole page.
+			// We should investigate why this is happening and invalidate the userQuery to instantly update the status fields.
+			userQuery.fetch();
+		}
 	};
 </script>
 

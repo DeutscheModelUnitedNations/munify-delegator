@@ -144,6 +144,7 @@
 				if (
 					row.status?.termsAndConditions === 'PROBLEM' ||
 					row.status?.mediaConsent === 'PROBLEM' ||
+					row.status?.guardianConsent === 'PROBLEM' ||
 					row.status?.paymentStatus === 'PROBLEM'
 				) {
 					return 'PROBLEM';
@@ -161,6 +162,7 @@
 				if (
 					row.status?.termsAndConditions === 'PROBLEM' ||
 					row.status?.mediaConsent === 'PROBLEM' ||
+					row.status?.guardianConsent === 'PROBLEM' ||
 					row.status?.paymentStatus === 'PROBLEM'
 				) {
 					return `<i class="fas fa-triangle-exclamation fa-beat text-red-500"></i>`;
