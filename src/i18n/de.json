@@ -517,5 +517,7 @@
 	"bic": "BIC",
 	"accountHolder": "Kontoinhaber*in",
 	"currency": "Währung",
-	"fee": "Teilnahmebeitrag"
+	"fee": "Teilnahmebeitrag",
+	"showFilters": "Filter anzeigen",
+	"ageAbove18": "Über 18 Jahre alt"
 }
