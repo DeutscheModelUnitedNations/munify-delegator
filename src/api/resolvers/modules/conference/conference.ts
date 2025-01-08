@@ -18,6 +18,7 @@ import {
 	ConferenceMediaConsentContentFieldObject,
 	ConferencePostalApartmentFieldObject,
 	ConferencePostalCityFieldObject,
+	ConferencePostalCountryFieldObject,
 	ConferencePostalNameFieldObject,
 	ConferencePostalStreetFieldObject,
 	ConferencePostalZipFieldObject,
@@ -67,7 +68,7 @@ builder.prismaObject('Conference', {
 		postalApartment: t.string(ConferencePostalApartmentFieldObject),
 		postalZip: t.string(ConferencePostalZipFieldObject),
 		postalCity: t.string(ConferencePostalCityFieldObject),
-		postalCountry: t.string(ConferencePostalCityFieldObject),
+		postalCountry: t.string(ConferencePostalCountryFieldObject),
 		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
 		guardianConsentContent: t.string(ConferenceGuardianConsentContentFieldObject),
 		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
@@ -288,7 +289,11 @@ builder.mutationFields((t) => {
 						state: args.data.state ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
 						startConference: args.data.startConference ?? undefined,
-						endConference: args.data.endConference ?? undefined
+						endConference: args.data.endConference ?? undefined,
+						unlockPayments:
+							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
+						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
+						postalApartment: args.data.postalApartment ?? null
 					},
 					...query
 				});

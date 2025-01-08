@@ -9,6 +9,7 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { ParticipationType, UserRowData } from './types';
+	import { cache } from '$houdini';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
@@ -229,6 +230,10 @@
 		user={selectedUserRow}
 		conferenceId={data.conferenceId}
 		open={selectedUserRow !== undefined}
-		onClose={() => (selectedUserRow = undefined)}
+		onClose={() => {
+			selectedUserRow = undefined;
+			cache.markStale();
+			data.ConferenceParticipantsByParticipationTypeQuery.fetch();
+		}}
 	/>
 {/if}

@@ -103,9 +103,9 @@
 			placeholder={'https://path-to-your-guide.com'}
 			label={m.preparationGuide()}
 		/>
+
+		<h3 class="mt-8 text-lg font-bold">{m.bankingInformation()}</h3>
 		<FormCheckbox {form} name="unlockPayments" label={m.paymentOpen()} />
-		<FormCheckbox {form} name="unlockPostals" label={m.postalOpen()} />
-		<h3 class="text-lg font-bold">{m.bankingInformation()}</h3>
 		<FormTextInput {form} name="feeAmount" placeholder={'75,00'} label={m.fee()} type="number" />
 		<FormTextInput {form} name="bankName" placeholder={'Bank Name'} label={m.bankName()} />
 		<FormTextInput {form} name="iban" placeholder={'DE12345678901234567890'} label={m.iban()} />
@@ -117,6 +117,20 @@
 			label={m.accountHolder()}
 		/>
 		<FormTextInput {form} name="currency" placeholder={'EUR'} label={m.currency()} />
+
+		<h3 class="mt-8 text-lg font-bold">{m.postalRegistration()}</h3>
+		<FormCheckbox {form} name="unlockPostals" label={m.postalOpen()} />
+		<FormTextInput {form} name="postalName" placeholder={m.name()} label={m.name()} />
+		<FormTextInput {form} name="postalStreet" placeholder={m.street()} label={m.street()} />
+		<FormTextInput
+			{form}
+			name="postalApartment"
+			placeholder={m.streetAddition()}
+			label={m.streetAddition()}
+		/>
+		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
+		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
+		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
 	</Form>
 </div>
 

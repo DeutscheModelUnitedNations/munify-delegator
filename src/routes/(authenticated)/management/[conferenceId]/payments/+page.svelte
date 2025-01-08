@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
 	import * as m from '$lib/paraglide/messages';
 	import { languageTag } from '$lib/paraglide/runtime';
@@ -118,6 +118,10 @@
 			reference: paymentTransaction?.id,
 			status,
 			recievedAt: recieveDate ? new Date(recieveDate) : undefined
+		});
+		cache.markStale();
+		paymentReferenceByIdQuery.fetch({
+			variables: { conferenceId: data.conferenceId, reference: searchValue }
 		});
 		loading = false;
 	};

@@ -26,6 +26,12 @@ export const myConferenceparticipationQuery = graphql(`
 			endConference
 			unlockPayments
 			unlockPostals
+			postalName
+			postalStreet
+			postalApartment
+			postalZip
+			postalCity
+			postalCountry
 			committees {
 				id
 				abbreviation

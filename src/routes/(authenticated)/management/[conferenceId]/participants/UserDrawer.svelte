@@ -2,7 +2,7 @@
 	import * as m from '$lib/paraglide/messages';
 	import type { UserRowData } from './types';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
+	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
 	import StatusWidget from '$lib/components/StatusWidget.svelte';
 	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
@@ -100,11 +100,8 @@
 			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
 			data
 		});
-		if (!$userQuery?.data?.findUniqueConferenceParticipantStatus){
-			// TODO houdini is somehow not fetching the newly created status without manually reloading the whole page.
-			// We should investigate why this is happening and invalidate the userQuery to instantly update the status fields.
-			userQuery.fetch();
-		}
+		cache.markStale();
+		userQuery.fetch();
 	};
 </script>
 

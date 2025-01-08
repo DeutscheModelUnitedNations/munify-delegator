@@ -4,13 +4,19 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let conferenceData = $derived(data.conferenceQueryData?.findUniqueConference);
+	const conferenceData = $derived(data.conferenceQueryData);
+	const conference = $derived(conferenceData?.findUniqueConference);
 </script>
 
 <div class="flex flex-col gap-2">
 	<h1 class="text-2xl font-bold">{m.postalRegistration()}</h1>
+	<!-- {#if conference.} -->
+	<div class="alert alert-error mt-4">
+		<i class="fas fa-traffic-cone text-3xl"></i>
+		{m.postalRegistrationNotYetImplemented()}
+	</div>
 	<!-- TODO i18n this once the thing is fully implemented -->
-	<div class="prose">
+	<div class="prose mt-4">
 		<p>
 			Um an der Konferenz teilnehmen zu können, benötigen wir von dir postalisch – als per Brief
 			verschickt – ein paar unterschriebene Dokumente. Diese Dokumente sind
@@ -22,8 +28,8 @@
 			</li>
 			<li>
 				die <strong>Einverständniserklärung deiner Eltern oder Erziehungsberechtigten</strong>, die
-				im Normalfall deine Eltern unterschreiben müssens, wenn du zu Konferenzbeginn ({conferenceData
-					? new Date(conferenceData.startConference).toLocaleDateString()
+				im Normalfall deine Eltern unterschreiben müssens, wenn du zu Konferenzbeginn ({conference?.startConference
+					? new Date(conference.startConference!).toLocaleDateString()
 					: 'Datum unbekannt'}) noch nicht volljährig bist
 			</li>
 			<li>
@@ -43,9 +49,26 @@
 			sparen könnten. Leider gibt das die rechtliche Rahmensituation in Deutschland nicht her. Daher
 			führt an dem Versenden der Dokumente per Post kein Weg vorbei.
 		</p>
-	</div>
-	<div class="alert alert-error mt-4">
-		<i class="fas fa-traffic-cone text-3xl"></i>
-		{m.postalRegistrationNotYetImplemented()}
+		<h2>Wohin soll ich meine Dokumente versenden?</h2>
+		<p>
+			Bitte sende deine Dokumente gründlich ausgefüllt und unterschrieben (von dir und ggf. deinen
+			Eltern) an folgende Adresse:
+		</p>
+		<div class="card bg-base-200 shadow-lg">
+			<div class="card-body gap-10 sm:flex-row">
+				<i class="fa-duotone fa-mailbox-flag-up text-5xl"></i>
+				<address class="text-lg sm:text-xl">
+					<strong>{conference?.postalName}</strong><br />
+					<span>{conference?.postalStreet}</span><br />
+					{#if conference?.postalApartment}
+						<span>{conference?.postalApartment}</span><br />
+					{/if}
+					<br />
+					<span>{conference?.postalZip} {conference?.postalCity}</span><br />
+					<span>{conference?.postalCountry}</span>
+				</address>
+			</div>
+		</div>
+		<p>Bitte achte besonders bei Sendungen aus dem Ausland auf ausreichendes Porto.</p>
 	</div>
 </div>

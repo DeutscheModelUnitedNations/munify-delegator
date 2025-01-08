@@ -30,6 +30,12 @@ const conferenceQuery = graphql(`
 			bankName
 			iban
 			accountHolder
+			postalName
+			postalStreet
+			postalApartment
+			postalZip
+			postalCity
+			postalCountry
 		}
 	}
 `);
@@ -67,12 +73,11 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		console.log('form', event);
 		const form = await superValidate(event.request, zod(conferenceSettingsFormSchema));
 		if (!form.valid) {
 			return fail(400, { form });
 		}
-
+		console.log(form.data);
 		await conferenceUpdate.mutate(
 			{
 				data: form.data,
