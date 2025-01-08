@@ -30,7 +30,7 @@
 	<h1 class="text-2xl font-bold">{m.giroCode()}</h1>
 	<p>{m.giroCodeDescription()}</p>
 	<div
-		class="flex aspect-square items-center justify-center rounded-lg bg-white p-10 w-full sm:max-w-sm"
+		class="flex aspect-square w-full items-center justify-center rounded-lg bg-white p-10 sm:max-w-sm"
 	>
 		{#if qrCode && qrCode !== ''}
 			<img src={qrCode} alt="QR Code" class="w-full" />
