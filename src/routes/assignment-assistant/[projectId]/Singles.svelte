@@ -18,13 +18,12 @@
 
 		if (!targetContainer || sourceContainer === targetContainer || !draggedItem.id) return;
 
-		
 		if (targetContainer === 'backToPool') {
 			unassignSingleRole(draggedItem.id);
 		} else if (targetContainer === 'convertToDelegation') {
 			convertSingleToDelegation(draggedItem.id);
 		} else if (targetContainer.startsWith('role')) {
-			assignSingleRole(draggedItem.id, targetContainer.replace('role-', ""));
+			assignSingleRole(draggedItem.id, targetContainer.replace('role-', ''));
 		}
 	}
 
