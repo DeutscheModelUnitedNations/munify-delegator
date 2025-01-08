@@ -3,11 +3,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import {
-		graphql,
-		type MyConferenceparticipationQuery$result,
-		type OfflineUser$result
-	} from '$houdini';
+	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
@@ -72,7 +68,7 @@
 	`);
 
 	const handlePresenceChange = async (e: Event) => {
-		updateQuery.mutate({
+		await updateQuery.mutate({
 			where: {
 				conferenceId_userId: {
 					conferenceId: conference.id,
@@ -83,6 +79,7 @@
 				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
 			}
 		});
+		//TODO does not update the UI after fetching
 	};
 </script>
 
@@ -122,7 +119,7 @@
 	</p>
 </section>
 
-{#if supervisor.plansOwnAttendenceAtConference}
+{#if supervisor.plansOwnAttendenceAtConference && conference.state !== 'PARTICIPANT_REGISTRATION'}
 	<ConferenceStatusWidget
 		conferenceId={conference!.id}
 		userId={user.sub}
