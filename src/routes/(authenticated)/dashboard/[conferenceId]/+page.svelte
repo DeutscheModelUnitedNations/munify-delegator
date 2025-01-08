@@ -31,6 +31,8 @@
 						userId={data.user.sub}
 						{status}
 						ofAgeAtConference={data.ofAgeAtConference}
+						unlockPayment={conference?.unlockPayments}
+						unlockPostals={conference?.unlockPostals}
 					/>
 					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if conference!.state === 'ACTIVE'}
@@ -51,6 +53,8 @@
 						userId={data.user.sub}
 						ofAgeAtConference={data.ofAgeAtConference}
 						{status}
+						unlockPayment={conference?.unlockPayments}
+						unlockPostals={conference?.unlockPostals}
 					/>
 					<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}

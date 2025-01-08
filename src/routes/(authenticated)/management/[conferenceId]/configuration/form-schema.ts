@@ -53,6 +53,8 @@ export const conferenceSettingsFormSchema = z.object({
 		z.literal('ACTIVE'),
 		z.literal('POST')
 	]),
+	unlockPayments: z.boolean().default(false),
+	unlockPostals: z.boolean().default(false),
 	feeAmount: z
 		.number()
 		.positive({

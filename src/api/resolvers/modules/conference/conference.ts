@@ -26,6 +26,8 @@ import {
 	ConferenceStateFieldObject,
 	ConferenceTermsAndConditionsContentFieldObject,
 	ConferenceTitleFieldObject,
+	ConferenceUnlockPaymentsFieldObject,
+	ConferenceUnlockPostalsFieldObject,
 	ConferenceWebsiteFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
@@ -52,6 +54,8 @@ builder.prismaObject('Conference', {
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
 		endConference: t.field(ConferenceEndConferenceFieldObject),
+		unlockPayments: t.field(ConferenceUnlockPaymentsFieldObject),
+		unlockPostals: t.field(ConferenceUnlockPostalsFieldObject),
 		feeAmount: t.float(ConferenceFeeAmountFieldObject),
 		accountHolder: t.string(ConferenceAccountHolderFieldObject),
 		iban: t.string(ConferenceIbanFieldObject),
@@ -208,6 +212,12 @@ builder.mutationFields((t) => {
 							startAssignment: t.field({ type: 'DateTime', required: false }),
 							startConference: t.field({ type: 'DateTime', required: false }),
 							endConference: t.field({ type: 'DateTime', required: false }),
+							unlockPayments: t.boolean({
+								required: false
+							}),
+							unlockPostals: t.boolean({
+								required: false
+							}),
 							feeAmount: t.float({
 								required: false
 							}),

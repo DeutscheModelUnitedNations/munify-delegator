@@ -53,6 +53,7 @@
 				recievedAt: $recievedAt
 			) {
 				id
+				recievedAt
 			}
 		}
 	`);
@@ -118,7 +119,6 @@
 			status,
 			recievedAt: recieveDate ? new Date(recieveDate) : undefined
 		});
-		await paymentReferenceByIdQuery.fetch();
 		loading = false;
 	};
 </script>

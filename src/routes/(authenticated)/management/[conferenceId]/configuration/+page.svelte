@@ -12,6 +12,7 @@
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
+	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -102,6 +103,8 @@
 			placeholder={'https://path-to-your-guide.com'}
 			label={m.preparationGuide()}
 		/>
+		<FormCheckbox {form} name="unlockPayments" label={m.paymentOpen()} />
+		<FormCheckbox {form} name="unlockPostals" label={m.postalOpen()} />
 		<h3 class="text-lg font-bold">{m.bankingInformation()}</h3>
 		<FormTextInput {form} name="feeAmount" placeholder={'75,00'} label={m.fee()} type="number" />
 		<FormTextInput {form} name="bankName" placeholder={'Bank Name'} label={m.bankName()} />

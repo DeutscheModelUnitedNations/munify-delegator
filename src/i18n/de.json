@@ -560,5 +560,10 @@
 	"markAsRecieved": "Als Erhalten markieren",
 	"attendance": "Anwesenheit",
 	"enterDateOfdateReceipt": "Empfangsdatum eingeben",
-	"recievedDate": "Empfangen am"
+	"recievedDate": "Empfangen am",
+	"paymentOpen": "Zahlungen erlauben",
+	"postalOpen": "Postalische Anmeldungen erlauben",
+	"postalRegistrationDisabled": "Die postalische Anmeldung ist noch nicht freigeschaltet. Du wirst bald Infromationen dazu erhalten.",
+	"paymentDisabled": "Die Beitragszahlung ist noch nicht freigeschaltet. Du wirst bald Infromationen dazu erhalten.",
+	"paymentAndPostalRegistrationDisabled": "Weder die Beitragszahlung noch die postalische Anmeldung wurden von der Teilnehmendenbetreuung freigeschaltet. Du wirst bald Informationen dazu erhalten."
 }

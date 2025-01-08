@@ -161,8 +161,6 @@ type Conference {
   delegationMembers: [DelegationMember!]!
   delegations: [Delegation!]!
   endConference: DateTime!
-
-  """Payment and Postal information"""
   feeAmount: Float
   guardianConsentContent: String
   iban: String
@@ -192,6 +190,10 @@ type Conference {
   """Legal document content"""
   termsAndConditionsContent: String
   title: String!
+
+  """Payment and Postal information"""
+  unlockPayments: Boolean!
+  unlockPostals: Boolean!
   website: String
 }
 
@@ -233,6 +235,8 @@ input ConferenceCreateInput {
   teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
   termsAndConditionsContent: String
   title: String!
+  unlockPayments: Boolean
+  unlockPostals: Boolean
   website: String
 }
 
@@ -274,6 +278,8 @@ input ConferenceOrderByWithRelationInput {
   teamMembers: TeamMemberOrderByRelationAggregateInput
   termsAndConditionsContent: SortOrder
   title: SortOrder
+  unlockPayments: SortOrder
+  unlockPostals: SortOrder
   website: SortOrder
 }
 
@@ -464,6 +470,8 @@ enum ConferenceScalarFieldEnum {
   state
   termsAndConditionsContent
   title
+  unlockPayments
+  unlockPostals
   website
 }
 
@@ -639,6 +647,8 @@ input ConferenceUpdateDataInput {
   state: ConferenceState
   termsAndConditionsContent: String
   title: String
+  unlockPayments: Boolean
+  unlockPostals: Boolean
   website: String
 }
 
@@ -680,6 +690,8 @@ input ConferenceUpdateInput {
   teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
   termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
+  unlockPayments: BoolFieldUpdateOperationsInput
+  unlockPostals: BoolFieldUpdateOperationsInput
   website: NullableStringFieldUpdateOperationsInput
 }
 
@@ -711,6 +723,8 @@ input ConferenceUpdateManyMutationInput {
   state: EnumConferenceStateFieldUpdateOperationsInput
   termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
+  unlockPayments: BoolFieldUpdateOperationsInput
+  unlockPostals: BoolFieldUpdateOperationsInput
   website: NullableStringFieldUpdateOperationsInput
 }
 
@@ -755,6 +769,8 @@ input ConferenceWhereInput {
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
   title: StringFilter
+  unlockPayments: BoolFilter
+  unlockPostals: BoolFilter
   website: StringNullableFilter
 }
 
@@ -799,6 +815,8 @@ input ConferenceWhereUniqueInput {
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
   title: StringFilter
+  unlockPayments: BoolFilter
+  unlockPostals: BoolFilter
   website: StringNullableFilter
 }
 

@@ -8,9 +8,18 @@
 		userId: string;
 		status?: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
 		ofAgeAtConference: boolean;
+		unlockPayment?: boolean;
+		unlockPostals?: boolean;
 	}
 
-	let { conferenceId, status, userId, ofAgeAtConference }: Props = $props();
+	let {
+		conferenceId,
+		status,
+		userId,
+		ofAgeAtConference,
+		unlockPayment = false,
+		unlockPostals = false
+	}: Props = $props();
 </script>
 
 <section class="flex flex-col gap-4">
@@ -50,9 +59,28 @@
 
 	{#if status?.paymentStatus !== 'DONE' || status?.termsAndConditions !== 'DONE' || (!ofAgeAtConference && status?.guardianConsent !== 'DONE') || status?.mediaConsent !== 'DONE'}
 		<h3 class="text-lg font-bold">{m.takeAction()}</h3>
+		{#if !unlockPayment && !unlockPostals}
+			<div class="alert alert-warning">
+				<i class="fas fa-hourglass-clock text-2xl"></i>
+				{m.paymentAndPostalRegistrationDisabled()}
+			</div>
+		{:else if !unlockPayment}
+			<div class="alert alert-warning">
+				<i class="fas fa-hourglass-clock text-2xl"></i>
+				{m.paymentDisabled()}
+			</div>
+		{:else if !unlockPostals}
+			<div class="alert alert-warning">
+				<i class="fas fa-hourglass-clock text-2xl"></i>
+				{m.postalRegistrationDisabled()}
+			</div>
+		{/if}
 		<div class="flex w-full flex-col gap-4 md:flex-row">
 			{#if status?.paymentStatus !== 'DONE'}
-				<a href="./{conferenceId}/payment" class="btn btn-primary btn-lg w-full md:w-auto">
+				<a
+					href="./{conferenceId}/payment"
+					class="btn btn-primary btn-lg w-full md:w-auto {!unlockPayment && 'btn-disabled'}"
+				>
 					<i class="fas fa-hand-holding-circle-dollar"></i>
 					<h4>{m.payment()}</h4>
 				</a>
@@ -60,7 +88,7 @@
 			{#if status?.termsAndConditions !== 'DONE' || (!ofAgeAtConference && status?.guardianConsent !== 'DONE') || status?.mediaConsent !== 'DONE'}
 				<a
 					href="./{conferenceId}/postalRegistration"
-					class="btn btn-primary btn-lg w-full md:w-auto"
+					class="btn btn-primary btn-lg w-full md:w-auto {!unlockPostals && 'btn-disabled'}"
 				>
 					<i class="fas fa-envelopes-bulk"></i>
 					<h4>{m.postalRegistration()}</h4>

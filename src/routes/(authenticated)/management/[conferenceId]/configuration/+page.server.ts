@@ -22,6 +22,8 @@ const conferenceQuery = graphql(`
 			language
 			linkToPreparationGuide
 			info
+			unlockPayments
+			unlockPostals
 			feeAmount
 			bic
 			currency
@@ -65,6 +67,7 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
+		console.log('form', event);
 		const form = await superValidate(event.request, zod(conferenceSettingsFormSchema));
 		if (!form.valid) {
 			return fail(400, { form });

@@ -502,5 +502,10 @@
 	"markAsRecieved": "Mark as Recieved",
 	"attendance": "Attendance",
 	"enterDateOfdateReceipt": "Enter Date of Receipt",
-	"recievedDate": "Revieved at"
+	"recievedDate": "Revieved at",
+	"paymentOpen": "Allow Payments",
+	"postalOpen": "Allow Postal Registration",
+	"postalRegistrationDisabled": "The postal registration is still disabled. You have will recieve information about it shortly.",
+	"paymentDisabled": "The payment process is still disabled. You have will recieve information about it shortly.",
+	"paymentAndPostalRegistrationDisabled": "Both the payment process and the postal registration are still disabled. You will recieve information about it shortly."
 }

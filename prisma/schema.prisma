@@ -42,6 +42,8 @@ model Conference {
   endConference          DateTime
 
   /// Payment and Postal information
+  unlockPayments  Boolean @default(false)
+  unlockPostals   Boolean @default(false)
   feeAmount       Float?
   accountHolder   String?
   iban            String?

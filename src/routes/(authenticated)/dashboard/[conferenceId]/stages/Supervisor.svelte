@@ -128,6 +128,8 @@
 		userId={user.sub}
 		{ofAgeAtConference}
 		{status}
+		unlockPayment={conference?.unlockPayments}
+		unlockPostals={conference?.unlockPostals}
 	/>
 {/if}
 
