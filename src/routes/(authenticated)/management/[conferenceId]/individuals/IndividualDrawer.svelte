@@ -3,8 +3,6 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
 	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
-	import { error } from '@sveltejs/kit';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
 

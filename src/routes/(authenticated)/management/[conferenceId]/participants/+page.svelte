@@ -146,6 +146,13 @@
 	rowSelected={(row) => {
 		selectedUserRow = row;
 	}}
+	filters={[
+		{
+			label: m.ageAbove18(),
+			matcher: (r) =>
+				(r.birthday && new Date().getFullYear() - r.birthday.getFullYear() > 18) ?? false
+		}
+	]}
 />
 
 {#if selectedUserRow}
