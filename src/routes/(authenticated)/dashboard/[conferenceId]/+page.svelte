@@ -5,9 +5,7 @@
 	import SingleParticipantPreparationStage from './stages/SingleParticipantPreparationStage.svelte';
 	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/DelegationPreparationStage.svelte';
-	import Spinner from '$lib/components/Spinner.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import * as m from '$lib/paraglide/messages.js';
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 
@@ -17,8 +15,7 @@
 	let { data }: { data: PageData } = $props();
 	let conferenceQueryData = $derived(data.conferenceQueryData);
 	let conference = $derived(conferenceQueryData?.findUniqueConference);
-
-	$inspect(conferenceQueryData);
+	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -32,7 +29,7 @@
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
 						userId={data.user.sub}
-						status={conferenceQueryData.findUniqueConferenceParticipantStatus}
+						{status}
 						ofAgeAtConference={data.ofAgeAtConference}
 					/>
 					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
@@ -53,6 +50,7 @@
 						conferenceId={conference!.id}
 						userId={data.user.sub}
 						ofAgeAtConference={data.ofAgeAtConference}
+						{status}
 					/>
 					<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}

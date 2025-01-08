@@ -13,27 +13,38 @@
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
 	const conference = $derived($queryData.data?.findUniqueConference);
+	const participationStatuses = $derived($queryData.data?.findManyConferenceParticipantStatuss);
+
 	const users = $derived.by(() => {
+		const getParticipationStatus = (userId: string) => {
+			if (!participationStatuses) return undefined;
+			const status = participationStatuses.find((s) => s.user.id === userId);
+			return status;
+		};
+
 		const ret: UserRowData[] = [];
 		for (const userRaw of $queryData.data?.findManyConferenceSupervisors ?? []) {
 			const user = userRaw.user;
 			ret.push({
 				...user,
-				participationType: 'SUPERVISOR'
+				participationType: 'SUPERVISOR',
+				status: getParticipationStatus(user.id)
 			});
 		}
 		for (const userRaw of $queryData.data?.findManyDelegationMembers ?? []) {
 			const user = userRaw.user;
 			ret.push({
 				...user,
-				participationType: 'DELEGATION_MEMBER'
+				participationType: 'DELEGATION_MEMBER',
+				status: getParticipationStatus(user.id)
 			});
 		}
 		for (const userRaw of $queryData.data?.findManySingleParticipants ?? []) {
 			const user = userRaw.user;
 			ret.push({
 				...user,
-				participationType: 'SINGLE_PARTICIPANT'
+				participationType: 'SINGLE_PARTICIPANT',
+				status: getParticipationStatus(user.id)
 			});
 		}
 		return ret;
@@ -101,6 +112,69 @@
 				row.birthday && conference?.endConference
 					? (calculateConferenceAge(row.birthday) ?? 'N/A')
 					: 'N/A',
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'paymentStatus',
+			title: m.payment(),
+			value: (row) => row.status?.paymentStatus ?? 'PENDING',
+			renderValue: (row) => {
+				switch (row.status?.paymentStatus) {
+					case 'DONE':
+						return `<i class="fas fa-check text-success"></i>`;
+					case 'PENDING':
+						return `<i class="fas fa-hourglass-half text-warning"></i>`;
+					case 'PROBLEM':
+						return `<i class="fas fa-triangle-exclamation fa-beat text-red-500"></i>`;
+					default:
+						return `<i class="fas fa-hourglass-half text-warning"></i>`;
+				}
+			},
+			parseHTML: true,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'postalRegistrationStatus',
+			title: m.postalRegistration(),
+			value: (row) => {
+				if (
+					row.status?.termsAndConditions === 'PROBLEM' ||
+					row.status?.mediaConsent === 'PROBLEM' ||
+					row.status?.paymentStatus === 'PROBLEM'
+				) {
+					return 'PROBLEM';
+				}
+				if (
+					row.status?.termsAndConditions === 'DONE' &&
+					row.status?.mediaConsent === 'DONE' &&
+					row.status?.paymentStatus === 'DONE'
+				) {
+					return 'DONE';
+				}
+				return 'PENDING';
+			},
+			renderValue: (row) => {
+				if (
+					row.status?.termsAndConditions === 'PROBLEM' ||
+					row.status?.mediaConsent === 'PROBLEM' ||
+					row.status?.paymentStatus === 'PROBLEM'
+				) {
+					return `<i class="fas fa-triangle-exclamation fa-beat text-red-500"></i>`;
+				}
+				if (
+					row.status?.termsAndConditions === 'DONE' &&
+					row.status?.mediaConsent === 'DONE' &&
+					row.status?.paymentStatus === 'DONE'
+				) {
+					return `<i class="fas fa-check text-success"></i>`;
+				}
+				return `<i class="fas fa-hourglass-half text-warning"></i>`;
+			},
+			parseHTML: true,
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'

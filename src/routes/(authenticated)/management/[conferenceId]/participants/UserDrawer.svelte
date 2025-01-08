@@ -2,10 +2,12 @@
 	import * as m from '$lib/paraglide/messages';
 	import type { UserRowData } from './types';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
 	import StatusWidget from './StatusWidget.svelte';
+	import StatusWidgetBoolean from './StatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import type { AdministrativeStatus } from '@prisma/client';
 
 	interface Props {
 		user: UserRowData;
@@ -56,7 +58,7 @@
 				id
 			}
 			findUniqueConferenceParticipantStatus(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
+				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
 			) {
 				id
 				termsAndConditions
@@ -74,34 +76,28 @@
 	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
 	const ofAge = $derived(ofAgeAtConference(status?.conference?.startConference, user.birthday));
 
-	// const changeParticipantStatus = graphql(`
-	// 	mutation changeParticipantStatusMutation(
-	// 		$userId: String!
-	// 		$conferenceId: String!
-	// 		$paymentStatus: AdministrativeStatus!
-	// 		$termsAndConditions: AdministrativeStatus!
-	// 		$guardianConsent: AdministrativeStatus!
-	// 		$mediaConsent: AdministrativeStatus!
-	// 		$didAttend: Boolean!
-	// 	) {
-	// 		updateOneConferenceParticipantStatus(
-	// 			userId: $userId
-	// 			conferenceId: $conferenceId
-	// 			paymentStatus: $paymentStatus
-	// 			termsAndConditions: $termsAndConditions
-	// 			guardianConsent: $guardianConsent
-	// 			mediaConsent: $mediaConsent
-	// 			didAttend: $didAttend
-	// 		) {
-	// 			id
-	// 			paymentStatus
-	// 			termsAndConditions
-	// 			guardianConsent
-	// 			mediaConsent
-	// 			didAttend
-	// 		}
-	// 	}
-	// `);
+	const changeParticipantStatus = graphql(`
+		mutation changeParticipantStatusMutation(
+			$where: ConferenceParticipantStatusWhereUniqueInputNotRequired!
+			$data: UpdateConferenceParticipantStatusInput!
+		) {
+			updateOneConferenceParticipantStatus(where: $where, data: $data) {
+				id
+				termsAndConditions
+				guardianConsent
+				mediaConsent
+				paymentStatus
+				didAttend
+			}
+		}
+	`);
+
+	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
+		await changeParticipantStatus.mutate({
+			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			data
+		});
+	};
 </script>
 
 <Drawer bind:open {onClose}>
@@ -232,12 +228,16 @@
 				title={m.payment()}
 				faIcon="fa-money-bill-transfer"
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.paymentStatus ?? 'PENDING'}
+				changeStatus={async (newStatus: AdministrativeStatus) =>
+					await changeAdministrativeStatus({ paymentStatus: newStatus })}
 			/>
 			<StatusWidget
 				title={m.userAgreement()}
 				faIcon="fa-file-signature"
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.termsAndConditions ??
 					'PENDING'}
+				changeStatus={async (newStatus: AdministrativeStatus) =>
+					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
 			/>
 			{#if !ofAge}
 				<StatusWidget
@@ -245,17 +245,23 @@
 					faIcon="fa-family"
 					status={$userQuery.data?.findUniqueConferenceParticipantStatus?.guardianConsent ??
 						'PENDING'}
+					changeStatus={async (newStatus: AdministrativeStatus) =>
+						await changeAdministrativeStatus({ guardianConsent: newStatus })}
 				/>
 			{/if}
 			<StatusWidget
 				title={m.mediaAgreement()}
 				faIcon="fa-photo-film-music"
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsent ?? 'PENDING'}
+				changeStatus={async (newStatus: AdministrativeStatus) =>
+					await changeAdministrativeStatus({ mediaConsent: newStatus })}
 			/>
-			<StatusWidget
+			<StatusWidgetBoolean
 				title={m.attendance()}
 				faIcon="fa-calendar-check"
-				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend ?? 'PENDING'}
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend ?? false}
+				changeStatus={async (newStatus: boolean) =>
+					changeAdministrativeStatus({ didAttend: newStatus })}
 			/>
 		</div>
 	</div>

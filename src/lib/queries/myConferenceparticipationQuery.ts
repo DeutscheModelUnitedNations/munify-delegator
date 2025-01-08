@@ -5,7 +5,9 @@ export const myConferenceparticipationQuery = graphql(`
 		findUniqueUser(where: { id: $userId }) {
 			birthday
 		}
-		findUniqueConferenceParticipantStatus(where: { userId: { equals: $userId } }) {
+		findUniqueConferenceParticipantStatus(
+			where: { userId_conferenceId: { userId: $userId, conferenceId: $conferenceId } }
+		) {
 			id
 			paymentStatus
 			termsAndConditions

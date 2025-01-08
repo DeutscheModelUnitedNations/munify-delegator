@@ -11,6 +11,8 @@ export const load: LayoutLoad = async (event) => {
 		blocking: true
 	});
 
+	console.log(data)
+
 	return {
 		conferenceQueryData: data,
 		ofAgeAtConference: ofAgeAtConference(

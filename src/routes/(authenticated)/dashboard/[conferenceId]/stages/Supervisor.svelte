@@ -32,6 +32,7 @@
 			? supervisor.delegations
 			: supervisor.delegations.filter((x) => x.assignedNation || x.assignedNonStateActor)
 	);
+	let status = $derived(conferenceData.findUniqueConferenceParticipantStatus);
 
 	const stats = $derived([
 		{
@@ -122,7 +123,12 @@
 </section>
 
 {#if supervisor.plansOwnAttendenceAtConference}
-	<ConferenceStatusWidget conferenceId={conference!.id} userId={user.sub} {ofAgeAtConference} />
+	<ConferenceStatusWidget
+		conferenceId={conference!.id}
+		userId={user.sub}
+		{ofAgeAtConference}
+		{status}
+	/>
 {/if}
 
 {#if conference.state !== 'PARTICIPANT_REGISTRATION'}

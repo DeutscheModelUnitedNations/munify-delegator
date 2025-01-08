@@ -14,7 +14,7 @@ import {
 	updateOneConferenceParticipantStatusMutationObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 import { db } from '$db/db';
-import type { AdministrativeStatus } from '@prisma/client';
+import { AdministrativeStatus } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('ConferenceParticipantStatus', {
 	fields: (t) => ({
@@ -78,60 +78,94 @@ builder.queryFields((t) => {
 // 	};
 // });
 
+// const administrativeStatusEnum = builder.enumType('AdministrativeStatus', {
+// 	values: ['PENDING', 'PROBLEM', 'DONE'] as const
+// });
+
 builder.mutationFields((t) => {
 	const field = updateOneConferenceParticipantStatusMutationObject(t);
 	return {
 		updateOneConferenceParticipantStatus: t.prismaField({
 			...field,
 			args: {
-				userId: t.arg.id(),
-				conferenceId: t.arg.id(),
-				termsAndConditions: t.arg.string(),
-				guardianConsent: t.arg.string(),
-				mediaConsent: t.arg.string(),
-				paymentStatus: t.arg.string(),
-				didAttend: t.arg.boolean()
+				where: t.arg({
+					type: t.builder.inputType('ConferenceParticipantStatusWhereUniqueInputNotRequired', {
+						fields: (t) => ({
+							id: t.field({
+								type: 'ID',
+								required: false
+							}),
+							userId: t.field({
+								type: 'ID',
+								required: true
+							}),
+							conferenceId: t.field({
+								type: 'ID',
+								required: true
+							})
+						})
+					})
+				}),
+				data: t.arg({
+					type: t.builder.inputType('UpdateConferenceParticipantStatusInput', {
+						fields: (t) => ({
+							termsAndConditions: t.field({
+								type: AdministrativeStatus,
+								required: false
+							}),
+							guardianConsent: t.field({
+								type: AdministrativeStatus,
+								required: false
+							}),
+							mediaConsent: t.field({
+								type: AdministrativeStatus,
+								required: false
+							}),
+							paymentStatus: t.field({
+								type: AdministrativeStatus,
+								required: false
+							}),
+							didAttend: t.field({
+								type: 'Boolean',
+								required: false
+							})
+						})
+					})
+				})
 			},
 			resolve: (query, root, args, ctx, info) => {
-				const administrativeStatus = ['PENDING', 'PROBLEM', 'DONE'];
-
-				if (!administrativeStatus.includes(args.paymentStatus)) {
-					throw new Error('Invalid payment status');
-				}
-
-				if (!administrativeStatus.includes(args.termsAndConditions)) {
-					throw new Error('Invalid terms and conditions status');
-				}
-
-				if (!administrativeStatus.includes(args.guardianConsent)) {
-					throw new Error('Invalid guardian consent status');
-				}
-
-				if (!administrativeStatus.includes(args.mediaConsent)) {
-					throw new Error('Invalid media consent status');
+				if (!args.where.id && (!args.where.userId || !args.where.conferenceId)) {
+					throw new Error('You must provide either an id or a userId and conferenceId');
 				}
 
 				return db.conferenceParticipantStatus.upsert({
 					where: {
-						userId_conferenceId: { userId: args.userId, conferenceId: args.conferenceId },
+						id: args.where.id || undefined,
+						userId_conferenceId:
+							(args.where.userId &&
+								args.where.conferenceId && {
+									userId: args.where.userId!,
+									conferenceId: args.where.conferenceId!
+								}) ||
+							undefined,
 						AND: [ctx.permissions.allowDatabaseAccessTo('update').ConferenceParticipantStatus]
 					},
 
 					create: {
-						userId: args.userId,
-						conferenceId: args.conferenceId,
-						termsAndConditions: args.termsAndConditions as AdministrativeStatus,
-						guardianConsent: args.guardianConsent as AdministrativeStatus,
-						mediaConsent: args.mediaConsent as AdministrativeStatus,
-						paymentStatus: args.paymentStatus as AdministrativeStatus,
-						didAttend: args.didAttend
+						userId: args.where.userId!,
+						conferenceId: args.where.conferenceId!,
+						termsAndConditions: args.data.termsAndConditions || undefined,
+						guardianConsent: args.data.guardianConsent || undefined,
+						mediaConsent: args.data.mediaConsent || undefined,
+						paymentStatus: args.data.paymentStatus || undefined,
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
 					},
 					update: {
-						termsAndConditions: args.termsAndConditions as AdministrativeStatus,
-						guardianConsent: args.guardianConsent as AdministrativeStatus,
-						mediaConsent: args.mediaConsent as AdministrativeStatus,
-						paymentStatus: args.paymentStatus as AdministrativeStatus,
-						didAttend: args.didAttend
+						termsAndConditions: args.data.termsAndConditions || undefined,
+						guardianConsent: args.data.guardianConsent || undefined,
+						mediaConsent: args.data.mediaConsent || undefined,
+						paymentStatus: args.data.paymentStatus || undefined,
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
 					}
 				});
 			}

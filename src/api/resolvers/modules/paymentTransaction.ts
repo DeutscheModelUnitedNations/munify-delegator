@@ -14,7 +14,7 @@ import { db } from '$db/db';
 import { builder } from '../builder';
 import { GraphQLError } from 'graphql';
 import { status } from '$lib/paraglide/messages';
-import type { AdministrativeStatus } from '@prisma/client';
+import { AdministrativeStatus } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('PaymentTransaction', {
 	fields: (t) => ({
@@ -136,11 +136,13 @@ builder.mutationFields((t) => {
 builder.mutationFields((t) => {
 	const field = updateOnePaymentTransactionMutationObject(t);
 	return {
-		createOnePaymentTransaction: t.prismaField({
+		updateOnePaymentTransaction: t.prismaField({
 			...field,
 			args: {
 				id: t.arg.id(),
-				assignedStatus: t.arg.string(),
+				assignedStatus: t.arg({
+					type: AdministrativeStatus
+				}),
 				recievedAt: t.arg.string()
 			},
 			resolve: async (query, root, args, ctx) => {
@@ -166,10 +168,6 @@ builder.mutationFields((t) => {
 					throw new GraphQLError('Transaction not found');
 				}
 
-				if (!['PENDING', 'PROBLEM', 'DONE'].includes(args.assignedStatus)) {
-					throw new GraphQLError('Invalid status provided');
-				}
-
 				return await db.$transaction(async (tx) => {
 					if (args.assignedStatus === 'DONE') {
 						await tx.paymentTransaction.update({
@@ -190,10 +188,10 @@ builder.mutationFields((t) => {
 							create: {
 								userId: user.id,
 								conferenceId: transaction.conferenceId,
-								paymentStatus: args.assignedStatus as AdministrativeStatus
+								paymentStatus: args.assignedStatus
 							},
 							update: {
-								paymentStatus: args.assignedStatus as AdministrativeStatus
+								paymentStatus: args.assignedStatus
 							}
 						});
 					}
