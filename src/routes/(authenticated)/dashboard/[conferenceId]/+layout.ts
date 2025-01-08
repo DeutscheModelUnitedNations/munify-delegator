@@ -1,4 +1,5 @@
 import { myConferenceparticipationQuery } from '$lib/queries/myConferenceparticipationQuery';
+import { ofAgeAtConference } from '$lib/services/ageChecker';
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async (event) => {
@@ -10,16 +11,11 @@ export const load: LayoutLoad = async (event) => {
 		blocking: true
 	});
 
-	const ofAgeAtConference =
-		data?.findUniqueUser?.birthday && data?.findUniqueConference?.startConference
-			? (new Date(data?.findUniqueConference?.startConference ?? '').getTime() -
-					new Date(data?.findUniqueUser?.birthday ?? '').getTime()) /
-					(1000 * 60 * 60 * 24 * 365.25) >=
-				18
-			: false;
-
 	return {
 		conferenceQueryData: data,
-		ofAgeAtConference
+		ofAgeAtConference: ofAgeAtConference(
+			data?.findUniqueConference?.startConference,
+			data?.findUniqueUser?.birthday
+		)
 	};
 };

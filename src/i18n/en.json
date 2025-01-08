@@ -499,5 +499,6 @@
 	"paymentRecieved": "The payment was already marked as recieved with transaction on {date}!",
 	"referencedUsers": "Referenced Users",
 	"markAsProblem": "Mark as Problem",
-	"markAsRecieved": "Mark as Recieved"
+	"markAsRecieved": "Mark as Recieved",
+	"attendance": "Attendance"
 }

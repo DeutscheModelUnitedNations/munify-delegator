@@ -557,5 +557,6 @@
 	"paymentRecieved": "Der Beitrag wurde bereits als am {date} bezahlt markiert!",
 	"referencedUsers": "Referenzierte Teilnehmende",
 	"markAsProblem": "Als Problem markieren",
-	"markAsRecieved": "Als Erhalten markieren"
+	"markAsRecieved": "Als Erhalten markieren",
+	"attendance": "Anwesenheit"
 }

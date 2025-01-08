@@ -7,11 +7,14 @@ import {
 	PaymentTransactionCreatedAtFieldObject,
 	PaymentTransactionIdFieldObject,
 	PaymentTransactionRecievedAtFieldObject,
-	PaymentTransactionUserFieldObject
+	PaymentTransactionUserFieldObject,
+	updateOnePaymentTransactionMutationObject
 } from '$db/generated/graphql/PaymentTransaction';
 import { db } from '$db/db';
 import { builder } from '../builder';
 import { GraphQLError } from 'graphql';
+import { status } from '$lib/paraglide/messages';
+import type { AdministrativeStatus } from '@prisma/client';
 
 builder.prismaObject('PaymentTransaction', {
 	fields: (t) => ({
@@ -83,7 +86,7 @@ builder.mutationFields((t) => {
 			},
 			resolve: async (query, root, args, ctx) => {
 				const _user = ctx.permissions.getLoggedInUserOrThrow();
-				
+
 				const conference = await db.conference.findUnique({
 					where: { id: args.conferenceId }
 				});
@@ -125,6 +128,80 @@ builder.mutationFields((t) => {
 				});
 
 				return res;
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOnePaymentTransactionMutationObject(t);
+	return {
+		createOnePaymentTransaction: t.prismaField({
+			...field,
+			args: {
+				id: t.arg.id(),
+				assignedStatus: t.arg.string(),
+				recievedAt: t.arg.string()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const transaction = await db.paymentTransaction.findUniqueOrThrow({
+					where: {
+						id: args.id,
+						AND: [ctx.permissions.allowDatabaseAccessTo('update').PaymentTransaction]
+					},
+					include: {
+						paymentFor: {
+							include: {
+								user: {
+									include: {
+										conferenceParticipantStatus: true
+									}
+								}
+							}
+						}
+					}
+				});
+
+				if (!transaction) {
+					throw new GraphQLError('Transaction not found');
+				}
+
+				if (!['PENDING', 'PROBLEM', 'DONE'].includes(args.assignedStatus)) {
+					throw new GraphQLError('Invalid status provided');
+				}
+
+				return await db.$transaction(async (tx) => {
+					if (args.assignedStatus === 'DONE') {
+						await tx.paymentTransaction.update({
+							where: { id: args.id },
+							data: {
+								recievedAt: args.recievedAt
+							}
+						});
+					}
+
+					for (const userTransaction of transaction.paymentFor) {
+						const user = userTransaction.user;
+
+						await tx.conferenceParticipantStatus.upsert({
+							where: {
+								userId_conferenceId: { userId: user.id, conferenceId: transaction.conferenceId }
+							},
+							create: {
+								userId: user.id,
+								conferenceId: transaction.conferenceId,
+								paymentStatus: args.assignedStatus as AdministrativeStatus
+							},
+							update: {
+								paymentStatus: args.assignedStatus as AdministrativeStatus
+							}
+						});
+					}
+
+					return await tx.paymentTransaction.findUnique({
+						where: { id: args.id }
+					});
+				});
 			}
 		})
 	};

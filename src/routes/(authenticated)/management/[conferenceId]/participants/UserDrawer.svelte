@@ -4,7 +4,8 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
-	import { find } from 'lodash';
+	import StatusWidget from './StatusWidget.svelte';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
 
 	interface Props {
 		user: UserRowData;
@@ -21,8 +22,7 @@
 		};
 	};
 
-	//TODO the types are broken here?
-	const userQuery: any = graphql(`
+	const userQuery = graphql(`
 		query UserDrawerQuery($userId: String!, $conferenceId: String!) @load {
 			findUniqueUser(where: { id: $userId }) {
 				id
@@ -55,8 +55,53 @@
 			) {
 				id
 			}
+			findUniqueConferenceParticipantStatus(
+				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
+			) {
+				id
+				termsAndConditions
+				guardianConsent
+				mediaConsent
+				paymentStatus
+				didAttend
+				conference {
+					startConference
+				}
+			}
 		}
 	`);
+
+	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
+	const ofAge = $derived(ofAgeAtConference(status?.conference?.startConference, user.birthday));
+
+	// const changeParticipantStatus = graphql(`
+	// 	mutation changeParticipantStatusMutation(
+	// 		$userId: String!
+	// 		$conferenceId: String!
+	// 		$paymentStatus: AdministrativeStatus!
+	// 		$termsAndConditions: AdministrativeStatus!
+	// 		$guardianConsent: AdministrativeStatus!
+	// 		$mediaConsent: AdministrativeStatus!
+	// 		$didAttend: Boolean!
+	// 	) {
+	// 		updateOneConferenceParticipantStatus(
+	// 			userId: $userId
+	// 			conferenceId: $conferenceId
+	// 			paymentStatus: $paymentStatus
+	// 			termsAndConditions: $termsAndConditions
+	// 			guardianConsent: $guardianConsent
+	// 			mediaConsent: $mediaConsent
+	// 			didAttend: $didAttend
+	// 		) {
+	// 			id
+	// 			paymentStatus
+	// 			termsAndConditions
+	// 			guardianConsent
+	// 			mediaConsent
+	// 			didAttend
+	// 		}
+	// 	}
+	// `);
 </script>
 
 <Drawer bind:open {onClose}>
@@ -182,9 +227,36 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminUserCardStatus()}</h3>
-		<div class="alert alert-info">
-			<i class="fas fa-excavator"></i>
-			{m.comingSoon()}
+		<div class="flex flex-col gap-2">
+			<StatusWidget
+				title={m.payment()}
+				faIcon="fa-money-bill-transfer"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.paymentStatus ?? 'PENDING'}
+			/>
+			<StatusWidget
+				title={m.userAgreement()}
+				faIcon="fa-file-signature"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.termsAndConditions ??
+					'PENDING'}
+			/>
+			{#if !ofAge}
+				<StatusWidget
+					title={m.guardianAgreement()}
+					faIcon="fa-family"
+					status={$userQuery.data?.findUniqueConferenceParticipantStatus?.guardianConsent ??
+						'PENDING'}
+				/>
+			{/if}
+			<StatusWidget
+				title={m.mediaAgreement()}
+				faIcon="fa-photo-film-music"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsent ?? 'PENDING'}
+			/>
+			<StatusWidget
+				title={m.attendance()}
+				faIcon="fa-calendar-check"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend ?? 'PENDING'}
+			/>
 		</div>
 	</div>
 

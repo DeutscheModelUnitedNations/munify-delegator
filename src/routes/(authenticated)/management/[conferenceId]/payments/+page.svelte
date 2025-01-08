@@ -169,5 +169,4 @@
 			{/if}
 		</div>
 	{/if}
-	<pre>{JSON.stringify($paymentReferenceByIdQuery, null, 2)}</pre>
 </div>
