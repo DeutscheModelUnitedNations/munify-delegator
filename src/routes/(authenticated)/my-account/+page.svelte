@@ -70,6 +70,7 @@
 						name="birthday"
 						label={m.birthDate()}
 						defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
+						enableFutureDates={false}
 					/>
 					<FormSelect
 						{form}
@@ -85,7 +86,7 @@
 					<FormTextInput
 						{form}
 						name="pronouns"
-						placeholder={m.pronounsSheHer()}
+						placeholder={m.pronounsExample()}
 						label={m.pronouns()}
 					/>
 					<FormSelect
