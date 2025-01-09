@@ -10,8 +10,8 @@
 </script>
 
 <div class="flex flex-col gap-2">
-	<h1 class="text-2xl font-bold">{m.singlePayment()}</h1>
-	<p>{m.singlePaymentDescription()}</p>
+	<h1 class="text-2xl font-bold">{m.delegationPayment()}</h1>
+	<p>{m.delegationPaymentDescription()}</p>
 
 	<ReferenceMaker
 		users={conferenceQueryData?.findUniqueDelegationMember?.delegation.members.map((member) => ({

@@ -3088,7 +3088,7 @@ input UserUpdateDataInput {
   foodPreference: String!
   gender: String!
   phone: String!
-  pronouns: String!
+  pronouns: String
   street: String!
   wantsJoinTeamInformation: Boolean
   wantsToReceiveGeneralInformation: Boolean
