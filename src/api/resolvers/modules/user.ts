@@ -144,7 +144,7 @@ builder.mutationFields((t) => {
 							city: t.string(),
 							country: t.string(),
 							gender: t.string(),
-							pronouns: t.string({ required: false}),
+							pronouns: t.string({ required: false }),
 							foodPreference: t.string(),
 							wantsToReceiveGeneralInformation: t.boolean({
 								required: false
