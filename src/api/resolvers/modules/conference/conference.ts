@@ -18,6 +18,7 @@ import {
 	ConferenceMediaConsentContentFieldObject,
 	ConferencePostalApartmentFieldObject,
 	ConferencePostalCityFieldObject,
+	ConferencePostalCountryFieldObject,
 	ConferencePostalNameFieldObject,
 	ConferencePostalStreetFieldObject,
 	ConferencePostalZipFieldObject,
@@ -26,6 +27,8 @@ import {
 	ConferenceStateFieldObject,
 	ConferenceTermsAndConditionsContentFieldObject,
 	ConferenceTitleFieldObject,
+	ConferenceUnlockPaymentsFieldObject,
+	ConferenceUnlockPostalsFieldObject,
 	ConferenceWebsiteFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
@@ -52,6 +55,8 @@ builder.prismaObject('Conference', {
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
 		endConference: t.field(ConferenceEndConferenceFieldObject),
+		unlockPayments: t.field(ConferenceUnlockPaymentsFieldObject),
+		unlockPostals: t.field(ConferenceUnlockPostalsFieldObject),
 		feeAmount: t.float(ConferenceFeeAmountFieldObject),
 		accountHolder: t.string(ConferenceAccountHolderFieldObject),
 		iban: t.string(ConferenceIbanFieldObject),
@@ -63,7 +68,7 @@ builder.prismaObject('Conference', {
 		postalApartment: t.string(ConferencePostalApartmentFieldObject),
 		postalZip: t.string(ConferencePostalZipFieldObject),
 		postalCity: t.string(ConferencePostalCityFieldObject),
-		postalCountry: t.string(ConferencePostalCityFieldObject),
+		postalCountry: t.string(ConferencePostalCountryFieldObject),
 		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
 		guardianConsentContent: t.string(ConferenceGuardianConsentContentFieldObject),
 		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
@@ -208,6 +213,12 @@ builder.mutationFields((t) => {
 							startAssignment: t.field({ type: 'DateTime', required: false }),
 							startConference: t.field({ type: 'DateTime', required: false }),
 							endConference: t.field({ type: 'DateTime', required: false }),
+							unlockPayments: t.boolean({
+								required: false
+							}),
+							unlockPostals: t.boolean({
+								required: false
+							}),
 							feeAmount: t.float({
 								required: false
 							}),
@@ -278,7 +289,11 @@ builder.mutationFields((t) => {
 						state: args.data.state ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
 						startConference: args.data.startConference ?? undefined,
-						endConference: args.data.endConference ?? undefined
+						endConference: args.data.endConference ?? undefined,
+						unlockPayments:
+							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
+						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
+						postalApartment: args.data.postalApartment ?? null
 					},
 					...query
 				});

@@ -112,6 +112,22 @@
 		postalRegistration: {
 			translation: m.postalRegistration(),
 			icon: 'envelopes-bulk'
+		},
+		group: {
+			translation: m.groupPayment(),
+			icon: 'people-group'
+		},
+		delegation: {
+			translation: m.delegationPayment(),
+			icon: 'users-viewfinder'
+		},
+		single: {
+			translation: m.singlePayment(),
+			icon: 'user'
+		},
+		payments: {
+			translation: m.payment(),
+			icon: 'money-bill-transfer'
 		}
 	};
 

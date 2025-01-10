@@ -23,7 +23,7 @@
 		data
 	}: {
 		data: Pick<
-			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
+			NonNullable<PageData['conferenceQueryData']>,
 			'findUniqueConference' | 'findUniqueDelegationMember'
 		> &
 			Pick<PageData, 'user'>;
