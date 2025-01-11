@@ -128,6 +128,10 @@
 		payments: {
 			translation: m.payment(),
 			icon: 'money-bill-transfer'
+		},
+		cleanup: {
+			icon: 'broom',
+			translation: m.cleanup()
 		}
 	};
 

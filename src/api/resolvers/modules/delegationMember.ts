@@ -268,3 +268,73 @@ builder.mutationFields((t) => {
 		})
 	};
 });
+
+builder.mutationFields((t) => {
+	return {
+		// dead = not assigned to any role
+		deleteDeadDelegationMembers: t.prismaField({
+			type: ['DelegationMember'],
+			args: {
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.oidc.user;
+				if (!user) throw new GraphQLError('Not logged in');
+				await db.delegationMember.deleteMany({
+					where: {
+						delegation: {
+							assignedNation: null,
+							assignedNonStateActor: null
+						},
+						conference: {
+							teamMembers: {
+								some: {
+									userId: user.sub,
+									role: {
+										in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+									}
+								}
+							}
+						}
+					}
+				});
+				return {
+					success: true
+				};
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	return {
+		// empty = no members
+		deleteDeadDelegationMembers: t.prismaField({
+			type: ['DelegationMember'],
+			args: {
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				return db.$transaction(async (tx) => {
+					const where = {
+						members: {
+							none: {}
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('delete').DelegationMember]
+					};
+
+					const res = await tx.delegation.findMany({
+						...query,
+						where
+					});
+
+					await db.delegation.deleteMany({
+						where
+					});
+
+					return res;
+				});
+			}
+		})
+	};
+});

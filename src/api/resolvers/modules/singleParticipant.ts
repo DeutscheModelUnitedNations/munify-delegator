@@ -251,3 +251,37 @@ builder.mutationFields((t) => {
 		})
 	};
 });
+
+builder.mutationFields((t) => {
+	return {
+		// dead = not assigned to any role
+		deleteDeadSingleParticipants: t.prismaField({
+			type: ['SingleParticipant'],
+			args: {
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.oidc.user;
+				if (!user) throw new GraphQLError('Not logged in');
+				await db.singleParticipant.deleteMany({
+					where: {
+						assignedRole: null,
+						conference: {
+							teamMembers: {
+								some: {
+									userId: user.sub,
+									role: {
+										in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+									}
+								}
+							}
+						}
+					}
+				});
+				return {
+					success: true
+				};
+			}
+		})
+	};
+});
