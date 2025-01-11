@@ -18,30 +18,36 @@
 	<!-- TODO i18n this once the thing is fully implemented -->
 	<div class="prose mt-4">
 		<p>
-			Um an der Konferenz teilnehmen zu können, benötigen wir von dir postalisch – als per Brief
-			verschickt – ein paar unterschriebene Dokumente. Diese Dokumente sind
+			Um an der Konferenz teilnehmen zu können, benötigen wir von dir postalisch – also die
+			Originale per Brief verschickt (keine Kopien) – ein paar unterschriebene Dokumente. Wir
+			stellen die Dokumente als Paket in einem PDF zum Download zur Verfügung. Enthalten sind die
+			folgenden Dokumente:
 		</p>
 		<ul class="list-disc pl-8">
 			<li>
-				die <strong>Einverständniserklärung unserer Allgemeinen Geschäftsbedingungen</strong>, die
-				du selbst unterschreiben musst
+				die <strong>verbindliche Anmeldung</strong>, der unsere Nutzungsbedingungen und
+				Datenschutzerklärung zu Grunde legt und welche du selbst unterschreiben musst
 			</li>
 			<li>
-				die <strong>Einverständniserklärung deiner Eltern oder Erziehungsberechtigten</strong>, die
-				im Normalfall deine Eltern unterschreiben müssens, wenn du zu Konferenzbeginn ({conference?.startConference
+				die <strong>Einverständniserklärung aller Eltern oder Erziehungsberechtigten</strong>, die
+				im Normalfall <strong>beide</strong> (!) Eltern unterschreiben müssens, wenn du zu
+				Konferenzbeginn ({conference?.startConference
 					? new Date(conference.startConference!).toLocaleDateString()
 					: 'Datum unbekannt'}) noch nicht volljährig bist
 			</li>
 			<li>
-				die <strong>Einverständniserklärung zur Veröffentlichung von Bild- und Tonaufnahmen</strong
-				>, die du und – wenn du zu Konferenz nicht volljährig bist – deine Eltern unterschreiben
-				müssen
+				die <strong>Einverständniserklärung zur Bildnutzung</strong>, die du und – wenn du zur
+				Konferenz nicht volljährig bist – zusätzlich alle Eltern bzw. Erziehungsberechtigten
+				unterschreiben müssen
 			</li>
 		</ul>
 		<p>
-			Diese drei Dokumente werden dir als Formulare von der Teilnehmendenbetreuung zur Verfügung
-			gestellt. Du musst sie ausdrucken, alle notwendigen Felder ausfüllen und dann wie oben
-			beschrieben unterschreiben bzw. deine Eltern unterschreiben lassen.
+			Du musst sie ausdrucken, alle notwendigen Felder ausfüllen und dann wie oben beschrieben
+			unterschreiben bzw. auch deine Eltern unterschreiben lassen.
+		</p>
+		<p>
+			Die Nutzungsbedingungen und die Datenschutzerklärung selbst sollte gelesen, muss aber nicht
+			ausgedruckt und bitte auch nicht mitgeschickt werden.
 		</p>
 		<p>
 			Leider reicht es nicht aus, die postalische Anmeldung einfach elektronisch zu unterzeichnen
