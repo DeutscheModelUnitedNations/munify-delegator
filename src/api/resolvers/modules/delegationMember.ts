@@ -278,57 +278,23 @@ builder.mutationFields((t) => {
 				conferenceId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
-				const user = ctx.oidc.user;
-				if (!user) throw new GraphQLError('Not logged in');
-				await db.delegationMember.deleteMany({
-					where: {
+				return db.$transaction(async (tx) => {
+					const where = {
+						assignedCommittee: null,
 						delegation: {
 							assignedNation: null,
 							assignedNonStateActor: null
 						},
-						conference: {
-							teamMembers: {
-								some: {
-									userId: user.sub,
-									role: {
-										in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
-									}
-								}
-							}
-						}
-					}
-				});
-				return {
-					success: true
-				};
-			}
-		})
-	};
-});
-
-builder.mutationFields((t) => {
-	return {
-		// empty = no members
-		deleteDeadDelegationMembers: t.prismaField({
-			type: ['DelegationMember'],
-			args: {
-				conferenceId: t.arg.id()
-			},
-			resolve: async (query, root, args, ctx) => {
-				return db.$transaction(async (tx) => {
-					const where = {
-						members: {
-							none: {}
-						},
+						conferenceId: args.conferenceId,
 						AND: [ctx.permissions.allowDatabaseAccessTo('delete').DelegationMember]
 					};
 
-					const res = await tx.delegation.findMany({
+					const res = await tx.delegationMember.findMany({
 						...query,
 						where
 					});
 
-					await db.delegation.deleteMany({
+					await db.delegationMember.deleteMany({
 						where
 					});
 

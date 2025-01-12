@@ -261,26 +261,24 @@ builder.mutationFields((t) => {
 				conferenceId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
-				const user = ctx.oidc.user;
-				if (!user) throw new GraphQLError('Not logged in');
-				await db.singleParticipant.deleteMany({
-					where: {
+				return db.$transaction(async (tx) => {
+					const where = {
 						assignedRole: null,
-						conference: {
-							teamMembers: {
-								some: {
-									userId: user.sub,
-									role: {
-										in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
-									}
-								}
-							}
-						}
-					}
+						conferenceId: args.conferenceId,
+						AND: [ctx.permissions.allowDatabaseAccessTo('delete').SingleParticipant]
+					};
+
+					const res = await tx.singleParticipant.findMany({
+						...query,
+						where
+					});
+
+					await db.singleParticipant.deleteMany({
+						where
+					});
+
+					return res;
 				});
-				return {
-					success: true
-				};
 			}
 		})
 	};

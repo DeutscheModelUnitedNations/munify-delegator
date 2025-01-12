@@ -393,6 +393,7 @@ builder.mutationFields((t) => {
 						members: {
 							none: {}
 						},
+						conferenceId: args.conferenceId,
 						AND: [ctx.permissions.allowDatabaseAccessTo('delete').Delegation]
 					};
 
