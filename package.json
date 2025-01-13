@@ -80,7 +80,6 @@
 		"prisma-generator-pothos-codegen": "^0.7.1",
 		"svelte": "^5.2.9",
 		"svelte-check": "^4.1.0",
-		"svelte-drawer-component": "^1.2.2",
 		"svelte-table": "^0.6.3",
 		"sveltekit-superforms": "^2.20.1",
 		"tailwindcss": "^3.4.15",

@@ -1,36 +1,56 @@
 <script lang="ts">
-	import Drawer from 'svelte-drawer-component';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
 		open: boolean;
 		onClose?: () => void;
-		placement?: 'left' | 'right' | 'top' | 'bottom';
-		size?: string;
 		children: Snippet;
+		width?: string;
 	}
 
-	let {
-		open = $bindable(),
-		onClose,
-		placement = 'right',
-		size = '34em',
-		children
-	}: Props = $props();
+	let { open = $bindable(), onClose, children, width = '34rem' }: Props = $props();
+
+	function close() {
+		document.body.classList.remove('overflow-hidden');
+		open = false;
+		if (onClose) onClose();
+	}
+
+	$effect(() => {
+		if (open) {
+			document.body.classList.add('overflow-hidden');
+		}
+	});
 </script>
 
-<Drawer bind:open {size} {placement} on:clickAway={() => (onClose ? onClose() : null)}>
-	<div class="flex min-h-full flex-col gap-8 bg-base-100 p-10">
-		{@render children()}
-		<button
-			class="btn absolute right-4 top-4"
-			onclick={() => {
-				open = false;
-				if (onClose) onClose();
-			}}
-			aria-label="Close"
-		>
-			<i class="fa-duotone fa-xmark"></i>
-		</button>
+{#if open}
+	<div
+		aria-hidden="true"
+		onclick={close}
+		class="fixed left-0 top-0 z-30 h-screen w-screen bg-black opacity-30"
+	></div>
+	<div
+		class="no-scrollbar fixed right-0 top-0 z-40 h-screen overflow-y-auto duration-300"
+		style="width: {width}"
+	>
+		<div class="flex min-h-full flex-col gap-8 bg-base-100 p-10">
+			{@render children()}
+			<button class="btn absolute right-4 top-4" onclick={close} aria-label="Close">
+				<i class="fa-duotone fa-xmark"></i>
+			</button>
+		</div>
 	</div>
-</Drawer>
+{/if}
+
+<style lang="postcss">
+	/* Hide scrollbar for Chrome, Safari and Opera */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Hide scrollbar for IE, Edge and Firefox */
+	.no-scrollbar {
+		-ms-overflow-style: none; /* IE and Edge */
+		scrollbar-width: none; /* Firefox */
+	}
+</style>
