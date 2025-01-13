@@ -1557,6 +1557,10 @@ type Mutation {
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
+  deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
+  deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
+  deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
+  deleteEmptyDelegations(conferenceId: ID!): [Delegation!]!
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   deleteOneConference(where: ConferenceWhereUniqueInput!): Conference
   deleteOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus

@@ -87,11 +87,11 @@
 		},
 		supervisors: {
 			translation: m.supervisors(),
-			icon: 'eye'
+			icon: 'chalkboard-user'
 		},
 		plausibility: {
 			translation: m.adminPlausibility(),
-			icon: 'question'
+			icon: 'shield-check'
 		},
 		seats: {
 			translation: m.seats(),
@@ -128,6 +128,10 @@
 		payments: {
 			translation: m.payment(),
 			icon: 'money-bill-transfer'
+		},
+		cleanup: {
+			icon: 'broom',
+			translation: m.cleanup()
 		}
 	};
 

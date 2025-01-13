@@ -378,3 +378,37 @@ builder.queryFields((t) => {
 		})
 	};
 });
+
+builder.mutationFields((t) => {
+	return {
+		// empty = no members
+		deleteEmptyDelegations: t.prismaField({
+			type: ['Delegation'],
+			args: {
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				return db.$transaction(async (tx) => {
+					const where = {
+						members: {
+							none: {}
+						},
+						conferenceId: args.conferenceId,
+						AND: [ctx.permissions.allowDatabaseAccessTo('delete').Delegation]
+					};
+
+					const res = await tx.delegation.findMany({
+						...query,
+						where
+					});
+
+					await db.delegation.deleteMany({
+						where
+					});
+
+					return res;
+				});
+			}
+		})
+	};
+});

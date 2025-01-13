@@ -251,3 +251,35 @@ builder.mutationFields((t) => {
 		})
 	};
 });
+
+builder.mutationFields((t) => {
+	return {
+		// dead = not assigned to any role
+		deleteDeadSingleParticipants: t.prismaField({
+			type: ['SingleParticipant'],
+			args: {
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				return db.$transaction(async (tx) => {
+					const where = {
+						assignedRole: null,
+						conferenceId: args.conferenceId,
+						AND: [ctx.permissions.allowDatabaseAccessTo('delete').SingleParticipant]
+					};
+
+					const res = await tx.singleParticipant.findMany({
+						...query,
+						where
+					});
+
+					await db.singleParticipant.deleteMany({
+						where
+					});
+
+					return res;
+				});
+			}
+		})
+	};
+});
