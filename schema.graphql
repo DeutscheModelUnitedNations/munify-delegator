@@ -35,6 +35,7 @@ input BoolWithAggregatesFilter {
 type Committee {
   abbreviation: String!
   conference: Conference!
+  delegationMembers: [DelegationMember!]!
   id: ID!
   name: String!
   nations: [Nation!]!
