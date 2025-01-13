@@ -13,7 +13,6 @@ import {
 import { db } from '$db/db';
 import { builder } from '../builder';
 import { GraphQLError } from 'graphql';
-import { status } from '$lib/paraglide/messages';
 import { AdministrativeStatus } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('PaymentTransaction', {

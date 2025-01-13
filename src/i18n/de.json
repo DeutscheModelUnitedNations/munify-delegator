@@ -588,5 +588,7 @@
 	"cleanupSupervisorsDescription": "Mit einem Klick auf den unteren Button werden alle Betreuende, die nicht mindestens eine Delegation mit einer zugewiesenen Rolle betreuen, aus der Konferenz entfernt.",
 	"cleanupSupervisorsButton": "Betreuende aufräumen",
 	"cleanupSupervisorsSuccess": "Betreuende wurden erfolgreich aufgeräumt.",
-	"deleted": "Gelöscht"
+	"deleted": "Gelöscht",
+	"downloadCommitteeData": "Daten für das Gremium \"{committee}\" herunterladen",
+	"alpha3Code": "ISO Alpha 3 Code"
 }

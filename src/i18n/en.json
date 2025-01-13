@@ -532,5 +532,7 @@
 	"cleanupSupervisorsDescription": "By clicking on the button below, all supervisors who do not supervise at least one delegation with an assigned role will be removed from the conference.",
 	"cleanupSupervisorsButton": "Clean up supervisors",
 	"cleanupSupervisorsSuccess": "Supervisors have been cleaned up successfully.",
-	"deleted": "Deleted"
+	"deleted": "Deleted",
+	"downloadCommitteeData": "Download committee data for the {committee}",
+	"alpha3Code": "ISO Alpha 3 Code"
 }
