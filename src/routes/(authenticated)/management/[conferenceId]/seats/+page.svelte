@@ -3,6 +3,7 @@
 	import * as m from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import type { PageData } from './$houdini';
+	import DownloadCommitteeDataBtn from './DownloadCommitteeDataBtn.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -16,10 +17,17 @@
 <div class="flex w-full flex-col items-start gap-10 p-4">
 	<section class="flex w-full flex-col items-start gap-4">
 		<h1 class="text-2xl font-bold">{m.nationSeats()}</h1>
-
 		<div class="block w-full overflow-y-scroll md:contents">
 			<table class="table table-pin-rows text-center">
 				<thead>
+					<tr>
+						<td> </td>
+						{#each committees as committee}
+							<th>
+								<DownloadCommitteeDataBtn {committee} />
+							</th>
+						{/each}
+					</tr>
 					<tr>
 						<td><i class="fa-duotone fa-sigma"></i></td>
 						{#each committees as committee}
@@ -91,12 +99,17 @@
 											)}
 											{#if assignedDelegationMember && assignedDelegationMember.length > 0}
 												{#each assignedDelegationMember as member}
-													<a
-														class="btn btn-outline btn-sm"
-														href={`/management/${data.conferenceId}/participants?filter=${member.user.id}`}
+													<div
+														class="tooltip"
+														data-tip={`${member.user.given_name} ${member.user.family_name}`}
 													>
-														{member.user.given_name[0].toUpperCase()}{member.user.family_name[0].toUpperCase()}
-													</a>
+														<a
+															class="btn btn-outline btn-sm"
+															href={`/management/${data.conferenceId}/participants?filter=${member.user.id}`}
+														>
+															{member.user.given_name[0].toUpperCase()}{member.user.family_name[0].toUpperCase()}
+														</a>
+													</div>
 												{/each}
 											{:else}
 												<i class="fas fa-dash text-gray-400"></i>
