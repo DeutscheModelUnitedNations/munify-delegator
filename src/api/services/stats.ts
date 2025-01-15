@@ -178,9 +178,156 @@ export async function conferenceStats({
 		distribution: ageDistribution
 	};
 
+	const diet = {
+		singleParticipants: {
+			omnivore: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		},
+		delegationMembers: {
+			omnivore: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		},
+		supervisors: {
+			omnivore: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		},
+		teamMembers: {
+			omnivore: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		}
+	};
+
 	return {
 		countdowns,
 		registrationStatistics,
-		ageStatistics
+		ageStatistics,
+		diet
 	};
 }

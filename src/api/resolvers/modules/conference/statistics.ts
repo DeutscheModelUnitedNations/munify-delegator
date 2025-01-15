@@ -3,6 +3,14 @@ import { conferenceStats } from '$api/services/stats';
 import { db } from '$db/db';
 import { builder } from '../../builder';
 
+const dietVariations = builder.simpleObject('StatisticsResultRegisteredParticipantDietVariations', {
+	fields: (t) => ({
+		omnivore: t.int(),
+		vegetarian: t.int(),
+		vegan: t.int()
+	})
+});
+
 const StatisticsResult = builder.simpleObject('StatisticsResult', {
 	fields: (t) => ({
 		countdowns: t.field({
@@ -81,9 +89,28 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 					})
 				})
 			})
+		}),
+		diet: t.field({
+			type: t.builder.simpleObject('StatisticsResultRegisteredParticipantDiet', {
+				fields: (t) => ({
+					singleParticipants: t.field({
+						type: dietVariations
+					}),
+					delegationMembers: t.field({
+						type: dietVariations
+					}),
+					supervisors: t.field({
+						type: dietVariations
+					}),
+					teamMembers: t.field({
+						type: dietVariations
+					})
+				})
+			})
 		})
 	})
 });
+
 builder.queryFields((t) => {
 	return {
 		getConferenceStatistics: t.field({
@@ -95,13 +122,14 @@ builder.queryFields((t) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				await requireToBeConferenceAdmin({ conferenceId: args.conferenceId, user });
 
-				const { countdowns, registrationStatistics, ageStatistics } = await conferenceStats({
+				const { countdowns, registrationStatistics, ageStatistics, diet } = await conferenceStats({
 					db,
 					conferenceId: args.conferenceId
 				});
 
 				return {
 					countdowns,
+					diet,
 					registered: registrationStatistics,
 					age: {
 						...ageStatistics,
