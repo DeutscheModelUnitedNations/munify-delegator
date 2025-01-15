@@ -2,6 +2,7 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import * as m from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import type { PageData } from './$houdini';
 	import DownloadCommitteeDataBtn from './DownloadCommitteeDataBtn.svelte';
 
@@ -101,13 +102,13 @@
 												{#each assignedDelegationMember as member}
 													<div
 														class="tooltip"
-														data-tip={`${member.user.given_name} ${member.user.family_name}`}
+														data-tip={formatNames(member.user.given_name, member.user.family_name)}
 													>
 														<a
 															class="btn btn-outline btn-sm"
 															href={`/management/${data.conferenceId}/participants?filter=${member.user.id}`}
 														>
-															{member.user.given_name[0].toUpperCase()}{member.user.family_name[0].toUpperCase()}
+															{formatInitials(member.user.given_name, member.user.family_name)}
 														</a>
 													</div>
 												{/each}
@@ -184,7 +185,7 @@
 												class="btn btn-outline btn-sm"
 												href={`/management/${data.conferenceId}/participants?filter=${member.user.id}`}
 											>
-												{member.user.given_name[0].toUpperCase()}{member.user.family_name[0].toUpperCase()}
+												{formatInitials(member.user.given_name, member.user.family_name)}
 											</a>
 										{/each}
 									</div>

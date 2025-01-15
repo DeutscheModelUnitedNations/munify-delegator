@@ -163,15 +163,14 @@
 				if (
 					row.status?.termsAndConditions === 'PROBLEM' ||
 					row.status?.mediaConsent === 'PROBLEM' ||
-					row.status?.guardianConsent === 'PROBLEM' ||
-					row.status?.paymentStatus === 'PROBLEM'
+					row.status?.guardianConsent === 'PROBLEM'
 				) {
 					return `<i class="fas fa-triangle-exclamation fa-beat text-red-500"></i>`;
 				}
 				if (
 					row.status?.termsAndConditions === 'DONE' &&
 					row.status?.mediaConsent === 'DONE' &&
-					row.status?.paymentStatus === 'DONE'
+					row.status?.guardianConsent === 'DONE'
 				) {
 					return `<i class="fas fa-check text-success"></i>`;
 				}

@@ -4,6 +4,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$houdini';
+	import formatNames from '$lib/services/formatNames';
 
 	let { data }: { data: PageData } = $props();
 	let assignmentData = $derived(data.DelegationAssignmentDataQuery);
@@ -111,7 +112,7 @@
 				{#each membersWithCommittees ?? [] as memberWithCommittee}
 					{@const member = members?.find((me) => me.id === memberWithCommittee.delegationMemberId)}
 					<tr>
-						<td>{member?.user.given_name} {member?.user.family_name} </td>
+						<td>{formatNames(member?.user.given_name, member?.user.family_name)}</td>
 						<td>
 							<select class="select select-bordered" bind:value={memberWithCommittee.committeeId}>
 								<option value="" selected>{m.pleaseSelect()}</option>

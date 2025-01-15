@@ -9,6 +9,11 @@
 	let { data }: { data: PageData } = $props();
 
 	let isDelegation = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
+	let supervisorIsNotPresent = $derived(
+		data.conferenceQueryData?.findUniqueConferenceSupervisor
+			? !data.conferenceQueryData.findUniqueConferenceSupervisor.plansOwnAttendenceAtConference
+			: true
+	);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -21,6 +26,8 @@
 			btnText={m.singlePaymentBtn()}
 			btnLink="./payment/single"
 			img={singlePayment}
+			disabled={supervisorIsNotPresent}
+			disabledText={m.paymentMethodNotAvailable()}
 		>
 			<p>{m.singlePaymentDescription()}</p>
 		</UndrawCard>

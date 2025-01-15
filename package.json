@@ -107,5 +107,7 @@
 		"add-translation": "bun run add_new_translation.ts"
 	},
 	"type": "module",
-	"dependencies": {}
+	"dependencies": {
+		"inquirer": "^12.3.2"
+	}
 }

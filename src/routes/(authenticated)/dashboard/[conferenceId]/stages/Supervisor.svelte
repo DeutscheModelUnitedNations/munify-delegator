@@ -9,16 +9,23 @@
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import ConferenceStatusWidget from '../ConferenceStatusWidget.svelte';
+	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
+	import formatNames from '$lib/services/formatNames';
+	import type { AdministrativeStatus } from '@prisma/client';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
+	import { find } from 'lodash';
 
 	// TODO these components need some refactoring
 	let {
 		user,
 		conferenceData,
-		ofAgeAtConference
+		ofAge
 	}: {
 		user: PageData['user'];
 		conferenceData: MyConferenceparticipationQuery$result;
-		ofAgeAtConference: boolean;
+		ofAge: boolean;
 	} = $props();
 
 	let conference = $derived(conferenceData.findUniqueConference!);
@@ -46,13 +53,13 @@
 	]);
 
 	const getName = (
-		user: NonNullable<typeof supervisor>['delegations'][0]['members'][0]['user'],
+		user: { given_name: string; family_name: string } & { [key: string]: any },
 		shortenGiven = false
 	) => {
 		if (shortenGiven) {
 			return `${user.given_name.charAt(0)}. ${user.family_name}`;
 		}
-		return `${user.given_name} ${user.family_name}`;
+		return formatNames(user.given_name, user.family_name);
 	};
 
 	const updateQuery = graphql(`
@@ -81,6 +88,12 @@
 		});
 		//TODO does not update the UI after fetching
 	};
+
+	const allParticipants = $derived(
+		supervisor.delegations
+			.flatMap((x) => x.members.map((y) => y.user))
+			.sort((a, b) => a.family_name.localeCompare(b.family_name))
+	);
 </script>
 
 {#if conference.state === 'PARTICIPANT_REGISTRATION'}
@@ -119,11 +132,11 @@
 	</p>
 </section>
 
-{#if supervisor.plansOwnAttendenceAtConference && conference.state !== 'PARTICIPANT_REGISTRATION'}
+{#if conference.state !== 'PARTICIPANT_REGISTRATION'}
 	<ConferenceStatusWidget
 		conferenceId={conference!.id}
 		userId={user.sub}
-		{ofAgeAtConference}
+		ofAgeAtConference={ofAge}
 		{status}
 		unlockPayment={conference?.unlockPayments}
 		unlockPostals={conference?.unlockPostals}
@@ -163,6 +176,29 @@
 		{/if}
 	</TasksWrapper>
 {/if}
+
+<section class="flex flex-col gap-2">
+	<h2 class="text-2xl font-bold">{m.participantStatus()}</h2>
+	<DelegationStatusTableWrapper withPostalSatus withPaymentStatus>
+		{#each allParticipants ?? [] as user}
+			{@const participantStatus = user.conferenceParticipantStatus.find(
+				(x) => x.conference.id === conference.id
+			)}
+			<DelegationStatusTableEntry
+				name={formatNames(user.given_name, user.family_name)}
+				pronouns={user.pronouns ?? ''}
+				withPaymentStatus
+				withPostalStatus
+				paymentStatus={participantStatus?.paymentStatus ?? 'PENDING'}
+				postalSatus={getSimplifiedPostalStatus(
+					participantStatus,
+					ofAgeAtConference(conference.startConference, user.birthday)
+				)}
+			/>
+		{/each}
+	</DelegationStatusTableWrapper>
+</section>
+
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	{#if supervisor && supervisor.delegations.length > 0}
@@ -235,7 +271,7 @@
 						<div class="font-bold">{m.supervisors()}</div>
 						<div class="mb-4 flex flex-wrap gap-1">
 							{#each delegation.supervisors as supervisor}
-								<span class="badge badge-secondary">{getName(supervisor.user)}</span>
+								<span class="badge badge-outline">{getName(supervisor.user)}</span>
 							{/each}
 						</div>
 						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
@@ -249,31 +285,29 @@
 							</div>
 						{:else}
 							<div class="font-bold">{m.role()}</div>
-							<div class="mb-4">
+							<div class="badge badge-primary mb-4">
 								{delegation.assignedNation
 									? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
 									: delegation.assignedNonStateActor?.name}
 							</div>
 							{#if delegation.assignedNation}
-								<div class="font-bold">{m.committee()}</div>
-								<div class="mb-4">
-									<ul class="list-inside list-disc">
-										{#each conference.committees
-											.filter( (x) => x.nations.some((y) => y.alpha3Code === delegation.assignedNation!.alpha3Code) )
-											.map((x) => `${x.name} (${x.abbreviation})`) as committee}
-											<li>{committee}</li>
-										{/each}
-									</ul>
+								<div class="font-bold">{m.committees()}</div>
+								<div class="mb-4 flex flex-col gap-1">
+									{#each conference.committees
+										.filter( (x) => x.nations.some((y) => y.alpha3Code === delegation.assignedNation!.alpha3Code) )
+										.map((x) => `${x.name} (${x.abbreviation})`) as committee}
+										<div class="badge badge-neutral">{committee}</div>
+									{/each}
 								</div>
 							{/if}
 						{/if}
-						<div class="font-bold">{m.schoolOrInstitution()}</div>
-						<div class="mb-4">{delegation.school}</div>
-						<div class="font-bold">{m.experience()}</div>
-						<div class="mb-4">{delegation.experience}</div>
-						<div class="font-bold">{m.motivation()}</div>
-						<div class="mb-4">{delegation.motivation}</div>
 						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+							<div class="font-bold">{m.schoolOrInstitution()}</div>
+							<div class="mb-4">{delegation.school}</div>
+							<div class="font-bold">{m.experience()}</div>
+							<div class="mb-4">{delegation.experience}</div>
+							<div class="font-bold">{m.motivation()}</div>
+							<div class="mb-4">{delegation.motivation}</div>
 							<div class="font-bold">{m.delegationPreferences()}</div>
 							<div class="flex flex-wrap gap-1">
 								{#if delegation.appliedForRoles.length > 0}

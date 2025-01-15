@@ -8,7 +8,7 @@
 		description?: string;
 		withEmail?: boolean;
 		withCommittee?: boolean;
-		withMailStatus?: boolean;
+		withPostalSatus?: boolean;
 		withPaymentStatus?: boolean;
 		children: Snippet;
 	}
@@ -18,7 +18,7 @@
 		description,
 		withEmail = false,
 		withCommittee = false,
-		withMailStatus = false,
+		withPostalSatus = false,
 		withPaymentStatus = false,
 		children
 	}: Props = $props();
@@ -36,10 +36,10 @@
 				{#if withEmail}
 					<th>{m.email()}</th>
 				{/if}
-				{#if withMailStatus}
+				{#if withPostalSatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Postialische Anmeldung">
-							<i class="fa-duotone fa-envelope-open-text text-xl"></i>
+							<i class="fa-duotone fa-envelopes-bulk text-xl"></i>
 						</div>
 					</th>
 				{/if}

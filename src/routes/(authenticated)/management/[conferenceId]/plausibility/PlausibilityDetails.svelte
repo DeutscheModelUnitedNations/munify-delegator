@@ -1,4 +1,5 @@
 <script lang="ts">
+	import formatNames from '$lib/services/formatNames';
 	import type { User } from '@prisma/client';
 
 	interface Props {
@@ -18,7 +19,7 @@
 				<tbody>
 					{#each items as user}
 						<tr>
-							<td>{user.given_name} <span class="uppercase">{user.family_name}</span></td>
+							<td>{formatNames(user.given_name, user.family_name)}</td>
 							<td>
 								<a href={`${link}${user.id}`} class="btn btn-sm" aria-label="Details">
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>

@@ -534,5 +534,13 @@
 	"cleanupSupervisorsSuccess": "Supervisors have been cleaned up successfully.",
 	"deleted": "Deleted",
 	"downloadCommitteeData": "Download committee data for the {committee}",
-	"alpha3Code": "ISO Alpha 3 Code"
+	"alpha3Code": "ISO Alpha 3 Code",
+	"committees": "Committees",
+	"participantStatus": "Participant Status",
+	"postalDone": "postal registration completed",
+	"postalProblem": "postal registration not complete / faulty",
+	"postalPending": "postal registration pending",
+	"paymentDone": "payment completed",
+	"paymentProblem": "payment not complete / faulty",
+	"paymentPending": "payment pending"
 }

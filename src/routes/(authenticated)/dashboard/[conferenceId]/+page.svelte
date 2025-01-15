@@ -70,7 +70,7 @@
 				<Supervisor
 					user={data.user}
 					conferenceData={conferenceQueryData}
-					ofAgeAtConference={data.ofAgeAtConference}
+					ofAge={data.ofAgeAtConference}
 				/>
 			{:else}
 				<ApplicationRejected />
