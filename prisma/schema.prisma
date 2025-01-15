@@ -92,6 +92,13 @@ enum FoodPreference {
   VEGAN
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  DIVERSE
+  NO_STATEMENT
+}
+
 model User {
   id String @id @default(nanoid())
 
@@ -110,7 +117,7 @@ model User {
   zip            String?
   city           String?
   country        String?
-  gender         String?
+  gender         Gender?
   pronouns       String?
   foodPreference FoodPreference?
 

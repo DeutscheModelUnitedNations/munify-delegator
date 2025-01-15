@@ -34,7 +34,7 @@ export const userFormSchema = z.object({
 		.string()
 		.min(1)
 		.max(1)
-		.refine((s) => ['m', 'f', 'd', 'n'].includes(s)),
+		.refine((s) => ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT'].includes(s)),
 	pronouns: z.string().optional(),
 	foodPreference: z.string().refine((s) => ['OMNIVORE', 'VEGETARIAN', 'VEGAN'].includes(s)),
 	wantsToReceiveGeneralInformation: z.boolean().default(false),

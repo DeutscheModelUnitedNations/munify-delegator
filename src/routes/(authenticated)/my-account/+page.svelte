@@ -77,10 +77,10 @@
 						name="gender"
 						label={m.gender()}
 						options={[
-							{ value: 'm', label: m.male() },
-							{ value: 'f', label: m.female() },
-							{ value: 'd', label: m.diverse() },
-							{ value: 'n', label: m.noStatement() }
+							{ value: 'MALE', label: m.male() },
+							{ value: 'FEMALE', label: m.female() },
+							{ value: 'DIVERSE', label: m.diverse() },
+							{ value: 'NO_STATEMENT', label: m.noStatement() }
 						]}
 					/>
 					<FormTextInput
