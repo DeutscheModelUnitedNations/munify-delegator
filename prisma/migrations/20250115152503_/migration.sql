@@ -7,11 +7,11 @@ ADD COLUMN     "new_gender" "Gender";
 
 UPDATE "User"
 SET "new_gender" = CASE
-  WHEN "gender" = 'm' THEN 'MALE'
-  WHEN "gender" = 'f' THEN 'FEMALE'
-  WHEN "gender" = 'd' THEN 'DIVERSE'
-  WHEN "gender" = 'n' THEN 'NO_STATEMENT'
-  ELSE 'NO_STATEMENT'
+  WHEN "gender" = 'm' THEN 'MALE'::"Gender"
+  WHEN "gender" = 'f' THEN 'FEMALE'::"Gender"
+  WHEN "gender" = 'd' THEN 'DIVERSE'::"Gender"
+  WHEN "gender" = 'n' THEN 'NO_STATEMENT'::"Gender"
+  ELSE 'NO_STATEMENT'::"Gender"
 END;
 
 ALTER TABLE "User" DROP COLUMN "gender";
