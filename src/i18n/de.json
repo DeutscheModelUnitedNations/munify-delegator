@@ -590,5 +590,7 @@
 	"cleanupSupervisorsSuccess": "Betreuende wurden erfolgreich aufgeräumt.",
 	"deleted": "Gelöscht",
 	"downloadCommitteeData": "Daten für das Gremium \"{committee}\" herunterladen",
-	"alpha3Code": "ISO Alpha 3 Code"
+	"alpha3Code": "ISO Alpha 3 Code",
+	"teamMember": "Teammitglied",
+	"teamMembers": "Teammitglieder"
 }

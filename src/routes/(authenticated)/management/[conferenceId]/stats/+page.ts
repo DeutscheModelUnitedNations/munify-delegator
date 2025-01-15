@@ -12,6 +12,28 @@ const statsQuery = graphql(`
 					value
 				}
 			}
+			diet {
+				delegationMembers {
+					omnivore
+					vegan
+					vegetarian
+				}
+				singleParticipants {
+					omnivore
+					vegan
+					vegetarian
+				}
+				supervisors {
+					omnivore
+					vegan
+					vegetarian
+				}
+				teamMembers {
+					omnivore
+					vegan
+					vegetarian
+				}
+			}
 			countdowns {
 				daysUntilConference
 				daysUntilEndRegistration

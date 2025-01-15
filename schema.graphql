@@ -2642,6 +2642,7 @@ enum SortOrder {
 type StatisticsResult {
   age: StatisticsResultRegisteredAge!
   countdowns: StatisticsResultCountdowns!
+  diet: StatisticsResultRegisteredParticipantDiet!
   registered: StatisticsResultRegistered!
 }
 
@@ -2681,6 +2682,19 @@ type StatisticsResultRegisteredDelegations {
   notApplied: Int!
   total: Int!
   withSupervisor: Int!
+}
+
+type StatisticsResultRegisteredParticipantDiet {
+  delegationMembers: StatisticsResultRegisteredParticipantDietVariations!
+  singleParticipants: StatisticsResultRegisteredParticipantDietVariations!
+  supervisors: StatisticsResultRegisteredParticipantDietVariations!
+  teamMembers: StatisticsResultRegisteredParticipantDietVariations!
+}
+
+type StatisticsResultRegisteredParticipantDietVariations {
+  omnivore: Int!
+  vegan: Int!
+  vegetarian: Int!
 }
 
 type StatisticsResultRegisteredSingleParticipants {
