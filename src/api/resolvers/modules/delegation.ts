@@ -22,6 +22,7 @@ import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplicatio
 import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
 import { GraphQLError } from 'graphql';
 import * as m from '$lib/paraglide/messages';
+import formatNames from '$lib/services/formatNames';
 
 builder.prismaObject('Delegation', {
 	fields: (t) => ({
@@ -370,7 +371,10 @@ builder.queryFields((t) => {
 					school: delegation.school,
 					experience: delegation.experience,
 					memberCount: delegation._count.members,
-					headDelegateFullName: `${delegation.members.find((x) => x.isHeadDelegate)?.user.given_name} ${delegation.members.find((x) => x.isHeadDelegate)?.user.family_name}`,
+					headDelegateFullName: formatNames(
+						delegation.members.find((x) => x.isHeadDelegate)?.user.given_name,
+						delegation.members.find((x) => x.isHeadDelegate)?.user.family_name
+					),
 					applied: delegation.applied,
 					conferenceTitle: delegation.conference.title
 				};

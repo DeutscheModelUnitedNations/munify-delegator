@@ -76,6 +76,17 @@ export const myConferenceparticipationQuery = graphql(`
 						family_name
 						given_name
 						email
+						birthday
+						conferenceParticipantStatus {
+							id
+							conference {
+								id
+							}
+							paymentStatus
+							termsAndConditions
+							guardianConsent
+							mediaConsent
+						}
 					}
 					assignedCommittee {
 						id
@@ -178,6 +189,18 @@ export const myConferenceparticipationQuery = graphql(`
 						id
 						given_name
 						family_name
+						pronouns
+						birthday
+						conferenceParticipantStatus {
+							id
+							conference {
+								id
+							}
+							paymentStatus
+							termsAndConditions
+							guardianConsent
+							mediaConsent
+						}
 					}
 				}
 			}

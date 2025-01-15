@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StarRating from '$lib/components/StarRating.svelte';
 	import codenamize from '$lib/services/codenamize';
+	import formatNames from '$lib/services/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import type { Delegation } from './appData.svelte';
 	import { getWeights } from './weights.svelte';
@@ -72,7 +73,7 @@
 		<div
 			class="tooltip"
 			data-tip={application.members
-				.map((x) => `${x.user.given_name} ${x.user.family_name}`)
+				.map((x) => formatNames(x.user.given_name, x.user.family_name))
 				.join(',')}
 		>
 			<i class="fas fa-users"></i>
@@ -81,7 +82,7 @@
 			<div
 				class="tooltip"
 				data-tip={application.supervisors
-					.map((x) => `${x.user.given_name} ${x.user.family_name}`)
+					.map((x) => formatNames(x.user.given_name, x.user.family_name))
 					.join(', ')}
 			>
 				<i class="fas fa-chalkboard-user"></i>

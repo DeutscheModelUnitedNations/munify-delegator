@@ -2,6 +2,7 @@
 	import { graphql, type PaymentLayoutQuery$result } from '$houdini';
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import * as m from '$lib/paraglide/messages.js';
+	import formatNames from '$lib/services/formatNames';
 	import GiroCode from './GiroCode.svelte';
 
 	interface Props {
@@ -65,7 +66,7 @@
 		<p class="font-bold">{m.youPayForXParticipants({ numParticipants: users.length })}</p>
 		<div class="mb-4 flex flex-wrap gap-1">
 			{#each users as user}
-				<span class="badge badge-neutral">{user.given_name} {user.family_name}</span>
+				<span class="badge badge-neutral">{formatNames(user.given_name, user.family_name)}</span>
 			{/each}
 		</div>
 

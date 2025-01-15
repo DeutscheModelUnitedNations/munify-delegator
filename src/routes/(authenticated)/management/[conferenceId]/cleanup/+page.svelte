@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import * as m from '$lib/paraglide/messages';
+	import formatNames from '$lib/services/formatNames';
 	import Modal from './Modal.svelte';
 	import Section from './Section.svelte';
 	import type { ModalData } from './types';
@@ -63,7 +64,9 @@
 			count: result.length,
 			detailArray:
 				result
-					.map((item) => (item.user ? `${item.user.given_name} ${item.user.family_name}` : item.id))
+					.map((item) =>
+						item.user ? formatNames(item.user.given_name, item.user.family_name) : item.id
+					)
 					.filter((item) => item !== undefined) ?? []
 		};
 	}

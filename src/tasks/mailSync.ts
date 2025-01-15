@@ -13,6 +13,7 @@ import type {
 	SingleParticipant,
 	TeamMember
 } from '@prisma/client';
+import formatNames from '$lib/services/formatNames';
 
 // GLOBALS
 
@@ -530,7 +531,7 @@ const _ = schedule.scheduleJob(
 			const res = await listmonkClient.POST('/subscribers', {
 				body: {
 					email: u.email,
-					name: `${u.given_name} ${u.family_name}`,
+					name: formatNames(u.given_name, u.family_name),
 					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id)
 				}
@@ -578,7 +579,7 @@ const _ = schedule.scheduleJob(
 				},
 				body: {
 					email: u.email,
-					name: `${u.given_name} ${u.family_name}`,
+					name: formatNames(u.given_name, u.family_name),
 					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id),
 					preconfirm_subscriptions: true
