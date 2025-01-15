@@ -11,6 +11,15 @@ const dietVariations = builder.simpleObject('StatisticsResultRegisteredParticipa
 	})
 });
 
+const genderVariations = builder.simpleObject('StatisticsResultRegisteredParticipantGenderVariations', {
+	fields: (t) => ({
+		male: t.int(),
+		female: t.int(),
+		diverse: t.int(),
+		noStatement: t.int()
+	})
+});
+
 const StatisticsResult = builder.simpleObject('StatisticsResult', {
 	fields: (t) => ({
 		countdowns: t.field({
@@ -107,6 +116,24 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 					})
 				})
 			})
+		}),
+		gender: t.field({
+			type: t.builder.simpleObject('StatisticsResultRegisteredParticipantGender', {
+				fields: (t) => ({
+					singleParticipants: t.field({
+						type: genderVariations
+					}),
+					delegationMembers: t.field({
+						type: genderVariations
+					}),
+					supervisors: t.field({
+						type: genderVariations
+					}),
+					teamMembers: t.field({
+						type: genderVariations
+					})
+				})
+			})
 		})
 	})
 });
@@ -122,7 +149,7 @@ builder.queryFields((t) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				await requireToBeConferenceAdmin({ conferenceId: args.conferenceId, user });
 
-				const { countdowns, registrationStatistics, ageStatistics, diet } = await conferenceStats({
+				const { countdowns, registrationStatistics, ageStatistics, diet, gender } = await conferenceStats({
 					db,
 					conferenceId: args.conferenceId
 				});
@@ -130,6 +157,7 @@ builder.queryFields((t) => {
 				return {
 					countdowns,
 					diet,
+					gender,
 					registered: registrationStatistics,
 					age: {
 						...ageStatistics,

@@ -2688,6 +2688,7 @@ type StatisticsResult {
   age: StatisticsResultRegisteredAge!
   countdowns: StatisticsResultCountdowns!
   diet: StatisticsResultRegisteredParticipantDiet!
+  gender: StatisticsResultRegisteredParticipantGender!
   registered: StatisticsResultRegistered!
 }
 
@@ -2740,6 +2741,20 @@ type StatisticsResultRegisteredParticipantDietVariations {
   omnivore: Int!
   vegan: Int!
   vegetarian: Int!
+}
+
+type StatisticsResultRegisteredParticipantGender {
+  delegationMembers: StatisticsResultRegisteredParticipantGenderVariations!
+  singleParticipants: StatisticsResultRegisteredParticipantGenderVariations!
+  supervisors: StatisticsResultRegisteredParticipantGenderVariations!
+  teamMembers: StatisticsResultRegisteredParticipantGenderVariations!
+}
+
+type StatisticsResultRegisteredParticipantGenderVariations {
+  diverse: Int!
+  female: Int!
+  male: Int!
+  noStatement: Int!
 }
 
 type StatisticsResultRegisteredSingleParticipants {

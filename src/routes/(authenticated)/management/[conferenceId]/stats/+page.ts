@@ -34,6 +34,32 @@ const statsQuery = graphql(`
 					vegetarian
 				}
 			}
+			gender {
+				delegationMembers {
+					diverse
+					female
+					male
+					noStatement
+				}
+				singleParticipants {
+					diverse
+					female
+					male
+					noStatement
+				}
+				supervisors {
+					diverse
+					female
+					male
+					noStatement
+				}
+				teamMembers {
+					diverse
+					female
+					male
+					noStatement
+				}
+			}
 			countdowns {
 				daysUntilConference
 				daysUntilEndRegistration
