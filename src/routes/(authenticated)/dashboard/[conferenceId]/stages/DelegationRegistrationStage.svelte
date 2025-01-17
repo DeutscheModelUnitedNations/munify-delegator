@@ -15,6 +15,7 @@
 	import { page } from '$app/stores';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import { cache } from '$houdini';
+	import formatNames from '$lib/services/formatNames';
 
 	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?
@@ -259,7 +260,7 @@
 		<DelegationStatusTableWrapper title={m.activeMembers()}>
 			{#each delegationMember.delegation.members as member}
 				<DelegationStatusTableEntry
-					name={`${member.user.given_name} ${member.user.family_name}`}
+					name={formatNames(member.user.given_name, member.user.family_name)}
 					pronouns={member.user.pronouns ?? ''}
 					headDelegate={member.isHeadDelegate}
 				>
@@ -293,7 +294,7 @@
 			>
 				{#each delegationMember.delegation?.supervisors as supervisor}
 					<DelegationStatusTableEntry
-						name={`${supervisor.user.given_name} ${supervisor.user.family_name}`}
+						name={formatNames(supervisor.user.given_name, supervisor.user.family_name)}
 						pronouns={supervisor.user.pronouns ?? ''}
 					/>
 				{/each}

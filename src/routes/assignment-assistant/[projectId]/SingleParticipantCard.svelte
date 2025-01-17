@@ -1,6 +1,7 @@
 <script lang="ts">
 	import StarRating from '$lib/components/StarRating.svelte';
 	import codenamize from '$lib/services/codenamize';
+	import formatNames from '$lib/services/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import type { SingleParticipant } from './appData.svelte';
 	import { getWeights } from './weights.svelte';
@@ -45,7 +46,7 @@
 		</div>
 		<div
 			class="tooltip"
-			data-tip={`${application.user.given_name} ${application.user.family_name}`}
+			data-tip={formatNames(application.user.given_name, application.user.family_name)}
 		>
 			<i class="fas fa-user-tie"></i>
 		</div>

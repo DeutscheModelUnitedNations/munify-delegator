@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
+	import type { AdministrativeStatus } from '@prisma/client';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -8,8 +9,10 @@
 		email?: string;
 		headDelegate?: boolean;
 		committee?: string;
-		mailStatus?: 'completed' | 'error' | 'incomplete';
-		paymentStatus?: 'completed' | 'error' | 'incomplete';
+		postalSatus?: AdministrativeStatus;
+		paymentStatus?: AdministrativeStatus;
+		withPostalStatus?: boolean;
+		withPaymentStatus?: boolean;
 		children?: Snippet;
 	}
 
@@ -19,30 +22,32 @@
 		email,
 		headDelegate = false,
 		committee,
-		mailStatus,
-		paymentStatus,
+		postalSatus = 'PENDING',
+		paymentStatus = 'PENDING',
+		withPostalStatus = false,
+		withPaymentStatus = false,
 		children
 	}: Props = $props();
 
 	const getMailStatusTooltip = () => {
-		switch (mailStatus) {
-			case 'completed':
-				return 'Postalische Anmeldung abgeschlossen';
-			case 'error':
-				return 'Postalische Anmeldung unvollständig';
-			case 'incomplete':
-				return 'Postalische Anmeldung ausstehend';
+		switch (postalSatus) {
+			case 'DONE':
+				return m.postalDone();
+			case 'PROBLEM':
+				return m.postalProblem();
+			case 'PENDING':
+				return m.postalPending();
 		}
 	};
 
 	const getPaymentStatusTooltip = () => {
 		switch (paymentStatus) {
-			case 'completed':
-				return 'Beitragszahlung ist eingegangen';
-			case 'error':
-				return 'Probleme bei der Beitragszahlung';
-			case 'incomplete':
-				return 'Beitragszahlung ausstehend';
+			case 'DONE':
+				return m.paymentDone();
+			case 'PROBLEM':
+				return m.paymentProblem();
+			case 'PENDING':
+				return m.paymentPending();
 		}
 	};
 </script>
@@ -78,28 +83,28 @@
 		</td>
 	{/if}
 
-	{#if mailStatus}
+	{#if withPostalStatus}
 		<td class="text-center">
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>
-				{#if mailStatus === 'completed'}
+				{#if postalSatus === 'DONE'}
 					<i class="fas fa-circle-check text-xl text-success"></i>
-				{:else if mailStatus === 'error'}
-					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
+				{:else if postalSatus === 'PROBLEM'}
+					<i class="fas fa-triangle-exclamation fa-beat text-xl text-error"></i>
 				{:else}
-					<i class="fas fa-octagon-xmark text-xl text-error"></i>
+					<i class="fas fa-hourglass-half text-xl text-warning"></i>
 				{/if}
 			</div>
 		</td>
 	{/if}
-	{#if paymentStatus}
+	{#if withPaymentStatus}
 		<td class="text-center">
 			<div class="tooltip" data-tip={getPaymentStatusTooltip()}>
-				{#if paymentStatus === 'completed'}
+				{#if paymentStatus === 'DONE'}
 					<i class="fas fa-circle-check text-xl text-success"></i>
-				{:else if paymentStatus === 'error'}
-					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
+				{:else if paymentStatus === 'PROBLEM'}
+					<i class="fas fa-triangle-exclamation fa-beat text-xl text-error"></i>
 				{:else}
-					<i class="fas fa-octagon-xmark text-xl text-error"></i>
+					<i class="fas fa-hourglass-half text-xl text-warning"></i>
 				{/if}
 			</div>
 		</td>

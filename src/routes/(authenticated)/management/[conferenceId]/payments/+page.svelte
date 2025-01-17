@@ -7,6 +7,7 @@
 	import { type PageData } from './$houdini';
 	import { fly, fade } from 'svelte/transition';
 	import type { AdministrativeStatus } from '@prisma/client';
+	import formatNames from '$lib/services/formatNames';
 
 	const paymentReferenceByIdQuery = graphql(`
 		query PaymentReferenceByIdQuery($reference: String!, $conferenceId: String!) {
@@ -211,12 +212,12 @@
 							{:else}
 								<i class="fa-duotone fa-hourglass-half text-2xl"></i>
 							{/if}
-							<div class="text-lg font-bold">{user.given_name} {user.family_name}</div>
+							<div class="text-lg font-bold">{formatNames(user.given_name, user.family_name)}</div>
 							<div>{user.id}</div>
 							<a
 								class="btn btn-ghost btn-sm"
 								href="/management/{data.conferenceId}/participants?filter={user.id}"
-								aria-label="Details for {user.given_name} {user.family_name}"
+								aria-label="Details for {formatNames(user.given_name, user.family_name)}"
 							>
 								<i class="fa-duotone fa-up-right-from-square"></i>
 							</a>

@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
+import inquirer from 'inquirer';
 import { join } from 'path';
 import * as readline from 'readline';
 
@@ -9,34 +10,12 @@ const rl = readline.createInterface({
 	output: process.stdout
 });
 
-async function askQuestion(query: string): Promise<string> {
-	return new Promise((resolve) => rl.question(query, resolve));
-	rl.close();
-}
-
-async function main() {
-	console.log('Enter the translation key:');
-	const key = await askQuestion('');
-
-	if (!key) {
-		console.error('Key is required');
-		process.exit(1);
-	}
-
-	const languages = ['en', 'de'];
-	const translations: Record<string, string> = {};
-
-	for (const lang of languages) {
-		console.log(`Enter the translation for ${lang}:`);
-		const translation = await askQuestion('');
-		translations[lang] = translation || '';
-	}
-
+function saveToTranslationFile(data: Record<string, string>, languages: string[]) {
 	for (const lang of languages) {
 		const filePath = join(MESSAGES_DIR, `${lang}.json`);
 		let content = readFileSync(filePath, 'utf-8');
 
-		const newTranslation = `"${key}": "${translations[lang]}"`;
+		const newTranslation = `"${data.key}": "${data[lang]}"`;
 
 		// Remove the last curly brace
 		content = content.replace(/}$/, '');
@@ -55,12 +34,102 @@ async function main() {
 
 		writeFileSync(filePath, content);
 	}
+}
 
-	console.log('Translations added successfully!');
+async function singleAdd() {
+	const languages = ['de', 'en'];
+	const prompts = [
+		{
+			type: 'input',
+			name: 'key',
+			message: 'Enter the key:'
+		}
+	];
+
+	for (const lang of languages) {
+		prompts.push({
+			type: 'input',
+			name: lang,
+			message: `Enter the translation for ${lang}:`
+		});
+	}
+
+	const prompt = inquirer.createPromptModule();
+	const data = await prompt(prompts);
+
+	if (!data.key) {
+		console.error('Key is required');
+		process.exit(1);
+	}
+
+	saveToTranslationFile(data, languages);
+	console.log('Translations added!');
+}
+
+async function bulkAdd() {
+	console.log('The translations should be in the following format:');
+	console.log('   key;de;en');
+	console.log('   key2;de;en');
+	console.log('   ...');
+
+	const languages = ['de', 'en'];
+
+	const data = await inquirer.prompt([
+		{
+			type: 'input',
+			name: 'translations',
+			message: 'Enter the translations:'
+		}
+	]);
+
+	for (const line of data.translations.split('\n')) {
+		const translations: Record<string, string> = {};
+		const [key, ...values] = line.split(';');
+		if (!key) {
+			console.error('Key is required');
+			process.exit(1);
+		}
+
+		translations.key = key;
+
+		for (let i = 0; i < languages.length; i++) {
+			const lang = languages[i];
+			const translation = values[i] || '';
+			translations[lang] = translation;
+		}
+
+		saveToTranslationFile(translations, languages);
+	}
+}
+
+async function main() {
+	const data = await inquirer.prompt([
+		{
+			type: 'select',
+			name: 'singleOrMultiple',
+			message: 'Do you want to add a single translation or multiple translations?',
+			choices: ['Single', 'Multiple'],
+			default: 'Single'
+		}
+	]);
+
+	if (data.singleOrMultiple === 'Multiple') {
+		await bulkAdd();
+	} else {
+		await singleAdd();
+	}
 
 	// Ask if the user wants to add another translation
-	const response = await askQuestion('Do you want to add another translation? (Y/n): ');
-	return !(response.toLowerCase() === 'n');
+	const answer = await inquirer.prompt([
+		{
+			type: 'confirm',
+			name: 'continue',
+			message: 'Do you want to add another translation?',
+			default: true
+		}
+	]);
+
+	return answer.continue;
 }
 
 let continueLoop = true;

@@ -592,5 +592,13 @@
 	"downloadCommitteeData": "Daten für das Gremium \"{committee}\" herunterladen",
 	"alpha3Code": "ISO Alpha 3 Code",
 	"teamMember": "Teammitglied",
-	"teamMembers": "Teammitglieder"
+	"teamMembers": "Teammitglieder",
+	"committees": "Gremien",
+	"participantStatus": "Teilnehmendenstatus",
+	"postalDone": "Postalische Anmeldung abgeschlossen",
+	"postalProblem": "Postalische Anmeldung nicht vollständig / fehlerhaft",
+	"postalPending": "Postalische Anmeldung noch nicht abgeschlossen",
+	"paymentDone": "Beitragszahlung abgeschlossen",
+	"paymentProblem": "Beitragszahlung nicht vollständig / fehlerhaft",
+	"paymentPending": "Beitragszahlung noch nicht abgeschlossen"
 }

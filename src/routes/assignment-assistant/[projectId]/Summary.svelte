@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
 	import codenamize from '$lib/services/codenamize';
+	import formatNames from '$lib/services/formatNames';
 	import {
 		getApplications,
 		getConference,
@@ -60,7 +61,7 @@
 		const text = `Ehrenwerte Teilnehmende,\n\nLeider mussten wir im Zuge der Verteilung für ${getConference()?.title} ihre Delegation mit der ID ${parent.id} aufteilen.\n\nDabei haben wir die folgende Aufteilung vorgenommen:\n${children
 			.map((x, i) => {
 				return `Delegation ${i + 1}: ${x.members
-					.map((y) => `${y.user.given_name} ${y.user.family_name}`)
+					.map((y) => formatNames(y.user.given_name, y.user.family_name))
 					.join(', ')}`;
 			})
 			.join(
@@ -72,7 +73,9 @@
 
 	const copyMergeExplanationText = (delegations: Delegation[]) => {
 		const text = `Ehrenwerte Teilnehmende,\n\nLeider mussten wir im Zuge der Verteilung für ${getConference()?.title} ihre Delegation mit einer oder mehreren anderen Delegationen fusionieren.\n\nSie sind nun Teil einer größeren Delegation. Die Mitglieder ihrer neuen Delegation sind:\n${delegations
-			.map((x) => x.members.map((y) => `${y.user.given_name} ${y.user.family_name}`).join(', '))
+			.map((x) =>
+				x.members.map((y) => formatNames(y.user.given_name, y.user.family_name)).join(', ')
+			)
 			.join(
 				', '
 			)}\n\nIhre Rollen entnehmen Sie bitte dem Dashboard auf der Website, sobald diese für alle verfügbar sind.\n`;
@@ -144,7 +147,7 @@
 								<h3 class="text-base font-bold">{codenamize(child.id)}</h3>
 								<p class="text-sm">
 									{child.members
-										.map((x) => `${x.user.given_name} ${x.user.family_name.toLocaleUpperCase()}`)
+										.map((x) => formatNames(x.user.given_name, x.user.family_name))
 										.join(', ')}
 								</p>
 							</div>
