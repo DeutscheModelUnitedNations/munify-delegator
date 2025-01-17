@@ -1,7 +1,6 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDC } from '$api/context/oidc';
-import { supervisor } from '$lib/paraglide/messages';
 
 export const defineAbilitiesForConferenceSupervisor = (
 	oidc: OIDC,

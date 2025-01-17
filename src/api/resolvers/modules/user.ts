@@ -29,6 +29,7 @@ import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { z } from 'zod';
 import { GraphQLError } from 'graphql';
+import { Gender } from '$db/generated/graphql/inputs';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -143,7 +144,7 @@ builder.mutationFields((t) => {
 							zip: t.string(),
 							city: t.string(),
 							country: t.string(),
-							gender: t.string(),
+							gender: t.field({ type: Gender }),
 							pronouns: t.string({ required: false }),
 							foodPreference: t.string(),
 							wantsToReceiveGeneralInformation: t.boolean({

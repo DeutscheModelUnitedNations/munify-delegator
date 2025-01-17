@@ -30,11 +30,12 @@ export const userFormSchema = z.object({
 		message: m.atLeastXChars({ amount: 3 })
 	}),
 	country: z.string().refine(valiator.isISO31661Alpha3),
-	gender: z
-		.string()
-		.min(1)
-		.max(1)
-		.refine((s) => ['m', 'f', 'd', 'n'].includes(s)),
+	gender: z.union([
+		z.literal('MALE'),
+		z.literal('FEMALE'),
+		z.literal('DIVERSE'),
+		z.literal('NO_STATEMENT')
+	]),
 	pronouns: z.string().optional(),
 	foodPreference: z.string().refine((s) => ['OMNIVORE', 'VEGETARIAN', 'VEGAN'].includes(s)),
 	wantsToReceiveGeneralInformation: z.boolean().default(false),
