@@ -140,43 +140,279 @@ async function createMultiPagePDF(data: DocumentData): Promise<Uint8Array> {
 	return pdfDoc.save();
 }
 
-// Example usage
+
+// Define interfaces for our data structure
+interface RegistrationFormData {
+  title: string;
+  logoPath?: string;
+  recipientAddress: {
+    name: string;
+    address: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  };
+}
+
+/**
+ * Creates a checkbox in the PDF using simple geometric shapes
+ * instead of Unicode characters to ensure compatibility
+ */
+function drawCheckbox(page: PDFPage, x: number, y: number, size: number = 12) {
+  // Draw the checkbox outline
+  page.drawRectangle({
+    x,
+    y,
+    width: size,
+    height: size,
+    borderWidth: 1,
+    borderColor: rgb(0, 0, 0),
+    color: rgb(1, 1, 1),
+    opacity: 0
+  });
+}
+
+async function createRegistrationForm(data: RegistrationFormData): Promise<Uint8Array> {
+  // Create a new PDF document
+  const pdfDoc = await PDFDocument.create();
+
+  // Embed fonts
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  // Define common styles
+  const styles = {
+    page: {
+      margin: { top: 50, right: 50, bottom: 50, left: 50 }
+    },
+    title: {
+      fontSize: 24,
+      lineHeight: 1.2,
+      color: rgb(0, 0, 0)
+    },
+    heading: {
+      fontSize: 14,
+      lineHeight: 1.2,
+      color: rgb(0, 0, 0)
+    },
+    normal: {
+      fontSize: 11,
+      lineHeight: 1.5,
+      color: rgb(0, 0, 0)
+    }
+  };
+
+  // Create registration page
+  const registrationPage = pdfDoc.addPage(PageSizes.A4);
+  const { width, height } = registrationPage.getSize();
+
+  // Add header with MUN-SH logo text
+  let currentY = height - styles.page.margin.top;
+  
+  // Draw the main title using gray color
+  registrationPage.drawText('Model United Nations', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helveticaBold,
+    size: styles.title.fontSize,
+    color: rgb(0.5, 0.5, 0.5)
+  });
+
+  currentY -= 30;
+  registrationPage.drawText('Schleswig-Holstein', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helveticaBold,
+    size: styles.title.fontSize,
+    color: rgb(0.5, 0.5, 0.5)
+  });
+
+  // Add form title
+  currentY -= 60;
+  registrationPage.drawText('Postalische Anmeldung MUN-SH 2025', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helveticaBold,
+    size: styles.heading.fontSize
+  });
+
+  // Add recipient address section
+  currentY -= 40;
+  registrationPage.drawText('per Post zu senden an:', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helvetica,
+    size: styles.normal.fontSize
+  });
+
+  // Draw address fields with angle brackets
+  const addressFields = [
+    'Name',
+    'Adresse',
+    'PLZ',
+    'Ort',
+    'COUNTRY'
+  ];
+
+  addressFields.forEach(field => {
+    currentY -= 20;
+    registrationPage.drawText(`<${field}>`, {
+      x: styles.page.margin.left,
+      y: currentY,
+      font: helvetica,
+      size: styles.normal.fontSize
+    });
+  });
+
+  // Add registration fields
+  currentY -= 40;
+  registrationPage.drawText('Verbindliche Anmeldung von', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helveticaBold,
+    size: styles.heading.fontSize
+  });
+
+  currentY -= 30;
+  registrationPage.drawLine({
+    start: { x: styles.page.margin.left, y: currentY },
+    end: { x: width - styles.page.margin.right, y: currentY },
+    thickness: 0.5,
+    color: rgb(0, 0, 0)
+  });
+
+  currentY -= 30;
+  registrationPage.drawText('geboren am', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helveticaBold,
+    size: styles.heading.fontSize
+  });
+
+  currentY -= 30;
+  registrationPage.drawLine({
+    start: { x: styles.page.margin.left + 100, y: currentY },
+    end: { x: width / 2, y: currentY },
+    thickness: 0.5,
+    color: rgb(0, 0, 0)
+  });
+
+  // Add consent text with proper word wrapping
+  currentY -= 40;
+  const consentText = `Mit meiner Unterschrift bestätige ich, dass alle Angaben auf dieser Anmeldung sowie in der dazugehörigen Online-Anmeldung, nach bestem Wissen und Gewissen gemacht worden sind. Ich bestätige weiter, nach Erhalt einer Zusage die Teilnahmegebühr in Höhe von 75,00 € pro Person umgehend zu überweisen. Die Vertragsbedingungen und die Datenschutzerklärung habe ich zur Kenntnis genommen und akzeptiere diese mit meiner Unterschrift. Ich melde mich hiermit zu MUN-SH 2025 an.`;
+  
+  const words = consentText.split(' ');
+  let line = '';
+  let lineY = currentY;
+  
+  words.forEach(word => {
+    const testLine = line + (line ? ' ' : '') + word;
+    const lineWidth = helvetica.widthOfTextAtSize(testLine, styles.normal.fontSize);
+    
+    if (lineWidth > width - styles.page.margin.left - styles.page.margin.right) {
+      registrationPage.drawText(line, {
+        x: styles.page.margin.left,
+        y: lineY,
+        font: helvetica,
+        size: styles.normal.fontSize
+      });
+      line = word;
+      lineY -= styles.normal.fontSize * styles.normal.lineHeight;
+    } else {
+      line = testLine;
+    }
+  });
+
+  if (line) {
+    registrationPage.drawText(line, {
+      x: styles.page.margin.left,
+      y: lineY,
+      font: helvetica,
+      size: styles.normal.fontSize
+    });
+  }
+
+  // Add checkbox and agreement text
+  currentY = lineY - 60;
+  // Draw a proper checkbox instead of using Unicode character
+  drawCheckbox(registrationPage, styles.page.margin.left, currentY);
+  
+  registrationPage.drawText('Ich habe die Vertragsbedingungen und Datenschutzerklärung gelesen und akzeptiere sie.', {
+    x: styles.page.margin.left + 20,
+    y: currentY + 2, // Align text with checkbox
+    font: helvetica,
+    size: styles.normal.fontSize
+  });
+
+  // Add signature fields
+  currentY -= 60;
+  registrationPage.drawText('Ort, Datum', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helvetica,
+    size: styles.normal.fontSize
+  });
+
+  currentY -= 20;
+  registrationPage.drawLine({
+    start: { x: styles.page.margin.left, y: currentY },
+    end: { x: width / 2 - 20, y: currentY },
+    thickness: 0.5,
+    color: rgb(0, 0, 0)
+  });
+
+  currentY -= 40;
+  registrationPage.drawText('Unterschrift des*der Teilnehmenden', {
+    x: styles.page.margin.left,
+    y: currentY,
+    font: helvetica,
+    size: styles.normal.fontSize
+  });
+
+  currentY -= 20;
+  registrationPage.drawLine({
+    start: { x: styles.page.margin.left, y: currentY },
+    end: { x: width - styles.page.margin.right, y: currentY },
+    thickness: 0.5,
+    color: rgb(0, 0, 0)
+  });
+
+  // Add page number
+  registrationPage.drawText('1', {
+    x: styles.page.margin.left,
+    y: styles.page.margin.bottom,
+    font: helvetica,
+    size: 10
+  });
+
+  // Generate PDF bytes
+  return pdfDoc.save();
+}
+
+// Example usage function
 export async function generateSamplePDF(): Promise<void> {
-	const sampleData: DocumentData = {
-		title: 'Sample Multi-Page Document',
-		author: 'John Doe',
-		content: [
-			{
-				heading: 'Introduction',
-				paragraphs: [
-					'This is the first paragraph of the introduction section. It contains some sample text to demonstrate how the PDF generator handles text flow and pagination.',
-					"Here's another paragraph with different content to show how multiple paragraphs are handled within a section."
-				]
-			},
-			{
-				heading: 'Main Content',
-				paragraphs: [
-					'The main content section begins here with its first paragraph. This section demonstrates how the generator handles multiple sections across pages.',
-					'A second paragraph in the main content section provides more sample text for testing the layout and formatting capabilities.'
-				]
-			}
-		]
-	};
+  const sampleData: RegistrationFormData = {
+    title: 'MUN-SH 2025 Registration',
+    recipientAddress: {
+      name: 'DMUN e.V.',
+      address: 'Sample Street 123',
+      postalCode: '24118',
+      city: 'Kiel',
+      country: 'Germany'
+    }
+  };
 
-	try {
-		const pdfBytes = await createMultiPagePDF(sampleData);
-
-		// In a browser environment, you can create a download link:
-		const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = 'sample-document.pdf';
-		link.click();
-
-		// In Node.js, you can write to a file:
-		// await fs.writeFile('sample-document.pdf', pdfBytes);
-	} catch (error) {
-		console.error('Error generating PDF:', error);
-	}
+  try {
+    const pdfBytes = await createRegistrationForm(sampleData);
+    
+    // Create download link for browser environment
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mun-sh-registration.pdf';
+    link.click();
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+  }
 }
