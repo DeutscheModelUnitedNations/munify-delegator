@@ -12,6 +12,7 @@
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
+	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -25,10 +26,34 @@
 	let formData = $derived(form.form);
 
 	let infoPreviewModalOpen = $state(false);
+
+	const conferenceStateOptions = [
+		{
+			label: m.conferenceStatusPre(),
+			value: 'PRE'
+		},
+		{
+			label: m.conferenceStatusParticipantRegistration(),
+			value: 'PARTICIPANT_REGISTRATION'
+		},
+		{
+			label: m.conferenceStatusPreparation(),
+			value: 'PREPARATION'
+		},
+		{
+			label: m.conferenceStatusActive(),
+			value: 'ACTIVE'
+		},
+		{
+			label: m.conferenceStatusPost(),
+			value: 'POST'
+		}
+	];
 </script>
 
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 	<Form {form}>
+		<h3 class="mt-8 text-lg font-bold">{m.general()}</h3>
 		<FormTextInput
 			{form}
 			name="title"
@@ -60,33 +85,14 @@
 		<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
 		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
-		<FormSelect
-			{form}
-			name="state"
-			label={m.conferenceStatus()}
-			options={[
-				{
-					label: m.conferenceStatusPre(),
-					value: 'PRE'
-				},
-				{
-					label: m.conferenceStatusParticipantRegistration(),
-					value: 'PARTICIPANT_REGISTRATION'
-				},
-				{
-					label: m.conferenceStatusPreparation(),
-					value: 'PREPARATION'
-				},
-				{
-					label: m.conferenceStatusActive(),
-					value: 'ACTIVE'
-				},
-				{
-					label: m.conferenceStatusPost(),
-					value: 'POST'
-				}
-			]}
-		/>
+
+		<h3 class="mt-8 text-lg font-bold">{m.conferenceStatus()}</h3>
+		<FormSelect {form} name="state" label={m.conferenceStatus()} options={conferenceStateOptions} />
+		<div class="prose">
+			{@html m.conferenceStatusDescription()}
+		</div>
+
+		<h3 class="mt-8 text-lg font-bold">{m.communication()}</h3>
 		<div class="flex w-full items-center gap-2">
 			<FormTextArea {form} name="info" placeholder={'Info...'} label={m.infos()} />
 			<button
@@ -105,6 +111,53 @@
 			placeholder={'https://path-to-your-guide.com'}
 			label={m.preparationGuide()}
 		/>
+
+		<h3 class="mt-8 text-lg font-bold">{m.bankingInformation()}</h3>
+		<FormCheckbox
+			{form}
+			name="unlockPayments"
+			label={m.paymentOpen()}
+			disabled={!$formData.feeAmount ||
+				!$formData.bankName ||
+				!$formData.iban ||
+				!$formData.bic ||
+				!$formData.accountHolder ||
+				!$formData.currency}
+		/>
+		<FormTextInput {form} name="feeAmount" placeholder={'75,00'} label={m.fee()} type="number" />
+		<FormTextInput {form} name="bankName" placeholder={'Bank Name'} label={m.bankName()} />
+		<FormTextInput {form} name="iban" placeholder={'DE12345678901234567890'} label={m.iban()} />
+		<FormTextInput {form} name="bic" placeholder={'ABCDEFGH'} label={m.bic()} />
+		<FormTextInput
+			{form}
+			name="accountHolder"
+			placeholder={'Max Mustermann'}
+			label={m.accountHolder()}
+		/>
+		<FormTextInput {form} name="currency" placeholder={'EUR'} label={m.currency()} />
+
+		<h3 class="mt-8 text-lg font-bold">{m.postalRegistration()}</h3>
+		<FormCheckbox
+			{form}
+			name="unlockPostals"
+			label={m.postalOpen()}
+			disabled={!$formData.postalName ||
+				!$formData.postalStreet ||
+				!$formData.postalZip ||
+				!$formData.postalCity ||
+				!$formData.postalCountry}
+		/>
+		<FormTextInput {form} name="postalName" placeholder={m.name()} label={m.name()} />
+		<FormTextInput {form} name="postalStreet" placeholder={m.street()} label={m.street()} />
+		<FormTextInput
+			{form}
+			name="postalApartment"
+			placeholder={m.streetAddition()}
+			label={m.streetAddition()}
+		/>
+		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
+		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
+		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
 	</Form>
 </div>
 

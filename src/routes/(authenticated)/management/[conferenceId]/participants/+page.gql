@@ -29,4 +29,15 @@ query ConferenceParticipantsByParticipationTypeQuery($conferenceId: String!) {
 			birthday
 		}
 	}
+	findManyConferenceParticipantStatuss(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		user {
+			id
+		}
+		paymentStatus
+		termsAndConditions
+		guardianConsent
+		mediaConsent
+		didAttend
+	}
 }

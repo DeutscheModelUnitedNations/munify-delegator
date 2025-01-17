@@ -9,12 +9,14 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
+	import formatNames from '$lib/services/formatNames';
+	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
 
 	let {
 		data
 	}: {
-		data: NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']> &
-			Pick<PageData, 'user'>;
+		data: PageData['conferenceQueryData'] & Pick<PageData, 'user'>;
 	} = $props();
 
 	const delegationStats = $derived([
@@ -84,15 +86,24 @@
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
-	<!-- <DelegationStatusTableWrapper withEmail withCommittee withMailStatus withPaymentStatus> -->
-	<DelegationStatusTableWrapper withEmail withCommittee>
+	<DelegationStatusTableWrapper withEmail withCommittee withPostalSatus withPaymentStatus>
 		{#each data.findUniqueDelegationMember?.delegation.members ?? [] as member}
+			{@const participantStatus = member.user.conferenceParticipantStatus.find(
+				(x) => x.conference.id === data.findUniqueConference?.id
+			)}
 			<DelegationStatusTableEntry
-				name={`${member.user.given_name} ${member.user.family_name}`}
+				name={formatNames(member.user.given_name, member.user.family_name)}
 				pronouns={member.user.pronouns ?? ''}
 				headDelegate={member.isHeadDelegate}
 				email={member.user.email}
 				committee={member.assignedCommittee?.abbreviation ?? ''}
+				withPaymentStatus
+				withPostalStatus
+				postalSatus={getSimplifiedPostalStatus(
+					participantStatus,
+					ofAgeAtConference(data.findUniqueConference?.startConference, member.user.birthday)
+				)}
+				paymentStatus={participantStatus?.paymentStatus}
 			/>
 		{/each}
 	</DelegationStatusTableWrapper>
@@ -104,7 +115,7 @@
 		>
 			{#each data.findUniqueDelegationMember?.delegation.supervisors ?? [] as supervisor}
 				<DelegationStatusTableEntry
-					name={`${supervisor.user.given_name} ${supervisor.user.family_name}`}
+					name={formatNames(supervisor.user.given_name, supervisor.user.family_name)}
 					pronouns={supervisor.user.pronouns ?? ''}
 					email={supervisor.user.email}
 				/>

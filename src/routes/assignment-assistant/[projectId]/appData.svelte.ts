@@ -417,6 +417,8 @@ export const assignSingleRole = (singleId: string, roleId: string) => {
 	const role = getSingleRoles().find((role) => role.id === roleId);
 	if (single && role) {
 		single.assignedRole = role;
+	} else {
+		console.error("Couldn't find singleParticipant or role");
 	}
 	saveProjects();
 };

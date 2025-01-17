@@ -36,7 +36,7 @@ export const defineAbilitiesForConferenceParticipantStatus = (
 		});
 
 		// if the user is a team member with the PARTICIPANT_CARE or PROJECT_MANAGEMENT role, they should be able to update the status
-		can(['list', 'update'], 'ConferenceParticipantStatus', {
+		can(['read', 'list', 'update'], 'ConferenceParticipantStatus', {
 			conference: {
 				teamMembers: {
 					some: {

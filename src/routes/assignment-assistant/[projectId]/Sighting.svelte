@@ -13,6 +13,7 @@
 	import codenamize from '$lib/services/codenamize';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import formatNames from '$lib/services/formatNames';
 
 	let page = 1;
 	let pageSize = 10;
@@ -191,7 +192,7 @@
 											if (x.isHeadDelegate) return -1;
 											return 1;
 										})
-										.map((x) => `${x.user.given_name} ${x.user.family_name}`)
+										.map((x) => formatNames(x.user.given_name, x.user.family_name))
 										.join(', ')}
 								</td>
 							</tr>
@@ -205,7 +206,7 @@
 									>
 									{application.supervisors
 										.map((x) => {
-											if (x.user) return `${x.user.given_name} ${x.user.family_name}`;
+											if (x.user) return formatNames(x.user.given_name, x.user.family_name);
 											return 'N/A';
 										})
 										.join(', ')}

@@ -9,13 +9,12 @@
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
 	import { graphql } from '$houdini';
-	import type { StoresValues } from '$lib/services/storeExtractorType';
 
 	interface Props {
 		open: boolean;
 		onClose: () => void;
 		data: Pick<
-			NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']>,
+			NonNullable<PageData['conferenceQueryData']>,
 			'findUniqueConference' | 'findUniqueDelegationMember'
 		>;
 	}
