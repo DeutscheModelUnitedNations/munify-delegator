@@ -22,6 +22,20 @@ const conferenceQuery = graphql(`
 			language
 			linkToPreparationGuide
 			info
+			unlockPayments
+			unlockPostals
+			feeAmount
+			bic
+			currency
+			bankName
+			iban
+			accountHolder
+			postalName
+			postalStreet
+			postalApartment
+			postalZip
+			postalCity
+			postalCountry
 		}
 	}
 `);
@@ -63,7 +77,7 @@ export const actions = {
 		if (!form.valid) {
 			return fail(400, { form });
 		}
-
+		console.log(form.data);
 		await conferenceUpdate.mutate(
 			{
 				data: form.data,

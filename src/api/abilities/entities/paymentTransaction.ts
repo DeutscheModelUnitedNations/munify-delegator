@@ -6,8 +6,21 @@ export const defineAbilitiesForPaymentTransaction = (
 	oidc: OIDC,
 	{ can }: AbilityBuilder<AppAbility>
 ) => {
-	// everyone should be able to see nations in the system
-	// can(['read', 'list'], 'PaymentTransaction');
-	// if (oidc && oidc.user) {
-	// }
+	if (oidc && oidc.user) {
+		const user = oidc.user;
+
+		// team members should be able to see the payment transactions of their conferences
+		can(['read', 'list', 'update'], 'PaymentTransaction', {
+			conference: {
+				teamMembers: {
+					some: {
+						user: {
+							id: user.sub
+						},
+						role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+					}
+				}
+			}
+		});
+	}
 };

@@ -307,6 +307,7 @@ export const translatedNationCodeAddressFormOptions = $state(
 			label: NationIso3ToLocalNamesMap.get(nation.iso_code)![languageTag()]
 		}))
 		.sort((a, b) => a.label.localeCompare(b.label))
+		.sort((a, b) => (a.value === 'DEU' ? -1 : b.value === 'DEU' ? 1 : 0))
 );
 
 export const getFullTranslatedCountryNameFromISO3Code = (isoCode: string) => {

@@ -1,4 +1,4 @@
-name: Build
+name: Build and run
 
 on:
   pull_request:
@@ -13,3 +13,7 @@ jobs:
       - run: bun install
       - run: bun run build
       - run: bun run check
+      - run: |
+          bun run preview &
+          sleep 10
+          curl -f http://localhost:4173

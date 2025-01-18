@@ -23,6 +23,19 @@
 		}
 	};
 
+	const iconClassNames = () => {
+		switch (size) {
+			case 'xs':
+				return 'text-base';
+			case 'sm':
+				return 'text-lg';
+			case 'md':
+				return 'text-2xl';
+			case 'lg':
+				return 'text-5xl';
+		}
+	};
+
 	onMount(() => {
 		if (!alpha2Code && !nsa) {
 			throw new Error('No alpha2Code or NSA-Flag provided');
@@ -35,7 +48,7 @@
 		'bg-base-300'}"
 >
 	{#if nsa}
-		<i class="fa-solid fa-{icon.replace('fa-', '')}"></i>
+		<i class="fa-solid fa-{icon.replace('fa-', '')} {iconClassNames()}"></i>
 	{:else}
 		<span class="fi fi-{alpha2Code}"></span>
 	{/if}

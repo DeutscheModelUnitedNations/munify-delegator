@@ -7,12 +7,12 @@
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
+	import formatNames from '$lib/services/formatNames';
 
 	let {
 		data
 	}: {
-		data: NonNullable<StoresValues<PageData['MyConferenceparticipationQuery']>['data']> &
-			Pick<PageData, 'user'>;
+		data: NonNullable<PageData['conferenceQueryData']> & Pick<PageData, 'user'>;
 	} = $props();
 
 	const user = $derived(data.findUniqueSingleParticipant?.user);
@@ -52,7 +52,7 @@
 	<!-- <DelegationStatusTableWrapper withCommittee withMailStatus withPaymentStatus> -->
 	<DelegationStatusTableWrapper>
 		<DelegationStatusTableEntry
-			name={`${user?.given_name} ${user?.family_name}`}
+			name={formatNames(user?.given_name, user?.family_name)}
 			pronouns={user?.pronouns ?? ''}
 		/>
 	</DelegationStatusTableWrapper>

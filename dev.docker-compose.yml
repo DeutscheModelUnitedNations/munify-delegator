@@ -64,8 +64,11 @@ services:
                   }
                 ]
               }
-          ]
+          ],
+          "loginPagePath": "/static/mock-oidc-landingpage.html"
         }
+    volumes:
+      - ./mock-oidc-landingpage.html:/static/mock-oidc-landingpage.html
 
   # app:
   #   image: munifydelegator

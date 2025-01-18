@@ -268,3 +268,39 @@ builder.mutationFields((t) => {
 		})
 	};
 });
+
+builder.mutationFields((t) => {
+	return {
+		// dead = not assigned to any role
+		deleteDeadDelegationMembers: t.prismaField({
+			type: ['DelegationMember'],
+			args: {
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				return db.$transaction(async (tx) => {
+					const where = {
+						assignedCommittee: null,
+						delegation: {
+							assignedNation: null,
+							assignedNonStateActor: null
+						},
+						conferenceId: args.conferenceId,
+						AND: [ctx.permissions.allowDatabaseAccessTo('delete').DelegationMember]
+					};
+
+					const res = await tx.delegationMember.findMany({
+						...query,
+						where
+					});
+
+					await db.delegationMember.deleteMany({
+						where
+					});
+
+					return res;
+				});
+			}
+		})
+	};
+});

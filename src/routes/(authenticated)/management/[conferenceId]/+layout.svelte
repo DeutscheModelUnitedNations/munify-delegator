@@ -70,6 +70,18 @@
 				title={m.adminAssignment()}
 				expanded={navbarExpanded}
 			/>
+			<NavMenuButton
+				href="/management/{data.conferenceId}/payments"
+				icon="fa-money-bill-transfer"
+				title={m.payment()}
+				expanded={navbarExpanded}
+			/>
+			<NavMenuButton
+				href="/management/{data.conferenceId}/cleanup"
+				icon="fa-broom"
+				title={m.cleanup()}
+				expanded={navbarExpanded}
+			/>
 		</NavMenuDetails>
 	</NavMenu>
 </SideNavigationDrawer>

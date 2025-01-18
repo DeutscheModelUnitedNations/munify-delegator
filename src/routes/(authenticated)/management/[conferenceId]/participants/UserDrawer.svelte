@@ -2,9 +2,13 @@
 	import * as m from '$lib/paraglide/messages';
 	import type { UserRowData } from './types';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
-	import { find } from 'lodash';
+	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import type { AdministrativeStatus } from '@prisma/client';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		user: UserRowData;
@@ -21,8 +25,7 @@
 		};
 	};
 
-	//TODO the types are broken here?
-	const userQuery: any = graphql(`
+	const userQuery = graphql(`
 		query UserDrawerQuery($userId: String!, $conferenceId: String!) @load {
 			findUniqueUser(where: { id: $userId }) {
 				id
@@ -55,8 +58,51 @@
 			) {
 				id
 			}
+			findUniqueConferenceParticipantStatus(
+				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
+			) {
+				id
+				termsAndConditions
+				guardianConsent
+				mediaConsent
+				paymentStatus
+				didAttend
+			}
+			findUniqueConference(where: { id: $conferenceId }) {
+				startConference
+			}
 		}
 	`);
+
+	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
+	const ofAge = $derived(
+		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
+	);
+
+	const changeParticipantStatus = graphql(`
+		mutation changeParticipantStatusMutation(
+			$where: ConferenceParticipantStatusWhereUniqueInputNotRequired!
+			$data: UpdateConferenceParticipantStatusInput!
+		) {
+			updateOneConferenceParticipantStatus(where: $where, data: $data) {
+				id
+				termsAndConditions
+				guardianConsent
+				mediaConsent
+				paymentStatus
+				didAttend
+			}
+		}
+	`);
+
+	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
+		await changeParticipantStatus.mutate({
+			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			data
+		});
+		cache.markStale();
+		userQuery.fetch();
+	};
 </script>
 
 <Drawer bind:open {onClose}>
@@ -182,9 +228,46 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminUserCardStatus()}</h3>
-		<div class="alert alert-info">
-			<i class="fas fa-excavator"></i>
-			{m.comingSoon()}
+		<div class="flex flex-col gap-2">
+			<StatusWidget
+				title={m.payment()}
+				faIcon="fa-money-bill-transfer"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.paymentStatus ?? 'PENDING'}
+				changeStatus={async (newStatus: AdministrativeStatus) =>
+					await changeAdministrativeStatus({ paymentStatus: newStatus })}
+			/>
+			<StatusWidget
+				title={m.userAgreement()}
+				faIcon="fa-file-signature"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.termsAndConditions ??
+					'PENDING'}
+				changeStatus={async (newStatus: AdministrativeStatus) =>
+					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
+			/>
+			{#if !ofAge}
+				<StatusWidget
+					title={m.guardianAgreement()}
+					faIcon="fa-family"
+					status={$userQuery.data?.findUniqueConferenceParticipantStatus?.guardianConsent ??
+						'PENDING'}
+					changeStatus={async (newStatus: AdministrativeStatus) =>
+						await changeAdministrativeStatus({ guardianConsent: newStatus })}
+				/>
+			{/if}
+			<StatusWidget
+				title={m.mediaAgreement()}
+				faIcon="fa-photo-film-music"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsent ?? 'PENDING'}
+				changeStatus={async (newStatus: AdministrativeStatus) =>
+					await changeAdministrativeStatus({ mediaConsent: newStatus })}
+			/>
+			<StatusWidgetBoolean
+				title={m.attendance()}
+				faIcon="fa-calendar-check"
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend ?? false}
+				changeStatus={async (newStatus: boolean) =>
+					changeAdministrativeStatus({ didAttend: newStatus })}
+			/>
 		</div>
 	</div>
 
