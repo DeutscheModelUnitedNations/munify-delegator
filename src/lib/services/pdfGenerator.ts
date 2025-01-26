@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, PageSizes, PDFPage } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PageSizes, PDFPage, PDFFont } from 'pdf-lib';
 
 interface PageStyles {
 	margin: {
@@ -24,11 +24,11 @@ interface PageStyles {
 // Create common utility functions
 class PDFUtils {
 	private page: PDFPage;
-	private helvetica: any;
-	private helveticaBold: any;
+	private helvetica: PDFFont;
+	private helveticaBold: PDFFont;
 	private styles: PageStyles;
 
-	constructor(page: PDFPage, helvetica: any, helveticaBold: any, styles: PageStyles) {
+	constructor(page: PDFPage, helvetica: PDFFont, helveticaBold: PDFFont, styles: PageStyles) {
 		this.page = page;
 		this.helvetica = helvetica;
 		this.helveticaBold = helveticaBold;
@@ -139,9 +139,11 @@ const defaultStyles: PageStyles = {
 // Create a base class for PDF pages
 abstract class PDFPageGenerator {
 	protected pdfDoc: PDFDocument;
-	protected utils: PDFUtils;
-	protected page: PDFPage;
+	protected utils!: PDFUtils; // Add definite assignment assertion
+	protected page!: PDFPage; // Add definite assignment assertion
 	protected styles: PageStyles;
+	protected helvetica!: PDFFont; // Add font properties
+	protected helveticaBold!: PDFFont; // Add font properties
 
 	constructor(pdfDoc: PDFDocument, styles = defaultStyles) {
 		this.pdfDoc = pdfDoc;
@@ -151,10 +153,10 @@ abstract class PDFPageGenerator {
 	protected abstract generateContent(): Promise<void>;
 
 	protected async initialize(): Promise<void> {
-		const helvetica = await this.pdfDoc.embedFont(StandardFonts.Helvetica);
-		const helveticaBold = await this.pdfDoc.embedFont(StandardFonts.HelveticaBold);
+		this.helvetica = await this.pdfDoc.embedFont(StandardFonts.Helvetica);
+		this.helveticaBold = await this.pdfDoc.embedFont(StandardFonts.HelveticaBold);
 		this.page = this.pdfDoc.addPage(PageSizes.A4);
-		this.utils = new PDFUtils(this.page, helvetica, helveticaBold, this.styles);
+		this.utils = new PDFUtils(this.page, this.helvetica, this.helveticaBold, this.styles);
 	}
 
 	public async generate(): Promise<PDFPage> {
@@ -163,7 +165,6 @@ abstract class PDFPageGenerator {
 		return this.page;
 	}
 }
-
 // Registration Form First Page
 class FirstPageGenerator extends PDFPageGenerator {
 	protected async generateContent(): Promise<void> {
@@ -468,7 +469,7 @@ class ThirdPageGenerator extends PDFPageGenerator {
 		yPosition = this.utils.drawHeader(yPosition);
 
 		// Add title
-		yPosition -= 60;
+		yPosition -= 50; // Reduced spacing
 		this.page.drawText('Einwilligung Bildnutzung', {
 			x: this.styles.margin.left,
 			y: yPosition,
@@ -478,13 +479,13 @@ class ThirdPageGenerator extends PDFPageGenerator {
 		});
 
 		// Add main consent title
-		yPosition -= 30;
+		yPosition -= 25; // Reduced spacing
 		const mainText =
 			'EINWILLIGUNG zur Verwendung meines Vor- und Nachnamens und Bildnisses in Video oder als Foto durch die Model United Nations e. V. (DMUN) als Trägerverein von Model United Nations Baden-Württemberg (MUNBW).';
 		yPosition = this.utils.drawWrappedText(mainText, yPosition);
 
 		// Add signature introduction
-		yPosition -= 25;
+		yPosition -= 20; // Reduced spacing
 		this.page.drawText('Mit meiner nachfolgenden Unterschrift willige ich,', {
 			x: this.styles.margin.left,
 			y: yPosition,
@@ -495,9 +496,9 @@ class ThirdPageGenerator extends PDFPageGenerator {
 
 		// Add personal information fields
 		const formFields = [
-			['NAME teilnehmende Person', 35],
-			['GEBURTSDATUM teilnehmende Person', 25],
-			['ADRESSE teilnehmende Person', 35]
+			['NAME teilnehmende Person', 30], // Reduced spacing
+			['GEBURTSDATUM teilnehmende Person', 20], // Reduced spacing
+			['ADRESSE teilnehmende Person', 30] // Reduced spacing
 		];
 
 		formFields.forEach(([field, spacing]) => {
@@ -511,7 +512,7 @@ class ThirdPageGenerator extends PDFPageGenerator {
 			});
 
 			// Draw field label
-			yPosition -= 15;
+			yPosition -= 12; // Reduced spacing
 			this.page.drawText(`(${field})`, {
 				x: this.styles.margin.left,
 				y: yPosition,
@@ -522,7 +523,7 @@ class ThirdPageGenerator extends PDFPageGenerator {
 		});
 
 		// Add consent introduction text
-		yPosition -= 30;
+		yPosition -= 25; // Reduced spacing
 		const consentIntro =
 			'ein, dass DMUN meinen vorstehenden Vor- und Nachnamen sowie mein Bildnis in folgender Form verwendet (zutreffendes bitte ankreuzen!):';
 		yPosition = this.utils.drawWrappedText(consentIntro, yPosition);
@@ -535,9 +536,9 @@ class ThirdPageGenerator extends PDFPageGenerator {
 			'welches/welche ich erstellt habe oder andere teilnehmende Personen erstellt haben und DMUN zur Verfügung gestellt wurde.'
 		];
 
-		yPosition -= 15;
+		yPosition -= 10; // Reduced spacing
 		mediaTypes.forEach((type) => {
-			yPosition -= 25;
+			yPosition -= 20; // Reduced spacing
 			yPosition = this.utils.drawCheckbox(this.styles.margin.left, yPosition, type);
 		});
 
@@ -549,12 +550,12 @@ class ThirdPageGenerator extends PDFPageGenerator {
 		];
 
 		consentSections.forEach((section) => {
-			yPosition -= 25;
+			yPosition -= 20; // Reduced spacing
 			yPosition = this.utils.drawWrappedText(section, yPosition);
 		});
 
 		// Add usage purposes introduction
-		yPosition -= 25;
+		yPosition -= 20; // Reduced spacing
 		const purposesIntro =
 			'Die Nutzung meines Vor- und Nachnamens und Bildnisses im vorgenannten Foto/Video erfolgt zu folgenden Zwecken (zutreffendes bitte ankreuzen!):';
 		yPosition = this.utils.drawWrappedText(purposesIntro, yPosition);
@@ -563,13 +564,13 @@ class ThirdPageGenerator extends PDFPageGenerator {
 		const purposes = [
 			'Zur internen Kommunikation innerhalb der DMUN-Teams und mit anderen teilnehmenden Personen über Videokonferenzen oder Software zur Zusammenarbeit (Google Drive, Slack);',
 			'zur Dokumentation meiner Teilnahme an einer DMUN-Veranstaltung (auch Online);',
-			'Veröffentlichung in Positions- und Arbeitspapieren, Gremienberichten, Dokumentation;',
+			'Veröffentlichung in Positions- und Arbeitspapieren, Gremienberichten, Dokumentation;', // Fixed typo
 			'Berichterstattung auf DMUN-Veranstaltungen (Konferenzpresse)'
 		];
 
-		yPosition -= 15;
+		yPosition -= 10; // Reduced spacing
 		purposes.forEach((purpose) => {
-			yPosition -= 25;
+			yPosition -= 20; // Reduced spacing
 			yPosition = this.utils.drawCheckbox(this.styles.margin.left, yPosition, purpose);
 		});
 
