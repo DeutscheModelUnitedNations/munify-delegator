@@ -44,7 +44,10 @@
 						<td class="text-center">
 							<span class="text-lg font-bold">{stats.status.postalStatus.done}</span>
 							{#if selectedHistory}
-								<StatsDesc currentValue={stats.status.postalStatus.done} historicValue={selectedHistory?.stats.status?.postalStatus.done} />
+								<StatsDesc
+									currentValue={stats.status.postalStatus.done}
+									historicValue={selectedHistory?.stats.status?.postalStatus.done}
+								/>
 							{/if}
 						</td>
 					</tr>
@@ -65,7 +68,10 @@
 						<td class="text-center">
 							<span class="text-lg font-bold">{stats.status.paymentStatus.done}</span>
 							{#if selectedHistory}
-								<StatsDesc currentValue={stats.status.paymentStatus.done} historicValue={selectedHistory?.stats.status?.paymentStatus.done} />
+								<StatsDesc
+									currentValue={stats.status.paymentStatus.done}
+									historicValue={selectedHistory?.stats.status?.paymentStatus.done}
+								/>
 							{/if}
 						</td>
 					</tr>
@@ -78,7 +84,10 @@
 						<td class="text-center">
 							<span class="text-lg font-bold">{stats.status.didAttend}</span>
 							{#if selectedHistory}
-								<StatsDesc currentValue={stats.status.didAttend} historicValue={selectedHistory?.stats.status?.didAttend} />
+								<StatsDesc
+									currentValue={stats.status.didAttend}
+									historicValue={selectedHistory?.stats.status?.didAttend}
+								/>
 							{/if}
 						</td>
 					</tr>
