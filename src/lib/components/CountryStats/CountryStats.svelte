@@ -86,7 +86,7 @@
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 	<div class="stats col-span-1 shadow md:col-span-2 xl:col-span-3">
 		<div class="stat bg-base-200">
-			<div class="text-primary stat-figure">
+			<div class="stat-figure text-primary">
 				<i class="fa-duotone fa-flag text-3xl"></i>
 			</div>
 			<div class="stat-title">Offizieller Landesname</div>

@@ -50,7 +50,7 @@
 	</div>
 </section>
 <section
-	class="bg-primary card col-span-2 grow text-primary-content shadow-sm md:col-span-4 xl:col-span-6"
+	class="card col-span-2 grow bg-primary text-primary-content shadow-sm md:col-span-4 xl:col-span-6"
 >
 	{#if stats?.registered}
 		<div class="hidden md:contents xl:hidden">
