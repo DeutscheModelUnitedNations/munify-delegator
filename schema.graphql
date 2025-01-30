@@ -2241,11 +2241,6 @@ input PaymentTransactionOrderByWithRelationInput {
   userId: SortOrder
 }
 
-input PaymentTransactionRelationFilter {
-  is: PaymentTransactionWhereInput
-  isNot: PaymentTransactionWhereInput
-}
-
 enum PaymentTransactionScalarFieldEnum {
   amount
   conferenceId
@@ -2253,6 +2248,11 @@ enum PaymentTransactionScalarFieldEnum {
   id
   recievedAt
   userId
+}
+
+input PaymentTransactionScalarRelationFilter {
+  is: PaymentTransactionWhereInput
+  isNot: PaymentTransactionWhereInput
 }
 
 input PaymentTransactionUpdateInput {
@@ -3131,11 +3131,6 @@ input UserReferenceInPaymentTransactionWhereUniqueInput {
   paymentTransactionId: StringFilter
   user: UserWhereInput
   userId: StringFilter
-}
-
-input UserRelationFilter {
-  is: UserWhereInput
-  isNot: UserWhereInput
 }
 
 enum UserScalarFieldEnum {
