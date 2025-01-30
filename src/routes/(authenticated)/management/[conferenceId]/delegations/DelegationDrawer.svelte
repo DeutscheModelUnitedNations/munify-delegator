@@ -6,7 +6,6 @@
 	import { error } from '@sveltejs/kit';
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { find } from 'lodash';
 	import Flag from '$lib/components/Flag.svelte';
 
 	interface Props {
