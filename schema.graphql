@@ -1422,6 +1422,23 @@ input EnumFoodPreferenceNullableWithAggregatesFilter {
   notIn: [FoodPreference!]
 }
 
+input EnumGenderNullableFilter {
+  equals: Gender
+  in: [Gender!]
+  not: Gender
+  notIn: [Gender!]
+}
+
+input EnumGenderNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumGenderNullableFilter
+  _min: NestedEnumGenderNullableFilter
+  equals: Gender
+  in: [Gender!]
+  not: Gender
+  notIn: [Gender!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1797,6 +1814,23 @@ input NestedEnumFoodPreferenceNullableWithAggregatesFilter {
   notIn: [FoodPreference!]
 }
 
+input NestedEnumGenderNullableFilter {
+  equals: Gender
+  in: [Gender!]
+  not: Gender
+  notIn: [Gender!]
+}
+
+input NestedEnumGenderNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumGenderNullableFilter
+  _min: NestedEnumGenderNullableFilter
+  equals: Gender
+  in: [Gender!]
+  not: Gender
+  notIn: [Gender!]
+}
+
 input NestedEnumTeamRoleFilter {
   equals: TeamRole
   in: [TeamRole!]
@@ -2110,6 +2144,10 @@ input NullableDateTimeFieldUpdateOperationsInput {
 
 input NullableEnumFoodPreferenceFieldUpdateOperationsInput {
   set: FoodPreference
+}
+
+input NullableEnumGenderFieldUpdateOperationsInput {
+  set: Gender
 }
 
 input NullableFloatFieldUpdateOperationsInput {
@@ -2959,7 +2997,7 @@ type User {
   email: String!
   family_name: String!
   foodPreference: FoodPreference
-  gender: String
+  gender: Gender
   given_name: String!
   id: ID!
   locale: String!
@@ -2985,7 +3023,7 @@ input UserCreateInput {
   email: String!
   family_name: String!
   foodPreference: FoodPreference
-  gender: String
+  gender: Gender
   given_name: String!
   id: String
   locale: String!
@@ -3164,7 +3202,7 @@ input UserUpdateInput {
   email: StringFieldUpdateOperationsInput
   family_name: StringFieldUpdateOperationsInput
   foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
-  gender: NullableStringFieldUpdateOperationsInput
+  gender: NullableEnumGenderFieldUpdateOperationsInput
   given_name: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   locale: StringFieldUpdateOperationsInput
@@ -3189,7 +3227,7 @@ input UserUpdateManyMutationInput {
   email: StringFieldUpdateOperationsInput
   family_name: StringFieldUpdateOperationsInput
   foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
-  gender: NullableStringFieldUpdateOperationsInput
+  gender: NullableEnumGenderFieldUpdateOperationsInput
   given_name: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   locale: StringFieldUpdateOperationsInput
@@ -3216,7 +3254,7 @@ input UserWhereInput {
   email: StringFilter
   family_name: StringFilter
   foodPreference: EnumFoodPreferenceNullableFilter
-  gender: StringNullableFilter
+  gender: EnumGenderNullableFilter
   given_name: StringFilter
   id: StringFilter
   locale: StringFilter
@@ -3247,7 +3285,7 @@ input UserWhereUniqueInput {
   email: StringFilter
   family_name: StringFilter
   foodPreference: EnumFoodPreferenceNullableFilter
-  gender: StringNullableFilter
+  gender: EnumGenderNullableFilter
   given_name: StringFilter
   id: String
   locale: StringFilter
