@@ -15,7 +15,6 @@
 	import type { AdministrativeStatus } from '@prisma/client';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
-	import { find } from 'lodash';
 
 	// TODO these components need some refactoring
 	let {
