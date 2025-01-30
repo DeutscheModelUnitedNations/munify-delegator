@@ -4,6 +4,7 @@ export interface StatsType {
 	countdowns: Countdowns;
 	registered: Registered;
 	age: Age;
+	status?: Status;
 }
 
 export interface Countdowns {
@@ -58,6 +59,17 @@ export interface StatsTypeHistoryEntry {
 	stats: StatsType;
 	timestamp: string;
 	conferenceId: string;
+}
+
+export interface Status {
+	postalStatus: StatusObject;
+	paymentStatus: StatusObject;
+	didAttend: number;
+}
+
+export interface StatusObject {
+	problem: number;
+	done: number;
 }
 
 // Filter (by applied, not applied)

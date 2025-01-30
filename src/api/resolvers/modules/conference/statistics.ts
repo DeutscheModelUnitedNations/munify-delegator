@@ -1,6 +1,7 @@
 import { requireToBeConferenceAdmin } from '$api/services/requireUserToBeConferenceAdmin';
 import { conferenceStats } from '$api/services/stats';
 import { db } from '$db/db';
+import { payment, postalRegistration } from '$lib/paraglide/messages';
 import { builder } from '../../builder';
 
 const dietVariations = builder.simpleObject('StatisticsResultRegisteredParticipantDietVariations', {
@@ -137,6 +138,32 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 					})
 				})
 			})
+		}),
+		status: t.field({
+			type: t.builder.simpleObject('StatisticsResultRegisteredParticipantStatus', {
+				fields: (t) => ({
+					postalStatus: t.field({
+						type: t.builder.simpleObject(
+							'StatisticsResultRegisteredParticipantStatusPostalRegistration',
+							{
+								fields: (t) => ({
+									done: t.int(),
+									problem: t.int()
+								})
+							}
+						)
+					}),
+					paymentStatus: t.field({
+						type: t.builder.simpleObject('StatisticsResultRegisteredParticipantStatusPayment', {
+							fields: (t) => ({
+								done: t.int(),
+								problem: t.int()
+							})
+						})
+					}),
+					didAttend: t.int()
+				})
+			})
 		})
 	})
 });
@@ -152,7 +179,7 @@ builder.queryFields((t) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				await requireToBeConferenceAdmin({ conferenceId: args.conferenceId, user });
 
-				const { countdowns, registrationStatistics, ageStatistics, diet, gender } =
+				const { countdowns, registrationStatistics, ageStatistics, diet, gender, status } =
 					await conferenceStats({
 						db,
 						conferenceId: args.conferenceId
@@ -169,7 +196,8 @@ builder.queryFields((t) => {
 							key: k,
 							value: v
 						}))
-					}
+					},
+					status
 				};
 			}
 		})

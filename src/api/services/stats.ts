@@ -1,3 +1,4 @@
+import { ofAgeAtConference } from '$lib/services/ageChecker';
 import type { PrismaClient } from '@prisma/client';
 
 export async function conferenceStats({
@@ -516,11 +517,54 @@ export async function conferenceStats({
 		}
 	};
 
+	const conferenceStatusStats = await db.conferenceParticipantStatus.findMany({
+		where: {
+			conferenceId
+		},
+		select: {
+			paymentStatus: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			didAttend: true,
+			user: {
+				select: {
+					birthday: true
+				}
+			}
+		}
+	});
+
+	const status = {
+		paymentStatus: {
+			done: conferenceStatusStats.filter((s) => s.paymentStatus === 'DONE').length,
+			problem: conferenceStatusStats.filter((s) => s.paymentStatus === 'PROBLEM').length
+		},
+		postalStatus: {
+			done: conferenceStatusStats.filter(
+				(s) =>
+					s.termsAndConditions === 'DONE' &&
+					(ofAgeAtConference(conference.startConference, s.user.birthday) ||
+						s.guardianConsent === 'DONE') &&
+					s.mediaConsent === 'DONE'
+			).length,
+			problem: conferenceStatusStats.filter(
+				(s) =>
+					s.termsAndConditions === 'PROBLEM' ||
+					(!ofAgeAtConference(conference.startConference, s.user.birthday) &&
+						s.guardianConsent === 'PROBLEM') ||
+					s.mediaConsent === 'PROBLEM'
+			).length
+		},
+		didAttend: conferenceStatusStats.filter((s) => s.didAttend).length
+	};
+
 	return {
 		countdowns,
 		registrationStatistics,
 		ageStatistics,
 		diet,
-		gender
+		gender,
+		status
 	};
 }
