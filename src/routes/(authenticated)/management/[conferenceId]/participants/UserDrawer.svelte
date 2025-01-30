@@ -179,11 +179,11 @@
 				</tr>
 				<tr>
 					<td class="text-center text-lg">
-						{#if $userQuery.data?.findUniqueUser?.gender === 'f'}
+						{#if $userQuery.data?.findUniqueUser?.gender === 'FEMALE'}
 							<i class="fa-duotone fa-venus"></i>
-						{:else if $userQuery.data?.findUniqueUser?.gender === 'm'}
+						{:else if $userQuery.data?.findUniqueUser?.gender === 'MALE'}
 							<i class="fa-duotone fa-mars"></i>
-						{:else if $userQuery.data?.findUniqueUser?.gender === 'd'}
+						{:else if $userQuery.data?.findUniqueUser?.gender === 'DIVERSE'}
 							<i class="fa-duotone fa-question"></i>
 						{:else}
 							<i class="fa-duotone fa-dash"></i>

@@ -3,6 +3,26 @@ import { conferenceStats } from '$api/services/stats';
 import { db } from '$db/db';
 import { builder } from '../../builder';
 
+const dietVariations = builder.simpleObject('StatisticsResultRegisteredParticipantDietVariations', {
+	fields: (t) => ({
+		omnivore: t.int(),
+		vegetarian: t.int(),
+		vegan: t.int()
+	})
+});
+
+const genderVariations = builder.simpleObject(
+	'StatisticsResultRegisteredParticipantGenderVariations',
+	{
+		fields: (t) => ({
+			male: t.int(),
+			female: t.int(),
+			diverse: t.int(),
+			noStatement: t.int()
+		})
+	}
+);
+
 const StatisticsResult = builder.simpleObject('StatisticsResult', {
 	fields: (t) => ({
 		countdowns: t.field({
@@ -81,9 +101,46 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 					})
 				})
 			})
+		}),
+		diet: t.field({
+			type: t.builder.simpleObject('StatisticsResultRegisteredParticipantDiet', {
+				fields: (t) => ({
+					singleParticipants: t.field({
+						type: dietVariations
+					}),
+					delegationMembers: t.field({
+						type: dietVariations
+					}),
+					supervisors: t.field({
+						type: dietVariations
+					}),
+					teamMembers: t.field({
+						type: dietVariations
+					})
+				})
+			})
+		}),
+		gender: t.field({
+			type: t.builder.simpleObject('StatisticsResultRegisteredParticipantGender', {
+				fields: (t) => ({
+					singleParticipants: t.field({
+						type: genderVariations
+					}),
+					delegationMembers: t.field({
+						type: genderVariations
+					}),
+					supervisors: t.field({
+						type: genderVariations
+					}),
+					teamMembers: t.field({
+						type: genderVariations
+					})
+				})
+			})
 		})
 	})
 });
+
 builder.queryFields((t) => {
 	return {
 		getConferenceStatistics: t.field({
@@ -95,13 +152,16 @@ builder.queryFields((t) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				await requireToBeConferenceAdmin({ conferenceId: args.conferenceId, user });
 
-				const { countdowns, registrationStatistics, ageStatistics } = await conferenceStats({
-					db,
-					conferenceId: args.conferenceId
-				});
+				const { countdowns, registrationStatistics, ageStatistics, diet, gender } =
+					await conferenceStats({
+						db,
+						conferenceId: args.conferenceId
+					});
 
 				return {
 					countdowns,
+					diet,
+					gender,
 					registered: registrationStatistics,
 					age: {
 						...ageStatistics,
