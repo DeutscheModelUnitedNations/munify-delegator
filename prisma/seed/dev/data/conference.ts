@@ -1,6 +1,5 @@
 import { Conference } from '@prisma/client';
 
-
 // https://fakerjs.dev/api/randomizer.html#seed
 export const conference: Conference = {
 	id: '9hNDe1EVOYxQfuZw7pLn3',
