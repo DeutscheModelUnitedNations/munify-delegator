@@ -21,6 +21,43 @@ interface PageStyles {
 	};
 }
 
+
+class PDFHeader {
+	private page: PDFPage;
+	private helveticaBold: PDFFont;
+	private styles: PageStyles;
+	private conferenceName: string;
+
+	constructor(page: PDFPage, helveticaBold: PDFFont, styles: PageStyles, conferenceName: string) {
+			this.page = page;
+			this.helveticaBold = helveticaBold;
+			this.styles = styles;
+			this.conferenceName = conferenceName;
+	}
+
+	draw(yPosition: number): number {
+			// Draw conference name
+			this.page.drawText(this.conferenceName, {
+					x: this.styles.margin.left,
+					y: yPosition,
+					size: this.styles.fontSize.title,
+					font: this.helveticaBold,
+					color: rgb(0.5, 0.5, 0.5)
+			});
+
+			yPosition -= 25;
+			this.page.drawText('Schleswig-Holstein', {
+					x: this.styles.margin.left,
+					y: yPosition,
+					size: this.styles.fontSize.title,
+					font: this.helveticaBold,
+					color: rgb(0.5, 0.5, 0.5)
+			});
+
+			return yPosition;
+	}
+}
+
 // Create common utility functions
 class PDFUtils {
 	private page: PDFPage;
@@ -92,26 +129,26 @@ class PDFUtils {
 		return this.drawWrappedText(text, textY, this.helvetica, size + 5);
 	}
 
-	drawHeader(yPosition: number): number {
-		this.page.drawText('Model United Nations', {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.title,
-			font: this.helveticaBold,
-			color: rgb(0.5, 0.5, 0.5)
-		});
+	// drawHeader(yPosition: number): number {
+	// 	this.page.drawText('Model United Nations', {
+	// 		x: this.styles.margin.left,
+	// 		y: yPosition,
+	// 		size: this.styles.fontSize.title,
+	// 		font: this.helveticaBold,
+	// 		color: rgb(0.5, 0.5, 0.5)
+	// 	});
 
-		yPosition -= 25;
-		this.page.drawText('Schleswig-Holstein', {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.title,
-			font: this.helveticaBold,
-			color: rgb(0.5, 0.5, 0.5)
-		});
+	// 	yPosition -= 25;
+	// 	this.page.drawText('Schleswig-Holstein', {
+	// 		x: this.styles.margin.left,
+	// 		y: yPosition,
+	// 		size: this.styles.fontSize.title,
+	// 		font: this.helveticaBold,
+	// 		color: rgb(0.5, 0.5, 0.5)
+	// 	});
 
-		return yPosition;
-	}
+	// 	return yPosition;
+	// }
 }
 
 // Define common styles
@@ -144,10 +181,13 @@ abstract class PDFPageGenerator {
 	protected styles: PageStyles;
 	protected helvetica!: PDFFont; // Add font properties
 	protected helveticaBold!: PDFFont; // Add font properties
+	protected header!: PDFHeader;
+	protected conferenceName: string;
 
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles) {
+	constructor(pdfDoc: PDFDocument, styles = defaultStyles, conferenceName: string) {
 		this.pdfDoc = pdfDoc;
 		this.styles = styles;
+		this.conferenceName = conferenceName;
 	}
 
 	protected abstract generateContent(): Promise<void>;
@@ -157,6 +197,7 @@ abstract class PDFPageGenerator {
 		this.helveticaBold = await this.pdfDoc.embedFont(StandardFonts.HelveticaBold);
 		this.page = this.pdfDoc.addPage(PageSizes.A4);
 		this.utils = new PDFUtils(this.page, this.helvetica, this.helveticaBold, this.styles);
+		this.header = new PDFHeader(this.page, this.helveticaBold, this.styles, this.conferenceName);
 	}
 
 	public async generate(): Promise<PDFPage> {
@@ -172,7 +213,7 @@ class FirstPageGenerator extends PDFPageGenerator {
 		let yPosition = height - this.styles.margin.top;
 
 		// Add header
-		yPosition = this.utils.drawHeader(yPosition);
+		yPosition = this.header.draw(yPosition);
 
 		// Add form title
 		yPosition -= 60;
@@ -311,7 +352,7 @@ class SecondPageGenerator extends PDFPageGenerator {
 		let yPosition = height - this.styles.margin.top;
 
 		// Add header
-		yPosition = this.utils.drawHeader(yPosition);
+		yPosition = this.header.draw(yPosition);
 
 		// Add main title
 		yPosition -= 60;
@@ -466,7 +507,7 @@ class ThirdPageGenerator extends PDFPageGenerator {
 		let yPosition = height - this.styles.margin.top;
 
 		// Add header
-		yPosition = this.utils.drawHeader(yPosition);
+		yPosition = this.header.draw(yPosition);
 
 		// Add title
 		yPosition -= 50; // Reduced spacing
@@ -591,7 +632,7 @@ class FourthPageGenerator extends PDFPageGenerator {
 		let yPosition = height - this.styles.margin.top;
 
 		// Add header
-		yPosition = this.utils.drawHeader(yPosition);
+		yPosition = this.header.draw(yPosition);
 
 		// Continue with the remaining usage purposes checkboxes
 		const additionalPurposes = [
@@ -705,7 +746,7 @@ class FifthPageGenerator extends PDFPageGenerator {
 		let yPosition = height - this.styles.margin.top;
 
 		// Add header
-		yPosition = this.utils.drawHeader(yPosition);
+		yPosition = this.header.draw(yPosition);
 
 		// Add section title for minors
 		yPosition -= 60;
@@ -859,16 +900,16 @@ class FifthPageGenerator extends PDFPageGenerator {
 // Continue with other page generators...
 
 // Main function to generate complete PDF
-async function generateCompletePDF(): Promise<Uint8Array> {
+async function generateCompletePDF(conferenceName: string = "Model United Nations"): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
 	// Create all pages
 	const pageGenerators = [
-		new FirstPageGenerator(pdfDoc),
-		new SecondPageGenerator(pdfDoc),
-		new ThirdPageGenerator(pdfDoc),
-		new FourthPageGenerator(pdfDoc),
-		new FifthPageGenerator(pdfDoc)
+		new FirstPageGenerator(pdfDoc,defaultStyles,conferenceName),
+		new SecondPageGenerator(pdfDoc,defaultStyles,conferenceName),
+		new ThirdPageGenerator(pdfDoc,defaultStyles,conferenceName),
+		new FourthPageGenerator(pdfDoc,defaultStyles,conferenceName),
+		new FifthPageGenerator(pdfDoc,defaultStyles,conferenceName)
 	];
 
 	// Generate all pages
