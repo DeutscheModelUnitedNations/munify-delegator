@@ -10,6 +10,7 @@ interface PageStyles {
 	colors: {
 		gray: { r: number; g: number; b: number };
 		black: { r: number; g: number; b: number };
+		blue: { r: number; g: number; b: number }; // Added blue color
 	};
 	fontSize: {
 		title: number;
@@ -20,6 +21,28 @@ interface PageStyles {
 		normal: number;
 	};
 }
+
+const defaultStyles: PageStyles = {
+	margin: {
+		left: 40,
+		right: 40,
+		top: 40,
+		bottom: 40
+	},
+	colors: {
+		gray: { r: 0.5, g: 0.5, b: 0.5 },
+		black: { r: 0, g: 0, b: 0 },
+		blue: { r: 0, g: 0.478, b: 1 } // RGB value for a bright blue color (approximating the PDF)
+	},
+	fontSize: {
+		title: 24,
+		heading: 14,
+		normal: 11
+	},
+	lineHeight: {
+		normal: 1.2
+	}
+};
 
 class PDFHeader {
 	private page: PDFPage;
@@ -41,7 +64,7 @@ class PDFHeader {
 			y: yPosition,
 			size: this.styles.fontSize.title,
 			font: this.helveticaBold,
-			color: rgb(0.5, 0.5, 0.5)
+			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
 		});
 
 		yPosition -= 25;
@@ -50,7 +73,7 @@ class PDFHeader {
 			y: yPosition,
 			size: this.styles.fontSize.title,
 			font: this.helveticaBold,
-			color: rgb(0.5, 0.5, 0.5)
+			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
 		});
 
 		return yPosition;
@@ -128,28 +151,6 @@ class PDFUtils {
 		return this.drawWrappedText(text, textY, this.helvetica, size + 5);
 	}
 }
-
-// Define common styles
-const defaultStyles: PageStyles = {
-	margin: {
-		left: 40,
-		right: 40,
-		top: 40,
-		bottom: 40
-	},
-	colors: {
-		gray: { r: 0.5, g: 0.5, b: 0.5 },
-		black: { r: 0, g: 0, b: 0 }
-	},
-	fontSize: {
-		title: 24,
-		heading: 14,
-		normal: 11
-	},
-	lineHeight: {
-		normal: 1.2
-	}
-};
 
 // Create a base class for PDF pages
 abstract class PDFPageGenerator {
