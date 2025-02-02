@@ -903,7 +903,7 @@ class FifthPageGenerator extends PDFPageGenerator {
 async function generateCompletePDF(
 	conferenceName: string = 'Model United Nations',
 	age: number = 20,
-	recipientInfo: RecipientInfo,
+	recipientInfo: RecipientInfo
 ): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
@@ -927,13 +927,13 @@ async function generateCompletePDF(
 // Export function for usage
 export async function generateSamplePDF(
 	age: number = 20,
-    recipientInfo: RecipientInfo = {
-        name: "DMUN e.V.",
-        address: "Birkenweg 1",
-        plz: "24244",
-        ort: "Felde",
-        country: "Deutschland"
-    }
+	recipientInfo: RecipientInfo = {
+		name: 'DMUN e.V.',
+		address: 'Birkenweg 1',
+		plz: '24244',
+		ort: 'Felde',
+		country: 'Deutschland'
+	}
 ): Promise<void> {
 	try {
 		const pdfBytes = await generateCompletePDF('Model United Nations', age, recipientInfo);
