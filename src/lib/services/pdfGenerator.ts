@@ -884,15 +884,15 @@ async function generateCompletePDF(
 ): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
-   // Create base pages
-	 const pageGenerators = [
+	// Create base pages
+	const pageGenerators = [
 		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName),
 		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName),
 		// Only include the parental consent page if age is less than 18
 		...(age < 18 ? [new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName)] : []),
 		new FourthPageGenerator(pdfDoc, defaultStyles, conferenceName),
 		new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName)
-];
+	];
 	// Generate all pages
 	for (const generator of pageGenerators) {
 		await generator.generate();
