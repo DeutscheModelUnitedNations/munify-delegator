@@ -21,7 +21,6 @@ interface PageStyles {
 	};
 }
 
-
 class PDFHeader {
 	private page: PDFPage;
 	private helveticaBold: PDFFont;
@@ -29,32 +28,32 @@ class PDFHeader {
 	private conferenceName: string;
 
 	constructor(page: PDFPage, helveticaBold: PDFFont, styles: PageStyles, conferenceName: string) {
-			this.page = page;
-			this.helveticaBold = helveticaBold;
-			this.styles = styles;
-			this.conferenceName = conferenceName;
+		this.page = page;
+		this.helveticaBold = helveticaBold;
+		this.styles = styles;
+		this.conferenceName = conferenceName;
 	}
 
 	draw(yPosition: number): number {
-			// Draw conference name
-			this.page.drawText(this.conferenceName, {
-					x: this.styles.margin.left,
-					y: yPosition,
-					size: this.styles.fontSize.title,
-					font: this.helveticaBold,
-					color: rgb(0.5, 0.5, 0.5)
-			});
+		// Draw conference name
+		this.page.drawText(this.conferenceName, {
+			x: this.styles.margin.left,
+			y: yPosition,
+			size: this.styles.fontSize.title,
+			font: this.helveticaBold,
+			color: rgb(0.5, 0.5, 0.5)
+		});
 
-			yPosition -= 25;
-			this.page.drawText('Schleswig-Holstein', {
-					x: this.styles.margin.left,
-					y: yPosition,
-					size: this.styles.fontSize.title,
-					font: this.helveticaBold,
-					color: rgb(0.5, 0.5, 0.5)
-			});
+		yPosition -= 25;
+		this.page.drawText('Schleswig-Holstein', {
+			x: this.styles.margin.left,
+			y: yPosition,
+			size: this.styles.fontSize.title,
+			font: this.helveticaBold,
+			color: rgb(0.5, 0.5, 0.5)
+		});
 
-			return yPosition;
+		return yPosition;
 	}
 }
 
@@ -900,16 +899,18 @@ class FifthPageGenerator extends PDFPageGenerator {
 // Continue with other page generators...
 
 // Main function to generate complete PDF
-async function generateCompletePDF(conferenceName: string = "Model United Nations"): Promise<Uint8Array> {
+async function generateCompletePDF(
+	conferenceName: string = 'Model United Nations'
+): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
 	// Create all pages
 	const pageGenerators = [
-		new FirstPageGenerator(pdfDoc,defaultStyles,conferenceName),
-		new SecondPageGenerator(pdfDoc,defaultStyles,conferenceName),
-		new ThirdPageGenerator(pdfDoc,defaultStyles,conferenceName),
-		new FourthPageGenerator(pdfDoc,defaultStyles,conferenceName),
-		new FifthPageGenerator(pdfDoc,defaultStyles,conferenceName)
+		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName),
+		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName),
+		new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName),
+		new FourthPageGenerator(pdfDoc, defaultStyles, conferenceName),
+		new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName)
 	];
 
 	// Generate all pages
