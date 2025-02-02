@@ -127,27 +127,6 @@ class PDFUtils {
 		const textY = y + 2; // Align text with checkbox center
 		return this.drawWrappedText(text, textY, this.helvetica, size + 5);
 	}
-
-	// drawHeader(yPosition: number): number {
-	// 	this.page.drawText('Model United Nations', {
-	// 		x: this.styles.margin.left,
-	// 		y: yPosition,
-	// 		size: this.styles.fontSize.title,
-	// 		font: this.helveticaBold,
-	// 		color: rgb(0.5, 0.5, 0.5)
-	// 	});
-
-	// 	yPosition -= 25;
-	// 	this.page.drawText('Schleswig-Holstein', {
-	// 		x: this.styles.margin.left,
-	// 		y: yPosition,
-	// 		size: this.styles.fontSize.title,
-	// 		font: this.helveticaBold,
-	// 		color: rgb(0.5, 0.5, 0.5)
-	// 	});
-
-	// 	return yPosition;
-	// }
 }
 
 // Define common styles
