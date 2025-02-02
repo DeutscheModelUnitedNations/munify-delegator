@@ -140,7 +140,5 @@ _db.$transaction(async (db) => {
 
 	// create some delegations
 
-	await Promise.all(conferences.map(async ({conference}) => {
-		
-	}));
+	await Promise.all(conferences.map(async ({ conference }) => {}));
 });
