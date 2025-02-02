@@ -1,5 +1,12 @@
 import { PDFDocument, rgb, StandardFonts, PageSizes, PDFPage, PDFFont } from 'pdf-lib';
 
+export interface RecipientInfo {
+	name: string;
+	address: string;
+	plz: string;
+	ort: string;
+	country: string;
+}
 interface PageStyles {
 	margin: {
 		left: number;
@@ -187,6 +194,16 @@ abstract class PDFPageGenerator {
 }
 // Registration Form First Page
 class FirstPageGenerator extends PDFPageGenerator {
+	private recipientInfo: RecipientInfo;
+	constructor(
+		pdfDoc: PDFDocument,
+		styles: PageStyles,
+		conferenceName: string,
+		recipientInfo: RecipientInfo
+	) {
+		super(pdfDoc, styles, conferenceName);
+		this.recipientInfo = recipientInfo;
+	}
 	protected async generateContent(): Promise<void> {
 		const { width, height } = this.page.getSize();
 		let yPosition = height - this.styles.margin.top;
@@ -206,8 +223,6 @@ class FirstPageGenerator extends PDFPageGenerator {
 
 		// Add recipient address section
 		yPosition -= 30;
-		const addressFields = ['Name', 'Adresse', 'PLZ', 'Ort', 'COUNTRY'];
-
 		this.page.drawText('per Post zu senden an:', {
 			x: this.styles.margin.left,
 			y: yPosition,
@@ -216,9 +231,16 @@ class FirstPageGenerator extends PDFPageGenerator {
 			color: rgb(0, 0, 0)
 		});
 
-		addressFields.forEach((field) => {
+		const recipientFields = [
+			{ label: this.recipientInfo.name },
+			{ label: this.recipientInfo.address },
+			{ label: `${this.recipientInfo.plz} ${this.recipientInfo.ort}` },
+			{ label: this.recipientInfo.country }
+		];
+
+		recipientFields.forEach((field) => {
 			yPosition -= 20;
-			this.page.drawText(`<${field}>`, {
+			this.page.drawText(field.label, {
 				x: this.styles.margin.left,
 				y: yPosition,
 				size: this.styles.fontSize.normal,
@@ -227,14 +249,14 @@ class FirstPageGenerator extends PDFPageGenerator {
 			});
 		});
 
-		// Add registration section
+		// Rest of the page content remains the same
 		yPosition -= 40;
 		this.page.drawText('Verbindliche Anmeldung von', {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
 			font: this.helveticaBold,
-			color: rgb(0, 0, 0)
+			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
 		});
 
 		// Add name line
@@ -876,18 +898,18 @@ class FifthPageGenerator extends PDFPageGenerator {
 		});
 	}
 }
-// Continue with other page generators...
 
 // Main function to generate complete PDF
 async function generateCompletePDF(
 	conferenceName: string = 'Model United Nations',
-	age: number = 20
+	age: number = 20,
+	recipientInfo: RecipientInfo,
 ): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
 	// Create base pages
 	const pageGenerators = [
-		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName),
+		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName, recipientInfo),
 		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName),
 		// Only include the parental consent page if age is less than 18
 		...(age < 18 ? [new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName)] : []),
@@ -903,9 +925,18 @@ async function generateCompletePDF(
 }
 
 // Export function for usage
-export async function generateSamplePDF(): Promise<void> {
+export async function generateSamplePDF(
+	age: number = 20,
+    recipientInfo: RecipientInfo = {
+        name: "DMUN e.V.",
+        address: "Birkenweg 1",
+        plz: "24244",
+        ort: "Felde",
+        country: "Deutschland"
+    }
+): Promise<void> {
 	try {
-		const pdfBytes = await generateCompletePDF();
+		const pdfBytes = await generateCompletePDF('Model United Nations', age, recipientInfo);
 
 		const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 		const url = URL.createObjectURL(blob);
