@@ -6,6 +6,8 @@ import { makeSeedCommittee } from './committee';
 import { makeSeedUser } from './user';
 import { makeSeedNSA } from './nonStateActor';
 import { makeSeedCustomConferenceRole } from './customConferenceRole';
+import { makeSeedDelegation } from './delegation';
+import { makeSeedDelegationMember } from './delegationMember';
 
 // force static seed for reproducible data
 faker.seed(123);
@@ -35,12 +37,12 @@ _db.$transaction(async (db) => {
 			});
 
 			const committees = [
-				makeSeedCommittee({ conference: { id: conference.id } }),
-				makeSeedCommittee({ conference: { id: conference.id } }),
-				makeSeedCommittee({ conference: { id: conference.id } }),
-				makeSeedCommittee({ conference: { id: conference.id } }),
-				makeSeedCommittee({ conference: { id: conference.id } }),
-				makeSeedCommittee({ conference: { id: conference.id } })
+				makeSeedCommittee({ conferenceId: conference.id }),
+				makeSeedCommittee({ conferenceId: conference.id }),
+				makeSeedCommittee({ conferenceId: conference.id }),
+				makeSeedCommittee({ conferenceId: conference.id }),
+				makeSeedCommittee({ conferenceId: conference.id }),
+				makeSeedCommittee({ conferenceId: conference.id })
 			];
 
 			console.info(`Seeding committees for conference ${conference.id}...`);
@@ -60,12 +62,12 @@ _db.$transaction(async (db) => {
 			console.info(`Seeded committees for conference ${conference.id} successfully!`);
 
 			const nonStateActors = [
-				makeSeedNSA({ conference: { id: conference.id } }),
-				makeSeedNSA({ conference: { id: conference.id } }),
-				makeSeedNSA({ conference: { id: conference.id } }),
-				makeSeedNSA({ conference: { id: conference.id } }),
-				makeSeedNSA({ conference: { id: conference.id } }),
-				makeSeedNSA({ conference: { id: conference.id } })
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id })
 			];
 
 			console.info(`Seeding nonStateActors for conference ${conference.id}...`);
@@ -85,12 +87,12 @@ _db.$transaction(async (db) => {
 			console.info(`Seeded nonStateActors for conference ${conference.id} successfully!`);
 
 			const customConferenceRoles = [
-				makeSeedCustomConferenceRole({ conference: { id: conference.id } }),
-				makeSeedCustomConferenceRole({ conference: { id: conference.id } }),
-				makeSeedCustomConferenceRole({ conference: { id: conference.id } }),
-				makeSeedCustomConferenceRole({ conference: { id: conference.id } }),
-				makeSeedCustomConferenceRole({ conference: { id: conference.id } }),
-				makeSeedCustomConferenceRole({ conference: { id: conference.id } })
+				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
+				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
+				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
+				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
+				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
+				makeSeedCustomConferenceRole({ conferenceId: conference.id })
 			];
 
 			console.info(`Seeding customConferenceRoles for conference ${conference.id}...`);
@@ -124,6 +126,10 @@ _db.$transaction(async (db) => {
 		users.push(makeSeedUser());
 	}
 
+	function takeXUsers(x: number) {
+		return users.splice(0, x);
+	}
+
 	console.info('Seeding users...');
 	await Promise.all(
 		users.map(async (user) =>
@@ -139,6 +145,73 @@ _db.$transaction(async (db) => {
 	console.info('Seeded users successfully!');
 
 	// create some delegations
+	await Promise.all(
+		conferences.map(async ({ conference }) => {
+			const delegations = [
+				makeSeedDelegation({ conferenceId: conference.id }),
+				makeSeedDelegation({ conferenceId: conference.id }),
+				makeSeedDelegation({ conferenceId: conference.id }),
+				makeSeedDelegation({ conferenceId: conference.id }),
+				makeSeedDelegation({ conferenceId: conference.id }),
+				makeSeedDelegation({ conferenceId: conference.id })
+			];
 
-	await Promise.all(conferences.map(async ({ conference }) => {}));
+			await Promise.all(
+				delegations.map(async (delegation) => {
+					await db.delegation.upsert({
+						where: {
+							id: delegation.id
+						},
+						update: delegation,
+						create: delegation
+					});
+
+					const delegationMembers = [
+						makeSeedDelegationMember({
+							delegationId: delegation.id,
+							conferenceId: conference.id,
+							userId: takeXUsers(1)[0].id,
+							isHeadDelegate: true
+						}),
+						makeSeedDelegationMember({
+							delegationId: delegation.id,
+							conferenceId: conference.id,
+							userId: takeXUsers(1)[0].id,
+							isHeadDelegate: false
+						}),
+						makeSeedDelegationMember({
+							delegationId: delegation.id,
+							conferenceId: conference.id,
+							userId: takeXUsers(1)[0].id,
+							isHeadDelegate: false
+						}),
+						makeSeedDelegationMember({
+							delegationId: delegation.id,
+							conferenceId: conference.id,
+							userId: takeXUsers(1)[0].id,
+							isHeadDelegate: false
+						}),
+						makeSeedDelegationMember({
+							delegationId: delegation.id,
+							conferenceId: conference.id,
+							userId: takeXUsers(1)[0].id,
+							isHeadDelegate: false
+						})
+					];
+
+					await Promise.all(
+						delegationMembers.map(async (delegationMember) => {
+							await db.delegationMember.upsert({
+								where: {
+									id: delegationMember.id
+								},
+								update: delegationMember,
+								create: delegationMember
+							});
+						})
+					);
+				})
+			);
+		})
+	);
 });

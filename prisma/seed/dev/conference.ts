@@ -2,12 +2,9 @@ import { Conference, ConferenceState } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedConference(
-	options?: Partial<{
-		state: ConferenceState;
-		startAssignment: Date;
-		startConference: Date;
-		endConference: Date;
-	}>
+	options?: Partial<
+		Pick<Conference, 'state' | 'startAssignment' | 'startConference' | 'endConference'>
+	>
 ): Conference {
 	const state = options?.state ?? faker.helpers.arrayElement(Object.values(ConferenceState));
 	let startAssignment = options?.startAssignment;

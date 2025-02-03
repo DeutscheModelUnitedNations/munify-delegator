@@ -1,15 +1,13 @@
-import { Conference, Delegation } from '@prisma/client';
+import { Delegation } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedDelegation(
-	options: {
-		conference: Pick<Conference, 'id'>;
-	} & Partial<{ delegation: Pick<Delegation, 'applied'> }>
+	options: Pick<Delegation, 'conferenceId'> & Partial<Pick<Delegation, 'applied'>>
 ): Delegation {
 	return {
+		...options,
 		id: faker.database.mongodbObjectId(),
-		applied: options?.delegation?.applied ?? false,
-		conferenceId: options.conference.id,
+		applied: options?.applied ?? false,
 		assignedNationAlpha3Code: null,
 		assignedNonStateActorId: null,
 		entryCode: faker.string.numeric(6),
