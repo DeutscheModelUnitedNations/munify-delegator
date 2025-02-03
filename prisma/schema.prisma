@@ -18,6 +18,7 @@ generator pothosCrud {
   generatorConfigPath = "./pothos.config.ts"
 }
 
+/// The state a conference can be in
 enum ConferenceState {
   PRE // the conference is created but applying is not possible yet
   PARTICIPANT_REGISTRATION // applications are open
@@ -26,6 +27,7 @@ enum ConferenceState {
   POST // the conference is over and things like downloading the participation certificate are possible
 }
 
+/// A conference in the system
 model Conference {
   id                     String          @id @default(nanoid())
   title                  String
@@ -74,6 +76,7 @@ model Conference {
   paymentTransactions          PaymentTransaction[]
 }
 
+/// A committee in a conference. E.g. the human rights council
 model Committee {
   id                      String @id @default(nanoid())
   name                    String
@@ -86,12 +89,14 @@ model Committee {
   delegationMembers DelegationMember[]
 }
 
+/// The dietary preference options a user can choose
 enum FoodPreference {
   OMNIVORE
   VEGETARIAN
   VEGAN
 }
 
+/// The gender preference options a user can choose
 enum Gender {
   MALE
   FEMALE
@@ -99,6 +104,7 @@ enum Gender {
   NO_STATEMENT
 }
 
+/// A user in the system. Often received by our OIDC provider
 model User {
   id String @id @default(nanoid())
 
@@ -133,6 +139,7 @@ model User {
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
 }
 
+// Status which can be set for various progress tracking fields in the app
 enum AdministrativeStatus {
   DONE
   PROBLEM
@@ -159,6 +166,7 @@ model ConferenceParticipantStatus {
   @@unique([userId, conferenceId])
 }
 
+/// The transactions used to reference the payment status of various users in the conference
 model PaymentTransaction {
   id           String                              @id /// do not use nanoid here since we need an id that is suitable for the reason field in SEPA transaction
   amount       Float
@@ -171,6 +179,7 @@ model PaymentTransaction {
   paymentFor   UserReferenceInPaymentTransaction[]
 }
 
+/// Payments can be done in place for other users. This is used to track reference in this process
 model UserReferenceInPaymentTransaction {
   id                   String             @id @default(nanoid())
   paymentTransaction   PaymentTransaction @relation(fields: [paymentTransactionId], references: [id])
@@ -179,6 +188,7 @@ model UserReferenceInPaymentTransaction {
   userId               String
 }
 
+/// A nation of the UN. Mostly gets seeded at application startup
 model Nation {
   alpha3Code String @id
   alpha2Code String @unique
@@ -191,6 +201,7 @@ model Nation {
   assignedDelegations Delegation[]
 }
 
+/// Conferences can create custom non state actors which can be selected as roles in applications
 model NonStateActor {
   id              String  @id @default(nanoid())
   name            String
@@ -209,7 +220,7 @@ model NonStateActor {
   @@unique([conferenceId, name])
 }
 
-// these can be journalists, judges, etc.
+// Conferences can create custom roles which can be chosen when applying. These can be journalists, judges, etc.
 model CustomConferenceRole {
   id              String  @id @default(nanoid())
   name            String
@@ -225,6 +236,7 @@ model CustomConferenceRole {
   @@unique([conferenceId, name])
 }
 
+/// An individual applicant who applies without a delegation.
 model SingleParticipant {
   id           String     @id @default(nanoid())
   conference   Conference @relation(fields: [conferenceId], references: [id])
@@ -248,6 +260,7 @@ model SingleParticipant {
   @@unique([conferenceId, userId])
 }
 
+/// A group application. Holds multiple members.
 model Delegation {
   id         String  @id @default(nanoid())
   school     String?
@@ -272,6 +285,7 @@ model Delegation {
   assignedNonStateActorId String?
 }
 
+/// Instance of a delegation application selection. When a delegation wants a role they create this entity.
 model RoleApplication {
   id           String     @id @default(nanoid())
   delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
@@ -290,6 +304,7 @@ model RoleApplication {
   @@unique([delegationId, rank])
 }
 
+/// Member in a delegation
 model DelegationMember {
   id                  String     @id @default(nanoid())
   conference          Conference @relation(fields: [conferenceId], references: [id])
@@ -310,6 +325,7 @@ model DelegationMember {
   @@unique([conferenceId, userId])
 }
 
+/// Supervisors are passive participants in conferences. Often they are teachers overseeing their students.
 model ConferenceSupervisor {
   id                             String  @id @default(nanoid())
   plansOwnAttendenceAtConference Boolean
@@ -333,12 +349,14 @@ model ConferenceSupervisor {
   @@unique([conferenceId, userId])
 }
 
+/// Role a team member can have
 enum TeamRole {
   PROJECT_MANAGEMENT
   PARTICIPANT_CARE
   MEMBER
 }
 
+/// A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.
 model TeamMember {
   id           String     @id @default(nanoid())
   conference   Conference @relation(fields: [conferenceId], references: [id])

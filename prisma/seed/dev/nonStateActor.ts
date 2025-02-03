@@ -6,7 +6,7 @@ export function makeSeedNSA(options: Pick<NonStateActor, 'conferenceId'>): NonSt
 		...options,
 		id: faker.database.mongodbObjectId(),
 		name: faker.company.name(),
-		abbreviation: faker.company.name().slice(0, 3).toUpperCase(),
+		abbreviation: faker.company.name().toUpperCase(),
 		description: faker.lorem.sentence(),
 		seatAmount: faker.number.int({ min: 1, max: 3 }),
 		fontAwesomeIcon: null
