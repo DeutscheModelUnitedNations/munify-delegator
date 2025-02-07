@@ -103,7 +103,7 @@ model User {
   id String @id @default(nanoid())
 
   // these are OIDC fields and only will be updated by the issuer in the login flow
-  email              String
+  email              String @unique
   family_name        String
   given_name         String
   locale             String
