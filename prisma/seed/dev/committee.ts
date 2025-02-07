@@ -1,4 +1,4 @@
-import { Committee, Conference } from '@prisma/client';
+import { Committee } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedCommittee(options: Pick<Committee, 'conferenceId'>): Committee {

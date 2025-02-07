@@ -10,6 +10,7 @@ import { makeSeedDelegation } from './delegation';
 import { makeSeedDelegationMember } from './delegationMember';
 import { makeSeedConferenceSupervisor } from './conferenceSupervisor';
 import { makeSeedSingleParticipant } from './singleParticipant';
+import { makeSeedTeamMember } from './teamMember';
 
 // force static seed for reproducible data
 faker.seed(123);
@@ -260,6 +261,27 @@ await _db.$transaction(async (db) => {
 						},
 						update: singleApplication,
 						create: singleApplication
+					});
+				})
+			);
+
+			const teamMembers = [
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+			]
+
+			await Promise.all(
+				teamMembers.map(async (teamMember) => {
+					await db.teamMember.upsert({
+						where: {
+							id: teamMember.id
+						},
+						update: teamMember,
+						create: teamMember
 					});
 				})
 			);
