@@ -7,19 +7,12 @@
 
 	interface Props {
 		country?: Omit<Omit<Nation, 'createdAt'>, 'updatedAt'> | null | undefined;
-		committees?:
-		// TODO use Houdini Types
-		| Omit<Omit<Omit<Committee, 'createdAt'>, 'updatedAt'>, 'conferenceId'>[]
-		| null
-		| undefined;
-		nonStateActor?:
-		// TODO use Houdini Types
-		| Omit<Omit<Omit<NonStateActor, 'createdAt'>, 'updatedAt'>, 'conferenceId'>
-		| null
-		| undefined;
-		customConferenceRole?:
-		// TODO use Houdini Types
-			| Omit<Omit<Omit<CustomConferenceRole, 'createdAt'>, 'updatedAt'>, 'conferenceId'>
+		committees?: // TODO use Houdini Types
+		Omit<Omit<Omit<Committee, 'createdAt'>, 'updatedAt'>, 'conferenceId'>[] | null | undefined;
+		nonStateActor?: // TODO use Houdini Types
+		Omit<Omit<Omit<NonStateActor, 'createdAt'>, 'updatedAt'>, 'conferenceId'> | null | undefined;
+		customConferenceRole?: // TODO use Houdini Types
+		| Omit<Omit<Omit<CustomConferenceRole, 'createdAt'>, 'updatedAt'>, 'conferenceId'>
 			| null
 			| undefined;
 	}
