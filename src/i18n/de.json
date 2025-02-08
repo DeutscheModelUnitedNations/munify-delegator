@@ -336,7 +336,7 @@
 	"adminStats": "Statistiken",
 	"adminPlausibility": "Plausibilität",
 	"adminAssignment": "Zuteilung",
-	"adminAssignmentDescription": "Dieses Tool führt dich interaktiv durck die Zuweisung von Angemeldeten Teilnehmenden zu Delegationen. Ein Algorithmus mancht dabei Vorschläge, wie die Verteilung am besten aufgeht.<br><strong>Laden Sie zunächst die Ergebnisse als JSON-Datei herunter und starten Sie dann das Tool. Sie werden aufgefordert, die gerade heruntergeladene Datei hochzuladen.</strong>",
+	"adminAssignmentDescription": "Dieses Tool führt dich interaktiv durck die Zuweisung von Angemeldeten Teilnehmenden zu Delegationen. Ein Algorithmus macht dabei Vorschläge, wie die Verteilung am besten aufgeht.<br><strong>Laden Sie zunächst die Ergebnisse als JSON-Datei herunter und starten Sie dann das Tool. Sie werden aufgefordert, die gerade heruntergeladene Datei hochzuladen.</strong>",
 	"downloadCurrentRegistrationData": "Aktuelle Anmeldedaten herunterladen",
 	"startAssignment": "Assistent starten",
 	"applyAssignment": "Zuweisung anwenden",

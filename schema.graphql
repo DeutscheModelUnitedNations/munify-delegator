@@ -66,7 +66,7 @@ input CommitteeListRelationFilter {
   some: CommitteeWhereInput
 }
 
-input CommitteeNullableRelationFilter {
+input CommitteeNullableScalarRelationFilter {
   is: CommitteeWhereInput
   isNot: CommitteeWhereInput
 }
@@ -438,11 +438,6 @@ input ConferenceParticipantStatusWhereUniqueInputNotRequired {
   userId: ID!
 }
 
-input ConferenceRelationFilter {
-  is: ConferenceWhereInput
-  isNot: ConferenceWhereInput
-}
-
 enum ConferenceScalarFieldEnum {
   accountHolder
   bankName
@@ -474,6 +469,11 @@ enum ConferenceScalarFieldEnum {
   unlockPayments
   unlockPostals
   website
+}
+
+input ConferenceScalarRelationFilter {
+  is: ConferenceWhereInput
+  isNot: ConferenceWhereInput
 }
 
 enum ConferenceState {
@@ -860,7 +860,7 @@ input CustomConferenceRoleListRelationFilter {
   some: CustomConferenceRoleWhereInput
 }
 
-input CustomConferenceRoleNullableRelationFilter {
+input CustomConferenceRoleNullableScalarRelationFilter {
   is: CustomConferenceRoleWhereInput
   isNot: CustomConferenceRoleWhereInput
 }
@@ -1256,11 +1256,6 @@ type DelegationPreview {
   school: String
 }
 
-input DelegationRelationFilter {
-  is: DelegationWhereInput
-  isNot: DelegationWhereInput
-}
-
 enum DelegationScalarFieldEnum {
   applied
   assignedNationAlpha3Code
@@ -1271,6 +1266,11 @@ enum DelegationScalarFieldEnum {
   id
   motivation
   school
+}
+
+input DelegationScalarRelationFilter {
+  is: DelegationWhereInput
+  isNot: DelegationWhereInput
 }
 
 input DelegationUpdateInput {
@@ -1637,7 +1637,7 @@ input NationListRelationFilter {
   some: NationWhereInput
 }
 
-input NationNullableRelationFilter {
+input NationNullableScalarRelationFilter {
   is: NationWhereInput
   isNot: NationWhereInput
 }
@@ -2045,7 +2045,7 @@ input NonStateActorListRelationFilter {
   some: NonStateActorWhereInput
 }
 
-input NonStateActorNullableRelationFilter {
+input NonStateActorNullableScalarRelationFilter {
   is: NonStateActorWhereInput
   isNot: NonStateActorWhereInput
 }
@@ -2241,11 +2241,6 @@ input PaymentTransactionOrderByWithRelationInput {
   userId: SortOrder
 }
 
-input PaymentTransactionRelationFilter {
-  is: PaymentTransactionWhereInput
-  isNot: PaymentTransactionWhereInput
-}
-
 enum PaymentTransactionScalarFieldEnum {
   amount
   conferenceId
@@ -2253,6 +2248,11 @@ enum PaymentTransactionScalarFieldEnum {
   id
   recievedAt
   userId
+}
+
+input PaymentTransactionScalarRelationFilter {
+  is: PaymentTransactionWhereInput
+  isNot: PaymentTransactionWhereInput
 }
 
 input PaymentTransactionUpdateInput {
@@ -3150,11 +3150,6 @@ input UserReferenceInPaymentTransactionWhereUniqueInput {
   userId: StringFilter
 }
 
-input UserRelationFilter {
-  is: UserWhereInput
-  isNot: UserWhereInput
-}
-
 enum UserScalarFieldEnum {
   apartment
   birthday
@@ -3174,6 +3169,11 @@ enum UserScalarFieldEnum {
   wantsJoinTeamInformation
   wantsToReceiveGeneralInformation
   zip
+}
+
+input UserScalarRelationFilter {
+  is: UserWhereInput
+  isNot: UserWhereInput
 }
 
 input UserUpdateDataInput {
