@@ -2690,6 +2690,7 @@ type StatisticsResult {
   diet: StatisticsResultRegisteredParticipantDiet!
   gender: StatisticsResultRegisteredParticipantGender!
   registered: StatisticsResultRegistered!
+  status: StatisticsResultRegisteredParticipantStatus!
 }
 
 type StatisticsResultCountdowns {
@@ -2755,6 +2756,22 @@ type StatisticsResultRegisteredParticipantGenderVariations {
   female: Int!
   male: Int!
   noStatement: Int!
+}
+
+type StatisticsResultRegisteredParticipantStatus {
+  didAttend: Int!
+  paymentStatus: StatisticsResultRegisteredParticipantStatusPayment!
+  postalStatus: StatisticsResultRegisteredParticipantStatusPostalRegistration!
+}
+
+type StatisticsResultRegisteredParticipantStatusPayment {
+  done: Int!
+  problem: Int!
+}
+
+type StatisticsResultRegisteredParticipantStatusPostalRegistration {
+  done: Int!
+  problem: Int!
 }
 
 type StatisticsResultRegisteredSingleParticipants {

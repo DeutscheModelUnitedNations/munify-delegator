@@ -12,7 +12,7 @@
 	let supervisorIsNotPresent = $derived(
 		data.conferenceQueryData?.findUniqueConferenceSupervisor
 			? !data.conferenceQueryData.findUniqueConferenceSupervisor.plansOwnAttendenceAtConference
-			: true
+			: false
 	);
 </script>
 

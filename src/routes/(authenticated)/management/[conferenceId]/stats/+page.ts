@@ -93,6 +93,17 @@ const statsQuery = graphql(`
 				supervisors
 				total
 			}
+			status {
+				postalStatus {
+					done
+					problem
+				}
+				paymentStatus {
+					done
+					problem
+				}
+				didAttend
+			}
 		}
 	}
 `);
