@@ -9,13 +9,16 @@ export async function createDefaultNationsInDatabase(db: DB) {
 	// @ts-expect-error
 	const countries = worldCountries.filter((c) => c.unMember);
 
-	await Promise.all(
-		countries.map(async (country) =>
+	const r = await Promise.all(
+		countries.map((country) =>
 			db.nation.upsert({
 				where: {
 					alpha3Code: country.cca3.toLowerCase()
 				},
-				update: {},
+				update: {
+					alpha2Code: country.cca2.toLowerCase(),
+					alpha3Code: country.cca3.toLowerCase()
+				},
 				create: {
 					alpha2Code: country.cca2.toLowerCase(),
 					alpha3Code: country.cca3.toLowerCase()
@@ -24,4 +27,5 @@ export async function createDefaultNationsInDatabase(db: DB) {
 		)
 	);
 	console.info('Created default nations!');
+	return r;
 }

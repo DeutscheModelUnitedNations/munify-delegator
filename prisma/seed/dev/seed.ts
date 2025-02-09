@@ -1,6 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { makeSeedConference } from './conference';
-import { ConferenceState, PrismaClient, User } from '@prisma/client';
+import {
+	ConferenceState,
+	DelegationMember,
+	PrismaClient,
+	RoleApplication,
+	User
+} from '@prisma/client';
 import { createDefaultData } from '../../defaultData/createDefaultData';
 import { makeSeedCommittee } from './committee';
 import { makeSeedUser } from './user';
@@ -19,7 +25,7 @@ const _db = new PrismaClient();
 
 await _db.$transaction(async (db) => {
 	// creating default data
-	await createDefaultData(db);
+	const { nations } = await createDefaultData(db);
 
 	const users: User[] = [];
 	for (let i = 0; i < 1000; i++) {
@@ -59,25 +65,64 @@ await _db.$transaction(async (db) => {
 			});
 
 			const committees = [
-				makeSeedCommittee({ conferenceId: conference.id }),
-				makeSeedCommittee({ conferenceId: conference.id }),
-				makeSeedCommittee({ conferenceId: conference.id }),
-				makeSeedCommittee({ conferenceId: conference.id }),
-				makeSeedCommittee({ conferenceId: conference.id }),
-				makeSeedCommittee({ conferenceId: conference.id })
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				})
 			];
 
-			await Promise.all(
-				committees.map(async (committee) => {
-					await db.committee.upsert({
+			const dbcommittees = await Promise.all(
+				committees.map((committee) => {
+					return db.committee.upsert({
 						where: {
 							id: committee.id
 						},
 						update: committee,
-						create: committee
+						create: committee,
+						include: {
+							nations: true
+						}
 					});
 				})
 			);
+
+			const allNationsRepresentedInCommittees = dbcommittees.map((c) => c.nations).flat();
 
 			const nonStateActors = [
 				makeSeedNSA({ conferenceId: conference.id }),
@@ -144,43 +189,19 @@ await _db.$transaction(async (db) => {
 						[ConferenceState.PRE, ConferenceState.PARTICIPANT_REGISTRATION] as ConferenceState[]
 					).includes(conference.state);
 
-					const delegationMembers = [
-						makeSeedDelegationMember({
-							delegationId: delegation.id,
-							conferenceId: conference.id,
-							userId: takeXUsers(1)[0].id,
-							isHeadDelegate: true,
-							assignedCommitteeId: conferenceIsInAssignedState ? committees[0].id : undefined
-						}),
-						makeSeedDelegationMember({
-							delegationId: delegation.id,
-							conferenceId: conference.id,
-							userId: takeXUsers(1)[0].id,
-							isHeadDelegate: false,
-							assignedCommitteeId: conferenceIsInAssignedState ? committees[1].id : undefined
-						}),
-						makeSeedDelegationMember({
-							delegationId: delegation.id,
-							conferenceId: conference.id,
-							userId: takeXUsers(1)[0].id,
-							isHeadDelegate: false,
-							assignedCommitteeId: conferenceIsInAssignedState ? committees[2].id : undefined
-						}),
-						makeSeedDelegationMember({
-							delegationId: delegation.id,
-							conferenceId: conference.id,
-							userId: takeXUsers(1)[0].id,
-							isHeadDelegate: false,
-							assignedCommitteeId: conferenceIsInAssignedState ? committees[3].id : undefined
-						}),
-						makeSeedDelegationMember({
-							delegationId: delegation.id,
-							conferenceId: conference.id,
-							userId: takeXUsers(1)[0].id,
-							isHeadDelegate: false,
-							assignedCommitteeId: conferenceIsInAssignedState ? committees[4].id : undefined
-						})
-					];
+					const delegationMembers: DelegationMember[] = [];
+
+					for (let i = 0; i < faker.number.int({ min: 1, max: 6 }); i++) {
+						delegationMembers.push(
+							makeSeedDelegationMember({
+								delegationId: delegation.id,
+								conferenceId: conference.id,
+								userId: takeXUsers(1)[0].id,
+								isHeadDelegate: false,
+								assignedCommitteeId: conferenceIsInAssignedState ? committees[4].id : undefined
+							})
+						);
+					}
 
 					await Promise.all(
 						delegationMembers.map(async (delegationMember) => {
@@ -190,6 +211,43 @@ await _db.$transaction(async (db) => {
 								},
 								update: delegationMember,
 								create: delegationMember
+							});
+						})
+					);
+
+					//TODO
+					const delegationRoleApplications: RoleApplication[] = [
+						{
+							id: faker.database.mongodbObjectId(),
+							delegationId: delegation.id,
+							rank: 0,
+							nationId: allNationsRepresentedInCommittees[0].alpha3Code,
+							nonStateActorId: null
+						},
+						{
+							id: faker.database.mongodbObjectId(),
+							delegationId: delegation.id,
+							rank: 1,
+							nationId: allNationsRepresentedInCommittees[1].alpha3Code,
+							nonStateActorId: null
+						},
+						{
+							id: faker.database.mongodbObjectId(),
+							delegationId: delegation.id,
+							rank: 2,
+							nationId: null,
+							nonStateActorId: nonStateActors[0].id
+						}
+					];
+
+					await Promise.all(
+						delegationRoleApplications.map(async (delegationRoleApplication) => {
+							await db.roleApplication.upsert({
+								where: {
+									id: delegationRoleApplication.id
+								},
+								update: delegationRoleApplication,
+								create: delegationRoleApplication
 							});
 						})
 					);
@@ -271,8 +329,8 @@ await _db.$transaction(async (db) => {
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-			]
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id })
+			];
 
 			await Promise.all(
 				teamMembers.map(async (teamMember) => {

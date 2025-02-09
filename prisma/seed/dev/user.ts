@@ -7,7 +7,7 @@ export function makeSeedUser(): User {
 		apartment: faker.location.buildingNumber(),
 		street: faker.location.street(),
 		zip: faker.location.zipCode(),
-		birthday: faker.date.birthdate(),
+		birthday: faker.date.birthdate({ mode: 'age', min: 14, max: 50 }),
 		city: faker.location.city(),
 		country: faker.location.country(),
 		email: faker.internet.email(),
