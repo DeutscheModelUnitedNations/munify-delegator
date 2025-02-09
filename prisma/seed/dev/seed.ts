@@ -329,6 +329,8 @@ await _db.$transaction(async (db) => {
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
 				makeSeedTeamMember({ conferenceId: conference.id, userId: takeXUsers(1)[0].id })
 			];
 

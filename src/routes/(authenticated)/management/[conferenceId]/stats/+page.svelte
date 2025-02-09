@@ -20,6 +20,7 @@
 	import NumberMatrix from './widgets/NumberMatrix.svelte';
 	import DietMatrix from './widgets/DietMatrix.svelte';
 	import GenderMatrix from './widgets/GenderMatrix.svelte';
+	import Status from './widgets/Status.svelte';
 	let { data }: { data: PageData } = $props();
 
 	onMount(() => {
@@ -65,6 +66,7 @@
 	<IndividualRoles {data} />
 	<DietMatrix {data} />
 	<GenderMatrix {data} />
+	<Status {data} />
 	<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12">
 		<div class="card-body">
 			<h3 class="text-xl font-bold">{m.historyComparison()}</h3>
