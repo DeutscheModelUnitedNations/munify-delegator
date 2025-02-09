@@ -15,7 +15,7 @@ generator pothos {
 
 generator pothosCrud {
   provider            = "prisma-generator-pothos-codegen"
-  generatorConfigPath = "./pothos.config.ts"
+  generatorConfigPath = "./pothos.config.cjs"
 }
 
 /// The state a conference can be in
