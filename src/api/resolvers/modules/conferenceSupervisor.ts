@@ -72,13 +72,17 @@ builder.mutationFields((t) => {
 		upsertOneConferenceSupervisor: t.prismaField({
 			...field,
 			args: {
-				entryCode: t.arg.string()
+				entryCode: t.arg.string(),
+				conferenceId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				const delegation = await db.delegation.findUniqueOrThrow({
 					where: {
-						entryCode: args.entryCode
+						conferenceId_entryCode: {
+							entryCode: args.entryCode,
+							conferenceId: args.conferenceId
+						}
 					}
 				});
 

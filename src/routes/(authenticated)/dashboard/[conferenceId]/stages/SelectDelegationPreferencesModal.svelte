@@ -25,7 +25,8 @@
 	let conference = $derived(data.findUniqueConference!);
 
 	let nations = $derived(() => {
-		const nations = new Array<Nation>();
+		// TODO Use Houdini Types instead of Prisma Types
+		const nations = new Array<Omit<Omit<Nation, 'createdAt'>, 'updatedAt'>>();
 		conference.committees.forEach((committee) => {
 			committee.nations.forEach((nation) => {
 				if (!nations.find((n) => n.alpha3Code === nation.alpha3Code)) nations.push(nation);
