@@ -1,4 +1,4 @@
-import { Delegation } from '@prisma/client';
+import type { Delegation } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedDelegation(
@@ -7,7 +7,7 @@ export function makeSeedDelegation(
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),
-		applied: options?.applied ?? false,
+		applied: options?.applied ?? faker.datatype.boolean(),
 		assignedNationAlpha3Code: null,
 		assignedNonStateActorId: null,
 		entryCode: faker.string.numeric(6),

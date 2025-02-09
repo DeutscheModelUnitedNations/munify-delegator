@@ -1,4 +1,4 @@
-import { TeamMember, TeamRole } from '@prisma/client';
+import { type TeamMember, TeamRole } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedTeamMember(

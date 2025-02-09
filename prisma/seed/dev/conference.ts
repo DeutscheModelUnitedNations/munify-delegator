@@ -1,4 +1,4 @@
-import { Conference, ConferenceState } from '@prisma/client';
+import { type Conference, ConferenceState } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedConference(
@@ -80,18 +80,15 @@ export function makeSeedConference(
 	return {
 		id: faker.database.mongodbObjectId(),
 		title: faker.company.name(),
-		longTitle: faker.company.name() + ' Konferenz',
+		longTitle: `${faker.company.name()} Konferenz`,
 		location: faker.location.city(),
 		language: faker.location.language().name,
 		website: faker.internet.url(),
 		info: faker.company.catchPhrase(),
 		state,
-		// yesterday
-		startAssignment: new Date(Date.now() - 24 * 60 * 60 * 1000),
-		// in a week
-		startConference: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-		// in a mont
-		endConference: new Date(Date.now() + 4 * 7 * 24 * 60 * 60 * 1000),
+		startAssignment,
+		startConference,
+		endConference,
 		feeAmount: faker.number.int({ max: 200 }),
 		accountHolder: faker.person.fullName(),
 		iban: faker.finance.iban(),

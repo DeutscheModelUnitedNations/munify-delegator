@@ -1,4 +1,4 @@
-import { SingleParticipant } from '@prisma/client';
+import type { SingleParticipant } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedSingleParticipant(
@@ -8,7 +8,7 @@ export function makeSeedSingleParticipant(
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),
-		applied: options?.applied ?? false,
+		applied: options?.applied ?? faker.datatype.boolean(),
 		assignmentDetails: faker.lorem.sentence(),
 		experience: faker.lorem.sentence(),
 		motivation: faker.lorem.sentence(),

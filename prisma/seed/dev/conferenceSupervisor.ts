@@ -1,9 +1,12 @@
-import { ConferenceSupervisor } from '@prisma/client';
+import type { ConferenceSupervisor } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedConferenceSupervisor(
 	options: Pick<ConferenceSupervisor, 'conferenceId' | 'userId'> &
-		Partial<{ delegations: { connect: { id: string }[] } }>
+		Partial<{
+			delegations: { connect: { id: string }[] };
+			postAssignmentDelegeationMembers: { connect: { id: string }[] };
+		}>
 ): ConferenceSupervisor {
 	return {
 		...options,

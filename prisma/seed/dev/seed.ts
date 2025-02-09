@@ -2,10 +2,10 @@ import { faker } from '@faker-js/faker';
 import { makeSeedConference } from './conference';
 import {
 	ConferenceState,
-	DelegationMember,
+	type DelegationMember,
 	PrismaClient,
-	RoleApplication,
-	User
+	type RoleApplication,
+	type User
 } from '@prisma/client';
 import { createDefaultData } from '../../defaultData/createDefaultData';
 import { makeSeedCommittee } from './committee';
@@ -63,6 +63,10 @@ await _db.$transaction(async (db) => {
 				update: conference,
 				create: conference
 			});
+
+			const conferenceIsInAssignedState = !(
+				[ConferenceState.PRE, ConferenceState.PARTICIPANT_REGISTRATION] as ConferenceState[]
+			).includes(conference.state);
 
 			const committees = [
 				makeSeedCommittee({
@@ -122,7 +126,7 @@ await _db.$transaction(async (db) => {
 				})
 			);
 
-			const allNationsRepresentedInCommittees = dbcommittees.map((c) => c.nations).flat();
+			const allNationsRepresentedInCommittees = dbcommittees.flatMap((c) => c.nations);
 
 			const nonStateActors = [
 				makeSeedNSA({ conferenceId: conference.id }),
@@ -175,7 +179,7 @@ await _db.$transaction(async (db) => {
 				makeSeedDelegation({ conferenceId: conference.id })
 			];
 
-			await Promise.all(
+			const dbdelegations = await Promise.all(
 				delegations.map(async (delegation) => {
 					await db.delegation.upsert({
 						where: {
@@ -184,10 +188,6 @@ await _db.$transaction(async (db) => {
 						update: delegation,
 						create: delegation
 					});
-
-					const conferenceIsInAssignedState = !(
-						[ConferenceState.PRE, ConferenceState.PARTICIPANT_REGISTRATION] as ConferenceState[]
-					).includes(conference.state);
 
 					const delegationMembers: DelegationMember[] = [];
 
@@ -215,7 +215,6 @@ await _db.$transaction(async (db) => {
 						})
 					);
 
-					//TODO
 					const delegationRoleApplications: RoleApplication[] = [
 						{
 							id: faker.database.mongodbObjectId(),
@@ -251,6 +250,36 @@ await _db.$transaction(async (db) => {
 							});
 						})
 					);
+
+					if (conferenceIsInAssignedState) {
+						if (faker.datatype.boolean()) {
+							await db.delegation.update({
+								where: {
+									id: delegation.id
+								},
+								data: {
+									assignedNationAlpha3Code: faker.helpers.arrayElement(
+										allNationsRepresentedInCommittees
+									).alpha3Code
+								}
+							});
+						} else {
+							await db.delegation.update({
+								where: {
+									id: delegation.id
+								},
+								data: {
+									assignedNonStateActorId: faker.helpers.arrayElement(nonStateActors).id
+								}
+							});
+						}
+					}
+
+					return {
+						...delegation,
+						members: delegationMembers,
+						appliedForRoles: delegationRoleApplications
+					};
 				})
 			);
 
@@ -258,23 +287,53 @@ await _db.$transaction(async (db) => {
 				makeSeedConferenceSupervisor({
 					conferenceId: conference.id,
 					userId: takeXUsers(1)[0].id,
-					delegations: {
-						connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
-					}
+					delegations: conferenceIsInAssignedState
+						? undefined
+						: {
+								connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
+							},
+					postAssignmentDelegeationMembers: conferenceIsInAssignedState
+						? {
+								connect: [
+									{ id: dbdelegations[0].members[0].id },
+									{ id: dbdelegations[0].members[1].id }
+								]
+							}
+						: undefined
 				}),
 				makeSeedConferenceSupervisor({
 					conferenceId: conference.id,
 					userId: takeXUsers(1)[0].id,
-					delegations: {
-						connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
-					}
+					delegations: conferenceIsInAssignedState
+						? undefined
+						: {
+								connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
+							},
+					postAssignmentDelegeationMembers: conferenceIsInAssignedState
+						? {
+								connect: [
+									{ id: dbdelegations[0].members[0].id },
+									{ id: dbdelegations[0].members[1].id }
+								]
+							}
+						: undefined
 				}),
 				makeSeedConferenceSupervisor({
 					conferenceId: conference.id,
 					userId: takeXUsers(1)[0].id,
-					delegations: {
-						connect: [{ id: delegations[2].id }]
-					}
+					delegations: conferenceIsInAssignedState
+						? undefined
+						: {
+								connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
+							},
+					postAssignmentDelegeationMembers: conferenceIsInAssignedState
+						? {
+								connect: [
+									{ id: dbdelegations[0].members[0].id },
+									{ id: dbdelegations[0].members[1].id }
+								]
+							}
+						: undefined
 				}),
 				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
 				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
@@ -294,21 +353,83 @@ await _db.$transaction(async (db) => {
 			);
 
 			const singleApplications = [
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedSingleParticipant({ conferenceId: conference.id, userId: takeXUsers(1)[0].id })
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				}),
+				makeSeedSingleParticipant({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					assignedRoleId: conferenceIsInAssignedState
+						? faker.helpers.arrayElement(customConferenceRoles).id
+						: null
+				})
 			];
 
 			await Promise.all(

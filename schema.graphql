@@ -3304,7 +3304,7 @@ input UserWhereUniqueInput {
   conferenceSupervisor: ConferenceSupervisorListRelationFilter
   country: StringNullableFilter
   delegationMemberships: DelegationMemberListRelationFilter
-  email: StringFilter
+  email: String
   family_name: StringFilter
   foodPreference: EnumFoodPreferenceNullableFilter
   gender: EnumGenderNullableFilter
