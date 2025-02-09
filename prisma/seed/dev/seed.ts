@@ -17,6 +17,7 @@ import { makeSeedDelegationMember } from './delegationMember';
 import { makeSeedConferenceSupervisor } from './conferenceSupervisor';
 import { makeSeedSingleParticipant } from './singleParticipant';
 import { makeSeedTeamMember } from './teamMember';
+import { makeSeedPaymentTransaction } from './paymentTransaction';
 
 // force static seed for reproducible data
 faker.seed(123);
@@ -466,6 +467,13 @@ await _db.$transaction(async (db) => {
 					});
 				})
 			);
+
+			const paymentTransaction = [
+				makeSeedPaymentTransaction({
+					conferenceId: conference.id,
+					userId: dbdelegations[0].members[0].userId
+				})
+			];
 		})
 	);
 });
