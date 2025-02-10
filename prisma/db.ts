@@ -32,7 +32,11 @@ export const db = new PrismaClient({
 	datasourceUrl: configPrivate.DATABASE_URL
 }).$extends(brandExtension) as unknown as PrismaClient;
 
-// creating default data
-createDefaultData(db);
+try {
+	// creating default data
+	createDefaultData(db);
+} catch (error) {
+	console.error('Error creating default data', error);
+}
 
 export type DB = typeof db | Parameters<Parameters<typeof db.$transaction>[0]>[0];

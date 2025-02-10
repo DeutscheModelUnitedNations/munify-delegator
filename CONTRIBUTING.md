@@ -46,7 +46,9 @@ branch: login
 📚 docs (Backend): add examples
 branch: setup
 ```
+
 #### Seeding the database
+
 To seed the database with various data/scenarios which might help you with development, please run [prisma/seed/dev/seed.ts](prisma/seed/dev/seed.ts) with bun after you migrated the database into the current schema. This will create a few datasets for various development scenarios. You can erase and re-seed the db as much as you want when you break things, the seed will always reset to a fixed state. Example usage commands (to run against a running database container):
 
 ```
