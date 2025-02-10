@@ -8,8 +8,8 @@
 	import { graphql } from '$houdini';
 
 	const supervisorUpsertMutation = graphql(`
-		mutation UpserConferenceSupervisorMutation($entryCode: String!) {
-			upsertOneConferenceSupervisor(entryCode: $entryCode) {
+		mutation UpserConferenceSupervisorMutation($entryCode: String!, $conferenceId: ID!) {
+			upsertOneConferenceSupervisor(entryCode: $entryCode, conferenceId: $conferenceId) {
 				id
 			}
 		}
@@ -34,7 +34,10 @@
 					<button
 						class="btn btn-primary mb-10"
 						onclick={async () => {
-							await supervisorUpsertMutation.mutate({ entryCode: code });
+							await supervisorUpsertMutation.mutate({
+								entryCode: code,
+								conferenceId: data.conferenceId
+							});
 							goto('/dashboard');
 						}}>{m.confirm()}</button
 					>

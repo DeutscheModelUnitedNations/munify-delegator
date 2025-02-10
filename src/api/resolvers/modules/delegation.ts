@@ -332,8 +332,10 @@ builder.queryFields((t) => {
 				ctx.permissions.getLoggedInUserOrThrow();
 				const delegation = await db.delegation.findUniqueOrThrow({
 					where: {
-						conferenceId: args.conferenceId,
-						entryCode: args.entryCode
+						conferenceId_entryCode: {
+							conferenceId: args.conferenceId,
+							entryCode: args.entryCode
+						}
 						// we dont want permission checks here. We carefully choose what to send, see the select statements below
 						// AND: [permissions.allowDatabaseAccessTo('read').Delegation]
 					},
