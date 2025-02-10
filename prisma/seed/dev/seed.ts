@@ -471,9 +471,53 @@ await _db.$transaction(async (db) => {
 			const paymentTransaction = [
 				makeSeedPaymentTransaction({
 					conferenceId: conference.id,
-					userId: dbdelegations[0].members[0].userId
+					userId: dbdelegations[0].members[0].userId,
+					paymentFor: {
+						createMany: {
+							data: dbdelegations[0].members.slice(1).map((m) => ({ userId: m.userId }))
+						}
+					}
+				}),
+				makeSeedPaymentTransaction({
+					conferenceId: conference.id,
+					userId: dbdelegations[1].members[0].userId,
+					paymentFor: {
+						createMany: {
+							data: dbdelegations[1].members.slice(1).map((m) => ({ userId: m.userId }))
+						}
+					}
+				}),
+				makeSeedPaymentTransaction({
+					conferenceId: conference.id,
+					userId: dbdelegations[2].members[0].userId,
+					paymentFor: {
+						createMany: {
+							data: dbdelegations[2].members.slice(1).map((m) => ({ userId: m.userId }))
+						}
+					}
+				}),
+				makeSeedPaymentTransaction({
+					conferenceId: conference.id,
+					userId: dbdelegations[3].members[0].userId,
+					paymentFor: {
+						createMany: {
+							data: dbdelegations[3].members.slice(1).map((m) => ({ userId: m.userId }))
+						}
+					}
 				})
 			];
+
+			await Promise.all(
+				paymentTransaction.map(async (paymentTransaction) => {
+					await db.paymentTransaction.upsert({
+						where: {
+							id: paymentTransaction.id
+						},
+						update: paymentTransaction,
+						create: paymentTransaction
+					});
+				})
+			);
 		})
 	);
 });

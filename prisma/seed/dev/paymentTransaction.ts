@@ -4,10 +4,12 @@ import { faker } from '@faker-js/faker';
 export function makeSeedPaymentTransaction(
 	options: Pick<PaymentTransaction, 'conferenceId' | 'userId'> &
 		Partial<{
-			nations: {
-				connect: {
-					alpha3Code: string;
-				}[];
+			paymentFor: {
+				createMany: {
+					data: {
+						userId: string;
+					}[];
+				};
 			};
 		}>
 ): PaymentTransaction {
