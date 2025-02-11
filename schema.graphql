@@ -32,6 +32,7 @@ input BoolWithAggregatesFilter {
   not: NestedBoolWithAggregatesFilter
 }
 
+"""A committee in a conference. E.g. the human rights council"""
 type Committee {
   abbreviation: String!
   conference: Conference!
@@ -68,7 +69,7 @@ input CommitteeListRelationFilter {
   some: CommitteeWhereInput
 }
 
-input CommitteeNullableRelationFilter {
+input CommitteeNullableScalarRelationFilter {
   is: CommitteeWhereInput
   isNot: CommitteeWhereInput
 }
@@ -165,6 +166,7 @@ input CommitteeWhereUniqueInput {
   updatedAt: DateTimeFilter
 }
 
+"""A conference in the system"""
 type Conference {
   accountHolder: String
   bankName: String
@@ -456,11 +458,6 @@ input ConferenceParticipantStatusWhereUniqueInputNotRequired {
   userId: ID!
 }
 
-input ConferenceRelationFilter {
-  is: ConferenceWhereInput
-  isNot: ConferenceWhereInput
-}
-
 enum ConferenceScalarFieldEnum {
   accountHolder
   bankName
@@ -496,6 +493,11 @@ enum ConferenceScalarFieldEnum {
   website
 }
 
+input ConferenceScalarRelationFilter {
+  is: ConferenceWhereInput
+  isNot: ConferenceWhereInput
+}
+
 enum ConferenceState {
   ACTIVE
   PARTICIPANT_REGISTRATION
@@ -504,6 +506,9 @@ enum ConferenceState {
   PREPARATION
 }
 
+"""
+Supervisors are passive participants in conferences. Often they are teachers overseeing their students.
+"""
 type ConferenceSupervisor {
   conference: Conference!
   delegations: [Delegation!]!
@@ -904,7 +909,7 @@ input CustomConferenceRoleListRelationFilter {
   some: CustomConferenceRoleWhereInput
 }
 
-input CustomConferenceRoleNullableRelationFilter {
+input CustomConferenceRoleNullableScalarRelationFilter {
   is: CustomConferenceRoleWhereInput
   isNot: CustomConferenceRoleWhereInput
 }
@@ -1058,6 +1063,7 @@ input DateTimeWithAggregatesFilter {
   notIn: [DateTime!]
 }
 
+"""A group application. Holds multiple members."""
 type Delegation {
   """
   wether the delegation has submitted their application
@@ -1131,6 +1137,7 @@ input DelegationListRelationFilter {
   some: DelegationWhereInput
 }
 
+"""Member in a delegation"""
 type DelegationMember {
   assignedCommittee: Committee
   conference: Conference!
@@ -1345,11 +1352,6 @@ type DelegationPreview {
   school: String
 }
 
-input DelegationRelationFilter {
-  is: DelegationWhereInput
-  isNot: DelegationWhereInput
-}
-
 enum DelegationScalarFieldEnum {
   applied
   assignedNationAlpha3Code
@@ -1362,6 +1364,11 @@ enum DelegationScalarFieldEnum {
   motivation
   school
   updatedAt
+}
+
+input DelegationScalarRelationFilter {
+  is: DelegationWhereInput
+  isNot: DelegationWhereInput
 }
 
 input DelegationUpdateInput {
@@ -1714,6 +1721,7 @@ type Mutation {
   upsertSelf: UpsertSelfResult!
 }
 
+"""A nation of the UN. Mostly gets seeded at application startup"""
 type Nation {
   alpha2Code: String!
   alpha3Code: ID!
@@ -1741,7 +1749,7 @@ input NationListRelationFilter {
   some: NationWhereInput
 }
 
-input NationNullableRelationFilter {
+input NationNullableScalarRelationFilter {
   is: NationWhereInput
   isNot: NationWhereInput
 }
@@ -2118,6 +2126,9 @@ input NestedStringWithAggregatesFilter {
   startsWith: String
 }
 
+"""
+Conferences can create custom non state actors which can be selected as roles in applications
+"""
 type NonStateActor {
   abbreviation: String!
   conference: Conference!
@@ -2163,7 +2174,7 @@ input NonStateActorListRelationFilter {
   some: NonStateActorWhereInput
 }
 
-input NonStateActorNullableRelationFilter {
+input NonStateActorNullableScalarRelationFilter {
   is: NonStateActorWhereInput
   isNot: NonStateActorWhereInput
 }
@@ -2318,6 +2329,9 @@ type OfflineUserRefresh {
   user: OfflineUser
 }
 
+"""
+The transactions used to reference the payment status of various users in the conference
+"""
 type PaymentTransaction {
   amount: Float!
   conference: Conference!
@@ -2373,11 +2387,6 @@ input PaymentTransactionOrderByWithRelationInput {
   userId: SortOrder
 }
 
-input PaymentTransactionRelationFilter {
-  is: PaymentTransactionWhereInput
-  isNot: PaymentTransactionWhereInput
-}
-
 enum PaymentTransactionScalarFieldEnum {
   amount
   conferenceId
@@ -2386,6 +2395,11 @@ enum PaymentTransactionScalarFieldEnum {
   recievedAt
   updatedAt
   userId
+}
+
+input PaymentTransactionScalarRelationFilter {
+  is: PaymentTransactionWhereInput
+  isNot: PaymentTransactionWhereInput
 }
 
 input PaymentTransactionUpdateInput {
@@ -2501,6 +2515,9 @@ enum QueryMode {
   insensitive
 }
 
+"""
+Instance of a delegation application selection. When a delegation wants a role they create this entity.
+"""
 type RoleApplication {
   delegation: Delegation!
   id: ID!
@@ -2658,6 +2675,7 @@ type SetAssignmentDataResult {
   success: Boolean!
 }
 
+"""An individual applicant who applies without a delegation."""
 type SingleParticipant {
   applied: Boolean!
   appliedForRoles: [CustomConferenceRole!]!
@@ -3024,6 +3042,9 @@ input StringWithAggregatesFilter {
   startsWith: String
 }
 
+"""
+A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.
+"""
 type TeamMember {
   conference: Conference!
   id: ID!
@@ -3165,6 +3186,7 @@ type UpsertSelfResult {
   userNeedsAdditionalInfo: Boolean!
 }
 
+"""A user in the system. Often received by our OIDC provider"""
 type User {
   apartment: String
   birthday: DateTime
@@ -3347,11 +3369,6 @@ input UserReferenceInPaymentTransactionWhereUniqueInput {
   userId: StringFilter
 }
 
-input UserRelationFilter {
-  is: UserWhereInput
-  isNot: UserWhereInput
-}
-
 enum UserScalarFieldEnum {
   apartment
   birthday
@@ -3373,6 +3390,11 @@ enum UserScalarFieldEnum {
   wantsJoinTeamInformation
   wantsToReceiveGeneralInformation
   zip
+}
+
+input UserScalarRelationFilter {
+  is: UserWhereInput
+  isNot: UserWhereInput
 }
 
 input UserUpdateDataInput {
