@@ -132,6 +132,10 @@
 		cleanup: {
 			icon: 'broom',
 			translation: m.cleanup()
+		},
+		downloads: {
+			icon: 'download',
+			translation: m.downloads()
 		}
 	};
 
