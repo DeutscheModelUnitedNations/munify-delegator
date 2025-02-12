@@ -4,11 +4,11 @@
 	import Fuse from 'fuse.js';
 	import * as m from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import DataTableSettingsButton from './DataTableSettingsButton.svelte';
 	import PrintHeader from './DataTablePrintHeader.svelte';
 	import ExportButton from './DataTableExportButton.svelte';
+	import { goto } from '$app/navigation';
 
 	interface Props {
 		columns: TableColumns<RowData>;
@@ -28,25 +28,30 @@
 		searchPattern = $bindable(''),
 		queryParamKey,
 		additionallyIndexedKeys = [],
-		title = $page.url.pathname.split('/').pop()!,
+		title = page.url.pathname.split('/').pop()!,
 		rowSelected
 	}: Props = $props();
 	const { getTableSize, getZebra } = getTableSettings();
 
 	if (queryParamKey && searchPattern.length === 0) {
-		searchPattern = $page.url.searchParams.get(queryParamKey) || '';
+		searchPattern = page.url.searchParams.get(queryParamKey) || '';
 	}
 
-	$effect(() => {
+	function onSearchPatternInput(e: Event) {
 		if (queryParamKey) {
-			$page.url.searchParams.set(queryParamKey, searchPattern);
-
 			if (searchPattern === '') {
-				$page.url.searchParams.delete(queryParamKey);
+				page.url.searchParams.delete(queryParamKey);
+			} else {
+				page.url.searchParams.set(queryParamKey, searchPattern);
 			}
-			goto(`?${$page.url.searchParams.toString()}`, { replaceState: true, keepFocus: true });
+
+			goto(`?${page.url.searchParams.toString()}`, {
+				replaceState: true,
+				keepFocus: true,
+				invalidateAll: false
+			});
 		}
-	});
+	}
 
 	let fuse = $derived(
 		new Fuse(rows, {
@@ -64,7 +69,7 @@
 		if (
 			searchedColumns.length === 1 &&
 			queryParamKey &&
-			$page.url.searchParams.get(queryParamKey) &&
+			page.url.searchParams.get(queryParamKey) &&
 			rowSelected
 		) {
 			// we assume that we hit a single result with a filter query key and therefore want
@@ -78,7 +83,13 @@
 	<div class="mt-6 flex w-full items-center">
 		{#if enableSearch}
 			<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
-				<input type="text" class="grow" bind:value={searchPattern} placeholder={m.search()} />
+				<input
+					type="text"
+					class="grow"
+					bind:value={searchPattern}
+					oninput={onSearchPatternInput}
+					placeholder={m.search()}
+				/>
 				{#if searchPattern !== ''}
 					<button
 						class="btn btn-square btn-ghost btn-sm"
