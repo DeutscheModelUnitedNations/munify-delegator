@@ -45,9 +45,10 @@
 				page.url.searchParams.set(queryParamKey, searchPattern);
 			}
 
-			goto(`?${page.url.searchParams.toString()}`, {
+			goto(new URL(page.url), {
 				replaceState: true,
 				keepFocus: true,
+				noScroll: true,
 				invalidateAll: false
 			});
 		}
