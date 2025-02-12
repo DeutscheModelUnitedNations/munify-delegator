@@ -10,5 +10,5 @@ export async function createDefaultData(db: DB) {
 		console.error('Error creating default data', error);
 	}
 
-	return { nations: await db.nation.findMany() };
+	return { nations: [] };
 }
