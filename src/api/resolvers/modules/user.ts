@@ -277,15 +277,13 @@ builder.mutationFields((t) => {
 							OR: [
 								{ delegationMemberships: { some: { conferenceId: args.conferenceId } } },
 								{ singleParticipant: { some: { conferenceId: args.conferenceId } } },
-								{ conferenceSupervisor: { some: { conferenceId: args.conferenceId } } },
-								{ teamMember: { some: { conferenceId: args.conferenceId } } }
+								{ conferenceSupervisor: { some: { conferenceId: args.conferenceId } } }
 							]
 						},
 						include: {
 							delegationMemberships: true,
 							singleParticipant: true,
 							conferenceSupervisor: true,
-							teamMember: true,
 							conferenceParticipantStatus: true
 						}
 					});
@@ -328,17 +326,6 @@ builder.mutationFields((t) => {
 							.includes(args.conferenceId)
 					) {
 						await tx.conferenceSupervisor.delete({
-							where: {
-								conferenceId_userId: {
-									userId: args.userId,
-									conferenceId: args.conferenceId
-								}
-							}
-						});
-					}
-
-					if (userToDelete.teamMember.map((tm) => tm.conferenceId).includes(args.conferenceId)) {
-						await tx.teamMember.delete({
 							where: {
 								conferenceId_userId: {
 									userId: args.userId,
