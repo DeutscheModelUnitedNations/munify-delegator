@@ -105,25 +105,8 @@
 	};
 
 	const deleteParticipantQuery = graphql(`
-		mutation deleteParticipantMutation($userId: String!, $conferenceId: String!) {
-			deleteOneDelegationMember(
-				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
-			) {
-				id
-			}
-			deleteOneSingleParticipant(
-				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
-			) {
-				id
-			}
-			deleteOneConferenceSupervisor(
-				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
-			) {
-				id
-			}
-			deleteOneConferenceParticipantStatus(
-				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
-			) {
+		mutation deleteParticipantMutation($userId: ID!, $conferenceId: ID!) {
+			unregisterParticipant(userId: $userId, conferenceId: $conferenceId) {
 				id
 			}
 		}
@@ -136,8 +119,9 @@
 			userId: user.id,
 			conferenceId
 		});
-		invalidateAll();
-		open = false;
+		if (onClose) {
+			onClose();
+		}
 	};
 </script>
 
@@ -263,6 +247,42 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
+		<div class="card flex flex-col">
+			<div class="flex flex-col gap-2">
+				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
+					<a
+						class="btn"
+						href="/management/{conferenceId}/individuals?filter={$userQuery.data
+							?.findManySingleParticipants[0].id}"
+					>
+						{m.individualApplication()}
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
+					<a
+						class="btn"
+						href="/management/{conferenceId}/delegations?filter={$userQuery.data
+							?.findManyDelegationMembers[0].delegation.id}"
+					>
+						{m.delegation()}
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
+					<a
+						class="btn"
+						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
+							?.findManyConferenceSupervisors[0].id}"
+					>
+						{m.supervisor()}
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminUserCardStatus()}</h3>
 		<div class="flex flex-col gap-2">
 			<StatusWidget
@@ -308,48 +328,12 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<div class="card flex flex-col">
-			<div class="flex flex-col gap-2">
-				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
-					<a
-						class="btn"
-						href="/management/{conferenceId}/individuals?filter={$userQuery.data
-							?.findManySingleParticipants[0].id}"
-					>
-						{m.individualApplication()}
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
-					<a
-						class="btn"
-						href="/management/{conferenceId}/delegations?filter={$userQuery.data
-							?.findManyDelegationMembers[0].delegation.id}"
-					>
-						{m.delegation()}
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
-					<a
-						class="btn"
-						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
-							?.findManyConferenceSupervisors[0].id}"
-					>
-						{m.supervisor()}
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				{/if}
-			</div>
-		</div>
-	</div>
-
-	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
 		<div class="card flex flex-col">
 			<div class="flex flex-col gap-2">
 				<button class="btn btn-error" onclick={() => deleteParticipant()}>
 					{m.deleteParticipant()}
-					<i class="fa-duotone fa-trash"></i>
+					<i class="fas fa-trash"></i>
 				</button>
 			</div>
 		</div>
