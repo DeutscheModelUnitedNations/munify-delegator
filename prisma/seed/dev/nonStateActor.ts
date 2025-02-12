@@ -9,6 +9,8 @@ export function makeSeedNSA(options: Pick<NonStateActor, 'conferenceId'>): NonSt
 		abbreviation: faker.company.name().toUpperCase(),
 		description: faker.lorem.sentence(),
 		seatAmount: faker.number.int({ min: 1, max: 3 }),
-		fontAwesomeIcon: null
+		fontAwesomeIcon: null,
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

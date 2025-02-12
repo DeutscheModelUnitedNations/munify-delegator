@@ -13,6 +13,8 @@ export function makeSeedSingleParticipant(
 		experience: faker.lorem.sentence(),
 		motivation: faker.lorem.sentence(),
 		school: faker.lorem.word(),
-		assignedRoleId: options?.assignedRoleId ?? null
+		assignedRoleId: options?.assignedRoleId ?? null,
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

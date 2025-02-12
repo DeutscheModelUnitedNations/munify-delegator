@@ -109,6 +109,46 @@ await _db.$transaction(async (db) => {
 							.arrayElements(nations, { min: 6, max: 36 })
 							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
 					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
+				}),
+				makeSeedCommittee({
+					conferenceId: conference.id,
+					nations: {
+						connect: faker.helpers
+							.arrayElements(nations, { min: 6, max: 36 })
+							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
+					}
 				})
 			];
 
@@ -130,6 +170,20 @@ await _db.$transaction(async (db) => {
 			const allNationsRepresentedInCommittees = dbcommittees.flatMap((c) => c.nations);
 
 			const nonStateActors = [
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
+				makeSeedNSA({ conferenceId: conference.id }),
 				makeSeedNSA({ conferenceId: conference.id }),
 				makeSeedNSA({ conferenceId: conference.id }),
 				makeSeedNSA({ conferenceId: conference.id }),
@@ -222,21 +276,27 @@ await _db.$transaction(async (db) => {
 							delegationId: delegation.id,
 							rank: 0,
 							nationId: allNationsRepresentedInCommittees[0].alpha3Code,
-							nonStateActorId: null
+							nonStateActorId: null,
+							createdAt: faker.date.past(),
+							updatedAt: faker.date.past()
 						},
 						{
 							id: faker.database.mongodbObjectId(),
 							delegationId: delegation.id,
 							rank: 1,
 							nationId: allNationsRepresentedInCommittees[1].alpha3Code,
-							nonStateActorId: null
+							nonStateActorId: null,
+							createdAt: faker.date.past(),
+							updatedAt: faker.date.past()
 						},
 						{
 							id: faker.database.mongodbObjectId(),
 							delegationId: delegation.id,
 							rank: 2,
 							nationId: null,
-							nonStateActorId: nonStateActors[0].id
+							nonStateActorId: nonStateActors[0].id,
+							createdAt: faker.date.past(),
+							updatedAt: faker.date.past()
 						}
 					];
 
@@ -296,8 +356,8 @@ await _db.$transaction(async (db) => {
 					postAssignmentDelegeationMembers: conferenceIsInAssignedState
 						? {
 								connect: [
-									{ id: dbdelegations[0].members[0].id },
-									{ id: dbdelegations[0].members[1].id }
+									{ id: dbdelegations[1].members[0].id },
+									{ id: dbdelegations[1].members[1].id }
 								]
 							}
 						: undefined
@@ -313,8 +373,8 @@ await _db.$transaction(async (db) => {
 					postAssignmentDelegeationMembers: conferenceIsInAssignedState
 						? {
 								connect: [
-									{ id: dbdelegations[0].members[0].id },
-									{ id: dbdelegations[0].members[1].id }
+									{ id: dbdelegations[1].members[0].id },
+									{ id: dbdelegations[1].members[1].id }
 								]
 							}
 						: undefined
@@ -330,8 +390,8 @@ await _db.$transaction(async (db) => {
 					postAssignmentDelegeationMembers: conferenceIsInAssignedState
 						? {
 								connect: [
-									{ id: dbdelegations[0].members[0].id },
-									{ id: dbdelegations[0].members[1].id }
+									{ id: dbdelegations[1].members[0].id },
+									{ id: dbdelegations[1].members[1].id }
 								]
 							}
 						: undefined

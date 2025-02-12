@@ -9,4 +9,6 @@ export async function createDefaultData(db: DB) {
 	} catch (error) {
 		console.error('Error creating default data', error);
 	}
+
+	return { nations: [] };
 }

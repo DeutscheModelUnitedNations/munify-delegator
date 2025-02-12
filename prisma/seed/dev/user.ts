@@ -20,6 +20,8 @@ export function makeSeedUser(): User {
 		preferred_username: faker.internet.username(),
 		pronouns: faker.helpers.arrayElement(['he/him', 'she/her', 'they/them']),
 		wantsJoinTeamInformation: faker.datatype.boolean(),
-		wantsToReceiveGeneralInformation: faker.datatype.boolean()
+		wantsToReceiveGeneralInformation: faker.datatype.boolean(),
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

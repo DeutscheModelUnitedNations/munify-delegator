@@ -83,6 +83,12 @@
 				expanded={navbarExpanded}
 			/>
 		</NavMenuDetails>
+		<NavMenuButton
+			href="/management/{data.conferenceId}/downloads"
+			icon="fa-download"
+			title={m.downloads()}
+			bind:expanded={navbarExpanded}
+		/>
 	</NavMenu>
 </SideNavigationDrawer>
 

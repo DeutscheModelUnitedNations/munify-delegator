@@ -1,0 +1,10 @@
+query DownloadsBaseDataQuery($conferenceId: String!) @blocking {
+	findUniqueConference(where: { id: $conferenceId }) {
+		id
+		committees {
+			id
+			name
+			abbreviation
+		}
+	}
+}

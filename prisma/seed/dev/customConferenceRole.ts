@@ -9,6 +9,8 @@ export function makeSeedCustomConferenceRole(
 		id: faker.database.mongodbObjectId(),
 		name: faker.company.name(),
 		description: faker.lorem.sentence(),
-		fontAwesomeIcon: null
+		fontAwesomeIcon: null,
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

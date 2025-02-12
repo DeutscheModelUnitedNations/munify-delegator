@@ -21,6 +21,10 @@ docker volume rm delegator_delegator-dev
 echo "Starting the database container..."
 docker compose -f dev.docker-compose.yml up -d postgres
 
+# Wait for the database to be ready
+echo "Waiting for the database to be ready..."
+sleep 1
+
 # Restore the database from the backup file
 echo "Restoring the database from the backup file..."
 docker exec -i postgres-dev-delegator psql -U postgres -d postgres <$POSTGRES_BACKUP_FILE

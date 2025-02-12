@@ -80,6 +80,7 @@
 		"prettier-plugin-tailwindcss": "^0.6.9",
 		"prisma": "^6.1.0",
 		"prisma-generator-pothos-codegen": "^0.7.1",
+		"replace-special-characters": "^1.2.7",
 		"svelte": "^5.16.1",
 		"svelte-check": "^4.1.1",
 		"svelte-table": "^0.6.3",

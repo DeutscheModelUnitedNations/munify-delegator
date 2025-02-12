@@ -602,5 +602,8 @@
 	"paymentProblem": "Beitragszahlung nicht vollständig / fehlerhaft",
 	"paymentPending": "Beitragszahlung noch nicht abgeschlossen",
 	"deleteParticipantConfirm": "Willst du den/die Teilnehmende*n wirklich von der Konferenz entfernen?",
-	"deleteParticipant": "Teilnehmende*n entfernen"
+	"deleteParticipant": "Teilnehmende*n entfernen",
+	"downloads": "Downloads",
+	"download": "Download",
+	"nonStateActors": "Nichtstaatliche Atkeure"
 }
