@@ -103,6 +103,42 @@
 		cache.markStale();
 		userQuery.fetch();
 	};
+
+	const deleteParticipantQuery = graphql(`
+		mutation deleteParticipantMutation($userId: String!, $conferenceId: String!) {
+			deleteOneDelegationMember(
+				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
+			) {
+				id
+			}
+			deleteOneSingleParticipant(
+				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
+			) {
+				id
+			}
+			deleteOneConferenceSupervisor(
+				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
+			) {
+				id
+			}
+			deleteOneConferenceParticipantStatus(
+				where: { userId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
+			) {
+				id
+			}
+		}
+	`);
+
+	const deleteParticipant = async () => {
+		const c = confirm(m.deleteParticipantConfirm());
+		if (!c) return;
+		await deleteParticipantQuery.mutate({
+			userId: user.id,
+			conferenceId
+		});
+		invalidateAll();
+		open = false;
+	};
 </script>
 
 <Drawer bind:open {onClose}>
@@ -303,6 +339,18 @@
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
 				{/if}
+			</div>
+		</div>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
+		<div class="card flex flex-col">
+			<div class="flex flex-col gap-2">
+				<button class="btn btn-error" onclick={() => deleteParticipant()}>
+					{m.deleteParticipant()}
+					<i class="fa-duotone fa-trash"></i>
+				</button>
 			</div>
 		</div>
 	</div>
