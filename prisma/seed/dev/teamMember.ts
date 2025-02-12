@@ -7,6 +7,8 @@ export function makeSeedTeamMember(
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),
-		role: options?.role ?? faker.helpers.arrayElement(Object.values(TeamRole))
+		role: options?.role ?? faker.helpers.arrayElement(Object.values(TeamRole)),
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

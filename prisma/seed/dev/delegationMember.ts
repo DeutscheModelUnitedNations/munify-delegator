@@ -9,6 +9,8 @@ export function makeSeedDelegationMember(
 		...options,
 		id: faker.database.mongodbObjectId(),
 		isHeadDelegate: options?.isHeadDelegate ?? false,
-		assignedCommitteeId: options?.assignedCommitteeId ?? null
+		assignedCommitteeId: options?.assignedCommitteeId ?? null,
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }
