@@ -18,6 +18,8 @@ export function makeSeedPaymentTransaction(
 		id: faker.database.mongodbObjectId(),
 		amount: faker.number.int({ min: 1, max: 1000 }),
 		createdAt: faker.date.past(),
-		recievedAt: faker.helpers.arrayElement([null, faker.date.past()])
+		recievedAt: faker.helpers.arrayElement([null, faker.date.past()]),
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

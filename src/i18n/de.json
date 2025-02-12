@@ -600,5 +600,8 @@
 	"postalPending": "Postalische Anmeldung noch nicht abgeschlossen",
 	"paymentDone": "Beitragszahlung abgeschlossen",
 	"paymentProblem": "Beitragszahlung nicht vollständig / fehlerhaft",
-	"paymentPending": "Beitragszahlung noch nicht abgeschlossen"
+	"paymentPending": "Beitragszahlung noch nicht abgeschlossen",
+	"downloads": "Downloads",
+	"download": "Download",
+	"nonStateActors": "Nichtstaatliche Atkeure"
 }

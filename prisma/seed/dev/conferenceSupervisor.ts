@@ -11,6 +11,8 @@ export function makeSeedConferenceSupervisor(
 	return {
 		...options,
 		id: faker.database.mongodbObjectId(),
-		plansOwnAttendenceAtConference: faker.datatype.boolean()
+		plansOwnAttendenceAtConference: faker.datatype.boolean(),
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }

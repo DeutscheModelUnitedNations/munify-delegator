@@ -13,6 +13,8 @@ export function makeSeedDelegation(
 		entryCode: faker.string.numeric(6),
 		experience: faker.lorem.sentence(),
 		motivation: faker.lorem.sentence(),
-		school: faker.lorem.word()
+		school: faker.lorem.word(),
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
 	};
 }
