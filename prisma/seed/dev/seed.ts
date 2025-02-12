@@ -357,7 +357,7 @@ await _db.$transaction(async (db) => {
 						? {
 								connect: [
 									{ id: dbdelegations[1].members[0].id },
-									{ id: dbdelegations[1].members[1].id },
+									{ id: dbdelegations[1].members[1].id }
 								]
 							}
 						: undefined
@@ -374,7 +374,7 @@ await _db.$transaction(async (db) => {
 						? {
 								connect: [
 									{ id: dbdelegations[1].members[0].id },
-									{ id: dbdelegations[1].members[1].id },
+									{ id: dbdelegations[1].members[1].id }
 								]
 							}
 						: undefined
@@ -391,7 +391,7 @@ await _db.$transaction(async (db) => {
 						? {
 								connect: [
 									{ id: dbdelegations[1].members[0].id },
-									{ id: dbdelegations[1].members[1].id },
+									{ id: dbdelegations[1].members[1].id }
 								]
 							}
 						: undefined
