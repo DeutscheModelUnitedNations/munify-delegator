@@ -1,58 +1,41 @@
 <script lang="ts">
+	import type { DelegationDrawerQuery$result } from '$houdini';
+	import Modal from '$lib/components/Modal.svelte';
+	import * as m from '$lib/paraglide/messages';
+
 	interface Props {
 		open: boolean;
+		members?: NonNullable<DelegationDrawerQuery$result['findUniqueDelegation']>['members'];
+		committees?: NonNullable<DelegationDrawerQuery$result['findManyCommittees']>;
 	}
 
-	let { open = $bindable(false) }: Props = $props();
+	let { open = $bindable(false), members, committees }: Props = $props();
 </script>
 
-<div class="modal {open && 'modal-open'}">
-	<button class="modal-backdrop" aria-label="Close modal" onclick={() => (open = false)}></button>
-	<div class="modal-box gap-4">
-		<div class="flex flex-col items-center gap-8">
-			<input
-				type="text"
-				bind:value={search}
-				placeholder={m.email()}
-				class="input input-bordered w-full"
-			/>
-
-			<div class="flex flex-col gap-4">
-				<div class="flex w-full flex-col items-center justify-center gap-1">
-					{#if loading}
-						<div>
-							<i class="fa-duotone fa-spinner fa-spin"></i>
-						</div>
-					{:else if user}
-						<div class="badge badge-success">
-							{formatNames(user.given_name, user.family_name)} ({user.email})
-						</div>
-					{:else}
-						<div class="badge badge-error">{m.userNotFound()}</div>
-					{/if}
-					<i class="fa-duotone fa-arrow-down"></i>
-					<div class="badge badge-primary">{targetRole}</div>
-				</div>
-				{#if children && user}
-					<div class="flex w-full flex-col gap-2">
-						{@render children()}
-					</div>
-				{/if}
-			</div>
-
-			<div class="modal-action">
-				<button class="btn btn-error" onclick={() => (open = false)}>{m.close()}</button>
-				<button
-					class="btn btn-success {!user && 'btn-disabled'}"
-					onclick={async () => {
-						await addParticipant();
-						open = false;
-						user = undefined;
-						cache.markStale();
-						invalidateAll();
-					}}>{m.addUser()}</button
-				>
-			</div>
-		</div>
-	</div>
-</div>
+<Modal bind:open title={m.committeeAssignment()}>
+	{#if !members || members.length === 0}
+		<!-- <p>{m.noMembers()}</p> -->
+	{:else if !committees || committees.length === 0}
+		<!-- <p>{m.noCommittees()}</p> -->
+	{:else}
+		<table class="table">
+			<thead>
+				<tr>
+					<th>{m.name()}</th>
+					{#each committees as committee}
+						<th>{committee.abbreviation}</th>
+					{/each}
+				</tr>
+			</thead>
+			<tbody>
+				{#each members as member}
+					<tr>
+						<td>{member.user.given_name} {member.user.family_name}</td>
+						<td>{member.isHeadDelegate ? m.headDelegate() : ''}</td>
+						<td>{member.assignedCommittee.name}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+</Modal>

@@ -3,7 +3,6 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
 	import type { DelegationDrawerQueryVariables } from './$houdini';
-	import { error } from '@sveltejs/kit';
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
@@ -21,12 +20,13 @@
 		console.log(delegationId);
 
 		return {
-			delegationId: delegationId
+			delegationId,
+			conferenceId
 		};
 	};
 
 	const delegationQuery = graphql(`
-		query DelegationDrawerQuery($delegationId: String!) @load {
+		query DelegationDrawerQuery($delegationId: String!, $conferenceId: String!) @load {
 			findUniqueDelegation(where: { id: $delegationId }) {
 				applied
 				entryCode
@@ -72,6 +72,11 @@
 					name
 					fontAwesomeIcon
 				}
+			}
+			findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
+				id
+				abbreviation
+				name
 			}
 		}
 	`);
@@ -282,7 +287,10 @@
 			<i class="fa-duotone fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
-		<button class="btn" onclick={() => (committeeAssignmentModalOpen = true)}>
+		<button
+			class="btn {$delegationQuery.data?.findUniqueDelegation?.members?.length === 0 && 'disabled'}"
+			onclick={() => (committeeAssignmentModalOpen = true)}
+		>
 			<i class="fa-duotone fa-grid-2"></i>
 			{m.committeeAssignment()}
 		</button>
@@ -307,4 +315,8 @@
 	</div>
 </Drawer>
 
-<CommitteeAssignmentModal bind:open={committeeAssignmentModalOpen} />
+<CommitteeAssignmentModal
+	bind:open={committeeAssignmentModalOpen}
+	members={$delegationQuery.data?.findUniqueDelegation?.members}
+	committees={$delegationQuery.data?.findManyCommittees}
+/>
