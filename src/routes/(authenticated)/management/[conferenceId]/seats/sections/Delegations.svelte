@@ -136,17 +136,17 @@
 								)}
 
 								{#if assignedDelegationMember && assignedDelegationMember.length > 0}
-								<div class="flex gap-1 justify-center">
-									{#each assignedDelegationMember as member}
-										<InitialsButton
-											given_name={member.user.given_name}
-											family_name={member.user.family_name}
-											href={`/management/${conferenceId}/participants?filter=${member.user.id}`}
-										/>
-									{/each}
-									{#if assignedDelegationMember.length < committee.numOfSeatsPerDelegation}
-										{@render addParticipantBtn()}
-									{/if}
+									<div class="flex justify-center gap-1">
+										{#each assignedDelegationMember as member}
+											<InitialsButton
+												given_name={member.user.given_name}
+												family_name={member.user.family_name}
+												href={`/management/${conferenceId}/participants?filter=${member.user.id}`}
+											/>
+										{/each}
+										{#if assignedDelegationMember.length < committee.numOfSeatsPerDelegation}
+											{@render addParticipantBtn()}
+										{/if}
 									</div>
 								{:else if delegation.members.length < sumSeats}
 									{@render addParticipantBtn(delegation.members.some((x) => !x.assignedCommittee))}
@@ -155,7 +155,7 @@
 										<div
 											class="flex h-8 w-10 items-center justify-center rounded-md border border-dotted border-info"
 										>
-											<i class="fas text-info fa-hourglass-half"></i>
+											<i class="fas fa-hourglass-half text-info"></i>
 										</div>
 									</div>
 								{/if}

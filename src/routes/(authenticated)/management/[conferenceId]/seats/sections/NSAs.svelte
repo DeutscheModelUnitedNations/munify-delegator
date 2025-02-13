@@ -3,9 +3,9 @@
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
 	import InitialsButton from '../InitialsButton.svelte';
-	import DownloadNsaDataBtn from '../downloads/DownloadNsaDataBtn.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
+	import DownloadNSADataBtn from '../downloads/DownloadNSADataBtn.svelte';
 
 	interface Props {
 		nonStateActors: SeatsQuery$result['findManyNonStateActors'];
@@ -40,7 +40,7 @@
 </script>
 
 {#snippet downloadNSADataBtn()}
-	<DownloadNsaDataBtn {conferenceId} />
+	<DownloadNSADataBtn {conferenceId} />
 {/snippet}
 
 <SeatsTableSection title={m.nsaSeats()} downloadButton={downloadNSADataBtn}>
