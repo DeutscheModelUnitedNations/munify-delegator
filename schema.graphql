@@ -2511,6 +2511,7 @@ type Query {
   myOIDCRoles: [OIDCRolesEnum!]!
   offlineUserRefresh: OfflineUserRefresh!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
+  previewUserByIdOrEmail(emailOrId: String!): UserPreview!
 }
 
 enum QueryMode {
@@ -3274,6 +3275,13 @@ input UserOrderByWithRelationInput {
   wantsJoinTeamInformation: SortOrder
   wantsToReceiveGeneralInformation: SortOrder
   zip: SortOrder
+}
+
+type UserPreview {
+  email: String!
+  family_name: String!
+  given_name: String!
+  id: ID!
 }
 
 input UserReferenceInPaymentTransactionCreateInput {

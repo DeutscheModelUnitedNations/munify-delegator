@@ -21,7 +21,9 @@ import {
 	UserPronounsFieldObject,
 	UserFoodPreferenceFieldObject,
 	UserWantsToReceiveGeneralInformationFieldObject,
-	UserWantsJoinTeamInformationFieldObject
+	UserWantsJoinTeamInformationFieldObject,
+	findFirstUserQueryObject,
+	findManyUserQuery
 } from '$db/generated/graphql/User';
 import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
@@ -107,6 +109,31 @@ builder.queryFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('read').User]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.queryFields((t) => {
+	return {
+		previewUserByIdOrEmail: t.field({
+			type: t.builder.simpleObject('UserPreview', {
+				fields: (t) => ({
+					id: t.id(),
+					email: t.string(),
+					given_name: t.string(),
+					family_name: t.string()
+				})
+			}),
+			args: {
+				emailOrId: t.arg.string()
+			},
+			resolve: async (root, args, ctx) => {
+				return await db.user.findFirstOrThrow({
+					where: {
+						OR: [{ id: args.emailOrId }, { email: args.emailOrId }]
+					}
+				});
 			}
 		})
 	};

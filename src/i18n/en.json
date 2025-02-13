@@ -552,5 +552,6 @@
 	"downloadParticipantData": "Download Data for Group \"{group}\"",
 	"searchForUser": "UserID or Email",
 	"details": "Details",
-	"addUser": "Add Participant"
+	"addUser": "Add Participant",
+	"userNotFound": "User not found"
 }

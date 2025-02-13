@@ -23,7 +23,7 @@
 
 	const getUserInfo = graphql(`
 		query getUserInfo($emailOrId: String!) {
-			findUniqueUser(where: { email: $emailOrId }) {
+			previewUserByIdOrEmail(emailOrId: $emailOrId) {
 				id
 				given_name
 				family_name
@@ -45,7 +45,7 @@
 					}
 				})
 				.then((result) => {
-					user = result.data?.findUniqueUser;
+					user = result.data?.previewUserByIdOrEmail;
 				})
 				.finally(() => {
 					loading = false;
