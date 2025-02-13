@@ -146,6 +146,31 @@ builder.mutationFields((t) => {
 });
 
 builder.mutationFields((t) => {
+	const field = createOneConferenceSupervisorMutationObject(t);
+	return {
+		createOneConferenceSupervisor: t.prismaField({
+			...field,
+			args: {
+				userId: t.arg.id(),
+				conferenceId: t.arg.id(),
+				plansOwnAttendenceAtConference: t.arg.boolean()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				return await db.conferenceSupervisor.create({
+					data: {
+						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
+						conferenceId: args.conferenceId,
+						userId: args.userId
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
 	const field = updateOneConferenceSupervisorMutationObject(t);
 	return {
 		updateOneConferenceSupervisor: t.prismaField({

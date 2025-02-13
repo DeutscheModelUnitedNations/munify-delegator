@@ -5,6 +5,7 @@
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import DownloadSingleParticipantsDataBtn from '../downloads/DownloadSingleParticipantsDataBtn.svelte';
+	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
 		singleParticipants: SeatsQuery$result['findManySingleParticipants'];
@@ -55,6 +56,7 @@
 										href={`/management/${conferenceId}/participants?filter=${participant.user.id}`}
 									/>
 								{/each}
+								<AddParticipantBtn />
 							</div>
 						{:else}
 							<i class="fas fa-dash text-gray-400"></i>

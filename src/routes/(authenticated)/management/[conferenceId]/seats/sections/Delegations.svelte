@@ -6,6 +6,7 @@
 	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
+	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
 		delegations: SeatsQuery$result['findManyDelegations'];
@@ -102,11 +103,13 @@
 											href={`/management/${conferenceId}/participants?filter=${member.user.id}`}
 										/>
 									{/each}
+								{:else if delegation.members.length < sumSeats}
+									<AddParticipantBtn warning />
 								{:else}
 									<i class="fas fa-dash text-gray-400"></i>
 								{/if}
 							{:else}
-								<i class="fas fa-xmark text-gray-400"></i>
+								<AddParticipantBtn />
 							{/if}
 						</td>
 					{:else}

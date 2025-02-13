@@ -549,5 +549,8 @@
 	"download": "Download",
 	"nonStateActors": "Non-State Actors",
 	"addParticipant": "Add Participant",
-	"downloadParticipantData": "Download Data for Group \"{group}\""
+	"downloadParticipantData": "Download Data for Group \"{group}\"",
+	"searchForUser": "UserID or Email",
+	"details": "Details",
+	"addUser": "Add Participant"
 }

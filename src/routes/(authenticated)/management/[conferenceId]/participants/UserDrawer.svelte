@@ -8,7 +8,6 @@
 	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
-	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		user: UserRowData;

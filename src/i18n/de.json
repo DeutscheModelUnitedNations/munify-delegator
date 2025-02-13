@@ -605,5 +605,8 @@
 	"download": "Download",
 	"nonStateActors": "Nichtstaatliche Atkeure",
 	"addParticipant": "Teilnehmer*in hinzufügen",
-	"downloadParticipantData": "Daten für Gruppe \"{group}\" herunterladen"
+	"downloadParticipantData": "Daten für Gruppe \"{group}\" herunterladen",
+	"searchForUser": "UserID oder E-Mail",
+	"details": "Details",
+	"addUser": "Teilnehmende*n hinzufügen"
 }

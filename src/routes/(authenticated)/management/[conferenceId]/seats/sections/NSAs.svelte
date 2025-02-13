@@ -5,6 +5,7 @@
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadNsaDataBtn from '../downloads/DownloadNsaDataBtn.svelte';
 	import Flag from '$lib/components/Flag.svelte';
+	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
 		nonStateActors: SeatsQuery$result['findManyNonStateActors'];
@@ -47,8 +48,8 @@
 					</div>
 				</td>
 				<td class="w-full">
-					{#if delegation}
-						<div class="flex gap-1">
+					<div class="flex gap-1">
+						{#if delegation}
 							{#each delegation.members as member}
 								<InitialsButton
 									given_name={member.user.given_name}
@@ -56,10 +57,13 @@
 									href={`/management/${conferenceId}/participants?filter=${member.user.id}`}
 								/>
 							{/each}
-						</div>
-					{:else}
-						<i class="fas fa-dash text-gray-400"></i>
-					{/if}
+							{#if delegation.members.length < nsa.seatAmount}
+								<AddParticipantBtn />
+							{/if}
+						{:else}
+							<AddParticipantBtn />
+						{/if}
+					</div>
 				</td>
 				<td>
 					{delegation?.members.length ?? 0}
