@@ -553,5 +553,6 @@
 	"searchForUser": "UserID or Email",
 	"details": "Details",
 	"addUser": "Add Participant",
-	"userNotFound": "User not found"
+	"userNotFound": "User not found",
+	"emailOrId": "email or user-id"
 }

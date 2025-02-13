@@ -27,7 +27,7 @@
 		}
 	`);
 
-	let user = $state<Partial<getUserInfo$result['findUniqueUser']> | undefined>(undefined);
+	let user = $state<Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined>(undefined);
 
 	const addParticipant = async (nonStateActorId: string) => {
 		if (!user?.id) return;

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
+	import { graphql, type SeatsQuery$result } from '$houdini';
+	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
@@ -29,7 +30,7 @@
 		}
 	`);
 
-	let user = $state<Partial<getUserInfo$result['findUniqueUser']> | undefined>(undefined);
+	let user = $state<Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined>(undefined);
 	let plansOwnAttendenceAtConference = $state(false);
 
 	const addParticipant = async () => {

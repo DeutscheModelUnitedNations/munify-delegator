@@ -35,7 +35,7 @@
 		}
 	`);
 
-	let user = $state<Partial<getUserInfo$result['findUniqueUser']> | undefined>(undefined);
+	let user = $state<Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined>(undefined);
 
 	const addParticipant = async (alpha3Code: string, committeeId: string) => {
 		if (!user?.id) return;

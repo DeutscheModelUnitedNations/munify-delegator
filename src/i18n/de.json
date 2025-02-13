@@ -608,5 +608,6 @@
 	"downloadParticipantData": "Daten für Gruppe \"{group}\" herunterladen",
 	"searchForUser": "UserID oder E-Mail",
 	"details": "Details",
-	"addUser": "Teilnehmende*n hinzufügen"
+	"addUser": "Teilnehmende*n hinzufügen",
+	"emailOrId": "Email oder UserID"
 }

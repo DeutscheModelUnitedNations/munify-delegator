@@ -1,12 +1,12 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
-	import UserSearchModal from './addModals/UserSearchModal.svelte';
+	import UserSearchModal from './UserSearchModal.svelte';
 	import { type getUserInfo$result } from '$houdini';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
 		warning?: boolean;
-		user: Partial<getUserInfo$result['findUniqueUser']> | undefined;
+		user: Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined;
 		targetRole: string;
 		addParticipant: () => Promise<void>;
 		formElements?: Snippet[];
