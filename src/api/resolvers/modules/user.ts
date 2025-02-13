@@ -251,26 +251,6 @@ builder.mutationFields((t) => {
 				return db.$transaction(async (tx) => {
 					const user = ctx.permissions.getLoggedInUserOrThrow();
 
-					// check conference permissions
-					const teamMemberStatus = await tx.teamMember.findUnique({
-						where: {
-							conferenceId_userId: {
-								userId: user.sub,
-								conferenceId: args.conferenceId
-							}
-						}
-					});
-
-					if (
-						!(
-							teamMemberStatus?.role === TeamRole.PARTICIPANT_CARE ||
-							teamMemberStatus?.role === TeamRole.PROJECT_MANAGEMENT ||
-							user.hasRole('admin')
-						)
-					) {
-						throw new GraphQLError('User is not allowed to unregister participants');
-					}
-
 					const userToDelete = await tx.user.findUnique({
 						where: {
 							id: args.userId,
@@ -302,7 +282,8 @@ builder.mutationFields((t) => {
 								conferenceId_userId: {
 									userId: args.userId,
 									conferenceId: args.conferenceId
-								}
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').DelegationMember]
 							}
 						});
 					}
@@ -315,7 +296,8 @@ builder.mutationFields((t) => {
 								conferenceId_userId: {
 									userId: args.userId,
 									conferenceId: args.conferenceId
-								}
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').SingleParticipant]
 							}
 						});
 					}
@@ -330,7 +312,8 @@ builder.mutationFields((t) => {
 								conferenceId_userId: {
 									userId: args.userId,
 									conferenceId: args.conferenceId
-								}
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').ConferenceSupervisor]
 							}
 						});
 					}
@@ -345,7 +328,8 @@ builder.mutationFields((t) => {
 								userId_conferenceId: {
 									userId: args.userId,
 									conferenceId: args.conferenceId
-								}
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').ConferenceParticipantStatus]
 							}
 						});
 					}
