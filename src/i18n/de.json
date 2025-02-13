@@ -605,5 +605,11 @@
 	"deleteParticipant": "Teilnehmende*n entfernen",
 	"downloads": "Downloads",
 	"download": "Download",
-	"nonStateActors": "Nichtstaatliche Atkeure"
+	"nonStateActors": "Nichtstaatliche Atkeure",
+	"addParticipant": "Teilnehmer*in hinzufügen",
+	"downloadParticipantData": "Daten für Gruppe \"{group}\" herunterladen",
+	"searchForUser": "UserID oder E-Mail",
+	"details": "Details",
+	"addUser": "Teilnehmende*n hinzufügen",
+	"emailOrId": "Email oder UserID"
 }

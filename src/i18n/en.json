@@ -549,5 +549,12 @@
 	"deleteParticipant": "Remove Particiapnt",
 	"downloads": "Downloads",
 	"download": "Download",
-	"nonStateActors": "Non-State Actors"
+	"nonStateActors": "Non-State Actors",
+	"addParticipant": "Add Participant",
+	"downloadParticipantData": "Download Data for Group \"{group}\"",
+	"searchForUser": "UserID or Email",
+	"details": "Details",
+	"addUser": "Add Participant",
+	"userNotFound": "User not found",
+	"emailOrId": "email or user-id"
 }
