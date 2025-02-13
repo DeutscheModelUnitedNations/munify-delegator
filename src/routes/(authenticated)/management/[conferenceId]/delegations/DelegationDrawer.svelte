@@ -7,6 +7,7 @@
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
+	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -74,6 +75,8 @@
 			}
 		}
 	`);
+
+	let committeeAssignmentModalOpen = $state(false);
 </script>
 
 <Drawer bind:open {onClose}>
@@ -279,20 +282,29 @@
 			<i class="fa-duotone fa-arrow-rotate-left"></i>
 			{m.rotateCode()}
 		</button>
-		{#if $delegationQuery.data?.findUniqueDelegation?.applied}
-			<button
-				class="btn"
-				onclick={async () => {
-					if (!confirm(m.confirmRevokeApplication())) return;
-					await delegaitonResetMutation.mutate({
-						delegationId,
-						applied: $delegationQuery.data?.findUniqueDelegation?.applied
-					});
-				}}
-			>
-				<i class="fa-duotone fa-file-slash"></i>
-				{m.revokeApplication()}
-			</button>
-		{/if}
+		<button class="btn" onclick={() => (committeeAssignmentModalOpen = true)}>
+			<i class="fa-duotone fa-grid-2"></i>
+			{m.committeeAssignment()}
+		</button>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
+		<button
+			class="btn {!$delegationQuery.data?.findUniqueDelegation?.applied &&
+				'btn-disabled'} btn-error"
+			onclick={async () => {
+				if (!confirm(m.confirmRevokeApplication())) return;
+				await delegaitonResetMutation.mutate({
+					delegationId,
+					applied: $delegationQuery.data?.findUniqueDelegation?.applied
+				});
+			}}
+		>
+			<i class="fas fa-file-slash"></i>
+			{m.revokeApplication()}
+		</button>
 	</div>
 </Drawer>
+
+<CommitteeAssignmentModal bind:open={committeeAssignmentModalOpen} />
