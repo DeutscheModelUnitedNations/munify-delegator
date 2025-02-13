@@ -129,6 +129,27 @@ builder.queryFields((t) => {
 				emailOrId: t.arg.string()
 			},
 			resolve: async (root, args, ctx) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const dbUser = await db.user.findUnique({
+					where: {
+						id: user.sub,
+						teamMember: {
+							some: {
+								role: {
+									in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+								}
+							}
+						}
+					}
+				});
+
+				if (!dbUser && user.hasRole('admin')) {
+					throw new GraphQLError(
+						'You are not allowed to preview users. You need to be a team member with the role PARTICIPANT_CARE or PROJECT_MANAGEMENT or an admin.'
+					);
+				}
+
 				return await db.user.findFirstOrThrow({
 					where: {
 						OR: [{ id: args.emailOrId }, { email: args.emailOrId }]

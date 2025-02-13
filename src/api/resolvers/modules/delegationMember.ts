@@ -142,6 +142,22 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
+				const dbUser = await db.teamMember.findUnique({
+					where: {
+						conferenceId_userId: {
+							conferenceId: args.conferenceId,
+							userId: user.sub
+						},
+						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+					}
+				});
+
+				if (!dbUser && user.hasRole('admin')) {
+					throw new GraphQLError(
+						'Only team members with the roles PARTICIPANT_CARE or PROJECT_MANAGEMENT, or admins can assign delegation members.'
+					);
+				}
+
 				const {
 					userId,
 					conferenceId,
