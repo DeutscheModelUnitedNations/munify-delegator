@@ -13,7 +13,10 @@ import {
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
 import { languageTag } from '$lib/paraglide/runtime';
-import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/fetchUserParticipations';
 import { GraphQLError } from 'graphql';
 
 builder.prismaObject('ConferenceSupervisor', {
@@ -158,13 +161,12 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				const { foundDelegationMember, foundSingleParticipant, foundTeamMember } =
-					await fetchUserParticipations({
-						conferenceId: args.conferenceId,
-						userId: args.userId
-					});
-
-				if (foundDelegationMember || foundSingleParticipant || foundTeamMember) {
+				if (
+					await isUserAlreadyRegistered({
+						userId: args.userId,
+						conferenceId: args.conferenceId
+					})
+				) {
 					throw new GraphQLError(
 						"User is already assigned a different role in the conference. Can't assign supervisor."
 					);

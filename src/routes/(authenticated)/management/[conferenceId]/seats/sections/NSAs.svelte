@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import type { SeatsQuery$result } from '$houdini';
+	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadNsaDataBtn from '../downloads/DownloadNsaDataBtn.svelte';
 	import Flag from '$lib/components/Flag.svelte';
@@ -14,6 +14,29 @@
 	}
 
 	let { nonStateActors, delegations, conferenceId }: Props = $props();
+
+	const addNSAParticipantMutation = graphql(`
+		mutation addNSAParticipant($userId: ID!, $conferenceId: ID!, $assignedNonStateActorId: ID!) {
+			createOneAppliedDelegationMember(
+				userId: $userId
+				conferenceId: $conferenceId
+				assignedNonStateActorId: $assignedNonStateActorId
+			) {
+				id
+			}
+		}
+	`);
+
+	let user = $state<Partial<getUserInfo$result['findUniqueUser']> | undefined>(undefined);
+
+	const addParticipant = async (nonStateActorId: string) => {
+		if (!user?.id) return;
+		await addNSAParticipantMutation.mutate({
+			userId: user.id,
+			conferenceId: conferenceId,
+			assignedNonStateActorId: nonStateActorId
+		});
+	};
 </script>
 
 {#snippet downloadNSADataBtn()}
@@ -49,6 +72,13 @@
 				</td>
 				<td class="w-full">
 					<div class="flex gap-1">
+						{#snippet addParticipantBtn()}
+							<AddParticipantBtn
+								bind:user
+								targetRole={`${nsa.abbreviation} (${m.nonStateActors()})`}
+								addParticipant={async () => await addParticipant(nsa.id)}
+							/>
+						{/snippet}
 						{#if delegation}
 							{#each delegation.members as member}
 								<InitialsButton
@@ -58,10 +88,10 @@
 								/>
 							{/each}
 							{#if delegation.members.length < nsa.seatAmount}
-								<AddParticipantBtn />
+								{@render addParticipantBtn()}
 							{/if}
 						{:else}
-							<AddParticipantBtn />
+							{@render addParticipantBtn()}
 						{/if}
 					</div>
 				</td>

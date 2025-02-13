@@ -15,7 +15,10 @@ import {
 	SingleParticipantUserFieldObject,
 	updateOneSingleParticipantMutationObject
 } from '$db/generated/graphql/SingleParticipant';
-import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 import * as m from '$lib/paraglide/messages';
@@ -172,15 +175,14 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				const { foundDelegationMember, foundSupervisor, foundTeamMember } =
-					await fetchUserParticipations({
-						conferenceId: args.conferenceId,
-						userId: args.userId
-					});
-
-				if (foundDelegationMember || foundSupervisor || foundTeamMember) {
+				if (
+					await isUserAlreadyRegistered({
+						userId: args.userId,
+						conferenceId: args.conferenceId
+					})
+				) {
 					throw new GraphQLError(
-						"User is already assigned a different role in the conference. Can't assign single participant."
+						"User is already assigned a different role in the conference. Can't assign SingleParticipant."
 					);
 				}
 
