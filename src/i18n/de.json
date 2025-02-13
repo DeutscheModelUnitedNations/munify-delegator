@@ -603,5 +603,7 @@
 	"paymentPending": "Beitragszahlung noch nicht abgeschlossen",
 	"downloads": "Downloads",
 	"download": "Download",
-	"nonStateActors": "Nichtstaatliche Atkeure"
+	"nonStateActors": "Nichtstaatliche Atkeure",
+	"addParticipant": "Teilnehmer*in hinzufügen",
+	"downloadParticipantData": "Daten für Gruppe \"{group}\" herunterladen"
 }

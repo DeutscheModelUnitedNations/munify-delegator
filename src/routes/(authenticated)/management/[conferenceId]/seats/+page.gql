@@ -13,6 +13,12 @@ query SeatsQuery($conferenceId: String!) @blocking {
 			numOfSeatsPerDelegation
 		}
 	}
+	findManyCustomConferenceRoles(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		name
+		description
+		fontAwesomeIcon
+	}
 	findManyDelegations(where: { conferenceId: { equals: $conferenceId } }) {
 		id
 		assignedNation {
@@ -46,5 +52,30 @@ query SeatsQuery($conferenceId: String!) @blocking {
 		abbreviation
 		fontAwesomeIcon
 		seatAmount
+	}
+	findManySingleParticipants(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		user {
+			id
+			given_name
+			family_name
+		}
+		assignedRole {
+			id
+			name
+			description
+			fontAwesomeIcon
+		}
+	}
+	findManyConferenceSupervisors(
+		where: { conferenceId: { equals: $conferenceId } }
+		orderBy: [{ user: { family_name: asc } }]
+	) {
+		id
+		user {
+			id
+			given_name
+			family_name
+		}
 	}
 }
