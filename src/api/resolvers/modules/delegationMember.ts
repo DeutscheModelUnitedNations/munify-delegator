@@ -136,7 +136,7 @@ builder.mutationFields((t) => {
 				userId: t.arg.id(),
 				conferenceId: t.arg.id(),
 				assignedNonStateActorId: t.arg.id({ required: false }),
-				assignedNationAlpha3Code: t.arg.id({ required: false }),
+				assignedNationAlpha3Code: t.arg.string({ required: false }),
 				assignedCommitteeId: t.arg.id({ required: false })
 			},
 			resolve: async (query, root, args, ctx) => {

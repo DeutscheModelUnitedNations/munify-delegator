@@ -32,7 +32,11 @@
 		class="btn btn-outline {warning ? 'btn-warning' : 'btn-success'} btn-sm w-10"
 		onclick={() => (open = true)}
 	>
-		<i class="fas fa-plus"></i>
+		{#if warning}
+			<i class="fas fa-diamond-exclamation"></i>
+		{:else}
+			<i class="fas fa-plus"></i>
+		{/if}
 	</button>
 </div>
 

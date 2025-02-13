@@ -70,25 +70,25 @@
 			/>
 
 			<div class="flex flex-col gap-4">
-				{#if loading}
-					<div>
-						<i class="fa-duotone fa-spinner fa-spin"></i>
-					</div>
-				{:else if user}
-					<div class="flex w-full flex-col items-center justify-center gap-1">
+				<div class="flex w-full flex-col items-center justify-center gap-1">
+					{#if loading}
+						<div>
+							<i class="fa-duotone fa-spinner fa-spin"></i>
+						</div>
+					{:else if user}
 						<div class="badge badge-success">
 							{formatNames(user.given_name, user.family_name)} ({user.email})
 						</div>
-						<i class="fa-duotone fa-arrow-down"></i>
-						<div class="badge badge-primary">{targetRole}</div>
-					</div>
-					{#if children}
-						<div class="flex w-full flex-col gap-2">
-							{@render children()}
-						</div>
+					{:else}
+						<div class="badge badge-error">{m.userNotFound()}</div>
 					{/if}
-				{:else}
-					<div class="badge badge-error">{m.userNotFound()}</div>
+					<i class="fa-duotone fa-arrow-down"></i>
+					<div class="badge badge-primary">{targetRole}</div>
+				</div>
+				{#if children && user}
+					<div class="flex w-full flex-col gap-2">
+						{@render children()}
+					</div>
 				{/if}
 			</div>
 

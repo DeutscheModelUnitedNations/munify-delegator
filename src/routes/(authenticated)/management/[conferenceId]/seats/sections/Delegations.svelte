@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import type { SeatsQuery$result } from '$houdini';
+	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
@@ -16,6 +16,36 @@
 	}
 
 	let { delegations, committees, nations, conferenceId }: Props = $props();
+
+	const addNationParticipantMutation = graphql(`
+		mutation addNationParticipant(
+			$userId: ID!
+			$conferenceId: ID!
+			$assignedNationAlpha3Code: String!
+			$assignedCommitteeId: ID
+		) {
+			createOneAppliedDelegationMember(
+				userId: $userId
+				conferenceId: $conferenceId
+				assignedNationAlpha3Code: $assignedNationAlpha3Code
+				assignedCommitteeId: $assignedCommitteeId
+			) {
+				id
+			}
+		}
+	`);
+
+	let user = $state<Partial<getUserInfo$result['findUniqueUser']> | undefined>(undefined);
+
+	const addParticipant = async (alpha3Code: string, committeeId: string) => {
+		if (!user?.id) return;
+		await addNationParticipantMutation.mutate({
+			userId: user.id,
+			conferenceId: conferenceId,
+			assignedNationAlpha3Code: alpha3Code,
+			assignedCommitteeId: committeeId
+		});
+	};
 </script>
 
 <SeatsTableSection title={m.seats()}>
@@ -90,12 +120,23 @@
 				</td>
 				{#each committees as committee}
 					{#if nation.committees.find((c) => c.id === committee.id)}
+						{#snippet addParticipantBtn(warning: boolean = false)}
+							<AddParticipantBtn
+								bind:user
+								targetRole={`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
+								addParticipant={async () => await addParticipant(nation.alpha3Code, committee.id)}
+								{warning}
+							/>
+						{/snippet}
+
 						<td>
 							{#if delegation}
 								{@const assignedDelegationMember = delegation.members.filter(
 									(dm) => dm.assignedCommittee?.id === committee.id
 								)}
+
 								{#if assignedDelegationMember && assignedDelegationMember.length > 0}
+								<div class="flex gap-1 justify-center">
 									{#each assignedDelegationMember as member}
 										<InitialsButton
 											given_name={member.user.given_name}
@@ -103,17 +144,27 @@
 											href={`/management/${conferenceId}/participants?filter=${member.user.id}`}
 										/>
 									{/each}
+									{#if assignedDelegationMember.length < committee.numOfSeatsPerDelegation}
+										{@render addParticipantBtn()}
+									{/if}
+									</div>
 								{:else if delegation.members.length < sumSeats}
-									<AddParticipantBtn warning />
+									{@render addParticipantBtn(delegation.members.some((x) => !x.assignedCommittee))}
 								{:else}
-									<i class="fas fa-dash text-gray-400"></i>
+									<div class="tooltip" data-tip={m.committeeAssignment()}>
+										<div
+											class="flex h-8 w-10 items-center justify-center rounded-md border border-dotted border-info"
+										>
+											<i class="fas text-info fa-hourglass-half"></i>
+										</div>
+									</div>
 								{/if}
 							{:else}
-								<AddParticipantBtn />
+								{@render addParticipantBtn()}
 							{/if}
 						</td>
 					{:else}
-						<td></td>
+						<td><i class="fas fa-circle-small text-[8px] text-gray-300"></i></td>
 					{/if}
 				{/each}
 				<td>
