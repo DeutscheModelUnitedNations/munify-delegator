@@ -20,7 +20,7 @@ RUN  bun install --frozen-lockfile
 # we need to generate prisma files before building to prevent type errors
 COPY ./prisma/migrations ./prisma/migrations/
 COPY ./prisma/schema.prisma ./prisma/schema.prisma
-COPY ./prisma/pothos.config.ts ./prisma/pothos.config.ts
+COPY ./prisma/pothos.config.cjs ./prisma/pothos.config.cjs
 RUN bunx prisma generate
 
 COPY . .
