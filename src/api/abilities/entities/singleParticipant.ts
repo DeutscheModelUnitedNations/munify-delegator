@@ -15,7 +15,7 @@ export const defineAbilitiesForSingleParticipant = (
 		});
 
 		// team members should be able to see the single participants of their conferences
-		can(['read', 'list', 'update'], 'SingleParticipant', {
+		can(['read', 'list', 'update', 'delete'], 'SingleParticipant', {
 			conference: {
 				teamMembers: {
 					some: {
