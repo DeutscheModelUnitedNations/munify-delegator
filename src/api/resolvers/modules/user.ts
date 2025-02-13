@@ -30,6 +30,7 @@ import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-
 import { z } from 'zod';
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
+import { TeamRole } from '@prisma/client';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -233,6 +234,108 @@ builder.mutationFields((t) => {
 				});
 
 				return { userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success };
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	return {
+		unregisterParticipant: t.prismaField({
+			type: 'User',
+			args: {
+				userId: t.arg.id(),
+				conferenceId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				return db.$transaction(async (tx) => {
+					const user = ctx.permissions.getLoggedInUserOrThrow();
+
+					const userToDelete = await tx.user.findUnique({
+						where: {
+							id: args.userId,
+							OR: [
+								{ delegationMemberships: { some: { conferenceId: args.conferenceId } } },
+								{ singleParticipant: { some: { conferenceId: args.conferenceId } } },
+								{ conferenceSupervisor: { some: { conferenceId: args.conferenceId } } }
+							]
+						},
+						include: {
+							delegationMemberships: true,
+							singleParticipant: true,
+							conferenceSupervisor: true,
+							conferenceParticipantStatus: true
+						}
+					});
+
+					if (!userToDelete) {
+						throw new GraphQLError('User not found');
+					}
+
+					if (
+						userToDelete.delegationMemberships
+							.map((dm) => dm.conferenceId)
+							.includes(args.conferenceId)
+					) {
+						await tx.delegationMember.delete({
+							where: {
+								conferenceId_userId: {
+									userId: args.userId,
+									conferenceId: args.conferenceId
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').DelegationMember]
+							}
+						});
+					}
+
+					if (
+						userToDelete.singleParticipant.map((sp) => sp.conferenceId).includes(args.conferenceId)
+					) {
+						await tx.singleParticipant.delete({
+							where: {
+								conferenceId_userId: {
+									userId: args.userId,
+									conferenceId: args.conferenceId
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').SingleParticipant]
+							}
+						});
+					}
+
+					if (
+						userToDelete.conferenceSupervisor
+							.map((cs) => cs.conferenceId)
+							.includes(args.conferenceId)
+					) {
+						await tx.conferenceSupervisor.delete({
+							where: {
+								conferenceId_userId: {
+									userId: args.userId,
+									conferenceId: args.conferenceId
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').ConferenceSupervisor]
+							}
+						});
+					}
+
+					if (
+						userToDelete.conferenceParticipantStatus
+							.map((cps) => cps.conferenceId)
+							.includes(args.conferenceId)
+					) {
+						await tx.conferenceParticipantStatus.delete({
+							where: {
+								userId_conferenceId: {
+									userId: args.userId,
+									conferenceId: args.conferenceId
+								},
+								AND: [ctx.permissions.allowDatabaseAccessTo('delete').ConferenceParticipantStatus]
+							}
+						});
+					}
+
+					return userToDelete;
+				});
 			}
 		})
 	};
