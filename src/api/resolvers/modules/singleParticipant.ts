@@ -160,6 +160,45 @@ builder.mutationFields((t) => {
 });
 
 builder.mutationFields((t) => {
+	const field = createOneSingleParticipantMutationObject(t);
+	return {
+		createOneAppliedSingleParticipant: t.prismaField({
+			...field,
+			args: {
+				userId: t.arg.id(),
+				conferenceId: t.arg.id(),
+				roleId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const { foundDelegationMember, foundSupervisor, foundTeamMember } =
+					await fetchUserParticipations({
+						conferenceId: args.conferenceId,
+						userId: args.userId
+					});
+
+				if (foundDelegationMember || foundSupervisor || foundTeamMember) {
+					throw new GraphQLError(
+						"User is already assigned a different role in the conference. Can't assign single participant."
+					);
+				}
+
+				return await db.singleParticipant.create({
+					...query,
+					data: {
+						conferenceId: args.conferenceId,
+						userId: args.userId,
+						applied: true,
+						assignedRoleId: args.roleId
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
 	const field = updateOneSingleParticipantMutationObject(t);
 	return {
 		updateOneSingleParticipant: t.prismaField({

@@ -158,6 +158,18 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
+				const { foundDelegationMember, foundSingleParticipant, foundTeamMember } =
+					await fetchUserParticipations({
+						conferenceId: args.conferenceId,
+						userId: args.userId
+					});
+
+				if (foundDelegationMember || foundSingleParticipant || foundTeamMember) {
+					throw new GraphQLError(
+						"User is already assigned a different role in the conference. Can't assign supervisor."
+					);
+				}
+
 				return await db.conferenceSupervisor.create({
 					data: {
 						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,

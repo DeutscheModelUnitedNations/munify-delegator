@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import type { SeatsQuery$result } from '$houdini';
+	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import DownloadSingleParticipantsDataBtn from '../downloads/DownloadSingleParticipantsDataBtn.svelte';
@@ -14,6 +14,29 @@
 	}
 
 	let { singleParticipants, roles, conferenceId }: Props = $props();
+
+	const addSingleParticipantMutation = graphql(`
+		mutation addSingleParticipant($userId: ID!, $conferenceId: ID!, $roleId: ID!) {
+			createOneAppliedSingleParticipant(
+				userId: $userId
+				conferenceId: $conferenceId
+				roleId: $roleId
+			) {
+				id
+			}
+		}
+	`);
+
+	let user = $state<Partial<getUserInfo$result['findUniqueUser']> | undefined>(undefined);
+
+	const addParticipant = async (roleId: string) => {
+		if (!user?.id) return;
+		await addSingleParticipantMutation.mutate({
+			userId: user.id,
+			conferenceId: conferenceId,
+			roleId
+		});
+	};
 </script>
 
 {#snippet downloadSingleParticipantsDataBtn()}
@@ -56,7 +79,11 @@
 										href={`/management/${conferenceId}/participants?filter=${participant.user.id}`}
 									/>
 								{/each}
-								<AddParticipantBtn />
+								<AddParticipantBtn
+									bind:user
+									targetRole={`${role.name} (${m.singleParticipant()})`}
+									addParticipant={async () => await addParticipant(role.id)}
+								/>
 							</div>
 						{:else}
 							<i class="fas fa-dash text-gray-400"></i>

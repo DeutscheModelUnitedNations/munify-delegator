@@ -1685,6 +1685,7 @@ scalar JSONObject
 
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
+  createOneAppliedSingleParticipant(conferenceId: ID!, roleId: ID!, userId: ID!): SingleParticipant!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID!): ConferenceSupervisor!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!

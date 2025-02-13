@@ -11,7 +11,7 @@
 </script>
 
 <div class="tooltip" data-tip={formatNames(given_name, family_name)}>
-	<a class="btn btn-sm font-mono w-10" {href}>
+	<a class="btn btn-sm w-10 font-mono" {href}>
 		{formatInitials(given_name, family_name)}
 	</a>
 </div>
