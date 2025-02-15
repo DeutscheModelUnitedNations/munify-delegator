@@ -145,7 +145,7 @@ builder.queryFields((t) => {
 					}
 				});
 
-				if (!dbUser && user.hasRole('admin')) {
+				if (!dbUser && !user.hasRole('admin')) {
 					throw new GraphQLError(
 						'You are not allowed to preview users. You need to be a team member with the role PARTICIPANT_CARE or PROJECT_MANAGEMENT or an admin.'
 					);

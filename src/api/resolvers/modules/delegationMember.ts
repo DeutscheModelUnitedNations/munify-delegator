@@ -152,7 +152,7 @@ builder.mutationFields((t) => {
 					}
 				});
 
-				if (!dbUser && user.hasRole('admin')) {
+				if (!dbUser && !user.hasRole('admin')) {
 					throw new GraphQLError(
 						'Only team members with the roles PARTICIPANT_CARE or PROJECT_MANAGEMENT, or admins can assign delegation members.'
 					);
