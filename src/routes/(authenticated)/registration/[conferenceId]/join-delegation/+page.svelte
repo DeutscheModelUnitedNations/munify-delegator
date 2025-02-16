@@ -8,8 +8,8 @@
 	import { graphql } from '$houdini';
 
 	const memberMutation = graphql(`
-		mutation CreateDelegationMemberMutation($entryCode: String!) {
-			createOneDelegationMember(entryCode: $entryCode) {
+		mutation CreateDelegationMemberMutation($entryCode: String!, $conferenceId: ID!) {
+			createOneDelegationMember(entryCode: $entryCode, conferenceId: $conferenceId) {
 				id
 			}
 		}
@@ -34,7 +34,7 @@
 					<button
 						class="btn btn-primary mb-10"
 						onclick={async () => {
-							await memberMutation.mutate({ entryCode: code });
+							await memberMutation.mutate({ entryCode: code, conferenceId: data.conferenceId });
 							goto('/dashboard');
 						}}>{m.confirm()}</button
 					>

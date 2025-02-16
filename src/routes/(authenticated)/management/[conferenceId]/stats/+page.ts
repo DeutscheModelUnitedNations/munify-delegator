@@ -12,6 +12,54 @@ const statsQuery = graphql(`
 					value
 				}
 			}
+			diet {
+				delegationMembers {
+					omnivore
+					vegan
+					vegetarian
+				}
+				singleParticipants {
+					omnivore
+					vegan
+					vegetarian
+				}
+				supervisors {
+					omnivore
+					vegan
+					vegetarian
+				}
+				teamMembers {
+					omnivore
+					vegan
+					vegetarian
+				}
+			}
+			gender {
+				delegationMembers {
+					diverse
+					female
+					male
+					noStatement
+				}
+				singleParticipants {
+					diverse
+					female
+					male
+					noStatement
+				}
+				supervisors {
+					diverse
+					female
+					male
+					noStatement
+				}
+				teamMembers {
+					diverse
+					female
+					male
+					noStatement
+				}
+			}
 			countdowns {
 				daysUntilConference
 				daysUntilEndRegistration
@@ -44,6 +92,17 @@ const statsQuery = graphql(`
 				}
 				supervisors
 				total
+			}
+			status {
+				postalStatus {
+					done
+					problem
+				}
+				paymentStatus {
+					done
+					problem
+				}
+				didAttend
 			}
 		}
 	}

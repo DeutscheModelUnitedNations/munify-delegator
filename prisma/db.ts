@@ -1,5 +1,6 @@
 import { configPrivate } from '$config/private';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { createDefaultData } from './defaultData/createDefaultData';
 
 // injects the actual types of the Prisma models into the data models at runtime
 // so CASL can extract those and run permission checks
@@ -30,3 +31,7 @@ const brandExtension = Prisma.defineExtension((client) => {
 export const db = new PrismaClient({
 	datasourceUrl: configPrivate.DATABASE_URL
 }).$extends(brandExtension) as unknown as PrismaClient;
+
+createDefaultData(db);
+
+export type DB = typeof db | Parameters<Parameters<typeof db.$transaction>[0]>[0];

@@ -13,7 +13,10 @@ import {
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
 import { languageTag } from '$lib/paraglide/runtime';
-import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/fetchUserParticipations';
 import { GraphQLError } from 'graphql';
 
 builder.prismaObject('ConferenceSupervisor', {
@@ -72,13 +75,17 @@ builder.mutationFields((t) => {
 		upsertOneConferenceSupervisor: t.prismaField({
 			...field,
 			args: {
-				entryCode: t.arg.string()
+				entryCode: t.arg.string(),
+				conferenceId: t.arg.id()
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				const delegation = await db.delegation.findUniqueOrThrow({
 					where: {
-						entryCode: args.entryCode
+						conferenceId_entryCode: {
+							entryCode: args.entryCode,
+							conferenceId: args.conferenceId
+						}
 					}
 				});
 
@@ -134,6 +141,58 @@ builder.mutationFields((t) => {
 							conferenceId: delegation.conferenceId,
 							userId: user.sub
 						}
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = createOneConferenceSupervisorMutationObject(t);
+	return {
+		createOneConferenceSupervisor: t.prismaField({
+			...field,
+			args: {
+				userId: t.arg.id(),
+				conferenceId: t.arg.id(),
+				plansOwnAttendenceAtConference: t.arg.boolean()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const dbUser = await db.teamMember.findUnique({
+					where: {
+						conferenceId_userId: {
+							conferenceId: args.conferenceId,
+							userId: user.sub
+						},
+						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+					}
+				});
+
+				if (!dbUser && !user.hasRole('admin')) {
+					throw new GraphQLError(
+						'Only team members with the roles PARTICIPANT_CARE or PROJECT_MANAGEMENT, or admins can assign supervisors.'
+					);
+				}
+
+				if (
+					await isUserAlreadyRegistered({
+						userId: args.userId,
+						conferenceId: args.conferenceId
+					})
+				) {
+					throw new GraphQLError(
+						"User is already assigned a different role in the conference. Can't assign supervisor."
+					);
+				}
+
+				return await db.conferenceSupervisor.create({
+					data: {
+						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
+						conferenceId: args.conferenceId,
+						userId: args.userId
 					}
 				});
 			}

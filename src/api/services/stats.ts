@@ -1,3 +1,4 @@
+import { ofAgeAtConference } from '$lib/services/ageChecker';
 import type { PrismaClient } from '@prisma/client';
 
 export async function conferenceStats({
@@ -178,9 +179,392 @@ export async function conferenceStats({
 		distribution: ageDistribution
 	};
 
+	//TODO refactor this
+	const diet = {
+		singleParticipants: {
+			omnivore: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		},
+		delegationMembers: {
+			omnivore: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		},
+		supervisors: {
+			omnivore: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		},
+		teamMembers: {
+			omnivore: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					foodPreference: 'OMNIVORE'
+				}
+			}),
+			vegetarian: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					foodPreference: 'VEGETARIAN'
+				}
+			}),
+			vegan: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					foodPreference: 'VEGAN'
+				}
+			})
+		}
+	};
+
+	const gender = {
+		singleParticipants: {
+			male: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					gender: 'MALE'
+				}
+			}),
+			female: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					gender: 'FEMALE'
+				}
+			}),
+			diverse: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					gender: 'DIVERSE'
+				}
+			}),
+			noStatement: await db.user.count({
+				where: {
+					singleParticipant: {
+						some: {
+							conferenceId,
+							applied: true
+						}
+					},
+					gender: 'NO_STATEMENT'
+				}
+			})
+		},
+		delegationMembers: {
+			male: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					gender: 'MALE'
+				}
+			}),
+			female: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					gender: 'FEMALE'
+				}
+			}),
+			diverse: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					gender: 'DIVERSE'
+				}
+			}),
+			noStatement: await db.user.count({
+				where: {
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					},
+					gender: 'NO_STATEMENT'
+				}
+			})
+		},
+		supervisors: {
+			male: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					gender: 'MALE'
+				}
+			}),
+			female: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					gender: 'FEMALE'
+				}
+			}),
+			diverse: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					gender: 'DIVERSE'
+				}
+			}),
+			noStatement: await db.user.count({
+				where: {
+					conferenceSupervisor: {
+						some: {
+							conferenceId,
+							plansOwnAttendenceAtConference: true
+						}
+					},
+					gender: 'NO_STATEMENT'
+				}
+			})
+		},
+		teamMembers: {
+			male: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					gender: 'MALE'
+				}
+			}),
+			female: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					gender: 'FEMALE'
+				}
+			}),
+			diverse: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					gender: 'DIVERSE'
+				}
+			}),
+			noStatement: await db.user.count({
+				where: {
+					teamMember: {
+						some: {
+							conferenceId
+						}
+					},
+					gender: 'NO_STATEMENT'
+				}
+			})
+		}
+	};
+
+	const conferenceStatusStats = await db.conferenceParticipantStatus.findMany({
+		where: {
+			conferenceId
+		},
+		select: {
+			paymentStatus: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			didAttend: true,
+			user: {
+				select: {
+					birthday: true
+				}
+			}
+		}
+	});
+
+	const status = {
+		paymentStatus: {
+			done: conferenceStatusStats.filter((s) => s.paymentStatus === 'DONE').length,
+			problem: conferenceStatusStats.filter((s) => s.paymentStatus === 'PROBLEM').length
+		},
+		postalStatus: {
+			done: conferenceStatusStats.filter(
+				(s) =>
+					s.termsAndConditions === 'DONE' &&
+					(ofAgeAtConference(conference.startConference, s.user.birthday) ||
+						s.guardianConsent === 'DONE') &&
+					s.mediaConsent === 'DONE'
+			).length,
+			problem: conferenceStatusStats.filter(
+				(s) =>
+					s.termsAndConditions === 'PROBLEM' ||
+					(!ofAgeAtConference(conference.startConference, s.user.birthday) &&
+						s.guardianConsent === 'PROBLEM') ||
+					s.mediaConsent === 'PROBLEM'
+			).length
+		},
+		didAttend: conferenceStatusStats.filter((s) => s.didAttend).length
+	};
+
 	return {
 		countdowns,
 		registrationStatistics,
-		ageStatistics
+		ageStatistics,
+		diet,
+		gender,
+		status
 	};
 }

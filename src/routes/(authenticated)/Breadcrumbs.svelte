@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Breadcrumbs from '../../lib/components/Breadcrumbs.svelte';
-	import type { PathSegment } from '../../lib/components/Breadcrumbs.svelte';
+	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
+	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { availableLanguageTags } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages.js';
 	import { graphql } from '$houdini';
@@ -132,6 +132,10 @@
 		cleanup: {
 			icon: 'broom',
 			translation: m.cleanup()
+		},
+		downloads: {
+			icon: 'download',
+			translation: m.downloads()
 		}
 	};
 
@@ -183,21 +187,22 @@ import path via the parameter! -->
 	homePath="/"
 >
 	{#snippet pathSnippet(pathSegment: PathSegment<Parameters, boolean>)}
+		{@const breadcrumb = getBreadcrumb(pathSegment)}
 		<a class="btn btn-ghost btn-sm" href={pathSegment.href}>
-			<i class="fa-duotone fa-{getBreadcrumb(pathSegment).icon}"></i>
+			<i class="fa-duotone fa-{breadcrumb.icon}"></i>
 			<p class="ml-2">
-				{#if getBreadcrumb(pathSegment).delayedLabel}
-					{#await getBreadcrumb(pathSegment).delayedLabel}
+				{#if breadcrumb.delayedLabel}
+					{#await breadcrumb.delayedLabel}
 						<span>
-							{getBreadcrumb(pathSegment).translation}
+							{breadcrumb.translation}
 						</span>
 					{:then value}
 						<span>
-							{value ?? getBreadcrumb(pathSegment).translation}
+							{value ?? breadcrumb.translation}
 						</span>
 					{/await}
 				{:else}
-					{getBreadcrumb(pathSegment).translation}
+					{breadcrumb.translation}
 				{/if}
 			</p>
 		</a>

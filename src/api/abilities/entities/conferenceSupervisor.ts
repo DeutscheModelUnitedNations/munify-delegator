@@ -1,7 +1,6 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
 import type { OIDC } from '$api/context/oidc';
-import { supervisor } from '$lib/paraglide/messages';
 
 export const defineAbilitiesForConferenceSupervisor = (
 	oidc: OIDC,
@@ -11,7 +10,7 @@ export const defineAbilitiesForConferenceSupervisor = (
 		const user = oidc.user;
 
 		// team members should be able to see the supervisors of their conferences
-		can(['list', 'read'], 'ConferenceSupervisor', {
+		can(['list', 'read', 'update', 'delete'], 'ConferenceSupervisor', {
 			conference: {
 				teamMembers: {
 					some: {

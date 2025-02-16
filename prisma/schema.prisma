@@ -15,9 +15,10 @@ generator pothos {
 
 generator pothosCrud {
   provider            = "prisma-generator-pothos-codegen"
-  generatorConfigPath = "./pothos.config.ts"
+  generatorConfigPath = "./pothos.config.cjs"
 }
 
+/// The state a conference can be in
 enum ConferenceState {
   PRE // the conference is created but applying is not possible yet
   PARTICIPANT_REGISTRATION // applications are open
@@ -26,6 +27,7 @@ enum ConferenceState {
   POST // the conference is over and things like downloading the participation certificate are possible
 }
 
+/// A conference in the system
 model Conference {
   id                     String          @id @default(nanoid())
   title                  String
@@ -72,8 +74,12 @@ model Conference {
   singleParticipants           SingleParticipant[]
   delegationMembers            DelegationMember[]
   paymentTransactions          PaymentTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
+/// A committee in a conference. E.g. the human rights council
 model Committee {
   id                      String @id @default(nanoid())
   name                    String
@@ -84,19 +90,32 @@ model Committee {
   conferenceId      String
   nations           Nation[]
   delegationMembers DelegationMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
+/// The dietary preference options a user can choose
 enum FoodPreference {
   OMNIVORE
   VEGETARIAN
   VEGAN
 }
 
+/// The gender preference options a user can choose
+enum Gender {
+  MALE
+  FEMALE
+  DIVERSE
+  NO_STATEMENT
+}
+
+/// A user in the system. Often received by our OIDC provider
 model User {
   id String @id @default(nanoid())
 
   // these are OIDC fields and only will be updated by the issuer in the login flow
-  email              String
+  email              String @unique
   family_name        String
   given_name         String
   locale             String
@@ -110,7 +129,7 @@ model User {
   zip            String?
   city           String?
   country        String?
-  gender         String?
+  gender         Gender?
   pronouns       String?
   foodPreference FoodPreference?
 
@@ -124,8 +143,12 @@ model User {
   singleParticipant             SingleParticipant[]
   ownPaymentTransactions        PaymentTransaction[]
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
+// Status which can be set for various progress tracking fields in the app
 enum AdministrativeStatus {
   DONE
   PROBLEM
@@ -141,37 +164,45 @@ model ConferenceParticipantStatus {
   paymentStatus      AdministrativeStatus @default(PENDING)
   didAttend          Boolean              @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   user         User       @relation(fields: [userId], references: [id])
   userId       String
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   @@unique([userId, conferenceId])
 }
 
+/// The transactions used to reference the payment status of various users in the conference
 model PaymentTransaction {
   id           String                              @id /// do not use nanoid here since we need an id that is suitable for the reason field in SEPA transaction
   amount       Float
-  createdAt    DateTime                            @default(now())
-  recievedAt   DateTime?
   conference   Conference                          @relation(fields: [conferenceId], references: [id])
   conferenceId String
   user         User                                @relation(fields: [userId], references: [id])
   userId       String
   paymentFor   UserReferenceInPaymentTransaction[]
+
+  createdAt    DateTime                            @default(now())
+  recievedAt   DateTime?
+  updatedAt    DateTime                            @updatedAt @default(now())
 }
 
+/// Payments can be done in place for other users. This is used to track reference in this process
 model UserReferenceInPaymentTransaction {
   id                   String             @id @default(nanoid())
   paymentTransaction   PaymentTransaction @relation(fields: [paymentTransactionId], references: [id])
   paymentTransactionId String
   user                 User               @relation(fields: [userId], references: [id])
   userId               String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
+/// A nation of the UN. Mostly gets seeded at application startup
 model Nation {
   alpha3Code String @id
   alpha2Code String @unique
@@ -182,8 +213,12 @@ model Nation {
   committees       Committee[]
 
   assignedDelegations Delegation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }
 
+/// Conferences can create custom non state actors which can be selected as roles in applications
 model NonStateActor {
   id              String  @id @default(nanoid())
   name            String
@@ -198,11 +233,14 @@ model NonStateActor {
 
   assignedDelegations Delegation[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   @@unique([conferenceId, abbreviation])
   @@unique([conferenceId, name])
 }
 
-// these can be journalists, judges, etc.
+// Conferences can create custom roles which can be chosen when applying. These can be journalists, judges, etc.
 model CustomConferenceRole {
   id              String  @id @default(nanoid())
   name            String
@@ -215,9 +253,13 @@ model CustomConferenceRole {
 
   singleParticipantAssignments SingleParticipant[] @relation("assignment")
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   @@unique([conferenceId, name])
 }
 
+/// An individual applicant who applies without a delegation.
 model SingleParticipant {
   id           String     @id @default(nanoid())
   conference   Conference @relation(fields: [conferenceId], references: [id])
@@ -238,9 +280,13 @@ model SingleParticipant {
 
   appliedForRoles CustomConferenceRole[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   @@unique([conferenceId, userId])
 }
 
+/// A group application. Holds multiple members.
 model Delegation {
   id         String  @id @default(nanoid())
   school     String?
@@ -250,7 +296,7 @@ model Delegation {
   /// after submitting the entity should not be able to change
   applied    Boolean @default(false)
   // this will always be auto generated
-  entryCode  String  @unique
+  entryCode  String
 
   conference      Conference             @relation(fields: [conferenceId], references: [id])
   conferenceId    String
@@ -263,8 +309,16 @@ model Delegation {
 
   assignedNonStateActor   NonStateActor? @relation(fields: [assignedNonStateActorId], references: [id])
   assignedNonStateActorId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@unique([conferenceId, entryCode])
+  @@unique([conferenceId, assignedNationAlpha3Code])
+  @@unique([conferenceId, assignedNonStateActorId])
 }
 
+/// Instance of a delegation application selection. When a delegation wants a role they create this entity.
 model RoleApplication {
   id           String     @id @default(nanoid())
   delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
@@ -278,11 +332,15 @@ model RoleApplication {
   nonStateActor   NonStateActor? @relation(fields: [nonStateActorId], references: [id])
   nonStateActorId String?
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   @@unique([delegationId, nationId])
   @@unique([delegationId, nonStateActorId])
   @@unique([delegationId, rank])
 }
 
+/// Member in a delegation
 model DelegationMember {
   id                  String     @id @default(nanoid())
   conference          Conference @relation(fields: [conferenceId], references: [id])
@@ -297,12 +355,16 @@ model DelegationMember {
 
   postAssignmentConferenceSupervisors ConferenceSupervisor[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   // users can only be once in this delegation
   @@unique([delegationId, userId])
   // users can only be in one delegation per conference
   @@unique([conferenceId, userId])
 }
 
+/// Supervisors are passive participants in conferences. Often they are teachers overseeing their students.
 model ConferenceSupervisor {
   id                             String  @id @default(nanoid())
   plansOwnAttendenceAtConference Boolean
@@ -323,15 +385,20 @@ model ConferenceSupervisor {
   // which would render their data open to read for a completely unknown person
   postAssignmentDelegeationMembers DelegationMember[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
   @@unique([conferenceId, userId])
 }
 
+/// Role a team member can have
 enum TeamRole {
   PROJECT_MANAGEMENT
   PARTICIPANT_CARE
   MEMBER
 }
 
+/// A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.
 model TeamMember {
   id           String     @id @default(nanoid())
   conference   Conference @relation(fields: [conferenceId], references: [id])
@@ -339,6 +406,9 @@ model TeamMember {
   user         User       @relation(fields: [userId], references: [id])
   userId       String
   role         TeamRole   @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 
   @@unique([conferenceId, userId])
 }

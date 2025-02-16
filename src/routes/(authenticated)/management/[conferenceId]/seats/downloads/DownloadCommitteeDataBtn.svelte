@@ -2,6 +2,7 @@
 	import { graphql } from '$houdini';
 	import * as m from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { stringify } from 'csv-stringify/browser/esm/sync';
 
 	const getCommitteeUserData = graphql(`
 		query getCommitteeUserData($id: String!) {
@@ -81,11 +82,9 @@
 					member.user.family_name,
 					member.user.email
 				])
-		]
-			.map((row) => row.join(','))
-			.join('\n');
+		];
 
-		const blob = new Blob([csv], { type: 'text/csv' });
+		const blob = new Blob([stringify(csv)], { type: 'text/csv' });
 		const url = window.URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;

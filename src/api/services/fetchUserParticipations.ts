@@ -80,3 +80,19 @@ export async function fetchUserParticipations({
 		foundTeamMember
 	};
 }
+
+export async function isUserAlreadyRegistered({
+	conferenceId,
+	userId
+}: {
+	conferenceId: Conference['id'];
+	userId: User['id'];
+}) {
+	const { foundDelegationMember, foundSingleParticipant, foundTeamMember, foundSupervisor } =
+		await fetchUserParticipations({
+			conferenceId,
+			userId
+		});
+
+	return foundDelegationMember || foundSingleParticipant || foundTeamMember || foundSupervisor;
+}

@@ -8,7 +8,6 @@
 	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
-	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		user: UserRowData;
@@ -103,6 +102,26 @@
 		cache.markStale();
 		userQuery.fetch();
 	};
+
+	const deleteParticipantQuery = graphql(`
+		mutation deleteParticipantMutation($userId: ID!, $conferenceId: ID!) {
+			unregisterParticipant(userId: $userId, conferenceId: $conferenceId) {
+				id
+			}
+		}
+	`);
+
+	const deleteParticipant = async () => {
+		const c = confirm(m.deleteParticipantConfirm());
+		if (!c) return;
+		await deleteParticipantQuery.mutate({
+			userId: user.id,
+			conferenceId
+		});
+		if (onClose) {
+			onClose();
+		}
+	};
 </script>
 
 <Drawer bind:open {onClose}>
@@ -179,11 +198,11 @@
 				</tr>
 				<tr>
 					<td class="text-center text-lg">
-						{#if $userQuery.data?.findUniqueUser?.gender === 'f'}
+						{#if $userQuery.data?.findUniqueUser?.gender === 'FEMALE'}
 							<i class="fa-duotone fa-venus"></i>
-						{:else if $userQuery.data?.findUniqueUser?.gender === 'm'}
+						{:else if $userQuery.data?.findUniqueUser?.gender === 'MALE'}
 							<i class="fa-duotone fa-mars"></i>
-						{:else if $userQuery.data?.findUniqueUser?.gender === 'd'}
+						{:else if $userQuery.data?.findUniqueUser?.gender === 'DIVERSE'}
 							<i class="fa-duotone fa-question"></i>
 						{:else}
 							<i class="fa-duotone fa-dash"></i>
@@ -224,6 +243,42 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
+		<div class="card flex flex-col">
+			<div class="flex flex-col gap-2">
+				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
+					<a
+						class="btn"
+						href="/management/{conferenceId}/individuals?filter={$userQuery.data
+							?.findManySingleParticipants[0].id}"
+					>
+						{m.individualApplication()}
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
+					<a
+						class="btn"
+						href="/management/{conferenceId}/delegations?filter={$userQuery.data
+							?.findManyDelegationMembers[0].delegation.id}"
+					>
+						{m.delegation()}
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
+					<a
+						class="btn"
+						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
+							?.findManyConferenceSupervisors[0].id}"
+					>
+						{m.supervisor()}
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{/if}
+			</div>
+		</div>
 	</div>
 
 	<div class="flex flex-col gap-2">
@@ -272,37 +327,13 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
+		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
 		<div class="card flex flex-col">
 			<div class="flex flex-col gap-2">
-				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
-					<a
-						class="btn"
-						href="/management/{conferenceId}/individuals?filter={$userQuery.data
-							?.findManySingleParticipants[0].id}"
-					>
-						{m.individualApplication()}
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
-					<a
-						class="btn"
-						href="/management/{conferenceId}/delegations?filter={$userQuery.data
-							?.findManyDelegationMembers[0].delegation.id}"
-					>
-						{m.delegation()}
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
-					<a
-						class="btn"
-						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
-							?.findManyConferenceSupervisors[0].id}"
-					>
-						{m.supervisor()}
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				{/if}
+				<button class="btn btn-error" onclick={() => deleteParticipant()}>
+					{m.deleteParticipant()}
+					<i class="fas fa-trash"></i>
+				</button>
 			</div>
 		</div>
 	</div>

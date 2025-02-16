@@ -12,7 +12,7 @@
 				<input
 					type="radio"
 					name="filter"
-					class="checked:bg-primary radio"
+					class="radio checked:bg-primary"
 					onchange={() => setFilter('all')}
 					checked={getFilter() === 'all'}
 				/>
@@ -22,7 +22,7 @@
 				<input
 					type="radio"
 					name="filter"
-					class="checked:bg-primary radio"
+					class="radio checked:bg-primary"
 					onchange={() => setFilter('applied')}
 					checked={getFilter() === 'applied'}
 				/>
@@ -32,7 +32,7 @@
 				<input
 					type="radio"
 					name="filter"
-					class="checked:bg-primary radio"
+					class="radio checked:bg-primary"
 					onchange={() => setFilter('notApplied')}
 					checked={getFilter() === 'notApplied'}
 				/>

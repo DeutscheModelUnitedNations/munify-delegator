@@ -15,7 +15,10 @@ import {
 	SingleParticipantUserFieldObject,
 	updateOneSingleParticipantMutationObject
 } from '$db/generated/graphql/SingleParticipant';
-import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
+import {
+	fetchUserParticipations,
+	isUserAlreadyRegistered
+} from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 import * as m from '$lib/paraglide/messages';
@@ -152,6 +155,60 @@ builder.mutationFields((t) => {
 								conferenceId: args.conferenceId
 							}
 						}
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = createOneSingleParticipantMutationObject(t);
+	return {
+		createOneAppliedSingleParticipant: t.prismaField({
+			...field,
+			args: {
+				userId: t.arg.id(),
+				conferenceId: t.arg.id(),
+				roleId: t.arg.id()
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const dbUser = await db.teamMember.findUnique({
+					where: {
+						conferenceId_userId: {
+							conferenceId: args.conferenceId,
+							userId: user.sub
+						},
+						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+					}
+				});
+
+				if (!dbUser && !user.hasRole('admin')) {
+					throw new GraphQLError(
+						'Only team members with the roles PARTICIPANT_CARE or PROJECT_MANAGEMENT, or admins can assign single participants.'
+					);
+				}
+
+				if (
+					await isUserAlreadyRegistered({
+						userId: args.userId,
+						conferenceId: args.conferenceId
+					})
+				) {
+					throw new GraphQLError(
+						"User is already assigned a different role in the conference. Can't assign SingleParticipant."
+					);
+				}
+
+				return await db.singleParticipant.create({
+					...query,
+					data: {
+						conferenceId: args.conferenceId,
+						userId: args.userId,
+						applied: true,
+						assignedRoleId: args.roleId
 					}
 				});
 			}
