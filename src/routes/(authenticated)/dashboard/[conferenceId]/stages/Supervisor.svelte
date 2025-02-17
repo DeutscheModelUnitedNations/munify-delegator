@@ -245,10 +245,11 @@
 						<div><i class="fa-duotone fa-users mr-4"></i>{delegation.members.length}</div>
 						<div class="divider divider-horizontal"></div>
 						<div>
-							<i class="fa-duotone fa-medal mr-4"></i>{getName(
-								delegation!.members.find((x) => x.isHeadDelegate)!.user!,
-								true
-							)}
+							<i class="fa-duotone fa-medal mr-4"></i>{(delegation?.members.find(
+								(x) => x.isHeadDelegate
+							) &&
+								getName(delegation?.members.find((x) => x.isHeadDelegate)!.user, true)) ??
+								'N/A'}
 						</div>
 					</div>
 				</div>

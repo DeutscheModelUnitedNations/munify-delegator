@@ -5,6 +5,7 @@
 	import type { SupervisorDrawerQueryVariables } from './$houdini';
 	import { error } from '@sveltejs/kit';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import formatNames from '$lib/services/formatNames';
 
 	interface Props {
 		conferenceId: string;
@@ -44,18 +45,18 @@
 	`);
 </script>
 
-<Drawer bind:open {onClose}>
-	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-thin uppercase">{m.supervisor()}</h3>
-		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
-			{$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user?.given_name}
-			<span class="uppercase"
-				>{$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user?.family_name}</span
-			>
-		</h2>
-		<h3 class="text-sm font-thin">{$supervisorQuery?.data?.findUniqueConferenceSupervisor?.id}</h3>
-	</div>
-
+<Drawer
+	bind:open
+	{onClose}
+	category={m.supervisor()}
+	title={formatNames(
+		$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user?.given_name,
+		$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user?.family_name,
+		{ givenNameFirst: false }
+	)}
+	id={$supervisorQuery?.data?.findUniqueConferenceSupervisor?.id ?? 'N/A'}
+	loading={$supervisorQuery.fetching}
+>
 	{#if $supervisorQuery?.data?.findUniqueConferenceSupervisor?.plansOwnAttendenceAtConference}
 		<div class="alert alert-success">
 			<i class="fas fa-location-check"></i>

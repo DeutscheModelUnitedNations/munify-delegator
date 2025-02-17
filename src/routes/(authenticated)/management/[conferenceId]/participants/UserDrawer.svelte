@@ -8,6 +8,7 @@
 	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
+	import formatNames from '$lib/services/formatNames';
 
 	interface Props {
 		user: UserRowData;
@@ -124,19 +125,27 @@
 	};
 </script>
 
-<Drawer bind:open {onClose}>
-	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-thin uppercase">{m.adminUserCard()}</h3>
-		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
-			<span class="capitalize">{$userQuery.data?.findUniqueUser?.given_name}</span>
-			<span class="uppercase">{$userQuery.data?.findUniqueUser?.family_name}</span>
-			{#if $userQuery.data?.findUniqueUser?.pronouns}
-				<span class="text-sm font-normal">({$userQuery.data?.findUniqueUser?.pronouns})</span>
-			{/if}
-		</h2>
-		<h3 class="text-sm font-thin">{user.id}</h3>
-	</div>
+{#snippet titleSnippet()}
+	<span>
+		{formatNames(
+			$userQuery.data?.findUniqueUser?.given_name,
+			$userQuery.data?.findUniqueUser?.family_name,
+			{ givenNameFirst: false }
+		)}
+	</span>
+	{#if $userQuery.data?.findUniqueUser?.pronouns}
+		<span class="text-sm font-normal">({$userQuery.data?.findUniqueUser?.pronouns})</span>
+	{/if}
+{/snippet}
 
+<Drawer
+	bind:open
+	{onClose}
+	id={user.id}
+	category={m.adminUserCard()}
+	{titleSnippet}
+	loading={$userQuery.fetching}
+>
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{m.adminUserCardDetails()}</h3>
 		<table class="table">

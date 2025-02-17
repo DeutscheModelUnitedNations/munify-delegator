@@ -9,7 +9,9 @@ import {
 	DelegationMemberConferenceFieldObject,
 	DelegationMemberDelegationFieldObject,
 	DelegationMemberUserFieldObject,
-	DelegationMemberAssignedCommitteeFieldObject
+	DelegationMemberAssignedCommitteeFieldObject,
+	updateOneDelegationMemberMutationObject,
+	updateManyDelegationMemberMutationObject
 } from '$db/generated/graphql/DelegationMember';
 import { db } from '$db/db';
 import * as m from '$lib/paraglide/messages';
@@ -240,22 +242,114 @@ builder.mutationFields((t) => {
 	};
 });
 
-// builder.mutationFields((t) => {
-// 	const field = updateOneDelegationMemberMutationObject(t);
-// 	return {
-// 		updateOneDelegationMember: t.prismaField({
-// 			...field,
-// 			args: { where: field.args.where },
-// 			resolve: (query, root, args, ctx, info) => {
-// 				args.where = {
-// 					...args.where,
-// 					AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
-// 				};
-// 				return field.resolve(query, root, args, ctx, info);
-// 			}
-// 		})
-// 	};
-// });
+builder.mutationFields((t) => {
+	const field = updateOneDelegationMemberMutationObject(t);
+	return {
+		updateOneDelegationMemberCommittee: t.prismaField({
+			...field,
+			args: {
+				where: field.args.where,
+				data: t.arg({
+					type: t.builder.inputType('UpdateOneDelegationMemberCommitteeInput', {
+						fields: (t) => ({
+							assignedCommitteeId: t.field({
+								type: 'ID'
+							})
+						})
+					})
+				})
+			},
+			resolve: (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
+				};
+
+				return db.$transaction(async (tx) => {
+					const member = await tx.delegationMember.findUniqueOrThrow({
+						where: args.where,
+						include: {
+							delegation: {
+								include: {
+									members: true
+								}
+							}
+						}
+					});
+
+					const delegationMembers = member.delegation.members.filter((x) => x.id !== member.id);
+
+					const alreadyAssignedMembers = delegationMembers.filter(
+						(x) => x.assignedCommitteeId === args.data.assignedCommitteeId
+					);
+
+					const committee = await tx.committee.findUniqueOrThrow({
+						where: {
+							id: args.data.assignedCommitteeId
+						}
+					});
+
+					if (alreadyAssignedMembers) {
+						if (alreadyAssignedMembers?.length >= committee.numOfSeatsPerDelegation) {
+							// unassign the one that hasn't been updated longest
+							await tx.delegationMember.update({
+								where: {
+									id: alreadyAssignedMembers.sort(
+										(a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+									)[0].id
+								},
+								data: {
+									assignedCommitteeId: member.assignedCommitteeId ?? null
+								}
+							});
+						}
+					}
+
+					return await tx.delegationMember.update({
+						...query,
+						where: args.where,
+						data: args.data
+					});
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateManyDelegationMemberMutationObject(t);
+	return {
+		updateManyDelegationMemberCommittee: t.field({
+			...field,
+			args: {
+				where: field.args.where,
+				data: t.arg({
+					type: t.builder.inputType('UpdateManyDelegationMemberCommitteeInput', {
+						fields: (t) => ({
+							assignedCommitteeId: t.field({
+								type: 'ID',
+								required: false
+							})
+						})
+					})
+				})
+			},
+			resolve: async (root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
+				};
+
+				return await db.delegationMember.updateMany({
+					where: args.where,
+					data: {
+						assignedCommitteeId: args.data.assignedCommitteeId ?? null
+					}
+				});
+			}
+		})
+	};
+});
 
 // mutation to update many delegation members to assign them to different committees
 builder.mutationFields((t) => {

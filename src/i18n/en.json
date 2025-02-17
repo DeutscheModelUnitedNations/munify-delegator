@@ -556,5 +556,7 @@
 	"details": "Details",
 	"addUser": "Add Participant",
 	"userNotFound": "User not found",
-	"emailOrId": "email or user-id"
+	"emailOrId": "email or user-id",
+	"reset": "Reset",
+	"done": "Done"
 }

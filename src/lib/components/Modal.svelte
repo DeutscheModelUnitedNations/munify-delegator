@@ -4,23 +4,24 @@
 	interface Props {
 		open: boolean;
 		title?: string;
+		fullWidth?: boolean;
 		children: Snippet;
 		action?: Snippet;
 	}
 
-	let { open = $bindable(), title, children, action }: Props = $props();
+	let { open = $bindable(), title, fullWidth = false, children, action }: Props = $props();
 </script>
 
 {#if open}
-	<div class="modal {open && 'modal-open'}">
+	<div class="modal {open && 'modal-open'} modal-bottom sm:modal-middle">
 		<button class="modal-backdrop" aria-label="Close modal" onclick={() => (open = false)}></button>
-		<div class="modal-box">
+		<div class="modal-box {fullWidth && 'w-auto max-w-full sm:max-w-[90%]'}">
 			{#if title}
 				<div class="modal-top mb-4">
 					<h2 class="text-xl">{title}</h2>
 				</div>
 			{/if}
-			<div class="modal-middle w-full">
+			<div class="w-full">
 				{@render children()}
 			</div>
 			{#if action}
