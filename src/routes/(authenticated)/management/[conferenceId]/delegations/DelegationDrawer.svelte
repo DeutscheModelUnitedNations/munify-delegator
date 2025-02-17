@@ -82,7 +82,6 @@
 			return bothNames(a).localeCompare(bothNames(b));
 		})
 	);
-	let committees = $derived($delegationQuery.data?.findManyCommittees);
 
 	let committeeAssignmentModalOpen = $state(false);
 </script>
