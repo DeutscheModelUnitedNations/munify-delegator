@@ -10,6 +10,7 @@
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { ParticipationType, UserRowData } from './types';
 	import { cache } from '$houdini';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
@@ -63,10 +64,10 @@
 	};
 
 	const calculateConferenceAge = (birthday: Date) => {
-		if (!conference?.endConference) return undefined;
-		const age = conference.endConference.getFullYear() - birthday.getFullYear();
-		const m = conference.endConference.getMonth() - birthday.getMonth();
-		const d = conference.endConference.getDate() - birthday.getDate();
+		if (!conference?.startConference) return undefined;
+		const age = conference.startConference.getFullYear() - birthday.getFullYear();
+		const m = conference.startConference.getMonth() - birthday.getMonth();
+		const d = conference.startConference.getDate() - birthday.getDate();
 		return (m < 0 || (m === 0 && d < 0) ? age - 1 : age).toString();
 	};
 
@@ -170,7 +171,8 @@
 				if (
 					row.status?.termsAndConditions === 'DONE' &&
 					row.status?.mediaConsent === 'DONE' &&
-					row.status?.guardianConsent === 'DONE'
+					(row.status?.guardianConsent === 'DONE' ||
+						ofAgeAtConference(conference?.startConference, row.birthday))
 				) {
 					return `<i class="fas fa-check text-success"></i>`;
 				}
