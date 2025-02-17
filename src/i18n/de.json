@@ -611,5 +611,7 @@
 	"searchForUser": "UserID oder E-Mail",
 	"details": "Details",
 	"addUser": "Teilnehmende*n hinzufügen",
-	"emailOrId": "Email oder UserID"
+	"emailOrId": "Email oder UserID",
+	"reset": "Zurücksetzen",
+	"done": "Fertig"
 }

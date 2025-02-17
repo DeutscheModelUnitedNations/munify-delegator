@@ -5,6 +5,7 @@
 	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
+	import formatNames from '$lib/services/formatNames';
 
 	interface Props {
 		conferenceId: string;
@@ -48,20 +49,18 @@
 	`);
 </script>
 
-<Drawer bind:open {onClose}>
-	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-thin uppercase">{m.singleParticipant()}</h3>
-		<h2 class="rounded-md bg-base-300 p-2 text-3xl font-bold">
-			{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.given_name}
-			<span class="uppercase"
-				>{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.family_name}</span
-			>
-		</h2>
-		<h3 class="text-sm font-thin">
-			{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.id}
-		</h3>
-	</div>
-
+<Drawer
+	bind:open
+	{onClose}
+	title={formatNames(
+		$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.given_name,
+		$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.family_name,
+		{ givenNameFirst: false }
+	)}
+	id={$singleParticipantQuery?.data?.findUniqueSingleParticipant?.id ?? 'N/A'}
+	category={m.singleParticipant()}
+	loading={$singleParticipantQuery.fetching}
+>
 	{#if $singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole}
 		<div class="alert">
 			<Flag
