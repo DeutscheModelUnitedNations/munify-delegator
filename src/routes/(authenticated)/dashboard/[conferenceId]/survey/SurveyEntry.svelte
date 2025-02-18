@@ -108,7 +108,7 @@
 		{#each question.options as option}
 			{@const capacity = option.upperLimit
 				? option.upperLimit - option.countSurveyAnswers
-				: undefined}
+				: 99999999}
 			<label
 				class="items-between flex cursor-pointer gap-4 rounded-md bg-base-200 p-4 transition-all duration-300 hover:bg-base-300"
 			>
@@ -135,7 +135,9 @@
 					>
 						<i class="{capacity === undefined || capacity > 5 ? 'fa-duotone' : 'fas'} fa-users mr-2"
 						></i>
-						{#if capacity && capacity > 5}
+						{#if !option.upperLimit}
+							<span>{option.countSurveyAnswers} ({m.noUpperLimit()})</span>
+						{:else if capacity && capacity > 5}
 							<span>{option.countSurveyAnswers}</span>
 							{#if option.upperLimit}
 								<span>&nbsp;{m.seatsOccupied({ seats: option.upperLimit })}</span>
