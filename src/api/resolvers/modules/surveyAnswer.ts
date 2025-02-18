@@ -12,6 +12,7 @@ import {
 import type { nullable } from 'zod';
 import { builder } from '../builder';
 import { upsertWithRetry } from '$api/services/prismaUpsertWithRetry';
+import * as m from '$lib/paraglide/messages';
 
 builder.prismaObject('SurveyAnswer', {
 	fields: (t) => ({
@@ -116,6 +117,24 @@ builder.mutationFields((t) => {
 				const data = {
 					optionId: args.data.optionId!
 				};
+
+				const option = await db.surveyOption.findUniqueOrThrow({
+					where: {
+						id: data.optionId
+					},
+					include: {
+						surveyAnswers: true,
+						question: true
+					}
+				});
+
+				if (option.surveyAnswers.length >= option.upperLimit && !!option.upperLimit) {
+					throw new Error(m.optionUpperLimitReached(option.upperLimit));
+				}
+
+				if (new Date(option.question.deadline) < new Date()) {
+					throw new Error(m.questionDeadlinePassed());
+				}
 
 				return await upsertWithRetry(
 					async () =>

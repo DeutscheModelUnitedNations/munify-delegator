@@ -570,5 +570,7 @@
 	"seatsOccupied": "of {seats} seats occupied",
 	"fewSeatsLeft": "Only a few seats left! ({seats} von {upperLimit} belegt)",
 	"noSeatsLeft": "No seats left ({seats} Plätze)",
-	"surveyOpen": "Survey open until {deadline}"
+	"surveyOpen": "Survey open until {deadline}",
+	"optionUpperLimitReached": "Selection could not be confirmed because the maximum number has already been reached.",
+	"questionDeadlinePassed": "The survey has already expired and can no longer be completed."
 }
