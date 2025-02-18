@@ -109,8 +109,5 @@
 		"format": "prettier --write .",
 		"add-translation": "bun run scripts/add_new_translation.ts"
 	},
-	"type": "module",
-	"dependencies": {
-		"munify-delegator": "."
-	}
+	"type": "module"
 }
