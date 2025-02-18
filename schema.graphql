@@ -202,6 +202,7 @@ type Conference {
   startAssignment: DateTime!
   startConference: DateTime!
   state: ConferenceState!
+  surveyQuestions: [SurveyQuestion!]!
   teamMembers: [TeamMember!]!
 
   """Legal document content"""
@@ -250,6 +251,7 @@ input ConferenceCreateInput {
   startAssignment: DateTime!
   startConference: DateTime!
   state: ConferenceState
+  surveyQuestions: SurveyQuestionCreateNestedManyWithoutConferenceInput
   teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
   termsAndConditionsContent: String
   title: String!
@@ -295,6 +297,7 @@ input ConferenceOrderByWithRelationInput {
   startAssignment: SortOrder
   startConference: SortOrder
   state: SortOrder
+  surveyQuestions: SurveyQuestionOrderByRelationAggregateInput
   teamMembers: TeamMemberOrderByRelationAggregateInput
   termsAndConditionsContent: SortOrder
   title: SortOrder
@@ -728,6 +731,7 @@ input ConferenceUpdateInput {
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
+  surveyQuestions: SurveyQuestionUpdateManyWithoutConferenceNestedInput
   teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
   termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
@@ -811,6 +815,7 @@ input ConferenceWhereInput {
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
   state: EnumConferenceStateFilter
+  surveyQuestions: SurveyQuestionListRelationFilter
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
   title: StringFilter
@@ -859,6 +864,7 @@ input ConferenceWhereUniqueInput {
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
   state: EnumConferenceStateFilter
+  surveyQuestions: SurveyQuestionListRelationFilter
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
   title: StringFilter
@@ -1546,6 +1552,14 @@ input EnumGenderNullableWithAggregatesFilter {
   in: [Gender!]
   not: Gender
   notIn: [Gender!]
+}
+
+input EnumParticipantCategoryNullableListFilter {
+  equals: [ParticipantCategory!]
+  has: ParticipantCategory
+  hasEvery: [ParticipantCategory!]
+  hasSome: [ParticipantCategory!]
+  isEmpty: Boolean
 }
 
 input EnumTeamRoleFieldUpdateOperationsInput {
@@ -2335,6 +2349,13 @@ type OfflineUserRefresh {
   user: OfflineUser
 }
 
+enum ParticipantCategory {
+  DELEGATION
+  NON_STATE_ACTOR
+  SINGLE_PARTICIPANT
+  SUPERVISOR
+}
+
 """
 The transactions used to reference the payment status of various users in the conference
 """
@@ -2493,6 +2514,9 @@ type Query {
   findManyPaymentTransactions(cursor: PaymentTransactionWhereUniqueInput, distinct: [PaymentTransactionScalarFieldEnum!], orderBy: [PaymentTransactionOrderByWithRelationInput!], skip: Int, take: Int, where: PaymentTransactionWhereInput): [PaymentTransaction!]!
   findManyRoleApplications(cursor: RoleApplicationWhereUniqueInput, distinct: [RoleApplicationScalarFieldEnum!], orderBy: [RoleApplicationOrderByWithRelationInput!], skip: Int, take: Int, where: RoleApplicationWhereInput): [RoleApplication!]!
   findManySingleParticipants(cursor: SingleParticipantWhereUniqueInput, distinct: [SingleParticipantScalarFieldEnum!], orderBy: [SingleParticipantOrderByWithRelationInput!], skip: Int, take: Int, where: SingleParticipantWhereInput): [SingleParticipant!]!
+  findManySurveyAnswers(cursor: SurveyAnswerWhereUniqueInput, distinct: [SurveyAnswerScalarFieldEnum!], orderBy: [SurveyAnswerOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyAnswerWhereInput): [SurveyAnswer!]!
+  findManySurveyOptions(cursor: SurveyOptionWhereUniqueInput, distinct: [SurveyOptionScalarFieldEnum!], orderBy: [SurveyOptionOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyOptionWhereInput): [SurveyOption!]!
+  findManySurveyQuestions(cursor: SurveyQuestionWhereUniqueInput, distinct: [SurveyQuestionScalarFieldEnum!], orderBy: [SurveyQuestionOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyQuestionWhereInput): [SurveyQuestion!]!
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
@@ -2507,6 +2531,9 @@ type Query {
   findUniquePaymentTransaction(where: PaymentTransactionWhereUniqueInput!): PaymentTransaction
   findUniqueRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   findUniqueSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
+  findUniqueSurveyAnswer(where: SurveyAnswerWhereUniqueInput!): SurveyAnswer
+  findUniqueSurveyOption(where: SurveyOptionWhereUniqueInput!): SurveyOption
+  findUniqueSurveyQuestion(where: SurveyQuestionWhereUniqueInput!): SurveyQuestion
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
   getConferenceStatistics(conferenceId: ID!): StatisticsResult!
@@ -3049,6 +3076,376 @@ input StringWithAggregatesFilter {
   startsWith: String
 }
 
+type SurveyAnswer {
+  id: ID!
+  option: SurveyOption!
+  question: SurveyQuestion!
+  user: User!
+}
+
+input SurveyAnswerCreateInput {
+  createdAt: DateTime
+  id: String
+  optionId: String!
+  questionId: String!
+  updatedAt: DateTime
+  userId: String!
+}
+
+input SurveyAnswerCreateNestedManyWithoutOptionInput {
+  connect: [SurveyAnswerWhereUniqueInput!]
+}
+
+input SurveyAnswerCreateNestedManyWithoutQuestionInput {
+  connect: [SurveyAnswerWhereUniqueInput!]
+}
+
+input SurveyAnswerCreateNestedManyWithoutUserInput {
+  connect: [SurveyAnswerWhereUniqueInput!]
+}
+
+input SurveyAnswerListRelationFilter {
+  every: SurveyAnswerWhereInput
+  none: SurveyAnswerWhereInput
+  some: SurveyAnswerWhereInput
+}
+
+input SurveyAnswerOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input SurveyAnswerOrderByWithRelationInput {
+  createdAt: SortOrder
+  id: SortOrder
+  option: SurveyOptionOrderByWithRelationInput
+  optionId: SortOrder
+  question: SurveyQuestionOrderByWithRelationInput
+  questionId: SortOrder
+  updatedAt: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum SurveyAnswerScalarFieldEnum {
+  createdAt
+  id
+  optionId
+  questionId
+  updatedAt
+  userId
+}
+
+input SurveyAnswerUpdateInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  optionId: StringFieldUpdateOperationsInput
+  questionId: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input SurveyAnswerUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input SurveyAnswerUpdateManyWithoutOptionNestedInput {
+  connect: [SurveyAnswerWhereUniqueInput!]
+  disconnect: [SurveyAnswerWhereUniqueInput!]
+  set: [SurveyAnswerWhereUniqueInput!]
+}
+
+input SurveyAnswerUpdateManyWithoutQuestionNestedInput {
+  connect: [SurveyAnswerWhereUniqueInput!]
+  disconnect: [SurveyAnswerWhereUniqueInput!]
+  set: [SurveyAnswerWhereUniqueInput!]
+}
+
+input SurveyAnswerUpdateManyWithoutUserNestedInput {
+  connect: [SurveyAnswerWhereUniqueInput!]
+  disconnect: [SurveyAnswerWhereUniqueInput!]
+  set: [SurveyAnswerWhereUniqueInput!]
+}
+
+input SurveyAnswerWhereInput {
+  AND: [SurveyAnswerWhereInput!]
+  NOT: [SurveyAnswerWhereInput!]
+  OR: [SurveyAnswerWhereInput!]
+  createdAt: DateTimeFilter
+  id: StringFilter
+  option: SurveyOptionWhereInput
+  optionId: StringFilter
+  question: SurveyQuestionWhereInput
+  questionId: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input SurveyAnswerWhereUniqueInput {
+  AND: [SurveyAnswerWhereInput!]
+  NOT: [SurveyAnswerWhereInput!]
+  OR: [SurveyAnswerWhereInput!]
+  createdAt: DateTimeFilter
+  id: String
+  option: SurveyOptionWhereInput
+  optionId: StringFilter
+  question: SurveyQuestionWhereInput
+  questionId: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+type SurveyOption {
+  description: String!
+  id: ID!
+  question: SurveyQuestion!
+  surveyAnswers: [SurveyAnswer!]!
+  title: String!
+  upperLimit: Int!
+}
+
+input SurveyOptionCreateInput {
+  createdAt: DateTime
+  description: String!
+  id: String
+  questionId: String!
+  surveyAnswers: SurveyAnswerCreateNestedManyWithoutOptionInput
+  title: String!
+  updatedAt: DateTime
+  upperLimit: Int!
+}
+
+input SurveyOptionCreateNestedManyWithoutQuestionInput {
+  connect: [SurveyOptionWhereUniqueInput!]
+}
+
+input SurveyOptionListRelationFilter {
+  every: SurveyOptionWhereInput
+  none: SurveyOptionWhereInput
+  some: SurveyOptionWhereInput
+}
+
+input SurveyOptionOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input SurveyOptionOrderByWithRelationInput {
+  createdAt: SortOrder
+  description: SortOrder
+  id: SortOrder
+  question: SurveyQuestionOrderByWithRelationInput
+  questionId: SortOrder
+  surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
+  title: SortOrder
+  updatedAt: SortOrder
+  upperLimit: SortOrder
+}
+
+enum SurveyOptionScalarFieldEnum {
+  createdAt
+  description
+  id
+  questionId
+  title
+  updatedAt
+  upperLimit
+}
+
+input SurveyOptionScalarRelationFilter {
+  is: SurveyOptionWhereInput
+  isNot: SurveyOptionWhereInput
+}
+
+input SurveyOptionUpdateInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  questionId: StringFieldUpdateOperationsInput
+  surveyAnswers: SurveyAnswerUpdateManyWithoutOptionNestedInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  upperLimit: IntFieldUpdateOperationsInput
+}
+
+input SurveyOptionUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  upperLimit: IntFieldUpdateOperationsInput
+}
+
+input SurveyOptionUpdateManyWithoutQuestionNestedInput {
+  connect: [SurveyOptionWhereUniqueInput!]
+  disconnect: [SurveyOptionWhereUniqueInput!]
+  set: [SurveyOptionWhereUniqueInput!]
+}
+
+input SurveyOptionWhereInput {
+  AND: [SurveyOptionWhereInput!]
+  NOT: [SurveyOptionWhereInput!]
+  OR: [SurveyOptionWhereInput!]
+  createdAt: DateTimeFilter
+  description: StringFilter
+  id: StringFilter
+  question: SurveyQuestionWhereInput
+  questionId: StringFilter
+  surveyAnswers: SurveyAnswerListRelationFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+  upperLimit: IntFilter
+}
+
+input SurveyOptionWhereUniqueInput {
+  AND: [SurveyOptionWhereInput!]
+  NOT: [SurveyOptionWhereInput!]
+  OR: [SurveyOptionWhereInput!]
+  createdAt: DateTimeFilter
+  description: StringFilter
+  id: String
+  question: SurveyQuestionWhereInput
+  questionId: StringFilter
+  surveyAnswers: SurveyAnswerListRelationFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+  upperLimit: IntFilter
+}
+
+type SurveyQuestion {
+  conference: Conference!
+  deadline: DateTime!
+  description: String!
+  forGroups: [ParticipantCategory!]!
+  id: ID!
+  options: [SurveyOption!]!
+  surveyAnswers: [SurveyAnswer!]!
+  title: String!
+}
+
+input SurveyQuestionCreateInput {
+  conferenceId: String!
+  createdAt: DateTime
+  deadline: DateTime!
+  description: String!
+  forGroups: [ParticipantCategory!]
+  id: String
+  options: SurveyOptionCreateNestedManyWithoutQuestionInput
+  surveyAnswers: SurveyAnswerCreateNestedManyWithoutQuestionInput
+  title: String!
+  updatedAt: DateTime
+}
+
+input SurveyQuestionCreateNestedManyWithoutConferenceInput {
+  connect: [SurveyQuestionWhereUniqueInput!]
+}
+
+input SurveyQuestionListRelationFilter {
+  every: SurveyQuestionWhereInput
+  none: SurveyQuestionWhereInput
+  some: SurveyQuestionWhereInput
+}
+
+input SurveyQuestionOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input SurveyQuestionOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  deadline: SortOrder
+  description: SortOrder
+  forGroups: SortOrder
+  id: SortOrder
+  options: SurveyOptionOrderByRelationAggregateInput
+  surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
+  title: SortOrder
+  updatedAt: SortOrder
+}
+
+enum SurveyQuestionScalarFieldEnum {
+  conferenceId
+  createdAt
+  deadline
+  description
+  forGroups
+  id
+  title
+  updatedAt
+}
+
+input SurveyQuestionScalarRelationFilter {
+  is: SurveyQuestionWhereInput
+  isNot: SurveyQuestionWhereInput
+}
+
+input SurveyQuestionUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  deadline: DateTimeFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  forGroups: [ParticipantCategory!]
+  id: StringFieldUpdateOperationsInput
+  options: SurveyOptionUpdateManyWithoutQuestionNestedInput
+  surveyAnswers: SurveyAnswerUpdateManyWithoutQuestionNestedInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input SurveyQuestionUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  deadline: DateTimeFieldUpdateOperationsInput
+  description: StringFieldUpdateOperationsInput
+  forGroups: [ParticipantCategory!]
+  id: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input SurveyQuestionUpdateManyWithoutConferenceNestedInput {
+  connect: [SurveyQuestionWhereUniqueInput!]
+  disconnect: [SurveyQuestionWhereUniqueInput!]
+  set: [SurveyQuestionWhereUniqueInput!]
+}
+
+input SurveyQuestionWhereInput {
+  AND: [SurveyQuestionWhereInput!]
+  NOT: [SurveyQuestionWhereInput!]
+  OR: [SurveyQuestionWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  deadline: DateTimeFilter
+  description: StringFilter
+  forGroups: EnumParticipantCategoryNullableListFilter
+  id: StringFilter
+  options: SurveyOptionListRelationFilter
+  surveyAnswers: SurveyAnswerListRelationFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+}
+
+input SurveyQuestionWhereUniqueInput {
+  AND: [SurveyQuestionWhereInput!]
+  NOT: [SurveyQuestionWhereInput!]
+  OR: [SurveyQuestionWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  deadline: DateTimeFilter
+  description: StringFilter
+  forGroups: EnumParticipantCategoryNullableListFilter
+  id: String
+  options: SurveyOptionListRelationFilter
+  surveyAnswers: SurveyAnswerListRelationFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+}
+
 """
 A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.
 """
@@ -3222,6 +3619,7 @@ type User {
   pronouns: String
   singleParticipant: [SingleParticipant!]!
   street: String
+  surveyAnswers: [SurveyAnswer!]!
   teamMember: [TeamMember!]!
   wantsJoinTeamInformation: Boolean!
   wantsToReceiveGeneralInformation: Boolean!
@@ -3251,6 +3649,7 @@ input UserCreateInput {
   pronouns: String
   singleParticipant: SingleParticipantCreateNestedManyWithoutUserInput
   street: String
+  surveyAnswers: SurveyAnswerCreateNestedManyWithoutUserInput
   teamMember: TeamMemberCreateNestedManyWithoutUserInput
   updatedAt: DateTime
   wantsJoinTeamInformation: Boolean
@@ -3281,6 +3680,7 @@ input UserOrderByWithRelationInput {
   pronouns: SortOrder
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
   street: SortOrder
+  surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
   teamMember: TeamMemberOrderByRelationAggregateInput
   updatedAt: SortOrder
   wantsJoinTeamInformation: SortOrder
@@ -3457,6 +3857,7 @@ input UserUpdateInput {
   pronouns: NullableStringFieldUpdateOperationsInput
   singleParticipant: SingleParticipantUpdateManyWithoutUserNestedInput
   street: NullableStringFieldUpdateOperationsInput
+  surveyAnswers: SurveyAnswerUpdateManyWithoutUserNestedInput
   teamMember: TeamMemberUpdateManyWithoutUserNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
   wantsJoinTeamInformation: BoolFieldUpdateOperationsInput
@@ -3513,6 +3914,7 @@ input UserWhereInput {
   pronouns: StringNullableFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
+  surveyAnswers: SurveyAnswerListRelationFilter
   teamMember: TeamMemberListRelationFilter
   updatedAt: DateTimeFilter
   wantsJoinTeamInformation: BoolFilter
@@ -3546,6 +3948,7 @@ input UserWhereUniqueInput {
   pronouns: StringNullableFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
+  surveyAnswers: SurveyAnswerListRelationFilter
   teamMember: TeamMemberListRelationFilter
   updatedAt: DateTimeFilter
   wantsJoinTeamInformation: BoolFilter

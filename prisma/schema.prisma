@@ -74,9 +74,10 @@ model Conference {
   singleParticipants           SingleParticipant[]
   delegationMembers            DelegationMember[]
   paymentTransactions          PaymentTransaction[]
+  surveyQuestions              SurveyQuestion[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// A committee in a conference. E.g. the human rights council
@@ -92,7 +93,7 @@ model Committee {
   delegationMembers DelegationMember[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// The dietary preference options a user can choose
@@ -143,9 +144,10 @@ model User {
   singleParticipant             SingleParticipant[]
   ownPaymentTransactions        PaymentTransaction[]
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
+  surveyAnswers                 SurveyAnswer[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 // Status which can be set for various progress tracking fields in the app
@@ -170,7 +172,7 @@ model ConferenceParticipantStatus {
   conferenceId String
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([userId, conferenceId])
 }
@@ -184,10 +186,10 @@ model PaymentTransaction {
   user         User                                @relation(fields: [userId], references: [id])
   userId       String
   paymentFor   UserReferenceInPaymentTransaction[]
-
-  createdAt    DateTime                            @default(now())
   recievedAt   DateTime?
-  updatedAt    DateTime                            @updatedAt @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// Payments can be done in place for other users. This is used to track reference in this process
@@ -199,7 +201,7 @@ model UserReferenceInPaymentTransaction {
   userId               String
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// A nation of the UN. Mostly gets seeded at application startup
@@ -215,7 +217,7 @@ model Nation {
   assignedDelegations Delegation[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// Conferences can create custom non state actors which can be selected as roles in applications
@@ -234,7 +236,7 @@ model NonStateActor {
   assignedDelegations Delegation[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, abbreviation])
   @@unique([conferenceId, name])
@@ -254,7 +256,7 @@ model CustomConferenceRole {
   singleParticipantAssignments SingleParticipant[] @relation("assignment")
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, name])
 }
@@ -281,7 +283,7 @@ model SingleParticipant {
   appliedForRoles CustomConferenceRole[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, userId])
 }
@@ -311,7 +313,7 @@ model Delegation {
   assignedNonStateActorId String?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, entryCode])
   @@unique([conferenceId, assignedNationAlpha3Code])
@@ -333,7 +335,7 @@ model RoleApplication {
   nonStateActorId String?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([delegationId, nationId])
   @@unique([delegationId, nonStateActorId])
@@ -356,7 +358,7 @@ model DelegationMember {
   postAssignmentConferenceSupervisors ConferenceSupervisor[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   // users can only be once in this delegation
   @@unique([delegationId, userId])
@@ -386,9 +388,62 @@ model ConferenceSupervisor {
   postAssignmentDelegeationMembers DelegationMember[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, userId])
+}
+
+enum ParticipantCategory {
+  DELEGATION
+  NON_STATE_ACTOR
+  SINGLE_PARTICIPANT
+  SUPERVISOR
+}
+
+model SurveyQuestion {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+
+  title       String
+  description String
+  options     SurveyOption[]
+  deadline    DateTime
+  forGroups   ParticipantCategory[]
+
+  surveyAnswers SurveyAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model SurveyOption {
+  id         String         @id @default(nanoid())
+  question   SurveyQuestion @relation(fields: [questionId], references: [id])
+  questionId String
+
+  title       String
+  description String
+  upperLimit  Int
+
+  surveyAnswers SurveyAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model SurveyAnswer {
+  id String @id @default(nanoid())
+
+  question   SurveyQuestion @relation(fields: [questionId], references: [id])
+  questionId String
+  user       User           @relation(fields: [userId], references: [id])
+  userId     String
+  option     SurveyOption   @relation(fields: [optionId], references: [id])
+  optionId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// Role a team member can have
@@ -408,7 +463,7 @@ model TeamMember {
   role         TeamRole   @default(MEMBER)
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, userId])
 }
