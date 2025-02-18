@@ -51,7 +51,7 @@
 <SeatsTableSection title={m.seats()}>
 	<thead>
 		<tr>
-			<td> </td>
+			<th></th>
 			{#each committees as committee}
 				<th>
 					<DownloadCommitteeDataBtn {committee} />
@@ -59,7 +59,9 @@
 			{/each}
 		</tr>
 		<tr>
-			<td><i class="fa-duotone fa-sigma"></i></td>
+			<th class="text-left">
+				<i class="fa-duotone fa-sigma"></i>
+			</th>
 			{#each committees as committee}
 				{@const occupiedSeats = delegations.reduce((acc, delegation) => {
 					return (
@@ -77,13 +79,15 @@
 					return acc;
 				}, 0)}
 				<td>
-					{occupiedSeats}
+					<span class={occupiedSeats === sumSeats ? 'font-normal' : ''}>
+						{occupiedSeats}
+					</span>
 					<span class="text-xs font-normal">/ {sumSeats} </span>
 				</td>
 			{/each}
 		</tr>
 		<tr>
-			<th>
+			<th class="text-left">
 				<i class="fa-duotone fa-flag"></i>
 			</th>
 			{#each committees as committee}
@@ -111,11 +115,14 @@
 			<tr>
 				<td>
 					<div
-						class="tooltip tooltip-right"
+						class="tooltip tooltip-right flex items-center gap-2"
 						data-tip={getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
 					>
 						<Flag alpha2Code={nation.alpha2Code} size="xs" />
 						{nation.alpha3Code.toUpperCase()}
+						<span class="hidden w-[12ch] truncate text-left text-xs text-gray-400 xl:block">
+							{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
+						</span>
 					</div>
 				</td>
 				{#each committees as committee}

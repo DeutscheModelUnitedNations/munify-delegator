@@ -26,6 +26,9 @@ import './modules/singleParticipant';
 import './modules/teamMember';
 import './modules/user';
 import './modules/assignments';
+import './modules/surveyQuestion';
+import './modules/surveyOption';
+import './modules/surveyAnswer';
 
 export const yogaInstance = createYoga<RequestEvent>({
 	plugins: [graphqlYogaTracerPlugin],

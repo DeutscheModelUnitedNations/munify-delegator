@@ -4,7 +4,6 @@
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import CountryStats from '$lib/components/CountryStats/CountryStats.svelte';
-	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import type { PageData } from '../$houdini';
 	import * as m from '$lib/paraglide/messages.js';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
@@ -42,6 +41,18 @@
 			btnLink={data.findUniqueDelegationMember!.isHeadDelegate
 				? `./${data.findUniqueConference?.id}/committeeAssignment`
 				: undefined}
+		/>
+	{/if}
+	{#if data.findManySurveyQuestions && data.findManySurveyQuestions.length > 0}
+		<TaskAlertCard
+			faIcon="fa-square-poll-horizontal"
+			title={m.survey()}
+			description={m.surveyDescription()}
+			btnText={m.goToSurvey()}
+			btnLink={`./${data.findUniqueConference?.id}/survey`}
+			severity={data.findManySurveyQuestions.length > data.findManySurveyAnswers.length
+				? 'warning'
+				: 'info'}
 		/>
 	{/if}
 	{#if data.findUniqueConference?.info}

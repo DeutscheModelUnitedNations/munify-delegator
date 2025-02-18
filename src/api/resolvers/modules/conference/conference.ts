@@ -121,6 +121,11 @@ builder.prismaObject('Conference', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
 			})
+		}),
+		surveyQuestions: t.relation('surveyQuestions', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyQuestion
+			})
 		})
 	})
 });

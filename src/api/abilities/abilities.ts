@@ -16,6 +16,9 @@ import { defineAbilitiesForTeamMember } from './entities/teamMember';
 import { defineAbilitiesForUserEntity } from './entities/user';
 import type { OIDC } from '$api/context/oidc';
 import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransaction';
+import { defineAbilitiesForSurveyQuestion } from './entities/surveyQuestion';
+import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
+import { defineAbilitiesForSurveyOption } from './entities/surveyOption';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete'] as const;
@@ -78,6 +81,9 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForSingleParticipant(oidc, builder);
 	defineAbilitiesForTeamMember(oidc, builder);
 	defineAbilitiesForUserEntity(oidc, builder);
+	defineAbilitiesForSurveyQuestion(oidc, builder);
+	defineAbilitiesForSurveyOption(oidc, builder);
+	defineAbilitiesForSurveyAnswer(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
-	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import type { PageData } from '../$houdini';
 	import * as m from '$lib/paraglide/messages.js';
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
@@ -19,6 +18,18 @@
 </script>
 
 <TasksWrapper>
+	{#if data.findManySurveyQuestions && data.findManySurveyQuestions.length > 0}
+		<TaskAlertCard
+			faIcon="fa-square-poll-horizontal"
+			title={m.survey()}
+			description={m.surveyDescription()}
+			btnText={m.goToSurvey()}
+			btnLink={`./${data.findUniqueConference?.id}/survey`}
+			severity={data.findManySurveyQuestions.length > data.findManySurveyAnswers.length
+				? 'warning'
+				: 'info'}
+		/>
+	{/if}
 	{#if data.findUniqueConference?.info}
 		<TaskAlertCard
 			faIcon="fa-info-circle"

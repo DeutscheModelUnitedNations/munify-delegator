@@ -60,7 +60,7 @@
 	</thead>
 	<tbody>
 		<tr>
-			<td class="w-full">
+			<td>
 				{#if supervisors.length > 0}
 					<div class="flex flex-wrap gap-1">
 						{#each supervisors as supervisor}

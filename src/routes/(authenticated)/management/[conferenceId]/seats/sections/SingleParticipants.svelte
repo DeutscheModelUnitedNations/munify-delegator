@@ -49,10 +49,10 @@
 >
 	<thead>
 		<tr>
-			<td>
+			<td class="text-left">
 				<i class="fa-duotone fa-masks-theater"></i>
 			</td>
-			<td>
+			<td class="text-left">
 				<i class="fa-duotone fa-users"></i>
 			</td>
 			<td>
@@ -65,11 +65,11 @@
 			{@const participants = singleParticipants.filter((sp) => sp.assignedRole?.id === role.id)}
 			{#if participants.length !== 0}
 				<tr>
-					<td class="flex items-center gap-4">
+					<td class="flex items-center gap-2">
 						<Flag nsa icon={role.fontAwesomeIcon ?? ''} size="xs" />
 						{role.name}
 					</td>
-					<td class="w-full">
+					<td>
 						{#if participants.length > 0}
 							<div class="flex flex-wrap gap-1">
 								{#each participants as participant}

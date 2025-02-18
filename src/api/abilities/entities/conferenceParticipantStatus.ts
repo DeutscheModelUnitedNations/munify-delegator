@@ -17,12 +17,31 @@ export const defineAbilitiesForConferenceParticipantStatus = (
 		});
 
 		// if the user has a delegation and that delegation has a supervisor, they also can see the status
-		can('read', 'ConferenceParticipantStatus', {
+		can(['read', 'list'], 'ConferenceParticipantStatus', {
 			user: {
 				delegationMemberships: {
 					some: {
 						delegation: {
 							supervisors: {
+								some: {
+									user: {
+										id: user.sub
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+
+		// if the user has a delegation they can see the status of all members of that delegation
+		can(['read', 'list'], 'ConferenceParticipantStatus', {
+			user: {
+				delegationMemberships: {
+					some: {
+						delegation: {
+							members: {
 								some: {
 									user: {
 										id: user.sub
