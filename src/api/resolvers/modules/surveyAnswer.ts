@@ -113,8 +113,6 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').SurveyAnswer]
 				};
 
-				console.log(where);
-
 				const data = {
 					optionId: args.data.optionId!
 				};
