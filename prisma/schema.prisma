@@ -393,13 +393,6 @@ model ConferenceSupervisor {
   @@unique([conferenceId, userId])
 }
 
-enum ParticipantCategory {
-  DELEGATION
-  NON_STATE_ACTOR
-  SINGLE_PARTICIPANT
-  SUPERVISOR
-}
-
 model SurveyQuestion {
   id           String     @id @default(nanoid())
   conference   Conference @relation(fields: [conferenceId], references: [id])
@@ -408,13 +401,15 @@ model SurveyQuestion {
   title       String
   description String
   options     SurveyOption[]
+  draft       Boolean        @default(true)
   deadline    DateTime
-  forGroups   ParticipantCategory[]
 
   surveyAnswers SurveyAnswer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, title])
 }
 
 model SurveyOption {
@@ -430,6 +425,8 @@ model SurveyOption {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([questionId, title])
 }
 
 model SurveyAnswer {
@@ -444,6 +441,8 @@ model SurveyAnswer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([questionId, userId])
 }
 
 /// Role a team member can have

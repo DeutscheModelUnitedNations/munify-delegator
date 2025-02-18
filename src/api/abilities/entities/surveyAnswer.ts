@@ -6,8 +6,8 @@ export const defineAbilitiesForSurveyAnswer = (oidc: OIDC, { can }: AbilityBuild
 	if (oidc && oidc.user) {
 		const user = oidc.user;
 
-		// The user should be able to read his own survey answers
-		can(['read', 'list'], 'SurveyAnswer', {
+		// The user should be able to read, list and update their own SurveyAnswers
+		can(['read', 'list', 'update'], 'SurveyAnswer', {
 			user: {
 				id: user.sub
 			}

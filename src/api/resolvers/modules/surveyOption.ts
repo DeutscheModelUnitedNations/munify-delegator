@@ -1,3 +1,4 @@
+import { db } from '$db/db';
 import {
 	findManySurveyOptionQueryObject,
 	findUniqueSurveyOptionQueryObject,
@@ -20,6 +21,17 @@ builder.prismaObject('SurveyOption', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyAnswer
 			})
+		}),
+		countSurveyAnswers: t.field({
+			type: 'Int',
+			resolve: async (parent, _args, ctx) => {
+				const count = await db.surveyAnswer.count({
+					where: {
+						optionId: parent.id
+					}
+				});
+				return count;
+			}
 		})
 	})
 });

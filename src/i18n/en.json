@@ -558,5 +558,17 @@
 	"userNotFound": "User not found",
 	"emailOrId": "email or user-id",
 	"reset": "Reset",
-	"done": "Done"
+	"done": "Done",
+	"survey": "Surveys / Polls",
+	"goToSurvey": "Take Surveys / Polls",
+	"surveyDescription": "In the surveys, you register for events, among other things, or the conference team asks you for other important information",
+	"days": "Day(s)",
+	"surveyClosed": "Survey Closed",
+	"yourAnswer": "Your Answer",
+	"noAnswerYet": "Not yet answered",
+	"takeSurvey": "Take Survey",
+	"seatsOccupied": "of {seats} seats occupied",
+	"fewSeatsLeft": "Only a few seats left! ({seats} von {upperLimit} belegt)",
+	"noSeatsLeft": "No seats left ({seats} Plätze)",
+	"surveyOpen": "Survey open until {deadline}"
 }

@@ -1554,14 +1554,6 @@ input EnumGenderNullableWithAggregatesFilter {
   notIn: [Gender!]
 }
 
-input EnumParticipantCategoryNullableListFilter {
-  equals: [ParticipantCategory!]
-  has: ParticipantCategory
-  hasEvery: [ParticipantCategory!]
-  hasSome: [ParticipantCategory!]
-  isEmpty: Boolean
-}
-
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1736,6 +1728,7 @@ type Mutation {
   updateOneDelegationMemberCommittee(data: UpdateOneDelegationMemberCommitteeInput!, where: DelegationMemberWhereUniqueInput!): DelegationMember
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
+  updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   upsertOneConferenceSupervisor(conferenceId: ID!, entryCode: String!): ConferenceSupervisor!
   upsertSelf: UpsertSelfResult!
@@ -2347,13 +2340,6 @@ type OfflineUser {
 type OfflineUserRefresh {
   nextTokenRefreshDue: DateTime
   user: OfflineUser
-}
-
-enum ParticipantCategory {
-  DELEGATION
-  NON_STATE_ACTOR
-  SINGLE_PARTICIPANT
-  SUPERVISOR
 }
 
 """
@@ -3126,6 +3112,11 @@ input SurveyAnswerOrderByWithRelationInput {
   userId: SortOrder
 }
 
+input SurveyAnswerQuestionIdUserIdCompoundUniqueInput {
+  questionId: String!
+  userId: String!
+}
+
 enum SurveyAnswerScalarFieldEnum {
   createdAt
   id
@@ -3193,12 +3184,14 @@ input SurveyAnswerWhereUniqueInput {
   optionId: StringFilter
   question: SurveyQuestionWhereInput
   questionId: StringFilter
+  questionId_userId: SurveyAnswerQuestionIdUserIdCompoundUniqueInput
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
 }
 
 type SurveyOption {
+  countSurveyAnswers: Int!
   description: String!
   id: ID!
   question: SurveyQuestion!
@@ -3242,6 +3235,11 @@ input SurveyOptionOrderByWithRelationInput {
   title: SortOrder
   updatedAt: SortOrder
   upperLimit: SortOrder
+}
+
+input SurveyOptionQuestionIdTitleCompoundUniqueInput {
+  questionId: String!
+  title: String!
 }
 
 enum SurveyOptionScalarFieldEnum {
@@ -3309,6 +3307,7 @@ input SurveyOptionWhereUniqueInput {
   id: String
   question: SurveyQuestionWhereInput
   questionId: StringFilter
+  questionId_title: SurveyOptionQuestionIdTitleCompoundUniqueInput
   surveyAnswers: SurveyAnswerListRelationFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -3319,10 +3318,15 @@ type SurveyQuestion {
   conference: Conference!
   deadline: DateTime!
   description: String!
-  forGroups: [ParticipantCategory!]!
+  draft: Boolean!
   id: ID!
   options: [SurveyOption!]!
   surveyAnswers: [SurveyAnswer!]!
+  title: String!
+}
+
+input SurveyQuestionConferenceIdTitleCompoundUniqueInput {
+  conferenceId: String!
   title: String!
 }
 
@@ -3331,7 +3335,7 @@ input SurveyQuestionCreateInput {
   createdAt: DateTime
   deadline: DateTime!
   description: String!
-  forGroups: [ParticipantCategory!]
+  draft: Boolean
   id: String
   options: SurveyOptionCreateNestedManyWithoutQuestionInput
   surveyAnswers: SurveyAnswerCreateNestedManyWithoutQuestionInput
@@ -3359,7 +3363,7 @@ input SurveyQuestionOrderByWithRelationInput {
   createdAt: SortOrder
   deadline: SortOrder
   description: SortOrder
-  forGroups: SortOrder
+  draft: SortOrder
   id: SortOrder
   options: SurveyOptionOrderByRelationAggregateInput
   surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
@@ -3372,7 +3376,7 @@ enum SurveyQuestionScalarFieldEnum {
   createdAt
   deadline
   description
-  forGroups
+  draft
   id
   title
   updatedAt
@@ -3388,7 +3392,7 @@ input SurveyQuestionUpdateInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   deadline: DateTimeFieldUpdateOperationsInput
   description: StringFieldUpdateOperationsInput
-  forGroups: [ParticipantCategory!]
+  draft: BoolFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   options: SurveyOptionUpdateManyWithoutQuestionNestedInput
   surveyAnswers: SurveyAnswerUpdateManyWithoutQuestionNestedInput
@@ -3400,7 +3404,7 @@ input SurveyQuestionUpdateManyMutationInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   deadline: DateTimeFieldUpdateOperationsInput
   description: StringFieldUpdateOperationsInput
-  forGroups: [ParticipantCategory!]
+  draft: BoolFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -3421,7 +3425,7 @@ input SurveyQuestionWhereInput {
   createdAt: DateTimeFilter
   deadline: DateTimeFilter
   description: StringFilter
-  forGroups: EnumParticipantCategoryNullableListFilter
+  draft: BoolFilter
   id: StringFilter
   options: SurveyOptionListRelationFilter
   surveyAnswers: SurveyAnswerListRelationFilter
@@ -3435,10 +3439,11 @@ input SurveyQuestionWhereUniqueInput {
   OR: [SurveyQuestionWhereInput!]
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  conferenceId_title: SurveyQuestionConferenceIdTitleCompoundUniqueInput
   createdAt: DateTimeFilter
   deadline: DateTimeFilter
   description: StringFilter
-  forGroups: EnumParticipantCategoryNullableListFilter
+  draft: BoolFilter
   id: String
   options: SurveyOptionListRelationFilter
   surveyAnswers: SurveyAnswerListRelationFilter
@@ -3592,6 +3597,16 @@ input UpdateManyDelegationMemberCommitteeInput {
 
 input UpdateOneDelegationMemberCommitteeInput {
   assignedCommitteeId: ID!
+}
+
+input UpdateOneSurveyAnswerInput {
+  optionId: String!
+}
+
+input UpdateOneSurveyAnswerWhereUniqueInput {
+  id: String
+  questionId: String
+  userId: String
 }
 
 type UpsertSelfResult {

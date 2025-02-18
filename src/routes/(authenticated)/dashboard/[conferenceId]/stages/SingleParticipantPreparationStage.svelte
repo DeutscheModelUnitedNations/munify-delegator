@@ -20,6 +20,18 @@
 
 <TasksWrapper>
 	{#if data.findUniqueConference?.info}
+		{#if data.findManySurveyQuestions && data.findManySurveyQuestions.length > 0}
+			<TaskAlertCard
+				faIcon="fa-square-poll-horizontal"
+				title={m.survey()}
+				description={m.surveyDescription()}
+				btnText={m.goToSurvey()}
+				btnLink={`./${data.findUniqueConference?.id}/survey`}
+				severity={data.findManySurveyQuestions.length > data.findManySurveyAnswers.length
+					? 'warning'
+					: 'info'}
+			/>
+		{/if}
 		<TaskAlertCard
 			faIcon="fa-info-circle"
 			title={m.conferenceInfo()}
