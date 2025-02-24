@@ -1,20 +1,36 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import { type PageData } from './$houdini';
+	import { graphql } from '$houdini';
 
 	let { data }: { data: PageData } = $props();
 
 	const conferenceData = $derived(data.conferenceQueryData);
 	const conference = $derived(conferenceData?.findUniqueConference);
-</script>
+	const userData = $derived(data.user);
+	const userEmail = $derived(userData.email);
 
+	const userQuery = graphql(`
+		query GetUserDetails($email: String!) {
+			findUniqueUser(where: { email: $email }) {
+				id
+				given_name
+				family_name
+				street
+				apartment
+				zip
+				city
+				country
+				birthday
+			}
+		}
+	`);
+
+	// const userDetailsStore = userQuery.fetch({ email: userEmail });
+</script>
 <div class="flex flex-col gap-2">
+	<!-- Add error handling and loading states -->
 	<h1 class="text-2xl font-bold">{m.postalRegistration()}</h1>
-	<!-- {#if conference.} -->
-	<div class="alert alert-error mt-4">
-		<i class="fas fa-traffic-cone text-3xl"></i>
-		{m.postalRegistrationNotYetImplemented()}
-	</div>
 	<!-- TODO i18n this once the thing is fully implemented -->
 	<div class="prose mt-4">
 		<p>
