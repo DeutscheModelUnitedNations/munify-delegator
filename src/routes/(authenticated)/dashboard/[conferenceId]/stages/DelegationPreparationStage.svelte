@@ -11,6 +11,7 @@
 	import formatNames from '$lib/services/formatNames';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
 
 	let {
 		data
@@ -72,6 +73,20 @@
 			btnText={m.goToPreparation()}
 			btnLink={data.findUniqueConference?.linkToPreparationGuide}
 			btnExternal
+		/>
+	{/if}
+	{#if data.findUniqueConference?.linkToPaperInbox && data.user}
+		<TaskAlertCard
+			faIcon="fa-file-circle-plus"
+			title={m.paperInbox()}
+			description={m.paperInboxDescription()}
+			btnText={m.paperInboxBtn()}
+			btnLink={generatePaperInboxLinkWithParams(
+				data.findUniqueConference?.linkToPaperInbox,
+				data.user
+			)}
+			btnExternal
+			severity="info"
 		/>
 	{/if}
 </TasksWrapper>
