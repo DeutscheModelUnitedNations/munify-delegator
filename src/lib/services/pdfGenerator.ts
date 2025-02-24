@@ -902,7 +902,7 @@ class FifthPageGenerator extends PDFPageGenerator {
 // Main function to generate complete PDF
 async function generateCompletePDF(
 	conferenceName: string = 'Model United Nations',
-	age: number = 20,
+	isAbove18: boolean,
 	recipientInfo: RecipientInfo
 ): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
@@ -912,9 +912,10 @@ async function generateCompletePDF(
 		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName, recipientInfo),
 		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName),
 		// Only include the parental consent page if age is less than 18
-		...(age < 18 ? [new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName)] : []),
+		...(!isAbove18 ? [new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName)] : []),
 		new FourthPageGenerator(pdfDoc, defaultStyles, conferenceName),
-		new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName)
+		// Only include the parental consent page if age is less than 18
+		...(!isAbove18 ? [new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName)] : [])
 	];
 	// Generate all pages
 	for (const generator of pageGenerators) {
@@ -926,17 +927,11 @@ async function generateCompletePDF(
 
 // Export function for usage
 export async function generateSamplePDF(
-	age: number = 20,
-	recipientInfo: RecipientInfo = {
-		name: 'DMUN e.V.',
-		address: 'Birkenweg 1',
-		plz: '24244',
-		ort: 'Felde',
-		country: 'Deutschland'
-	}
+	isAbove18: boolean,
+	recipientInfo: RecipientInfo
 ): Promise<void> {
 	try {
-		const pdfBytes = await generateCompletePDF('Model United Nations', age, recipientInfo);
+		const pdfBytes = await generateCompletePDF('Model United Nations', isAbove18, recipientInfo);
 
 		const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 		const url = URL.createObjectURL(blob);

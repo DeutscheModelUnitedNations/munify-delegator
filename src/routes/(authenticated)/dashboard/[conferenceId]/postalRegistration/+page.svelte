@@ -3,6 +3,7 @@
 	import { type PageData } from './$houdini';
 	import { graphql } from '$houdini';
 	import { generateSamplePDF } from '$lib/services/pdfGenerator';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
 
 	let { data }: { data: PageData } = $props();
 
@@ -27,18 +28,10 @@
 		}
 	`);
 
-	function calculateAge(birthday: Date): number {
-		const birthDate = new Date(birthday);
-		const today = new Date();
-		let age = today.getFullYear() - birthDate.getFullYear();
-		const monthDifference = today.getMonth() - birthDate.getMonth();
-		if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-			age--;
-		}
-		return age;
-	}
+	let loading = false;
 
 	async function handleGeneratePDF() {
+		loading = true;
 		try {
 			const userDetailsStore = await userQuery.fetch({
 				variables: { email: userEmail }
@@ -53,13 +46,18 @@
 					ort: user.city ?? '',
 					country: user.country ?? ''
 				};
-				const age = calculateAge(user.birthday ?? new Date());
-				await generateSamplePDF(age, recipientInfo);
+				const isAbove18 = ofAgeAtConference(
+					conference?.startConference,
+					user.birthday ?? new Date()
+				);
+				await generateSamplePDF(isAbove18, recipientInfo);
 			} else {
 				console.error('User details not found');
 			}
 		} catch (error) {
 			console.error('Error generating PDF:', error);
+		} finally {
+			loading = false;
 		}
 	}
 </script>
@@ -129,5 +127,11 @@
 		</div>
 		<p>Bitte achte besonders bei Sendungen aus dem Ausland auf ausreichendes Porto.</p>
 	</div>
-	<button class="btn btn-primary mt-4" onclick={handleGeneratePDF}>Generate PDF</button>
+	<button class="btn btn-primary mt-4" onclick={handleGeneratePDF} disabled={loading}>
+		{#if loading}
+			Generating PDF...
+		{:else}
+			Generate Conference Documents
+		{/if}
+	</button>
 </div>
