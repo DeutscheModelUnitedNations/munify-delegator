@@ -38,6 +38,7 @@ model Conference {
   imageDataURL           String?
   info                   String?
   linkToPreparationGuide String?
+  linkToPaperInbox       String?
   state                  ConferenceState @default(PRE)
   startAssignment        DateTime
   startConference        DateTime

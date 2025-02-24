@@ -111,6 +111,12 @@
 			placeholder={'https://path-to-your-guide.com'}
 			label={m.preparationGuide()}
 		/>
+		<FormTextInput
+			{form}
+			name="linkToPaperInbox"
+			placeholder={'https://path-to-your-paper-inbox.com'}
+			label={m.paperInbox()}
+		/>
 
 		<h3 class="mt-8 text-lg font-bold">{m.bankingInformation()}</h3>
 		<FormCheckbox

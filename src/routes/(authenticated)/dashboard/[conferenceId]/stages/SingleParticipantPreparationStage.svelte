@@ -7,6 +7,7 @@
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import formatNames from '$lib/services/formatNames';
+	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
 
 	let {
 		data
@@ -47,6 +48,20 @@
 			btnText={m.goToPreparation()}
 			btnLink={data.findUniqueConference?.linkToPreparationGuide}
 			btnExternal
+		/>
+	{/if}
+	{#if data.findUniqueConference?.linkToPaperInbox && data.user}
+		<TaskAlertCard
+			faIcon="fa-file-circle-plus"
+			title={m.paperInbox()}
+			description={m.paperInboxDescription()}
+			btnText={m.paperInboxBtn()}
+			btnLink={generatePaperInboxLinkWithParams(
+				data.findUniqueConference?.linkToPaperInbox,
+				data.user
+			)}
+			btnExternal
+			severity="info"
 		/>
 	{/if}
 </TasksWrapper>
