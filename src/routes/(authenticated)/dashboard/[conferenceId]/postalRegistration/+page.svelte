@@ -27,7 +27,16 @@
 		}
 	`);
 
-	// const userDetailsStore = userQuery.fetch({ email: userEmail });
+	function calculateAge(birthday: Date): number {
+		const birthDate = new Date(birthday);
+		const today = new Date();
+		let age = today.getFullYear() - birthDate.getFullYear();
+		const monthDifference = today.getMonth() - birthDate.getMonth();
+		if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+			age--;
+		}
+		return age;
+	}
 
 	async function handleGeneratePDF() {
 		try {
@@ -44,8 +53,8 @@
 					ort: user.city ?? '',
 					country: user.country ?? ''
 				};
-
-				await generateSamplePDF(20, recipientInfo);
+				const age = calculateAge(user.birthday ?? new Date());
+				await generateSamplePDF(age, recipientInfo);
 			} else {
 				console.error('User details not found');
 			}
@@ -120,5 +129,5 @@
 		</div>
 		<p>Bitte achte besonders bei Sendungen aus dem Ausland auf ausreichendes Porto.</p>
 	</div>
-	<button class="btn btn-primary mt-4" on:click={handleGeneratePDF}>Generate PDF</button>
+	<button class="btn btn-primary mt-4" onclick={handleGeneratePDF}>Generate PDF</button>
 </div>
