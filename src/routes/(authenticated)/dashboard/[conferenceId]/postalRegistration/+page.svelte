@@ -2,6 +2,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import { type PageData } from './$houdini';
 	import { graphql } from '$houdini';
+	import { generateSamplePDF } from '$lib/services/pdfGenerator';
 
 	let { data }: { data: PageData } = $props();
 
@@ -27,7 +28,33 @@
 	`);
 
 	// const userDetailsStore = userQuery.fetch({ email: userEmail });
+
+	async function handleGeneratePDF() {
+		try {
+			const userDetailsStore = await userQuery.fetch({
+				variables:{ email: userEmail }
+			});
+			const user = userDetailsStore?.data?.findUniqueUser;
+
+			if (user) {
+				const recipientInfo = {
+					name: `${user.given_name} ${user.family_name}`,
+					address: user.street ?? '',
+					plz: user?.zip?.toString() ?? '',
+					ort: user.city ?? '',
+					country: user.country ?? ''
+				};
+
+				await generateSamplePDF(20, recipientInfo);
+			} else {
+				console.error('User details not found');
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		}
+	}
 </script>
+
 <div class="flex flex-col gap-2">
 	<!-- Add error handling and loading states -->
 	<h1 class="text-2xl font-bold">{m.postalRegistration()}</h1>
@@ -93,4 +120,5 @@
 		</div>
 		<p>Bitte achte besonders bei Sendungen aus dem Ausland auf ausreichendes Porto.</p>
 	</div>
+	<button class="btn btn-primary mt-4" on:click={handleGeneratePDF}>Generate PDF</button>
 </div>
