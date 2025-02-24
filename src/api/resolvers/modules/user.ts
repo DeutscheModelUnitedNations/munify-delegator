@@ -78,6 +78,11 @@ export const GQLUser = builder.prismaObject('User', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant
 			})
+		}),
+		surveyAnswers: t.relation('surveyAnswers', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyAnswer
+			})
 		})
 	})
 });

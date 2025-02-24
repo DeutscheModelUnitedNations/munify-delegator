@@ -232,5 +232,19 @@ export const myConferenceparticipationQuery = graphql(`
 				pronouns
 			}
 		}
+		findManySurveyQuestions(
+			where: { conferenceId: { equals: $conferenceId }, draft: { equals: false } }
+		) {
+			id
+			title
+			description
+			deadline
+		}
+		findManySurveyAnswers(where: { userId: { equals: $userId } }) {
+			id
+			question {
+				id
+			}
+		}
 	}
 `);

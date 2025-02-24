@@ -1,14 +1,30 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import DrawerHeader from './DrawerHeader.svelte';
 
 	interface Props {
 		open: boolean;
+		category: string;
+		title?: string;
+		titleSnippet?: Snippet;
+		id: string;
+		loading: boolean;
 		onClose?: () => void;
 		children: Snippet;
 		width?: string;
 	}
 
-	let { open = $bindable(), onClose, children, width = '34rem' }: Props = $props();
+	let {
+		open = $bindable(),
+		loading,
+		onClose,
+		children,
+		width = '34rem',
+		id,
+		title,
+		titleSnippet,
+		category
+	}: Props = $props();
 
 	function close() {
 		document.body.classList.remove('overflow-hidden');
@@ -34,7 +50,14 @@
 		style="width: {width}"
 	>
 		<div class="flex min-h-full flex-col gap-8 bg-base-100 p-10">
-			{@render children()}
+			<DrawerHeader {id} {title} {titleSnippet} {category} {loading} />
+			{#if loading}
+				<div class="flex w-full items-center justify-center">
+					<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+				</div>
+			{:else}
+				{@render children()}
+			{/if}
 			<button class="btn absolute right-4 top-4" onclick={close} aria-label="Close">
 				<i class="fa-duotone fa-xmark"></i>
 			</button>

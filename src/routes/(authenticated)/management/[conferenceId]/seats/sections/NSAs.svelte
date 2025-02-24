@@ -46,10 +46,10 @@
 <SeatsTableSection title={m.nsaSeats()} downloadButton={downloadNSADataBtn}>
 	<thead>
 		<tr>
-			<td>
+			<td class="text-left">
 				<i class="fa-duotone fa-megaphone"></i>
 			</td>
-			<td>
+			<td class="text-left">
 				<i class="fa-duotone fa-users"></i>
 			</td>
 			<td>
@@ -65,12 +65,15 @@
 			{@const delegation = delegations.find((d) => d.assignedNonStateActor?.id === nsa.id)}
 			<tr>
 				<td>
-					<div class="tooltip tooltip-right flex flex-col items-center" data-tip={nsa.name}>
+					<div class="tooltip tooltip-right flex items-center gap-2" data-tip={nsa.name}>
 						<Flag nsa icon={nsa.fontAwesomeIcon ?? ''} size="xs" />
 						{nsa.abbreviation.toUpperCase()}
+						<span class="hidden truncate text-left text-xs text-gray-400 lg:block">
+							{nsa.name}
+						</span>
 					</div>
 				</td>
-				<td class="w-full">
+				<td>
 					<div class="flex gap-1">
 						{#snippet addParticipantBtn()}
 							<AddParticipantBtn

@@ -99,7 +99,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
-		"dev:server": "svelte-kit sync && vite",
+		"dev:server": "while true; do svelte-kit sync && vite; echo 'Server crashed, restarting...'; sleep 1; done",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
 		"build": "vite build && bun ./scripts/tasksBuild.ts",
 		"preview": "vite preview",

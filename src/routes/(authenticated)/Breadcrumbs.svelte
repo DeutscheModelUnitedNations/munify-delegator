@@ -136,6 +136,10 @@
 		downloads: {
 			icon: 'download',
 			translation: m.downloads()
+		},
+		survey: {
+			icon: 'square-poll-horizontal',
+			translation: m.survey()
 		}
 	};
 

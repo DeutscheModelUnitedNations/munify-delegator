@@ -611,5 +611,22 @@
 	"searchForUser": "UserID oder E-Mail",
 	"details": "Details",
 	"addUser": "Teilnehmende*n hinzufügen",
-	"emailOrId": "Email oder UserID"
+	"emailOrId": "Email oder UserID",
+	"reset": "Zurücksetzen",
+	"done": "Fertig",
+	"survey": "Umfragen",
+	"goToSurvey": "Zu den Umfragen",
+	"surveyDescription": "In den Umfragen melden Sie sich u.a. für Wahlveranstaltungen an oder das Konferenzteam fragt andere wichtige Informationen von Ihnen ab",
+	"days": "Tag(e)",
+	"surveyClosed": "Umfrage geschlossen",
+	"yourAnswer": "Deine Antwort",
+	"noAnswerYet": "Noch nicht beantwortet",
+	"takeSurvey": "Umfrage beantworten",
+	"seatsOccupied": "von {seats} Plätzen belegt",
+	"fewSeatsLeft": "Nur wenige Plätze übrig! ({seats} von {upperLimit} belegt)",
+	"noSeatsLeft": "Ausgebucht ({seats} Plätze)",
+	"surveyOpen": "Umfrage bis {deadline} geöffnet",
+	"optionUpperLimitReached": "Auswahl konnte nicht bestätigt werden, da die Maximalanzahl bereits erreicht wurde.",
+	"questionDeadlinePassed": "Die Umfrage ist bereits abgelaufen und kann nicht mehr ausgefüllt werden.",
+	"noUpperLimit": "Keine Begrenzung"
 }
