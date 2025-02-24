@@ -32,7 +32,7 @@
 	async function handleGeneratePDF() {
 		try {
 			const userDetailsStore = await userQuery.fetch({
-				variables:{ email: userEmail }
+				variables: { email: userEmail }
 			});
 			const user = userDetailsStore?.data?.findUniqueUser;
 
