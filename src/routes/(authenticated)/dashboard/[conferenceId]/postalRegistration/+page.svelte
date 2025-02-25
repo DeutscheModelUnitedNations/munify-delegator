@@ -10,11 +10,11 @@
 	const conferenceData = $derived(data.conferenceQueryData);
 	const conference = $derived(conferenceData?.findUniqueConference);
 	const userData = $derived(data.user);
-	const userEmail = $derived(userData.email);
+	const userId = $derived(userData.sub);
 
 	const userQuery = graphql(`
-		query GetUserDetails($email: String!) {
-			findUniqueUser(where: { email: $email }) {
+		query GetUserDetails($id: String!) {
+			findUniqueUser(where: { id: $id }) {
 				id
 				given_name
 				family_name
@@ -34,7 +34,7 @@
 		loading = true;
 		try {
 			const userDetailsStore = await userQuery.fetch({
-				variables: { email: userEmail }
+				variables: { id: userId }
 			});
 			const user = userDetailsStore?.data?.findUniqueUser;
 
