@@ -4,12 +4,11 @@
 
 @font-face {
 	font-family: 'FontAwesome';
-	src: url('/fontawesome/webfonts/fa-solid-900.woff2') format('woff2');
+	src: url('https://dmuncdnstorage.blob.core.windows.net/cdn/fontawesome-pro-6.7.2/webfonts/fa-solid-900.woff2') format('woff2');
 	font-weight: normal;
 	font-style: normal;
 	font-display: swap;
 }
-
 #mermaid .outcome > * {
 	stroke: #000 !important;
 	transition: all 0.3s;
