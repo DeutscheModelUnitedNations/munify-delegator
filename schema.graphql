@@ -2531,6 +2531,7 @@ type Query {
   findUniqueSurveyQuestion(where: SurveyQuestionWhereUniqueInput!): SurveyQuestion
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
+  getAllConferenceNations(conferenceId: String!): [Nation!]!
   getConferenceStatistics(conferenceId: ID!): StatisticsResult!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!

@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import * as m from '$lib/paraglide/messages.js';
 	import type { PageData } from './$houdini';
+	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -20,4 +21,5 @@
 		bind:loading
 		conferenceId={data.conferenceId}
 	/>
+	<AllNations bind:loading conferenceId={data.conferenceId} />
 </div>
