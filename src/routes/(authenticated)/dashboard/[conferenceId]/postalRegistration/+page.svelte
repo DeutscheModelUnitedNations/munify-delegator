@@ -40,11 +40,11 @@
 
 			if (user) {
 				const recipientInfo = {
-					name: `${user.given_name} ${user.family_name}`,
-					address: user.street ?? '',
-					plz: user?.zip?.toString() ?? '',
-					ort: user.city ?? '',
-					country: user.country ?? ''
+					name: `${conference?.postalName}`,
+					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
+					plz: conference?.postalZip?.toString() ?? '',
+					ort: conference?.postalCity ?? '',
+					country: conference?.postalCountry ?? ''
 				};
 				const isAbove18 = ofAgeAtConference(
 					conference?.startConference,
