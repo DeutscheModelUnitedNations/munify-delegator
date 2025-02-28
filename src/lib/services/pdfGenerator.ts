@@ -169,11 +169,13 @@ abstract class PDFPageGenerator {
 	protected helveticaBold!: PDFFont; // Add font properties
 	protected header!: PDFHeader;
 	protected conferenceName: string;
+	protected pageNumber: number; // Add page number property
 
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles, conferenceName: string) {
+	constructor(pdfDoc: PDFDocument, styles = defaultStyles, conferenceName: string, pageNumber: number) {
 		this.pdfDoc = pdfDoc;
 		this.styles = styles;
 		this.conferenceName = conferenceName;
+		this.pageNumber = pageNumber;
 	}
 
 	protected abstract generateContent(): Promise<void>;
@@ -189,6 +191,16 @@ abstract class PDFPageGenerator {
 	public async generate(): Promise<PDFPage> {
 		await this.initialize();
 		await this.generateContent();
+		
+		// Add page number at the bottom
+		this.page.drawText(this.pageNumber.toString(), {
+			x: this.styles.margin.left,
+			y: 30,
+			size: 10,
+			font: this.helvetica,
+			color: rgb(0, 0, 0)
+			});
+		
 		return this.page;
 	}
 }
@@ -199,9 +211,10 @@ class FirstPageGenerator extends PDFPageGenerator {
 		pdfDoc: PDFDocument,
 		styles: PageStyles,
 		conferenceName: string,
-		recipientInfo: RecipientInfo
+		recipientInfo: RecipientInfo,
+		pageNumber: number
 	) {
-		super(pdfDoc, styles, conferenceName);
+		super(pdfDoc, styles, conferenceName, pageNumber);
 		this.recipientInfo = recipientInfo;
 	}
 	protected async generateContent(): Promise<void> {
@@ -333,15 +346,6 @@ class FirstPageGenerator extends PDFPageGenerator {
 			start: { x: this.styles.margin.left, y: yPosition },
 			end: { x: width - this.styles.margin.right, y: yPosition },
 			thickness: 0.5,
-			color: rgb(0, 0, 0)
-		});
-
-		// Add page number
-		this.page.drawText('1', {
-			x: this.styles.margin.left,
-			y: 30,
-			size: 10,
-			font: this.helvetica,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -490,15 +494,6 @@ class SecondPageGenerator extends PDFPageGenerator {
 			thickness: 0.5,
 			color: rgb(0, 0, 0)
 		});
-
-		// Add page number
-		this.page.drawText('2', {
-			x: this.styles.margin.left,
-			y: 30,
-			size: 10,
-			font: this.helvetica,
-			color: rgb(0, 0, 0)
-		});
 	}
 }
 
@@ -615,15 +610,6 @@ class ThirdPageGenerator extends PDFPageGenerator {
 			yPosition -= 20; // Reduced spacing
 			yPosition = this.utils.drawCheckbox(this.styles.margin.left, yPosition, purpose);
 		});
-
-		// Add page number
-		this.page.drawText('3', {
-			x: this.styles.margin.left,
-			y: 30,
-			size: 10,
-			font: this.helvetica,
-			color: rgb(0, 0, 0)
-		});
 	}
 }
 
@@ -727,15 +713,6 @@ class FourthPageGenerator extends PDFPageGenerator {
 			start: { x: this.styles.margin.left, y: yPosition },
 			end: { x: width - this.styles.margin.right, y: yPosition },
 			thickness: 0.5,
-			color: rgb(0, 0, 0)
-		});
-
-		// Add page number
-		this.page.drawText('4', {
-			x: this.styles.margin.left,
-			y: 30,
-			size: 10,
-			font: this.helvetica,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -887,15 +864,6 @@ class FifthPageGenerator extends PDFPageGenerator {
 			thickness: 0.5,
 			color: rgb(0, 0, 0)
 		});
-
-		// Add page number
-		this.page.drawText('5', {
-			x: this.styles.margin.left,
-			y: 30,
-			size: 10,
-			font: this.helvetica,
-			color: rgb(0, 0, 0)
-		});
 	}
 }
 
@@ -907,16 +875,39 @@ async function generateCompletePDF(
 ): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
-	// Create base pages
-	const pageGenerators = [
-		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName, recipientInfo),
-		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName),
-		// Only include the parental consent page if age is less than 18
-		...(!isAbove18 ? [new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName)] : []),
-		new FourthPageGenerator(pdfDoc, defaultStyles, conferenceName),
-		// Only include the parental consent page if age is less than 18
-		...(!isAbove18 ? [new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName)] : [])
-	];
+	// Determine which pages to include based on age
+	const pageGenerators = [];
+	let currentPageNumber = 1;
+	
+	// First page is always included
+	pageGenerators.push(
+		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName, recipientInfo, currentPageNumber++)
+	);
+	
+	// Second page is always included
+	pageGenerators.push(
+		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
+	);
+	
+	// Third page depends on age
+	if (!isAbove18) {
+		pageGenerators.push(
+			new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
+		);
+	}
+	
+	// Fourth page is always included (but with sequential page number)
+	pageGenerators.push(
+		new FourthPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
+	);
+	
+	// Fifth page depends on age
+	if (!isAbove18) {
+		pageGenerators.push(
+			new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
+		);
+	}
+	
 	// Generate all pages
 	for (const generator of pageGenerators) {
 		await generator.generate();
