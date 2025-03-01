@@ -278,13 +278,13 @@ class FirstPageGenerator extends PDFPageGenerator {
 
 		// Rest of the page content remains the same
 		yPosition -= 40;
-		
+
 		// Calculate text widths for proper positioning
 		const registrationTextWidth = this.helveticaBold.widthOfTextAtSize(
 			'Verbindliche Anmeldung von',
 			this.styles.fontSize.heading
 		);
-		
+
 		// Draw the first part of the text
 		this.page.drawText('Verbindliche Anmeldung von', {
 			x: this.styles.margin.left,
@@ -293,7 +293,7 @@ class FirstPageGenerator extends PDFPageGenerator {
 			font: this.helveticaBold,
 			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
 		});
-		
+
 		// Add name and address on the same line with spacing
 		const spacing = 10; // Space between the texts
 		this.page.drawText(`${this.userInfo.name}, ${this.userInfo.address}`, {
@@ -306,13 +306,13 @@ class FirstPageGenerator extends PDFPageGenerator {
 
 		// Add birth date field
 		yPosition -= 30;
-		
+
 		// Calculate text width for proper positioning
 		const birthTextWidth = this.helveticaBold.widthOfTextAtSize(
 			'geboren am',
 			this.styles.fontSize.heading
 		);
-		
+
 		// Draw the birth date label
 		this.page.drawText('geboren am', {
 			x: this.styles.margin.left,
@@ -321,7 +321,7 @@ class FirstPageGenerator extends PDFPageGenerator {
 			font: this.helveticaBold,
 			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
 		});
-		
+
 		// Add birth date on the same line
 		this.page.drawText(`${this.userInfo.birthday}`, {
 			x: this.styles.margin.left + birthTextWidth + spacing,
