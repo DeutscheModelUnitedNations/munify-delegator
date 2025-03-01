@@ -923,17 +923,18 @@ async function generateCompletePDF(
 		)
 	);
 
-	// Second page is always included
-	pageGenerators.push(
-		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
-	);
-
-	// Third page depends on age
 	if (!isAbove18) {
+		// Second page depends on age
 		pageGenerators.push(
-			new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
+			new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
 		);
 	}
+
+	// Third page is always included
+
+	pageGenerators.push(
+		new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
+	);
 
 	// Fourth page is always included (but with sequential page number)
 	pageGenerators.push(
