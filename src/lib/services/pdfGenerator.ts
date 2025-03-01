@@ -171,7 +171,12 @@ abstract class PDFPageGenerator {
 	protected conferenceName: string;
 	protected pageNumber: number; // Add page number property
 
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles, conferenceName: string, pageNumber: number) {
+	constructor(
+		pdfDoc: PDFDocument,
+		styles = defaultStyles,
+		conferenceName: string,
+		pageNumber: number
+	) {
 		this.pdfDoc = pdfDoc;
 		this.styles = styles;
 		this.conferenceName = conferenceName;
@@ -191,7 +196,7 @@ abstract class PDFPageGenerator {
 	public async generate(): Promise<PDFPage> {
 		await this.initialize();
 		await this.generateContent();
-		
+
 		// Add page number at the bottom
 		this.page.drawText(this.pageNumber.toString(), {
 			x: this.styles.margin.left,
@@ -199,8 +204,8 @@ abstract class PDFPageGenerator {
 			size: 10,
 			font: this.helvetica,
 			color: rgb(0, 0, 0)
-			});
-		
+		});
+
 		return this.page;
 	}
 }
@@ -878,36 +883,42 @@ async function generateCompletePDF(
 	// Determine which pages to include based on age
 	const pageGenerators = [];
 	let currentPageNumber = 1;
-	
+
 	// First page is always included
 	pageGenerators.push(
-		new FirstPageGenerator(pdfDoc, defaultStyles, conferenceName, recipientInfo, currentPageNumber++)
+		new FirstPageGenerator(
+			pdfDoc,
+			defaultStyles,
+			conferenceName,
+			recipientInfo,
+			currentPageNumber++
+		)
 	);
-	
+
 	// Second page is always included
 	pageGenerators.push(
 		new SecondPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
 	);
-	
+
 	// Third page depends on age
 	if (!isAbove18) {
 		pageGenerators.push(
 			new ThirdPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
 		);
 	}
-	
+
 	// Fourth page is always included (but with sequential page number)
 	pageGenerators.push(
 		new FourthPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
 	);
-	
+
 	// Fifth page depends on age
 	if (!isAbove18) {
 		pageGenerators.push(
 			new FifthPageGenerator(pdfDoc, defaultStyles, conferenceName, currentPageNumber++)
 		);
 	}
-	
+
 	// Generate all pages
 	for (const generator of pageGenerators) {
 		await generator.generate();
