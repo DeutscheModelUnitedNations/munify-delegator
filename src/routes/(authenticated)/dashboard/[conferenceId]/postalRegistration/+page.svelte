@@ -2,7 +2,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import { type PageData } from './$houdini';
 	import { graphql } from '$houdini';
-	import { generateSamplePDF } from '$lib/services/pdfGenerator';
+	import { generateSamplePDF, type RecipientInfo, type UserInfo } from '$lib/services/pdfGenerator';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 
 	let { data }: { data: PageData } = $props();
@@ -39,18 +39,24 @@
 			const user = userDetailsStore?.data?.findUniqueUser;
 
 			if (user) {
-				const recipientInfo = {
+				const recipientInfo: RecipientInfo = {
 					name: `${conference?.postalName}`,
 					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
 					plz: conference?.postalZip?.toString() ?? '',
 					ort: conference?.postalCity ?? '',
 					country: conference?.postalCountry ?? ''
 				};
+
+				const userInfo: UserInfo = {
+					name: `${user.given_name} ${user.family_name}`,
+					address: `${user.street} ${user.apartment ? user.apartment : ''}`,
+					birthday: user.birthday?.toDateString() ?? ''
+				};
 				const isAbove18 = ofAgeAtConference(
 					conference?.startConference,
 					user.birthday ?? new Date()
 				);
-				await generateSamplePDF(isAbove18, recipientInfo);
+				await generateSamplePDF(isAbove18, recipientInfo, userInfo);
 			} else {
 				console.error('User details not found');
 			}

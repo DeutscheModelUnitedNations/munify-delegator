@@ -7,6 +7,12 @@ export interface RecipientInfo {
 	ort: string;
 	country: string;
 }
+
+export interface UserInfo {
+	name: string;
+	address: string;
+	birthday: string;
+}
 interface PageStyles {
 	margin: {
 		left: number;
@@ -212,15 +218,18 @@ abstract class PDFPageGenerator {
 // Registration Form First Page
 class FirstPageGenerator extends PDFPageGenerator {
 	private recipientInfo: RecipientInfo;
+	private userInfo: UserInfo;
 	constructor(
 		pdfDoc: PDFDocument,
 		styles: PageStyles,
 		conferenceName: string,
 		recipientInfo: RecipientInfo,
-		pageNumber: number
+		pageNumber: number,
+		userInfo: UserInfo
 	) {
 		super(pdfDoc, styles, conferenceName, pageNumber);
 		this.recipientInfo = recipientInfo;
+		this.userInfo = userInfo;
 	}
 	protected async generateContent(): Promise<void> {
 		const { width, height } = this.page.getSize();
@@ -269,6 +278,14 @@ class FirstPageGenerator extends PDFPageGenerator {
 
 		// Rest of the page content remains the same
 		yPosition -= 40;
+		
+		// Calculate text widths for proper positioning
+		const registrationTextWidth = this.helveticaBold.widthOfTextAtSize(
+			'Verbindliche Anmeldung von',
+			this.styles.fontSize.heading
+		);
+		
+		// Draw the first part of the text
 		this.page.drawText('Verbindliche Anmeldung von', {
 			x: this.styles.margin.left,
 			y: yPosition,
@@ -276,32 +293,41 @@ class FirstPageGenerator extends PDFPageGenerator {
 			font: this.helveticaBold,
 			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
 		});
-
-		// Add name line
-		yPosition -= 25;
-		this.page.drawLine({
-			start: { x: this.styles.margin.left, y: yPosition },
-			end: { x: width - this.styles.margin.right, y: yPosition },
-			thickness: 0.5,
-			color: rgb(0, 0, 0)
-		});
-
-		// Add birth date field
-		yPosition -= 30;
-		this.page.drawText('geboren am', {
-			x: this.styles.margin.left,
+		
+		// Add name and address on the same line with spacing
+		const spacing = 10; // Space between the texts
+		this.page.drawText(`${this.userInfo.name}, ${this.userInfo.address}`, {
+			x: this.styles.margin.left + registrationTextWidth + spacing,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
 			font: this.helveticaBold,
 			color: rgb(0, 0, 0)
 		});
 
-		// Add date line
-		yPosition -= 25;
-		this.page.drawLine({
-			start: { x: this.styles.margin.left, y: yPosition },
-			end: { x: width - this.styles.margin.right, y: yPosition },
-			thickness: 0.5,
+		// Add birth date field
+		yPosition -= 30;
+		
+		// Calculate text width for proper positioning
+		const birthTextWidth = this.helveticaBold.widthOfTextAtSize(
+			'geboren am',
+			this.styles.fontSize.heading
+		);
+		
+		// Draw the birth date label
+		this.page.drawText('geboren am', {
+			x: this.styles.margin.left,
+			y: yPosition,
+			size: this.styles.fontSize.heading,
+			font: this.helveticaBold,
+			color: rgb(this.styles.colors.blue.r, this.styles.colors.blue.g, this.styles.colors.blue.b)
+		});
+		
+		// Add birth date on the same line
+		this.page.drawText(`${this.userInfo.birthday}`, {
+			x: this.styles.margin.left + birthTextWidth + spacing,
+			y: yPosition,
+			size: this.styles.fontSize.heading,
+			font: this.helveticaBold,
 			color: rgb(0, 0, 0)
 		});
 
@@ -876,7 +902,8 @@ class FifthPageGenerator extends PDFPageGenerator {
 async function generateCompletePDF(
 	conferenceName: string = 'Model United Nations',
 	isAbove18: boolean,
-	recipientInfo: RecipientInfo
+	recipientInfo: RecipientInfo,
+	userInfo: UserInfo
 ): Promise<Uint8Array> {
 	const pdfDoc = await PDFDocument.create();
 
@@ -891,7 +918,8 @@ async function generateCompletePDF(
 			defaultStyles,
 			conferenceName,
 			recipientInfo,
-			currentPageNumber++
+			currentPageNumber++,
+			userInfo
 		)
 	);
 
@@ -930,10 +958,16 @@ async function generateCompletePDF(
 // Export function for usage
 export async function generateSamplePDF(
 	isAbove18: boolean,
-	recipientInfo: RecipientInfo
+	recipientInfo: RecipientInfo,
+	userInfo: UserInfo
 ): Promise<void> {
 	try {
-		const pdfBytes = await generateCompletePDF('Model United Nations', isAbove18, recipientInfo);
+		const pdfBytes = await generateCompletePDF(
+			'Model United Nations',
+			isAbove18,
+			recipientInfo,
+			userInfo
+		);
 
 		const blob = new Blob([pdfBytes], { type: 'application/pdf' });
 		const url = URL.createObjectURL(blob);
