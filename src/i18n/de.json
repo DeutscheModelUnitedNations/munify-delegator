@@ -631,5 +631,8 @@
 	"noUpperLimit": "Keine Begrenzung",
 	"paperInbox": "Link zum Einreichen von Papieren",
 	"paperInboxDescription": "Über das hinterlegte Formular kannst du Positions- und Arbeitspapiere einreichen.",
-	"paperInboxBtn": "Papier einreichen"
+	"paperInboxBtn": "Papier einreichen",
+	"ofAge": "Volljährig",
+	"termsAndConditions": "Teilnahmebedingungen",
+	"nonStateActor": "Nichtstaatlicher Akteur"
 }
