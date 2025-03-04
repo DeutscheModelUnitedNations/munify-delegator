@@ -1,0 +1,16 @@
+query SurveyResultsMainPage($conferenceId: String!) @blocking {
+	findManySurveyQuestions(where: { conferenceId: { equals: $conferenceId } }) {
+		id
+		title
+		description
+		deadline
+		draft
+		options {
+			id
+			title
+			description
+			countSurveyAnswers
+			upperLimit
+		}
+	}
+}

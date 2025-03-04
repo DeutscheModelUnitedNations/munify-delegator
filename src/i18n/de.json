@@ -636,5 +636,9 @@
 	"ofAge": "Volljährig",
 	"termsAndConditions": "Teilnahmebedingungen",
 	"nonStateActor": "Nichtstaatlicher Akteur",
-	"allNations": "Alle Nationen"
+	"allNations": "Alle Nationen",
+	"surveyIsDraft": "Umfrage ist noch ein Entwurf",
+	"surveyIsLive": "Umfrage ist live",
+	"notAssignedParticipants": "Noch nicht zugewiesene Teilnehmende",
+	"noAnswer": "Keine Antwort"
 }

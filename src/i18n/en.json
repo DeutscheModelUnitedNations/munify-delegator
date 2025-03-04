@@ -581,5 +581,9 @@
 	"ofAge": "Of Age",
 	"termsAndConditions": "Terms & Conditions",
 	"nonStateActor": "Non-State Actor",
-	"allNations": "All Nations"
+	"allNations": "All Nations",
+	"surveyIsDraft": "Survey is stil a draft",
+	"surveyIsLive": "Survey is live",
+	"notAssignedParticipants": "Not Yet Assigned Participants",
+	"noAnswer": "No Answer"
 }
