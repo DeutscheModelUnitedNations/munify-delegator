@@ -4,6 +4,7 @@
 	import type { PageData } from './$houdini';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
+	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let queryData = $derived(data.DownloadsBaseDataQuery);
@@ -21,5 +22,6 @@
 		bind:loading
 		conferenceId={data.conferenceId}
 	/>
+  <ConferenceRegistrationList bind:loading conferenceId={data.conferenceId} />
 	<AllNations bind:loading conferenceId={data.conferenceId} />
 </div>

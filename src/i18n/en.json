@@ -577,5 +577,8 @@
 	"paperInbox": "Link to Submit Papers",
 	"paperInboxDescription": "You can submit position and working papers using the form provided.",
 	"paperInboxBtn": "Submit Paper",
-	"allNations": "List of all Nations at the Conference"
+	"allNations": "List of all Nations at the Conference",
+	"ofAge": "Of Age",
+	"termsAndConditions": "Terms & Conditions",
+	"nonStateActor": "Non-State Actor"
 }

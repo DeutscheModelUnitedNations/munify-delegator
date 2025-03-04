@@ -632,5 +632,8 @@
 	"paperInbox": "Link zum Einreichen von Papieren",
 	"paperInboxDescription": "Über das hinterlegte Formular kannst du Positions- und Arbeitspapiere einreichen.",
 	"paperInboxBtn": "Papier einreichen",
-	"allNations": "Liste aller Nationen der Konferenz"
+	"allNations": "Liste aller Nationen der Konferenz",
+	"ofAge": "Volljährig",
+	"termsAndConditions": "Teilnahmebedingungen",
+	"nonStateActor": "Nichtstaatlicher Akteur"
 }
