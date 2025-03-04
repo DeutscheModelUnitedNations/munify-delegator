@@ -207,7 +207,7 @@
 							member.user.given_name ?? '',
 							formatRegistrationStatus(status?.paymentStatus),
 							formatRegistrationStatus(status?.termsAndConditions),
-							ofAge ? formatRegistrationStatus(status?.guardianConsent) : '',
+							ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
 							formatRegistrationStatus(status?.mediaConsent),
 							ofAge ? 'Y' : 'N'
 						];
@@ -275,7 +275,7 @@
 							member.user.given_name ?? '',
 							formatRegistrationStatus(status?.paymentStatus),
 							formatRegistrationStatus(status?.termsAndConditions),
-							ofAge ? formatRegistrationStatus(status?.guardianConsent) : '',
+							ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
 							formatRegistrationStatus(status?.mediaConsent),
 							ofAge ? 'Y' : 'N'
 						];
@@ -342,7 +342,7 @@
 					singleParticipant.user.given_name ?? '',
 					formatRegistrationStatus(status?.paymentStatus),
 					formatRegistrationStatus(status?.termsAndConditions),
-					ofAge ? formatRegistrationStatus(status?.guardianConsent) : '',
+					ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
 					formatRegistrationStatus(status?.mediaConsent),
 					ofAge ? 'Y' : 'N'
 				];
