@@ -3,6 +3,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import type { PageData } from './$houdini';
 	import BadgeData from './BadgeData.svelte';
+	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let queryData = $derived(data.DownloadsBaseDataQuery);
@@ -20,4 +21,5 @@
 		bind:loading
 		conferenceId={data.conferenceId}
 	/>
+	<ConferenceRegistrationList bind:loading conferenceId={data.conferenceId} />
 </div>
