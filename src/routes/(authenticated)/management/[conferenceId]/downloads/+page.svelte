@@ -22,6 +22,6 @@
 		bind:loading
 		conferenceId={data.conferenceId}
 	/>
-  <ConferenceRegistrationList bind:loading conferenceId={data.conferenceId} />
+	<ConferenceRegistrationList bind:loading conferenceId={data.conferenceId} />
 	<AllNations bind:loading conferenceId={data.conferenceId} />
 </div>
