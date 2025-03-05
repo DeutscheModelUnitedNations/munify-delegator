@@ -9,6 +9,7 @@
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
+	import SurveyCard from './SurveyCard.svelte';
 
 	interface Props {
 		user: UserRowData;
@@ -68,6 +69,34 @@
 				paymentStatus
 				didAttend
 			}
+			findManySurveyAnswers(
+				where: {
+					userId: { equals: $userId }
+					question: { conferenceId: { equals: $conferenceId } }
+				}
+			) {
+				id
+				question {
+					id
+					title
+				}
+				option {
+					id
+					title
+				}
+			}
+			findManySurveyQuestions(
+				where: { conferenceId: { equals: $conferenceId }, draft: { equals: false } }
+			) {
+				id
+				title
+				options {
+					id
+					title
+					countSurveyAnswers
+					upperLimit
+				}
+			}
 			findUniqueConference(where: { id: $conferenceId }) {
 				startConference
 			}
@@ -75,6 +104,8 @@
 	`);
 
 	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
+	const surveys = $derived($userQuery?.data?.findManySurveyQuestions);
+	const surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
 	const ofAge = $derived(
 		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
 	);
@@ -333,6 +364,18 @@
 					changeAdministrativeStatus({ didAttend: newStatus })}
 			/>
 		</div>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.survey()}</h3>
+		{#each surveys ?? [] as survey}
+			<SurveyCard
+				{survey}
+				surveyAnswer={surveyAnswers?.find((a) => a.question.id === survey.id)}
+				{conferenceId}
+				userId={user.id}
+			/>
+		{/each}
 	</div>
 
 	<div class="flex flex-col gap-2">

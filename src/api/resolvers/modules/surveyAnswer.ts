@@ -13,6 +13,7 @@ import type { nullable } from 'zod';
 import { builder } from '../builder';
 import { upsertWithRetry } from '$api/services/prismaUpsertWithRetry';
 import * as m from '$lib/paraglide/messages';
+import { GraphQLError } from 'graphql';
 
 builder.prismaObject('SurveyAnswer', {
 	fields: (t) => ({
@@ -94,12 +95,14 @@ builder.mutationFields((t) => {
 				})
 			},
 			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
 				if (!args.where.id && (!args.where.userId || !args.where.questionId)) {
-					throw new Error('You must provide either an id or a userId and questionId');
+					throw new GraphQLError('You must provide either an id or a userId and questionId');
 				}
 
 				if (!args.data.optionId) {
-					throw new Error('You must provide an optionId');
+					throw new GraphQLError('You must provide an optionId');
 				}
 
 				const where = {
@@ -128,12 +131,35 @@ builder.mutationFields((t) => {
 					}
 				});
 
-				if (option.surveyAnswers.length >= option.upperLimit && !!option.upperLimit) {
-					throw new Error(m.optionUpperLimitReached(option.upperLimit));
-				}
+				const question = await db.surveyQuestion.findUniqueOrThrow({
+					where: {
+						id: option.questionId
+					}
+				});
 
-				if (new Date(option.question.deadline) < new Date()) {
-					throw new Error(m.questionDeadlinePassed());
+				// if the user is admin, project management or participant care, skip the following checks
+				const conferenceAdminUser = await db.user.findUnique({
+					where: {
+						id: user.sub,
+						teamMember: {
+							some: {
+								conferenceId: question.conferenceId,
+								role: {
+									in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE']
+								}
+							}
+						}
+					}
+				});
+
+				if (!conferenceAdminUser && !user.hasRole('admin')) {
+					if (option.surveyAnswers.length >= option.upperLimit && !!option.upperLimit) {
+						throw new Error(m.optionUpperLimitReached(option.upperLimit));
+					}
+
+					if (new Date(option.question.deadline) < new Date()) {
+						throw new Error(m.questionDeadlinePassed());
+					}
 				}
 
 				return await upsertWithRetry(
