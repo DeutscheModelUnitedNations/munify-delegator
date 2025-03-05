@@ -67,7 +67,7 @@
 					<div
 						class="badge {option.upperLimit !== 0 && option.countSurveyAnswers >= option.upperLimit
 							? 'badge-error'
-							: option.countSurveyAnswers >= option.upperLimit - 5
+							: option.upperLimit !== 0 && option.countSurveyAnswers >= option.upperLimit - 5
 								? 'badge-warning'
 								: ''}"
 					>
