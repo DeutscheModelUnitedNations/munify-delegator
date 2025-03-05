@@ -65,9 +65,9 @@
 					/>
 					<div class="w-full flex-1">{option.title}</div>
 					<div
-						class="badge {option.countSurveyAnswers >= option.upperLimit
+						class="badge {option.upperLimit !== 0 && option.countSurveyAnswers >= option.upperLimit
 							? 'badge-error'
-							: option.countSurveyAnswers >= option.upperLimit - 10
+							: option.countSurveyAnswers >= option.upperLimit - 5
 								? 'badge-warning'
 								: ''}"
 					>
