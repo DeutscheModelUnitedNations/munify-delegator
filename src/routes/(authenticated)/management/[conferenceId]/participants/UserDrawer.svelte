@@ -9,6 +9,7 @@
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
+	import SurveyCard from './SurveyCard.svelte';
 
 	interface Props {
 		user: UserRowData;
@@ -89,6 +90,12 @@
 			) {
 				id
 				title
+				options {
+					id
+					title
+					countSurveyAnswers
+					upperLimit
+				}
 			}
 			findUniqueConference(where: { id: $conferenceId }) {
 				startConference
@@ -362,30 +369,12 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.survey()}</h3>
 		{#each surveys ?? [] as survey}
-			{@const surveyAnswer = surveyAnswers?.find((a) => a.question.id === survey.id)}
-			<div class="card flex flex-col gap-2 p-4 shadow-md">
-				<h3 class="w-full flex-1 font-bold">
-					<i class="fa-duotone fa-poll mr-2"></i>
-					{survey.title}
-				</h3>
-				{#if surveyAnswer}
-					<p>{surveyAnswer.option.title}</p>
-				{:else}
-					<p class="badge badge-error">{m.noAnswer()}</p>
-				{/if}
-				<div class="flex w-full gap-2">
-					<button class="btn btn-sm">
-						<i class="fa-duotone fa-pencil"></i>{m.edit()}
-					</button>
-					<a
-						class="btn btn-sm"
-						href="/management/{conferenceId}/survey/{survey.id}"
-						aria-label="Edit Survey"
-					>
-						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-					</a>
-				</div>
-			</div>
+			<SurveyCard
+				{survey}
+				surveyAnswer={surveyAnswers?.find((a) => a.question.id === survey.id)}
+				{conferenceId}
+				userId={user.id}
+			/>
 		{/each}
 	</div>
 

@@ -14,7 +14,7 @@
 		if (option.upperLimit === 0) {
 			return 0;
 		}
-		return Math.round((option.countSurveyAnswers / option.upperLimit) * 100);
+		return Math.min(Math.round((option.countSurveyAnswers / option.upperLimit) * 100), 100);
 	};
 </script>
 
