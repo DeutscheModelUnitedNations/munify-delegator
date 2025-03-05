@@ -585,5 +585,7 @@
 	"surveyIsDraft": "Survey is stil a draft",
 	"surveyIsLive": "Survey is live",
 	"notAssignedParticipants": "Not Yet Assigned Participants",
-	"noAnswer": "No Answer"
+	"noAnswer": "No Answer",
+	"downloadResults": "Download Survey Results",
+	"surveyOption": "Option"
 }

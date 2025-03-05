@@ -1,7 +1,8 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames, { sortByNames } from '$lib/services/formatNames';
 	import type { PageData } from './$houdini';
+	import { stringify } from 'csv-stringify/browser/esm/sync';
 
 	let { data }: { data: PageData } = $props();
 
@@ -9,10 +10,40 @@
 	let survey = $derived($surveysQuery.data?.findUniqueSurveyQuestion);
 
 	let notAssignedParticipants = $derived($surveysQuery.data?.findManyUsers);
+
+	const downloadCSV = async (header: string[], data: string[][], filename: string) => {
+		const csv = [header, ...data];
+		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+
+	const downloadResults = () => {
+		const header = [m.name(), m.surveyOption()];
+		const data =
+			survey?.surveyAnswers
+				.sort((a, b) => sortByNames(a.user, b.user))
+				.map((answer) => [
+					formatNames(answer.user.given_name, answer.user.family_name, { givenNameFirst: false }),
+					survey?.options.find((option) => option.id === answer.option.id)?.title ?? ''
+				]) ?? [];
+
+		downloadCSV(header, data, `${survey?.title ?? 'survey'}_results.csv`);
+	};
 </script>
 
 <div class="flex w-full flex-col gap-8 p-10">
-	<h2 class="text-2xl font-bold">{survey?.title}</h2>
+	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
+		<h2 class="text-2xl font-bold">{survey?.title}</h2>
+		<button class="btn btn-primary max-w-sm" onclick={downloadResults}>
+			<i class="fas fa-download"></i>
+			{m.downloadResults()}
+		</button>
+	</div>
 	{#each survey?.options ?? [] as option}
 		{@const users = survey?.surveyAnswers
 			.filter((answer) => answer.option.id === option.id)

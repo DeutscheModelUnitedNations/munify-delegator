@@ -640,5 +640,7 @@
 	"surveyIsDraft": "Umfrage ist noch ein Entwurf",
 	"surveyIsLive": "Umfrage ist live",
 	"notAssignedParticipants": "Noch nicht zugewiesene Teilnehmende",
-	"noAnswer": "Keine Antwort"
+	"noAnswer": "Keine Antwort",
+	"downloadResults": "Alle Ergebnisse herunterladen",
+	"surveyOption": "Auswahl"
 }

@@ -128,7 +128,7 @@
 
 	const downloadCSV = (header: string[], data: string[][], filename: string) => {
 		const csv = [header, ...data];
-		const blob = new Blob([stringify(csv)], { type: 'text/csv' });
+		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;

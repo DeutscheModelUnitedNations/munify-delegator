@@ -109,5 +109,8 @@
 		"format": "prettier --write .",
 		"add-translation": "bun run scripts/add_new_translation.ts"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"with-csv": "^2.0.0"
+	}
 }
