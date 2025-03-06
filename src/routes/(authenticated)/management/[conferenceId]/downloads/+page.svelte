@@ -4,6 +4,7 @@
 	import type { PageData } from './$houdini';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
+	import ChaseSeedExport from './ChaseSeedExport.svelte';
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -24,4 +25,5 @@
 	/>
 	<ConferenceRegistrationList bind:loading conferenceId={data.conferenceId} />
 	<AllNations bind:loading conferenceId={data.conferenceId} />
+	<ChaseSeedExport bind:loading conferenceId={data.conferenceId} />
 </div>
