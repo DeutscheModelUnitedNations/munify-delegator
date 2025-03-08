@@ -193,7 +193,8 @@
 		{
 			key: 'notes',
 			title: m.notes(),
-			renderValue: (row) => `<p class="max-w-[20ch] truncate">${row.status?.additionalNotes ?? 'N/A'}</p>`,
+			renderValue: (row) =>
+				`<p class="max-w-[20ch] truncate">${row.status?.additionalNotes ?? 'N/A'}</p>`,
 			parseHTML: true
 		}
 	];
