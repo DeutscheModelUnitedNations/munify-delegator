@@ -188,6 +188,11 @@
 			title: m.city(),
 			value: (row) => (row.city ? capitalizeFirstLetter(row.city) : 'N/A'),
 			sortable: true
+		},
+		{
+			key: 'notes',
+			title: m.notes(),
+			value: (row) => row.status?.additionalNotes ?? 'N/A'
 		}
 	];
 

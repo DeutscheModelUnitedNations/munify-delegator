@@ -311,6 +311,7 @@ input ConferenceOrderByWithRelationInput {
 }
 
 type ConferenceParticipantStatus {
+  additionalNotes: String!
   conference: Conference!
   didAttend: Boolean!
   guardianConsent: AdministrativeStatus!
@@ -322,6 +323,7 @@ type ConferenceParticipantStatus {
 }
 
 input ConferenceParticipantStatusCreateInput {
+  additionalNotes: String
   conferenceId: String!
   createdAt: DateTime
   didAttend: Boolean
@@ -353,6 +355,7 @@ input ConferenceParticipantStatusOrderByRelationAggregateInput {
 }
 
 input ConferenceParticipantStatusOrderByWithRelationInput {
+  additionalNotes: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   createdAt: SortOrder
@@ -368,6 +371,7 @@ input ConferenceParticipantStatusOrderByWithRelationInput {
 }
 
 enum ConferenceParticipantStatusScalarFieldEnum {
+  additionalNotes
   conferenceId
   createdAt
   didAttend
@@ -381,6 +385,7 @@ enum ConferenceParticipantStatusScalarFieldEnum {
 }
 
 input ConferenceParticipantStatusUpdateInput {
+  additionalNotes: StringFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   didAttend: BoolFieldUpdateOperationsInput
@@ -394,6 +399,7 @@ input ConferenceParticipantStatusUpdateInput {
 }
 
 input ConferenceParticipantStatusUpdateManyMutationInput {
+  additionalNotes: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   didAttend: BoolFieldUpdateOperationsInput
   guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
@@ -425,6 +431,7 @@ input ConferenceParticipantStatusWhereInput {
   AND: [ConferenceParticipantStatusWhereInput!]
   NOT: [ConferenceParticipantStatusWhereInput!]
   OR: [ConferenceParticipantStatusWhereInput!]
+  additionalNotes: StringFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   createdAt: DateTimeFilter
@@ -443,6 +450,7 @@ input ConferenceParticipantStatusWhereUniqueInput {
   AND: [ConferenceParticipantStatusWhereInput!]
   NOT: [ConferenceParticipantStatusWhereInput!]
   OR: [ConferenceParticipantStatusWhereInput!]
+  additionalNotes: StringFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   createdAt: DateTimeFilter
@@ -3594,6 +3602,7 @@ enum TransactionIsolationLevel {
 }
 
 input UpdateConferenceParticipantStatusInput {
+  additionalNotes: String
   didAttend: Boolean
   guardianConsent: AdministrativeStatus
   mediaConsent: AdministrativeStatus
@@ -3628,7 +3637,7 @@ type User {
   apartment: String
   birthday: DateTime
   city: String
-  conferenceParticipantStatus: [ConferenceParticipantStatus!]!
+  conferenceParticipantStatus(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
   conferenceSupervisor: [ConferenceSupervisor!]!
   country: String
   delegationMemberships: [DelegationMember!]!

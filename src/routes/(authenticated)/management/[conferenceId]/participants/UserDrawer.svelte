@@ -68,6 +68,7 @@
 				mediaConsent
 				paymentStatus
 				didAttend
+				additionalNotes
 			}
 			findManySurveyAnswers(
 				where: {
@@ -122,6 +123,7 @@
 				mediaConsent
 				paymentStatus
 				didAttend
+				additionalNotes
 			}
 		}
 	`);
