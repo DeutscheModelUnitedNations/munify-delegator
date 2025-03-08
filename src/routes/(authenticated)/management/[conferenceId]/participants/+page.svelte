@@ -73,6 +73,7 @@
 
 	const { getTableSize } = getTableSettings();
 
+	// TODO we need to make sure that this is not vulnerable to XSS injection
 	const columns: TableColumns<UserRowData> = [
 		{
 			key: 'family_name',
@@ -192,7 +193,8 @@
 		{
 			key: 'notes',
 			title: m.notes(),
-			value: (row) => row.status?.additionalNotes ?? 'N/A'
+			renderValue: (row) => `<p class="max-w-[20ch] truncate">${row.status?.additionalNotes ?? 'N/A'}</p>`,
+			parseHTML: true
 		}
 	];
 
