@@ -33,6 +33,7 @@ import { z } from 'zod';
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
 import { TeamRole } from '@prisma/client';
+import { findManyConferenceParticipantStatusQueryArgs } from '$db/generated/graphql/ConferenceParticipantStatus/queries/findMany.base';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -65,6 +66,7 @@ export const GQLUser = builder.prismaObject('User', {
 			})
 		}),
 		conferenceParticipantStatus: t.relation('conferenceParticipantStatus', {
+			args: findManyConferenceParticipantStatusQueryArgs,
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceParticipantStatus
 			})

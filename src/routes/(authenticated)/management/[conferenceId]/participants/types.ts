@@ -6,7 +6,12 @@ export type UserRowData = Pick<User, 'id' | 'given_name' | 'family_name' | 'city
 	status:
 		| Pick<
 				ConferenceParticipantStatus,
-				'didAttend' | 'guardianConsent' | 'paymentStatus' | 'mediaConsent' | 'termsAndConditions'
+				| 'didAttend'
+				| 'guardianConsent'
+				| 'paymentStatus'
+				| 'mediaConsent'
+				| 'termsAndConditions'
+				| 'additionalNotes'
 		  >
 		| undefined;
 };
