@@ -1,20 +1,76 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages.js';
 	import { type PageData } from './$houdini';
+	import { graphql } from '$houdini';
+	import { generateSamplePDF, type RecipientInfo, type UserInfo } from '$lib/services/pdfGenerator';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
 
 	let { data }: { data: PageData } = $props();
 
 	const conferenceData = $derived(data.conferenceQueryData);
 	const conference = $derived(conferenceData?.findUniqueConference);
+	const userData = $derived(data.user);
+	const userId = $derived(userData.sub);
+
+	const userQuery = graphql(`
+		query GetUserDetails($id: String!) {
+			findUniqueUser(where: { id: $id }) {
+				id
+				given_name
+				family_name
+				street
+				apartment
+				zip
+				city
+				country
+				birthday
+			}
+		}
+	`);
+
+	let loading = false;
+
+	async function handleGeneratePDF() {
+		loading = true;
+		try {
+			const userDetailsStore = await userQuery.fetch({
+				variables: { id: userId }
+			});
+			const user = userDetailsStore?.data?.findUniqueUser;
+
+			if (user) {
+				const recipientInfo: RecipientInfo = {
+					name: `${conference?.postalName}`,
+					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
+					plz: conference?.postalZip?.toString() ?? '',
+					ort: conference?.postalCity ?? '',
+					country: conference?.postalCountry ?? ''
+				};
+
+				const userInfo: UserInfo = {
+					name: `${user.given_name} ${user.family_name}`,
+					address: `${user.street} ${user.apartment ? user.apartment : ''}`,
+					birthday: user.birthday?.toDateString() ?? ''
+				};
+				const isAbove18 = ofAgeAtConference(
+					conference?.startConference,
+					user.birthday ?? new Date()
+				);
+				await generateSamplePDF(isAbove18, recipientInfo, userInfo);
+			} else {
+				console.error('User details not found');
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 <div class="flex flex-col gap-2">
+	<!-- Add error handling and loading states -->
 	<h1 class="text-2xl font-bold">{m.postalRegistration()}</h1>
-	<!-- {#if conference.} -->
-	<div class="alert alert-error mt-4">
-		<i class="fas fa-traffic-cone text-3xl"></i>
-		{m.postalRegistrationNotYetImplemented()}
-	</div>
 	<!-- TODO i18n this once the thing is fully implemented -->
 	<div class="prose mt-4">
 		<p>
@@ -77,4 +133,11 @@
 		</div>
 		<p>Bitte achte besonders bei Sendungen aus dem Ausland auf ausreichendes Porto.</p>
 	</div>
+	<button class="btn btn-primary mt-4" onclick={handleGeneratePDF} disabled={loading}>
+		{#if loading}
+			Generating PDF...
+		{:else}
+			Generate Conference Documents
+		{/if}
+	</button>
 </div>
