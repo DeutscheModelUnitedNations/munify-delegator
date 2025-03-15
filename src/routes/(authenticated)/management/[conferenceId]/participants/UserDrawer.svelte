@@ -68,6 +68,7 @@
 				mediaConsent
 				paymentStatus
 				didAttend
+				additionalNotes
 			}
 			findManySurveyAnswers(
 				where: {
@@ -122,6 +123,7 @@
 				mediaConsent
 				paymentStatus
 				didAttend
+				additionalNotes
 			}
 		}
 	`);
@@ -283,6 +285,18 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.notes()}</h3>
+		<textarea
+			class="textarea textarea-bordered textarea-sm w-full"
+			value={$userQuery.data?.findUniqueConferenceParticipantStatus?.additionalNotes ?? ''}
+			placeholder={m.notes()}
+			oninput={(e) => {
+				changeAdministrativeStatus({ additionalNotes: e.currentTarget.value });
+			}}
+		></textarea>
 	</div>
 
 	<div class="flex flex-col gap-2">

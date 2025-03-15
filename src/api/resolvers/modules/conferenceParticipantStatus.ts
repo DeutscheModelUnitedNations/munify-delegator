@@ -11,7 +11,8 @@ import {
 	ConferenceParticipantStatusTermsAndConditionsFieldObject,
 	ConferenceParticipantStatusGuardianConsentFieldObject,
 	ConferenceParticipantStatusMediaConsentFieldObject,
-	updateOneConferenceParticipantStatusMutationObject
+	updateOneConferenceParticipantStatusMutationObject,
+	ConferenceParticipantStatusAdditionalNotesFieldObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 import { db } from '$db/db';
 import { AdministrativeStatus } from '$db/generated/graphql/inputs';
@@ -22,6 +23,7 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		termsAndConditions: t.field(ConferenceParticipantStatusTermsAndConditionsFieldObject),
 		guardianConsent: t.field(ConferenceParticipantStatusGuardianConsentFieldObject),
 		mediaConsent: t.field(ConferenceParticipantStatusMediaConsentFieldObject),
+		additionalNotes: t.field(ConferenceParticipantStatusAdditionalNotesFieldObject),
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
 		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),
@@ -128,6 +130,10 @@ builder.mutationFields((t) => {
 							didAttend: t.field({
 								type: 'Boolean',
 								required: false
+							}),
+							additionalNotes: t.field({
+								type: 'String',
+								required: false
 							})
 						})
 					})
@@ -158,14 +164,16 @@ builder.mutationFields((t) => {
 						guardianConsent: args.data.guardianConsent || undefined,
 						mediaConsent: args.data.mediaConsent || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
-						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
+						additionalNotes: args.data.additionalNotes ?? ''
 					},
 					update: {
 						termsAndConditions: args.data.termsAndConditions || undefined,
 						guardianConsent: args.data.guardianConsent || undefined,
 						mediaConsent: args.data.mediaConsent || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
-						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
+						additionalNotes: args.data.additionalNotes ?? ''
 					}
 				});
 			}
