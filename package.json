@@ -109,7 +109,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"add-translation": "bun run scripts/add_new_translation.ts",
-    "install-git-hooks": "bunx lefthook install"
+		"install-git-hooks": "bunx lefthook install"
 	},
 	"type": "module",
 	"dependencies": {
