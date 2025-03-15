@@ -57,6 +57,12 @@
 				bind:expanded={navbarExpanded}
 			/>
 		</NavMenuDetails>
+		<NavMenuButton
+			href="/management/{data.conferenceId}/survey"
+			icon="fa-chart-pie"
+			title={m.survey()}
+			bind:expanded={navbarExpanded}
+		/>
 		<NavMenuDetails title={m.tools()} icon="fa-wrench" small={!navbarExpanded}>
 			<NavMenuButton
 				href="/management/{data.conferenceId}/plausibility"

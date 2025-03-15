@@ -21,6 +21,7 @@ const conferenceQuery = graphql(`
 			imageDataURL
 			language
 			linkToPreparationGuide
+			linkToPaperInbox
 			info
 			unlockPayments
 			unlockPostals

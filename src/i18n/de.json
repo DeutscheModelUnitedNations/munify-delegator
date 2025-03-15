@@ -628,5 +628,19 @@
 	"surveyOpen": "Umfrage bis {deadline} geöffnet",
 	"optionUpperLimitReached": "Auswahl konnte nicht bestätigt werden, da die Maximalanzahl bereits erreicht wurde.",
 	"questionDeadlinePassed": "Die Umfrage ist bereits abgelaufen und kann nicht mehr ausgefüllt werden.",
-	"noUpperLimit": "Keine Begrenzung"
+	"noUpperLimit": "Keine Begrenzung",
+	"paperInbox": "Link zum Einreichen von Papieren",
+	"paperInboxDescription": "Über das hinterlegte Formular kannst du Positions- und Arbeitspapiere einreichen.",
+	"paperInboxBtn": "Papier einreichen",
+	"allNations": "Liste aller Nationen der Konferenz",
+	"ofAge": "Volljährig",
+	"termsAndConditions": "Teilnahmebedingungen",
+	"nonStateActor": "Nichtstaatlicher Akteur",
+	"allNations": "Alle Nationen",
+	"surveyIsDraft": "Umfrage ist noch ein Entwurf",
+	"surveyIsLive": "Umfrage ist live",
+	"notAssignedParticipants": "Noch nicht zugewiesene Teilnehmende",
+	"noAnswer": "Keine Antwort",
+	"downloadResults": "Alle Ergebnisse herunterladen",
+	"surveyOption": "Auswahl"
 }

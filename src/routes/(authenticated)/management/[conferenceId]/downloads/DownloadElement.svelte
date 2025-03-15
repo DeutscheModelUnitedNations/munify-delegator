@@ -14,5 +14,7 @@
 <button class="btn btn-primary btn-sm" onclick={btnClick}>
 	{#if loading}
 		<i class="fas fa-spinner fa-spin"></i>
-	{:else}{m.download()}{/if}
+	{:else}
+		<i class="fas fa-download"></i>
+	{/if}
 </button>

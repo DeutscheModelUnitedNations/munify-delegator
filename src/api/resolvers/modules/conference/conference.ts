@@ -12,6 +12,7 @@ import {
 	ConferenceImageDataURLFieldObject,
 	ConferenceInfoFieldObject,
 	ConferenceLanguageFieldObject,
+	ConferenceLinkToPaperInboxFieldObject,
 	ConferenceLinkToPreparationGuideFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
@@ -39,6 +40,8 @@ import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 import { ConferenceState } from '$db/generated/graphql/inputs';
+import { conference } from '$lib/paraglide/messages';
+import { findManyNationQueryObject } from '$db/generated/graphql/Nation';
 
 builder.prismaObject('Conference', {
 	fields: (t) => ({
@@ -46,6 +49,7 @@ builder.prismaObject('Conference', {
 		title: t.field(ConferenceTitleFieldObject),
 		info: t.field(ConferenceInfoFieldObject),
 		linkToPreparationGuide: t.field(ConferenceLinkToPreparationGuideFieldObject),
+		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
 		location: t.field(ConferenceLocationFieldObject),
 		language: t.field(ConferenceLanguageFieldObject),
@@ -164,6 +168,48 @@ builder.queryFields((t) => {
 	};
 });
 
+builder.queryFields((t) => {
+	const field = findManyConferenceQueryObject(t);
+	return {
+		getAllConferenceNations: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.string()
+			},
+			type: findManyNationQueryObject(t).type,
+			resolve: async (query, root, args, ctx, info) => {
+				const conference = await db.conference.findUniqueOrThrow({
+					where: {
+						id: args.conferenceId,
+						AND: [ctx.permissions.allowDatabaseAccessTo('read').Conference]
+					},
+					include: {
+						committees: {
+							include: {
+								nations: true
+							}
+						}
+					}
+				});
+
+				const nations = conference.committees.flatMap((committee) => committee.nations);
+
+				// remove duplicates (check if nation.alpha2Code is unique)
+				const uniqueNations: typeof nations = [];
+				const usedUniqueIdentifier = new Set();
+				for (const nation of nations) {
+					if (!usedUniqueIdentifier.has(nation.alpha2Code)) {
+						uniqueNations.push(nation);
+						usedUniqueIdentifier.add(nation.alpha2Code);
+					}
+				}
+
+				return uniqueNations;
+			}
+		})
+	};
+});
+
 // builder.mutationFields((t) => {
 // 	const field = createOneConferenceMutationObject(t);
 // 	return {
@@ -196,6 +242,9 @@ builder.mutationFields((t) => {
 								required: false
 							}),
 							linkToPreparationGuide: t.string({
+								required: false
+							}),
+							linkToPaperInbox: t.string({
 								required: false
 							}),
 							longTitle: t.string({

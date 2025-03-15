@@ -32,9 +32,12 @@
 		// header
 		const csv = data.map((row) => Object.values(row));
 
-		const blob = new Blob([stringify(csv, { header: true, columns: Object.keys(data[0]) })], {
-			type: 'text/csv'
-		});
+		const blob = new Blob(
+			[stringify(csv, { header: true, columns: Object.keys(data[0]), delimiter: ';' })],
+			{
+				type: 'text/csv'
+			}
+		);
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
