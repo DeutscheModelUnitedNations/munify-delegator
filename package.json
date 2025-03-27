@@ -96,6 +96,7 @@
 		"pdf-lib": "^1.17.1",
 		"world-countries": "^5.1.0",
 		"@bwip-js/browser": "^4.5.3",
+		"barcode-detector": "^3.0.1",
 		"zod": "^3.24.1"
 	},
 	"private": true,
@@ -114,6 +115,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"hotkeys-js": "^3.13.9",
 		"with-csv": "^2.0.0"
 	}
 }

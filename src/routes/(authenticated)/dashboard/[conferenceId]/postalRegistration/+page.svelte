@@ -70,7 +70,7 @@
 					testGuardian,
 					testMedia,
 					testTerms,
-					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`,
+					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
 				);
 			} else {
 				console.error('User details not found');
