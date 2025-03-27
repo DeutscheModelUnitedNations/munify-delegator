@@ -166,6 +166,7 @@ model ConferenceParticipantStatus {
   mediaConsent       AdministrativeStatus @default(PENDING)
   paymentStatus      AdministrativeStatus @default(PENDING)
   didAttend          Boolean              @default(false)
+  additionalNotes    String               @default("")
 
   user         User       @relation(fields: [userId], references: [id])
   userId       String
@@ -188,7 +189,6 @@ model PaymentTransaction {
   userId       String
   paymentFor   UserReferenceInPaymentTransaction[]
   recievedAt   DateTime?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }

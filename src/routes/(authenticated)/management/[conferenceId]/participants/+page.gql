@@ -40,5 +40,6 @@ query ConferenceParticipantsByParticipationTypeQuery($conferenceId: String!) {
 		guardianConsent
 		mediaConsent
 		didAttend
+		additionalNotes
 	}
 }
