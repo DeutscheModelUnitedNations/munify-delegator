@@ -95,6 +95,7 @@
 		"vite": "^5.4.11",
 		"pdf-lib": "^1.17.1",
 		"world-countries": "^5.1.0",
+		"@bwip-js/browser": "^4.5.3",
 		"zod": "^3.24.1"
 	},
 	"private": true,

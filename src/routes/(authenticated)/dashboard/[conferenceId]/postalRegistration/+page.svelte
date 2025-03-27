@@ -2,8 +2,14 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import { type PageData } from './$houdini';
 	import { graphql } from '$houdini';
-	import { generateSamplePDF, type RecipientInfo, type UserInfo } from '$lib/services/pdfGenerator';
+	import {
+		downloadCompletePostalRegistrationPDF,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import formatNames, { formatInitials } from '$lib/services/formatNames';
+	import { testGuardian, testContract, testMedia, testTerms } from '$lib/services/testdata';
 
 	let { data }: { data: PageData } = $props();
 
@@ -33,30 +39,39 @@
 	async function handleGeneratePDF() {
 		loading = true;
 		try {
-			const userDetailsStore = await userQuery.fetch({
-				variables: { id: userId }
-			});
+			const userDetailsStore = await userQuery.fetch({ variables: { id: userId } });
 			const user = userDetailsStore?.data?.findUniqueUser;
 
 			if (user) {
-				const recipientInfo: RecipientInfo = {
+				const recipientData: RecipientData = {
 					name: `${conference?.postalName}`,
 					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
-					plz: conference?.postalZip?.toString() ?? '',
-					ort: conference?.postalCity ?? '',
+					zip: conference?.postalZip?.toString() ?? '',
+					city: conference?.postalCity ?? '',
 					country: conference?.postalCountry ?? ''
 				};
 
-				const userInfo: UserInfo = {
-					name: `${user.given_name} ${user.family_name}`,
-					address: `${user.street} ${user.apartment ? user.apartment : ''}`,
-					birthday: user.birthday?.toDateString() ?? ''
+				const participantData: ParticipantData = {
+					id: user.id,
+					name: formatNames(user.given_name, user.family_name, {
+						givenNameFirst: true,
+						familyNameUppercase: true,
+						givenNameUppercase: true
+					}),
+					address: `${user.street} ${user.apartment ? user.apartment : ''}, ${user.zip} ${user.city}, ${user.country}`,
+					birthday: user.birthday?.toLocaleDateString() ?? ''
 				};
-				const isAbove18 = ofAgeAtConference(
-					conference?.startConference,
-					user.birthday ?? new Date()
+
+				await downloadCompletePostalRegistrationPDF(
+					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
+					participantData,
+					recipientData,
+					testContract,
+					testGuardian,
+					testMedia,
+					testTerms,
+					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`,
 				);
-				await generateSamplePDF(isAbove18, recipientInfo, userInfo);
 			} else {
 				console.error('User details not found');
 			}
