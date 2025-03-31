@@ -34,7 +34,8 @@ import {
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
-	updateOneConferenceMutationObject
+	updateOneConferenceMutationObject,
+	ConferenceContractContentFieldObject
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
@@ -73,9 +74,10 @@ builder.prismaObject('Conference', {
 		postalZip: t.string(ConferencePostalZipFieldObject),
 		postalCity: t.string(ConferencePostalCityFieldObject),
 		postalCountry: t.string(ConferencePostalCountryFieldObject),
-		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
+		contractContent: t.string(ConferenceContractContentFieldObject),
 		guardianConsentContent: t.string(ConferenceGuardianConsentContentFieldObject),
 		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
+		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
 		paymentTransactions: t.relation('paymentTransactions', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').PaymentTransaction
@@ -309,13 +311,20 @@ builder.mutationFields((t) => {
 							postalCountry: t.string({
 								required: false
 							}),
-							termsAndConditionsContent: t.string({
+							contractContent: t.field({
+								type: 'File',
 								required: false
 							}),
-							guardianConsentContent: t.string({
+							guardianConsentContent: t.field({
+								type: 'File',
 								required: false
 							}),
-							mediaConsentContent: t.string({
+							mediaConsentContent: t.field({
+								type: 'File',
+								required: false
+							}),
+							termsAndConditionsContent: t.field({
+								type: 'File',
 								required: false
 							})
 						})
@@ -333,6 +342,26 @@ builder.mutationFields((t) => {
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;
 
+				const contractContentURL = args.data.contractContent
+					? await toDataURL(args.data.contractContent)
+					: args.data.contractContent;
+				args.data.contractContent = undefined;
+
+				const guardianConsentContentURL = args.data.guardianConsentContent
+					? await toDataURL(args.data.guardianConsentContent)
+					: args.data.guardianConsentContent;
+				args.data.guardianConsentContent = undefined;
+
+				const mediaConsentContentURL = args.data.mediaConsentContent
+					? await toDataURL(args.data.mediaConsentContent)
+					: args.data.mediaConsentContent;
+				args.data.mediaConsentContent = undefined;
+
+				const termsAndConditionsContentURL = args.data.termsAndConditionsContent
+					? await toDataURL(args.data.termsAndConditionsContent)
+					: args.data.termsAndConditionsContent;
+				args.data.termsAndConditionsContent = undefined;
+
 				return await db.conference.update({
 					where: args.where,
 					data: {
@@ -347,7 +376,11 @@ builder.mutationFields((t) => {
 						unlockPayments:
 							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
-						postalApartment: args.data.postalApartment ?? null
+						postalApartment: args.data.postalApartment ?? null,
+						contractContent: contractContentURL,
+						guardianConsentContent: guardianConsentContentURL,
+						mediaConsentContent: mediaConsentContentURL,
+						termsAndConditionsContent: termsAndConditionsContentURL
 					},
 					...query
 				});

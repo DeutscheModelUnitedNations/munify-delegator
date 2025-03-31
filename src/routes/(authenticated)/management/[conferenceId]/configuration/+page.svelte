@@ -13,6 +13,15 @@
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import FormFile from '$lib/components/Form/FormFile.svelte';
+	import {
+		downloadCompletePostalRegistrationPDF,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
+	import formatNames, { formatInitials } from '$lib/services/formatNames';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import { toDataURL } from '$api/services/fileToDataURL';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -49,6 +58,47 @@
 			value: 'POST'
 		}
 	];
+
+	let loading = $state(false);
+
+	async function handleGeneratePDF() {
+		loading = true;
+		try {
+			const recipientData: RecipientData = {
+				name: "L'Office des Nations Unies a Geneve",
+				address: 'Av. de la Paix 8-14',
+				zip: '1211',
+				city: 'Geneve',
+				country: 'Schweiz'
+			};
+
+			const participantData: ParticipantData = {
+				id: '123456781234567812345678',
+				name: formatNames('Antonio', 'Guterres', {
+					givenNameFirst: true,
+					familyNameUppercase: true,
+					givenNameUppercase: true
+				}),
+				address: '405 E 45th St, New York, NY 10017, USA',
+				birthday: new Date('1949-04-30').toLocaleDateString() ?? ''
+			};
+
+			await downloadCompletePostalRegistrationPDF(
+				false,
+				participantData,
+				recipientData,
+				data.contractContent ?? undefined,
+				data.guardianConsentContent ?? undefined,
+				data.mediaConsentContent ?? undefined,
+				data.termsAndConditionsContent ?? undefined,
+				'test_postal_registration.pdf'
+			);
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
@@ -164,6 +214,34 @@
 		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
 		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
 		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
+		<FormFile {form} name="contractContent" label={m.postalTemplateContract()} accept="*.pdf" />
+		<FormFile
+			{form}
+			name="guardianConsentContent"
+			label={m.postalTemplateGuardianConsent()}
+			accept="*.pdf"
+		/>
+		<FormFile
+			{form}
+			name="mediaConsentContent"
+			label={m.postalTemplateMediaConsent()}
+			accept="*.pdf"
+		/>
+		<FormFile
+			{form}
+			name="termsAndConditionsContent"
+			label={m.postalTemplateTermsAndConditions()}
+			accept="*.pdf"
+		/>
+		<button
+			class="btn"
+			onclick={async (e) => {
+				e.preventDefault();
+				handleGeneratePDF();
+			}}
+		>
+			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+		</button>
 	</Form>
 </div>
 

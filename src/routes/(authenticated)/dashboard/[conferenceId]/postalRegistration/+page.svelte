@@ -9,7 +9,6 @@
 	} from '$lib/services/pdfGenerator';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
-	import { testGuardian, testContract, testMedia, testTerms } from '$lib/services/testdata';
 
 	let { data }: { data: PageData } = $props();
 
@@ -19,7 +18,7 @@
 	const userId = $derived(userData.sub);
 
 	const userQuery = graphql(`
-		query GetUserDetails($id: String!) {
+		query GetUserDetails($id: String!, $conferenceId: String!) {
 			findUniqueUser(where: { id: $id }) {
 				id
 				given_name
@@ -31,6 +30,14 @@
 				country
 				birthday
 			}
+
+			findUniqueConference(where: { id: $conferenceId }) {
+				id
+				contractContent
+				guardianConsentContent
+				mediaConsentContent
+				termsAndConditionsContent
+			}
 		}
 	`);
 
@@ -39,8 +46,11 @@
 	async function handleGeneratePDF() {
 		loading = true;
 		try {
-			const userDetailsStore = await userQuery.fetch({ variables: { id: userId } });
+			const userDetailsStore = await userQuery.fetch({
+				variables: { id: userId, conferenceId: conference!.id }
+			});
 			const user = userDetailsStore?.data?.findUniqueUser;
+			const conferenceData = userDetailsStore?.data?.findUniqueConference;
 
 			if (user) {
 				const recipientData: RecipientData = {
@@ -66,10 +76,10 @@
 					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
 					participantData,
 					recipientData,
-					testContract,
-					testGuardian,
-					testMedia,
-					testTerms,
+					conferenceData?.contractContent ?? undefined,
+					conferenceData?.guardianConsentContent ?? undefined,
+					conferenceData?.mediaConsentContent ?? undefined,
+					conferenceData?.termsAndConditionsContent ?? undefined,
 					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
 				);
 			} else {

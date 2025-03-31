@@ -587,5 +587,6 @@
 	"noAnswer": "No Answer",
 	"downloadResults": "Download Survey Results",
 	"surveyOption": "Option",
-	"downloadPostalDocuments": "Download documents for postal registration"
+	"downloadPostalDocuments": "Download documents for postal registration",
+	"postalTemplateTest": "Generate test document"
 }

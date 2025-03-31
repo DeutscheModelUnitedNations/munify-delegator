@@ -37,6 +37,10 @@ const conferenceQuery = graphql(`
 			postalZip
 			postalCity
 			postalCountry
+			contractContent
+			guardianConsentContent
+			mediaConsentContent
+			termsAndConditionsContent
 		}
 	}
 `);
@@ -69,7 +73,14 @@ export const load: PageServerLoad = async (event) => {
 		zod(conferenceSettingsFormSchema)
 	);
 
-	return { form, imageDataURL: conference.imageDataURL };
+	return {
+		form,
+		imageDataURL: conference.imageDataURL,
+		contractContent: conference.contractContent,
+		guardianConsentContent: conference.guardianConsentContent,
+		mediaConsentContent: conference.mediaConsentContent,
+		termsAndConditionsContent: conference.termsAndConditionsContent
+	};
 };
 
 export const actions = {

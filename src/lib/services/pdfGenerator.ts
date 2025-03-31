@@ -442,6 +442,9 @@ export async function downloadCompletePostalRegistrationPDF(
 	termsAndConditions?: string,
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
+	if (!contract || !guardianAgreement || !medialAgreement || !termsAndConditions) {
+		throw new Error('Missing required PDF content');
+	}
 	try {
 		const pdfBytes = await generateCompletePostalRegistrationPDF(
 			isOfAge,

@@ -61,9 +61,10 @@ model Conference {
   postalCountry   String?
 
   /// Legal document content
-  termsAndConditionsContent String?
+  contractContent           String?
   guardianConsentContent    String?
   mediaConsentContent       String?
+  termsAndConditionsContent String?
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
