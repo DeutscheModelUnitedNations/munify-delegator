@@ -328,7 +328,7 @@ class MediaGenerator extends PDFPageGenerator {
 		this.page.drawText(replaceSpecialChars(this.participantData.address), {
 			x: this.styles.margin.left,
 			y: yPosition,
-			size: this.styles.fontSize.normal,
+			size: 10,
 			font: this.courier,
 			color: rgb(0, 0, 0)
 		});

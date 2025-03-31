@@ -15,7 +15,11 @@
 	import type { AdministrativeStatus } from '@prisma/client';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
-	import { downloadCompletePostalRegistrationPDF, type ParticipantData, type RecipientData } from '$lib/services/pdfGenerator';
+	import {
+		downloadCompletePostalRegistrationPDF,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
 	import { testGuardian, testContract, testMedia, testTerms } from '$lib/services/testdata';
 
 	// TODO these components need some refactoring
