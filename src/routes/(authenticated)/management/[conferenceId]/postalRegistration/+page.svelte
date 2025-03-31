@@ -106,10 +106,10 @@
 	<div
 		class="media-container {queryUserId
 			? 'hidden'
-			: ''} max-w-1/3 relative z-50 lg:w-60 aspect-video flex justify-center items-center overflow-hidden rounded-lg bg-primary shadow-lg lg:fixed lg:right-4 lg:top-4"
+			: ''} max-w-1/3 relative z-50 flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-primary shadow-lg lg:fixed lg:right-4 lg:top-4 lg:w-60"
 	>
 		<i
-			class="-z-10 fas fa-camera absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
+			class="fas fa-camera absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
 		></i>
 		<video bind:this={videoElem} autoplay playsinline>
 			<track kind="captions" src="" srclang="en" label="English" default />

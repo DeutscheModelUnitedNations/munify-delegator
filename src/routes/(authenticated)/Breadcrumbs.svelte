@@ -144,7 +144,7 @@
 		surveyId: {
 			icon: 'magnifying-glass',
 			translation: m.details()
-		},
+		}
 	};
 
 	function getBreadcrumb(segment: PathSegment<Parameters, boolean>): LocalizedBreadcrumb {
