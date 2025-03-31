@@ -587,5 +587,6 @@
 	"notAssignedParticipants": "Not Yet Assigned Participants",
 	"noAnswer": "No Answer",
 	"downloadResults": "Download Survey Results",
-	"surveyOption": "Option"
+	"surveyOption": "Option",
+	"downloadPostalDocuments": "Download documents for postal registration"
 }

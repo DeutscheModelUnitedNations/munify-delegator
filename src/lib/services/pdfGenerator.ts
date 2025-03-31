@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, StandardFonts, PageSizes, PDFPage, PDFFont } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
+import replaceSpecialChars from 'replace-special-characters';
 
 export interface ParticipantData {
 	id: string;
@@ -228,15 +229,15 @@ class ContractGenerator extends PDFPageGenerator {
 		const barcodeCanvas = document.createElement('canvas');
 
 		bwipjs.toCanvas(barcodeCanvas, {
-			bcid: 'pdf417',
+			bcid: 'datamatrix',
 			text: barcodeData,
-			scale: 1,
+			scale: 2,
 			rotate: 'L'
 		});
 
 		const barcodeImg = barcodeCanvas.toDataURL('image/png');
 		const pngImage = await this.pdfDoc.embedPng(barcodeImg);
-		const pngDims = pngImage.scale(1.5);
+		const pngDims = pngImage.scale(1);
 		this.page.drawImage(pngImage, {
 			x: width - pngDims.width - this.styles.margin.right,
 			y: height - 100 - pngDims.height,
@@ -246,7 +247,7 @@ class ContractGenerator extends PDFPageGenerator {
 
 		// Participant Fields
 		yPosition = height - 320;
-		this.page.drawText(this.participantData.name, {
+		this.page.drawText(replaceSpecialChars(this.participantData.name), {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
@@ -277,7 +278,7 @@ class GuardianGenerator extends PDFPageGenerator {
 		let yPosition: number;
 
 		yPosition = height - 180;
-		this.page.drawText(this.participantData.name, {
+		this.page.drawText(replaceSpecialChars(this.participantData.name), {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
@@ -308,7 +309,7 @@ class MediaGenerator extends PDFPageGenerator {
 		let yPosition: number;
 
 		yPosition = height - 225;
-		this.page.drawText(this.participantData.name, {
+		this.page.drawText(replaceSpecialChars(this.participantData.name), {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
@@ -324,7 +325,7 @@ class MediaGenerator extends PDFPageGenerator {
 			color: rgb(0, 0, 0)
 		});
 		yPosition -= 42;
-		this.page.drawText(this.participantData.address, {
+		this.page.drawText(replaceSpecialChars(this.participantData.address), {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.normal,
@@ -384,7 +385,6 @@ export async function generateCompletePostalRegistrationPDF(
 
 	if (!isOfAge) {
 		// Second PDF depends on age
-		console.log(guardianAgreement);
 		pageGenerators.push(
 			new GuardianGenerator(
 				await PDFDocument.load(guardianAgreement || ''),

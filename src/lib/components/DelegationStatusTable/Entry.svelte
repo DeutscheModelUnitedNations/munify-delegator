@@ -11,6 +11,7 @@
 		committee?: string;
 		postalSatus?: AdministrativeStatus;
 		paymentStatus?: AdministrativeStatus;
+		downloadPostalDocuments?: () => Promise<void>;
 		withPostalStatus?: boolean;
 		withPaymentStatus?: boolean;
 		children?: Snippet;
@@ -24,6 +25,7 @@
 		committee,
 		postalSatus = 'PENDING',
 		paymentStatus = 'PENDING',
+		downloadPostalDocuments,
 		withPostalStatus = false,
 		withPaymentStatus = false,
 		children
@@ -50,6 +52,8 @@
 				return m.paymentPending();
 		}
 	};
+
+	let loading = $state(false);
 </script>
 
 <tr>
@@ -85,6 +89,26 @@
 
 	{#if withPostalStatus}
 		<td class="text-center">
+			{#if downloadPostalDocuments}
+				<div class="tooltip" data-tip={m.downloadPostalDocuments()}>
+					<button
+						class="btn btn-ghost btn-sm mr-1"
+						onclick={async () => {
+							loading = true;
+							await downloadPostalDocuments();
+							loading = false;
+						}}
+						disabled={loading}
+						aria-label="Download Postal Registration PDF"
+					>
+						{#if loading}
+							<i class="fa-solid fa-spinner fa-spin text-xl"></i>
+						{:else}
+							<i class="fa-duotone fa-download text-xl"></i>
+						{/if}
+					</button>
+				</div>
+			{/if}
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>
 				{#if postalSatus === 'DONE'}
 					<i class="fas fa-circle-check text-xl text-success"></i>

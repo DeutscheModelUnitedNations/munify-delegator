@@ -21,7 +21,7 @@
 
 	const barcodeDetector: BarcodeDetector = new BarcodeDetector({
 		// make sure the formats are supported
-		formats: ['pdf417']
+		formats: ['data_matrix']
 	});
 
 	async function startVideo() {

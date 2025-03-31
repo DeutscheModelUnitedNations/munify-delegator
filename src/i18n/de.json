@@ -642,5 +642,6 @@
 	"notAssignedParticipants": "Noch nicht zugewiesene Teilnehmende",
 	"noAnswer": "Keine Antwort",
 	"downloadResults": "Alle Ergebnisse herunterladen",
-	"surveyOption": "Auswahl"
+	"surveyOption": "Auswahl",
+	"downloadPostalDocuments": "Dokumente für postalische Anmeldung herunterladen"
 }

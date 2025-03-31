@@ -34,7 +34,7 @@
 		}
 	`);
 
-	let loading = false;
+	let loading = $state(false);
 
 	async function handleGeneratePDF() {
 		loading = true;
@@ -126,6 +126,15 @@
 			sparen könnten. Leider gibt das die rechtliche Rahmensituation in Deutschland nicht her. Daher
 			führt an dem Versenden der Dokumente per Post kein Weg vorbei.
 		</p>
+		<button class="btn btn-primary mt-4" onclick={handleGeneratePDF} disabled={loading}>
+			{#if loading}
+				<i class="fas fa-spinner fa-spin"></i>
+				Dokumente werden generiert...
+			{:else}
+				<i class="fas fa-download"></i>
+				Dokumente herunterladen
+			{/if}
+		</button>
 		<h2>Wohin soll ich meine Dokumente versenden?</h2>
 		<p>
 			Bitte sende deine Dokumente gründlich ausgefüllt und unterschrieben (von dir und ggf. deinen
@@ -148,11 +157,4 @@
 		</div>
 		<p>Bitte achte besonders bei Sendungen aus dem Ausland auf ausreichendes Porto.</p>
 	</div>
-	<button class="btn btn-primary mt-4" onclick={handleGeneratePDF} disabled={loading}>
-		{#if loading}
-			Generating PDF...
-		{:else}
-			Generate Conference Documents
-		{/if}
-	</button>
 </div>
