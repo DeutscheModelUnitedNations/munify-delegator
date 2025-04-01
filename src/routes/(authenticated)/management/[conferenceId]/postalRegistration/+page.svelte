@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
 	import * as m from '$lib/paraglide/messages';
 	import { languageTag } from '$lib/paraglide/runtime';
@@ -13,11 +13,17 @@
 
 	import { onMount } from 'svelte';
 	import { toast } from '@zerodevx/svelte-toast';
+	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
+
+	let { data }: { data: PageData } = $props();
+
 	let videoElem: HTMLVideoElement;
 	let canvasElem: HTMLCanvasElement;
 	let streaming = false;
 
 	let queryUserId = $state('');
+	// let queryUserId = $state('298967658244603906');
 
 	const barcodeDetector: BarcodeDetector = new BarcodeDetector({
 		// make sure the formats are supported
@@ -94,12 +100,68 @@
 			setInterval(scanForCode, 500);
 		}
 	});
+
+	const userData = graphql(`
+		query GetUserDataForPostalRegistration($userId: String!, $conferenceId: String!) {
+			findUniqueUser(where: { id: $userId }) {
+				id
+				given_name
+				family_name
+				birthday
+			}
+			findUniqueConferenceParticipantStatus(
+				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
+			) {
+				id
+				termsAndConditions
+				mediaConsent
+				guardianConsent
+			}
+		}
+	`);
+
+	$effect(() => {
+		if (queryUserId) {
+			userData.fetch({
+				variables: {
+					userId: queryUserId,
+					conferenceId: data.conferenceId
+				}
+			});
+		}
+	});
+
+	const changeAdministrativeStatus = async (
+		statusId: string | undefined,
+		userId: string | undefined,
+		mutationData: UpdateConferenceParticipantStatusInput
+	) => {
+		if (!userId) {
+			toast.push(m.userNotFound(), {
+				duration: 5000,
+				dismissable: true
+			});
+			return;
+		}
+		await changeParticipantStatus.mutate({
+			where: { id: statusId, conferenceId: data.conferenceId, userId },
+			data: mutationData
+		});
+		cache.markStale();
+		userData.fetch();
+	};
+
+	hotkeys('esc', (event) => {
+		if (queryUserId) {
+			queryUserId = '';
+		}
+	});
 </script>
 
 <div class="flex w-full flex-col gap-8 p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.postalRegistration()}</h2>
-		<!-- <p>{@html m.paymentAdminDescription()}</p> -->
+		<p>{@html m.scanPostalRegistrationCode()}</p>
 	</div>
 
 	<!-- Always render the media container; hide it if queryUserId exists -->
@@ -118,13 +180,79 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
-		<div class="flex w-full max-w-md items-center justify-center gap-4 rounded-lg bg-base-200 p-4">
-			<i class="fa-duotone fa-barcode {!queryUserId && 'fa-beat'}"></i>
-			{#if queryUserId}
-				<div class="truncate font-mono text-sm">
-					{queryUserId}
-				</div>
-			{/if}
+		<div class="h-18 flex w-full max-w-md items-center gap-6 rounded-3xl bg-base-200 p-6">
+			<i class="fa-duotone fa-barcode-read {!queryUserId && 'fa-beat-fade'} text-2xl"></i>
+			<div class="truncate font-mono text-sm">
+				{queryUserId ? queryUserId : m.scanPostalRegistrationCodePrompt()}
+			</div>
 		</div>
 	</div>
+
+	{#if queryUserId}
+		{@const userDetails = $userData?.data?.findUniqueUser}
+		{@const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus}
+
+		<div class="flex w-full max-w-md flex-col gap-2">
+			<div class="flex w-full flex-col gap-4 rounded-3xl bg-base-200 p-6">
+				<div class="mb-2 flex w-full items-center gap-6">
+					<i class="fa-duotone fa-user text-2xl"></i>
+					{#if $userData.fetching}
+						<div class="skeleton h-9 w-full bg-base-300"></div>
+					{:else}
+						<div class="flex-grow">
+							<h3 class="text-xl font-bold">
+								{formatNames(userDetails?.given_name, userDetails?.family_name)}
+							</h3>
+							<h5 class="text-sm">
+								{userDetails?.birthday ? userDetails?.birthday.toLocaleDateString(languageTag) : ''}
+							</h5>
+						</div>
+					{/if}
+					<a
+						class="btn btn-ghost {$userData?.fetching && 'btn-disabled'}"
+						href={`/management/${data.conferenceId}/participants?filter=${queryUserId}`}
+						aria-label="View participant details"
+					>
+						<i class="fa-duotone fa-up-right-from-square"></i>
+					</a>
+				</div>
+				{#if $userData.fetching}
+					<div class="skeleton h-52 w-full bg-base-300"></div>
+				{:else}
+					<StatusWidget
+						title={m.userAgreement()}
+						faIcon="fa-file-signature"
+						status={postalRegistrationDetails?.termsAndConditions ?? 'PENDING'}
+						changeStatus={async (newStatus: AdministrativeStatus) =>
+							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+								termsAndConditions: newStatus
+							})}
+					/>
+					<StatusWidget
+						title={m.guardianAgreement()}
+						faIcon="fa-user-shield"
+						status={postalRegistrationDetails?.guardianConsent ?? 'PENDING'}
+						changeStatus={async (newStatus: AdministrativeStatus) =>
+							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+								guardianConsent: newStatus
+							})}
+					/>
+					<StatusWidget
+						title={m.mediaAgreement()}
+						faIcon="fa-camera"
+						status={postalRegistrationDetails?.mediaConsent ?? 'PENDING'}
+						changeStatus={async (newStatus: AdministrativeStatus) =>
+							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+								mediaConsent: newStatus
+							})}
+					/>
+				{/if}
+				<button class="btn btn-error w-full" onclick={() => (queryUserId = '')}>
+					<i class="fa-solid fa-xmark"></i>
+					{m.close()}
+					<span class="kbd kbd-sm">Esc</span>
+				</button>
+			</div>
+		</div>
+	{/if}
 </div>

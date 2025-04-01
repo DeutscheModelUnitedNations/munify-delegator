@@ -19,7 +19,7 @@
 	};
 </script>
 
-<div class="card flex flex-col gap-2 p-4 shadow-md">
+<div class="card flex flex-col gap-2 p-4 shadow-md bg-base-100">
 	<h3 class="font-bold">
 		<i class="fa-duotone fa-{faIcon.replace('fa-', '')} mr-2"></i>
 		{title}

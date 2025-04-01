@@ -20,8 +20,6 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
-	import { toDataURL } from '$api/services/fileToDataURL';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {

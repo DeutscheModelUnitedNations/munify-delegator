@@ -10,6 +10,7 @@
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
+	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 
 	interface Props {
 		user: UserRowData;
@@ -110,21 +111,7 @@
 		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
 	);
 
-	const changeParticipantStatus = graphql(`
-		mutation changeParticipantStatusMutation(
-			$where: ConferenceParticipantStatusWhereUniqueInputNotRequired!
-			$data: UpdateConferenceParticipantStatusInput!
-		) {
-			updateOneConferenceParticipantStatus(where: $where, data: $data) {
-				id
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-				paymentStatus
-				didAttend
-			}
-		}
-	`);
+	
 
 	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
 		await changeParticipantStatus.mutate({

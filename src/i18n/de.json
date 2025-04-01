@@ -650,5 +650,7 @@
 	"postalTemplateGuardianConsent": "Basis-PDF für die Einverständniserklärung der Erziehungsberechtigten",
 	"postalTemplateMediaConsent": "Basis-PDF für die Bildnutzungseinwilligung",
 	"postalTemplateTermsAndConditions": "PDF für die Vertragsbedingungen",
-	"postalTemplateTest": "Testdokument generieren"
+	"postalTemplateTest": "Testdokument generieren",
+	"scanPostalRegistrationCode": "Scanne den quadratischen Code (Data-Matrix) in der rechten oberen Ecke der postalischen Anmeldung, um den Status zu ändern.",
+	"scanPostalRegistrationCodePrompt": "Präsentiere den Code..."
 }
