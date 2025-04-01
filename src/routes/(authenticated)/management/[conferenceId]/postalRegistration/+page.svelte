@@ -11,7 +11,7 @@
 	import { BarcodeDetector } from 'barcode-detector';
 	import hotkeys from 'hotkeys-js';
 
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { toast } from '@zerodevx/svelte-toast';
 	import StatusWidget from '$lib/components/StatusWidget.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
@@ -98,6 +98,12 @@
 			startVideo();
 			// Automatically scan every 500ms
 			setInterval(scanForCode, 500);
+		}
+	});
+
+	onDestroy(() => {
+		if (streaming) {
+			stopVideo();
 		}
 	});
 
