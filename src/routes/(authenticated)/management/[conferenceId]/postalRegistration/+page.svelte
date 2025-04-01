@@ -162,6 +162,20 @@
 			queryUserId = '';
 		}
 	});
+
+	hotkeys('enter', (event) => {
+		if (queryUserId) {
+			const userDetails = $userData?.data?.findUniqueUser;
+			const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus;
+			if (userDetails && postalRegistrationDetails) {
+				changeAdministrativeStatus(postalRegistrationDetails.id, userDetails.id, {
+					termsAndConditions: 'DONE',
+					mediaConsent: 'DONE',
+					guardianConsent: 'DONE'
+				});
+			}
+		}
+	});
 </script>
 
 <div class="flex w-full flex-col gap-8 md:p-10">
@@ -233,6 +247,7 @@
 							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 								termsAndConditions: newStatus
 							})}
+						doneHotkey="1"
 					/>
 					<StatusWidget
 						title={m.guardianAgreement()}
@@ -242,6 +257,7 @@
 							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 								guardianConsent: newStatus
 							})}
+						doneHotkey="2"
 					/>
 					<StatusWidget
 						title={m.mediaAgreement()}
@@ -251,6 +267,7 @@
 							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 								mediaConsent: newStatus
 							})}
+						doneHotkey="3"
 					/>
 				{/if}
 				<button class="btn btn-error w-full" onclick={() => (queryUserId = '')}>

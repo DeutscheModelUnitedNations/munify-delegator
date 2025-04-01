@@ -1,14 +1,16 @@
 <script lang="ts">
 	import type { AdministrativeStatus } from '@prisma/client';
+	import hotkeys from 'hotkeys-js';
 
 	interface Props {
 		title: string;
 		faIcon: string;
 		status: AdministrativeStatus;
 		changeStatus: (status: AdministrativeStatus) => Promise<void>;
+		doneHotkey?: string;
 	}
 
-	let { title, faIcon, status, changeStatus }: Props = $props();
+	let { title, faIcon, status, changeStatus, doneHotkey }: Props = $props();
 
 	let loading = $state(false);
 
@@ -17,6 +19,15 @@
 		await changeStatus(status);
 		loading = false;
 	};
+
+	$effect(() => {
+		if (doneHotkey) {
+			hotkeys(doneHotkey ?? '', (event, handler) => {
+				event.preventDefault();
+				btnClick('DONE');
+			});
+		}
+	});
 </script>
 
 <div class="card flex flex-col gap-2 bg-base-100 p-4 shadow-md">
@@ -56,6 +67,7 @@
 				<i class="fas fa-spin fa-spinner"></i>
 			{:else}
 				<i class="fas fa-check text-lg"></i>
+				<span class="kbd kbd-xs hidden sm:inline-block">{doneHotkey}</span>
 			{/if}
 		</button>
 	</div>
