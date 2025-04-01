@@ -200,7 +200,7 @@
 						<div class="skeleton h-9 w-full bg-base-300"></div>
 					{:else}
 						<div class="flex-grow">
-							<h3 class="text-xl font-bold">
+							<h3 class="text-base md:text-xl font-bold">
 								{formatNames(userDetails?.given_name, userDetails?.family_name)}
 							</h3>
 							<h5 class="text-sm">
