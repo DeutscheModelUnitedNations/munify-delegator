@@ -158,7 +158,7 @@
 	});
 </script>
 
-<div class="flex w-full flex-col gap-8 p-10">
+<div class="flex w-full flex-col gap-8 md:p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.postalRegistration()}</h2>
 		<p>{@html m.scanPostalRegistrationCode()}</p>
@@ -204,7 +204,7 @@
 								{formatNames(userDetails?.given_name, userDetails?.family_name)}
 							</h3>
 							<h5 class="text-sm">
-								{userDetails?.birthday ? userDetails?.birthday.toLocaleDateString(languageTag) : ''}
+								{userDetails?.birthday ? userDetails?.birthday.toLocaleDateString() : ''}
 							</h5>
 						</div>
 					{/if}

@@ -111,8 +111,6 @@
 		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
 	);
 
-	
-
 	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
 		await changeParticipantStatus.mutate({
 			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
