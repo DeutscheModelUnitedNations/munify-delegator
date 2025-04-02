@@ -651,7 +651,7 @@
 	"postalTemplateMediaConsent": "Base PDF for image usage consent",
 	"postalTemplateTermsAndConditions": "PDF for the terms and conditions",
 	"postalTemplateTest": "Generate test document",
-	"scanPostalRegistrationCode": "Scan the square code (Data-Matrix) in the top right corner of the postal registration to change the status. With <span class=\"kbd kbd-sm\">enter</span> you can confirm everything at once, and with <span class=\"kbd kbd-sm\">1</span>, <span class=\"kbd kbd-sm\">2</span> and <span class=\"kbd kbd-sm\">3</span> you can confirm the individual documents.",
+	"scanPostalRegistrationCode": "Scan the square code (Data-Matrix) in the top right corner of the postal registration to change the status. With <span class=\"kbd kbd-sm\">enter</span> you can confirm everything at once, and with <span class=\"kbd kbd-sm\">1</span>, <span class=\"kbd kbd-sm\">2</span>, <span class=\"kbd kbd-sm\">3</span> and <span class=\"kbd kbd-sm\">4</span> you can confirm the individual documents.",
 	"scanPostalRegistrationCodePrompt": "Present the code...",
 	"assistantFlowRolePress1": "Journalist",
 	"personalStatusUnderDevelopment": "Personal status overview still under development",

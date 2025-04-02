@@ -651,7 +651,7 @@
 	"postalTemplateMediaConsent": "Basis-PDF für die Bildnutzungseinwilligung",
 	"postalTemplateTermsAndConditions": "PDF für die Vertragsbedingungen",
 	"postalTemplateTest": "Testdokument generieren",
-	"scanPostalRegistrationCode": "Scanne den quadratischen Code (Data-Matrix) in der rechten oberen Ecke der postalischen Anmeldung, um den Status zu ändern. Mit <span class=\"kbd kbd-sm\">enter</span> kannst du alles auf einmal bestätigen, mit <span class=\"kbd kbd-sm\">1</span>, <span class=\"kbd kbd-sm\">2</span> und <span class=\"kbd kbd-sm\">3</span> kannst du die einzelnen Dokumente bestätigen.",
+	"scanPostalRegistrationCode": "Scanne den quadratischen Code (Data-Matrix) in der rechten oberen Ecke der postalischen Anmeldung, um den Status zu ändern. Mit <span class=\"kbd kbd-sm\">enter</span> kannst du alles auf einmal bestätigen, mit <span class=\"kbd kbd-sm\">1</span>, <span class=\"kbd kbd-sm\">2</span>, <span class=\"kbd kbd-sm\">3</span> und <span class=\"kbd kbd-sm\">4</span> kannst du die einzelnen Dokumente bestätigen.",
 	"scanPostalRegistrationCodePrompt": "Präsentiere den Code...",
 	"mediaConsentStatus": "Fotostatus"
 }
