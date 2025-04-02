@@ -15,7 +15,7 @@ services:
       timeout: 5s
     volumes:
       - delegator-dev:/var/lib/postgresql/data
-      
+
   # When using the mock server this can be helpful to paste into the form to create a valid token with claims etc.
   # {
   #  "email": "my@mail.com",
