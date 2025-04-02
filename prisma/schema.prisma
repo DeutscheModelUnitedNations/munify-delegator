@@ -61,9 +61,10 @@ model Conference {
   postalCountry   String?
 
   /// Legal document content
-  termsAndConditionsContent String?
+  contractContent           String?
   guardianConsentContent    String?
   mediaConsentContent       String?
+  termsAndConditionsContent String?
 
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
@@ -158,6 +159,14 @@ enum AdministrativeStatus {
   PENDING
 }
 
+// Status which can be set for the media consent describing what the user has agreed to
+enum MediaConsentStatus {
+  NOT_SET
+  ALLOWED_ALL
+  PARTIALLY_ALLOWED
+  NOT_ALLOWED
+}
+
 // administrative status of a user in a conference, used for storing e.g. payment status, postal application status, etc.
 model ConferenceParticipantStatus {
   id                 String               @id @default(nanoid())
@@ -165,6 +174,7 @@ model ConferenceParticipantStatus {
   guardianConsent    AdministrativeStatus @default(PENDING)
   mediaConsent       AdministrativeStatus @default(PENDING)
   paymentStatus      AdministrativeStatus @default(PENDING)
+  mediaConsentStatus MediaConsentStatus   @default(NOT_SET)
   didAttend          Boolean              @default(false)
 
   user         User       @relation(fields: [userId], references: [id])

@@ -77,6 +77,12 @@
 				expanded={navbarExpanded}
 			/>
 			<NavMenuButton
+				href="/management/{data.conferenceId}/postalRegistration"
+				icon="fa-envelope"
+				title={m.postalRegistration()}
+				expanded={navbarExpanded}
+			/>
+			<NavMenuButton
 				href="/management/{data.conferenceId}/payments"
 				icon="fa-money-bill-transfer"
 				title={m.payment()}

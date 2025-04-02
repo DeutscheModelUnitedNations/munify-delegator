@@ -1,7 +1,9 @@
 {
-	"name": "munify-delegator",
-	"version": "0.0.1",
+	"dependencies": {
+		"with-csv": "^2.0.0"
+	},
 	"devDependencies": {
+		"@bwip-js/browser": "^4.5.3",
 		"@casl/ability": "^6.7.2",
 		"@casl/prisma": "^1.5.0",
 		"@dipser/epc-qr-code.js": "^1.0.3",
@@ -42,6 +44,7 @@
 		"@weblogin/trendchart-elements": "^2.0.1",
 		"@zerodevx/svelte-toast": "^0.9.6",
 		"autoprefixer": "^10.4.20",
+		"barcode-detector": "^3.0.1",
 		"codenamize-ts": "1.0.2",
 		"concurrently": "^9.1.2",
 		"convert-iso-codes": "^1.0.10",
@@ -57,6 +60,7 @@
 		"globals": "^15.14.0",
 		"graphql": "^16.10.0",
 		"graphql-yoga": "^5.10.8",
+		"hotkeys-js": "^3.13.9",
 		"houdini": "^1.4.0",
 		"houdini-svelte": "^2.1.0",
 		"iban": "^0.0.14",
@@ -73,6 +77,7 @@
 		"openapi-fetch": "^0.13.4",
 		"openapi-typescript": "^7.5.1",
 		"openid-client": "^6.1.7",
+		"pdf-lib": "^1.17.1",
 		"postcss": "^8.4.49",
 		"postcss-load-config": "^6.0.1",
 		"prettier": "^3.4.2",
@@ -93,26 +98,24 @@
 		"validator": "^13.12.0",
 		"vanilla-cookieconsent": "^3.0.1",
 		"vite": "^5.4.11",
-		"pdf-lib": "^1.17.1",
 		"world-countries": "^5.1.0",
 		"zod": "^3.24.1"
 	},
+	"name": "munify-delegator",
 	"private": true,
 	"scripts": {
-		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
-		"dev:server": "while true; do svelte-kit sync && vite; echo 'Server crashed, restarting...'; sleep 1; done",
-		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
+		"add-translation": "bun run scripts/add_new_translation.ts",
 		"build": "vite build && bun ./scripts/tasksBuild.ts",
-		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check . && eslint .",
+		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
+		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
+		"dev:server": "while true; do svelte-kit sync && vite; echo 'Server crashed, restarting...'; sleep 1; done",
 		"format": "prettier --write .",
-		"add-translation": "bun run scripts/add_new_translation.ts",
-		"install-git-hooks": "bunx lefthook install"
+		"install-git-hooks": "bunx lefthook install",
+		"lint": "prettier --check . && eslint .",
+		"preview": "vite preview"
 	},
 	"type": "module",
-	"dependencies": {
-		"with-csv": "^2.0.0"
-	}
+	"version": "0.0.1"
 }
