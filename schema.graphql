@@ -205,8 +205,6 @@ type Conference {
   state: ConferenceState!
   surveyQuestions: [SurveyQuestion!]!
   teamMembers: [TeamMember!]!
-
-  """Legal document content"""
   termsAndConditionsContent: String
   title: String!
 
@@ -223,6 +221,7 @@ input ConferenceCreateInput {
   committees: CommitteeCreateNestedManyWithoutConferenceInput
   conferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutConferenceInput
   conferenceUserStatus: ConferenceParticipantStatusCreateNestedManyWithoutConferenceInput
+  contractContent: String
   createdAt: DateTime
   currency: String
   delegationMembers: DelegationMemberCreateNestedManyWithoutConferenceInput
@@ -270,6 +269,7 @@ input ConferenceOrderByWithRelationInput {
   committees: CommitteeOrderByRelationAggregateInput
   conferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
   conferenceUserStatus: ConferenceParticipantStatusOrderByRelationAggregateInput
+  contractContent: SortOrder
   createdAt: SortOrder
   currency: SortOrder
   delegationMembers: DelegationMemberOrderByRelationAggregateInput
@@ -468,6 +468,7 @@ enum ConferenceScalarFieldEnum {
   accountHolder
   bankName
   bic
+  contractContent
   createdAt
   currency
   endConference
@@ -707,6 +708,7 @@ input ConferenceUpdateInput {
   committees: CommitteeUpdateManyWithoutConferenceNestedInput
   conferenceSupervisors: ConferenceSupervisorUpdateManyWithoutConferenceNestedInput
   conferenceUserStatus: ConferenceParticipantStatusUpdateManyWithoutConferenceNestedInput
+  contractContent: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   currency: NullableStringFieldUpdateOperationsInput
   delegationMembers: DelegationMemberUpdateManyWithoutConferenceNestedInput
@@ -751,6 +753,7 @@ input ConferenceUpdateManyMutationInput {
   accountHolder: NullableStringFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
+  contractContent: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   currency: NullableStringFieldUpdateOperationsInput
   endConference: DateTimeFieldUpdateOperationsInput
@@ -793,6 +796,7 @@ input ConferenceWhereInput {
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
   conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  contractContent: StringNullableFilter
   createdAt: DateTimeFilter
   currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
@@ -843,6 +847,7 @@ input ConferenceWhereUniqueInput {
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
   conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  contractContent: StringNullableFilter
   createdAt: DateTimeFilter
   currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
