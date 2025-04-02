@@ -419,7 +419,6 @@
 	"valueTooShort": "The specified value for {field} is too short.",
 	"pleaseFillOutYourProfileCorrectly": "Please make sure <b><a href='/my-account'>your profile</a></b> is filled out correctly.",
 	"changesSuccessful": "The changes were saved successfully.",
-	"userNotFound": "User not found",
 	"toConference": "To the conference",
 	"userNotFound": "User not found",
 	"until": "until",
