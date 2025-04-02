@@ -22,7 +22,17 @@
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
 
 	let { data }: { data: PageData } = $props();
-	let form = superForm(data.form, {
+
+	// Remove saved PDF file URLs from the initial form data so that only File objects (or undefined) are processed.
+	const initialForm = {
+		...data.form,
+		contractContent: undefined,
+		guardianConsentContent: undefined,
+		mediaConsentContent: undefined,
+		termsAndConditionsContent: undefined
+	};
+
+	let form = superForm(initialForm, {
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod(conferenceSettingsFormSchema),

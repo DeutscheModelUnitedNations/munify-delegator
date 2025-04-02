@@ -339,27 +339,34 @@ builder.mutationFields((t) => {
 
 				conferenceSettingsFormSchema.parse(args.data);
 
-				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
+				const dataURL =
+					args.data.image && args.data.image instanceof File
+						? await toDataURL(args.data.image)
+						: args.data.image;
 				args.data.image = undefined;
 
-				const contractContentURL = args.data.contractContent
-					? await toDataURL(args.data.contractContent)
-					: args.data.contractContent;
+				const contractContentURL =
+					args.data.contractContent && args.data.contractContent instanceof File
+						? await toDataURL(args.data.contractContent)
+						: args.data.contractContent;
 				args.data.contractContent = undefined;
 
-				const guardianConsentContentURL = args.data.guardianConsentContent
-					? await toDataURL(args.data.guardianConsentContent)
-					: args.data.guardianConsentContent;
+				const guardianConsentContentURL =
+					args.data.guardianConsentContent && args.data.guardianConsentContent instanceof File
+						? await toDataURL(args.data.guardianConsentContent)
+						: args.data.guardianConsentContent;
 				args.data.guardianConsentContent = undefined;
 
-				const mediaConsentContentURL = args.data.mediaConsentContent
-					? await toDataURL(args.data.mediaConsentContent)
-					: args.data.mediaConsentContent;
+				const mediaConsentContentURL =
+					args.data.mediaConsentContent && args.data.mediaConsentContent instanceof File
+						? await toDataURL(args.data.mediaConsentContent)
+						: args.data.mediaConsentContent;
 				args.data.mediaConsentContent = undefined;
 
-				const termsAndConditionsContentURL = args.data.termsAndConditionsContent
-					? await toDataURL(args.data.termsAndConditionsContent)
-					: args.data.termsAndConditionsContent;
+				const termsAndConditionsContentURL =
+					args.data.termsAndConditionsContent && args.data.termsAndConditionsContent instanceof File
+						? await toDataURL(args.data.termsAndConditionsContent)
+						: args.data.termsAndConditionsContent;
 				args.data.termsAndConditionsContent = undefined;
 
 				return await db.conference.update({
