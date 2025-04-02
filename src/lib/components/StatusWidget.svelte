@@ -67,7 +67,9 @@
 				<i class="fas fa-spin fa-spinner"></i>
 			{:else}
 				<i class="fas fa-check text-lg"></i>
-				<span class="kbd kbd-xs hidden sm:inline-block">{doneHotkey}</span>
+				{#if doneHotkey}
+					<span class="kbd kbd-xs hidden sm:inline-block">{doneHotkey}</span>
+				{/if}
 			{/if}
 		</button>
 	</div>
