@@ -11,10 +11,11 @@ import {
 	ConferenceParticipantStatusTermsAndConditionsFieldObject,
 	ConferenceParticipantStatusGuardianConsentFieldObject,
 	ConferenceParticipantStatusMediaConsentFieldObject,
-	updateOneConferenceParticipantStatusMutationObject
+	updateOneConferenceParticipantStatusMutationObject,
+	ConferenceParticipantStatusMediaConsentStatusFieldObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 import { db } from '$db/db';
-import { AdministrativeStatus } from '$db/generated/graphql/inputs';
+import { AdministrativeStatus, MediaConsentStatus } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('ConferenceParticipantStatus', {
 	fields: (t) => ({
@@ -23,6 +24,7 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		guardianConsent: t.field(ConferenceParticipantStatusGuardianConsentFieldObject),
 		mediaConsent: t.field(ConferenceParticipantStatusMediaConsentFieldObject),
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
+		mediaConsentStatus: t.field(ConferenceParticipantStatusMediaConsentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
 		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),
 		conference: t.relation('conference', ConferenceParticipantStatusConferenceFieldObject)
@@ -121,6 +123,10 @@ builder.mutationFields((t) => {
 								type: AdministrativeStatus,
 								required: false
 							}),
+							mediaConsentStatus: t.field({
+								type: MediaConsentStatus,
+								required: false
+							}),
 							paymentStatus: t.field({
 								type: AdministrativeStatus,
 								required: false
@@ -157,6 +163,7 @@ builder.mutationFields((t) => {
 						termsAndConditions: args.data.termsAndConditions || undefined,
 						guardianConsent: args.data.guardianConsent || undefined,
 						mediaConsent: args.data.mediaConsent || undefined,
+						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
 					},
@@ -164,6 +171,7 @@ builder.mutationFields((t) => {
 						termsAndConditions: args.data.termsAndConditions || undefined,
 						guardianConsent: args.data.guardianConsent || undefined,
 						mediaConsent: args.data.mediaConsent || undefined,
+						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
 					}

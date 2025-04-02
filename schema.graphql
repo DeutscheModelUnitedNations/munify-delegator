@@ -319,6 +319,7 @@ type ConferenceParticipantStatus {
   guardianConsent: AdministrativeStatus!
   id: ID!
   mediaConsent: AdministrativeStatus!
+  mediaConsentStatus: MediaConsentStatus!
   paymentStatus: AdministrativeStatus!
   termsAndConditions: AdministrativeStatus!
   user: User!
@@ -331,6 +332,7 @@ input ConferenceParticipantStatusCreateInput {
   guardianConsent: AdministrativeStatus
   id: String
   mediaConsent: AdministrativeStatus
+  mediaConsentStatus: MediaConsentStatus
   paymentStatus: AdministrativeStatus
   termsAndConditions: AdministrativeStatus
   updatedAt: DateTime
@@ -363,6 +365,7 @@ input ConferenceParticipantStatusOrderByWithRelationInput {
   guardianConsent: SortOrder
   id: SortOrder
   mediaConsent: SortOrder
+  mediaConsentStatus: SortOrder
   paymentStatus: SortOrder
   termsAndConditions: SortOrder
   updatedAt: SortOrder
@@ -377,6 +380,7 @@ enum ConferenceParticipantStatusScalarFieldEnum {
   guardianConsent
   id
   mediaConsent
+  mediaConsentStatus
   paymentStatus
   termsAndConditions
   updatedAt
@@ -390,6 +394,7 @@ input ConferenceParticipantStatusUpdateInput {
   guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   mediaConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
+  mediaConsentStatus: EnumMediaConsentStatusFieldUpdateOperationsInput
   paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
   termsAndConditions: EnumAdministrativeStatusFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -402,6 +407,7 @@ input ConferenceParticipantStatusUpdateManyMutationInput {
   guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   mediaConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
+  mediaConsentStatus: EnumMediaConsentStatusFieldUpdateOperationsInput
   paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
   termsAndConditions: EnumAdministrativeStatusFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -435,6 +441,7 @@ input ConferenceParticipantStatusWhereInput {
   guardianConsent: EnumAdministrativeStatusFilter
   id: StringFilter
   mediaConsent: EnumAdministrativeStatusFilter
+  mediaConsentStatus: EnumMediaConsentStatusFilter
   paymentStatus: EnumAdministrativeStatusFilter
   termsAndConditions: EnumAdministrativeStatusFilter
   updatedAt: DateTimeFilter
@@ -453,6 +460,7 @@ input ConferenceParticipantStatusWhereUniqueInput {
   guardianConsent: EnumAdministrativeStatusFilter
   id: String
   mediaConsent: EnumAdministrativeStatusFilter
+  mediaConsentStatus: EnumMediaConsentStatusFilter
   paymentStatus: EnumAdministrativeStatusFilter
   termsAndConditions: EnumAdministrativeStatusFilter
   updatedAt: DateTimeFilter
@@ -1572,6 +1580,27 @@ input EnumGenderNullableWithAggregatesFilter {
   notIn: [Gender!]
 }
 
+input EnumMediaConsentStatusFieldUpdateOperationsInput {
+  set: MediaConsentStatus
+}
+
+input EnumMediaConsentStatusFilter {
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
+}
+
+input EnumMediaConsentStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumMediaConsentStatusFilter
+  _min: NestedEnumMediaConsentStatusFilter
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1706,6 +1735,13 @@ input IntWithAggregatesFilter {
 }
 
 scalar JSONObject
+
+enum MediaConsentStatus {
+  ALLOWED_ALL
+  NOT_ALLOWED
+  NOT_SET
+  PARTIALLY_ALLOWED
+}
 
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
@@ -1984,6 +2020,23 @@ input NestedEnumGenderNullableWithAggregatesFilter {
   in: [Gender!]
   not: Gender
   notIn: [Gender!]
+}
+
+input NestedEnumMediaConsentStatusFilter {
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
+}
+
+input NestedEnumMediaConsentStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumMediaConsentStatusFilter
+  _min: NestedEnumMediaConsentStatusFilter
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
 }
 
 input NestedEnumTeamRoleFilter {
@@ -3606,6 +3659,7 @@ input UpdateConferenceParticipantStatusInput {
   didAttend: Boolean
   guardianConsent: AdministrativeStatus
   mediaConsent: AdministrativeStatus
+  mediaConsentStatus: MediaConsentStatus
   paymentStatus: AdministrativeStatus
   termsAndConditions: AdministrativeStatus
 }

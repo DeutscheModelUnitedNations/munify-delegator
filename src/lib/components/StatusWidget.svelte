@@ -1,31 +1,37 @@
-<script lang="ts">
-	import type { AdministrativeStatus } from '@prisma/client';
+<script lang="ts" generics="Status">
 	import hotkeys from 'hotkeys-js';
 
 	interface Props {
 		title: string;
 		faIcon: string;
-		status: AdministrativeStatus;
-		changeStatus: (status: AdministrativeStatus) => Promise<void>;
-		doneHotkey?: string;
+		activeStatus: Status;
+		status: {
+			value: Status;
+			faIcon: string;
+			color: 'success' | 'warning' | 'error' | 'info';
+			hotkey?: string;
+		}[];
+		changeStatus: (status: Status) => Promise<void>;
 	}
 
-	let { title, faIcon, status, changeStatus, doneHotkey }: Props = $props();
+	let { title, faIcon, activeStatus, status, changeStatus }: Props = $props();
 
 	let loading = $state(false);
 
-	const btnClick = async (status: AdministrativeStatus) => {
+	const btnClick = async (status: Status) => {
 		loading = true;
 		await changeStatus(status);
 		loading = false;
 	};
 
 	$effect(() => {
-		if (doneHotkey) {
-			hotkeys(doneHotkey ?? '', (event, handler) => {
-				event.preventDefault();
-				btnClick('DONE');
-			});
+		for (const s of status) {
+			if (s.hotkey) {
+				hotkeys(s.hotkey ?? '', (event, handler) => {
+					event.preventDefault();
+					btnClick(s.value);
+				});
+			}
 		}
 	});
 </script>
@@ -36,41 +42,21 @@
 		{title}
 	</h3>
 	<div class="join w-full">
-		<button
-			class="btn {status === 'PENDING' && 'btn-warning'} join-item flex-1"
-			aria-label="Pending"
-			onclick={() => btnClick('PENDING')}
-		>
-			{#if loading}
-				<i class="fas fa-spin fa-spinner"></i>
-			{:else}
-				<i class="fas fa-hourglass-half text-lg"></i>
-			{/if}
-		</button>
-		<button
-			class="btn {status === 'PROBLEM' && 'btn-error'} join-item flex-1"
-			aria-label="Problem"
-			onclick={() => btnClick('PROBLEM')}
-		>
-			{#if loading}
-				<i class="fas fa-spin fa-spinner"></i>
-			{:else}
-				<i class="fas fa-triangle-exclamation text-lg"></i>
-			{/if}
-		</button>
-		<button
-			class="btn {status === 'DONE' && 'btn-success'} join-item flex-1"
-			aria-label="Done"
-			onclick={() => btnClick('DONE')}
-		>
-			{#if loading}
-				<i class="fas fa-spin fa-spinner"></i>
-			{:else}
-				<i class="fas fa-check text-lg"></i>
-				{#if doneHotkey}
-					<span class="kbd kbd-xs hidden sm:inline-block">{doneHotkey}</span>
+		{#each status as { value, faIcon, color, hotkey }}
+			<button
+				class="btn {activeStatus === value && `btn-${color}`} join-item flex-1"
+				aria-label={`${value}`}
+				onclick={() => btnClick(value)}
+			>
+				{#if loading}
+					<i class="fas fa-spin fa-spinner"></i>
+				{:else}
+					<i class="fas fa-{faIcon.replace('fa-', '')} text-lg"></i>
+					{#if hotkey}
+						<span class="kbd kbd-xs hidden sm:inline-block">{hotkey}</span>
+					{/if}
 				{/if}
-			{/if}
-		</button>
+			</button>
+		{/each}
 	</div>
 </div>

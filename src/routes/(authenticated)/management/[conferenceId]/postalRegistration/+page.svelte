@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
+	import {
+		cache,
+		graphql,
+		type MediaConsentStatus$options,
+		type UpdateConferenceParticipantStatusInput
+	} from '$houdini';
 	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
 	import * as m from '$lib/paraglide/messages';
 	import { languageTag } from '$lib/paraglide/runtime';
@@ -13,8 +18,9 @@
 
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from '@zerodevx/svelte-toast';
-	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
+	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -120,8 +126,9 @@
 			) {
 				id
 				termsAndConditions
-				mediaConsent
 				guardianConsent
+				mediaConsent
+				mediaConsentStatus
 			}
 		}
 	`);
@@ -171,7 +178,8 @@
 				changeAdministrativeStatus(postalRegistrationDetails.id, userDetails.id, {
 					termsAndConditions: 'DONE',
 					mediaConsent: 'DONE',
-					guardianConsent: 'DONE'
+					guardianConsent: 'DONE',
+					mediaConsentStatus: 'ALLOWED_ALL'
 				});
 			}
 		}
@@ -268,6 +276,15 @@
 								mediaConsent: newStatus
 							})}
 						doneHotkey="3"
+					/>
+					<ParticipantStatusMediaWidget
+						title={m.mediaConsentStatus()}
+						status={postalRegistrationDetails?.mediaConsentStatus ?? 'NOT_SET'}
+						changeStatus={async (newStatus: MediaConsentStatus$options) =>
+							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+								mediaConsentStatus: newStatus
+							})}
+						doneHotkey="4"
 					/>
 				{/if}
 				<button class="btn btn-error w-full" onclick={() => (queryUserId = '')}>

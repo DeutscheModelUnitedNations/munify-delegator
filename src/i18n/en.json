@@ -655,5 +655,6 @@
 	"scanPostalRegistrationCodePrompt": "Present the code...",
 	"assistantFlowRolePress1": "Journalist",
 	"personalStatusUnderDevelopment": "Personal status overview still under development",
-	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly."
+	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly.",
+	"mediaConsentStatus": "Media Status"
 }
