@@ -489,7 +489,7 @@
 	"onlyHeadDelegateCanAssignCommittees": "Nur die Delegationsleitung kann Gremien zuweisen.",
 	"payment": "Beitragszahlung",
 	"postalRegistration": "Postalische Anmeldung",
-	"personalStatusDescription": "Hier kannst du deinen persönlichen Status verflogen. Dieser umfasst alle formellen Schritte, die du erledigen musst. Du kannst an der Konferenz nicht teilnehmen, wenn du nicht alle Aufgaben von dieser Liste erledigt hast!",
+	"personalStatusDescription": "Hier kannst du deinen persönlichen Status verfolgen. Dieser umfasst alle formellen Schritte, die du erledigen musst. Du kannst an der Konferenz nicht teilnehmen, wenn du nicht alle Aufgaben von dieser Liste erledigt hast!",
 	"takeAction": "Jetzt Erledigen",
 	"userAgreement": "Verbindliche Anmeldung",
 	"guardianAgreement": "Einwilligung Erziehungsberechtigten",
@@ -631,5 +631,16 @@
 	"noUpperLimit": "Keine Begrenzung",
 	"paperInbox": "Link zum Einreichen von Papieren",
 	"paperInboxDescription": "Über das hinterlegte Formular kannst du Positions- und Arbeitspapiere einreichen.",
-	"paperInboxBtn": "Papier einreichen"
+	"paperInboxBtn": "Papier einreichen",
+	"allNations": "Liste aller Nationen der Konferenz",
+	"ofAge": "Volljährig",
+	"termsAndConditions": "Teilnahmebedingungen",
+	"nonStateActor": "Nichtstaatlicher Akteur",
+	"allNations": "Alle Nationen",
+	"surveyIsDraft": "Umfrage ist noch ein Entwurf",
+	"surveyIsLive": "Umfrage ist live",
+	"notAssignedParticipants": "Noch nicht zugewiesene Teilnehmende",
+	"noAnswer": "Keine Antwort",
+	"downloadResults": "Alle Ergebnisse herunterladen",
+	"surveyOption": "Auswahl"
 }

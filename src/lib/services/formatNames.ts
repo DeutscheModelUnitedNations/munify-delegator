@@ -71,3 +71,12 @@ export function formatInitials(
 	if (!familyName) return givenName.charAt(0).toUpperCase();
 	return `${givenName.charAt(0).toUpperCase()}${familyName.charAt(0).toUpperCase()}`;
 }
+
+export function sortByNames(
+	a: { given_name: string; family_name: string },
+	b: { given_name: string; family_name: string }
+): number {
+	const aName = formatNames(a.given_name, a.family_name, { givenNameFirst: false });
+	const bName = formatNames(b.given_name, b.family_name, { givenNameFirst: false });
+	return aName.localeCompare(bName);
+}

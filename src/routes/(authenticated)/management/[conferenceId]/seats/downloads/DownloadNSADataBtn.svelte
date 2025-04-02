@@ -69,7 +69,7 @@
 				])
 		];
 
-		const blob = new Blob([stringify(csv)], { type: 'text/csv' });
+		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
 		const url = window.URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;

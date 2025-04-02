@@ -93,6 +93,7 @@
 		"validator": "^13.12.0",
 		"vanilla-cookieconsent": "^3.0.1",
 		"vite": "^5.4.11",
+		"pdf-lib": "^1.17.1",
 		"world-countries": "^5.1.0",
 		"zod": "^3.24.1"
 	},
@@ -107,7 +108,11 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"add-translation": "bun run scripts/add_new_translation.ts"
+		"add-translation": "bun run scripts/add_new_translation.ts",
+		"install-git-hooks": "bunx lefthook install"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"with-csv": "^2.0.0"
+	}
 }

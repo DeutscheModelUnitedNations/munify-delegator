@@ -7,6 +7,9 @@ RUN apt-get -y update; apt-get -y install curl
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash
 RUN apt-get install -y nodejs
 
+# TODO separate dependencies and build to prevent reinstall if
+# lockfile didnt change
+
 FROM dual AS builder
 WORKDIR /app
 
@@ -15,7 +18,7 @@ ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
 
-COPY package.json bun.lockb tsconfig.json ./
+COPY package.json bun.lockb tsconfig.json bunfig.toml ./
 RUN  bun install --frozen-lockfile
 # we need to generate prisma files before building to prevent type errors
 COPY ./prisma/migrations ./prisma/migrations/
@@ -49,6 +52,7 @@ COPY --from=builder /app/tasksOut .
 # the prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma/
 
+# TODO check if user is created
 
 # Make a folder called /app/ephemeralData
 RUN mkdir /app/ephemeralData

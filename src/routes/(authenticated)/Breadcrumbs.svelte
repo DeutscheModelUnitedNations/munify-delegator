@@ -140,6 +140,10 @@
 		survey: {
 			icon: 'square-poll-horizontal',
 			translation: m.survey()
+		},
+		surveyId: {
+			icon: 'magnifying-glass',
+			translation: m.details()
 		}
 	};
 

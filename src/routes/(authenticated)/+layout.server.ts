@@ -3,6 +3,8 @@ import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/s
 import { redirect } from '@sveltejs/kit';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
 
+//TODO: a more clean approach would be to do this inside the api and not
+// in the layout server
 //TODO: investiagte this
 // https://youtu.be/K1Tya6ovVOI?si=HFPf8-z_L9ppiTqc&t=903
 // we should not use load functions for authentication
