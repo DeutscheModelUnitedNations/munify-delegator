@@ -263,7 +263,9 @@
 				pronouns={user.pronouns ?? ''}
 				withPaymentStatus
 				withPostalStatus
-				downloadPostalDocuments={() => downloadPostalDocuments(user.id)}
+				downloadPostalDocuments={conference?.unlockPostals
+					? () => downloadPostalDocuments(user.id)
+					: undefined}
 				paymentStatus={participantStatus?.paymentStatus ?? 'PENDING'}
 				postalSatus={getSimplifiedPostalStatus(
 					participantStatus,
