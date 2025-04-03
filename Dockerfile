@@ -18,7 +18,7 @@ ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
 
-COPY package.json bun.lockb tsconfig.json bunfig.toml ./
+COPY package.json bun.lockb tsconfig.json ./
 RUN  bun install --frozen-lockfile
 # we need to generate prisma files before building to prevent type errors
 COPY ./prisma/migrations ./prisma/migrations/
