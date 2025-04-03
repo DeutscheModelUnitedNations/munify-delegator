@@ -661,5 +661,9 @@
 	"certificateDescription": "Hier kannst du hier dein Teilnahmezertifikat herunterladen.",
 	"downloadCertificate": "Zertifikat herunterladen",
 	"CertifiacteTemplate": "Basis-PDF für das Zertifikat",
-	"certificateNotYetAvailable": "Zertifikat steht noch nicht zur Verfügung. Bitte komme später zurück."
+	"certificateNotYetAvailable": "Zertifikat steht noch nicht zur Verfügung. Bitte komme später zurück.",
+	"certificateIsValid": "Das Zertifikat ist gültig.",
+	"certificateIsValidFor": "Dieses Zertifikat bescheinigt, dass <br /><strong>{fullName}</strong><br /> vom {conferenceStartDate} bis zum {conferenceEndDate} an der Veranstaltung <br /><strong>{conferenceTitle}</strong><br /> teilgenommen hat.",
+	"certificateIsNotValid": "Das Zertifikat ist ungültig.",
+	"certificateIsNotValidText": "Das Zertifikat kann nicht verifiziert werden. Bitte wende dich an uns, wenn du glaubst, dass es sich dabei um einen Fehler handelt."
 }
