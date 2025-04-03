@@ -97,32 +97,24 @@ export const conferenceSettingsFormSchema = z.object({
 	postalZip: z.string().optional(),
 	postalCity: z.string().optional(),
 	postalCountry: z.string().optional(),
-	contractContent: z
-		.custom<File | string>()
-		.refine(
-			(f) => ((f as File).size ? (f as File).size < 10_000_000 : true),
-			'Max 10mb upload size.'
-		)
+	contractBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
 		.optional(),
-	guardianConsentContent: z
-		.custom<File | string>()
-		.refine(
-			(f) => ((f as File).size ? (f as File).size < 10_000_000 : true),
-			'Max 10mb upload size.'
-		)
+	guardianConsentBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
 		.optional(),
-	mediaConsentContent: z
-		.custom<File | string>()
-		.refine(
-			(f) => ((f as File).size ? (f as File).size < 10_000_000 : true),
-			'Max 10mb upload size.'
-		)
+	mediaConsentBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
 		.optional(),
-	termsAndConditionsContent: z
-		.custom<File | string>()
-		.refine(
-			(f) => ((f as File).size ? (f as File).size < 10_000_000 : true),
-			'Max 10mb upload size.'
-		)
+	termsAndConditionsBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
+		.optional(),
+	certificateBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
 		.optional()
 });

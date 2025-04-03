@@ -41,6 +41,7 @@ const conferenceQuery = graphql(`
 			guardianConsentContent
 			mediaConsentContent
 			termsAndConditionsContent
+			certificateContent
 		}
 	}
 `);
@@ -79,7 +80,8 @@ export const load: PageServerLoad = async (event) => {
 		contractContent: conference.contractContent,
 		guardianConsentContent: conference.guardianConsentContent,
 		mediaConsentContent: conference.mediaConsentContent,
-		termsAndConditionsContent: conference.termsAndConditionsContent
+		termsAndConditionsContent: conference.termsAndConditionsContent,
+		certificateContent: conference.certificateContent
 	};
 };
 

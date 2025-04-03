@@ -653,5 +653,13 @@
 	"postalTemplateTest": "Testdokument generieren",
 	"scanPostalRegistrationCode": "Scanne den quadratischen Code (Data-Matrix) in der rechten oberen Ecke der postalischen Anmeldung, um den Status zu ändern. Mit <span class=\"kbd kbd-sm\">enter</span> kannst du alles auf einmal bestätigen, mit <span class=\"kbd kbd-sm\">1</span>, <span class=\"kbd kbd-sm\">2</span>, <span class=\"kbd kbd-sm\">3</span> und <span class=\"kbd kbd-sm\">4</span> kannst du die einzelnen Dokumente bestätigen.",
 	"scanPostalRegistrationCodePrompt": "Präsentiere den Code...",
-	"mediaConsentStatus": "Fotostatus"
+	"mediaConsentStatus": "Fotostatus",
+	"thanksForParticipating": "Vielen Dank für deine Teilnahme!",
+	"thanksForParticipatingDescription": "Wir hoffen, dass du von der Konferenz viel mitnehmen konntest. Wir freuen uns, wenn du auch nächstes Jahr oder bei unserer Schwesterkonferenz wieder Teilnimmst. Wenn du noch Fragen oder Anregungen hast, kannst du dich jederzeit an die Teilnehmendenbetreuung wenden.",
+	"certificate": "Teilnahmezertifikat",
+	"certificateDescriptionNotAttended": "Du hast an der Konferenz nicht oder nicht ausreichend teilgenommen und kannst daher kein Zertifikat herunterladen. Wenn du glaubst, dass es sich dabei um einen Fehler handelt, wende dich bitte an die Teilnehmendenbetreuung.",
+	"certificateDescription": "Hier kannst du hier dein Teilnahmezertifikat herunterladen.",
+	"downloadCertificate": "Zertifikat herunterladen",
+	"CertifiacteTemplate": "Basis-PDF für das Zertifikat",
+	"certificateNotYetAvailable": "Zertifikat steht noch nicht zur Verfügung. Bitte komme später zurück."
 }
