@@ -96,8 +96,12 @@ builder.queryFields((t) => {
 		getCertificateJWT: t.field({
 			type: t.builder.simpleObject('CertificateJWT', {
 				fields: (t) => ({
-					jwt: t.string(),
-					fullName: t.string()
+					jwt: t.string({
+						nullable: true
+					}),
+					fullName: t.string({
+						nullable: true
+					})
 				})
 			}),
 			args: field.args,
@@ -128,7 +132,11 @@ builder.queryFields((t) => {
 				});
 
 				if (!conferenceParticipantStatus.didAttend) {
-					throw new Error('Participant did not attend the conference');
+					// if the user did not attend the conference, do not return a JWT
+					return {
+						jwt: undefined,
+						fullName: undefined
+					};
 				}
 
 				const { user, conference } = conferenceParticipantStatus;

@@ -33,8 +33,8 @@ input BoolWithAggregatesFilter {
 }
 
 type CertificateJWT {
-  fullName: String!
-  jwt: String!
+  fullName: String
+  jwt: String
 }
 
 """A committee in a conference. E.g. the human rights council"""
@@ -1810,6 +1810,7 @@ type Mutation {
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
+  updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
   updateManyDelegationMemberCommittee(data: UpdateManyDelegationMemberCommitteeInput!, where: DelegationMemberWhereInput): BatchPayload!
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(data: UpdateConferenceParticipantStatusInput!, where: ConferenceParticipantStatusWhereUniqueInputNotRequired!): ConferenceParticipantStatus
@@ -3698,6 +3699,14 @@ enum TransactionIsolationLevel {
   ReadUncommitted
   RepeatableRead
   Serializable
+}
+
+input UpdateAllConferenceParticipantStatusInput {
+  didAttend: Boolean
+}
+
+type UpdateAllConferenceParticipantStatusResponse {
+  changed: [String!]
 }
 
 input UpdateConferenceParticipantStatusInput {

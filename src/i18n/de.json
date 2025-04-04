@@ -667,5 +667,12 @@
 	"certificateIsNotValid": "Das Zertifikat ist ungültig.",
 	"certificateIsNotValidText": "Das Zertifikat kann nicht verifiziert werden. Bitte wende dich an uns, wenn du glaubst, dass es sich dabei um einen Fehler handelt.",
 	"certificateDownloadError": "Das Zertifikat konnte nicht heruntergeladen werden.",
-	"unknownConferenceTitle": "Unbekannter Konferenzname"
+	"unknownConferenceTitle": "Unbekannter Konferenzname",
+	"switchAttendanceState": "Anwesenheit aller Teilnehmenden umschalten",
+	"switchAttendanceStateDescription": "Hier kannst du die Anwesenheit aller Teilnehmenden umschalten. Wenn du auf den Button klickst, wird die Anwesenheit für alle Teilnehmenden auf \"Anwesend\" gesetzt, wenn sie vorher \"Abwesend\" waren und umgekehrt. Diese Aktion ist aufgrund der Tragweite Administratoren vorbehalten.",
+	"helper": "Helfer",
+	"helperDescription": "Hier findest du kleine Helfer-Skripte, die dir bei der Arbeit mit der App helfen können. Die Skripte sind teilweise sehr mächtig und weitreichend und können auch Daten unwiderruflich überschreiben. Bitte sei vorsichtig, wenn du dich dieser Funktionen bedienst.",
+	"setAttendanceTrue": "Alle auf \"Anwesend\" setzen",
+	"setAttendanceFalse": "Alle auf \"Abwesend\" setzen",
+	"switchAttendanceStateConfirmation": "Bist du dir sicher, dass du die Anwesenheit aller Teilnehmenden umschalten möchtest? Dies kann nicht rückgängig gemacht werden."
 }

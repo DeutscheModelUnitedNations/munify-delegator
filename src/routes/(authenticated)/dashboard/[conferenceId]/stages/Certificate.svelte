@@ -65,7 +65,7 @@
 	};
 </script>
 
-<section class="flex flex-col gap-2">
+<section class="flex flex-col gap-2 md:p-8">
 	<h2 class="text-2xl font-bold">{m.thanksForParticipating()}</h2>
 	<p>{m.thanksForParticipatingDescription()}</p>
 	<h3 class="mt-6 text-xl font-bold">{m.certificate()}</h3>
@@ -77,7 +77,7 @@
 					{m.certificateNotYetAvailable()}
 				</p>
 			</div>
-		{:else if didAttend && userId}
+		{:else if didAttend && userId && $certificateQuery.data?.getCertificateJWT.jwt}
 			<p>{m.certificateDescription()}</p>
 
 			<button class="btn btn-primary mt-4 w-full max-w-sm" onclick={downloadPDF}>
