@@ -35,7 +35,6 @@ input BoolWithAggregatesFilter {
 type CertificateJWT {
   fullName: String!
   jwt: String!
-  publicKey: String!
 }
 
 """A committee in a conference. E.g. the human rights council"""
@@ -1753,6 +1752,27 @@ input IntWithAggregatesFilter {
 
 scalar JSONObject
 
+type JWK {
+  alg: String
+  crv: String
+  d: String
+  dp: String
+  dq: String
+  e: String
+  ext: Boolean
+  k: String
+  key_ops: [String!]
+  kty: String
+  n: String
+  oth: [RsaOtherPrimesInfo!]
+  p: String
+  q: String
+  qi: String
+  use: String
+  x: String
+  y: String
+}
+
 enum MediaConsentStatus {
   ALLOWED_ALL
   NOT_ALLOWED
@@ -2612,6 +2632,7 @@ type Query {
   findUniqueUser(where: UserWhereUniqueInput!): User
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
+  getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!): StatisticsResult!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
@@ -2779,6 +2800,12 @@ input RoleApplicationWhereUniqueInput {
   nonStateActorId: StringNullableFilter
   rank: IntFilter
   updatedAt: DateTimeFilter
+}
+
+type RsaOtherPrimesInfo {
+  d: String
+  r: String
+  t: String
 }
 
 type SetAssignmentDataResult {

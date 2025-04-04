@@ -1,6 +1,16 @@
-import { PDFDocument, rgb, StandardFonts, PageSizes, PDFPage, PDFFont } from 'pdf-lib';
+import {
+	PDFDocument,
+	rgb,
+	StandardFonts,
+	PageSizes,
+	PDFPage,
+	PDFFont,
+	PDFName,
+	PDFString
+} from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import replaceSpecialChars from 'replace-special-characters';
+import { toast } from '@zerodevx/svelte-toast';
 
 export interface ParticipantData {
 	id: string;
@@ -377,7 +387,7 @@ class CertificateGenerator extends PDFPageGenerator {
 		const { width, height } = this.page.getSize();
 		const yPosition = height - 215;
 		const text = replaceSpecialChars(this.data.fullName);
-		const textWidth = this.courier.widthOfTextAtSize(text, this.styles.fontSize.title);
+		let textWidth = this.courier.widthOfTextAtSize(text, this.styles.fontSize.title);
 		const xPosition = (width - textWidth) / 2;
 
 		this.page.drawText(text, {
@@ -390,25 +400,52 @@ class CertificateGenerator extends PDFPageGenerator {
 
 		const origin = new URL(window.location.href).origin;
 
-		const barcodeData = `${origin}/validateCertificate?jwt=${this.data.jwt}`;
+		const barcodeData = `${origin}/vc/${this.data.jwt}`;
 
 		const barcodeCanvas = document.createElement('canvas');
 
 		bwipjs.toCanvas(barcodeCanvas, {
 			bcid: 'qrcode',
 			text: barcodeData,
-			scale: 2
+			scale: 1
 		});
 
 		const barcodeImg = barcodeCanvas.toDataURL('image/png');
 		const pngImage = await this.pdfDoc.embedPng(barcodeImg);
-		const pngDims = pngImage.scale(1);
+		const pngDims = pngImage.scale(0.5);
 		this.page.drawImage(pngImage, {
-			x: width - pngDims.width - this.styles.margin.right,
-			y: height - 100 - pngDims.height,
+			x: width - pngDims.width - 10,
+			y: 10,
 			width: pngDims.width,
 			height: pngDims.height
 		});
+
+		const verifyText = 'Verify Certificate';
+		textWidth = this.courier.widthOfTextAtSize(verifyText, 8);
+		const textX = width - pngDims.width - 10 + (pngDims.width - textWidth) / 2;
+		this.page.drawText(verifyText, {
+			x: textX,
+			y: pngDims.height + 13,
+			size: 8,
+			font: this.courier,
+			color: rgb(0, 0, 0)
+		});
+
+		const link = this.pdfDoc.context.register(
+			this.pdfDoc.context.obj({
+				Type: 'Annot',
+				Subtype: 'Link',
+				Rect: [textX, pngDims.height + 13, textX + textWidth, pngDims.height + 13 + 8],
+				Border: [0, 0, 0],
+				A: this.pdfDoc.context.obj({
+					Type: 'Action',
+					S: 'URI',
+					URI: PDFString.of(barcodeData)
+				})
+			})
+		);
+
+		this.page.node.set(PDFName.of('Annots'), this.pdfDoc.context.obj([link]));
 	}
 }
 
@@ -494,7 +531,20 @@ export async function downloadCompletePostalRegistrationPDF(
 	termsAndConditions?: string,
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
-	if (!contract || !guardianAgreement || !medialAgreement || !termsAndConditions) {
+	if (!contract) {
+		toast.push('Missing contract content');
+		throw new Error('Missing required PDF content');
+	}
+	if (!guardianAgreement) {
+		toast.push('Missing guardian agreement content');
+		throw new Error('Missing required PDF content');
+	}
+	if (!medialAgreement) {
+		toast.push('Missing media agreement content');
+		throw new Error('Missing required PDF content');
+	}
+	if (!termsAndConditions) {
+		toast.push('Missing terms and conditions content');
 		throw new Error('Missing required PDF content');
 	}
 	try {
@@ -545,6 +595,7 @@ export async function downloadCompleteCertificate(
 ): Promise<void> {
 	try {
 		if (!certificate) {
+			toast.push('Missing certificate content');
 			throw new Error('Missing required PDF content');
 		}
 		const pdfBytes = await generateCertificatePDF(data, certificate);

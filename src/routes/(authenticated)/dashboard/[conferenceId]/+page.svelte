@@ -37,7 +37,7 @@
 					/>
 					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if conference!.state === 'POST'}
-					<Certificate conferenceId={conference!.id} userId={data.user.sub} didAttend />
+					<Certificate conferenceId={conference?.id} userId={data.user.sub} didAttend />
 				{/if}
 			{:else}
 				<ApplicationRejected />
@@ -57,7 +57,11 @@
 					/>
 					<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if conference!.state === 'POST'}
-					<Certificate conferenceId={conference!.id} userId={data.user.sub} didAttend />
+					<Certificate
+						conferenceId={conference!.id}
+						userId={data.user.sub}
+						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+					/>
 				{/if}
 			{:else}
 				<ApplicationRejected />

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import { blur } from 'svelte/transition';
-
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -26,9 +25,13 @@
 					<p class="text-lg">
 						{@html m.certificateIsValidFor({
 							fullName,
-							conferenceTitle,
-							conferenceStartDate: conferenceStartDate.toLocaleDateString(),
-							conferenceEndDate: conferenceEndDate.toLocaleDateString()
+							conferenceTitle: conferenceTitle ?? m.unknownConferenceTitle(),
+							conferenceStartDate: conferenceStartDate
+								? conferenceStartDate.toLocaleDateString()
+								: m.unknownDate(),
+							conferenceEndDate: conferenceEndDate
+								? conferenceEndDate.toLocaleDateString()
+								: m.unknownDate()
 						})}
 					</p>
 					<i class="fas fa-check-circle text-4xl text-success"></i>

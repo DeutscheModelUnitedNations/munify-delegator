@@ -6,7 +6,7 @@
 	import { toast } from '@zerodevx/svelte-toast';
 
 	interface Props {
-		conferenceId: string;
+		conferenceId: string | undefined;
 		userId: string;
 		didAttend: boolean;
 	}
@@ -16,13 +16,13 @@
 	let loading = $state(false);
 
 	const certificateQuery = graphql(`
-		query CertificateQuery($conferenceId: String!, $userId: String!) @load {
+		query CertificateQuery($conferenceId: String!, $userId: String!) {
 			findUniqueConference(where: { id: $conferenceId }) {
 				certificateContent
 				title
 			}
 			getCertificateJWT(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
+				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
 			) {
 				jwt
 				fullName
@@ -31,7 +31,9 @@
 	`);
 
 	$effect(() => {
-		certificateQuery.fetch({ variables: { conferenceId, userId } });
+		if (conferenceId && userId) {
+			certificateQuery.fetch({ variables: { conferenceId, userId } });
+		}
 	});
 
 	const downloadPDF = async () => {
@@ -67,7 +69,7 @@
 	<h2 class="text-2xl font-bold">{m.thanksForParticipating()}</h2>
 	<p>{m.thanksForParticipatingDescription()}</p>
 	<h3 class="mt-6 text-xl font-bold">{m.certificate()}</h3>
-	{#if !$certificateQuery.fetching}
+	{#if !$certificateQuery.fetching && $certificateQuery.variables}
 		{#if !$certificateQuery.data?.findUniqueConference?.certificateContent}
 			<div class="alert alert-error">
 				<i class="fas fa-hourglass-half"></i>
@@ -75,7 +77,7 @@
 					{m.certificateNotYetAvailable()}
 				</p>
 			</div>
-		{:else if didAttend && $certificateQuery.data?.findUniqueUser?.id}
+		{:else if didAttend && userId}
 			<p>{m.certificateDescription()}</p>
 
 			<button class="btn btn-primary mt-4 w-full max-w-sm" onclick={downloadPDF}>

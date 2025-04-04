@@ -4,58 +4,88 @@ import { configPrivate } from '$config/private';
 import { db } from '$db/db';
 import { findUniqueConferenceParticipantStatusQueryObject } from '$db/generated/graphql/ConferenceParticipantStatus';
 import formatNames from '$lib/services/formatNames';
-import { importPKCS8, SignJWT } from 'jose';
-import { subtle, randomBytes } from 'node:crypto';
+import { importPKCS8, SignJWT, exportJWK } from 'jose';
+import { certificateAlg } from './certificateConfig';
 
 const envSecret = configPrivate.CERTIFICATE_SECRET;
-const issuer = 'munify-delegator';
-const audience = 'munify-delegator-pdf-certificate';
-const alg = 'RS256';
-const requiredClaims = [
-	'fullName',
-	'conferenceTitle',
-	'conferenceStartDateISOString',
-	'conferenceEndDateISOString'
-];
 
 //TODO: investigate performance
 const keyPair = generateSeededRsa(envSecret, { bits: 2048 });
-
+const jwkPublicKey = exportJWK((await keyPair).publicKey).then((k) => {
+	k.alg = certificateAlg;
+	return k;
+});
 export interface CertificateJWTPayload extends Record<string, unknown> {
-	fullName: string;
-	conferenceTitle: string;
-	conferenceStartDateISOString: string;
-	conferenceEndDateISOString: string;
+	n: string; // user full name
+	t: string; // conference title
+	s: number; // conference start date
+	e: number; // conference end date
 }
 
-export const CryptoKeyTypeEnum = builder.enumType('CryptoKeyType', {
-	values: ['private', 'public', 'secret'] as const
-});
-
-export const CryptoKeyUsagesEnum = builder.enumType('CryptoKeyUsages', {
-	values: [
-		'decrypt',
-		'deriveBits',
-		'deriveKey',
-		'encrypt',
-		'sign',
-		'unwrapKey',
-		'verify',
-		'wrapKey'
-	] as const
-});
-
-const GraphqlCryptoKey = builder.simpleObject('CryptoKey', {
+const GraphqlJWK = builder.simpleObject('JWK', {
 	fields: (t) => ({
-		algorithm: t.field({
-			type: t.builder.simpleObject('KeyAlgorithm', { fields: (t) => ({ name: t.string() }) })
+		alg: t.string({
+			nullable: true
 		}),
-		extractable: t.boolean(),
-		type: t.field({
-			type: CryptoKeyTypeEnum
+		crv: t.string({
+			nullable: true
 		}),
-		usages: t.field({
-			type: [CryptoKeyUsagesEnum]
+		d: t.string({
+			nullable: true
+		}),
+		dp: t.string({
+			nullable: true
+		}),
+		dq: t.string({
+			nullable: true
+		}),
+		e: t.string({
+			nullable: true
+		}),
+		ext: t.boolean({
+			nullable: true
+		}),
+		k: t.string({
+			nullable: true
+		}),
+		key_ops: t.stringList({
+			nullable: true
+		}),
+		kty: t.string({
+			nullable: true
+		}),
+		n: t.string({
+			nullable: true
+		}),
+		oth: t.field({
+			type: [
+				t.builder.simpleObject('RsaOtherPrimesInfo', {
+					fields: (t) => ({
+						d: t.string({ nullable: true }),
+						r: t.string({ nullable: true }),
+						t: t.string({ nullable: true })
+					})
+				})
+			],
+			nullable: true
+		}),
+		p: t.string({
+			nullable: true
+		}),
+		q: t.string({
+			nullable: true
+		}),
+		qi: t.string({
+			nullable: true
+		}),
+		use: t.string({
+			nullable: true
+		}),
+		x: t.string({
+			nullable: true
+		}),
+		y: t.string({
+			nullable: true
 		})
 	})
 });
@@ -67,9 +97,6 @@ builder.queryFields((t) => {
 			type: t.builder.simpleObject('CertificateJWT', {
 				fields: (t) => ({
 					jwt: t.string(),
-					publicKey: t.field({
-						type: GraphqlCryptoKey
-					}),
 					fullName: t.string()
 				})
 			}),
@@ -112,24 +139,32 @@ builder.queryFields((t) => {
 				});
 
 				const tokenPayload: CertificateJWTPayload = {
-					conferenceTitle: conference.longTitle || conference.title,
-					conferenceStartDateISOString: conference.startConference.toISOString(),
-					conferenceEndDateISOString: conference.endConference.toISOString(),
-					fullName
+					n: fullName,
+					t: conference.longTitle || conference.title,
+					s: conference.startConference.getTime(),
+					e: conference.endConference.getTime()
 				};
 
 				const jwt = await new SignJWT(tokenPayload)
-					.setProtectedHeader({ alg })
+					.setProtectedHeader({ alg: certificateAlg })
 					.setIssuedAt()
-					.setIssuer(issuer)
-					.setAudience(audience)
 					.sign((await keyPair).privateKey);
 
 				return {
 					jwt,
-					publicKey: (await keyPair).publicKey,
 					fullName
 				};
+			}
+		})
+	};
+});
+
+builder.queryFields((t) => {
+	return {
+		getCertificateJWTPublicKeyObject: t.field({
+			type: GraphqlJWK,
+			resolve: async (root, _args, ctx) => {
+				return await jwkPublicKey;
 			}
 		})
 	};

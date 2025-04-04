@@ -1,4 +1,4 @@
-import * as forge from 'node-forge';
+import forge from 'node-forge';
 import { subtle } from 'node:crypto';
 
 // https://gitlab.com/soapbox-pub/seeded-rsa/-/blob/main/mod.ts?ref_type=heads

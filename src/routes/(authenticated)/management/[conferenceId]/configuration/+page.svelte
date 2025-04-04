@@ -102,24 +102,25 @@
 	async function handleGenerateCertificatePDF() {
 		const conference = $formData;
 
+		const randomString = (n: number) => {
+			const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+			let result = '';
+			for (let i = 0; i < n; i++) {
+				result += chars.charAt(Math.floor(Math.random() * chars.length));
+			}
+			return result;
+		};
+
+		loading = true;
 		await downloadCompleteCertificate(
 			{
 				fullName: 'Antonio Guterres',
-				conferenceName: conference.longTitle || conference.title,
-				conferenceStartDate: new Date(conference.startConference).toLocaleDateString(undefined, {
-					year: 'numeric',
-					month: '2-digit',
-					day: '2-digit'
-				}),
-				conferenceEndDate: new Date(conference.endConference).toLocaleDateString(undefined, {
-					year: 'numeric',
-					month: '2-digit',
-					day: '2-digit'
-				})
+				jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
 			},
 			data.certificateContent ?? undefined,
 			`test_certificate.pdf`
 		);
+		loading = false;
 	}
 </script>
 
@@ -236,7 +237,7 @@
 		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
 		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
 		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
-		<FormFile {form} name="contractContent" label={m.postalTemplateContract()} accept="*.pdf" />
+		<FormFile {form} name="contractBasePDF" label={m.postalTemplateContract()} accept="*.pdf" />
 		<FormFile
 			{form}
 			name="guardianConsentBasePDF"

@@ -666,5 +666,6 @@
 	"certificateIsValidFor": "Dieses Zertifikat bescheinigt, dass <br /><strong>{fullName}</strong><br /> vom {conferenceStartDate} bis zum {conferenceEndDate} an der Veranstaltung <br /><strong>{conferenceTitle}</strong><br /> teilgenommen hat.",
 	"certificateIsNotValid": "Das Zertifikat ist ungültig.",
 	"certificateIsNotValidText": "Das Zertifikat kann nicht verifiziert werden. Bitte wende dich an uns, wenn du glaubst, dass es sich dabei um einen Fehler handelt.",
-	"certificateDownloadError": "Das Zertifikat konnte nicht heruntergeladen werden."
+	"certificateDownloadError": "Das Zertifikat konnte nicht heruntergeladen werden.",
+	"unknownConferenceTitle": "Unbekannter Konferenzname"
 }
