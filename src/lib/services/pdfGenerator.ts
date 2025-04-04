@@ -390,11 +390,7 @@ class CertificateGenerator extends PDFPageGenerator {
 
 		const origin = new URL(window.location.href).origin;
 
-		const baseUrl = `${origin}/validateCertificate?jwt=`;
-
-		const jwt = '';
-
-		const barcodeData = '';
+		const barcodeData = `${origin}/validateCertificate?jwt=${this.data.jwt}`;
 
 		const barcodeCanvas = document.createElement('canvas');
 

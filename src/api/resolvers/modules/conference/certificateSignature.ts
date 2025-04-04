@@ -1,10 +1,25 @@
 import { builder } from '$api/resolvers/builder';
+import { generateSeededRsa } from '$api/services/deterministicRSAKeypair';
 import { configPrivate } from '$config/private';
 import { db } from '$db/db';
 import { findUniqueConferenceParticipantStatusQueryObject } from '$db/generated/graphql/ConferenceParticipantStatus';
 import formatNames from '$lib/services/formatNames';
 import { importPKCS8, SignJWT } from 'jose';
 import { subtle, randomBytes } from 'node:crypto';
+
+const envSecret = configPrivate.CERTIFICATE_SECRET;
+const issuer = 'munify-delegator';
+const audience = 'munify-delegator-pdf-certificate';
+const alg = 'RS256';
+const requiredClaims = [
+	'fullName',
+	'conferenceTitle',
+	'conferenceStartDateISOString',
+	'conferenceEndDateISOString'
+];
+
+//TODO: investigate performance
+const keyPair = generateSeededRsa(envSecret, { bits: 2048 });
 
 export interface CertificateJWTPayload extends Record<string, unknown> {
 	fullName: string;
@@ -13,6 +28,38 @@ export interface CertificateJWTPayload extends Record<string, unknown> {
 	conferenceEndDateISOString: string;
 }
 
+export const CryptoKeyTypeEnum = builder.enumType('CryptoKeyType', {
+	values: ['private', 'public', 'secret'] as const
+});
+
+export const CryptoKeyUsagesEnum = builder.enumType('CryptoKeyUsages', {
+	values: [
+		'decrypt',
+		'deriveBits',
+		'deriveKey',
+		'encrypt',
+		'sign',
+		'unwrapKey',
+		'verify',
+		'wrapKey'
+	] as const
+});
+
+const GraphqlCryptoKey = builder.simpleObject('CryptoKey', {
+	fields: (t) => ({
+		algorithm: t.field({
+			type: t.builder.simpleObject('KeyAlgorithm', { fields: (t) => ({ name: t.string() }) })
+		}),
+		extractable: t.boolean(),
+		type: t.field({
+			type: CryptoKeyTypeEnum
+		}),
+		usages: t.field({
+			type: [CryptoKeyUsagesEnum]
+		})
+	})
+});
+
 builder.queryFields((t) => {
 	const field = findUniqueConferenceParticipantStatusQueryObject(t);
 	return {
@@ -20,7 +67,9 @@ builder.queryFields((t) => {
 			type: t.builder.simpleObject('CertificateJWT', {
 				fields: (t) => ({
 					jwt: t.string(),
-					publicKey: t.string(),
+					publicKey: t.field({
+						type: GraphqlCryptoKey
+					}),
 					fullName: t.string()
 				})
 			}),
@@ -62,63 +111,25 @@ builder.queryFields((t) => {
 					givenNameUppercase: false
 				});
 
-				// const tokenPayload: CertificateJWTPayload = {
-				// 	conferenceTitle: conference.longTitle || conference.title,
-				// 	conferenceStartDateISOString: conference.startConference.toISOString(),
-				// 	conferenceEndDateISOString: conference.endConference.toISOString(),
-				// 	fullName:
-				// };
+				const tokenPayload: CertificateJWTPayload = {
+					conferenceTitle: conference.longTitle || conference.title,
+					conferenceStartDateISOString: conference.startConference.toISOString(),
+					conferenceEndDateISOString: conference.endConference.toISOString(),
+					fullName
+				};
 
-				// 	const encoder = new TextEncoder();
-				// 	const secretKeyData = encoder.encode(configPrivate.CERTIFICATE_SECRET);
-				// 	const secretKey = await subtle.importKey('raw', secretKeyData, { name: 'PBKDF2' }, false, [
-				// 		'deriveBits',
-				// 		'deriveKey'
-				// 	]);
+				const jwt = await new SignJWT(tokenPayload)
+					.setProtectedHeader({ alg })
+					.setIssuedAt()
+					.setIssuer(issuer)
+					.setAudience(audience)
+					.sign((await keyPair).privateKey);
 
-				// 	const pubKeyObject = crypto.createPublicKey({
-				// 		key: privateKey,
-				// 		format: 'pem'
-				// })
-
-				// const publicKey = pubKeyObject.export({
-				// 		format: 'pem',
-				// 		type: 'spki'
-				// })
-
-				// Derive a key pair from the secret key
-				// const keyPair = await subtle.deriveKey(
-				// 	{
-				// 		name: 'PBKDF2',
-				// 		salt: randomBytes(16),
-				// 		iterations: 100000,
-				// 		hash: 'SHA-256'
-				// 	},
-				// 	secretKey,
-				// 	{
-				// 		name: 'ECDSA',
-				// 	},
-				// 	true,
-				// 	['sign', 'verify']
-				// );
-
-				// const privateKey = await importPKCS8(
-				// 	configPrivate.CERTIFICATE_PRIVATE_KEY,
-				// 	configPrivate.CERTIFICATE_PRIVATE_KEY_ALG
-				// );
-
-				// const jwt = await new SignJWT(tokenPayload)
-				// 	.setProtectedHeader({ alg: 'HS256' })
-				// 	.setIssuedAt()
-				// 	.setIssuer('munify-delegator')
-				// 	.setAudience('certificate-pdf')
-				// 	.sign(privateKey);
-
-				// return {
-				// 	jwt,
-				// 	publicKey,
-				// 	fullName
-				// };
+				return {
+					jwt,
+					publicKey: (await keyPair).publicKey,
+					fullName
+				};
 			}
 		})
 	};

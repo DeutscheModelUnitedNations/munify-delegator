@@ -3,6 +3,7 @@
 	import * as m from '$lib/paraglide/messages.js';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	interface Props {
 		conferenceId: string;
@@ -18,6 +19,7 @@
 		query CertificateQuery($conferenceId: String!, $userId: String!) @load {
 			findUniqueConference(where: { id: $conferenceId }) {
 				certificateContent
+				title
 			}
 			getCertificateJWT(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
@@ -35,7 +37,17 @@
 	const downloadPDF = async () => {
 		const conference = $certificateQuery.data?.findUniqueConference;
 
-		if (!conference?.certificateContent || !user) {
+		if (!conference?.certificateContent || !userId) {
+			return;
+		}
+
+		if (
+			!$certificateQuery.data?.getCertificateJWT?.fullName ||
+			!$certificateQuery.data?.getCertificateJWT?.jwt
+		) {
+			toast.push(m.certificateDownloadError(), {
+				duration: 5000
+			});
 			return;
 		}
 
