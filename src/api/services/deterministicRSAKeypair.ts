@@ -5,6 +5,9 @@ import { subtle } from 'node:crypto';
 
 /** Get SHA-256 hex digest from a string. */
 function getDigest(message: string) {
+	if (!message) {
+		return '';
+	}
 	const hash = forge.md.sha256.create();
 	hash.update(message);
 	return hash.digest().toHex();
