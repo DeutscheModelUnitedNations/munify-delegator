@@ -8,6 +8,7 @@
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
+	import Certificate from './stages/Certificate.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -25,7 +26,7 @@
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 				<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 			{:else if conferenceQueryData?.findUniqueSingleParticipant?.assignedRole}
-				{#if conference!.state === 'PREPARATION'}
+				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
 						userId={data.user.sub}
@@ -35,10 +36,8 @@
 						unlockPostals={conference?.unlockPostals}
 					/>
 					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
-				{:else if conference!.state === 'ACTIVE'}
-					#TODO: Implement individual on conference stage
 				{:else if conference!.state === 'POST'}
-					#TODO: Implement individual post conference stage
+					<Certificate conferenceId={conference?.id} userId={data.user.sub} didAttend />
 				{/if}
 			{:else}
 				<ApplicationRejected />
@@ -47,7 +46,7 @@
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 				<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
 			{:else if !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNation || !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor}
-				{#if conference!.state === 'PREPARATION'}
+				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
 						userId={data.user.sub}
@@ -57,10 +56,12 @@
 						unlockPostals={conference?.unlockPostals}
 					/>
 					<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
-				{:else if Date.now() < conference!.startConference.getTime() && Date.now() < conference!.endConference.getTime()}
-					#TODO: Implement individual on conference stage
-				{:else if Date.now() > conference!.endConference.getTime()}
-					<!-- <PostConferenceStage /> -->
+				{:else if conference!.state === 'POST'}
+					<Certificate
+						conferenceId={conference!.id}
+						userId={data.user.sub}
+						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+					/>
 				{/if}
 			{:else}
 				<ApplicationRejected />

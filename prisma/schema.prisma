@@ -66,6 +66,9 @@ model Conference {
   mediaConsentContent       String?
   termsAndConditionsContent String?
 
+  /// Certificate
+  certificateContent String?
+
   individualApplicationOptions CustomConferenceRole[]
   delegations                  Delegation[]
   nonStateActors               NonStateActor[]

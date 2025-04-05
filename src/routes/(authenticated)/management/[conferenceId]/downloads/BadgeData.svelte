@@ -31,6 +31,13 @@
 						given_name
 						family_name
 						pronouns
+						conferenceParticipantStatus {
+							id
+							mediaConsentStatus
+							conference {
+								id
+							}
+						}
 					}
 					delegation {
 						id
@@ -58,6 +65,13 @@
 					given_name
 					family_name
 					pronouns
+					conferenceParticipantStatus {
+						id
+						mediaConsentStatus
+						conference {
+							id
+						}
+					}
 				}
 				delegation {
 					id
@@ -85,6 +99,13 @@
 					given_name
 					family_name
 					pronouns
+					conferenceParticipantStatus {
+						id
+						mediaConsentStatus
+						conference {
+							id
+						}
+					}
 				}
 				assignedRole {
 					name
@@ -156,7 +177,11 @@
 				),
 				countryAlpha2Code: member.delegation.assignedNation!.alpha2Code,
 				alternativeImage: '',
-				pronouns: member.user.pronouns
+				pronouns: member.user.pronouns,
+				mediaConsentStatus:
+					member.user.conferenceParticipantStatus.find((conference) => {
+						return conference.conference.id === conferenceId;
+					})?.mediaConsentStatus ?? 'NOT_SET'
 			}));
 
 		downloadCSV(badgeData, `${resData.abbreviation}_badge_data_${new Date().toISOString()}.csv`);
@@ -184,7 +209,11 @@
 				countryName: member.delegation.assignedNonStateActor!.name,
 				countryAlpha2Code: 'un',
 				alternativeImage: '',
-				pronouns: member.user.pronouns
+				pronouns: member.user.pronouns,
+				mediaConsentStatus:
+					member.user.conferenceParticipantStatus.find((conference) => {
+						return conference.conference.id === conferenceId;
+					})?.mediaConsentStatus ?? 'NOT_SET'
 			}));
 
 		downloadCSV(badgeData, `NSA_badge_data_${new Date().toISOString()}.csv`);
@@ -215,7 +244,11 @@
 				countryName: member.assignedRole!.name,
 				countryAlpha2Code: 'un',
 				alternativeImage: '',
-				pronouns: member.user.pronouns
+				pronouns: member.user.pronouns,
+				mediaConsentStatus:
+					member.user.conferenceParticipantStatus.find((conference) => {
+						return conference.conference.id === conferenceId;
+					})?.mediaConsentStatus ?? 'NOT_SET'
 			}));
 
 		downloadCSV(badgeData, `single_participants_badge_data_${new Date().toISOString()}.csv`);

@@ -89,6 +89,12 @@
 				expanded={navbarExpanded}
 			/>
 			<NavMenuButton
+				href="/management/{data.conferenceId}/helper"
+				icon="fa-gear-code"
+				title={m.helper()}
+				expanded={navbarExpanded}
+			/>
+			<NavMenuButton
 				href="/management/{data.conferenceId}/cleanup"
 				icon="fa-broom"
 				title={m.cleanup()}

@@ -144,6 +144,10 @@
 		surveyId: {
 			icon: 'magnifying-glass',
 			translation: m.details()
+		},
+		helper: {
+			icon: 'gear-code',
+			translation: m.helper()
 		}
 	};
 

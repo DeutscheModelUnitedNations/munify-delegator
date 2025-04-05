@@ -15,24 +15,15 @@
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import FormFile from '$lib/components/Form/FormFile.svelte';
 	import {
+		downloadCompleteCertificate,
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
-	import formatNames, { formatInitials } from '$lib/services/formatNames';
+	import formatNames from '$lib/services/formatNames';
 
 	let { data }: { data: PageData } = $props();
-
-	// Remove saved PDF file URLs from the initial form data so that only File objects (or undefined) are processed.
-	const initialForm = {
-		...data.form,
-		contractContent: undefined,
-		guardianConsentContent: undefined,
-		mediaConsentContent: undefined,
-		termsAndConditionsContent: undefined
-	};
-
-	let form = superForm(initialForm, {
+	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod(conferenceSettingsFormSchema),
@@ -69,7 +60,7 @@
 
 	let loading = $state(false);
 
-	async function handleGeneratePDF() {
+	async function handleGeneratePostalPDF() {
 		loading = true;
 		try {
 			const recipientData: RecipientData = {
@@ -106,6 +97,30 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	async function handleGenerateCertificatePDF() {
+		const conference = $formData;
+
+		const randomString = (n: number) => {
+			const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+			let result = '';
+			for (let i = 0; i < n; i++) {
+				result += chars.charAt(Math.floor(Math.random() * chars.length));
+			}
+			return result;
+		};
+
+		loading = true;
+		await downloadCompleteCertificate(
+			{
+				fullName: 'Antonio Guterres',
+				jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
+			},
+			data.certificateContent ?? undefined,
+			`test_certificate.pdf`
+		);
+		loading = false;
 	}
 </script>
 
@@ -222,22 +237,22 @@
 		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
 		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
 		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
-		<FormFile {form} name="contractContent" label={m.postalTemplateContract()} accept="*.pdf" />
+		<FormFile {form} name="contractBasePDF" label={m.postalTemplateContract()} accept="*.pdf" />
 		<FormFile
 			{form}
-			name="guardianConsentContent"
+			name="guardianConsentBasePDF"
 			label={m.postalTemplateGuardianConsent()}
 			accept="*.pdf"
 		/>
 		<FormFile
 			{form}
-			name="mediaConsentContent"
+			name="mediaConsentBasePDF"
 			label={m.postalTemplateMediaConsent()}
 			accept="*.pdf"
 		/>
 		<FormFile
 			{form}
-			name="termsAndConditionsContent"
+			name="termsAndConditionsBasePDF"
 			label={m.postalTemplateTermsAndConditions()}
 			accept="*.pdf"
 		/>
@@ -245,7 +260,18 @@
 			class="btn"
 			onclick={async (e) => {
 				e.preventDefault();
-				handleGeneratePDF();
+				handleGeneratePostalPDF();
+			}}
+		>
+			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+		</button>
+		<h3 class="mt-8 text-lg font-bold">{m.certificate()}</h3>
+		<FormFile {form} name="certificateBasePDF" label={m.CertifiacteTemplate()} accept="*.pdf" />
+		<button
+			class="btn"
+			onclick={async (e) => {
+				e.preventDefault();
+				handleGenerateCertificatePDF();
 			}}
 		>
 			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}

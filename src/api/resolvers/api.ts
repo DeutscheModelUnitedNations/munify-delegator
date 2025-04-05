@@ -10,6 +10,7 @@ builder.mutationType({});
 
 import './modules/conference/conference';
 import './modules/conference/plausibility';
+import './modules/conference/certificateSignature';
 import './modules/conference/statistics';
 import './modules/auth';
 import './modules/committee';

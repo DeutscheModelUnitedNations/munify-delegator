@@ -5,7 +5,7 @@
 	import svgquestion from '$assets/undraw/question.svg';
 	import access_denied from '$assets/undraw/access_denied.svg';
 
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 
 	const getPicture = (e: number) => {
 		switch (e) {
@@ -37,7 +37,7 @@
 </script>
 
 <main class="flex h-screen w-full flex-col items-center justify-center gap-10 p-4">
-	<img src={getPicture($page.status)} alt="404" class="w-1/2" />
-	<h1 class="text-center text-3xl">{getErrorText($page.status)}</h1>
-	<p>{$page.error?.message}</p>
+	<img src={getPicture(page.status)} alt="404" class="w-1/2" />
+	<h1 class="text-center text-3xl">{getErrorText(page.status)}</h1>
+	<p>{page.error?.message}</p>
 </main>

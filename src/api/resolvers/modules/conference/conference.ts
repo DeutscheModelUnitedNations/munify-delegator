@@ -35,6 +35,7 @@ import {
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
 	updateOneConferenceMutationObject,
+	ConferenceCertificateContentFieldObject,
 	ConferenceContractContentFieldObject
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
@@ -78,6 +79,7 @@ builder.prismaObject('Conference', {
 		guardianConsentContent: t.string(ConferenceGuardianConsentContentFieldObject),
 		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
 		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
+		certificateContent: t.string(ConferenceCertificateContentFieldObject),
 		paymentTransactions: t.relation('paymentTransactions', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').PaymentTransaction
@@ -311,19 +313,23 @@ builder.mutationFields((t) => {
 							postalCountry: t.string({
 								required: false
 							}),
-							contractContent: t.field({
+							contractBasePDF: t.field({
 								type: 'File',
 								required: false
 							}),
-							guardianConsentContent: t.field({
+							guardianConsentBasePDF: t.field({
 								type: 'File',
 								required: false
 							}),
-							mediaConsentContent: t.field({
+							mediaConsentBasePDF: t.field({
 								type: 'File',
 								required: false
 							}),
-							termsAndConditionsContent: t.field({
+							termsAndConditionsBasePDF: t.field({
+								type: 'File',
+								required: false
+							}),
+							certificateBasePDF: t.field({
 								type: 'File',
 								required: false
 							})
@@ -339,35 +345,33 @@ builder.mutationFields((t) => {
 
 				conferenceSettingsFormSchema.parse(args.data);
 
-				const dataURL =
-					args.data.image && args.data.image instanceof File
-						? await toDataURL(args.data.image)
-						: args.data.image;
+				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;
 
-				const contractContentURL =
-					args.data.contractContent && args.data.contractContent instanceof File
-						? await toDataURL(args.data.contractContent)
-						: args.data.contractContent;
-				args.data.contractContent = undefined;
+				const contractContentURL = args.data.contractBasePDF
+					? await toDataURL(args.data.contractBasePDF)
+					: args.data.contractBasePDF;
+				args.data.contractBasePDF = undefined;
 
-				const guardianConsentContentURL =
-					args.data.guardianConsentContent && args.data.guardianConsentContent instanceof File
-						? await toDataURL(args.data.guardianConsentContent)
-						: args.data.guardianConsentContent;
-				args.data.guardianConsentContent = undefined;
+				const guardianConsentContentURL = args.data.guardianConsentBasePDF
+					? await toDataURL(args.data.guardianConsentBasePDF)
+					: args.data.guardianConsentBasePDF;
+				args.data.guardianConsentBasePDF = undefined;
 
-				const mediaConsentContentURL =
-					args.data.mediaConsentContent && args.data.mediaConsentContent instanceof File
-						? await toDataURL(args.data.mediaConsentContent)
-						: args.data.mediaConsentContent;
-				args.data.mediaConsentContent = undefined;
+				const mediaConsentContentURL = args.data.mediaConsentBasePDF
+					? await toDataURL(args.data.mediaConsentBasePDF)
+					: args.data.mediaConsentBasePDF;
+				args.data.mediaConsentBasePDF = undefined;
 
-				const termsAndConditionsContentURL =
-					args.data.termsAndConditionsContent && args.data.termsAndConditionsContent instanceof File
-						? await toDataURL(args.data.termsAndConditionsContent)
-						: args.data.termsAndConditionsContent;
-				args.data.termsAndConditionsContent = undefined;
+				const termsAndConditionsContentURL = args.data.termsAndConditionsBasePDF
+					? await toDataURL(args.data.termsAndConditionsBasePDF)
+					: args.data.termsAndConditionsBasePDF;
+				args.data.termsAndConditionsBasePDF = undefined;
+
+				const certificateContentURL = args.data.certificateBasePDF
+					? await toDataURL(args.data.certificateBasePDF)
+					: args.data.certificateBasePDF;
+				args.data.certificateBasePDF = undefined;
 
 				return await db.conference.update({
 					where: args.where,
@@ -387,7 +391,8 @@ builder.mutationFields((t) => {
 						contractContent: contractContentURL,
 						guardianConsentContent: guardianConsentContentURL,
 						mediaConsentContent: mediaConsentContentURL,
-						termsAndConditionsContent: termsAndConditionsContentURL
+						termsAndConditionsContent: termsAndConditionsContentURL,
+						certificateContent: certificateContentURL
 					},
 					...query
 				});
