@@ -1,3 +1,4 @@
+import { building } from '$app/environment';
 import forge from 'node-forge';
 import { subtle } from 'node:crypto';
 
@@ -6,7 +7,7 @@ import { subtle } from 'node:crypto';
 /** Get SHA-256 hex digest from a string. */
 function getDigest(message: string) {
 	if (!message) {
-		return '';
+		throw new Error('Secret must not be empty');
 	}
 	const hash = forge.md.sha256.create();
 	hash.update(message);
@@ -35,6 +36,14 @@ export async function generateSeededRsa(
 	seed: string,
 	opts: GenerateSeededRsaOptions = {}
 ): Promise<{ publicKey: CryptoKey; privateKey: CryptoKey }> {
+	if (building) {
+		// Mock the function to return a dummy keypair as Uint8Arrays
+		return {
+			publicKey: new Uint8Array(0) as unknown as CryptoKey,
+			privateKey: new Uint8Array(0) as unknown as CryptoKey
+		};
+	}
+
 	// Seed the PRNG with a SHA-256 digest from the string.
 	const prng = forge.random.createInstance();
 	prng.seedFileSync = () => getDigest(seed);
