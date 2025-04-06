@@ -37,7 +37,11 @@
 					/>
 					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
 				{:else if conference!.state === 'POST'}
-					<Certificate conferenceId={conference?.id} userId={data.user.sub} didAttend />
+					<Certificate
+						conferenceId={conference!.id}
+						userId={data.user.sub}
+						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+					/>
 				{/if}
 			{:else}
 				<ApplicationRejected />
@@ -68,11 +72,19 @@
 			{/if}
 		{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
 			{#if (conference!.state !== 'PARTICIPANT_REGISTRATION' && conferenceQueryData.findUniqueConferenceSupervisor.delegations.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0) || conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<Supervisor
-					user={data.user}
-					conferenceData={conferenceQueryData}
-					ofAge={data.ofAgeAtConference}
-				/>
+				{#if conference!.state === 'POST'}
+					<Certificate
+						conferenceId={conference!.id}
+						userId={data.user.sub}
+						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+					/>
+				{:else}
+					<Supervisor
+						user={data.user}
+						conferenceData={conferenceQueryData}
+						ofAge={data.ofAgeAtConference}
+					/>
+				{/if}
 			{:else}
 				<ApplicationRejected />
 			{/if}
