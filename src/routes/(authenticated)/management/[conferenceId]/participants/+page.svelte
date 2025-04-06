@@ -184,6 +184,21 @@
 			headerClass: 'text-center'
 		},
 		{
+			key: 'didAttend',
+			title: m.attendance(),
+			value: (row) => (row.status?.didAttend ? 1 : 0),
+			renderValue: (row) => {
+				if (row.status?.didAttend) {
+					return `<i class="fas fa-check text-success"></i>`;
+				}
+				return `<i class="fas fa-xmark text-error"></i>`;
+			},
+			parseHTML: true,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
 			key: 'city',
 			title: m.city(),
 			value: (row) => (row.city ? capitalizeFirstLetter(row.city) : 'N/A'),

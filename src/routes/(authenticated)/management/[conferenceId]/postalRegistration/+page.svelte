@@ -5,12 +5,8 @@
 		type MediaConsentStatus$options,
 		type UpdateConferenceParticipantStatusInput
 	} from '$houdini';
-	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
 	import * as m from '$lib/paraglide/messages';
-	import { languageTag } from '$lib/paraglide/runtime';
-	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { type PageData } from './$houdini';
-	import { fly, fade } from 'svelte/transition';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
 	import { BarcodeDetector } from 'barcode-detector';
@@ -104,6 +100,13 @@
 			startVideo();
 			// Automatically scan every 500ms
 			setInterval(scanForCode, 500);
+		} else {
+			userData.fetch({
+				variables: {
+					userId: queryUserId,
+					conferenceId: data.conferenceId
+				}
+			});
 		}
 	});
 
@@ -133,17 +136,6 @@
 		}
 	`);
 
-	$effect(() => {
-		if (queryUserId) {
-			userData.fetch({
-				variables: {
-					userId: queryUserId,
-					conferenceId: data.conferenceId
-				}
-			});
-		}
-	});
-
 	const changeAdministrativeStatus = async (
 		statusId: string | undefined,
 		userId: string | undefined,
@@ -164,25 +156,27 @@
 		userData.fetch();
 	};
 
-	hotkeys('esc', (event) => {
-		if (queryUserId) {
-			queryUserId = '';
-		}
-	});
-
-	hotkeys('enter', (event) => {
-		if (queryUserId) {
-			const userDetails = $userData?.data?.findUniqueUser;
-			const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus;
-			if (userDetails && postalRegistrationDetails) {
-				changeAdministrativeStatus(postalRegistrationDetails.id, userDetails.id, {
-					termsAndConditions: 'DONE',
-					mediaConsent: 'DONE',
-					guardianConsent: 'DONE',
-					mediaConsentStatus: 'ALLOWED_ALL'
-				});
+	onMount(() => {
+		hotkeys('esc', (event) => {
+			if (queryUserId) {
+				queryUserId = '';
 			}
-		}
+		});
+
+		hotkeys('enter', (event) => {
+			if (queryUserId) {
+				const userDetails = $userData?.data?.findUniqueUser;
+				const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus;
+				if (userDetails && postalRegistrationDetails) {
+					changeAdministrativeStatus(postalRegistrationDetails.id, userDetails.id, {
+						termsAndConditions: 'DONE',
+						mediaConsent: 'DONE',
+						guardianConsent: 'DONE',
+						mediaConsentStatus: 'ALLOWED_ALL'
+					});
+				}
+			}
+		});
 	});
 </script>
 
