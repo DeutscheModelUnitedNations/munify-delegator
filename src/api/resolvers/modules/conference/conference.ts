@@ -80,6 +80,21 @@ builder.prismaObject('Conference', {
 		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
 		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
 		certificateContent: t.string(ConferenceCertificateContentFieldObject),
+		contractContentSet: t.boolean({
+			resolve: (root) => !!root.contractContent
+		}),
+		guardianConsentContentSet: t.boolean({
+			resolve: (root) => !!root.guardianConsentContent
+		}),
+		mediaConsentContentSet: t.boolean({
+			resolve: (root) => !!root.mediaConsentContent
+		}),
+		termsAndConditionsContentSet: t.boolean({
+			resolve: (root) => !!root.termsAndConditionsContent
+		}),
+		certificateContentSet: t.boolean({
+			resolve: (root) => !!root.certificateContent
+		}),
 		paymentTransactions: t.relation('paymentTransactions', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').PaymentTransaction

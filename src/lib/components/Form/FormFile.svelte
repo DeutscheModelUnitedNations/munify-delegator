@@ -8,9 +8,10 @@
 		form: SuperForm<A, B>;
 		accept?: string;
 		multiple?: boolean;
+		inputClass?: string;
 	}
 
-	let { form, label, name, accept, multiple }: Props = $props();
+	let { form, label, name, accept, multiple, inputClass = '' }: Props = $props();
 	let { constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
@@ -22,7 +23,7 @@
 	<span class="label-text">{label}</span>
 	<input
 		type="file"
-		class="file-input file-input-bordered"
+		class="file-input file-input-bordered {inputClass}"
 		{multiple}
 		{accept}
 		{name}
