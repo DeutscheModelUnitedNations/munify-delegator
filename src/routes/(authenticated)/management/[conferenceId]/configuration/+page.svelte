@@ -21,6 +21,7 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import formatNames from '$lib/services/formatNames';
+	import { graphql } from '$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -62,13 +63,39 @@
 
 	async function handleGeneratePostalPDF() {
 		loading = true;
+
+		const getPostalBasePDFData = graphql(`
+			query GetPostalBasePDFDataForExample($conferenceId: String!) {
+				findUniqueConference(where: { id: $conferenceId }) {
+					contractContent
+					guardianConsentContent
+					mediaConsentContent
+					termsAndConditionsContent
+				}
+			}
+		`);
+
+		const pdfData = await getPostalBasePDFData.fetch({
+			variables: {
+				conferenceId: data.conferenceId
+			}
+		});
+
+		if (pdfData.errors) {
+			toast.push('Could not get Template from Server', {
+				duration: 5000
+			});
+			loading = false;
+			return;
+		}
+
 		try {
 			const recipientData: RecipientData = {
-				name: "L'Office des Nations Unies a Geneve",
-				address: 'Av. de la Paix 8-14',
-				zip: '1211',
-				city: 'Geneve',
-				country: 'Schweiz'
+				name: $formData.postalName ?? 'Not set',
+				address: $formData.postalStreet ?? 'Not set',
+				zip: $formData.postalZip ?? 'Not set',
+				city: $formData.postalCity ?? 'Not set',
+				country: $formData.postalCountry ?? 'Not set'
 			};
 
 			const participantData: ParticipantData = {
@@ -86,10 +113,10 @@
 				false,
 				participantData,
 				recipientData,
-				data.contractContent ?? undefined,
-				data.guardianConsentContent ?? undefined,
-				data.mediaConsentContent ?? undefined,
-				data.termsAndConditionsContent ?? undefined,
+				pdfData.data?.findUniqueConference?.contractContent ?? undefined,
+				pdfData.data?.findUniqueConference?.guardianConsentContent ?? undefined,
+				pdfData.data?.findUniqueConference?.mediaConsentContent ?? undefined,
+				pdfData.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
 				'test_postal_registration.pdf'
 			);
 		} catch (error) {
@@ -112,12 +139,35 @@
 		};
 
 		loading = true;
+
+		const getCertificateBasePDFData = graphql(`
+			query GetCertificateBasePDFDataForExample($conferenceId: String!) {
+				findUniqueConference(where: { id: $conferenceId }) {
+					certificateContent
+				}
+			}
+		`);
+
+		const pdfData = await getCertificateBasePDFData.fetch({
+			variables: {
+				conferenceId: data.conferenceId
+			}
+		});
+
+		if (pdfData.errors) {
+			toast.push('Could not get Template from Server', {
+				duration: 5000
+			});
+			loading = false;
+			return;
+		}
+
 		await downloadCompleteCertificate(
 			{
 				fullName: 'Antonio Guterres',
 				jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
 			},
-			data.certificateContent ?? undefined,
+			pdfData.data?.findUniqueConference?.certificateContent ?? undefined,
 			`test_certificate.pdf`
 		);
 		loading = false;
@@ -237,27 +287,42 @@
 		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
 		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
 		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
-		<FormFile {form} name="contractBasePDF" label={m.postalTemplateContract()} accept="*.pdf" />
+		<FormFile
+			{form}
+			name="contractBasePDF"
+			label={m.postalTemplateContract()}
+			accept="*.pdf"
+			inputClass={data.contractContentSet ? 'file-input-success' : undefined}
+		/>
 		<FormFile
 			{form}
 			name="guardianConsentBasePDF"
 			label={m.postalTemplateGuardianConsent()}
 			accept="*.pdf"
+			inputClass={data.guardianConsentContentSet ? 'file-input-success' : undefined}
 		/>
 		<FormFile
 			{form}
 			name="mediaConsentBasePDF"
 			label={m.postalTemplateMediaConsent()}
 			accept="*.pdf"
+			inputClass={data.mediaConsentContentSet ? 'file-input-success' : undefined}
 		/>
 		<FormFile
 			{form}
 			name="termsAndConditionsBasePDF"
 			label={m.postalTemplateTermsAndConditions()}
 			accept="*.pdf"
+			inputClass={data.termsAndConditionsContentSet ? 'file-input-success' : undefined}
 		/>
 		<button
-			class="btn"
+			class="btn dark:btn-outline {loading ||
+			!data.contractContentSet ||
+			!data.guardianConsentContentSet ||
+			!data.mediaConsentContentSet ||
+			!data.termsAndConditionsContentSet
+				? 'btn-disabled'
+				: ''}"
 			onclick={async (e) => {
 				e.preventDefault();
 				handleGeneratePostalPDF();
@@ -266,9 +331,15 @@
 			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
 		</button>
 		<h3 class="mt-8 text-lg font-bold">{m.certificate()}</h3>
-		<FormFile {form} name="certificateBasePDF" label={m.CertifiacteTemplate()} accept="*.pdf" />
+		<FormFile
+			{form}
+			name="certificateBasePDF"
+			label={m.CertifiacteTemplate()}
+			accept="*.pdf"
+			inputClass={data.certificateContentSet ? 'file-input-success' : undefined}
+		/>
 		<button
-			class="btn"
+			class="btn dark:btn-outline {loading || !data.certificateContentSet ? 'btn-disabled' : ''}"
 			onclick={async (e) => {
 				e.preventDefault();
 				handleGenerateCertificatePDF();

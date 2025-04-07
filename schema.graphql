@@ -179,18 +179,21 @@ type Conference {
 
   """Certificate"""
   certificateContent: String
+  certificateContentSet: Boolean!
   committees: [Committee!]!
   conferenceSupervisors: [ConferenceSupervisor!]!
   conferenceUserStatus: [ConferenceParticipantStatus!]!
 
   """Legal document content"""
   contractContent: String
+  contractContentSet: Boolean!
   currency: String
   delegationMembers: [DelegationMember!]!
   delegations: [Delegation!]!
   endConference: DateTime!
   feeAmount: Float
   guardianConsentContent: String
+  guardianConsentContentSet: Boolean!
   iban: String
   id: ID!
   imageDataURL: String
@@ -202,6 +205,7 @@ type Conference {
   location: String
   longTitle: String
   mediaConsentContent: String
+  mediaConsentContentSet: Boolean!
   nonStateActors: [NonStateActor!]!
   paymentTransactions: [PaymentTransaction!]!
   postalApartment: String
@@ -217,6 +221,7 @@ type Conference {
   surveyQuestions: [SurveyQuestion!]!
   teamMembers: [TeamMember!]!
   termsAndConditionsContent: String
+  termsAndConditionsContentSet: Boolean!
   title: String!
 
   """Payment and Postal information"""
