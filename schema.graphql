@@ -32,6 +32,11 @@ input BoolWithAggregatesFilter {
   not: NestedBoolWithAggregatesFilter
 }
 
+type CertificateJWT {
+  fullName: String
+  jwt: String
+}
+
 """A committee in a conference. E.g. the human rights council"""
 type Committee {
   abbreviation: String!
@@ -171,15 +176,24 @@ type Conference {
   accountHolder: String
   bankName: String
   bic: String
+
+  """Certificate"""
+  certificateContent: String
+  certificateContentSet: Boolean!
   committees: [Committee!]!
   conferenceSupervisors: [ConferenceSupervisor!]!
   conferenceUserStatus: [ConferenceParticipantStatus!]!
+
+  """Legal document content"""
+  contractContent: String
+  contractContentSet: Boolean!
   currency: String
   delegationMembers: [DelegationMember!]!
   delegations: [Delegation!]!
   endConference: DateTime!
   feeAmount: Float
   guardianConsentContent: String
+  guardianConsentContentSet: Boolean!
   iban: String
   id: ID!
   imageDataURL: String
@@ -191,6 +205,7 @@ type Conference {
   location: String
   longTitle: String
   mediaConsentContent: String
+  mediaConsentContentSet: Boolean!
   nonStateActors: [NonStateActor!]!
   paymentTransactions: [PaymentTransaction!]!
   postalApartment: String
@@ -205,9 +220,8 @@ type Conference {
   state: ConferenceState!
   surveyQuestions: [SurveyQuestion!]!
   teamMembers: [TeamMember!]!
-
-  """Legal document content"""
   termsAndConditionsContent: String
+  termsAndConditionsContentSet: Boolean!
   title: String!
 
   """Payment and Postal information"""
@@ -220,9 +234,11 @@ input ConferenceCreateInput {
   accountHolder: String
   bankName: String
   bic: String
+  certificateContent: String
   committees: CommitteeCreateNestedManyWithoutConferenceInput
   conferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutConferenceInput
   conferenceUserStatus: ConferenceParticipantStatusCreateNestedManyWithoutConferenceInput
+  contractContent: String
   createdAt: DateTime
   currency: String
   delegationMembers: DelegationMemberCreateNestedManyWithoutConferenceInput
@@ -267,9 +283,11 @@ input ConferenceOrderByWithRelationInput {
   accountHolder: SortOrder
   bankName: SortOrder
   bic: SortOrder
+  certificateContent: SortOrder
   committees: CommitteeOrderByRelationAggregateInput
   conferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
   conferenceUserStatus: ConferenceParticipantStatusOrderByRelationAggregateInput
+  contractContent: SortOrder
   createdAt: SortOrder
   currency: SortOrder
   delegationMembers: DelegationMemberOrderByRelationAggregateInput
@@ -317,6 +335,7 @@ type ConferenceParticipantStatus {
   guardianConsent: AdministrativeStatus!
   id: ID!
   mediaConsent: AdministrativeStatus!
+  mediaConsentStatus: MediaConsentStatus!
   paymentStatus: AdministrativeStatus!
   termsAndConditions: AdministrativeStatus!
   user: User!
@@ -330,6 +349,7 @@ input ConferenceParticipantStatusCreateInput {
   guardianConsent: AdministrativeStatus
   id: String
   mediaConsent: AdministrativeStatus
+  mediaConsentStatus: MediaConsentStatus
   paymentStatus: AdministrativeStatus
   termsAndConditions: AdministrativeStatus
   updatedAt: DateTime
@@ -363,6 +383,7 @@ input ConferenceParticipantStatusOrderByWithRelationInput {
   guardianConsent: SortOrder
   id: SortOrder
   mediaConsent: SortOrder
+  mediaConsentStatus: SortOrder
   paymentStatus: SortOrder
   termsAndConditions: SortOrder
   updatedAt: SortOrder
@@ -378,6 +399,7 @@ enum ConferenceParticipantStatusScalarFieldEnum {
   guardianConsent
   id
   mediaConsent
+  mediaConsentStatus
   paymentStatus
   termsAndConditions
   updatedAt
@@ -392,6 +414,7 @@ input ConferenceParticipantStatusUpdateInput {
   guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   mediaConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
+  mediaConsentStatus: EnumMediaConsentStatusFieldUpdateOperationsInput
   paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
   termsAndConditions: EnumAdministrativeStatusFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -405,6 +428,7 @@ input ConferenceParticipantStatusUpdateManyMutationInput {
   guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   mediaConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
+  mediaConsentStatus: EnumMediaConsentStatusFieldUpdateOperationsInput
   paymentStatus: EnumAdministrativeStatusFieldUpdateOperationsInput
   termsAndConditions: EnumAdministrativeStatusFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -439,6 +463,7 @@ input ConferenceParticipantStatusWhereInput {
   guardianConsent: EnumAdministrativeStatusFilter
   id: StringFilter
   mediaConsent: EnumAdministrativeStatusFilter
+  mediaConsentStatus: EnumMediaConsentStatusFilter
   paymentStatus: EnumAdministrativeStatusFilter
   termsAndConditions: EnumAdministrativeStatusFilter
   updatedAt: DateTimeFilter
@@ -458,6 +483,7 @@ input ConferenceParticipantStatusWhereUniqueInput {
   guardianConsent: EnumAdministrativeStatusFilter
   id: String
   mediaConsent: EnumAdministrativeStatusFilter
+  mediaConsentStatus: EnumMediaConsentStatusFilter
   paymentStatus: EnumAdministrativeStatusFilter
   termsAndConditions: EnumAdministrativeStatusFilter
   updatedAt: DateTimeFilter
@@ -476,6 +502,8 @@ enum ConferenceScalarFieldEnum {
   accountHolder
   bankName
   bic
+  certificateContent
+  contractContent
   createdAt
   currency
   endConference
@@ -679,10 +707,12 @@ input ConferenceUpdateDataInput {
   accountHolder: String
   bankName: String
   bic: String
+  certificateBasePDF: File
+  contractBasePDF: File
   currency: String
   endConference: DateTime
   feeAmount: Float
-  guardianConsentContent: String
+  guardianConsentBasePDF: File
   iban: String
   image: File
   info: String
@@ -691,7 +721,7 @@ input ConferenceUpdateDataInput {
   linkToPreparationGuide: String
   location: String
   longTitle: String
-  mediaConsentContent: String
+  mediaConsentBasePDF: File
   postalApartment: String
   postalCity: String
   postalCountry: String
@@ -701,7 +731,7 @@ input ConferenceUpdateDataInput {
   startAssignment: DateTime
   startConference: DateTime
   state: ConferenceState
-  termsAndConditionsContent: String
+  termsAndConditionsBasePDF: File
   title: String
   unlockPayments: Boolean
   unlockPostals: Boolean
@@ -712,9 +742,11 @@ input ConferenceUpdateInput {
   accountHolder: NullableStringFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
+  certificateContent: NullableStringFieldUpdateOperationsInput
   committees: CommitteeUpdateManyWithoutConferenceNestedInput
   conferenceSupervisors: ConferenceSupervisorUpdateManyWithoutConferenceNestedInput
   conferenceUserStatus: ConferenceParticipantStatusUpdateManyWithoutConferenceNestedInput
+  contractContent: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   currency: NullableStringFieldUpdateOperationsInput
   delegationMembers: DelegationMemberUpdateManyWithoutConferenceNestedInput
@@ -759,6 +791,8 @@ input ConferenceUpdateManyMutationInput {
   accountHolder: NullableStringFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
+  certificateContent: NullableStringFieldUpdateOperationsInput
+  contractContent: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   currency: NullableStringFieldUpdateOperationsInput
   endConference: DateTimeFieldUpdateOperationsInput
@@ -798,9 +832,11 @@ input ConferenceWhereInput {
   accountHolder: StringNullableFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
+  certificateContent: StringNullableFilter
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
   conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  contractContent: StringNullableFilter
   createdAt: DateTimeFilter
   currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
@@ -848,9 +884,11 @@ input ConferenceWhereUniqueInput {
   accountHolder: StringNullableFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
+  certificateContent: StringNullableFilter
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
   conferenceUserStatus: ConferenceParticipantStatusListRelationFilter
+  contractContent: StringNullableFilter
   createdAt: DateTimeFilter
   currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
@@ -1571,6 +1609,27 @@ input EnumGenderNullableWithAggregatesFilter {
   notIn: [Gender!]
 }
 
+input EnumMediaConsentStatusFieldUpdateOperationsInput {
+  set: MediaConsentStatus
+}
+
+input EnumMediaConsentStatusFilter {
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
+}
+
+input EnumMediaConsentStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumMediaConsentStatusFilter
+  _min: NestedEnumMediaConsentStatusFilter
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1706,6 +1765,34 @@ input IntWithAggregatesFilter {
 
 scalar JSONObject
 
+type JWK {
+  alg: String
+  crv: String
+  d: String
+  dp: String
+  dq: String
+  e: String
+  ext: Boolean
+  k: String
+  key_ops: [String!]
+  kty: String
+  n: String
+  oth: [RsaOtherPrimesInfo!]
+  p: String
+  q: String
+  qi: String
+  use: String
+  x: String
+  y: String
+}
+
+enum MediaConsentStatus {
+  ALLOWED_ALL
+  NOT_ALLOWED
+  NOT_SET
+  PARTIALLY_ALLOWED
+}
+
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
   createOneAppliedDelegationMember(assignedCommitteeId: ID, assignedNationAlpha3Code: String, assignedNonStateActorId: ID, conferenceId: ID!, userId: ID!): DelegationMember!
@@ -1736,6 +1823,7 @@ type Mutation {
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
+  updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
   updateManyDelegationMemberCommittee(data: UpdateManyDelegationMemberCommitteeInput!, where: DelegationMemberWhereInput): BatchPayload!
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(data: UpdateConferenceParticipantStatusInput!, where: ConferenceParticipantStatusWhereUniqueInputNotRequired!): ConferenceParticipantStatus
@@ -1983,6 +2071,23 @@ input NestedEnumGenderNullableWithAggregatesFilter {
   in: [Gender!]
   not: Gender
   notIn: [Gender!]
+}
+
+input NestedEnumMediaConsentStatusFilter {
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
+}
+
+input NestedEnumMediaConsentStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumMediaConsentStatusFilter
+  _min: NestedEnumMediaConsentStatusFilter
+  equals: MediaConsentStatus
+  in: [MediaConsentStatus!]
+  not: MediaConsentStatus
+  notIn: [MediaConsentStatus!]
 }
 
 input NestedEnumTeamRoleFilter {
@@ -2540,6 +2645,8 @@ type Query {
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
   getAllConferenceNations(conferenceId: String!): [Nation!]!
+  getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
+  getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!): StatisticsResult!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
@@ -2707,6 +2814,12 @@ input RoleApplicationWhereUniqueInput {
   nonStateActorId: StringNullableFilter
   rank: IntFilter
   updatedAt: DateTimeFilter
+}
+
+type RsaOtherPrimesInfo {
+  d: String
+  r: String
+  t: String
 }
 
 type SetAssignmentDataResult {
@@ -3601,11 +3714,20 @@ enum TransactionIsolationLevel {
   Serializable
 }
 
+input UpdateAllConferenceParticipantStatusInput {
+  didAttend: Boolean
+}
+
+type UpdateAllConferenceParticipantStatusResponse {
+  changed: [String!]
+}
+
 input UpdateConferenceParticipantStatusInput {
   additionalNotes: String
   didAttend: Boolean
   guardianConsent: AdministrativeStatus
   mediaConsent: AdministrativeStatus
+  mediaConsentStatus: MediaConsentStatus
   paymentStatus: AdministrativeStatus
   termsAndConditions: AdministrativeStatus
 }

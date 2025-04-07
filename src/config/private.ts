@@ -16,7 +16,8 @@ const schema = z.object({
 	OTEL_SERVICE_NAME: z.string().default('MUNIFY-DELEGATOR'),
 	OTEL_SERVICE_VERSION: z.optional(z.string()),
 	OTEL_ENDPOINT_URL: z.optional(z.string()),
-	OTEL_AUTHORIZATION_HEADER: z.optional(z.string())
+	OTEL_AUTHORIZATION_HEADER: z.optional(z.string()),
+	CERTIFICATE_SECRET: z.string()
 });
 
 export const configPrivate = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

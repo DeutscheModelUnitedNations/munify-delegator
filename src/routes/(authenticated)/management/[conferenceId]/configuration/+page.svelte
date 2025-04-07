@@ -13,6 +13,15 @@
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import FormFile from '$lib/components/Form/FormFile.svelte';
+	import {
+		downloadCompleteCertificate,
+		downloadCompletePostalRegistrationPDF,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
+	import formatNames from '$lib/services/formatNames';
+	import { graphql } from '$houdini';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -49,6 +58,120 @@
 			value: 'POST'
 		}
 	];
+
+	let loading = $state(false);
+
+	async function handleGeneratePostalPDF() {
+		loading = true;
+
+		const getPostalBasePDFData = graphql(`
+			query GetPostalBasePDFDataForExample($conferenceId: String!) {
+				findUniqueConference(where: { id: $conferenceId }) {
+					contractContent
+					guardianConsentContent
+					mediaConsentContent
+					termsAndConditionsContent
+				}
+			}
+		`);
+
+		const pdfData = await getPostalBasePDFData.fetch({
+			variables: {
+				conferenceId: data.conferenceId
+			}
+		});
+
+		if (pdfData.errors) {
+			toast.push('Could not get Template from Server', {
+				duration: 5000
+			});
+			loading = false;
+			return;
+		}
+
+		try {
+			const recipientData: RecipientData = {
+				name: $formData.postalName ?? 'Not set',
+				address: $formData.postalStreet ?? 'Not set',
+				zip: $formData.postalZip ?? 'Not set',
+				city: $formData.postalCity ?? 'Not set',
+				country: $formData.postalCountry ?? 'Not set'
+			};
+
+			const participantData: ParticipantData = {
+				id: '123456781234567812345678',
+				name: formatNames('Antonio', 'Guterres', {
+					givenNameFirst: true,
+					familyNameUppercase: true,
+					givenNameUppercase: true
+				}),
+				address: '405 E 45th St, New York, NY 10017, USA',
+				birthday: new Date('1949-04-30').toLocaleDateString() ?? ''
+			};
+
+			await downloadCompletePostalRegistrationPDF(
+				false,
+				participantData,
+				recipientData,
+				pdfData.data?.findUniqueConference?.contractContent ?? undefined,
+				pdfData.data?.findUniqueConference?.guardianConsentContent ?? undefined,
+				pdfData.data?.findUniqueConference?.mediaConsentContent ?? undefined,
+				pdfData.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
+				'test_postal_registration.pdf'
+			);
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function handleGenerateCertificatePDF() {
+		const conference = $formData;
+
+		const randomString = (n: number) => {
+			const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+			let result = '';
+			for (let i = 0; i < n; i++) {
+				result += chars.charAt(Math.floor(Math.random() * chars.length));
+			}
+			return result;
+		};
+
+		loading = true;
+
+		const getCertificateBasePDFData = graphql(`
+			query GetCertificateBasePDFDataForExample($conferenceId: String!) {
+				findUniqueConference(where: { id: $conferenceId }) {
+					certificateContent
+				}
+			}
+		`);
+
+		const pdfData = await getCertificateBasePDFData.fetch({
+			variables: {
+				conferenceId: data.conferenceId
+			}
+		});
+
+		if (pdfData.errors) {
+			toast.push('Could not get Template from Server', {
+				duration: 5000
+			});
+			loading = false;
+			return;
+		}
+
+		await downloadCompleteCertificate(
+			{
+				fullName: 'Antonio Guterres',
+				jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
+			},
+			pdfData.data?.findUniqueConference?.certificateContent ?? undefined,
+			`test_certificate.pdf`
+		);
+		loading = false;
+	}
 </script>
 
 <div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
@@ -164,6 +287,66 @@
 		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
 		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
 		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
+		<FormFile
+			{form}
+			name="contractBasePDF"
+			label={m.postalTemplateContract()}
+			accept="*.pdf"
+			inputClass={data.contractContentSet ? 'file-input-success' : undefined}
+		/>
+		<FormFile
+			{form}
+			name="guardianConsentBasePDF"
+			label={m.postalTemplateGuardianConsent()}
+			accept="*.pdf"
+			inputClass={data.guardianConsentContentSet ? 'file-input-success' : undefined}
+		/>
+		<FormFile
+			{form}
+			name="mediaConsentBasePDF"
+			label={m.postalTemplateMediaConsent()}
+			accept="*.pdf"
+			inputClass={data.mediaConsentContentSet ? 'file-input-success' : undefined}
+		/>
+		<FormFile
+			{form}
+			name="termsAndConditionsBasePDF"
+			label={m.postalTemplateTermsAndConditions()}
+			accept="*.pdf"
+			inputClass={data.termsAndConditionsContentSet ? 'file-input-success' : undefined}
+		/>
+		<button
+			class="btn dark:btn-outline {loading ||
+			!data.contractContentSet ||
+			!data.guardianConsentContentSet ||
+			!data.mediaConsentContentSet ||
+			!data.termsAndConditionsContentSet
+				? 'btn-disabled'
+				: ''}"
+			onclick={async (e) => {
+				e.preventDefault();
+				handleGeneratePostalPDF();
+			}}
+		>
+			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+		</button>
+		<h3 class="mt-8 text-lg font-bold">{m.certificate()}</h3>
+		<FormFile
+			{form}
+			name="certificateBasePDF"
+			label={m.CertifiacteTemplate()}
+			accept="*.pdf"
+			inputClass={data.certificateContentSet ? 'file-input-success' : undefined}
+		/>
+		<button
+			class="btn dark:btn-outline {loading || !data.certificateContentSet ? 'btn-disabled' : ''}"
+			onclick={async (e) => {
+				e.preventDefault();
+				handleGenerateCertificatePDF();
+			}}
+		>
+			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+		</button>
 	</Form>
 </div>
 

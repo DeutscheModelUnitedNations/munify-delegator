@@ -2,14 +2,22 @@
 	import * as m from '$lib/paraglide/messages';
 	import type { UserRowData } from './types';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
+	import {
+		cache,
+		graphql,
+		type MediaConsentStatus$options,
+		type UpdateConferenceParticipantStatusInput
+	} from '$houdini';
 	import type { UserDrawerQueryVariables } from './$houdini';
-	import StatusWidget from '$lib/components/StatusWidget.svelte';
-	import StatusWidgetBoolean from '$lib/components/StatusWidgetBoolean.svelte';
+	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
+	import StatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
+	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
+	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 
 	interface Props {
 		user: UserRowData;
@@ -66,6 +74,7 @@
 				termsAndConditions
 				guardianConsent
 				mediaConsent
+				mediaConsentStatus
 				paymentStatus
 				didAttend
 				additionalNotes
@@ -111,27 +120,19 @@
 		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
 	);
 
-	const changeParticipantStatus = graphql(`
-		mutation changeParticipantStatusMutation(
-			$where: ConferenceParticipantStatusWhereUniqueInputNotRequired!
-			$data: UpdateConferenceParticipantStatusInput!
-		) {
-			updateOneConferenceParticipantStatus(where: $where, data: $data) {
-				id
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-				paymentStatus
-				didAttend
-				additionalNotes
-			}
-		}
-	`);
-
 	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
 		await changeParticipantStatus.mutate({
 			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
 			data
+		});
+		cache.markStale();
+		userQuery.fetch();
+	};
+
+	const changeMediaConsentStatus = async (data: MediaConsentStatus$options) => {
+		await changeParticipantStatus.mutate({
+			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			data: { mediaConsentStatus: data }
 		});
 		cache.markStale();
 		userQuery.fetch();
@@ -338,14 +339,14 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminUserCardStatus()}</h3>
 		<div class="flex flex-col gap-2">
-			<StatusWidget
+			<ParticipantStatusWidget
 				title={m.payment()}
 				faIcon="fa-money-bill-transfer"
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.paymentStatus ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ paymentStatus: newStatus })}
 			/>
-			<StatusWidget
+			<ParticipantStatusWidget
 				title={m.userAgreement()}
 				faIcon="fa-file-signature"
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.termsAndConditions ??
@@ -354,7 +355,7 @@
 					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
 			/>
 			{#if !ofAge}
-				<StatusWidget
+				<ParticipantStatusWidget
 					title={m.guardianAgreement()}
 					faIcon="fa-family"
 					status={$userQuery.data?.findUniqueConferenceParticipantStatus?.guardianConsent ??
@@ -363,12 +364,19 @@
 						await changeAdministrativeStatus({ guardianConsent: newStatus })}
 				/>
 			{/if}
-			<StatusWidget
+			<ParticipantStatusWidget
 				title={m.mediaAgreement()}
 				faIcon="fa-photo-film-music"
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsent ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ mediaConsent: newStatus })}
+			/>
+			<ParticipantStatusMediaWidget
+				title={m.mediaConsentStatus()}
+				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsentStatus ??
+					'NOT_SET'}
+				changeStatus={async (newStatus: MediaConsentStatus$options) =>
+					await changeMediaConsentStatus(newStatus)}
 			/>
 			<StatusWidgetBoolean
 				title={m.attendance()}

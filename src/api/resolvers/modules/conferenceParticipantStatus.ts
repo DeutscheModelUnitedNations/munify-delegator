@@ -12,10 +12,12 @@ import {
 	ConferenceParticipantStatusGuardianConsentFieldObject,
 	ConferenceParticipantStatusMediaConsentFieldObject,
 	updateOneConferenceParticipantStatusMutationObject,
-	ConferenceParticipantStatusAdditionalNotesFieldObject
+	ConferenceParticipantStatusAdditionalNotesFieldObject,
+	ConferenceParticipantStatusMediaConsentStatusFieldObject,
+	updateManyConferenceParticipantStatusMutationObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 import { db } from '$db/db';
-import { AdministrativeStatus } from '$db/generated/graphql/inputs';
+import { AdministrativeStatus, MediaConsentStatus } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('ConferenceParticipantStatus', {
 	fields: (t) => ({
@@ -25,6 +27,7 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		mediaConsent: t.field(ConferenceParticipantStatusMediaConsentFieldObject),
 		additionalNotes: t.field(ConferenceParticipantStatusAdditionalNotesFieldObject),
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
+		mediaConsentStatus: t.field(ConferenceParticipantStatusMediaConsentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
 		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),
 		conference: t.relation('conference', ConferenceParticipantStatusConferenceFieldObject)
@@ -123,6 +126,10 @@ builder.mutationFields((t) => {
 								type: AdministrativeStatus,
 								required: false
 							}),
+							mediaConsentStatus: t.field({
+								type: MediaConsentStatus,
+								required: false
+							}),
 							paymentStatus: t.field({
 								type: AdministrativeStatus,
 								required: false
@@ -163,6 +170,7 @@ builder.mutationFields((t) => {
 						termsAndConditions: args.data.termsAndConditions || undefined,
 						guardianConsent: args.data.guardianConsent || undefined,
 						mediaConsent: args.data.mediaConsent || undefined,
+						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
 						additionalNotes: args.data.additionalNotes ?? ''
@@ -171,6 +179,7 @@ builder.mutationFields((t) => {
 						termsAndConditions: args.data.termsAndConditions || undefined,
 						guardianConsent: args.data.guardianConsent || undefined,
 						mediaConsent: args.data.mediaConsent || undefined,
+						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
 						additionalNotes: args.data.additionalNotes ?? ''
@@ -192,6 +201,105 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('delete').ConferenceParticipantStatus]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateManyConferenceParticipantStatusMutationObject(t);
+	return {
+		updateAllConferenceParticipantStatus: t.field({
+			...field,
+			args: {
+				conferenceId: t.arg({
+					type: 'String',
+					required: true
+				}),
+				data: t.arg({
+					type: t.builder.inputType('UpdateAllConferenceParticipantStatusInput', {
+						fields: (t) => ({
+							didAttend: t.field({
+								type: 'Boolean',
+								required: false
+							})
+						})
+					})
+				})
+			},
+			type: t.builder.simpleObject('UpdateAllConferenceParticipantStatusResponse', {
+				fields: (t) => ({
+					changed: t.field({
+						type: ['String'],
+						nullable: true
+					})
+				})
+			}),
+			resolve: async (root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+				// Check permissions
+				if (!user.hasRole('admin')) {
+					throw new Error('You do not have permission to update all conference participant status');
+				}
+
+				const changed = await db.$transaction(async (tx) => {
+					const conferenceUsers = await tx.user.findMany({
+						where: {
+							OR: [
+								{
+									conferenceSupervisor: {
+										some: {
+											conferenceId: args.conferenceId
+										}
+									}
+								},
+								{
+									singleParticipant: {
+										some: {
+											conferenceId: args.conferenceId
+										}
+									}
+								},
+								{
+									delegationMemberships: {
+										some: {
+											conferenceId: args.conferenceId
+										}
+									}
+								}
+							]
+						},
+						include: {
+							conferenceParticipantStatus: true
+						}
+					});
+
+					const changed: string[] = [];
+
+					for (const user of conferenceUsers) {
+						const res = await tx.conferenceParticipantStatus.upsert({
+							where: {
+								userId_conferenceId: {
+									userId: user.id,
+									conferenceId: args.conferenceId
+								}
+							},
+							create: {
+								userId: user.id,
+								conferenceId: args.conferenceId,
+								didAttend: args.data.didAttend !== null ? args.data.didAttend : undefined
+							},
+							update: {
+								didAttend: args.data.didAttend !== null ? args.data.didAttend : undefined
+							}
+						});
+						changed.push(res.id);
+					}
+					return changed;
+				});
+				return {
+					changed
+				};
 			}
 		})
 	};

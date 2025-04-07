@@ -16,19 +16,6 @@ services:
     volumes:
       - delegator-dev:/var/lib/postgresql/data
 
-  # prisma_studio:
-  #   image: timothyjmiller/prisma-studio
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - postgres
-  #   ports:
-  #     - '5555:5555'
-  #   environment:
-  #     PROJECT_NAME: 'MUNify DELEGATOR'
-  #     POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
-  #     PRISMA_STUDIO_PORT: 5555
-  #     POSTGRES_PATH: /postgres
-
   # When using the mock server this can be helpful to paste into the form to create a valid token with claims etc.
   # {
   #  "email": "my@mail.com",
@@ -86,39 +73,6 @@ services:
   #     # - PUBLIC_OIDC_CLIENT_ID=275671515582758948@dev
 
   #     - SECRET=123
-
-  # prisma_studio:
-  #   image: timothyjmiller/prisma-studio
-  #   restart: unless-stopped
-  #   ports:
-  #     - 5555:5555
-  #   depends_on:
-  #     - postgres
-
-  #   environment:
-  #     PROJECT_NAME: 'MUNify DELEGATOR'
-  #     POSTGRES_URL: postgres://postgres:postgres@postgres:5432/postgres
-  #     PRISMA_STUDIO_PORT: 5555
-  #     POSTGRES_PATH: /postgres
-
-  # web dashboard available at http://localhost:16686
-  # jaeger:
-  #   image: jaegertracing/jaeger
-  #   ports:
-  #     - '5778:5778'
-  #     - '16686:16686'
-  #     - '4317:4317'
-  #     - '4318:4318'
-  #     - '14250:14250'
-  #     - '14268:14268'
-  #     - '9411:9411'
-  #   command:
-  #     [
-  #       '--set',
-  #       'receivers.otlp.protocols.http.endpoint=0.0.0.0:4318',
-  #       '--set',
-  #       'receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317'
-  #     ]
 
 volumes:
   delegator-dev:

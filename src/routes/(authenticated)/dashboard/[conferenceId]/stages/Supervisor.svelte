@@ -11,10 +11,15 @@
 	import ConferenceStatusWidget from '../ConferenceStatusWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
+	import {
+		downloadCompletePostalRegistrationPDF,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
 
 	// TODO these components need some refactoring
 	let {
@@ -93,6 +98,76 @@
 			.flatMap((x) => x.members.map((y) => y.user))
 			.sort((a, b) => a.family_name.localeCompare(b.family_name))
 	);
+
+	const userQuery = graphql(`
+		query GetUserDetailsForPostalRegistration($id: String!, $conferenceId: String!) {
+			findUniqueUser(where: { id: $id }) {
+				id
+				given_name
+				family_name
+				street
+				apartment
+				zip
+				city
+				country
+				birthday
+			}
+
+			findUniqueConference(where: { id: $conferenceId }) {
+				id
+				contractContent
+				guardianConsentContent
+				mediaConsentContent
+				termsAndConditionsContent
+			}
+		}
+	`);
+
+	const downloadPostalDocuments = async (userId: string) => {
+		try {
+			const userDetailsStore = await userQuery.fetch({
+				variables: { id: userId, conferenceId: conference!.id }
+			});
+			const user = userDetailsStore?.data?.findUniqueUser;
+			const conferenceData = userDetailsStore?.data?.findUniqueConference;
+
+			if (user) {
+				const recipientData: RecipientData = {
+					name: `${conference?.postalName}`,
+					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
+					zip: conference?.postalZip?.toString() ?? '',
+					city: conference?.postalCity ?? '',
+					country: conference?.postalCountry ?? ''
+				};
+
+				const participantData: ParticipantData = {
+					id: user.id,
+					name: formatNames(user.given_name, user.family_name, {
+						givenNameFirst: true,
+						familyNameUppercase: true,
+						givenNameUppercase: true
+					}),
+					address: `${user.street} ${user.apartment ? user.apartment : ''}, ${user.zip} ${user.city}, ${user.country}`,
+					birthday: user.birthday?.toLocaleDateString() ?? ''
+				};
+
+				await downloadCompletePostalRegistrationPDF(
+					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
+					participantData,
+					recipientData,
+					conferenceData?.contractContent ?? undefined,
+					conferenceData?.guardianConsentContent ?? undefined,
+					conferenceData?.mediaConsentContent ?? undefined,
+					conferenceData?.termsAndConditionsContent ?? undefined,
+					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
+				);
+			} else {
+				console.error('User details not found');
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		}
+	};
 </script>
 
 {#if conference.state === 'PARTICIPANT_REGISTRATION'}
@@ -188,6 +263,9 @@
 				pronouns={user.pronouns ?? ''}
 				withPaymentStatus
 				withPostalStatus
+				downloadPostalDocuments={conference?.unlockPostals
+					? () => downloadPostalDocuments(user.id)
+					: undefined}
 				paymentStatus={participantStatus?.paymentStatus ?? 'PENDING'}
 				postalSatus={getSimplifiedPostalStatus(
 					participantStatus,

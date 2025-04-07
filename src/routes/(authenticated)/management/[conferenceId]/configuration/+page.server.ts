@@ -37,6 +37,11 @@ const conferenceQuery = graphql(`
 			postalZip
 			postalCity
 			postalCountry
+			contractContentSet
+			guardianConsentContentSet
+			mediaConsentContentSet
+			termsAndConditionsContentSet
+			certificateContentSet
 		}
 	}
 `);
@@ -48,6 +53,11 @@ const conferenceUpdate = graphql(`
 	) {
 		updateOneConference(data: $data, where: $where) {
 			id
+			certificateContentSet
+			termsAndConditionsContentSet
+			mediaConsentContentSet
+			guardianConsentContentSet
+			contractContentSet
 		}
 	}
 `);
@@ -69,7 +79,15 @@ export const load: PageServerLoad = async (event) => {
 		zod(conferenceSettingsFormSchema)
 	);
 
-	return { form, imageDataURL: conference.imageDataURL };
+	return {
+		form,
+		imageDataURL: conference.imageDataURL,
+		certificateContentSet: conference.certificateContentSet,
+		termsAndConditionsContentSet: conference.termsAndConditionsContentSet,
+		mediaConsentContentSet: conference.mediaConsentContentSet,
+		guardianConsentContentSet: conference.guardianConsentContentSet,
+		contractContentSet: conference.contractContentSet
+	};
 };
 
 export const actions = {

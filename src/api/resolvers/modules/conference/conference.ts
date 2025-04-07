@@ -34,7 +34,9 @@ import {
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
-	updateOneConferenceMutationObject
+	updateOneConferenceMutationObject,
+	ConferenceCertificateContentFieldObject,
+	ConferenceContractContentFieldObject
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
@@ -73,9 +75,26 @@ builder.prismaObject('Conference', {
 		postalZip: t.string(ConferencePostalZipFieldObject),
 		postalCity: t.string(ConferencePostalCityFieldObject),
 		postalCountry: t.string(ConferencePostalCountryFieldObject),
-		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
+		contractContent: t.string(ConferenceContractContentFieldObject),
 		guardianConsentContent: t.string(ConferenceGuardianConsentContentFieldObject),
 		mediaConsentContent: t.string(ConferenceMediaConsentContentFieldObject),
+		termsAndConditionsContent: t.string(ConferenceTermsAndConditionsContentFieldObject),
+		certificateContent: t.string(ConferenceCertificateContentFieldObject),
+		contractContentSet: t.boolean({
+			resolve: (root) => !!root.contractContent
+		}),
+		guardianConsentContentSet: t.boolean({
+			resolve: (root) => !!root.guardianConsentContent
+		}),
+		mediaConsentContentSet: t.boolean({
+			resolve: (root) => !!root.mediaConsentContent
+		}),
+		termsAndConditionsContentSet: t.boolean({
+			resolve: (root) => !!root.termsAndConditionsContent
+		}),
+		certificateContentSet: t.boolean({
+			resolve: (root) => !!root.certificateContent
+		}),
 		paymentTransactions: t.relation('paymentTransactions', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').PaymentTransaction
@@ -309,13 +328,24 @@ builder.mutationFields((t) => {
 							postalCountry: t.string({
 								required: false
 							}),
-							termsAndConditionsContent: t.string({
+							contractBasePDF: t.field({
+								type: 'File',
 								required: false
 							}),
-							guardianConsentContent: t.string({
+							guardianConsentBasePDF: t.field({
+								type: 'File',
 								required: false
 							}),
-							mediaConsentContent: t.string({
+							mediaConsentBasePDF: t.field({
+								type: 'File',
+								required: false
+							}),
+							termsAndConditionsBasePDF: t.field({
+								type: 'File',
+								required: false
+							}),
+							certificateBasePDF: t.field({
+								type: 'File',
 								required: false
 							})
 						})
@@ -333,6 +363,31 @@ builder.mutationFields((t) => {
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;
 
+				const contractContentURL = args.data.contractBasePDF
+					? await toDataURL(args.data.contractBasePDF)
+					: args.data.contractBasePDF;
+				args.data.contractBasePDF = undefined;
+
+				const guardianConsentContentURL = args.data.guardianConsentBasePDF
+					? await toDataURL(args.data.guardianConsentBasePDF)
+					: args.data.guardianConsentBasePDF;
+				args.data.guardianConsentBasePDF = undefined;
+
+				const mediaConsentContentURL = args.data.mediaConsentBasePDF
+					? await toDataURL(args.data.mediaConsentBasePDF)
+					: args.data.mediaConsentBasePDF;
+				args.data.mediaConsentBasePDF = undefined;
+
+				const termsAndConditionsContentURL = args.data.termsAndConditionsBasePDF
+					? await toDataURL(args.data.termsAndConditionsBasePDF)
+					: args.data.termsAndConditionsBasePDF;
+				args.data.termsAndConditionsBasePDF = undefined;
+
+				const certificateContentURL = args.data.certificateBasePDF
+					? await toDataURL(args.data.certificateBasePDF)
+					: args.data.certificateBasePDF;
+				args.data.certificateBasePDF = undefined;
+
 				return await db.conference.update({
 					where: args.where,
 					data: {
@@ -347,7 +402,12 @@ builder.mutationFields((t) => {
 						unlockPayments:
 							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
-						postalApartment: args.data.postalApartment ?? null
+						postalApartment: args.data.postalApartment ?? null,
+						contractContent: contractContentURL,
+						guardianConsentContent: guardianConsentContentURL,
+						mediaConsentContent: mediaConsentContentURL,
+						termsAndConditionsContent: termsAndConditionsContentURL,
+						certificateContent: certificateContentURL
 					},
 					...query
 				});

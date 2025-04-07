@@ -97,7 +97,24 @@ export const conferenceSettingsFormSchema = z.object({
 	postalZip: z.string().optional(),
 	postalCity: z.string().optional(),
 	postalCountry: z.string().optional(),
-	termsAndConditionsContent: z.string().optional(),
-	guardianConsentContent: z.string().optional(),
-	mediaConsentContent: z.string().optional()
+	contractBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
+		.optional(),
+	guardianConsentBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
+		.optional(),
+	mediaConsentBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
+		.optional(),
+	termsAndConditionsBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
+		.optional(),
+	certificateBasePDF: z
+		.instanceof(File)
+		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
+		.optional()
 });
