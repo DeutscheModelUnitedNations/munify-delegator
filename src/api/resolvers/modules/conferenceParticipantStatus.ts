@@ -12,6 +12,7 @@ import {
 	ConferenceParticipantStatusGuardianConsentFieldObject,
 	ConferenceParticipantStatusMediaConsentFieldObject,
 	updateOneConferenceParticipantStatusMutationObject,
+	ConferenceParticipantStatusAdditionalNotesFieldObject,
 	ConferenceParticipantStatusMediaConsentStatusFieldObject,
 	updateManyConferenceParticipantStatusMutationObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
@@ -24,6 +25,7 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		termsAndConditions: t.field(ConferenceParticipantStatusTermsAndConditionsFieldObject),
 		guardianConsent: t.field(ConferenceParticipantStatusGuardianConsentFieldObject),
 		mediaConsent: t.field(ConferenceParticipantStatusMediaConsentFieldObject),
+		additionalNotes: t.field(ConferenceParticipantStatusAdditionalNotesFieldObject),
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
 		mediaConsentStatus: t.field(ConferenceParticipantStatusMediaConsentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
@@ -135,6 +137,10 @@ builder.mutationFields((t) => {
 							didAttend: t.field({
 								type: 'Boolean',
 								required: false
+							}),
+							additionalNotes: t.field({
+								type: 'String',
+								required: false
 							})
 						})
 					})
@@ -166,7 +172,8 @@ builder.mutationFields((t) => {
 						mediaConsent: args.data.mediaConsent || undefined,
 						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
-						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
+						additionalNotes: args.data.additionalNotes ?? ''
 					},
 					update: {
 						termsAndConditions: args.data.termsAndConditions || undefined,
@@ -174,7 +181,8 @@ builder.mutationFields((t) => {
 						mediaConsent: args.data.mediaConsent || undefined,
 						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
-						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
+						additionalNotes: args.data.additionalNotes ?? ''
 					}
 				});
 			}

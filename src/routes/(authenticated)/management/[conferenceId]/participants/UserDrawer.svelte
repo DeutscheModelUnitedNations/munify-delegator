@@ -16,7 +16,6 @@
 	import formatNames from '$lib/services/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
-	import StatusWidget from '$lib/components/StatusWidget.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -87,6 +86,7 @@
 				mediaConsentStatus
 				paymentStatus
 				didAttend
+				additionalNotes
 			}
 			findManySurveyAnswers(
 				where: {
@@ -411,6 +411,18 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.notes()}</h3>
+		<textarea
+			class="textarea textarea-bordered textarea-sm w-full"
+			value={$userQuery.data?.findUniqueConferenceParticipantStatus?.additionalNotes ?? ''}
+			placeholder={m.notes()}
+			oninput={(e) => {
+				changeAdministrativeStatus({ additionalNotes: e.currentTarget.value });
+			}}
+		></textarea>
 	</div>
 
 	<div class="flex flex-col gap-2">
