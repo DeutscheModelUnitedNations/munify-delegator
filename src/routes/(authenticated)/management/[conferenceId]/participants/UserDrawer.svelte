@@ -18,6 +18,15 @@
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import StatusWidget from '$lib/components/StatusWidget.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
+	import {
+		downloadCompleteCertificate,
+		downloadCompletePostalRegistrationPDF,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
+	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
+	import { toast } from '@zerodevx/svelte-toast';
+	import { certificateQuery } from '$lib/queries/certificateQuery';
 
 	interface Props {
 		user: UserRowData;
@@ -46,6 +55,7 @@
 				street
 				apartment
 				zip
+				city
 				country
 				foodPreference
 				gender
@@ -108,6 +118,12 @@
 			}
 			findUniqueConference(where: { id: $conferenceId }) {
 				startConference
+				postalName
+				postalStreet
+				postalApartment
+				postalZip
+				postalCity
+				postalCountry
 			}
 		}
 	`);
@@ -118,6 +134,9 @@
 	const ofAge = $derived(
 		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
 	);
+
+	let loadingDownloadPostalDocuments = $state(false);
+	let loadingDownloadCertificate = $state(false);
 
 	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
 		await changeParticipantStatus.mutate({
@@ -154,6 +173,113 @@
 		});
 		if (onClose) {
 			onClose();
+		}
+	};
+
+	const downloadPostalDocuments = async () => {
+		loadingDownloadPostalDocuments = true;
+		try {
+			const conference = $userQuery?.data?.findUniqueConference;
+
+			const baseContent = await getBaseDocumentsForPostal.fetch({
+				variables: {
+					conferenceId
+				}
+			});
+
+			if (baseContent.errors) {
+				toast.push(m.httpGenericError());
+			}
+
+			if (
+				!conference?.postalName ||
+				!conference?.postalStreet ||
+				!conference?.postalZip ||
+				!conference?.postalCity ||
+				!conference?.postalCountry
+			) {
+				toast.push('Missing postal information for the conference');
+				return;
+			}
+
+			if (user) {
+				const recipientData: RecipientData = {
+					name: `${conference?.postalName}`,
+					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
+					zip: conference?.postalZip?.toString() ?? '',
+					city: conference?.postalCity ?? '',
+					country: conference?.postalCountry ?? ''
+				};
+
+				const participantData: ParticipantData = {
+					id: user.id,
+					name: formatNames(user.given_name, user.family_name, {
+						givenNameFirst: true,
+						familyNameUppercase: true,
+						givenNameUppercase: true
+					}),
+					address: `${$userQuery.data?.findUniqueUser?.street} ${$userQuery.data?.findUniqueUser?.apartment ? $userQuery.data?.findUniqueUser?.apartment : ''}, ${$userQuery.data?.findUniqueUser?.zip} ${$userQuery.data?.findUniqueUser?.city}, ${$userQuery.data?.findUniqueUser?.country}`,
+					birthday: user.birthday?.toLocaleDateString() ?? ''
+				};
+
+				await downloadCompletePostalRegistrationPDF(
+					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
+					participantData,
+					recipientData,
+					baseContent.data?.findUniqueConference?.contractContent ?? undefined,
+					baseContent.data?.findUniqueConference?.guardianConsentContent ?? undefined,
+					baseContent.data?.findUniqueConference?.mediaConsentContent ?? undefined,
+					baseContent.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
+					`${formatNames(user.given_name, user.family_name, {
+						givenNameFirst: false,
+						delimiter: '_'
+					})}_postal_registration.pdf`
+				);
+			} else {
+				console.error('User details not found');
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		} finally {
+			loadingDownloadPostalDocuments = false;
+		}
+	};
+
+	const downloadCertificate = async () => {
+		loadingDownloadCertificate = true;
+
+		const certificateData = await certificateQuery.fetch({
+			variables: {
+				conferenceId,
+				userId: user.id
+			}
+		});
+
+		console.log(certificateData);
+		const jwtData = certificateData.data?.getCertificateJWT;
+
+		if (!jwtData?.fullName || !jwtData?.jwt) {
+			toast.push(m.certificateDownloadError());
+			return;
+		}
+
+		try {
+			if (user) {
+				await downloadCompleteCertificate(
+					jwtData,
+					certificateData.data?.findUniqueConference?.certificateContent ?? undefined,
+					`${formatNames(user.given_name, user.family_name, {
+						givenNameFirst: false,
+						delimiter: '_'
+					})}_certificate.pdf`
+				);
+			} else {
+				console.error('User details not found');
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
+		} finally {
+			loadingDownloadCertificate = false;
 		}
 	};
 </script>
@@ -225,7 +351,7 @@
 								<br />
 							{/if}
 							{$userQuery.data?.findUniqueUser?.zip}
-							{user?.city}
+							{$userQuery.data?.findUniqueUser?.city}
 							<br />
 							<span class="uppercase"
 								>{$userQuery.data?.findUniqueUser?.country &&
@@ -319,6 +445,24 @@
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
 				{/if}
+				<button
+					class="btn {loadingDownloadPostalDocuments && 'btn-disabled'}"
+					onclick={() => downloadPostalDocuments()}
+				>
+					<i class="fa-duotone fa-{loadingDownloadPostalDocuments ? 'spinner fa-spin' : 'download'}"
+					></i>
+					{m.postalRegistration()}
+				</button>
+				<button
+					class="btn {(loadingDownloadCertificate ||
+						!$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend) &&
+						'btn-disabled'}"
+					onclick={() => downloadCertificate()}
+				>
+					<i class="fa-duotone fa-{loadingDownloadCertificate ? 'spinner fa-spin' : 'download'}"
+					></i>
+					{m.certificate()}
+				</button>
 			</div>
 		</div>
 	</div>

@@ -7,8 +7,10 @@
  * - If familyName is not provided, it returns the givenName as is.
  *
  * The name order is determined by the givenNameFirst option:
- * - If true, the formatted string is "GivenName FamilyName".
- * - If false, the formatted string is "FamilyName, GivenName".
+ * - If true, the formatted string is "GivenName{delimiter}FamilyName".
+ * - If false, the formatted string is "FamilyName{delimiter}GivenName".
+ *
+ * Additionally, any spaces within the formatted names are replaced with the provided delimiter.
  *
  * @param givenName - The given (or first) name. Its case is adjusted based on givenNameUppercase.
  * @param familyName - The family (or last) name. Its case is adjusted based on familyNameUppercase.
@@ -16,6 +18,7 @@
  *   @param options.givenNameFirst - If true, places the given name before the family name; otherwise, reverses the order.
  *   @param options.givenNameUppercase - If true, converts the given name to uppercase. Otherwise, applies sentence case.
  *   @param options.familyNameUppercase - If true, converts the family name to uppercase. Otherwise, applies sentence case.
+ *   @param options.delimiter - The string to use as a delimiter for joining names and replacing spaces. Defaults to a single space.
  *
  * @returns A formatted string of the names according to the provided options.
  */
@@ -26,29 +29,39 @@ export default function formatNames(
 		givenNameFirst?: boolean;
 		givenNameUppercase?: boolean;
 		familyNameUppercase?: boolean;
+		delimiter?: string;
 	}
 ): string {
 	const {
 		givenNameFirst = true,
 		givenNameUppercase = false,
-		familyNameUppercase = true
+		familyNameUppercase = true,
+		delimiter = ' '
 	} = options || {};
 
 	const sentenceCase = (name: string) => {
 		const words = name.split(' ');
 		return words
 			.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-			.join(' ');
+			.join(delimiter);
 	};
 
-	if (!givenName) return familyName?.toUpperCase() || 'unknown name';
-	if (!familyName) return givenName;
-	const formattedGivenName = givenNameUppercase ? givenName.toUpperCase() : sentenceCase(givenName);
+	if (!givenName) {
+		return familyName?.toUpperCase().replace(/ /g, delimiter) || 'unknown name';
+	}
+	if (!familyName) {
+		return givenName.replace(/ /g, delimiter);
+	}
+
+	const formattedGivenName = givenNameUppercase
+		? givenName.toUpperCase().replace(/ /g, delimiter)
+		: sentenceCase(givenName);
 	const formattedFamilyName = familyNameUppercase
-		? familyName.toUpperCase()
+		? familyName.toUpperCase().replace(/ /g, delimiter)
 		: sentenceCase(familyName);
-	if (givenNameFirst) return `${formattedGivenName} ${formattedFamilyName}`;
-	return `${formattedFamilyName}, ${formattedGivenName}`;
+
+	if (givenNameFirst) return `${formattedGivenName}${delimiter}${formattedFamilyName}`;
+	return `${formattedFamilyName}${delimiter}${formattedGivenName}`;
 }
 
 /**

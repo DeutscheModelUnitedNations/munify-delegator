@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import * as m from '$lib/paraglide/messages.js';
+	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
 	import { toast } from '@zerodevx/svelte-toast';
@@ -14,21 +15,6 @@
 	let { conferenceId, userId, didAttend }: Props = $props();
 
 	let loading = $state(false);
-
-	const certificateQuery = graphql(`
-		query CertificateQuery($conferenceId: String!, $userId: String!) {
-			findUniqueConference(where: { id: $conferenceId }) {
-				certificateContent
-				title
-			}
-			getCertificateJWT(
-				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
-			) {
-				jwt
-				fullName
-			}
-		}
-	`);
 
 	$effect(() => {
 		if (conferenceId && userId) {

@@ -28,8 +28,8 @@ export interface RecipientData {
 }
 
 export interface ParticipantCertificateData {
-	fullName: string;
-	jwt: string;
+	fullName?: string | null;
+	jwt?: string | null;
 }
 
 interface PageStyles {
@@ -384,6 +384,13 @@ class CertificateGenerator extends PDFPageGenerator {
 		this.page = this.pdfDoc.getPage(0);
 	}
 	protected async generateContent(): Promise<void> {
+		if (!this.data.fullName) {
+			throw new Error('Full name is required for the certificate');
+		}
+		if (!this.data.jwt) {
+			throw new Error('JWT is required for the certificate');
+		}
+
 		const { width, height } = this.page.getSize();
 		const yPosition = height - 215;
 		const text = replaceSpecialChars(this.data.fullName);
