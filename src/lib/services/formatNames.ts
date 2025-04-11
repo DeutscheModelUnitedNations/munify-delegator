@@ -40,7 +40,7 @@ export default function formatNames(
 	} = options || {};
 
 	const sentenceCase = (name: string) => {
-		const words = name.split(' ');
+		const words = name.trim().split(/\s+/);
 		return words
 			.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
 			.join(delimiter);
