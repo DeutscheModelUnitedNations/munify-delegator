@@ -179,7 +179,7 @@ model ConferenceParticipantStatus {
   paymentStatus      AdministrativeStatus @default(PENDING)
   mediaConsentStatus MediaConsentStatus   @default(NOT_SET)
   didAttend          Boolean              @default(false)
-  additionalNotes    String               @default("")
+  additionalNotes    Json                 @default("{}")
 
   user         User       @relation(fields: [userId], references: [id])
   userId       String
@@ -202,8 +202,8 @@ model PaymentTransaction {
   userId       String
   paymentFor   UserReferenceInPaymentTransaction[]
   recievedAt   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt    DateTime                            @default(now())
+  updatedAt    DateTime                            @default(now()) @updatedAt
 }
 
 /// Payments can be done in place for other users. This is used to track reference in this process
