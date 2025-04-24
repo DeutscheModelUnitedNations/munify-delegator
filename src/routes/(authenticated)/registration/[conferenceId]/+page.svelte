@@ -2,7 +2,7 @@
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	import UndrawNew from '$assets/undraw/new.svg';
 	import UndrawTeam from '$assets/undraw/team.svg';

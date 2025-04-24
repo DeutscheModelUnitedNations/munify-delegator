@@ -11,8 +11,8 @@ import {
 	ConferenceSupervisorUserFieldObject
 } from '$db/generated/graphql/ConferenceSupervisor';
 import { db } from '$db/db';
-import * as m from '$lib/paraglide/messages';
-import { languageTag } from '$lib/paraglide/runtime';
+import { m } from '$lib/paraglide/messages';
+import { getLocale } from '$lib/paraglide/runtime';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -96,17 +96,15 @@ builder.mutationFields((t) => {
 
 				// if the user somehow is already participating in the conference as something else than a supervisor, throw
 				if (participations.foundDelegationMember) {
-					throw new GraphQLError(
-						m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() })
-					);
+					throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: getLocale() }));
 				}
 				if (participations.foundSingleParticipant) {
 					throw new GraphQLError(
-						m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() })
+						m.youAreAlreadySingleParticipant({}, { languageTag: getLocale() })
 					);
 				}
 				if (participations.foundTeamMember) {
-					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: languageTag() }));
+					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: getLocale() }));
 				}
 
 				return await db.conferenceSupervisor.upsert({

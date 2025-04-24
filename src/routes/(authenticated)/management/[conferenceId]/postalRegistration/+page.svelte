@@ -5,7 +5,7 @@
 		type MediaConsentStatus$options,
 		type UpdateConferenceParticipantStatusInput
 	} from '$houdini';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';

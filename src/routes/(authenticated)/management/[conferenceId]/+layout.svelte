@@ -3,7 +3,7 @@
 	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
 	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 

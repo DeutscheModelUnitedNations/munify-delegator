@@ -7,7 +7,7 @@ import {
 	type Nation
 } from '../../../routes/assignment-assistant/[projectId]/appData.svelte';
 import { builder } from '../builder';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
 
 function getNations(committees: Committee[]): {

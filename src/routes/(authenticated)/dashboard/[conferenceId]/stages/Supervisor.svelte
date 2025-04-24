@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from '../$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';

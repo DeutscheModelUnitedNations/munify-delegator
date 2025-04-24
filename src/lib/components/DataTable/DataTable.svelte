@@ -2,7 +2,7 @@
 	import SvelteTable, { type TableColumns } from 'svelte-table';
 	import { getTableSettings } from './dataTableSettings.svelte';
 	import Fuse from 'fuse.js';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import DataTableSettingsButton from './DataTableSettingsButton.svelte';

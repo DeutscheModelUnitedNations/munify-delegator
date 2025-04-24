@@ -4,7 +4,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { userFormSchema } from './form-schema';
 import { graphql, redirect } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
 

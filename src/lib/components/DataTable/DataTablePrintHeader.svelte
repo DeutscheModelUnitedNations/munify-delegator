@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { languageTag } from '$lib/paraglide/runtime';
-	import * as m from '$lib/paraglide/messages';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		title: string;
@@ -14,7 +14,7 @@
 	<h1 class="text-2xl font-bold">{title}</h1>
 	<h2 class="text-lg">
 		{m.createdOn({
-			date: new Date().toLocaleDateString(languageTag()),
+			date: new Date().toLocaleDateString(getLocale()),
 			time: new Date().toLocaleTimeString()
 		})}
 	</h2>

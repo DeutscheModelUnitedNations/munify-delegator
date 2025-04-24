@@ -2,7 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { cache, graphql, type DelegationDrawerQuery$result } from '$houdini';
 	import Modal from '$lib/components/Modal.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import type { GetCommitteeDataForCommitteeAssignmentVariables } from './$houdini';
 

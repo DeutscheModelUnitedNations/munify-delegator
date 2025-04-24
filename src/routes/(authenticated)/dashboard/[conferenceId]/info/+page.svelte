@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();

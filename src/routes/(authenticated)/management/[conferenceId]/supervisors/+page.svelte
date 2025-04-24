@@ -2,7 +2,7 @@
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';

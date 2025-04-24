@@ -12,7 +12,7 @@ import {
 import type { nullable } from 'zod';
 import { builder } from '../builder';
 import { upsertWithRetry } from '$api/services/prismaUpsertWithRetry';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import { GraphQLError } from 'graphql';
 
 builder.prismaObject('SurveyAnswer', {

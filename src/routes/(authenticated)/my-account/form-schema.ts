@@ -1,7 +1,7 @@
 import valiator from 'validator';
 import { z } from 'zod';
-import * as m from '$lib/paraglide/messages.js';
-import { languageTag } from '$lib/paraglide/runtime';
+import { m } from '$lib/paraglide/messages';
+import { getLocale } from '$lib/paraglide/runtime';
 
 // must be at least 13 years old
 const birthdayMaxDate = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);
@@ -9,7 +9,7 @@ const birthdayMaxDate = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);
 export const userFormSchema = z.object({
 	birthday: z.date().max(birthdayMaxDate, {
 		message: m.dateMustBeBefore({
-			date: birthdayMaxDate.toLocaleDateString(languageTag())
+			date: birthdayMaxDate.toLocaleDateString(getLocale())
 		})
 	}),
 	phone: z

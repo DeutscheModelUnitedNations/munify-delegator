@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
 	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';

@@ -2,7 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { cache, graphql, type DashboardSurveyPageQuery$result } from '$houdini';
 	import Modal from '$lib/components/Modal.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		question: DashboardSurveyPageQuery$result['findManySurveyQuestions'][0];

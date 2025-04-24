@@ -21,7 +21,7 @@ import {
 } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import { individualApplicationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/individual/[roleId]/form-schema';
 
 builder.prismaObject('SingleParticipant', {

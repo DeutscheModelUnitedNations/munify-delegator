@@ -5,7 +5,7 @@
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import CountryStats from '$lib/components/CountryStats/CountryStats.svelte';
 	import type { PageData } from '../$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import formatNames from '$lib/services/formatNames';

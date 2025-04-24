@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ChartBar from '$lib/components/Charts/ChartBar.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from '../$types';
 	let { data }: { data: PageData } = $props();
 	let stats = $derived(data.stats);

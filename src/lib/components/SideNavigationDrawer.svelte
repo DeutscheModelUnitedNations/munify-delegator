@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import { isMobileOrTablet } from '$lib/services/detectMobile';
 	import NavMenu from './NavMenu/NavMenu.svelte';

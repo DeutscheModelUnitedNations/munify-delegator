@@ -1,8 +1,8 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
 	import { type SuperForm, dateProxy } from 'sveltekit-superforms';
 	import { DatePicker } from '@svelte-plugins/datepicker';
-	import { languageTag } from '$lib/paraglide/runtime';
-	import * as m from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
 	import { isMobileOrTablet } from '$lib/services/detectMobile';
 	import { onMount } from 'svelte';
 
@@ -48,7 +48,7 @@
 		if (!$proxyDate) return m.selectADate();
 		const date = new Date($proxyDate);
 		if (enableTime) {
-			return date.toLocaleDateString(languageTag(), {
+			return date.toLocaleDateString(getLocale(), {
 				year: 'numeric',
 				month: 'short',
 				day: 'numeric',
@@ -57,7 +57,7 @@
 				second: 'numeric'
 			});
 		} else {
-			return date.toLocaleDateString(languageTag(), {
+			return date.toLocaleDateString(getLocale(), {
 				year: 'numeric',
 				month: 'short',
 				day: 'numeric'
@@ -117,7 +117,7 @@
 				placeholder={m.selectADate()}
 				aria-invalid={errors ? 'true' : undefined}
 				class="input input-bordered w-full"
-				lang={languageTag()}
+				lang={getLocale()}
 				{...constraints}
 				bind:this={nativeDateInput}
 			/>

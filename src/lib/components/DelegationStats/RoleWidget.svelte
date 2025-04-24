@@ -3,7 +3,7 @@
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import type { Committee, CustomConferenceRole, Nation, NonStateActor } from '@prisma/client';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		country?: Omit<Omit<Nation, 'createdAt'>, 'updatedAt'> | null | undefined;

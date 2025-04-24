@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { cache, graphql, type UserDrawerQuery$result } from '$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		survey: UserDrawerQuery$result['findManySurveyQuestions'][0];

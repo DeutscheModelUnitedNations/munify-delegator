@@ -1,20 +1,18 @@
 <script>
-	import { availableLanguageTags, languageTag } from '$lib/paraglide/runtime';
-	import { i18n } from '$lib/i18n';
-	import { page } from '$app/stores';
+	import { locales, getLocale, localizeHref, setLocale } from '$lib/paraglide/runtime';
+	import { page } from '$app/state';
 </script>
 
 <span class="flex">
-	{#each availableLanguageTags as lang, i}
-		<a
-			class={languageTag() === lang ? 'font-bold' : ''}
-			href={i18n.route($page.url.pathname)}
-			hreflang={lang}
-			aria-current={lang === languageTag() ? 'page' : undefined}
+	{#each locales as lang, i}
+		<button
+			class={getLocale() === lang ? 'font-bold' : ''}
+			onclick={() => setLocale(lang)}
+			aria-current={lang === getLocale() ? 'page' : undefined}
 		>
 			{lang.toUpperCase()}
-		</a>
-		{#if availableLanguageTags.length > i + 1}
+		</button>
+		{#if locales.length > i + 1}
 			|
 		{/if}
 	{/each}

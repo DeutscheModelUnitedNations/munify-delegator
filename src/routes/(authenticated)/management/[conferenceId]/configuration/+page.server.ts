@@ -3,7 +3,7 @@ import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { conferenceSettingsFormSchema } from './form-schema';
 

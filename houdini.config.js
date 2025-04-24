@@ -10,6 +10,7 @@ const config = {
 			forceRunesMode: true
 		}
 	},
+	exclude: ['src/lib/paraglide/**/*'],
 	scalars: {
 		DateTime: {
 			type: 'Date',

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import StatusCube from '$lib/components/StatusCubes/StatusCube.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		conferenceId: string;

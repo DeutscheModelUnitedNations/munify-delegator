@@ -14,7 +14,7 @@ import {
 	updateManyDelegationMemberMutationObject
 } from '$db/generated/graphql/DelegationMember';
 import { db } from '$db/db';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered

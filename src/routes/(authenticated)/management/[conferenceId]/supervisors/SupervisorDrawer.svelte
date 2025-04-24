@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
 	import type { SupervisorDrawerQueryVariables } from './$houdini';

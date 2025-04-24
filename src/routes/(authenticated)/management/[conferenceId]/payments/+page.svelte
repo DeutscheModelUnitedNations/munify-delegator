@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { cache, graphql } from '$houdini';
 	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
-	import * as m from '$lib/paraglide/messages';
-	import { languageTag } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { type PageData } from './$houdini';
 	import { fly, fade } from 'svelte/transition';
@@ -98,7 +98,7 @@
 	let localizedDateString = $derived.by(() => {
 		if (!recieveDate) return m.selectADate();
 		const date = new Date(recieveDate);
-		return date.toLocaleDateString(languageTag(), {
+		return date.toLocaleDateString(getLocale(), {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric'
@@ -273,7 +273,7 @@
 					bind:value={recieveDate}
 					placeholder={m.selectADate()}
 					class="input input-bordered w-full"
-					lang={languageTag()}
+					lang={getLocale()}
 					bind:this={nativeDateInput}
 				/>
 				<div

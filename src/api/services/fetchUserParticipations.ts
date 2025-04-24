@@ -1,7 +1,7 @@
 import { db } from '$db/db';
-import { languageTag } from '$lib/paraglide/runtime';
+import { getLocale } from '$lib/paraglide/runtime';
 import type { Conference, User } from '@prisma/client';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import { GraphQLError } from 'graphql';
 
 /**
@@ -57,19 +57,19 @@ export async function fetchUserParticipations({
 
 	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw new GraphQLError(m.youAreAlreadySupervisor({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadySupervisor({}, { languageTag: getLocale() }));
 		}
 
 		if (foundSingleParticipant) {
-			throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { languageTag: getLocale() }));
 		}
 
 		if (foundDelegationMember) {
-			throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: getLocale() }));
 		}
 
 		if (foundTeamMember) {
-			throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: languageTag() }));
+			throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: getLocale() }));
 		}
 	}
 

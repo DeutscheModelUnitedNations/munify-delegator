@@ -3,7 +3,7 @@
 	import { cache, graphql } from '$houdini';
 	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';
 	import Modal from '$lib/components/Modal.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import type { Snippet } from 'svelte';
 

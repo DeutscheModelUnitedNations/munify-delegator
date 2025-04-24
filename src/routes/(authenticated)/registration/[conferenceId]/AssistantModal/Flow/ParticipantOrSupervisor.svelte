@@ -4,7 +4,7 @@
 	import ChatUser from '../ChatUser.svelte';
 	import Choice from '../Choice.svelte';
 	import QuestionFlowState from '../flowEnum';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		advance: (q: QuestionFlowState) => void;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { graphql, type PaymentLayoutQuery$result } from '$houdini';
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import GiroCode from './GiroCode.svelte';
 

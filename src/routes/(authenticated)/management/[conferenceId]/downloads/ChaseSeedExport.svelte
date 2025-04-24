@@ -4,7 +4,7 @@
 		type ConferenceCommitteeNationQuery,
 		type ConferenceCommitteeNationQuery$result
 	} from '$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import formatNames from '$lib/services/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';

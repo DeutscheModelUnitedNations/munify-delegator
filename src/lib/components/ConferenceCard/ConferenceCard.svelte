@@ -1,9 +1,9 @@
 <script lang="ts">
 	import CardInfoSectionWithIcons from './CardInfoSectionWithIcons.svelte';
-	import { languageTag } from '$lib/paraglide/runtime.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
 	import { onMount } from 'svelte';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import type { Conference } from '@prisma/client';
 
 	interface ConferenceCardProps {
@@ -66,9 +66,9 @@
 			{
 				fontAwesomeIcon: 'fa-calendar',
 				text: `<span class="whitespace-nowrap">
-								${new Date(conference.startConference).toLocaleDateString(languageTag(), dateOptions)}
+								${new Date(conference.startConference).toLocaleDateString(getLocale(), dateOptions)}
 							</span> - <span class="whitespace-nowrap">
-							${new Date(conference.endConference).toLocaleDateString(languageTag(), dateOptions)}
+							${new Date(conference.endConference).toLocaleDateString(getLocale(), dateOptions)}
 							</span>`
 			},
 			{ fontAwesomeIcon: 'fa-map-marker-alt', text: conference.location ?? m.unknownLocation() },
@@ -78,7 +78,7 @@
 				text:
 					registrationStatus === 'OPEN'
 						? m.registrationOpen({
-								date: `${new Date(conference.startAssignment as unknown as string)?.toLocaleDateString(languageTag(), dateOptions) ?? ''}`
+								date: `${new Date(conference.startAssignment as unknown as string)?.toLocaleDateString(getLocale(), dateOptions) ?? ''}`
 							})
 						: registrationStatus === 'CLOSED'
 							? m.registrationClosed()
