@@ -1,7 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import houdini from 'houdini/vite';
 import { defineConfig } from 'vite';
-import { paraglide } from '@inlang/paraglide-sveltekit/vite';
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
 export default defineConfig({
 	optimizeDeps: {
@@ -9,7 +9,7 @@ export default defineConfig({
 	},
 	plugins: [
 		houdini(),
-		paraglide({ project: './project.inlang', outdir: './src/lib/paraglide' }),
+		paraglideVitePlugin({ project: './project.inlang', outdir: './src/lib/paraglide' }),
 		sveltekit()
 	]
 });
