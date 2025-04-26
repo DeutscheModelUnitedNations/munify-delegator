@@ -7,14 +7,16 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
+	import { type PageData } from './$houdini';
 
 	interface Props {
 		conferenceId: string;
 		delegationId: string;
 		open?: boolean;
 		onClose?: () => void;
+		userData: PageData['user'];
 	}
-	let { delegationId, open = $bindable(false), onClose, conferenceId }: Props = $props();
+	let { delegationId, open = $bindable(false), onClose, conferenceId, userData }: Props = $props();
 
 	export const _DelegationDrawerQueryVariables: DelegationDrawerQueryVariables = () => {
 		return {
@@ -75,6 +77,18 @@
 		}
 	`);
 
+	const makeHeadDelegateMutation = graphql(`
+		mutation MakeHeadDelegateMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
+			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
+				id
+				members {
+					id
+					isHeadDelegate
+				}
+			}
+		}
+	`);
+
 	let delegation = $derived($delegationQuery.data?.findUniqueDelegation);
 	let members = $derived(
 		delegation?.members.sort((a, b) => {
@@ -83,7 +97,39 @@
 		})
 	);
 
+	// Define member type to properly type selectedMember
+	type MemberType = {
+		id: string;
+		isHeadDelegate: boolean;
+		user: {
+			id: string;
+			given_name: string;
+			family_name: string;
+		};
+		assignedCommittee: {
+			id: string;
+			abbreviation: string;
+			name: string;
+		} | null;
+	};
+
 	let committeeAssignmentModalOpen = $state(false);
+	let headDelegateModalOpen = $state(false);
+	let selectedMember = $state<MemberType | null>(null);
+
+	async function handleConfirmHeadDelegate() {
+		if (!selectedMember || selectedMember.isHeadDelegate) return;
+		try {
+			await makeHeadDelegateMutation.mutate({
+				where: { id: delegationId },
+				userId: selectedMember.user.id
+			});
+		} catch (error) {
+			console.error('Failed to update head delegate:', error);
+		} finally {
+			headDelegateModalOpen = false;
+		}
+	}
 </script>
 
 <Drawer
@@ -289,6 +335,18 @@
 			<i class="fa-duotone fa-grid-2"></i>
 			{m.committeeAssignment()}
 		</button>
+		{#if userData?.myOIDCRoles?.includes('admin')}
+			<button
+				class="btn"
+				onclick={() => {
+					selectedMember = members?.find((m) => m.isHeadDelegate) ?? null;
+					headDelegateModalOpen = true;
+				}}
+			>
+				<i class="fa-duotone fa-crown"></i>
+				{m.headDelegate ? m.headDelegate() : 'Change Head Delegate'}
+			</button>
+		{/if}
 	</div>
 
 	<div class="flex flex-col gap-2">
@@ -308,6 +366,43 @@
 		</button>
 	</div>
 </Drawer>
+
+<!-- Head Delegate Selection Modal -->
+<div class="modal" class:modal-open={headDelegateModalOpen}>
+	<div class="modal-box">
+		<h3 class="text-lg font-bold">{m.headDelegate ? m.headDelegate() : m.delegationMembers()}</h3>
+		<div class="max-h-60 overflow-y-auto">
+			{#each members ?? [] as member}
+				<label class="flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-base-200">
+					<input
+						type="radio"
+						name="head-delegate"
+						checked={member.isHeadDelegate}
+						onclick={() => (selectedMember = member)}
+						disabled={member.isHeadDelegate}
+						class="radio"
+					/>
+					<span>{member.user.given_name} {member.user.family_name}</span>
+					{#if member.isHeadDelegate}
+						<span class="badge badge-primary">★</span>
+					{/if}
+				</label>
+			{/each}
+		</div>
+		<div class="modal-action">
+			<button class="btn" onclick={() => (headDelegateModalOpen = false)}
+				>{m.close ? m.close() : 'Cancel'}</button
+			>
+			<button
+				class="btn btn-primary"
+				onclick={handleConfirmHeadDelegate}
+				disabled={!selectedMember || selectedMember.isHeadDelegate}
+			>
+				{m.confirm()}
+			</button>
+		</div>
+	</div>
+</div>
 
 <CommitteeAssignmentModal
 	bind:open={committeeAssignmentModalOpen}

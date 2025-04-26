@@ -11,5 +11,8 @@ export default defineConfig({
 		houdini(),
 		paraglide({ project: './project.inlang', outdir: './src/lib/paraglide' }),
 		sveltekit()
-	]
+	],
+	ssr:{
+		noExternal: ["@inlang/paraglide-js"]
+	}
 });
