@@ -8,6 +8,7 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 	import { type PageData } from './$houdini';
+	import { never } from 'zod';
 
 	interface Props {
 		conferenceId: string;
@@ -124,7 +125,8 @@
 				where: { id: delegationId },
 				userId: selectedMember.user.id
 			});
-			await delegationQuery.fetch();
+			// Force a complete refetch with potentially new variables
+			await delegationQuery.fetch({ variables: { delegationId } });
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
 		} finally {
