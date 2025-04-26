@@ -124,13 +124,12 @@
 				where: { id: delegationId },
 				userId: selectedMember.user.id
 			});
+			await delegationQuery.fetch();
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
 		} finally {
 			headDelegateModalOpen = false;
 			selectedMember = null;
-			// Refetch the delegation query to update the UI
-			await delegationQuery.fetch();
 		}
 	}
 </script>
@@ -380,7 +379,7 @@
 					<input
 						type="radio"
 						name="head-delegate"
-						checked={member.isHeadDelegate}
+						checked={selectedMember?.id === member.id}
 						onclick={() => (selectedMember = member)}
 						disabled={member.isHeadDelegate}
 						class="radio"
@@ -396,8 +395,8 @@
 			<button
 				class="btn"
 				onclick={() => {
-					headDelegateModalOpen = false;
 					selectedMember = null;
+					headDelegateModalOpen = false;
 				}}>{m.close ? m.close() : 'Cancel'}</button
 			>
 			<button
