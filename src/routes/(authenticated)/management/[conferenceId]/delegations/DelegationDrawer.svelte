@@ -128,6 +128,9 @@
 			console.error('Failed to update head delegate:', error);
 		} finally {
 			headDelegateModalOpen = false;
+			selectedMember = null;
+			// Refetch the delegation query to update the UI
+			await delegationQuery.fetch();
 		}
 	}
 </script>
@@ -390,8 +393,12 @@
 			{/each}
 		</div>
 		<div class="modal-action">
-			<button class="btn" onclick={() => (headDelegateModalOpen = false)}
-				>{m.close ? m.close() : 'Cancel'}</button
+			<button
+				class="btn"
+				onclick={() => {
+					headDelegateModalOpen = false;
+					selectedMember = null;
+				}}>{m.close ? m.close() : 'Cancel'}</button
 			>
 			<button
 				class="btn btn-primary"
