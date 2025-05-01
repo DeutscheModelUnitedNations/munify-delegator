@@ -98,7 +98,6 @@
 		})
 	);
 
-
 	// Define member type to properly type selectedMember
 	type MemberType = {
 		id: string;
@@ -118,9 +117,11 @@
 	let committeeAssignmentModalOpen = $state(false);
 	let headDelegateModalOpen = $state(false);
 	let selectedMember = $state<MemberType | null>(null);
+	let isUpdatingHeadDelegate = $state(false);
 
 	async function handleConfirmHeadDelegate() {
 		if (!selectedMember || selectedMember.isHeadDelegate) return;
+		isUpdatingHeadDelegate = true;
 		try {
 			await makeHeadDelegateMutation.mutate({
 				where: { id: delegationId },
@@ -131,6 +132,7 @@
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
 		} finally {
+			isUpdatingHeadDelegate = false;
 			headDelegateModalOpen = false;
 			selectedMember = null;
 		}
@@ -384,7 +386,7 @@
 						name="head-delegate"
 						checked={selectedMember?.id === member.id}
 						onclick={() => (selectedMember = member)}
-						disabled={member.isHeadDelegate}
+						disabled={member.isHeadDelegate || isUpdatingHeadDelegate}
 						class="radio"
 					/>
 					<span>{member.user.given_name} {member.user.family_name}</span>
@@ -400,13 +402,17 @@
 				onclick={() => {
 					selectedMember = null;
 					headDelegateModalOpen = false;
-				}}>{m.close ? m.close() : 'Cancel'}</button
+				}}
+				disabled={isUpdatingHeadDelegate}>{m.close ? m.close() : 'Cancel'}</button
 			>
 			<button
 				class="btn btn-primary"
 				onclick={handleConfirmHeadDelegate}
-				disabled={!selectedMember || selectedMember.isHeadDelegate}
+				disabled={!selectedMember || selectedMember.isHeadDelegate || isUpdatingHeadDelegate}
 			>
+				{#if isUpdatingHeadDelegate}
+					<span class="loading loading-spinner"></span>
+				{/if}
 				{m.confirm()}
 			</button>
 		</div>
