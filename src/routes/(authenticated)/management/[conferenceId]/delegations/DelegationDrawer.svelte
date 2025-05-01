@@ -1,14 +1,14 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import type { DelegationDrawerQueryVariables } from './$houdini';
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 	import { type PageData } from './$houdini';
-	import { never } from 'zod';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		conferenceId: string;
@@ -98,6 +98,7 @@
 		})
 	);
 
+
 	// Define member type to properly type selectedMember
 	type MemberType = {
 		id: string;
@@ -125,8 +126,8 @@
 				where: { id: delegationId },
 				userId: selectedMember.user.id
 			});
-			// Force a complete refetch with potentially new variables
-			await delegationQuery.fetch({ variables: { delegationId } });
+			cache.markStale();
+			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
 		} finally {
