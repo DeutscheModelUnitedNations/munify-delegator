@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { graphql, type MediaConsentStatus$options } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
@@ -122,6 +122,7 @@
 			countryAlpha2Code?: string | null;
 			alternativeImage?: string | null;
 			pronouns?: string | null;
+			mediaConsentStatus?: MediaConsentStatus$options;
 		}[],
 		filename: string
 	) => {
@@ -131,7 +132,8 @@
 			'countryName',
 			'countryAlpha2Code',
 			'alternativeImage',
-			'pronouns'
+			'pronouns',
+			'mediaConsentStatus'
 		];
 		const csv = [
 			header,
@@ -141,7 +143,8 @@
 				x.countryName,
 				x.countryAlpha2Code,
 				x.alternativeImage,
-				x.pronouns
+				x.pronouns,
+				x.mediaConsentStatus ?? 'NOT_SET'
 			])
 		];
 		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
@@ -256,8 +259,8 @@
 	};
 </script>
 
-<DownloadSection title={'Tabellen für Schildergenerator'}>
-	{#each committees as committee}
+<DownloadSection title="Tabellen für Schildergenerator">
+	{#each committees as committee, i (i)}
 		<DownloadElement
 			btnClick={() => getCommitteeBadgeData(committee.id)}
 			title={committee.name}
