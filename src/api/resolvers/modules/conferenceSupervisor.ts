@@ -99,9 +99,7 @@ builder.mutationFields((t) => {
 					throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
 				}
 				if (participations.foundSingleParticipant) {
-					throw new GraphQLError(
-						m.youAreAlreadySingleParticipant({}, { locale: getLocale() })
-					);
+					throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
 				}
 				if (participations.foundTeamMember) {
 					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
