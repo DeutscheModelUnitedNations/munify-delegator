@@ -96,15 +96,13 @@ builder.mutationFields((t) => {
 
 				// if the user somehow is already participating in the conference as something else than a supervisor, throw
 				if (participations.foundDelegationMember) {
-					throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: getLocale() }));
+					throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
 				}
 				if (participations.foundSingleParticipant) {
-					throw new GraphQLError(
-						m.youAreAlreadySingleParticipant({}, { languageTag: getLocale() })
-					);
+					throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
 				}
 				if (participations.foundTeamMember) {
-					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: getLocale() }));
+					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
 				}
 
 				return await db.conferenceSupervisor.upsert({
