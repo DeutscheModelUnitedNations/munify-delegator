@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { configPublic } from '$config/public';
 	import { graphql } from '$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import AuthenticatedHeader from './AuthenticatedHeader.svelte';
 

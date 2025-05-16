@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	// @ts-expect-error - This library has no types
 	import { girocode } from '@dipser/epc-qr-code.js';
 

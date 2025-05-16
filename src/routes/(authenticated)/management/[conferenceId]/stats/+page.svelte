@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import DaysUntil from './widgets/DaysUntil.svelte';
 	import type { PageData } from './$types';
 	import AppliedChartAndStats from './widgets/AppliedChartAndStats.svelte';

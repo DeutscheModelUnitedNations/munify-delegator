@@ -2,7 +2,7 @@
 	import ChatBot from '../ChatBot.svelte';
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		conferenceId: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ConferenceCard from '$lib/components/ConferenceCard/ConferenceCard.svelte';
 	import type { PageData } from './$types';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 
 	let { data }: { data: PageData } = $props();

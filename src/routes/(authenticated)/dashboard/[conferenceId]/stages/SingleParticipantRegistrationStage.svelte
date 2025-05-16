@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from '../$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';

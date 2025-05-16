@@ -1,6 +1,6 @@
 <script lang="ts">
 	import StackChart from '$lib/components/Charts/StackChart.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { registrationFilter } from '../stats.svelte';
 	import type { PageData } from '../$types';
 	let { data }: { data: PageData } = $props();

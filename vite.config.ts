@@ -1,15 +1,12 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import houdini from 'houdini/vite';
 import { defineConfig } from 'vite';
-import { paraglide } from '@inlang/paraglide-sveltekit/vite';
+import { paraglideVitePlugin } from '@inlang/paraglide-js';
 
 export default defineConfig({
-	optimizeDeps: {
-		exclude: ['chunk-LDTYDLR3.js?v=b698017b'] // TODO why is this needed!?
-	},
 	plugins: [
+		paraglideVitePlugin({ project: './project.inlang', outdir: './src/lib/paraglide' }),
 		houdini(),
-		paraglide({ project: './project.inlang', outdir: './src/lib/paraglide' }),
 		sveltekit()
 	],
 	ssr:{

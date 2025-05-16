@@ -21,7 +21,7 @@ import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenera
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
 import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
 import { GraphQLError } from 'graphql';
-import * as m from '$lib/paraglide/messages';
+import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/services/formatNames';
 
 builder.prismaObject('Delegation', {

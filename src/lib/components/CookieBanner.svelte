@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import 'vanilla-cookieconsent/dist/cookieconsent.css';
 	import * as CookieConsent from 'vanilla-cookieconsent';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	onMount(() => {
 		CookieConsent.run({

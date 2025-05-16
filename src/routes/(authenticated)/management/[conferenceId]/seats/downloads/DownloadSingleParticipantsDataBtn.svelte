@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	import GenericDownloadButton from './GenericDownloadButton.svelte';
 

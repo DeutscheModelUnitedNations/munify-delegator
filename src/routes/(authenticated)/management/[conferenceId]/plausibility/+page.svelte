@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { error } from '@sveltejs/kit';
 	import type { PageData } from './$houdini';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';

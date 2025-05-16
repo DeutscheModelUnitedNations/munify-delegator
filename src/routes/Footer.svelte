@@ -2,7 +2,7 @@
 	import dmunLogo from '$assets/logo/dmun_logo.png';
 	import { configPublic } from '$config/public';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 </script>
 
 <div class="w-full p-4">

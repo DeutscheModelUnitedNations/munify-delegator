@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { ParaglideJS } from '@inlang/paraglide-sveltekit';
-	import { i18n } from '$lib/i18n';
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import Footer from './Footer.svelte';
 	import { SvelteToast } from '@zerodevx/svelte-toast';
@@ -83,13 +81,11 @@
 	<meta name="theme-color" content="#ffffff" />
 </svelte:head>
 
-<ParaglideJS {i18n}>
-	<SvelteToast options={{}} />
-	<CookieBanner />
-	<div class="flex min-h-screen">
-		<!-- {@render children()} -->
-		<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
-		{@render children()}
-	</div>
-	<Footer />
-</ParaglideJS>
+<SvelteToast options={{}} />
+<CookieBanner />
+<div class="flex min-h-screen">
+	<!-- {@render children()} -->
+	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
+	{@render children()}
+</div>
+<Footer />

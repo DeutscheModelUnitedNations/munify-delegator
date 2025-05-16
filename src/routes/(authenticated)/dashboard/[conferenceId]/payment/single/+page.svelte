@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import { type PageData } from './$houdini';
 

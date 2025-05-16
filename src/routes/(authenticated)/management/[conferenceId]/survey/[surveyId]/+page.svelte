@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
 	import type { PageData } from './$houdini';
 	import { stringify } from 'csv-stringify/browser/esm/sync';

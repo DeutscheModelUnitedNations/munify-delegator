@@ -11,7 +11,7 @@
 	},
 	"i18n Import": {
 		"prefix": "i18n",
-		"body": "import * as m from '$lib/paraglide/messages';",
+		"body": "import { m } from '$lib/paraglide/messages';",
 		"description": "Import i18n messages"
 	},
 	"i18n": {

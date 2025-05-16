@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';

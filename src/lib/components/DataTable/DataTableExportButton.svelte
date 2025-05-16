@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	interface Props {
 		exportedData: Record<string, string>[];

@@ -3,7 +3,7 @@
 	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import UserDrawer from './UserDrawer.svelte';
 	import { type TableColumns } from 'svelte-table';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
 	import { capitalizeFirstLetter } from '$lib/services/capitalizeFirstLetter';
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';

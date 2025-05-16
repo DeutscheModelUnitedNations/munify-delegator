@@ -1,7 +1,7 @@
 import valiator from 'validator';
 import IBAN from 'iban';
 import { z } from 'zod';
-import * as m from '$lib/paraglide/messages.js';
+import { m } from '$lib/paraglide/messages';
 
 export const conferenceSettingsFormSchema = z.object({
 	title: z.string().min(3, {

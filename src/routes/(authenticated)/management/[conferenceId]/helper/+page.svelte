@@ -2,7 +2,7 @@
 	import { graphql } from '$houdini';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import ParticipantStatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import { toast } from '@zerodevx/svelte-toast';
 	import Section from './Section.svelte';

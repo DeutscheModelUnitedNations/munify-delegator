@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import svg500 from '$assets/undraw/500.svg';
 	import svg404 from '$assets/undraw/404.svg';
 	import svgquestion from '$assets/undraw/question.svg';

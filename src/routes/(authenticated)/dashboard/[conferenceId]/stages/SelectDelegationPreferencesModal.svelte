@@ -3,7 +3,7 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import type { Nation } from '@prisma/client';
 	import { invalidateAll } from '$app/navigation';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';

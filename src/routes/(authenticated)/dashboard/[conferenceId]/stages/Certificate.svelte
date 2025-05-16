@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';

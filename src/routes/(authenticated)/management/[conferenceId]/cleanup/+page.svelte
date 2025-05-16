@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import Modal from './Modal.svelte';
 	import Section from './Section.svelte';

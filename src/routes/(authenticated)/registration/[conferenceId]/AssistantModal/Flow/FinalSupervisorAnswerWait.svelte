@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ChatBot from '../ChatBot.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 </script>
 
 <ChatBot delay={400}>

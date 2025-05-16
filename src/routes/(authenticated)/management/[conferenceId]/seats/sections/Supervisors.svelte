@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { graphql, type SeatsQuery$result } from '$houdini';
 	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';

@@ -1,10 +1,6 @@
 // world-countries
 
-import {
-	availableLanguageTags,
-	languageTag,
-	type AvailableLanguageTag
-} from '$lib/paraglide/runtime';
+import { getLocale, locales } from '$lib/paraglide/runtime';
 import allNations from 'world-countries';
 
 const addressNations = [
@@ -247,7 +243,7 @@ const addressNations = [
 ];
 
 //TODO this could probably be part of the localization engine
-function nationCodeToLocalName(code: string, locale = languageTag(), official = false) {
+function nationCodeToLocalName(code: string, locale = getLocale(), official = false) {
 	const getTranslationCode = (locale: string) => {
 		switch (locale) {
 			case 'de':
@@ -286,12 +282,12 @@ function nationCodeToLocalName(code: string, locale = languageTag(), official = 
 }
 
 // we build an index of nation codes to translation objects
-type TranslationObject = { [key in AvailableLanguageTag]: string };
+type TranslationObject = { [key in (typeof locales)[number]]: string };
 export const NationIso3ToLocalNamesMap = new Map<string, TranslationObject>();
 
 for (const nation of allNations) {
 	const translationObject: TranslationObject = {} as any;
-	for (const languageTag of availableLanguageTags) {
+	for (const languageTag of locales) {
 		translationObject[languageTag] = nationCodeToLocalName(nation.cca3, languageTag);
 	}
 	NationIso3ToLocalNamesMap.set(nation.cca3, translationObject);
@@ -304,7 +300,7 @@ export const translatedNationCodeAddressFormOptions = $state(
 	addressNations
 		.map((nation) => ({
 			value: nation.iso_code,
-			label: NationIso3ToLocalNamesMap.get(nation.iso_code)![languageTag()]
+			label: NationIso3ToLocalNamesMap.get(nation.iso_code)![getLocale()]
 		}))
 		.sort((a, b) => a.label.localeCompare(b.label))
 		.sort((a, b) => (a.value === 'DEU' ? -1 : b.value === 'DEU' ? 1 : 0))
@@ -312,7 +308,7 @@ export const translatedNationCodeAddressFormOptions = $state(
 
 export const getFullTranslatedCountryNameFromISO3Code = (isoCode: string) => {
 	const found = NationIso3ToLocalNamesMap.get(isoCode.toUpperCase());
-	if (found) return found[languageTag()];
+	if (found) return found[getLocale()];
 	console.log(NationIso3ToLocalNamesMap);
 
 	console.warn('Could not translate country code', isoCode);

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import type { PageData } from './$types';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import DelegationPreview from '$lib/components/DelegationPreview.svelte';
 	import { entryCodeLength } from '$api/services/delegationEntryCodeGenerator';

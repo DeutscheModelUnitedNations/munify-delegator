@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
 	import SHLogo from '$assets/logo/mun-sh_logo.png';
 	import BWLogo from '$assets/logo/munbw_logo.png';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ModalData } from './types';
-	import * as m from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		modalData: ModalData | undefined;

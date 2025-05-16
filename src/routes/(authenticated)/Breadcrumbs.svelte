@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
-	import { availableLanguageTags } from '$lib/paraglide/runtime';
-	import * as m from '$lib/paraglide/messages.js';
+	import { locales } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
 	import { graphql } from '$houdini';
 	import type { LayoutServerLoadEvent } from './$types';
 	import { browser } from '$app/environment';
@@ -194,7 +194,7 @@
 import path via the parameter! -->
 <Breadcrumbs
 	importObject={import.meta.glob('./**/+page.svelte')}
-	availableLanguageTags={availableLanguageTags as any as string[]}
+	availableLanguageTags={locales as any as string[]}
 	delimeterSnippet="disabled"
 	homePath="/"
 >

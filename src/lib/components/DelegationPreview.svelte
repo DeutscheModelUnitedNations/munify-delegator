@@ -3,7 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import type { DelegationPreviewComponentQueryVariables } from './$houdini';
 	import Spinner from './Spinner.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		conferenceId: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';

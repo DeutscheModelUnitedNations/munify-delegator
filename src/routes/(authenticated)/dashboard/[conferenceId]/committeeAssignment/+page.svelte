@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { graphql } from '$houdini';
-	import * as m from '$lib/paraglide/messages.js';
+	import { m } from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$houdini';
 	import formatNames from '$lib/services/formatNames';
