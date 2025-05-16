@@ -1,5 +1,5 @@
 import { graphql } from '$houdini';
-import { importJWK, exportSPKI, jwtVerify, type JWK, type KeyLike } from 'jose';
+import { importJWK, jwtVerify, type JWK } from 'jose';
 import type { PageLoad } from './$houdini';
 import {
 	certificateAlg,
