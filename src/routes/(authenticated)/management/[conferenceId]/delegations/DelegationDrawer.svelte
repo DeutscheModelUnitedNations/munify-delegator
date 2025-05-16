@@ -242,7 +242,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each members ?? [] as member}
+					{#each members ?? [] as member, i (i)}
 						<tr>
 							<td>
 								{#if member.isHeadDelegate}
@@ -294,7 +294,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each delegation?.supervisors ?? [] as supervisor}
+					{#each delegation?.supervisors ?? [] as supervisor, i (i)}
 						<tr>
 							<td>
 								{#if supervisor.plansOwnAttendenceAtConference}
@@ -350,7 +350,7 @@
 					headDelegateModalOpen = true;
 				}}
 			>
-				<i class="fa-duotone fa-crown"></i>
+				<i class="fa-duotone fa-medal"></i>
 				{m.headDelegate ? m.headDelegate() : 'Change Head Delegate'}
 			</button>
 		{/if}
@@ -379,7 +379,7 @@
 	<div class="modal-box">
 		<h3 class="text-lg font-bold">{m.headDelegate ? m.headDelegate() : m.delegationMembers()}</h3>
 		<div class="max-h-60 overflow-y-auto">
-			{#each members ?? [] as member}
+			{#each members ?? [] as member, i (i)}
 				<label class="flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-base-200">
 					<input
 						type="radio"
