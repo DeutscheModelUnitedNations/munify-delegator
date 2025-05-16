@@ -57,19 +57,19 @@ export async function fetchUserParticipations({
 
 	if (throwIfAnyIsFound) {
 		if (foundSupervisor) {
-			throw new GraphQLError(m.youAreAlreadySupervisor({}, { languageTag: getLocale() }));
+			throw new GraphQLError(m.youAreAlreadySupervisor({}, { locale: getLocale() }));
 		}
 
 		if (foundSingleParticipant) {
-			throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { languageTag: getLocale() }));
+			throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
 		}
 
 		if (foundDelegationMember) {
-			throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { languageTag: getLocale() }));
+			throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
 		}
 
 		if (foundTeamMember) {
-			throw new GraphQLError(m.youAreAlreadyTeamMember({}, { languageTag: getLocale() }));
+			throw new GraphQLError(m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
 		}
 	}
 
