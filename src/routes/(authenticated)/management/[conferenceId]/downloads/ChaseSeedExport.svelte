@@ -97,10 +97,10 @@
 	};
 </script>
 
-<DownloadSection title={'CHASE Seed Export'}>
+<DownloadSection title="CHASE Seed Export">
 	<DownloadElement
 		btnClick={() => getConferenceCommitteeNationsData()}
-		title={'Konferenz-Seed Daten'}
+		title="Konferenz-Seed Daten"
 		bind:loading
 	/>
 </DownloadSection>
