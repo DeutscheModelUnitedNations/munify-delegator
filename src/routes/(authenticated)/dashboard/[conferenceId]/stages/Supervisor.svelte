@@ -223,7 +223,7 @@
 			.flatMap((x) => x.members.map((y) => y.assignedCommittee))
 			.some((x) => !x)}
 			<TaskAlertCard
-				severity={'warning'}
+				severity="warning"
 				faIcon="fa-arrows-turn-to-dots"
 				title={m.committeeAssignment()}
 				description={m.committeeAssignmentAlertDescriptionSupervisor()}

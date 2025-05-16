@@ -50,7 +50,7 @@
 		}
 	`);
 
-	export const sendAssignmentData = async (id: string, data: ProjectData) => {
+	const sendAssignmentData = async (id: string, data: ProjectData) => {
 		const req = await sendAssigmentDataMutation.mutate({
 			where: { id },
 			data

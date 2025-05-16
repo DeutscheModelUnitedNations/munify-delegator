@@ -192,11 +192,11 @@
 		<FormTextInput
 			{form}
 			name="location"
-			placeholder={'New York, USA'}
+			placeholder="New York, USA"
 			label={m.conferenceLocation()}
 		/>
-		<FormTextInput {form} name="language" placeholder={'Deutsch'} label={m.conferenceLanguage()} />
-		<FormTextInput {form} name="website" placeholder={'mun-sh.de'} label={m.conferenceWebsite()} />
+		<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
+		<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
 		{#if $formData.image || data.imageDataURL}
 			<img
 				src={$formData.image ? URL.createObjectURL($formData.image) : data.imageDataURL}
@@ -217,7 +217,7 @@
 
 		<h3 class="mt-8 text-lg font-bold">{m.communication()}</h3>
 		<div class="flex w-full items-center gap-2">
-			<FormTextArea {form} name="info" placeholder={'Info...'} label={m.infos()} />
+			<FormTextArea {form} name="info" placeholder="Info..." label={m.infos()} />
 			<button
 				class="btn btn-primary h-full"
 				onclick={(e) => {
@@ -231,13 +231,13 @@
 		<FormTextInput
 			{form}
 			name="linkToPreparationGuide"
-			placeholder={'https://path-to-your-guide.com'}
+			placeholder="https://path-to-your-guide.com"
 			label={m.preparationGuide()}
 		/>
 		<FormTextInput
 			{form}
 			name="linkToPaperInbox"
-			placeholder={'https://path-to-your-paper-inbox.com'}
+			placeholder="https://path-to-your-paper-inbox.com"
 			label={m.paperInbox()}
 		/>
 
@@ -253,17 +253,17 @@
 				!$formData.accountHolder ||
 				!$formData.currency}
 		/>
-		<FormTextInput {form} name="feeAmount" placeholder={'75,00'} label={m.fee()} type="number" />
-		<FormTextInput {form} name="bankName" placeholder={'Bank Name'} label={m.bankName()} />
-		<FormTextInput {form} name="iban" placeholder={'DE12345678901234567890'} label={m.iban()} />
-		<FormTextInput {form} name="bic" placeholder={'ABCDEFGH'} label={m.bic()} />
+		<FormTextInput {form} name="feeAmount" placeholder="75,00" label={m.fee()} type="number" />
+		<FormTextInput {form} name="bankName" placeholder="Bank Name" label={m.bankName()} />
+		<FormTextInput {form} name="iban" placeholder="DE12345678901234567890" label={m.iban()} />
+		<FormTextInput {form} name="bic" placeholder="ABCDEFGH" label={m.bic()} />
 		<FormTextInput
 			{form}
 			name="accountHolder"
-			placeholder={'Max Mustermann'}
+			placeholder="Max Mustermann"
 			label={m.accountHolder()}
 		/>
-		<FormTextInput {form} name="currency" placeholder={'EUR'} label={m.currency()} />
+		<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
 
 		<h3 class="mt-8 text-lg font-bold">{m.postalRegistration()}</h3>
 		<FormCheckbox

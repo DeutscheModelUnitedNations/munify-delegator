@@ -415,25 +415,25 @@
 	};
 </script>
 
-<DownloadSection title={'Tabellen für Registrierung'}>
+<DownloadSection title="Tabellen für Registrierung">
 	<DownloadElement
 		btnClick={() => getConferenceRegistrationListDelegationsData()}
-		title={'Delegationen'}
+		title="Delegationen"
 		bind:loading
 	/>
 	<DownloadElement
 		btnClick={() => getConferenceRegistrationListNSAData()}
-		title={'Nichtstaatliche Akteure'}
+		title="Nichtstaatliche Akteure"
 		bind:loading
 	/>
 	<DownloadElement
 		btnClick={() => getConferenceRegistrationListSingleParticipantData()}
-		title={'Einzelteilnehmer'}
+		title="Einzelteilnehmer"
 		bind:loading
 	/>
 	<DownloadElement
 		btnClick={() => getConferenceRegistrationListSupervisorsData()}
-		title={'Supervisors'}
+		title="Supervisors"
 		bind:loading
 	/>
 </DownloadSection>
