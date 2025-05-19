@@ -148,7 +148,7 @@
 			conferenceUsers: [
 				...conferenceData.teamMembers.map((tm) => ({
 					id: tm.id,
-					conferenceUserType: tm.role === "PROJECT_MANAGEMENT" ? 'ADMIN' : 'TEAM',
+					conferenceUserType: tm.role === 'PROJECT_MANAGEMENT' ? 'ADMIN' : 'TEAM',
 					userEmail: tm.user.email
 				})),
 				...conferenceData.conferenceSupervisors.map((supervisor) => ({
@@ -160,7 +160,7 @@
 					id: uuidv4(),
 					conferenceUserType: dm.delegation.assignedNation ? 'DELEGATE' : 'NON_STATE_ACTOR',
 					userEmail: dm.user.email,
-					committeeMemberId: dm.id,
+					committeeMemberId: dm.id
 					//TODO
 					// conferenceMemberId: dm.id
 				}))
