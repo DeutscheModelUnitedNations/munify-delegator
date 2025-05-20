@@ -99,6 +99,8 @@ model Committee {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, abbreviation])
 }
 
 /// The dietary preference options a user can choose
