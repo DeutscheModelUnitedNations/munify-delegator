@@ -130,40 +130,51 @@
 					alpha3Code: nation.alpha3Code,
 					alpha2Code: nation.alpha2Code
 				})),
-				...conferenceData.nonStateActors.map((na) => ({
-					id: na.id,
+				...conferenceData.nonStateActors.map((nonStateActor) => ({
+					id: nonStateActor.id,
 					representationType: 'NSA',
-					name: na.name,
-					faIcon: na.fontAwesomeIcon
+					name: nonStateActor.name,
+					faIcon: nonStateActor.fontAwesomeIcon
 				}))
 			],
-			//TODO
-			conferenceMembers: [],
-			committeeMembers: conferenceData.delegationMembers.map((dm) => ({
-				id: dm.id,
-				representationId:
-					dm.delegation?.assignedNonStateActor?.id ?? dm.delegation?.assignedNation?.alpha3Code,
-				committeeId: dm.assignedCommittee?.id
-			})),
+			conferenceMembers: conferenceData.delegationMembers
+				.filter((delegationMember) => delegationMember.delegation?.assignedNonStateActor?.id)
+				.map((delegationMember) => ({
+					id: delegationMember.id,
+					representationId: delegationMember.delegation?.assignedNonStateActor?.id
+				})),
+			committeeMembers: conferenceData.delegationMembers
+				.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
+				.map((delegationMember) => ({
+					id: delegationMember.id,
+					representationId: delegationMember.delegation?.assignedNation?.alpha3Code,
+					committeeId: delegationMember.assignedCommittee?.id
+				})),
 			conferenceUsers: [
-				...conferenceData.teamMembers.map((tm) => ({
-					id: tm.id,
-					conferenceUserType: tm.role === 'PROJECT_MANAGEMENT' ? 'ADMIN' : 'TEAM',
-					userEmail: tm.user.email
+				...conferenceData.teamMembers.map((teamMember) => ({
+					id: teamMember.id,
+					conferenceUserType: teamMember.role === 'PROJECT_MANAGEMENT' ? 'ADMIN' : 'TEAM',
+					userEmail: teamMember.user.email
 				})),
 				...conferenceData.conferenceSupervisors.map((supervisor) => ({
 					id: supervisor.id,
 					conferenceUserType: 'SPECTATOR',
 					userEmail: supervisor.user.email
 				})),
-				...conferenceData.delegationMembers.map((dm) => ({
-					id: uuidv4(),
-					conferenceUserType: dm.delegation.assignedNation ? 'DELEGATE' : 'NON_STATE_ACTOR',
-					userEmail: dm.user.email,
-					committeeMemberId: dm.id
-					//TODO
-					// conferenceMemberId: dm.id
-				}))
+				...conferenceData.delegationMembers
+					.filter((delegationMember) => delegationMember.delegation?.assignedNonStateActor?.id)
+					.map((delegationMember) => ({
+						id: delegationMember.id + "_user",
+						conferenceUserType: 'NON_STATE_ACTOR',
+						userEmail: delegationMember.user.email
+					})),
+				...conferenceData.delegationMembers
+					.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
+					.map((delegationMember) => ({
+						id: delegationMember.id + "_user",
+						conferenceUserType: 'DELEGATE',
+						userEmail: delegationMember.user.email
+					}))
 			],
 			agendaItems: []
 		};
