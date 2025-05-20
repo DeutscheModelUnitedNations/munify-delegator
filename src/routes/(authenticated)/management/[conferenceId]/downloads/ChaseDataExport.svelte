@@ -145,6 +145,7 @@
 				})),
 			committeeMembers: conferenceData.delegationMembers
 				.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
+				.filter((delegationMember) => delegationMember.assignedCommittee?.id)
 				.map((delegationMember) => ({
 					id: delegationMember.id,
 					representationId: delegationMember.delegation?.assignedNation?.alpha3Code,
@@ -164,14 +165,14 @@
 				...conferenceData.delegationMembers
 					.filter((delegationMember) => delegationMember.delegation?.assignedNonStateActor?.id)
 					.map((delegationMember) => ({
-						id: delegationMember.id + '_user',
+						id: `${delegationMember.id}_user`,
 						conferenceUserType: 'NON_STATE_ACTOR',
 						userEmail: delegationMember.user.email
 					})),
 				...conferenceData.delegationMembers
 					.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
 					.map((delegationMember) => ({
-						id: delegationMember.id + '_user',
+						id: `${delegationMember.id}_user`,
 						conferenceUserType: 'DELEGATE',
 						userEmail: delegationMember.user.email
 					}))
