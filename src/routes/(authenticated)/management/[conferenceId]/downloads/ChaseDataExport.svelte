@@ -117,6 +117,7 @@
 
 		// schema of this data is the input argument data to src/api/handlers/import.ts in munify-chase
 		const transformedData = {
+			$schema: 'https://chase.munify.cloud/api/schema/import',
 			id: conferenceData.id,
 			title: conferenceData.title,
 			committees: conferenceData.committees.map((committee) => ({
