@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
+	import { nanoid } from 'nanoid';
 	import DownloadElement from './DownloadElement.svelte';
 	import DownloadSection from './DownloadSection.svelte';
 	import { v4 as uuidv4 } from 'uuid';
@@ -125,7 +126,7 @@
 			})),
 			representations: [
 				...data.findManyNations.map((nation) => ({
-					id: nation.alpha3Code,
+					id: nanoid(30),
 					representationType: 'DELEGATION',
 					alpha3Code: nation.alpha3Code,
 					alpha2Code: nation.alpha2Code
