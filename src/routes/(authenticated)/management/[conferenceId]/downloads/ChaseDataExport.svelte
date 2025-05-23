@@ -132,6 +132,7 @@
 					return undefined;
 			}
 		};
+		const representationAlpha3CodeToIdMap = new Map<string, string>();
 
 		// schema of this data is the input argument data to src/api/handlers/import.ts in munify-chase
 		const transformedData = {
@@ -144,13 +145,17 @@
 				abbreviation: committee.abbreviation
 			})),
 			representations: [
-				...data.findManyNations.map((nation) => ({
-					id: nanoid(30),
-					representationType: 'DELEGATION',
-					alpha3Code: nation.alpha3Code,
-					alpha2Code: nation.alpha2Code,
-					regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code))
-				})),
+				...data.findManyNations.map((nation) => {
+					const id = nanoid(30);
+					representationAlpha3CodeToIdMap.set(nation.alpha3Code, id);
+					return {
+						id,
+						representationType: 'DELEGATION',
+						alpha3Code: nation.alpha3Code,
+						alpha2Code: nation.alpha2Code,
+						regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code)),
+					};
+				}),
 				...conferenceData.nonStateActors.map((nonStateActor) => ({
 					id: nonStateActor.id,
 					representationType: 'NSA',
@@ -169,7 +174,9 @@
 				.filter((delegationMember) => delegationMember.assignedCommittee?.id)
 				.map((delegationMember) => ({
 					id: delegationMember.id,
-					representationId: delegationMember.delegation?.assignedNation?.alpha3Code,
+					representationId: representationAlpha3CodeToIdMap.get(
+						delegationMember.delegation?.assignedNation!.alpha3Code
+					),
 					committeeId: delegationMember.assignedCommittee?.id
 				})),
 			conferenceUsers: [
