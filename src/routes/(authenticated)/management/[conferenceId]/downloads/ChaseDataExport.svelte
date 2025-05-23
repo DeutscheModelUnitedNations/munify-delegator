@@ -4,6 +4,7 @@
 	import DownloadElement from './DownloadElement.svelte';
 	import DownloadSection from './DownloadSection.svelte';
 	import { v4 as uuidv4 } from 'uuid';
+	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
 
 	interface Props {
 		loading: boolean;
@@ -115,6 +116,23 @@
 			return;
 		}
 
+		const transformRegionalGroup = (regionalGroup: string | undefined) => {
+			switch (regionalGroup) {
+				case 'African Group':
+					return 'AFRICA';
+				case 'Asia and the Pacific Group':
+					return 'ASIA_PACIFIC';
+				case 'Eastern European Group':
+					return 'EASTERN_EUROPE';
+				case 'Latin American and Caribbean Group':
+					return 'LATIN_AMERICA_CARIBBEAN';
+				case 'Western European and Others Group':
+					return 'WESTERN_EUROPE_OTHERS';
+				default:
+					return undefined;
+			}
+		};
+
 		// schema of this data is the input argument data to src/api/handlers/import.ts in munify-chase
 		const transformedData = {
 			$schema: 'https://chase.munify.cloud/api/schema/import',
@@ -130,7 +148,8 @@
 					id: nanoid(30),
 					representationType: 'DELEGATION',
 					alpha3Code: nation.alpha3Code,
-					alpha2Code: nation.alpha2Code
+					alpha2Code: nation.alpha2Code,
+					regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code))
 				})),
 				...conferenceData.nonStateActors.map((nonStateActor) => ({
 					id: nonStateActor.id,
