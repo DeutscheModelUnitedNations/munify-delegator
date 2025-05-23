@@ -4,7 +4,7 @@
 	import type { PageData } from './$houdini';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
-	import ChaseSeedExport from './ChaseSeedExport.svelte';
+	import ChaseSeedExport from './ChaseDataExport.svelte';
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 
 	let { data }: { data: PageData } = $props();
