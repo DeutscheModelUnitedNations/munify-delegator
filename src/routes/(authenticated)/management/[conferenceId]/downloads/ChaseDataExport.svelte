@@ -153,7 +153,7 @@
 						representationType: 'DELEGATION',
 						alpha3Code: nation.alpha3Code,
 						alpha2Code: nation.alpha2Code,
-						regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code)),
+						regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code))
 					};
 				}),
 				...conferenceData.nonStateActors.map((nonStateActor) => ({
