@@ -1,12 +1,12 @@
-FROM oven/bun:1.2-slim AS base
-
-FROM base AS builder
+FROM oven/bun:1.2 AS builder
 WORKDIR /app
 
 ARG VERSION
 ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
+
+RUN apt-get update && apt-get install -y jq
 
 COPY package.json bun.lockb tsconfig.json ./
 RUN  bun install --frozen-lockfile
@@ -21,8 +21,11 @@ COPY . .
 # therefore we need to run the build command BEFORE we check for correctness
 RUN bun run build
 RUN bun run check
+
 # remove all dependencies which are unused
 # TODO https://github.com/oven-sh/bun/issues/3605
+
+RUN jq '.type="commonjs"' package.json > tmp.json && mv tmp.json package.json
 
 FROM node:24.0-slim AS release
 WORKDIR /app
@@ -48,11 +51,9 @@ COPY --from=builder /app/prisma ./prisma/
 RUN mkdir /app/ephemeralData
 # Change ownership to the node user
 RUN chown -R node:node /app/node_modules /app/prisma /app/ephemeralData
-# For the node runtime set the module type accordingly
-RUN npm config set type commonjs
 
 ENV NODE_ENV=production
 USER node
 EXPOSE 3000/tcp
 # HEALTHCHECK --interval=15s --timeout=10s --retries=3 CMD curl -f http://0.0.0.0:3000/api/health/ready || exit 1
-CMD npx prisma migrate deploy && node ./index.js
+CMD ["sh", "-c", "npx prisma migrate deploy && node ./index.js"]
