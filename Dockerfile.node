@@ -48,6 +48,8 @@ COPY --from=builder /app/prisma ./prisma/
 RUN mkdir /app/ephemeralData
 # Change ownership to the node user
 RUN chown -R node:node /app/node_modules /app/prisma /app/ephemeralData
+# For the node runtime set the module type accordingly
+RUN npm config set type commonjs
 
 ENV NODE_ENV=production
 USER node
