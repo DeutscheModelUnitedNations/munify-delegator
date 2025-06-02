@@ -14,7 +14,8 @@ services:
       - delegator:/var/lib/postgresql/data
 
   delegator:
-    image: deutschemodelunitednations/delegator:latest
+    image: dddd/delegator:latest
+    command: ["sh", "-c", "ls -l && npx prisma migrate deploy && node ./index.js"]
     depends_on:
       - postgres
     ports:
@@ -29,8 +30,9 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
       # change this to something long, secure and truly random
       - SECRET=123
+      - CERTIFICATE_SECRET=123
       # change this to where the app is located at. E.g. https://delegator.munify.cloud
-      - ORIGIN=https://{your orign}
+      # - ORIGIN=https://{your orign}
 
       # variables which are exposed to the client must be prefixed with PUBLIC_
       - PUBLIC_OIDC_AUTHORITY=https://guard.munify.cloud

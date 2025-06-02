@@ -674,5 +674,11 @@
 	"helperDescription": "Hier findest du kleine Helfer-Skripte, die dir bei der Arbeit mit der App helfen können. Die Skripte sind teilweise sehr mächtig und weitreichend und können auch Daten unwiderruflich überschreiben. Bitte sei vorsichtig, wenn du dich dieser Funktionen bedienst. Manche Funktionen sind Administratoren vorbehalten.",
 	"setAttendanceTrue": "Alle auf \"Anwesend\" setzen",
 	"setAttendanceFalse": "Alle auf \"Abwesend\" setzen",
-	"switchAttendanceStateConfirmation": "Bist du dir sicher, dass du die Anwesenheit aller Teilnehmenden umschalten möchtest? Dies kann nicht rückgängig gemacht werden."
+	"switchAttendanceStateConfirmation": "Bist du dir sicher, dass du die Anwesenheit aller Teilnehmenden umschalten möchtest? Dies kann nicht rückgängig gemacht werden.",
+	"import": "Import",
+	"importDescription": "Hier kannst du verschiedene Arten von Daten in die Anwendung importieren. Bitte beachte, dass einige Schritte nicht rückgängig gemacht werden können und nur für Admins oder andere spezifische Usergruppen verfügbar sind!",
+	"importPresenceData": "Präsenzdaten importieren",
+	"importPresenceDataDescription": "Hier kannst du Anwesenheitsdatensätze aus CHASE importieren. CHASE zeichnet den Anwesenheitsstatus bei jeder Feststellung auf und speichert diese über die gesamte Konferenz. Die Daten können verwendet werden um den Anwesenheitsstatus hier automatisch anhand dieser Daten zu aktualisieren. Bitte beachte, dass nur Werte die auch in der Tabelle auftauchen auch überschrieben werden! User, die nicht in der Tabelle angezeigt werden, werde nicht auf abwesend gesetzt. Solltest du ein zurücksetzen aller User auf abwesend erreichen wollen, nutze dafür bitte die helper!",
+	"attendancePercentage": "Anwesenheitsanteil",
+	"cannotBeUndone": "Bitte bestätige die Eingabe! Die Änderung kann nicht rückgängig gemacht werden!"
 }
