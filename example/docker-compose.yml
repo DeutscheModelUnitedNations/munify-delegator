@@ -14,7 +14,7 @@ services:
       - delegator:/var/lib/postgresql/data
 
   delegator:
-    image: dddd/delegator:latest
+    image: deutschemodelunitednations/delegator:latest
     command: ['sh', '-c', 'ls -l && npx prisma migrate deploy && node ./index.js']
     depends_on:
       - postgres
