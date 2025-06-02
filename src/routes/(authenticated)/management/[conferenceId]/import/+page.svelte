@@ -168,16 +168,17 @@
 	</div>
 	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
 		<input
-			class="file-input file-input-bordered w-full"
+			class="file-input file-input-bordered w-full mt-4"
 			type="file"
 			accept=".json"
 			onchange={(e) => setFileInput(e)}
 		/>
 
 		{#if users}
-			<span class="flex">
-				<input
-					class="range mr-2 w-44"
+			<span class="flex my-2">
+        {m.threshold()}
+				:<input
+					class="range mx-2 w-44"
 					type="range"
 					min="0"
 					max="100"

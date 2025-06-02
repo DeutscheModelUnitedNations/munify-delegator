@@ -680,5 +680,6 @@
 	"importPresenceData": "Präsenzdaten importieren",
 	"importPresenceDataDescription": "Hier kannst du Anwesenheitsdatensätze aus CHASE importieren. CHASE zeichnet den Anwesenheitsstatus bei jeder Feststellung auf und speichert diese über die gesamte Konferenz. Die Daten können verwendet werden um den Anwesenheitsstatus hier automatisch anhand dieser Daten zu aktualisieren. Bitte beachte, dass nur Werte die auch in der Tabelle auftauchen auch überschrieben werden! User, die nicht in der Tabelle angezeigt werden, werde nicht auf abwesend gesetzt. Solltest du ein zurücksetzen aller User auf abwesend erreichen wollen, nutze dafür bitte die helper!",
 	"attendancePercentage": "Anwesenheitsanteil",
-	"cannotBeUndone": "Bitte bestätige die Eingabe! Die Änderung kann nicht rückgängig gemacht werden!"
+	"cannotBeUndone": "Bitte bestätige die Eingabe! Die Änderung kann nicht rückgängig gemacht werden!",
+	"threshold": "Schwellwert"
 }
