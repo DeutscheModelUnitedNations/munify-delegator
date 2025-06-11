@@ -195,14 +195,16 @@
 					.map((delegationMember) => ({
 						id: `${delegationMember.id}_user`,
 						conferenceUserType: 'NON_STATE_ACTOR',
-						userEmail: delegationMember.user.email
+						userEmail: delegationMember.user.email,
+						conferenceMemberId: delegationMember.id
 					})),
 				...conferenceData.delegationMembers
 					.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
 					.map((delegationMember) => ({
 						id: `${delegationMember.id}_user`,
 						conferenceUserType: 'DELEGATE',
-						userEmail: delegationMember.user.email
+						userEmail: delegationMember.user.email,
+						committeeMemberId: delegationMember.id
 					}))
 			],
 			agendaItems: []
