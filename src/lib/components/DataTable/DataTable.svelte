@@ -19,6 +19,7 @@
 		title?: string;
 		additionallyIndexedKeys?: string[];
 		rowSelected?: (row: RowData) => void;
+		tableClass?: string;
 	}
 
 	let {
@@ -29,6 +30,7 @@
 		queryParamKey,
 		additionallyIndexedKeys = [],
 		title = page.url.pathname.split('/').pop()!,
+		tableClass,
 		rowSelected
 	}: Props = $props();
 	const { getTableSize, getZebra } = getTableSettings();
@@ -110,7 +112,9 @@
 
 	<PrintHeader {title} {searchPattern} />
 
-	<div class="svelte-table-wrapper mt-4 w-full overflow-x-auto transition-all duration-300">
+	<div
+		class="svelte-table-wrapper mt-4 w-full overflow-x-auto transition-all duration-300 {tableClass}"
+	>
 		<SvelteTable
 			{columns}
 			rows={searchedColumns}

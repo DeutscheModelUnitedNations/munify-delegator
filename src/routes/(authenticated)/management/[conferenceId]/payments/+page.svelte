@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { cache, graphql } from '$houdini';
-	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { DatePicker } from '@svelte-plugins/datepicker';

@@ -100,7 +100,11 @@ builder.mutationFields((t) => {
 							}),
 							userId: t.field({
 								type: 'ID',
-								required: true
+								required: false
+							}),
+							userEmail: t.field({
+								type: 'ID',
+								required: false
 							}),
 							conferenceId: t.field({
 								type: 'ID',
@@ -140,9 +144,25 @@ builder.mutationFields((t) => {
 					})
 				})
 			},
-			resolve: (query, root, args, ctx, info) => {
-				if (!args.where.id && (!args.where.userId || !args.where.conferenceId)) {
-					throw new Error('You must provide either an id or a userId and conferenceId');
+			resolve: async (query, root, args, ctx, info) => {
+				if (
+					!args.where.id &&
+					(!args.where.userId || !args.where.conferenceId) &&
+					(!args.where.userEmail || !args.where.conferenceId)
+				) {
+					throw new Error(
+						'You must provide either an id, a userId and conferenceId or a userEmail and conferenceId'
+					);
+				}
+
+				if (!args.where.userId) {
+					const found = await db.user.findUniqueOrThrow({
+						where: {
+							email: args.where.userEmail!
+						}
+					});
+
+					args.where.userId = found.id;
 				}
 
 				return db.conferenceParticipantStatus.upsert({

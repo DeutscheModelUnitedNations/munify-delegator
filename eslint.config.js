@@ -45,7 +45,8 @@ export default ts.config(
 			'no-undef': 'warn',
 			'no-irregular-whitespace': 'warn',
 			'svelte/require-each-key': 'warn',
-			'svelte/no-dom-manipulating': 'warn'
+			'svelte/no-dom-manipulating': 'warn',
+			'@typescript-eslint/no-non-null-asserted-optional-chain': 'warn'
 		}
 	}
 );

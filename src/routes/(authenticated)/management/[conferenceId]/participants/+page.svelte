@@ -30,7 +30,8 @@
 			ret.push({
 				...user,
 				participationType: 'SUPERVISOR',
-				status: getParticipationStatus(user.id)
+				status: getParticipationStatus(user.id),
+				email: user.email
 			});
 		}
 		for (const userRaw of $queryData.data?.findManyDelegationMembers ?? []) {
@@ -38,7 +39,8 @@
 			ret.push({
 				...user,
 				participationType: 'DELEGATION_MEMBER',
-				status: getParticipationStatus(user.id)
+				status: getParticipationStatus(user.id),
+				email: user.email
 			});
 		}
 		for (const userRaw of $queryData.data?.findManySingleParticipants ?? []) {
@@ -46,7 +48,8 @@
 			ret.push({
 				...user,
 				participationType: 'SINGLE_PARTICIPANT',
-				status: getParticipationStatus(user.id)
+				status: getParticipationStatus(user.id),
+				email: user.email
 			});
 		}
 		return ret;
@@ -84,6 +87,12 @@
 			key: 'given_name',
 			title: m.givenName(),
 			value: (row) => capitalizeFirstLetter(row.given_name),
+			sortable: true
+		},
+		{
+			key: 'email',
+			title: m.email(),
+			value: (row) => row.email,
 			sortable: true
 		},
 		{
