@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
-	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import ParticipantStatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
-	import { toast } from '@zerodevx/svelte-toast';
 	import Section from '../helper/Section.svelte';
 	import type { TableColumns } from 'svelte-table';
 	import type { PageData } from './$houdini';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import { committee } from '$lib/paraglide/messages/en';
+	import { toast } from '@zerodevx/svelte-toast';
+	import Modal from '$lib/components/Modal.svelte';
+	import { getLocale } from '$lib/paraglide/runtime';
 
 	// TODO we could improve this by defining and applying a ZOD schema
 	// for this import
@@ -43,14 +41,15 @@
 	let loading = $state(false);
 	let fileInput = $state<string>();
 	let threshold = $state(20);
+	let parsedUsers = $derived(
+		fileInput ? (JSON.parse(fileInput) as CHASECommitteeMember[]) : undefined
+	);
 	let users = $derived.by(() => {
-		if (!fileInput) return undefined;
-
-		let parsedUsers = JSON.parse(fileInput) as CHASECommitteeMember[];
-		parsedUsers = parsedUsers.filter((x) => x.presenceChangedTimestamps.length > 0);
-		parsedUsers = parsedUsers.filter((x) => x.presenceChangedTimestamps.length > 0);
-		parsedUsers = parsedUsers.filter((x) => x.user?.userEmail);
-		let mappedUsers = parsedUsers.map((x) => ({
+		if (!parsedUsers) return undefined;
+		let processedUsers = parsedUsers.filter((x) => x.presenceChangedTimestamps.length > 0);
+		processedUsers = processedUsers.filter((x) => x.presenceChangedTimestamps.length > 0);
+		processedUsers = processedUsers.filter((x) => x.user?.userEmail);
+		let mappedUsers = processedUsers.map((x) => ({
 			email: x.user!.userEmail,
 			representation: x.representation,
 			committeeId: x.committeeId,
@@ -58,10 +57,12 @@
 				(100 * x.presenceChangedTimestamps.filter((t) => t.presentSetTo).length) /
 				x.presenceChangedTimestamps.length
 		}));
-		mappedUsers = mappedUsers.filter((x) => x.attendancePercentage >= threshold);
 
 		return mappedUsers;
 	});
+	let presentUsers = $derived(users?.filter((x) => x.attendancePercentage >= threshold));
+	let absentUsers = $derived(users?.filter((x) => x.attendancePercentage < threshold));
+	let selectedUser = $state<NonNullable<typeof presentUsers>[number] | undefined>(undefined);
 
 	const setFileInput = (e: Event) => {
 		const target = e.target as HTMLInputElement;
@@ -78,7 +79,7 @@
 	};
 
 	// TODO fetch user name from backend
-	const columns: TableColumns<NonNullable<typeof users>[number]> = [
+	const columns: TableColumns<NonNullable<typeof presentUsers>[number]> = [
 		{
 			key: 'email',
 			title: m.email(),
@@ -107,7 +108,9 @@
 		{
 			key: 'attendancePercentage',
 			title: m.attendancePercentage(),
-			value: (row) => `${Math.floor(row.attendancePercentage)}%`
+			value: (row) => row.attendancePercentage,
+			renderValue: (row) => `${Math.floor(row.attendancePercentage)}%`,
+			sortable: true
 		}
 	];
 
@@ -127,16 +130,16 @@
 		}
 	`);
 
-	async function apply() {
+	async function applyPresent() {
 		loading = true;
 		if (!confirm(m.cannotBeUndone())) {
 			return;
 		}
 
-		if (!users) return;
+		if (!presentUsers) return;
 
 		await Promise.all(
-			users.map(async (user) => {
+			presentUsers.map(async (user) => {
 				await updateParticipantAttendanceStatus.mutate({
 					conferenceId: data.conferenceId,
 					didAttend: true,
@@ -145,20 +148,39 @@
 			})
 		);
 
-		// if (!$updateImportedConferenceParticipantStatusQuery.errors) {
-		//   toast.push(m.changesSuccessful(), {
-		//     duration: 5000
-		//   });
+		toast.push(m.changesSuccessful(), {
+			duration: 5000
+		});
 		loading = false;
 	}
 
-	// const switchAttendanceState = async (value: boolean) => {
-	// 	await updateImportedConferenceParticipantStatusQuery.mutate({
-	// 		conferenceId: data.conferenceId,
-	// 		didAttend: value
-	// 	});
-	// 	}
-	// };
+	async function applyAbsent() {
+		loading = true;
+		if (!confirm(m.cannotBeUndone())) {
+			return;
+		}
+
+		if (!presentUsers) return;
+
+		await Promise.all(
+			presentUsers.map(async (user) => {
+				await updateParticipantAttendanceStatus.mutate({
+					conferenceId: data.conferenceId,
+					didAttend: false,
+					userEmail: user.email
+				});
+			})
+		);
+
+		toast.push(m.changesSuccessful(), {
+			duration: 5000
+		});
+		loading = false;
+	}
+
+	function selectUser(user) {
+		selectedUser = user;
+	}
 </script>
 
 <div class="flex w-full flex-col flex-wrap gap-8 p-10">
@@ -174,8 +196,8 @@
 			onchange={(e) => setFileInput(e)}
 		/>
 
-		{#if users}
-			<span class="my-2 flex">
+		{#if presentUsers && absentUsers}
+			<span class="my-6 flex">
 				{m.threshold()}
 				:<input
 					class="range mx-2 w-44"
@@ -187,9 +209,37 @@
 				/>
 				{threshold}%
 			</span>
-			<DataTable {columns} rows={users} enableSearch={true} tableClass="max-h-80" />
 
-			<button class="btn btn-primary" onclick={apply}>
+			<h2 class="mt-4 text-2xl font-bold">
+				{m.present()}: {presentUsers.length}
+			</h2>
+			<DataTable
+				{columns}
+				rows={presentUsers}
+				enableSearch={true}
+				tableClass="max-h-80"
+				rowSelected={selectUser}
+			/>
+			<button class="btn btn-primary" onclick={applyPresent}>
+				{#if loading}
+					<i class="fas fa-spinner fa-spin"></i>
+				{:else}
+					<i class="fas fa-save"></i>
+				{/if}
+				{m.save()}
+			</button>
+
+			<h2 class="mt-2 text-2xl font-bold">
+				{m.absent()}: {absentUsers.length}
+			</h2>
+			<DataTable
+				{columns}
+				rows={absentUsers}
+				enableSearch={true}
+				tableClass="max-h-80"
+				rowSelected={selectUser}
+			/>
+			<button class="btn btn-primary" onclick={applyAbsent}>
 				{#if loading}
 					<i class="fas fa-spinner fa-spin"></i>
 				{:else}
@@ -200,3 +250,46 @@
 		{/if}
 	</Section>
 </div>
+
+{#snippet gotoUser()}
+	<a
+		href={`/management/${data.conferenceId}/participants?filter=${selectedUser?.email}`}
+		target="_blank"
+	>
+		<button class="btn btn-primary">
+			<i class="fas fa-arrow-up-right-from-square"></i>
+			{selectedUser?.email}
+		</button>
+	</a>
+{/snippet}
+
+<Modal
+	open={selectedUser !== undefined}
+	action={gotoUser}
+	onclose={() => {
+		selectedUser = undefined;
+	}}
+>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>{m.timestamp()}</th>
+				<th>{m.attendanceStatus()}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each parsedUsers
+				?.find((u) => u.user?.userEmail === selectedUser?.email)
+				?.presenceChangedTimestamps?.sort((a, b) => new Date(a!.timestamp).getTime() - new Date(b!.timestamp).getTime())! as timestamp}
+				<tr>
+					<td
+						>{new Date(timestamp.timestamp).toLocaleDateString(getLocale()) +
+							' ' +
+							new Date(timestamp.timestamp).toLocaleTimeString(getLocale())}</td
+					>
+					<td>{timestamp.presentSetTo ? m.present() + ' ✅' : m.absent() + ' ❌'}</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+</Modal>

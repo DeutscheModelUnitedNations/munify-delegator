@@ -678,8 +678,12 @@
 	"import": "Import",
 	"importDescription": "Hier kannst du verschiedene Arten von Daten in die Anwendung importieren. Bitte beachte, dass einige Schritte nicht rückgängig gemacht werden können und nur für Admins oder andere spezifische Usergruppen verfügbar sind!",
 	"importPresenceData": "Präsenzdaten importieren",
-	"importPresenceDataDescription": "Hier kannst du Anwesenheitsdatensätze aus CHASE importieren. CHASE zeichnet den Anwesenheitsstatus bei jeder Feststellung auf und speichert diese über die gesamte Konferenz. Die Daten können verwendet werden um den Anwesenheitsstatus hier automatisch anhand dieser Daten zu aktualisieren. Bitte beachte, dass nur Werte die auch in der Tabelle auftauchen auch überschrieben werden! User, die nicht in der Tabelle angezeigt werden, werde nicht auf abwesend gesetzt. Solltest du ein zurücksetzen aller User auf abwesend erreichen wollen, nutze dafür bitte die helper!",
+	"importPresenceDataDescription": "Hier kannst du Anwesenheitsdatensätze aus CHASE importieren. CHASE zeichnet den Anwesenheitsstatus bei jeder Feststellung auf und speichert diese über die gesamte Konferenz. Die Daten können verwendet werden um den Anwesenheitsstatus hier automatisch anhand dieser Daten zu aktualisieren. Bitte beachte, dass nur Werte die auch in der jeweiligen Tabelle auftauchen auch überschrieben werden! User, die nicht in der Tabelle angezeigt werden, werden nicht verändert. Solltest du ein zurücksetzen aller User auf einen speziellen Status erreichen wollen, nutze dafür bitte die Helper!",
 	"attendancePercentage": "Anwesenheitsanteil",
 	"cannotBeUndone": "Bitte bestätige die Eingabe! Die Änderung kann nicht rückgängig gemacht werden!",
-	"threshold": "Schwellwert"
+	"threshold": "Schwellwert",
+	"present": "Anwesend",
+	"absent": "Abwesend",
+	"timestamp": "Zeitstempel",
+	"attendanceStatus": "Anwesenheitsstatus"
 }
