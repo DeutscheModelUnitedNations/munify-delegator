@@ -160,10 +160,10 @@
 			return;
 		}
 
-		if (!presentUsers) return;
+		if (!absentUsers) return;
 
 		await Promise.all(
-			presentUsers.map(async (user) => {
+			absentUsers.map(async (user) => {
 				await updateParticipantAttendanceStatus.mutate({
 					conferenceId: data.conferenceId,
 					didAttend: false,
