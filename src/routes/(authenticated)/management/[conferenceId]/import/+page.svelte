@@ -178,7 +178,7 @@
 		loading = false;
 	}
 
-	function selectUser(user) {
+	function selectUser(user: any) {
 		selectedUser = user;
 	}
 </script>
