@@ -148,6 +148,10 @@
 		helper: {
 			icon: 'gear-code',
 			translation: m.helper()
+		},
+		import: {
+			icon: 'file-import',
+			translation: m.import()
 		}
 	};
 
