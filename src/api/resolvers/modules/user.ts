@@ -23,7 +23,8 @@ import {
 	UserWantsToReceiveGeneralInformationFieldObject,
 	UserWantsJoinTeamInformationFieldObject,
 	findFirstUserQueryObject,
-	findManyUserQuery
+	findManyUserQuery,
+	UserEmergencyContactsFieldObject
 } from '$db/generated/graphql/User';
 import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
@@ -52,6 +53,7 @@ export const GQLUser = builder.prismaObject('User', {
 		gender: t.field(UserGenderFieldObject),
 		pronouns: t.field(UserPronounsFieldObject),
 		foodPreference: t.field(UserFoodPreferenceFieldObject),
+		emergencyContacts: t.field(UserEmergencyContactsFieldObject),
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
 		delegationMemberships: t.relation('delegationMemberships', {
@@ -201,6 +203,7 @@ builder.mutationFields((t) => {
 							gender: t.field({ type: Gender }),
 							pronouns: t.string({ required: false }),
 							foodPreference: t.string(),
+							emergencyContacts: t.string(),
 							wantsToReceiveGeneralInformation: t.boolean({
 								required: false
 							}),
