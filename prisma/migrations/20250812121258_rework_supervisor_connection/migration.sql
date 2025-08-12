@@ -12,7 +12,7 @@ FROM "_ConferenceSupervisorToDelegation" AS old
 JOIN "DelegationMember" AS dm
   ON dm."delegationId" = old."B"
 -- avoid duplicate inserts if the script is re-run
-ON CONFLICT DO NOTHING
+ON CONFLICT DO NOTHING;
 
 
 -- DropForeignKey
@@ -46,3 +46,5 @@ ALTER TABLE "_ConferenceSupervisorToSingleParticipant" ADD CONSTRAINT "_Conferen
 
 -- AddForeignKey
 ALTER TABLE "_ConferenceSupervisorToSingleParticipant" ADD CONSTRAINT "_ConferenceSupervisorToSingleParticipant_B_fkey" FOREIGN KEY ("B") REFERENCES "SingleParticipant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "ConferenceSupervisor" ALTER COLUMN "connectionCode" DROP DEFAULT;
