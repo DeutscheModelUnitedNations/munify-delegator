@@ -1,20 +1,23 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import type { DelegationDrawerQueryVariables } from './$houdini';
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
+	import { type PageData } from './$houdini';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		conferenceId: string;
 		delegationId: string;
 		open?: boolean;
 		onClose?: () => void;
+		userData: PageData['user'];
 	}
-	let { delegationId, open = $bindable(false), onClose, conferenceId }: Props = $props();
+	let { delegationId, open = $bindable(false), onClose, conferenceId, userData }: Props = $props();
 
 	export const _DelegationDrawerQueryVariables: DelegationDrawerQueryVariables = () => {
 		return {
@@ -75,6 +78,18 @@
 		}
 	`);
 
+	const makeHeadDelegateAdminMutation = graphql(`
+		mutation MakeHeadDelegateAdminMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
+			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
+				id
+				members {
+					id
+					isHeadDelegate
+				}
+			}
+		}
+	`);
+
 	let delegation = $derived($delegationQuery.data?.findUniqueDelegation);
 	let members = $derived(
 		delegation?.members.sort((a, b) => {
@@ -83,7 +98,45 @@
 		})
 	);
 
+	// Define member type to properly type selectedMember
+	type MemberType = {
+		id: string;
+		isHeadDelegate: boolean;
+		user: {
+			id: string;
+			given_name: string;
+			family_name: string;
+		};
+		assignedCommittee: {
+			id: string;
+			abbreviation: string;
+			name: string;
+		} | null;
+	};
+
 	let committeeAssignmentModalOpen = $state(false);
+	let headDelegateModalOpen = $state(false);
+	let selectedMember = $state<MemberType | null>(null);
+	let isUpdatingHeadDelegate = $state(false);
+
+	async function handleConfirmHeadDelegate() {
+		if (!selectedMember || selectedMember.isHeadDelegate) return;
+		isUpdatingHeadDelegate = true;
+		try {
+			await makeHeadDelegateAdminMutation.mutate({
+				where: { id: delegationId },
+				userId: selectedMember.user.id
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to update head delegate:', error);
+		} finally {
+			isUpdatingHeadDelegate = false;
+			headDelegateModalOpen = false;
+			selectedMember = null;
+		}
+	}
 </script>
 
 <Drawer
@@ -189,7 +242,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each members ?? [] as member}
+					{#each members ?? [] as member, i (i)}
 						<tr>
 							<td>
 								{#if member.isHeadDelegate}
@@ -241,7 +294,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each delegation?.supervisors ?? [] as supervisor}
+					{#each delegation?.supervisors ?? [] as supervisor, i (i)}
 						<tr>
 							<td>
 								{#if supervisor.plansOwnAttendenceAtConference}
@@ -289,6 +342,18 @@
 			<i class="fa-duotone fa-grid-2"></i>
 			{m.committeeAssignment()}
 		</button>
+		{#if userData?.myOIDCRoles?.includes('admin')}
+			<button
+				class="btn"
+				onclick={() => {
+					selectedMember = members?.find((m) => m.isHeadDelegate) ?? null;
+					headDelegateModalOpen = true;
+				}}
+			>
+				<i class="fa-duotone fa-medal"></i>
+				{m.headDelegate ? m.headDelegate() : 'Change Head Delegate'}
+			</button>
+		{/if}
 	</div>
 
 	<div class="flex flex-col gap-2">
@@ -308,6 +373,53 @@
 		</button>
 	</div>
 </Drawer>
+
+<!-- Head Delegate Selection Modal -->
+<div class="modal" class:modal-open={headDelegateModalOpen}>
+	<div class="modal-box">
+		<h3 class="text-lg font-bold">{m.headDelegate ? m.headDelegate() : m.delegationMembers()}</h3>
+		<div class="max-h-60 overflow-y-auto">
+			{#each members ?? [] as member, i (i)}
+				<label class="flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-base-200">
+					<input
+						type="radio"
+						name="head-delegate"
+						checked={selectedMember?.id === member.id}
+						onclick={() => (selectedMember = member)}
+						disabled={member.isHeadDelegate || isUpdatingHeadDelegate}
+						class="radio"
+					/>
+					<span>{member.user.given_name} {member.user.family_name}</span>
+					{#if member.isHeadDelegate}
+						<span class="badge badge-primary">
+							<i class="fas fa-medal"></i>
+						</span>
+					{/if}
+				</label>
+			{/each}
+		</div>
+		<div class="modal-action">
+			<button
+				class="btn"
+				onclick={() => {
+					selectedMember = null;
+					headDelegateModalOpen = false;
+				}}
+				disabled={isUpdatingHeadDelegate}>{m.close ? m.close() : 'Cancel'}</button
+			>
+			<button
+				class="btn btn-primary"
+				onclick={handleConfirmHeadDelegate}
+				disabled={!selectedMember || selectedMember.isHeadDelegate || isUpdatingHeadDelegate}
+			>
+				{#if isUpdatingHeadDelegate}
+					<span class="loading loading-spinner"></span>
+				{/if}
+				{m.confirm()}
+			</button>
+		</div>
+	</div>
+</div>
 
 <CommitteeAssignmentModal
 	bind:open={committeeAssignmentModalOpen}
