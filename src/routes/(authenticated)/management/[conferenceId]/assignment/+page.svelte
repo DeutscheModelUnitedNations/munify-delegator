@@ -38,7 +38,6 @@
 			alert('File is from a different conference');
 			return;
 		}
-		console.log(jsonData);
 		sendAssignmentData(data.conferenceId, jsonData);
 	};
 

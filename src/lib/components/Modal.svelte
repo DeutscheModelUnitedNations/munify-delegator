@@ -7,14 +7,22 @@
 		fullWidth?: boolean;
 		children: Snippet;
 		action?: Snippet;
+		onclose?: () => void;
 	}
 
-	let { open = $bindable(), title, fullWidth = false, children, action }: Props = $props();
+	let { open = $bindable(), title, fullWidth = false, children, action, onclose }: Props = $props();
 </script>
 
 {#if open}
 	<div class="modal {open && 'modal-open'} modal-bottom sm:modal-middle">
-		<button class="modal-backdrop" aria-label="Close modal" onclick={() => (open = false)}></button>
+		<button
+			class="modal-backdrop"
+			aria-label="Close modal"
+			onclick={() => {
+				open = false;
+				if (onclose) onclose();
+			}}
+		></button>
 		<div class="modal-box {fullWidth && 'w-auto max-w-full sm:max-w-[90%]'}">
 			{#if title}
 				<div class="modal-top mb-4">

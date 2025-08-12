@@ -100,6 +100,12 @@
 				title={m.cleanup()}
 				expanded={navbarExpanded}
 			/>
+			<NavMenuButton
+				href="/management/{data.conferenceId}/import"
+				icon="fa-file-import"
+				title={m.import()}
+				expanded={navbarExpanded}
+			/>
 		</NavMenuDetails>
 		<NavMenuButton
 			href="/management/{data.conferenceId}/downloads"
