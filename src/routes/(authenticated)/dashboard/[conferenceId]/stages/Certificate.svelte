@@ -4,7 +4,7 @@
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 
 	interface Props {
 		conferenceId: string | undefined;
@@ -33,9 +33,7 @@
 			!$certificateQuery.data?.getCertificateJWT?.fullName ||
 			!$certificateQuery.data?.getCertificateJWT?.jwt
 		) {
-			toast.push(m.certificateDownloadError(), {
-				duration: 5000
-			});
+			toast.error(m.certificateDownloadError());
 			return;
 		}
 

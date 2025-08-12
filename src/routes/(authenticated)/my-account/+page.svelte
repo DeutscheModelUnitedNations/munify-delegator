@@ -10,7 +10,7 @@
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$houdini';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -18,7 +18,7 @@
 		validationMethod: 'oninput',
 		validators: zod(userFormSchema),
 		onError(e) {
-			toast.push(e.result.error.message);
+			toast.error(e.result.error.message);
 		}
 	});
 

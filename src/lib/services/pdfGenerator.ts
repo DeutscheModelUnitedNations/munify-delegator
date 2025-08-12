@@ -10,7 +10,7 @@ import {
 } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import replaceSpecialChars from 'replace-special-characters';
-import { toast } from '@zerodevx/svelte-toast';
+import toast from 'svelte-french-toast';
 
 export interface ParticipantData {
 	id: string;
@@ -539,19 +539,19 @@ export async function downloadCompletePostalRegistrationPDF(
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
 	if (!contract) {
-		toast.push('Missing contract content');
+		toast.error('Missing contract content');
 		throw new Error('Missing required PDF content');
 	}
 	if (!guardianAgreement) {
-		toast.push('Missing guardian agreement content');
+		toast.error('Missing guardian agreement content');
 		throw new Error('Missing required PDF content');
 	}
 	if (!medialAgreement) {
-		toast.push('Missing media agreement content');
+		toast.error('Missing media agreement content');
 		throw new Error('Missing required PDF content');
 	}
 	if (!termsAndConditions) {
-		toast.push('Missing terms and conditions content');
+		toast.error('Missing terms and conditions content');
 		throw new Error('Missing required PDF content');
 	}
 	try {
