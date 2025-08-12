@@ -58,6 +58,7 @@
 				city
 				country
 				foodPreference
+				emergencyContacts
 				gender
 			}
 			findManyDelegationMembers(
@@ -406,6 +407,15 @@
 						<td>{m.vegan()}</td>
 					{:else}
 						<td><i class="fa-duotone fa-meat text-lg"></i></td>
+						<td>N/A</td>
+					{/if}
+				</tr>
+				<tr>
+					<td><i class="fa-duotone fa-light-emergency-on text-lg"></i></td>
+					{#if $userQuery.data?.findUniqueUser?.emergencyContacts}
+						<td class="whitespace-pre-wrap">{$userQuery.data?.findUniqueUser?.emergencyContacts}</td
+						>
+					{:else}
 						<td>N/A</td>
 					{/if}
 				</tr>

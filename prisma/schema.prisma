@@ -138,6 +138,7 @@ model User {
   gender         Gender?
   pronouns       String?
   foodPreference FoodPreference?
+  emergencyContacts String?
 
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)

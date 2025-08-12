@@ -685,5 +685,8 @@
 	"present": "Anwesend",
 	"absent": "Abwesend",
 	"timestamp": "Zeitstempel",
-	"attendanceStatus": "Anwesenheitsstatus"
+	"attendanceStatus": "Anwesenheitsstatus",
+	"emergencyContacts": "Notfallkontakte",
+	"emergencyContactDescription": "Bitte hinterlege mindest einen Notfallkontakt (mit Name, Telefonnummer und Email), damit wir im Notfall jemanden in deinem Umkreis erreichen können.",
+	"emergencyContactsPlaceholder": "Maria Musterfrau, +49123456789, m.musterfrau@mail.de"
 }
