@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import Footer from './Footer.svelte';
-	import { SvelteToast } from '@zerodevx/svelte-toast';
+	import { Toaster } from 'svelte-french-toast';
 
 	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
 	// import CookieBanner from '$lib/components/CookieBanner.svelte';
@@ -81,7 +81,7 @@
 	<meta name="theme-color" content="#ffffff" />
 </svelte:head>
 
-<SvelteToast options={{}} />
+<Toaster />
 <CookieBanner />
 <div class="flex min-h-screen">
 	<!-- {@render children()} -->

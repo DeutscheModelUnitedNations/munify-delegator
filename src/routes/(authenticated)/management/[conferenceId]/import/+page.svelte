@@ -5,7 +5,7 @@
 	import type { TableColumns } from 'svelte-table';
 	import type { PageData } from './$houdini';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import Modal from '$lib/components/Modal.svelte';
 	import { getLocale } from '$lib/paraglide/runtime';
 
@@ -148,9 +148,7 @@
 			})
 		);
 
-		toast.push(m.changesSuccessful(), {
-			duration: 5000
-		});
+		toast.success(m.changesSuccessful());
 		loading = false;
 	}
 
@@ -172,9 +170,7 @@
 			})
 		);
 
-		toast.push(m.changesSuccessful(), {
-			duration: 5000
-		});
+		toast.success(m.changesSuccessful());
 		loading = false;
 	}
 

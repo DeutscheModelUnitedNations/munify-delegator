@@ -5,6 +5,7 @@
 		"with-csv": "^2.0.0"
 	},
 	"devDependencies": {
+		"caniuse-lite": "^1.0.30001734",
 		"@bwip-js/browser": "^4.6.0",
 		"@casl/ability": "^6.7.3",
 		"@casl/prisma": "^1.5.1",
@@ -90,6 +91,7 @@
 		"replace-special-characters": "^1.2.7",
 		"svelte": "^5.28.2",
 		"svelte-check": "^4.1.6",
+		"svelte-french-toast": "^1.2.0",
 		"svelte-table": "^0.6.4",
 		"sveltekit-breadcrumbs": "^0.0.3",
 		"sveltekit-superforms": "^2.24.1",

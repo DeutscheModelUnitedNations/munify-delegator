@@ -4,7 +4,7 @@
 	import ParticipantStatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import Section from './Section.svelte';
 
 	let { data } = $props();
@@ -30,9 +30,7 @@
 			didAttend: value
 		});
 		if (!$updateAllConferenceParticipantStatusQuery.errors) {
-			toast.push(m.changesSuccessful(), {
-				duration: 5000
-			});
+			toast.success(m.changesSuccessful());
 		}
 		loading = false;
 	};
