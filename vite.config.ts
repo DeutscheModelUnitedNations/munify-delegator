@@ -8,8 +8,5 @@ export default defineConfig({
 		paraglideVitePlugin({ project: './project.inlang', outdir: './src/lib/paraglide' }),
 		houdini(),
 		sveltekit()
-	],
-	ssr:{
-		noExternal: ["@inlang/paraglide-js"]
-	}
+	]
 });

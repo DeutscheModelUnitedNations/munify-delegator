@@ -78,8 +78,8 @@
 		}
 	`);
 
-	const makeHeadDelegateMutation = graphql(`
-		mutation MakeHeadDelegateMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
+	const makeHeadDelegateAdminMutation = graphql(`
+		mutation MakeHeadDelegateAdminMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
 			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
 				id
 				members {
@@ -123,7 +123,7 @@
 		if (!selectedMember || selectedMember.isHeadDelegate) return;
 		isUpdatingHeadDelegate = true;
 		try {
-			await makeHeadDelegateMutation.mutate({
+			await makeHeadDelegateAdminMutation.mutate({
 				where: { id: delegationId },
 				userId: selectedMember.user.id
 			});
@@ -391,7 +391,9 @@
 					/>
 					<span>{member.user.given_name} {member.user.family_name}</span>
 					{#if member.isHeadDelegate}
-						<span class="badge badge-primary">★</span>
+						<span class="badge badge-primary">
+							<i class="fas fa-medal"></i>
+						</span>
 					{/if}
 				</label>
 			{/each}
