@@ -296,6 +296,8 @@ model SingleParticipant {
 
   appliedForRoles CustomConferenceRole[]
 
+  supervisors ConferenceSupervisor[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -317,7 +319,6 @@ model Delegation {
   conference      Conference             @relation(fields: [conferenceId], references: [id])
   conferenceId    String
   members         DelegationMember[]
-  supervisors     ConferenceSupervisor[]
   appliedForRoles RoleApplication[]
 
   assignedNation           Nation? @relation(fields: [assignedNationAlpha3Code], references: [alpha3Code])
@@ -369,7 +370,7 @@ model DelegationMember {
   assignedCommittee   Committee? @relation(fields: [assignedCommitteeId], references: [id])
   assignedCommitteeId String?
 
-  postAssignmentConferenceSupervisors ConferenceSupervisor[]
+  supervisors ConferenceSupervisor[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -391,19 +392,17 @@ model ConferenceSupervisor {
   conferenceId String
   user         User         @relation(fields: [userId], references: [id])
   userId       String
-  // this also never will be set directly but via a check of the entry code for delegations
-  // therefore no update/create call ever should include this
-  delegations  Delegation[]
+  supervisedDelegationMembers  DelegationMember[]
+  supervisedSingleParticipants SingleParticipant[]
 
-  // after assignment the supervisors lose their delegation access and gain a member access
-  // this is for pricacy reasons since the assignment process might add user which are not
-  // related to the supervisor in any way to a delegation they are supervising
-  // which would render their data open to read for a completely unknown person
-  postAssignmentDelegeationMembers DelegationMember[]
+  // this will always be auto generated
+  /// code the participants have to enter to allow this supervisor access to their data
+  connectionCode  String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  @@unique([conferenceId, connectionCode])
   @@unique([conferenceId, userId])
 }
 
