@@ -602,7 +602,7 @@ export async function downloadCompleteCertificate(
 ): Promise<void> {
 	try {
 		if (!certificate) {
-			toast.push('Missing certificate content');
+			toast.error('Missing certificate content');
 			throw new Error('Missing required PDF content');
 		}
 		const pdfBytes = await generateCertificatePDF(data, certificate);
