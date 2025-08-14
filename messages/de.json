@@ -685,5 +685,9 @@
 	"present": "Anwesend",
 	"absent": "Abwesend",
 	"timestamp": "Zeitstempel",
-	"attendanceStatus": "Anwesenheitsstatus"
+	"attendanceStatus": "Anwesenheitsstatus",
+	"globalNotes": "Globale Notizen",
+	"globalNotesDescription": "Hier kannst du globale Notizen hinterlegen, die für alle Konferenzen sichtbar sind.",
+	"editGlobalNotes": "Notizen bearbeiten",
+	"saving": "Speichern..."
 }
