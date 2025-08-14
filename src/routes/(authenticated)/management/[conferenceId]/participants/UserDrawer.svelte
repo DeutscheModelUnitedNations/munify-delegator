@@ -16,7 +16,7 @@
 	import formatNames from '$lib/services/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
-	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import GlobalNotes from './GlobalNotes.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -27,6 +27,7 @@
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
 	import { toast } from '@zerodevx/svelte-toast';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
+	import { env } from '$env/dynamic/public';
 
 	interface Props {
 		user: UserRowData;
@@ -35,6 +36,8 @@
 		onClose?: () => void;
 	}
 	let { user, conferenceId, open = $bindable(false), onClose }: Props = $props();
+
+	let openGlobalNotes = $state(false);
 
 	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
 		return {
@@ -59,6 +62,7 @@
 				country
 				foodPreference
 				gender
+				globalNotes
 			}
 			findManyDelegationMembers(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
@@ -412,6 +416,31 @@
 			</tbody>
 		</table>
 	</div>
+
+	{#if env.PUBLIC_GLOBAL_USER_NOTES_ACTIVE}
+		<div class="flex flex-col gap-2">
+			<h3 class="text-xl font-bold">{m.globalNotes()}</h3>
+			<p class="text-sm">{m.globalNotesDescription()}</p>
+
+			{#if $userQuery.data?.findUniqueUser?.globalNotes}
+				<div class="card bg-base-200">
+					<div class="card-body whitespace-pre-wrap">
+						{$userQuery.data.findUniqueUser?.globalNotes}
+					</div>
+				</div>
+			{/if}
+			<button class="btn" aria-label="open global Notes" onclick={() => (openGlobalNotes = true)}>
+				<i class="fa-duotone fa-pencil"></i>
+				{m.editGlobalNotes()}
+			</button>
+
+			<GlobalNotes
+				globalNotes={$userQuery.data?.findUniqueUser?.globalNotes ?? ''}
+				bind:open={openGlobalNotes}
+				id={$userQuery.data?.findUniqueUser?.id}
+			/>
+		</div>
+	{/if}
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
