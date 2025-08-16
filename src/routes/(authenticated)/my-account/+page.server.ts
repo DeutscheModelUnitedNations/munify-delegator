@@ -55,7 +55,7 @@ export const load: PageServerLoad = async (event) => {
 		redirectUrl = undefined;
 	}
 
-	const devMode = NODE_ENV === 'development' ? true : false;
+	const devMode = NODE_ENV === 'development';
 
 	return {
 		form,
