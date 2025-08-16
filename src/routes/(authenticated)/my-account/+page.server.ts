@@ -7,6 +7,7 @@ import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
+import { NODE_ENV } from '$env/static/private';
 
 const userQuery = graphql(`
 	query FullUserMyAccountQuery($id: String!) {
@@ -54,10 +55,13 @@ export const load: PageServerLoad = async (event) => {
 		redirectUrl = undefined;
 	}
 
+	const devMode = NODE_ENV === 'development' ? true : false;
+
 	return {
 		form,
 		redirectUrl,
-		user
+		user,
+		devMode
 	};
 };
 

@@ -11,6 +11,7 @@
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$houdini';
 	import { toast } from '@zerodevx/svelte-toast';
+	import FakeUser from './FakeUser.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -110,6 +111,9 @@
 						label={m.receiveJoinTeamInformation()}
 					/>
 				</Form>
+				{#if data.devMode}
+					<FakeUser {form} />
+				{/if}
 			</div>
 		</div>
 
