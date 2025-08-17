@@ -27,9 +27,14 @@ builder.prismaObject('ConferenceSupervisor', {
 		),
 		conference: t.relation('conference', ConferenceSupervisorConferenceFieldObject),
 		user: t.relation('user', ConferenceSupervisorUserFieldObject),
-		delegations: t.relation('delegations', {
+		supervisedDelegationMembers: t.relation('supervisedDelegationMembers', {
 			query: (_args, ctx) => ({
-				where: ctx.permissions.allowDatabaseAccessTo('list').Delegation
+				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
+			})
+		}),
+		supervisedSingleParticipants: t.relation('supervisedSingleParticipants', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant
 			})
 		})
 	})

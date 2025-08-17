@@ -25,11 +25,20 @@ export const defineAbilitiesForConferenceSupervisor = (
 			}
 		});
 
-		// other supervisors should be able to see the supervisors of their delegations
+		// supervised participants should be able to see their supervisors
 		can(['list', 'read'], 'ConferenceSupervisor', {
-			delegations: {
-				some: {
-					supervisors: {
+			OR: [
+				{
+					supervisedDelegationMembers: {
+						some: {
+							user: {
+								id: user.sub
+							}
+						}
+					}
+				},
+				{
+					supervisedSingleParticipants: {
 						some: {
 							user: {
 								id: user.sub
@@ -37,22 +46,7 @@ export const defineAbilitiesForConferenceSupervisor = (
 						}
 					}
 				}
-			}
-		});
-
-		// delegates should be able to see their supervisors
-		can(['list', 'read'], 'ConferenceSupervisor', {
-			delegations: {
-				some: {
-					members: {
-						some: {
-							user: {
-								id: user.sub
-							}
-						}
-					}
-				}
-			}
+			]
 		});
 
 		// supervisors should be able to update/delete themselves

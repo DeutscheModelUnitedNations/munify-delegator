@@ -119,7 +119,8 @@
 		"lint": "prettier --check . && eslint .",
 		"preview": "vite preview",
 		"studio": "prisma studio",
-		"machine-translate": "inlang machine translate --project project.inlang"
+		"machine-translate": "inlang machine translate --project project.inlang",
+		"typecheck": "tsc --noEmit"
 	},
 	"type": "module",
 	"version": "0.0.1"

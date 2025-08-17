@@ -54,10 +54,14 @@ export const defineAbilitiesForRoleApplication = (
 		// delegation supervisors can see the applications of their delegations
 		can(['read', 'list'], 'RoleApplication', {
 			delegation: {
-				supervisors: {
+				members: {
 					some: {
-						user: {
-							id: user.sub
+						supervisors: {
+							some: {
+								user: {
+									id: user.sub
+								}
+							}
 						}
 					}
 				}

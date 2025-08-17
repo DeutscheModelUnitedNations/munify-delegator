@@ -29,45 +29,9 @@ export const defineAbilitiesForUserEntity = (oidc: OIDC, { can }: AbilityBuilder
 
 		// supervisors should see their delegates
 		can(['list', 'read'], 'User', {
-			delegationMemberships: {
-				some: {
-					delegation: {
-						supervisors: {
-							some: {
-								user: {
-									id: user.sub
-								}
-							}
-						}
-					}
-				}
-			}
-		});
-
-		// delegates should see their supervisors
-		can(['list', 'read'], 'User', {
-			conferenceSupervisor: {
-				some: {
-					delegations: {
-						some: {
-							members: {
-								some: {
-									user: {
-										id: user.sub
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		});
-
-		// supervisors should see each other
-		can(['list', 'read'], 'User', {
-			conferenceSupervisor: {
-				some: {
-					delegations: {
+			OR: [
+				{
+					delegationMemberships: {
 						some: {
 							supervisors: {
 								some: {
@@ -78,6 +42,47 @@ export const defineAbilitiesForUserEntity = (oidc: OIDC, { can }: AbilityBuilder
 							}
 						}
 					}
+				},
+				{
+					singleParticipant: {
+						some: {
+							supervisors: {
+								some: {
+									user: {
+										id: user.sub
+									}
+								}
+							}
+						}
+					}
+				}
+			]
+		});
+
+		// delegates should see their supervisors
+		can(['list', 'read'], 'User', {
+			conferenceSupervisor: {
+				some: {
+					OR: [
+						{
+							supervisedDelegationMembers: {
+								some: {
+									user: {
+										id: user.sub
+									}
+								}
+							}
+						},
+						{
+							supervisedSingleParticipants: {
+								some: {
+									user: {
+										id: user.sub
+									}
+								}
+							}
+						}
+					]
 				}
 			}
 		});

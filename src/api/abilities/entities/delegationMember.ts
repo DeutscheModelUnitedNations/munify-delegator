@@ -18,9 +18,7 @@ export const defineAbilitiesForDelegationMember = (
 
 		// supervisors should be able to see the delegates of their supervised delegations
 		can(['read', 'list'], 'DelegationMember', {
-			delegation: {
-				supervisors: { some: { user: { id: user.sub } } }
-			}
+			supervisors: { some: { user: { id: user.sub } } }
 		});
 
 		// team members should be able to see the delegation members of their conferences
