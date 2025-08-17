@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { faker } from '@faker-js/faker';
+	import { fakerDE as faker } from '@faker-js/faker';
 	interface Props {
 		form: any;
 	}
