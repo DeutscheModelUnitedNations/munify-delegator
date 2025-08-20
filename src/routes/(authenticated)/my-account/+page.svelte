@@ -10,8 +10,10 @@
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$houdini';
+	import FakeUser from './FakeUser.svelte';
 	import toast from 'svelte-french-toast';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import { dev } from '$app/environment';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -120,6 +122,9 @@
 						label={m.receiveJoinTeamInformation()}
 					/>
 				</Form>
+				{#if dev}
+					<FakeUser {form} />
+				{/if}
 			</div>
 		</div>
 
