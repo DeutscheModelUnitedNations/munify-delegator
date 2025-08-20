@@ -22,6 +22,7 @@ const userQuery = graphql(`
 			gender
 			pronouns
 			foodPreference
+			emergencyContacts
 			wantsToReceiveGeneralInformation
 			wantsJoinTeamInformation
 		}

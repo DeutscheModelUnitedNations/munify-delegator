@@ -13,7 +13,7 @@
 	import hotkeys from 'hotkeys-js';
 
 	import { onDestroy, onMount } from 'svelte';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
@@ -84,10 +84,7 @@
 								}
 							})
 							.catch((error) => {
-								toast.push('Error detecting barcode: ' + error, {
-									duration: 5000,
-									dismissable: true
-								});
+								toast.error('Error detecting barcode: ' + error);
 							});
 					}
 				}, 'image/jpeg');
@@ -142,10 +139,7 @@
 		mutationData: UpdateConferenceParticipantStatusInput
 	) => {
 		if (!userId) {
-			toast.push(m.userNotFound(), {
-				duration: 5000,
-				dismissable: true
-			});
+			toast.error(m.userNotFound());
 			return;
 		}
 		await changeParticipantStatus.mutate({

@@ -7,7 +7,7 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { createDelegationFormSchema } from './form-schema';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -15,7 +15,7 @@
 		validationMethod: 'oninput',
 		validators: zod(createDelegationFormSchema),
 		onError(e) {
-			toast.push(e.result.error.message);
+			toast.error(e.result.error.message);
 		},
 		onResult({ result }) {
 			switch (result.type) {
@@ -25,7 +25,7 @@
 					break;
 
 				case 'error':
-					toast.push(result.error.message);
+					toast.error(result.error.message);
 					break;
 				default:
 					throw new Error('Unknown result type');

@@ -25,7 +25,7 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 
 	interface Props {
@@ -58,6 +58,7 @@
 				city
 				country
 				foodPreference
+				emergencyContacts
 				gender
 			}
 			findManyDelegationMembers(
@@ -188,7 +189,7 @@
 			});
 
 			if (baseContent.errors) {
-				toast.push(m.httpGenericError());
+				toast.error(m.httpGenericError());
 			}
 
 			if (
@@ -198,7 +199,7 @@
 				!conference?.postalCity ||
 				!conference?.postalCountry
 			) {
-				toast.push('Missing postal information for the conference');
+				toast.error('Missing postal information for the conference');
 				return;
 			}
 
@@ -259,7 +260,7 @@
 		const jwtData = certificateData.data?.getCertificateJWT;
 
 		if (!jwtData?.fullName || !jwtData?.jwt) {
-			toast.push(m.certificateDownloadError());
+			toast.error(m.certificateDownloadError());
 			return;
 		}
 
@@ -406,6 +407,15 @@
 						<td>{m.vegan()}</td>
 					{:else}
 						<td><i class="fa-duotone fa-meat text-lg"></i></td>
+						<td>N/A</td>
+					{/if}
+				</tr>
+				<tr>
+					<td><i class="fa-duotone fa-light-emergency-on text-lg"></i></td>
+					{#if $userQuery.data?.findUniqueUser?.emergencyContacts}
+						<td class="whitespace-pre-wrap">{$userQuery.data?.findUniqueUser?.emergencyContacts}</td
+						>
+					{:else}
 						<td>N/A</td>
 					{/if}
 				</tr>

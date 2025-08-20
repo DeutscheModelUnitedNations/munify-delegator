@@ -38,6 +38,7 @@ export const userFormSchema = z.object({
 	]),
 	pronouns: z.string().optional(),
 	foodPreference: z.string().refine((s) => ['OMNIVORE', 'VEGETARIAN', 'VEGAN'].includes(s)),
+	emergencyContacts: z.string().min(5),
 	wantsToReceiveGeneralInformation: z.boolean().default(false),
 	wantsJoinTeamInformation: z.boolean().default(false)
 });
