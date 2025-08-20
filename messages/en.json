@@ -678,5 +678,8 @@
 	"assistantFlowRolePress1": "Journalist",
 	"personalStatusUnderDevelopment": "Personal status overview still under development",
 	"import": "Import",
-	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly."
+	"personalStatusUnderDevelopmentDescription": "The personal status overview is still under development. Later, you'll find here information about the postal registration and payment of the conference fee. Please follow the instructions being sent to you by the participant care. You'll have an overview shortly.",
+	"emergencyContacts": "Emergency Contacts",
+	"emergencyContactDescription": "Please give us at least one emergency contact (with name, phone and email), so that we are able to reach someone close to you.",
+	"emergencyContactsPlaceholder": "Jane Doe, +49123456789, j.doe@mail.de"
 }
