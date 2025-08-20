@@ -31,12 +31,8 @@ import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { z } from 'zod';
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
-import { TeamRole } from '@prisma/client';
-import { globalNotes } from '$lib/paraglide/messages';
-import { KnownArgumentNamesOnDirectivesRule } from 'graphql/validation/rules/KnownArgumentNamesRule';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
