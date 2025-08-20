@@ -25,7 +25,7 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 
 	interface Props {
@@ -189,7 +189,7 @@
 			});
 
 			if (baseContent.errors) {
-				toast.push(m.httpGenericError());
+				toast.error(m.httpGenericError());
 			}
 
 			if (
@@ -199,7 +199,7 @@
 				!conference?.postalCity ||
 				!conference?.postalCountry
 			) {
-				toast.push('Missing postal information for the conference');
+				toast.error('Missing postal information for the conference');
 				return;
 			}
 
@@ -260,7 +260,7 @@
 		const jwtData = certificateData.data?.getCertificateJWT;
 
 		if (!jwtData?.fullName || !jwtData?.jwt) {
-			toast.push(m.certificateDownloadError());
+			toast.error(m.certificateDownloadError());
 			return;
 		}
 

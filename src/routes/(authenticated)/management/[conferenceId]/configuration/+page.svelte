@@ -8,7 +8,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
@@ -29,7 +29,7 @@
 		validationMethod: 'oninput',
 		validators: zod(conferenceSettingsFormSchema),
 		onError(e) {
-			toast.push(e.result.error.message);
+			toast.error(e.result.error.message);
 		}
 	});
 	let formData = $derived(form.form);
@@ -82,9 +82,7 @@
 		});
 
 		if (pdfData.errors) {
-			toast.push('Could not get Template from Server', {
-				duration: 5000
-			});
+			toast.error('Could not get Template from Server');
 			loading = false;
 			return;
 		}
@@ -155,9 +153,7 @@
 		});
 
 		if (pdfData.errors) {
-			toast.push('Could not get Template from Server', {
-				duration: 5000
-			});
+			toast.error('Could not get Template from Server');
 			loading = false;
 			return;
 		}
