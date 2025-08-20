@@ -3757,6 +3757,7 @@ type User {
   country: String
   delegationMemberships: [DelegationMember!]!
   email: String!
+  emergencyContacts: String
   family_name: String!
   foodPreference: FoodPreference
   gender: Gender
@@ -3786,6 +3787,7 @@ input UserCreateInput {
   createdAt: DateTime
   delegationMemberships: DelegationMemberCreateNestedManyWithoutUserInput
   email: String!
+  emergencyContacts: String
   family_name: String!
   foodPreference: FoodPreference
   gender: Gender
@@ -3818,6 +3820,7 @@ input UserOrderByWithRelationInput {
   createdAt: SortOrder
   delegationMemberships: DelegationMemberOrderByRelationAggregateInput
   email: SortOrder
+  emergencyContacts: SortOrder
   family_name: SortOrder
   foodPreference: SortOrder
   gender: SortOrder
@@ -3950,6 +3953,7 @@ enum UserScalarFieldEnum {
   country
   createdAt
   email
+  emergencyContacts
   family_name
   foodPreference
   gender
@@ -3977,6 +3981,7 @@ input UserUpdateDataInput {
   birthday: DateTime!
   city: String!
   country: String!
+  emergencyContacts: String!
   foodPreference: String!
   gender: Gender!
   globalNotes: String!
@@ -3998,6 +4003,7 @@ input UserUpdateInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   delegationMemberships: DelegationMemberUpdateManyWithoutUserNestedInput
   email: StringFieldUpdateOperationsInput
+  emergencyContacts: NullableStringFieldUpdateOperationsInput
   family_name: StringFieldUpdateOperationsInput
   foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
   gender: NullableEnumGenderFieldUpdateOperationsInput
@@ -4027,6 +4033,7 @@ input UserUpdateManyMutationInput {
   country: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   email: StringFieldUpdateOperationsInput
+  emergencyContacts: NullableStringFieldUpdateOperationsInput
   family_name: StringFieldUpdateOperationsInput
   foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
   gender: NullableEnumGenderFieldUpdateOperationsInput
@@ -4057,6 +4064,7 @@ input UserWhereInput {
   createdAt: DateTimeFilter
   delegationMemberships: DelegationMemberListRelationFilter
   email: StringFilter
+  emergencyContacts: StringNullableFilter
   family_name: StringFilter
   foodPreference: EnumFoodPreferenceNullableFilter
   gender: EnumGenderNullableFilter
@@ -4092,6 +4100,7 @@ input UserWhereUniqueInput {
   createdAt: DateTimeFilter
   delegationMemberships: DelegationMemberListRelationFilter
   email: String
+  emergencyContacts: StringNullableFilter
   family_name: StringFilter
   foodPreference: EnumFoodPreferenceNullableFilter
   gender: EnumGenderNullableFilter

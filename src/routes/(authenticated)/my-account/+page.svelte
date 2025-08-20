@@ -10,7 +10,10 @@
 	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$houdini';
-	import { toast } from '@zerodevx/svelte-toast';
+	import FakeUser from './FakeUser.svelte';
+	import toast from 'svelte-french-toast';
+	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import { dev } from '$app/environment';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -18,7 +21,7 @@
 		validationMethod: 'oninput',
 		validators: zod(userFormSchema),
 		onError(e) {
-			toast.push(e.result.error.message);
+			toast.error(e.result.error.message);
 		}
 	});
 
@@ -99,6 +102,15 @@
 							{ value: 'OMNIVORE', label: m.omnivore() }
 						]}
 					/>
+					<div class="divider"></div>
+					<FormTextArea
+						{form}
+						name="emergencyContacts"
+						label={m.emergencyContacts()}
+						description={m.emergencyContactDescription()}
+						placeholder={m.emergencyContactsPlaceholder()}
+					/>
+					<div class="divider"></div>
 					<FormCheckbox
 						{form}
 						name="wantsToReceiveGeneralInformation"
@@ -110,6 +122,9 @@
 						label={m.receiveJoinTeamInformation()}
 					/>
 				</Form>
+				{#if dev}
+					<FakeUser {form} />
+				{/if}
 			</div>
 		</div>
 

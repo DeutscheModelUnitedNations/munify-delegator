@@ -6,7 +6,7 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { individualApplicationFormSchema } from './form-schema';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -14,7 +14,7 @@
 		validationMethod: 'oninput',
 		validators: zod(individualApplicationFormSchema),
 		onError(e) {
-			toast.push(e.result.error.message);
+			toast.error(e.result.error.message);
 		}
 	});
 	let step = $state(0);
