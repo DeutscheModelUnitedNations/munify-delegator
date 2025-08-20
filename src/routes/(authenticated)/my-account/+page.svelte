@@ -31,7 +31,7 @@
 	<div class="backdrop"></div>
 {/if}
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
-	<section class="max-ch-md z-20 mt-10 text-center">
+	<section class="z-20 mt-10 text-center max-ch-md">
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
 		<!-- If this is set we are likely to call this via the registration flow
@@ -50,10 +50,10 @@
 	</section>
 	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
 		<div
-			class="card bg-base-100 dark:bg-base-200 z-20 max-w-80 shadow-xl sm:min-w-96 sm:max-w-full {data.redirectUrl &&
+			class="card z-20 max-w-80 bg-base-100 shadow-xl sm:min-w-96 sm:max-w-full dark:bg-base-200 {data.redirectUrl &&
 				'highlight-card'}"
 		>
-			<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
+			<div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
 				<div class="card-title block text-center">{m.personalData()}</div>
 				<Form {form}>
 					<FormTextInput {form} name="phone" label={m.phoneNumber()} placeholder="+49 123456789" />
@@ -127,7 +127,7 @@
 			</div>
 		</div>
 
-		<div class="card bg-base-100 dark:bg-base-200 w-full shadow-xl md:w-auto md:min-w-96">
+		<div class="card w-full bg-base-100 shadow-xl md:w-auto md:min-w-96 dark:bg-base-200">
 			<div class="card-body">
 				<div class="card-title block text-center">{m.loginInformation()}</div>
 				<table class="table">
