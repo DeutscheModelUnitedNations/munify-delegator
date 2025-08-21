@@ -27,8 +27,7 @@
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
 	import toast from 'svelte-french-toast';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
-	import { env } from '$env/dynamic/public';
-
+	import { configPublic } from '$config/public';
 	interface Props {
 		user: UserRowData;
 		conferenceId: string;
@@ -427,7 +426,7 @@
 		</table>
 	</div>
 
-	{#if env.PUBLIC_GLOBAL_USER_NOTES_ACTIVE}
+	{#if configPublic.PUBLIC_GLOBAL_USER_NOTES_ACTIVE}
 		<div class="flex flex-col gap-2">
 			<h3 class="text-xl font-bold">{m.globalNotes()}</h3>
 			<p class="text-sm">{m.globalNotesDescription()}</p>
