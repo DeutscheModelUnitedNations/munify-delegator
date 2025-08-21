@@ -46,7 +46,6 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 								total: t.int(),
 								notApplied: t.int(),
 								applied: t.int(),
-								withSupervisor: t.int()
 							})
 						})
 					}),

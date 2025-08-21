@@ -48,7 +48,7 @@ interface User extends BaseUser {
 	})[];
 	conferenceSupervisor: (ConferenceSupervisor & {
 		conference: Conference;
-		delegations: Delegation[];
+		// delegations: Delegation[];
 	})[];
 	teamMember: (TeamMember & {
 		conference: Conference;
@@ -180,7 +180,7 @@ async function getUsers(): Promise<User[]> {
 			conferenceSupervisor: {
 				include: {
 					conference: true,
-					delegations: true
+					// delegations: true
 				}
 			},
 			teamMember: {
@@ -270,20 +270,21 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 			title: cs.conference.title,
 			role: 'SUPERVISOR'
 		});
-		if (cs.conference.state === 'PARTICIPANT_REGISTRATION') {
-			if (cs.delegations.some((d) => d.applied)) {
-				lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
-			}
-			if (cs.delegations.some((d) => !d.applied)) {
-				lists.push(
-					createListName(cs.conference.title, cs.conferenceId, 'REGISTRATION_NOT_COMPLETED')
-				);
-			}
-		} else {
-			if (cs.delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId)) {
-				lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
-			}
-		}
+		// TODO: adjust to new connection structure
+		// if (cs.conference.state === 'PARTICIPANT_REGISTRATION') {
+		// 	if (cs.delegations.some((d) => d.applied)) {
+		// 		lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
+		// 	}
+		// 	if (cs.delegations.some((d) => !d.applied)) {
+		// 		lists.push(
+		// 			createListName(cs.conference.title, cs.conferenceId, 'REGISTRATION_NOT_COMPLETED')
+		// 		);
+		// 	}
+		// } else {
+		// 	if (cs.delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId)) {
+		// 		lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
+		// 	}
+		// }
 	}
 
 	// Assign Global Lists based on User Preferences
