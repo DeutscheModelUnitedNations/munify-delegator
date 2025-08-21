@@ -45,7 +45,7 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 							fields: (t) => ({
 								total: t.int(),
 								notApplied: t.int(),
-								applied: t.int(),
+								applied: t.int()
 							})
 						})
 					}),

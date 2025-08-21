@@ -179,7 +179,7 @@ async function getUsers(): Promise<User[]> {
 			},
 			conferenceSupervisor: {
 				include: {
-					conference: true,
+					conference: true
 					// delegations: true
 				}
 			},

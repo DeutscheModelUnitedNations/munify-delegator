@@ -39,7 +39,7 @@ export async function conferenceStats({
 			applied: true,
 			_count: {
 				select: {
-					members: true,
+					members: true
 				}
 			}
 		}
@@ -105,7 +105,7 @@ export async function conferenceStats({
 		delegations: {
 			total: delegationsNotApplied + delegationsApplied,
 			notApplied: delegationsNotApplied,
-			applied: delegationsApplied,
+			applied: delegationsApplied
 		},
 		delegationMembers: {
 			total: delegationMembersNotApplied + delegationMembersApplied,
