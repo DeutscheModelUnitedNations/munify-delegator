@@ -203,7 +203,6 @@ builder.mutationFields((t) => {
 							gender: t.field({ type: Gender }),
 							pronouns: t.string({ required: false }),
 							foodPreference: t.string(),
-							globalNotes: t.string(),
 							emergencyContacts: t.string(),
 							wantsToReceiveGeneralInformation: t.boolean({
 								required: false

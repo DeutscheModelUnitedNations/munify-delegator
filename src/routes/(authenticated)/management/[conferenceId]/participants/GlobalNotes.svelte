@@ -14,14 +14,14 @@
 
 	let value = $state(globalNotes);
 
-	let saveGlobalNotesMutation = graphql`
+	const saveGlobalNotesMutation = graphql(`
 		mutation saveGlobalNotesMutation($where: UserWhereUniqueInput!, $globalNotes: String!) {
 			updateOneUsersGlobalNotes(where: $where, globalNotes: $globalNotes) {
 				id
 				globalNotes
 			}
 		}
-	`;
+	`);
 
 	const saveGlobalNotes = async () => {
 		if (!id) return;

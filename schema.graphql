@@ -3984,7 +3984,6 @@ input UserUpdateDataInput {
   emergencyContacts: String!
   foodPreference: String!
   gender: Gender!
-  globalNotes: String!
   phone: String!
   pronouns: String
   street: String!
