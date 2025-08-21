@@ -172,3 +172,109 @@ builder.mutationFields((t) => {
 		})
 	};
 });
+
+builder.queryFields((t) => {
+	return {
+		previewConferenceSupervisor: t.field({
+			type: builder
+				.objectRef<{
+					given_name: string;
+					family_name: string;
+				}>('PreviewConferenceSupervisor')
+				.implement({
+					fields: (t) => ({
+						given_name: t.exposeString('given_name'),
+						family_name: t.exposeString('family_name')
+					})
+				}),
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				connectionCode: t.arg.string({ required: true })
+			},
+			resolve: (parent, args) => {
+				// CAREFUL: This is not authenticated
+				return db.conferenceSupervisor
+					.findUniqueOrThrow({
+						where: {
+							conferenceId_connectionCode: {
+								conferenceId: args.conferenceId,
+								connectionCode: args.connectionCode
+							}
+						},
+						include: {
+							user: true
+						}
+					})
+					.then((r) => ({
+						given_name: r.user.given_name,
+						family_name: r.user.family_name
+					}));
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneConferenceSupervisorMutationObject(t);
+	return {
+		connectToConferenceSupervisor: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				connectionCode: t.arg.string({ required: true })
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const supervisor = await db.conferenceSupervisor.findUniqueOrThrow({
+					where: {
+						conferenceId_connectionCode: {
+							conferenceId: args.conferenceId,
+							connectionCode: args.connectionCode
+						}
+					}
+				});
+
+				const r = await fetchUserParticipations({
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					throwIfAnyIsFound: false
+				});
+
+				if (r.foundSupervisor) {
+					throw new GraphQLError(
+						'You are already a supervisor of this conference and cannot connect to another supervisor.'
+					);
+				}
+
+				if (!r.foundDelegationMember && !r.foundSingleParticipant && !r.foundTeamMember) {
+					throw new GraphQLError(
+						'You are not a participant of this conference and cannot connect to a supervisor inside it.'
+					);
+				}
+
+				return await db.conferenceSupervisor.update({
+					where: { id: supervisor.id },
+					data: {
+						supervisedDelegationMembers: r.foundDelegationMember
+							? {
+									connect: {
+										id: r.foundDelegationMember.id
+									}
+								}
+							: undefined,
+
+						supervisedSingleParticipants: r.foundSingleParticipant
+							? {
+									connect: {
+										id: r.foundSingleParticipant.id
+									}
+								}
+							: undefined
+					},
+					...query
+				});
+			}
+		})
+	};
+});
