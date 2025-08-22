@@ -1,6 +1,6 @@
 import valiator from 'validator';
 import IBAN from 'iban';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { m } from '$lib/paraglide/messages';
 
 export const conferenceSettingsFormSchema = z.object({

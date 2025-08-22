@@ -1,5 +1,5 @@
 import valiator from 'validator';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
 

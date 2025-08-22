@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$houdini';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 as zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';

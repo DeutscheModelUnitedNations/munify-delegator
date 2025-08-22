@@ -4,7 +4,7 @@
 	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zod } from 'sveltekit-superforms/adapters';
+	import { zod4 as zod } from 'sveltekit-superforms/adapters';
 	import { createDelegationFormSchema } from './form-schema';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';

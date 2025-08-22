@@ -3,7 +3,7 @@
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import { zod } from 'sveltekit-superforms/adapters';
+	import { zod4 as zod } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
