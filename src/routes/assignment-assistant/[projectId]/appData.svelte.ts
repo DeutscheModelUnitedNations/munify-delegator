@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { graphql } from '$houdini';
 import { RAW_DATA_KEY } from '../local_storage_keys';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const NationSchema = z.object({
 	alpha2Code: z.string(),

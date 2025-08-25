@@ -9,7 +9,7 @@ import {
 	SurveyAnswerUserFieldObject,
 	updateOneSurveyAnswerMutationObject
 } from '$db/generated/graphql/SurveyAnswer';
-import type { nullable } from 'zod/v4';
+import type { nullable } from 'zod';
 import { builder } from '../builder';
 import { upsertWithRetry } from '$api/services/prismaUpsertWithRetry';
 import { m } from '$lib/paraglide/messages';

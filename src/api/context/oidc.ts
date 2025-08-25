@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { oidcRoles, refresh, validateTokens } from '$api/services/OIDC';
 import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
