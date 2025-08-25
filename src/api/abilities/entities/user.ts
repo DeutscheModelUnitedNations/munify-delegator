@@ -27,7 +27,7 @@ export const defineAbilitiesForUserEntity = (oidc: OIDC, { can }: AbilityBuilder
 			}
 		});
 
-		// supervisors should see their delegates
+		// supervisors should see their delegates/single participants
 		can(['list', 'read'], 'User', {
 			OR: [
 				{
@@ -162,6 +162,46 @@ export const defineAbilitiesForUserEntity = (oidc: OIDC, { can }: AbilityBuilder
 					}
 				}
 			}
+		});
+
+		// supervisors should be able to see each other if the supervise the same delegate or single participant
+		can(['list', 'read'], 'User', {
+			OR: [
+				{
+					conferenceSupervisor: {
+						some: {
+							supervisedDelegationMembers: {
+								some: {
+									supervisors: {
+										some: {
+											user: {
+												id: user.sub
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				{
+					conferenceSupervisor: {
+						some: {
+							supervisedSingleParticipants: {
+								some: {
+									supervisors: {
+										some: {
+											user: {
+												id: user.sub
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			]
 		});
 	}
 };

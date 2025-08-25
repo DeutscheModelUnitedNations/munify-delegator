@@ -55,5 +55,41 @@ export const defineAbilitiesForConferenceSupervisor = (
 				id: user.sub
 			}
 		});
+
+		// supervisors should be able to see each others placeholders if they supervise the same delegation
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			supervisedDelegationMembers: {
+				some: {
+					delegation: {
+						members: {
+							some: {
+								supervisors: {
+									some: {
+										user: {
+											id: user.sub
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+
+		// supervisors should be able to see each others placeholders if they supervise the same single participant
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			supervisedSingleParticipants: {
+				some: {
+					supervisors: {
+						some: {
+							user: {
+								id: user.sub
+							}
+						}
+					}
+				}
+			}
+		});
 	}
 };
