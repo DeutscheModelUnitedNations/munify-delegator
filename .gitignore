@@ -31,3 +31,5 @@ $houdini
 tasksOut
 
 dev-get-data.sh
+
+tailwindcss*.log
