@@ -191,8 +191,25 @@ builder.queryFields((t) => {
 				conferenceId: t.arg.id({ required: true }),
 				connectionCode: t.arg.string({ required: true })
 			},
-			resolve: (parent, args) => {
+			resolve: async (parent, args, ctx) => {
 				// CAREFUL: This is not authenticated
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const r = await fetchUserParticipations({
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					throwIfAnyIsFound: false
+				});
+
+				if (
+					!r.foundDelegationMember &&
+					!r.foundSingleParticipant &&
+					!r.foundTeamMember &&
+					!r.foundSupervisor
+				) {
+					throw new GraphQLError('You are not registered for this conference.');
+				}
+
 				return db.conferenceSupervisor
 					.findUniqueOrThrow({
 						where: {
@@ -241,13 +258,13 @@ builder.mutationFields((t) => {
 					throwIfAnyIsFound: false
 				});
 
-				if (r.foundSupervisor) {
+				if (r.foundSupervisor || r.foundTeamMember) {
 					throw new GraphQLError(
-						'You are already a supervisor of this conference and cannot connect to another supervisor.'
+						'You are already a supervisor or team member of this conference and cannot connect to a supervisor.'
 					);
 				}
 
-				if (!r.foundDelegationMember && !r.foundSingleParticipant && !r.foundTeamMember) {
+				if (!r.foundDelegationMember && !r.foundSingleParticipant) {
 					throw new GraphQLError(
 						'You are not a participant of this conference and cannot connect to a supervisor inside it.'
 					);
