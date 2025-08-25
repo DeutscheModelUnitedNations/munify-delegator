@@ -33,5 +33,10 @@ export const defineAbilitiesForSingleParticipant = (
 			user: { id: user.sub },
 			applied: false
 		});
+
+		// supervisors should be able to see the single participants
+		can(['read', 'list'], 'SingleParticipant', {
+			supervisors: { some: { user: { id: user.sub } } }
+		});
 	}
 };

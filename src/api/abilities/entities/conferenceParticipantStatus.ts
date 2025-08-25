@@ -16,22 +16,42 @@ export const defineAbilitiesForConferenceParticipantStatus = (
 			}
 		});
 
-		// if the user has a delegation and that delegation has a supervisor, they also can see the status
+		//TODO: this needs to be scoped to a conference!
+		// currently the supervisor can see status of all conferences of the participant
+
+		//TODO: this might be the case for other entities too?
+
+		// if the user has a supervisor, they also can see the status
 		can(['read', 'list'], 'ConferenceParticipantStatus', {
 			user: {
-				delegationMemberships: {
-					some: {
-						delegation: {
-							supervisors: {
-								some: {
-									user: {
-										id: user.sub
+				OR: [
+					{
+						delegationMemberships: {
+							some: {
+								supervisors: {
+									some: {
+										user: {
+											id: user.sub
+										}
+									}
+								}
+							}
+						}
+					},
+					{
+						singleParticipant: {
+							some: {
+								supervisors: {
+									some: {
+										user: {
+											id: user.sub
+										}
 									}
 								}
 							}
 						}
 					}
-				}
+				]
 			}
 		});
 
