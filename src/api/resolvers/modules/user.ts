@@ -244,6 +244,33 @@ builder.mutationFields((t) => {
 builder.mutationFields((t) => {
 	const field = updateOneUserMutationObject(t);
 	return {
+		updateOneUsersNewsletterPreferences: t.prismaField({
+			...field,
+			args: {
+				email: t.arg.string(),
+				wantsToReceiveGeneralInformation: t.arg.boolean({
+					required: false
+				}),
+				wantsJoinTeamInformation: t.arg.boolean({ required: false })
+			},
+			resolve: async (query, root, args, ctx) => {
+				return await db.user.update({
+					where: {
+						email: args.email
+					},
+					data: {
+						wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
+						wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneUserMutationObject(t);
+	return {
 		updateOneUsersGlobalNotes: t.prismaField({
 			...field,
 			args: {

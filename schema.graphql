@@ -1829,6 +1829,7 @@ type Mutation {
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
+  updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   upsertOneConferenceSupervisor(conferenceId: ID!, entryCode: String!): ConferenceSupervisor!
   upsertSelf: UpsertSelfResult!
 }

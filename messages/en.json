@@ -685,5 +685,16 @@
 	"saving": "Saving...",
 	"emergencyContacts": "Emergency Contacts",
 	"emergencyContactDescription": "Please give us at least one emergency contact (with name, phone and email), so that we are able to reach someone close to you.",
-	"emergencyContactsPlaceholder": "Jane Doe, +49123456789, j.doe@mail.de"
+	"emergencyContactsPlaceholder": "Jane Doe, +49123456789, j.doe@mail.de",
+	"unsubscribeEmailMissing": "you have to enter an email",
+	"unsubscribeSuccess": "you have been successfully unsubscribed",
+	"unsubscribeError": "sorry, this didn't work out",
+	"unsubscribeLoading": "unsubscribing...",
+	"unsubscribeAllNewslettersButton": "unsubscribe all newsletters",
+	"usubscribeSomeOnly": "Do you want to unsubscribe from only certain newsletters instead?",
+	"goToProfile": "Go to profile management",
+	"unsubscribedAll": "You have been unsubscribed from all newsletters.",
+	"unsubscribeRegret": "What a pity! Maybe you want to subscribe again?",
+	"unsubscribeNote": "Please note: The unsubscription does not apply to mailing lists for conferences you are registered for. Please contact the participant support for unsubscription.",
+	"unsubscribeNewsletters": "Unsubscribe Newsletters"
 }
