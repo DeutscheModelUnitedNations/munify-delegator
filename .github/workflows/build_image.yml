@@ -70,7 +70,6 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          file: ./Dockerfile.${{ matrix.runtime }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
