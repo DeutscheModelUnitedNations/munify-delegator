@@ -263,8 +263,8 @@ builder.mutationFields((t) => {
 						wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
 					}
 				});
-      }
-    })
+			}
+		})
 	};
 });
 
