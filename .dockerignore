@@ -20,5 +20,27 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-prisma/generated
+prisma/generated/*
 src/lib/paraglide
+
+# Tasks
+/tasksOut/*
+empheralData/*
+
+$houdini
+tasksOut
+
+dev-get-data.sh
+
+.github
+.vscode
+example
+.env.example
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+dev-restart-database.sh
+dev.docker-compose.yml
+lefthook.yml
+LICENSE.md
+mock-oidc-landingpage.html
+README.md
