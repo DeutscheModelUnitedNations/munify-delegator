@@ -1829,6 +1829,7 @@ type Mutation {
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
+  updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   upsertOneConferenceSupervisor(conferenceId: ID!, entryCode: String!): ConferenceSupervisor!
   upsertSelf: UpsertSelfResult!
 }
@@ -3762,6 +3763,7 @@ type User {
   foodPreference: FoodPreference
   gender: Gender
   given_name: String!
+  globalNotes: String
   id: ID!
   locale: String!
   phone: String
@@ -3791,6 +3793,7 @@ input UserCreateInput {
   foodPreference: FoodPreference
   gender: Gender
   given_name: String!
+  globalNotes: String
   id: String
   locale: String!
   ownPaymentTransactions: PaymentTransactionCreateNestedManyWithoutUserInput
@@ -3823,6 +3826,7 @@ input UserOrderByWithRelationInput {
   foodPreference: SortOrder
   gender: SortOrder
   given_name: SortOrder
+  globalNotes: SortOrder
   id: SortOrder
   locale: SortOrder
   ownPaymentTransactions: PaymentTransactionOrderByRelationAggregateInput
@@ -3955,6 +3959,7 @@ enum UserScalarFieldEnum {
   foodPreference
   gender
   given_name
+  globalNotes
   id
   locale
   phone
@@ -4003,6 +4008,7 @@ input UserUpdateInput {
   foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
   gender: NullableEnumGenderFieldUpdateOperationsInput
   given_name: StringFieldUpdateOperationsInput
+  globalNotes: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   locale: StringFieldUpdateOperationsInput
   ownPaymentTransactions: PaymentTransactionUpdateManyWithoutUserNestedInput
@@ -4032,6 +4038,7 @@ input UserUpdateManyMutationInput {
   foodPreference: NullableEnumFoodPreferenceFieldUpdateOperationsInput
   gender: NullableEnumGenderFieldUpdateOperationsInput
   given_name: StringFieldUpdateOperationsInput
+  globalNotes: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   locale: StringFieldUpdateOperationsInput
   phone: NullableStringFieldUpdateOperationsInput
@@ -4062,6 +4069,7 @@ input UserWhereInput {
   foodPreference: EnumFoodPreferenceNullableFilter
   gender: EnumGenderNullableFilter
   given_name: StringFilter
+  globalNotes: StringNullableFilter
   id: StringFilter
   locale: StringFilter
   ownPaymentTransactions: PaymentTransactionListRelationFilter
@@ -4097,6 +4105,7 @@ input UserWhereUniqueInput {
   foodPreference: EnumFoodPreferenceNullableFilter
   gender: EnumGenderNullableFilter
   given_name: StringFilter
+  globalNotes: StringNullableFilter
   id: String
   locale: StringFilter
   ownPaymentTransactions: PaymentTransactionListRelationFilter

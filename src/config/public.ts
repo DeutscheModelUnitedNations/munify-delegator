@@ -8,7 +8,8 @@ const schema = z.object({
 	PUBLIC_OIDC_AUTHORITY: z.string(),
 	PUBLIC_OIDC_CLIENT_ID: z.string(),
 	PUBLIC_DEFAULT_LOCALE: z.string().default('de'),
-	PUBLIC_FEEDBACK_URL: z.optional(z.string())
+	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
+	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false)
 });
 
 export const configPublic = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

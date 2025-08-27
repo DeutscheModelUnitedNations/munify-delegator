@@ -143,6 +143,8 @@ model User {
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
 
+  globalNotes String?
+
   delegationMemberships         DelegationMember[]
   conferenceSupervisor          ConferenceSupervisor[]
   conferenceParticipantStatus   ConferenceParticipantStatus[]

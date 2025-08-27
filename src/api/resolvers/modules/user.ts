@@ -24,16 +24,15 @@ import {
 	UserWantsJoinTeamInformationFieldObject,
 	findFirstUserQueryObject,
 	findManyUserQuery,
+	UserGlobalNotesFieldObject,
 	UserEmergencyContactsFieldObject
 } from '$db/generated/graphql/User';
 import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { z } from 'zod';
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
-import { TeamRole } from '@prisma/client';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -56,6 +55,7 @@ export const GQLUser = builder.prismaObject('User', {
 		emergencyContacts: t.field(UserEmergencyContactsFieldObject),
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
+		globalNotes: t.field(UserGlobalNotesFieldObject),
 		delegationMemberships: t.relation('delegationMemberships', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
@@ -263,6 +263,34 @@ builder.mutationFields((t) => {
 						wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
 					}
 				});
+      }
+    })
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneUserMutationObject(t);
+	return {
+		updateOneUsersGlobalNotes: t.prismaField({
+			...field,
+			args: {
+				where: field.args.where,
+				globalNotes: t.arg.string()
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
+				};
+
+				const res = await db.user.update({
+					where: args.where,
+					data: {
+						globalNotes: args.globalNotes
+					}
+				});
+
+				return res;
 			}
 		})
 	};
