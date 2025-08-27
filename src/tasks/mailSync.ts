@@ -48,7 +48,8 @@ interface User extends BaseUser {
 	})[];
 	conferenceSupervisor: (ConferenceSupervisor & {
 		conference: Conference;
-		delegations: Delegation[];
+		supervisedDelegationMembers: (DelegationMember & { delegation: Delegation })[];
+		supervisedSingleParticipants: SingleParticipant[];
 	})[];
 	teamMember: (TeamMember & {
 		conference: Conference;
@@ -180,7 +181,12 @@ async function getUsers(): Promise<User[]> {
 			conferenceSupervisor: {
 				include: {
 					conference: true,
-					delegations: true
+					supervisedDelegationMembers: {
+						include: {
+							delegation: true
+						}
+					},
+					supervisedSingleParticipants: true
 				}
 			},
 			teamMember: {
@@ -264,24 +270,44 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 		}
 	}
 
-	for (const cs of user.conferenceSupervisor) {
+	for (const supervisors of user.conferenceSupervisor) {
 		attribs.conferences.push({
-			id: cs.conferenceId,
-			title: cs.conference.title,
+			id: supervisors.conferenceId,
+			title: supervisors.conference.title,
 			role: 'SUPERVISOR'
 		});
-		if (cs.conference.state === 'PARTICIPANT_REGISTRATION') {
-			if (cs.delegations.some((d) => d.applied)) {
-				lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
-			}
-			if (cs.delegations.some((d) => !d.applied)) {
+
+		if (supervisors.conference.state === 'PARTICIPANT_REGISTRATION') {
+			if (
+				supervisors.supervisedDelegationMembers.map((d) => d.delegation).some((d) => d.applied) ||
+				supervisors.supervisedSingleParticipants.some((d) => d.applied)
+			) {
 				lists.push(
-					createListName(cs.conference.title, cs.conferenceId, 'REGISTRATION_NOT_COMPLETED')
+					createListName(supervisors.conference.title, supervisors.conferenceId, 'SUPERVISORS')
+				);
+			}
+			if (
+				supervisors.supervisedDelegationMembers.map((d) => d.delegation).some((d) => !d.applied) ||
+				supervisors.supervisedSingleParticipants.some((d) => !d.applied)
+			) {
+				lists.push(
+					createListName(
+						supervisors.conference.title,
+						supervisors.conferenceId,
+						'REGISTRATION_NOT_COMPLETED'
+					)
 				);
 			}
 		} else {
-			if (cs.delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId)) {
-				lists.push(createListName(cs.conference.title, cs.conferenceId, 'SUPERVISORS'));
+			if (
+				supervisors.supervisedDelegationMembers
+					.map((d) => d.delegation)
+					.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId) ||
+				supervisors.supervisedSingleParticipants.some((d) => d.assignedRoleId)
+			) {
+				lists.push(
+					createListName(supervisors.conference.title, supervisors.conferenceId, 'SUPERVISORS')
+				);
 			}
 		}
 	}

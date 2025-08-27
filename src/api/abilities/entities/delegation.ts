@@ -12,7 +12,17 @@ export const defineAbilitiesForDelegation = (oidc: OIDC, { can }: AbilityBuilder
 		});
 		// the supervisors of a delegation should be able to see it
 		can(['list', 'read'], 'Delegation', {
-			supervisors: { some: { user: { id: user.sub } } }
+			members: {
+				some: {
+					supervisors: {
+						some: {
+							user: {
+								id: user.sub
+							}
+						}
+					}
+				}
+			}
 		});
 
 		// the head delegate of a delegation should be able to update/delete it

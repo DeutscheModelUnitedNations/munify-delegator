@@ -4,7 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import DelegationPreview from '$lib/components/DelegationPreview.svelte';
-	import { entryCodeLength } from '$api/services/delegationEntryCodeGenerator';
+	import { entryCodeLength } from '$api/services/entryCodeGenerator';
 	import { graphql } from '$houdini';
 
 	const memberMutation = graphql(`

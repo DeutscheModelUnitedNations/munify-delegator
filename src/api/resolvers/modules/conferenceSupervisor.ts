@@ -18,6 +18,7 @@ import {
 	isUserAlreadyRegistered
 } from '$api/services/fetchUserParticipations';
 import { GraphQLError } from 'graphql';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
 
 builder.prismaObject('ConferenceSupervisor', {
 	fields: (t) => ({
@@ -27,9 +28,14 @@ builder.prismaObject('ConferenceSupervisor', {
 		),
 		conference: t.relation('conference', ConferenceSupervisorConferenceFieldObject),
 		user: t.relation('user', ConferenceSupervisorUserFieldObject),
-		delegations: t.relation('delegations', {
+		supervisedDelegationMembers: t.relation('supervisedDelegationMembers', {
 			query: (_args, ctx) => ({
-				where: ctx.permissions.allowDatabaseAccessTo('list').Delegation
+				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
+			})
+		}),
+		supervisedSingleParticipants: t.relation('supervisedSingleParticipants', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant
 			})
 		})
 	})
@@ -64,81 +70,6 @@ builder.queryFields((t) => {
 				};
 
 				return field.resolve(query, root, args, ctx, info);
-			}
-		})
-	};
-});
-
-builder.mutationFields((t) => {
-	const field = createOneConferenceSupervisorMutationObject(t);
-	return {
-		upsertOneConferenceSupervisor: t.prismaField({
-			...field,
-			args: {
-				entryCode: t.arg.string(),
-				conferenceId: t.arg.id()
-			},
-			resolve: async (query, root, args, ctx) => {
-				const user = ctx.permissions.getLoggedInUserOrThrow();
-				const delegation = await db.delegation.findUniqueOrThrow({
-					where: {
-						conferenceId_entryCode: {
-							entryCode: args.entryCode,
-							conferenceId: args.conferenceId
-						}
-					}
-				});
-
-				const participations = await fetchUserParticipations({
-					conferenceId: delegation.conferenceId,
-					userId: user.sub!
-				});
-
-				// if the user somehow is already participating in the conference as something else than a supervisor, throw
-				if (participations.foundDelegationMember) {
-					throw new GraphQLError(m.youAreAlreadyDelegationMember({}, { locale: getLocale() }));
-				}
-				if (participations.foundSingleParticipant) {
-					throw new GraphQLError(m.youAreAlreadySingleParticipant({}, { locale: getLocale() }));
-				}
-				if (participations.foundTeamMember) {
-					throw new GraphQLError(m.youAreAlreadyTeamMember({}, { locale: getLocale() }));
-				}
-
-				return await db.conferenceSupervisor.upsert({
-					...query,
-					create: {
-						plansOwnAttendenceAtConference: false,
-						conference: {
-							connect: {
-								id: delegation.conferenceId
-							}
-						},
-						user: {
-							connect: {
-								id: user.sub
-							}
-						},
-						delegations: {
-							connect: {
-								id: delegation.id
-							}
-						}
-					},
-					update: {
-						delegations: {
-							connect: {
-								id: delegation.id
-							}
-						}
-					},
-					where: {
-						conferenceId_userId: {
-							conferenceId: delegation.conferenceId,
-							userId: user.sub
-						}
-					}
-				});
 			}
 		})
 	};
@@ -188,7 +119,8 @@ builder.mutationFields((t) => {
 					data: {
 						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
 						conferenceId: args.conferenceId,
-						userId: args.userId
+						userId: args.userId,
+						connectionCode: makeEntryCode()
 					}
 				});
 			}
@@ -241,6 +173,129 @@ builder.mutationFields((t) => {
 	};
 });
 
+builder.queryFields((t) => {
+	return {
+		previewConferenceSupervisor: t.field({
+			type: builder
+				.objectRef<{
+					given_name: string;
+					family_name: string;
+				}>('PreviewConferenceSupervisor')
+				.implement({
+					fields: (t) => ({
+						given_name: t.exposeString('given_name'),
+						family_name: t.exposeString('family_name')
+					})
+				}),
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				connectionCode: t.arg.string({ required: true })
+			},
+			resolve: async (parent, args, ctx) => {
+				// CAREFUL: This is not authenticated
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const r = await fetchUserParticipations({
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					throwIfAnyIsFound: false
+				});
+
+				if (
+					!r.foundDelegationMember &&
+					!r.foundSingleParticipant &&
+					!r.foundTeamMember &&
+					!r.foundSupervisor
+				) {
+					throw new GraphQLError('You are not registered for this conference.');
+				}
+
+				return db.conferenceSupervisor
+					.findUniqueOrThrow({
+						where: {
+							conferenceId_connectionCode: {
+								conferenceId: args.conferenceId,
+								connectionCode: args.connectionCode
+							}
+						},
+						include: {
+							user: true
+						}
+					})
+					.then((r) => ({
+						given_name: r.user.given_name,
+						family_name: r.user.family_name
+					}));
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneConferenceSupervisorMutationObject(t);
+	return {
+		connectToConferenceSupervisor: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.id({ required: true }),
+				connectionCode: t.arg.string({ required: true })
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const supervisor = await db.conferenceSupervisor.findUniqueOrThrow({
+					where: {
+						conferenceId_connectionCode: {
+							conferenceId: args.conferenceId,
+							connectionCode: args.connectionCode
+						}
+					}
+				});
+
+				const r = await fetchUserParticipations({
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					throwIfAnyIsFound: false
+				});
+
+				if (r.foundSupervisor || r.foundTeamMember) {
+					throw new GraphQLError(
+						'You are already a supervisor or team member of this conference and cannot connect to a supervisor.'
+					);
+				}
+
+				if (!r.foundDelegationMember && !r.foundSingleParticipant) {
+					throw new GraphQLError(
+						'You are not a participant of this conference and cannot connect to a supervisor inside it.'
+					);
+				}
+
+				return await db.conferenceSupervisor.update({
+					where: { id: supervisor.id },
+					data: {
+						supervisedDelegationMembers: r.foundDelegationMember
+							? {
+									connect: {
+										id: r.foundDelegationMember.id
+									}
+								}
+							: undefined,
+
+						supervisedSingleParticipants: r.foundSingleParticipant
+							? {
+									connect: {
+										id: r.foundSingleParticipant.id
+									}
+								}
+							: undefined
+					},
+					...query
+				});
+			}
+		})
+	};
+});
+
 builder.mutationFields((t) => {
 	return {
 		// dead = not assigned to any role
@@ -252,22 +307,13 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				return db.$transaction(async (tx) => {
 					const where = {
+						supervisedDelegationMembers: {
+							none: {}
+						},
+						supervisedSingleParticipants: {
+							none: {}
+						},
 						conferenceId: args.conferenceId,
-						OR: [
-							{
-								delegations: {
-									none: {}
-								}
-							},
-							{
-								delegations: {
-									every: {
-										assignedNation: null,
-										assignedNonStateActor: null
-									}
-								}
-							}
-						],
 						AND: [ctx.permissions.allowDatabaseAccessTo('delete').ConferenceSupervisor]
 					};
 
