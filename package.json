@@ -124,5 +124,9 @@
 		"machine-translate": "inlang machine translate --project project.inlang"
 	},
 	"type": "module",
-	"version": "0.0.1"
+	"version": "0.0.1",
+	"resolutions": {
+		"devalue": "5.3.2",
+		"form-data": "4.0.4"
+	}
 }
