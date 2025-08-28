@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'main'
+    tags:
+      - '*'
   pull_request:
     branches:
       - 'main'
@@ -34,7 +36,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           trivyignores: .trivyignore
 
-      # TODO: enable if we also plan on building for ARM natively 
+      # TODO: enable if we also plan on building for ARM natively
       # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v3
 
@@ -102,7 +104,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          # TODO: enable if we also plan on building for ARM natively 
+          # TODO: enable if we also plan on building for ARM natively
           # platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
