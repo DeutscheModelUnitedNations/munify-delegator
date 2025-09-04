@@ -128,19 +128,22 @@ model User {
   preferred_username String
 
   // custom data fields
-  birthday       DateTime?
-  phone          String?
-  street         String?
-  apartment      String?
-  zip            String?
-  city           String?
-  country        String?
-  gender         Gender?
-  pronouns       String?
-  foodPreference FoodPreference?
+  birthday          DateTime?
+  phone             String?
+  street            String?
+  apartment         String?
+  zip               String?
+  city              String?
+  country           String?
+  gender            Gender?
+  pronouns          String?
+  foodPreference    FoodPreference?
+  emergencyContacts String?
 
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
+
+  globalNotes String?
 
   delegationMemberships DelegationMember[]
   singleParticipant     SingleParticipant[]

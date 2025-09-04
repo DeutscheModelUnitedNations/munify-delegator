@@ -119,5 +119,6 @@
 		conferenceId={data.conferenceId}
 		open={selectedDelegationRow !== undefined}
 		onClose={() => (selectedDelegationRow = undefined)}
+		userData={data.user}
 	/>
 {/if}

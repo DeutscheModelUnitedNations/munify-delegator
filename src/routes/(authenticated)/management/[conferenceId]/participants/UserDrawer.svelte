@@ -16,7 +16,7 @@
 	import formatNames from '$lib/services/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
-	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import GlobalNotes from './GlobalNotes.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -25,9 +25,9 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import { toast } from '@zerodevx/svelte-toast';
+	import toast from 'svelte-french-toast';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
-
+	import { configPublic } from '$config/public';
 	interface Props {
 		user: UserRowData;
 		conferenceId: string;
@@ -35,6 +35,8 @@
 		onClose?: () => void;
 	}
 	let { user, conferenceId, open = $bindable(false), onClose }: Props = $props();
+
+	let openGlobalNotes = $state(false);
 
 	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
 		return {
@@ -58,7 +60,9 @@
 				city
 				country
 				foodPreference
+				emergencyContacts
 				gender
+				globalNotes
 			}
 			findManyDelegationMembers(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
@@ -188,7 +192,7 @@
 			});
 
 			if (baseContent.errors) {
-				toast.push(m.httpGenericError());
+				toast.error(m.httpGenericError());
 			}
 
 			if (
@@ -198,7 +202,7 @@
 				!conference?.postalCity ||
 				!conference?.postalCountry
 			) {
-				toast.push('Missing postal information for the conference');
+				toast.error('Missing postal information for the conference');
 				return;
 			}
 
@@ -259,7 +263,7 @@
 		const jwtData = certificateData.data?.getCertificateJWT;
 
 		if (!jwtData?.fullName || !jwtData?.jwt) {
-			toast.push(m.certificateDownloadError());
+			toast.error(m.certificateDownloadError());
 			return;
 		}
 
@@ -409,9 +413,43 @@
 						<td>N/A</td>
 					{/if}
 				</tr>
+				<tr>
+					<td><i class="fa-duotone fa-light-emergency-on text-lg"></i></td>
+					{#if $userQuery.data?.findUniqueUser?.emergencyContacts}
+						<td class="whitespace-pre-wrap">{$userQuery.data?.findUniqueUser?.emergencyContacts}</td
+						>
+					{:else}
+						<td>N/A</td>
+					{/if}
+				</tr>
 			</tbody>
 		</table>
 	</div>
+
+	{#if configPublic.PUBLIC_GLOBAL_USER_NOTES_ACTIVE}
+		<div class="flex flex-col gap-2">
+			<h3 class="text-xl font-bold">{m.globalNotes()}</h3>
+			<p class="text-sm">{m.globalNotesDescription()}</p>
+
+			{#if $userQuery.data?.findUniqueUser?.globalNotes}
+				<div class="card bg-base-200">
+					<div class="card-body whitespace-pre-wrap">
+						{$userQuery.data.findUniqueUser?.globalNotes}
+					</div>
+				</div>
+			{/if}
+			<button class="btn" aria-label="open global Notes" onclick={() => (openGlobalNotes = true)}>
+				<i class="fa-duotone fa-pencil"></i>
+				{m.editGlobalNotes()}
+			</button>
+
+			<GlobalNotes
+				globalNotes={$userQuery.data?.findUniqueUser?.globalNotes ?? ''}
+				bind:open={openGlobalNotes}
+				id={$userQuery.data?.findUniqueUser?.id}
+			/>
+		</div>
+	{/if}
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>

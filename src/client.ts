@@ -1,6 +1,6 @@
 import { HoudiniClient } from '$houdini';
 import { error } from '@sveltejs/kit';
-import { toast } from '@zerodevx/svelte-toast';
+import toast from 'svelte-french-toast';
 
 export default new HoudiniClient({
 	url: '/api/graphql',
@@ -9,10 +9,10 @@ export default new HoudiniClient({
 		error: (errors, ctx) => {
 			const err = errors.at(0);
 			if (err) {
-				toast.push(err.message);
+				toast.error(err.message, { position: 'bottom-right' });
 				error(500, errors.map((err) => err.message).join('. ') + ` (${ctx.artifact.name})`);
 			} else {
-				toast.push('Something went wrong');
+				toast.error('Something went wrong');
 				error(500, 'Something went wrong');
 			}
 		}
