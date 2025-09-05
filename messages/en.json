@@ -696,5 +696,6 @@
 	"unsubscribedAll": "You have been unsubscribed from all newsletters.",
 	"unsubscribeRegret": "What a pity! Maybe you want to subscribe again?",
 	"unsubscribeNote": "Please note: The unsubscription does not apply to mailing lists for conferences you are registered for. Please contact the participant support for unsubscription.",
-	"unsubscribeNewsletters": "Unsubscribe Newsletters"
+	"unsubscribeNewsletters": "Unsubscribe Newsletters",
+	"noSingleParticipantsFound": "No single participants found."
 }

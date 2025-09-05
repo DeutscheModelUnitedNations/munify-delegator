@@ -29,7 +29,7 @@
 
 <div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<p>{m.selectConference()}</p>
+		<h1 class="text-xl">{m.selectConference()}</h1>
 	</hero>
 
 	<main>

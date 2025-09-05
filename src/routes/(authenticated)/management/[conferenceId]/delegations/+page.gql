@@ -13,9 +13,6 @@ query ConferenceDelegationsQuery($conferenceId: String!) {
 		members {
 			id
 		}
-		supervisors {
-			id
-		}
 		appliedForRoles {
 			id
 		}

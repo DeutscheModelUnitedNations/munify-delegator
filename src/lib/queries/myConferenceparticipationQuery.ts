@@ -122,15 +122,6 @@ export const myConferenceparticipationQuery = graphql(`
 						alpha2Code
 					}
 				}
-				supervisors {
-					id
-					user {
-						given_name
-						family_name
-						pronouns
-						email
-					}
-				}
 			}
 		}
 		findUniqueConferenceSupervisor(
@@ -138,73 +129,6 @@ export const myConferenceparticipationQuery = graphql(`
 		) {
 			id
 			plansOwnAttendenceAtConference
-			delegations {
-				id
-				applied
-				entryCode
-				school
-				motivation
-				experience
-				assignedNation {
-					alpha3Code
-					alpha2Code
-				}
-				assignedNonStateActor {
-					id
-					abbreviation
-					name
-					description
-					fontAwesomeIcon
-					seatAmount
-				}
-				appliedForRoles {
-					id
-					rank
-					nonStateActor {
-						id
-						name
-					}
-					nation {
-						alpha3Code
-						alpha2Code
-					}
-				}
-				supervisors {
-					id
-					user {
-						id
-						given_name
-						family_name
-						email
-					}
-				}
-				members {
-					id
-					isHeadDelegate
-					assignedCommittee {
-						id
-						abbreviation
-						name
-					}
-					user {
-						id
-						given_name
-						family_name
-						pronouns
-						birthday
-						conferenceParticipantStatus {
-							id
-							conference {
-								id
-							}
-							paymentStatus
-							termsAndConditions
-							guardianConsent
-							mediaConsent
-						}
-					}
-				}
-			}
 		}
 		findUniqueSingleParticipant(
 			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }

@@ -1,5 +1,8 @@
-query ConferenceOpenForRegistrationQuery($userId: String!) {
-	findManyConferences(orderBy: [{ startConference: asc }]) {
+query ConferenceOpenForRegistrationQuery($userId: String!, $currentDate: DateTime!) {
+	findManyConferences(
+		orderBy: [{ startConference: asc }]
+		where: { startConference: { gt: $currentDate } }
+	) {
 		id
 		location
 		longTitle

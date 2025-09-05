@@ -38,8 +38,25 @@
 		},
 		{
 			key: 'delegations',
-			title: m.adminDelegations(),
-			value: (row) => row.delegations.length,
+			title: m.delegationMembers(),
+			value: (row) => row.supervisedDelegationMembers?.length,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'singleParticipants',
+			title: m.adminSingleParticipants(),
+			value: (row) => row.supervisedSingleParticipants.length,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'totalSupervisedParticipants',
+			title: m.participants(),
+			value: (row) =>
+				row.supervisedSingleParticipants.length + row.supervisedDelegationMembers.length,
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'

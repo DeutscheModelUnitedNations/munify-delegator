@@ -6,7 +6,12 @@ query ConferenceSupervisorsQuery($conferenceId: String!) {
 			family_name
 			given_name
 		}
-		delegations {
+		supervisedDelegationMembers {
+			delegation {
+				id
+			}
+		}
+		supervisedSingleParticipants {
 			id
 		}
 	}

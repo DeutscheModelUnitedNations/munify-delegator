@@ -547,10 +547,16 @@ Supervisors are passive participants in conferences. Often they are teachers ove
 """
 type ConferenceSupervisor {
   conference: Conference!
-  delegations: [Delegation!]!
   id: ID!
   plansOwnAttendenceAtConference: Boolean!
+  supervisedDelegationMembers: [DelegationMember!]!
+  supervisedSingleParticipants: [SingleParticipant!]!
   user: User!
+}
+
+input ConferenceSupervisorConferenceIdConnectionCodeCompoundUniqueInput {
+  conferenceId: String!
+  connectionCode: String!
 }
 
 input ConferenceSupervisorConferenceIdUserIdCompoundUniqueInput {
@@ -560,11 +566,12 @@ input ConferenceSupervisorConferenceIdUserIdCompoundUniqueInput {
 
 input ConferenceSupervisorCreateInput {
   conferenceId: String!
+  connectionCode: String!
   createdAt: DateTime
-  delegations: DelegationCreateNestedManyWithoutSupervisorsInput
   id: String
   plansOwnAttendenceAtConference: Boolean!
-  postAssignmentDelegeationMembers: DelegationMemberCreateNestedManyWithoutPostAssignmentConferenceSupervisorsInput
+  supervisedDelegationMembers: DelegationMemberCreateNestedManyWithoutSupervisorsInput
+  supervisedSingleParticipants: SingleParticipantCreateNestedManyWithoutSupervisorsInput
   updatedAt: DateTime
   userId: String!
 }
@@ -573,11 +580,11 @@ input ConferenceSupervisorCreateNestedManyWithoutConferenceInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
 }
 
-input ConferenceSupervisorCreateNestedManyWithoutDelegationsInput {
+input ConferenceSupervisorCreateNestedManyWithoutSupervisedDelegationMembersInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
 }
 
-input ConferenceSupervisorCreateNestedManyWithoutPostAssignmentDelegeationMembersInput {
+input ConferenceSupervisorCreateNestedManyWithoutSupervisedSingleParticipantsInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
 }
 
@@ -598,11 +605,12 @@ input ConferenceSupervisorOrderByRelationAggregateInput {
 input ConferenceSupervisorOrderByWithRelationInput {
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
+  connectionCode: SortOrder
   createdAt: SortOrder
-  delegations: DelegationOrderByRelationAggregateInput
   id: SortOrder
   plansOwnAttendenceAtConference: SortOrder
-  postAssignmentDelegeationMembers: DelegationMemberOrderByRelationAggregateInput
+  supervisedDelegationMembers: DelegationMemberOrderByRelationAggregateInput
+  supervisedSingleParticipants: SingleParticipantOrderByRelationAggregateInput
   updatedAt: SortOrder
   user: UserOrderByWithRelationInput
   userId: SortOrder
@@ -610,6 +618,7 @@ input ConferenceSupervisorOrderByWithRelationInput {
 
 enum ConferenceSupervisorScalarFieldEnum {
   conferenceId
+  connectionCode
   createdAt
   id
   plansOwnAttendenceAtConference
@@ -623,16 +632,18 @@ input ConferenceSupervisorUpdateDataInput {
 
 input ConferenceSupervisorUpdateInput {
   conferenceId: StringFieldUpdateOperationsInput
+  connectionCode: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
-  delegations: DelegationUpdateManyWithoutSupervisorsNestedInput
   id: StringFieldUpdateOperationsInput
   plansOwnAttendenceAtConference: BoolFieldUpdateOperationsInput
-  postAssignmentDelegeationMembers: DelegationMemberUpdateManyWithoutPostAssignmentConferenceSupervisorsNestedInput
+  supervisedDelegationMembers: DelegationMemberUpdateManyWithoutSupervisorsNestedInput
+  supervisedSingleParticipants: SingleParticipantUpdateManyWithoutSupervisorsNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
 
 input ConferenceSupervisorUpdateManyMutationInput {
+  connectionCode: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   plansOwnAttendenceAtConference: BoolFieldUpdateOperationsInput
@@ -645,13 +656,13 @@ input ConferenceSupervisorUpdateManyWithoutConferenceNestedInput {
   set: [ConferenceSupervisorWhereUniqueInput!]
 }
 
-input ConferenceSupervisorUpdateManyWithoutDelegationsNestedInput {
+input ConferenceSupervisorUpdateManyWithoutSupervisedDelegationMembersNestedInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
   disconnect: [ConferenceSupervisorWhereUniqueInput!]
   set: [ConferenceSupervisorWhereUniqueInput!]
 }
 
-input ConferenceSupervisorUpdateManyWithoutPostAssignmentDelegeationMembersNestedInput {
+input ConferenceSupervisorUpdateManyWithoutSupervisedSingleParticipantsNestedInput {
   connect: [ConferenceSupervisorWhereUniqueInput!]
   disconnect: [ConferenceSupervisorWhereUniqueInput!]
   set: [ConferenceSupervisorWhereUniqueInput!]
@@ -669,11 +680,12 @@ input ConferenceSupervisorWhereInput {
   OR: [ConferenceSupervisorWhereInput!]
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  connectionCode: StringFilter
   createdAt: DateTimeFilter
-  delegations: DelegationListRelationFilter
   id: StringFilter
   plansOwnAttendenceAtConference: BoolFilter
-  postAssignmentDelegeationMembers: DelegationMemberListRelationFilter
+  supervisedDelegationMembers: DelegationMemberListRelationFilter
+  supervisedSingleParticipants: SingleParticipantListRelationFilter
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
@@ -685,12 +697,14 @@ input ConferenceSupervisorWhereUniqueInput {
   OR: [ConferenceSupervisorWhereInput!]
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  conferenceId_connectionCode: ConferenceSupervisorConferenceIdConnectionCodeCompoundUniqueInput
   conferenceId_userId: ConferenceSupervisorConferenceIdUserIdCompoundUniqueInput
+  connectionCode: StringFilter
   createdAt: DateTimeFilter
-  delegations: DelegationListRelationFilter
   id: String
   plansOwnAttendenceAtConference: BoolFilter
-  postAssignmentDelegeationMembers: DelegationMemberListRelationFilter
+  supervisedDelegationMembers: DelegationMemberListRelationFilter
+  supervisedSingleParticipants: SingleParticipantListRelationFilter
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
@@ -1134,7 +1148,6 @@ type Delegation {
   members: [DelegationMember!]!
   motivation: String
   school: String
-  supervisors: [ConferenceSupervisor!]!
 }
 
 input DelegationConferenceIdAssignedNationAlpha3CodeCompoundUniqueInput {
@@ -1165,7 +1178,6 @@ input DelegationCreateInput {
   members: DelegationMemberCreateNestedManyWithoutDelegationInput
   motivation: String
   school: String
-  supervisors: ConferenceSupervisorCreateNestedManyWithoutDelegationsInput
   updatedAt: DateTime
 }
 
@@ -1178,10 +1190,6 @@ input DelegationCreateNestedManyWithoutAssignedNonStateActorInput {
 }
 
 input DelegationCreateNestedManyWithoutConferenceInput {
-  connect: [DelegationWhereUniqueInput!]
-}
-
-input DelegationCreateNestedManyWithoutSupervisorsInput {
   connect: [DelegationWhereUniqueInput!]
 }
 
@@ -1213,7 +1221,7 @@ input DelegationMemberCreateInput {
   delegationId: String!
   id: String
   isHeadDelegate: Boolean!
-  postAssignmentConferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutPostAssignmentDelegeationMembersInput
+  supervisors: ConferenceSupervisorCreateNestedManyWithoutSupervisedDelegationMembersInput
   updatedAt: DateTime
   userId: String!
 }
@@ -1230,7 +1238,7 @@ input DelegationMemberCreateNestedManyWithoutDelegationInput {
   connect: [DelegationMemberWhereUniqueInput!]
 }
 
-input DelegationMemberCreateNestedManyWithoutPostAssignmentConferenceSupervisorsInput {
+input DelegationMemberCreateNestedManyWithoutSupervisorsInput {
   connect: [DelegationMemberWhereUniqueInput!]
 }
 
@@ -1263,7 +1271,7 @@ input DelegationMemberOrderByWithRelationInput {
   delegationId: SortOrder
   id: SortOrder
   isHeadDelegate: SortOrder
-  postAssignmentConferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
+  supervisors: ConferenceSupervisorOrderByRelationAggregateInput
   updatedAt: SortOrder
   user: UserOrderByWithRelationInput
   userId: SortOrder
@@ -1287,7 +1295,7 @@ input DelegationMemberUpdateInput {
   delegationId: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   isHeadDelegate: BoolFieldUpdateOperationsInput
-  postAssignmentConferenceSupervisors: ConferenceSupervisorUpdateManyWithoutPostAssignmentDelegeationMembersNestedInput
+  supervisors: ConferenceSupervisorUpdateManyWithoutSupervisedDelegationMembersNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
@@ -1317,7 +1325,7 @@ input DelegationMemberUpdateManyWithoutDelegationNestedInput {
   set: [DelegationMemberWhereUniqueInput!]
 }
 
-input DelegationMemberUpdateManyWithoutPostAssignmentConferenceSupervisorsNestedInput {
+input DelegationMemberUpdateManyWithoutSupervisorsNestedInput {
   connect: [DelegationMemberWhereUniqueInput!]
   disconnect: [DelegationMemberWhereUniqueInput!]
   set: [DelegationMemberWhereUniqueInput!]
@@ -1342,7 +1350,7 @@ input DelegationMemberWhereInput {
   delegationId: StringFilter
   id: StringFilter
   isHeadDelegate: BoolFilter
-  postAssignmentConferenceSupervisors: ConferenceSupervisorListRelationFilter
+  supervisors: ConferenceSupervisorListRelationFilter
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
@@ -1363,7 +1371,7 @@ input DelegationMemberWhereUniqueInput {
   delegationId_userId: DelegationMemberDelegationIdUserIdCompoundUniqueInput
   id: String
   isHeadDelegate: BoolFilter
-  postAssignmentConferenceSupervisors: ConferenceSupervisorListRelationFilter
+  supervisors: ConferenceSupervisorListRelationFilter
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
@@ -1389,7 +1397,6 @@ input DelegationOrderByWithRelationInput {
   members: DelegationMemberOrderByRelationAggregateInput
   motivation: SortOrder
   school: SortOrder
-  supervisors: ConferenceSupervisorOrderByRelationAggregateInput
   updatedAt: SortOrder
 }
 
@@ -1438,7 +1445,6 @@ input DelegationUpdateInput {
   members: DelegationMemberUpdateManyWithoutDelegationNestedInput
   motivation: NullableStringFieldUpdateOperationsInput
   school: NullableStringFieldUpdateOperationsInput
-  supervisors: ConferenceSupervisorUpdateManyWithoutDelegationsNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -1471,12 +1477,6 @@ input DelegationUpdateManyWithoutConferenceNestedInput {
   set: [DelegationWhereUniqueInput!]
 }
 
-input DelegationUpdateManyWithoutSupervisorsNestedInput {
-  connect: [DelegationWhereUniqueInput!]
-  disconnect: [DelegationWhereUniqueInput!]
-  set: [DelegationWhereUniqueInput!]
-}
-
 input DelegationWhereInput {
   AND: [DelegationWhereInput!]
   NOT: [DelegationWhereInput!]
@@ -1496,7 +1496,6 @@ input DelegationWhereInput {
   members: DelegationMemberListRelationFilter
   motivation: StringNullableFilter
   school: StringNullableFilter
-  supervisors: ConferenceSupervisorListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -1522,7 +1521,6 @@ input DelegationWhereUniqueInput {
   members: DelegationMemberListRelationFilter
   motivation: StringNullableFilter
   school: StringNullableFilter
-  supervisors: ConferenceSupervisorListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -1788,6 +1786,7 @@ enum MediaConsentStatus {
 
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
+  connectToConferenceSupervisor(conferenceId: ID!, connectionCode: String!): ConferenceSupervisor
   createOneAppliedDelegationMember(assignedCommitteeId: ID, assignedNationAlpha3Code: String, assignedNonStateActorId: ID, conferenceId: ID!, userId: ID!): DelegationMember!
   createOneAppliedSingleParticipant(conferenceId: ID!, roleId: ID!, userId: ID!): SingleParticipant!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID!): ConferenceSupervisor!
@@ -1830,7 +1829,6 @@ type Mutation {
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
-  upsertOneConferenceSupervisor(conferenceId: ID!, entryCode: String!): ConferenceSupervisor!
   upsertSelf: UpsertSelfResult!
 }
 
@@ -2603,6 +2601,11 @@ type PlausibilityResult {
   tooYoungUsers: [User!]!
 }
 
+type PreviewConferenceSupervisor {
+  family_name: String!
+  given_name: String!
+}
+
 type Query {
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
@@ -2646,6 +2649,7 @@ type Query {
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
   offlineUserRefresh: OfflineUserRefresh!
+  previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
   previewUserByIdOrEmail(emailOrId: String!): UserPreview!
 }
@@ -2853,6 +2857,7 @@ input SingleParticipantCreateInput {
   id: String
   motivation: String
   school: String
+  supervisors: ConferenceSupervisorCreateNestedManyWithoutSupervisedSingleParticipantsInput
   updatedAt: DateTime
   userId: String!
 }
@@ -2866,6 +2871,10 @@ input SingleParticipantCreateNestedManyWithoutAssignedRoleInput {
 }
 
 input SingleParticipantCreateNestedManyWithoutConferenceInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+}
+
+input SingleParticipantCreateNestedManyWithoutSupervisorsInput {
   connect: [SingleParticipantWhereUniqueInput!]
 }
 
@@ -2896,6 +2905,7 @@ input SingleParticipantOrderByWithRelationInput {
   id: SortOrder
   motivation: SortOrder
   school: SortOrder
+  supervisors: ConferenceSupervisorOrderByRelationAggregateInput
   updatedAt: SortOrder
   user: UserOrderByWithRelationInput
   userId: SortOrder
@@ -2926,6 +2936,7 @@ input SingleParticipantUpdateInput {
   id: StringFieldUpdateOperationsInput
   motivation: NullableStringFieldUpdateOperationsInput
   school: NullableStringFieldUpdateOperationsInput
+  supervisors: ConferenceSupervisorUpdateManyWithoutSupervisedSingleParticipantsNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
   userId: StringFieldUpdateOperationsInput
 }
@@ -2959,6 +2970,12 @@ input SingleParticipantUpdateManyWithoutConferenceNestedInput {
   set: [SingleParticipantWhereUniqueInput!]
 }
 
+input SingleParticipantUpdateManyWithoutSupervisorsNestedInput {
+  connect: [SingleParticipantWhereUniqueInput!]
+  disconnect: [SingleParticipantWhereUniqueInput!]
+  set: [SingleParticipantWhereUniqueInput!]
+}
+
 input SingleParticipantUpdateManyWithoutUserNestedInput {
   connect: [SingleParticipantWhereUniqueInput!]
   disconnect: [SingleParticipantWhereUniqueInput!]
@@ -2981,6 +2998,7 @@ input SingleParticipantWhereInput {
   id: StringFilter
   motivation: StringNullableFilter
   school: StringNullableFilter
+  supervisors: ConferenceSupervisorListRelationFilter
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
@@ -3003,6 +3021,7 @@ input SingleParticipantWhereUniqueInput {
   id: String
   motivation: StringNullableFilter
   school: StringNullableFilter
+  supervisors: ConferenceSupervisorListRelationFilter
   updatedAt: DateTimeFilter
   user: UserWhereInput
   userId: StringFilter
@@ -3057,7 +3076,6 @@ type StatisticsResultRegisteredDelegations {
   applied: Int!
   notApplied: Int!
   total: Int!
-  withSupervisor: Int!
 }
 
 type StatisticsResultRegisteredParticipantDiet {

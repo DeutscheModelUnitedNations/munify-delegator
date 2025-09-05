@@ -56,14 +56,6 @@
 						alpha3Code
 					}
 				}
-				supervisors {
-					id
-					plansOwnAttendenceAtConference
-					user {
-						given_name
-						family_name
-					}
-				}
 				assignedNation {
 					alpha2Code
 					alpha3Code
