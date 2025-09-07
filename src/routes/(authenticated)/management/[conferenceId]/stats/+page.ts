@@ -23,6 +23,11 @@ const statsQuery = graphql(`
 					vegan
 					vegetarian
 				}
+				supervisors {
+					omnivore
+					vegetarian
+					vegan
+				}
 				teamMembers {
 					omnivore
 					vegan
@@ -40,6 +45,12 @@ const statsQuery = graphql(`
 					diverse
 					female
 					male
+					noStatement
+				}
+				supervisors {
+					male
+					female
+					diverse
 					noStatement
 				}
 				teamMembers {
@@ -78,6 +89,7 @@ const statsQuery = graphql(`
 					notApplied
 					total
 				}
+				supervisors
 				total
 			}
 			status {
