@@ -415,10 +415,7 @@
 		</div>
 	{/if}
 	{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-		<a
-			class="btn btn-ghost btn-wide mt-4"
-			href="/registration/{conference.id}/join-delegation-supervisor"
-		>
+		<a class="btn btn-ghost btn-wide mt-4" href="/registration/{conference.id}/supervisor">
 			<i class="fa-solid fa-plus"></i>
 			{m.addAnotherDelegation()}
 		</a>

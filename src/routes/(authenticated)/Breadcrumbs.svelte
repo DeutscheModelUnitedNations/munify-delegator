@@ -65,7 +65,7 @@
 			translation: m.role(),
 			icon: 'gavel'
 		},
-		'join-delegation-supervisor': {
+		supervisor: {
 			translation: m.supervisor(),
 			icon: 'eye'
 		},

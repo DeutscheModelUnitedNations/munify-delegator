@@ -708,5 +708,6 @@
 	"assignSupervisor": "Betreuung hinzufügen",
 	"genericToastLoading": "Lädt...",
 	"genericToastsuccess": "Erfolgreich",
-	"genericToastError": "Fehler"
+	"genericToastError": "Fehler",
+	"signupForSupervisorsDescription": "Als Betreuer*in behältst du den Überblick über alle deine Teilnehmenden und kannst ihren Status verfolgen."
 }

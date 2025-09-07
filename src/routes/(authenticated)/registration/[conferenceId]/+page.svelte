@@ -136,7 +136,7 @@
 				title={m.supervisor()}
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
-				btnLink={`${data.conferenceId}/join-delegation-supervisor`}
+				btnLink={`${data.conferenceId}/supervisor`}
 				disabled={supervisorBlocked()}
 			>
 				<CardInfoSectionWithIcons
@@ -196,7 +196,7 @@
 						click E "/registration/${data.conferenceId}/create-delegation"
 						click D "/registration/${data.conferenceId}/join-delegation"
 						click Individual "/registration/${data.conferenceId}/individual"
-						click G "/registration/${data.conferenceId}/join-delegation-supervisor"
+						click G "/registration/${data.conferenceId}/supervisor"
 				`}
 				></MermaidWrapper>
 			</div>

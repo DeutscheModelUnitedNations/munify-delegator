@@ -83,18 +83,19 @@ builder.mutationFields((t) => {
 		createOneConferenceSupervisor: t.prismaField({
 			...field,
 			args: {
-				userId: t.arg.id(),
+				userId: t.arg.id({ required: false }),
 				conferenceId: t.arg.id(),
 				plansOwnAttendenceAtConference: t.arg.boolean()
 			},
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
+				const userId = args.userId ?? user.sub;
 
 				const dbUser = await db.teamMember.findUnique({
 					where: {
 						conferenceId_userId: {
 							conferenceId: args.conferenceId,
-							userId: user.sub
+							userId: userId
 						},
 						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
 					}
@@ -108,7 +109,7 @@ builder.mutationFields((t) => {
 
 				if (
 					await isUserAlreadyRegistered({
-						userId: args.userId,
+						userId,
 						conferenceId: args.conferenceId
 					})
 				) {
@@ -119,9 +120,9 @@ builder.mutationFields((t) => {
 
 				return await db.conferenceSupervisor.create({
 					data: {
-						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference,
+						plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? true,
 						conferenceId: args.conferenceId,
-						userId: args.userId,
+						userId,
 						connectionCode: makeEntryCode()
 					}
 				});
