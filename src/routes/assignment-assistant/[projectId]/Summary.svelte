@@ -134,7 +134,7 @@
 						<a
 							aria-label="Details"
 							class="btn btn-ghost btn-sm"
-							href={`/management/${getConference()?.id}/delegations?filter=${parent.id}`}
+							href={`/management/${getConference()?.id}/delegations?selected=${parent.id}`}
 							target="_blank"
 						>
 							<i class="fas fa-up-right-from-square"></i>

@@ -117,7 +117,7 @@
 		try {
 			await makeHeadDelegateAdminMutation.mutate({
 				where: { id: delegationId },
-				userId: selectedMember.user.id
+				userId: selectedMember.user?.id
 			});
 			cache.markStale();
 			await invalidateAll();
@@ -255,7 +255,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/participants?filter={member.user.id}"
+									href="/management/{conferenceId}/participants?selected={member.user?.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -302,7 +302,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/supervisors?filter={supervisor.id}"
+									href="/management/{conferenceId}/supervisors?selected={supervisor.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>

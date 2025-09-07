@@ -249,7 +249,7 @@
 
 {#snippet gotoUser()}
 	<a
-		href={`/management/${data.conferenceId}/participants?filter=${selectedUser?.email}`}
+		href={`/management/${data.conferenceId}/participants?selected=${selectedUser?.email}`}
 		target="_blank"
 	>
 		<button class="btn btn-primary">

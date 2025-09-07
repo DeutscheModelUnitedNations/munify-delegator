@@ -131,7 +131,7 @@
 								<td>
 									<a
 										class="btn btn-sm"
-										href={`/management/${conferenceId}/delegations?filter=${delegation?.id}`}
+										href={`/management/${conferenceId}/delegations?selected=${delegation?.id}`}
 										aria-label="Details"
 									>
 										<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -151,7 +151,7 @@
 									<td>
 										<a
 											class="btn btn-sm"
-											href={`/management/${conferenceId}/participants?filter=${member.user?.id}`}
+											href={`/management/${conferenceId}/participants?selected=${member.user?.id}`}
 											aria-label="Details"
 										>
 											<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -159,6 +159,7 @@
 									</td>
 								</tr>
 							{/each}
+							<tr><td></td></tr>
 						{/each}
 					{:else}
 						<tr>
@@ -205,7 +206,7 @@
 								<td>
 									<a
 										class="btn btn-sm"
-										href={`/management/${conferenceId}/singleParticipants?filter=${singleParticipant?.id}`}
+										href={`/management/${conferenceId}/singleParticipants?selected=${singleParticipant?.id}`}
 										aria-label="Details"
 									>
 										<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -227,7 +228,7 @@
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<a
 			class="btn"
-			href={`/management/${conferenceId}/participants?filter=${$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user.id}`}
+			href={`/management/${conferenceId}/participants?selected=${$supervisorQuery?.data?.findUniqueConferenceSupervisor?.userId}`}
 		>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-arrow-up-right-from-square"></i>

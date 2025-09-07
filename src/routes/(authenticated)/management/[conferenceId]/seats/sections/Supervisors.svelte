@@ -67,7 +67,7 @@
 							<InitialsButton
 								given_name={supervisor.user.given_name}
 								family_name={supervisor.user.family_name}
-								href={`/management/${conferenceId}/participants?filter=${supervisor.user.id}`}
+								href={`/management/${conferenceId}/participants?selected=${supervisor.user.id}`}
 							/>
 						{/each}
 

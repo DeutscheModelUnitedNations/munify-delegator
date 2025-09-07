@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { UserRowData } from './types';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import {
 		cache,
@@ -29,18 +28,18 @@
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { configPublic } from '$config/public';
 	interface Props {
-		user: UserRowData;
+		userId: string;
 		conferenceId: string;
 		open?: boolean;
 		onClose?: () => void;
 	}
-	let { user, conferenceId, open = $bindable(false), onClose }: Props = $props();
+	let { userId, conferenceId, open = $bindable(false), onClose }: Props = $props();
 
 	let openGlobalNotes = $state(false);
 
 	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
 		return {
-			userId: user.id,
+			userId: userId,
 			conferenceId
 		};
 	};
@@ -51,6 +50,7 @@
 				id
 				given_name
 				family_name
+				birthday
 				pronouns
 				phone
 				email
@@ -132,11 +132,12 @@
 		}
 	`);
 
-	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
-	const surveys = $derived($userQuery?.data?.findManySurveyQuestions);
-	const surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
-	const ofAge = $derived(
-		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
+	let status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
+	let surveys = $derived($userQuery?.data?.findManySurveyQuestions);
+	let surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
+	let user = $derived($userQuery?.data?.findUniqueUser);
+	let ofAge = $derived(
+		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user?.birthday)
 	);
 
 	let loadingDownloadPostalDocuments = $state(false);
@@ -144,7 +145,7 @@
 
 	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
 		await changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			where: { id: status?.id, conferenceId: conferenceId, userId: userId },
 			data
 		});
 		cache.markStale();
@@ -153,7 +154,7 @@
 
 	const changeMediaConsentStatus = async (data: MediaConsentStatus$options) => {
 		await changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			where: { id: status?.id, conferenceId: conferenceId, userId: user?.id },
 			data: { mediaConsentStatus: data }
 		});
 		cache.markStale();
@@ -172,7 +173,7 @@
 		const c = confirm(m.deleteParticipantConfirm());
 		if (!c) return;
 		await deleteParticipantQuery.mutate({
-			userId: user.id,
+			userId: user?.id ?? '',
 			conferenceId
 		});
 		if (onClose) {
@@ -255,7 +256,7 @@
 		const certificateData = await certificateQuery.fetch({
 			variables: {
 				conferenceId,
-				userId: user.id
+				userId: user?.id ?? ''
 			}
 		});
 
@@ -304,7 +305,7 @@
 <Drawer
 	bind:open
 	{onClose}
-	id={user.id}
+	id={userId}
 	category={m.adminUserCard()}
 	{titleSnippet}
 	loading={$userQuery.fetching}
@@ -458,7 +459,7 @@
 				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/individuals?filter={$userQuery.data
+						href="/management/{conferenceId}/individuals?selected={$userQuery.data
 							?.findManySingleParticipants[0].id}"
 					>
 						{m.individualApplication()}
@@ -467,7 +468,7 @@
 				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/delegations?filter={$userQuery.data
+						href="/management/{conferenceId}/delegations?selected={$userQuery.data
 							?.findManyDelegationMembers[0].delegation.id}"
 					>
 						{m.delegation()}
@@ -476,7 +477,7 @@
 				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
+						href="/management/{conferenceId}/supervisors?selected={$userQuery.data
 							?.findManyConferenceSupervisors[0].id}"
 					>
 						{m.supervisor()}
@@ -564,7 +565,7 @@
 				{survey}
 				surveyAnswer={surveyAnswers?.find((a) => a.question.id === survey.id)}
 				{conferenceId}
-				userId={user.id}
+				{userId}
 			/>
 		{/each}
 	</div>

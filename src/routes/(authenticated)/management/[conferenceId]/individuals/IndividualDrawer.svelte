@@ -138,7 +138,7 @@
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<a
 			class="btn"
-			href={`/management/${conferenceId}/participants?filter=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id}`}
+			href={`/management/${conferenceId}/participants?selected=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.userId}`}
 		>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
