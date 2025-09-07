@@ -47,6 +47,15 @@
 						abbreviation
 						name
 					}
+					supervisors {
+						id
+						plansOwnAttendenceAtConference
+						user {
+							id
+							given_name
+							family_name
+						}
+					}
 				}
 				appliedForRoles {
 					nonStateActor {
@@ -88,6 +97,11 @@
 			const bothNames = (x: typeof a) => x.user.family_name + x.user.given_name;
 			return bothNames(a).localeCompare(bothNames(b));
 		})
+	);
+	let supervisors = $derived(
+		delegation?.members
+			.flatMap((m) => m.supervisors)
+			.filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
 	);
 
 	// Define member type to properly type selectedMember
@@ -271,7 +285,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
 
-		{#if !delegation?.supervisors || delegation?.supervisors.length === 0}
+		{#if !supervisors || supervisors.length === 0}
 			<div class="alert alert-info">
 				<i class="fa-solid fa-user-slash"></i>
 				{m.noSupervisors()}
@@ -286,7 +300,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each delegation?.supervisors ?? [] as supervisor, i (i)}
+					{#each supervisors as supervisor, i (i)}
 						<tr>
 							<td>
 								{#if supervisor.plansOwnAttendenceAtConference}

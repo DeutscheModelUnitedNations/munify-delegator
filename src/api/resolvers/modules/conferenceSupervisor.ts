@@ -8,7 +8,8 @@ import {
 	ConferenceSupervisorPlansOwnAttendenceAtConferenceFieldObject,
 	createOneConferenceSupervisorMutationObject,
 	ConferenceSupervisorConferenceFieldObject,
-	ConferenceSupervisorUserFieldObject
+	ConferenceSupervisorUserFieldObject,
+	ConferenceSupervisorConnectionCodeFieldObject
 } from '$db/generated/graphql/ConferenceSupervisor';
 import { db } from '$db/db';
 import { m } from '$lib/paraglide/messages';
@@ -26,6 +27,7 @@ builder.prismaObject('ConferenceSupervisor', {
 		plansOwnAttendenceAtConference: t.field(
 			ConferenceSupervisorPlansOwnAttendenceAtConferenceFieldObject
 		),
+		connectionCode: t.field(ConferenceSupervisorConnectionCodeFieldObject),
 		conference: t.relation('conference', ConferenceSupervisorConferenceFieldObject),
 		user: t.relation('user', ConferenceSupervisorUserFieldObject),
 		supervisedDelegationMembers: t.relation('supervisedDelegationMembers', {
@@ -238,10 +240,12 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				conferenceId: t.arg.id({ required: true }),
+				userId: t.arg.id(),
 				connectionCode: t.arg.string({ required: true })
 			},
 			resolve: async (query, root, args, ctx, info) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
+				const specifiedUserId = args.userId ?? user.sub;
 
 				const supervisor = await db.conferenceSupervisor.findUniqueOrThrow({
 					where: {
@@ -254,7 +258,7 @@ builder.mutationFields((t) => {
 
 				const r = await fetchUserParticipations({
 					conferenceId: args.conferenceId,
-					userId: user.sub,
+					userId: specifiedUserId,
 					throwIfAnyIsFound: false
 				});
 

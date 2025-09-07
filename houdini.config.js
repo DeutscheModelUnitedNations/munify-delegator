@@ -35,6 +35,15 @@ const config = {
 			marshal(val) {
 				return JSON.stringify(val);
 			}
+		},
+		File: {
+			type: 'File',
+			unmarshal(val) {
+				return val;
+			},
+			marshal(val) {
+				return val;
+			}
 		}
 	},
 	types: {

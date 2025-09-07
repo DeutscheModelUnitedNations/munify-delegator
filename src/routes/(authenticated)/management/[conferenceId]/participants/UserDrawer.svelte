@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { givenName, m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import {
 		cache,
@@ -27,6 +27,9 @@
 	import toast from 'svelte-french-toast';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { configPublic } from '$config/public';
+	import Modal from '$lib/components/Modal.svelte';
+	import { invalidateAll } from '$app/navigation';
+
 	interface Props {
 		userId: string;
 		conferenceId: string;
@@ -36,6 +39,8 @@
 	let { userId, conferenceId, open = $bindable(false), onClose }: Props = $props();
 
 	let openGlobalNotes = $state(false);
+
+	let assignSupervisorModalOpen = $state(false);
 
 	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
 		return {
@@ -132,6 +137,20 @@
 		}
 	`);
 
+	const supervisorListQuery = graphql(`
+		query ListSupervisors($conferenceId: String!) {
+			findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
+				id
+				connectionCode
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
+		}
+	`);
+
 	let status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
 	let surveys = $derived($userQuery?.data?.findManySurveyQuestions);
 	let surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
@@ -168,6 +187,43 @@
 			}
 		}
 	`);
+
+	const assignSupervisorMutation = graphql(`
+		mutation assignSupervisorAsManagementMutation(
+			$conferenceId: ID!
+			$userId: ID!
+			$connectionCode: String!
+		) {
+			connectToConferenceSupervisor(
+				conferenceId: $conferenceId
+				userId: $userId
+				connectionCode: $connectionCode
+			) {
+				id
+			}
+		}
+	`);
+
+	const assigneSupervisor = async (connectionCode: string) => {
+		await toast
+			.promise(
+				assignSupervisorMutation.mutate({
+					conferenceId,
+					userId,
+					connectionCode
+				}),
+				{
+					loading: m.genericToastLoading(),
+					success: m.genericToastsuccess(),
+					error: m.genericToastError()
+				}
+			)
+			.then(async () => {
+				assignSupervisorModalOpen = false;
+				cache.markStale();
+				await invalidateAll();
+			});
+	};
 
 	const deleteParticipant = async () => {
 		const c = confirm(m.deleteParticipantConfirm());
@@ -287,6 +343,12 @@
 			loadingDownloadCertificate = false;
 		}
 	};
+
+	$effect(() => {
+		if (assignSupervisorModalOpen) {
+			supervisorListQuery.fetch({ variables: { conferenceId } });
+		}
+	});
 </script>
 
 {#snippet titleSnippet()}
@@ -484,6 +546,12 @@
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
 				{/if}
+
+				<button class="btn" onclick={() => (assignSupervisorModalOpen = true)}>
+					<i class="fa-duotone fa-chalkboard-user"></i>
+					{m.assignSupervisor()}
+				</button>
+
 				<button
 					class="btn {loadingDownloadPostalDocuments && 'btn-disabled'}"
 					onclick={() => downloadPostalDocuments()}
@@ -582,3 +650,54 @@
 		</div>
 	</div>
 </Drawer>
+
+{#if assignSupervisorModalOpen}
+	<Modal bind:open={assignSupervisorModalOpen} title={m.assignSupervisor()}>
+		<div class="h-full max-h-[70vh] overflow-y-auto">
+			<table class="table w-full">
+				<thead>
+					<tr>
+						<th></th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#if $supervisorListQuery.fetching}
+						{#each Array(3) as _, i}
+							<tr>
+								<td colspan="2"><div class="skeleton h-8 w-32"></div></td>
+							</tr>
+						{/each}
+					{:else if $supervisorListQuery.data?.findManyConferenceSupervisors && $supervisorListQuery.data?.findManyConferenceSupervisors.length !== 0}
+						{#each $supervisorListQuery.data?.findManyConferenceSupervisors.sort( (a, b) => `${a.user.family_name}${a.user.given_name}`.localeCompare(`${b.user.family_name}${b.user.given_name}`) ) as supervisor (supervisor.id)}
+							<tr>
+								<td>
+									<button
+										class="btn btn-sm"
+										aria-label="Details"
+										onclick={() => assigneSupervisor(supervisor.connectionCode)}
+									>
+										<i class="fa-duotone fa-plus"></i>
+									</button>
+								</td>
+								<td>
+									<span class="capitalize">{supervisor.user.given_name}</span>
+									<span class="uppercase">{supervisor.user.family_name}</span>
+								</td>
+							</tr>
+						{/each}
+					{:else}
+						<tr>
+							<td colspan="2">
+								<div class="alert alert-info">
+									<i class="fa-solid fa-user-slash"></i>
+									{m.noSingleParticipantsFound()}
+								</div>
+							</td>
+						</tr>
+					{/if}
+				</tbody>
+			</table>
+		</div>
+	</Modal>
+{/if}

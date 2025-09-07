@@ -12,6 +12,21 @@ query ConferenceDelegationsQuery($conferenceId: String!) {
 		}
 		members {
 			id
+			user {
+				id
+				given_name
+				family_name
+			}
+			isHeadDelegate
+			supervisors {
+				id
+				plansOwnAttendenceAtConference
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
 		}
 		appliedForRoles {
 			id

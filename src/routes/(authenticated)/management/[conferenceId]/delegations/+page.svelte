@@ -8,6 +8,7 @@
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { queryParam } from 'sveltekit-search-params';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceDelegationsQuery);
@@ -22,6 +23,9 @@
 				: undefined
 		})) ?? []
 	);
+
+	let selectedDelegationRow = queryParam('selected');
+
 	const { getTableSize } = getTableSettings();
 
 	const columns: TableColumns<(typeof delegations)[number]> = [
@@ -71,34 +75,14 @@
 			class: 'text-center'
 		},
 		{
-			key: 'supervisors',
-			title: m.supervisors(),
-			value: (row) => row.supervisors.length,
-			sortable: true,
-			class: 'text-center'
-		},
-		{
 			key: 'appliedForRoles',
 			title: m.roleApplications(),
 			value: (row) => row.appliedForRoles.length,
 			sortable: true,
 			class: 'text-center'
-		},
-		{
-			key: 'motivation',
-			title: m.motivation(),
-			value: (row) => row.motivation ?? 'N/A',
-			class: 'max-w-[20ch] truncate'
-		},
-		{
-			key: 'experience',
-			title: m.experience(),
-			value: (row) => row.experience ?? 'N/A',
-			class: 'max-w-[20ch] truncate'
 		}
 	];
 
-	let selectedDelegationRow = $state<(typeof delegations)[number]>();
 	// TODO export data
 </script>
 
@@ -109,16 +93,16 @@
 	additionallyIndexedKeys={['assignedNation.name']}
 	queryParamKey="filter"
 	rowSelected={(row) => {
-		selectedDelegationRow = row;
+		$selectedDelegationRow = row.id;
 	}}
 />
 
-{#if selectedDelegationRow}
+{#if $selectedDelegationRow}
 	<DelegationDrawer
-		delegationId={selectedDelegationRow.id}
+		delegationId={$selectedDelegationRow}
 		conferenceId={data.conferenceId}
-		open={selectedDelegationRow !== undefined}
-		onClose={() => (selectedDelegationRow = undefined)}
+		open={$selectedDelegationRow !== null}
+		onClose={() => ($selectedDelegationRow = null)}
 		userData={data.user}
 	/>
 {/if}

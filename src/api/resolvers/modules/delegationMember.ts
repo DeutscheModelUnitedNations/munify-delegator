@@ -30,7 +30,15 @@ builder.prismaObject('DelegationMember', {
 		conference: t.relation('conference', DelegationMemberConferenceFieldObject),
 		delegation: t.relation('delegation', DelegationMemberDelegationFieldObject),
 		user: t.relation('user', DelegationMemberUserFieldObject),
-		assignedCommittee: t.relation('assignedCommittee', DelegationMemberAssignedCommitteeFieldObject)
+		assignedCommittee: t.relation(
+			'assignedCommittee',
+			DelegationMemberAssignedCommitteeFieldObject
+		),
+		supervisors: t.relation('supervisors', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceSupervisor
+			})
+		})
 	})
 });
 

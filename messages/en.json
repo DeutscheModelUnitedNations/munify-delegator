@@ -697,5 +697,9 @@
 	"unsubscribeRegret": "What a pity! Maybe you want to subscribe again?",
 	"unsubscribeNote": "Please note: The unsubscription does not apply to mailing lists for conferences you are registered for. Please contact the participant support for unsubscription.",
 	"unsubscribeNewsletters": "Unsubscribe Newsletters",
-	"noSingleParticipantsFound": "No single participants found."
+	"noSingleParticipantsFound": "No single participants found.",
+	"assignSupervisor": "Assign Supervisor",
+	"genericToastLoading": "Loading...",
+	"genericToastsuccess": "Success",
+	"genericToastError": "Error"
 }

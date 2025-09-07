@@ -704,5 +704,9 @@
 	"unsubscribeRegret": "Wie schade! Vielleicht doch wieder anmelden?",
 	"unsubscribeNote": "Bitte beachte: Die Abmeldung gilt nicht für Mailinglisten für Konferenzen, bei denen du angemeldet bist. Wende dich zur Abmeldung an die Teilnehmendenbetreuung.",
 	"unsubscribeNewsletters": "Newsletter abmelden",
-	"noSingleParticipantsFound": "Keine Einzelteilnehmende gefunden."
+	"noSingleParticipantsFound": "Keine Einzelteilnehmende gefunden.",
+	"assignSupervisor": "Betreuung hinzufügen",
+	"genericToastLoading": "Lädt...",
+	"genericToastsuccess": "Erfolgreich",
+	"genericToastError": "Fehler"
 }

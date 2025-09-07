@@ -44,9 +44,22 @@
 					name
 					fontAwesomeIcon
 				}
+				supervisors {
+					id
+					plansOwnAttendenceAtConference
+					user {
+						id
+						given_name
+						family_name
+					}
+				}
 			}
 		}
 	`);
+
+	let supervisors = $derived(
+		$singleParticipantQuery.data?.findUniqueSingleParticipant?.supervisors ?? []
+	);
 </script>
 
 <Drawer
@@ -135,10 +148,57 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
+
+		{#if supervisors.length === 0}
+			<div class="alert alert-info">
+				<i class="fa-solid fa-user-slash"></i>
+				{m.noSupervisors()}
+			</div>
+		{:else}
+			<table class="table">
+				<thead>
+					<tr>
+						<th></th>
+						<th class="w-full"></th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each supervisors as supervisor, i (i)}
+						<tr>
+							<td>
+								{#if supervisor.plansOwnAttendenceAtConference}
+									<i class="fa-duotone fa-location-check text-lg"></i>
+								{:else}
+									<i class="fa-duotone fa-cloud text-lg"></i>
+								{/if}
+							</td>
+							<td>
+								<span class="capitalize">{supervisor.user.given_name}</span>
+								<span class="uppercase">{supervisor.user.family_name}</span>
+							</td>
+							<td>
+								<a
+									class="btn btn-sm"
+									href="/management/{conferenceId}/supervisors?selected={supervisor.id}"
+									aria-label="Details"
+								>
+									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+								</a>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
+	</div>
+
+	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<a
 			class="btn"
-			href={`/management/${conferenceId}/participants?selected=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.userId}`}
+			href={`/management/${conferenceId}/participants?selected=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id}`}
 		>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
