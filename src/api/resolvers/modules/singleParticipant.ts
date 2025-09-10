@@ -270,6 +270,12 @@ builder.mutationFields((t) => {
 					}
 				}
 
+				individualApplicationFormSchema.parse({
+					school: args.school,
+					experience: args.experience,
+					motivation: args.motivation
+				});
+
 				return await db.singleParticipant.update({
 					...query,
 					where: args.where,
