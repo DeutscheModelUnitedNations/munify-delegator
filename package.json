@@ -1,10 +1,5 @@
 {
-	"dependencies": {
-		"@types/node-forge": "^1.3.11",
-		"node-forge": "^1.3.1",
-		"svelte-inspect-value": "^0.8.0-next.8",
-		"with-csv": "^2.0.0"
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"@bwip-js/browser": "^4.6.0",
 		"@casl/ability": "^6.7.3",
@@ -34,6 +29,7 @@
 		"@prisma/instrumentation": "^6.6.0",
 		"@slack/webhook": "^7.0.5",
 		"@svelte-plugins/datepicker": "^1.0.11",
+		"@svelte-put/qr": "^2.1.0",
 		"@sveltejs/adapter-node": "^5.2.12",
 		"@sveltejs/kit": "^2.20",
 		"@sveltejs/vite-plugin-svelte": "^5.0.3",
@@ -43,6 +39,7 @@
 		"@types/iban": "^0.0.35",
 		"@types/lodash": "^4.17.16",
 		"@types/marked": "^6.0.0",
+		"@types/node-forge": "^1.3.11",
 		"@types/node-schedule": "^2.1.7",
 		"@weblogin/trendchart-elements": "^2.0.1",
 		"@zerodevx/svelte-toast": "^0.9.6",
@@ -76,6 +73,7 @@
 		"mermaid": "^11.6.0",
 		"munkres-algorithm": "^1.0.2",
 		"nanoid": "^5.1.5",
+		"node-forge": "^1.3.1",
 		"node-schedule": "^2.1.1",
 		"numeral": "^2.0.6",
 		"openapi-fetch": "^0.13.5",
@@ -93,7 +91,7 @@
 		"svelte": "^5.28.2",
 		"svelte-check": "^4.1.6",
 		"svelte-french-toast": "^1.2.0",
-		"svelte-qrcode": "^1.0.1",
+		"svelte-inspect-value": "^0.8.0-next.8",
 		"svelte-table": "^0.6.4",
 		"sveltekit-breadcrumbs": "^0.0.3",
 		"sveltekit-search-params": "^3.0.0",
@@ -106,11 +104,16 @@
 		"validator": "^13.15.0",
 		"vanilla-cookieconsent": "^3.1.0",
 		"vite": "^6.3.3",
+		"with-csv": "^2.0.0",
 		"world-countries": "^5.1.0",
 		"zod": "^3.24.3"
 	},
 	"name": "munify-delegator",
 	"private": true,
+	"resolutions": {
+		"devalue": "5.3.2",
+		"form-data": "4.0.4"
+	},
 	"scripts": {
 		"add-translation": "bun run scripts/add_new_translation.ts",
 		"build": "vite build && bun ./scripts/tasksBuild.ts",
@@ -122,15 +125,11 @@
 		"format": "prettier --write .",
 		"install-git-hooks": "bunx lefthook install",
 		"lint": "prettier --check . && eslint .",
+		"machine-translate": "inlang machine translate --project project.inlang",
 		"preview": "vite preview",
 		"studio": "prisma studio",
-		"machine-translate": "inlang machine translate --project project.inlang",
 		"typecheck": "tsc --noEmit"
 	},
 	"type": "module",
-	"version": "0.0.1",
-	"resolutions": {
-		"devalue": "5.3.2",
-		"form-data": "4.0.4"
-	}
+	"version": "0.0.1"
 }

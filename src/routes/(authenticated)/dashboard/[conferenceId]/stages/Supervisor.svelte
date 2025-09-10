@@ -30,7 +30,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
 	import { page } from '$app/state';
-	import QRCode from 'svelte-qrcode';
+	import { qr } from '@svelte-put/qr/svg';
 
 	// TODO these components need some refactoring
 	let {
@@ -496,7 +496,6 @@
 			</button>
 		</div>
 	</div>
-	<div class="mt-4 flex max-w-sm items-center justify-center rounded-md bg-white p-4 shadow-sm">
-		<QRCode value={connectionLink as string} size={200} />
-	</div>
+
+	<svg use:qr={{ data: connectionLink as string, shape: 'circle' }} class="mt-4 max-w-sm" />
 </DashboardContentCard>
