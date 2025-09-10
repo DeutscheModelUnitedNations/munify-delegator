@@ -152,6 +152,10 @@
 		import: {
 			icon: 'file-import',
 			translation: m.import()
+		},
+		connectSupervisor: {
+			icon: 'eye',
+			translation: m.connectSupervisorTitle()
 		}
 	};
 

@@ -2,6 +2,7 @@
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import Footer from './Footer.svelte';
 	import { Toaster } from 'svelte-french-toast';
+	import Inspect from 'svelte-inspect-value';
 
 	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
 	// import CookieBanner from '$lib/components/CookieBanner.svelte';
@@ -35,14 +36,10 @@
 
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
-	import type { Snippet } from 'svelte';
-	import { browser } from '$app/environment';
+	import { browser, dev } from '$app/environment';
+	import type { LayoutProps } from './$types';
 
-	interface Props {
-		children: Snippet;
-	}
-
-	let { children }: Props = $props();
+	let { children }: LayoutProps = $props();
 
 	const changeFaDuotoneTheme = () => {
 		const r = document.querySelector(':root');
@@ -89,3 +86,7 @@
 	{@render children()}
 </div>
 <Footer />
+
+{#if dev}
+	<Inspect.Panel />
+{/if}

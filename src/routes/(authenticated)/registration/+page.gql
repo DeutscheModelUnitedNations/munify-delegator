@@ -25,4 +25,9 @@ query ConferenceOpenForRegistrationQuery($userId: String!, $currentDate: DateTim
 			id
 		}
 	}
+	findManyConferenceSupervisors(where: { userId: { equals: $userId } }) {
+		conference {
+			id
+		}
+	}
 }

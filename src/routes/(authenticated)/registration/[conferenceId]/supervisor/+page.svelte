@@ -33,7 +33,7 @@
 				}),
 				{
 					loading: m.genericToastLoading(),
-					success: m.genericToastsuccess(),
+					success: m.genericToastSuccess(),
 					error: m.genericToastError()
 				}
 			)

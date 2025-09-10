@@ -1792,7 +1792,7 @@ enum MediaConsentStatus {
 
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
-  connectToConferenceSupervisor(conferenceId: ID!, connectionCode: String!, userId: ID!): ConferenceSupervisor
+  connectToConferenceSupervisor(conferenceId: ID!, connectionCode: String!, userId: ID): ConferenceSupervisor
   createOneAppliedDelegationMember(assignedCommitteeId: ID, assignedNationAlpha3Code: String, assignedNonStateActorId: ID, conferenceId: ID!, userId: ID!): DelegationMember!
   createOneAppliedSingleParticipant(conferenceId: ID!, roleId: ID!, userId: ID!): SingleParticipant!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
@@ -1818,6 +1818,7 @@ type Mutation {
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
+  rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!

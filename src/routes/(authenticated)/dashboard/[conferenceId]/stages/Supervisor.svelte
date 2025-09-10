@@ -1,10 +1,17 @@
 <script lang="ts">
+	import codenamize from '$lib/services/codenamize';
 	import type { PageData } from '../$houdini';
-	import { m } from '$lib/paraglide/messages';
+	import {
+		alpha3Code,
+		headDelegate,
+		linkCopied,
+		m,
+		motivation,
+		roleApplications
+	} from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
-	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import Flag from '$lib/components/Flag.svelte';
@@ -12,7 +19,6 @@
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
-	import type { AdministrativeStatus } from '@prisma/client';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
 	import {
@@ -20,6 +26,11 @@
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
+	import toast from 'svelte-french-toast';
+	import { invalidateAll } from '$app/navigation';
+	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
+	import { page } from '$app/state';
+	import QRCode from 'svelte-qrcode';
 
 	// TODO these components need some refactoring
 	let {
@@ -36,23 +47,40 @@
 	let supervisor = $derived(conferenceData.findUniqueConferenceSupervisor!);
 	let delegations = $derived(
 		conference.state === 'PARTICIPANT_REGISTRATION'
-			? supervisor.delegations
-			: supervisor.delegations.filter((x) => x.assignedNation || x.assignedNonStateActor)
+			? supervisor.supervisedDelegationMembers.map((x) => x.delegation)
+			: supervisor.supervisedDelegationMembers
+					.map((x) => x.delegation)
+					.filter((x) => x.assignedNation || x.assignedNonStateActor)
+	);
+	let singleParticipants = $derived(
+		conference.state === 'PARTICIPANT_REGISTRATION'
+			? supervisor.supervisedSingleParticipants
+			: supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
 	);
 	let status = $derived(conferenceData.findUniqueConferenceParticipantStatus);
+
+	let connectionLink = $derived(
+		`${page.url.origin}/dashboard/${conference.id}/connectSupervisor?code=${supervisor.connectionCode}`
+	);
 
 	const stats = $derived([
 		{
 			icon: 'flag',
 			title: m.delegations(),
-			value: supervisor.delegations.length,
+			value: delegations.length,
 			desc: m.inTheConference()
 		},
 		{
 			icon: 'users',
 			title: m.members(),
-			value: supervisor.delegations.reduce((acc, cur) => acc + cur.members.length, 0),
+			value: delegations.reduce((acc, cur) => acc + cur.members.length, 0),
 			desc: m.inAllDelegations()
+		},
+		{
+			icon: 'users',
+			title: m.singleParticipants(),
+			value: singleParticipants.length,
+			desc: m.singleParticipants()
 		}
 	]);
 
@@ -79,25 +107,30 @@
 	`);
 
 	const handlePresenceChange = async (e: Event) => {
-		await updateQuery.mutate({
-			where: {
-				conferenceId_userId: {
-					conferenceId: conference.id,
-					userId: user.sub
+		await toast.promise(
+			updateQuery.mutate({
+				where: {
+					conferenceId_userId: {
+						conferenceId: conference.id,
+						userId: user.sub
+					}
+				},
+				data: {
+					plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
 				}
-			},
-			data: {
-				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
+			}),
+			{
+				loading: m.genericToastLoading(),
+				success: m.genericToastSuccess(),
+				error: m.genericToastError()
 			}
-		});
-		//TODO does not update the UI after fetching
+		);
+
+		cache.markStale();
+		await invalidateAll();
 	};
 
-	const allParticipants = $derived(
-		supervisor.delegations
-			.flatMap((x) => x.members.map((y) => y.user))
-			.sort((a, b) => a.family_name.localeCompare(b.family_name))
-	);
+	// const allParticipants = $derived([...supervisor.supervisedSingleParticipants, ...supervisor.supervisedDelegationMembers].sort((a, b) => a.user.family_name.localeCompare(b.user.family_name)));
 
 	const userQuery = graphql(`
 		query GetUserDetailsForPostalRegistration($id: String!, $conferenceId: String!) {
@@ -168,6 +201,15 @@
 			console.error('Error generating PDF:', error);
 		}
 	};
+
+	const rotateConnectionCodeMutation = graphql(`
+		mutation RotateSupervisorConnectionCode($id: ID!) {
+			rotateSupervisorConnectionCode(id: $id) {
+				id
+				connectionCode
+			}
+		}
+	`);
 </script>
 
 {#if conference.state === 'PARTICIPANT_REGISTRATION'}
@@ -215,13 +257,9 @@
 		unlockPayment={conference?.unlockPayments}
 		unlockPostals={conference?.unlockPostals}
 	/>
-{/if}
 
-{#if conference.state !== 'PARTICIPANT_REGISTRATION'}
 	<TasksWrapper>
-		{#if supervisor.delegations
-			.flatMap((x) => x.members.map((y) => y.assignedCommittee))
-			.some((x) => !x)}
+		{#if supervisor.supervisedDelegationMembers.some((x) => !x.assignedCommittee)}
 			<TaskAlertCard
 				severity="warning"
 				faIcon="fa-arrows-turn-to-dots"
@@ -251,9 +289,9 @@
 	</TasksWrapper>
 {/if}
 
-<section class="flex flex-col gap-2">
+<!-- <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.participantStatus()}</h2>
-	<DelegationStatusTableWrapper withPostalSatus withPaymentStatus>
+<DelegationStatusTableWrapper withPostalSatus withPaymentStatus>
 		{#each allParticipants ?? [] as user}
 			{@const participantStatus = user.conferenceParticipantStatus.find(
 				(x) => x.conference.id === conference.id
@@ -274,151 +312,129 @@
 			/>
 		{/each}
 	</DelegationStatusTableWrapper>
-</section>
+</section> -->
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
-	{#if supervisor && supervisor.delegations.length > 0}
-		{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-			<div class="flex flex-col gap-2 sm:flex-row sm:gap-8">
-				<div class="text-sm">
-					<i class="fa-solid fa-hourglass-half text-warning"></i>
-					<span> = {m.notApplied()}</span>
-				</div>
-				<div class="text-sm">
-					<i class="fa-solid fa-circle-check text-success"></i>
-					<span> = {m.applied()}</span>
-				</div>
-			</div>
-		{/if}
+	{#if delegations.length > 0}
 		{#each delegations as delegation, index}
-			<div
-				tabindex="-1"
-				class="collapse bg-base-100 p-4 shadow-md transition-colors duration-300 hover:bg-base-200 dark:bg-base-200 dark:hover:bg-base-300"
-			>
-				<input type="radio" name="supervisor-accordion-1" checked={index === 0} />
-				<div class="collapse-title flex flex-col text-nowrap text-xl font-medium sm:flex-row">
-					<div class="mb-6 flex items-center sm:mb-0">
-						<div>
-							{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-								{#if delegation.applied}
-									<i class="fa-solid fa-circle-check text-3xl text-success"></i>
-								{:else}
-									<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
-								{/if}
-							{:else}
-								<Flag
-									size="sm"
-									alpha2Code={delegation.assignedNation?.alpha2Code}
-									nsa={!!delegation.assignedNonStateActor}
-									icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
-								/>
-							{/if}
-						</div>
-						<div class="divider divider-horizontal"></div>
-						<div><i class="fa-duotone fa-fingerprint mr-4"></i>{delegation.entryCode}</div>
-					</div>
-					<div class="divider divider-horizontal hidden sm:flex"></div>
-					<div class="flex items-center">
-						<div><i class="fa-duotone fa-users mr-4"></i>{delegation.members.length}</div>
-						<div class="divider divider-horizontal"></div>
-						<div>
-							<i class="fa-duotone fa-medal mr-4"></i>{(delegation?.members.find(
-								(x) => x.isHeadDelegate
-							) &&
-								getName(delegation?.members.find((x) => x.isHeadDelegate)!.user, true)) ??
-								'N/A'}
-						</div>
-					</div>
-				</div>
-				<div class="collapse-content overflow-x-auto">
-					<div class="mt-10 grid grid-cols-[1fr] gap-x-4 text-sm sm:grid-cols-[auto_1fr]">
-						<div class="font-bold">{m.members()}</div>
-						<div class="mb-4 flex flex-wrap gap-1">
-							{#each delegation.members as member}
-								<span class="badge badge-primary">
-									{getName(member.user)}
-									{#if member.assignedCommittee}
-										<span class="tooltip ml-2" data-tip={member.assignedCommittee?.name}>
-											{member.assignedCommittee?.abbreviation}
-										</span>
+			<DashboardContentCard title={codenamize(delegation.id)}>
+				<table class="table">
+					<thead>
+						<tr>
+							<th></th>
+							<th class="w-full"></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+							<tr>
+								<td>{m.applied()}</td>
+								<td>
+									{#if delegation.applied}
+										<i class="fa-solid fa-circle-check text-3xl text-success"></i>
+									{:else}
+										<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
 									{/if}
-								</span>
-							{/each}
-						</div>
-						<div class="font-bold">{m.supervisors()}</div>
-						<div class="mb-4 flex flex-wrap gap-1">
-							{#each delegation.supervisors as supervisor}
-								<span class="badge badge-outline">{getName(supervisor.user)}</span>
-							{/each}
-						</div>
-						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-							<div class="font-bold">{m.delegationStatus()}</div>
-							<div class="mb-4">
-								{#if delegation.applied}
-									<span class="badge badge-success">{m.applied()}</span>
-								{:else}
-									<span class="badge badge-warning">{m.notApplied()}</span>
-								{/if}
-							</div>
-						{:else}
-							<div class="font-bold">{m.role()}</div>
-							<div class="badge badge-primary mb-4">
-								{delegation.assignedNation
-									? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
-									: delegation.assignedNonStateActor?.name}
-							</div>
-							{#if delegation.assignedNation}
-								<div class="font-bold">{m.committees()}</div>
-								<div class="mb-4 flex flex-col gap-1">
-									{#each conference.committees
-										.filter( (x) => x.nations.some((y) => y.alpha3Code === delegation.assignedNation!.alpha3Code) )
-										.map((x) => `${x.name} (${x.abbreviation})`) as committee}
-										<div class="badge badge-neutral">{committee}</div>
-									{/each}
-								</div>
-							{/if}
-						{/if}
-						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-							<div class="font-bold">{m.schoolOrInstitution()}</div>
-							<div class="mb-4">{delegation.school}</div>
-							<div class="font-bold">{m.experience()}</div>
-							<div class="mb-4">{delegation.experience}</div>
-							<div class="font-bold">{m.motivation()}</div>
-							<div class="mb-4">{delegation.motivation}</div>
-							<div class="font-bold">{m.delegationPreferences()}</div>
-							<div class="flex flex-wrap gap-1">
-								{#if delegation.appliedForRoles.length > 0}
-									{#each delegation.appliedForRoles.sort((x) => x.rank) as roleApplication}
-										<div class="flex gap-2">
-											<div class="badge bg-base-300">
-												{roleApplication.nation
-													? getFullTranslatedCountryNameFromISO3Code(
-															roleApplication.nation.alpha3Code
-														)
-													: roleApplication.nonStateActor?.name}
-											</div>
+								</td>
+							</tr>
+
+							<tr>
+								<td>{m.entryCode()}</td>
+								<td>{delegation.entryCode}</td>
+							</tr>
+
+							<tr>
+								<td>{m.roleApplications()}</td>
+								<td>
+									{#if delegation.appliedForRoles.length > 0}
+										<div class="flex flex-wrap gap-2">
+											{#each delegation.appliedForRoles.sort((x) => x.rank) as roleApplication}
+												<Flag
+													size="xs"
+													alpha2Code={roleApplication.nation?.alpha2Code}
+													nsa={!!roleApplication.nonStateActor}
+													icon={roleApplication.nonStateActor?.fontAwesomeIcon ??
+														'fa-hand-point-up'}
+												/>
+											{/each}
 										</div>
-									{/each}
-								{:else}{m.noRoleApplications()}
-								{/if}
-							</div>
+									{:else}
+										<i class="fa-duotone fa-dash"></i>
+									{/if}
+								</td>
+							</tr>
+						{:else}
+							<tr>
+								<td>{m.role()}</td>
+								<td>
+									<Flag
+										size="xs"
+										alpha2Code={delegation.assignedNation?.alpha2Code}
+										nsa={!!delegation.assignedNonStateActor}
+										icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+									/>
+									{#if delegation.assignedNation}
+										{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
+										({alpha3Code(delegation.assignedNation.alpha3Code)})
+									{:else if delegation.assignedNonStateActor}
+										{delegation.assignedNonStateActor.name}
+									{/if}
+								</td>
+							</tr>
 						{/if}
-					</div>
-				</div>
-			</div>
+
+						<tr>
+							<td>{m.members()}</td>
+							<td>{delegation.members.length}</td>
+						</tr>
+
+						<tr>
+							<td>{m.schoolOrInstitution()}</td>
+							<td>{delegation.school}</td>
+						</tr>
+						<tr>
+							<td>{m.experience()}</td>
+							<td>{delegation.experience}</td>
+						</tr>
+						<tr>
+							<td>{m.motivation()}</td>
+							<td>{delegation.motivation}</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<DelegationStatusTableWrapper withPostalSatus withPaymentStatus withCommittee withEmail>
+					{#each delegation.members ?? [] as member}
+						{@const participantStatus = member.user.conferenceParticipantStatus.find(
+							(x) => x.conference.id === conference?.id
+						)}
+						<DelegationStatusTableEntry
+							name={formatNames(member.user.given_name, member.user.family_name)}
+							pronouns={member.user.pronouns ?? ''}
+							headDelegate={member.isHeadDelegate}
+							email={member.user.email}
+							committee={member.assignedCommittee?.abbreviation ?? ''}
+							withPaymentStatus
+							withPostalStatus
+							downloadPostalDocuments={conference?.unlockPostals
+								? () => downloadPostalDocuments(member.user.id)
+								: undefined}
+							postalSatus={getSimplifiedPostalStatus(
+								participantStatus,
+								ofAgeAtConference(conference?.startConference, member.user.birthday)
+							)}
+							paymentStatus={participantStatus?.paymentStatus}
+						/>
+					{/each}
+				</DelegationStatusTableWrapper>
+			</DashboardContentCard>
 		{/each}
 	{:else}
 		<div class="alert alert-warning">
 			<i class="fa-solid fa-exclamation-triangle text-xl"></i>
 			{m.noDelegationsFound()}
 		</div>
-	{/if}
-	{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-		<a class="btn btn-ghost btn-wide mt-4" href="/registration/{conference.id}/supervisor">
-			<i class="fa-solid fa-plus"></i>
-			{m.addAnotherDelegation()}
-		</a>
 	{/if}
 </section>
 
@@ -429,3 +445,58 @@
 		{m.noSingleApplicationTrackingYet()}
 	</div>
 </section>
+
+<DashboardContentCard
+	title={m.connectWithStudents()}
+	description={m.connectWithStudentsDescription()}
+	class="bg-base-200"
+>
+	<div class="mt-4 flex items-center gap-2 rounded-lg bg-base-200 p-2 pl-4 dark:bg-base-300">
+		<p class="overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
+			{supervisor.connectionCode}
+		</p>
+		<button
+			class="btn btn-square btn-ghost btn-primary"
+			onclick={() => {
+				navigator.clipboard.writeText(supervisor.connectionCode);
+				toast.success(m.codeCopied());
+			}}
+			aria-label="Copy entry code"
+			><i class="fa-duotone fa-clipboard text-xl"></i>
+		</button>
+		<button
+			class="btn btn-square btn-ghost btn-primary tooltip"
+			data-tip={m.copyLink()}
+			onclick={() => {
+				navigator.clipboard.writeText(connectionLink as string);
+				toast.success(m.linkCopied());
+			}}
+			aria-label="Copy referral link"
+			><i class="fa-duotone fa-link text-xl"></i>
+		</button>
+		<div class="tooltip" data-tip={m.rotateCode()}>
+			<button
+				class="btn btn-square btn-ghost btn-primary"
+				onclick={async () => {
+					await toast.promise(
+						rotateConnectionCodeMutation.mutate({
+							id: supervisor.id
+						}),
+						{
+							loading: m.genericToastLoading(),
+							success: m.codeRotated(),
+							error: m.genericToastError()
+						}
+					);
+					cache.markStale();
+					await invalidateAll();
+				}}
+				aria-label="Rotate connection code"
+				><i class="fa-duotone fa-rotate text-xl"></i>
+			</button>
+		</div>
+	</div>
+	<div class="mt-4 flex max-w-sm items-center justify-center rounded-md bg-white p-4 shadow-sm">
+		<QRCode value={connectionLink as string} size={200} />
+	</div>
+</DashboardContentCard>

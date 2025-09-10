@@ -12,7 +12,7 @@
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
 	import { graphql } from '$houdini';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import { cache } from '$houdini';
 	import formatNames from '$lib/services/formatNames';
@@ -53,7 +53,7 @@
 	let userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
 
 	let referralLink = $derived(
-		`${$page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
+		`${page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
 	);
 
 	let todos = $derived([

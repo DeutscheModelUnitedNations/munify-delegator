@@ -9,6 +9,7 @@
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 	import Certificate from './stages/Certificate.svelte';
+	import { addToPanel } from 'svelte-inspect-value';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -17,6 +18,8 @@
 	let conferenceQueryData = $derived(data.conferenceQueryData);
 	let conference = $derived(conferenceQueryData?.findUniqueConference);
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
+
+	addToPanel('DashboardQuery', () => conferenceQueryData);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -71,7 +74,15 @@
 				<ApplicationRejected />
 			{/if}
 		{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
-			{#if (conference!.state !== 'PARTICIPANT_REGISTRATION' && conferenceQueryData.findUniqueConferenceSupervisor.delegations.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0) || conference!.state === 'PARTICIPANT_REGISTRATION'}
+			{@const everybodyGotRejected =
+				conference!.state !== 'PARTICIPANT_REGISTRATION' &&
+				(conferenceQueryData?.findUniqueConferenceSupervisor.supervisedDelegationMembers
+					.flatMap((x) => x.delegation)
+					.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0 ||
+					conferenceQueryData?.findUniqueConferenceSupervisor.supervisedSingleParticipants.filter(
+						(x) => x.assignedRole
+					).length > 0)}
+			{#if everybodyGotRejected || conference!.state === 'PARTICIPANT_REGISTRATION'}
 				{#if conference!.state === 'POST'}
 					<Certificate
 						conferenceId={conference!.id}

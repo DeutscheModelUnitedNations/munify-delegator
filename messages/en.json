@@ -232,7 +232,7 @@
 	"willBePresentAtConference": "I will be present at the conference",
 	"willNotBePresentAtConference": "I will not be present at the conference",
 	"presentAtConference": "Present at the conference",
-	"registeredAsSupervisor": "You are logged in as a supervisor and can monitor the status of your delegations here. If you want to add more delegations, simply follow the registration process again.",
+	"registeredAsSupervisor": "You are registered as a supervisor and can view the status of your students here. To add more students, they need to use your supervisor code or your magical link and add you as their supervisor.",
 	"addAnotherDelegation": "Add another delegation",
 	"addAnotherApplication": "Add another application",
 	"noConferenceOpenForRegistration": "No conference open for registration",
@@ -701,5 +701,15 @@
 	"assignSupervisor": "Assign Supervisor",
 	"genericToastLoading": "Loading...",
 	"genericToastsuccess": "Success",
-	"genericToastError": "Error"
+	"genericToastError": "Error",
+	"genericToastSuccess": "Success",
+	"connectWithStudents": "Mit Schüler*innen verbinden",
+	"connectWithStudentsDescription": "To connect your students with you and view them here, your students need to add you as their supervisor. This can be done either via a magical invitation link that you can send to your students or by giving them the invitation code, which they can then enter on their dashboard. For privacy reasons, you unfortunately cannot add your students independently.",
+	"connectSupervisorTitle": "Connect Supervisor",
+	"connectSupervisorDescription": "Enter your supervisor's invitation code to connect with them.",
+	"connectSupervisorWarning": "Check the data carefully before connecting. You can only disconnect through participant care. Your supervisor can view your data and status.",
+	"connectWith": "Connect with",
+	"connectSupervisorBtn": "Connect",
+	"copyLink": "Copy Link",
+	"entryCode": "Entry Code"
 }

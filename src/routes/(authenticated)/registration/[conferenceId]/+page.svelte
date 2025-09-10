@@ -17,7 +17,7 @@
 
 	let showAssistant = $state(false);
 
-	let delegationBlocked = $derived(() => {
+	let alreadyRegistered = $derived.by(() => {
 		if (!$conferenceQuery?.data?.findManySingleParticipants) return false;
 		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
 		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
@@ -32,24 +32,13 @@
 		}
 	});
 
-	let individualBlocked = $derived(() => {
+	let individualBlocked = $derived.by(() => {
 		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
 		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
 		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
 			return true;
 		}
 		if ($conferenceQuery.data.findManyConferenceSupervisors.length > 0) {
-			return true;
-		}
-	});
-
-	let supervisorBlocked = $derived(() => {
-		if (!$conferenceQuery?.data?.findManySingleParticipants) return false;
-		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
-		if ($conferenceQuery.data.findManySingleParticipants.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
 			return true;
 		}
 	});
@@ -86,7 +75,7 @@
 				img={UndrawNew}
 				btnText={m.createDelegation()}
 				btnLink={`${data.conferenceId}/create-delegation`}
-				disabled={delegationBlocked()}
+				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -103,7 +92,7 @@
 				img={UndrawTeam}
 				btnText={m.enterCode()}
 				btnLink={`${data.conferenceId}/join-delegation`}
-				disabled={delegationBlocked()}
+				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -120,7 +109,7 @@
 				img={UndrawLetter}
 				btnText={m.individualApplication()}
 				btnLink={`${data.conferenceId}/individual`}
-				disabled={individualBlocked()}
+				disabled={individualBlocked}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -137,7 +126,7 @@
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
 				btnLink={`${data.conferenceId}/supervisor`}
-				disabled={supervisorBlocked()}
+				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
 					items={[

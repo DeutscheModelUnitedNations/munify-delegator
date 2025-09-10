@@ -129,6 +129,118 @@ export const myConferenceparticipationQuery = graphql(`
 		) {
 			id
 			plansOwnAttendenceAtConference
+			connectionCode
+			supervisedDelegationMembers {
+				id
+				delegation {
+					id
+					applied
+					entryCode
+					school
+					experience
+					motivation
+					appliedForRoles {
+						id
+						rank
+						nation {
+							alpha2Code
+							alpha3Code
+							committees {
+								abbreviation
+								name
+								numOfSeatsPerDelegation
+							}
+						}
+						nonStateActor {
+							id
+							name
+							abbreviation
+							fontAwesomeIcon
+							seatAmount
+						}
+					}
+					assignedNation {
+						alpha2Code
+						alpha3Code
+						committees {
+							numOfSeatsPerDelegation
+						}
+					}
+					assignedNonStateActor {
+						id
+						abbreviation
+						name
+						fontAwesomeIcon
+					}
+					members {
+						id
+						assignedCommittee {
+							id
+							abbreviation
+							name
+						}
+						isHeadDelegate
+						user {
+							id
+							family_name
+							given_name
+							pronouns
+							email
+							birthday
+							conferenceParticipantStatus {
+								id
+								guardianConsent
+								mediaConsent
+								termsAndConditions
+								paymentStatus
+								didAttend
+								conference {
+									id
+								}
+							}
+						}
+					}
+				}
+				isHeadDelegate
+				assignedCommittee {
+					id
+					abbreviation
+					name
+				}
+			}
+			supervisedSingleParticipants {
+				id
+				user {
+					id
+					family_name
+					given_name
+					pronouns
+					email
+					birthday
+					conferenceParticipantStatus {
+						id
+						guardianConsent
+						mediaConsent
+						termsAndConditions
+						paymentStatus
+						didAttend
+						conference {
+							id
+						}
+					}
+				}
+				appliedForRoles {
+					id
+					name
+					fontAwesomeIcon
+				}
+				assignedRole {
+					id
+					name
+					fontAwesomeIcon
+				}
+				applied
+			}
 		}
 		findUniqueSingleParticipant(
 			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }

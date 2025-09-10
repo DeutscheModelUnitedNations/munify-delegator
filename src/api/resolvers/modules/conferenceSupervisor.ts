@@ -12,8 +12,6 @@ import {
 	ConferenceSupervisorConnectionCodeFieldObject
 } from '$db/generated/graphql/ConferenceSupervisor';
 import { db } from '$db/db';
-import { m } from '$lib/paraglide/messages';
-import { getLocale } from '$lib/paraglide/runtime';
 import {
 	fetchUserParticipations,
 	isUserAlreadyRegistered
@@ -241,7 +239,7 @@ builder.mutationFields((t) => {
 			...field,
 			args: {
 				conferenceId: t.arg.id({ required: true }),
-				userId: t.arg.id(),
+				userId: t.arg.id({ required: false }),
 				connectionCode: t.arg.string({ required: true })
 			},
 			resolve: async (query, root, args, ctx, info) => {
@@ -332,6 +330,38 @@ builder.mutationFields((t) => {
 					});
 
 					return res;
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	return {
+		rotateSupervisorConnectionCode: t.prismaField({
+			type: 'ConferenceSupervisor',
+			args: {
+				id: t.arg.id({ required: true })
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				const supervisor = await db.conferenceSupervisor.findUniqueOrThrow({
+					where: {
+						id: args.id
+					}
+				});
+
+				if (supervisor.userId !== user.sub || !user.hasRole('admin')) {
+					throw new GraphQLError('You are not allowed to rotate this connection code.');
+				}
+
+				return await db.conferenceSupervisor.update({
+					where: { id: supervisor.id },
+					data: {
+						connectionCode: makeEntryCode()
+					},
+					...query
 				});
 			}
 		})
