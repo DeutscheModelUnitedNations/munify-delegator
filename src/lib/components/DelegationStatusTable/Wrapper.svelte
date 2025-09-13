@@ -24,7 +24,7 @@
 	}: Props = $props();
 </script>
 
-<DashboardContentCard {title} {description} class="overflow-x-auto">
+<DashboardContentCard {title} {description} class="overflow-x-auto dark:bg-base-300">
 	<table class="table">
 		<thead>
 			<tr>

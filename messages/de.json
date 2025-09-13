@@ -718,5 +718,7 @@
 	"connectWith": "Verbinden mit",
 	"connectSupervisorBtn": "Verbinden",
 	"copyLink": "Link kopieren",
-	"entryCode": "Eintrittscode"
+	"entryCode": "Eintrittscode",
+	"hiddenMember": "Verstecktes Mitglied",
+	"delegationsDescription": "Hier findest du alle Delegationen, in denen Schüler*innen von dir angemeldet sind. Jede Delegation hat einen generierten Namen mit einem der UN-Generalsekretäre - gib diesen Namen an, wenn du mit der Teilnehmendenbetreuung sprichst. Delegationsmitglieder, die dich nicht als Betreuer*in hinzugefügt haben, sind als \"versteckte Mitglieder\" gekennzeichnet."
 }

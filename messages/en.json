@@ -711,5 +711,7 @@
 	"connectWith": "Connect with",
 	"connectSupervisorBtn": "Connect",
 	"copyLink": "Copy Link",
-	"entryCode": "Entry Code"
+	"entryCode": "Entry Code",
+	"hiddenMember": "Hidden Member",
+	"delegationsDescription": "Here you will find all the delegations in which your students are registered. Each delegation has a generated name based on one of the past UN Secretaries-Generals - please mention this name when you talk to participant care. Delegation members who have not added you as a supervisor are marked as \"hidden members\"."
 }

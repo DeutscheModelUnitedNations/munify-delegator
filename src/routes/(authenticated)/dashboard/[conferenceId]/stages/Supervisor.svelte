@@ -45,15 +45,16 @@
 
 	let conference = $derived(conferenceData.findUniqueConference!);
 	let supervisor = $derived(conferenceData.findUniqueConferenceSupervisor!);
+	let isStateParticipantRegistration = $derived(conference.state === 'PARTICIPANT_REGISTRATION');
 	let delegations = $derived(
-		conference.state === 'PARTICIPANT_REGISTRATION'
+		isStateParticipantRegistration
 			? supervisor.supervisedDelegationMembers.map((x) => x.delegation)
 			: supervisor.supervisedDelegationMembers
 					.map((x) => x.delegation)
 					.filter((x) => x.assignedNation || x.assignedNonStateActor)
 	);
 	let singleParticipants = $derived(
-		conference.state === 'PARTICIPANT_REGISTRATION'
+		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
 			: supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
 	);
@@ -212,7 +213,7 @@
 	`);
 </script>
 
-{#if conference.state === 'PARTICIPANT_REGISTRATION'}
+{#if isStateParticipantRegistration}
 	<section class="alert alert-info">
 		<i class="fa-solid fa-circle-info text-xl"></i>
 		{m.registeredAsSupervisor()}
@@ -236,7 +237,7 @@
 					class="toggle toggle-success"
 					checked={supervisor.plansOwnAttendenceAtConference}
 					onchange={handlePresenceChange}
-					disabled={conference.state !== 'PARTICIPANT_REGISTRATION'}
+					disabled={!isStateParticipantRegistration}
 				/>
 			</label>
 		</div>
@@ -248,7 +249,7 @@
 	</p>
 </section>
 
-{#if conference.state !== 'PARTICIPANT_REGISTRATION'}
+{#if !isStateParticipantRegistration}
 	<ConferenceStatusWidget
 		conferenceId={conference!.id}
 		userId={user.sub}
@@ -314,12 +315,26 @@
 	</DelegationStatusTableWrapper>
 </section> -->
 
-<section class="flex flex-col gap-2">
+<section class="flex flex-col gap-6">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
+	<p class="text-sm">{m.delegationsDescription()}</p>
 	{#if delegations.length > 0}
 		{#each delegations as delegation, index}
-			<DashboardContentCard title={codenamize(delegation.id)}>
-				<table class="table">
+			<DashboardContentCard title={codenamize(delegation.id)} class="bg-base-200">
+				{#if isStateParticipantRegistration}
+					<div
+						class="badge {delegation.applied
+							? 'badge-success'
+							: 'badge-warning'} badge-lg absolute right-4 top-0 z-10 -translate-y-1/2"
+					>
+						{#if delegation.applied}
+							<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
+						{:else}
+							<i class="fa-solid fa-hourglass-half mr-2"></i> {m.notApplied()}
+						{/if}
+					</div>
+				{/if}
+				<table class="table mb-10">
 					<thead>
 						<tr>
 							<th></th>
@@ -327,23 +342,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#if conference.state === 'PARTICIPANT_REGISTRATION'}
-							<tr>
-								<td>{m.applied()}</td>
-								<td>
-									{#if delegation.applied}
-										<i class="fa-solid fa-circle-check text-3xl text-success"></i>
-									{:else}
-										<i class="fa-solid fa-hourglass-half text-3xl text-warning"></i>
-									{/if}
-								</td>
-							</tr>
-
-							<tr>
-								<td>{m.entryCode()}</td>
-								<td>{delegation.entryCode}</td>
-							</tr>
-
+						{#if isStateParticipantRegistration}
 							<tr>
 								<td>{m.roleApplications()}</td>
 								<td>
@@ -363,6 +362,11 @@
 										<i class="fa-duotone fa-dash"></i>
 									{/if}
 								</td>
+							</tr>
+
+							<tr>
+								<td>{m.entryCode()}</td>
+								<td>{delegation.entryCode}</td>
 							</tr>
 						{:else}
 							<tr>
@@ -391,41 +395,69 @@
 
 						<tr>
 							<td>{m.schoolOrInstitution()}</td>
-							<td>{delegation.school}</td>
+							{#if delegation.school}
+								<td>{delegation.school}</td>
+							{:else}
+								<td><i class="fa-duotone fa-dash"></i></td>
+							{/if}
 						</tr>
 						<tr>
 							<td>{m.experience()}</td>
-							<td>{delegation.experience}</td>
+							{#if delegation.experience}
+								<td>{delegation.experience}</td>
+							{:else}
+								<td><i class="fa-duotone fa-dash"></i></td>
+							{/if}
 						</tr>
 						<tr>
 							<td>{m.motivation()}</td>
-							<td>{delegation.motivation}</td>
+							{#if delegation.motivation}
+								<td>{delegation.motivation}</td>
+							{:else}
+								<td><i class="fa-duotone fa-dash"></i></td>
+							{/if}
 						</tr>
 					</tbody>
 				</table>
 
-				<DelegationStatusTableWrapper withPostalSatus withPaymentStatus withCommittee withEmail>
+				<DelegationStatusTableWrapper
+					withPostalSatus={!isStateParticipantRegistration}
+					withPaymentStatus={!isStateParticipantRegistration}
+					withCommittee={!isStateParticipantRegistration}
+					withEmail
+					title={m.members()}
+				>
 					{#each delegation.members ?? [] as member}
-						{@const participantStatus = member.user.conferenceParticipantStatus.find(
+						{@const participantStatus = member.user?.conferenceParticipantStatus.find(
 							(x) => x.conference.id === conference?.id
 						)}
-						<DelegationStatusTableEntry
-							name={formatNames(member.user.given_name, member.user.family_name)}
-							pronouns={member.user.pronouns ?? ''}
-							headDelegate={member.isHeadDelegate}
-							email={member.user.email}
-							committee={member.assignedCommittee?.abbreviation ?? ''}
-							withPaymentStatus
-							withPostalStatus
-							downloadPostalDocuments={conference?.unlockPostals
-								? () => downloadPostalDocuments(member.user.id)
-								: undefined}
-							postalSatus={getSimplifiedPostalStatus(
-								participantStatus,
-								ofAgeAtConference(conference?.startConference, member.user.birthday)
-							)}
-							paymentStatus={participantStatus?.paymentStatus}
-						/>
+						{#if member.user}
+							<DelegationStatusTableEntry
+								name={formatNames(member.user.given_name, member.user.family_name)}
+								pronouns={member.user.pronouns ?? ''}
+								headDelegate={member.isHeadDelegate}
+								email={member.user.email}
+								committee={!isStateParticipantRegistration
+									? (member.assignedCommittee?.abbreviation ?? '')
+									: undefined}
+								withPaymentStatus={!isStateParticipantRegistration}
+								withPostalStatus={!isStateParticipantRegistration}
+								downloadPostalDocuments={conference?.unlockPostals
+									? () => downloadPostalDocuments(member.user.id)
+									: undefined}
+								postalSatus={getSimplifiedPostalStatus(
+									participantStatus,
+									ofAgeAtConference(conference?.startConference, member.user.birthday)
+								)}
+								paymentStatus={participantStatus?.paymentStatus}
+							/>
+						{:else}
+							<tr>
+								<td colspan="5" class="text-center italic text-gray-500">
+									{m.hiddenMember()}
+								</td>
+							</tr>
+						{/if}
 					{/each}
 				</DelegationStatusTableWrapper>
 			</DashboardContentCard>

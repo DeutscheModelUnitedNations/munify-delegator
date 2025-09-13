@@ -1,6 +1,9 @@
 {
+	"editor.suggest.showReferences": false,
 	"files.eol": "\n",
-	"vscodeGitCommit.template": ["{prefix}: {message}"],
+	"vscodeGitCommit.template": [
+		"{prefix}: {message}"
+	],
 	"[javascript]": {},
 	"editor.codeActionsOnSave": {},
 	"vscodeGitCommit.variables": {
@@ -83,5 +86,7 @@
 			"name": "OpenI18n"
 		}
 	],
-	"css.customData": [".vscode/tailwind.json"]
+	"css.customData": [
+		".vscode/tailwind.json"
+	]
 }
