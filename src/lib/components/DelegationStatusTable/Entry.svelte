@@ -5,7 +5,7 @@
 
 	interface Props {
 		name: string;
-		pronouns: string;
+		pronouns?: string | null;
 		email?: string;
 		headDelegate?: boolean;
 		committee?: string;
@@ -66,7 +66,11 @@
 		{/if}
 	</td>
 	<td>
-		{pronouns}
+		{#if pronouns}
+			{pronouns}
+		{:else}
+			<i class="fa-duotone fa-dash"></i>
+		{/if}
 	</td>
 
 	{#if committee != undefined}

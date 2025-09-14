@@ -5,7 +5,7 @@
 		size?: 'xs' | 'sm' | 'md' | 'lg';
 		alpha2Code?: string;
 		nsa?: boolean;
-		icon?: string;
+		icon?: string | null;
 	}
 
 	let { size = 'md', alpha2Code, nsa = false, icon = 'fa-hand-point-up' }: Props = $props();

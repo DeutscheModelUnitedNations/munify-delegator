@@ -720,5 +720,9 @@
 	"copyLink": "Link kopieren",
 	"entryCode": "Eintrittscode",
 	"hiddenMember": "Verstecktes Mitglied",
-	"delegationsDescription": "Hier findest du alle Delegationen, in denen Schüler*innen von dir angemeldet sind. Jede Delegation hat einen generierten Namen mit einem der UN-Generalsekretäre - gib diesen Namen an, wenn du mit der Teilnehmendenbetreuung sprichst. Delegationsmitglieder, die dich nicht als Betreuer*in hinzugefügt haben, sind als \"versteckte Mitglieder\" gekennzeichnet."
+	"delegationsDescription": "Hier findest du alle Delegationen, in denen Schüler*innen von dir angemeldet sind. Jede Delegation hat einen generierten Namen mit einem der UN-Generalsekretäre - gib diesen Namen an, wenn du mit der Teilnehmendenbetreuung sprichst. Delegationsmitglieder, die dich nicht als Betreuer*in hinzugefügt haben, sind als \"versteckte Mitglieder\" gekennzeichnet.",
+	"addSupervisorsDescription": "Um Betreuer*innen hinzuzufügen musst du dir erst von deinem/deiner Betreuer*in einen Code bzw. Link holen. Wenn du diesen hast, kannst du ihn/sie über die Schaltfläche unten oder direkt über den Link hinzufügen.",
+	"connectSupervisor": "Betreuer*in verbinden",
+	"delegationName": "Delegationsname",
+	"delegationNameExplaination": "automatisch generierter Name"
 }

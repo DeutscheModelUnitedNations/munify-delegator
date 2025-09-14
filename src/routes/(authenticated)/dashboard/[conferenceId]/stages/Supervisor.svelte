@@ -26,18 +26,21 @@
 	import { qr } from '@svelte-put/qr/svg';
 
 	// TODO these components need some refactoring
-	let {
-		user,
-		conferenceData,
-		ofAge
-	}: {
-		user: PageData['user'];
-		conferenceData: MyConferenceparticipationQuery$result;
-		ofAge: boolean;
-	} = $props();
 
-	let conference = $derived(conferenceData.findUniqueConference!);
-	let supervisor = $derived(conferenceData.findUniqueConferenceSupervisor!);
+	interface Props {
+		user: PageData['user'];
+		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		supervisor: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']
+		>;
+		status: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus']
+		>;
+		ofAge: boolean;
+	}
+
+	let { user, conference, supervisor, status, ofAge }: Props = $props();
+
 	let isStateParticipantRegistration = $derived(conference.state === 'PARTICIPANT_REGISTRATION');
 	let delegationMembers = $derived(
 		isStateParticipantRegistration
@@ -52,7 +55,6 @@
 			? supervisor.supervisedSingleParticipants
 			: supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
 	);
-	let status = $derived(conferenceData.findUniqueConferenceParticipantStatus);
 
 	let connectionLink = $derived(
 		`${page.url.origin}/dashboard/${conference.id}/connectSupervisor?code=${supervisor.connectionCode}`
@@ -268,7 +270,7 @@
 				title={m.conferenceInfo()}
 				description={m.conferenceInfoDescription()}
 				btnText={m.goToConferenceInfo()}
-				btnLink={`./${conferenceData.findUniqueConference?.id}/info`}
+				btnLink={`./${conference.id}/info`}
 			/>
 		{/if}
 		{#if conference.linkToPreparationGuide}
@@ -346,7 +348,9 @@
 								<td>
 									{#if delegation.appliedForRoles.length > 0}
 										<div class="flex flex-wrap gap-2">
-											{#each delegation.appliedForRoles.sort((x) => x.rank) as roleApplication}
+											{#each delegation.appliedForRoles
+												.sort((x) => x.rank)
+												.reverse() as roleApplication}
 												<Flag
 													size="xs"
 													alpha2Code={roleApplication.nation?.alpha2Code}
@@ -476,7 +480,7 @@
 	<h2 class="text-2xl font-bold">{m.singleParticipants()}</h2>
 
 	{#if singleParticipants.length > 0}
-		{#each singleParticipants as singleParticipant, index}
+		{#each singleParticipants as singleParticipant}
 			<DashboardContentCard
 				title={formatNames(singleParticipant.user.given_name, singleParticipant.user.family_name)}
 				class="bg-base-200"
@@ -511,7 +515,7 @@
 											{#each singleParticipant.appliedForRoles as roleApplication}
 												<div class="badge">
 													<i
-														class="fa-duotone fa-{roleApplication.fontAwesomeIcon.replace(
+														class="fa-duotone fa-{roleApplication.fontAwesomeIcon?.replace(
 															'fa-',
 															''
 														)} mr-2"
@@ -578,7 +582,6 @@
 				<DelegationStatusTableWrapper
 					withPostalSatus={!isStateParticipantRegistration}
 					withPaymentStatus={!isStateParticipantRegistration}
-					withCommittee={!isStateParticipantRegistration}
 					withEmail
 					title={m.details()}
 				>
@@ -591,11 +594,7 @@
 							singleParticipant.user.family_name
 						)}
 						pronouns={singleParticipant.user.pronouns ?? ''}
-						headDelegate={singleParticipant.isHeadDelegate}
 						email={singleParticipant.user.email}
-						committee={!isStateParticipantRegistration
-							? (singleParticipant.assignedCommittee?.abbreviation ?? '')
-							: undefined}
 						withPaymentStatus={!isStateParticipantRegistration}
 						withPostalStatus={!isStateParticipantRegistration}
 						downloadPostalDocuments={conference?.unlockPostals

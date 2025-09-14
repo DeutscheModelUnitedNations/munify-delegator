@@ -123,6 +123,15 @@ export const myConferenceparticipationQuery = graphql(`
 					}
 				}
 			}
+			supervisors {
+				id
+				user {
+					given_name
+					family_name
+					pronouns
+					email
+				}
+			}
 		}
 		findUniqueConferenceSupervisor(
 			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
@@ -192,6 +201,7 @@ export const myConferenceparticipationQuery = graphql(`
 						fontAwesomeIcon
 					}
 					members {
+						id
 						assignedCommittee {
 							id
 							abbreviation
@@ -266,6 +276,15 @@ export const myConferenceparticipationQuery = graphql(`
 				given_name
 				family_name
 				pronouns
+			}
+			supervisors {
+				id
+				user {
+					given_name
+					family_name
+					pronouns
+					email
+				}
 			}
 		}
 		findManySurveyQuestions(

@@ -9,7 +9,6 @@
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 	import Certificate from './stages/Certificate.svelte';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -17,18 +16,21 @@
 	let { data }: { data: PageData } = $props();
 	let conferenceQueryData = $derived(data.conferenceQueryData);
 	let conference = $derived(conferenceQueryData?.findUniqueConference);
+	let delegationMember = $derived(conferenceQueryData?.findUniqueDelegationMember);
+	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
+	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
-
-	addToPanel('DashboardQuery', () => conferenceQueryData);
+	let surveyQuestions = $derived(conferenceQueryData?.findUniqueSurveyQuestions);
+	let surveyAnswers = $derived(conferenceQueryData?.findUniqueSurveyAnswers);
 </script>
 
 <div class="flex w-full flex-col items-center">
 	<div class="flex w-full flex-col gap-10">
 		<!-- TODO add "new" badge if content of this changes -->
-		{#if conferenceQueryData?.findUniqueSingleParticipant?.id}
+		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<SingleParticipantRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
-			{:else if conferenceQueryData?.findUniqueSingleParticipant?.assignedRole}
+				<SingleParticipantRegistrationStage {singleParticipant} {conference} />
+			{:else if singleParticipant?.assignedRole}
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
@@ -38,7 +40,13 @@
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
-					<SingleParticipantPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
+					<SingleParticipantPreparationStage
+						{conference}
+						{singleParticipant}
+						{surveyAnswers}
+						{surveyQuestions}
+						user={data.user}
+					/>
 				{:else if conference!.state === 'POST'}
 					<Certificate
 						conferenceId={conference!.id}
@@ -49,10 +57,10 @@
 			{:else}
 				<ApplicationRejected />
 			{/if}
-		{:else if conferenceQueryData?.findUniqueDelegationMember?.id}
+		{:else if delegationMember?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<DelegationRegistrationStage data={{ ...conferenceQueryData, user: data.user }} />
-			{:else if !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNation || !!conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor}
+				<DelegationRegistrationStage {delegationMember} {conference} />
+			{:else if !!delegationMember?.delegation?.assignedNation || !!delegationMember?.delegation?.assignedNonStateActor}
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
@@ -62,37 +70,43 @@
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
-					<DelegationPreparationStage data={{ ...conferenceQueryData, user: data.user }} />
+					<DelegationPreparationStage
+						{delegationMember}
+						{conference}
+						{surveyAnswers}
+						{surveyQuestions}
+						user={data.user}
+					/>
 				{:else if conference!.state === 'POST'}
 					<Certificate
 						conferenceId={conference!.id}
 						userId={data.user.sub}
-						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+						didAttend={!!status?.didAttend}
 					/>
 				{/if}
 			{:else}
 				<ApplicationRejected />
 			{/if}
-		{:else if conferenceQueryData?.findUniqueConferenceSupervisor}
+		{:else if supervisor}
 			{@const everybodyGotRejected =
 				conference!.state !== 'PARTICIPANT_REGISTRATION' &&
-				(conferenceQueryData?.findUniqueConferenceSupervisor.supervisedDelegationMembers
+				(supervisor.supervisedDelegationMembers
 					.flatMap((x) => x.delegation)
 					.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0 ||
-					conferenceQueryData?.findUniqueConferenceSupervisor.supervisedSingleParticipants.filter(
-						(x) => x.assignedRole
-					).length > 0)}
+					supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole).length > 0)}
 			{#if everybodyGotRejected || conference!.state === 'PARTICIPANT_REGISTRATION'}
 				{#if conference!.state === 'POST'}
 					<Certificate
 						conferenceId={conference!.id}
 						userId={data.user.sub}
-						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+						didAttend={!!status?.didAttend}
 					/>
 				{:else}
 					<Supervisor
 						user={data.user}
-						conferenceData={conferenceQueryData}
+						{conference}
+						{supervisor}
+						{status}
 						ofAge={data.ofAgeAtConference}
 					/>
 				{/if}

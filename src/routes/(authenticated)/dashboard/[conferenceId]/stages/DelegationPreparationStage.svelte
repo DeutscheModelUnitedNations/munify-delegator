@@ -4,7 +4,6 @@
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import CountryStats from '$lib/components/CountryStats/CountryStats.svelte';
-	import type { PageData } from '../$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
@@ -12,79 +11,87 @@
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
+	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import SupervisorTable from './SupervisorTable.svelte';
+	import codenamize from '$lib/services/codenamize';
+	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 
-	let {
-		data
-	}: {
-		data: PageData['conferenceQueryData'] & Pick<PageData, 'user'>;
-	} = $props();
+	interface Props {
+		delegationMember: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+		>;
+		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		surveyQuestions: NonNullable<MyConferenceparticipationQuery$result['findManySurveyQuestions']>;
+		surveyAnswers: NonNullable<MyConferenceparticipationQuery$result['findManySurveyAnswers']>;
+		user: {
+			sub: string;
+			email: string;
+		};
+	}
+
+	let { delegationMember, conference, surveyAnswers, surveyQuestions, user }: Props = $props();
 
 	const delegationStats = $derived([
 		{
 			icon: 'users',
 			title: m.members(),
-			value: data.findUniqueDelegationMember?.delegation.members.length,
+			value: delegationMember.delegation.members.length,
 			desc: m.inTheDelegation()
 		}
 	]);
 </script>
 
 <TasksWrapper>
-	{#if !!data.findUniqueDelegationMember?.delegation.assignedNation && !!data.findUniqueDelegationMember?.delegation.members.every((member) => !member.assignedCommittee)}
+	{#if !!delegationMember.delegation.assignedNation && !!delegationMember.delegation.members.every((member) => !member.assignedCommittee)}
 		<TaskAlertCard
-			severity={data.findUniqueDelegationMember!.isHeadDelegate ? 'warning' : 'info'}
+			severity={delegationMember.isHeadDelegate ? 'warning' : 'info'}
 			faIcon="fa-arrows-turn-to-dots"
 			title={m.committeeAssignment()}
-			description={data.findUniqueDelegationMember!.isHeadDelegate
+			description={delegationMember.isHeadDelegate
 				? m.committeeAssignmentAlertDescription()
 				: m.committeeAssignmentAlertDescriptionNonHeadDelegate()}
-			btnText={data.findUniqueDelegationMember!.isHeadDelegate ? m.assignCommittees() : undefined}
-			btnLink={data.findUniqueDelegationMember!.isHeadDelegate
-				? `./${data.findUniqueConference?.id}/committeeAssignment`
+			btnText={delegationMember.isHeadDelegate ? m.assignCommittees() : undefined}
+			btnLink={delegationMember.isHeadDelegate
+				? `./${conference.id}/committeeAssignment`
 				: undefined}
 		/>
 	{/if}
-	{#if data.findManySurveyQuestions && data.findManySurveyQuestions.length > 0}
+	{#if surveyQuestions && surveyQuestions.length > 0}
 		<TaskAlertCard
 			faIcon="fa-square-poll-horizontal"
 			title={m.survey()}
 			description={m.surveyDescription()}
 			btnText={m.goToSurvey()}
-			btnLink={`./${data.findUniqueConference?.id}/survey`}
-			severity={data.findManySurveyQuestions.length > data.findManySurveyAnswers.length
-				? 'warning'
-				: 'info'}
+			btnLink={`./${conference.id}/survey`}
+			severity={surveyQuestions.length > surveyAnswers.length ? 'warning' : 'info'}
 		/>
 	{/if}
-	{#if data.findUniqueConference?.info}
+	{#if conference.info}
 		<TaskAlertCard
 			faIcon="fa-info-circle"
 			title={m.conferenceInfo()}
 			description={m.conferenceInfoDescription()}
 			btnText={m.goToConferenceInfo()}
-			btnLink={`./${data.findUniqueConference?.id}/info`}
+			btnLink={`./${conference.id}/info`}
 		/>
 	{/if}
-	{#if data.findUniqueConference?.linkToPreparationGuide}
+	{#if conference.linkToPreparationGuide}
 		<TaskAlertCard
 			faIcon="fa-book-bookmark"
 			title={m.preparation()}
 			description={m.preparationDescription()}
 			btnText={m.goToPreparation()}
-			btnLink={data.findUniqueConference?.linkToPreparationGuide}
+			btnLink={conference.linkToPreparationGuide}
 			btnExternal
 		/>
 	{/if}
-	{#if data.findUniqueConference?.linkToPaperInbox && data.user}
+	{#if conference.linkToPaperInbox && user}
 		<TaskAlertCard
 			faIcon="fa-file-circle-plus"
 			title={m.paperInbox()}
 			description={m.paperInboxDescription()}
 			btnText={m.paperInboxBtn()}
-			btnLink={generatePaperInboxLinkWithParams(
-				data.findUniqueConference?.linkToPaperInbox,
-				data.user
-			)}
+			btnLink={generatePaperInboxLinkWithParams(conference.linkToPaperInbox, user)}
 			btnExternal
 			severity="info"
 		/>
@@ -95,27 +102,26 @@
 	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
 	<div class="stats bg-base-200 shadow">
 		<RoleWidget
-			country={data.findUniqueDelegationMember?.delegation.assignedNation}
-			committees={data.findUniqueDelegationMember?.delegation.assignedNation &&
-				data.findUniqueConference?.committees.filter((c) =>
+			country={delegationMember.delegation.assignedNation}
+			committees={delegationMember.delegation.assignedNation &&
+				conference.committees.filter((c) =>
 					c.nations.some(
-						(n) =>
-							n.alpha3Code ===
-							data.findUniqueDelegationMember?.delegation.assignedNation?.alpha3Code
+						(n) => n.alpha3Code === delegationMember.delegation.assignedNation?.alpha3Code
 					)
 				)}
-			nonStateActor={data.findUniqueDelegationMember?.delegation.assignedNonStateActor}
+			nonStateActor={delegationMember.delegation.assignedNonStateActor}
 		/>
 	</div>
 	<GenericWidget content={delegationStats} />
+	<DelegationNameDisplay delegationId={delegationMember.delegation.id} />
 </section>
 
 <section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
+	<h2 class="text-2xl font-bold">{codenamize(delegationMember.delegation.id)}</h2>
 	<DelegationStatusTableWrapper withEmail withCommittee withPostalSatus withPaymentStatus>
-		{#each data.findUniqueDelegationMember?.delegation.members ?? [] as member}
+		{#each delegationMember.delegation.members ?? [] as member}
 			{@const participantStatus = member.user.conferenceParticipantStatus.find(
-				(x) => x.conference.id === data.findUniqueConference?.id
+				(x) => x.conference.id === conference.id
 			)}
 			<DelegationStatusTableEntry
 				name={formatNames(member.user.given_name, member.user.family_name)}
@@ -127,36 +133,21 @@
 				withPostalStatus
 				postalSatus={getSimplifiedPostalStatus(
 					participantStatus,
-					ofAgeAtConference(data.findUniqueConference?.startConference, member.user.birthday)
+					ofAgeAtConference(conference.startConference, member.user.birthday)
 				)}
 				paymentStatus={participantStatus?.paymentStatus}
 			/>
 		{/each}
 	</DelegationStatusTableWrapper>
-	{#if data.findUniqueDelegationMember?.delegation.supervisors.length ?? 0 > 0}
-		<DelegationStatusTableWrapper
-			title={m.supervisors()}
-			description={m.supervisorDelegationDescription()}
-			withEmail
-		>
-			{#each data.findUniqueDelegationMember?.delegation.supervisors ?? [] as supervisor}
-				<DelegationStatusTableEntry
-					name={formatNames(supervisor.user.given_name, supervisor.user.family_name)}
-					pronouns={supervisor.user.pronouns ?? ''}
-					email={supervisor.user.email}
-				/>
-			{/each}
-		</DelegationStatusTableWrapper>
-	{/if}
+	<div class="h-4"></div>
+	<SupervisorTable supervisors={delegationMember.supervisors} conferenceId={conference.id} />
 </section>
 <section class="flex flex-col">
-	{#if data.findUniqueDelegationMember?.delegation.assignedNation}
+	{#if delegationMember.delegation.assignedNation}
 		<h2 class="mb-4 text-2xl font-bold">{m.informationOnYourCountry()}</h2>
-		<CountryStats
-			countryCode={data.findUniqueDelegationMember?.delegation.assignedNation?.alpha3Code}
-		/>
-	{:else if data.findUniqueDelegationMember?.delegation.assignedNonStateActor}
-		{@const nsa = data.findUniqueDelegationMember?.delegation.assignedNonStateActor}
+		<CountryStats countryCode={delegationMember.delegation.assignedNation?.alpha3Code} />
+	{:else if delegationMember.delegation.assignedNonStateActor}
+		{@const nsa = delegationMember.delegation.assignedNonStateActor}
 		<h2 class="mb-4 text-2xl font-bold">{m.informationOnYourNSA()}</h2>
 		<div class="prose">
 			<h3 class="font-bold">{nsa.name}</h3>
