@@ -1,14 +1,7 @@
 <script lang="ts">
 	import codenamize from '$lib/services/codenamize';
 	import type { PageData } from '../$houdini';
-	import {
-		alpha3Code,
-		headDelegate,
-		linkCopied,
-		m,
-		motivation,
-		roleApplications
-	} from '$lib/paraglide/messages';
+	import { alpha3Code, m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
@@ -46,13 +39,14 @@
 	let conference = $derived(conferenceData.findUniqueConference!);
 	let supervisor = $derived(conferenceData.findUniqueConferenceSupervisor!);
 	let isStateParticipantRegistration = $derived(conference.state === 'PARTICIPANT_REGISTRATION');
-	let delegations = $derived(
+	let delegationMembers = $derived(
 		isStateParticipantRegistration
-			? supervisor.supervisedDelegationMembers.map((x) => x.delegation)
-			: supervisor.supervisedDelegationMembers
-					.map((x) => x.delegation)
-					.filter((x) => x.assignedNation || x.assignedNonStateActor)
+			? supervisor.supervisedDelegationMembers
+			: supervisor.supervisedDelegationMembers.filter(
+					(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
+				)
 	);
+	let delegations = $derived(delegationMembers.map((x) => x.delegation));
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
@@ -320,6 +314,10 @@
 	<p class="text-sm">{m.delegationsDescription()}</p>
 	{#if delegations.length > 0}
 		{#each delegations as delegation, index}
+			{@const members = delegationMembers.filter((x) => x.delegation.id === delegation.id)}
+			{@const hiddenMembers = delegation.members.filter(
+				(x) => !members.map((y) => y.id).includes(x.id)
+			)}
 			<DashboardContentCard title={codenamize(delegation.id)} class="bg-base-200">
 				{#if isStateParticipantRegistration}
 					<div
@@ -427,37 +425,41 @@
 					withEmail
 					title={m.members()}
 				>
-					{#each delegation.members ?? [] as member}
+					{#each members ?? [] as member}
 						{@const participantStatus = member.user?.conferenceParticipantStatus.find(
 							(x) => x.conference.id === conference?.id
 						)}
-						{#if member.user}
-							<DelegationStatusTableEntry
-								name={formatNames(member.user.given_name, member.user.family_name)}
-								pronouns={member.user.pronouns ?? ''}
-								headDelegate={member.isHeadDelegate}
-								email={member.user.email}
-								committee={!isStateParticipantRegistration
-									? (member.assignedCommittee?.abbreviation ?? '')
-									: undefined}
-								withPaymentStatus={!isStateParticipantRegistration}
-								withPostalStatus={!isStateParticipantRegistration}
-								downloadPostalDocuments={conference?.unlockPostals
-									? () => downloadPostalDocuments(member.user.id)
-									: undefined}
-								postalSatus={getSimplifiedPostalStatus(
-									participantStatus,
-									ofAgeAtConference(conference?.startConference, member.user.birthday)
-								)}
-								paymentStatus={participantStatus?.paymentStatus}
-							/>
-						{:else}
-							<tr>
-								<td colspan="5" class="text-center italic text-gray-500">
-									{m.hiddenMember()}
-								</td>
-							</tr>
-						{/if}
+						<DelegationStatusTableEntry
+							name={formatNames(member.user.given_name, member.user.family_name)}
+							pronouns={member.user.pronouns ?? ''}
+							headDelegate={member.isHeadDelegate}
+							email={member.user.email}
+							committee={!isStateParticipantRegistration
+								? (member.assignedCommittee?.abbreviation ?? '')
+								: undefined}
+							withPaymentStatus={!isStateParticipantRegistration}
+							withPostalStatus={!isStateParticipantRegistration}
+							downloadPostalDocuments={conference?.unlockPostals
+								? () => downloadPostalDocuments(member.user.id)
+								: undefined}
+							postalSatus={getSimplifiedPostalStatus(
+								participantStatus,
+								ofAgeAtConference(conference?.startConference, member.user.birthday)
+							)}
+							paymentStatus={participantStatus?.paymentStatus}
+						/>
+					{/each}
+					{#each hiddenMembers as member}
+						<tr>
+							<td colspan="5" class="italic text-gray-500">
+								{m.hiddenMember()}
+								{#if member.isHeadDelegate}
+									<div class="tooltip" data-tip={m.headDelegate()}>
+										<i class="fa-duotone fa-medal ml-2"></i>
+									</div>
+								{/if}
+							</td>
+						</tr>
 					{/each}
 				</DelegationStatusTableWrapper>
 			</DashboardContentCard>
@@ -472,10 +474,148 @@
 
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.singleParticipants()}</h2>
-	<div class="alert alert-info">
-		<i class="fa-solid fa-exclamation-triangle text-xl"></i>
-		{m.noSingleApplicationTrackingYet()}
-	</div>
+
+	{#if singleParticipants.length > 0}
+		{#each singleParticipants as singleParticipant, index}
+			<DashboardContentCard
+				title={formatNames(singleParticipant.user.given_name, singleParticipant.user.family_name)}
+				class="bg-base-200"
+			>
+				{#if isStateParticipantRegistration}
+					<div
+						class="badge {singleParticipant.applied
+							? 'badge-success'
+							: 'badge-warning'} badge-lg absolute right-4 top-0 z-10 -translate-y-1/2"
+					>
+						{#if singleParticipant.applied}
+							<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
+						{:else}
+							<i class="fa-solid fa-hourglass-half mr-2"></i> {m.notApplied()}
+						{/if}
+					</div>
+				{/if}
+				<table class="table mb-10">
+					<thead>
+						<tr>
+							<th></th>
+							<th class="w-full"></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#if isStateParticipantRegistration}
+							<tr>
+								<td>{m.roleApplications()}</td>
+								<td>
+									{#if singleParticipant.appliedForRoles.length > 0}
+										<div class="flex flex-wrap gap-2">
+											{#each singleParticipant.appliedForRoles as roleApplication}
+												<div class="badge">
+													<i
+														class="fa-duotone fa-{roleApplication.fontAwesomeIcon.replace(
+															'fa-',
+															''
+														)} mr-2"
+													></i>
+													{roleApplication.name}
+												</div>
+											{/each}
+										</div>
+									{:else}
+										<i class="fa-duotone fa-dash"></i>
+									{/if}
+								</td>
+							</tr>
+						{:else}
+							<tr>
+								<td>{m.role()}</td>
+								<td>
+									<Flag
+										size="xs"
+										alpha2Code={singleParticipant.assignedNation?.alpha2Code}
+										nsa={!!singleParticipant.assignedNonStateActor}
+										icon={singleParticipant.assignedNonStateActor?.fontAwesomeIcon ??
+											'fa-hand-point-up'}
+									/>
+									{#if singleParticipant.assignedNation}
+										{getFullTranslatedCountryNameFromISO3Code(
+											singleParticipant.assignedNation.alpha3Code
+										)}
+										({alpha3Code(singleParticipant.assignedNation.alpha3Code)})
+									{:else if singleParticipant.assignedNonStateActor}
+										{singleParticipant.assignedNonStateActor.name}
+									{/if}
+								</td>
+							</tr>
+						{/if}
+
+						<tr>
+							<td>{m.schoolOrInstitution()}</td>
+							{#if singleParticipant.school}
+								<td>{singleParticipant.school}</td>
+							{:else}
+								<td><i class="fa-duotone fa-dash"></i></td>
+							{/if}
+						</tr>
+						<tr>
+							<td>{m.experience()}</td>
+							{#if singleParticipant.experience}
+								<td>{singleParticipant.experience}</td>
+							{:else}
+								<td><i class="fa-duotone fa-dash"></i></td>
+							{/if}
+						</tr>
+						<tr>
+							<td>{m.motivation()}</td>
+							{#if singleParticipant.motivation}
+								<td>{singleParticipant.motivation}</td>
+							{:else}
+								<td><i class="fa-duotone fa-dash"></i></td>
+							{/if}
+						</tr>
+					</tbody>
+				</table>
+
+				<DelegationStatusTableWrapper
+					withPostalSatus={!isStateParticipantRegistration}
+					withPaymentStatus={!isStateParticipantRegistration}
+					withCommittee={!isStateParticipantRegistration}
+					withEmail
+					title={m.details()}
+				>
+					{@const participantStatus = singleParticipant.user?.conferenceParticipantStatus.find(
+						(x) => x.conference.id === conference?.id
+					)}
+					<DelegationStatusTableEntry
+						name={formatNames(
+							singleParticipant.user.given_name,
+							singleParticipant.user.family_name
+						)}
+						pronouns={singleParticipant.user.pronouns ?? ''}
+						headDelegate={singleParticipant.isHeadDelegate}
+						email={singleParticipant.user.email}
+						committee={!isStateParticipantRegistration
+							? (singleParticipant.assignedCommittee?.abbreviation ?? '')
+							: undefined}
+						withPaymentStatus={!isStateParticipantRegistration}
+						withPostalStatus={!isStateParticipantRegistration}
+						downloadPostalDocuments={conference?.unlockPostals
+							? () => downloadPostalDocuments(singleParticipant.user.id)
+							: undefined}
+						postalSatus={getSimplifiedPostalStatus(
+							participantStatus,
+							ofAgeAtConference(conference?.startConference, singleParticipant.user.birthday)
+						)}
+						paymentStatus={participantStatus?.paymentStatus}
+					/>
+				</DelegationStatusTableWrapper>
+			</DashboardContentCard>
+		{/each}
+	{:else}
+		<div class="alert alert-warning">
+			<i class="fa-solid fa-exclamation-triangle text-xl"></i>
+			{m.noSingleParticipantsFound()}
+		</div>
+	{/if}
 </section>
 
 <DashboardContentCard

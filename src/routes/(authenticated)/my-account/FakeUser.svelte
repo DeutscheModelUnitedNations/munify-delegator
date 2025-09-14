@@ -9,13 +9,15 @@
 	let formData = $derived(form.form);
 
 	const populateForm = () => {
-		$formData.phone = faker.phone.number({ style: 'international' });
+		$formData.phone = '+4917612345678';
 		$formData.zip = faker.location.zipCode({ format: '#####' });
 		$formData.street = faker.location.streetAddress();
 		$formData.city = faker.location.city();
 		$formData.country = 'DEU';
 		$formData.birthday = faker.date.birthdate();
 		$formData.foodPreference = 'VEGAN';
+		$formData.pronouns = 'he/him';
+		$formData.emergencyContacts = 'Emergency Contact';
 	};
 </script>
 

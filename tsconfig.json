@@ -19,6 +19,6 @@
 				"schema": "./src/lib/gqlClient/schema.gql"
 			}
 		],
-		"rootDirs": [".", "./.svelte-kit/types", "./$houdini/types"]
+		"rootDirs": [".", "./.svelte-kit/types", "./.houdini/types"]
 	}
 }

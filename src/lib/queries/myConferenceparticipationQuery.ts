@@ -132,6 +132,25 @@ export const myConferenceparticipationQuery = graphql(`
 			connectionCode
 			supervisedDelegationMembers {
 				id
+				user {
+					id
+					family_name
+					given_name
+					pronouns
+					email
+					birthday
+					conferenceParticipantStatus {
+						id
+						guardianConsent
+						mediaConsent
+						termsAndConditions
+						paymentStatus
+						didAttend
+						conference {
+							id
+						}
+					}
+				}
 				delegation {
 					id
 					applied
@@ -173,32 +192,12 @@ export const myConferenceparticipationQuery = graphql(`
 						fontAwesomeIcon
 					}
 					members {
-						id
 						assignedCommittee {
 							id
 							abbreviation
 							name
 						}
 						isHeadDelegate
-						user {
-							id
-							family_name
-							given_name
-							pronouns
-							email
-							birthday
-							conferenceParticipantStatus {
-								id
-								guardianConsent
-								mediaConsent
-								termsAndConditions
-								paymentStatus
-								didAttend
-								conference {
-									id
-								}
-							}
-						}
 					}
 				}
 				isHeadDelegate
