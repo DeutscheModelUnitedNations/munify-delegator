@@ -148,7 +148,7 @@
 											<InitialsButton
 												given_name={member.user.given_name}
 												family_name={member.user.family_name}
-												href={`/management/${conferenceId}/participants?selected=${member.userId}`}
+												href={`/management/${conferenceId}/participants?selected=${member.user.id}`}
 											/>
 										{/each}
 										{#if assignedDelegationMember.length < committee.numOfSeatsPerDelegation}

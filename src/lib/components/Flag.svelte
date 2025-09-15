@@ -8,7 +8,7 @@
 		icon?: string | null;
 	}
 
-	let { size = 'md', alpha2Code, nsa = false, icon = 'fa-hand-point-up' }: Props = $props();
+	let { size = 'md', alpha2Code, nsa = false, icon }: Props = $props();
 
 	const flagClassNames = () => {
 		switch (size) {
@@ -48,7 +48,7 @@
 		'bg-base-300'}"
 >
 	{#if nsa}
-		<i class="fa-solid fa-{icon.replace('fa-', '')} {iconClassNames()}"></i>
+		<i class="fa-solid fa-{(icon ?? 'fa-hand-point-up').replace('fa-', '')} {iconClassNames()}"></i>
 	{:else}
 		<span class="fi fi-{alpha2Code}"></span>
 	{/if}
