@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	//@ts-expect-error – numeral does not have type definitions
 	import numeral from 'numeral';
 	import SingleStatFromWb from './SingleStatFromWB.svelte';
 
