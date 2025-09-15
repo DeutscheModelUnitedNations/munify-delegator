@@ -10,7 +10,7 @@ builder.mutationFields((t) => {
 			type: t.builder.simpleObject('SeedNewConferenceResult', {
 				fields: (t) => ({
 					success: t.boolean(),
-          conferenceId: t.string()
+					conferenceId: t.string()
 				})
 			}),
 			args: {
@@ -54,6 +54,15 @@ builder.mutationFields((t) => {
 					}
 
 					for (const committee of data.committees) {
+						const nations = await tx.nation.findMany();
+
+						for (const nation of committee.nations) {
+							if (!nations.map((x) => x.alpha2Code.toUpperCase()).includes(nation)) {
+								console.log('found the culprid');
+								console.log(nation);
+							}
+						}
+
 						await tx.committee.create({
 							data: {
 								...committee,
@@ -65,7 +74,7 @@ builder.mutationFields((t) => {
 						});
 					}
 
-          return conference;
+					return conference;
 				});
 
 				return {

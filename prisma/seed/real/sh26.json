@@ -1,14 +1,14 @@
 {
-	"$schema": "./schema.json",
+	"$schema": "http://localhost:5173/schemata/seed",
 	"conference": {
 		"title": "MUN-SH 2026",
 		"longTitle": "Model United Nations Schleswig-Holstein 2026",
 		"location": "Kiel",
 		"website": "https://mun-sh.de",
 		"language": "Deutsch / German",
-		"startAssignment": "2025-10-24",
-		"startConference": "2026-03-12",
-		"endConference": "2026-03-16"
+		"startAssignment": "2025-10-24T23:59:00+01:00",
+		"startConference": "2026-03-12T10:00:00+01:00",
+		"endConference": "2026-03-16T14:00:00+01:00"
 	},
 	"nsa": [
 		{
@@ -41,17 +41,24 @@
 		},
 		{
 			"name": "International Gay and Lesbian Alliance World",
-			"abbreviation": "ILGA World",
+			"abbreviation": "ILGA",
 			"seatAmount": 2,
 			"description": "ILGA World ist eine weltweite Organisation, welche sich für die Rechte von lesbischen, schwulen, bisexuellen, trans und queeren Menschen einsetzt und ihren Anliegen mehr Sichtbarkeit verschafft. Dazu gehören beispielsweise Kampagnen für das Recht auf Ehe für alle und gegen die staatliche Kriminalisierung von Homosexualität.",
 			"fontAwesomeIcon": "venus-mars"
 		}
 	],
-	"countries": [
+	"customConferenceRole": [
+		{
+			"name": "Konferenpresse",
+			"description": "Die Konferenzpresse berichtet während der Konferenz über die Ereignisse und Ergebnisse der verschiedenen Gremien. Sie führt Interviews mit Delegierten und veröffentlicht Artikel, um die Öffentlichkeit über die Themen und Diskussionen der Konferenz zu informieren.",
+			"fontAwesomeIcon": "newspaper"
+		}
+	],
+	"committees": [
 		{
 			"name": "Generalversammlung",
 			"abbreviation": "GV",
-			"seats": 1,
+			"numOfSeatsPerDelegation": 1,
 			"nations": [
 				"EG",
 				"ET",
@@ -122,7 +129,7 @@
 				"DO",
 				"EC",
 				"SV",
-				"GF",
+				"GY",
 				"HT",
 				"JM",
 				"CO",
@@ -156,7 +163,7 @@
 		{
 			"name": "Wirtschafts- und Sozialrat",
 			"abbreviation": "WISO",
-			"seats": 1,
+			"numOfSeatsPerDelegation": 1,
 			"nations": [
 				"BF",
 				"DJ",
@@ -219,7 +226,7 @@
 		{
 			"name": "Sicherheitsrat",
 			"abbreviation": "SR",
-			"seats": 2,
+			"numOfSeatsPerDelegation": 2,
 			"nations": [
 				"CD",
 				"LR",
@@ -241,7 +248,7 @@
 		{
 			"name": "Menschenrechtsrat",
 			"abbreviation": "MRR",
-			"seats": 1,
+			"numOfSeatsPerDelegation": 1,
 			"nations": [
 				"EG",
 				"ET",
@@ -274,7 +281,7 @@
 		{
 			"name": "Umweltversammlung",
 			"abbreviation": "UV",
-			"seats": 1,
+			"numOfSeatsPerDelegation": 1,
 			"nations": [
 				"EG",
 				"KE",
@@ -313,7 +320,7 @@
 				"CL",
 				"CR",
 				"SV",
-				"GF",
+				"GY",
 				"JM",
 				"CU",
 				"PE",
@@ -337,7 +344,7 @@
 		{
 			"name": "Ernährungs- und Landwirtschaftskonferenz",
 			"abbreviation": "ELO",
-			"seats": 1,
+			"numOfSeatsPerDelegation": 1,
 			"nations": [
 				"EG",
 				"KM",
@@ -380,7 +387,7 @@
 		{
 			"name": "Fachkommission für Suchtstoffe",
 			"abbreviation": "FFS",
-			"seats": 1,
+			"numOfSeatsPerDelegation": 1,
 			"nations": [
 				"KE",
 				"NG",

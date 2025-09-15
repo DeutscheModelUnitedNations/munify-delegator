@@ -718,5 +718,8 @@
 	"connectSupervisor": "Connect Supervisor",
 	"delegationName": "Delegation Name",
 	"delegationNameExplaination": "auto-generated name",
-	"seedConference": "Create Conference"
+	"seedConference": "Create Conference",
+	"validationFailed": "Validation Failed",
+	"validationSuccessful": "Validation Successful",
+	"createConference": "Create Conference"
 }

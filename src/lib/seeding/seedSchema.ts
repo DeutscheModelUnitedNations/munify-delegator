@@ -80,7 +80,6 @@ const nationSeedSchema = z.enum([
 	'GB',
 	'GD',
 	'GE',
-	'GF',
 	'GG',
 	'GH',
 	'GI',
@@ -260,15 +259,9 @@ export const ConferenceSeedingSchema = z.object({
 		location: z.string(),
 		website: z.string().url(),
 		language: z.string(),
-		startAssignment: z
-			.string()
-			.refine((x) => !isNaN(Date.parse(x)), { message: 'Invalid date format' }),
-		startConference: z
-			.string()
-			.refine((x) => !isNaN(Date.parse(x)), { message: 'Invalid date format' }),
-		endConference: z
-			.string()
-			.refine((x) => !isNaN(Date.parse(x)), { message: 'Invalid date format' })
+		startAssignment: z.coerce.date(),
+		startConference: z.coerce.date(),
+		endConference: z.coerce.date()
 	}),
 	nsa: z.array(
 		z.object({
@@ -283,8 +276,10 @@ export const ConferenceSeedingSchema = z.object({
 		z.object({
 			name: z.string(),
 			abbreviation: z.string().refine((x) => x.length < 6),
-			nations: z.array(nationSeedSchema),
-			seats: z.number().min(1).optional().default(1)
+			nations: z.array(nationSeedSchema).refine((items) => new Set(items).size === items.length, {
+				message: 'No Duplicate Nations Allowed'
+			}),
+			numOfSeatsPerDelegation: z.number().min(1).optional().default(1)
 		})
 	),
 	customConferenceRole: z.array(

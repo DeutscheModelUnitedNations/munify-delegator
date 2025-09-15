@@ -725,5 +725,8 @@
 	"connectSupervisor": "Betreuer*in verbinden",
 	"delegationName": "Delegationsname",
 	"delegationNameExplaination": "automatisch generierter Name",
-	"seedConference": "Konferenz anlegen"
+	"seedConference": "Konferenz anlegen",
+	"validationFailed": "Validierung fehlgeschlagen",
+	"validationSuccessful": "Validierung erfolgreich",
+	"createConference": "Konferenz erstellen"
 }

@@ -12,6 +12,7 @@ import './modules/conference/conference';
 import './modules/conference/plausibility';
 import './modules/conference/certificateSignature';
 import './modules/conference/statistics';
+import './modules/conference/seed';
 import './modules/auth';
 import './modules/committee';
 import './modules/conferenceParticipantStatus';
