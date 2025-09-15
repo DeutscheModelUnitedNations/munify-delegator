@@ -717,5 +717,6 @@
 	"addSupervisorsDescription": "To add supervisors, you first need to obtain a code or link from your supervisor. Once you have this, you can add them using the button below or directly via the link.",
 	"connectSupervisor": "Connect Supervisor",
 	"delegationName": "Delegation Name",
-	"delegationNameExplaination": "auto-generated name"
+	"delegationNameExplaination": "auto-generated name",
+	"seedConference": "Create Conference"
 }

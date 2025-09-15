@@ -724,5 +724,6 @@
 	"addSupervisorsDescription": "Um Betreuer*innen hinzuzufügen musst du dir erst von deinem/deiner Betreuer*in einen Code bzw. Link holen. Wenn du diesen hast, kannst du ihn/sie über die Schaltfläche unten oder direkt über den Link hinzufügen.",
 	"connectSupervisor": "Betreuer*in verbinden",
 	"delegationName": "Delegationsname",
-	"delegationNameExplaination": "automatisch generierter Name"
+	"delegationNameExplaination": "automatisch generierter Name",
+	"seedConference": "Konferenz anlegen"
 }

@@ -1,4 +1,4 @@
-import * as z from 'zod/v4';
+import * as z from 'zod';
 
 const nationSeedSchema = z.enum([
 	'AD',
@@ -252,15 +252,46 @@ const nationSeedSchema = z.enum([
 	'ZW'
 ]);
 
-export const committeeSeedSchema = z.object({
+export const ConferenceSeedingSchema = z.object({
 	$schema: z.string(),
-	data: z.array(
+	conference: z.object({
+		title: z.string(),
+		longTitle: z.string(),
+		location: z.string(),
+		website: z.string().url(),
+		language: z.string(),
+		startAssignment: z
+			.string()
+			.refine((x) => !isNaN(Date.parse(x)), { message: 'Invalid date format' }),
+		startConference: z
+			.string()
+			.refine((x) => !isNaN(Date.parse(x)), { message: 'Invalid date format' }),
+		endConference: z
+			.string()
+			.refine((x) => !isNaN(Date.parse(x)), { message: 'Invalid date format' })
+	}),
+	nsa: z.array(
 		z.object({
 			name: z.string(),
 			abbreviation: z.string().refine((x) => x.length < 6),
-			nations: z.array(nationSeedSchema)
+			seatAmount: z.number().min(1).optional().default(1),
+			description: z.string(),
+			fontAwesomeIcon: z.string()
+		})
+	),
+	committees: z.array(
+		z.object({
+			name: z.string(),
+			abbreviation: z.string().refine((x) => x.length < 6),
+			nations: z.array(nationSeedSchema),
+			seats: z.number().min(1).optional().default(1)
+		})
+	),
+	customConferenceRole: z.array(
+		z.object({
+			name: z.string(),
+			description: z.string(),
+			fontAwesomeIcon: z.string()
 		})
 	)
 });
-
-console.info(JSON.stringify(z.toJSONSchema(committeeSeedSchema)));
