@@ -108,7 +108,7 @@
 		"vite": "^6.3.6",
 		"with-csv": "^2.0.0",
 		"world-countries": "^5.1.0",
-		"zod": "3.24.3",
+		"zod": "^3.24.3",
 		"zod-to-json-schema": "^3.24.6"
 	},
 	"name": "munify-delegator",
