@@ -9,7 +9,12 @@
 </script>
 
 <div class="join">
-	<button class="btn join-item btn-sm" disabled={active === 1} onclick={() => setPage(active - 1)}>
+	<button
+		class="btn join-item btn-sm"
+		disabled={active === 1}
+		onclick={() => setPage(active - 1)}
+		aria-label="Previous page"
+	>
 		<i class="fas fa-chevron-left"></i>
 	</button>
 
@@ -24,6 +29,7 @@
 
 	<button
 		class="btn join-item btn-sm"
+		aria-label="Next page"
 		disabled={active === total}
 		onclick={() => setPage(active + 1)}
 	>
