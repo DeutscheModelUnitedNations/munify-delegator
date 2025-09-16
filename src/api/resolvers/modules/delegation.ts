@@ -19,10 +19,10 @@ import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
-import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/services/formatNames';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 builder.prismaObject('Delegation', {
 	fields: (t) => ({
@@ -99,7 +99,7 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				createDelegationFormSchema.parse({ ...args, conferenceId: undefined });
+				applicationFormSchema.parse({ ...args, conferenceId: undefined });
 
 				// if the user somehow is already participating in the conference, throw an error
 				await fetchUserParticipations({
@@ -202,7 +202,7 @@ builder.mutationFields((t) => {
 							delegation.experience.length === 0 ||
 							!delegation.motivation ||
 							delegation.motivation.length === 0 ||
-							!createDelegationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+							!applicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 						) {
 							throw new GraphQLError(m.missingInformation());
 						}

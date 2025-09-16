@@ -707,7 +707,7 @@
 	"noSingleParticipantsFound": "Keine Einzelteilnehmende gefunden.",
 	"assignSupervisor": "Betreuung hinzufügen",
 	"genericToastLoading": "Lädt...",
-	"genericToastsuccess": "Erfolgreich",
+	"genericToastSuccess": "Erfolgreich",
 	"genericToastError": "Fehler",
 	"signupForSupervisorsDescription": "Als Betreuer*in behältst du den Überblick über alle deine Teilnehmenden und kannst ihren Status verfolgen.",
 	"connectWithStudents": "Mit Schüler*innen verbinden",

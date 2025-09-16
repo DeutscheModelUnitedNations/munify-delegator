@@ -9,7 +9,9 @@ const schema = z.object({
 	PUBLIC_OIDC_CLIENT_ID: z.string(),
 	PUBLIC_DEFAULT_LOCALE: z.string().default('de'),
 	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
-	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false)
+	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false),
+	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: z.coerce.number().default(1200),
+	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: z.coerce.number().default(100)
 });
 
 export const configPublic = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

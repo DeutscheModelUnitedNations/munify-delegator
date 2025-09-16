@@ -22,7 +22,7 @@ import {
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
-import { individualApplicationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/individual/[roleId]/form-schema';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 builder.prismaObject('SingleParticipant', {
 	fields: (t) => ({
@@ -97,7 +97,7 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				individualApplicationFormSchema.parse({ ...args, conferenceId: undefined });
+				applicationFormSchema.parse({ ...args, conferenceId: undefined });
 
 				const { foundDelegationMember, foundSupervisor, foundTeamMember } =
 					await fetchUserParticipations({
@@ -265,7 +265,7 @@ builder.mutationFields((t) => {
 						singleParticipant.experience.length === 0 ||
 						!singleParticipant.motivation ||
 						singleParticipant.motivation.length === 0 ||
-						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+						!applicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 					) {
 						throw new GraphQLError(m.missingInformation());
 					}
@@ -275,7 +275,7 @@ builder.mutationFields((t) => {
 					}
 				}
 
-				individualApplicationFormSchema.parse({
+				applicationFormSchema.parse({
 					school: args.school,
 					experience: args.experience,
 					motivation: args.motivation
