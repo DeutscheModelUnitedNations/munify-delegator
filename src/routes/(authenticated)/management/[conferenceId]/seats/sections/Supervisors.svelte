@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { graphql, type SeatsQuery$result } from '$houdini';
-	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';
+	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
@@ -67,7 +66,7 @@
 							<InitialsButton
 								given_name={supervisor.user.given_name}
 								family_name={supervisor.user.family_name}
-								href={`/management/${conferenceId}/participants?filter=${supervisor.user.id}`}
+								href={`/management/${conferenceId}/participants?selected=${supervisor.user.id}`}
 							/>
 						{/each}
 

@@ -1,0 +1,102 @@
+<script lang="ts">
+	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import { queryParam } from 'sveltekit-search-params';
+	import type { PageData } from './$types';
+	import { addToPanel } from 'svelte-inspect-value';
+	import { cache, graphql } from '$houdini';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import toast from 'svelte-french-toast';
+	import { goto, invalidateAll } from '$app/navigation';
+
+	let { data }: { data: PageData } = $props();
+
+	let code = queryParam('code');
+
+	let conferenceId = $derived(data.conferenceQueryData?.findUniqueConference?.id);
+
+	const previewSupervisorQuery = graphql(`
+		query previewSupervisor($conferenceId: ID!, $connectionCode: String!) {
+			previewConferenceSupervisor(conferenceId: $conferenceId, connectionCode: $connectionCode) {
+				family_name
+				given_name
+			}
+		}
+	`);
+
+	const connectSupervisorMutation = graphql(`
+		mutation connectSupervisor($conferenceId: ID!, $connectionCode: String!) {
+			connectToConferenceSupervisor(conferenceId: $conferenceId, connectionCode: $connectionCode) {
+				id
+			}
+		}
+	`);
+
+	const connect = async () => {
+		if (!conferenceId || !$code || !$previewSupervisorQuery.data?.previewConferenceSupervisor)
+			return;
+
+		const res = await toast.promise(
+			connectSupervisorMutation.mutate({
+				conferenceId,
+				connectionCode: $code
+			}),
+			genericPromiseToastMessages
+		);
+
+		if (res.errors) {
+			console.error(res.errors);
+			return;
+		}
+
+		cache.markStale();
+		await invalidateAll();
+		goto(`/dashboard/${conferenceId}`);
+	};
+	$effect(() => {
+		if ($code) {
+			if (!conferenceId) {
+				return;
+			}
+			previewSupervisorQuery.fetch({
+				variables: { conferenceId, connectionCode: $code }
+			});
+		}
+	});
+
+	addToPanel('Data', () => data);
+	addToPanel('ConnectionCode', () => $code);
+	addToPanel('Query', () => $previewSupervisorQuery);
+</script>
+
+<div class="flex w-full flex-col gap-4">
+	<DashboardContentCard
+		title={m.connectSupervisorTitle()}
+		description={m.connectSupervisorDescription()}
+	>
+		<input
+			type="text"
+			class="input input-bordered w-full max-w-lg font-mono tracking-[0.6rem]"
+			bind:value={$code}
+		/>
+
+		{#if $previewSupervisorQuery.fetching}
+			<div class="ml-10 mt-10">
+				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
+			</div>
+		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}
+			<div class="alert alert-info mt-4">
+				<div>
+					<h3 class="text-lg font-bold capitalize">
+						{$previewSupervisorQuery.data.previewConferenceSupervisor.given_name}
+						{$previewSupervisorQuery.data.previewConferenceSupervisor.family_name}
+					</h3>
+					<p class="mt-4 text-sm">{m.connectSupervisorWarning()}</p>
+					<button class="btn btn-primary mt-4" onclick={connect}>{m.connectSupervisorBtn()}</button>
+				</div>
+			</div>
+		{:else if $code}
+			<div class="alert alert-warning mt-4">{m.notFound()}</div>
+		{/if}
+	</DashboardContentCard>
+</div>

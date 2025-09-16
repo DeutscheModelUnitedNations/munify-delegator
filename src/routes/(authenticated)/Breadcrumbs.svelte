@@ -65,7 +65,7 @@
 			translation: m.role(),
 			icon: 'gavel'
 		},
-		'join-delegation-supervisor': {
+		supervisor: {
 			translation: m.supervisor(),
 			icon: 'eye'
 		},
@@ -152,6 +152,14 @@
 		import: {
 			icon: 'file-import',
 			translation: m.import()
+		},
+		connectSupervisor: {
+			icon: 'eye',
+			translation: m.connectSupervisorTitle()
+		},
+		seed: {
+			icon: 'seedling',
+			translation: m.seedConference()
 		}
 	};
 
@@ -204,7 +212,7 @@ import path via the parameter! -->
 >
 	{#snippet pathSnippet(pathSegment: PathSegment<Parameters, boolean>)}
 		{@const breadcrumb = getBreadcrumb(pathSegment)}
-		<a class="btn btn-ghost btn-sm" href={pathSegment.href}>
+		<a class="btn btn-ghost btn-sm !no-underline" href={pathSegment.href}>
 			<i class="fa-duotone fa-{breadcrumb.icon}"></i>
 			<p class="ml-2">
 				{#if breadcrumb.delayedLabel}

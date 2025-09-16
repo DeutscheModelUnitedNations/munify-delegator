@@ -467,7 +467,7 @@ export async function generateCompletePostalRegistrationPDF(
 	termsAndConditions?: string
 ): Promise<Uint8Array> {
 	// Determine which pages to include based on age
-	const pageGenerators = [];
+	const pageGenerators: any[] = [];
 
 	// First PDF is always included
 	pageGenerators.push(
@@ -495,7 +495,7 @@ export async function generateCompletePostalRegistrationPDF(
 		new MediaGenerator(await PDFDocument.load(medialAgreement || ''), defaultStyles, participant)
 	);
 
-	const singlePDFs = [];
+	const singlePDFs: any[] = [];
 
 	// Generate all pages
 	for (const generator of pageGenerators) {

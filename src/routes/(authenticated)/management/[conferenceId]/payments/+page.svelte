@@ -219,7 +219,7 @@
 							<div>{user.id}</div>
 							<a
 								class="btn btn-ghost btn-sm"
-								href="/management/{data.conferenceId}/participants?filter={user.id}"
+								href="/management/{data.conferenceId}/participants?selected={user.id}"
 								aria-label="Details for {formatNames(user.given_name, user.family_name)}"
 							>
 								<i class="fa-duotone fa-up-right-from-square"></i>

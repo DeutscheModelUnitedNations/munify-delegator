@@ -5,7 +5,75 @@
 		"$schema": {
 			"type": "string"
 		},
-		"data": {
+		"conference": {
+			"type": "object",
+			"properties": {
+				"title": {
+					"type": "string"
+				},
+				"longTitle": {
+					"type": "string"
+				},
+				"location": {
+					"type": "string"
+				},
+				"website": {
+					"type": "string",
+					"format": "uri"
+				},
+				"language": {
+					"type": "string"
+				},
+				"startAssignment": {
+					"type": "string"
+				},
+				"startConference": {
+					"type": "string"
+				},
+				"endConference": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"title",
+				"longTitle",
+				"location",
+				"website",
+				"language",
+				"startAssignment",
+				"startConference",
+				"endConference"
+			],
+			"additionalProperties": false
+		},
+		"nsa": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"abbreviation": {
+						"type": "string"
+					},
+					"seatAmount": {
+						"default": 1,
+						"type": "number",
+						"minimum": 1
+					},
+					"description": {
+						"type": "string"
+					},
+					"fontAwesomeIcon": {
+						"type": "string"
+					}
+				},
+				"required": ["name", "abbreviation", "seatAmount", "fontAwesomeIcon"],
+				"additionalProperties": false
+			}
+		},
+		"countries": {
 			"type": "array",
 			"items": {
 				"type": "object",
@@ -272,13 +340,18 @@
 								"ZW"
 							]
 						}
+					},
+					"seats": {
+						"default": 1,
+						"type": "number",
+						"minimum": 1
 					}
 				},
-				"required": ["name", "abbreviation", "nations"],
+				"required": ["name", "abbreviation", "nations", "seats"],
 				"additionalProperties": false
 			}
 		}
 	},
-	"required": ["$schema", "data"],
+	"required": ["$schema", "conference", "nsa", "countries"],
 	"additionalProperties": false
 }

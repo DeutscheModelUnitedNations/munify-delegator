@@ -3,6 +3,7 @@
 	import type { PageData } from './$houdini';
 	import svgempty from '$assets/undraw/empty_street.svg';
 	import ConferenceCard from '$lib/components/ConferenceCard/ConferenceCard.svelte';
+	import { addToPanel } from 'svelte-inspect-value';
 
 	let { data }: { data: PageData } = $props();
 	let conferenceQuery = $derived(data.ConferenceOpenForRegistrationQuery);
@@ -23,13 +24,26 @@
 			return true;
 		}
 
+		if (
+			$conferenceQuery.data?.findManyConferenceSupervisors.find(
+				(x) => x.conference.id === conferenceId
+			)
+		) {
+			return true;
+		}
+
 		return false;
 	}
+
+	addToPanel('conferences', () => ({ conferences }));
+	addToPanel('supervisors', () => ({
+		supervisors: $conferenceQuery.data?.findManyConferenceSupervisors
+	}));
 </script>
 
 <div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<p>{m.selectConference()}</p>
+		<h1 class="text-xl">{m.selectConference()}</h1>
 	</hero>
 
 	<main>

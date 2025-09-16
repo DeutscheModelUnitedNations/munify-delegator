@@ -124,11 +124,16 @@
 					{btnText ?? m.signup()}
 					<i class="fas fa-arrow-right"></i>
 				</a>
-			{:else}
-				<button class="btn" disabled>
+			{:else if registrationStatus === 'NOT_YET_OPEN'}
+				<button class="btn btn-disabled">
+					<i class="fas fa-lock"></i>
 					{btnText ?? m.signup()}
-					<i class="fas fa-arrow-right"></i>
 				</button>
+			{:else}
+				<a href={`/dashboard/${conference.id}`} class="btn btn-success">
+					{btnText ?? m.dashboard()}
+					<i class="fas fa-arrow-right"></i>
+				</a>
 			{/if}
 		</div>
 	</div>

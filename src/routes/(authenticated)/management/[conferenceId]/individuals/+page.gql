@@ -16,6 +16,7 @@ query ConferenceSingleParticipantsQuery($conferenceId: String!) {
 		motivation
 		experience
 		user {
+			id
 			family_name
 			given_name
 		}

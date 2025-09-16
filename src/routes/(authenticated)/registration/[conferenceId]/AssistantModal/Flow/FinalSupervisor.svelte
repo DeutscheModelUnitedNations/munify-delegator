@@ -15,7 +15,7 @@
 			icon: 'arrow-right',
 			title: 'Zur Anmeldung',
 			class: 'btn-primary',
-			href: `${conferenceId}/join-delegation-supervisor`
+			href: `${conferenceId}/supervisor`
 		}
 	];
 </script>

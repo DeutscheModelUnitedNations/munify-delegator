@@ -2,6 +2,7 @@
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
 		"allowJs": true,
+		"noImplicitAny": false,
 		"checkJs": true,
 		"module": "ESNext", // or "CommonJS"
 		"target": "ESNext", // or "ES6"
@@ -19,6 +20,6 @@
 				"schema": "./src/lib/gqlClient/schema.gql"
 			}
 		],
-		"rootDirs": [".", "./.svelte-kit/types", "./$houdini/types"]
+		"rootDirs": [".", "./.svelte-kit/types", "./.houdini/types"]
 	}
 }

@@ -58,26 +58,26 @@
 	<PlausibilityDetails
 		headline={m.plausibilityTooYoung()}
 		items={plausibility.tooYoungUsers}
-		link="/management/{data.conferenceId}/participants?filter="
+		link="/management/{data.conferenceId}/participants?selected="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityTooOld()}
 		items={plausibility.tooOldUsers}
-		link="/management/{data.conferenceId}/participants?filter="
+		link="/management/{data.conferenceId}/participants?selected="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldBeSupervisor()}
 		items={plausibility.shouldBeSupervisor}
-		link="/management/{data.conferenceId}/participants?filter="
+		link="/management/{data.conferenceId}/participants?selected="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldNotBeSupervisor()}
 		items={plausibility.shouldNotBeSupervisor}
-		link="/management/{data.conferenceId}/participants?filter="
+		link="/management/{data.conferenceId}/participants?selected="
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityIncompleteOrInvalidData()}
 		items={plausibility.dataMissing}
-		link="/management/{data.conferenceId}/participants?filter="
+		link="/management/{data.conferenceId}/participants?selected="
 	/>
 </div>

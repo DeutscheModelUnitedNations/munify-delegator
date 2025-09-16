@@ -7,11 +7,15 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import IndividualDrawer from './SupervisorDrawer.svelte';
+	import { queryParam } from 'sveltekit-search-params';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceSupervisorsQuery);
 	const supervisors = $derived($queryData?.data?.findManyConferenceSupervisors ?? []);
 	const { getTableSize } = getTableSettings();
+
+	let selectedSupervisorId = queryParam('selected');
+	let filter = queryParam('filter');
 
 	const columns: TableColumns<(typeof supervisors)[number]> = [
 		{
@@ -38,15 +42,31 @@
 		},
 		{
 			key: 'delegations',
-			title: m.adminDelegations(),
-			value: (row) => row.delegations.length,
+			title: m.delegationMembers(),
+			value: (row) => row.supervisedDelegationMembers?.length,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'singleParticipants',
+			title: m.adminSingleParticipants(),
+			value: (row) => row.supervisedSingleParticipants.length,
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'totalSupervisedParticipants',
+			title: m.participants(),
+			value: (row) =>
+				row.supervisedSingleParticipants.length + row.supervisedDelegationMembers.length,
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'
 		}
 	];
 
-	let selectedSupervisorRow = $state<(typeof supervisors)[number]>();
 	// TODO export data
 </script>
 
@@ -56,15 +76,15 @@
 	enableSearch={true}
 	queryParamKey="filter"
 	rowSelected={(row) => {
-		selectedSupervisorRow = row;
+		$selectedSupervisorId = row.id;
 	}}
 />
 
-{#if selectedSupervisorRow}
+{#if $selectedSupervisorId}
 	<IndividualDrawer
-		supervisorId={selectedSupervisorRow.id}
+		supervisorId={$selectedSupervisorId}
 		conferenceId={data.conferenceId}
-		open={selectedSupervisorRow !== undefined}
-		onClose={() => (selectedSupervisorRow = undefined)}
+		open={$selectedSupervisorId !== null}
+		onClose={() => ($selectedSupervisorId = null)}
 	/>
 {/if}

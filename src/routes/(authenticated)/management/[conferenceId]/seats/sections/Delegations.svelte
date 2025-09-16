@@ -148,7 +148,7 @@
 											<InitialsButton
 												given_name={member.user.given_name}
 												family_name={member.user.family_name}
-												href={`/management/${conferenceId}/participants?filter=${member.user.id}`}
+												href={`/management/${conferenceId}/participants?selected=${member.user.id}`}
 											/>
 										{/each}
 										{#if assignedDelegationMember.length < committee.numOfSeatsPerDelegation}
@@ -184,7 +184,7 @@
 					{#if delegation}
 						<a
 							class="btn btn-ghost btn-sm"
-							href={`/management/${conferenceId}/delegations?filter=${delegation?.id}`}
+							href={`/management/${conferenceId}/delegations?selected=${delegation?.id}`}
 							aria-label="View delegation"
 						>
 							<i class="fa-duotone fa-up-right-from-square"></i>

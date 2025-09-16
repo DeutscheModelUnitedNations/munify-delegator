@@ -1,4 +1,5 @@
 {
+	"editor.suggest.showReferences": false,
 	"files.eol": "\n",
 	"vscodeGitCommit.template": ["{prefix}: {message}"],
 	"[javascript]": {},

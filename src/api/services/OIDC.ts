@@ -57,7 +57,7 @@ const { config, cryptr, jwks } = await (async () => {
 			cryptr: undefined as unknown as Cryptr
 		};
 	}
-	const execute = [];
+	const execute: any[] = [];
 	if (configPrivate.NODE_ENV === 'development') {
 		execute.push(allowInsecureRequests);
 	}

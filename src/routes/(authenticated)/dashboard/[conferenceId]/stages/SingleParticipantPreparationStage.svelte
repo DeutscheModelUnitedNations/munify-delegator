@@ -1,65 +1,63 @@
 <script lang="ts">
-	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
 	import type { PageData } from '../$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
-	import formatNames from '$lib/services/formatNames';
 	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
+	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import SupervisorTable from './SupervisorTable.svelte';
 
-	let {
-		data
-	}: {
-		data: NonNullable<PageData['conferenceQueryData']> & Pick<PageData, 'user'>;
-	} = $props();
+	interface Props {
+		surveyQuestions: NonNullable<MyConferenceparticipationQuery$result['findManySurveyQuestions']>;
+		surveyAnswers: NonNullable<MyConferenceparticipationQuery$result['findManySurveyAnswers']>;
+		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		singleParticipant: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
+		>;
+		user: PageData['user'];
+	}
 
-	const user = $derived(data.findUniqueSingleParticipant?.user);
+	let { surveyQuestions, surveyAnswers, conference, singleParticipant, user }: Props = $props();
 </script>
 
 <TasksWrapper>
-	{#if data.findManySurveyQuestions && data.findManySurveyQuestions.length > 0}
+	{#if surveyQuestions && surveyQuestions.length > 0}
 		<TaskAlertCard
 			faIcon="fa-square-poll-horizontal"
 			title={m.survey()}
 			description={m.surveyDescription()}
 			btnText={m.goToSurvey()}
-			btnLink={`./${data.findUniqueConference?.id}/survey`}
-			severity={data.findManySurveyQuestions.length > data.findManySurveyAnswers.length
-				? 'warning'
-				: 'info'}
+			btnLink={`./${conference?.id}/survey`}
+			severity={surveyQuestions.length > surveyAnswers.length ? 'warning' : 'info'}
 		/>
 	{/if}
-	{#if data.findUniqueConference?.info}
+	{#if conference?.info}
 		<TaskAlertCard
 			faIcon="fa-info-circle"
 			title={m.conferenceInfo()}
 			description={m.conferenceInfoDescription()}
 			btnText={m.goToConferenceInfo()}
-			btnLink={`./${data.findUniqueConference?.id}/info`}
+			btnLink={`./${conference?.id}/info`}
 		/>
 	{/if}
-	{#if data.findUniqueConference?.linkToPreparationGuide}
+	{#if conference?.linkToPreparationGuide}
 		<TaskAlertCard
 			faIcon="fa-book-bookmark"
 			title={m.preparation()}
 			description={m.preparationDescription()}
 			btnText={m.goToPreparation()}
-			btnLink={data.findUniqueConference?.linkToPreparationGuide}
+			btnLink={conference?.linkToPreparationGuide}
 			btnExternal
 		/>
 	{/if}
-	{#if data.findUniqueConference?.linkToPaperInbox && data.user}
+	{#if conference?.linkToPaperInbox && user}
 		<TaskAlertCard
 			faIcon="fa-file-circle-plus"
 			title={m.paperInbox()}
 			description={m.paperInboxDescription()}
 			btnText={m.paperInboxBtn()}
-			btnLink={generatePaperInboxLinkWithParams(
-				data.findUniqueConference?.linkToPaperInbox,
-				data.user
-			)}
+			btnLink={generatePaperInboxLinkWithParams(conference?.linkToPaperInbox, user)}
 			btnExternal
 			severity="info"
 		/>
@@ -69,17 +67,7 @@
 <section class="flex w-full flex-col gap-4">
 	<h2 class="text-2xl font-bold">{m.role()}</h2>
 	<div class="stats bg-base-200 shadow">
-		<RoleWidget customConferenceRole={data.findUniqueSingleParticipant?.assignedRole} />
+		<RoleWidget customConferenceRole={singleParticipant?.assignedRole} />
 	</div>
-</section>
-
-<section class="flex w-full flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.status()}</h2>
-	<!-- <DelegationStatusTableWrapper withCommittee withMailStatus withPaymentStatus> -->
-	<DelegationStatusTableWrapper>
-		<DelegationStatusTableEntry
-			name={formatNames(user?.given_name, user?.family_name)}
-			pronouns={user?.pronouns ?? ''}
-		/>
-	</DelegationStatusTableWrapper>
+	<SupervisorTable supervisors={singleParticipant.supervisors} conferenceId={conference.id} />
 </section>

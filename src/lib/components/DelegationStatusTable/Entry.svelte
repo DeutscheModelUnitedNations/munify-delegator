@@ -5,7 +5,7 @@
 
 	interface Props {
 		name: string;
-		pronouns: string;
+		pronouns?: string | null;
 		email?: string;
 		headDelegate?: boolean;
 		committee?: string;
@@ -66,7 +66,11 @@
 		{/if}
 	</td>
 	<td>
-		{pronouns}
+		{#if pronouns}
+			{pronouns}
+		{:else}
+			<i class="fa-duotone fa-dash"></i>
+		{/if}
 	</td>
 
 	{#if committee != undefined}
@@ -102,20 +106,20 @@
 						aria-label="Download Postal Registration PDF"
 					>
 						{#if loading}
-							<i class="fa-solid fa-spinner fa-spin text-xl"></i>
+							<i class="fa-solid fa-spinner fa-spin"></i>
 						{:else}
-							<i class="fa-duotone fa-download text-xl"></i>
+							<i class="fa-duotone fa-download"></i>
 						{/if}
 					</button>
 				</div>
 			{/if}
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>
 				{#if postalSatus === 'DONE'}
-					<i class="fas fa-circle-check text-xl text-success"></i>
+					<i class="fas fa-circle-check text-success"></i>
 				{:else if postalSatus === 'PROBLEM'}
-					<i class="fas fa-triangle-exclamation fa-beat text-xl text-error"></i>
+					<i class="fas fa-triangle-exclamation fa-beat text-error"></i>
 				{:else}
-					<i class="fas fa-hourglass-half text-xl text-warning"></i>
+					<i class="fas fa-hourglass-half text-warning"></i>
 				{/if}
 			</div>
 		</td>
@@ -124,11 +128,11 @@
 		<td class="text-center">
 			<div class="tooltip" data-tip={getPaymentStatusTooltip()}>
 				{#if paymentStatus === 'DONE'}
-					<i class="fas fa-circle-check text-xl text-success"></i>
+					<i class="fas fa-circle-check text-success"></i>
 				{:else if paymentStatus === 'PROBLEM'}
-					<i class="fas fa-triangle-exclamation fa-beat text-xl text-error"></i>
+					<i class="fas fa-triangle-exclamation fa-beat text-error"></i>
 				{:else}
-					<i class="fas fa-hourglass-half text-xl text-warning"></i>
+					<i class="fas fa-hourglass-half text-warning"></i>
 				{/if}
 			</div>
 		</td>

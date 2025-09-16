@@ -70,7 +70,7 @@
 					{#each users ?? [] as u}
 						<p>
 							<a
-								href="/management/{data.conferenceId}/participants?filter={u.user.id}"
+								href="/management/{data.conferenceId}/participants?selected={u.user.id}"
 								class="hover:underline">{formatNames(u.user.given_name, u.user.family_name)}</a
 							>
 						</p>
@@ -86,7 +86,7 @@
 			{#each notAssignedParticipants ?? [] as user}
 				<p>
 					<a
-						href="/management/{data.conferenceId}/participants?filter={user.id}"
+						href="/management/{data.conferenceId}/participants?selected={user.id}"
 						class="hover:underline">{formatNames(user.given_name, user.family_name)}</a
 					>
 				</p>

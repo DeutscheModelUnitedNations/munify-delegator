@@ -39,4 +39,8 @@
 			{m.noResults()}
 		{/if}
 	</div>
+	<a class="btn btn-ghost btn-sm self-center" href="/management/seed">
+		<i class="fa-duotone fa-seedling"></i>
+		{m.seedConference()}
+	</a>
 </div>

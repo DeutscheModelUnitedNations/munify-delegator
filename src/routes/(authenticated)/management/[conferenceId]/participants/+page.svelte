@@ -9,13 +9,16 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { ParticipationType, UserRowData } from './types';
-	import { cache } from '$houdini';
+	import { cache, query } from '$houdini';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import { queryParam } from 'sveltekit-search-params';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
 	const conference = $derived($queryData.data?.findUniqueConference);
 	const participationStatuses = $derived($queryData.data?.findManyConferenceParticipantStatuss);
+
+	let selectedUserRow = queryParam('selected');
 
 	const users = $derived.by(() => {
 		const getParticipationStatus = (userId: string) => {
@@ -232,8 +235,6 @@
 	// 	];
 	// });
 
-	let selectedUserRow = $state<UserRowData>();
-
 	// <!-- <ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions /> -->
 	// <PrintHeader title={m.adminUsers()} globalSearchValue={filterValue ?? undefined} />
 	// <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
@@ -246,17 +247,17 @@
 	enableSearch={true}
 	queryParamKey="filter"
 	rowSelected={(row) => {
-		selectedUserRow = row;
+		$selectedUserRow = row.id;
 	}}
 />
 
-{#if selectedUserRow}
+{#if $selectedUserRow}
 	<UserDrawer
-		user={selectedUserRow}
+		userId={$selectedUserRow}
 		conferenceId={data.conferenceId}
-		open={selectedUserRow !== undefined}
+		open={$selectedUserRow !== null}
 		onClose={() => {
-			selectedUserRow = undefined;
+			$selectedUserRow = null;
 			cache.markStale();
 			data.ConferenceParticipantsByParticipationTypeQuery.fetch();
 		}}
