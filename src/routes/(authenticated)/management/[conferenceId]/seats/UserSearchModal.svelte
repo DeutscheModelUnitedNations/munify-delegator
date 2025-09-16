@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { cache, graphql } from '$houdini';
-	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';
+	import { cache, graphql, type getUserInfo$result } from '$houdini';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';

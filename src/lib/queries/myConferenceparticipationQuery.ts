@@ -219,6 +219,9 @@ export const myConferenceparticipationQuery = graphql(`
 			}
 			supervisedSingleParticipants {
 				id
+				school
+				motivation
+				experience
 				user {
 					id
 					family_name

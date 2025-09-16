@@ -533,21 +533,13 @@
 							<tr>
 								<td>{m.role()}</td>
 								<td>
-									<Flag
-										size="xs"
-										alpha2Code={singleParticipant.assignedNation?.alpha2Code}
-										nsa={!!singleParticipant.assignedNonStateActor}
-										icon={singleParticipant.assignedNonStateActor?.fontAwesomeIcon ??
-											'fa-hand-point-up'}
-									/>
-									{#if singleParticipant.assignedNation}
-										{getFullTranslatedCountryNameFromISO3Code(
-											singleParticipant.assignedNation.alpha3Code
-										)}
-										({alpha3Code(singleParticipant.assignedNation.alpha3Code)})
-									{:else if singleParticipant.assignedNonStateActor}
-										{singleParticipant.assignedNonStateActor.name}
-									{/if}
+									<i
+										class="fa-duotone fa-{singleParticipant.assignedRole?.fontAwesomeIcon?.replace(
+											'fa-',
+											''
+										)}"
+									></i>
+									{singleParticipant.assignedRole?.name}
 								</td>
 							</tr>
 						{/if}

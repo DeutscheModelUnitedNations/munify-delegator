@@ -9,6 +9,7 @@
 	import DelegationDrawer from './DelegationDrawer.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { queryParam } from 'sveltekit-search-params';
+	import codenmz from '$lib/services/codenamize';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceDelegationsQuery);
@@ -29,6 +30,11 @@
 	const { getTableSize } = getTableSettings();
 
 	const columns: TableColumns<(typeof delegations)[number]> = [
+		{
+			key: 'codename',
+			title: 'Codename',
+			value: (row) => codenmz(row.id)
+		},
 		{
 			key: 'entryCode',
 			title: 'Entry Code',

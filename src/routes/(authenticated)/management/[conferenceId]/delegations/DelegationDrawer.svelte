@@ -9,6 +9,7 @@
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 	import { type PageData } from './$houdini';
 	import { invalidateAll } from '$app/navigation';
+	import codenmz from '$lib/services/codenamize';
 
 	interface Props {
 		conferenceId: string;
@@ -149,7 +150,7 @@
 	bind:open
 	{onClose}
 	id={delegationId}
-	title={delegation?.entryCode ?? 'XXXXXX'}
+	title={codenmz(delegationId)}
 	category={m.delegation()}
 	loading={$delegationQuery.fetching}
 >
