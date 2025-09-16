@@ -8,9 +8,10 @@
 		placeholder?: string;
 		form: SuperForm<A, B>;
 		type?: string;
+		disabled?: boolean;
 	}
 
-	let { form, label, name, placeholder, type = 'text' }: Props = $props();
+	let { form, label, name, placeholder, type = 'text', disabled = false }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
@@ -28,9 +29,14 @@
 		id={name}
 		bind:value={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
+		{disabled}
 		{...constraints}
 	/>
-
+	{#if constraints?.maxlength}
+		<label class="label w-full text-right text-xs text-base-content/60" for={name}>
+			{($formData[name] as string | undefined | null)?.length ?? 0} / {constraints?.maxlength}
+		</label>
+	{/if}
 	<FormFieldErrors {errors} />
 </label>
 

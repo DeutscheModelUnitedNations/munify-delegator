@@ -4,7 +4,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
-import { createDelegationFormSchema } from './form-schema';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 const createDelegation = graphql(`
 	mutation CreateDelegationFromFormMutation(
@@ -26,13 +26,16 @@ const createDelegation = graphql(`
 `);
 
 export const load: PageServerLoad = async (event) => {
-	const form = await superValidate(zod(createDelegationFormSchema));
+	const form = await superValidate(zod(applicationFormSchema));
 	return { form, conferenceId: event.params.conferenceId, origin: event.url.origin };
 };
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(createDelegationFormSchema));
+		const form = await superValidate(event.request, zod(applicationFormSchema));
+
+		console.log(form);
+
 		if (!form.valid) {
 			return fail(400, { form });
 		}

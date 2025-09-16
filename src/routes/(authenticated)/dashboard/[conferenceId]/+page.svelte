@@ -29,7 +29,11 @@
 		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<SingleParticipantRegistrationStage {singleParticipant} {conference} />
+				<SingleParticipantRegistrationStage
+					{singleParticipant}
+					{conference}
+					applicationForm={data.applicationForm}
+				/>
 			{:else if singleParticipant?.assignedRole}
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
@@ -59,7 +63,11 @@
 			{/if}
 		{:else if delegationMember?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<DelegationRegistrationStage {delegationMember} {conference} />
+				<DelegationRegistrationStage
+					{delegationMember}
+					{conference}
+					applicationForm={data.applicationForm}
+				/>
 			{:else if !!delegationMember?.delegation?.assignedNation || !!delegationMember?.delegation?.assignedNonStateActor}
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget

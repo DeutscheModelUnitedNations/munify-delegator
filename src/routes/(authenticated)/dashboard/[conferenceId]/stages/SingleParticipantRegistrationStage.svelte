@@ -5,35 +5,51 @@
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
 	import SupervisorTable from './SupervisorTable.svelte';
+	import { superForm } from 'sveltekit-superforms';
+	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { applicationFormSchema } from '$lib/schemata/applicationForm';
+	import toast from 'svelte-french-toast';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import Form from '$lib/components/Form/Form.svelte';
+	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 
 	interface Props {
 		singleParticipant: NonNullable<
 			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
 		>;
 		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		applicationForm: any;
 	}
 
-	let { singleParticipant, conference }: Props = $props();
+	let { singleParticipant, conference, applicationForm }: Props = $props();
 
-	//TODO: We should use forms for this
-	let questionnaireValues = $state({
-		school: '',
-		motivation: '',
-		experience: ''
+	const form = superForm(applicationForm, {
+		SPA: true,
+		resetForm: false,
+		validationMethod: 'oninput',
+		validators: zodClient(applicationFormSchema),
+		onError: (e) => {
+			toast.error(e.result.error.message);
+		},
+		onSubmit: async () => {
+			await toast.promise(
+				updateMutation.mutate({
+					where: { id: singleParticipant.id },
+					...$formData
+				}),
+				genericPromiseToastMessages
+			);
+			cache.markStale();
+			await invalidateAll();
+		}
 	});
-
-	onMount(async () => {
-		questionnaireValues = {
-			school: singleParticipant.school ?? '',
-			motivation: singleParticipant.motivation ?? '',
-			experience: singleParticipant.experience ?? ''
-		};
-	});
+	let formData = $derived(form.form);
 
 	const updateMutation = graphql(`
 		mutation UpdateSingleParticipantMutation(
@@ -77,10 +93,15 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		await updateMutation.mutate({
-			where: { id: singleParticipant.id },
-			applied: true
-		});
+		await toast.promise(
+			updateMutation.mutate({
+				where: { id: singleParticipant.id },
+				applied: true
+			}),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
+		await invalidateAll();
 	};
 
 	const deleteAllApplications = async () => {
@@ -90,9 +111,14 @@
 		}
 		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
 
-		await deleteMutation.mutate({
-			where: { id: singleParticipant.id }
-		});
+		await toast.promise(
+			deleteMutation.mutate({
+				where: { id: singleParticipant.id }
+			}),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
+		await invalidateAll();
 		goto('/dashboard');
 	};
 
@@ -102,10 +128,15 @@
 			return;
 		}
 		if (!confirm(m.deleteApplicationConfirmation())) return;
-		await updateMutation.mutate({
-			where: { id: singleParticipant.id },
-			unApplyForRolesIdList: [id]
-		});
+		await toast.promise(
+			updateMutation.mutate({
+				where: { id: singleParticipant.id },
+				unApplyForRolesIdList: [id]
+			}),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
+		await invalidateAll();
 		goto('/dashboard');
 	};
 
@@ -232,80 +263,36 @@
 			description={m.informationAndMotivationDescriptionHeadDelegate()}
 			class="flex-1"
 		>
-			<form
-				class="flex flex-col gap-4"
-				onsubmit={async (e) => {
-					e.preventDefault();
-					if (!singleParticipant) {
-						console.error('Error: Single Participant Data not found');
-						return;
-					}
-					await updateMutation.mutate({
-						where: { id: singleParticipant.id },
-						school: questionnaireValues.school,
-						motivation: questionnaireValues.motivation,
-						experience: questionnaireValues.experience
-					});
-				}}
-			>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text text-left max-ch-sm">{m.whichSchoolDoYouComeFrom()}</span>
-					</div>
-					<input
-						type="text"
-						placeholder={m.answerHere()}
-						class="input input-sm input-bordered w-full"
-						value={questionnaireValues.school}
-						oninput={(e: any) => {
-							questionnaireValues.school = e.target.value;
-						}}
-						disabled={singleParticipant.applied}
-						required
-					/>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text text-left max-ch-sm"
-							>{m.whyDoYouWantToJoinTheConferenceSingleParticipant()}</span
-						>
-					</div>
-					<textarea
-						placeholder={m.answerHere()}
-						class="textarea textarea-bordered textarea-sm w-full"
-						value={questionnaireValues.motivation}
-						oninput={(e: any) => {
-							questionnaireValues.motivation = e.target.value;
-						}}
-						disabled={singleParticipant.applied}
-						required
-					></textarea>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text text-left max-ch-sm"
-							>{m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}</span
-						>
-					</div>
-					<textarea
-						placeholder={m.answerHere()}
-						class="textarea textarea-bordered textarea-sm w-full"
-						value={questionnaireValues.experience}
-						oninput={(e: any) => {
-							questionnaireValues.experience = e.target.value;
-						}}
-						disabled={singleParticipant.applied}
-						required
-					></textarea>
-				</label>
+			<Form {form} showSubmitButton={false}>
+				<FormTextInput
+					name="school"
+					label={m.whichSchoolDoesYourDelegationComeFrom()}
+					{form}
+					placeholder={m.answerHere()}
+					type="text"
+					disabled={singleParticipant.applied}
+				/>
+				<FormTextArea
+					name="motivation"
+					label={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
+					{form}
+					placeholder={m.answerHere()}
+					disabled={singleParticipant.applied}
+				/>
+				<FormTextArea
+					name="experience"
+					label={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
+					{form}
+					placeholder={m.answerHere()}
+					disabled={singleParticipant.applied}
+				/>
 				<div class="flex-1"></div>
-				<!-- this was data.delegationData previously, is this correct? -->
 				{#if !singleParticipant.applied}
 					<button class="btn btn-primary" type="submit">
 						{m.save()}
 					</button>
 				{/if}
-			</form>
+			</Form>
 		</DashboardContentCard>
 	</div>
 	{#if !singleParticipant.applied}
