@@ -31,17 +31,6 @@ query BaseAssignmentDataQuery($conferenceId: String!) {
 				birthday
 			}
 		}
-		supervisors {
-			id
-			delegations {
-				id
-			}
-			user {
-				id
-				given_name
-				family_name
-			}
-		}
 	}
 
 	findManySingleParticipants(

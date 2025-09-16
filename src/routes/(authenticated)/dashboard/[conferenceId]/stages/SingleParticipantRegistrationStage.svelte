@@ -7,17 +7,18 @@
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { graphql } from '$houdini';
+	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import SupervisorTable from './SupervisorTable.svelte';
 
-	let {
-		data
-	}: {
-		data: NonNullable<PageData['conferenceQueryData']> & Pick<PageData, 'user'>;
-	} = $props();
+	interface Props {
+		singleParticipant: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
+		>;
+		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+	}
 
-	let singleParticipant = $derived(data.findUniqueSingleParticipant!);
-	let conference = $derived(data.findUniqueConference!);
+	let { singleParticipant, conference }: Props = $props();
 
 	//TODO: We should use forms for this
 	let questionnaireValues = $state({
@@ -169,8 +170,9 @@
 	</section>
 {/if}
 <section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
+	<h2 class="text-2xl font-bold">{m.status()}</h2>
 	<GenericWidget content={stats} />
+	<SupervisorTable supervisors={singleParticipant.supervisors} conferenceId={conference.id} />
 </section>
 
 <section>

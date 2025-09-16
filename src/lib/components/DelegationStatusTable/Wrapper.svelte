@@ -24,7 +24,7 @@
 	}: Props = $props();
 </script>
 
-<DashboardContentCard {title} {description} class="overflow-x-auto">
+<DashboardContentCard {title} {description} class="overflow-x-auto dark:bg-base-300">
 	<table class="table">
 		<thead>
 			<tr>
@@ -39,14 +39,14 @@
 				{#if withPostalSatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Postialische Anmeldung">
-							<i class="fa-duotone fa-envelopes-bulk text-xl"></i>
+							<i class="fa-duotone fa-envelopes-bulk"></i>
 						</div>
 					</th>
 				{/if}
 				{#if withPaymentStatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Beitragszahlung">
-							<i class="fa-duotone fa-money-bill-transfer text-xl"></i>
+							<i class="fa-duotone fa-money-bill-transfer"></i>
 						</div>
 					</th>
 				{/if}

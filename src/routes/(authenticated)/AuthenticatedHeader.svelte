@@ -24,7 +24,7 @@
 			<button
 				class="sm:hidden"
 				aria-label="Toggle navigation menu"
-				on:click={() => {
+				onclick={() => {
 					if (headerState.openNavCallback) {
 						headerState.openNavCallback();
 					}

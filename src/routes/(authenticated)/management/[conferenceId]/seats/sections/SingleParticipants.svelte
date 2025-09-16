@@ -76,7 +76,7 @@
 									<InitialsButton
 										given_name={participant.user.given_name}
 										family_name={participant.user.family_name}
-										href={`/management/${conferenceId}/participants?filter=${participant.user.id}`}
+										href={`/management/${conferenceId}/participants?selected=${participant.user.id}`}
 									/>
 								{/each}
 								<AddParticipantBtn

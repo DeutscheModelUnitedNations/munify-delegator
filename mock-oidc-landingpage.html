@@ -19,15 +19,16 @@
 				margin: 0 5px 5px 0;
 			}
 		</style>
-		<script>
+		<script type="module">
+			import { faker } from 'https://cdn.jsdelivr.net/npm/@faker-js/faker@8.4.1/+esm';
 			const presets = [
 				{
 					id: 'admin',
 					claims: {
-						email: 'm.musterfrau@mail.com',
-						family_name: 'Musterfrau',
-						given_name: 'Maria',
-						preferred_username: 'AdminUser',
+						email: faker.internet.email(),
+						family_name: faker.person.lastName(),
+						given_name: faker.person.firstName(),
+						preferred_username: faker.internet.userName(),
 						locale: 'de',
 						'urn:zitadel:iam:org:project:275671427955294244:roles': {
 							admin: {}
@@ -37,10 +38,10 @@
 				{
 					id: 'user',
 					claims: {
-						email: 'm.mustermann@mail.com',
-						family_name: 'Mustermann',
-						given_name: 'Max',
-						preferred_username: 'NormalUser',
+						email: faker.internet.email(),
+						family_name: faker.person.lastName(),
+						given_name: faker.person.firstName(),
+						preferred_username: faker.internet.userName(),
 						locale: 'de'
 					}
 				}
@@ -53,6 +54,20 @@
 				usernameInput.value = preset.claims.preferred_username;
 				claimsTextarea.value = JSON.stringify(preset.claims, null, 2);
 			}
+
+			function generatePresetButtons() {
+				const container = document.querySelector('.presets-container');
+				presets.forEach((preset) => {
+					const button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'btn btn-secondary btn-sm preset-btn';
+					button.textContent = preset.id;
+					button.onclick = () => selectPreset(preset);
+					container.appendChild(button);
+				});
+			}
+
+			generatePresetButtons();
 		</script>
 	</head>
 
@@ -61,19 +76,7 @@
 			<div class="row justify-content-md-center mt-5">
 				<div class="col-md-5">
 					<h4>MUNify DELEGATOR Mock OAuth2</h4>
-					<div class="presets-container">
-						<script>
-							presets.forEach((preset, index) => {
-								document.write(`
-									<button type="button" 
-											class="btn btn-secondary btn-sm preset-btn" 
-											onclick="selectPreset(presets[${index}])">
-										${preset.id}
-									</button>
-								`);
-							});
-						</script>
-					</div>
+					<div class="presets-container"></div>
 					<form method="post">
 						<hr class="divisor" />
 						<div class="form-group">

@@ -8,7 +8,7 @@ import {
 } from '../../../routes/assignment-assistant/[projectId]/appData.svelte';
 import { builder } from '../builder';
 import { m } from '$lib/paraglide/messages';
-import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
 
 function getNations(committees: Committee[]): {
 	nation: Nation;
@@ -70,9 +70,6 @@ builder.mutationFields((t) => {
 						const parentDelegationDB = await tx.delegation.delete({
 							where: {
 								id: parentDelegation.id
-							},
-							include: {
-								supervisors: true
 							}
 						});
 
@@ -82,22 +79,11 @@ builder.mutationFields((t) => {
 							const childDelegationDB = await tx.delegation.create({
 								data: {
 									conferenceId: parentDelegationDB.conferenceId,
-									entryCode: makeDelegationEntryCode(),
+									entryCode: makeEntryCode(),
 									applied: true,
 									school: parentDelegationDB.school,
 									motivation: parentDelegationDB.motivation,
 									experience: parentDelegationDB.experience,
-									supervisors:
-										parentDelegationDB.supervisors.length > 0
-											? {
-													connect: parentDelegationDB.supervisors.map((supervisor) => ({
-														conferenceId_userId: {
-															conferenceId: parentDelegationDB.conferenceId,
-															userId: supervisor.userId
-														}
-													}))
-												}
-											: undefined,
 									members:
 										childDelegation.members.length > 0
 											? {
@@ -152,8 +138,7 @@ builder.mutationFields((t) => {
 									}
 								},
 								include: {
-									members: true,
-									supervisors: true
+									members: true
 								}
 							})
 						)?.sort((a, b) => a.members.length - b.members.length);
@@ -165,11 +150,6 @@ builder.mutationFields((t) => {
 						const newUserIds = assignedDelegations
 							.flatMap((x) => x.members.map((y) => y.user.id))
 							.filter((x) => !primaryDelegation?.members.some((y) => y.userId === x));
-
-						// gather all supervisors to fill the primary delegation
-						const newSupervisorIds = assignedDelegations
-							.flatMap((x) => x.supervisors.map((y) => y.user.id))
-							.filter((x) => !primaryDelegation?.supervisors.some((y) => y.userId === x));
 
 						// delete all other delegations
 						if (primaryDelegation) {
@@ -223,23 +203,12 @@ builder.mutationFields((t) => {
 										userId: x,
 										isHeadDelegate: false
 									}))
-								},
-								supervisors:
-									newSupervisorIds.length > 0
-										? {
-												connect: newSupervisorIds.map((x) => ({
-													conferenceId_userId: {
-														conferenceId: data.conference.id,
-														userId: x
-													}
-												}))
-											}
-										: undefined
+								}
 							},
 							create: {
 								applied: true,
 								conferenceId: data.conference.id,
-								entryCode: makeDelegationEntryCode(),
+								entryCode: makeEntryCode(),
 								assignedNationAlpha3Code: nation.nation.alpha3Code,
 								experience: assignedDelegations[0].experience,
 								motivation: assignedDelegations[0].motivation,
@@ -253,15 +222,7 @@ builder.mutationFields((t) => {
 													isHeadDelegate: i === 0
 												}))
 											}
-										: undefined,
-								supervisors: {
-									connect: newSupervisorIds.map((x) => ({
-										conferenceId_userId: {
-											conferenceId: data.conference.id,
-											userId: x
-										}
-									}))
-								}
+										: undefined
 							}
 						});
 					}
@@ -281,8 +242,7 @@ builder.mutationFields((t) => {
 									}
 								},
 								include: {
-									members: true,
-									supervisors: true
+									members: true
 								}
 							})
 						)?.sort((a, b) => a.members.length - b.members.length);
@@ -294,11 +254,6 @@ builder.mutationFields((t) => {
 						const newUserIds = assignedDelegations
 							.flatMap((x) => x.members.map((y) => y.user.id))
 							.filter((x) => !primaryDelegation?.members.some((y) => y.userId === x));
-
-						// gather all supervisors to fill the primary delegation
-						const newSupervisorIds = assignedDelegations
-							.flatMap((x) => x.supervisors.map((y) => y.user.id))
-							.filter((x) => !primaryDelegation?.supervisors.some((y) => y.userId === x));
 
 						// delete all other delegations
 						if (primaryDelegation && newUserIds.length > 0) {
@@ -356,17 +311,6 @@ builder.mutationFields((t) => {
 														isHeadDelegate: false
 													}))
 												}
-											: undefined,
-									supervisors:
-										newSupervisorIds.length > 0
-											? {
-													connect: newSupervisorIds.map((x) => ({
-														conferenceId_userId: {
-															conferenceId: data.conference.id,
-															userId: x
-														}
-													}))
-												}
 											: undefined
 								}
 							});
@@ -375,7 +319,7 @@ builder.mutationFields((t) => {
 								data: {
 									applied: true,
 									conferenceId: data.conference.id,
-									entryCode: makeDelegationEntryCode(),
+									entryCode: makeEntryCode(),
 									experience: assignedDelegations[0].experience,
 									motivation: assignedDelegations[0].motivation,
 									school: assignedDelegations[0].school,
@@ -385,14 +329,6 @@ builder.mutationFields((t) => {
 											conferenceId: data.conference.id,
 											userId: x,
 											isHeadDelegate: i === 0
-										}))
-									},
-									supervisors: {
-										connect: newSupervisorIds.map((x) => ({
-											conferenceId_userId: {
-												conferenceId: data.conference.id,
-												userId: x
-											}
 										}))
 									}
 								}

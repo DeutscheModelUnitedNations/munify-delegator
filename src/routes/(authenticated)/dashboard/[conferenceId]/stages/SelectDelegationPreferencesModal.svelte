@@ -8,21 +8,18 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
-	import { graphql } from '$houdini';
+	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 
 	interface Props {
 		open: boolean;
 		onClose: () => void;
-		data: Pick<
-			NonNullable<PageData['conferenceQueryData']>,
-			'findUniqueConference' | 'findUniqueDelegationMember'
+		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		delegationMember: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
 		>;
 	}
 
-	let { open, onClose, data }: Props = $props();
-
-	let delegationMember = $derived(data.findUniqueDelegationMember!);
-	let conference = $derived(data.findUniqueConference!);
+	let { open, onClose, conference, delegationMember }: Props = $props();
 
 	let nations = $derived(() => {
 		// TODO Use Houdini Types instead of Prisma Types

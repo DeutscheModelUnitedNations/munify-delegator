@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { PageData } from '../$houdini';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import DelegationStatusTableWrapper from '$lib/components/Dashboard/DelegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/Dashboard/DelegationStatusTable/Entry.svelte';
+	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import RoleApplicationTable from './RoleApplicationTable.svelte';
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
@@ -11,27 +11,24 @@
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
-	import { graphql } from '$houdini';
-	import { page } from '$app/stores';
-	import type { StoresValues } from '$lib/services/storeExtractorType';
+	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { page } from '$app/state';
 	import { cache } from '$houdini';
 	import formatNames from '$lib/services/formatNames';
+	import SupervisorTable from './SupervisorTable.svelte';
+	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 
 	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?
 
-	let {
-		data
-	}: {
-		data: Pick<
-			NonNullable<PageData['conferenceQueryData']>,
-			'findUniqueConference' | 'findUniqueDelegationMember'
-		> &
-			Pick<PageData, 'user'>;
-	} = $props();
+	interface Props {
+		delegationMember: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+		>;
+		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+	}
 
-	let delegationMember = $derived(data.findUniqueDelegationMember!);
-	let conference = $derived(data.findUniqueConference!);
+	let { delegationMember, conference }: Props = $props();
 
 	//TODO we should use forms for this
 	let questionnaireValues = $state({
@@ -53,7 +50,7 @@
 	let userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
 
 	let referralLink = $derived(
-		`${$page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
+		`${page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
 	);
 
 	let todos = $derived([
@@ -252,6 +249,7 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
 	<GenericWidget content={stats} />
+	<DelegationNameDisplay delegationId={delegationMember.delegation.id} />
 </section>
 
 <section class="flex flex-col gap-2">
@@ -287,19 +285,6 @@
 				</DelegationStatusTableEntry>
 			{/each}
 		</DelegationStatusTableWrapper>
-		{#if delegationMember.delegation?.supervisors.length > 0}
-			<DelegationStatusTableWrapper
-				title={m.supervisors()}
-				description={m.supervisorDelegationDescription()}
-			>
-				{#each delegationMember.delegation?.supervisors as supervisor}
-					<DelegationStatusTableEntry
-						name={formatNames(supervisor.user.given_name, supervisor.user.family_name)}
-						pronouns={supervisor.user.pronouns ?? ''}
-					/>
-				{/each}
-			</DelegationStatusTableWrapper>
-		{/if}
 		<DashboardContentCard
 			title={!delegationMember.delegation?.applied
 				? m.inviteMorePeople()
@@ -349,6 +334,7 @@
 				{/if}
 			</div>
 		</DashboardContentCard>
+		<SupervisorTable supervisors={delegationMember.supervisors} conferenceId={conference.id} />
 	{:else}
 		<div class="skeleton h-60 w-full"></div>
 	{/if}
@@ -526,5 +512,6 @@
 	onClose={() => {
 		delegationPreferencesModalOpen = false;
 	}}
-	{data}
+	{conference}
+	{delegationMember}
 />

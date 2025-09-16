@@ -9,6 +9,7 @@
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 	import { type PageData } from './$houdini';
 	import { invalidateAll } from '$app/navigation';
+	import codenmz from '$lib/services/codenamize';
 
 	interface Props {
 		conferenceId: string;
@@ -47,6 +48,15 @@
 						abbreviation
 						name
 					}
+					supervisors {
+						id
+						plansOwnAttendenceAtConference
+						user {
+							id
+							given_name
+							family_name
+						}
+					}
 				}
 				appliedForRoles {
 					nonStateActor {
@@ -54,14 +64,6 @@
 					}
 					nation {
 						alpha3Code
-					}
-				}
-				supervisors {
-					id
-					plansOwnAttendenceAtConference
-					user {
-						given_name
-						family_name
 					}
 				}
 				assignedNation {
@@ -97,6 +99,11 @@
 			return bothNames(a).localeCompare(bothNames(b));
 		})
 	);
+	let supervisors = $derived(
+		delegation?.members
+			.flatMap((m) => m.supervisors)
+			.filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
+	);
 
 	// Define member type to properly type selectedMember
 	type MemberType = {
@@ -125,7 +132,7 @@
 		try {
 			await makeHeadDelegateAdminMutation.mutate({
 				where: { id: delegationId },
-				userId: selectedMember.user.id
+				userId: selectedMember.user?.id
 			});
 			cache.markStale();
 			await invalidateAll();
@@ -143,7 +150,7 @@
 	bind:open
 	{onClose}
 	id={delegationId}
-	title={delegation?.entryCode ?? 'XXXXXX'}
+	title={codenmz(delegationId)}
 	category={m.delegation()}
 	loading={$delegationQuery.fetching}
 >
@@ -263,7 +270,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/participants?filter={member.user.id}"
+									href="/management/{conferenceId}/participants?selected={member.user?.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -279,7 +286,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
 
-		{#if !delegation?.supervisors || delegation?.supervisors.length === 0}
+		{#if !supervisors || supervisors.length === 0}
 			<div class="alert alert-info">
 				<i class="fa-solid fa-user-slash"></i>
 				{m.noSupervisors()}
@@ -294,7 +301,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each delegation?.supervisors ?? [] as supervisor, i (i)}
+					{#each supervisors as supervisor, i (i)}
 						<tr>
 							<td>
 								{#if supervisor.plansOwnAttendenceAtConference}
@@ -310,7 +317,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/supervisors?filter={supervisor.id}"
+									href="/management/{conferenceId}/supervisors?selected={supervisor.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>

@@ -226,7 +226,7 @@
 					{/if}
 					<a
 						class="btn btn-ghost {$userData?.fetching && 'btn-disabled'}"
-						href={`/management/${data.conferenceId}/participants?filter=${queryUserId}`}
+						href={`/management/${data.conferenceId}/participants?selected=${queryUserId}`}
 						aria-label="View participant details"
 					>
 						<i class="fa-duotone fa-up-right-from-square"></i>

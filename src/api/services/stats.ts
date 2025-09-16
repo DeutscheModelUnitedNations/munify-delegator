@@ -39,8 +39,7 @@ export async function conferenceStats({
 			applied: true,
 			_count: {
 				select: {
-					members: true,
-					supervisors: true
+					members: true
 				}
 			}
 		}
@@ -78,10 +77,6 @@ export async function conferenceStats({
 
 	const delegationsApplied = delegations.filter((d) => d.applied).length;
 	const delegationsNotApplied = delegations.length - delegationsApplied;
-	const delegationsWithSupervisor = delegations.reduce((acc, d) => {
-		if (!d._count.supervisors) return acc;
-		return acc + 1;
-	}, 0);
 	const delegationMembersApplied = delegations.reduce((acc, d) => {
 		if (!d.applied) return acc;
 		return acc + d._count.members;
@@ -110,8 +105,7 @@ export async function conferenceStats({
 		delegations: {
 			total: delegationsNotApplied + delegationsApplied,
 			notApplied: delegationsNotApplied,
-			applied: delegationsApplied,
-			withSupervisor: delegationsWithSupervisor
+			applied: delegationsApplied
 		},
 		delegationMembers: {
 			total: delegationMembersNotApplied + delegationMembersApplied,

@@ -65,7 +65,7 @@
 			translation: m.role(),
 			icon: 'gavel'
 		},
-		'join-delegation-supervisor': {
+		supervisor: {
 			translation: m.supervisor(),
 			icon: 'eye'
 		},
@@ -152,6 +152,10 @@
 		import: {
 			icon: 'file-import',
 			translation: m.import()
+		},
+		connectSupervisor: {
+			icon: 'eye',
+			translation: m.connectSupervisorTitle()
 		}
 	};
 

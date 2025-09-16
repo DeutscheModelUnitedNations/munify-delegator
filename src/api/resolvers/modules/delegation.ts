@@ -17,7 +17,7 @@ import {
 } from '$db/generated/graphql/Delegation';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
-import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
 import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
 import { GraphQLError } from 'graphql';
@@ -41,11 +41,6 @@ builder.prismaObject('Delegation', {
 		members: t.relation('members', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
-			})
-		}),
-		supervisors: t.relation('supervisors', {
-			query: (_args, ctx) => ({
-				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceSupervisor
 			})
 		}),
 		appliedForRoles: t.relation('appliedForRoles', {
@@ -125,7 +120,7 @@ builder.mutationFields((t) => {
 							motivation: args.motivation,
 							school: args.school,
 							experience: args.experience,
-							entryCode: makeDelegationEntryCode()
+							entryCode: makeEntryCode()
 						}
 					});
 
@@ -249,7 +244,7 @@ builder.mutationFields((t) => {
 							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
 						},
 						data: {
-							entryCode: makeDelegationEntryCode()
+							entryCode: makeEntryCode()
 						}
 					});
 				}

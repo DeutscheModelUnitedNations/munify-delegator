@@ -21,7 +21,7 @@ import {
 } from '$api/services/fetchUserParticipations';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
 import { GraphQLError } from 'graphql';
-import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
 
 builder.prismaObject('DelegationMember', {
 	fields: (t) => ({
@@ -30,7 +30,15 @@ builder.prismaObject('DelegationMember', {
 		conference: t.relation('conference', DelegationMemberConferenceFieldObject),
 		delegation: t.relation('delegation', DelegationMemberDelegationFieldObject),
 		user: t.relation('user', DelegationMemberUserFieldObject),
-		assignedCommittee: t.relation('assignedCommittee', DelegationMemberAssignedCommitteeFieldObject)
+		assignedCommittee: t.relation(
+			'assignedCommittee',
+			DelegationMemberAssignedCommitteeFieldObject
+		),
+		supervisors: t.relation('supervisors', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceSupervisor
+			})
+		})
 	})
 });
 
@@ -210,7 +218,7 @@ builder.mutationFields((t) => {
 								conferenceId,
 								assignedNationAlpha3Code,
 								assignedNonStateActorId,
-								entryCode: makeDelegationEntryCode(),
+								entryCode: makeEntryCode(),
 								...delegationInfos
 							},
 							include: {
