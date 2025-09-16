@@ -1814,6 +1814,7 @@ type Mutation {
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
+  seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
@@ -2821,6 +2822,11 @@ type RsaOtherPrimesInfo {
   d: String
   r: String
   t: String
+}
+
+type SeedNewConferenceResult {
+  conferenceId: String!
+  success: Boolean!
 }
 
 type SetAssignmentDataResult {

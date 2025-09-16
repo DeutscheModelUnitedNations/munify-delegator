@@ -109,7 +109,7 @@
 	</div>
 </div>
 
-<style>
+<style lang="postcss">
 	.svelte-table-wrapper :global(> table > tbody > tr) {
 		@apply transition-all duration-300;
 	}

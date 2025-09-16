@@ -1,4 +1,4 @@
-import * as z from 'zod/v4';
+import * as z from 'zod';
 
 const nationSeedSchema = z.enum([
 	'AD',
@@ -80,7 +80,6 @@ const nationSeedSchema = z.enum([
 	'GB',
 	'GD',
 	'GE',
-	'GF',
 	'GG',
 	'GH',
 	'GI',
@@ -252,15 +251,42 @@ const nationSeedSchema = z.enum([
 	'ZW'
 ]);
 
-export const committeeSeedSchema = z.object({
+export const ConferenceSeedingSchema = z.object({
 	$schema: z.string(),
-	data: z.array(
+	conference: z.object({
+		title: z.string(),
+		longTitle: z.string(),
+		location: z.string(),
+		website: z.string().url(),
+		language: z.string(),
+		startAssignment: z.coerce.date(),
+		startConference: z.coerce.date(),
+		endConference: z.coerce.date()
+	}),
+	nsa: z.array(
 		z.object({
 			name: z.string(),
 			abbreviation: z.string().refine((x) => x.length < 6),
-			nations: z.array(nationSeedSchema)
+			seatAmount: z.number().min(1).optional().default(1),
+			description: z.string(),
+			fontAwesomeIcon: z.string()
+		})
+	),
+	committees: z.array(
+		z.object({
+			name: z.string(),
+			abbreviation: z.string().refine((x) => x.length < 6),
+			nations: z.array(nationSeedSchema).refine((items) => new Set(items).size === items.length, {
+				message: 'No Duplicate Nations Allowed'
+			}),
+			numOfSeatsPerDelegation: z.number().min(1).optional().default(1)
+		})
+	),
+	customConferenceRole: z.array(
+		z.object({
+			name: z.string(),
+			description: z.string(),
+			fontAwesomeIcon: z.string()
 		})
 	)
 });
-
-console.info(JSON.stringify(z.toJSONSchema(committeeSeedSchema)));
