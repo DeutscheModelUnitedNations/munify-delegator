@@ -6,7 +6,6 @@
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import RoleApplicationTable from './RoleApplicationTable.svelte';
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
-	import { onMount } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
@@ -17,6 +16,14 @@
 	import formatNames from '$lib/services/formatNames';
 	import SupervisorTable from './SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
+	import { superForm } from 'sveltekit-superforms';
+	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { applicationFormSchema } from '$lib/schemata/applicationForm';
+	import Form from '$lib/components/Form/Form.svelte';
+	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import toast from 'svelte-french-toast';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?
@@ -26,26 +33,35 @@
 			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
 		>;
 		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		applicationForm: PageData['applicationForm'];
 	}
 
-	let { delegationMember, conference }: Props = $props();
+	let { delegationMember, conference, applicationForm }: Props = $props();
 
-	//TODO we should use forms for this
-	let questionnaireValues = $state({
-		school: '',
-		motivation: '',
-		experience: ''
+	const form = superForm(applicationForm, {
+		SPA: true,
+		resetForm: false,
+		validationMethod: 'oninput',
+		validators: zodClient(applicationFormSchema),
+		onError: (e) => {
+			toast.error(e.result.error.message);
+		},
+		onSubmit: async () => {
+			await toast.promise(
+				updateFieldMutation.mutate({
+					where: { id: delegationMember.delegation.id },
+					...$formData
+				}),
+				genericPromiseToastMessages
+			);
+			// TODO this is weird. When I invalidate the cache and make him refetch here, the form resets and the data is back to the old version. Fix this!
+			cache.markStale();
+			invalidateAll();
+		}
 	});
+	let formData = $derived(form.form);
 
 	let delegationPreferencesModalOpen = $state(false);
-
-	onMount(async () => {
-		questionnaireValues = {
-			school: delegationMember.delegation?.school ?? '',
-			motivation: delegationMember.delegation?.motivation ?? '',
-			experience: delegationMember.delegation?.experience ?? ''
-		};
-	});
 
 	let userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
 
@@ -172,7 +188,11 @@
 			return;
 		}
 		if (!confirm(m.leaveDelegationConfirmation())) return;
-		await deleteMemberMutation.mutate({ where: { id: delegationMember.id } });
+		await toast.promise(
+			deleteMemberMutation.mutate({ where: { id: delegationMember.id } }),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
 	};
@@ -183,7 +203,11 @@
 			return;
 		}
 		if (!confirm(m.deleteDelegationConfirmation())) return;
-		await deleteDelegationMutation.mutate({ where: { id: delegationMember.delegation.id } });
+		await toast.promise(
+			deleteDelegationMutation.mutate({ where: { id: delegationMember.delegation.id } }),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
 	};
@@ -194,11 +218,14 @@
 			return;
 		}
 		if (!confirm(m.makeHeadDelegateConfirmation())) return;
-		await makeHeadDelegateMutation.mutate({
-			where: { id: delegationMember.delegation.id },
-			userId
-		});
-		cache.reset();
+		await toast.promise(
+			makeHeadDelegateMutation.mutate({
+				where: { id: delegationMember.delegation.id },
+				userId
+			}),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
 		await invalidateAll();
 	};
 
@@ -208,8 +235,11 @@
 			return;
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
-		await deleteMemberMutation.mutate({ where: { id: memberId } });
-		cache.reset();
+		await toast.promise(
+			deleteMemberMutation.mutate({ where: { id: memberId } }),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
 		await invalidateAll();
 	};
 
@@ -219,8 +249,11 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		await applyMutation.mutate({ where: { id: delegationMember.delegation.id } });
-		cache.reset();
+		await toast.promise(
+			applyMutation.mutate({ where: { id: delegationMember.delegation.id } }),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
 		await invalidateAll();
 	};
 </script>
@@ -301,7 +334,7 @@
 					class="btn btn-square btn-ghost btn-primary"
 					onclick={() => {
 						navigator.clipboard.writeText(delegationMember?.delegation?.entryCode as string);
-						alert(m.codeCopied());
+						toast.success(m.codeCopied());
 					}}
 					aria-label="Copy entry code"
 					><i class="fa-duotone fa-clipboard text-xl"></i>
@@ -311,7 +344,7 @@
 						class="btn btn-square btn-ghost btn-primary"
 						onclick={() => {
 							navigator.clipboard.writeText(referralLink as string);
-							alert(m.linkCopied());
+							toast.success(m.linkCopied());
 						}}
 						aria-label="Copy referral link"
 						><i class="fa-duotone fa-link text-xl"></i>
@@ -321,10 +354,14 @@
 							<button
 								class="btn btn-square btn-ghost btn-primary"
 								onclick={async () => {
-									await resetEntryCodeMutation.mutate({
-										where: { id: delegationMember.delegation.id }
-									});
-									alert(m.codeRotated());
+									await toast.promise(
+										resetEntryCodeMutation.mutate({
+											where: { id: delegationMember.delegation.id }
+										}),
+										{ ...genericPromiseToastMessages, success: m.codeRotated() }
+									);
+									cache.markStale();
+									await invalidateAll();
 								}}
 								aria-label="Rotate entry code"
 								><i class="fa-duotone fa-rotate text-xl"></i>
@@ -350,80 +387,36 @@
 				: m.informationAndMotivationDescriptionMember()}
 			class="flex-1"
 		>
-			<form
-				class="flex flex-col gap-4"
-				onsubmit={async (e) => {
-					e.preventDefault();
-					if (!delegationMember.delegation) {
-						console.error('Error: Delegation Data not found');
-						return;
-					}
-					await updateFieldMutation.mutate({
-						where: { id: delegationMember.delegation.id },
-						school: questionnaireValues.school,
-						motivation: questionnaireValues.motivation,
-						experience: questionnaireValues.experience
-					});
-				}}
-			>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text text-left max-ch-sm"
-							>{m.whichSchoolDoesYourDelegationComeFrom()}</span
-						>
-					</div>
-					<input
-						type="text"
-						placeholder={m.answerHere()}
-						class="input input-sm input-bordered w-full"
-						value={questionnaireValues.school}
-						oninput={(e: any) => {
-							questionnaireValues.school = e.target.value;
-						}}
-						disabled={!userIsHeadDelegate || delegationMember.delegation?.applied}
-						required
-					/>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text text-left max-ch-sm">{m.whyDoYouWantToJoinTheConference()}</span
-						>
-					</div>
-					<textarea
-						placeholder={m.answerHere()}
-						class="textarea textarea-bordered textarea-sm w-full"
-						value={questionnaireValues.motivation}
-						oninput={(e: any) => {
-							questionnaireValues.motivation = e.target.value;
-						}}
-						disabled={!userIsHeadDelegate || delegationMember.delegation?.applied}
-						required
-					></textarea>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text text-left max-ch-sm"
-							>{m.howMuchExperienceDoesYourDelegationHave()}</span
-						>
-					</div>
-					<textarea
-						placeholder={m.answerHere()}
-						class="textarea textarea-bordered textarea-sm w-full"
-						value={questionnaireValues.experience}
-						oninput={(e: any) => {
-							questionnaireValues.experience = e.target.value;
-						}}
-						disabled={!userIsHeadDelegate || delegationMember.delegation?.applied}
-						required
-					></textarea>
-				</label>
+			<Form {form} showSubmitButton={false}>
+				<FormTextInput
+					name="school"
+					label={m.whichSchoolDoesYourDelegationComeFrom()}
+					{form}
+					placeholder={m.answerHere()}
+					type="text"
+					disabled={delegationMember.delegation.applied}
+				/>
+				<FormTextArea
+					name="motivation"
+					label={m.whyDoYouWantToJoinTheConference()}
+					{form}
+					placeholder={m.answerHere()}
+					disabled={delegationMember.delegation.applied}
+				/>
+				<FormTextArea
+					name="experience"
+					label={m.howMuchExperienceDoesYourDelegationHave()}
+					{form}
+					placeholder={m.answerHere()}
+					disabled={delegationMember.delegation.applied}
+				/>
 				<div class="flex-1"></div>
 				{#if !delegationMember.delegation?.applied}
 					<button class="btn btn-primary" type="submit" disabled={!userIsHeadDelegate}>
 						{m.save()}
 					</button>
 				{/if}
-			</form>
+			</Form>
 		</DashboardContentCard>
 		<DashboardContentCard
 			title={m.delegationPreferences()}

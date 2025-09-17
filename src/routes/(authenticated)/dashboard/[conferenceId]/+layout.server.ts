@@ -1,8 +1,8 @@
 import { myConferenceparticipationQuery } from '$lib/queries/myConferenceparticipationQuery';
 import { ofAgeAtConference } from '$lib/services/ageChecker';
-import type { LayoutLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 
-export const load: LayoutLoad = async (event) => {
+export const load: LayoutServerLoad = async (event) => {
 	const { user } = await event.parent();
 
 	const { data } = await myConferenceparticipationQuery.fetch({

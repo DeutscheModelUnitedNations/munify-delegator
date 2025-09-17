@@ -4,15 +4,15 @@
 	import Form from '$lib/components/Form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
-	import { individualApplicationFormSchema } from './form-schema';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
+	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(individualApplicationFormSchema),
+		validators: zod(applicationFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		}

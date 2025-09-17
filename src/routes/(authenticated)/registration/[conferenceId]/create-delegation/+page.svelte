@@ -5,15 +5,16 @@
 	import Form from '$lib/components/Form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { createDelegationFormSchema } from './form-schema';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
+	import { applicationFormSchema } from '$lib/schemata/applicationForm';
+	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zodClient(createDelegationFormSchema),
+		validators: zodClient(applicationFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		},
@@ -76,13 +77,13 @@
 				placeholder={m.answerHere()}
 				label={m.whichSchoolDoesYourDelegationComeFrom()}
 			/>
-			<FormTextInput
+			<FormTextArea
 				{form}
 				name="motivation"
 				placeholder={m.answerHere()}
 				label={m.whyDoYouWantToJoinTheConference()}
 			/>
-			<FormTextInput
+			<FormTextArea
 				{form}
 				name="experience"
 				placeholder={m.answerHere()}
@@ -147,7 +148,7 @@
 				type="button"
 				onclick={() => {
 					navigator.clipboard.writeText(referralLink);
-					alert(m.linkCopied());
+					toast.success(m.linkCopied());
 				}}
 				aria-label="Copy referral link"
 				><i class="fa-duotone fa-clipboard text-xl"></i>
@@ -165,7 +166,7 @@
 				type="button"
 				onclick={() => {
 					navigator.clipboard.writeText(entryCode as string);
-					alert(m.codeCopied());
+					toast.success(m.codeCopied());
 				}}
 				aria-label="Copy entry code"
 				><i class="fa-duotone fa-clipboard text-xl"></i>
