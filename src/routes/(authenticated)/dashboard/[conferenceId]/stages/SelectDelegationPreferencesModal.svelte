@@ -8,7 +8,11 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
-	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import NationPool from '$lib/components/NationPool.svelte';
+	import NsaPool from '$lib/components/NSAPool.svelte';
+	import toast from 'svelte-french-toast';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	interface Props {
 		open: boolean;
@@ -21,7 +25,7 @@
 
 	let { open, onClose, conference, delegationMember }: Props = $props();
 
-	let nations = $derived(() => {
+	let nations = $derived.by(() => {
 		// TODO Use Houdini Types instead of Prisma Types
 		const nations = new Array<Omit<Omit<Nation, 'createdAt'>, 'updatedAt'>>();
 		conference.committees.forEach((committee) => {
@@ -36,8 +40,8 @@
 		);
 	});
 
-	let nationsPool = $derived(() => {
-		return nations()
+	let nationPool = $derived(
+		nations
 			.filter(
 				(nation) =>
 					!delegationMember.delegation.appliedForRoles.find(
@@ -49,31 +53,27 @@
 					getNumOfSeatsPerNation(nation, conference.committees) >=
 						(delegationMember.delegation?.members?.length ?? 0) &&
 					getNumOfSeatsPerNation(nation, conference.committees) > 1
-			);
-	});
+			)
+	);
 
-	let nonStateActors = $derived(() => {
-		return conference.nonStateActors || [];
-	});
+	let nonStateActors = $derived(conference.nonStateActors || []);
 
-	let nonStateActorsPool = $derived(() => {
-		return nonStateActors()
+	let nonStateActorPool = $derived(
+		nonStateActors
 			.filter(
 				(nsa) =>
 					!delegationMember.delegation?.appliedForRoles.find(
 						(role) => role.nonStateActor?.id === nsa.id
 					)
 			)
-			.filter((nsa) => nsa.seatAmount >= (delegationMember.delegation?.members.length ?? 0));
-	});
+			.filter((nsa) => nsa.seatAmount >= (delegationMember.delegation?.members.length ?? 0))
+	);
 
-	const maxDelegationSizeReached = $derived(() => {
-		return (
-			nationsPool().length === 0 &&
-			nonStateActorsPool().length === 0 &&
+	const maxDelegationSizeReached = $derived(
+		nationPool.length === 0 &&
+			nonStateActorPool.length === 0 &&
 			delegationMember.delegation?.appliedForRoles.length === 0
-		);
-	});
+	);
 
 	const deleteEntryMutation = graphql(`
 		mutation DeleteRoleApplicationMutation($where: RoleApplicationWhereUniqueInput!) {
@@ -136,18 +136,25 @@
 	`);
 
 	const swapEntry = async (firstId: string, secondId: string) => {
-		await swapEntryMutation.mutate({ a: firstId, b: secondId });
+		await toast.promise(
+			swapEntryMutation.mutate({ a: firstId, b: secondId }),
+			genericPromiseToastMessages
+		);
+		cache.markStale();
+		await invalidateAll();
 	};
 
 	const deleteEntry = async (id: string) => {
-		await deleteEntryMutation.mutate({ where: { id } });
+		await toast.promise(deleteEntryMutation.mutate({ where: { id } }), genericPromiseToastMessages);
+		cache.markStale();
+		await invalidateAll();
 	};
 </script>
 
 <dialog class="modal {open && 'modal-open'}">
 	<div class="modal-box relative w-11/12 max-w-5xl">
 		<div class="flex flex-col gap-10">
-			{#if maxDelegationSizeReached()}
+			{#if maxDelegationSizeReached}
 				<div class="alert alert-error">
 					<i class="fas fa-hexagon-exclamation text-5xl"></i>
 					<div class="flex flex-col gap-2">
@@ -177,14 +184,6 @@
 										<td>
 											<div class="flex items-center gap-4">
 												{#if role.nonStateActor}
-													<!-- TODO: Enable custom images for NSAs
-											 {#if role.nonStateActors?.icon} 
-												<img
-													src={role.nonStateActor.icon}
-													alt={role.nonStateActor.name}
-													class="w-6 h-6 rounded-full"
-												/>
-											{:else} -->
 													<Flag
 														nsa
 														size="xs"
@@ -267,54 +266,27 @@
 					<div class="collapse-title text-xl font-bold">{m.nationsPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
 						<p class="text-sm">{m.nationsPoolDescription()}</p>
-						<div class="overflow-x-auto">
-							<NationsWithCommitteesTable
-								committees={conference.committees.map((committee) => ({
-									abbreviation: committee.abbreviation,
-									name: committee.name
-								}))}
-							>
-								{#each nationsPool() as nation}
-									<tr>
-										<td>
-											<div class="flex items-center gap-4">
-												<Flag alpha2Code={nation.alpha2Code} size="xs" />
-												<span>{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}</span>
-											</div>
-										</td>
-										{#each conference.committees as committee}
-											<td class="text-center">
-												{#if committee.nations.find((c) => c.alpha3Code === nation.alpha3Code)}
-													<div class="tooltip" data-tip={committee.abbreviation}>
-														{#each { length: committee.numOfSeatsPerDelegation } as _}
-															<i class="fa-duotone fa-check"></i>
-														{/each}
-													</div>
-												{/if}
-											</td>
-										{/each}
-										<td class="text-center">
-											{getNumOfSeatsPerNation(nation, conference.committees)}
-										</td>
-										<td>
-											<SquareButtonWithLoadingState
-												icon="fa-chevrons-up"
-												cssClass="bg-base-300"
-												onClick={async () => {
-													if (!delegationMember.delegation) return;
-													await createEntryMutation.mutate({
-														nationId: nation.alpha3Code,
-														delegationId: delegationMember.delegation.id
-													});
-													await invalidateAll();
-												}}
-											/>
-										</td>
-									</tr>
-								{/each}
-							</NationsWithCommitteesTable>
-						</div>
-						{#if nationsPool().length === 0}
+						<NationPool committees={conference.committees} {nationPool}>
+							{#snippet actionCell(nation: (typeof nations)[number])}
+								<SquareButtonWithLoadingState
+									icon="fa-chevrons-up"
+									cssClass="bg-base-300"
+									onClick={async () => {
+										if (!delegationMember.delegation) return;
+										await toast.promise(
+											createEntryMutation.mutate({
+												nationId: nation.alpha3Code,
+												delegationId: delegationMember.delegation.id
+											}),
+											genericPromiseToastMessages
+										);
+										cache.markStale();
+										await invalidateAll();
+									}}
+								/>
+							{/snippet}
+						</NationPool>
+						{#if nationPool.length === 0}
 							<div class="alert alert-warning">
 								<i class="fas fa-triangle-exclamation"></i>
 								<p>{m.noNationsAvailable()}</p>
@@ -327,41 +299,27 @@
 					<div class="collapse-title text-xl font-bold">{m.nsaPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
 						<p class="text-sm">{m.nsaPoolDescription()}</p>
-						<div class="overflow-x-auto">
-							<table class="table">
-								<thead>
-									<tr>
-										<th><i class="fa-duotone fa-megaphone"></i></th>
-										<th><i class="fa-duotone fa-info"></i></th>
-										<th class="text-center"><i class="fa-duotone fa-users"></i></th>
-										<th></th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each nonStateActorsPool() as nsa}
-										<tr>
-											<td class="align-top md:align-middle">{nsa.name}</td>
-											<td><span class="text-sm">{nsa.description}</span></td>
-											<td class="center align-top md:align-middle">{nsa.seatAmount}</td>
-											<td class="align-top md:align-middle">
-												<SquareButtonWithLoadingState
-													icon="fa-chevrons-up"
-													cssClass="bg-base-300"
-													onClick={async () => {
-														if (!delegationMember.delegation) return;
-														await createEntryMutation.mutate({
-															nonStateActorId: nsa.id,
-															delegationId: delegationMember.delegation.id
-														});
-													}}
-												/>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-						{#if nationsPool().length === 0}
+						<NsaPool {nonStateActorPool}>
+							{#snippet actionCell(nsa)}
+								<SquareButtonWithLoadingState
+									icon="fa-chevrons-up"
+									cssClass="bg-base-300"
+									onClick={async () => {
+										if (!delegationMember.delegation) return;
+										await toast.promise(
+											createEntryMutation.mutate({
+												nonStateActorId: nsa.id,
+												delegationId: delegationMember.delegation.id
+											}),
+											genericPromiseToastMessages
+										);
+										cache.markStale();
+										await invalidateAll();
+									}}
+								/>
+							{/snippet}
+						</NsaPool>
+						{#if nationPool.length === 0}
 							<div class="alert alert-warning">
 								<i class="fas fa-triangle-exclamation"></i>
 								<p>{m.noNSAAvailable()}</p>

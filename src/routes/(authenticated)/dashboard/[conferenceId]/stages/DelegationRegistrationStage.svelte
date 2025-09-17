@@ -447,15 +447,22 @@
 			{/if}
 			{#if !delegationMember.delegation?.applied}
 				<div class="flex-1"></div>
-				<button
-					class="btn btn-primary mt-4"
-					disabled={!userIsHeadDelegate}
-					onclick={() => {
-						delegationPreferencesModalOpen = true;
-					}}
-				>
-					{m.setDelegationPreferences()}</button
-				>
+				{#if !userIsHeadDelegate}
+					<button
+						class="btn btn-primary mt-4"
+						disabled={!userIsHeadDelegate}
+						onclick={() => {
+							delegationPreferencesModalOpen = true;
+						}}
+					>
+						{m.setDelegationPreferences()}</button
+					>
+				{:else}
+					<a class="btn btn-primary mt-4" href="/seats/{conference.id}" target="_blank">
+						<i class="fas fa-arrow-up-right-from-square"></i>
+						{m.conferenceSeats()}
+					</a>
+				{/if}
 			{/if}
 		</DashboardContentCard>
 	</div>

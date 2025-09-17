@@ -1,5 +1,5 @@
 {
-	"$schema": "http://localhost:5173/schemata/seed",
+	"$schema": "https://delegator.munify.cloud/schemata/seed",
 	"conference": {
 		"title": "MUN-SH 2026",
 		"longTitle": "Model United Nations Schleswig-Holstein 2026",
@@ -12,39 +12,95 @@
 	},
 	"nsa": [
 		{
+			"name": "Human Rights Watch",
+			"abbreviation": "HRW",
+			"seatAmount": 3,
+			"description": "Human Rights Watch dokumentiert weltweit Menschenrechtsverletzungen durch gründliche Recherche und Berichte. Die Organisation betreibt Advocacy, übt Druck auf Regierungen und Unternehmen aus und nutzt juristische sowie mediale Strategien, um Reformen anzustoßen.",
+			"fontAwesomeIcon": "scale-balanced"
+		},
+		{
+			"name": "Amnesty International",
+			"abbreviation": "AI",
+			"seatAmount": 3,
+			"description": "Amnesty International setzt sich global für den Schutz der Menschenrechte ein, mit Fokus auf Freiheit, Gerechtigkeit und Würde. Sie kombiniert Recherche, öffentliche Kampagnen, Lobbyarbeit und Eilaktionen, etwa für gewaltlose politische Gefangene.",
+			"fontAwesomeIcon": "bullhorn"
+		},
+		{
 			"name": "Greenpeace",
 			"abbreviation": "GP",
-			"seatAmount": 2,
-			"description": "Greenpeace ist eine international agierende und bekannte Nichtregierungsorganisation, welche sich weltweit für Umwelt- und Klimaschutz einsetzt. Sie sind in den Siebzigerjahren durch Aktionen gegen Kernwaffentests und den Walfang bekannt geworden und widmen sich mittlerweile einer Vielzahl an Themen, darunter vor allem der globale Klimawandel und seine Auswirkungen.",
+			"seatAmount": 3,
+			"description": "Greenpeace ist eine internationale Umweltorganisation, die mit friedlichem, direktem Protest und wissenschaftlich fundierten Kampagnen auf Umweltschäden aufmerksam macht. Schwerpunkte sind Klima- und Biodiversitätsschutz, Meeres- und Waldschutz sowie der Ausstieg aus fossilen Energien und Atomkraft.",
 			"fontAwesomeIcon": "leaf"
 		},
 		{
+			"name": "World Wide Fund for Nature",
+			"abbreviation": "WWF",
+			"seatAmount": 3,
+			"description": "Der WWF arbeitet am Schutz bedrohter Arten und ihrer Lebensräume sowie an der Bewahrung globaler Biodiversität. Er kooperiert mit Regierungen, Unternehmen und Gemeinden, fördert nachhaltige Nutzung natürlicher Ressourcen und betreibt Projekte vor Ort sowie politische Einflussnahme.",
+			"fontAwesomeIcon": "elephant"
+		},
+		{
+			"name": "Transparency International",
+			"abbreviation": "TI",
+			"seatAmount": 3,
+			"description": "Transparency International bekämpft Korruption weltweit und stärkt Integrität in Politik, Wirtschaft und Gesellschaft. Die Organisation erstellt Analysen wie den Corruption Perceptions Index, unterstützt nationale Chapter und treibt rechtliche und institutionelle Reformen voran.",
+			"fontAwesomeIcon": "eye"
+		},
+		{
+			"name": "World Animal Protection",
+			"abbreviation": "WAP",
+			"seatAmount": 3,
+			"description": "World Animal Protection setzt sich global für das Wohlergehen von Tieren ein, mit Kampagnen gegen Grausamkeit in Landwirtschaft, Wildtierhandel und Unterhaltung. Sie arbeitet an politischen Standards, Bewusstseinsbildung und leistet Nothilfe für Tiere in Katastrophen.",
+			"fontAwesomeIcon": "paw"
+		},
+		{
+			"name": "Plan International",
+			"abbreviation": "Plan",
+			"seatAmount": 3,
+			"description": "Plan International fördert Kinderrechte und Gleichberechtigung für Mädchen, insbesondere durch Bildung, Gesundheit, Kinderschutz und wirtschaftliche Stärkung. Die Organisation arbeitet in Entwicklungs- und humanitären Kontexten und bindet Gemeinden langfristig ein.",
+			"fontAwesomeIcon": "hands-holding-child"
+		},
+		{
+			"name": "International Committee of the Red Cross",
+			"abbreviation": "ICRC",
+			"seatAmount": 3,
+			"description": "Das Internationale Komitee vom Roten Kreuz leistet neutrale, unparteiische humanitäre Hilfe in bewaffneten Konflikten. Es schützt Zivilpersonen und Gefangene, stellt medizinische Versorgung und Wasser bereit und fördert die Einhaltung des humanitären Völkerrechts.",
+			"fontAwesomeIcon": "truck-medical"
+		},
+		{
+			"name": "World Federation for Mental Health",
+			"abbreviation": "WFMH",
+			"seatAmount": 3,
+			"description": "Die WFMH ist ein globales Netzwerk zur Förderung psychischer Gesundheit und zur Bekämpfung von Stigmatisierung. Sie verbindet Fachleute, Organisationen und Betroffene, treibt Aufklärung und Politikdialog voran und koordiniert den World Mental Health Day.",
+			"fontAwesomeIcon": "brain-circuit"
+		},
+		{
+			"name": "Oceana",
+			"abbreviation": "OC",
+			"seatAmount": 3,
+			"description": "Oceana ist eine auf Meere spezialisierte Naturschutzorganisation, die wissenschaftsbasierte Kampagnen für gesunde Fischbestände, Schutz mariner Lebensräume und gegen Verschmutzung führt. Sie setzt auf politische Reformen, Durchsetzung bestehender Regeln und strategische Rechtsverfahren.",
+			"fontAwesomeIcon": "fish-fins"
+		},
+		{
 			"name": "Ärzt*innen ohne Grenzen",
-			"abbreviation": "AoG",
-			"seatAmount": 2,
-			"description": "Ärzt*innen ohne Grenzen ist eine Hilfsorganisation, welche Menschen medizinische oder humanitäre Hilfe leistet, deren Leben durch Konflikte, Epidemien oder Naturkatastrophen gefährdet sind.",
-			"fontAwesomeIcon": "medkit"
+			"abbreviation": "MSF",
+			"seatAmount": 3,
+			"description": "Ärzt*innen ohne Grenzen (franz. Médecins Sans Frontières) bietet unabhängige medizinische Nothilfe in Konflikten, Epidemien und nach Naturkatastrophen. Neben lebensrettender Versorgung betreibt die Organisation auch Öffentlichkeitsarbeit, um auf Missstände hinzuweisen, die Patientinnen und Patienten betreffen.",
+			"fontAwesomeIcon": "stethoscope"
 		},
 		{
-			"name": "Center for Reproductive Rights",
-			"abbreviation": "CRR",
-			"seatAmount": 2,
-			"description": "Das Center for Reproductive Rights ist eine globale Menschenrechtsorganisation von Anwältinnen und Alwälten, die sich für reproduktive Rechte einsetzen. Dazu gehören unter anderem der Zugang zu lebensrettender Geburtshilfe, Empfängnisverhütung und sichere Abtreibungsmöglichkeiten.",
-			"fontAwesomeIcon": "person-pregnant"
+			"name": "Mentor International",
+			"abbreviation": "MI",
+			"seatAmount": 3,
+			"description": "Mentor International arbeitet an der Prävention von Drogen- und Substanzmissbrauch bei Kindern und Jugendlichen. Die Organisation entwickelt Mentoring- und Lebenskompetenzprogramme und kooperiert mit Schulen, Gemeinden und Unternehmen.",
+			"fontAwesomeIcon": "syringe"
 		},
 		{
-			"name": "Human Rights Watch",
-			"abbreviation": "HRW",
-			"seatAmount": 2,
-			"description": "Human Rights Watch ist eine hinternational tätige nichtstaatliche Organisation, die durch Untersuchungen und Öffentlichkeitsarbeit für die Wahrung der Menschenrechte eintritt. Sie konzentrieren sich vor allem auf Recherche und die öffentlichkeitswirksame Berichterstattung über Menschenrechtsverletzungen.",
-			"fontAwesomeIcon": "balance-scale"
-		},
-		{
-			"name": "International Gay and Lesbian Alliance World",
-			"abbreviation": "ILGA",
-			"seatAmount": 2,
-			"description": "ILGA World ist eine weltweite Organisation, welche sich für die Rechte von lesbischen, schwulen, bisexuellen, trans und queeren Menschen einsetzt und ihren Anliegen mehr Sichtbarkeit verschafft. Dazu gehören beispielsweise Kampagnen für das Recht auf Ehe für alle und gegen die staatliche Kriminalisierung von Homosexualität.",
-			"fontAwesomeIcon": "venus-mars"
+			"name": "Global Initiative against Transnational Organized Crime",
+			"abbreviation": "GITOC",
+			"seatAmount": 3,
+			"description": "Die Global Initiative ist ein Netzwerk und Think Tank, der transnationale organisierte Kriminalität analysiert und wirksame Gegenstrategien fördert. Sie erstellt Forschung und Indizes, berät Politik und Praxis und stärkt die Resilienz von Gemeinschaften gegen kriminelle Märkte.",
+			"fontAwesomeIcon": "shield-halved"
 		}
 	],
 	"customConferenceRole": [
@@ -52,6 +108,11 @@
 			"name": "Konferenpresse",
 			"description": "Die Konferenzpresse berichtet während der Konferenz über die Ereignisse und Ergebnisse der verschiedenen Gremien. Sie führt Interviews mit Delegierten und veröffentlicht Artikel, um die Öffentlichkeit über die Themen und Diskussionen der Konferenz zu informieren.",
 			"fontAwesomeIcon": "newspaper"
+		},
+		{
+			"name": "Einzelanmeldung Delegierte*r",
+			"description": "Hier kannst du dich als Einzelperson als Delegierter eines Landes bzw. Vertreter*in eines Nichtstaatlichen Akteurs anmelden. Bitte beache, dass du bei dieser Bewerbungsoption keinerlei Wünsche angeben kannst. Du wirst - sofern deine Bewerbung Erfolg hat - einem zufälligen freien Platz zugeteilt. Um Wünsche angeben zu können, bewirb dich mit anderen Personen als Delegation.",
+			"fontAwesomeIcon": "user-tie"
 		}
 	],
 	"committees": [

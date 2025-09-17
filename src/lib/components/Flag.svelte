@@ -44,7 +44,7 @@
 </script>
 
 <div
-	class="{flagClassNames()} flex items-center justify-center overflow-hidden shadow {nsa &&
+	class="{flagClassNames()} flex shrink-0 items-center justify-center overflow-hidden shadow {nsa &&
 		'bg-base-300'}"
 >
 	{#if nsa}

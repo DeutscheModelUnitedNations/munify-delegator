@@ -4,8 +4,7 @@ import {
 	findManyNationQueryObject,
 	findUniqueNationQueryObject,
 	NationAlpha2CodeFieldObject,
-	NationAlpha3CodeFieldObject,
-	updateOneNationMutationObject
+	NationAlpha3CodeFieldObject
 } from '$db/generated/graphql/Nation';
 
 builder.prismaObject('Nation', {
