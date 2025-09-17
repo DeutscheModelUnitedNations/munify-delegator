@@ -84,7 +84,6 @@
 				.filter((x) => getNumOfSeatsPerNation(x, committees) > 1);
 
 			for (const f of activeFilter) {
-				console.log(f);
 				const filterFn = filterOptions.find((o) => o.key === f)?.filter;
 				if (filterFn) {
 					res = res.filter(filterFn);
