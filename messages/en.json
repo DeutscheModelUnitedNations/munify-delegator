@@ -721,5 +721,11 @@
 	"seedConference": "Create Conference",
 	"validationFailed": "Validation Failed",
 	"validationSuccessful": "Validation Successful",
-	"createConference": "Create Conference"
+	"createConference": "Create Conference",
+	"conferenceSeats": "Seats of the Conference",
+	"alphabetical": "alphabetical",
+	"byRegionalGroups": "by Regional Groups",
+	"byDelegationSize": "by Delegation Size",
+	"nations": "Nations",
+	"membersPerDelegation": "Seats per Delegation"
 }

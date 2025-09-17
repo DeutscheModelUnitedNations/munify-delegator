@@ -728,5 +728,11 @@
 	"seedConference": "Konferenz anlegen",
 	"validationFailed": "Validierung fehlgeschlagen",
 	"validationSuccessful": "Validierung erfolgreich",
-	"createConference": "Konferenz erstellen"
+	"createConference": "Konferenz erstellen",
+	"conferenceSeats": "Plätze der Konferenz",
+	"alphabetical": "Alphabetisch",
+	"byRegionalGroups": "Nach Regionalgruppen",
+	"byDelegationSize": "Nach Delegationsgröße",
+	"nations": "Länder",
+	"membersPerDelegation": "Plätze pro Delegation"
 }

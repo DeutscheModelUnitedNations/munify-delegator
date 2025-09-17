@@ -48,6 +48,7 @@ export const myConferenceparticipationQuery = graphql(`
 				name
 				seatAmount
 				description
+				fontAwesomeIcon
 			}
 		}
 

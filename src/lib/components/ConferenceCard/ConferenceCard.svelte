@@ -135,6 +135,10 @@
 					<i class="fas fa-arrow-right"></i>
 				</a>
 			{/if}
+			<a href="/seats/{conference.id}" target="_blank" class="btn btn-outline btn-primary">
+				{m.conferenceSeats()}
+				<i class="fas fa-arrow-up-right-from-square"></i>
+			</a>
 		</div>
 	</div>
 </div>
