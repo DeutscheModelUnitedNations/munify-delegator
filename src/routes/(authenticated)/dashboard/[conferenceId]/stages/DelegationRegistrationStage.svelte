@@ -443,7 +443,6 @@
 				{#if userIsHeadDelegate}
 					<button
 						class="btn btn-primary mt-4"
-						disabled={!userIsHeadDelegate}
 						onclick={() => {
 							delegationPreferencesModalOpen = true;
 						}}
