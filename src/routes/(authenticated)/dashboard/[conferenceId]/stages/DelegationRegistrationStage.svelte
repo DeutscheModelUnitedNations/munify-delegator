@@ -440,7 +440,7 @@
 			{/if}
 			{#if !delegationMember.delegation?.applied}
 				<div class="flex-1"></div>
-				{#if !userIsHeadDelegate}
+				{#if userIsHeadDelegate}
 					<button
 						class="btn btn-primary mt-4"
 						disabled={!userIsHeadDelegate}
