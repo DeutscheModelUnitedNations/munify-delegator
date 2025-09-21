@@ -266,7 +266,11 @@
 					<div class="collapse-title text-xl font-bold">{m.nationsPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
 						<p class="text-sm">{m.nationsPoolDescription()}</p>
-						<NationPool committees={conference.committees} {nationPool}>
+						<NationPool
+							committees={conference.committees}
+							{nationPool}
+							delegationSize={delegationMember.delegation?.members.length}
+						>
 							{#snippet actionCell(nation: (typeof nations)[number])}
 								<SquareButtonWithLoadingState
 									icon="fa-chevrons-up"
