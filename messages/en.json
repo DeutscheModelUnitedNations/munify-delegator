@@ -727,5 +727,6 @@
 	"byRegionalGroups": "by Regional Groups",
 	"byDelegationSize": "by Delegation Size",
 	"nations": "Nations",
-	"membersPerDelegation": "Seats per Delegation"
+	"membersPerDelegation": "Seats per Delegation",
+	"tooManySeatsForDelegationSize": "Your delegation ({size} members) is smaller than the number of seats ({seats}). An assignment is therefore unlikely."
 }

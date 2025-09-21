@@ -734,5 +734,6 @@
 	"byRegionalGroups": "Nach Regionalgruppen",
 	"byDelegationSize": "Nach Delegationsgröße",
 	"nations": "Länder",
-	"membersPerDelegation": "Plätze pro Delegation"
+	"membersPerDelegation": "Plätze pro Delegation",
+	"tooManySeatsForDelegationSize": "Deine Delegation ({size} Mitglieder) ist kleiner als die Anzahl der Sitzplätze ({seats}). Eine Zuteilung ist daher unwahrscheinlich."
 }
