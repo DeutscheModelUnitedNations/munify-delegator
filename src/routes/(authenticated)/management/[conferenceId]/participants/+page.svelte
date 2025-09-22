@@ -12,7 +12,6 @@
 	import { cache, query } from '$houdini';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import { queryParam } from 'sveltekit-search-params';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
