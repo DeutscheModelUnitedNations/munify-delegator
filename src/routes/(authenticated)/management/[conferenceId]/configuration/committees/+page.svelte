@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { addToPanel } from 'svelte-inspect-value';
 	import type { PageData } from './$houdini';
 	import { cache, graphql } from '$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
