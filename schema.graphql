@@ -35,6 +35,7 @@ type CertificateJWT {
 """A committee in a conference. E.g. the human rights council"""
 type Committee {
   abbreviation: String!
+  agendaItems: [CommitteeAgendaItem!]!
   conference: Conference!
   delegationMembers: [DelegationMember!]!
   id: ID!
@@ -43,7 +44,107 @@ type Committee {
   numOfSeatsPerDelegation: Int!
 }
 
+"""Agenda Items that are discussed in a committee"""
+type CommitteeAgendaItem {
+  committee: Committee!
+  id: ID!
+  teaserText: String!
+  title: String!
+}
+
+input CommitteeAgendaItemCreateInput {
+  committeeId: String!
+  createdAt: DateTime
+  id: String
+  teaserText: String!
+  title: String!
+  updatedAt: DateTime
+}
+
+input CommitteeAgendaItemCreateNestedManyWithoutCommitteeInput {
+  connect: [CommitteeAgendaItemWhereUniqueInput!]
+}
+
+input CommitteeAgendaItemListRelationFilter {
+  every: CommitteeAgendaItemWhereInput
+  none: CommitteeAgendaItemWhereInput
+  some: CommitteeAgendaItemWhereInput
+}
+
+input CommitteeAgendaItemOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input CommitteeAgendaItemOrderByWithRelationInput {
+  committee: CommitteeOrderByWithRelationInput
+  committeeId: SortOrder
+  createdAt: SortOrder
+  id: SortOrder
+  teaserText: SortOrder
+  title: SortOrder
+  updatedAt: SortOrder
+}
+
+enum CommitteeAgendaItemScalarFieldEnum {
+  committeeId
+  createdAt
+  id
+  teaserText
+  title
+  updatedAt
+}
+
+input CommitteeAgendaItemUpdateInput {
+  committeeId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  teaserText: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CommitteeAgendaItemUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  teaserText: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CommitteeAgendaItemUpdateManyWithoutCommitteeNestedInput {
+  connect: [CommitteeAgendaItemWhereUniqueInput!]
+  disconnect: [CommitteeAgendaItemWhereUniqueInput!]
+  set: [CommitteeAgendaItemWhereUniqueInput!]
+}
+
+input CommitteeAgendaItemWhereInput {
+  AND: [CommitteeAgendaItemWhereInput!]
+  NOT: [CommitteeAgendaItemWhereInput!]
+  OR: [CommitteeAgendaItemWhereInput!]
+  committee: CommitteeWhereInput
+  committeeId: StringFilter
+  createdAt: DateTimeFilter
+  id: StringFilter
+  teaserText: StringFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+}
+
+input CommitteeAgendaItemWhereUniqueInput {
+  AND: [CommitteeAgendaItemWhereInput!]
+  NOT: [CommitteeAgendaItemWhereInput!]
+  OR: [CommitteeAgendaItemWhereInput!]
+  committee: CommitteeWhereInput
+  committeeId: StringFilter
+  createdAt: DateTimeFilter
+  id: String
+  teaserText: StringFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+}
+
 input CommitteeCreateInput {
+  CommitteeAgendaItem: CommitteeAgendaItemCreateNestedManyWithoutCommitteeInput
   abbreviation: String!
   conferenceId: String!
   createdAt: DateTime
@@ -79,6 +180,7 @@ input CommitteeOrderByRelationAggregateInput {
 }
 
 input CommitteeOrderByWithRelationInput {
+  CommitteeAgendaItem: CommitteeAgendaItemOrderByRelationAggregateInput
   abbreviation: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
@@ -101,7 +203,13 @@ enum CommitteeScalarFieldEnum {
   updatedAt
 }
 
+input CommitteeScalarRelationFilter {
+  is: CommitteeWhereInput
+  isNot: CommitteeWhereInput
+}
+
 input CommitteeUpdateInput {
+  CommitteeAgendaItem: CommitteeAgendaItemUpdateManyWithoutCommitteeNestedInput
   abbreviation: StringFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
@@ -136,6 +244,7 @@ input CommitteeUpdateManyWithoutNationsNestedInput {
 
 input CommitteeWhereInput {
   AND: [CommitteeWhereInput!]
+  CommitteeAgendaItem: CommitteeAgendaItemListRelationFilter
   NOT: [CommitteeWhereInput!]
   OR: [CommitteeWhereInput!]
   abbreviation: StringFilter
@@ -152,6 +261,7 @@ input CommitteeWhereInput {
 
 input CommitteeWhereUniqueInput {
   AND: [CommitteeWhereInput!]
+  CommitteeAgendaItem: CommitteeAgendaItemListRelationFilter
   NOT: [CommitteeWhereInput!]
   OR: [CommitteeWhereInput!]
   abbreviation: StringFilter
@@ -1788,6 +1898,7 @@ enum MediaConsentStatus {
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
   connectToConferenceSupervisor(conferenceId: ID!, connectionCode: String!, userId: ID): ConferenceSupervisor
+  createOneAgendaItem(data: CommitteeAgendaItemCreateInput!): CommitteeAgendaItem!
   createOneAppliedDelegationMember(assignedCommitteeId: ID, assignedNationAlpha3Code: String, assignedNonStateActorId: ID, conferenceId: ID!, userId: ID!): DelegationMember!
   createOneAppliedSingleParticipant(conferenceId: ID!, roleId: ID!, userId: ID!): SingleParticipant!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
@@ -1800,6 +1911,7 @@ type Mutation {
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
   deleteEmptyDelegations(conferenceId: ID!): [Delegation!]!
+  deleteOneAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   deleteOneConference(where: ConferenceWhereUniqueInput!): Conference
   deleteOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
@@ -1820,6 +1932,7 @@ type Mutation {
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
   updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
   updateManyDelegationMemberCommittee(data: UpdateManyDelegationMemberCommitteeInput!, where: DelegationMemberWhereInput): BatchPayload!
+  updateOneAgendaItem(data: CommitteeAgendaItemUpdateInput!, where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(data: UpdateConferenceParticipantStatusInput!, where: ConferenceParticipantStatusWhereUniqueInputNotRequired!): ConferenceParticipantStatus
   updateOneConferenceSupervisor(data: ConferenceSupervisorUpdateDataInput!, where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
@@ -2611,6 +2724,7 @@ type PreviewConferenceSupervisor {
 
 type Query {
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
+  findManyAgendaItems(cursor: CommitteeAgendaItemWhereUniqueInput, distinct: [CommitteeAgendaItemScalarFieldEnum!], orderBy: [CommitteeAgendaItemOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeAgendaItemWhereInput): [CommitteeAgendaItem!]!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
   findManyConferenceParticipantStatuss(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
   findManyConferenceSupervisors(cursor: ConferenceSupervisorWhereUniqueInput, distinct: [ConferenceSupervisorScalarFieldEnum!], orderBy: [ConferenceSupervisorOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceSupervisorWhereInput): [ConferenceSupervisor!]!
@@ -2628,6 +2742,7 @@ type Query {
   findManySurveyQuestions(cursor: SurveyQuestionWhereUniqueInput, distinct: [SurveyQuestionScalarFieldEnum!], orderBy: [SurveyQuestionOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyQuestionWhereInput): [SurveyQuestion!]!
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
+  findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
   findUniqueConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus

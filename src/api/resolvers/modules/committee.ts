@@ -28,6 +28,11 @@ builder.prismaObject('Committee', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
 			})
+		}),
+		agendaItems: t.relation('CommitteeAgendaItem', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').CommitteeAgendaItem
+			})
 		})
 	})
 });

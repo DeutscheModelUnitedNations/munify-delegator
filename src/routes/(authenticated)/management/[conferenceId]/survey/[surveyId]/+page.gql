@@ -1,4 +1,4 @@
-query SurveyResultsDetailsPage($conferenceId: String!, $surveyId: String!) @blocking {
+query SurveyResultsDetailsPage($conferenceId: String!, $surveyId: String!) {
 	findUniqueSurveyQuestion(where: { id: $surveyId }) {
 		id
 		title
