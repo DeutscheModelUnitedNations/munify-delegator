@@ -1,3 +1,4 @@
+import { graphql } from '$houdini';
 import type { ConferenceOpenForRegistrationQueryVariables } from './$houdini';
 
 export const _houdini_load = graphql(`

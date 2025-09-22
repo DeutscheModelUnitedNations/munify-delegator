@@ -29,7 +29,9 @@
 		}
 	`);
 
-	$effect(() => delegationQuery.fetch());
+	$effect(() => {
+		delegationQuery.fetch({ variables: { conferenceId, entryCode } });
+	});
 
 	let delegation = $derived($delegationQuery.data!.previewDelegation!);
 </script>

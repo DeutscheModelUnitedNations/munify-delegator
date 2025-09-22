@@ -57,7 +57,7 @@
 	`);
 
 	$effect(() => {
-		SupervisorDrawerQuery.fetch({ variables: { supervisorId } });
+		supervisorQuery.fetch({ variables: { supervisorId } });
 	});
 </script>
 
