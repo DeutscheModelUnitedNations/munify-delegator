@@ -22,9 +22,10 @@
 		>['committees'];
 		nationPool: NationPool;
 		actionCell?: Snippet<[Nation]>;
+		delegationSize?: number;
 	}
 
-	let { committees, nationPool, actionCell }: Props = $props();
+	let { committees, nationPool, actionCell, delegationSize }: Props = $props();
 
 	let sortingOptions = [
 		{
@@ -134,6 +135,17 @@
 						{/each}
 						<td class="text-center">
 							{getNumOfSeatsPerNation(nation, committees)}
+							{#if delegationSize && delegationSize < getNumOfSeatsPerNation(nation, committees)}
+								<div
+									class="tooltip tooltip-left"
+									data-tip={m.tooManySeatsForDelegationSize({
+										size: delegationSize,
+										seats: getNumOfSeatsPerNation(nation, committees)
+									})}
+								>
+									<i class="fas fa-triangle-exclamation ml-1 text-warning"></i>
+								</div>
+							{/if}
 						</td>
 						{#if actionCell}
 							<td>
