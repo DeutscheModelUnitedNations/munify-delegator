@@ -35,16 +35,47 @@
 
 	let searchPattern = queryParam(queryParamKey ?? 'filter');
 
+	const searchableRows = $derived.by(() => {
+		return rows.map((row) => {
+			const newRow: { [key: string]: any } = { __original__: row };
+			let all = '';
+			for (const column of columns) {
+				if (column.value) {
+					const key = column.key.toString();
+					const value = column.value(row);
+					newRow[key] = value;
+					if (typeof value === 'string') {
+						all += ` ${value}`;
+					}
+				}
+			}
+			newRow.__search__all = all;
+			return newRow;
+		});
+	});
+
 	let fuse = $derived(
-		new Fuse(rows, {
-			keys: [...columns.map((c) => c.key.toString()), 'id', ...additionallyIndexedKeys],
+		new Fuse(searchableRows, {
+			keys: [
+				...columns.map((c) => c.key.toString()),
+				'id',
+				...additionallyIndexedKeys,
+				'__search__all'
+			],
 			shouldSort: true,
-			threshold: 0.2,
-			minMatchCharLength: 2
+			threshold: 0.4,
+			minMatchCharLength: 1,
+			useExtendedSearch: true
 		})
 	);
 	let searchedColumns = $derived(
-		$searchPattern != null ? fuse.search($searchPattern).map((i) => i.item) : rows
+		$searchPattern != null
+			? fuse
+					.search({
+						$and: $searchPattern.split(' ').map((p) => ({ __search__all: p }))
+					})
+					.map((i) => i.item.__original__ ?? i.item)
+			: rows
 	);
 
 	onMount(() => {
@@ -67,46 +98,44 @@
 	});
 </script>
 
-<div class="w-full">
-	<div class="mt-6 flex w-full items-center">
-		{#if enableSearch}
-			<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
-				<input type="text" class="grow" bind:value={$searchPattern} placeholder={m.search()} />
-				{#if $searchPattern !== ''}
-					<button
-						class="btn btn-square btn-ghost btn-sm"
-						onclick={() => ($searchPattern = '')}
-						aria-label="Reset search"
-					>
-						<i class="fa-duotone fa-times"></i>
-					</button>
-				{:else}
-					<i class="fa-duotone fa-magnifying-glass"></i>
-				{/if}
-			</label>
-		{/if}
-		<DataTableSettingsButton />
-		<ExportButton exportedData={rows as any} />
-	</div>
+<div class="flex min-w-0 items-center overflow-x-auto">
+	{#if enableSearch}
+		<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
+			<input type="text" class="grow" bind:value={$searchPattern} placeholder={m.search()} />
+			{#if $searchPattern !== ''}
+				<button
+					class="btn btn-square btn-ghost btn-sm"
+					onclick={() => ($searchPattern = '')}
+					aria-label="Reset search"
+				>
+					<i class="fa-duotone fa-times"></i>
+				</button>
+			{:else}
+				<i class="fa-duotone fa-magnifying-glass"></i>
+			{/if}
+		</label>
+	{/if}
+	<DataTableSettingsButton />
+	<ExportButton exportedData={rows as any} />
+</div>
 
-	<PrintHeader {title} searchPattern={$searchPattern ?? ''} />
+<PrintHeader {title} searchPattern={$searchPattern ?? ''} />
 
-	<div
-		class="svelte-table-wrapper mt-4 w-full overflow-x-auto transition-all duration-300 {tableClass}"
-	>
-		<SvelteTable
-			{columns}
-			rows={searchedColumns}
-			on:clickRow={(e) => (rowSelected ? rowSelected(e.detail.row) : null)}
-			rowKey="id"
-			classNameTable="table {getZebra() && 'table-zebra'} table-{getTableSize()} table-pin-rows"
-			classNameRow="hover:!bg-base-300 cursor-pointer"
-			iconAsc="<i class='fa-duotone fa-arrow-down-a-z'></i>"
-			iconDesc="<i class='fa-duotone fa-arrow-down-z-a'></i>"
-			iconSortable="<i class='fa-solid fa-sort'></i>"
-			sortBy="family_name"
-		/>
-	</div>
+<div
+	class="svelte-table-wrapper mt-4 max-h-[80vh] min-w-0 overflow-x-auto transition-all duration-300 {tableClass}"
+>
+	<SvelteTable
+		{columns}
+		rows={searchedColumns}
+		on:clickRow={(e) => (rowSelected ? rowSelected(e.detail.row) : null)}
+		rowKey="id"
+		classNameTable="table {getZebra() && 'table-zebra'} table-{getTableSize()} table-pin-rows"
+		classNameRow="hover:!bg-base-300 cursor-pointer"
+		iconAsc="<i class='fa-duotone fa-arrow-down-a-z'></i>"
+		iconDesc="<i class='fa-duotone fa-arrow-down-z-a'></i>"
+		iconSortable="<i class='fa-solid fa-sort'></i>"
+		sortBy="family_name"
+	/>
 </div>
 
 <style lang="postcss">
