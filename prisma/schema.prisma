@@ -105,9 +105,9 @@ model Committee {
 
 /// Agenda Items that are discussed in a committee
 model CommitteeAgendaItem {
-  id         String @id @default(nanoid())
+  id         String  @id @default(nanoid())
   title      String
-  teaserText String
+  teaserText String?
 
   committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
   committeeId String

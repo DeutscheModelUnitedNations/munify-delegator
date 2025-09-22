@@ -160,6 +160,10 @@
 		seed: {
 			icon: 'seedling',
 			translation: m.seedConference()
+		},
+		committees: {
+			icon: 'podium',
+			translation: m.committees()
 		}
 	};
 

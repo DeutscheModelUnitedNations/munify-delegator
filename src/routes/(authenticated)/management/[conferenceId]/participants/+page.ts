@@ -14,6 +14,7 @@ export const _houdini_load = graphql(`
 				city
 				birthday
 				email
+				conferenceParticipationsCount
 			}
 		}
 		findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
@@ -24,6 +25,7 @@ export const _houdini_load = graphql(`
 				city
 				birthday
 				email
+				conferenceParticipationsCount
 			}
 		}
 		findManySingleParticipants(where: { conferenceId: { equals: $conferenceId } }) {
@@ -41,6 +43,7 @@ export const _houdini_load = graphql(`
 			user {
 				id
 				email
+				conferenceParticipationsCount
 			}
 			paymentStatus
 			termsAndConditions

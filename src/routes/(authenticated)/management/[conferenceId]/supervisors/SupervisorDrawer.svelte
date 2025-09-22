@@ -15,14 +15,8 @@
 	}
 	let { supervisorId, open = $bindable(false), onClose, conferenceId }: Props = $props();
 
-	export const _SupervisorDrawerQueryVariables: SupervisorDrawerQueryVariables = () => {
-		return {
-			supervisorId: supervisorId
-		};
-	};
-
 	const supervisorQuery = graphql(`
-		query SupervisorDrawerQuery($supervisorId: String!) @load {
+		query SupervisorDrawerQuery($supervisorId: String!) {
 			findUniqueConferenceSupervisor(where: { id: $supervisorId }) {
 				id
 				plansOwnAttendenceAtConference
@@ -61,6 +55,10 @@
 			}
 		}
 	`);
+
+	$effect(() => {
+		SupervisorDrawerQuery.fetch({ variables: { supervisorId } });
+	});
 </script>
 
 <Drawer

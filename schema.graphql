@@ -48,7 +48,7 @@ type Committee {
 type CommitteeAgendaItem {
   committee: Committee!
   id: ID!
-  teaserText: String!
+  teaserText: String
   title: String!
 }
 
@@ -56,7 +56,7 @@ input CommitteeAgendaItemCreateInput {
   committeeId: String!
   createdAt: DateTime
   id: String
-  teaserText: String!
+  teaserText: String
   title: String!
   updatedAt: DateTime
 }
@@ -98,7 +98,7 @@ input CommitteeAgendaItemUpdateInput {
   committeeId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  teaserText: StringFieldUpdateOperationsInput
+  teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
@@ -106,7 +106,7 @@ input CommitteeAgendaItemUpdateInput {
 input CommitteeAgendaItemUpdateManyMutationInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
-  teaserText: StringFieldUpdateOperationsInput
+  teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
@@ -125,7 +125,7 @@ input CommitteeAgendaItemWhereInput {
   committeeId: StringFilter
   createdAt: DateTimeFilter
   id: StringFilter
-  teaserText: StringFilter
+  teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
 }
@@ -138,7 +138,7 @@ input CommitteeAgendaItemWhereUniqueInput {
   committeeId: StringFilter
   createdAt: DateTimeFilter
   id: String
-  teaserText: StringFilter
+  teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
 }
@@ -3896,6 +3896,7 @@ type User {
   birthday: DateTime
   city: String
   conferenceParticipantStatus: [ConferenceParticipantStatus!]!
+  conferenceParticipationsCount: Int!
   conferenceSupervisor: [ConferenceSupervisor!]!
   country: String
   delegationMemberships: [DelegationMember!]!

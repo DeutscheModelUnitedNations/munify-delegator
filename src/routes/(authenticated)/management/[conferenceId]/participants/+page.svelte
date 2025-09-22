@@ -12,6 +12,7 @@
 	import { cache, query } from '$houdini';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import { queryParam } from 'sveltekit-search-params';
+	import { addToPanel } from 'svelte-inspect-value';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
@@ -34,7 +35,8 @@
 				...user,
 				participationType: 'SUPERVISOR',
 				status: getParticipationStatus(user.id),
-				email: user.email
+				email: user.email,
+				participationCount: user.conferenceParticipationsCount ?? 0
 			});
 		}
 		for (const userRaw of $queryData.data?.findManyDelegationMembers ?? []) {
@@ -43,7 +45,8 @@
 				...user,
 				participationType: 'DELEGATION_MEMBER',
 				status: getParticipationStatus(user.id),
-				email: user.email
+				email: user.email,
+				participationCount: user.conferenceParticipationsCount ?? 0
 			});
 		}
 		for (const userRaw of $queryData.data?.findManySingleParticipants ?? []) {
@@ -52,7 +55,8 @@
 				...user,
 				participationType: 'SINGLE_PARTICIPANT',
 				status: getParticipationStatus(user.id),
-				email: user.email
+				email: user.email,
+				participationCount: user.conferenceParticipationsCount ?? 0
 			});
 		}
 		return ret;
@@ -126,6 +130,14 @@
 				row.birthday && conference?.endConference
 					? (calculateConferenceAge(row.birthday) ?? 'N/A')
 					: 'N/A',
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'participationCount',
+			title: m.participationCount(),
+			value: (row) => row.participationCount.toString(),
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'

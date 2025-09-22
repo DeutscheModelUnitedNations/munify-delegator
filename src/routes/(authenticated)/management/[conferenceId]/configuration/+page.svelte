@@ -236,6 +236,10 @@
 			placeholder="https://path-to-your-paper-inbox.com"
 			label={m.paperInbox()}
 		/>
+		<a class="btn btn-primary self-start" href="./configuration/committees">
+			{m.committeesAndAgendaItems()}
+			<i class="fas fa-podium ml-2"></i>
+		</a>
 
 		<h3 class="mt-8 text-lg font-bold">{m.bankingInformation()}</h3>
 		<FormCheckbox

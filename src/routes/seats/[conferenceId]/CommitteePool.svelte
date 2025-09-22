@@ -22,17 +22,17 @@
 			<th>
 				<i class="fa-duotone fa-podium"></i>
 			</th>
-			<th>
+			<th class="text-center">
 				<div class="tooltip" data-tip={m.nations()}>
 					<i class="fa-duotone fa-flag"></i>
 				</div>
 			</th>
-			<th>
+			<th class="text-center">
 				<div class="tooltip" data-tip={m.membersPerDelegation()}>
 					<i class="fa-duotone fa-users"></i>
 				</div>
 			</th>
-			<th>
+			<th class="text-left">
 				<i class="fa-duotone fa-list-ol"></i>
 			</th>
 		</tr>
@@ -42,17 +42,20 @@
 			<tr>
 				<td>{committee.abbreviation}</td>
 				<td>{committee.name}</td>
-				<td>{committee.nations.length}</td>
-				<td>{committee.numOfSeatsPerDelegation}</td>
+				<td class="text-center">{committee.nations.length}</td>
+				<td class="text-center">{committee.numOfSeatsPerDelegation}</td>
 				<td>
-					<ul class="list-disc">
+					<ul class="ml-4 list-disc">
 						{#each committee.agendaItems as agendaItem}
-							<button
-								class="btn btn-link list-item"
-								onclick={() => (drawerAgendaItem = agendaItem.id)}
-							>
-								{agendaItem.title}
-							</button>
+							<li class="list-item">
+								{#if agendaItem.teaserText}
+									<button class="btn-link" onclick={() => (drawerAgendaItem = agendaItem.id)}>
+										{agendaItem.title}
+									</button>
+								{:else}
+									{agendaItem.title}
+								{/if}
+							</li>
 						{/each}
 					</ul>
 				</td>
