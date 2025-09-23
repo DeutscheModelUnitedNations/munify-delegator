@@ -1,7 +1,0 @@
-query ImportGetCommittees($conferenceId: String!) {
-	findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
-		id
-		abbreviation
-		name
-	}
-}

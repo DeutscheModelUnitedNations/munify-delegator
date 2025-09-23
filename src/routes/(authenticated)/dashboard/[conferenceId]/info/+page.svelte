@@ -4,7 +4,7 @@
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let conferenceData = $derived(data.conferenceInfoQuery);
+	let conferenceData = $derived(data.ConferenceInfoQuery);
 </script>
 
 <div class="flex w-full flex-col gap-4">

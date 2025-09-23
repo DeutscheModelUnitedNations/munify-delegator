@@ -85,6 +85,37 @@ export const GQLUser = builder.prismaObject('User', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyAnswer
 			})
+		}),
+		conferenceParticipationsCount: t.field({
+			type: 'Int',
+			resolve: async (parent, args, ctx, info) => {
+				const delegationMembershipsCount = await db.delegationMember.count({
+					where: {
+						userId: parent.id,
+						delegation: {
+							OR: [
+								{ assignedNationAlpha3Code: { not: null } },
+								{ assignedNonStateActorId: { not: null } }
+							]
+						}
+					}
+				});
+
+				const singleParticipantsCount = await db.singleParticipant.count({
+					where: {
+						userId: parent.id,
+						assignedRoleId: { not: null }
+					}
+				});
+
+				const conferenceSupervisorsCount = await db.conferenceSupervisor.count({
+					where: {
+						userId: parent.id
+					}
+				});
+
+				return delegationMembershipsCount + singleParticipantsCount + conferenceSupervisorsCount;
+			}
 		})
 	})
 });

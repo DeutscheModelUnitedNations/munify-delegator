@@ -728,5 +728,9 @@
 	"byDelegationSize": "by Delegation Size",
 	"nations": "Nations",
 	"membersPerDelegation": "Seats per Delegation",
+	"committeesAndAgendaItems": "Committees and Agenda Items",
+	"participationCount": "Participations",
+	"teaserText": "Teaser Text",
+	"createNewAgendaItem": "Create new Agenda Item",
 	"tooManySeatsForDelegationSize": "Your delegation ({size} members) is smaller than the number of seats ({seats}). An assignment is therefore unlikely."
 }

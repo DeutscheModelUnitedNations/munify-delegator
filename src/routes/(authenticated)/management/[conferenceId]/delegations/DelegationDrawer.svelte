@@ -20,15 +20,8 @@
 	}
 	let { delegationId, open = $bindable(false), onClose, conferenceId, userData }: Props = $props();
 
-	export const _DelegationDrawerQueryVariables: DelegationDrawerQueryVariables = () => {
-		return {
-			delegationId,
-			conferenceId
-		};
-	};
-
 	const delegationQuery = graphql(`
-		query DelegationDrawerQuery($delegationId: String!) @load {
+		query DelegationDrawerQuery($delegationId: String!) {
 			findUniqueDelegation(where: { id: $delegationId }) {
 				applied
 				entryCode
@@ -79,6 +72,12 @@
 			}
 		}
 	`);
+
+	$effect(() => {
+		if (delegationId) {
+			delegationQuery.fetch({ variables: { delegationId } });
+		}
+	});
 
 	const makeHeadDelegateAdminMutation = graphql(`
 		mutation MakeHeadDelegateAdminMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {

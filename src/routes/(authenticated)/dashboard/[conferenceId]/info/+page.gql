@@ -1,7 +1,0 @@
-query conferenceInfoQuery($conferenceId: String!) @blocking {
-	findUniqueConference(where: { id: $conferenceId }) {
-		id
-		title
-		info
-	}
-}
