@@ -4,7 +4,6 @@
 	import type { DelegationPreviewComponentQueryVariables } from './$houdini';
 	import Spinner from './Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { addToPanel } from 'svelte-inspect-value';
 	import { goto } from '$app/navigation';
 
 	interface Props {
