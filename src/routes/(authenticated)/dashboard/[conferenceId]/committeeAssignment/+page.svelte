@@ -101,7 +101,7 @@
 			{/each}
 		</div>
 
-		<table class="table table-lg">
+		<table class="table-lg table">
 			<thead>
 				<tr>
 					<th>{m.name()}</th>

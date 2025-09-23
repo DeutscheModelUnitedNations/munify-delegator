@@ -46,7 +46,7 @@
 	);
 </script>
 
-<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
 		<i class="fa-duotone fa-id-card-clip text-base-content mb-6 text-6xl"></i>
 		<h2 class="text-base-content text-2xl font-thin">MUNify</h2>
@@ -66,14 +66,17 @@
 			>
 				<p>{m.homeRegistrationSub()}</p>
 				{#if openRegistrations.length > 0}
-					<ul class="live-list mt-2">
+					<div class="mt-4 flex flex-col gap-2">
 						{#each openRegistrations as conference}
-							<li>
-								<span></span>
+							<div class="flex items-center gap-2">
+								<div class="inline-grid *:[grid-area:1/1]">
+									<div class="status status-success status-lg animate-ping"></div>
+									<div class="status status-success status-lg"></div>
+								</div>
 								{conference.title}
-							</li>
+							</div>
 						{/each}
-					</ul>
+					</div>
 				{/if}
 			</UndrawCard>
 
@@ -164,45 +167,3 @@
 		</section>
 	</main>
 </div>
-
-<style lang="postcss">
-	.live-list {
-		list-style: none;
-		margin-top: calc(var(--spacing) * 4)
-	}
-
-	.live-list li {
-		position: relative;
-		margin-inline: calc(var(--spacing) * 2)
-		margin-block: calc(var(--spacing) * 1)
-		padding-left: calc(var(--spacing) * 6)
-	}
-
-	.live-list span {
-		position: absolute;
-		left: 0;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 10px; /* Size of the dot */
-		height: 10px; /* Size of the dot */
-		background-color: green; /* Dot color */
-		border-radius: 50%; /* Make it a circle */
-		box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); /* Initial glow */
-		animation: pulsate 1.5s infinite; /* Animation */
-	}
-
-	@keyframes pulsate {
-		0% {
-			box-shadow: 0 0 3px rgba(0, 115, 0, 0.2);
-			transform: translateY(-50%) scale(1);
-		}
-		50% {
-			box-shadow: 0 0 10px rgb(0, 115, 0); /* Glow effect */
-			transform: translateY(-50%) scale(1.1); /* Slightly enlarge */
-		}
-		100% {
-			box-shadow: 0 0 5px rgba(0, 115, 0, 0.2);
-			transform: translateY(-50%) scale(1);
-		}
-	}
-</style>

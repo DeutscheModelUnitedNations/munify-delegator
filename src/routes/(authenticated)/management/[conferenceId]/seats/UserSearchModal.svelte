@@ -95,7 +95,7 @@
 
 		<div class="flex w-full flex-col gap-4">
 			<div
-				class="flex w-full flex-col items-center justify-center gap-1 rounded-lg bg-base-200 p-4"
+				class="bg-base-200 flex w-full flex-col items-center justify-center gap-1 rounded-lg p-4"
 			>
 				{#if loading}
 					<div>

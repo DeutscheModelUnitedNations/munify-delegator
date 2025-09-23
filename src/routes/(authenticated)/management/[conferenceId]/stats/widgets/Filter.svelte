@@ -5,7 +5,7 @@
 	let { getFilter, setFilter } = registrationFilter();
 </script>
 
-<section class="card col-span-2 grow bg-base-200 shadow-sm md:col-span-4 xl:col-span-3">
+<section class="card bg-base-200 col-span-2 grow shadow-sm md:col-span-4 xl:col-span-3">
 	<div class="card-body items-center justify-center">
 		<fieldset class="fieldset">
 			<div class="flex flex-col items-start justify-start">

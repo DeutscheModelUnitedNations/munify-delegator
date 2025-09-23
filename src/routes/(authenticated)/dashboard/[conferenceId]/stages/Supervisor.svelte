@@ -224,7 +224,7 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.ownPresence()}</h2>
 	<p class="text-sm">{m.ownPresenceDescription()}</p>
-	<div class="card max-w-80 bg-base-100 p-6 shadow-md dark:bg-base-200">
+	<div class="card bg-base-100 dark:bg-base-200 max-w-80 p-6 shadow-md">
 		<fieldset class="fieldset">
 			<label class="label cursor-pointer">
 				<span>{m.presentAtConference()}</span>
@@ -325,7 +325,7 @@
 					<div
 						class="badge {delegation.applied
 							? 'badge-success'
-							: 'badge-warning'} badge-lg absolute right-4 top-0 z-10 -translate-y-1/2"
+							: 'badge-warning'} badge-lg absolute top-0 right-4 z-10 -translate-y-1/2"
 					>
 						{#if delegation.applied}
 							<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
@@ -334,7 +334,7 @@
 						{/if}
 					</div>
 				{/if}
-				<table class="table mb-10">
+				<table class="mb-10 table">
 					<thead>
 						<tr>
 							<th></th>
@@ -455,7 +455,7 @@
 					{/each}
 					{#each hiddenMembers as member}
 						<tr>
-							<td colspan="5" class="italic text-gray-500">
+							<td colspan="5" class="text-gray-500 italic">
 								{m.hiddenMember()}
 								{#if member.isHeadDelegate}
 									<div class="tooltip" data-tip={m.headDelegate()}>
@@ -489,7 +489,7 @@
 					<div
 						class="badge {singleParticipant.applied
 							? 'badge-success'
-							: 'badge-warning'} badge-lg absolute right-4 top-0 z-10 -translate-y-1/2"
+							: 'badge-warning'} badge-lg absolute top-0 right-4 z-10 -translate-y-1/2"
 					>
 						{#if singleParticipant.applied}
 							<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
@@ -498,7 +498,7 @@
 						{/if}
 					</div>
 				{/if}
-				<table class="table mb-10">
+				<table class="mb-10 table">
 					<thead>
 						<tr>
 							<th></th>
@@ -614,8 +614,8 @@
 	description={m.connectWithStudentsDescription()}
 	class="bg-base-200"
 >
-	<div class="mt-4 flex items-center gap-2 rounded-lg bg-base-200 p-2 pl-4 dark:bg-base-300">
-		<p class="overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
+	<div class="bg-base-200 dark:bg-base-300 mt-4 flex items-center gap-2 rounded-lg p-2 pl-4">
+		<p class="overflow-x-auto font-mono text-xl tracking-[0.6rem] uppercase">
 			{supervisor.connectionCode}
 		</p>
 		<button

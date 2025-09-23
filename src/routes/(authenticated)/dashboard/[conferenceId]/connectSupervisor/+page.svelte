@@ -81,7 +81,7 @@
 		/>
 
 		{#if $previewSupervisorQuery.fetching}
-			<div class="ml-10 mt-10">
+			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
 		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}
