@@ -735,5 +735,9 @@
 	"byDelegationSize": "Nach Delegationsgröße",
 	"nations": "Länder",
 	"membersPerDelegation": "Plätze pro Delegation",
+	"committeesAndAgendaItems": "Gremien und Themen",
+	"participationCount": "Teilnahmen",
+	"teaserText": "Teaser Text",
+	"createNewAgendaItem": "Tagesordnungspunkt hinzufügen",
 	"tooManySeatsForDelegationSize": "Deine Delegation ({size} Mitglieder) ist kleiner als die Anzahl der Sitzplätze ({seats}). Eine Zuteilung ist daher unwahrscheinlich."
 }

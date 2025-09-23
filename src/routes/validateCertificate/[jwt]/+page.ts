@@ -11,7 +11,7 @@ export const load: PageLoad = async (event) => {
 	const { params } = event;
 
 	const publicKeyQuery = graphql(`
-		query LoadJWTPublicKey @load {
+		query LoadJWTPublicKey {
 			getCertificateJWTPublicKeyObject {
 				alg
 				e

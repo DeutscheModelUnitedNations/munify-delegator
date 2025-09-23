@@ -5,6 +5,7 @@
 	import NsaPool from '$lib/components/NSAPool.svelte';
 	import { getUniqueNations } from '$lib/services/getUniqueNations';
 	import { m } from '$lib/paraglide/messages';
+	import CommitteePool from './CommitteePool.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const conferenceQuery = $derived(data.SeatsOfConferenceQuery);
@@ -28,40 +29,9 @@
 
 		<div class="collapse collapse-arrow w-full bg-base-100 shadow-lg">
 			<input type="checkbox" />
-			<div class="collapse-title text-xl font-medium">{m.committees()}</div>
+			<div class="collapse-title text-xl font-medium">{m.committeesAndAgendaItems()}</div>
 			<div class="collapse-content w-full overflow-x-auto">
-				<table class="table">
-					<thead>
-						<tr>
-							<th>
-								<i class="fa-duotone fa-text"></i>
-							</th>
-							<th>
-								<i class="fa-duotone fa-podium"></i>
-							</th>
-							<th>
-								<div class="tooltip" data-tip={m.nations()}>
-									<i class="fa-duotone fa-flag"></i>
-								</div>
-							</th>
-							<th>
-								<div class="tooltip" data-tip={m.membersPerDelegation()}>
-									<i class="fa-duotone fa-users"></i>
-								</div>
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each committees as committee}
-							<tr>
-								<td>{committee.abbreviation}</td>
-								<td>{committee.name}</td>
-								<td>{committee.nations.length}</td>
-								<td>{committee.numOfSeatsPerDelegation}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+				<CommitteePool {committees} />
 			</div>
 		</div>
 		<div class="collapse collapse-arrow w-full bg-base-100 shadow-lg">

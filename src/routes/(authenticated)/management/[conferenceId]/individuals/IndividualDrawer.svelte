@@ -23,7 +23,7 @@
 		};
 
 	const singleParticipantQuery = graphql(`
-		query SingleParticipantDrawerQuery($singleParticipantId: String!) @load {
+		query SingleParticipantDrawerQuery($singleParticipantId: String!) {
 			findUniqueSingleParticipant(where: { id: $singleParticipantId }) {
 				id
 				applied
@@ -56,6 +56,10 @@
 			}
 		}
 	`);
+
+	$effect(() => {
+		singleParticipantQuery.fetch({ variables: { singleParticipantId } });
+	});
 
 	let supervisors = $derived(
 		$singleParticipantQuery.data?.findUniqueSingleParticipant?.supervisors ?? []
