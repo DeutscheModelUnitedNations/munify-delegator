@@ -61,6 +61,9 @@ builder.mutationFields((t) => {
 			...field,
 			resolve: async (query, root, args, ctx, info) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
+				if (!ctx.oidc.user?.hasRole('admin') && !ctx.oidc.user?.hasRole('service_user')) {
+					throw new Error('Only admins can create agenda items');
+				}
 
 				args.data = {
 					...args.data

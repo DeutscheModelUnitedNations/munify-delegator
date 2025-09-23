@@ -72,7 +72,10 @@
 		$searchPattern != null
 			? fuse
 					.search({
-						$and: $searchPattern.split(' ').map((p) => ({ __search__all: p }))
+						$and: $searchPattern
+							.split(' ')
+							.filter((p) => p.trim())
+							.map((p) => ({ __search__all: p }))
 					})
 					.map((i) => i.item.__original__ ?? i.item)
 			: rows
