@@ -19,6 +19,7 @@ import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransact
 import { defineAbilitiesForSurveyQuestion } from './entities/surveyQuestion';
 import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
 import { defineAbilitiesForSurveyOption } from './entities/surveyOption';
+import { defineAbilitiesForCommitteeAgendaItem } from './entities/committeeAgendaItem';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete'] as const;
@@ -68,6 +69,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	}
 
 	defineAbilitiesForCommittee(oidc, builder);
+	defineAbilitiesForCommitteeAgendaItem(oidc, builder);
 	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForConferenceParticipantStatus(oidc, builder);
 	defineAbilitiesForConferenceSupervisor(oidc, builder);

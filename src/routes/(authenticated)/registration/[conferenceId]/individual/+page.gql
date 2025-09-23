@@ -1,8 +1,0 @@
-query RoleSelectionQuery($conferenceId: String!) {
-	findManyCustomConferenceRoles(where: { conferenceId: { equals: $conferenceId } }) {
-		id
-		name
-		description
-		fontAwesomeIcon
-	}
-}

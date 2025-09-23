@@ -7,7 +7,7 @@
 		category: string;
 		title?: string;
 		titleSnippet?: Snippet;
-		id: string;
+		id?: string;
 		loading: boolean;
 		onClose?: () => void;
 		children: Snippet;

@@ -15,15 +15,8 @@
 
 	let { open = $bindable(false), members: unsortedMembers, nation, conferenceId }: Props = $props();
 
-	export const _GetCommitteeDataForCommitteeAssignmentVariables: GetCommitteeDataForCommitteeAssignmentVariables =
-		() => {
-			return {
-				conferenceId
-			};
-		};
-
 	const CommitteeDataQuery = graphql(`
-		query GetCommitteeDataForCommitteeAssignment($conferenceId: String!) @load {
+		query GetCommitteeDataForCommitteeAssignment($conferenceId: String!) {
 			findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
 				id
 				abbreviation
@@ -35,6 +28,10 @@
 			}
 		}
 	`);
+
+	$effect(() => {
+		CommitteeDataQuery.fetch({ variables: { conferenceId } });
+	});
 
 	let filteredCommittees = $derived(
 		$CommitteeDataQuery.data

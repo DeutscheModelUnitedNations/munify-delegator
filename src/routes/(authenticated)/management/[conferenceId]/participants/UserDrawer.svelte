@@ -42,15 +42,8 @@
 
 	let assignSupervisorModalOpen = $state(false);
 
-	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
-		return {
-			userId: userId,
-			conferenceId
-		};
-	};
-
 	const userQuery = graphql(`
-		query UserDrawerQuery($userId: String!, $conferenceId: String!) @load {
+		query UserDrawerQuery($userId: String!, $conferenceId: String!) {
 			findUniqueUser(where: { id: $userId }) {
 				id
 				given_name
@@ -68,6 +61,7 @@
 				emergencyContacts
 				gender
 				globalNotes
+				conferenceParticipationsCount
 			}
 			findManyDelegationMembers(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
@@ -136,6 +130,15 @@
 			}
 		}
 	`);
+
+	$effect(() => {
+		userQuery.fetch({
+			variables: {
+				userId,
+				conferenceId
+			}
+		});
+	});
 
 	const supervisorListQuery = graphql(`
 		query ListSupervisors($conferenceId: String!) {

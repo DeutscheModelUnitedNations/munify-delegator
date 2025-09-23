@@ -18,7 +18,7 @@
 		};
 
 	const delegationQuery = graphql(`
-		query DelegationPreviewComponentQuery($conferenceId: String!, $entryCode: String!) @load {
+		query DelegationPreviewComponentQuery($conferenceId: String!, $entryCode: String!) {
 			previewDelegation(conferenceId: $conferenceId, entryCode: $entryCode) {
 				memberCount
 				applied
@@ -28,6 +28,10 @@
 			}
 		}
 	`);
+
+	$effect(() => {
+		delegationQuery.fetch({ variables: { conferenceId, entryCode } });
+	});
 
 	let delegation = $derived($delegationQuery.data!.previewDelegation!);
 </script>

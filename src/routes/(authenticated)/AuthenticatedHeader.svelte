@@ -10,10 +10,14 @@
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
 	export const logoutUrlQuery = graphql(`
-		query LogoutUrlQuery @load {
+		query LogoutUrlQuery {
 			logoutUrl
 		}
 	`);
+
+	$effect(() => {
+		logoutUrlQuery.fetch();
+	});
 </script>
 
 <div class="w-full p-4">

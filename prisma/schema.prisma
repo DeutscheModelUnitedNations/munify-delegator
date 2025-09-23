@@ -97,6 +97,21 @@ model Committee {
   nations           Nation[]
   delegationMembers DelegationMember[]
 
+  CommitteeAgendaItem CommitteeAgendaItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Agenda Items that are discussed in a committee
+model CommitteeAgendaItem {
+  id         String  @id @default(nanoid())
+  title      String
+  teaserText String?
+
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  committeeId String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }

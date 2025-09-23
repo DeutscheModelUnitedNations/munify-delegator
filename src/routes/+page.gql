@@ -1,9 +1,0 @@
-query ConferencesPreview {
-	findManyConferences {
-		state
-		startAssignment
-		location
-		title
-		id
-	}
-}

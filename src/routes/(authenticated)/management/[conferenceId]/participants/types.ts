@@ -6,6 +6,7 @@ export type UserRowData = Pick<
 	'id' | 'given_name' | 'family_name' | 'city' | 'birthday' | 'email'
 > & {
 	participationType: ParticipationType;
+	participationCount: number;
 	status:
 		| Pick<
 				ConferenceParticipantStatus,
