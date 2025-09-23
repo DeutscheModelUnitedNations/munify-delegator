@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
