@@ -7,14 +7,6 @@
 	import { entryCodeLength } from '$api/services/entryCodeGenerator';
 	import { graphql } from '$houdini';
 
-	const memberMutation = graphql(`
-		mutation CreateDelegationMemberMutation($entryCode: String!, $conferenceId: ID!) {
-			createOneDelegationMember(entryCode: $entryCode, conferenceId: $conferenceId) {
-				id
-			}
-		}
-	`);
-
 	let { data }: { data: PageData } = $props();
 
 	let code = $state<string>(data.code ?? '');
@@ -29,16 +21,6 @@
 					{m.pleaseCheckDelegation()}
 				</p>
 
-				{#if code && code.length === entryCodeLength}
-					<DelegationPreview conferenceId={data.conferenceId} entryCode={code} />
-					<button
-						class="btn btn-primary mb-10"
-						onclick={async () => {
-							await memberMutation.mutate({ entryCode: code, conferenceId: data.conferenceId });
-							goto('/dashboard');
-						}}>{m.confirm()}</button
-					>
-				{/if}
 				<input
 					type="text"
 					placeholder="Code"
@@ -48,6 +30,10 @@
 						code = (e.target.value as string).toUpperCase().slice(0, 6);
 					}}
 				/>
+
+				{#if code && code.length === entryCodeLength}
+					<DelegationPreview conferenceId={data.conferenceId} entryCode={code} />
+				{/if}
 
 				<a class="btn btn-warning mt-16" href=".">{m.back()}</a>
 			</div>
