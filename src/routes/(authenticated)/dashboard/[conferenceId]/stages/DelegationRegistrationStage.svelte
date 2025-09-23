@@ -326,8 +326,8 @@
 				? m.inviteMorePeopleDescription()
 				: m.inviteMorePeopleButAlreadyAppliedDescription()}
 		>
-			<div class="mt-4 flex items-center gap-2 rounded-lg bg-base-200 p-2 pl-4 dark:bg-base-300">
-				<p class="overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
+			<div class="bg-base-200 dark:bg-base-300 mt-4 flex items-center gap-2 rounded-lg p-2 pl-4">
+				<p class="overflow-x-auto font-mono text-xl tracking-[0.6rem] uppercase">
 					{delegationMember.delegation?.entryCode}
 				</p>
 				<button
@@ -499,7 +499,7 @@
 	<p class="mt-10 text-xs">
 		{@html m.delegationIdForSupport()}
 		{#if delegationMember.delegation}
-			<span class="rounded-sm bg-base-200 p-1 font-mono">{delegationMember.delegation.id}</span>
+			<span class="bg-base-200 rounded-sm p-1 font-mono">{delegationMember.delegation.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

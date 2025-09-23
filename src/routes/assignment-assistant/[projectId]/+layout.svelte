@@ -14,7 +14,7 @@
 	};
 </script>
 
-<div class="navbar gap-4 bg-base-200 p-2">
+<div class="navbar bg-base-200 gap-4 p-2">
 	<a class="btn btn-ghost" href="/assignment-assistant" aria-label="Back">
 		<i class="fas fa-arrow-left"></i>
 	</a>

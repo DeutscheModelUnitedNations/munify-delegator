@@ -46,7 +46,7 @@
 
 <div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.signup()}</h1>
+		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signup()}</h1>
 		<p class="max-ch-md">
 			{@html m.conferenceSignupIntroduction()}
 		</p>

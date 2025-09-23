@@ -51,11 +51,11 @@
 			<div class="card-body">
 				<h3 class="text-xl font-bold">{committee.name} ({committee.abbreviation})</h3>
 				{#each agendaItems as item}
-					<div class="flex items-center gap-2 rounded-md bg-base-300 px-4 py-2">
+					<div class="bg-base-300 flex items-center gap-2 rounded-md px-4 py-2">
 						<div class="flex w-full flex-1 flex-col gap-2">
 							<h4>{item.title}</h4>
 							{#if item.teaserText}
-								<p class="whitespace-pre-wrap text-xs">{item.teaserText}</p>
+								<p class="text-xs whitespace-pre-wrap">{item.teaserText}</p>
 							{/if}
 						</div>
 						<button

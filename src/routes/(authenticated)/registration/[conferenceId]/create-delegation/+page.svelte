@@ -61,7 +61,7 @@
 
 	<Form {form} showSubmitButton={false}>
 		<div class="flex flex-col gap-6 text-center {step !== 0 ? 'hidden' : ''}">
-			<h1 class="text-3xl uppercase tracking-wider">{m.createDelegation()}</h1>
+			<h1 class="text-3xl tracking-wider uppercase">{m.createDelegation()}</h1>
 			{@html m.createDelegationProcessExplaination()}
 			<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}>{m.next()}</button
 			>
@@ -105,7 +105,7 @@
 		<div class="flex flex-col items-center gap-4 {step !== 2 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
 
-			<div class="rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200 dark:stroke-slate-300">
+			<div class="bg-base-100 dark:bg-base-200 rounded-lg p-4 shadow-lg dark:stroke-slate-300">
 				<div class="overflow-x-auto">
 					<table class="table">
 						<tbody>
@@ -139,7 +139,7 @@
 		<p class="max-ch-sm">
 			{m.nowYouCanInvitePeople()}
 		</p>
-		<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
+		<div class="border-primary flex w-full items-center rounded-lg border-2 border-dashed p-2">
 			<p class="flex-1 overflow-x-auto">
 				{referralLink}
 			</p>
@@ -157,8 +157,8 @@
 		<p class="max-ch-sm">
 			{m.orShareThisCode()}
 		</p>
-		<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
-			<p class="flex-1 overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
+		<div class="border-primary flex w-full items-center rounded-lg border-2 border-dashed p-2">
+			<p class="flex-1 overflow-x-auto font-mono text-xl tracking-[0.6rem] uppercase">
 				{entryCode}
 			</p>
 			<button

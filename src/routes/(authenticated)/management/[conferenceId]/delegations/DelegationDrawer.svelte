@@ -214,7 +214,7 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-flag text-lg"></i></td>
 					<td>
-						<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
+						<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 							>{delegation?.appliedForRoles.length}</span
 						>
 						{delegation?.appliedForRoles
@@ -386,7 +386,7 @@
 		<h3 class="text-lg font-bold">{m.headDelegate ? m.headDelegate() : m.delegationMembers()}</h3>
 		<div class="max-h-60 overflow-y-auto">
 			{#each members ?? [] as member, i (i)}
-				<label class="flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-base-200">
+				<label class="hover:bg-base-200 flex cursor-pointer items-center gap-2 rounded-md p-2">
 					<input
 						type="radio"
 						name="head-delegate"

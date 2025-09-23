@@ -77,6 +77,6 @@
 			</div>
 		{/if}
 	{:else}
-		<div class="skeleton h-32 w-full max-w-md bg-base-200"></div>
+		<div class="skeleton bg-base-200 h-32 w-full max-w-md"></div>
 	{/if}
 </section>

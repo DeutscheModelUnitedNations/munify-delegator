@@ -11,7 +11,7 @@
 	let { title, description, class: class_, children }: Props = $props();
 </script>
 
-<div class="card bg-base-100 p-8 shadow-md dark:bg-base-200 {class_}">
+<div class="card bg-base-100 dark:bg-base-200 p-8 shadow-md {class_}">
 	{#if title}
 		<h2 class="card-title mb-2">{title}</h2>
 	{/if}

@@ -21,7 +21,7 @@
 			<TableSizeControl />
 			<ZebraControl />
 		</div>
-		<div class="absolute right-2 top-2">
+		<div class="absolute top-2 right-2">
 			<button
 				class="btn btn-square btn-ghost"
 				onclick={() => (confirmDialogOpen = false)}

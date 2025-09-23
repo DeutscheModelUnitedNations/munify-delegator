@@ -19,7 +19,7 @@
 	</h1>
 
 	<div class="block w-full overflow-y-scroll md:contents">
-		<table class="table table-pin-rows text-center">
+		<table class="table-pin-rows table text-center">
 			{@render children()}
 		</table>
 	</div>

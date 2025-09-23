@@ -42,12 +42,12 @@
 	{:else}
 		{#each values as value, i}
 			<div
-				class="tooltip w-full rounded-md bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 {elementClass} transition-color duration-300"
+				class="tooltip bg-base-200 w-full rounded-md hover:bg-neutral-400 dark:hover:bg-neutral-600 {elementClass} transition-color duration-300"
 				style="height: {length(value)}%;"
 				data-tip={formatter(value, (labels && labels[i]) || undefined)}
 			>
 				{#if showLabels && labels && length(value) > 40}
-					<div class="text-sm text-base-content">{labels[i]}</div>
+					<div class="text-base-content text-sm">{labels[i]}</div>
 				{/if}
 			</div>
 		{/each}

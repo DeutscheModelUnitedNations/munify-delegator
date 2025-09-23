@@ -9,7 +9,7 @@
 </script>
 
 <section
-	class="card col-span-2 grow bg-primary text-primary-content shadow-sm md:col-span-12 xl:col-span-6"
+	class="card bg-primary text-primary-content col-span-2 grow shadow-sm md:col-span-12 xl:col-span-6"
 >
 	<div class="card-body mb-4 pb-0">
 		<h3 class="text-xs">{m.averageAgeOnlyApplied()}</h3>

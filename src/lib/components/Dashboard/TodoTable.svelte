@@ -22,9 +22,9 @@
 			<tr>
 				<td>
 					{#if todo.completed}
-						<i class="fas fa-square-check text-2xl text-primary"></i>
+						<i class="fas fa-square-check text-primary text-2xl"></i>
 					{:else if todo.completed === false}
-						<i class="fas fa-square text-2xl text-error"></i>
+						<i class="fas fa-square text-error text-2xl"></i>
 					{:else}
 						<span class="loading loading-spinner loading-sm"></span>
 					{/if}

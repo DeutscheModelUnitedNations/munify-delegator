@@ -261,7 +261,7 @@
 					{/if}
 				</div>
 
-				<div class="collapse collapse-arrow bg-base-200">
+				<div class="collapse-arrow bg-base-200 collapse">
 					<input type="checkbox" />
 					<div class="collapse-title text-xl font-bold">{m.nationsPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
@@ -298,7 +298,7 @@
 						{/if}
 					</div>
 				</div>
-				<div class="collapse collapse-arrow bg-base-200">
+				<div class="collapse-arrow bg-base-200 collapse">
 					<input type="checkbox" />
 					<div class="collapse-title text-xl font-bold">{m.nsaPool()}</div>
 					<div class="collapse-content flex flex-col gap-4 overflow-x-auto">
@@ -333,7 +333,7 @@
 				</div>
 			{/if}
 		</div>
-		<div class="absolute right-2 top-2">
+		<div class="absolute top-2 right-2">
 			<button
 				class="btn btn-circle btn-ghost"
 				onclick={() => {

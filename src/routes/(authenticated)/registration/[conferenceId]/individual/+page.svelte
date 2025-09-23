@@ -10,7 +10,7 @@
 
 <div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.individualApplication()}</h1>
+		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.individualApplication()}</h1>
 		<p class="max-ch-md">
 			{m.individualApplicationDescription2()}
 		</p>

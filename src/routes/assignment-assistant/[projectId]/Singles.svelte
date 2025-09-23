@@ -46,7 +46,7 @@
 </TextPreview>
 
 <div class="mt-6 flex flex-col gap-4">
-	<div class="flex flex-col gap-4 rounded-lg bg-base-200 p-4 shadow-lg">
+	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
 		<h2 class="text-xl font-bold">Einzelteilnehmenden-Pool</h2>
 		<div class="flex flex-wrap gap-2">
 			{#each getSingleApplications().filter((x) => !x.assignedRole) as application}
@@ -64,7 +64,7 @@
 	</div>
 	{#each getSingleRoles() as role}
 		{#if !role.name.toLowerCase().startsWith('einzel')}
-			<div class="flex flex-col gap-4 rounded-lg bg-base-200 p-4 shadow-lg">
+			<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
 				<h2 class="text-xl font-bold">{role.name} ({getNumAssignmentsForRole(role.id)})</h2>
 				<div class="flex flex-wrap gap-2">
 					{#each getSingleApplications().filter((x) => x.assignedRole?.id === role.id) as application}
@@ -85,7 +85,7 @@
 </div>
 
 <div
-	class="fixed bottom-10 left-10 right-10 top-10 z-50 flex flex-col justify-center gap-4 rounded-lg bg-warning p-4 shadow-lg {dragging
+	class="bg-warning fixed top-10 right-10 bottom-10 left-10 z-50 flex flex-col justify-center gap-4 rounded-lg p-4 shadow-lg {dragging
 		? ''
 		: 'translate-y-[100vh]'} transition-all duration-300"
 >

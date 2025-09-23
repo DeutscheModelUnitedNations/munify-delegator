@@ -133,7 +133,7 @@
 					<td class="text-center"><i class="fa-duotone fa-check-to-slot text-lg"></i></td>
 					<td>
 						<div class="flex items-center gap-2">
-							<div class="h-full rounded-md bg-base-300 px-3 py-[2px]">
+							<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
 								{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles.length}
 							</div>
 							<div class="flex flex-col">

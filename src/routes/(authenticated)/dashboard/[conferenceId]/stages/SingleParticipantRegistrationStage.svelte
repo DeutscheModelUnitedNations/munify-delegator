@@ -329,7 +329,7 @@
 	<p class="mt-10 text-xs">
 		{@html m.singleParticipantsIdForSupport()}
 		{#if singleParticipant}
-			<span class="rounded-sm bg-base-200 p-1 font-mono">{singleParticipant.id}</span>
+			<span class="bg-base-200 rounded-sm p-1 font-mono">{singleParticipant.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

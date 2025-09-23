@@ -30,7 +30,7 @@
 
 <div id={randId} class="flex w-full flex-col gap-2 py-6" in:fly={{ y: 10, duration: 300, delay }}>
 	{#if caption}
-		<h3 class="w-full text-center text-sm uppercase tracking-wider">
+		<h3 class="w-full text-center text-sm tracking-wider uppercase">
 			{caption}
 		</h3>
 	{/if}

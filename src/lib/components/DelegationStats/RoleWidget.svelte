@@ -31,7 +31,7 @@
 			/>
 		</div>
 		<div class="stat-title">{m.youWillRepresent()}</div>
-		<div class="stat-value overflow-ellipsis text-wrap text-2xl sm:w-auto sm:text-4xl">
+		<div class="stat-value text-2xl text-wrap overflow-ellipsis sm:w-auto sm:text-4xl">
 			{#if nonStateActor}
 				{nonStateActor.name}
 			{:else if country}

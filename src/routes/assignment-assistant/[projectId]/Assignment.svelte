@@ -225,7 +225,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="w-1 rounded-full bg-base-300"></div>
+	<div class="bg-base-300 w-1 rounded-full"></div>
 	<div
 		class="flex flex-1 flex-col justify-start"
 		use:droppable={{ container: 'delegationApplications', callbacks: { onDrop: handleDrop } }}
@@ -269,12 +269,12 @@
 </div>
 
 <div
-	class="fixed bottom-0 left-20 right-20 flex h-32 justify-center {dragging
+	class="fixed right-20 bottom-0 left-20 flex h-32 justify-center {dragging
 		? ''
 		: 'translate-y-40'} transition-all duration-300"
 >
 	<div
-		class="flex w-full grow-0 flex-col items-center justify-center gap-4 rounded-t-xl bg-warning p-4 shadow-lg"
+		class="bg-warning flex w-full grow-0 flex-col items-center justify-center gap-4 rounded-t-xl p-4 shadow-lg"
 		use:droppable={{ container: 'options', callbacks: { onDrop: handleDrop } }}
 	>
 		<h2 class="w-full text-center font-bold">Zerteilen</h2>

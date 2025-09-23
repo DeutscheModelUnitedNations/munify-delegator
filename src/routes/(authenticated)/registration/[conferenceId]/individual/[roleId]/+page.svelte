@@ -38,7 +38,7 @@
 <div class="flex min-h-screen w-full flex-col items-center p-4">
 	<Form {form} showSubmitButton={false}>
 		<div class="flex flex-col gap-4 {step !== 0 ? 'hidden' : ''}">
-			<h1 class="text-3xl uppercase tracking-wider">{role.name}</h1>
+			<h1 class="text-3xl tracking-wider uppercase">{role.name}</h1>
 			<p class="max-ch-sm">
 				{m.pleaseAnswerTheFollowingQuestions()}
 			</p>
@@ -76,7 +76,7 @@
 		<div class="flex flex-col items-center gap-4 {step !== 1 ? 'hidden' : ''}">
 			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
 
-			<div class="rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200 dark:stroke-slate-300">
+			<div class="bg-base-100 dark:bg-base-200 rounded-lg p-4 shadow-lg dark:stroke-slate-300">
 				<div class="overflow-x-auto">
 					<table class="table">
 						<tbody>

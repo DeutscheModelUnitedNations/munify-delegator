@@ -13,7 +13,7 @@
 	<div class="w-full">
 		<section class="mt-10 flex flex-wrap gap-4">
 			<div
-				class="carousel carousel-center w-full space-x-6 rounded-box bg-base-200 p-6 shadow-inner dark:bg-base-300"
+				class="carousel carousel-center rounded-box bg-base-200 dark:bg-base-300 w-full space-x-6 p-6 shadow-inner"
 			>
 				{#each data.conferences as conference}
 					<ConferenceCard
@@ -25,10 +25,10 @@
 				{/each}
 				<a href="/registration" class="carousel-item w-[90%] max-w-96">
 					<div
-						class="flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed border-primary p-4 transition-all duration-300 ease-in-out hover:scale-[101%] hover:bg-base-100 hover:shadow-lg"
+						class="border-primary hover:bg-base-100 flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed p-4 transition-all duration-300 ease-in-out hover:scale-[101%] hover:shadow-lg"
 					>
-						<i class="fa-duotone fa-plus text-5xl text-primary"></i>
-						<p class="mt-4 text-lg text-primary">{m.signup()}</p>
+						<i class="fa-duotone fa-plus text-primary text-5xl"></i>
+						<p class="text-primary mt-4 text-lg">{m.signup()}</p>
 					</div>
 				</a>
 			</div>

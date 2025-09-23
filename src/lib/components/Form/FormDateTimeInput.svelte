@@ -125,11 +125,11 @@
 				aria-hidden={true}
 				onclick={open}
 				onkeydown={open}
-				class="input input-bordered absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
+				class="input input-bordered absolute top-1/2 right-1/2 flex w-full translate-x-1/2 -translate-y-1/2 cursor-pointer items-center"
 			>
 				{localizedDateString}
 			</div>
-			<i class="fa-duotone fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
+			<i class="fa-duotone fa-calendar absolute top-1/2 right-4 -translate-y-1/2 text-lg"></i>
 		</div>
 	</label>
 </DatePicker>

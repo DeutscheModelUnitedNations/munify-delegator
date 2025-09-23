@@ -170,7 +170,7 @@
 	}
 </script>
 
-<div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
+<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
 	<Form {form}>
 		<h3 class="mt-8 text-lg font-bold">{m.general()}</h3>
 		<FormTextInput

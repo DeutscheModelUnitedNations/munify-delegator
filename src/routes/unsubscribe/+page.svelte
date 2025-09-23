@@ -53,13 +53,13 @@
 </script>
 
 <div
-	class="flex min-h-screen w-full flex-col items-center justify-center bg-base-200 p-5 text-center sm:p-10"
+	class="bg-base-200 flex min-h-screen w-full flex-col items-center justify-center p-5 text-center sm:p-10"
 >
 	{#if !unsubscribed}
 		<div class="card bg-base-100">
 			<div class="card-body">
 				<h1 class="text-3xl">{m.unsubscribeNewsletters()}</h1>
-				<input class="w-lg input input-bordered mt-6 text-center" type="email" bind:value={email} />
+				<input class="input input-bordered mt-6 w-lg text-center" type="email" bind:value={email} />
 				<button class="btn btn-error {email ? '' : 'btn-disabled'} mt-5" onclick={unsubscribe}
 					>{m.unsubscribeAllNewslettersButton()}</button
 				>

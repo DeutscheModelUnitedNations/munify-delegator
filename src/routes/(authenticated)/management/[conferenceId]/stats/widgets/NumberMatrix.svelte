@@ -10,7 +10,7 @@
 </script>
 
 <div
-	class="col-span-2 overflow-x-auto rounded-2xl bg-base-200 p-6 shadow-sm sm:col-span-2 md:col-span-12 xl:col-span-6"
+	class="bg-base-200 col-span-2 overflow-x-auto rounded-2xl p-6 shadow-sm sm:col-span-2 md:col-span-12 xl:col-span-6"
 >
 	<h1 class="stat-title w-full">{title}</h1>
 	<div class="overflow-x-auto">

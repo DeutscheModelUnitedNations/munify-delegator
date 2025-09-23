@@ -13,9 +13,9 @@
 	<td>{headline}</td>
 	<td>
 		{#if items.length > 0}
-			<i class="fas fa-circle-xmark text-xl text-error"></i>
+			<i class="fas fa-circle-xmark text-error text-xl"></i>
 		{:else}
-			<i class="fas fa-circle-check text-xl text-success"></i>
+			<i class="fas fa-circle-check text-success text-xl"></i>
 		{/if}
 	</td>
 	<td>{items.length}</td>

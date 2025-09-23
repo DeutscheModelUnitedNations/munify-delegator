@@ -71,11 +71,11 @@
 		<td class="text-center">
 			<div class="tooltip" data-tip={getMailStatusTooltip()}>
 				{#if mailStatus === 'completed'}
-					<i class="fas fa-circle-check text-xl text-success"></i>
+					<i class="fas fa-circle-check text-success text-xl"></i>
 				{:else if mailStatus === 'error'}
-					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
+					<i class="fas fa-triangle-exclamation text-warning text-xl"></i>
 				{:else}
-					<i class="fas fa-octagon-xmark text-xl text-error"></i>
+					<i class="fas fa-octagon-xmark text-error text-xl"></i>
 				{/if}
 			</div>
 		</td>
@@ -84,11 +84,11 @@
 		<td class="text-center">
 			<div class="tooltip" data-tip={getPaymentStatusTooltip()}>
 				{#if paymentStatus === 'completed'}
-					<i class="fas fa-circle-check text-xl text-success"></i>
+					<i class="fas fa-circle-check text-success text-xl"></i>
 				{:else if paymentStatus === 'error'}
-					<i class="fas fa-triangle-exclamation text-xl text-warning"></i>
+					<i class="fas fa-triangle-exclamation text-warning text-xl"></i>
 				{:else}
-					<i class="fas fa-octagon-xmark text-xl text-error"></i>
+					<i class="fas fa-octagon-xmark text-error text-xl"></i>
 				{/if}
 			</div>
 		</td>

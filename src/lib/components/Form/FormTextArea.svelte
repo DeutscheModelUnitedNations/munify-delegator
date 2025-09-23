@@ -39,7 +39,7 @@
 	></textarea>
 
 	{#if constraints?.maxlength}
-		<label class="label w-full text-right text-xs text-base-content/60" for={name}>
+		<label class="label text-base-content/60 w-full text-right text-xs" for={name}>
 			{($formData[name] as string | undefined | null)?.length ?? 0} / {constraints?.maxlength}
 		</label>
 	{/if}
