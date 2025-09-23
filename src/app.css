@@ -1,6 +1,47 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import 'tailwindcss';
+@plugin "@tailwindcss/typography";
+@plugin "daisyui";
+
+@theme {
+	/* Font families */
+	--font-sans: 'Outfit', 'system-ui', 'sans-serif';
+	--font-serif: 'Vollkorn', 'ui-serif', 'Georgia', 'serif';
+	--font-mono: 'Roboto Mono', 'ui-monospace', 'SFMono-Regular', 'monospace';
+	--font-fa: 'FontAwesome';
+
+	/* Primary color palette */
+	--color-primary-50: #f7fbfd;
+	--color-primary-100: #e3f0f8;
+	--color-primary-200: #b9d7ef;
+	--color-primary-300: #90bce5;
+	--color-primary-400: #669edc;
+	--color-primary-500: #3d7dd2;
+	--color-primary-600: #295fb3;
+	--color-primary-700: #204489;
+	--color-primary-800: #162d60;
+	--color-primary-900: #0d1836;
+	--color-primary-950: #080e22;
+	--color-primary: #3d7dd2;
+
+	/* Table utilities safelist */
+	--table-xs: '';
+	--table-sm: '';
+	--table-md: '';
+	--table-lg: '';
+	--table-zebra: '';
+}
+
+@utility max-ch-sm {
+	max-width: 50ch;
+}
+
+@utility max-ch-md {
+	max-width: 75ch;
+}
+
+@utility max-ch-lg {
+	max-width: 100ch;
+}
 
 @font-face {
 	font-family: 'FontAwesome';
@@ -10,6 +51,7 @@
 	font-style: normal;
 	font-display: swap;
 }
+
 #mermaid .outcome > * {
 	stroke: #000 !important;
 	transition: all 0.3s;

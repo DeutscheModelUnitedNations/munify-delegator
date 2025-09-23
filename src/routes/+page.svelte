@@ -48,10 +48,10 @@
 
 <div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<i class="fa-duotone fa-id-card-clip mb-6 text-6xl text-base-content"></i>
-		<h2 class="text-2xl font-thin text-base-content">MUNify</h2>
-		<h1 class="text-4xl font-bold uppercase tracking-widest text-base-content">Delegator</h1>
-		<p class="mt-4 text-lg text-base-content">{m.homeHeroSub()}</p>
+		<i class="fa-duotone fa-id-card-clip text-base-content mb-6 text-6xl"></i>
+		<h2 class="text-base-content text-2xl font-thin">MUNify</h2>
+		<h1 class="text-base-content text-4xl font-bold tracking-widest uppercase">Delegator</h1>
+		<p class="text-base-content mt-4 text-lg">{m.homeHeroSub()}</p>
 	</hero>
 
 	<main class="flex flex-col gap-20">
@@ -103,7 +103,7 @@
 						<a
 							href={configPublic.PUBLIC_FEEDBACK_URL}
 							target="_blank"
-							class="btn btn-primary shadow-md sm:btn-wide"
+							class="btn btn-primary sm:btn-wide shadow-md"
 						>
 							<i class="fas fa-bullhorn"></i>
 							{m.feedbackBoard()}
@@ -122,8 +122,8 @@
 		<section class="flex flex-col items-center gap-6">
 			<h2 class="text-center text-3xl">{m.homeOurConferences()}</h2>
 			<div class="flex flex-col gap-4 md:flex-row">
-				<div class="card bg-base-100 shadow-lg dark:bg-base-200">
-					<figure class="flex h-60 items-center justify-center bg-base-300 p-6">
+				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
+					<figure class="bg-base-300 flex h-60 items-center justify-center p-6">
 						<img src={munSh.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
@@ -139,8 +139,8 @@
 						/>
 					</div>
 				</div>
-				<div class="card bg-base-100 shadow-lg dark:bg-base-200">
-					<figure class="flex h-60 items-center justify-center bg-base-300 p-6">
+				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
+					<figure class="bg-base-300 flex h-60 items-center justify-center p-6">
 						<img src={munBw.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
@@ -168,13 +168,14 @@
 <style lang="postcss">
 	.live-list {
 		list-style: none;
-		@apply mt-4;
+		margin-top: calc(var(--spacing) * 4)
 	}
 
 	.live-list li {
 		position: relative;
-
-		@apply mx-2 my-1 pl-6;
+		margin-inline: calc(var(--spacing) * 2)
+		margin-block: calc(var(--spacing) * 1)
+		padding-left: calc(var(--spacing) * 6)
 	}
 
 	.live-list span {
