@@ -55,7 +55,7 @@
 				<div class="card w-full max-w-md bg-base-200 shadow-lg">
 					<div class="card-body items-center justify-center">
 						<label class="label cursor-pointer">
-							<span class="label-text mr-4">{m.presentAtConference()}</span>
+							<span class="mr-4">{m.presentAtConference()}</span>
 							<input
 								type="checkbox"
 								class="toggle toggle-success"

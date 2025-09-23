@@ -52,7 +52,7 @@
 		<div class="flex flex-col">
 			{#each survey.options as option}
 				<label
-					class="form-control w-full cursor-pointer flex-row items-center gap-2 rounded-lg p-2 text-sm transition-all duration-300 hover:bg-base-200"
+					class="w-full cursor-pointer flex-row items-center gap-2 rounded-lg p-2 text-sm transition-all duration-300 hover:bg-base-200"
 				>
 					<input
 						type="radio"

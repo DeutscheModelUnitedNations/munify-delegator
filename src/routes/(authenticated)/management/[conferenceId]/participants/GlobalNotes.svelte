@@ -44,7 +44,7 @@
 </script>
 
 <Modal bind:open title={m.globalNotes()}>
-	<textarea class="textarea textarea-bordered w-full" rows="8" bind:value></textarea>
+	<textarea class="textarea w-full" rows="8" bind:value></textarea>
 	<button class="btn btn-primary mt-2" onclick={saveGlobalNotes}>
 		<i class="fas fa-save"></i>
 		{m.save()}

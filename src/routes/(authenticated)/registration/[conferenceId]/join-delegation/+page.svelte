@@ -43,7 +43,7 @@
 					type="text"
 					placeholder="Code"
 					bind:value={code}
-					class="input input-lg join-item input-bordered w-full max-w-xs font-mono uppercase tracking-[0.8rem]"
+					class="input input-lg join-item w-full max-w-xs font-mono uppercase tracking-[0.8rem]"
 					oninput={(e: any) => {
 						code = (e.target.value as string).toUpperCase().slice(0, 6);
 					}}

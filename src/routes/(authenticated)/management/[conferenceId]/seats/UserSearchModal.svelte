@@ -90,7 +90,7 @@
 			id="emailOrId"
 			bind:value={search}
 			placeholder={m.emailOrId()}
-			class="input input-bordered w-full"
+			class="input w-full"
 		/>
 
 		<div class="flex w-full flex-col gap-4">

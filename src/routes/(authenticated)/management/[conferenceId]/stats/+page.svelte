@@ -72,7 +72,7 @@
 			<h3 class="text-xl font-bold">{m.historyComparison()}</h3>
 			<p>{@html m.historyComparisonDescription()}</p>
 			<select
-				class="select select-bordered w-full max-w-xs"
+				class="select w-full max-w-xs"
 				onchange={(e) => setSelectedHistory((e.target as any)?.value)}
 			>
 				{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}

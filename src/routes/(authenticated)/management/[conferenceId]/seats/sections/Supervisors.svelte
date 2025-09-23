@@ -71,16 +71,16 @@
 						{/each}
 
 						{#snippet plansOwnAttendenceCheck()}
-							<div class="form-control">
+							<fieldset class="fieldset">
 								<label class="label cursor-pointer">
-									<span class="label-text mr-4">{m.supervisorPlansOwnAttendance()}</span>
+									<span class="mr-4">{m.supervisorPlansOwnAttendance()}</span>
 									<input
 										type="checkbox"
 										bind:checked={plansOwnAttendenceAtConference}
 										class="checkbox"
 									/>
 								</label>
-							</div>
+							</fieldset>
 						{/snippet}
 
 						<AddParticipantBtn

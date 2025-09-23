@@ -225,9 +225,9 @@
 	<h2 class="text-2xl font-bold">{m.ownPresence()}</h2>
 	<p class="text-sm">{m.ownPresenceDescription()}</p>
 	<div class="card max-w-80 bg-base-100 p-6 shadow-md dark:bg-base-200">
-		<div class="form-control">
+		<fieldset class="fieldset">
 			<label class="label cursor-pointer">
-				<span class="label-text">{m.presentAtConference()}</span>
+				<span>{m.presentAtConference()}</span>
 				<input
 					type="checkbox"
 					class="toggle toggle-success"
@@ -236,7 +236,7 @@
 					disabled={!isStateParticipantRegistration}
 				/>
 			</label>
-		</div>
+		</fieldset>
 	</div>
 	<p class="text-xs text-gray-500">
 		{@html supervisor.plansOwnAttendenceAtConference

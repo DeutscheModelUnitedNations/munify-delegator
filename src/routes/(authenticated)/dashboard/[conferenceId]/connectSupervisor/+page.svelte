@@ -76,7 +76,7 @@
 	>
 		<input
 			type="text"
-			class="input input-bordered w-full max-w-lg font-mono tracking-[0.6rem]"
+			class="input w-full max-w-lg font-mono tracking-[0.6rem]"
 			bind:value={$code}
 		/>
 

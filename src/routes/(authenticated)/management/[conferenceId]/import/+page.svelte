@@ -186,7 +186,7 @@
 	</div>
 	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
 		<input
-			class="file-input file-input-bordered mt-4 w-full"
+			class="file-input mt-4 w-full"
 			type="file"
 			accept=".json"
 			onchange={(e) => setFileInput(e)}

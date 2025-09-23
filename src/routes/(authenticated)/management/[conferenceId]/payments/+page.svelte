@@ -140,7 +140,7 @@
 	<input
 		type="text"
 		placeholder={m.referenceSearch()}
-		class="input input-lg input-bordered w-full"
+		class="input input-lg w-full"
 		bind:value={searchValue}
 	/>
 
@@ -271,7 +271,7 @@
 					id="RecievedDate"
 					bind:value={recieveDate}
 					placeholder={m.selectADate()}
-					class="input input-bordered w-full"
+					class="input w-full"
 					lang={getLocale()}
 					bind:this={nativeDateInput}
 				/>
@@ -279,7 +279,7 @@
 					aria-hidden={true}
 					onclick={open}
 					onkeydown={open}
-					class="input input-bordered absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
+					class="input absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
 				>
 					{localizedDateString}
 				</div>
