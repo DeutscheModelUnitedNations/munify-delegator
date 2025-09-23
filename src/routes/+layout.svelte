@@ -3,6 +3,7 @@
 	import Footer from './Footer.svelte';
 	import { Toaster } from 'svelte-french-toast';
 	import Inspect from 'svelte-inspect-value';
+	import { locales, localizeHref } from '$lib/paraglide/runtime';
 
 	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
 	// import CookieBanner from '$lib/components/CookieBanner.svelte';
@@ -38,6 +39,7 @@
 	import 'flag-icons/css/flag-icons.min.css';
 	import { browser, dev } from '$app/environment';
 	import type { LayoutProps } from './$types';
+	import { page } from '$app/state';
 
 	let { children }: LayoutProps = $props();
 
@@ -90,3 +92,9 @@
 {#if dev}
 	<Inspect.Panel />
 {/if}
+
+<div style="display:none">
+	{#each locales as locale}
+		<a href={localizeHref(page.url.pathname, { locale })}>{locale}</a>
+	{/each}
+</div>
