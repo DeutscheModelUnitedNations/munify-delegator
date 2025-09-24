@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { PageData } from '../$houdini';
 	import Flag from '$lib/components/Flag.svelte';
 	import type { Nation } from '@prisma/client';
 	import { invalidateAll } from '$app/navigation';
