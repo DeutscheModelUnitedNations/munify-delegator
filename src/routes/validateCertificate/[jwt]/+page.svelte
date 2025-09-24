@@ -6,11 +6,7 @@
 	let { data }: PageProps = $props();
 	let { fullName, conferenceTitle, conferenceStartDate, conferenceEndDate } = data;
 
-	let loading = $state(true);
-
-	$effect(() => {
-		loading = false;
-	});
+	let loading = $derived(true);
 </script>
 
 <div class="bg-base-200 flex h-screen w-full flex-col items-center justify-center p-6">

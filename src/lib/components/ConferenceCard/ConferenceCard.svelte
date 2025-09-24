@@ -101,7 +101,7 @@
 </script>
 
 <div
-	class="card carousel-item bg-base-100 dark:bg-base-200 w-[90%] max-w-96 shadow-xl transition-all duration-300 hover:scale-[1.01]"
+	class="card carousel-item bg-base-100 border-base-200 w-[90%] max-w-96 border shadow-xl transition-all duration-300 hover:scale-[1.01]"
 >
 	<figure class="relative aspect-video">
 		<img

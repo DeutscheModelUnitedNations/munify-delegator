@@ -52,7 +52,7 @@
 					{m.signupForSupervisorsDescription()}
 				</p>
 
-				<div class="card bg-base-200 w-full max-w-md shadow-lg">
+				<div class="card bg-base-100 border-base-200 w-full max-w-md border shadow-lg">
 					<div class="card-body items-center justify-center">
 						<label class="label cursor-pointer">
 							<span class="mr-4">{m.presentAtConference()}</span>

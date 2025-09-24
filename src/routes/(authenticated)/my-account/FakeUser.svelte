@@ -21,7 +21,7 @@
 	};
 </script>
 
-<button class="btn btn-primary" onclick={populateForm}>
+<button class="btn btn-outline btn-primary mb-8" onclick={populateForm}>
 	<i class="fas fa-magic"></i>
 	Fake User
 </button>

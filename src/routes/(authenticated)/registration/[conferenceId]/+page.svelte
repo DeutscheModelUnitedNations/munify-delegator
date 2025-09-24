@@ -50,7 +50,7 @@
 		<p class="max-ch-md">
 			{@html m.conferenceSignupIntroduction()}
 		</p>
-		<div role="alert" class="alert mt-10">
+		<div role="alert " class="alert md:alert-horizontal alert-vertical mt-10">
 			<i class="fa-duotone fa-message-question mx-1 text-xl"></i>
 			<div class="flex flex-col">
 				<div class="font-bold tracking-wider">{m.signUpAssistant()}</div>

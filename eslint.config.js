@@ -46,7 +46,9 @@ export default ts.config(
 			'no-irregular-whitespace': 'warn',
 			'svelte/require-each-key': 'warn',
 			'svelte/no-dom-manipulating': 'warn',
-			'@typescript-eslint/no-non-null-asserted-optional-chain': 'warn'
+			'@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
+			'svelte/no-navigation-without-resolve': 'warn',
+			'svelte/prefer-writable-derived': 'warn'
 		}
 	}
 );

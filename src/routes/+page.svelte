@@ -125,7 +125,7 @@
 		<section class="flex flex-col items-center gap-6">
 			<h2 class="text-center text-3xl">{m.homeOurConferences()}</h2>
 			<div class="flex flex-col gap-4 md:flex-row">
-				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
+				<div class="card bg-base-100 border-base-200 border shadow-lg">
 					<figure class="bg-base-300 flex h-60 items-center justify-center p-6">
 						<img src={munSh.logo} alt="Conference" class="h-full" />
 					</figure>
@@ -142,7 +142,7 @@
 						/>
 					</div>
 				</div>
-				<div class="card bg-base-100 dark:bg-base-200 shadow-lg">
+				<div class="card bg-base-100 border-base-200 border shadow-lg">
 					<figure class="bg-base-300 flex h-60 items-center justify-center p-6">
 						<img src={munBw.logo} alt="Conference" class="h-full" />
 					</figure>

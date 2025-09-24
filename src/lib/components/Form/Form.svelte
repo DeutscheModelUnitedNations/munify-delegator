@@ -13,10 +13,10 @@
 	let { message, enhance, allErrors, submitting, tainted, isTainted } = $derived(form);
 </script>
 
-<form class="flex flex-col gap-4 {class_}" method="post" enctype="multipart/form-data" use:enhance>
+<form class="flex flex-col gap-2 {class_}" method="post" enctype="multipart/form-data" use:enhance>
 	{@render children()}
 	{#if $message}
-		<p class="text mt-5 font-bold">{$message}</p>
+		<div class="alert alert-success mt-5 justify-center font-bold">{$message}</div>
 	{/if}
 	{#if showSubmitButton}
 		<FormSubmitButton
