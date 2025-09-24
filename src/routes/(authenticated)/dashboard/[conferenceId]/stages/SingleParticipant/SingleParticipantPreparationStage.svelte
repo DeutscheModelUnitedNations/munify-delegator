@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { PageData } from '../$houdini';
+	import type { PageData } from '../../$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import SupervisorTable from './SupervisorTable.svelte';
+	import SupervisorTable from '../Common/SupervisorTable.svelte';
 
 	interface Props {
 		surveyQuestions: NonNullable<MyConferenceparticipationQuery$result['findManySurveyQuestions']>;

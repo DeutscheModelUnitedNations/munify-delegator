@@ -22,7 +22,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each conferences as conference}
+					{#each conferences as conference (conference.id)}
 						<tr>
 							<td>{conference.title}</td>
 							<td>{conference.myMembership}</td>

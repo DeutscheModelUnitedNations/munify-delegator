@@ -12,6 +12,7 @@
 	import { AddAgendaItemFormSchema } from './form-schema';
 	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -78,16 +79,16 @@
 		</div>
 	{/each}
 
-	<h2 class="mt-10 text-xl font-bold">{m.createNewAgendaItem()}</h2>
-
-	<Form {form} showSubmitButton>
-		<FormSelect
-			{form}
-			name="committeeId"
-			label={m.committee()}
-			options={committees.map((x) => ({ label: x.abbreviation, value: x.id }))}
-		/>
-		<FormTextInput {form} name="title" label={m.title()} />
-		<FormTextArea {form} name="teaserText" label={m.teaserText()} />
-	</Form>
+	<FormFieldset title={m.createNewAgendaItem()}>
+		<Form {form}>
+			<FormSelect
+				{form}
+				name="committeeId"
+				label={m.committee()}
+				options={committees.map((x) => ({ label: x.abbreviation, value: x.id }))}
+			/>
+			<FormTextInput {form} name="title" label={m.title()} />
+			<FormTextArea {form} name="teaserText" label={m.teaserText()} />
+		</Form>
+	</FormFieldset>
 </div>

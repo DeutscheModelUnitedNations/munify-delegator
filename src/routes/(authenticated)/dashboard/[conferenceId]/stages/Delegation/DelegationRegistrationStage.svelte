@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from '../$houdini';
+	import type { PageData } from '../../$houdini';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
@@ -11,10 +11,9 @@
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
 	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
-	import { page } from '$app/state';
 	import { cache } from '$houdini';
 	import formatNames from '$lib/services/formatNames';
-	import SupervisorTable from './SupervisorTable.svelte';
+	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
@@ -24,6 +23,9 @@
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import toast from 'svelte-french-toast';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import EntryCode from '../Common/EntryCode.svelte';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import { page } from '$app/state';
 
 	//TODO we should split this up/refactor this
 	// use some component queries instead of that monster load maybe?
@@ -37,6 +39,8 @@
 	}
 
 	let { delegationMember, conference, applicationForm }: Props = $props();
+
+	let userIsHeadDelegate = $derived(delegationMember.isHeadDelegate);
 
 	const form = superForm(applicationForm, {
 		SPA: true,
@@ -63,10 +67,24 @@
 
 	let delegationPreferencesModalOpen = $state(false);
 
-	let userIsHeadDelegate = $derived(!!delegationMember.isHeadDelegate);
-
 	let referralLink = $derived(
 		`${page.url.origin}/registration/${conference.id}/join-delegation?code=${delegationMember.delegation.entryCode}`
+	);
+
+	let invitePeopleCompleted = $derived(
+		delegationMember.delegation?.members?.length
+			? delegationMember.delegation?.members?.length > 1
+			: undefined
+	);
+
+	let answerQuestionaireCompleted = $derived(
+		!!delegationMember.delegation?.school &&
+			!!delegationMember.delegation?.motivation &&
+			!!delegationMember.delegation?.experience
+	);
+
+	let enterDelegationPreferencesCompleted = $derived(
+		(delegationMember.delegation.appliedForRoles?.length ?? 0) >= 3
 	);
 
 	let todos = $derived([
@@ -76,28 +94,25 @@
 		},
 		{
 			title: m.todoInvitePeople(),
-			completed: delegationMember.delegation?.members?.length
-				? delegationMember.delegation?.members?.length > 1
-				: undefined,
+			completed: invitePeopleCompleted,
 			help: m.todoInvitePeopleHelp()
 		},
 		{
 			title: m.todoAnswerQuestionaire(),
-			completed:
-				!!delegationMember.delegation?.school &&
-				!!delegationMember.delegation?.motivation &&
-				!!delegationMember.delegation?.experience,
+			completed: answerQuestionaireCompleted,
 			help: m.todoAnswerQuestionaireHelp()
 		},
 		{
 			title: m.todoEnterDelegationPreferences(),
-			completed: (delegationMember.delegation.appliedForRoles?.length ?? 0) >= 3,
+			completed: enterDelegationPreferencesCompleted,
 			help: m.todoEnterDelegationPreferencesHelp()
 		},
 		{
 			title: m.todoCompleteSignup(),
 			completed: delegationMember.delegation?.applied,
-			help: m.todoCompleteSignupHelp()
+			help: m.todoCompleteSignupHelp(),
+			arrowDown:
+				invitePeopleCompleted && answerQuestionaireCompleted && enterDelegationPreferencesCompleted
 		}
 	]);
 
@@ -155,15 +170,6 @@
 		}
 	`);
 
-	const resetEntryCodeMutation = graphql(`
-		mutation ResetEntryCodeMutation($where: DelegationWhereUniqueInput!) {
-			updateOneDelegation(where: $where, resetEntryCode: true) {
-				id
-				entryCode
-			}
-		}
-	`);
-
 	const updateFieldMutation = graphql(`
 		mutation UpdateDelegationFieldsMutation(
 			$where: DelegationWhereUniqueInput!
@@ -178,6 +184,15 @@
 				school: $school
 			) {
 				id
+			}
+		}
+	`);
+
+	const resetEntryCodeMutation = graphql(`
+		mutation ResetEntryCodeMutation($where: DelegationWhereUniqueInput!) {
+			updateOneDelegation(where: $where, resetEntryCode: true) {
+				id
+				entryCode
 			}
 		}
 	`);
@@ -318,59 +333,28 @@
 				</DelegationStatusTableEntry>
 			{/each}
 		</DelegationStatusTableWrapper>
-		<DashboardContentCard
-			title={!delegationMember.delegation?.applied
-				? m.inviteMorePeople()
-				: m.inviteMorePeopleButAlreadyApplied()}
-			description={!delegationMember.delegation?.applied
-				? m.inviteMorePeopleDescription()
-				: m.inviteMorePeopleButAlreadyAppliedDescription()}
-		>
-			<div class="bg-base-200 dark:bg-base-300 mt-4 flex items-center gap-2 rounded-lg p-2 pl-4">
-				<p class="overflow-x-auto font-mono text-xl tracking-[0.6rem] uppercase">
-					{delegationMember.delegation?.entryCode}
-				</p>
-				<button
-					class="btn btn-square btn-ghost btn-primary"
-					onclick={() => {
-						navigator.clipboard.writeText(delegationMember?.delegation?.entryCode as string);
-						toast.success(m.codeCopied());
+		{#if !delegationMember.delegation?.applied}
+			<DashboardContentCard
+				title={m.inviteMorePeople()}
+				description={m.inviteMorePeopleDescription()}
+			>
+				<EntryCode
+					entryCode={delegationMember.delegation.entryCode}
+					{referralLink}
+					userHasRotationPermission={userIsHeadDelegate}
+					rotationFn={async () => {
+						await toast.promise(
+							resetEntryCodeMutation.mutate({
+								where: { id: delegationMember.delegation.id }
+							}),
+							{ ...genericPromiseToastMessages, success: m.codeRotated() }
+						);
+						cache.markStale();
+						await invalidateAll();
 					}}
-					aria-label="Copy entry code"
-					><i class="fa-duotone fa-clipboard text-xl"></i>
-				</button>
-				{#if !delegationMember.delegation?.applied}
-					<button
-						class="btn btn-square btn-ghost btn-primary"
-						onclick={() => {
-							navigator.clipboard.writeText(referralLink as string);
-							toast.success(m.linkCopied());
-						}}
-						aria-label="Copy referral link"
-						><i class="fa-duotone fa-link text-xl"></i>
-					</button>
-					{#if userIsHeadDelegate}
-						<div class="tooltip" data-tip={m.rotateCode()}>
-							<button
-								class="btn btn-square btn-ghost btn-primary"
-								onclick={async () => {
-									await toast.promise(
-										resetEntryCodeMutation.mutate({
-											where: { id: delegationMember.delegation.id }
-										}),
-										{ ...genericPromiseToastMessages, success: m.codeRotated() }
-									);
-									cache.markStale();
-									await invalidateAll();
-								}}
-								aria-label="Rotate entry code"
-								><i class="fa-duotone fa-rotate text-xl"></i>
-							</button>
-						</div>
-					{/if}
-				{/if}
-			</div>
-		</DashboardContentCard>
+				/>
+			</DashboardContentCard>
+		{/if}
 		<SupervisorTable supervisors={delegationMember.supervisors} conferenceId={conference.id} />
 	{:else}
 		<div class="skeleton h-60 w-full"></div>
@@ -379,7 +363,7 @@
 
 <section>
 	<h2 class="mb-2 text-2xl font-bold">{m.application()}</h2>
-	<div class="mb-4 flex flex-col gap-4 md:flex-row">
+	<div class="mb-4 flex flex-col items-start justify-start gap-4 md:flex-row">
 		<DashboardContentCard
 			title={m.informationAndMotivation()}
 			description={userIsHeadDelegate
@@ -387,35 +371,34 @@
 				: m.informationAndMotivationDescriptionMember()}
 			class="flex-1"
 		>
-			<Form {form} showSubmitButton={false}>
-				<FormTextInput
-					name="school"
-					label={m.whichSchoolDoesYourDelegationComeFrom()}
-					{form}
-					placeholder={m.answerHere()}
-					type="text"
-					disabled={delegationMember.delegation.applied}
-				/>
-				<FormTextArea
-					name="motivation"
-					label={m.whyDoYouWantToJoinTheConference()}
-					{form}
-					placeholder={m.answerHere()}
-					disabled={delegationMember.delegation.applied}
-				/>
-				<FormTextArea
-					name="experience"
-					label={m.howMuchExperienceDoesYourDelegationHave()}
-					{form}
-					placeholder={m.answerHere()}
-					disabled={delegationMember.delegation.applied}
-				/>
-				<div class="flex-1"></div>
-				{#if !delegationMember.delegation?.applied}
-					<button class="btn btn-primary" type="submit" disabled={!userIsHeadDelegate}>
-						{m.save()}
-					</button>
-				{/if}
+			<Form
+				{form}
+				showSubmitButton={!delegationMember.delegation?.applied && delegationMember.isHeadDelegate}
+			>
+				<FormFieldset title={m.questionnaire()}>
+					<FormTextInput
+						name="school"
+						label={m.whichSchoolDoesYourDelegationComeFrom()}
+						{form}
+						placeholder={m.answerHere()}
+						type="text"
+						disabled={delegationMember.delegation.applied || !delegationMember.isHeadDelegate}
+					/>
+					<FormTextArea
+						name="motivation"
+						label={m.whyDoYouWantToJoinTheConference()}
+						{form}
+						placeholder={m.answerHere()}
+						disabled={delegationMember.delegation.applied || !delegationMember.isHeadDelegate}
+					/>
+					<FormTextArea
+						name="experience"
+						label={m.howMuchExperienceDoesYourDelegationHave()}
+						{form}
+						placeholder={m.answerHere()}
+						disabled={delegationMember.delegation.applied || !delegationMember.isHeadDelegate}
+					/>
+				</FormFieldset>
 			</Form>
 		</DashboardContentCard>
 		<DashboardContentCard

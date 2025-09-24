@@ -1,8 +1,20 @@
 <script lang="ts">
 	interface Props {
 		todos: (
-			| { title: string; completed: boolean | undefined; help?: string; helpLink?: undefined }
-			| { title: string; completed: boolean | undefined; helpLink?: string; help?: undefined }
+			| {
+					title: string;
+					completed: boolean | undefined;
+					help?: string;
+					helpLink?: undefined;
+					arrowDown?: boolean;
+			  }
+			| {
+					title: string;
+					completed: boolean | undefined;
+					helpLink?: string;
+					help?: undefined;
+					arrowDown?: boolean;
+			  }
 		)[];
 	}
 
@@ -22,9 +34,13 @@
 			<tr>
 				<td>
 					{#if todo.completed}
-						<i class="fas fa-square-check text-primary text-2xl"></i>
+						<i class="fas fa-square-check text-primary w-6 text-center text-2xl"></i>
 					{:else if todo.completed === false}
-						<i class="fas fa-square text-error text-2xl"></i>
+						{#if todo.arrowDown}
+							<i class="fa-duotone fa-arrow-down point-down w-6 text-center text-2xl"></i>
+						{:else}
+							<i class="fas fa-square text-error w-6 text-center text-2xl"></i>
+						{/if}
 					{:else}
 						<span class="loading loading-spinner loading-sm"></span>
 					{/if}
@@ -52,3 +68,19 @@
 		{/each}
 	</tbody>
 </table>
+
+<style>
+	.point-down {
+		animation: point-down 1s infinite;
+	}
+
+	@keyframes point-down {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(5px);
+		}
+	}
+</style>

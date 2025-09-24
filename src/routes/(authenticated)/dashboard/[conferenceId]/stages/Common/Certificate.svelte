@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
-	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
 	import toast from 'svelte-french-toast';
 

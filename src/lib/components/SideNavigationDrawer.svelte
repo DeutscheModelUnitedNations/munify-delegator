@@ -55,7 +55,9 @@
 			: 'h-0 w-0 items-center sm:h-full sm:w-16'}"
 	>
 		<button
-			class="btn top-2 right-2 z-10 flex items-center p-3 {expanded ? 'absolute' : ''}"
+			class="btn btn-ghost btn-circle top-0 right-2 z-10 mt-2 flex items-center p-3 {expanded
+				? 'absolute'
+				: ''}"
 			onclick={() => {
 				expanded = !expanded;
 			}}
@@ -101,7 +103,7 @@
 							bind:expanded
 						/>
 					{/if}
-					<NavMenuButton href="/" icon="fa-home" title={m.home()} bind:expanded />
+					<NavMenuButton href="/" icon="fa-globe-pointer" title={m.home()} bind:expanded />
 				</div>
 			</NavMenu>
 		{/if}

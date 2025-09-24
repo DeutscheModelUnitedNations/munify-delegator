@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
-	import Supervisor from './stages/Supervisor.svelte';
-	import SingleParticipantRegistrationStage from './stages/SingleParticipantRegistrationStage.svelte';
-	import SingleParticipantPreparationStage from './stages/SingleParticipantPreparationStage.svelte';
-	import DelegationRegistrationStage from './stages/DelegationRegistrationStage.svelte';
-	import DelegationPreparationStage from './stages/DelegationPreparationStage.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
-	import Certificate from './stages/Certificate.svelte';
+	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
+	import SingleParticipantPreparationStage from './stages/SingleParticipant/SingleParticipantPreparationStage.svelte';
+	import Certificate from './stages/Common/Certificate.svelte';
+	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
+	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
+	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states

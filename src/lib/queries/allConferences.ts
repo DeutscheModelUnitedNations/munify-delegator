@@ -2,7 +2,7 @@ import { graphql } from '$houdini';
 
 export const allConferenceQuery = graphql(`
 	query AllConferencesQuery {
-		findManyConferences {
+		findManyConferences(orderBy: { startConference: desc }) {
 			id
 			title
 		}

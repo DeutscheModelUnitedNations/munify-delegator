@@ -63,3 +63,9 @@
 	height: auto !important;
 	width: auto !important;
 }
+
+.btn {
+	height: auto;
+	min-height: var(--size);
+	@apply py-2;
+}

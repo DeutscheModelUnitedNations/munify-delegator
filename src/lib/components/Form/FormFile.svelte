@@ -7,7 +7,7 @@
 	interface Props {
 		name: string;
 		label: string;
-		description: string;
+		description?: string;
 		form: SuperForm<A, B>;
 		accept?: string;
 		multiple?: boolean;

@@ -56,7 +56,7 @@
 	// <ManagementHeader title={m.adminStats()} fontAwesomeIcon="fa-chart-pie" />
 </script>
 
-<div class="grid grid-cols-2 gap-10 md:grid-cols-12">
+<div class="grid grid-cols-2 gap-3 md:grid-cols-12">
 	<DaysUntil {data} />
 	<AppliedChartAndStats {data} />
 	<AgeChart {data} />

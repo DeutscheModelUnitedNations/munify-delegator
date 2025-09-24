@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';

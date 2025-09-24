@@ -46,8 +46,8 @@
 				style="height: {length(value)}%;"
 				data-tip={formatter(value, (labels && labels[i]) || undefined)}
 			>
-				{#if showLabels && labels && length(value) > 40}
-					<div class="text-base-content text-sm">{labels[i]}</div>
+				{#if showLabels && labels && length(value) > 30}
+					<div class="text-base-content w-full text-center text-sm">{labels[i]}</div>
 				{/if}
 			</div>
 		{/each}
