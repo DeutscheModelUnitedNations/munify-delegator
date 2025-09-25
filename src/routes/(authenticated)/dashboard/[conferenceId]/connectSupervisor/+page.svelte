@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';
@@ -76,12 +76,12 @@
 	>
 		<input
 			type="text"
-			class="input input-bordered w-full max-w-lg font-mono tracking-[0.6rem]"
+			class="input w-full max-w-lg font-mono tracking-[0.6rem]"
 			bind:value={$code}
 		/>
 
 		{#if $previewSupervisorQuery.fetching}
-			<div class="ml-10 mt-10">
+			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
 		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}

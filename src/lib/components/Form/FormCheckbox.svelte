@@ -26,6 +26,6 @@
 		{...constraints}
 		{disabled}
 	/>
-	<span class="label-text ml-3">{label}</span>
+	<span class="label ml-3 whitespace-break-spaces">{label}</span>
 </label>
 <FormFieldErrors {errors} />

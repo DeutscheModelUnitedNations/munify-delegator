@@ -9,6 +9,9 @@
 	import toast from 'svelte-french-toast';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import type { Snippet } from 'svelte';
+	import { qr } from '@svelte-put/qr/svg';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -34,11 +37,6 @@
 		}
 	});
 	let step = $state(0);
-	let formdata = $derived(form.form);
-	let allErrors = $derived(form.allErrors);
-	let tainted = $derived(form.tainted);
-	let validateForm = $derived(form.validateForm);
-	let isTainted = $derived(form.isTainted);
 
 	let entryCode = $derived<string | undefined>(undefined);
 	let referralLink = $derived(
@@ -50,128 +48,101 @@
 	<header class="mb-20">
 		<Steps
 			currentStep={step}
-			steps={[
-				{ title: m.infos() },
-				{ title: m.questionnaire() },
-				{ title: m.review() },
-				{ title: m.invite() }
-			]}
+			steps={[{ title: m.infos() }, { title: m.questionnaire() }, { title: m.invite() }]}
 		/>
 	</header>
 
-	<Form {form} showSubmitButton={false}>
-		<div class="flex flex-col gap-6 text-center {step !== 0 ? 'hidden' : ''}">
-			<h1 class="text-3xl uppercase tracking-wider">{m.createDelegation()}</h1>
-			{@html m.createDelegationProcessExplaination()}
-			<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}>{m.next()}</button
-			>
-			<a class="btn btn-warning" href=".">{m.back()}</a>
+	{#if step < 2}
+		<div class="flex w-full max-w-lg flex-col gap-6 text-center">
+			<h1 class="text-3xl tracking-wider uppercase">{m.createDelegation()}</h1>
+			{#if step === 0}
+				{@html m.createDelegationProcessExplaination()}
+				<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}
+					>{m.next()}</button
+				>
+				<a class="btn btn-warning" href=".">{m.back()}</a>
+			{:else}
+				<Form {form}>
+					<p>
+						{m.pleaseAnswerTheFollowingQuestions()}
+					</p>
+					<FormFieldset title={m.questionnaire()}>
+						<FormTextInput
+							{form}
+							name="school"
+							placeholder={m.answerHere()}
+							label={m.whichSchoolDoesYourDelegationComeFrom()}
+						/>
+						<FormTextArea
+							{form}
+							name="motivation"
+							placeholder={m.answerHere()}
+							label={m.whyDoYouWantToJoinTheConference()}
+						/>
+						<FormTextArea
+							{form}
+							name="experience"
+							placeholder={m.answerHere()}
+							label={m.howMuchExperienceDoesYourDelegationHave()}
+						/>
+					</FormFieldset>
+				</Form>
+				<button class="btn btn-warning" type="button" onclick={() => step--}>{m.back()}</button>
+			{/if}
 		</div>
-		<div class="flex flex-col gap-4 {step !== 1 ? 'hidden' : ''}">
-			<p class="max-ch-sm">
-				{m.pleaseAnswerTheFollowingQuestions()}
-			</p>
-			<FormTextInput
-				{form}
-				name="school"
-				placeholder={m.answerHere()}
-				label={m.whichSchoolDoesYourDelegationComeFrom()}
-			/>
-			<FormTextArea
-				{form}
-				name="motivation"
-				placeholder={m.answerHere()}
-				label={m.whyDoYouWantToJoinTheConference()}
-			/>
-			<FormTextArea
-				{form}
-				name="experience"
-				placeholder={m.answerHere()}
-				label={m.howMuchExperienceDoesYourDelegationHave()}
-			/>
-			<button
-				class="btn btn-primary btn-lg"
-				type="button"
-				disabled={$allErrors.length > 0}
-				onclick={async () => {
-					const val = await validateForm({ update: true });
-					if (val.valid) {
-						step++;
-					}
-				}}>{m.next()}</button
-			>
-			<button class="btn btn-warning" type="button" onclick={() => step--}>{m.back()}</button>
-		</div>
-		<div class="flex flex-col items-center gap-4 {step !== 2 ? 'hidden' : ''}">
-			<p class="max-ch-sm">{m.pleaseCheckYourAnswers()}</p>
-
-			<div class="rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200 dark:stroke-slate-300">
-				<div class="overflow-x-auto">
-					<table class="table">
-						<tbody>
-							<tr>
-								<td>{m.schoolOrInstitution()}</td>
-								<td class="max-ch-sm">{$formdata.school}</td>
-							</tr>
-							<tr>
-								<td>{m.motivation()}</td>
-								<td class="max-ch-sm">{$formdata.motivation}</td>
-							</tr>
-							<tr>
-								<td>{m.experience()}</td>
-								<td class="max-ch-sm">{$formdata.experience}</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
+	{:else if step === 2}
+		{#snippet CopyCard(content: Snippet, onclick?: () => void)}
+			<div class="card bg-base-200 border-base-300 flex w-full flex-row items-center border p-2">
+				{@render content()}
+				{#if onclick}
+					<button class="btn btn-ghost" type="button" {onclick} aria-label="Copy referral">
+						<i class="fa-duotone fa-clipboard text-xl"></i>
+					</button>
+				{/if}
 			</div>
+		{/snippet}
 
-			<button class="btn btn-primary btn-lg w-full" type="submit">{m.createDelegation()}</button>
-			<button class="btn btn-warning w-full" type="button" onclick={() => step--}>{m.back()}</button
-			>
-		</div>
-	</Form>
-	<div class="flex w-full flex-col items-center gap-4 sm:w-auto {step !== 3 ? 'hidden' : ''}">
-		<div role="alert" class="alert alert-success flex justify-center">
-			<i class="fas fa-check"></i>
-			<span>{m.delegationCreatedSuccessfully()}</span>
-		</div>
-		<p class="max-ch-sm">
-			{m.nowYouCanInvitePeople()}
-		</p>
-		<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
-			<p class="flex-1 overflow-x-auto">
-				{referralLink}
+		<div class="flex w-full max-w-lg flex-col items-center gap-4">
+			<div role="alert" class="alert alert-success flex justify-center">
+				<i class="fas fa-check"></i>
+				<span>{m.delegationCreatedSuccessfully()}</span>
+			</div>
+			<p>
+				{m.nowYouCanInvitePeople()}
 			</p>
-			<button
-				class="btn btn-ghost btn-primary"
-				type="button"
-				onclick={() => {
-					navigator.clipboard.writeText(referralLink);
-					toast.success(m.linkCopied());
-				}}
-				aria-label="Copy referral link"
-				><i class="fa-duotone fa-clipboard text-xl"></i>
-			</button>
-		</div>
-		<p class="max-ch-sm">
-			{m.orShareThisCode()}
-		</p>
-		<div class="flex w-full items-center rounded-lg border-2 border-dashed border-primary p-2">
-			<p class="flex-1 overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
-				{entryCode}
+
+			{#snippet ReferralLink()}
+				<p class="flex-1 overflow-x-auto">
+					{referralLink}
+				</p>
+			{/snippet}
+			{@render CopyCard(ReferralLink, () => {
+				navigator.clipboard.writeText(referralLink);
+				toast.success(m.linkCopied());
+			})}
+			{#snippet QRCode()}
+				<div class="flex w-full items-center justify-center">
+					<svg use:qr={{ data: referralLink, shape: 'circle' }} class="max-w-32" />
+				</div>
+			{/snippet}
+			{@render CopyCard(QRCode)}
+
+			<p class="max-ch-sm">
+				{m.orShareThisCode()}
 			</p>
-			<button
-				class="btn btn-ghost btn-primary"
-				type="button"
-				onclick={() => {
-					navigator.clipboard.writeText(entryCode as string);
-					toast.success(m.codeCopied());
-				}}
-				aria-label="Copy entry code"
-				><i class="fa-duotone fa-clipboard text-xl"></i>
-			</button>
+
+			{#snippet ReferralCode()}
+				<p
+					class="w-full flex-1 overflow-x-auto text-center font-mono text-xl tracking-[0.6rem] uppercase"
+				>
+					{entryCode}
+				</p>
+			{/snippet}
+			{@render CopyCard(ReferralCode, () => {
+				navigator.clipboard.writeText(entryCode as string);
+				toast.success(m.codeCopied());
+			})}
+			<a class="btn btn-primary btn-lg mt-10 w-full" href="/dashboard">{m.toDashboard()}</a>
 		</div>
-		<a class="btn btn-primary btn-lg mt-10 w-full" href="/dashboard">{m.toDashboard()}</a>
-	</div>
+	{/if}
 </div>

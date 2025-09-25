@@ -4,7 +4,7 @@
 	const { getZebra, setZebra } = getTableSettings();
 </script>
 
-<div class="card bg-base-100 p-4 shadow-md dark:bg-base-200">
+<div class="card bg-base-100 dark:bg-base-200 p-4 shadow-md">
 	<div class="card-title">Zebra</div>
 	<div class="card-body">
 		<input

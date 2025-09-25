@@ -14,7 +14,7 @@
 </script>
 
 <section
-	class="stats stats-vertical col-span-2 bg-base-200 shadow-sm xl:stats-horizontal md:col-span-12 xl:col-span-9"
+	class="stats stats-vertical bg-base-200 xl:stats-horizontal col-span-2 shadow-sm md:col-span-12 xl:col-span-9"
 >
 	<div class="stat">
 		<div class="stat-figure xl:hidden"><i class="fa-duotone fa-flag text-3xl"></i></div>

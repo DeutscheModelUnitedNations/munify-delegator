@@ -6,7 +6,9 @@
 </script>
 
 <div class="w-full p-4">
-	<footer class="footer footer-center mt-3 rounded-xl bg-base-200 p-10 text-base-content">
+	<footer
+		class="footer footer-center footer-horizontal bg-base-200 text-base-content mt-3 flex-col rounded-xl p-10"
+	>
 		<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
 			<a class="link-hover link" href="/">{m.home()}</a>
 			<a class="link-hover link" href="/registration">{m.registration()}</a>
@@ -59,7 +61,7 @@
 				</div>
 				<div class="flex max-w-[15ch] flex-col sm:flex-row sm:gap-2 md:max-w-max">
 					<div>{m.sha()}:</div>
-					<div class="overflow-hidden overflow-ellipsis font-mono">
+					<div class="overflow-hidden font-mono overflow-ellipsis">
 						{#if !configPublic.PUBLIC_SHA || configPublic.PUBLIC_SHA.length === 0}
 							unknown
 						{:else}

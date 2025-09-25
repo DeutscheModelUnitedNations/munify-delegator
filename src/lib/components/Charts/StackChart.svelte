@@ -50,7 +50,7 @@
 			<div
 				class="{vertical
 					? 'w-full'
-					: 'h-full'} tooltip flex min-h-14 min-w-10 items-center justify-center bg-base-200 hover:bg-neutral-400 dark:hover:bg-neutral-600 {elementClass} transition-color duration-300 {vertical
+					: 'h-full'} tooltip bg-base-200 flex min-h-14 min-w-10 items-center justify-center hover:bg-neutral-400 dark:hover:bg-neutral-600 {elementClass} transition-color duration-300 {vertical
 					? 'first:rounded-t-md last:rounded-b-md'
 					: 'first:rounded-l-md last:rounded-r-md'}"
 				style={vertical ? `height: ${length(value)}%;` : `width: ${length(value)}%;`}
@@ -61,7 +61,7 @@
 						<i class="fas fa-{icons[i].replace('fa-', '')} text-base-content"></i>
 					{/if}
 					{#if percentage}
-						<div class="text-sm text-base-content">{length(value)}%</div>
+						<div class="text-base-content text-sm">{length(value)}%</div>
 					{/if}
 				</div>
 			</div>

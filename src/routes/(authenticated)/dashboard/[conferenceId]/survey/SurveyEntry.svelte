@@ -58,7 +58,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-4 rounded-lg bg-base-200 p-4">
+<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4">
 	<div class="flex flex-col gap-4">
 		<div class="flex flex-col gap-2">
 			{#if !questionLocked}
@@ -72,7 +72,7 @@
 			<p>{question.description}</p>
 		</div>
 		<div
-			class="grid grid-cols-[auto,1fr] items-center gap-2 rounded-md bg-base-100 p-4 shadow-md {!answer &&
+			class="bg-base-100 grid grid-cols-[auto,1fr] items-center gap-2 rounded-md p-4 shadow-md {!answer &&
 				'bg-error'}"
 		>
 			{#if answer}
@@ -110,7 +110,7 @@
 				? option.upperLimit - option.countSurveyAnswers
 				: 99999999}
 			<label
-				class="items-between flex cursor-pointer gap-4 rounded-md bg-base-200 p-4 transition-all duration-300 hover:bg-base-300"
+				class="items-between bg-base-200 hover:bg-base-300 flex cursor-pointer gap-4 rounded-md p-4 transition-all duration-300"
 			>
 				<input
 					type="radio"

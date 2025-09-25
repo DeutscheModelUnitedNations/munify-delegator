@@ -46,11 +46,11 @@
 
 <div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.signup()}</h1>
+		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signup()}</h1>
 		<p class="max-ch-md">
 			{@html m.conferenceSignupIntroduction()}
 		</p>
-		<div role="alert" class="alert mt-10">
+		<div role="alert " class="alert md:alert-horizontal alert-vertical mt-10">
 			<i class="fa-duotone fa-message-question mx-1 text-xl"></i>
 			<div class="flex flex-col">
 				<div class="font-bold tracking-wider">{m.signUpAssistant()}</div>

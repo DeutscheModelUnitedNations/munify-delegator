@@ -13,7 +13,7 @@
 	let { validateForm } = $derived(form);
 </script>
 
-<div class="{!disabled ? 'sticky bottom-4 bg-base-200 shadow-sm' : ''} mt-10 w-full rounded-lg p-2">
+<div class="{!disabled ? 'sticky bottom-4 shadow-sm' : ''} mt-6 w-full">
 	<button
 		onclick={async (e) => {
 			const val = await validateForm({ update: true });

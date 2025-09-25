@@ -14,10 +14,10 @@
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
 	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
-		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.joinDelegation()}</h1>
+		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.joinDelegation()}</h1>
 		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
 			<div class="flex flex-col items-center">
-				<p class="mb-10 max-ch-sm">
+				<p class="max-ch-sm mb-10">
 					{m.pleaseCheckDelegation()}
 				</p>
 
@@ -25,7 +25,7 @@
 					type="text"
 					placeholder="Code"
 					bind:value={code}
-					class="input input-lg join-item input-bordered w-full max-w-xs font-mono uppercase tracking-[0.8rem]"
+					class="input input-lg join-item mb-4 w-full max-w-xs font-mono tracking-[0.8rem] uppercase"
 					oninput={(e: any) => {
 						code = (e.target.value as string).toUpperCase().slice(0, 6);
 					}}

@@ -15,7 +15,7 @@
 	const nationPool = $derived(getUniqueNations(committees));
 </script>
 
-<div class="flex w-full flex-col items-center bg-base-200 p-4 md:p-10">
+<div class="bg-base-200 flex w-full flex-col items-center p-4 md:p-10">
 	<div class="flex w-full max-w-6xl flex-col items-center gap-10">
 		<div class="text-center">
 			<h1 class="text-5xl font-bold">
@@ -27,14 +27,14 @@
 			</h2>
 		</div>
 
-		<div class="collapse collapse-arrow w-full bg-base-100 shadow-lg">
+		<div class="collapse-arrow bg-base-100 collapse w-full shadow-lg">
 			<input type="checkbox" />
 			<div class="collapse-title text-xl font-medium">{m.committeesAndAgendaItems()}</div>
 			<div class="collapse-content w-full overflow-x-auto">
 				<CommitteePool {committees} />
 			</div>
 		</div>
-		<div class="collapse collapse-arrow w-full bg-base-100 shadow-lg">
+		<div class="collapse-arrow bg-base-100 collapse w-full shadow-lg">
 			<input type="checkbox" />
 			<div class="collapse-title text-xl font-medium">{m.nationsPool()}</div>
 			<div class="collapse-content w-full overflow-x-auto">
@@ -42,7 +42,7 @@
 			</div>
 		</div>
 
-		<div class="collapse collapse-arrow w-full bg-base-100 shadow-lg">
+		<div class="collapse-arrow bg-base-100 collapse w-full shadow-lg">
 			<input type="checkbox" />
 			<div class="collapse-title text-xl font-medium">{m.nsaPool()}</div>
 			<div class="collapse-content w-full overflow-x-auto">

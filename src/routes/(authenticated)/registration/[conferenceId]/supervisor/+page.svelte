@@ -45,17 +45,17 @@
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
 	<main class="flex h-full w-full flex-1 flex-col items-center py-16 text-center">
-		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.signupForSupervisors()}</h1>
+		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signupForSupervisors()}</h1>
 		<div in:fly={{ x: -50, duration: 300, delay: 300 }} out:fly={{ x: -50, duration: 300 }}>
 			<div class="flex flex-col items-center">
-				<p class="mb-10 max-ch-sm">
+				<p class="max-ch-sm mb-10">
 					{m.signupForSupervisorsDescription()}
 				</p>
 
-				<div class="card w-full max-w-md bg-base-200 shadow-lg">
+				<div class="card bg-base-100 border-base-200 w-full max-w-md border shadow-lg">
 					<div class="card-body items-center justify-center">
 						<label class="label cursor-pointer">
-							<span class="label-text mr-4">{m.presentAtConference()}</span>
+							<span class="mr-4">{m.presentAtConference()}</span>
 							<input
 								type="checkbox"
 								class="toggle toggle-success"

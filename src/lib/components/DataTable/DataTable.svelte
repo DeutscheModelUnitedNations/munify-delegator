@@ -143,6 +143,9 @@
 
 <style lang="postcss">
 	.svelte-table-wrapper :global(> table > tbody > tr) {
-		@apply transition-all duration-300;
+		transition-property: all;
+		transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+		--tw-duration: 300ms;
+		transition-duration: 300ms;
 	}
 </style>

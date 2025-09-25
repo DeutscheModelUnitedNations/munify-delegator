@@ -56,7 +56,7 @@
 	// <ManagementHeader title={m.adminStats()} fontAwesomeIcon="fa-chart-pie" />
 </script>
 
-<div class="grid grid-cols-2 gap-10 md:grid-cols-12">
+<div class="grid grid-cols-2 gap-3 md:grid-cols-12">
 	<DaysUntil {data} />
 	<AppliedChartAndStats {data} />
 	<AgeChart {data} />
@@ -67,12 +67,12 @@
 	<DietMatrix {data} />
 	<GenderMatrix {data} />
 	<Status {data} />
-	<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12">
+	<section class="card bg-base-200 col-span-2 shadow-sm md:col-span-12">
 		<div class="card-body">
 			<h3 class="text-xl font-bold">{m.historyComparison()}</h3>
 			<p>{@html m.historyComparisonDescription()}</p>
 			<select
-				class="select select-bordered w-full max-w-xs"
+				class="select w-full max-w-xs"
 				onchange={(e) => setSelectedHistory((e.target as any)?.value)}
 			>
 				{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}

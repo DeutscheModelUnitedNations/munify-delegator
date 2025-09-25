@@ -140,7 +140,7 @@
 	<input
 		type="text"
 		placeholder={m.referenceSearch()}
-		class="input input-lg input-bordered w-full"
+		class="input input-lg w-full"
 		bind:value={searchValue}
 	/>
 
@@ -160,7 +160,7 @@
 		</div>
 	{:else}
 		<div
-			class="flex w-full flex-col gap-4 rounded-lg bg-base-200 p-4 shadow-md md:p-10"
+			class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4 shadow-md md:p-10"
 			in:fly={{ y: -10, duration: 300 }}
 		>
 			<div>
@@ -190,7 +190,7 @@
 				</div>
 			{/if}
 
-			<div class="w-fit max-w-sm rounded-md bg-base-100 p-2">
+			<div class="bg-base-100 w-fit max-w-sm rounded-md p-2">
 				<div class="font-mono text-3xl font-bold">
 					{paymentTransaction?.amount.toLocaleString(undefined, {
 						style: 'currency',
@@ -203,7 +203,7 @@
 				<h2 class="text-xl font-bold">{m.referencedUsers()}</h2>
 				<div class="flex flex-col gap-2">
 					{#each referencedUsers ?? [] as user}
-						<div class="flex w-full items-center gap-4 rounded-md bg-base-100 px-4 py-2">
+						<div class="bg-base-100 flex w-full items-center gap-4 rounded-md px-4 py-2">
 							{#if getPaymentStatus(user.id) === 'DONE'}
 								{#if paymentTransaction?.recievedAt}
 									<i class="fa-duotone fa-check text-2xl"></i>
@@ -271,7 +271,7 @@
 					id="RecievedDate"
 					bind:value={recieveDate}
 					placeholder={m.selectADate()}
-					class="input input-bordered w-full"
+					class="input w-full"
 					lang={getLocale()}
 					bind:this={nativeDateInput}
 				/>
@@ -279,11 +279,11 @@
 					aria-hidden={true}
 					onclick={open}
 					onkeydown={open}
-					class="input input-bordered absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
+					class="input absolute top-1/2 right-1/2 flex w-full translate-x-1/2 -translate-y-1/2 cursor-pointer items-center"
 				>
 					{localizedDateString}
 				</div>
-				<i class="fa-duotone fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
+				<i class="fa-duotone fa-calendar absolute top-1/2 right-4 -translate-y-1/2 text-lg"></i>
 			</div>
 		</DatePicker>
 		<div class="modal-action justify-between">

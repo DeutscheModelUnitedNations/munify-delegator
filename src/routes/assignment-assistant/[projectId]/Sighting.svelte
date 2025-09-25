@@ -77,8 +77,8 @@
 		{#if index >= (page - 1) * pageSize && index < page * pageSize}
 			<div
 				class="card p-4 shadow-lg {application.disqualified
-					? 'border-8 border-error'
-					: application.flagged && 'border-8 border-warning'} transition-all"
+					? 'border-error border-8'
+					: application.flagged && 'border-warning border-8'} transition-all"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex flex-col">
@@ -184,7 +184,7 @@
 							<tr>
 								<td class="text-center"><i class="fa-duotone fa-users-viewfinder text-lg"></i></td>
 								<td>
-									<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
+									<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 										>{application.members.length}</span
 									>
 									{application.members
@@ -201,7 +201,7 @@
 							<tr>
 								<td class="text-center"><i class="fa-duotone fa-chalkboard-user text-lg"></i></td>
 								<td>
-									<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
+									<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 										>{application.supervisors?.length}</span
 									>
 									{application.supervisors
@@ -234,7 +234,7 @@
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-flag text-lg"></i></td>
 							<td>
-								<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
+								<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 									>{application.appliedForRoles.length}</span
 								>
 								{application.appliedForRoles

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
 	import { m } from '$lib/paraglide/messages';

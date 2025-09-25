@@ -43,7 +43,7 @@
 <UserSearchModal bind:open bind:user {targetRole} {addParticipant}>
 	{#if formElements}
 		{#each formElements as element}
-			<div class="rounded-lg bg-base-200 p-4">
+			<div class="bg-base-200 rounded-lg p-4">
 				{@render element()}
 			</div>
 		{/each}

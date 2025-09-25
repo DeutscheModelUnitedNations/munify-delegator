@@ -12,6 +12,7 @@
 	import { AddAgendaItemFormSchema } from './form-schema';
 	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -51,11 +52,11 @@
 			<div class="card-body">
 				<h3 class="text-xl font-bold">{committee.name} ({committee.abbreviation})</h3>
 				{#each agendaItems as item}
-					<div class="flex items-center gap-2 rounded-md bg-base-300 px-4 py-2">
+					<div class="bg-base-300 flex items-center gap-2 rounded-md px-4 py-2">
 						<div class="flex w-full flex-1 flex-col gap-2">
 							<h4>{item.title}</h4>
 							{#if item.teaserText}
-								<p class="whitespace-pre-wrap text-xs">{item.teaserText}</p>
+								<p class="text-xs whitespace-pre-wrap">{item.teaserText}</p>
 							{/if}
 						</div>
 						<button
@@ -78,16 +79,16 @@
 		</div>
 	{/each}
 
-	<h2 class="mt-10 text-xl font-bold">{m.createNewAgendaItem()}</h2>
-
-	<Form {form} showSubmitButton>
-		<FormSelect
-			{form}
-			name="committeeId"
-			label={m.committee()}
-			options={committees.map((x) => ({ label: x.abbreviation, value: x.id }))}
-		/>
-		<FormTextInput {form} name="title" label={m.title()} />
-		<FormTextArea {form} name="teaserText" label={m.teaserText()} />
-	</Form>
+	<FormFieldset title={m.createNewAgendaItem()}>
+		<Form {form}>
+			<FormSelect
+				{form}
+				name="committeeId"
+				label={m.committee()}
+				options={committees.map((x) => ({ label: x.abbreviation, value: x.id }))}
+			/>
+			<FormTextInput {form} name="title" label={m.title()} />
+			<FormTextArea {form} name="teaserText" label={m.teaserText()} />
+		</Form>
+	</FormFieldset>
 </div>

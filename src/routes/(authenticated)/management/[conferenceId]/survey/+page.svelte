@@ -23,7 +23,7 @@
 		<h2 class="text-2xl font-bold">{m.survey()}</h2>
 	</div>
 	{#each surveys ?? [] as survey}
-		<div class="flex w-full flex-col gap-8 rounded-lg bg-base-200 p-4">
+		<div class="bg-base-200 flex w-full flex-col gap-8 rounded-lg p-4">
 			<div class="grid grid-cols-[auto,1fr] items-center gap-2">
 				<h3 class="col-span-2 text-xl font-bold">{survey.title}</h3>
 				<i class="fa-duotone fa-info place-self-center"></i>
@@ -37,7 +37,7 @@
 				{#each survey.options as option}
 					<div class="relative flex w-full gap-2 p-2">
 						<div
-							class="absolute bottom-0 left-0 top-0 z-0 flex rounded-md {getBarPercent(option) ===
+							class="absolute top-0 bottom-0 left-0 z-0 flex rounded-md {getBarPercent(option) ===
 							100
 								? 'bg-red-200 dark:bg-red-900'
 								: 'bg-primary-200 dark:bg-primary-900'}"

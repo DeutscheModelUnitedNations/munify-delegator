@@ -143,7 +143,7 @@
 										seats: getNumOfSeatsPerNation(nation, committees)
 									})}
 								>
-									<i class="fas fa-triangle-exclamation ml-1 text-warning"></i>
+									<i class="fas fa-triangle-exclamation text-warning ml-1"></i>
 								</div>
 							{/if}
 						</td>

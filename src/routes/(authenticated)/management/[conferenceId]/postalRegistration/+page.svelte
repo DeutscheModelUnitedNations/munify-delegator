@@ -184,10 +184,10 @@
 	<div
 		class="media-container {queryUserId
 			? 'hidden'
-			: ''} max-w-1/3 relative z-50 flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-primary shadow-lg lg:fixed lg:right-4 lg:top-4 lg:w-60"
+			: ''} bg-primary relative z-50 flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-lg shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
 	>
 		<i
-			class="fas fa-camera absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
+			class="fas fa-camera absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
 		></i>
 		<video bind:this={videoElem} autoplay playsinline>
 			<track kind="captions" src="" srclang="en" label="English" default />
@@ -196,7 +196,7 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
-		<div class="h-18 flex w-full max-w-md items-center gap-6 rounded-3xl bg-base-200 p-6">
+		<div class="bg-base-200 flex h-18 w-full max-w-md items-center gap-6 rounded-3xl p-6">
 			<i class="fa-duotone fa-barcode-read {!queryUserId && 'fa-beat-fade'} text-2xl"></i>
 			<div class="truncate font-mono text-sm">
 				{queryUserId ? queryUserId : m.scanPostalRegistrationCodePrompt()}
@@ -209,11 +209,11 @@
 		{@const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus}
 
 		<div class="flex w-full max-w-md flex-col gap-2">
-			<div class="flex w-full flex-col gap-4 rounded-3xl bg-base-200 p-6">
+			<div class="bg-base-200 flex w-full flex-col gap-4 rounded-3xl p-6">
 				<div class="mb-2 flex w-full items-center gap-6">
 					<i class="fa-duotone fa-user text-2xl"></i>
 					{#if $userData.fetching}
-						<div class="skeleton h-9 w-full bg-base-300"></div>
+						<div class="skeleton bg-base-300 h-9 w-full"></div>
 					{:else}
 						<div class="flex-grow">
 							<h3 class="text-base font-bold md:text-xl">
@@ -233,7 +233,7 @@
 					</a>
 				</div>
 				{#if $userData.fetching}
-					<div class="skeleton h-52 w-full bg-base-300"></div>
+					<div class="skeleton bg-base-300 h-52 w-full"></div>
 				{:else}
 					<StatusWidget
 						title={m.userAgreement()}

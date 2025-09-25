@@ -22,7 +22,7 @@
 			{/each}
 		</div>
 		<button
-			class="btn btn-ghost absolute right-4 top-4"
+			class="btn btn-ghost absolute top-4 right-4"
 			onclick={closeModal}
 			aria-label="Close modal"
 		>

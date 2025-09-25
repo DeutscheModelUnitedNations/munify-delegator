@@ -22,6 +22,7 @@
 	} from '$lib/services/pdfGenerator';
 	import formatNames from '$lib/services/formatNames';
 	import { graphql } from '$houdini';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -170,183 +171,196 @@
 	}
 </script>
 
-<div class="card-body rounded-2xl bg-base-100 dark:bg-base-200">
+<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
+	<h1 class="text-2xl font-bold">{m.settings()}</h1>
 	<Form {form}>
-		<h3 class="mt-8 text-lg font-bold">{m.general()}</h3>
-		<FormTextInput
-			{form}
-			name="title"
-			placeholder={`MUN-SH ${new Date().getFullYear() + 1}`}
-			label={m.conferenceTitle()}
-		/>
-		<FormTextInput
-			{form}
-			name="longTitle"
-			placeholder={`Model United Nation Schleswig-Holstein ${new Date().getFullYear() + 1}`}
-			label={m.conferenceLongTitle()}
-		/>
-		<FormTextInput
-			{form}
-			name="location"
-			placeholder="New York, USA"
-			label={m.conferenceLocation()}
-		/>
-		<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
-		<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
-		{#if $formData.image || data.imageDataURL}
-			<img
-				src={$formData.image ? URL.createObjectURL($formData.image) : data.imageDataURL}
-				class="h-64 w-64"
-				alt="Preview of the file you selected"
+		<FormFieldset title={m.general()}>
+			<FormTextInput
+				{form}
+				name="title"
+				placeholder={`MUN-SH ${new Date().getFullYear() + 1}`}
+				label={m.conferenceTitle()}
 			/>
-		{/if}
-		<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
-		<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
-		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
-		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+			<FormTextInput
+				{form}
+				name="longTitle"
+				placeholder={`Model United Nation Schleswig-Holstein ${new Date().getFullYear() + 1}`}
+				label={m.conferenceLongTitle()}
+			/>
+			<FormTextInput
+				{form}
+				name="location"
+				placeholder="New York, USA"
+				label={m.conferenceLocation()}
+			/>
+			<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
+			<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
+			{#if $formData.image || data.imageDataURL}
+				<img
+					src={$formData.image ? URL.createObjectURL($formData.image) : data.imageDataURL}
+					class="h-64 w-64"
+					alt="Preview of the file you selected"
+				/>
+			{/if}
+			<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
+			<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
+			<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
+			<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+		</FormFieldset>
 
-		<h3 class="mt-8 text-lg font-bold">{m.conferenceStatus()}</h3>
-		<FormSelect {form} name="state" label={m.conferenceStatus()} options={conferenceStateOptions} />
-		<div class="prose">
-			{@html m.conferenceStatusDescription()}
-		</div>
+		<FormFieldset title={m.conferenceStatus()}>
+			<FormSelect
+				{form}
+				name="state"
+				label={m.conferenceStatus()}
+				options={conferenceStateOptions}
+			/>
+			<div class="prose">
+				{@html m.conferenceStatusDescription()}
+			</div>
+		</FormFieldset>
 
-		<h3 class="mt-8 text-lg font-bold">{m.communication()}</h3>
-		<div class="flex w-full items-center gap-2">
-			<FormTextArea {form} name="info" placeholder="Info..." label={m.infos()} />
+		<FormFieldset title={m.communication()}>
+			<div class="flex w-full items-center gap-2">
+				<FormTextArea {form} name="info" placeholder="Info..." label={m.infos()} />
+				<button
+					class="btn btn-primary h-full"
+					onclick={(e) => {
+						e.preventDefault();
+						infoPreviewModalOpen = !infoPreviewModalOpen;
+					}}
+				>
+					{m.preview()}
+				</button>
+			</div>
+			<FormTextInput
+				{form}
+				name="linkToPreparationGuide"
+				placeholder="https://path-to-your-guide.com"
+				label={m.preparationGuide()}
+			/>
+			<FormTextInput
+				{form}
+				name="linkToPaperInbox"
+				placeholder="https://path-to-your-paper-inbox.com"
+				label={m.paperInbox()}
+			/>
+			<a class="btn btn-primary self-start" href="./configuration/committees">
+				{m.committeesAndAgendaItems()}
+				<i class="fas fa-podium ml-2"></i>
+			</a>
+		</FormFieldset>
+
+		<FormFieldset title={m.bankingInformation()}>
+			<FormCheckbox
+				{form}
+				name="unlockPayments"
+				label={m.paymentOpen()}
+				disabled={!$formData.feeAmount ||
+					!$formData.bankName ||
+					!$formData.iban ||
+					!$formData.bic ||
+					!$formData.accountHolder ||
+					!$formData.currency}
+			/>
+			<FormTextInput {form} name="feeAmount" placeholder="75,00" label={m.fee()} type="number" />
+			<FormTextInput {form} name="bankName" placeholder="Bank Name" label={m.bankName()} />
+			<FormTextInput {form} name="iban" placeholder="DE12345678901234567890" label={m.iban()} />
+			<FormTextInput {form} name="bic" placeholder="ABCDEFGH" label={m.bic()} />
+			<FormTextInput
+				{form}
+				name="accountHolder"
+				placeholder="Max Mustermann"
+				label={m.accountHolder()}
+			/>
+			<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
+		</FormFieldset>
+
+		<FormFieldset title={m.postalRegistration()}>
+			<FormCheckbox
+				{form}
+				name="unlockPostals"
+				label={m.postalOpen()}
+				disabled={!$formData.postalName ||
+					!$formData.postalStreet ||
+					!$formData.postalZip ||
+					!$formData.postalCity ||
+					!$formData.postalCountry}
+			/>
+			<FormTextInput {form} name="postalName" placeholder={m.name()} label={m.name()} />
+			<FormTextInput {form} name="postalStreet" placeholder={m.street()} label={m.street()} />
+			<FormTextInput
+				{form}
+				name="postalApartment"
+				placeholder={m.streetAddition()}
+				label={m.streetAddition()}
+			/>
+			<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
+			<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
+			<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
+			<FormFile
+				{form}
+				name="contractBasePDF"
+				label={m.postalTemplateContract()}
+				accept="*.pdf"
+				inputClass={data.contractContentSet ? 'file-input-success' : undefined}
+			/>
+			<FormFile
+				{form}
+				name="guardianConsentBasePDF"
+				label={m.postalTemplateGuardianConsent()}
+				accept="*.pdf"
+				inputClass={data.guardianConsentContentSet ? 'file-input-success' : undefined}
+			/>
+			<FormFile
+				{form}
+				name="mediaConsentBasePDF"
+				label={m.postalTemplateMediaConsent()}
+				accept="*.pdf"
+				inputClass={data.mediaConsentContentSet ? 'file-input-success' : undefined}
+			/>
+			<FormFile
+				{form}
+				name="termsAndConditionsBasePDF"
+				label={m.postalTemplateTermsAndConditions()}
+				accept="*.pdf"
+				inputClass={data.termsAndConditionsContentSet ? 'file-input-success' : undefined}
+			/>
 			<button
-				class="btn btn-primary h-full"
-				onclick={(e) => {
+				class="btn dark:btn-outline {loading ||
+				!data.contractContentSet ||
+				!data.guardianConsentContentSet ||
+				!data.mediaConsentContentSet ||
+				!data.termsAndConditionsContentSet
+					? 'btn-disabled'
+					: ''}"
+				onclick={async (e) => {
 					e.preventDefault();
-					infoPreviewModalOpen = !infoPreviewModalOpen;
+					handleGeneratePostalPDF();
 				}}
 			>
-				{m.preview()}
+				<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
 			</button>
-		</div>
-		<FormTextInput
-			{form}
-			name="linkToPreparationGuide"
-			placeholder="https://path-to-your-guide.com"
-			label={m.preparationGuide()}
-		/>
-		<FormTextInput
-			{form}
-			name="linkToPaperInbox"
-			placeholder="https://path-to-your-paper-inbox.com"
-			label={m.paperInbox()}
-		/>
-		<a class="btn btn-primary self-start" href="./configuration/committees">
-			{m.committeesAndAgendaItems()}
-			<i class="fas fa-podium ml-2"></i>
-		</a>
+		</FormFieldset>
 
-		<h3 class="mt-8 text-lg font-bold">{m.bankingInformation()}</h3>
-		<FormCheckbox
-			{form}
-			name="unlockPayments"
-			label={m.paymentOpen()}
-			disabled={!$formData.feeAmount ||
-				!$formData.bankName ||
-				!$formData.iban ||
-				!$formData.bic ||
-				!$formData.accountHolder ||
-				!$formData.currency}
-		/>
-		<FormTextInput {form} name="feeAmount" placeholder="75,00" label={m.fee()} type="number" />
-		<FormTextInput {form} name="bankName" placeholder="Bank Name" label={m.bankName()} />
-		<FormTextInput {form} name="iban" placeholder="DE12345678901234567890" label={m.iban()} />
-		<FormTextInput {form} name="bic" placeholder="ABCDEFGH" label={m.bic()} />
-		<FormTextInput
-			{form}
-			name="accountHolder"
-			placeholder="Max Mustermann"
-			label={m.accountHolder()}
-		/>
-		<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
-
-		<h3 class="mt-8 text-lg font-bold">{m.postalRegistration()}</h3>
-		<FormCheckbox
-			{form}
-			name="unlockPostals"
-			label={m.postalOpen()}
-			disabled={!$formData.postalName ||
-				!$formData.postalStreet ||
-				!$formData.postalZip ||
-				!$formData.postalCity ||
-				!$formData.postalCountry}
-		/>
-		<FormTextInput {form} name="postalName" placeholder={m.name()} label={m.name()} />
-		<FormTextInput {form} name="postalStreet" placeholder={m.street()} label={m.street()} />
-		<FormTextInput
-			{form}
-			name="postalApartment"
-			placeholder={m.streetAddition()}
-			label={m.streetAddition()}
-		/>
-		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
-		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
-		<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
-		<FormFile
-			{form}
-			name="contractBasePDF"
-			label={m.postalTemplateContract()}
-			accept="*.pdf"
-			inputClass={data.contractContentSet ? 'file-input-success' : undefined}
-		/>
-		<FormFile
-			{form}
-			name="guardianConsentBasePDF"
-			label={m.postalTemplateGuardianConsent()}
-			accept="*.pdf"
-			inputClass={data.guardianConsentContentSet ? 'file-input-success' : undefined}
-		/>
-		<FormFile
-			{form}
-			name="mediaConsentBasePDF"
-			label={m.postalTemplateMediaConsent()}
-			accept="*.pdf"
-			inputClass={data.mediaConsentContentSet ? 'file-input-success' : undefined}
-		/>
-		<FormFile
-			{form}
-			name="termsAndConditionsBasePDF"
-			label={m.postalTemplateTermsAndConditions()}
-			accept="*.pdf"
-			inputClass={data.termsAndConditionsContentSet ? 'file-input-success' : undefined}
-		/>
-		<button
-			class="btn dark:btn-outline {loading ||
-			!data.contractContentSet ||
-			!data.guardianConsentContentSet ||
-			!data.mediaConsentContentSet ||
-			!data.termsAndConditionsContentSet
-				? 'btn-disabled'
-				: ''}"
-			onclick={async (e) => {
-				e.preventDefault();
-				handleGeneratePostalPDF();
-			}}
-		>
-			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
-		</button>
-		<h3 class="mt-8 text-lg font-bold">{m.certificate()}</h3>
-		<FormFile
-			{form}
-			name="certificateBasePDF"
-			label={m.CertifiacteTemplate()}
-			accept="*.pdf"
-			inputClass={data.certificateContentSet ? 'file-input-success' : undefined}
-		/>
-		<button
-			class="btn dark:btn-outline {loading || !data.certificateContentSet ? 'btn-disabled' : ''}"
-			onclick={async (e) => {
-				e.preventDefault();
-				handleGenerateCertificatePDF();
-			}}
-		>
-			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
-		</button>
+		<FormFieldset title={m.certificate()}>
+			<FormFile
+				{form}
+				name="certificateBasePDF"
+				label={m.CertifiacteTemplate()}
+				accept="*.pdf"
+				inputClass={data.certificateContentSet ? 'file-input-success' : undefined}
+			/>
+			<button
+				class="btn dark:btn-outline {loading || !data.certificateContentSet ? 'btn-disabled' : ''}"
+				onclick={async (e) => {
+					e.preventDefault();
+					handleGenerateCertificatePDF();
+				}}
+			>
+				<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+			</button>
+		</FormFieldset>
 	</Form>
 </div>
 

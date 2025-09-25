@@ -12,7 +12,7 @@
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import SupervisorTable from './SupervisorTable.svelte';
+	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import codenamize from '$lib/services/codenamize';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 

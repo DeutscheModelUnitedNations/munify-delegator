@@ -12,17 +12,15 @@
 
 	let { name, iban, amount, currency, reason }: Props = $props();
 
-	let qrCode = $state<string>();
-
-	$effect(() => {
-		qrCode = girocode({
+	let qrCode = $derived(
+		girocode({
 			name,
 			iban,
 			amount,
 			currency,
 			reason
-		}).svg_data_url();
-	});
+		}).svg_data_url()
+	);
 </script>
 
 <div class="flex flex-col gap-4">

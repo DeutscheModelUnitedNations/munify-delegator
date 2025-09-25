@@ -11,7 +11,7 @@
 	);
 </script>
 
-<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12">
+<section class="card bg-base-200 col-span-2 shadow-sm md:col-span-12">
 	<div class="card-body">
 		<div class="overflow-x-auto">
 			<table class="table">

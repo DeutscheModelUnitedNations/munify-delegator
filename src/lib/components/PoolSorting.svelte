@@ -22,7 +22,7 @@
 	}: Props = $props();
 </script>
 
-<div class="card grid w-full grid-cols-[auto_1fr] items-center gap-4 bg-base-200 p-4">
+<div class="card bg-base-200 grid w-full grid-cols-[auto_1fr] items-center gap-4 p-4">
 	<i class="fa-duotone fa-arrow-down-short-wide self-center text-xl"></i>
 	<div class="flex flex-wrap gap-2">
 		{#each sortingOptions as option}

@@ -5,6 +5,9 @@
 	import { m } from '$lib/paraglide/messages';
 	import { isMobileOrTablet } from '$lib/services/detectMobile';
 	import { onMount } from 'svelte';
+	import FormLabel from './FormLabel.svelte';
+	import FormDescription from './FormDescription.svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 
 	// Dates and Date pickers in JS are a mess. I tried around a lot of things with this
 	// but all of non native inputs break acceissibility. According to this suggestion
@@ -14,6 +17,7 @@
 	interface Props {
 		name: string;
 		label?: string;
+		description?: string;
 		form: SuperForm<A, B>;
 		enableTime?: boolean;
 		showYearControls?: boolean;
@@ -26,6 +30,7 @@
 	let {
 		form,
 		label,
+		description,
 		name,
 		showYearControls = true,
 		enableTime = false,
@@ -44,6 +49,7 @@
 	let errors = $derived(($formErrors as any)[name]);
 	let constraints = $derived(($formConstraints as any)[name]);
 	let nativeDateInput = $state<HTMLInputElement>();
+
 	let localizedDateString = $derived.by(() => {
 		if (!$proxyDate) return m.selectADate();
 		const date = new Date($proxyDate);
@@ -78,7 +84,7 @@
 	}
 
 	function nonNativeDatePickEvent(e: any) {
-		const newDate = new Date(e.startDate);
+		const newDate = new SvelteDate(e.startDate);
 		if (enableTime) {
 			const timeNumbers = e.startDateTime.split(':').map(Number) as number[];
 			newDate.setHours(
@@ -95,7 +101,7 @@
 
 <DatePicker
 	onDayClick={nonNativeDatePickEvent}
-	startDate={new Date($proxyDate)}
+	startDate={new SvelteDate($proxyDate)}
 	bind:isOpen={isNonNativeDatepickerOpen}
 	{enableFutureDates}
 	{enablePastDates}
@@ -106,30 +112,20 @@
 	isRange={false}
 	includeFont={false}
 >
-	<label class="form-control w-full" for={name}>
-		{label}
-		<div class="relative">
-			<input
-				{name}
-				type={format}
-				id={name}
-				bind:value={$proxyDate}
-				placeholder={m.selectADate()}
-				aria-invalid={errors ? 'true' : undefined}
-				class="input input-bordered w-full"
-				lang={getLocale()}
-				{...constraints}
-				bind:this={nativeDateInput}
-			/>
-			<div
-				aria-hidden={true}
-				onclick={open}
-				onkeydown={open}
-				class="input input-bordered absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
-			>
-				{localizedDateString}
-			</div>
-			<i class="fa-duotone fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
-		</div>
+	<label for={name} class="flex w-full flex-col">
+		<FormLabel {label} />
+		<FormDescription {description} />
+		<input
+			{name}
+			type={format}
+			id={name}
+			bind:value={$proxyDate}
+			placeholder={m.selectADate()}
+			aria-invalid={errors ? 'true' : undefined}
+			class="input validator w-full"
+			lang={getLocale()}
+			{...constraints}
+			bind:this={nativeDateInput}
+		/>
 	</label>
 </DatePicker>

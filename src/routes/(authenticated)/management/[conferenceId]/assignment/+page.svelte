@@ -101,7 +101,7 @@
 				</a>
 				<i class="fa-duotone fa-3 text-3xl"></i>
 				<input
-					class="file-input file-input-bordered w-full"
+					class="file-input w-full"
 					type="file"
 					accept=".json"
 					onchange={(e) => setFileInput(e)}

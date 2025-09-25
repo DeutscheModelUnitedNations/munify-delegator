@@ -52,7 +52,7 @@
 					formatNames(b.user.given_name, b.user.family_name, { givenNameFirst: false })
 				)
 			)}
-		<div class="flex w-full flex-col rounded-lg bg-base-200 p-4">
+		<div class="bg-base-200 flex w-full flex-col rounded-lg p-4">
 			<div class="flex gap-2">
 				<div class="flex w-full flex-1 flex-col">
 					<h3>{option.title}</h3>
@@ -65,7 +65,7 @@
 					{/if}
 				</h3>
 			</div>
-			<div class="mt-4 rounded bg-base-300 p-2 text-sm shadow-sm">
+			<div class="bg-base-300 mt-4 rounded p-2 text-sm shadow-sm">
 				<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4">
 					{#each users ?? [] as u}
 						<p>
@@ -81,7 +81,7 @@
 	{/each}
 
 	<h2 class="text-2xl font-bold">{m.notAssignedParticipants()}</h2>
-	<div class="flex w-full flex-col rounded-lg bg-base-200 p-4 text-sm">
+	<div class="bg-base-200 flex w-full flex-col rounded-lg p-4 text-sm">
 		<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4">
 			{#each notAssignedParticipants ?? [] as user}
 				<p>

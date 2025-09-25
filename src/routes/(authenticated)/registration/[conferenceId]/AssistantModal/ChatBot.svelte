@@ -23,7 +23,7 @@
 </script>
 
 <div class="chat chat-start w-full rounded-md" in:fly={{ x: -30, duration, delay }}>
-	<div id={randId} class="chat-bubble flex flex-col gap-2 bg-base-300 text-base-content">
+	<div id={randId} class="chat-bubble bg-base-300 text-base-content flex flex-col gap-2">
 		{@render children()}
 	</div>
 </div>

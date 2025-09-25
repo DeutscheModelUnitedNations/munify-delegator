@@ -13,6 +13,7 @@ const conferencesWhereImMoreThanMember = graphql(`
 					}
 				}
 			}
+			orderBy: { startConference: desc }
 		) {
 			id
 			title

@@ -51,7 +51,7 @@
 			<section class="flex w-full flex-col items-center gap-4">
 				<img src={svgempty} alt="Empty" class="mb-10 w-1/2" />
 				<h1 class="text-center text-3xl">{m.noConferenceOpenForRegistration()}</h1>
-				<p class="text-center max-ch-md">{m.noConferenceOpenForRegistrationText()}</p>
+				<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
 				<div class="flex flex-col gap-4 md:flex-row-reverse">
 					<a class="btn mt-10" href="/">{m.backToHome()}</a>
 				</div>

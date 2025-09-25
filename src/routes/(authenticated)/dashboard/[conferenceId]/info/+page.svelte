@@ -14,7 +14,7 @@
 		</a>
 		<h1 class="text-2xl font-bold">{m.conferenceInfo()}</h1>
 	</div>
-	<div class="prose w-full rounded-2xl bg-base-200 p-4">
+	<div class="prose bg-base-200 w-full rounded-2xl p-4">
 		<Markdown source={$conferenceData.data?.findUniqueConference?.info ?? ''} />
 	</div>
 </div>

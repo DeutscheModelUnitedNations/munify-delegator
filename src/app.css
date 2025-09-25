@@ -1,6 +1,24 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import '@deutschemodelunitednations/corporate-identity/css/fonts';
+@import '@deutschemodelunitednations/corporate-identity/css/shades/dmun';
+
+@import 'tailwindcss';
+@plugin "@tailwindcss/typography";
+@plugin "daisyui";
+
+@import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-light';
+@import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-dark';
+
+@utility max-ch-sm {
+	max-width: 50ch;
+}
+
+@utility max-ch-md {
+	max-width: 75ch;
+}
+
+@utility max-ch-lg {
+	max-width: 100ch;
+}
 
 @font-face {
 	font-family: 'FontAwesome';
@@ -10,6 +28,7 @@
 	font-style: normal;
 	font-display: swap;
 }
+
 #mermaid .outcome > * {
 	stroke: #000 !important;
 	transition: all 0.3s;
@@ -37,4 +56,16 @@
 	.print-only {
 		display: block;
 	}
+}
+
+/* https://github.com/kbrgl/svelte-french-toast/issues/103 */
+.toaster > .wrapper > .base > .indicator > .status {
+	height: auto !important;
+	width: auto !important;
+}
+
+.btn {
+	height: auto;
+	min-height: var(--size);
+	@apply py-2;
 }

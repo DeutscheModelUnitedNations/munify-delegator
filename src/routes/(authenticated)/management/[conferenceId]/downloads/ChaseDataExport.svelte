@@ -5,6 +5,7 @@
 	import DownloadSection from './DownloadSection.svelte';
 	import { v4 as uuidv4 } from 'uuid';
 	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	interface Props {
 		loading: boolean;
@@ -132,7 +133,7 @@
 					return undefined;
 			}
 		};
-		const representationAlpha3CodeToIdMap = new Map<string, string>();
+		const representationAlpha3CodeToIdMap = new SvelteMap<string, string>();
 
 		// schema of this data is the input argument data to src/api/handlers/import.ts in munify-chase
 		const transformedData = {

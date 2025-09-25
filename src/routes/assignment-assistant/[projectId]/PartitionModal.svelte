@@ -50,7 +50,7 @@
 		<div class="flex gap-2 p-4">
 			{#each buckets as bucket, i}
 				<div
-					class="flex flex-1 flex-col gap-2 rounded-lg bg-base-200 p-4"
+					class="bg-base-200 flex flex-1 flex-col gap-2 rounded-lg p-4"
 					use:droppable={{
 						container: `bucket-${i}`,
 						callbacks: {
@@ -61,7 +61,7 @@
 					{#each bucket as member}
 						<div class="flex items-center gap-2">
 							<div
-								class="flex cursor-grab items-center gap-2 rounded-md bg-base-300 p-2 shadow-md"
+								class="bg-base-300 flex cursor-grab items-center gap-2 rounded-md p-2 shadow-md"
 								use:draggable={{
 									container: `bucket-${i}`,
 									dragData: { id: member.user.id }
@@ -81,7 +81,7 @@
 				</div>
 			{/each}
 			<button
-				class="flex h-full min-h-[100px] w-full flex-1 items-center justify-center rounded-lg border-4 border-dashed border-base-200 hover:bg-base-200"
+				class="border-base-200 hover:bg-base-200 flex h-full min-h-[100px] w-full flex-1 items-center justify-center rounded-lg border-4 border-dashed"
 				aria-label="Add new bucket"
 				onclick={() => {
 					buckets = [...buckets, []];

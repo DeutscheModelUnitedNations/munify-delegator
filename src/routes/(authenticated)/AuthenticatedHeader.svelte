@@ -22,7 +22,7 @@
 
 <div class="w-full p-4">
 	<div
-		class="no-print navbar mb-4 justify-between gap-0 rounded-2xl bg-base-200 px-4 py-2 shadow-lg sm:gap-2"
+		class="no-print navbar bg-base-200 mb-4 justify-between gap-0 rounded-2xl px-4 py-2 shadow-lg sm:gap-2"
 	>
 		{#if headerState.openNavCallback !== undefined}
 			<button
@@ -47,7 +47,7 @@
 			</div>
 			<ul
 				tabindex="-1"
-				class="menu dropdown-content mt-3 w-52 rounded-box bg-base-100 p-2 shadow-2xl"
+				class="menu dropdown-content rounded-box bg-base-100 mt-3 w-52 p-2 shadow-2xl"
 			>
 				<li>
 					<a href="/my-account">

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import codenamize from '$lib/services/codenamize';
-	import type { PageData } from '../$houdini';
+	import type { PageData } from '../../$houdini';
 	import { alpha3Code, m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
@@ -8,7 +8,7 @@
 	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
 	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import ConferenceStatusWidget from '../ConferenceStatusWidget.svelte';
+	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
@@ -21,9 +21,12 @@
 	} from '$lib/services/pdfGenerator';
 	import toast from 'svelte-french-toast';
 	import { invalidateAll } from '$app/navigation';
-	import DashboardContentCard from '$lib/components/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { page } from '$app/state';
 	import { qr } from '@svelte-put/qr/svg';
+	import EntryCode from '../Common/EntryCode.svelte';
+	import SupervisorContentCard from './SupervisorContentCard.svelte';
+	import InfoGrid from '$lib/components/InfoGrid';
 
 	// TODO these components need some refactoring
 
@@ -224,10 +227,10 @@
 <section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.ownPresence()}</h2>
 	<p class="text-sm">{m.ownPresenceDescription()}</p>
-	<div class="card max-w-80 bg-base-100 p-6 shadow-md dark:bg-base-200">
-		<div class="form-control">
+	<div class="card bg-base-100 dark:bg-base-200 max-w-80 p-6 shadow-md">
+		<fieldset class="fieldset">
 			<label class="label cursor-pointer">
-				<span class="label-text">{m.presentAtConference()}</span>
+				<span>{m.presentAtConference()}</span>
 				<input
 					type="checkbox"
 					class="toggle toggle-success"
@@ -236,7 +239,7 @@
 					disabled={!isStateParticipantRegistration}
 				/>
 			</label>
-		</div>
+		</fieldset>
 	</div>
 	<p class="text-xs text-gray-500">
 		{@html supervisor.plansOwnAttendenceAtConference
@@ -311,162 +314,131 @@
 	</DelegationStatusTableWrapper>
 </section> -->
 
-<section class="flex flex-col gap-6">
+<section class="flex flex-col gap-2">
 	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
 	<p class="text-sm">{m.delegationsDescription()}</p>
 	{#if delegations.length > 0}
-		{#each delegations as delegation, index}
+		{#each delegations as delegation (delegation.id)}
 			{@const members = delegationMembers.filter((x) => x.delegation.id === delegation.id)}
 			{@const hiddenMembers = delegation.members.filter(
 				(x) => !members.map((y) => y.id).includes(x.id)
 			)}
-			<DashboardContentCard title={codenamize(delegation.id)} class="bg-base-200">
-				{#if isStateParticipantRegistration}
-					<div
-						class="badge {delegation.applied
-							? 'badge-success'
-							: 'badge-warning'} badge-lg absolute right-4 top-0 z-10 -translate-y-1/2"
-					>
-						{#if delegation.applied}
-							<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
-						{:else}
-							<i class="fa-solid fa-hourglass-half mr-2"></i> {m.notApplied()}
-						{/if}
-					</div>
-				{/if}
-				<table class="table mb-10">
-					<thead>
-						<tr>
-							<th></th>
-							<th class="w-full"></th>
-						</tr>
-					</thead>
-					<tbody>
+
+			<SupervisorContentCard
+				title={codenamize(delegation.id)}
+				{isStateParticipantRegistration}
+				applied={delegation.applied}
+			>
+				{#snippet detailSpace()}
+					<InfoGrid.Grid>
 						{#if isStateParticipantRegistration}
-							<tr>
-								<td>{m.roleApplications()}</td>
-								<td>
-									{#if delegation.appliedForRoles.length > 0}
-										<div class="flex flex-wrap gap-2">
-											{#each delegation.appliedForRoles
-												.sort((x) => x.rank)
-												.reverse() as roleApplication}
-												<Flag
-													size="xs"
-													alpha2Code={roleApplication.nation?.alpha2Code}
-													nsa={!!roleApplication.nonStateActor}
-													icon={roleApplication.nonStateActor?.fontAwesomeIcon ??
-														'fa-hand-point-up'}
-												/>
-											{/each}
-										</div>
-									{:else}
-										<i class="fa-duotone fa-dash"></i>
-									{/if}
-								</td>
-							</tr>
-
-							<tr>
-								<td>{m.entryCode()}</td>
-								<td>{delegation.entryCode}</td>
-							</tr>
-						{:else}
-							<tr>
-								<td>{m.role()}</td>
-								<td>
-									<Flag
-										size="xs"
-										alpha2Code={delegation.assignedNation?.alpha2Code}
-										nsa={!!delegation.assignedNonStateActor}
-										icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
-									/>
-									{#if delegation.assignedNation}
-										{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
-										({alpha3Code(delegation.assignedNation.alpha3Code)})
-									{:else if delegation.assignedNonStateActor}
-										{delegation.assignedNonStateActor.name}
-									{/if}
-								</td>
-							</tr>
-						{/if}
-
-						<tr>
-							<td>{m.members()}</td>
-							<td>{delegation.members.length}</td>
-						</tr>
-
-						<tr>
-							<td>{m.schoolOrInstitution()}</td>
-							{#if delegation.school}
-								<td>{delegation.school}</td>
-							{:else}
-								<td><i class="fa-duotone fa-dash"></i></td>
-							{/if}
-						</tr>
-						<tr>
-							<td>{m.experience()}</td>
-							{#if delegation.experience}
-								<td>{delegation.experience}</td>
-							{:else}
-								<td><i class="fa-duotone fa-dash"></i></td>
-							{/if}
-						</tr>
-						<tr>
-							<td>{m.motivation()}</td>
-							{#if delegation.motivation}
-								<td>{delegation.motivation}</td>
-							{:else}
-								<td><i class="fa-duotone fa-dash"></i></td>
-							{/if}
-						</tr>
-					</tbody>
-				</table>
-
-				<DelegationStatusTableWrapper
-					withPostalSatus={!isStateParticipantRegistration}
-					withPaymentStatus={!isStateParticipantRegistration}
-					withCommittee={!isStateParticipantRegistration}
-					withEmail
-					title={m.members()}
-				>
-					{#each members ?? [] as member}
-						{@const participantStatus = member.user?.conferenceParticipantStatus.find(
-							(x) => x.conference.id === conference?.id
-						)}
-						<DelegationStatusTableEntry
-							name={formatNames(member.user.given_name, member.user.family_name)}
-							pronouns={member.user.pronouns ?? ''}
-							headDelegate={member.isHeadDelegate}
-							email={member.user.email}
-							committee={!isStateParticipantRegistration
-								? (member.assignedCommittee?.abbreviation ?? '')
-								: undefined}
-							withPaymentStatus={!isStateParticipantRegistration}
-							withPostalStatus={!isStateParticipantRegistration}
-							downloadPostalDocuments={conference?.unlockPostals
-								? () => downloadPostalDocuments(member.user.id)
-								: undefined}
-							postalSatus={getSimplifiedPostalStatus(
-								participantStatus,
-								ofAgeAtConference(conference?.startConference, member.user.birthday)
-							)}
-							paymentStatus={participantStatus?.paymentStatus}
-						/>
-					{/each}
-					{#each hiddenMembers as member}
-						<tr>
-							<td colspan="5" class="italic text-gray-500">
-								{m.hiddenMember()}
-								{#if member.isHeadDelegate}
-									<div class="tooltip" data-tip={m.headDelegate()}>
-										<i class="fa-duotone fa-medal ml-2"></i>
+							<InfoGrid.Entry title={m.entryCode()} fontAwesomeIcon="fa-duotone fa-barcode">
+								<span class="font-mono tracking-[0.3rem]">{delegation.entryCode}</span>
+							</InfoGrid.Entry>
+							<InfoGrid.Entry title={m.roleApplications()} fontAwesomeIcon="fa-duotone fa-flag">
+								{#if delegation.appliedForRoles.length > 0}
+									<div class="flex flex-wrap gap-2">
+										{#each delegation.appliedForRoles
+											.sort((x) => x.rank)
+											.reverse() as roleApplication (roleApplication.id)}
+											<Flag
+												size="xs"
+												alpha2Code={roleApplication.nation?.alpha2Code}
+												nsa={!!roleApplication.nonStateActor}
+												icon={roleApplication.nonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+											/>
+										{/each}
 									</div>
+								{:else}
+									<i class="fa-duotone fa-dash"></i>
 								{/if}
-							</td>
-						</tr>
-					{/each}
-				</DelegationStatusTableWrapper>
-			</DashboardContentCard>
+							</InfoGrid.Entry>
+						{:else}
+							<InfoGrid.Entry title={m.role()} fontAwesomeIcon="fa-duotone fa-flag">
+								<Flag
+									size="xs"
+									alpha2Code={delegation.assignedNation?.alpha2Code}
+									nsa={!!delegation.assignedNonStateActor}
+									icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+								/>
+								{#if delegation.assignedNation}
+									{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
+									({alpha3Code(delegation.assignedNation.alpha3Code)})
+								{:else if delegation.assignedNonStateActor}
+									{delegation.assignedNonStateActor.name}
+								{/if}
+							</InfoGrid.Entry>
+						{/if}
+						<InfoGrid.Entry
+							title={m.delegationMembers()}
+							fontAwesomeIcon="fa-duotone fa-users"
+							content={delegation.members.length}
+						/>
+						<InfoGrid.Entry
+							title={m.schoolOrInstitution()}
+							fontAwesomeIcon="school"
+							content={delegation.school}
+						/>
+						<InfoGrid.Entry
+							title={m.experience()}
+							fontAwesomeIcon="compass"
+							content={delegation.experience}
+						/>
+						<InfoGrid.Entry
+							title={m.motivation()}
+							fontAwesomeIcon="fire-flame-curved"
+							content={delegation.motivation}
+						/>
+					</InfoGrid.Grid>
+				{/snippet}
+
+				{#snippet memberSpace()}
+					<DelegationStatusTableWrapper
+						withPostalSatus={!isStateParticipantRegistration}
+						withPaymentStatus={!isStateParticipantRegistration}
+						withCommittee={!isStateParticipantRegistration}
+						withEmail
+						title={m.members()}
+					>
+						{#each members ?? [] as member}
+							{@const participantStatus = member.user?.conferenceParticipantStatus.find(
+								(x) => x.conference.id === conference?.id
+							)}
+							<DelegationStatusTableEntry
+								name={formatNames(member.user.given_name, member.user.family_name)}
+								pronouns={member.user.pronouns ?? ''}
+								headDelegate={member.isHeadDelegate}
+								email={member.user.email}
+								committee={!isStateParticipantRegistration
+									? (member.assignedCommittee?.abbreviation ?? '')
+									: undefined}
+								withPaymentStatus={!isStateParticipantRegistration}
+								withPostalStatus={!isStateParticipantRegistration}
+								downloadPostalDocuments={conference?.unlockPostals
+									? () => downloadPostalDocuments(member.user.id)
+									: undefined}
+								postalSatus={getSimplifiedPostalStatus(
+									participantStatus,
+									ofAgeAtConference(conference?.startConference, member.user.birthday)
+								)}
+								paymentStatus={participantStatus?.paymentStatus}
+							/>
+						{/each}
+						{#each hiddenMembers as member}
+							<tr>
+								<td colspan="5" class="text-gray-500 italic">
+									{m.hiddenMember()}
+									{#if member.isHeadDelegate}
+										<div class="tooltip" data-tip={m.headDelegate()}>
+											<i class="fa-duotone fa-medal ml-2"></i>
+										</div>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</DelegationStatusTableWrapper>
+				{/snippet}
+			</SupervisorContentCard>
 		{/each}
 	{:else}
 		<div class="alert alert-warning">
@@ -481,125 +453,93 @@
 
 	{#if singleParticipants.length > 0}
 		{#each singleParticipants as singleParticipant}
-			<DashboardContentCard
+			<SupervisorContentCard
 				title={formatNames(singleParticipant.user.given_name, singleParticipant.user.family_name)}
-				class="bg-base-200"
+				{isStateParticipantRegistration}
+				applied={singleParticipant.applied}
 			>
-				{#if isStateParticipantRegistration}
-					<div
-						class="badge {singleParticipant.applied
-							? 'badge-success'
-							: 'badge-warning'} badge-lg absolute right-4 top-0 z-10 -translate-y-1/2"
-					>
-						{#if singleParticipant.applied}
-							<i class="fa-solid fa-circle-check mr-2"></i> {m.applied()}
+				{#snippet detailSpace()}
+					<InfoGrid.Grid>
+						{#if !singleParticipant.assignedRole}
+							<InfoGrid.Entry title={m.roleApplications()} fontAwesomeIcon="masks-theater">
+								{#if singleParticipant.appliedForRoles.length > 0}
+									<div class="flex flex-wrap gap-2">
+										{#each singleParticipant.appliedForRoles as roleApplication}
+											<div class="badge">
+												<i
+													class="fa-duotone fa-{roleApplication.fontAwesomeIcon?.replace(
+														'fa-',
+														''
+													)} mr-2"
+												></i>
+												{roleApplication.name}
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<i class="fa-duotone fa-dash"></i>
+								{/if}
+							</InfoGrid.Entry>
 						{:else}
-							<i class="fa-solid fa-hourglass-half mr-2"></i> {m.notApplied()}
+							<InfoGrid.Entry title={m.role()} fontAwesomeIcon="masks-theater">
+								<i
+									class="fa-duotone fa-{singleParticipant.assignedRole?.fontAwesomeIcon?.replace(
+										'fa-',
+										''
+									)}"
+								></i>
+								{singleParticipant.assignedRole?.name}
+							</InfoGrid.Entry>
 						{/if}
-					</div>
-				{/if}
-				<table class="table mb-10">
-					<thead>
-						<tr>
-							<th></th>
-							<th class="w-full"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#if isStateParticipantRegistration}
-							<tr>
-								<td>{m.roleApplications()}</td>
-								<td>
-									{#if singleParticipant.appliedForRoles.length > 0}
-										<div class="flex flex-wrap gap-2">
-											{#each singleParticipant.appliedForRoles as roleApplication}
-												<div class="badge">
-													<i
-														class="fa-duotone fa-{roleApplication.fontAwesomeIcon?.replace(
-															'fa-',
-															''
-														)} mr-2"
-													></i>
-													{roleApplication.name}
-												</div>
-											{/each}
-										</div>
-									{:else}
-										<i class="fa-duotone fa-dash"></i>
-									{/if}
-								</td>
-							</tr>
-						{:else}
-							<tr>
-								<td>{m.role()}</td>
-								<td>
-									<i
-										class="fa-duotone fa-{singleParticipant.assignedRole?.fontAwesomeIcon?.replace(
-											'fa-',
-											''
-										)}"
-									></i>
-									{singleParticipant.assignedRole?.name}
-								</td>
-							</tr>
-						{/if}
+						<InfoGrid.Entry
+							title={m.schoolOrInstitution()}
+							content={singleParticipant.school}
+							fontAwesomeIcon="school"
+						/>
+						<InfoGrid.Entry
+							title={m.experience()}
+							content={singleParticipant.experience}
+							fontAwesomeIcon="compass"
+						/>
+						<InfoGrid.Entry
+							title={m.motivation()}
+							content={singleParticipant.motivation}
+							fontAwesomeIcon="fire-flame-curved"
+						/>
+					</InfoGrid.Grid>
+				{/snippet}
 
-						<tr>
-							<td>{m.schoolOrInstitution()}</td>
-							{#if singleParticipant.school}
-								<td>{singleParticipant.school}</td>
-							{:else}
-								<td><i class="fa-duotone fa-dash"></i></td>
-							{/if}
-						</tr>
-						<tr>
-							<td>{m.experience()}</td>
-							{#if singleParticipant.experience}
-								<td>{singleParticipant.experience}</td>
-							{:else}
-								<td><i class="fa-duotone fa-dash"></i></td>
-							{/if}
-						</tr>
-						<tr>
-							<td>{m.motivation()}</td>
-							{#if singleParticipant.motivation}
-								<td>{singleParticipant.motivation}</td>
-							{:else}
-								<td><i class="fa-duotone fa-dash"></i></td>
-							{/if}
-						</tr>
-					</tbody>
-				</table>
-
-				<DelegationStatusTableWrapper
-					withPostalSatus={!isStateParticipantRegistration}
-					withPaymentStatus={!isStateParticipantRegistration}
-					withEmail
-					title={m.details()}
-				>
-					{@const participantStatus = singleParticipant.user?.conferenceParticipantStatus.find(
-						(x) => x.conference.id === conference?.id
-					)}
-					<DelegationStatusTableEntry
-						name={formatNames(
-							singleParticipant.user.given_name,
-							singleParticipant.user.family_name
-						)}
-						pronouns={singleParticipant.user.pronouns ?? ''}
-						email={singleParticipant.user.email}
+				{#snippet memberSpace()}
+					<DelegationStatusTableWrapper
+						withPostalSatus={!isStateParticipantRegistration}
 						withPaymentStatus={!isStateParticipantRegistration}
-						withPostalStatus={!isStateParticipantRegistration}
-						downloadPostalDocuments={conference?.unlockPostals
-							? () => downloadPostalDocuments(singleParticipant.user.id)
-							: undefined}
-						postalSatus={getSimplifiedPostalStatus(
-							participantStatus,
-							ofAgeAtConference(conference?.startConference, singleParticipant.user.birthday)
+						withEmail
+						title={m.details()}
+					>
+						{@const participantStatus = singleParticipant.user?.conferenceParticipantStatus.find(
+							(x) => x.conference.id === conference?.id
 						)}
-						paymentStatus={participantStatus?.paymentStatus}
-					/>
-				</DelegationStatusTableWrapper>
-			</DashboardContentCard>
+						<DelegationStatusTableEntry
+							name={formatNames(
+								singleParticipant.user.given_name,
+								singleParticipant.user.family_name
+							)}
+							pronouns={singleParticipant.user.pronouns ?? ''}
+							email={singleParticipant.user.email}
+							withPaymentStatus={!isStateParticipantRegistration}
+							withPostalStatus={!isStateParticipantRegistration}
+							downloadPostalDocuments={conference?.unlockPostals
+								? () => downloadPostalDocuments(singleParticipant.user.id)
+								: undefined}
+							postalSatus={getSimplifiedPostalStatus(
+								participantStatus,
+								ofAgeAtConference(conference?.startConference, singleParticipant.user.birthday)
+							)}
+							paymentStatus={participantStatus?.paymentStatus}
+						/>
+					</DelegationStatusTableWrapper>
+				{/snippet}
+			</SupervisorContentCard>
 		{/each}
 	{:else}
 		<div class="alert alert-warning">
@@ -612,53 +552,24 @@
 <DashboardContentCard
 	title={m.connectWithStudents()}
 	description={m.connectWithStudentsDescription()}
-	class="bg-base-200"
 >
-	<div class="mt-4 flex items-center gap-2 rounded-lg bg-base-200 p-2 pl-4 dark:bg-base-300">
-		<p class="overflow-x-auto font-mono text-xl uppercase tracking-[0.6rem]">
-			{supervisor.connectionCode}
-		</p>
-		<button
-			class="btn btn-square btn-ghost btn-primary"
-			onclick={() => {
-				navigator.clipboard.writeText(supervisor.connectionCode);
-				toast.success(m.codeCopied());
-			}}
-			aria-label="Copy entry code"
-			><i class="fa-duotone fa-clipboard text-xl"></i>
-		</button>
-		<button
-			class="btn btn-square btn-ghost btn-primary tooltip"
-			data-tip={m.copyLink()}
-			onclick={() => {
-				navigator.clipboard.writeText(connectionLink as string);
-				toast.success(m.linkCopied());
-			}}
-			aria-label="Copy referral link"
-			><i class="fa-duotone fa-link text-xl"></i>
-		</button>
-		<div class="tooltip" data-tip={m.rotateCode()}>
-			<button
-				class="btn btn-square btn-ghost btn-primary"
-				onclick={async () => {
-					await toast.promise(
-						rotateConnectionCodeMutation.mutate({
-							id: supervisor.id
-						}),
-						{
-							loading: m.genericToastLoading(),
-							success: m.codeRotated(),
-							error: m.genericToastError()
-						}
-					);
-					cache.markStale();
-					await invalidateAll();
-				}}
-				aria-label="Rotate connection code"
-				><i class="fa-duotone fa-rotate text-xl"></i>
-			</button>
-		</div>
-	</div>
-
-	<svg use:qr={{ data: connectionLink as string, shape: 'circle' }} class="mt-4 max-w-sm" />
+	<EntryCode
+		entryCode={supervisor.connectionCode}
+		referralLink={connectionLink}
+		userHasRotationPermission={true}
+		rotationFn={async () => {
+			await toast.promise(
+				rotateConnectionCodeMutation.mutate({
+					id: supervisor.id
+				}),
+				{
+					loading: m.genericToastLoading(),
+					success: m.codeRotated(),
+					error: m.genericToastError()
+				}
+			);
+			cache.markStale();
+			await invalidateAll();
+		}}
+	/>
 </DashboardContentCard>

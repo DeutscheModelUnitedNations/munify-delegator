@@ -101,7 +101,7 @@
 			{/each}
 		</div>
 
-		<table class="table table-lg">
+		<table class="table-lg table">
 			<thead>
 				<tr>
 					<th>{m.name()}</th>
@@ -114,7 +114,7 @@
 					<tr>
 						<td>{formatNames(member?.user.given_name, member?.user.family_name)}</td>
 						<td>
-							<select class="select select-bordered" bind:value={memberWithCommittee.committeeId}>
+							<select class="select" bind:value={memberWithCommittee.committeeId}>
 								<option value="" selected>{m.pleaseSelect()}</option>
 								{#each committees ?? [] as committee}
 									<option

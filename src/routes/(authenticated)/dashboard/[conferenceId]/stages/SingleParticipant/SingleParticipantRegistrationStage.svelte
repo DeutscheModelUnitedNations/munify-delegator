@@ -1,15 +1,12 @@
 <script lang="ts">
-	import type { PageData } from '../$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
-	import type { StoresValues } from '$lib/services/storeExtractorType';
-	import SupervisorTable from './SupervisorTable.svelte';
+	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
@@ -18,6 +15,7 @@
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
 	interface Props {
 		singleParticipant: NonNullable<
@@ -157,7 +155,11 @@
 		{
 			title: m.todoCompleteSignup(),
 			completed: singleParticipant.applied,
-			help: m.todoCompleteSignupHelp()
+			help: m.todoCompleteSignupHelp(),
+			arrowDown:
+				!!singleParticipant.school &&
+				!!singleParticipant.motivation &&
+				!!singleParticipant.experience
 		}
 	]);
 
@@ -233,9 +235,10 @@
 							{#if !singleParticipant.applied}
 								<td>
 									<SquareButtonWithLoadingState
-										cssClass="btn-error {(singleParticipant.applied ||
-											singleParticipant.appliedForRoles.length === 1) &&
-											'opacity-10'}"
+										cssClass={singleParticipant.applied ||
+										singleParticipant.appliedForRoles.length === 1
+											? 'opacity-10'
+											: ''}
 										disabled={singleParticipant.applied ||
 											singleParticipant.appliedForRoles.length === 1}
 										icon="trash"
@@ -248,11 +251,13 @@
 				</tbody>
 			</table>
 		</div>
+		{#if !singleParticipant.applied}
+			<a class="btn btn-primary btn-wide mt-4" href="/registration/{conference.id}/individual">
+				<i class="fa-solid fa-plus"></i>
+				{m.addAnotherApplication()}
+			</a>
+		{/if}
 	</DashboardContentCard>
-	<a class="btn btn-ghost btn-wide mt-4" href="/registration/{conference.id}/individual">
-		<i class="fa-solid fa-plus"></i>
-		{m.addAnotherApplication()}
-	</a>
 </section>
 
 <section>
@@ -263,35 +268,31 @@
 			description={m.informationAndMotivationDescriptionHeadDelegate()}
 			class="flex-1"
 		>
-			<Form {form} showSubmitButton={false}>
-				<FormTextInput
-					name="school"
-					label={m.whichSchoolDoesYourDelegationComeFrom()}
-					{form}
-					placeholder={m.answerHere()}
-					type="text"
-					disabled={singleParticipant.applied}
-				/>
-				<FormTextArea
-					name="motivation"
-					label={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
-					{form}
-					placeholder={m.answerHere()}
-					disabled={singleParticipant.applied}
-				/>
-				<FormTextArea
-					name="experience"
-					label={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
-					{form}
-					placeholder={m.answerHere()}
-					disabled={singleParticipant.applied}
-				/>
-				<div class="flex-1"></div>
-				{#if !singleParticipant.applied}
-					<button class="btn btn-primary" type="submit">
-						{m.save()}
-					</button>
-				{/if}
+			<Form {form} showSubmitButton={!singleParticipant.applied}>
+				<FormFieldset title={m.questionnaire()}>
+					<FormTextInput
+						name="school"
+						label={m.whichSchoolDoesYourDelegationComeFrom()}
+						{form}
+						placeholder={m.answerHere()}
+						type="text"
+						disabled={singleParticipant.applied}
+					/>
+					<FormTextArea
+						name="motivation"
+						label={m.whyDoYouWantToJoinTheConferenceSingleParticipant()}
+						{form}
+						placeholder={m.answerHere()}
+						disabled={singleParticipant.applied}
+					/>
+					<FormTextArea
+						name="experience"
+						label={m.howMuchExperienceDoesYourDelegationHaveSingleParticipant()}
+						{form}
+						placeholder={m.answerHere()}
+						disabled={singleParticipant.applied}
+					/>
+				</FormFieldset>
 			</Form>
 		</DashboardContentCard>
 	</div>
@@ -329,7 +330,7 @@
 	<p class="mt-10 text-xs">
 		{@html m.singleParticipantsIdForSupport()}
 		{#if singleParticipant}
-			<span class="rounded-sm bg-base-200 p-1 font-mono">{singleParticipant.id}</span>
+			<span class="bg-base-200 rounded-sm p-1 font-mono">{singleParticipant.id}</span>
 		{:else}
 			<span class="loading-dots"></span>
 		{/if}

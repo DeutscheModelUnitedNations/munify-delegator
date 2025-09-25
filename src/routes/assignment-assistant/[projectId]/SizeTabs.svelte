@@ -8,7 +8,7 @@
 	let { tab, changeTab, largestNationOrNSA }: Props = $props();
 </script>
 
-<div role="tablist" class="tabs-boxed tabs mb-4">
+<div role="tablist" class="tabs-box tabs mb-4">
 	{#each { length: largestNationOrNSA } as _, i}
 		<button
 			role="tab"

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
-	import DashboardContentCard from '../DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 
 	interface Props {
 		title?: string;
@@ -24,7 +24,7 @@
 	}: Props = $props();
 </script>
 
-<DashboardContentCard {title} {description} class="overflow-x-auto dark:bg-base-300">
+<DashboardContentCard {title} {description} class="overflow-x-auto">
 	<table class="table">
 		<thead>
 			<tr>

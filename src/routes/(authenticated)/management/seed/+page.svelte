@@ -59,7 +59,7 @@
 <div class="flex w-full flex-col items-center gap-4 p-10">
 	<input
 		type="file"
-		class="file-input file-input-bordered w-full"
+		class="file-input w-full"
 		onchange={(e) => {
 			rawFile = e.currentTarget.files?.[0] ?? null;
 		}}

@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
-	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
 	import toast from 'svelte-french-toast';
 
@@ -77,6 +75,6 @@
 			</div>
 		{/if}
 	{:else}
-		<div class="skeleton h-32 w-full max-w-md bg-base-200"></div>
+		<div class="skeleton bg-base-200 h-32 w-full max-w-md"></div>
 	{/if}
 </section>

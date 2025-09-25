@@ -43,13 +43,13 @@
 	<div
 		aria-hidden="true"
 		onclick={close}
-		class="fixed left-0 top-0 z-30 h-screen w-screen bg-black opacity-30"
+		class="fixed top-0 left-0 z-30 h-screen w-screen bg-black opacity-30"
 	></div>
 	<div
-		class="no-scrollbar fixed right-0 top-0 z-40 h-screen overflow-y-auto duration-300"
+		class="no-scrollbar fixed top-0 right-0 z-40 h-screen overflow-y-auto duration-300"
 		style="width: {width}"
 	>
-		<div class="flex min-h-full flex-col gap-8 bg-base-100 p-10">
+		<div class="bg-base-100 flex min-h-full flex-col gap-8 p-10">
 			<DrawerHeader {id} {title} {titleSnippet} {category} {loading} />
 			{#if loading}
 				<div class="flex w-full items-center justify-center">
@@ -58,7 +58,7 @@
 			{:else}
 				{@render children()}
 			{/if}
-			<button class="btn absolute right-4 top-4" onclick={close} aria-label="Close">
+			<button class="btn absolute top-4 right-4" onclick={close} aria-label="Close">
 				<i class="fa-duotone fa-xmark"></i>
 			</button>
 		</div>

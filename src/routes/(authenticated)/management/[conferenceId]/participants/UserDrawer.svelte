@@ -390,7 +390,7 @@
 					{#if $userQuery.data?.findUniqueUser?.phone}
 						<td class="font-mono">
 							<a
-								class="cursor-pointer rounded-md bg-base-300 px-2 py-1 hover:underline"
+								class="bg-base-300 cursor-pointer rounded-md px-2 py-1 hover:underline"
 								href={`tel:${$userQuery.data?.findUniqueUser?.phone}`}
 								>{$userQuery.data?.findUniqueUser?.phone}</a
 							>
@@ -403,7 +403,7 @@
 					<td class="text-center"><i class="fa-duotone fa-envelope text-lg"></i></td>
 					<td class="font-mono">
 						<a
-							class="cursor-pointer rounded-md bg-base-300 px-2 py-1 hover:underline"
+							class="bg-base-300 cursor-pointer rounded-md px-2 py-1 hover:underline"
 							href={`mailto:${$userQuery.data?.findUniqueUser?.email}`}
 						>
 							{$userQuery.data?.findUniqueUser?.email}
