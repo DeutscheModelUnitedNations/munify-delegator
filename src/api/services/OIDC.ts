@@ -205,3 +205,101 @@ export function getLogoutUrl(visitedUrl: URL) {
 export function fetchUserInfoFromIssuer(access_token: string, expectedSubject: string) {
 	return fetchUserInfo(config, access_token, expectedSubject);
 }
+
+export async function performTokenExchange(
+	actorToken: string,
+	subjectUserId: string,
+	scope?: string,
+	audience?: string
+): Promise<TokenEndpointResponse> {
+	if (!config) {
+		throw new Error('OIDC configuration not initialized');
+	}
+
+	const tokenExchangeParams: Record<string, string> = {
+		grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+		subject_token: subjectUserId,
+		subject_token_type: 'urn:zitadel:params:oauth:token-type:user_id',
+		actor_token: actorToken,
+		actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+		requested_token_type: 'urn:ietf:params:oauth:token-type:jwt'
+	};
+
+	if (scope) {
+		tokenExchangeParams.scope = scope;
+	}
+
+	if (audience) {
+		tokenExchangeParams.audience = audience;
+	}
+
+	try {
+		const response = await fetch(config.serverMetadata().token_endpoint!, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				...(configPrivate.OIDC_CLIENT_SECRET
+					? {
+							Authorization: `Basic ${Buffer.from(`${configPublic.PUBLIC_OIDC_CLIENT_ID}:${configPrivate.OIDC_CLIENT_SECRET}`).toString('base64')}`
+						}
+					: {})
+			},
+			body: new URLSearchParams({
+				...tokenExchangeParams,
+				...(configPrivate.OIDC_CLIENT_SECRET
+					? {}
+					: { client_id: configPublic.PUBLIC_OIDC_CLIENT_ID })
+			})
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			let errorDetail;
+			try {
+				errorDetail = JSON.parse(errorText);
+			} catch {
+				errorDetail = errorText;
+			}
+
+			// Specific error handling for different error types
+			if (
+				errorDetail?.error === 'unauthorized_client' &&
+				errorDetail?.error_description?.includes('token-exchange')
+			) {
+				throw new Error(
+					`OIDC Client not configured for Token Exchange. Please add the grant type 'urn:ietf:params:oauth:grant-type:token-exchange' to your Zitadel OIDC application configuration.`
+				);
+			}
+
+			if (
+				errorDetail?.error === 'invalid_request' &&
+				errorDetail?.error_description?.includes('No matching permissions found')
+			) {
+				throw new Error(
+					`Impersonation not allowed. The user lacks permission to impersonate the target user. Please check:\n1. User has 'ORG_END_USER_IMPERSONATOR' role\n2. User has 'ORG_USER_SELF_MANAGEMENT' role or project-specific impersonation permissions\n3. Target user is in the same organization/project scope`
+				);
+			}
+
+			console.error('Token exchange error details:', {
+				status: response.status,
+				error: errorDetail,
+				tokenExchangeParams: {
+					...tokenExchangeParams,
+					actor_token: '[REDACTED]'
+				}
+			});
+
+			throw new Error(
+				`Token exchange failed: ${response.status} ${typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail)}`
+			);
+		}
+
+		const tokenResponse = await response.json();
+		return tokenResponse as TokenEndpointResponse;
+	} catch (error) {
+		console.error('Token exchange error:', error);
+		throw new Error(
+			`Token exchange failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+		);
+	}
+}

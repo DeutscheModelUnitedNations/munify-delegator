@@ -4,6 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { headerState } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import Breadcrumbs from './Breadcrumbs.svelte';
+	import ImpersonationBanner from '$lib/components/ImpersonationBanner.svelte';
 
 	//TODO
 	// import ExportButtons from '$lib/components/DataTable/ExportButtons.svelte';
@@ -21,6 +22,9 @@
 </script>
 
 <div class="w-full p-4">
+	<!-- Impersonation Banner -->
+	<ImpersonationBanner />
+
 	<div
 		class="no-print navbar bg-base-200 mb-4 justify-between gap-0 rounded-2xl px-4 py-2 shadow-lg sm:gap-2"
 	>

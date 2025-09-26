@@ -21,6 +21,7 @@ import './modules/conferenceSupervisor';
 import './modules/customConferenceRole';
 import './modules/delegation';
 import './modules/delegationMember';
+import './modules/impersonation';
 import './modules/nation';
 import './modules/nonStateActor';
 import './modules/paymentTransaction';
