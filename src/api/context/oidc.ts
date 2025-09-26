@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { oidcRoles, refresh, validateTokens } from '$api/services/OIDC';
+import { oidcRoles, refresh, validateTokens, type OIDCUser } from '$api/services/OIDC';
 import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
@@ -18,7 +18,15 @@ const TokenCookieSchema = z
 
 export type TokenCookieSchemaType = z.infer<typeof TokenCookieSchema>;
 
+export type ImpersonationContext = {
+	isImpersonating: boolean;
+	originalUser?: OIDCUser;
+	impersonatedUser?: OIDCUser;
+	actorInfo?: { iss: string; sub: string };
+};
+
 export const tokensCookieName = 'token_set';
+export const impersonationTokenCookieName = 'impersonation_token_set';
 
 export async function oidc(cookies: RequestEvent['cookies']) {
 	const cookie = cookies.get(tokensCookieName);
@@ -90,12 +98,97 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 		return OIDCRoleNames.includes(role);
 	};
 
+	// Check for impersonation
+	let impersonationContext: ImpersonationContext = { isImpersonating: false };
+
+	const impersonationCookie = cookies.get(impersonationTokenCookieName);
+	console.log('🔍 Checking impersonation cookie:', {
+		hasCookie: !!impersonationCookie,
+		cookieLength: impersonationCookie?.length,
+		hasUser: !!user
+	});
+
+	if (impersonationCookie && user) {
+		console.log('🔍 Processing impersonation cookie...');
+		try {
+			const impersonationTokenSet = await TokenCookieSchema.safeParse(
+				JSON.parse(impersonationCookie)
+			);
+			console.log('🔍 Token validation result:', {
+				success: impersonationTokenSet.success,
+				hasAccessToken: impersonationTokenSet.success
+					? !!impersonationTokenSet.data.access_token
+					: false
+			});
+
+			if (impersonationTokenSet.success && impersonationTokenSet.data.access_token) {
+				console.log('🔍 Validating impersonation tokens...');
+				const impersonatedUser = await validateTokens({
+					access_token: impersonationTokenSet.data.access_token,
+					id_token: impersonationTokenSet.data.id_token
+				});
+				console.log('🔍 Impersonated user validated:', { sub: impersonatedUser?.sub });
+
+				// Extract actor information from the JWT token
+				const actorInfo = (impersonatedUser as any).act;
+
+				impersonationContext = {
+					isImpersonating: true,
+					originalUser: user,
+					impersonatedUser: impersonatedUser,
+					actorInfo: actorInfo
+				};
+
+				// When impersonating, we use the impersonated user's details but keep original user as reference
+				user = impersonatedUser;
+
+				// Update role information for impersonated user
+				const impersonatedOIDCRoleNames: (typeof oidcRoles)[number][] = [];
+				if (impersonatedUser && configPrivate.OIDC_ROLE_CLAIM) {
+					const impersonatedRolesRaw = impersonatedUser[configPrivate.OIDC_ROLE_CLAIM]!;
+					if (impersonatedRolesRaw) {
+						const impersonatedRoleNames = Object.keys(impersonatedRolesRaw);
+						impersonatedOIDCRoleNames.push(...(impersonatedRoleNames as any));
+					}
+				}
+
+				// Override role functions for impersonated user
+				const impersonatedHasRole = (role: (typeof impersonatedOIDCRoleNames)[number]) => {
+					return impersonatedOIDCRoleNames.includes(role);
+				};
+
+				console.log('🎭 Impersonation active:', {
+					originalUser: impersonationContext?.originalUser?.sub,
+					impersonatedUser: impersonatedUser.sub,
+					originalRoles: OIDCRoleNames,
+					impersonatedRoles: impersonatedOIDCRoleNames
+				});
+
+				return {
+					nextTokenRefreshDue: tokenSet.expires_in
+						? new Date(Date.now() + tokenSet.expires_in * 1000)
+						: undefined,
+					tokenSet,
+					user: user
+						? { ...user, hasRole: impersonatedHasRole, OIDCRoleNames: impersonatedOIDCRoleNames }
+						: undefined,
+					impersonation: impersonationContext
+				};
+			}
+		} catch (error) {
+			console.warn('Failed to process impersonation token:', error);
+			// Clear invalid impersonation cookie
+			cookies.delete(impersonationTokenCookieName, { path: '/' });
+		}
+	}
+
 	return {
 		nextTokenRefreshDue: tokenSet.expires_in
 			? new Date(Date.now() + tokenSet.expires_in * 1000)
 			: undefined,
 		tokenSet,
-		user: user ? { ...user, hasRole, OIDCRoleNames } : undefined
+		user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+		impersonation: impersonationContext
 	};
 }
 

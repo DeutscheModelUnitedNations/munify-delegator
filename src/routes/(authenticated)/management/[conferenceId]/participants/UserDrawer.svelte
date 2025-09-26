@@ -29,6 +29,7 @@
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
 	import { invalidateAll } from '$app/navigation';
+	import ImpersonationButton from './ImpersonationButton.svelte';
 
 	interface Props {
 		userId: string;
@@ -549,6 +550,8 @@
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
 				{/if}
+
+				<ImpersonationButton {userId} />
 
 				<button class="btn" onclick={() => (assignSupervisorModalOpen = true)}>
 					<i class="fa-duotone fa-chalkboard-user"></i>
