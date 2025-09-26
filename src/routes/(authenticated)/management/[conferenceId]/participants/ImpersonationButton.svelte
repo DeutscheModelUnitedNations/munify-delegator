@@ -28,7 +28,7 @@
 					goto('/dashboard').then(() => window.location.reload());
 				})
 				.catch((error) => {
-					console.error('Failed to stop impersonation:', error);
+					console.error('Failed to start impersonation:', error);
 				});
 		} catch (error) {
 			console.error('Failed to start impersonation:', error);
