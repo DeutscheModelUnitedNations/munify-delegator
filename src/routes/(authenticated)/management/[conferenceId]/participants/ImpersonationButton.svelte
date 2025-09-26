@@ -33,7 +33,6 @@
 		} catch (error) {
 			console.error('Failed to start impersonation:', error);
 			toast.error(m.impersonationFailed({ error: 'Could not start Impersonation' }));
-			alert('Fehler beim Starten der Impersonation.');
 		}
 	};
 </script>
