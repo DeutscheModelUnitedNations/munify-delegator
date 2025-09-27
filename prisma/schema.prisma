@@ -81,8 +81,9 @@ model Conference {
   paymentTransactions          PaymentTransaction[]
   surveyQuestions              SurveyQuestion[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+  WaitingListEntry WaitingListEntry[]
 }
 
 /// A committee in a conference. E.g. the human rights council
@@ -169,6 +170,7 @@ model User {
   ownPaymentTransactions        PaymentTransaction[]
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
   surveyAnswers                 SurveyAnswer[]
+  waitingListEntry              WaitingListEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -475,6 +477,23 @@ model SurveyAnswer {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([questionId, userId])
+}
+
+/// An Entry of a User on a Waiting List for a Conference
+model WaitingListEntry {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+
+  school     String
+  experience String
+  motivation String
+  requests   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// Role a team member can have
