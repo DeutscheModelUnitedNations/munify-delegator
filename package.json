@@ -51,7 +51,7 @@
 		"convert-iso-codes": "^1.0.10",
 		"cryptr": "^6.4.0",
 		"csv-stringify": "^6.6.0",
-		"daisyui": "^5.1.14",
+		"daisyui": "^5.1.24",
 		"date-fns": "^4.1.0",
 		"eslint": "^9.36.0",
 		"eslint-config-prettier": "^10.1.8",
