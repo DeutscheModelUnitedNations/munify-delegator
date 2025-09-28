@@ -149,6 +149,68 @@ builder.prismaObject('Conference', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyQuestion
 			})
+		}),
+		totalParticipants: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				const delegationMembersCount = await db.delegationMember.count({
+					where: {
+						delegation: {
+							conferenceId: conference.id,
+							OR: [
+								{
+									NOT: {
+										assignedNationAlpha3Code: null
+									}
+								},
+								{
+									NOT: {
+										assignedNonStateActorId: null
+									}
+								}
+							]
+						}
+					}
+				});
+
+				const individualsCount = await db.singleParticipant.count({
+					where: {
+						conferenceId: conference.id,
+						NOT: {
+							assignedRoleId: null
+						}
+					}
+				});
+
+				return delegationMembersCount + individualsCount;
+			}
+		}),
+		totalSeats: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				let count = 0;
+
+				const committees = await db.committee.findMany({
+					where: { conferenceId: conference.id },
+					include: { nations: true }
+				});
+				for (const committee of committees) {
+					count += committee.nations.length;
+				}
+
+				count += await db.nonStateActor.count({ where: { conferenceId: conference.id } });
+
+				return count;
+			}
+		}),
+		waitingListLength: t.field({
+			type: 'Int',
+			resolve: async (conference) =>
+				await db.waitingListEntry.count({
+					where: {
+						conferenceId: conference.id
+					}
+				})
 		})
 	})
 });

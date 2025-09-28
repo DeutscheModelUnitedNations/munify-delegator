@@ -16,7 +16,11 @@ export const load: LayoutServerLoad = async (event) => {
 	if (data?.offlineUserRefresh.user) {
 		return {
 			nextTokenRefreshDue: data.offlineUserRefresh,
-			user: { ...data.offlineUserRefresh.user, myOIDCRoles: data.myOIDCRoles }
+			user: {
+				...data.offlineUserRefresh.user,
+				myOIDCRoles: data.myOIDCRoles,
+				isAdmin: data.myOIDCRoles.includes('admin')
+			}
 		};
 	}
 

@@ -328,10 +328,13 @@ type Conference {
   termsAndConditionsContent: String
   termsAndConditionsContentSet: Boolean!
   title: String!
+  totalParticipants: Int!
+  totalSeats: Int!
 
   """Payment and Postal information"""
   unlockPayments: Boolean!
   unlockPostals: Boolean!
+  waitingListLength: Int!
   website: String
 }
 
