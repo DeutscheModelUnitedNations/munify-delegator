@@ -6,6 +6,8 @@
 	import type { ConferenceOpenForRegistrationQuery$result } from '$houdini';
 	import { getRegistrationStatus, type RegistrationStatus } from '$lib/services/registrationStatus';
 	import { getWaitingListStatus } from '$lib/services/waitingListStatus';
+	import StatusLight from '../StatusLight.svelte';
+	import RegistrationStatusLight from '../RegistrationStatusLight.svelte';
 
 	interface ConferenceCardProps {
 		conference: NonNullable<
@@ -111,7 +113,10 @@
 		{/if}
 	</figure>
 	<div class="card-body">
-		<h2 class="card-title mb-2">{conference.title}</h2>
+		<div class="mb-2 flex items-center gap-4">
+			<h2 class="card-title">{conference.title}</h2>
+			<RegistrationStatusLight {registrationStatus} {waitingListStatus} size="xl" />
+		</div>
 		<CardInfoSectionWithIcons items={cardInfoItems()} />
 		<div class="card-actions mt-4 h-full flex-col items-end justify-end">
 			{#if alreadyRegistered && !alwaysEnableButton}

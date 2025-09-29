@@ -5,7 +5,7 @@ export type RegistrationStatus = 'OPEN' | 'CLOSED' | 'WAITING_LIST' | 'NOT_YET_O
 export const getRegistrationStatus = (
 	conferenceState: ConferenceState$options,
 	startAssignment: Date
-) => {
+): RegistrationStatus => {
 	if (conferenceState === 'PRE') {
 		return 'NOT_YET_OPEN';
 	}
