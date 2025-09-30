@@ -35,6 +35,8 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: .trivyignore
+          # don't scan for secrets in PRs
+          scanners: ${{ github.event_name == 'pull_request' && 'vuln,license' || 'vuln,secret,misconfig,license'}}
 
       # TODO: enable if we also plan on building for ARM natively
       # - name: Set up QEMU
@@ -99,8 +101,10 @@ jobs:
           severity: 'CRITICAL,HIGH'
           skip-setup-trivy: true
           trivyignores: .trivyignore
+          scanners: ${{ github.event_name == 'pull_request' && 'vuln,license' || 'vuln,secret,misconfig,license'}}
 
       - name: Publish docker image
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
         with:
           push: true
