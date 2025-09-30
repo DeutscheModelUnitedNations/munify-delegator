@@ -17,27 +17,31 @@
 		}
 	`);
 
+	let isLoading = $state(false);
 	const startImpersonation = async () => {
+		if (isLoading) return;
+		isLoading = true;
 		try {
-			toast
-				.promise(
-					StartImpersonationMutation.mutate({ targetUserId: userId }),
-					genericPromiseToastMessages
-				)
-				.then(() => {
-					goto('/dashboard').then(() => window.location.reload());
-				})
-				.catch((error) => {
-					console.error('Failed to start impersonation:', error);
-				});
+			await toast.promise(
+				StartImpersonationMutation.mutate({ targetUserId: userId }),
+				genericPromiseToastMessages
+			);
+			await goto('/dashboard');
+			window.location.reload();
 		} catch (error) {
 			console.error('Failed to start impersonation:', error);
 			toast.error(m.impersonationFailed({ error: 'Could not start Impersonation' }));
+		} finally {
+			isLoading = false;
 		}
 	};
 </script>
 
-<button class="btn" onclick={startImpersonation}>
-	<i class="fa-duotone fa-user-secret"></i>
+<button class="btn" onclick={startImpersonation} disabled={isLoading}>
+	{#if isLoading}
+		<i class="fa-duotone fa-spinner fa-spin"></i>
+	{:else}
+		<i class="fa-duotone fa-user-secret"></i>
+	{/if}
 	<span class="ml-2">{m.impersonation()}</span>
 </button>

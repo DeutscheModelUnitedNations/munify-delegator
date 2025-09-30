@@ -53,7 +53,7 @@
 </script>
 
 {#if isImpersonating}
-	<div class="alert alert-warning mb-4 gap-4 shadow-lg">
+	<div class="alert alert-warning mb-4 gap-4 shadow-lg" role="status" aria-live="polite">
 		<i class="fa-solid fa-user-secret text-2xl"></i>
 		<div class="text-warning-content w-full flex-1">
 			<div class="font-bold">{m.impersonationActive()}</div>

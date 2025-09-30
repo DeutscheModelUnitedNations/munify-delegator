@@ -22,7 +22,8 @@ export type ImpersonationContext = {
 	isImpersonating: boolean;
 	originalUser?: OIDCUser;
 	impersonatedUser?: OIDCUser;
-	actorInfo?: { iss: string; sub: string };
+	actorInfo?: Record<string, unknown>;
+	startedAt?: Date;
 };
 
 export const tokensCookieName = 'token_set';
