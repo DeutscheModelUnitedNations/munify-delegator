@@ -1,22 +1,22 @@
 {
-	"FA Icon Solid": {
-		"prefix": "<is",
-		"body": "<i class=\"fas fa-$1\"></i>",
-		"description": "Font Awesome Icon Solid"
-	},
 	"FA Icon Duotone": {
-		"prefix": "<ir",
 		"body": "<i class=\"fa-duotone fa-$1\"></i>",
-		"description": "Font Awesome Icon Regular"
+		"description": "Font Awesome Icon Regular",
+		"prefix": "<ir"
 	},
-	"i18n Import": {
-		"prefix": "i18n",
-		"body": "import { m } from '$lib/paraglide/messages';",
-		"description": "Import i18n messages"
+	"FA Icon Solid": {
+		"body": "<i class=\"fas fa-$1\"></i>",
+		"description": "Font Awesome Icon Solid",
+		"prefix": "<is"
 	},
 	"i18n": {
-		"prefix": "m",
 		"body": "{m.$1()}",
-		"description": "i18n message"
+		"description": "i18n message",
+		"prefix": "m"
+	},
+	"i18n Import": {
+		"body": "import { m } from '$lib/paraglide/messages';",
+		"description": "Import i18n messages",
+		"prefix": "i18n"
 	}
 }
