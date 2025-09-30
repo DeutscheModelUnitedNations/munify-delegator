@@ -6,6 +6,7 @@
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import toast from 'svelte-french-toast';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { cache, graphql } from '$houdini';
 
 	let { data }: { data: PageData } = $props();
 
