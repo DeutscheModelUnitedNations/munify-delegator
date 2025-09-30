@@ -742,7 +742,7 @@
 	"willNotBePresentAtConference": "I will not be present at the conference",
 	"years": "Years",
 	"yes": "Yes",
-	"youAreActingAs": "Signed in as: {impersonatedUser} (your account: {originalUser})",
+	"youAreActingAs": "Acting as: {impersonatedUser} (your account: {originalUser})",
 	"youAreAlreadyDelegationMember": "You are already a delegation member in this conference",
 	"youAreAlreadySingleParticipant": "You are already a single participant in this conference",
 	"youAreAlreadySupervisor": "You are already a supervisor in this conference",

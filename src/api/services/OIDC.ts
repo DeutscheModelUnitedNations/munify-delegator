@@ -216,6 +216,24 @@ export async function performTokenExchange(
 		throw new Error('OIDC configuration not initialized');
 	}
 
+	let actor = 'unknown';
+	if (jwks) {
+		try {
+			const { payload } = await jwtVerify(actorToken, jwks);
+			if (payload.sub) {
+				actor = payload.sub;
+			}
+		} catch (err) {
+			console.warn(
+				`Could not determine actor from token for audit purposes: ${
+					err instanceof Error ? err.message : 'Unknown error'
+				}`
+			);
+		}
+	} else {
+		console.warn('No jwks available for decoding actor token for audit purposes.');
+	}
+
 	const tokenExchangeParams: Record<string, string> = {
 		grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
 		subject_token: subjectUserId,
@@ -295,8 +313,21 @@ export async function performTokenExchange(
 		}
 
 		const tokenResponse = await response.json();
+		console.info({
+			event: 'impersonation_attempt',
+			outcome: 'success',
+			actor,
+			subject: subjectUserId
+		});
 		return tokenResponse as TokenEndpointResponse;
 	} catch (error) {
+		console.info({
+			event: 'impersonation_attempt',
+			outcome: 'failure',
+			actor,
+			subject: subjectUserId,
+			reason: error instanceof Error ? error.message : 'Unknown error'
+		});
 		console.error('Token exchange error:', error);
 		throw new Error(
 			`Token exchange failed: ${error instanceof Error ? error.message : 'Unknown error'}`
