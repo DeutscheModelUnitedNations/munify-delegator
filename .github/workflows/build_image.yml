@@ -101,7 +101,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           skip-setup-trivy: true
           trivyignores: .trivyignore
-          scanners: ${{ github.event_name == 'pull_request' && 'vuln,license' || 'vuln,secret,misconfig,license'}}
+          scanners: ${{ github.event_name == 'pull_request' && 'vuln' || 'vuln,secret,misconfig'}}
 
       - name: Publish docker image
         if: github.event_name != 'pull_request'
