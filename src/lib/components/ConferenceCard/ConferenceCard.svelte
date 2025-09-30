@@ -126,7 +126,7 @@
 				</a>
 			{:else if registrationStatus === 'WAITING_LIST'}
 				<a href="{baseSlug}/{conference.id}/waiting-list" class="btn btn-accent">
-					{(btnText ?? waitingListStatus === 'VACANCIES') ? m.vacanciesBtn() : m.waitingListBtn()}
+					{btnText ?? (waitingListStatus === 'VACANCIES' ? m.vacanciesBtn() : m.waitingListBtn())}
 					<i class="fas fa-arrow-right"></i>
 				</a>
 			{:else}
