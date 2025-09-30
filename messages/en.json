@@ -324,7 +324,6 @@
 	"genericToastError": "Error",
 	"genericToastLoading": "Loading...",
 	"genericToastSuccess": "Success",
-	"genericToastSuccess": "Success",
 	"giroCode": "GiroCode",
 	"giroCodeDescription": "Scan the GiroCode with your banking app to pay quickly and easily (might only work from EU Countries with SEPA Transactions).",
 	"givenName": "Given Name",
