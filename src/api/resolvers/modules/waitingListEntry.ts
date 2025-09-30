@@ -1,3 +1,5 @@
+import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
+import { db } from '$db/db';
 import {
 	findManyWaitingListEntryQueryObject,
 	findUniqueWaitingListEntryQueryObject,
@@ -7,8 +9,11 @@ import {
 	WaitingListEntryMotivationFieldObject,
 	WaitingListEntryRequestsFieldObject,
 	WaitingListEntrySchoolFieldObject,
-	WaitingListEntryUserFieldObject
+	WaitingListEntryUserFieldObject,
+	WaitingListEntryCreatedAtFieldObject,
+	createOneWaitingListEntryMutationObject
 } from '$db/generated/graphql/WaitingListEntry';
+import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { builder } from '../builder';
 
 builder.prismaObject('WaitingListEntry', {
@@ -19,7 +24,8 @@ builder.prismaObject('WaitingListEntry', {
 		motivation: t.field(WaitingListEntryMotivationFieldObject),
 		requests: t.field(WaitingListEntryRequestsFieldObject),
 		conference: t.relation('conference', WaitingListEntryConferenceFieldObject),
-		user: t.relation('user', WaitingListEntryUserFieldObject)
+		user: t.relation('user', WaitingListEntryUserFieldObject),
+		createdAt: t.field(WaitingListEntryCreatedAtFieldObject)
 	})
 });
 
@@ -52,6 +58,54 @@ builder.queryFields((t) => {
 				};
 
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = createOneWaitingListEntryMutationObject(t);
+	return {
+		createOneWaitingListEntry: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.id(),
+				motivation: t.arg.string(),
+				school: t.arg.string(),
+				experience: t.arg.string(),
+				requests: t.arg.string({ required: false })
+			},
+			resolve: async (query, root, args, ctx) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				waitingListFormSchema.parse({ ...args, conferenceId: undefined });
+
+				// if the user somehow is already participating in the conference, throw an error
+				await fetchUserParticipations({
+					conferenceId: args.conferenceId,
+					userId: user.sub!,
+					throwIfAnyIsFound: true
+				});
+
+				return await db.waitingListEntry.create({
+					...query,
+					data: {
+						conference: {
+							connect: {
+								id: args.conferenceId
+							}
+						},
+						user: {
+							connect: {
+								id: user.sub!
+							}
+						},
+						motivation: args.motivation,
+						school: args.school,
+						experience: args.experience,
+						requests: args.requests
+					}
+				});
 			}
 		})
 	};

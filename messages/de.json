@@ -758,5 +758,10 @@
 	"yourPreferences": "Deine Auswahl",
 	"yourPreferencesDescription": "Mit den hier aufgelisteten Präferenzen nimmst am Auswahlverfahren teil. Du kannst die Reihenfolge der Präferenzen ändern, indem du auf die Pfeile klickst. Bitte gib mindestens 3 Präferenzen an.",
 	"youWillRepresent": "Du vertrittst",
-	"zipCode": "Postleitzahl"
+	"zipCode": "Postleitzahl",
+	"vacanciesSlashWaitingList": "Restplätze / Warteliste",
+	"vacanciesSlashWaitingListDescription": "Hier kannst du dich auf die Warteliste eintragen. Die Teilnehmendenbetreuung wird sich dann bei dir melden, sobald sie dir einen Platz zuteilen kann.",
+	"anySpecificRequests": "Hast du spezielle Wünsche, was deine Rolle oder dein Gremium angeht?",
+	"anySpecificRequestsDescription": "Bitte beachte, dass jede Einschränkung die Wahrscheinlichkeit verringert, dass du einen Platz bekommst. Bitte lasse das Feld leer, wenn du die besten Chancen haben möchtest, an der Konferenz teilzunehmen.",
+	"answereHereOrLeaveEmpty": "Hier antworten oder leer lassen"
 }

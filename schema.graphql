@@ -1923,6 +1923,7 @@ type Mutation {
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
+  createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -4292,6 +4293,7 @@ input UserWhereUniqueInput {
 """An Entry of a User on a Waiting List for a Conference"""
 type WaitingListEntry {
   conference: Conference!
+  createdAt: DateTime!
   experience: String!
   id: ID!
   motivation: String!

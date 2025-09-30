@@ -758,5 +758,6 @@
 	"yourPreferences": "Your Preferences",
 	"yourPreferencesDescription": "By specifying the preferences listed here, you participate in the selection process. You can change the order of the preferences by clicking on the arrows. Please provide at least 3 preferences.",
 	"youWillRepresent": "You will represent",
-	"zipCode": "ZIP"
+	"zipCode": "ZIP",
+	"vacanciesSlashWaitingList": "Vacancies / Waitinglist"
 }
