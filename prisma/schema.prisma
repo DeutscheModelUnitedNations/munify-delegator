@@ -283,6 +283,7 @@ model CustomConferenceRole {
   name            String
   description     String
   fontAwesomeIcon String?
+  seatAmount      Int     @default(1)
 
   conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String

@@ -1060,6 +1060,7 @@ type CustomConferenceRole {
   fontAwesomeIcon: String
   id: ID!
   name: String!
+  seatAmount: Int!
   singleParticipant: [SingleParticipant!]!
   singleParticipantAssignments: [SingleParticipant!]!
 }
@@ -1076,6 +1077,7 @@ input CustomConferenceRoleCreateInput {
   fontAwesomeIcon: String
   id: String
   name: String!
+  seatAmount: Int
   singleParticipant: SingleParticipantCreateNestedManyWithoutAppliedForRolesInput
   singleParticipantAssignments: SingleParticipantCreateNestedManyWithoutAssignedRoleInput
   updatedAt: DateTime
@@ -1112,6 +1114,7 @@ input CustomConferenceRoleOrderByWithRelationInput {
   fontAwesomeIcon: SortOrder
   id: SortOrder
   name: SortOrder
+  seatAmount: SortOrder
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
   singleParticipantAssignments: SingleParticipantOrderByRelationAggregateInput
   updatedAt: SortOrder
@@ -1124,6 +1127,7 @@ enum CustomConferenceRoleScalarFieldEnum {
   fontAwesomeIcon
   id
   name
+  seatAmount
   updatedAt
 }
 
@@ -1134,6 +1138,7 @@ input CustomConferenceRoleUpdateInput {
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
+  seatAmount: IntFieldUpdateOperationsInput
   singleParticipant: SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput
   singleParticipantAssignments: SingleParticipantUpdateManyWithoutAssignedRoleNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -1145,6 +1150,7 @@ input CustomConferenceRoleUpdateManyMutationInput {
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
+  seatAmount: IntFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -1171,6 +1177,7 @@ input CustomConferenceRoleWhereInput {
   fontAwesomeIcon: StringNullableFilter
   id: StringFilter
   name: StringFilter
+  seatAmount: IntFilter
   singleParticipant: SingleParticipantListRelationFilter
   singleParticipantAssignments: SingleParticipantListRelationFilter
   updatedAt: DateTimeFilter
@@ -1188,6 +1195,7 @@ input CustomConferenceRoleWhereUniqueInput {
   fontAwesomeIcon: StringNullableFilter
   id: String
   name: StringFilter
+  seatAmount: IntFilter
   singleParticipant: SingleParticipantListRelationFilter
   singleParticipantAssignments: SingleParticipantListRelationFilter
   updatedAt: DateTimeFilter

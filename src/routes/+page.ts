@@ -8,7 +8,6 @@ export const _houdini_load = graphql(`
 			location
 			title
 			id
-			startAssignment
 			totalSeats
 			totalParticipants
 			waitingListLength
