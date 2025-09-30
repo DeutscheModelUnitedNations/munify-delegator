@@ -3,6 +3,47 @@ import { performTokenExchange } from '$api/services/OIDC';
 import { impersonationTokenCookieName, type TokenCookieSchemaType } from '$api/context/oidc';
 import { GraphQLError } from 'graphql';
 import { db } from '$db/db';
+import { dev } from '$app/environment';
+import { TeamRole } from '@prisma/client';
+
+const ALLOWED_IMPERSONATION_SCOPES = new Set(['openid', 'profile', 'email', 'offline_access']);
+
+function getImpersonatableUserOrClause(userId: string) {
+	return [
+		// Delegation members from conferences where user is team member
+		{
+			delegationMemberships: {
+				some: {
+					delegation: {
+						conference: {
+							teamMembers: {
+								some: {
+									user: { id: userId },
+									role: { in: [TeamRole.PROJECT_MANAGEMENT, TeamRole.PARTICIPANT_CARE] }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		// Single participants from conferences where user is team member
+		{
+			singleParticipant: {
+				some: {
+					conference: {
+						teamMembers: {
+							some: {
+								user: { id: userId },
+								role: { in: [TeamRole.PROJECT_MANAGEMENT, TeamRole.PARTICIPANT_CARE] }
+							}
+						}
+					}
+				}
+			}
+		}
+	];
+}
 
 builder.queryFields((t) => ({
 	impersonationStatus: t.field({
@@ -13,10 +54,10 @@ builder.queryFields((t) => ({
 					type: t.builder.simpleObject('ImpersonationUser', {
 						fields: (t) => ({
 							sub: t.string(),
-							email: t.string(),
-							preferred_username: t.string(),
-							family_name: t.string(),
-							given_name: t.string()
+							email: t.string({ nullable: true }),
+							preferred_username: t.string({ nullable: true }),
+							family_name: t.string({ nullable: true }),
+							given_name: t.string({ nullable: true })
 						})
 					}),
 					nullable: true
@@ -25,10 +66,10 @@ builder.queryFields((t) => ({
 					type: t.builder.simpleObject('ImpersonatedUser', {
 						fields: (t) => ({
 							sub: t.string(),
-							email: t.string(),
-							preferred_username: t.string(),
-							family_name: t.string(),
-							given_name: t.string()
+							email: t.string({ nullable: true }),
+							preferred_username: t.string({ nullable: true }),
+							family_name: t.string({ nullable: true }),
+							given_name: t.string({ nullable: true })
 						})
 					}),
 					nullable: true
@@ -72,6 +113,10 @@ builder.queryFields((t) => ({
 
 	impersonatableUsers: t.prismaField({
 		type: ['User'],
+		args: {
+			skip: t.arg.int({ required: false }),
+			take: t.arg.int({ required: false })
+		},
 		resolve: async (query, root, args, ctx) => {
 			// Check if user has impersonation permissions
 			const user = ctx.oidc.user;
@@ -79,9 +124,8 @@ builder.queryFields((t) => ({
 				throw new GraphQLError('Not authenticated');
 			}
 
-			// Only admins, project management, and participant care can impersonate
 			const canImpersonate =
-				user.hasRole('admin') || ctx.permissions.abilities.can('impersonate', 'User' as any);
+				user.hasRole('admin') || ctx.permissions.abilities.can('impersonate', 'User');
 
 			if (!canImpersonate) {
 				throw new GraphQLError('No permission to impersonate users');
@@ -91,6 +135,9 @@ builder.queryFields((t) => ({
 			if (user.hasRole('admin')) {
 				return db.user.findMany({
 					...query,
+					skip: args.skip ?? undefined,
+					take: args.take ?? undefined,
+					where: { id: { not: user.sub } },
 					orderBy: { preferred_username: 'asc' }
 				});
 			}
@@ -98,41 +145,11 @@ builder.queryFields((t) => ({
 			// For project management and participant care: return users from their conferences
 			return db.user.findMany({
 				...query,
+				skip: args.skip ?? undefined,
+				take: args.take ?? undefined,
 				where: {
-					OR: [
-						// Delegation members from conferences where user is team member
-						{
-							delegationMemberships: {
-								some: {
-									delegation: {
-										conference: {
-											teamMembers: {
-												some: {
-													user: { id: user.sub },
-													role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
-												}
-											}
-										}
-									}
-								}
-							}
-						},
-						// Single participants from conferences where user is team member
-						{
-							singleParticipant: {
-								some: {
-									conference: {
-										teamMembers: {
-											some: {
-												user: { id: user.sub },
-												role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
-											}
-										}
-									}
-								}
-							}
-						}
-					]
+					id: { not: user.sub },
+					OR: getImpersonatableUserOrClause(user.sub)
 				},
 				orderBy: { preferred_username: 'asc' }
 			});
@@ -166,7 +183,7 @@ builder.mutationFields((t) => ({
 
 			// Check permissions
 			const canImpersonate =
-				user.hasRole('admin') || ctx.permissions.abilities.can('impersonate', 'User' as any);
+				user.hasRole('admin') || ctx.permissions.abilities.can('impersonate', 'User');
 
 			if (!canImpersonate) {
 				throw new GraphQLError('No permission to impersonate users');
@@ -181,45 +198,16 @@ builder.mutationFields((t) => ({
 				throw new GraphQLError('Target user not found');
 			}
 
+			if (args.targetUserId === user.sub) {
+				throw new GraphQLError('Cannot impersonate yourself');
+			}
+
 			// For non-admins, verify they can impersonate this specific user
 			if (!user.hasRole('admin')) {
 				const canImpersonateTarget = await db.user.findFirst({
 					where: {
 						id: args.targetUserId,
-						OR: [
-							// Delegation members from conferences where user is team member
-							{
-								delegationMemberships: {
-									some: {
-										delegation: {
-											conference: {
-												teamMembers: {
-													some: {
-														user: { id: user.sub },
-														role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
-													}
-												}
-											}
-										}
-									}
-								}
-							},
-							// Single participants from conferences where user is team member
-							{
-								singleParticipant: {
-									some: {
-										conference: {
-											teamMembers: {
-												some: {
-													user: { id: user.sub },
-													role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
-												}
-											}
-										}
-									}
-								}
-							}
-						]
+						OR: getImpersonatableUserOrClause(user.sub)
 					}
 				});
 
@@ -231,12 +219,16 @@ builder.mutationFields((t) => ({
 			try {
 				// Use the same scopes as the original user's token for consistency
 				const originalScopes = ctx.oidc.tokenSet.scope || 'openid profile email';
+				const requested = (args.scope || originalScopes).split(/\s+/).filter(Boolean);
+				const sanitizedScopes =
+					requested.filter((s) => ALLOWED_IMPERSONATION_SCOPES.has(s)).join(' ') ||
+					'openid profile email';
 
 				// Perform token exchange
 				const impersonationTokens = await performTokenExchange(
 					ctx.oidc.tokenSet.access_token,
 					args.targetUserId,
-					args.scope || originalScopes
+					sanitizedScopes
 				);
 
 				// Store impersonation tokens in cookie
@@ -268,9 +260,17 @@ builder.mutationFields((t) => ({
 					console.error('🍪 Failed to set cookie - no event.cookies available');
 				}
 
-				console.log(
-					`User ${user.email} (${user.sub}) started impersonating user ${targetUser.email} (${targetUser.id})`
-				);
+				console.info({
+					event: 'impersonation_started',
+					actor: {
+						id: user.sub,
+						email: user.email
+					},
+					target: {
+						id: targetUser.id,
+						email: targetUser.email
+					}
+				});
 
 				return true;
 			} catch (error) {
@@ -291,16 +291,28 @@ builder.mutationFields((t) => ({
 
 			const event = ctx.event;
 			if (event?.cookies) {
-				event.cookies.delete(impersonationTokenCookieName, { path: '/' });
+				event.cookies.delete(impersonationTokenCookieName, {
+					path: '/',
+					secure: !dev,
+					sameSite: dev ? 'lax' : 'strict'
+				});
 			}
 
 			const originalUser = ctx.oidc.impersonation?.originalUser;
 			const impersonatedUser = ctx.oidc.impersonation?.impersonatedUser;
 
 			if (originalUser && impersonatedUser) {
-				console.log(
-					`User ${originalUser.preferred_username} (${originalUser.sub}) stopped impersonating user ${impersonatedUser.preferred_username} (${impersonatedUser.sub})`
-				);
+				console.info({
+					event: 'impersonation_stopped',
+					actor: {
+						id: originalUser.sub,
+						username: originalUser.preferred_username
+					},
+					target: {
+						id: impersonatedUser.sub,
+						username: impersonatedUser.preferred_username
+					}
+				});
 			}
 
 			return true;
