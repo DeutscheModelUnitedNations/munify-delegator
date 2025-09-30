@@ -30,7 +30,7 @@
 			window.location.reload();
 		} catch (error) {
 			console.error('Failed to start impersonation:', error);
-			toast.error(m.impersonationFailed({ error: 'Could not start Impersonation' }));
+			toast.error(m.impersonationFailed());
 		} finally {
 			isLoading = false;
 		}

@@ -374,7 +374,7 @@
 	"ibanMustBe22Characters": "IBAN must be 22 characters without spaces",
 	"impersonation": "Impersonation",
 	"impersonationActive": "Impersonation active",
-	"impersonationFailed": "Impersonation failed: {error}",
+	"impersonationFailed": "Impersonation failed",
 	"import": "Import",
 	"importDescription": "Here you can import various types of data into the application. Please note that some steps are irreversible and are only available to admins or other specific user groups.",
 	"importPresenceData": "Import Attendance Data",

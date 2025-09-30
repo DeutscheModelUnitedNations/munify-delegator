@@ -252,9 +252,12 @@ export async function performTokenExchange(
 	}
 
 	try {
+		// Add a timeout so the token exchange does not hang indefinitely
+		const signal = AbortSignal.timeout(10_000); // 10s timeout
 		const response = await fetch(config.serverMetadata().token_endpoint!, {
 			method: 'POST',
 			headers: {
+				Accept: 'application/json',
 				'Content-Type': 'application/x-www-form-urlencoded',
 				...(configPrivate.OIDC_CLIENT_SECRET
 					? {
@@ -267,7 +270,8 @@ export async function performTokenExchange(
 				...(configPrivate.OIDC_CLIENT_SECRET
 					? {}
 					: { client_id: configPublic.PUBLIC_OIDC_CLIENT_ID })
-			})
+			}),
+			signal
 		});
 
 		if (!response.ok) {
@@ -303,7 +307,8 @@ export async function performTokenExchange(
 				error: errorDetail,
 				tokenExchangeParams: {
 					...tokenExchangeParams,
-					actor_token: '[REDACTED]'
+					actor_token: '[REDACTED]',
+					subject_token: '[REDACTED]'
 				}
 			});
 

@@ -374,7 +374,7 @@
 	"ibanMustBe22Characters": "IBAN muss 22 Zeichen ohne Leerzeichen haben",
 	"impersonation": "Stellvertretung",
 	"impersonationActive": "Stellvertretung aktiv",
-	"impersonationFailed": "Stellvertretung fehlgeschlagen: {error}",
+	"impersonationFailed": "Stellvertretung fehlgeschlagen",
 	"import": "Import",
 	"importDescription": "Hier kannst du verschiedene Arten von Daten in die Anwendung importieren. Bitte beachte, dass einige Schritte nicht rückgängig gemacht werden können und nur für Admins oder andere spezifische Usergruppen verfügbar sind!",
 	"importPresenceData": "Präsenzdaten importieren",
