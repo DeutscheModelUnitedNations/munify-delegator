@@ -21,6 +21,7 @@ export const _houdini_load = graphql(`
 			name
 			description
 			fontAwesomeIcon
+			seatAmount
 		}
 		findManyDelegations(where: { conferenceId: { equals: $conferenceId } }) {
 			id
@@ -68,6 +69,7 @@ export const _houdini_load = graphql(`
 				name
 				description
 				fontAwesomeIcon
+				seatAmount
 			}
 		}
 		findManyConferenceSupervisors(

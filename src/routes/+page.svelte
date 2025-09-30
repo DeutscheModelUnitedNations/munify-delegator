@@ -8,6 +8,8 @@
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import { configPublic } from '$config/public';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import { addToPanel } from 'svelte-inspect-value';
+	import ConferenceStatusLight from './ConferenceStatusLight.svelte';
 
 	const munSh = {
 		name: 'MUN-SH',
@@ -30,20 +32,12 @@
 	};
 
 	let { data }: { data: PageData } = $props();
-	let { ConferencesPreview } = $derived(data);
+	let conferencesPreview = $derived(data.ConferencesPreview);
+	let conferenceList = $derived($conferencesPreview.data.findManyConferences);
 
-	const openRegistrations = $derived(
-		$ConferencesPreview.data?.findManyConferences
-			.filter((c) => {
-				return (
-					c.state === 'PARTICIPANT_REGISTRATION' &&
-					new Date(c.startAssignment).getTime() > new Date().getTime()
-				);
-			})
-			.sort(
-				(a, b) => new Date(b.startAssignment!).getTime() - new Date(a.startAssignment!).getTime()
-			) ?? []
-	);
+	let conferencesToDisplay = $derived(conferenceList);
+
+	addToPanel('cP', () => conferenceList);
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
@@ -65,19 +59,11 @@
 				btnLink="/registration"
 			>
 				<p>{m.homeRegistrationSub()}</p>
-				{#if openRegistrations.length > 0}
-					<div class="mt-4 flex flex-col gap-2">
-						{#each openRegistrations as conference}
-							<div class="flex items-center gap-2">
-								<div class="inline-grid *:[grid-area:1/1]">
-									<div class="status status-success status-lg animate-ping"></div>
-									<div class="status status-success status-lg"></div>
-								</div>
-								{conference.title}
-							</div>
-						{/each}
+				{#each conferencesToDisplay as conference (conference.id)}
+					<div class="mt-2 flex flex-col">
+						<ConferenceStatusLight {conference} />
 					</div>
-				{/if}
+				{/each}
 			</UndrawCard>
 
 			<UndrawCard

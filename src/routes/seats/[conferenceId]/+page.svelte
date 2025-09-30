@@ -15,6 +15,10 @@
 	const nationPool = $derived(getUniqueNations(committees));
 </script>
 
+<svelte:head>
+	<title>{conference.title} – {m.conferenceSeats()}</title>
+</svelte:head>
+
 <div class="bg-base-200 flex w-full flex-col items-center p-4 md:p-10">
 	<div class="flex w-full max-w-6xl flex-col items-center gap-10">
 		<div class="text-center">

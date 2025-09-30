@@ -32,6 +32,7 @@ import './modules/assignments';
 import './modules/surveyQuestion';
 import './modules/surveyOption';
 import './modules/surveyAnswer';
+import './modules/waitingListEntry';
 
 export const yogaInstance = createYoga<RequestEvent>({
 	plugins: [graphqlYogaTracerPlugin],

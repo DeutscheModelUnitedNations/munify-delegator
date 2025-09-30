@@ -18,6 +18,9 @@ export const _houdini_load = graphql(`
 			endConference
 			imageDataURL
 			language
+			totalSeats
+			totalParticipants
+			waitingListLength
 		}
 		findManyDelegationMembers(where: { userId: { equals: $userId } }) {
 			conference {
