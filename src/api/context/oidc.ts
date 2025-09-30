@@ -102,32 +102,16 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 	let impersonationContext: ImpersonationContext = { isImpersonating: false };
 
 	const impersonationCookie = cookies.get(impersonationTokenCookieName);
-	console.log('🔍 Checking impersonation cookie:', {
-		hasCookie: !!impersonationCookie,
-		cookieLength: impersonationCookie?.length,
-		hasUser: !!user
-	});
 
 	if (impersonationCookie && user) {
-		console.log('🔍 Processing impersonation cookie...');
 		try {
-			const impersonationTokenSet = await TokenCookieSchema.safeParse(
-				JSON.parse(impersonationCookie)
-			);
-			console.log('🔍 Token validation result:', {
-				success: impersonationTokenSet.success,
-				hasAccessToken: impersonationTokenSet.success
-					? !!impersonationTokenSet.data.access_token
-					: false
-			});
+			const impersonationTokenSet = TokenCookieSchema.safeParse(JSON.parse(impersonationCookie));
 
 			if (impersonationTokenSet.success && impersonationTokenSet.data.access_token) {
-				console.log('🔍 Validating impersonation tokens...');
 				const impersonatedUser = await validateTokens({
 					access_token: impersonationTokenSet.data.access_token,
 					id_token: impersonationTokenSet.data.id_token
 				});
-				console.log('🔍 Impersonated user validated:', { sub: impersonatedUser?.sub });
 
 				// Extract actor information from the JWT token
 				const actorInfo = (impersonatedUser as any).act;
@@ -157,7 +141,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 					return impersonatedOIDCRoleNames.includes(role);
 				};
 
-				console.log('🎭 Impersonation active:', {
+				console.info('🎭 Impersonation active:', {
 					originalUser: impersonationContext?.originalUser?.sub,
 					impersonatedUser: impersonatedUser.sub,
 					originalRoles: OIDCRoleNames,

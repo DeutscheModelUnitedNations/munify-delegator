@@ -251,11 +251,6 @@ builder.mutationFields((t) => ({
 				};
 
 				const event = ctx.event;
-				console.log('🍪 Setting impersonation cookie:', {
-					hasEvent: !!event,
-					hasCookies: !!event?.cookies,
-					cookieValue: JSON.stringify(impersonationCookieValue)
-				});
 
 				if (event?.cookies) {
 					event.cookies.set(
@@ -269,13 +264,12 @@ builder.mutationFields((t) => ({
 							maxAge: impersonationTokens.expires_in ? impersonationTokens.expires_in : 3600 // 1 hour default
 						}
 					);
-					console.log('🍪 Cookie set successfully');
 				} else {
 					console.error('🍪 Failed to set cookie - no event.cookies available');
 				}
 
 				console.log(
-					`User ${user.preferred_username} (${user.sub}) started impersonating user ${targetUser.preferred_username} (${targetUser.id})`
+					`User ${user.email} (${user.sub}) started impersonating user ${targetUser.email} (${targetUser.id})`
 				);
 
 				return true;
