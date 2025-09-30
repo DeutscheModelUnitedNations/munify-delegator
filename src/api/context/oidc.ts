@@ -29,6 +29,16 @@ export type ImpersonationContext = {
 export const tokensCookieName = 'token_set';
 export const impersonationTokenCookieName = 'impersonation_token_set';
 
+/**
+ * Builds an OIDC context from request cookies: validates or refreshes tokens, extracts roles, and handles optional impersonation.
+ *
+ * @param cookies - The request cookie store used to read and set token cookies
+ * @returns An object containing:
+ *  - `nextTokenRefreshDue`: a `Date` when the access token will expire, or `undefined`
+ *  - `tokenSet`: the token cookie contents matching `TokenCookieSchemaType`, or `undefined`
+ *  - `user`: the validated OIDC user augmented with `hasRole` and `OIDCRoleNames`, or `undefined`
+ *  - `impersonation`: an `ImpersonationContext` describing impersonation state
+ */
 export async function oidc(cookies: RequestEvent['cookies']) {
 	const cookie = cookies.get(tokensCookieName);
 	if (!cookie) {

@@ -202,10 +202,27 @@ export function getLogoutUrl(visitedUrl: URL) {
 	});
 }
 
+/**
+ * Retrieve user information for an access token from the issuer.
+ *
+ * @param access_token - The access token presented to the issuer's userinfo endpoint
+ * @param expectedSubject - The expected `sub` (subject) to validate against the issuer's response
+ * @returns The user info object returned by the issuer
+ */
 export function fetchUserInfoFromIssuer(access_token: string, expectedSubject: string) {
 	return fetchUserInfo(config, access_token, expectedSubject);
 }
 
+/**
+ * Perform an OAuth 2.0 Token Exchange to obtain a JWT for acting as a specified subject.
+ *
+ * @param actorToken - The actor's access token used to authorize the exchange.
+ * @param subjectUserId - The user identifier of the subject to impersonate (subject token).
+ * @param scope - Optional scope to request for the exchanged token.
+ * @param audience - Optional audience to request for the exchanged token.
+ * @returns The token endpoint response from the issuer as a `TokenEndpointResponse`.
+ * @throws When the OIDC configuration is not initialized, when the token endpoint returns an error (includes provider error details when available), or when the exchange request fails or times out.
+ */
 export async function performTokenExchange(
 	actorToken: string,
 	subjectUserId: string,
