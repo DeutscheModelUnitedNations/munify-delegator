@@ -117,11 +117,51 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				// Extract actor information from the JWT token
 				const actorInfo = (impersonatedUser as any).act;
 
+				// Security: verify the impersonation token was actually issued for the currently authenticated actor (original user)
+				const actorSub =
+					actorInfo && typeof actorInfo === 'object'
+						? actorInfo.sub || actorInfo.subject || (actorInfo as any)['urn:zitadel:act:sub']
+						: undefined;
+
+				if (!actorSub) {
+					console.warn(
+						'Security: Impersonation token missing actor (act.sub) claim. Aborting impersonation.'
+					);
+					// Defensive: clear cookie so we do not repeatedly parse invalid token
+					cookies.delete(impersonationTokenCookieName, { path: '/' });
+					return {
+						nextTokenRefreshDue: tokenSet.expires_in
+							? new Date(Date.now() + tokenSet.expires_in * 1000)
+							: undefined,
+						tokenSet,
+						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+						impersonation: impersonationContext
+					};
+				}
+
+				if (actorSub !== user.sub) {
+					console.warn('Security: Actor mismatch in impersonation token. Aborting impersonation.', {
+						actorSub,
+						currentUserSub: user.sub
+					});
+					// Clear cookie to prevent repeated attempts with a mismatched token
+					cookies.delete(impersonationTokenCookieName, { path: '/' });
+					return {
+						nextTokenRefreshDue: tokenSet.expires_in
+							? new Date(Date.now() + tokenSet.expires_in * 1000)
+							: undefined,
+						tokenSet,
+						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+						impersonation: impersonationContext
+					};
+				}
+
 				impersonationContext = {
 					isImpersonating: true,
 					originalUser: user,
 					impersonatedUser: impersonatedUser,
-					actorInfo: actorInfo
+					actorInfo: actorInfo,
+					startedAt: new Date()
 				};
 
 				// When impersonating, we use the impersonated user's details but keep original user as reference

@@ -158,7 +158,7 @@ builder.mutationFields((t) => ({
 			}
 
 			// Check if already impersonating
-			if (ctx.oidc.impersonation.isImpersonating) {
+			if (ctx.oidc.impersonation?.isImpersonating) {
 				throw new GraphQLError(
 					'Already impersonating a user. Please stop current impersonation first.'
 				);
