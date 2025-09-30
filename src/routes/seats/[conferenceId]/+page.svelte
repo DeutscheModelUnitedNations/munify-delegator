@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { addToPanel } from 'svelte-inspect-value';
 	import type { PageData } from './$houdini';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';

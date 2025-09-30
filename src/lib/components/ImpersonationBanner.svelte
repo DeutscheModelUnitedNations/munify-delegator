@@ -4,7 +4,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import toast from 'svelte-french-toast';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	const checkImpersonationStatusQuery = graphql(`
 		query checkImpersonationStatus {
@@ -27,8 +26,6 @@
 			stopImpersonation
 		}
 	`);
-
-	addToPanel('imp', () => $checkImpersonationStatusQuery);
 
 	let status = $derived($checkImpersonationStatusQuery?.data?.impersonationStatus);
 	let isImpersonating = $derived(status?.isImpersonating || false);

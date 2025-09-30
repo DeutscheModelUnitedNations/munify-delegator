@@ -3,8 +3,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';
-	import { addToPanel } from 'svelte-inspect-value';
-	import { cache, graphql } from '$houdini';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import toast from 'svelte-french-toast';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -63,10 +61,6 @@
 			});
 		}
 	});
-
-	addToPanel('Data', () => data);
-	addToPanel('ConnectionCode', () => $code);
-	addToPanel('Query', () => $previewSupervisorQuery);
 </script>
 
 <div class="flex w-full flex-col gap-4">
