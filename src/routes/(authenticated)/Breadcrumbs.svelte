@@ -26,7 +26,7 @@
 
 	const breadcrumbs: { [key: string]: LocalizedBreadcrumb } = {
 		management: {
-			translation: m.admininstration(),
+			translation: m.administration(),
 			icon: 'bars-progress'
 		},
 		conferenceId: {

@@ -40,7 +40,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 		return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
 	}
 
-	const tokenSet = tokenSetRaw.data;
+	let tokenSet = tokenSetRaw.data;
 
 	if (!tokenSet.access_token) {
 		console.error('Incoming token set did not provide an access token!');
@@ -77,8 +77,21 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				httpOnly: true,
 				secure: true,
 				sameSite: 'lax',
-				maxAge: tokenSet.expires_in ? tokenSet.expires_in : undefined
+				maxAge: refreshed.expires_in ?? undefined
 			});
+
+			// Make refreshed token set effective for the rest of this request lifecycle
+			tokenSet = cookieValue;
+
+			try {
+				user = await validateTokens({
+					access_token: refreshed.access_token,
+					id_token: refreshed.id_token
+				});
+			} catch (e) {
+				console.warn('Refreshed tokens failed validation', e);
+				return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
+			}
 		} catch (error) {
 			console.warn(`Failed to refresh tokens`, error);
 			return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };

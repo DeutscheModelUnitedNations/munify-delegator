@@ -75,11 +75,11 @@
 			bind:value={$code}
 		/>
 
-		{#if $previewSupervisorQuery.fetching}
+		{#if $code && $previewSupervisorQuery.fetching}
 			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
-		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}
+		{:else if $code && $previewSupervisorQuery.data?.previewConferenceSupervisor}
 			<div class="alert alert-info mt-4">
 				<div>
 					<h3 class="text-lg font-bold capitalize">
