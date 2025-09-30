@@ -20,7 +20,6 @@ export const _houdini_load = graphql(`
 			language
 			totalSeats
 			totalParticipants
-			state
 			waitingListLength
 		}
 		findManyDelegationMembers(where: { userId: { equals: $userId } }) {

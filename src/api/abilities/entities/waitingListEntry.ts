@@ -18,15 +18,13 @@ export const defineAbilitiesForWaitingListEntry = (
 
 		// team members should be able to edit the WaitingListEntry of their conferences
 		can(['read', 'list', 'update', 'delete'], 'WaitingListEntry', {
-			question: {
-				conference: {
-					teamMembers: {
-						some: {
-							user: {
-								id: user.sub
-							},
-							role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
-						}
+			conference: {
+				teamMembers: {
+					some: {
+						user: {
+							id: user.sub
+						},
+						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
 					}
 				}
 			}

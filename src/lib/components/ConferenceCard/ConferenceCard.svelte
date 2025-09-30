@@ -125,7 +125,7 @@
 					<i class="fas fa-arrow-right"></i>
 				</a>
 			{:else if registrationStatus === 'OPEN' || alwaysEnableButton}
-				<a href="${baseSlug}/${conference.id}" class="btn btn-primary">
+				<a href="{baseSlug}/{conference.id}" class="btn btn-primary">
 					{btnText ?? m.signup()}
 					<i class="fas fa-arrow-right"></i>
 				</a>

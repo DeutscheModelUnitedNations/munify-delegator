@@ -4292,6 +4292,11 @@ type WaitingListEntry {
   user: User!
 }
 
+input WaitingListEntryConferenceIdUserIdCompoundUniqueInput {
+  conferenceId: String!
+  userId: String!
+}
+
 input WaitingListEntryCreateInput {
   conferenceId: String!
   createdAt: DateTime
@@ -4405,6 +4410,7 @@ input WaitingListEntryWhereUniqueInput {
   OR: [WaitingListEntryWhereInput!]
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  conferenceId_userId: WaitingListEntryConferenceIdUserIdCompoundUniqueInput
   createdAt: DateTimeFilter
   experience: StringFilter
   id: String
