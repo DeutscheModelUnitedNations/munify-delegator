@@ -5,7 +5,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	interface Props {
 		supervisors: NonNullable<
@@ -15,8 +14,6 @@
 	}
 
 	let { supervisors, conferenceId }: Props = $props();
-
-	addToPanel('supervisors', () => supervisors);
 </script>
 
 <DashboardContentCard title={m.supervisors()} description={m.addSupervisorsDescription()}>

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { oidcRoles, refresh, validateTokens } from '$api/services/OIDC';
+import { oidcRoles, refresh, validateTokens, type OIDCUser } from '$api/services/OIDC';
 import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
@@ -18,8 +18,27 @@ const TokenCookieSchema = z
 
 export type TokenCookieSchemaType = z.infer<typeof TokenCookieSchema>;
 
-export const tokensCookieName = 'token_set';
+export type ImpersonationContext = {
+	isImpersonating: boolean;
+	originalUser?: OIDCUser;
+	impersonatedUser?: OIDCUser;
+	actorInfo?: Record<string, unknown>;
+	startedAt?: Date;
+};
 
+export const tokensCookieName = 'token_set';
+export const impersonationTokenCookieName = 'impersonation_token_set';
+
+/**
+ * Builds an OIDC context from request cookies: validates or refreshes tokens, extracts roles, and handles optional impersonation.
+ *
+ * @param cookies - The request cookie store used to read and set token cookies
+ * @returns An object containing:
+ *  - `nextTokenRefreshDue`: a `Date` when the access token will expire, or `undefined`
+ *  - `tokenSet`: the token cookie contents matching `TokenCookieSchemaType`, or `undefined`
+ *  - `user`: the validated OIDC user augmented with `hasRole` and `OIDCRoleNames`, or `undefined`
+ *  - `impersonation`: an `ImpersonationContext` describing impersonation state
+ */
 export async function oidc(cookies: RequestEvent['cookies']) {
 	const cookie = cookies.get(tokensCookieName);
 	if (!cookie) {
@@ -31,7 +50,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 		return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
 	}
 
-	const tokenSet = tokenSetRaw.data;
+	let tokenSet = tokenSetRaw.data;
 
 	if (!tokenSet.access_token) {
 		console.error('Incoming token set did not provide an access token!');
@@ -68,8 +87,21 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				httpOnly: true,
 				secure: true,
 				sameSite: 'lax',
-				maxAge: tokenSet.expires_in ? tokenSet.expires_in : undefined
+				maxAge: refreshed.expires_in ?? undefined
 			});
+
+			// Make refreshed token set effective for the rest of this request lifecycle
+			tokenSet = cookieValue;
+
+			try {
+				user = await validateTokens({
+					access_token: refreshed.access_token,
+					id_token: refreshed.id_token
+				});
+			} catch (e) {
+				console.warn('Refreshed tokens failed validation', e);
+				return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
+			}
 		} catch (error) {
 			console.warn(`Failed to refresh tokens`, error);
 			return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
@@ -90,12 +122,121 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 		return OIDCRoleNames.includes(role);
 	};
 
+	// Check for impersonation
+	let impersonationContext: ImpersonationContext = { isImpersonating: false };
+
+	const impersonationCookie = cookies.get(impersonationTokenCookieName);
+
+	if (impersonationCookie && user) {
+		try {
+			const impersonationTokenSet = TokenCookieSchema.safeParse(JSON.parse(impersonationCookie));
+
+			if (impersonationTokenSet.success && impersonationTokenSet.data.access_token) {
+				const impersonatedUser = await validateTokens({
+					access_token: impersonationTokenSet.data.access_token,
+					id_token: impersonationTokenSet.data.id_token
+				});
+
+				// Extract actor information from the JWT token
+				const actorInfo = (impersonatedUser as any).act;
+
+				// Security: verify the impersonation token was actually issued for the currently authenticated actor (original user)
+				const actorSub =
+					actorInfo && typeof actorInfo === 'object'
+						? actorInfo.sub || actorInfo.subject || (actorInfo as any)['urn:zitadel:act:sub']
+						: undefined;
+
+				if (!actorSub) {
+					console.warn(
+						'Security: Impersonation token missing actor (act.sub) claim. Aborting impersonation.'
+					);
+					// Defensive: clear cookie so we do not repeatedly parse invalid token
+					cookies.delete(impersonationTokenCookieName, { path: '/' });
+					return {
+						nextTokenRefreshDue: tokenSet.expires_in
+							? new Date(Date.now() + tokenSet.expires_in * 1000)
+							: undefined,
+						tokenSet,
+						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+						impersonation: impersonationContext
+					};
+				}
+
+				if (actorSub !== user.sub) {
+					console.warn('Security: Actor mismatch in impersonation token. Aborting impersonation.', {
+						actorSub,
+						currentUserSub: user.sub
+					});
+					// Clear cookie to prevent repeated attempts with a mismatched token
+					cookies.delete(impersonationTokenCookieName, { path: '/' });
+					return {
+						nextTokenRefreshDue: tokenSet.expires_in
+							? new Date(Date.now() + tokenSet.expires_in * 1000)
+							: undefined,
+						tokenSet,
+						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+						impersonation: impersonationContext
+					};
+				}
+
+				impersonationContext = {
+					isImpersonating: true,
+					originalUser: user,
+					impersonatedUser: impersonatedUser,
+					actorInfo: actorInfo,
+					startedAt: new Date()
+				};
+
+				// When impersonating, we use the impersonated user's details but keep original user as reference
+				user = impersonatedUser;
+
+				// Update role information for impersonated user
+				const impersonatedOIDCRoleNames: (typeof oidcRoles)[number][] = [];
+				if (impersonatedUser && configPrivate.OIDC_ROLE_CLAIM) {
+					const impersonatedRolesRaw = impersonatedUser[configPrivate.OIDC_ROLE_CLAIM]!;
+					if (impersonatedRolesRaw) {
+						const impersonatedRoleNames = Object.keys(impersonatedRolesRaw);
+						impersonatedOIDCRoleNames.push(...(impersonatedRoleNames as any));
+					}
+				}
+
+				// Override role functions for impersonated user
+				const impersonatedHasRole = (role: (typeof impersonatedOIDCRoleNames)[number]) => {
+					return impersonatedOIDCRoleNames.includes(role);
+				};
+
+				console.info('🎭 Impersonation active:', {
+					originalUser: impersonationContext?.originalUser?.sub,
+					impersonatedUser: impersonatedUser.sub,
+					originalRoles: OIDCRoleNames,
+					impersonatedRoles: impersonatedOIDCRoleNames
+				});
+
+				return {
+					nextTokenRefreshDue: tokenSet.expires_in
+						? new Date(Date.now() + tokenSet.expires_in * 1000)
+						: undefined,
+					tokenSet,
+					user: user
+						? { ...user, hasRole: impersonatedHasRole, OIDCRoleNames: impersonatedOIDCRoleNames }
+						: undefined,
+					impersonation: impersonationContext
+				};
+			}
+		} catch (error) {
+			console.warn('Failed to process impersonation token:', error);
+			// Clear invalid impersonation cookie
+			cookies.delete(impersonationTokenCookieName, { path: '/' });
+		}
+	}
+
 	return {
 		nextTokenRefreshDue: tokenSet.expires_in
 			? new Date(Date.now() + tokenSet.expires_in * 1000)
 			: undefined,
 		tokenSet,
-		user: user ? { ...user, hasRole, OIDCRoleNames } : undefined
+		user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+		impersonation: impersonationContext
 	};
 }
 

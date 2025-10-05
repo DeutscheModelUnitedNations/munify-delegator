@@ -7,8 +7,12 @@ const schema = z.object({
 	OIDC_CLIENT_SECRET: z.optional(z.string()),
 	OIDC_SCOPES: z
 		.string()
-		.default(
-			'openid profile offline_access address email family_name gender given_name locale name phone preferred_username urn:zitadel:iam:org:projects:roles urn:zitadel:iam:user:metadata'
+		.transform((v) => v.trim())
+		.refine((v) => v.length > 0, 'OIDC_SCOPES must be set')
+		.refine((v) => v.split(/\s+/).includes('openid'), 'OIDC_SCOPES must include "openid"')
+		.refine(
+			(v) => v.split(/\s+/).includes('offline_access'),
+			'OIDC_SCOPES must include "offline_access"'
 		),
 	OIDC_ROLE_CLAIM: z.string().nullish(),
 	SECRET: z.string(),

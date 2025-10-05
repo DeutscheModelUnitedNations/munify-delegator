@@ -347,7 +347,7 @@
 			<FormFile
 				{form}
 				name="certificateBasePDF"
-				label={m.CertifiacteTemplate()}
+				label={m.certificateTemplate()}
 				accept="*.pdf"
 				inputClass={data.certificateContentSet ? 'file-input-success' : undefined}
 			/>

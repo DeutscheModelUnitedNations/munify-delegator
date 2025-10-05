@@ -7,7 +7,6 @@
 	import NationsWithCommitteesTable from './NationsWithCommitteesTable.svelte';
 	import PoolSorting from './PoolSorting.svelte';
 	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
-	import { addToPanel } from 'svelte-inspect-value';
 	import { m } from '$lib/paraglide/messages';
 
 	type Committee = NonNullable<
@@ -93,9 +92,6 @@
 			sortedNationPool = res;
 		}
 	});
-
-	addToPanel('filter', () => activeFilter);
-	addToPanel('filterOptions', () => filterOptions);
 </script>
 
 <div class="flex w-full flex-col items-center">

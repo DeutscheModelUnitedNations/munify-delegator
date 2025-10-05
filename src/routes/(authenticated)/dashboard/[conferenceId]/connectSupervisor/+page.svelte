@@ -3,11 +3,10 @@
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';
-	import { addToPanel } from 'svelte-inspect-value';
-	import { cache, graphql } from '$houdini';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import toast from 'svelte-french-toast';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { cache, graphql } from '$houdini';
 
 	let { data }: { data: PageData } = $props();
 
@@ -63,10 +62,6 @@
 			});
 		}
 	});
-
-	addToPanel('Data', () => data);
-	addToPanel('ConnectionCode', () => $code);
-	addToPanel('Query', () => $previewSupervisorQuery);
 </script>
 
 <div class="flex w-full flex-col gap-4">
@@ -80,11 +75,11 @@
 			bind:value={$code}
 		/>
 
-		{#if $previewSupervisorQuery.fetching}
+		{#if $code && $previewSupervisorQuery.fetching}
 			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
-		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}
+		{:else if $code && $previewSupervisorQuery.data?.previewConferenceSupervisor}
 			<div class="alert alert-info mt-4">
 				<div>
 					<h3 class="text-lg font-bold capitalize">

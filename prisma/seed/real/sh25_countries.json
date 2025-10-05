@@ -1,7 +1,7 @@
 [
 	{
-		"name": "Generalversammlung",
 		"abbreviation": "GV",
+		"name": "Generalversammlung",
 		"nations": [
 			"EG",
 			"DZ",
@@ -104,8 +104,8 @@
 		]
 	},
 	{
-		"name": "Wirtschafts- und Sozialrat",
 		"abbreviation": "WiSo",
+		"name": "Wirtschafts- und Sozialrat",
 		"nations": [
 			"DZ",
 			"GA",
@@ -166,8 +166,8 @@
 		]
 	},
 	{
-		"name": "Sicherheitsrat",
 		"abbreviation": "SR",
+		"name": "Sicherheitsrat",
 		"nations": [
 			"DZ",
 			"SL",
@@ -187,8 +187,8 @@
 		]
 	},
 	{
-		"name": "Internationale Seeschifffahrtsorganisation",
 		"abbreviation": "IMO",
+		"name": "Internationale Seeschifffahrtsorganisation",
 		"nations": [
 			"EG",
 			"KE",
@@ -249,8 +249,8 @@
 		]
 	},
 	{
-		"name": "Menschenrechtsrat",
 		"abbreviation": "MRR",
+		"name": "Menschenrechtsrat",
 		"nations": [
 			"DZ",
 			"BI",
@@ -291,8 +291,8 @@
 		]
 	},
 	{
-		"name": "Kommission für Friedenskonsolidierung",
 		"abbreviation": "KFK",
+		"name": "Kommission für Friedenskonsolidierung",
 		"nations": [
 			"EG",
 			"CG",
@@ -333,8 +333,8 @@
 		]
 	},
 	{
-		"name": "Regionalkommission Lateinamerika",
 		"abbreviation": "RKL",
+		"name": "Regionalkommission Lateinamerika",
 		"nations": [
 			"KR",
 			"AR",

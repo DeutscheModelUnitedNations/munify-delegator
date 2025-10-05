@@ -1,88 +1,88 @@
 {
-	"editor.suggest.showReferences": false,
-	"files.eol": "\n",
-	"vscodeGitCommit.template": ["{prefix}: {message}"],
 	"[javascript]": {},
+	"css.customData": [".vscode/tailwind.json"],
 	"editor.codeActionsOnSave": {},
+	"editor.suggest.showReferences": false,
+	"editor.tabSize": 2,
+	"files.eol": "\n",
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"vscodeGitCommit.template": ["{prefix}: {message}"],
 	"vscodeGitCommit.variables": {
 		"prefix": [
 			{
-				"label": "✨ feat",
-				"detail": "A new feature"
+				"detail": "A new feature",
+				"label": "✨ feat"
 			},
 			{
-				"label": "⬆️ improvement",
-				"detail": "An improvement of an existing feature"
+				"detail": "An improvement of an existing feature",
+				"label": "⬆️ improvement"
 			},
 			{
-				"label": "🐞 fix",
-				"detail": "A bugfix"
+				"detail": "A bugfix",
+				"label": "🐞 fix"
 			},
 			{
-				"label": "🎨 style",
-				"detail": "Stylistic changes to the App"
+				"detail": "Stylistic changes to the App",
+				"label": "🎨 style"
 			},
 			{
-				"label": "🗺️ i18n",
-				"detail": "Make changes to the Internationalization files"
+				"detail": "Make changes to the Internationalization files",
+				"label": "🗺️ i18n"
 			},
 			{
-				"label": "🚧 wip",
-				"detail": "Work in progress"
+				"detail": "Work in progress",
+				"label": "🚧 wip"
 			},
 			{
-				"label": "🧼 format & lint",
-				"detail": "Formatting and linting changes"
+				"detail": "Formatting and linting changes",
+				"label": "🧼 format & lint"
 			},
 			{
-				"label": "🔤 typing",
-				"detail": "Changes to fulfill typing requirements"
+				"detail": "Changes to fulfill typing requirements",
+				"label": "🔤 typing"
 			},
 			{
-				"label": "📚 docs",
-				"detail": "A documentation update"
+				"detail": "A documentation update",
+				"label": "📚 docs"
 			},
 			{
-				"label": "🚀 perf",
-				"detail": "A code change that improves performance"
+				"detail": "A code change that improves performance",
+				"label": "🚀 perf"
 			},
 			{
-				"label": "🧪 test",
-				"detail": "A test update"
+				"detail": "A test update",
+				"label": "🧪 test"
 			},
 			{
-				"label": "🧹 chore",
-				"detail": "Project housekeeping"
+				"detail": "Project housekeeping",
+				"label": "🧹 chore"
 			},
 			{
-				"label": "♻️ refactor",
-				"detail": "Refactor of the code without change in functionality"
+				"detail": "Refactor of the code without change in functionality",
+				"label": "♻️ refactor"
 			},
 			{
-				"label": "🏗️ build",
-				"detail": "Changes that affect the build system or external dependencies"
+				"detail": "Changes that affect the build system or external dependencies",
+				"label": "🏗️ build"
 			},
 			{
-				"label": "🚦 ci",
-				"detail": "Changes to CI configuration files and scripts"
+				"detail": "Changes to CI configuration files and scripts",
+				"label": "🚦 ci"
 			},
 			{
-				"label": "↩️ revert",
-				"detail": "Reverts a previous commit"
+				"detail": "Reverts a previous commit",
+				"label": "↩️ revert"
 			},
 			{
-				"label": "🔀 merge",
-				"detail": "Use when merging branches"
+				"detail": "Use when merging branches",
+				"label": "🔀 merge"
 			}
 		]
 	},
-	"typescript.tsdk": "node_modules/typescript/lib",
-	"editor.tabSize": 2,
 	"vscodemacros.userMacroCommands": [
 		{
-			"path": "/workspaces/munify/.vscode/macros.ts",
-			"name": "OpenI18n"
+			"name": "OpenI18n",
+			"path": "/workspaces/munify/.vscode/macros.ts"
 		}
-	],
-	"css.customData": [".vscode/tailwind.json"]
+	]
 }
