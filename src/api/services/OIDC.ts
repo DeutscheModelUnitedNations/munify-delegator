@@ -193,6 +193,14 @@ export function refresh(refresh_token: string) {
 	return refreshTokenGrant(config, refresh_token);
 }
 
+/**
+ * Constructs the OIDC end-session (logout) URL for a given visited URL.
+ *
+ * If `NODE_ENV` is "production", the visited URL's protocol is set to `https` before building the logout URL.
+ *
+ * @param visitedUrl - The URL the user visited; its origin is used as the `post_logout_redirect_uri` base.
+ * @returns The end-session URL with `post_logout_redirect_uri` set to the visited URL's origin plus `/auth/logout-callback`.
+ */
 export function getLogoutUrl(visitedUrl: URL) {
 	if (configPrivate.NODE_ENV === 'production') {
 		visitedUrl.protocol = 'https:';
@@ -214,14 +222,14 @@ export function fetchUserInfoFromIssuer(access_token: string, expectedSubject: s
 }
 
 /**
- * Perform an OAuth 2.0 Token Exchange to obtain a JWT for acting as a specified subject.
+ * Performs an OAuth 2.0 Token Exchange to obtain a JWT that can be used to act as the specified subject.
  *
- * @param actorToken - The actor's access token used to authorize the exchange.
- * @param subjectUserId - The user identifier of the subject to impersonate (subject token).
+ * @param actorToken - The actor's access token authorizing the exchange.
+ * @param subjectUserId - The identifier of the subject to impersonate (used as the subject token).
  * @param scope - Optional scope to request for the exchanged token.
  * @param audience - Optional audience to request for the exchanged token.
- * @returns The token endpoint response from the issuer as a `TokenEndpointResponse`.
- * @throws When the OIDC configuration is not initialized, when the token endpoint returns an error (includes provider error details when available), or when the exchange request fails or times out.
+ * @returns The issuer's token endpoint response as a `TokenEndpointResponse`.
+ * @throws When the OIDC configuration is not initialized, when the token endpoint returns an error (provider error details included when available), or when the exchange request fails or times out.
  */
 export async function performTokenExchange(
 	actorToken: string,
