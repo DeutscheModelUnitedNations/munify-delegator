@@ -1,0 +1,17 @@
+language: 'en-US'
+reviews:
+  profile: 'chill'
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+
+  pre_merge_checks:
+    custom_checks:
+      - name: 'Boy Scout Scope'
+        instructions: |
+          If the PR includes changes beyond the primary issue/task, verify:
+          - All opportunistic fixes are confined to files already edited for the main change
+          - Changes are small, low-risk, and improve clarity/maintainability
+          - The PR description contains a “Boy Scout changes” section listing these edits
+          - No unrelated module-wide refactor is included

@@ -23,7 +23,6 @@
 	import { invalidateAll } from '$app/navigation';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { page } from '$app/state';
-	import { qr } from '@svelte-put/qr/svg';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
@@ -52,7 +51,9 @@
 					(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
 				)
 	);
-	let delegations = $derived(delegationMembers.map((x) => x.delegation));
+	let delegations = $derived([
+		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
+	]);
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
@@ -400,7 +401,7 @@
 						withEmail
 						title={m.members()}
 					>
-						{#each members ?? [] as member}
+						{#each members ?? [] as member (member.id)}
 							{@const participantStatus = member.user?.conferenceParticipantStatus.find(
 								(x) => x.conference.id === conference?.id
 							)}
@@ -424,7 +425,7 @@
 								paymentStatus={participantStatus?.paymentStatus}
 							/>
 						{/each}
-						{#each hiddenMembers as member}
+						{#each hiddenMembers as member (member.id)}
 							<tr>
 								<td colspan="5" class="text-gray-500 italic">
 									{m.hiddenMember()}
@@ -452,7 +453,7 @@
 	<h2 class="text-2xl font-bold">{m.singleParticipants()}</h2>
 
 	{#if singleParticipants.length > 0}
-		{#each singleParticipants as singleParticipant}
+		{#each singleParticipants as singleParticipant (singleParticipant.id)}
 			<SupervisorContentCard
 				title={formatNames(singleParticipant.user.given_name, singleParticipant.user.family_name)}
 				{isStateParticipantRegistration}
@@ -464,7 +465,7 @@
 							<InfoGrid.Entry title={m.roleApplications()} fontAwesomeIcon="masks-theater">
 								{#if singleParticipant.appliedForRoles.length > 0}
 									<div class="flex flex-wrap gap-2">
-										{#each singleParticipant.appliedForRoles as roleApplication}
+										{#each singleParticipant.appliedForRoles as roleApplication (roleApplication.id)}
 											<div class="badge">
 												<i
 													class="fa-duotone fa-{roleApplication.fontAwesomeIcon?.replace(

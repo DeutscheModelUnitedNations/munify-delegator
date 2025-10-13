@@ -62,7 +62,7 @@
 			<td>
 				{#if supervisors.length > 0}
 					<div class="flex flex-wrap gap-1">
-						{#each supervisors as supervisor}
+						{#each supervisors as supervisor (supervisor.id)}
 							<InitialsButton
 								given_name={supervisor.user.given_name}
 								family_name={supervisor.user.family_name}
