@@ -23,7 +23,6 @@
 	import { invalidateAll } from '$app/navigation';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { page } from '$app/state';
-	import { qr } from '@svelte-put/qr/svg';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
