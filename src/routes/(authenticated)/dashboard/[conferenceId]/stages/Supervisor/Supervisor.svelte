@@ -52,7 +52,9 @@
 					(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
 				)
 	);
-	let delegations = $derived(delegationMembers.map((x) => x.delegation));
+	let delegations = $derived([
+		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
+	]);
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
