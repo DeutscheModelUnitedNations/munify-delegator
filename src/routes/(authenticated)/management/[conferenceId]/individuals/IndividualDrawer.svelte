@@ -140,7 +140,7 @@
 								{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles.length}
 							</div>
 							<div class="flex flex-col">
-								{#each $singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles ?? [] as role}
+								{#each $singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles ?? [] as role (role.id)}
 									<div>
 										<i class="fa-duotone fa-{(role?.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
 										{role.name}
@@ -227,7 +227,7 @@
 					genericPromiseToastMessages
 				);
 				cache.markStale();
-				invalidateAll();
+				await invalidateAll();
 			}}
 		>
 			{m.revokeApplication()}

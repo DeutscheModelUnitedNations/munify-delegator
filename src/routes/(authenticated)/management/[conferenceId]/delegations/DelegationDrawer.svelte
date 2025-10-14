@@ -378,7 +378,7 @@
 					genericPromiseToastMessages
 				);
 				cache.markStale();
-				invalidateAll();
+				await invalidateAll();
 			}}
 		>
 			<i class="fas fa-file-slash"></i>
