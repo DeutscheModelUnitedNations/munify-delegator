@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/services/formatNames';
+	import toast from 'svelte-french-toast';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		conferenceId: string;
@@ -207,20 +210,28 @@
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 		</a>
-		{#if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
-			<button
-				class="btn"
-				onclick={async () => {
-					if (!confirm('Willst du wirklich den Bewerbungsstatus zurücksetzen?')) return;
-					await singleParticipantResetMutation.mutate({
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
+		<button
+			class="btn {!$singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied &&
+				'btn-disabled'} btn-error"
+			onclick={async () => {
+				if (!confirm(m.confirmRevokeApplication())) return;
+				await toast.promise(
+					singleParticipantResetMutation.mutate({
 						singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
 						applied: false
-					});
-				}}
-			>
-				{m.revokeApplication()}
-				<i class="fa-duotone fa-file-slash"></i>
-			</button>
-		{/if}
+					}),
+					genericPromiseToastMessages
+				);
+				cache.markStale();
+				invalidateAll();
+			}}
+		>
+			{m.revokeApplication()}
+			<i class="fa-solid fa-file-slash"></i>
+		</button>
 	</div>
 </Drawer>

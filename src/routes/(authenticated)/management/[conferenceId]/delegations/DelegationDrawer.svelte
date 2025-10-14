@@ -10,6 +10,8 @@
 	import { type PageData } from './$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import codenmz from '$lib/services/codenamize';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import toast from 'svelte-french-toast';
 
 	interface Props {
 		conferenceId: string;
@@ -368,10 +370,15 @@
 			class="btn {!delegation?.applied && 'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				await delegaitonResetMutation.mutate({
-					delegationId,
-					applied: delegation?.applied
-				});
+				await toast.promise(
+					delegaitonResetMutation.mutate({
+						delegationId,
+						applied: false
+					}),
+					genericPromiseToastMessages
+				);
+				cache.markStale();
+				invalidateAll();
 			}}
 		>
 			<i class="fas fa-file-slash"></i>
