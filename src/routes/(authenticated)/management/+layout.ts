@@ -1,6 +1,8 @@
 import { graphql } from '$houdini';
 import { allConferenceQuery } from '$lib/queries/allConferences';
-import type { PageLoad } from './$types';
+import { error } from '@sveltejs/kit';
+import type { LayoutLoad } from './$types';
+import { m } from '$lib/paraglide/messages';
 
 const conferencesWhereImMoreThanMember = graphql(`
 	query ConferencesWhereImMoreThanMember($myUserId: String!) {
@@ -28,7 +30,7 @@ const conferencesWhereImMoreThanMember = graphql(`
 	}
 `);
 
-export const load: PageLoad = async (event) => {
+export const load: LayoutLoad = async (event) => {
 	const { user } = await event.parent();
 
 	// we want the conferences to appear either if we are a privileged user on that conference or
@@ -53,6 +55,11 @@ export const load: PageLoad = async (event) => {
 		blocking: true
 	});
 	const queriedConfernces = data?.findManyConferences;
+
+	if (queriedConfernces.length === 0) {
+		error(403, m.noAccess());
+	}
+
 	return {
 		conferences: queriedConfernces?.map((c) => ({
 			id: c.id,
