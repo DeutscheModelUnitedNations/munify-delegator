@@ -2,19 +2,22 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import type { Committee, CustomConferenceRole, Nation, NonStateActor } from '@prisma/client';
 	import { m } from '$lib/paraglide/messages';
+	import type { MyConferenceparticipationQuery$result } from '$houdini';
 
 	interface Props {
-		country?: Omit<Omit<Nation, 'createdAt'>, 'updatedAt'> | null | undefined;
-		committees?: // TODO use Houdini Types
-		Omit<Omit<Omit<Committee, 'createdAt'>, 'updatedAt'>, 'conferenceId'>[] | null | undefined;
-		nonStateActor?: // TODO use Houdini Types
-		Omit<Omit<Omit<NonStateActor, 'createdAt'>, 'updatedAt'>, 'conferenceId'> | null | undefined;
-		customConferenceRole?: // TODO use Houdini Types
-		| Omit<Omit<Omit<CustomConferenceRole, 'createdAt'>, 'updatedAt'>, 'conferenceId'>
-			| null
-			| undefined;
+		country?: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+		>['delegation']['assignedNation'];
+		committees?:
+			| NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>['committees']
+			| null;
+		nonStateActor?: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+		>['delegation']['assignedNonStateActor'];
+		customConferenceRole?: NonNullable<
+			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
+		>['assignedRole'];
 	}
 
 	let { country, nonStateActor, committees, customConferenceRole }: Props = $props();

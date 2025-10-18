@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator - {m.admininstration()}</title>
+	<title>MUNify Delegator - {m.administration()}</title>
 </svelte:head>
 
 {@render children()}

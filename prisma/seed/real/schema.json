@@ -1,27 +1,23 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"type": "object",
+	"additionalProperties": false,
 	"properties": {
 		"$schema": {
 			"type": "string"
 		},
 		"conference": {
-			"type": "object",
+			"additionalProperties": false,
 			"properties": {
-				"title": {
+				"endConference": {
 					"type": "string"
 				},
-				"longTitle": {
+				"language": {
 					"type": "string"
 				},
 				"location": {
 					"type": "string"
 				},
-				"website": {
-					"type": "string",
-					"format": "uri"
-				},
-				"language": {
+				"longTitle": {
 					"type": "string"
 				},
 				"startAssignment": {
@@ -30,7 +26,11 @@
 				"startConference": {
 					"type": "string"
 				},
-				"endConference": {
+				"title": {
+					"type": "string"
+				},
+				"website": {
+					"format": "uri",
 					"type": "string"
 				}
 			},
@@ -44,50 +44,20 @@
 				"startConference",
 				"endConference"
 			],
-			"additionalProperties": false
-		},
-		"nsa": {
-			"type": "array",
-			"items": {
-				"type": "object",
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"abbreviation": {
-						"type": "string"
-					},
-					"seatAmount": {
-						"default": 1,
-						"type": "number",
-						"minimum": 1
-					},
-					"description": {
-						"type": "string"
-					},
-					"fontAwesomeIcon": {
-						"type": "string"
-					}
-				},
-				"required": ["name", "abbreviation", "seatAmount", "fontAwesomeIcon"],
-				"additionalProperties": false
-			}
+			"type": "object"
 		},
 		"countries": {
-			"type": "array",
 			"items": {
-				"type": "object",
+				"additionalProperties": false,
 				"properties": {
-					"name": {
+					"abbreviation": {
 						"type": "string"
 					},
-					"abbreviation": {
+					"name": {
 						"type": "string"
 					},
 					"nations": {
-						"type": "array",
 						"items": {
-							"type": "string",
 							"enum": [
 								"AD",
 								"AE",
@@ -338,20 +308,50 @@
 								"ZA",
 								"ZM",
 								"ZW"
-							]
-						}
+							],
+							"type": "string"
+						},
+						"type": "array"
 					},
 					"seats": {
 						"default": 1,
-						"type": "number",
-						"minimum": 1
+						"minimum": 1,
+						"type": "number"
 					}
 				},
 				"required": ["name", "abbreviation", "nations", "seats"],
-				"additionalProperties": false
-			}
+				"type": "object"
+			},
+			"type": "array"
+		},
+		"nsa": {
+			"items": {
+				"additionalProperties": false,
+				"properties": {
+					"abbreviation": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"fontAwesomeIcon": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"seatAmount": {
+						"default": 1,
+						"minimum": 1,
+						"type": "number"
+					}
+				},
+				"required": ["name", "abbreviation", "seatAmount", "fontAwesomeIcon"],
+				"type": "object"
+			},
+			"type": "array"
 		}
 	},
 	"required": ["$schema", "conference", "nsa", "countries"],
-	"additionalProperties": false
+	"type": "object"
 }

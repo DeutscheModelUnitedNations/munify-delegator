@@ -7,7 +7,7 @@
 </script>
 
 <div class="flex w-full flex-col items-center gap-4 p-10">
-	<h1 class="text-2xl font-bold">{m.admininstration()}</h1>
+	<h1 class="text-2xl font-bold">{m.administration()}</h1>
 	<p class="max-ch-md text-center">
 		{m.administrationConferenceSelection()}
 	</p>

@@ -17,7 +17,7 @@
 			<a class="link-hover link" href="https://dmun.de/impressum" target="_blank"
 				>{@html m.imprintAndPrivacy()}</a
 			>
-			<a class="link-hover link" href="/management">{m.admininstration()}</a>
+			<a class="link-hover link" href="/management">{m.administration()}</a>
 		</nav>
 		<LanguageSwitcher />
 		<nav>

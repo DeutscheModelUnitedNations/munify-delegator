@@ -1,7 +1,7 @@
 [
 	{
-		"name": "Generalversammlung",
 		"abbreviation": "GV",
+		"name": "Generalversammlung",
 		"nations": [
 			"EGY",
 			"ETH",
@@ -102,8 +102,8 @@
 		]
 	},
 	{
-		"name": "Wirtschafts- und Sozialrat",
 		"abbreviation": "WiSo",
+		"name": "Wirtschafts- und Sozialrat",
 		"nations": [
 			"EGY",
 			"GMB",
@@ -162,8 +162,8 @@
 		]
 	},
 	{
-		"name": "Sicherheitsrat",
 		"abbreviation": "SR",
+		"name": "Sicherheitsrat",
 		"nations": [
 			"RUS",
 			"FRA",
@@ -183,8 +183,8 @@
 		]
 	},
 	{
-		"name": "Menschenrechtsrat",
 		"abbreviation": "MRR",
+		"name": "Menschenrechtsrat",
 		"nations": [
 			"EGY",
 			"ETH",
@@ -236,8 +236,8 @@
 		]
 	},
 	{
-		"name": "Ausschuss für Abrüstungsfragen",
 		"abbreviation": "AfA",
+		"name": "Ausschuss für Abrüstungsfragen",
 		"nations": [
 			"COD",
 			"LBY",
@@ -276,8 +276,8 @@
 		]
 	},
 	{
-		"name": "Internationaler Gerichtshof",
 		"abbreviation": "IGH",
+		"name": "Internationaler Gerichtshof",
 		"nations": [
 			"KEN",
 			"TGO",

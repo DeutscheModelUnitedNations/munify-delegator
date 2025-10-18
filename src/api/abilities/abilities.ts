@@ -23,7 +23,7 @@ import { defineAbilitiesForCommitteeAgendaItem } from './entities/committeeAgend
 import { defineAbilitiesForWaitingListEntry } from './entities/waitingListEntry';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ['list', 'read', 'update', 'delete'] as const;
+const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
 
 /**
  * Actions which can be run on entities in the system:
@@ -67,6 +67,55 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	if (oidc && oidc.user && oidc.user.hasRole('admin')) {
 		console.info('Admin granted: ', oidc.user.preferred_username);
 		builder.can('manage' as any, 'all' as any);
+	}
+
+	// Grant impersonation permissions
+	if (oidc && oidc.user) {
+		const user = oidc.user;
+
+		// Admins can impersonate anyone
+		if (user.hasRole('admin')) {
+			builder.can('impersonate', 'User' as any);
+		}
+
+		// Team members with PROJECT_MANAGEMENT or PARTICIPANT_CARE can impersonate users from their conferences
+		// This is handled more granularly in the resolver logic
+		builder.can('impersonate', 'User' as any, {
+			OR: [
+				// Delegation members from conferences where user is team member
+				{
+					delegationMemberships: {
+						some: {
+							delegation: {
+								conference: {
+									teamMembers: {
+										some: {
+											user: { id: user.sub },
+											role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				// Single participants from conferences where user is team member
+				{
+					singleParticipant: {
+						some: {
+							conference: {
+								teamMembers: {
+									some: {
+										user: { id: user.sub },
+										role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+									}
+								}
+							}
+						}
+					}
+				}
+			]
+		});
 	}
 
 	defineAbilitiesForCommittee(oidc, builder);

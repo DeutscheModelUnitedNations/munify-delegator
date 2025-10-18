@@ -1846,6 +1846,28 @@ enum Gender {
   NO_STATEMENT
 }
 
+type ImpersonatedUser {
+  email: String!
+  family_name: String!
+  given_name: String!
+  preferred_username: String!
+  sub: String!
+}
+
+type ImpersonationStatus {
+  impersonatedUser: ImpersonatedUser
+  isImpersonating: Boolean!
+  originalUser: ImpersonationUser
+}
+
+type ImpersonationUser {
+  email: String!
+  family_name: String!
+  given_name: String!
+  preferred_username: String!
+  sub: String!
+}
+
 input IntFieldUpdateOperationsInput {
   decrement: Int
   divide: Int
@@ -1945,6 +1967,8 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
+  startImpersonation(scope: String, targetUserId: String!): Boolean!
+  stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
   unregisterParticipant(conferenceId: ID!, userId: ID!): User!
   updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
@@ -2783,6 +2807,8 @@ type Query {
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!): StatisticsResult!
+  impersonatableUsers: [User!]!
+  impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
   offlineUserRefresh: OfflineUserRefresh!
