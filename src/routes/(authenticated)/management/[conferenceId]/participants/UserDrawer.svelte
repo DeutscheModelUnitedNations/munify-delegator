@@ -7,7 +7,6 @@
 		type MediaConsentStatus$options,
 		type UpdateConferenceParticipantStatusInput
 	} from '$houdini';
-	import type { UserDrawerQueryVariables } from './$houdini';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import StatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';

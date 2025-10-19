@@ -167,7 +167,11 @@
 		},
 		'waiting-list': {
 			icon: 'user-clock',
-			translation: m.vacanciesSlashWaitingList()
+			translation: m.waitingList()
+		},
+		waitingList: {
+			icon: 'user-clock',
+			translation: m.waitingList()
 		}
 	};
 

@@ -13,9 +13,10 @@
 		committees: SeatsQuery$result['findManyCommittees'];
 		nations: SeatsQuery$result['findManyNations'];
 		conferenceId: string;
+		assignUserId?: string;
 	}
 
-	let { delegations, committees, nations, conferenceId }: Props = $props();
+	let { delegations, committees, nations, conferenceId, assignUserId }: Props = $props();
 
 	const addNationParticipantMutation = graphql(`
 		mutation addNationParticipant(
@@ -126,6 +127,7 @@
 					</div>
 				</td>
 				{#each committees as committee}
+					{@const seatsPerCommittee = committee.numOfSeatsPerDelegation}
 					{#if nation.committees.find((c) => c.id === committee.id)}
 						{#snippet addParticipantBtn(warning: boolean = false)}
 							<AddParticipantBtn
@@ -151,12 +153,17 @@
 												href={`/management/${conferenceId}/participants?selected=${member.user.id}`}
 											/>
 										{/each}
-										{#if assignedDelegationMember.length < committee.numOfSeatsPerDelegation}
+
+										{#each Array.from( { length: seatsPerCommittee - assignedDelegationMember.length } ) as _, index (index)}
 											{@render addParticipantBtn()}
-										{/if}
+										{/each}
 									</div>
 								{:else if delegation.members.length < sumSeats}
-									{@render addParticipantBtn(delegation.members.some((x) => !x.assignedCommittee))}
+									{#each Array.from({ length: seatsPerCommittee }) as _, index (index)}
+										{@render addParticipantBtn(
+											delegation.members.some((x) => !x.assignedCommittee)
+										)}
+									{/each}
 								{:else}
 									<div class="tooltip" data-tip={m.committeeAssignment()}>
 										<div
@@ -167,11 +174,19 @@
 									</div>
 								{/if}
 							{:else}
-								{@render addParticipantBtn()}
+								{#each Array.from({ length: seatsPerCommittee }) as _, index (index)}
+									{@render addParticipantBtn()}
+								{/each}
 							{/if}
 						</td>
 					{:else}
-						<td><i class="fas fa-circle-small text-[8px] text-gray-300"></i></td>
+						<td class="opacity-20">
+							<div class="flex justify-center gap-2">
+								{#each Array.from({ length: seatsPerCommittee }) as _, index (index)}
+									<i class="fas fa-circle-small text-[8px]"></i>
+								{/each}
+							</div>
+						</td>
 					{/if}
 				{/each}
 				<td>

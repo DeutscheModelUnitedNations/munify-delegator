@@ -493,6 +493,9 @@ model WaitingListEntry {
   motivation String
   requests   String?
 
+  hidden   Boolean @default(false)
+  assigned Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 

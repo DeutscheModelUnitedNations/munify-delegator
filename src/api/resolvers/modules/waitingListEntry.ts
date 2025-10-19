@@ -11,7 +11,11 @@ import {
 	WaitingListEntrySchoolFieldObject,
 	WaitingListEntryUserFieldObject,
 	WaitingListEntryCreatedAtFieldObject,
-	createOneWaitingListEntryMutationObject
+	WaitingListEntryHiddenFieldObject,
+	WaitingListEntryAssignedFieldObject,
+	createOneWaitingListEntryMutationObject,
+	deleteOneWaitingListEntryMutationObject,
+	updateOneWaitingListEntryMutationObject
 } from '$db/generated/graphql/WaitingListEntry';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { builder } from '../builder';
@@ -25,6 +29,8 @@ builder.prismaObject('WaitingListEntry', {
 		requests: t.field(WaitingListEntryRequestsFieldObject),
 		conference: t.relation('conference', WaitingListEntryConferenceFieldObject),
 		user: t.relation('user', WaitingListEntryUserFieldObject),
+		hidden: t.field(WaitingListEntryHiddenFieldObject),
+		assigned: t.field(WaitingListEntryAssignedFieldObject),
 		createdAt: t.field(WaitingListEntryCreatedAtFieldObject)
 	})
 });
@@ -106,6 +112,38 @@ builder.mutationFields((t) => {
 						requests: args.requests
 					}
 				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = deleteOneWaitingListEntryMutationObject(t);
+	return {
+		deleteOneWaitingListEntry: t.prismaField({
+			...field,
+			resolve: (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('delete').WaitingListEntry]
+				};
+				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneWaitingListEntryMutationObject(t);
+	return {
+		updateOneWaitingListEntry: t.prismaField({
+			...field,
+			resolve: (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').WaitingListEntry]
+				};
+				return field.resolve(query, root, args, ctx, info);
 			}
 		})
 	};

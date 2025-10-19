@@ -69,24 +69,20 @@
 					{role.name}
 				</td>
 				<td>
-					{#if participants.length > 0}
-						<div class="flex flex-wrap gap-1">
-							{#each participants as participant}
-								<InitialsButton
-									given_name={participant.user.given_name}
-									family_name={participant.user.family_name}
-									href={`/management/${conferenceId}/participants?selected=${participant.user.id}`}
-								/>
-							{/each}
-							<AddParticipantBtn
-								bind:user
-								targetRole={`${role.name} (${m.singleParticipant()})`}
-								addParticipant={async () => await addParticipant(role.id)}
+					<div class="flex flex-wrap gap-1">
+						{#each participants as participant}
+							<InitialsButton
+								given_name={participant.user.given_name}
+								family_name={participant.user.family_name}
+								href={`/management/${conferenceId}/participants?selected=${participant.user.id}`}
 							/>
-						</div>
-					{:else}
-						<i class="fas fa-dash text-gray-400"></i>
-					{/if}
+						{/each}
+						<AddParticipantBtn
+							bind:user
+							targetRole={`${role.name} (${m.singleParticipant()})`}
+							addParticipant={async () => await addParticipant(role.id)}
+						/>
+					</div>
 				</td>
 				<td>
 					{participants.length ?? 0}

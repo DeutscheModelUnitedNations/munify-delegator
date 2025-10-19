@@ -21,11 +21,13 @@
 		onError(e) {
 			toast.error(e.result.error.message);
 		},
-		onSubmit(e) {
+		onSubmit(_e) {
 			cache.markStale();
 			invalidateAll();
 		}
 	});
+
+	let { tainted, form: formContent } = form;
 
 	let disabled = $derived(data.disabled);
 </script>
@@ -37,6 +39,13 @@
 			{@html m.vacanciesSlashWaitingListDescription()}
 		</p>
 	</hero>
+
+	{#if !$tainted && !!$formContent.school}
+		<div class="alert alert-success alert-vertical sm:alert-horizontal mt-10">
+			<i class="fas fa-circle-check"></i>
+			{@html m.alreadyOnWatingList()}
+		</div>
+	{/if}
 
 	<main class="mt-10">
 		<Form {form}>
