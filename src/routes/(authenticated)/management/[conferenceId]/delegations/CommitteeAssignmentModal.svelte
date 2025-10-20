@@ -78,18 +78,21 @@
 	<button
 		class="btn btn-error"
 		onclick={async () => {
-			loading = true;
 			if (!members) return;
-			await toast.promise(
-				resetCommitteeAssignmentForAllDelegationMembers.mutate({
-					delegationMemberIds: members.map((m) => m.id)
-				}),
-				genericPromiseToastMessages
-			);
+			loading = true;
+			try {
+				await toast.promise(
+					resetCommitteeAssignmentForAllDelegationMembers.mutate({
+						delegationMemberIds: members.map((m) => m.id)
+					}),
+					genericPromiseToastMessages
+				);
 
-			cache.markStale();
-			await invalidateAll();
-			loading = false;
+				cache.markStale();
+				await invalidateAll();
+			} finally {
+				loading = false;
+			}
 		}}
 	>
 		<i class="fas fa-trash-undo"></i>
@@ -132,19 +135,22 @@
 								<button
 									class="btn btn-square btn-sm {active ? 'btn-success' : ''} {loading &&
 										'disabled'}"
-									onclick={async (e) => {
+									onclick={async () => {
 										loading = true;
-										await toast.promise(
-											updateDelegationMemberAssignedCommittee.mutate({
-												committeeId: committee.id,
-												delegationMemberId: member.id
-											}),
-											genericPromiseToastMessages
-										);
+										try {
+											await toast.promise(
+												updateDelegationMemberAssignedCommittee.mutate({
+													committeeId: committee.id,
+													delegationMemberId: member.id
+												}),
+												genericPromiseToastMessages
+											);
 
-										cache.markStale();
-										await invalidateAll();
-										loading = false;
+											cache.markStale();
+											await invalidateAll();
+										} finally {
+											loading = false;
+										}
 									}}
 								>
 									{#if loading}

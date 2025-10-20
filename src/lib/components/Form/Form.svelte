@@ -7,7 +7,7 @@
 		class?: string;
 		form: SuperForm<A, B>;
 		showSubmitButton?: boolean;
-		disabledButtonWhenTainted?: boolean;
+		requireTaintedToSubmit?: boolean;
 	}
 
 	let {
@@ -15,7 +15,7 @@
 		form,
 		children,
 		showSubmitButton = true,
-		disabledButtonWhenTainted = true
+		requireTaintedToSubmit = true
 	}: Props = $props();
 	let { message, enhance, allErrors, submitting, tainted, isTainted } = $derived(form);
 </script>
@@ -28,7 +28,7 @@
 	{#if showSubmitButton}
 		<FormSubmitButton
 			{form}
-			disabled={$allErrors.length > 0 || (disabledButtonWhenTainted ? !isTainted() : false)}
+			disabled={$allErrors.length > 0 || (requireTaintedToSubmit ? !isTainted() : false)}
 			loading={$submitting}
 		/>
 	{/if}

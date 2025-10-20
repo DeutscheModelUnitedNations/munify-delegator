@@ -8,7 +8,6 @@
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import { configPublic } from '$config/public';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
-	import { addToPanel } from 'svelte-inspect-value';
 	import ConferenceStatusLight from './ConferenceStatusLight.svelte';
 
 	const munSh = {
@@ -36,8 +35,6 @@
 	let conferenceList = $derived($conferencesPreview.data.findManyConferences);
 
 	let conferencesToDisplay = $derived(conferenceList);
-
-	addToPanel('cP', () => conferenceList);
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">

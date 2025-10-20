@@ -3,7 +3,6 @@
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	let { data }: { data: PageData } = $props();
 </script>

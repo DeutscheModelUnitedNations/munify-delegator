@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { addToPanel } from 'svelte-inspect-value';
 	import type { PageData } from './$houdini';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { TableColumns } from 'svelte-table';
@@ -17,7 +16,7 @@
 
 	let filterHidden = $state(true);
 	let rows = $derived(
-		$waitingListQuery.data.findManyWaitingListEntry.filter(
+		$waitingListQuery.data?.findManyWaitingListEntry?.filter(
 			(
 				entry: NonNullable<WaitingListManagementQuery$result['findManyWaitingListEntry']>[number]
 			) => (filterHidden ? !entry.hidden : true)
@@ -27,12 +26,11 @@
 	const calculateConferenceAge = (birthday: Date) => {
 		if (!conference?.startConference) return undefined;
 		const age = conference.startConference.getFullYear() - birthday.getFullYear();
-		const m = conference.startConference.getMonth() - birthday.getMonth();
+		const monthsDiff = conference.startConference.getMonth() - birthday.getMonth();
 		const d = conference.startConference.getDate() - birthday.getDate();
-		return (m < 0 || (m === 0 && d < 0) ? age - 1 : age).toString();
+		return (monthsDiff < 0 || (monthsDiff === 0 && d < 0) ? age - 1 : age).toString();
 	};
 
-	addToPanel('data', () => $waitingListQuery);
 	const columns: TableColumns<
 		NonNullable<WaitingListManagementQuery$result['findManyWaitingListEntry']>[number]
 	> = [
@@ -65,7 +63,7 @@
 			key: 'birthday',
 			title: m.conferenceAge(),
 			value: (row) =>
-				row.user?.birthday && conference?.endConference
+				row.user?.birthday && conference?.startConference
 					? (calculateConferenceAge(row.user.birthday) ?? 'N/A')
 					: 'N/A',
 			sortable: true,
