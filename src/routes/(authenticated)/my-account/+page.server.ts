@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { userFormSchema } from './form-schema';
 import { graphql, redirect } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
@@ -45,7 +45,7 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404, m.userNotFound());
 	}
 
-	const form = await superValidate(nullFieldsToUndefined(fullUser), zod(userFormSchema));
+	const form = await superValidate(nullFieldsToUndefined(fullUser), zod4(userFormSchema));
 
 	const eventUrl = event.url;
 
@@ -64,7 +64,7 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(userFormSchema));
+		const form = await superValidate(event.request, zod4(userFormSchema));
 
 		if (!form.valid) {
 			return fail(400, { form });

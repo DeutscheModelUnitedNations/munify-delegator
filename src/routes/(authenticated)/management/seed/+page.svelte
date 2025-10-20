@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 	import { m } from '$lib/paraglide/messages';
-	import type { z } from 'zod';
+	import { z } from 'zod';
 	import { graphql } from '$houdini';
 	import toast from 'svelte-french-toast';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	let rawFile = $state<File | null>(null);
-	let validationErrors = $state<string[] | null>(null);
+	let validationErrors = $state<string | null>(null);
 	let seedData = $state<z.infer<typeof ConferenceSeedingSchema> | null>(null);
 
 	$effect(() => {
@@ -21,13 +21,11 @@
 						seedData = validation.data;
 						validationErrors = null;
 					} else {
-						validationErrors = validation.error.errors.map(
-							(err) => `${err.path.join('.')}: ${err.message}`
-						);
+						validationErrors = z.prettifyError(validation.error);
 						seedData = null;
 					}
 				} catch (error) {
-					validationErrors = [(error as Error).message];
+					validationErrors = (error as Error).message;
 					seedData = null;
 				}
 			};
