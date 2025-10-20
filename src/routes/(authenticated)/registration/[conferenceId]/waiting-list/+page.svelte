@@ -21,9 +21,9 @@
 		onError(e) {
 			toast.error(e.result.error.message);
 		},
-		onSubmit(_e) {
+		async onUpdate(_e) {
 			cache.markStale();
-			invalidateAll();
+			await invalidateAll();
 		}
 	});
 
@@ -76,7 +76,7 @@
 					name="requests"
 					label={m.anySpecificRequests()}
 					description={m.anySpecificRequestsDescription()}
-					placeholder={m.answereHereOrLeaveEmpty()}
+					placeholder={m.answerHereOrLeaveEmpty()}
 					{disabled}
 				/>
 			</FormFieldset>
