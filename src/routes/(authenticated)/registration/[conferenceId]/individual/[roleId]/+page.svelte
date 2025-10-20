@@ -3,7 +3,7 @@
 	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zod4 } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
@@ -14,7 +14,7 @@
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod4(applicationFormSchema),
+		validators: zod4Client(applicationFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		}

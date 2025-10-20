@@ -68,11 +68,7 @@
 		<div class="alert alert-error">
 			<div class="flex flex-col">
 				<h3 class="font-bold">{m.validationFailed()}</h3>
-				<ul>
-					{#each validationErrors as error}
-						<li>{error}</li>
-					{/each}
-				</ul>
+				<pre class="w-full overflow-auto break-all whitespace-pre-wrap">{validationErrors}</pre>
 			</div>
 		</div>
 	{/if}
