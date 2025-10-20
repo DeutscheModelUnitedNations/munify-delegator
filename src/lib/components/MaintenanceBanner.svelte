@@ -16,12 +16,20 @@
 	let isUpcoming = $state(false);
 
 	$effect(() => {
+		const interval = setInterval(() => {
+			now = new Date();
+		}, 60000); // Update every minute
 		if (start && end && end > now) {
 			visible = true;
 			if (start > now) {
 				isUpcoming = true;
+			} else {
+				isUpcoming = false;
 			}
+		} else {
+			visible = false;
 		}
+		return () => clearInterval(interval);
 	});
 </script>
 
