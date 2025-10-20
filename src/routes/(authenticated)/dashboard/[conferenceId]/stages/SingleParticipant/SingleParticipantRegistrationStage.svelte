@@ -8,7 +8,7 @@
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 	import toast from 'svelte-french-toast';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
@@ -31,7 +31,7 @@
 		SPA: true,
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zodClient(applicationFormSchema),
+		validators: zod4Client(applicationFormSchema),
 		onError: (e) => {
 			toast.error(e.result.error.message);
 		},

@@ -1,6 +1,6 @@
 import { superValidate } from 'sveltekit-superforms';
 import type { PageServerLoad } from './$types';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 export const load: PageServerLoad = async (event) => {
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async (event) => {
 				parent.conferenceQueryData?.findUniqueSingleParticipant?.motivation ||
 				''
 		},
-		zod(applicationFormSchema)
+		zod4(applicationFormSchema)
 	);
 
 	return {
