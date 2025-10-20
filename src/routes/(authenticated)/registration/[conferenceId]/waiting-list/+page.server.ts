@@ -2,7 +2,7 @@ import { graphql } from '$houdini';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import type { Actions, PageServerLoad } from './$types';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { waitingListFormSchema } from './form-schema';
 import { m } from '$lib/paraglide/messages';
 
@@ -53,7 +53,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const form = await superValidate(
 		nullFieldsToUndefined(waitingListEntry) as any,
-		zod(waitingListFormSchema)
+		zod4(waitingListFormSchema)
 	);
 
 	return {
@@ -64,7 +64,7 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(waitingListFormSchema));
+		const form = await superValidate(event.request, zod4(waitingListFormSchema));
 		if (!form.valid) {
 			return fail(400, { form });
 		}
