@@ -3,7 +3,7 @@
 	import FormFileInput from '$lib/components/Form/FormFile.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/Form/Form.svelte';
@@ -28,7 +28,7 @@
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zodClient(conferenceSettingsFormSchema),
+		validators: zod4Client(conferenceSettingsFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		}

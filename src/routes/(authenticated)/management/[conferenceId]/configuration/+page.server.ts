@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
@@ -76,7 +76,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const form = await superValidate(
 		nullFieldsToUndefined(conference) as any,
-		zod(conferenceSettingsFormSchema)
+		zod4(conferenceSettingsFormSchema)
 	);
 
 	return {
@@ -92,7 +92,7 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(conferenceSettingsFormSchema));
+		const form = await superValidate(event.request, zod4(conferenceSettingsFormSchema));
 		if (!form.valid) {
 			return fail(400, { form });
 		}

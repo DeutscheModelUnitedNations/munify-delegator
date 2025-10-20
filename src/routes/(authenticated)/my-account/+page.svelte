@@ -3,7 +3,7 @@
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
@@ -20,7 +20,7 @@
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zodClient(userFormSchema),
+		validators: zod4Client(userFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		}

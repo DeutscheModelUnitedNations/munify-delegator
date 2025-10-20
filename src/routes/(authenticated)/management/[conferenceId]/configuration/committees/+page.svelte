@@ -7,7 +7,7 @@
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import toast from 'svelte-french-toast';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { AddAgendaItemFormSchema } from './form-schema';
 	import { invalidateAll } from '$app/navigation';
@@ -22,7 +22,7 @@
 	let form = superForm(data.addAgendaItemForm, {
 		resetForm: true,
 		validationMethod: 'oninput',
-		validators: zodClient(AddAgendaItemFormSchema),
+		validators: zod4Client(AddAgendaItemFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		},
