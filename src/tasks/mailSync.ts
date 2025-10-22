@@ -3,7 +3,6 @@ import { config } from './config';
 import { tasksDb } from './tasksDb';
 import { logLoading, logTaskEnd, logTaskStart, taskError, taskWarning } from './logs';
 import { listmonkClient } from './apis/listmonk/listmonkClient';
-import lodash from 'lodash';
 import type {
 	User as BaseUser,
 	Conference,
@@ -14,6 +13,7 @@ import type {
 	TeamMember
 } from '@prisma/client';
 import formatNames from '$lib/services/formatNames';
+import deepEquals from './helper/deepEquals';
 
 // GLOBALS
 
@@ -200,8 +200,8 @@ async function getUsers(): Promise<User[]> {
 
 function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	const attribs: SubscriberObj['attribs'] = {
-		userId: user.id,
-		conferences: []
+		conferences: [],
+		userId: user.id
 	};
 
 	const lists: string[] = [];
@@ -211,12 +211,12 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const dm of user.delegationMemberships) {
 		attribs.conferences.push({
 			id: dm.conferenceId,
-			title: dm.delegation.conference.title,
 			role: dm.delegation.assignedNationAlpha3Code
 				? 'DELEGATE_NATION'
 				: dm.delegation.assignedNonStateActorId
 					? 'DELEGATE_NSA'
-					: undefined
+					: undefined,
+			title: dm.delegation.conference.title
 		});
 		if (dm.delegation.assignedNationAlpha3Code) {
 			lists.push(
@@ -255,8 +255,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const sp of user.singleParticipant) {
 		attribs.conferences.push({
 			id: sp.conferenceId,
-			title: sp.conference.title,
-			role: 'SINGLE_PARTICIPANT'
+			role: 'SINGLE_PARTICIPANT',
+			title: sp.conference.title
 		});
 		if (sp.assignedRoleId) {
 			lists.push(createListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS'));
@@ -273,8 +273,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const supervisors of user.conferenceSupervisor) {
 		attribs.conferences.push({
 			id: supervisors.conferenceId,
-			title: supervisors.conference.title,
-			role: 'SUPERVISOR'
+			role: 'SUPERVISOR',
+			title: supervisors.conference.title
 		});
 
 		if (supervisors.conference.state === 'PARTICIPANT_REGISTRATION') {
@@ -327,8 +327,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const tm of user.teamMember) {
 		attribs.conferences.push({
 			id: tm.conferenceId,
-			title: tm.conference.title,
-			role: tm.role
+			role: tm.role,
+			title: tm.conference.title
 		});
 		// Default Team list for all Team Members
 		lists.push(createListName(tm.conference.title, tm.conferenceId, 'TEAM'));
@@ -364,7 +364,7 @@ function compareSubscriberToUser(subscriber: Subscriber, user: User) {
 	const listIsinUserObj = userObj.lists.every((list) => subscriberObj.lists.includes(list));
 
 	return (
-		lodash.isEqual(subscriberObj.attribs, userObj.attribs) &&
+		deepEquals(subscriberObj.attribs, userObj.attribs) &&
 		listIsinSubscriberObj &&
 		listIsinUserObj &&
 		subscriberObj.lists.length === userObj.lists.length
@@ -563,7 +563,7 @@ const _ = schedule.scheduleJob(
 				}
 			});
 			if (res.error) {
-				console.log(
+				console.error(
 					`  ! Failed to create subscriber for user ${u.id}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
 				);
 			} else {
@@ -581,7 +581,7 @@ const _ = schedule.scheduleJob(
 				}
 			});
 			if (res.error) {
-				console.info(
+				console.error(
 					`  ! Failed to delete subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
 				);
 			} else {
@@ -593,7 +593,7 @@ const _ = schedule.scheduleJob(
 		for (const s of subscribersToUpdate) {
 			const u = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
 			if (!u) {
-				console.info(`  ! Failed to find user for subscriber ${s.attribs.userId}: User not found`);
+				console.error(`  ! Failed to find user for subscriber ${s.attribs.userId}: User not found`);
 				continue;
 			}
 			const subscriberObj = constructSubscriberObjectFromUser(u!);
@@ -612,7 +612,7 @@ const _ = schedule.scheduleJob(
 				}
 			});
 			if (res.error) {
-				console.info(
+				console.error(
 					`  ! Failed to update subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
 				);
 			} else {
