@@ -18,8 +18,6 @@ export const load: LayoutLoad = async (event) => {
 		blocking: true
 	});
 
-	console.log(conferenceStatusQueryResult);
-
 	if (!conferenceStatusQueryResult.data?.findUniqueConference) {
 		redirect(307, '/registration');
 	}
