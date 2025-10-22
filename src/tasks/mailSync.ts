@@ -32,6 +32,7 @@ const requiredListsPerConference = [
 	// "NO_POSTAL_REGISTRATION",
 	// "NO_PAYMENT",
 	'SUPERVISORS',
+	'SUPERVISORS_REGISTRATION_NOT_COMPLETED',
 	'TEAM'
 ] as const;
 
@@ -294,7 +295,7 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 					createListName(
 						supervisors.conference.title,
 						supervisors.conferenceId,
-						'REGISTRATION_NOT_COMPLETED'
+						'SUPERVISORS_REGISTRATION_NOT_COMPLETED'
 					)
 				);
 			}
@@ -363,8 +364,15 @@ function compareSubscriberToUser(subscriber: Subscriber, user: User) {
 	const listIsinSubscriberObj = subscriberObj.lists.every((list) => userObj.lists.includes(list));
 	const listIsinUserObj = userObj.lists.every((list) => subscriberObj.lists.includes(list));
 
+	const emailMatches = subscriber.email.toLowerCase() === user.email.toLowerCase();
+	const nameMatches =
+		subscriber.name ===
+		formatNames(user.given_name, user.family_name, { familyNameUppercase: false });
+
 	return (
 		deepEquals(subscriberObj.attribs, userObj.attribs) &&
+		emailMatches &&
+		nameMatches &&
 		listIsinSubscriberObj &&
 		listIsinUserObj &&
 		subscriberObj.lists.length === userObj.lists.length
@@ -557,7 +565,7 @@ const _ = schedule.scheduleJob(
 			const res = await listmonkClient.POST('/subscribers', {
 				body: {
 					email: u.email,
-					name: formatNames(u.given_name, u.family_name),
+					name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
 					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id)
 				}
@@ -605,7 +613,7 @@ const _ = schedule.scheduleJob(
 				},
 				body: {
 					email: u.email,
-					name: formatNames(u.given_name, u.family_name),
+					name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
 					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id),
 					preconfirm_subscriptions: true
