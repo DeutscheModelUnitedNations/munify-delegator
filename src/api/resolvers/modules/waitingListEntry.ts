@@ -17,6 +17,7 @@ import {
 	deleteOneWaitingListEntryMutationObject,
 	updateOneWaitingListEntryMutationObject
 } from '$db/generated/graphql/WaitingListEntry';
+import { GraphQLError } from 'graphql';
 import { waitingListFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
 import { builder } from '../builder';
 
@@ -92,6 +93,17 @@ builder.mutationFields((t) => {
 					userId: user.sub!,
 					throwIfAnyIsFound: true
 				});
+
+				// guard against the user already being on the waiting list
+				const existingEntry = await db.waitingListEntry.findFirst({
+					where: {
+						conferenceId: args.conferenceId,
+						userId: user.sub!
+					}
+				});
+				if (existingEntry) {
+					throw new GraphQLError('You are already on the waiting list for this conference');
+				}
 
 				return await db.waitingListEntry.create({
 					...query,
