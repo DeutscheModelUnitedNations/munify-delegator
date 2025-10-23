@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
+	import MaintenanceBanner from '$lib/components/MaintenanceBanner.svelte';
 	import Footer from './Footer.svelte';
 	import { Toaster } from 'svelte-french-toast';
 	import Inspect from 'svelte-inspect-value';
@@ -59,6 +60,7 @@
 
 <Toaster />
 <CookieBanner />
+<MaintenanceBanner />
 <div class="flex min-h-screen">
 	<!-- {@render children()} -->
 	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
