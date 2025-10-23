@@ -16,6 +16,7 @@
 	import { browser, dev } from '$app/environment';
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';
+	import DevTools from '$lib/components/DevTools.svelte';
 
 	let { children }: LayoutProps = $props();
 
@@ -67,6 +68,7 @@
 
 {#if dev}
 	<Inspect.Panel />
+	<DevTools />
 {/if}
 
 <div style="display:none">

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres
+    image: postgres:18
     container_name: postgres-dev-delegator
     environment:
       POSTGRES_USER: postgres

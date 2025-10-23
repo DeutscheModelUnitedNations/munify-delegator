@@ -63,37 +63,32 @@
 	<tbody>
 		{#each roles as role}
 			{@const participants = singleParticipants.filter((sp) => sp.assignedRole?.id === role.id)}
-			{#if participants.length !== 0}
-				<tr>
-					<td class="flex items-center gap-2">
-						<Flag nsa icon={role.fontAwesomeIcon ?? ''} size="xs" />
-						{role.name}
-					</td>
-					<td>
-						{#if participants.length > 0}
-							<div class="flex flex-wrap gap-1">
-								{#each participants as participant}
-									<InitialsButton
-										given_name={participant.user.given_name}
-										family_name={participant.user.family_name}
-										href={`/management/${conferenceId}/participants?selected=${participant.user.id}`}
-									/>
-								{/each}
-								<AddParticipantBtn
-									bind:user
-									targetRole={`${role.name} (${m.singleParticipant()})`}
-									addParticipant={async () => await addParticipant(role.id)}
-								/>
-							</div>
-						{:else}
-							<i class="fas fa-dash text-gray-400"></i>
-						{/if}
-					</td>
-					<td>
-						{participants.length ?? 0}
-					</td>
-				</tr>
-			{/if}
+			<tr>
+				<td class="flex items-center gap-2">
+					<Flag nsa icon={role.fontAwesomeIcon ?? ''} size="xs" />
+					{role.name}
+				</td>
+				<td>
+					<div class="flex flex-wrap gap-1">
+						{#each participants as participant}
+							<InitialsButton
+								given_name={participant.user.given_name}
+								family_name={participant.user.family_name}
+								href={`/management/${conferenceId}/participants?selected=${participant.user.id}`}
+							/>
+						{/each}
+						<AddParticipantBtn
+							bind:user
+							targetRole={`${role.name} (${m.singleParticipant()})`}
+							addParticipant={async () => await addParticipant(role.id)}
+						/>
+					</div>
+				</td>
+				<td>
+					{participants.length ?? 0}
+					<span class="text-xs">/ {role.seatAmount} </span>
+				</td>
+			</tr>
 		{/each}
 	</tbody>
 </SeatsTableSection>

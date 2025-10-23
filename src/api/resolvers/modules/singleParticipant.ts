@@ -207,14 +207,28 @@ builder.mutationFields((t) => {
 					);
 				}
 
-				return await db.singleParticipant.create({
-					...query,
-					data: {
-						conferenceId: args.conferenceId,
-						userId: args.userId,
-						applied: true,
-						assignedRoleId: args.roleId
-					}
+				return await db.$transaction(async (tx) => {
+					await tx.waitingListEntry
+						.update({
+							where: {
+								conferenceId_userId: {
+									conferenceId: args.conferenceId,
+									userId: args.userId
+								}
+							},
+							data: { assigned: true }
+						})
+						.catch(() => {});
+
+					return await tx.singleParticipant.create({
+						...query,
+						data: {
+							conferenceId: args.conferenceId,
+							userId: args.userId,
+							applied: true,
+							assignedRoleId: args.roleId
+						}
+					});
 				});
 			}
 		})

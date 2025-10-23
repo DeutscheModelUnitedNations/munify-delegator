@@ -1,4 +1,8 @@
-import { graphql } from '$houdini';
+import {
+	graphql,
+	type AllConferencesQuery$result,
+	type ConferencesWhereImMoreThanMember$result
+} from '$houdini';
 import { allConferenceQuery } from '$lib/queries/allConferences';
 import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
@@ -19,6 +23,8 @@ const conferencesWhereImMoreThanMember = graphql(`
 		) {
 			id
 			title
+			startConference
+			endConference
 			teamMembers {
 				id
 				role
@@ -40,11 +46,12 @@ export const load: LayoutLoad = async (event) => {
 		const { data } = await allConferenceQuery.fetch({ event, blocking: true });
 		const queriedConfernces = data?.findManyConferences;
 		return {
-			conferences: queriedConfernces?.map((c) => ({
-				id: c.id,
-				title: c.title,
-				myMembership: 'SYSTEM_ADMIN'
-			}))
+			conferences: queriedConfernces?.map(
+				(c: NonNullable<AllConferencesQuery$result['findManyConferences']>[number]) => ({
+					...c,
+					myMembership: 'SYSTEM_ADMIN'
+				})
+			)
 		};
 	}
 
@@ -61,10 +68,11 @@ export const load: LayoutLoad = async (event) => {
 	}
 
 	return {
-		conferences: queriedConfernces?.map((c) => ({
-			id: c.id,
-			title: c.title,
-			myMembership: c.teamMembers.find((m) => m.user.id === user.sub)?.role
-		}))
+		conferences: queriedConfernces?.map(
+			(c: NonNullable<ConferencesWhereImMoreThanMember$result['findManyConferences']>[number]) => ({
+				...c,
+				myMembership: c.teamMembers.find((m) => m.user.id === user.sub)?.role
+			})
+		)
 	};
 };

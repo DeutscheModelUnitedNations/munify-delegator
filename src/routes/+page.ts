@@ -8,6 +8,9 @@ export const _houdini_load = graphql(`
 			location
 			title
 			id
+			totalSeats
+			totalParticipants
+			waitingListLength
 		}
 	}
 `);
