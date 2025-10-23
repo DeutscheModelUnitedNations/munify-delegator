@@ -1,5 +1,6 @@
-import { graphql, redirect } from '$houdini';
+import { graphql } from '$houdini';
 import { getRegistrationStatus } from '$lib/services/registrationStatus';
+import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 
 const ConferenceStatusQuery = graphql(`
@@ -18,8 +19,6 @@ export const load: LayoutLoad = async (event) => {
 		blocking: true
 	});
 
-	console.log(conferenceStatusQueryResult);
-
 	if (!conferenceStatusQueryResult.data?.findUniqueConference) {
 		redirect(307, '/registration');
 	}
@@ -37,7 +36,7 @@ export const load: LayoutLoad = async (event) => {
 			break;
 		case 'WAITING_LIST':
 			if (!event.url.pathname.endsWith('waiting-list')) {
-				redirect(307, `${event.params.conferenceId}/waiting-list`);
+				redirect(307, `/registration/${event.params.conferenceId}/waiting-list`);
 			}
 	}
 
