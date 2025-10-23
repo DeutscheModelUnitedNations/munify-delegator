@@ -58,7 +58,7 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		form,
-		disabled: !!waitingListEntry
+		alreadyOnWaitingList: !!waitingListEntry
 	};
 };
 
