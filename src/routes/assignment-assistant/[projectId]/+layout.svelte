@@ -1,5 +1,11 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
 	import { getProject } from './appData.svelte';
+	import Tabs from '$lib/components/Tabs/Tabs.svelte';
+	import Tab from '$lib/components/Tabs/Tab.svelte';
+
+	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	const downloadData = () => {
 		const filename = `assignment-assistant-data_${new Date().toISOString()}.json`;
@@ -27,4 +33,30 @@
 	</button>
 </div>
 
-<slot />
+<main class="hidden w-full flex-col p-10 lg:flex">
+	<Tabs>
+		<Tab active={data.tab === 'sighting'} title="Sichtung" icon="eye" href="sighting" />
+		<Tab
+			active={data.tab === 'weighting'}
+			title="Gewichtung"
+			icon="balance-scale"
+			href="weighting"
+		/>
+		<Tab active={data.tab === 'singles'} title="Singles" icon="user-tie" href="singles" />
+		<Tab active={data.tab === 'assignment'} title="Zuweisung" icon="split" href="assignment" />
+		<Tab
+			active={data.tab === 'summary'}
+			title="Zusammenfassung"
+			icon="clipboard-list"
+			href="summary"
+		/>
+	</Tabs>
+
+	{@render children?.()}
+</main>
+
+<main class="h-full w-full flex-col items-center justify-center p-10 lg:hidden">
+	<i class="fa-duotone fa-ban text-5xl"></i>
+	<h1 class="text-2xl font-bold">Smaller Screensizes are not supported</h1>
+	<p class="text-base">Please use a larger screen to view this page</p>
+</main>

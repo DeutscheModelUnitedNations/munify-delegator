@@ -11,13 +11,13 @@
 		unassignNationOrNSAFromDelegation,
 		type Nation,
 		type NonStateActor
-	} from './appData.svelte';
-	import DelegationCard from './DelegationCard.svelte';
+	} from '../appData.svelte';
+	import DelegationCard from '../DelegationCard.svelte';
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
-	import NationCard from './NationCard.svelte';
-	import { autoAssign } from './autoAssign.svelte';
-	import SizeTabs from './SizeTabs.svelte';
-	import PartitionModal from './PartitionModal.svelte';
+	import NationCard from '../NationCard.svelte';
+	import { autoAssign } from '../autoAssign.svelte';
+	import SizeTabs from '../SizeTabs.svelte';
+	import PartitionModal from '../PartitionModal.svelte';
 	import TextPreview from '$lib/components/TextPreview.svelte';
 
 	let dragging = $state(false);

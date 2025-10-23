@@ -7,9 +7,9 @@
 		unassignSingleRole,
 		convertSingleToDelegation,
 		assignSingleRole
-	} from './appData.svelte';
+	} from '../appData.svelte';
 
-	import SingleParticipantCard from './SingleParticipantCard.svelte';
+	import SingleParticipantCard from '../SingleParticipantCard.svelte';
 
 	let dragging = $state(false);
 
