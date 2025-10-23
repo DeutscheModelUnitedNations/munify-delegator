@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getWeights, setNonWishMalus, setNullRating, setRatingFactor } from './weights.svelte';
+	import { getWeights, setNonWishMalus, setNullRating, setRatingFactor } from '../weights.svelte';
 </script>
 
 <div class="prose w-full">

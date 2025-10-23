@@ -1,5 +1,4 @@
 import { goto } from '$app/navigation';
-import { graphql } from '$houdini';
 import { RAW_DATA_KEY } from '../local_storage_keys';
 import { z } from 'zod';
 
@@ -40,22 +39,19 @@ export const AppliedForDelegationRoleSchema = z.object({
 });
 
 export const UserSchema = z.object({
+	id: z.string()
+});
+
+export const SupervisorSchema = z.object({
 	id: z.string(),
-	family_name: z.string(),
-	given_name: z.string()
-	// birthday: z.string().nullish()
+	user: UserSchema
 });
 
 export const MemberSchema = z.object({
 	id: z.string(),
 	isHeadDelegate: z.boolean(),
-	user: UserSchema
-});
-
-export const SupervisorSchema = z.object({
-	id: z.string(),
-	delegations: z.array(z.object({ id: z.string() })),
-	user: UserSchema
+	user: UserSchema,
+	supervisors: z.optional(z.array(SupervisorSchema))
 });
 
 export const AppliedForSingleRoleSchema = z.object({
@@ -94,38 +90,30 @@ export const ConferenceSchema = z.object({
 	individualApplicationOptions: z.array(IndividualApplicationOptionSchema)
 });
 
-export const DelegationSchema = z
-	.object({
-		id: z.string(),
-		motivation: z.string().nullish(),
-		experience: z.string().nullish(),
-		school: z.string().nullish(),
-		appliedForRoles: z.array(AppliedForDelegationRoleSchema),
-		members: z.array(MemberSchema),
-		supervisors: z.array(SupervisorSchema),
-		user: z.undefined(),
-		splittedFrom: z.string().nullish(),
-		splittedInto: z.array(z.string()).nullish()
-	})
-	.merge(SightingPropsSchema)
-	.merge(DelegationAssignmentSchema)
-	.merge(NSAAssignmentSchema);
+export const DelegationSchema = z.object({
+	id: z.string(),
+	appliedForRoles: z.array(AppliedForDelegationRoleSchema),
+	members: z.array(MemberSchema),
+	supervisors: z.undefined(),
+	user: z.undefined(),
+	splittedFrom: z.string().nullish(),
+	splittedInto: z.array(z.string()).nullish(),
+	...SightingPropsSchema.shape,
+	...DelegationAssignmentSchema.shape,
+	...NSAAssignmentSchema.shape
+});
 
-export const SingleParticipantSchema = z
-	.object({
-		id: z.string(),
-		motivation: z.string().nullish(),
-		school: z.string().nullish(),
-		experience: z.string().nullish(),
-		user: UserSchema,
-		appliedForRoles: z.array(AppliedForSingleRoleSchema),
-		supervisors: z.undefined(),
-		members: z.undefined(),
-		splittedFrom: z.undefined(),
-		splittedInto: z.undefined()
-	})
-	.merge(SightingPropsSchema)
-	.merge(SingleAssignmentSchema);
+export const SingleParticipantSchema = z.object({
+	id: z.string(),
+	user: UserSchema,
+	appliedForRoles: z.array(AppliedForSingleRoleSchema),
+	supervisors: z.optional(z.array(SupervisorSchema)),
+	members: z.undefined(),
+	splittedFrom: z.undefined(),
+	splittedInto: z.undefined(),
+	...SightingPropsSchema.shape,
+	...SingleAssignmentSchema.shape
+});
 
 export const ProjectDataSchema = z.object({
 	conference: ConferenceSchema,
@@ -389,9 +377,6 @@ export const convertSingleToDelegation = (singleId: string) => {
 	if (!single) return;
 	const newDelegation: Delegation = {
 		id: single.id,
-		motivation: single.motivation,
-		experience: single.experience,
-		school: single.school,
 		members: [
 			{
 				id: Math.round(Math.random() * 1000000).toString(),
@@ -400,9 +385,9 @@ export const convertSingleToDelegation = (singleId: string) => {
 			}
 		],
 		appliedForRoles: [],
-		supervisors: [],
 		splittedFrom: undefined,
 		splittedInto: undefined,
+		supervisors: undefined,
 		user: undefined as never
 	};
 	selectedProject?.data.delegations.push(newDelegation);

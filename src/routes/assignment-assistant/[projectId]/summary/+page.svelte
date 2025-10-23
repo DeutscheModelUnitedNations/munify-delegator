@@ -12,9 +12,9 @@
 		type Delegation,
 		type Nation,
 		type NonStateActor
-	} from './appData.svelte';
-	import DelegationCard from './DelegationCard.svelte';
-	import NationCard from './NationCard.svelte';
+	} from '../appData.svelte';
+	import DelegationCard from '../DelegationCard.svelte';
+	import NationCard from '../NationCard.svelte';
 
 	const project = $derived(getProject());
 

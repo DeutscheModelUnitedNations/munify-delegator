@@ -8,15 +8,50 @@
 		toggleDisqualifyApplication,
 		getMoreInfoLink,
 		deleteEvaluation,
-		addNote
-	} from './appData.svelte';
+		addNote,
+		loadProjects
+	} from '../appData.svelte';
 	import codenamize from '$lib/services/codenamize';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import formatNames from '$lib/services/formatNames';
+	import { graphql } from '$houdini';
+	import { queryParameters } from 'sveltekit-search-params';
+	import type { PageProps } from './$types';
+	import { onMount } from 'svelte';
 
-	let page = 1;
-	let pageSize = 10;
+	let { data }: PageProps = $props();
+
+	const params = queryParameters({
+		page: {
+			defaultValue: 1,
+			encode: (v) => v.toString(),
+			decode: (v) => (v ? parseInt(v) : undefined)
+		},
+		pageSize: {
+			defaultValue: 10,
+			encode: (v) => v.toString(),
+			decode: (v) => (v ? parseInt(v) : undefined)
+		}
+	});
+
+	let page = $derived($params.page ?? 1);
+	let pageSize = $derived($params.pageSize ?? 10);
+
+	onMount(() => {
+		loadProjects(data.projectId);
+	});
+
+	const setPageSize = (size: number) => {
+		$params.pageSize = size;
+		$params.page = 1; // Reset to first page when page size changes
+	};
+
+	const setPage = (newPage: number) => {
+		$params.page = newPage;
+	};
+
+	// const DelegationDataQuery = graphql(``)
 </script>
 
 <TextPreview>
@@ -67,11 +102,7 @@
 
 <div class="mt-6 flex flex-col gap-4">
 	<div class="flex items-center justify-center">
-		<Pagination
-			active={page}
-			total={Math.ceil(getApplications().length / pageSize)}
-			setPage={(newPage) => (page = newPage)}
-		/>
+		<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
 	</div>
 	{#each getApplications() as application, index}
 		{#if index >= (page - 1) * pageSize && index < page * pageSize}
@@ -176,8 +207,8 @@
 							<tr>
 								<td class="text-center"><i class="fa-duotone fa-user text-lg"></i></td>
 								<td>
-									{application.user.given_name}
-									{application.user.family_name}
+									<!-- {application.user.given_name} -->
+									<!-- {application.user.family_name} -->
 								</td>
 							</tr>
 						{:else}
@@ -187,13 +218,13 @@
 									<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 										>{application.members.length}</span
 									>
-									{application.members
-										.sort((x) => {
-											if (x.isHeadDelegate) return -1;
-											return 1;
-										})
-										.map((x) => formatNames(x.user.given_name, x.user.family_name))
-										.join(', ')}
+									<!-- {application.members -->
+									<!-- 	.sort((x) => { -->
+									<!-- 		if (x.isHeadDelegate) return -1; -->
+									<!-- 		return 1; -->
+									<!-- 	}) -->
+									<!-- 	.map((x) => formatNames(x.user.given_name, x.user.family_name)) -->
+									<!-- 	.join(', ')} -->
 								</td>
 							</tr>
 						{/if}
@@ -204,31 +235,31 @@
 									<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 										>{application.supervisors?.length}</span
 									>
-									{application.supervisors
-										.map((x) => {
-											if (x.user) return formatNames(x.user.given_name, x.user.family_name);
-											return 'N/A';
-										})
-										.join(', ')}
+									<!-- {application.supervisors -->
+									<!-- 	.map((x) => { -->
+									<!-- 		if (x.user) return formatNames(x.user.given_name, x.user.family_name); -->
+									<!-- 		return 'N/A'; -->
+									<!-- 	}) -->
+									<!-- 	.join(', ')} -->
 								</td>
 							</tr>
 						{/if}
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
 							<td>
-								{application.school}
+								<!-- {application.school} -->
 							</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-fire-flame-curved text-lg"></i></td>
 							<td>
-								{application.motivation}
+								<!-- {application.motivation} -->
 							</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-compass text-lg"></i></td>
 							<td>
-								{application.experience}
+								<!-- {application.experience} -->
 							</td>
 						</tr>
 						<tr>
@@ -254,16 +285,12 @@
 		{/if}
 	{/each}
 	<div class="flex flex-col items-center justify-center gap-4">
-		<Pagination
-			active={page}
-			total={Math.ceil(getApplications().length / pageSize)}
-			setPage={(newPage) => (page = newPage)}
-		/>
+		<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
 		<div class="flex items-center gap-4">
 			<div>Pro Seite:</div>
-			<select class="select select-bordered" bind:value={pageSize}>
+			<select class="select select-bordered" bind:value={$params.pageSize}>
 				<option value="10" selected>10</option>
-				<option value="25">20</option>
+				<option value="20">20</option>
 				<option value="50">50</option>
 			</select>
 		</div>
