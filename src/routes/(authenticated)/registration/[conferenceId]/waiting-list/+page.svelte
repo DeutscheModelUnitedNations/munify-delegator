@@ -27,12 +27,10 @@
 		}
 	});
 
-	let { tainted, form: formContent } = form;
-
-	let disabled = $derived(data.disabled);
+	let disabled = $derived(data.alreadyOnWaitingList);
 </script>
 
-<div class="flex min-h-screen w-full flex-col items-center p-4">
+<div class="flex w-full flex-col items-center p-4">
 	<hero class="mt-20 text-center">
 		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.vacanciesSlashWaitingList()}</h1>
 		<p class="max-ch-md">
@@ -40,7 +38,7 @@
 		</p>
 	</hero>
 
-	{#if !$tainted && !!$formContent.school}
+	{#if data.alreadyOnWaitingList}
 		<div class="alert alert-success alert-vertical sm:alert-horizontal mt-10">
 			<i class="fas fa-circle-check"></i>
 			{@html m.alreadyOnWaitingList()}
