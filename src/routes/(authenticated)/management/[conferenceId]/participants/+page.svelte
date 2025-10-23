@@ -1,6 +1,4 @@
 <script lang="ts">
-	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import UserDrawer from './UserDrawer.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';

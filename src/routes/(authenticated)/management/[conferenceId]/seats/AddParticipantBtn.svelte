@@ -3,6 +3,7 @@
 	import UserSearchModal from './UserSearchModal.svelte';
 	import { type getUserInfo$result } from '$houdini';
 	import type { Snippet } from 'svelte';
+	import { queryParameters } from 'sveltekit-search-params';
 
 	interface Props {
 		warning?: boolean;
@@ -21,6 +22,10 @@
 	}: Props = $props();
 
 	let open = $state(false);
+
+	const params = queryParameters({
+		assignUserId: true
+	});
 </script>
 
 <div
@@ -29,13 +34,15 @@
 >
 	<button
 		aria-label={m.addParticipant()}
-		class="btn btn-outline {warning ? 'btn-warning' : 'btn-success'} btn-sm w-10"
+		class="btn {$params.assignUserId ? '' : 'btn-outline'} {warning
+			? 'btn-warning'
+			: 'btn-success'} btn-sm w-10"
 		onclick={() => (open = true)}
 	>
 		{#if warning}
 			<i class="fas fa-diamond-exclamation"></i>
 		{:else}
-			<i class="fas fa-plus"></i>
+			<i class="fas fa-plus {$params.assignUserId ? 'fa-beat' : ''}"></i>
 		{/if}
 	</button>
 </div>

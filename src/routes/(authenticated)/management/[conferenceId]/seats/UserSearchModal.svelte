@@ -5,6 +5,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import type { Snippet } from 'svelte';
+	import { queryParameters } from 'sveltekit-search-params';
 
 	interface Props {
 		open: boolean;
@@ -33,7 +34,11 @@
 		}
 	`);
 
-	let search = $state('');
+	const params = queryParameters({
+		assignUserId: true
+	});
+
+	let search = $state($params.assignUserId ?? '');
 	let loading = $state(false);
 
 	$effect(() => {
@@ -78,7 +83,10 @@
 			open = false;
 			user = undefined;
 			cache.markStale();
-			invalidateAll();
+			await invalidateAll();
+			if ($params.assignUserId) {
+				$params.assignUserId = null;
+			}
 		}}>{m.addUser()}</button
 	>
 {/snippet}

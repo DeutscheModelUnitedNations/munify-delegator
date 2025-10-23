@@ -5,6 +5,8 @@ export const allConferenceQuery = graphql(`
 		findManyConferences(orderBy: { startConference: desc }) {
 			id
 			title
+			startConference
+			endConference
 		}
 	}
 `);

@@ -23,7 +23,7 @@
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
-	<Form {form} class="w-full max-w-lg">
+	<Form {form} class="w-full max-w-lg" requireTaintedToSubmit={false}>
 		<h1 class="text-3xl tracking-wider uppercase">{role.name}</h1>
 		<p>
 			{m.pleaseAnswerTheFollowingQuestions()}

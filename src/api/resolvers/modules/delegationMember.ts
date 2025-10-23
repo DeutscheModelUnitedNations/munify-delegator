@@ -234,6 +234,18 @@ builder.mutationFields((t) => {
 						});
 					}
 
+					await tx.waitingListEntry
+						.update({
+							where: {
+								conferenceId_userId: {
+									conferenceId,
+									userId
+								}
+							},
+							data: { assigned: true }
+						})
+						.catch(() => {});
+
 					return await tx.delegationMember.create({
 						...query,
 						data: {

@@ -59,7 +59,7 @@
 					/>
 				{/if}
 			{:else}
-				<ApplicationRejected />
+				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
 			{/if}
 		{:else if delegationMember?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
@@ -93,7 +93,7 @@
 					/>
 				{/if}
 			{:else}
-				<ApplicationRejected />
+				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
 			{/if}
 		{:else if supervisor}
 			{@const everybodyGotRejected =

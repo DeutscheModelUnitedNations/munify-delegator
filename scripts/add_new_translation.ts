@@ -3,7 +3,7 @@ import inquirer from 'inquirer';
 import { join } from 'path';
 import * as readline from 'readline';
 
-const MESSAGES_DIR = './src/i18n';
+const MESSAGES_DIR = './messages';
 
 const rl = readline.createInterface({
 	input: process.stdin,
