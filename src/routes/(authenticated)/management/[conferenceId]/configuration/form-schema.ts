@@ -41,6 +41,7 @@ export const conferenceSettingsFormSchema = z.object({
 	startAssignment: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),
+	registrationDeadlineGracePeriodMinutes: z.coerce.number(),
 	startConference: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),

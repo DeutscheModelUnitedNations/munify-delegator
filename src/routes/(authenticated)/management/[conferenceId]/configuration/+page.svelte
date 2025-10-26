@@ -209,6 +209,14 @@
 				label={m.conferenceStartAssignment()}
 				enableTime
 			/>
+			<FormTextInput
+				{form}
+				name="registrationDeadlineGracePeriodMinutes"
+				label={m.registrationDeadlineGracePeriod()}
+			/>
+			<p class="test-sm mb-2 opacity-50">
+				{m.technicalRegistrationDeadline()}: {data.technicalRegistrationDeadline.toLocaleString()}
+			</p>
 			<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 			<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
 		</FormFieldset>
