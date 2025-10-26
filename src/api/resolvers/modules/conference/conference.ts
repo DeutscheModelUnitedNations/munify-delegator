@@ -36,6 +36,7 @@ import {
 	findUniqueConferenceQueryObject,
 	updateOneConferenceMutationObject,
 	ConferenceCertificateContentFieldObject,
+	ConferenceRegistrationDeadlineGracePeriodMinutesFieldObject,
 	ConferenceContractContentFieldObject
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
@@ -59,6 +60,9 @@ builder.prismaObject('Conference', {
 		imageDataURL: t.field(ConferenceImageDataURLFieldObject),
 		state: t.field(ConferenceStateFieldObject),
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
+		registrationDeadlineGracePeriodMinutes: t.field(
+			ConferenceRegistrationDeadlineGracePeriodMinutesFieldObject
+		),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
 		endConference: t.field(ConferenceEndConferenceFieldObject),
 		unlockPayments: t.field(ConferenceUnlockPaymentsFieldObject),
@@ -346,6 +350,7 @@ builder.mutationFields((t) => {
 							}),
 							state: t.field({ type: ConferenceState, required: false }),
 							startAssignment: t.field({ type: 'DateTime', required: false }),
+							registrationDeadlineGracePeriodMinutes: t.int({ required: false }),
 							startConference: t.field({ type: 'DateTime', required: false }),
 							endConference: t.field({ type: 'DateTime', required: false }),
 							unlockPayments: t.boolean({
@@ -459,6 +464,8 @@ builder.mutationFields((t) => {
 						info: args.data.info ?? undefined,
 						state: args.data.state ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
+						registrationDeadlineGracePeriodMinutes:
+							args.data.registrationDeadlineGracePeriodMinutes ?? undefined,
 						startConference: args.data.startConference ?? undefined,
 						endConference: args.data.endConference ?? undefined,
 						unlockPayments:

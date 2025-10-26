@@ -29,20 +29,21 @@ enum ConferenceState {
 
 /// A conference in the system
 model Conference {
-  id                     String          @id @default(nanoid())
-  title                  String
-  longTitle              String?
-  location               String?
-  language               String?
-  website                String?
-  imageDataURL           String?
-  info                   String?
-  linkToPreparationGuide String?
-  linkToPaperInbox       String?
-  state                  ConferenceState @default(PRE)
-  startAssignment        DateTime
-  startConference        DateTime
-  endConference          DateTime
+  id                                     String          @id @default(nanoid())
+  title                                  String
+  longTitle                              String?
+  location                               String?
+  language                               String?
+  website                                String?
+  imageDataURL                           String?
+  info                                   String?
+  linkToPreparationGuide                 String?
+  linkToPaperInbox                       String?
+  state                                  ConferenceState @default(PRE)
+  startAssignment                        DateTime
+  registrationDeadlineGracePeriodMinutes Int             @default(30)
+  startConference                        DateTime
+  endConference                          DateTime
 
   /// Payment and Postal information
   unlockPayments  Boolean @default(false)
