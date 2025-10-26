@@ -45,6 +45,14 @@
 		day: 'numeric'
 	};
 
+	const dateTimeOptions: Intl.DateTimeFormatOptions = {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit'
+	};
+
 	const registrationInfoText = () => {
 		switch (registrationStatus) {
 			case 'WAITING_LIST':
@@ -59,7 +67,7 @@
 				break;
 			case 'OPEN':
 				return m.registrationOpen({
-					date: `${new Date(conference.startAssignment as unknown as string)?.toLocaleDateString(getLocale(), dateOptions) ?? ''}`
+					date: `${new Date(conference.startAssignment as unknown as string)?.toLocaleString(getLocale(), dateTimeOptions) ?? ''}`
 				});
 			case 'CLOSED':
 				return m.registrationClosed();

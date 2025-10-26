@@ -203,7 +203,12 @@
 				/>
 			{/if}
 			<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
-			<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
+			<FormDateTimeInput
+				{form}
+				name="startAssignment"
+				label={m.conferenceStartAssignment()}
+				enableTime
+			/>
 			<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 			<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
 		</FormFieldset>
