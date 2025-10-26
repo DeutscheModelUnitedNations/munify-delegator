@@ -319,6 +319,7 @@ type Conference {
   postalName: String
   postalStreet: String
   postalZip: String
+  registrationDeadlineGracePeriodMinutes: Int!
   singleParticipants: [SingleParticipant!]!
   startAssignment: DateTime!
   startConference: DateTime!
@@ -374,6 +375,7 @@ input ConferenceCreateInput {
   postalName: String
   postalStreet: String
   postalZip: String
+  registrationDeadlineGracePeriodMinutes: Int
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
   startAssignment: DateTime!
   startConference: DateTime!
@@ -424,6 +426,7 @@ input ConferenceOrderByWithRelationInput {
   postalName: SortOrder
   postalStreet: SortOrder
   postalZip: SortOrder
+  registrationDeadlineGracePeriodMinutes: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
   startAssignment: SortOrder
   startConference: SortOrder
@@ -628,6 +631,7 @@ enum ConferenceScalarFieldEnum {
   postalName
   postalStreet
   postalZip
+  registrationDeadlineGracePeriodMinutes
   startAssignment
   startConference
   state
@@ -850,6 +854,7 @@ input ConferenceUpdateDataInput {
   postalName: String
   postalStreet: String
   postalZip: String
+  registrationDeadlineGracePeriodMinutes: Int
   startAssignment: DateTime
   startConference: DateTime
   state: ConferenceState
@@ -896,6 +901,7 @@ input ConferenceUpdateInput {
   postalName: NullableStringFieldUpdateOperationsInput
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
+  registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
@@ -937,6 +943,7 @@ input ConferenceUpdateManyMutationInput {
   postalName: NullableStringFieldUpdateOperationsInput
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
+  registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
@@ -987,6 +994,7 @@ input ConferenceWhereInput {
   postalName: StringNullableFilter
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
+  registrationDeadlineGracePeriodMinutes: IntFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
@@ -1040,6 +1048,7 @@ input ConferenceWhereUniqueInput {
   postalName: StringNullableFilter
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
+  registrationDeadlineGracePeriodMinutes: IntFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter

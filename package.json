@@ -54,6 +54,7 @@
 		"csv-stringify": "^6.6.0",
 		"daisyui": "^5.3.7",
 		"date-fns": "^4.1.0",
+		"dayjs": "^1.11.18",
 		"eslint": "^9.38.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.12.5",

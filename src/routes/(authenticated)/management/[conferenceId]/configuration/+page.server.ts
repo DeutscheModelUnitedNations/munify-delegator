@@ -6,6 +6,7 @@ import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { conferenceSettingsFormSchema } from './form-schema';
+import dayjs from 'dayjs';
 
 const conferenceQuery = graphql(`
 	query ConferenceFormPrepopulationQuery($id: String!) {
@@ -14,6 +15,7 @@ const conferenceQuery = graphql(`
 			location
 			longTitle
 			startAssignment
+			registrationDeadlineGracePeriodMinutes
 			startConference
 			state
 			website
@@ -86,7 +88,10 @@ export const load: PageServerLoad = async (event) => {
 		termsAndConditionsContentSet: conference.termsAndConditionsContentSet,
 		mediaConsentContentSet: conference.mediaConsentContentSet,
 		guardianConsentContentSet: conference.guardianConsentContentSet,
-		contractContentSet: conference.contractContentSet
+		contractContentSet: conference.contractContentSet,
+		technicalRegistrationDeadline: dayjs(conference.startAssignment)
+			.add(conference.registrationDeadlineGracePeriodMinutes, 'minute')
+			.toDate()
 	};
 };
 

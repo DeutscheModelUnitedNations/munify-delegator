@@ -23,6 +23,7 @@ import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/services/formatNames';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
+import dayjs from 'dayjs';
 
 builder.prismaObject('Delegation', {
 	fields: (t) => ({
@@ -207,7 +208,11 @@ builder.mutationFields((t) => {
 							throw new GraphQLError(m.missingInformation());
 						}
 
-						if (Date.now() > delegation.conference.startAssignment.getTime()) {
+						if (
+							dayjs(delegation.conference.startAssignment)
+								.add(delegation.conference.registrationDeadlineGracePeriodMinutes, 'minute')
+								.isBefore(dayjs())
+						) {
 							throw new GraphQLError(m.applicationTimeframeClosed());
 						}
 					}
