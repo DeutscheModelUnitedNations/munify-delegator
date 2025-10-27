@@ -3,7 +3,6 @@ import { config } from './config';
 import { tasksDb } from './tasksDb';
 import { logLoading, logTaskEnd, logTaskStart, taskError, taskWarning } from './logs';
 import { listmonkClient } from './apis/listmonk/listmonkClient';
-import lodash from 'lodash';
 import type {
 	User as BaseUser,
 	Conference,
@@ -14,6 +13,10 @@ import type {
 	TeamMember
 } from '@prisma/client';
 import formatNames from '$lib/services/formatNames';
+import deepEquals from './helper/deepEquals';
+import { Command } from 'commander';
+import { argv } from 'process';
+import dayjs from 'dayjs';
 
 // GLOBALS
 
@@ -32,6 +35,7 @@ const requiredListsPerConference = [
 	// "NO_POSTAL_REGISTRATION",
 	// "NO_PAYMENT",
 	'SUPERVISORS',
+	'SUPERVISORS_REGISTRATION_NOT_COMPLETED',
 	'TEAM'
 ] as const;
 
@@ -162,6 +166,8 @@ async function getSubscribers<T>(perPage: number): Promise<T[]> {
 }
 
 async function getUsers(): Promise<User[]> {
+	const lt = dayjs().add(10, 'month').toDate();
+
 	return await tasksDb.user.findMany({
 		include: {
 			delegationMemberships: {
@@ -194,14 +200,62 @@ async function getUsers(): Promise<User[]> {
 					conference: true
 				}
 			}
+		},
+		where: {
+			OR: [
+				{
+					delegationMemberships: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				},
+				{
+					singleParticipant: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				},
+				{
+					conferenceSupervisor: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				},
+				{
+					teamMember: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				}
+			]
 		}
 	});
 }
 
 function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	const attribs: SubscriberObj['attribs'] = {
-		userId: user.id,
-		conferences: []
+		conferences: [],
+		userId: user.id
 	};
 
 	const lists: string[] = [];
@@ -211,12 +265,12 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const dm of user.delegationMemberships) {
 		attribs.conferences.push({
 			id: dm.conferenceId,
-			title: dm.delegation.conference.title,
 			role: dm.delegation.assignedNationAlpha3Code
 				? 'DELEGATE_NATION'
 				: dm.delegation.assignedNonStateActorId
 					? 'DELEGATE_NSA'
-					: undefined
+					: undefined,
+			title: dm.delegation.conference.title
 		});
 		if (dm.delegation.assignedNationAlpha3Code) {
 			lists.push(
@@ -255,8 +309,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const sp of user.singleParticipant) {
 		attribs.conferences.push({
 			id: sp.conferenceId,
-			title: sp.conference.title,
-			role: 'SINGLE_PARTICIPANT'
+			role: 'SINGLE_PARTICIPANT',
+			title: sp.conference.title
 		});
 		if (sp.assignedRoleId) {
 			lists.push(createListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS'));
@@ -273,8 +327,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const supervisors of user.conferenceSupervisor) {
 		attribs.conferences.push({
 			id: supervisors.conferenceId,
-			title: supervisors.conference.title,
-			role: 'SUPERVISOR'
+			role: 'SUPERVISOR',
+			title: supervisors.conference.title
 		});
 
 		if (supervisors.conference.state === 'PARTICIPANT_REGISTRATION') {
@@ -294,7 +348,7 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 					createListName(
 						supervisors.conference.title,
 						supervisors.conferenceId,
-						'REGISTRATION_NOT_COMPLETED'
+						'SUPERVISORS_REGISTRATION_NOT_COMPLETED'
 					)
 				);
 			}
@@ -327,8 +381,8 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 	for (const tm of user.teamMember) {
 		attribs.conferences.push({
 			id: tm.conferenceId,
-			title: tm.conference.title,
-			role: tm.role
+			role: tm.role,
+			title: tm.conference.title
 		});
 		// Default Team list for all Team Members
 		lists.push(createListName(tm.conference.title, tm.conferenceId, 'TEAM'));
@@ -363,81 +417,124 @@ function compareSubscriberToUser(subscriber: Subscriber, user: User) {
 	const listIsinSubscriberObj = subscriberObj.lists.every((list) => userObj.lists.includes(list));
 	const listIsinUserObj = userObj.lists.every((list) => subscriberObj.lists.includes(list));
 
+	const emailMatches = subscriber.email.toLowerCase() === user.email.toLowerCase();
+	const nameMatches =
+		subscriber.name ===
+		formatNames(user.given_name, user.family_name, { familyNameUppercase: false });
+
 	return (
-		lodash.isEqual(subscriberObj.attribs, userObj.attribs) &&
+		deepEquals(subscriberObj.attribs, userObj.attribs) &&
+		emailMatches &&
+		nameMatches &&
 		listIsinSubscriberObj &&
 		listIsinUserObj &&
 		subscriberObj.lists.length === userObj.lists.length
 	);
 }
 
-// MAIN TASK
+const mainFunction = async () => {
+	const startTime = logTaskStart(TASK_NAME);
+	if (!config.LISTMONK_API_URL || config.LISTMONK_API_URL === '') {
+		taskError(TASK_NAME, 'Listmonk API URL is not set. Aborting task.');
+		return;
+	}
 
-logLoading(TASK_NAME, CRON);
+	// Save all Lists for later use
+	const allLists: ListData[] = [];
 
-const _ = schedule.scheduleJob(
-	// TODO: we should allow passing the TZ via env var to the container
-	{ rule: CRON, tz: 'Etc/GMT-2' },
-	async function () {
-		const startTime = logTaskStart(TASK_NAME);
-		if (!config.LISTMONK_API_URL || config.LISTMONK_API_URL === '') {
-			taskError(TASK_NAME, 'Listmonk API URL is not set. Aborting task.');
-			return;
-		}
+	// Get all conferences
+	const conferences = await tasksDb.conference.findMany();
 
-		// Save all Lists for later use
-		const allLists: ListData[] = [];
+	// Get all Listmonk Subscribers
 
-		// Get all conferences
-		const conferences = await tasksDb.conference.findMany();
+	const subscribers = await getSubscribers<Subscriber>(40);
+	console.info(`Fetched ${subscribers.length} subscribers from Listmonk`);
 
-		// Get all Listmonk Subscribers
+	const users = await getUsers();
+	console.info(`Loaded ${users.length} users from the Database`);
 
-		const subscribers = await getSubscribers<Subscriber>(40);
-		console.info(`Fetched ${subscribers.length} subscribers from Listmonk`);
+	console.info('\nSTEP 1: Updating Lists');
+	console.info('======================');
 
-		const users = await getUsers();
-		console.info(`Loaded ${users.length} users from the Database`);
+	// Update Global Lists
+	console.info(`Syncing Global Lists`);
 
-		console.info('\nSTEP 1: Updating Lists');
-		console.info('======================');
-
-		// Update Global Lists
-		console.info(`Syncing Global Lists`);
-
-		const listsResponse = await listmonkClient.GET('/lists', {
-			params: {
-				query: {
-					per_page: 500
-				}
+	const listsResponse = await listmonkClient.GET('/lists', {
+		params: {
+			query: {
+				per_page: 500
 			}
-		});
-		if (listsResponse.error) {
-			taskError(
-				TASK_NAME,
-				`Failed to fetch lists from Listmonk. Aborting task.`,
-				(listsResponse as any).error
-			);
-			return;
 		}
-		const lists = listsResponse.data.data?.results;
+	});
+	if (listsResponse.error) {
+		taskError(
+			TASK_NAME,
+			`Failed to fetch lists from Listmonk. Aborting task.`,
+			(listsResponse as any).error
+		);
+		return;
+	}
+	const lists = listsResponse.data.data?.results;
 
-		// Update Global Lists
-		for (const list of requiredListsGlobal) {
-			const listName = createGlobalList(list);
-			const listmonkList = lists?.find((l) => l.name === listName);
+	// Update Global Lists
+	for (const list of requiredListsGlobal) {
+		const listName = createGlobalList(list);
+		const listmonkList = lists?.find((l) => l.name === listName);
+		if (!listmonkList) {
+			const res = await listmonkClient.POST('/lists', {
+				body: {
+					name: listName,
+					description: `List for ${listName} (global)`,
+					tags: ['global']
+				}
+			});
+			if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
+				taskError(
+					TASK_NAME,
+					`Failed to create list ${listName} (global). Aborting task.`,
+					res.error ? (res as any).error : undefined
+				);
+				return;
+			}
+			const resData = res.data.data;
+			allLists.push({
+				id: resData.id!,
+				name: resData.name!,
+				type: list
+			});
+			console.info(`  - Created list ${listName}`);
+		} else {
+			allLists.push({
+				id: listmonkList.id!,
+				name: listmonkList.name!,
+				type: list
+			});
+			console.info(`  - List ${listName} already exists`);
+		}
+	}
+
+	// Update per Conference
+	for (const conference of conferences) {
+		console.info(`Syncing Lists for conference ${conference.title}`);
+
+		// create lists
+		for (const list of requiredListsPerConference) {
+			const listmonkList = lists?.find(
+				(l) => l.name === createListName(conference.title, conference.id, list)
+			);
 			if (!listmonkList) {
+				const listName = createListName(conference.title, conference.id, list);
 				const res = await listmonkClient.POST('/lists', {
 					body: {
 						name: listName,
-						description: `List for ${listName} (global)`,
-						tags: ['global']
+						description: `List for ${list} of conference ${conference.title}`,
+						tags: [createTagName(conference.title, conference.id), list.toLowerCase()]
 					}
 				});
 				if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
 					taskError(
 						TASK_NAME,
-						`Failed to create list ${listName} (global). Aborting task.`,
+						`Failed to create list ${list} for conference ${conference.title}. Aborting task.`,
 						res.error ? (res as any).error : undefined
 					);
 					return;
@@ -455,7 +552,7 @@ const _ = schedule.scheduleJob(
 					name: listmonkList.name!,
 					type: list
 				});
-				console.info(`  - List ${listName} already exists`);
+				console.info(`  - List ${listmonkList.name} already exists`);
 			}
 		}
 
@@ -557,13 +654,13 @@ const _ = schedule.scheduleJob(
 			const res = await listmonkClient.POST('/subscribers', {
 				body: {
 					email: u.email,
-					name: formatNames(u.given_name, u.family_name),
+					name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
 					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id)
 				}
 			});
 			if (res.error) {
-				console.log(
+				console.error(
 					`  ! Failed to create subscriber for user ${u.id}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
 				);
 			} else {
@@ -581,7 +678,7 @@ const _ = schedule.scheduleJob(
 				}
 			});
 			if (res.error) {
-				console.info(
+				console.error(
 					`  ! Failed to delete subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
 				);
 			} else {
@@ -593,7 +690,7 @@ const _ = schedule.scheduleJob(
 		for (const s of subscribersToUpdate) {
 			const u = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
 			if (!u) {
-				console.info(`  ! Failed to find user for subscriber ${s.attribs.userId}: User not found`);
+				console.error(`  ! Failed to find user for subscriber ${s.attribs.userId}: User not found`);
 				continue;
 			}
 			const subscriberObj = constructSubscriberObjectFromUser(u!);
@@ -605,14 +702,14 @@ const _ = schedule.scheduleJob(
 				},
 				body: {
 					email: u.email,
-					name: formatNames(u.given_name, u.family_name),
+					name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
 					attribs: subscriberObj.attribs as Record<string, any>,
 					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id),
 					preconfirm_subscriptions: true
 				}
 			});
 			if (res.error) {
-				console.info(
+				console.error(
 					`  ! Failed to update subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
 				);
 			} else {
@@ -622,4 +719,25 @@ const _ = schedule.scheduleJob(
 
 		logTaskEnd(TASK_NAME, startTime);
 	}
-);
+};
+
+const program = new Command();
+
+program.option('--run-once', 'Run the mail sync task once immediately');
+program.parse(argv);
+
+const options = program.opts();
+
+// MAIN TASK
+
+if (options.runOnce) {
+	console.info(`Running ${TASK_NAME} once immediately`);
+	await mainFunction();
+} else {
+	logLoading(TASK_NAME, CRON);
+	const _ = schedule.scheduleJob(
+		// TODO: we should allow passing the TZ via env var to the container
+		{ rule: CRON, tz: 'Etc/GMT-2' },
+		mainFunction
+	);
+}
