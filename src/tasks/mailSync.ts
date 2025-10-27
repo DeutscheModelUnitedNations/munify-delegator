@@ -16,6 +16,7 @@ import formatNames from '$lib/services/formatNames';
 import deepEquals from './helper/deepEquals';
 import { Command } from 'commander';
 import { argv } from 'process';
+import dayjs from 'dayjs';
 
 // GLOBALS
 
@@ -165,6 +166,8 @@ async function getSubscribers<T>(perPage: number): Promise<T[]> {
 }
 
 async function getUsers(): Promise<User[]> {
+	const lt = dayjs().add(10, 'month').toDate();
+
 	return await tasksDb.user.findMany({
 		include: {
 			delegationMemberships: {
@@ -197,6 +200,54 @@ async function getUsers(): Promise<User[]> {
 					conference: true
 				}
 			}
+		},
+		where: {
+			OR: [
+				{
+					delegationMemberships: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				},
+				{
+					singleParticipant: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				},
+				{
+					conferenceSupervisor: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				},
+				{
+					teamMember: {
+						some: {
+							conference: {
+								endConference: {
+									lt
+								}
+							}
+						}
+					}
+				}
+			]
 		}
 	});
 }
