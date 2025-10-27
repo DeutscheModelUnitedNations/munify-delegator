@@ -14,6 +14,8 @@ import type {
 } from '@prisma/client';
 import formatNames from '$lib/services/formatNames';
 import deepEquals from './helper/deepEquals';
+import { Command } from 'commander';
+import { argv } from 'process';
 
 // GLOBALS
 
@@ -379,73 +381,109 @@ function compareSubscriberToUser(subscriber: Subscriber, user: User) {
 	);
 }
 
-// MAIN TASK
+const mainFunction = async () => {
+	const startTime = logTaskStart(TASK_NAME);
+	if (!config.LISTMONK_API_URL || config.LISTMONK_API_URL === '') {
+		taskError(TASK_NAME, 'Listmonk API URL is not set. Aborting task.');
+		return;
+	}
 
-logLoading(TASK_NAME, CRON);
+	// Save all Lists for later use
+	const allLists: ListData[] = [];
 
-const _ = schedule.scheduleJob(
-	// TODO: we should allow passing the TZ via env var to the container
-	{ rule: CRON, tz: 'Etc/GMT-2' },
-	async function () {
-		const startTime = logTaskStart(TASK_NAME);
-		if (!config.LISTMONK_API_URL || config.LISTMONK_API_URL === '') {
-			taskError(TASK_NAME, 'Listmonk API URL is not set. Aborting task.');
-			return;
-		}
+	// Get all conferences
+	const conferences = await tasksDb.conference.findMany();
 
-		// Save all Lists for later use
-		const allLists: ListData[] = [];
+	// Get all Listmonk Subscribers
 
-		// Get all conferences
-		const conferences = await tasksDb.conference.findMany();
+	const subscribers = await getSubscribers<Subscriber>(40);
+	console.info(`Fetched ${subscribers.length} subscribers from Listmonk`);
 
-		// Get all Listmonk Subscribers
+	const users = await getUsers();
+	console.info(`Loaded ${users.length} users from the Database`);
 
-		const subscribers = await getSubscribers<Subscriber>(40);
-		console.info(`Fetched ${subscribers.length} subscribers from Listmonk`);
+	console.info('\nSTEP 1: Updating Lists');
+	console.info('======================');
 
-		const users = await getUsers();
-		console.info(`Loaded ${users.length} users from the Database`);
+	// Update Global Lists
+	console.info(`Syncing Global Lists`);
 
-		console.info('\nSTEP 1: Updating Lists');
-		console.info('======================');
-
-		// Update Global Lists
-		console.info(`Syncing Global Lists`);
-
-		const listsResponse = await listmonkClient.GET('/lists', {
-			params: {
-				query: {
-					per_page: 500
-				}
+	const listsResponse = await listmonkClient.GET('/lists', {
+		params: {
+			query: {
+				per_page: 500
 			}
-		});
-		if (listsResponse.error) {
-			taskError(
-				TASK_NAME,
-				`Failed to fetch lists from Listmonk. Aborting task.`,
-				(listsResponse as any).error
-			);
-			return;
 		}
-		const lists = listsResponse.data.data?.results;
+	});
+	if (listsResponse.error) {
+		taskError(
+			TASK_NAME,
+			`Failed to fetch lists from Listmonk. Aborting task.`,
+			(listsResponse as any).error
+		);
+		return;
+	}
+	const lists = listsResponse.data.data?.results;
 
-		// Update Global Lists
-		for (const list of requiredListsGlobal) {
-			const listName = createGlobalList(list);
-			const listmonkList = lists?.find((l) => l.name === listName);
+	// Update Global Lists
+	for (const list of requiredListsGlobal) {
+		const listName = createGlobalList(list);
+		const listmonkList = lists?.find((l) => l.name === listName);
+		if (!listmonkList) {
+			const res = await listmonkClient.POST('/lists', {
+				body: {
+					name: listName,
+					description: `List for ${listName} (global)`,
+					tags: ['global']
+				}
+			});
+			if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
+				taskError(
+					TASK_NAME,
+					`Failed to create list ${listName} (global). Aborting task.`,
+					res.error ? (res as any).error : undefined
+				);
+				return;
+			}
+			const resData = res.data.data;
+			allLists.push({
+				id: resData.id!,
+				name: resData.name!,
+				type: list
+			});
+			console.info(`  - Created list ${listName}`);
+		} else {
+			allLists.push({
+				id: listmonkList.id!,
+				name: listmonkList.name!,
+				type: list
+			});
+			console.info(`  - List ${listName} already exists`);
+		}
+	}
+
+	// Update per Conference
+	for (const conference of conferences) {
+		console.info(`Syncing Lists for conference ${conference.title}`);
+
+		// create lists
+		for (const list of requiredListsPerConference) {
+			const listmonkList = lists?.find(
+				(l) => l.name === createListName(conference.title, conference.id, list)
+			);
 			if (!listmonkList) {
+				const listName = createListName(conference.title, conference.id, list);
 				const res = await listmonkClient.POST('/lists', {
 					body: {
 						name: listName,
-						description: `List for ${listName} (global)`,
-						tags: ['global']
+						description: `List for ${list} of conference ${conference.title}`,
+						tags: [createTagName(conference.title, conference.id), list.toLowerCase()]
 					}
 				});
 				if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
 					taskError(
 						TASK_NAME,
-						`Failed to create list ${listName} (global). Aborting task.`,
+						`Failed to create list ${list} for conference ${conference.title}. Aborting task.`,
 						res.error ? (res as any).error : undefined
 					);
 					return;
@@ -463,7 +501,7 @@ const _ = schedule.scheduleJob(
 					name: listmonkList.name!,
 					type: list
 				});
-				console.info(`  - List ${listName} already exists`);
+				console.info(`  - List ${listmonkList.name} already exists`);
 			}
 		}
 
@@ -630,4 +668,25 @@ const _ = schedule.scheduleJob(
 
 		logTaskEnd(TASK_NAME, startTime);
 	}
-);
+};
+
+const program = new Command();
+
+program.option('--run-once', 'Run the mail sync task once immediately');
+program.parse(argv);
+
+const options = program.opts();
+
+// MAIN TASK
+
+logLoading(TASK_NAME, CRON);
+
+if (options.runOnce) {
+	await mainFunction();
+} else {
+	const _ = schedule.scheduleJob(
+		// TODO: we should allow passing the TZ via env var to the container
+		{ rule: CRON, tz: 'Etc/GMT-2' },
+		mainFunction
+	);
+}
