@@ -730,11 +730,11 @@ const options = program.opts();
 
 // MAIN TASK
 
-logLoading(TASK_NAME, CRON);
-
 if (options.runOnce) {
+	console.info(`Running ${TASK_NAME} once immediately`);
 	await mainFunction();
 } else {
+	logLoading(TASK_NAME, CRON);
 	const _ = schedule.scheduleJob(
 		// TODO: we should allow passing the TZ via env var to the container
 		{ rule: CRON, tz: 'Etc/GMT-2' },
