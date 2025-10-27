@@ -3,7 +3,7 @@
 	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zod } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
@@ -14,7 +14,7 @@
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zod(applicationFormSchema),
+		validators: zod4Client(applicationFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		}
@@ -23,7 +23,7 @@
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
-	<Form {form} class="w-full max-w-lg">
+	<Form {form} class="w-full max-w-lg" requireTaintedToSubmit={false}>
 		<h1 class="text-3xl tracking-wider uppercase">{role.name}</h1>
 		<p>
 			{m.pleaseAnswerTheFollowingQuestions()}

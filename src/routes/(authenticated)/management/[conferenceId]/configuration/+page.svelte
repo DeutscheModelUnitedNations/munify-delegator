@@ -3,7 +3,7 @@
 	import FormFileInput from '$lib/components/Form/FormFile.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/Form/Form.svelte';
@@ -28,7 +28,7 @@
 	let form = superForm(data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zodClient(conferenceSettingsFormSchema),
+		validators: zod4Client(conferenceSettingsFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		}
@@ -203,7 +203,20 @@
 				/>
 			{/if}
 			<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
-			<FormDateTimeInput {form} name="startAssignment" label={m.conferenceStartAssignment()} />
+			<FormDateTimeInput
+				{form}
+				name="startAssignment"
+				label={m.conferenceStartAssignment()}
+				enableTime
+			/>
+			<FormTextInput
+				{form}
+				name="registrationDeadlineGracePeriodMinutes"
+				label={m.registrationDeadlineGracePeriod()}
+			/>
+			<p class="test-sm mb-2 opacity-50">
+				{m.technicalRegistrationDeadline()}: {data.technicalRegistrationDeadline.toLocaleString()}
+			</p>
 			<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 			<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
 		</FormFieldset>

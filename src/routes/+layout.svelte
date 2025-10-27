@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
+	import MaintenanceBanner from '$lib/components/MaintenanceBanner.svelte';
 	import Footer from './Footer.svelte';
 	import { Toaster } from 'svelte-french-toast';
 	import Inspect from 'svelte-inspect-value';
@@ -16,6 +17,7 @@
 	import { browser, dev } from '$app/environment';
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';
+	import DevTools from '$lib/components/DevTools.svelte';
 
 	let { children }: LayoutProps = $props();
 
@@ -58,6 +60,7 @@
 
 <Toaster />
 <CookieBanner />
+<MaintenanceBanner />
 <div class="flex min-h-screen">
 	<!-- {@render children()} -->
 	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
@@ -67,6 +70,7 @@
 
 {#if dev}
 	<Inspect.Panel />
+	<DevTools />
 {/if}
 
 <div style="display:none">

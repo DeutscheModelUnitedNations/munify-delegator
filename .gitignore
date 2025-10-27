@@ -34,3 +34,4 @@ tasksOut
 dev-get-data.sh
 
 tailwindcss*.log
+*.json.backup.*

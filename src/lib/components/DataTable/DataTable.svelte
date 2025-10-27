@@ -3,7 +3,7 @@
 	import { getTableSettings } from './dataTableSettings.svelte';
 	import Fuse from 'fuse.js';
 	import { m } from '$lib/paraglide/messages';
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import DataTableSettingsButton from './DataTableSettingsButton.svelte';
 	import PrintHeader from './DataTablePrintHeader.svelte';
@@ -14,8 +14,13 @@
 		columns: TableColumns<RowData>;
 		rows: RowData[];
 		enableSearch?: boolean;
+		sortBy?: string;
 		queryParamKey?: string;
 		title?: string;
+		showExpandIcon?: boolean;
+		expandSingle?: boolean;
+		expandedRowContent?: Snippet<[RowData]>;
+		filterOptions?: TableColumns<RowData>[number]['key'][];
 		additionallyIndexedKeys?: string[];
 		rowSelected?: (row: RowData) => void;
 		tableClass?: string;
@@ -25,7 +30,12 @@
 		columns,
 		rows,
 		enableSearch = true,
+		sortBy = 'family_name',
 		queryParamKey,
+		showExpandIcon = false,
+		expandSingle = false,
+		expandedRowContent,
+		filterOptions,
 		additionallyIndexedKeys = [],
 		title = page.url.pathname.split('/').pop()!,
 		tableClass,
@@ -33,7 +43,28 @@
 	}: Props = $props();
 	const { getTableSize, getZebra } = getTableSettings();
 
+	const enhancedColumns = $derived(
+		columns.map((col) => ({
+			...col,
+			headerFilterClass: col.filterValue ? 'input py-2' : undefined
+		}))
+	);
+
 	let searchPattern = queryParam(queryParamKey ?? 'filter');
+	let expanded = $state<string[]>([]);
+
+	const toggleExpanded = (row: RowData) => {
+		let rowKey = (row as any).rowKey ?? (row as any).id;
+		if (expanded.includes(rowKey)) {
+			expanded = expanded.filter((r) => r !== rowKey);
+		} else {
+			if (expandSingle) {
+				expanded = [rowKey];
+			} else {
+				expanded = [...expanded, rowKey];
+			}
+		}
+	};
 
 	const searchableRows = $derived.by(() => {
 		return rows.map((row) => {
@@ -128,17 +159,39 @@
 	class="svelte-table-wrapper mt-4 max-h-[80vh] min-w-0 overflow-x-auto transition-all duration-300 {tableClass}"
 >
 	<SvelteTable
-		{columns}
+		columns={enhancedColumns}
 		rows={searchedColumns}
-		on:clickRow={(e) => (rowSelected ? rowSelected(e.detail.row) : null)}
+		on:clickRow={(e) =>
+			expandedRowContent
+				? toggleExpanded(e.detail.row)
+				: rowSelected
+					? rowSelected(e.detail.row)
+					: undefined}
+		on:clickExpand={(e) => toggleExpanded(e.detail.row)}
 		rowKey="id"
-		classNameTable="table {getZebra() && 'table-zebra'} table-{getTableSize()} table-pin-rows"
+		classNameTable="table {getZebra() &&
+			!expandedRowContent &&
+			'table-zebra'} table-{getTableSize()} table-pin-rows"
 		classNameRow="hover:!bg-base-300 cursor-pointer"
+		classNameRowExpanded="bg-base-200"
+		classNameExpandedContent="shadow-inner ring-1 ring-black/5 bg-base-200 w-full overflow-x-auto"
 		iconAsc="<i class='fa-duotone fa-arrow-down-a-z'></i>"
 		iconDesc="<i class='fa-duotone fa-arrow-down-z-a'></i>"
 		iconSortable="<i class='fa-solid fa-sort'></i>"
-		sortBy="family_name"
-	/>
+		iconExpand="<button class='btn btn-ghost btn-sm btn-square btn-error'><i class='fa-solid fa-chevron-up'></i></button>"
+		iconExpanded="<button class='btn btn-ghost btn-sm btn-square btn-primary'><i class='fa-solid fa-chevron-down'></i></button>"
+		iconFilterable="<i class='fa-solid fa-filter'></i>"
+		{sortBy}
+		{expandSingle}
+		{showExpandIcon}
+		bind:expanded
+	>
+		<svelte:fragment slot="expanded" let:row>
+			{#if expandedRowContent}
+				{@render expandedRowContent(row)}
+			{/if}
+		</svelte:fragment>
+	</SvelteTable>
 </div>
 
 <style lang="postcss">

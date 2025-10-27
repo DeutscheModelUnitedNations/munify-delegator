@@ -32,6 +32,12 @@
 				title={m.seats()}
 				bind:expanded={navbarExpanded}
 			/>
+			<NavMenuButton
+				href={`/management/${data.conferenceId}/waitingList`}
+				icon="fa-user-clock"
+				title={m.waitingList()}
+				bind:expanded={navbarExpanded}
+			/>
 			<NavMenuDetails title={m.tables()} icon="fa-database" small={!navbarExpanded}>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/participants"

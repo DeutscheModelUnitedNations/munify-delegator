@@ -319,6 +319,7 @@ type Conference {
   postalName: String
   postalStreet: String
   postalZip: String
+  registrationDeadlineGracePeriodMinutes: Int!
   singleParticipants: [SingleParticipant!]!
   startAssignment: DateTime!
   startConference: DateTime!
@@ -328,14 +329,18 @@ type Conference {
   termsAndConditionsContent: String
   termsAndConditionsContentSet: Boolean!
   title: String!
+  totalParticipants: Int!
+  totalSeats: Int!
 
   """Payment and Postal information"""
   unlockPayments: Boolean!
   unlockPostals: Boolean!
+  waitingListLength: Int!
   website: String
 }
 
 input ConferenceCreateInput {
+  WaitingListEntry: WaitingListEntryCreateNestedManyWithoutConferenceInput
   accountHolder: String
   bankName: String
   bic: String
@@ -370,6 +375,7 @@ input ConferenceCreateInput {
   postalName: String
   postalStreet: String
   postalZip: String
+  registrationDeadlineGracePeriodMinutes: Int
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
   startAssignment: DateTime!
   startConference: DateTime!
@@ -385,6 +391,7 @@ input ConferenceCreateInput {
 }
 
 input ConferenceOrderByWithRelationInput {
+  WaitingListEntry: WaitingListEntryOrderByRelationAggregateInput
   accountHolder: SortOrder
   bankName: SortOrder
   bic: SortOrder
@@ -419,6 +426,7 @@ input ConferenceOrderByWithRelationInput {
   postalName: SortOrder
   postalStreet: SortOrder
   postalZip: SortOrder
+  registrationDeadlineGracePeriodMinutes: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
   startAssignment: SortOrder
   startConference: SortOrder
@@ -623,6 +631,7 @@ enum ConferenceScalarFieldEnum {
   postalName
   postalStreet
   postalZip
+  registrationDeadlineGracePeriodMinutes
   startAssignment
   startConference
   state
@@ -845,6 +854,7 @@ input ConferenceUpdateDataInput {
   postalName: String
   postalStreet: String
   postalZip: String
+  registrationDeadlineGracePeriodMinutes: Int
   startAssignment: DateTime
   startConference: DateTime
   state: ConferenceState
@@ -856,6 +866,7 @@ input ConferenceUpdateDataInput {
 }
 
 input ConferenceUpdateInput {
+  WaitingListEntry: WaitingListEntryUpdateManyWithoutConferenceNestedInput
   accountHolder: NullableStringFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
@@ -890,6 +901,7 @@ input ConferenceUpdateInput {
   postalName: NullableStringFieldUpdateOperationsInput
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
+  registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
@@ -931,6 +943,7 @@ input ConferenceUpdateManyMutationInput {
   postalName: NullableStringFieldUpdateOperationsInput
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
+  registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
@@ -946,6 +959,7 @@ input ConferenceWhereInput {
   AND: [ConferenceWhereInput!]
   NOT: [ConferenceWhereInput!]
   OR: [ConferenceWhereInput!]
+  WaitingListEntry: WaitingListEntryListRelationFilter
   accountHolder: StringNullableFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
@@ -980,6 +994,7 @@ input ConferenceWhereInput {
   postalName: StringNullableFilter
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
+  registrationDeadlineGracePeriodMinutes: IntFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
@@ -998,6 +1013,7 @@ input ConferenceWhereUniqueInput {
   AND: [ConferenceWhereInput!]
   NOT: [ConferenceWhereInput!]
   OR: [ConferenceWhereInput!]
+  WaitingListEntry: WaitingListEntryListRelationFilter
   accountHolder: StringNullableFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
@@ -1032,6 +1048,7 @@ input ConferenceWhereUniqueInput {
   postalName: StringNullableFilter
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
+  registrationDeadlineGracePeriodMinutes: IntFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
@@ -1052,6 +1069,7 @@ type CustomConferenceRole {
   fontAwesomeIcon: String
   id: ID!
   name: String!
+  seatAmount: Int!
   singleParticipant: [SingleParticipant!]!
   singleParticipantAssignments: [SingleParticipant!]!
 }
@@ -1068,6 +1086,7 @@ input CustomConferenceRoleCreateInput {
   fontAwesomeIcon: String
   id: String
   name: String!
+  seatAmount: Int
   singleParticipant: SingleParticipantCreateNestedManyWithoutAppliedForRolesInput
   singleParticipantAssignments: SingleParticipantCreateNestedManyWithoutAssignedRoleInput
   updatedAt: DateTime
@@ -1104,6 +1123,7 @@ input CustomConferenceRoleOrderByWithRelationInput {
   fontAwesomeIcon: SortOrder
   id: SortOrder
   name: SortOrder
+  seatAmount: SortOrder
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
   singleParticipantAssignments: SingleParticipantOrderByRelationAggregateInput
   updatedAt: SortOrder
@@ -1116,6 +1136,7 @@ enum CustomConferenceRoleScalarFieldEnum {
   fontAwesomeIcon
   id
   name
+  seatAmount
   updatedAt
 }
 
@@ -1126,6 +1147,7 @@ input CustomConferenceRoleUpdateInput {
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
+  seatAmount: IntFieldUpdateOperationsInput
   singleParticipant: SingleParticipantUpdateManyWithoutAppliedForRolesNestedInput
   singleParticipantAssignments: SingleParticipantUpdateManyWithoutAssignedRoleNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -1137,6 +1159,7 @@ input CustomConferenceRoleUpdateManyMutationInput {
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
+  seatAmount: IntFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -1163,6 +1186,7 @@ input CustomConferenceRoleWhereInput {
   fontAwesomeIcon: StringNullableFilter
   id: StringFilter
   name: StringFilter
+  seatAmount: IntFilter
   singleParticipant: SingleParticipantListRelationFilter
   singleParticipantAssignments: SingleParticipantListRelationFilter
   updatedAt: DateTimeFilter
@@ -1180,6 +1204,7 @@ input CustomConferenceRoleWhereUniqueInput {
   fontAwesomeIcon: StringNullableFilter
   id: String
   name: StringFilter
+  seatAmount: IntFilter
   singleParticipant: SingleParticipantListRelationFilter
   singleParticipantAssignments: SingleParticipantListRelationFilter
   updatedAt: DateTimeFilter
@@ -1929,6 +1954,7 @@ type Mutation {
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
+  createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -1947,6 +1973,7 @@ type Mutation {
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
+  deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
@@ -1969,6 +1996,7 @@ type Mutation {
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
+  updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   upsertSelf: UpsertSelfResult!
 }
 
@@ -2766,6 +2794,7 @@ type Query {
   findManySurveyQuestions(cursor: SurveyQuestionWhereUniqueInput, distinct: [SurveyQuestionScalarFieldEnum!], orderBy: [SurveyQuestionOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyQuestionWhereInput): [SurveyQuestion!]!
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
+  findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
@@ -2784,6 +2813,7 @@ type Query {
   findUniqueSurveyQuestion(where: SurveyQuestionWhereUniqueInput!): SurveyQuestion
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
+  findUniqueWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
@@ -3975,6 +4005,7 @@ input UserCreateInput {
   surveyAnswers: SurveyAnswerCreateNestedManyWithoutUserInput
   teamMember: TeamMemberCreateNestedManyWithoutUserInput
   updatedAt: DateTime
+  waitingListEntry: WaitingListEntryCreateNestedManyWithoutUserInput
   wantsJoinTeamInformation: Boolean
   wantsToReceiveGeneralInformation: Boolean
   zip: String
@@ -4008,6 +4039,7 @@ input UserOrderByWithRelationInput {
   surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
   teamMember: TeamMemberOrderByRelationAggregateInput
   updatedAt: SortOrder
+  waitingListEntry: WaitingListEntryOrderByRelationAggregateInput
   wantsJoinTeamInformation: SortOrder
   wantsToReceiveGeneralInformation: SortOrder
   zip: SortOrder
@@ -4190,6 +4222,7 @@ input UserUpdateInput {
   surveyAnswers: SurveyAnswerUpdateManyWithoutUserNestedInput
   teamMember: TeamMemberUpdateManyWithoutUserNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
+  waitingListEntry: WaitingListEntryUpdateManyWithoutUserNestedInput
   wantsJoinTeamInformation: BoolFieldUpdateOperationsInput
   wantsToReceiveGeneralInformation: BoolFieldUpdateOperationsInput
   zip: NullableStringFieldUpdateOperationsInput
@@ -4251,6 +4284,7 @@ input UserWhereInput {
   surveyAnswers: SurveyAnswerListRelationFilter
   teamMember: TeamMemberListRelationFilter
   updatedAt: DateTimeFilter
+  waitingListEntry: WaitingListEntryListRelationFilter
   wantsJoinTeamInformation: BoolFilter
   wantsToReceiveGeneralInformation: BoolFilter
   zip: StringNullableFilter
@@ -4287,9 +4321,168 @@ input UserWhereUniqueInput {
   surveyAnswers: SurveyAnswerListRelationFilter
   teamMember: TeamMemberListRelationFilter
   updatedAt: DateTimeFilter
+  waitingListEntry: WaitingListEntryListRelationFilter
   wantsJoinTeamInformation: BoolFilter
   wantsToReceiveGeneralInformation: BoolFilter
   zip: StringNullableFilter
+}
+
+"""An Entry of a User on a Waiting List for a Conference"""
+type WaitingListEntry {
+  assigned: Boolean!
+  conference: Conference!
+  createdAt: DateTime!
+  experience: String!
+  hidden: Boolean!
+  id: ID!
+  motivation: String!
+  requests: String
+  school: String!
+  user: User!
+}
+
+input WaitingListEntryConferenceIdUserIdCompoundUniqueInput {
+  conferenceId: String!
+  userId: String!
+}
+
+input WaitingListEntryCreateInput {
+  assigned: Boolean
+  conferenceId: String!
+  createdAt: DateTime
+  experience: String!
+  hidden: Boolean
+  id: String
+  motivation: String!
+  requests: String
+  school: String!
+  updatedAt: DateTime
+  userId: String!
+}
+
+input WaitingListEntryCreateNestedManyWithoutConferenceInput {
+  connect: [WaitingListEntryWhereUniqueInput!]
+}
+
+input WaitingListEntryCreateNestedManyWithoutUserInput {
+  connect: [WaitingListEntryWhereUniqueInput!]
+}
+
+input WaitingListEntryListRelationFilter {
+  every: WaitingListEntryWhereInput
+  none: WaitingListEntryWhereInput
+  some: WaitingListEntryWhereInput
+}
+
+input WaitingListEntryOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input WaitingListEntryOrderByWithRelationInput {
+  assigned: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  experience: SortOrder
+  hidden: SortOrder
+  id: SortOrder
+  motivation: SortOrder
+  requests: SortOrder
+  school: SortOrder
+  updatedAt: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum WaitingListEntryScalarFieldEnum {
+  assigned
+  conferenceId
+  createdAt
+  experience
+  hidden
+  id
+  motivation
+  requests
+  school
+  updatedAt
+  userId
+}
+
+input WaitingListEntryUpdateInput {
+  assigned: BoolFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  experience: StringFieldUpdateOperationsInput
+  hidden: BoolFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  motivation: StringFieldUpdateOperationsInput
+  requests: NullableStringFieldUpdateOperationsInput
+  school: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input WaitingListEntryUpdateManyMutationInput {
+  assigned: BoolFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  experience: StringFieldUpdateOperationsInput
+  hidden: BoolFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  motivation: StringFieldUpdateOperationsInput
+  requests: NullableStringFieldUpdateOperationsInput
+  school: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input WaitingListEntryUpdateManyWithoutConferenceNestedInput {
+  connect: [WaitingListEntryWhereUniqueInput!]
+  disconnect: [WaitingListEntryWhereUniqueInput!]
+  set: [WaitingListEntryWhereUniqueInput!]
+}
+
+input WaitingListEntryUpdateManyWithoutUserNestedInput {
+  connect: [WaitingListEntryWhereUniqueInput!]
+  disconnect: [WaitingListEntryWhereUniqueInput!]
+  set: [WaitingListEntryWhereUniqueInput!]
+}
+
+input WaitingListEntryWhereInput {
+  AND: [WaitingListEntryWhereInput!]
+  NOT: [WaitingListEntryWhereInput!]
+  OR: [WaitingListEntryWhereInput!]
+  assigned: BoolFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  experience: StringFilter
+  hidden: BoolFilter
+  id: StringFilter
+  motivation: StringFilter
+  requests: StringNullableFilter
+  school: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input WaitingListEntryWhereUniqueInput {
+  AND: [WaitingListEntryWhereInput!]
+  NOT: [WaitingListEntryWhereInput!]
+  OR: [WaitingListEntryWhereInput!]
+  assigned: BoolFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_userId: WaitingListEntryConferenceIdUserIdCompoundUniqueInput
+  createdAt: DateTimeFilter
+  experience: StringFilter
+  hidden: BoolFilter
+  id: String
+  motivation: StringFilter
+  requests: StringNullableFilter
+  school: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
 }
 
 input updateManyDelegationMemberInputTypeArrayValue {

@@ -164,6 +164,14 @@
 		committees: {
 			icon: 'podium',
 			translation: m.committees()
+		},
+		'waiting-list': {
+			icon: 'user-clock',
+			translation: m.waitingList()
+		},
+		waitingList: {
+			icon: 'user-clock',
+			translation: m.waitingList()
 		}
 	};
 

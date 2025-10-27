@@ -16,7 +16,7 @@
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 	import { superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
@@ -46,7 +46,7 @@
 		SPA: true,
 		resetForm: false,
 		validationMethod: 'oninput',
-		validators: zodClient(applicationFormSchema),
+		validators: zod4Client(applicationFormSchema),
 		onError: (e) => {
 			toast.error(e.result.error.message);
 		},

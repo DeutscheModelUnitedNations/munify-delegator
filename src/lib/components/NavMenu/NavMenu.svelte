@@ -8,6 +8,6 @@
 	let { children }: Props = $props();
 </script>
 
-<ul class="menu px-0">
+<ul class="menu w-full px-0">
 	{@render children()}
 </ul>

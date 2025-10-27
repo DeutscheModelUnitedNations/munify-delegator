@@ -29,20 +29,21 @@ enum ConferenceState {
 
 /// A conference in the system
 model Conference {
-  id                     String          @id @default(nanoid())
-  title                  String
-  longTitle              String?
-  location               String?
-  language               String?
-  website                String?
-  imageDataURL           String?
-  info                   String?
-  linkToPreparationGuide String?
-  linkToPaperInbox       String?
-  state                  ConferenceState @default(PRE)
-  startAssignment        DateTime
-  startConference        DateTime
-  endConference          DateTime
+  id                                     String          @id @default(nanoid())
+  title                                  String
+  longTitle                              String?
+  location                               String?
+  language                               String?
+  website                                String?
+  imageDataURL                           String?
+  info                                   String?
+  linkToPreparationGuide                 String?
+  linkToPaperInbox                       String?
+  state                                  ConferenceState @default(PRE)
+  startAssignment                        DateTime
+  registrationDeadlineGracePeriodMinutes Int             @default(30)
+  startConference                        DateTime
+  endConference                          DateTime
 
   /// Payment and Postal information
   unlockPayments  Boolean @default(false)
@@ -81,8 +82,9 @@ model Conference {
   paymentTransactions          PaymentTransaction[]
   surveyQuestions              SurveyQuestion[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+  WaitingListEntry WaitingListEntry[]
 }
 
 /// A committee in a conference. E.g. the human rights council
@@ -169,6 +171,7 @@ model User {
   ownPaymentTransactions        PaymentTransaction[]
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
   surveyAnswers                 SurveyAnswer[]
+  waitingListEntry              WaitingListEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -281,6 +284,7 @@ model CustomConferenceRole {
   name            String
   description     String
   fontAwesomeIcon String?
+  seatAmount      Int     @default(1)
 
   conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
@@ -475,6 +479,28 @@ model SurveyAnswer {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([questionId, userId])
+}
+
+/// An Entry of a User on a Waiting List for a Conference
+model WaitingListEntry {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+
+  school     String
+  experience String
+  motivation String
+  requests   String?
+
+  hidden   Boolean @default(false)
+  assigned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, userId])
 }
 
 /// Role a team member can have

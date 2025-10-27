@@ -2,7 +2,7 @@ import { cache, graphql } from '$houdini';
 import z from 'zod';
 import type { PageServerLoad } from './$types';
 import { message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import type { Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { fail } from '@sveltejs/kit';
@@ -45,7 +45,7 @@ export const load: PageServerLoad = async (event) => {
 		blocking: true
 	});
 
-	const addAgendaItemForm = await superValidate(zod(AddAgendaItemFormSchema));
+	const addAgendaItemForm = await superValidate(zod4(AddAgendaItemFormSchema));
 
 	return {
 		data,
@@ -55,7 +55,7 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(AddAgendaItemFormSchema));
+		const form = await superValidate(event.request, zod4(AddAgendaItemFormSchema));
 		if (!form.valid) {
 			return fail(400, { form });
 		}

@@ -4,7 +4,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
+	import toast from 'svelte-french-toast';
 	import type { GetCommitteeDataForCommitteeAssignmentVariables } from './$houdini';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	interface Props {
 		open: boolean;
@@ -76,15 +78,21 @@
 	<button
 		class="btn btn-error"
 		onclick={async () => {
-			loading = true;
 			if (!members) return;
-			await resetCommitteeAssignmentForAllDelegationMembers.mutate({
-				delegationMemberIds: members.map((m) => m.id)
-			});
+			loading = true;
+			try {
+				await toast.promise(
+					resetCommitteeAssignmentForAllDelegationMembers.mutate({
+						delegationMemberIds: members.map((m) => m.id)
+					}),
+					genericPromiseToastMessages
+				);
 
-			cache.markStale();
-			await invalidateAll();
-			loading = false;
+				cache.markStale();
+				await invalidateAll();
+			} finally {
+				loading = false;
+			}
 		}}
 	>
 		<i class="fas fa-trash-undo"></i>
@@ -127,18 +135,22 @@
 								<button
 									class="btn btn-square btn-sm {active ? 'btn-success' : ''} {loading &&
 										'disabled'}"
-									onclick={(e) => {
+									onclick={async () => {
 										loading = true;
-										updateDelegationMemberAssignedCommittee
-											.mutate({
-												committeeId: committee.id,
-												delegationMemberId: member.id
-											})
-											.then(async () => {
-												cache.markStale();
-												await invalidateAll();
-												loading = false;
-											});
+										try {
+											await toast.promise(
+												updateDelegationMemberAssignedCommittee.mutate({
+													committeeId: committee.id,
+													delegationMemberId: member.id
+												}),
+												genericPromiseToastMessages
+											);
+
+											cache.markStale();
+											await invalidateAll();
+										} finally {
+											loading = false;
+										}
 									}}
 								>
 									{#if loading}
