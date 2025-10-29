@@ -8,7 +8,7 @@
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { ParticipationType, UserRowData } from './types';
 	import { cache, query } from '$houdini';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import { getAgeAtConference, ofAgeAtConference } from '$lib/services/ageChecker';
 	import { queryParam } from 'sveltekit-search-params';
 
 	const { data }: { data: PageData } = $props();
@@ -70,14 +70,6 @@
 		}
 	};
 
-	const calculateConferenceAge = (birthday: Date) => {
-		if (!conference?.startConference) return undefined;
-		const age = conference.startConference.getFullYear() - birthday.getFullYear();
-		const m = conference.startConference.getMonth() - birthday.getMonth();
-		const d = conference.startConference.getDate() - birthday.getDate();
-		return (m < 0 || (m === 0 && d < 0) ? age - 1 : age).toString();
-	};
-
 	const { getTableSize } = getTableSettings();
 
 	const columns: TableColumns<UserRowData> = [
@@ -125,7 +117,7 @@
 			title: m.conferenceAge(),
 			value: (row) =>
 				row.birthday && conference?.endConference
-					? (calculateConferenceAge(row.birthday) ?? 'N/A')
+					? (getAgeAtConference(row.birthday, conference.startConference) ?? 'N/A')
 					: 'N/A',
 			sortable: true,
 			class: 'text-center',

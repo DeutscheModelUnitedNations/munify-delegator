@@ -6,12 +6,21 @@
 		getSingleRoles,
 		unassignSingleRole,
 		convertSingleToDelegation,
-		assignSingleRole
-	} from './appData.svelte';
+		assignSingleRole,
+		loadProjects
+	} from '../appData.svelte';
 
-	import SingleParticipantCard from './SingleParticipantCard.svelte';
+	import SingleParticipantCard from '../SingleParticipantCard.svelte';
+	import { onMount } from 'svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let dragging = $state(false);
+
+	onMount(() => {
+		loadProjects(data.projectId);
+	});
 
 	function handleDrop(state: DragDropState<{ id: string }>) {
 		const { draggedItem, sourceContainer, targetContainer } = state;
