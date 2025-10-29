@@ -70,10 +70,6 @@
 				id
 				given_name
 				family_name
-				gender
-				birthday
-				globalNotes
-				conferenceParticipationsCount
 			}
 		}
 	`);

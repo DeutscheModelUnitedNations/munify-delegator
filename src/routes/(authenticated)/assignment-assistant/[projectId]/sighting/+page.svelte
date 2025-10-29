@@ -55,7 +55,7 @@
 			Zuteilung zu optimieren. Eine bessere Bewertung erhöht die Wahrscheinlichkeit, dass die Bewerbung
 			eine Wunschrolle erhält. Eine schlechtere Bewertung verringert die Wahrscheinlichkeit und kann
 			sogar bei Engpässen zu einer einstweiligen Ablehnung führen. Eine "Grundbewertung" kann festgelegt
-			werden, um die Bewertung zu standardisieren – sie liegt standartmäßig bei 2,5 Sternen.
+			werden, um die Bewertung zu standardisieren – sie liegt standardmäßig bei 2,5 Sternen.
 		</li>
 		<li>
 			<strong>Notizen:</strong> Zu jeder Bewerbung kann eine Notiz hinzugefügt werden, um besondere Umstände
@@ -77,7 +77,7 @@
 		Zu jedem Zeitpunkt kann der Stand der Zuteilung als JSON-Datei exportiert und damit sicher
 		gespeichert bzw. auch verschickt werden. Es ist wichtig, regelmäßig zu speichern – nicht zuletzt
 		um auch eine Möglichkeit zu haben, auf einen früheren Stand zurückzukehren. Viele Aktionen
-		können zwar wieder umgekehrt werden, aber ein generelles zurücksetzen von Aktionen wie "Str+Z"
+		können zwar wieder umgekehrt werden, aber ein generelles zurücksetzen von Aktionen wie "Strg+Z"
 		ist nicht möglich.
 	</p>
 </TextPreview>

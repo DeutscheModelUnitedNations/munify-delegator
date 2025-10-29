@@ -16,15 +16,11 @@
 	let buckets = $state<Member[][]>([[]]);
 
 	const getUserDetailsQuery = graphql(`
-		query GetUserDetailsForPartition($userId: [String!]) {
-			findManyUsers(where: { id: { in: $userId } }) {
+		query GetUserDetailsForPartition($userIds: [String!]) {
+			findManyUsers(where: { id: { in: $userIds } }) {
 				id
 				given_name
 				family_name
-				gender
-				birthday
-				globalNotes
-				conferenceParticipationsCount
 			}
 		}
 	`);

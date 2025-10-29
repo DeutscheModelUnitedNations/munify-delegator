@@ -13,10 +13,12 @@
 <a
 	role="tab"
 	class="tab {active && 'tab-active'} {disabled && 'tab-disabled'}"
-	tabindex="-1"
+	aria-selected={active}
+	aria-disabled={disabled}
+	tabindex={disabled ? -1 : 0}
 	{onclick}
 	onkeydown={onclick}
-	{href}
+	href={disabled ? undefined : href}
 >
 	<div class="inline-flex items-center gap-2 {active && 'font-bold'}">
 		<i class="fa-duotone fa-{icon.replace('fa-', '')}"></i>
