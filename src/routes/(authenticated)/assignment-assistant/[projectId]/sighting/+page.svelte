@@ -1,6 +1,5 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import { getApplications, getConference, getSchools, loadProjects } from '../appData.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import type { PageProps } from './$types';

@@ -89,6 +89,6 @@ export const _houdini_load = graphql(`
 `);
 
 export const _BaseAssignmentDataQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+  const { conferenceId } = event.params;
+  return { conferenceId };
 };

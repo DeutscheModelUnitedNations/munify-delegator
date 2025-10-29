@@ -140,7 +140,6 @@
 				).toFixed(1)}
 			</div>
 		</LoadingData>
-
 		{#if application.note}
 			<div class="tooltip" data-tip={application.note}>
 				<i class="fas fa-sticky-note"></i>
