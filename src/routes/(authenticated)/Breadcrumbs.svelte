@@ -172,6 +172,34 @@
 		waitingList: {
 			icon: 'user-clock',
 			translation: m.waitingList()
+		},
+		'assignment-assistant': {
+			icon: 'robot',
+			translation: m.assignmentAssistant()
+		},
+		projectId: {
+			icon: 'folder-open',
+			translation: m.project()
+		},
+		sighting: {
+			icon: 'binoculars',
+			translation: m.sightings()
+		},
+		weighting: {
+			icon: 'scale-unbalanced',
+			translation: m.weighting()
+		},
+		singles: {
+			icon: 'user',
+			translation: m.singleParticipants()
+		},
+		assignment: {
+			icon: 'arrows-turn-to-dots',
+			translation: m.assignment()
+		},
+		summary: {
+			icon: 'file-chart-column',
+			translation: m.summary()
 		}
 	};
 

@@ -40,28 +40,30 @@
 		Alle Bewerbungen, die keine Bewertung haben, werden automatisch als Nullbewertung gewertet. Den neutralen
 		Wert 0 bekommen also alle Bewerbungen, die keine oder diese Bewertung haben.
 	</p>
-	<input
-		type="range"
-		min="0.5"
-		max="5"
-		value={getWeights().nullRating}
-		class="range"
-		step="0.5"
-		onchange={(e: any) => {
-			setNullRating(e.target.value);
-		}}
-	/>
-	<div class="flex w-full justify-between px-2 text-xs">
-		<span>|</span>
-		<span>1</span>
-		<span>|</span>
-		<span>2</span>
-		<span>|</span>
-		<span>3</span>
-		<span>|</span>
-		<span>4</span>
-		<span>|</span>
-		<span>5</span>
+	<div class="w-full max-w-xs">
+		<input
+			type="range"
+			min="0.5"
+			max="5"
+			value={getWeights().nullRating}
+			class="range"
+			step="0.5"
+			onchange={(e: any) => {
+				setNullRating(e.target.value);
+			}}
+		/>
+		<div class="flex w-full justify-between px-2 text-xs">
+			<span>|</span>
+			<span>1</span>
+			<span>|</span>
+			<span>2</span>
+			<span>|</span>
+			<span>3</span>
+			<span>|</span>
+			<span>4</span>
+			<span>|</span>
+			<span>5</span>
+		</div>
 	</div>
 	<h4>Multiplikator</h4>
 	<p>
