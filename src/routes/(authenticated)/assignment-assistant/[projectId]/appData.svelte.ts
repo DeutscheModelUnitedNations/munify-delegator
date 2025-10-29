@@ -85,7 +85,7 @@ export const SingleAssignmentSchema = z.object({
 export const ConferenceSchema = z.object({
 	id: z.string(),
 	title: z.string(),
-	startConference: z.date(),
+	startConference: z.coerce.date(),
 	committees: z.array(CommitteeSchema),
 	nonStateActors: z.array(NonStateActorSchema),
 	individualApplicationOptions: z.array(IndividualApplicationOptionSchema)
@@ -382,7 +382,8 @@ export const convertSingleToDelegation = (singleId: string) => {
 			{
 				id: Math.round(Math.random() * 1000000).toString(),
 				isHeadDelegate: true,
-				user: single.user
+				user: single.user,
+				supervisors: single.supervisors
 			}
 		],
 		appliedForRoles: [],

@@ -29,6 +29,9 @@ export const _houdini_load = graphql(`
 				}
 				supervisors {
 					id
+					user {
+						id
+					}
 				}
 			}
 		}
@@ -39,6 +42,9 @@ export const _houdini_load = graphql(`
 			id
 			supervisors {
 				id
+				user {
+					id
+				}
 			}
 			user {
 				id

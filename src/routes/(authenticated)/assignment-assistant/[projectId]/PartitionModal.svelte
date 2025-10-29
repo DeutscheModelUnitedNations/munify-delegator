@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { graphql } from '$houdini';
 	import { getDelegationApplication, splitDelegation, type Member } from './appData.svelte';
 
 	interface Props {
@@ -7,10 +8,35 @@
 		id: string | undefined;
 	}
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
+	import LoadingData from './components/LoadingData.svelte';
+	import formatNames from '$lib/services/formatNames';
 
 	let { open, close, id }: Props = $props();
 
 	let buckets = $state<Member[][]>([[]]);
+
+	const getUserDetailsQuery = graphql(`
+		query GetUserDetailsForPartition($userId: [String!]) {
+			findManyUsers(where: { id: { in: $userId } }) {
+				id
+				given_name
+				family_name
+				gender
+				birthday
+				globalNotes
+				conferenceParticipationsCount
+			}
+		}
+	`);
+
+	$effect(() => {
+		if (!id) return;
+		getUserDetailsQuery.fetch({
+			variables: {
+				userIds: buckets.flat().map((x) => x.user.id)
+			}
+		});
+	});
 
 	$effect(() => {
 		if (!id) {
@@ -19,7 +45,6 @@
 		}
 		const members = getDelegationApplication(id)?.members;
 		if (!members) return;
-		console.log('now');
 		buckets = [[...getDelegationApplication(id)!.members]];
 	});
 
@@ -69,8 +94,17 @@
 							>
 								<i class="fas fa-grip-dots"></i>
 								<p>
-									{member.user.given_name}
-									{member.user.family_name.toLocaleUpperCase()}
+									<LoadingData
+										fetching={$getUserDetailsQuery.fetching}
+										error={$getUserDetailsQuery.error}
+									>
+										{formatNames(
+											$getUserDetailsQuery.data?.findManyUsers.find((u) => u.id === member.user.id)
+												?.given_name,
+											$getUserDetailsQuery.data?.findManyUsers.find((u) => u.id === member.user.id)
+												?.family_name
+										)}
+									</LoadingData>
 									{#if member.isHeadDelegate}
 										<i class="fa-duotone fa-medal ml-2"></i>
 									{/if}
