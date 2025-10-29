@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import { getApplications, loadProjects } from '../appData.svelte';
+	import { getApplications, getConference, loadProjects } from '../appData.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import type { PageProps } from './$types';
@@ -25,14 +25,11 @@
 	let page = $derived($params.page ?? 1);
 	let pageSize = $derived($params.pageSize ?? 10);
 
+	let conference = $state(getConference());
+
 	onMount(() => {
 		loadProjects(data.projectId);
 	});
-
-	const setPageSize = (size: number) => {
-		$params.pageSize = size;
-		$params.page = 1; // Reset to first page when page size changes
-	};
 
 	const setPage = (newPage: number) => {
 		$params.page = newPage;
@@ -91,7 +88,7 @@
 	</div>
 	{#each getApplications() as application, index}
 		{#if index >= (page - 1) * pageSize && index < page * pageSize}
-			<Application {application} />
+			<Application {application} startConference={conference?.startConference ?? new Date()} />
 		{/if}
 	{/each}
 	<div class="flex flex-col items-center justify-center gap-4">

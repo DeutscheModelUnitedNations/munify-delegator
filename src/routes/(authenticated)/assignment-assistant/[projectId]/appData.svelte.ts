@@ -85,6 +85,7 @@ export const SingleAssignmentSchema = z.object({
 export const ConferenceSchema = z.object({
 	id: z.string(),
 	title: z.string(),
+	startConference: z.date(),
 	committees: z.array(CommitteeSchema),
 	nonStateActors: z.array(NonStateActorSchema),
 	individualApplicationOptions: z.array(IndividualApplicationOptionSchema)

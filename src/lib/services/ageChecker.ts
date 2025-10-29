@@ -1,11 +1,33 @@
+import dayjs from 'dayjs';
+
+export function getAgeAtConference(birthday: Date | string, startConference: Date | string) {
+	const start = dayjs(startConference);
+	const birth = dayjs(birthday);
+
+	if (!start.isValid() || !birth.isValid()) {
+		return undefined;
+	}
+
+	// Compute age in full years by comparing year/month/day
+	let years = start.year() - birth.year();
+	if (
+		start.month() < birth.month() ||
+		(start.month() === birth.month() && start.date() < birth.date())
+	) {
+		years -= 1;
+	}
+
+	return years;
+}
+
 export function ofAgeAtConference(
-	conferenceStart: Date | string | undefined | null,
+	startConference: Date | string | undefined | null,
 	dateOfBirth: Date | string | undefined | null
 ): boolean {
-	if (!conferenceStart || !dateOfBirth) {
+	if (!startConference || !dateOfBirth) {
 		return false;
 	}
-	const start = new Date(conferenceStart);
-	const birth = new Date(dateOfBirth);
-	return (start.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365.25) >= 18;
+
+	const ageAtConference = getAgeAtConference(dateOfBirth, startConference);
+	return ageAtConference ? ageAtConference >= 18 : false;
 }

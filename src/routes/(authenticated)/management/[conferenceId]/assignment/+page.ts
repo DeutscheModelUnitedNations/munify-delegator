@@ -27,6 +27,9 @@ export const _houdini_load = graphql(`
 				user {
 					id
 				}
+				supervisors {
+					id
+				}
 			}
 		}
 
@@ -34,6 +37,9 @@ export const _houdini_load = graphql(`
 			where: { conferenceId: { equals: $conferenceId }, applied: { equals: true } }
 		) {
 			id
+			supervisors {
+				id
+			}
 			user {
 				id
 			}
@@ -47,6 +53,7 @@ export const _houdini_load = graphql(`
 		findUniqueConference(where: { id: $conferenceId }) {
 			id
 			title
+			startConference
 			nonStateActors {
 				id
 				name

@@ -2,6 +2,7 @@
 	import TextPreview from '$lib/components/TextPreview.svelte';
 	import codenamize from '$lib/services/codenamize';
 	import formatNames from '$lib/services/formatNames';
+	import { onMount } from 'svelte';
 	import {
 		getApplications,
 		getConference,
@@ -9,13 +10,20 @@
 		getNations,
 		getNSAs,
 		getProject,
+		loadProjects,
 		type Delegation,
 		type Nation,
 		type NonStateActor
 	} from '../appData.svelte';
 	import DelegationCard from '../DelegationCard.svelte';
 	import NationCard from '../NationCard.svelte';
+	import type { PageData } from './$types';
 
+	let { data }: { data: PageData } = $props();
+
+	onMount(() => {
+		loadProjects(data.projectId);
+	});
 	const project = $derived(getProject());
 
 	const getRejections = $derived(() =>

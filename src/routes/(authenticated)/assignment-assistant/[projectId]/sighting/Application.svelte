@@ -14,12 +14,14 @@
 	import { graphql } from '$houdini';
 	import LoadingData from '../components/LoadingData.svelte';
 	import Members from './Members.svelte';
+	import formatNames from '$lib/services/formatNames';
 
 	interface Props {
 		application: ReturnType<typeof getApplications>[number];
+		startConference: Date;
 	}
 
-	let { application }: Props = $props();
+	let { application, startConference }: Props = $props();
 
 	let applicationDetails = $derived.by<
 		| {
@@ -35,8 +37,12 @@
 		return delegation ?? singleParticipant ?? undefined;
 	});
 
+	let supervisorDetails = $derived.by(() => {
+		return $getApplicationDetailsQuery.data?.findManyConferenceSupervisors ?? [];
+	});
+
 	const getApplicationDetailsQuery = graphql(`
-		query GetApplicationDetails($applicationId: String!) {
+		query GetApplicationDetails($applicationId: String!, $supervisorIds: [String!]) {
 			findUniqueDelegation(where: { id: $applicationId }) {
 				id
 				school
@@ -50,6 +56,14 @@
 				experience
 				motivation
 			}
+
+			findManyConferenceSupervisors(where: { id: { in: $supervisorIds } }) {
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
 		}
 	`);
 
@@ -57,7 +71,12 @@
 		if (!application.id) return;
 		getApplicationDetailsQuery.fetch({
 			variables: {
-				applicationId: application.id
+				applicationId: application.id,
+				supervisorIds: (
+					application.supervisors?.map((sp) => sp.id) ??
+					application.members?.flatMap((m) => m.supervisors?.map((sp) => sp.id)) ??
+					[]
+				).filter((v) => !!v)
 			}
 		});
 	});
@@ -160,26 +179,28 @@
 					</td>
 				</tr>
 			{/if}
-
 			<Members
 				userIds={application.user?.id
 					? [application.user.id]
-					: (application.members?.map((member) => member.id) ?? [])}
+					: (application.members?.map((member) => member.user.id) ?? [])}
+				{startConference}
 			/>
 
-			{#if application.supervisors && application.supervisors.length > 0}
+			{#if supervisorDetails && supervisorDetails.length > 0}
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-chalkboard-user text-lg"></i></td>
 					<td>
-						<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
-							>{application.supervisors?.length}</span
+						<LoadingData
+							fetching={$getApplicationDetailsQuery.fetching}
+							error={!applicationDetails?.school}
 						>
-						<!-- {application.supervisors -->
-						<!-- 	.map((x) => { -->
-						<!-- 		if (x.user) return formatNames(x.user.given_name, x.user.family_name); -->
-						<!-- 		return 'N/A'; -->
-						<!-- 	}) -->
-						<!-- 	.join(', ')} -->
+							{supervisorDetails
+								.map((x) => {
+									if (x.user) return formatNames(x.user.given_name, x.user.family_name);
+									return 'N/A';
+								})
+								.join(', ')}
+						</LoadingData>
 					</td>
 				</tr>
 			{/if}

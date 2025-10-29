@@ -7,6 +7,7 @@
 		getNations,
 		getNSAs,
 		getRemainingSeats,
+		loadProjects,
 		resetSeatCategory,
 		unassignNationOrNSAFromDelegation,
 		type Nation,
@@ -19,9 +20,17 @@
 	import SizeTabs from '../SizeTabs.svelte';
 	import PartitionModal from '../PartitionModal.svelte';
 	import TextPreview from '$lib/components/TextPreview.svelte';
+	import { onMount } from 'svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let dragging = $state(false);
 	let optionsModalOpen = $state<string | undefined>(undefined);
+
+	onMount(() => {
+		loadProjects(data.projectId);
+	});
 
 	let largestApplication = $derived(() =>
 		Math.max(...getDelegationApplications().map((application) => application.members.length))

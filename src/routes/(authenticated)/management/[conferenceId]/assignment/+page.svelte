@@ -5,9 +5,8 @@
 	import { prettifyError } from 'zod';
 	import {
 		ProjectDataSchema,
-		type Project,
 		type ProjectData
-	} from '../../../../assignment-assistant/[projectId]/appData.svelte';
+	} from '../../../../(authenticated)/assignment-assistant/[projectId]/appData.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
