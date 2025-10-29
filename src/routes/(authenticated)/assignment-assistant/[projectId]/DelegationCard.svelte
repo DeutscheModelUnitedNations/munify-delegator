@@ -88,23 +88,23 @@
 		});
 	});
 
-	let gotWishNation = $derived(() => {
+	let gotWishNation = $derived.by(() => {
 		if (!application.assignedNation) return false;
 		return application.appliedForRoles
 			.map((x) => x.nation?.alpha3Code)
 			.includes(application.assignedNation?.alpha3Code);
 	});
 
-	let gotWishNSA = $derived(() => {
+	let gotWishNSA = $derived.by(() => {
 		if (!application.assignedNSA) return false;
 		return application.appliedForRoles
 			.map((x) => x.nonStateActor?.id)
 			.includes(application.assignedNSA?.id);
 	});
 
-	let gotWish = $derived(() => {
+	let gotWish = $derived.by(() => {
 		if (!application.assignedNation && !application.assignedNSA) return true;
-		return gotWishNation() || gotWishNSA();
+		return gotWishNation || gotWishNSA;
 	});
 </script>
 
@@ -114,7 +114,7 @@
 		? 'bg-warning'
 		: application.note
 			? `bg-info`
-			: 'bg-base-300'} {!gotWish() ? 'shadow-md shadow-red-500' : 'shadow'}"
+			: 'bg-base-300'} {!gotWish ? 'shadow-md shadow-red-500' : 'shadow'}"
 >
 	<p class="text-xs font-bold">
 		{codenamize(application.id)}
