@@ -210,9 +210,9 @@ builder.mutationFields((t) => {
 								conferenceId: data.conference.id,
 								entryCode: makeEntryCode(),
 								assignedNationAlpha3Code: nation.nation.alpha3Code,
-								experience: assignedDelegations[0].experience,
-								motivation: assignedDelegations[0].motivation,
-								school: assignedDelegations[0].school,
+								experience: 'Created during assignment',
+								motivation: 'Created during assignment',
+								school: 'Created during assignment',
 								members:
 									newUserIds.length > 0
 										? {
@@ -320,9 +320,9 @@ builder.mutationFields((t) => {
 									applied: true,
 									conferenceId: data.conference.id,
 									entryCode: makeEntryCode(),
-									experience: assignedDelegations[0].experience,
-									motivation: assignedDelegations[0].motivation,
-									school: assignedDelegations[0].school,
+									experience: 'Created during assignment',
+									motivation: 'Created during assignment',
+									school: 'Created during assignment',
 									assignedNonStateActorId: nsa.id,
 									members: {
 										create: newUserIds.map((x, i) => ({
