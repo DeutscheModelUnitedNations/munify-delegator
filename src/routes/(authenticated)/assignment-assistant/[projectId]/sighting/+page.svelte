@@ -8,6 +8,7 @@
 	import Application from './Application.svelte';
 	import { graphql } from '$houdini';
 	import SchoolFilter from './SchoolFilter.svelte';
+	import codenmz from '$lib/services/codenamize';
 
 	let { data }: PageProps = $props();
 
@@ -26,8 +27,16 @@
 			encode: (val) => val.join(','),
 			decode: (val) => (val ? val.split(',') : []),
 			defaultValue: []
+		},
+		search: {
+			defaultValue: '',
+			encode: (v) => v,
+			decode: (v) => v ?? ''
 		}
 	});
+
+	let searchActive = $derived($params.search.length > 2);
+	let filterActive = $derived($params.filter.length > 0 && !searchActive);
 
 	let page = $derived($params.page ?? 1);
 	let pageSize = $derived($params.pageSize ?? 10);
@@ -90,21 +99,33 @@
 </TextPreview>
 
 <div class="mt-6 flex flex-col gap-4">
-	<SchoolFilter bind:filter={$params.filter} />
+	<div class="flex flex-col items-center gap-4">
+		<SchoolFilter bind:filter={$params.filter} />
+		<label class="input input-bordered flex items-center gap-2">
+			<input type="text" class="grow" placeholder="Suche" bind:value={$params.search} />
+		</label>
+	</div>
 
-	{#if $params.filter.length === 0}
+	{#if $params.filter.length === 0 && searchActive}
 		<div class="flex items-center justify-center">
 			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
 		</div>
 	{/if}
 
 	{#each getApplications() as application, index}
-		{#if ($params.filter.length === 0 && index >= (page - 1) * pageSize && index < page * pageSize) || $params.filter.includes(application.school ?? '')}
+		{@const inCurrentPage = index >= (page - 1) * pageSize && index < page * pageSize}
+		{@const filterOrSearchActive = filterActive || searchActive}
+		{@const inFilter = filterActive && $params.filter.includes(application.school ?? '')}
+		{@const inSearch =
+			searchActive &&
+			(codenmz(application.id).toLowerCase().includes($params.search.toLowerCase()) ||
+				application.school?.toLowerCase().includes($params.search.toLowerCase()))}
+		{#if (!filterOrSearchActive && inCurrentPage) || inFilter || inSearch}
 			<Application {application} startConference={conference?.startConference ?? new Date()} />
 		{/if}
 	{/each}
 
-	{#if $params.filter.length === 0}
+	{#if $params.filter.length === 0 && $params.search === ''}
 		<div class="flex flex-col items-center justify-center gap-4">
 			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
 			<div class="flex items-center gap-4">
