@@ -8,6 +8,7 @@
 	import { graphql } from '$houdini';
 	import SchoolFilter from './SchoolFilter.svelte';
 	import codenmz from '$lib/services/codenamize';
+	import { getConference, loadProjects, getApplications } from '../appData.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -114,11 +115,11 @@
 	{#each getApplications() as application, index}
 		{@const inCurrentPage = index >= (page - 1) * pageSize && index < page * pageSize}
 		{@const filterOrSearchActive = filterActive || searchActive}
-		{@const inFilter = filterActive && $params.filter.includes(application.school ?? '')}
+		{@const inFilter = filterActive && $params.filter?.includes(application.school ?? '')}
 		{@const inSearch =
 			searchActive &&
 			(codenmz(application.id).toLowerCase().includes($params.search.toLowerCase()) ||
-				application.school?.toLowerCase().includes($params.search.toLowerCase()))}
+				application.school?.toLowerCase()?.includes($params.search.toLowerCase()))}
 		{#if (!filterOrSearchActive && inCurrentPage) || inFilter || inSearch}
 			<Application {application} startConference={conference?.startConference ?? new Date()} />
 		{/if}
