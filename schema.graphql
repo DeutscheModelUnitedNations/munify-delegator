@@ -320,6 +320,7 @@ type Conference {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int!
+  schools: [ConferenceSchools!]!
   singleParticipants: [SingleParticipant!]!
   startAssignment: DateTime!
   startConference: DateTime!
@@ -646,6 +647,11 @@ enum ConferenceScalarFieldEnum {
 input ConferenceScalarRelationFilter {
   is: ConferenceWhereInput
   isNot: ConferenceWhereInput
+}
+
+type ConferenceSchools {
+  count: Int!
+  school: String!
 }
 
 enum ConferenceState {
@@ -1974,6 +1980,7 @@ type Mutation {
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!

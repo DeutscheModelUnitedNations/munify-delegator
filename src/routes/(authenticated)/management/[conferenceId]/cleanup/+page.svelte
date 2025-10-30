@@ -3,6 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import Modal from './Modal.svelte';
+	import NormalizeSchools from './NormalizeSchools.svelte';
 	import Section from './Section.svelte';
 	import type { ModalData } from './types';
 
@@ -125,6 +126,7 @@
 			);
 		}}
 	/>
+	<NormalizeSchools conferenceId={data.conferenceId} />
 </div>
 
 <Modal {modalData} open={!!modalData} closeModal={() => (modalData = undefined)} />
