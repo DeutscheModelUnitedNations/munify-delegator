@@ -43,7 +43,6 @@ import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 import { ConferenceState } from '$db/generated/graphql/inputs';
-import { conference } from '$lib/paraglide/messages';
 import { findManyNationQueryObject } from '$db/generated/graphql/Nation';
 
 builder.prismaObject('Conference', {
@@ -215,71 +214,71 @@ builder.prismaObject('Conference', {
 						conferenceId: conference.id
 					}
 				})
+		}),
+		schools: t.field({
+			type: [
+				builder.simpleObject('ConferenceSchools', {
+					fields: (t) => ({
+						school: t.string(),
+						count: t.int()
+					})
+				})
+			],
+			resolve: async (conference, _, ctx) => {
+				const delegations = await db.delegation.groupBy({
+					where: {
+						conferenceId: conference.id,
+						school: {
+							not: null
+						},
+						applied: {
+							equals: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').Delegation]
+					},
+					by: 'school',
+					_count: {
+						school: true
+					}
+				});
+
+				const singleParticipants = await db.singleParticipant.groupBy({
+					where: {
+						conferenceId: conference.id,
+						school: {
+							not: null
+						},
+						applied: {
+							equals: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant]
+					},
+					by: 'school',
+					_count: {
+						school: true
+					}
+				});
+
+				const res: { school: string; count: number }[] = [];
+
+				for (const delegation of delegations) {
+					if (!delegation.school) continue;
+					res.push({ school: delegation.school, count: delegation._count.school });
+				}
+
+				for (const singleParticipant of singleParticipants) {
+					if (!singleParticipant.school) continue;
+					const existing = res.find((r) => r.school === singleParticipant.school);
+					if (existing) {
+						existing.count += singleParticipant._count.school;
+					} else {
+						res.push({ school: singleParticipant.school, count: singleParticipant._count.school });
+					}
+				}
+
+				return res;
+			}
 		})
-		// schools: t.field({
-		// 	type: [
-		// 		builder.simpleObject('ConferenceSchools', {
-		// 			fields: (t) => ({
-		// 				school: t.string(),
-		// 				count: t.int()
-		// 			})
-		// 		})
-		// 	],
-		// 	resolve: async (conference, _, ctx) => {
-		// 		const delegations = await db.delegation.groupBy({
-		// 			where: {
-		// 				conferenceId: conference.id,
-		// 				school: {
-		// 					not: null
-		// 				},
-		// 				applied: {
-		// 					equals: true
-		// 				},
-		// 				AND: [ctx.permissions.allowDatabaseAccessTo('list').Delegation]
-		// 			},
-		// 			by: 'school',
-		// 			_count: {
-		// 				school: true
-		// 			}
-		// 		});
-		//
-		// 		const singleParticipants = await db.singleParticipant.groupBy({
-		// 			where: {
-		// 				conferenceId: conference.id,
-		// 				school: {
-		// 					not: null
-		// 				},
-		// 				applied: {
-		// 					equals: true
-		// 				},
-		// 				AND: [ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant]
-		// 			},
-		// 			by: 'school',
-		// 			_count: {
-		// 				school: true
-		// 			}
-		// 		});
-		//
-		// 		const res: { school: string; count: number }[] = [];
-		//
-		// 		for (const delegation of delegations) {
-		// 			if (!delegation.school) continue;
-		// 			res.push({ school: delegation.school, count: delegation._count.school });
-		// 		}
-		//
-		// 		for (const singleParticipant of singleParticipants) {
-		// 			if (!singleParticipant.school) continue;
-		// 			const existing = res.find((r) => r.school === singleParticipant.school);
-		// 			if (existing) {
-		// 				existing.count += singleParticipant._count.school;
-		// 			} else {
-		// 				res.push({ school: singleParticipant.school, count: singleParticipant._count.school });
-		// 			}
-		// 		}
-		//
-		// 		return res;
-		// 	}
-		// })
 	})
 });
 
@@ -560,6 +559,56 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('delete').Conference]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneConferenceMutationObject(t);
+	return {
+		normalizeSchoolsInConference: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.string({ required: true }),
+				schoolsToMerge: t.arg.stringList(),
+				newSchoolName: t.arg.string({ required: true })
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				await db.$transaction(async (tx) => {
+					const { conferenceId, schoolsToMerge } = args;
+
+					await tx.delegation.updateMany({
+						where: {
+							conferenceId,
+							school: {
+								in: schoolsToMerge
+							},
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+						},
+						data: {
+							school: args.newSchoolName
+						}
+					});
+
+					await tx.singleParticipant.updateMany({
+						where: {
+							conferenceId,
+							school: {
+								in: schoolsToMerge
+							},
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').SingleParticipant]
+						},
+						data: {
+							school: args.newSchoolName
+						}
+					});
+				});
+				return await db.conference.findUnique({
+					where: {
+						id: args.conferenceId
+					}
+				});
 			}
 		})
 	};
