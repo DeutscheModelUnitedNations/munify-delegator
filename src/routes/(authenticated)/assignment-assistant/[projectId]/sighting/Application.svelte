@@ -223,6 +223,7 @@
 						error={!applicationDetails?.motivation}
 					>
 						{applicationDetails?.motivation}
+						<span class="badge badge-xs">{applicationDetails?.motivation?.length}</span>
 					</LoadingData>
 				</td>
 			</tr>
@@ -234,6 +235,7 @@
 						error={!applicationDetails?.experience}
 					>
 						{applicationDetails?.experience}
+						<span class="badge badge-xs">{applicationDetails?.experience?.length}</span>
 					</LoadingData>
 				</td>
 			</tr>

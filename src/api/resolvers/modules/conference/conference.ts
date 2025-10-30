@@ -216,6 +216,70 @@ builder.prismaObject('Conference', {
 					}
 				})
 		})
+		// schools: t.field({
+		// 	type: [
+		// 		builder.simpleObject('ConferenceSchools', {
+		// 			fields: (t) => ({
+		// 				school: t.string(),
+		// 				count: t.int()
+		// 			})
+		// 		})
+		// 	],
+		// 	resolve: async (conference, _, ctx) => {
+		// 		const delegations = await db.delegation.groupBy({
+		// 			where: {
+		// 				conferenceId: conference.id,
+		// 				school: {
+		// 					not: null
+		// 				},
+		// 				applied: {
+		// 					equals: true
+		// 				},
+		// 				AND: [ctx.permissions.allowDatabaseAccessTo('list').Delegation]
+		// 			},
+		// 			by: 'school',
+		// 			_count: {
+		// 				school: true
+		// 			}
+		// 		});
+		//
+		// 		const singleParticipants = await db.singleParticipant.groupBy({
+		// 			where: {
+		// 				conferenceId: conference.id,
+		// 				school: {
+		// 					not: null
+		// 				},
+		// 				applied: {
+		// 					equals: true
+		// 				},
+		// 				AND: [ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant]
+		// 			},
+		// 			by: 'school',
+		// 			_count: {
+		// 				school: true
+		// 			}
+		// 		});
+		//
+		// 		const res: { school: string; count: number }[] = [];
+		//
+		// 		for (const delegation of delegations) {
+		// 			if (!delegation.school) continue;
+		// 			res.push({ school: delegation.school, count: delegation._count.school });
+		// 		}
+		//
+		// 		for (const singleParticipant of singleParticipants) {
+		// 			if (!singleParticipant.school) continue;
+		// 			const existing = res.find((r) => r.school === singleParticipant.school);
+		// 			if (existing) {
+		// 				existing.count += singleParticipant._count.school;
+		// 			} else {
+		// 				res.push({ school: singleParticipant.school, count: singleParticipant._count.school });
+		// 			}
+		// 		}
+		//
+		// 		return res;
+		// 	}
+		// })
 	})
 });
 

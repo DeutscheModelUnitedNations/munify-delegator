@@ -1,11 +1,13 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import { getApplications, getConference, loadProjects } from '../appData.svelte';
+	import { getApplications, getConference, getSchools, loadProjects } from '../appData.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
 	import Application from './Application.svelte';
+	import { graphql } from '$houdini';
+	import SchoolFilter from './SchoolFilter.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -19,6 +21,11 @@
 			defaultValue: 10,
 			encode: (v) => v.toString(),
 			decode: (v) => (v ? parseInt(v) : undefined)
+		},
+		filter: {
+			encode: (val) => val.join(','),
+			decode: (val) => (val ? val.split(',') : []),
+			defaultValue: []
 		}
 	});
 
@@ -83,23 +90,31 @@
 </TextPreview>
 
 <div class="mt-6 flex flex-col gap-4">
-	<div class="flex items-center justify-center">
-		<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
-	</div>
+	<SchoolFilter bind:filter={$params.filter} />
+
+	{#if $params.filter.length === 0}
+		<div class="flex items-center justify-center">
+			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+		</div>
+	{/if}
+
 	{#each getApplications() as application, index}
-		{#if index >= (page - 1) * pageSize && index < page * pageSize}
+		{#if ($params.filter.length === 0 && index >= (page - 1) * pageSize && index < page * pageSize) || $params.filter.includes(application.school ?? '')}
 			<Application {application} startConference={conference?.startConference ?? new Date()} />
 		{/if}
 	{/each}
-	<div class="flex flex-col items-center justify-center gap-4">
-		<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
-		<div class="flex items-center gap-4">
-			<div>Pro Seite:</div>
-			<select class="select select-bordered" bind:value={$params.pageSize}>
-				<option value="10" selected>10</option>
-				<option value="20">20</option>
-				<option value="50">50</option>
-			</select>
+
+	{#if $params.filter.length === 0}
+		<div class="flex flex-col items-center justify-center gap-4">
+			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+			<div class="flex items-center gap-4">
+				<div>Pro Seite:</div>
+				<select class="select select-bordered" bind:value={$params.pageSize}>
+					<option value="10" selected>10</option>
+					<option value="20">20</option>
+					<option value="50">50</option>
+				</select>
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
