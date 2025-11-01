@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import StarRating from '$lib/components/StarRating.svelte';
+	import { getAgeAtConference } from '$lib/services/ageChecker';
 	import codenamize from '$lib/services/codenamize';
 	import formatNames from '$lib/services/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import type { Delegation } from './appData.svelte';
+	import { getConference, type Delegation } from './appData.svelte';
 	import LoadingData from './components/LoadingData.svelte';
 	import { getWeights } from './weights.svelte';
 
@@ -70,6 +71,8 @@
 				id
 				given_name
 				family_name
+				birthday
+				conferenceParticipationsCount
 			}
 		}
 	`);
@@ -121,6 +124,22 @@
 	</p>
 	<StarRating rating={application.evaluation ?? getWeights().nullRating} size="xs" />
 	<div class="flex items-center justify-center gap-2 text-xs">
+		<LoadingData
+			fetching={$getApplicationDetailsQuery.fetching}
+			error={$getApplicationDetailsQuery.error}
+		>
+			<div class="tooltip" data-tip="Durchschnittsalter">
+				{(
+					$getApplicationDetailsQuery.data?.findManyUsers?.reduce((acc, user) => {
+						const age = getAgeAtConference(
+							user.birthday,
+							getConference()?.startConference ?? new Date()
+						);
+						return acc + (age ? age : 0);
+					}, 0) / ($getApplicationDetailsQuery.data?.findManyUsers?.length || 1)
+				).toFixed(1)}
+			</div>
+		</LoadingData>
 		{#if application.note}
 			<div class="tooltip" data-tip={application.note}>
 				<i class="fas fa-sticky-note"></i>
@@ -182,6 +201,18 @@
 				<i class="fas fa-split"></i>
 			</div>
 		{/if}
+		<LoadingData
+			fetching={$getApplicationDetailsQuery.fetching}
+			error={$getApplicationDetailsQuery.error}
+		>
+			<div class="tooltip" data-tip="Durchschnittliche Konferenzteilnahmen">
+				{(
+					$getApplicationDetailsQuery.data?.findManyUsers?.reduce((acc, user) => {
+						return acc + (user.conferenceParticipationsCount ?? 0);
+					}, 0) / ($getApplicationDetailsQuery.data?.findManyUsers?.length || 1)
+				).toFixed(1)}
+			</div>
+		</LoadingData>
 	</div>
 </div>
 

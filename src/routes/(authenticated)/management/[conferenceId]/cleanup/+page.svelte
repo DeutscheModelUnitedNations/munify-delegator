@@ -3,6 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import Modal from './Modal.svelte';
+	import NormalizeSchools from './NormalizeSchools.svelte';
 	import Section from './Section.svelte';
 	import type { ModalData } from './types';
 
@@ -72,7 +73,7 @@
 	}
 </script>
 
-<div class="flex w-full flex-col flex-wrap gap-8 p-10">
+<div class="flex w-full flex-col flex-wrap gap-10 p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.cleanup()}</h2>
 		<p>{@html m.cleanupDescription()}</p>
@@ -125,6 +126,11 @@
 			);
 		}}
 	/>
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.cleanupNormalizeSchoolsTitle()}</h3>
+		<p>{@html m.cleanupNormalizeSchoolsDescription()}</p>
+		<NormalizeSchools conferenceId={data.conferenceId} />
+	</div>
 </div>
 
 <Modal {modalData} open={!!modalData} closeModal={() => (modalData = undefined)} />

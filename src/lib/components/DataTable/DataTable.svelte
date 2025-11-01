@@ -19,6 +19,9 @@
 		title?: string;
 		showExpandIcon?: boolean;
 		expandSingle?: boolean;
+		selectOnClick?: boolean;
+		rowKey?: string;
+		selected?: string[];
 		expandedRowContent?: Snippet<[RowData]>;
 		filterOptions?: TableColumns<RowData>[number]['key'][];
 		additionallyIndexedKeys?: string[];
@@ -34,6 +37,9 @@
 		queryParamKey,
 		showExpandIcon = false,
 		expandSingle = false,
+		selectOnClick = false,
+		rowKey = 'id',
+		selected = $bindable([]),
 		expandedRowContent,
 		filterOptions,
 		additionallyIndexedKeys = [],
@@ -168,7 +174,6 @@
 					? rowSelected(e.detail.row)
 					: undefined}
 		on:clickExpand={(e) => toggleExpanded(e.detail.row)}
-		rowKey="id"
 		classNameTable="table {getZebra() &&
 			!expandedRowContent &&
 			'table-zebra'} table-{getTableSize()} table-pin-rows"
@@ -181,6 +186,10 @@
 		iconExpand="<button class='btn btn-ghost btn-sm btn-square btn-error'><i class='fa-solid fa-chevron-up'></i></button>"
 		iconExpanded="<button class='btn btn-ghost btn-sm btn-square btn-primary'><i class='fa-solid fa-chevron-down'></i></button>"
 		iconFilterable="<i class='fa-solid fa-filter'></i>"
+		classNameRowSelected="bg-accent"
+		bind:selected
+		{rowKey}
+		{selectOnClick}
 		{sortBy}
 		{expandSingle}
 		{showExpandIcon}

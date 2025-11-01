@@ -6,6 +6,7 @@ export const _houdini_load = graphql(`
 			where: { conferenceId: { equals: $conferenceId }, applied: { equals: true } }
 		) {
 			id
+			school
 			appliedForRoles {
 				id
 				rank
@@ -40,6 +41,7 @@ export const _houdini_load = graphql(`
 			where: { conferenceId: { equals: $conferenceId }, applied: { equals: true } }
 		) {
 			id
+			school
 			supervisors {
 				id
 				user {

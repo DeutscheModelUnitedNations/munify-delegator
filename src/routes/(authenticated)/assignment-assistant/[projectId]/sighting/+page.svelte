@@ -1,11 +1,14 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import { getApplications, getConference, loadProjects } from '../appData.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
 	import Application from './Application.svelte';
+	import { graphql } from '$houdini';
+	import SchoolFilter from './SchoolFilter.svelte';
+	import codenmz from '$lib/services/codenamize';
+	import { getConference, loadProjects, getApplications } from '../appData.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -19,8 +22,21 @@
 			defaultValue: 10,
 			encode: (v) => v.toString(),
 			decode: (v) => (v ? parseInt(v) : undefined)
+		},
+		filter: {
+			encode: (val) => val.join(','),
+			decode: (val) => (val ? val.split(',') : []),
+			defaultValue: []
+		},
+		search: {
+			defaultValue: '',
+			encode: (v) => v,
+			decode: (v) => v ?? ''
 		}
 	});
+
+	let searchActive = $derived($params.search.length > 2);
+	let filterActive = $derived($params.filter.length > 0 && !searchActive);
 
 	let page = $derived($params.page ?? 1);
 	let pageSize = $derived($params.pageSize ?? 10);
@@ -83,23 +99,43 @@
 </TextPreview>
 
 <div class="mt-6 flex flex-col gap-4">
-	<div class="flex items-center justify-center">
-		<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+	<div class="flex flex-col items-center gap-4">
+		<SchoolFilter bind:filter={$params.filter} />
+		<label class="input input-bordered flex items-center gap-2">
+			<input type="text" class="grow" placeholder="Suche" bind:value={$params.search} />
+		</label>
 	</div>
+
+	{#if $params.filter.length === 0 && searchActive}
+		<div class="flex items-center justify-center">
+			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+		</div>
+	{/if}
+
 	{#each getApplications() as application, index}
-		{#if index >= (page - 1) * pageSize && index < page * pageSize}
+		{@const inCurrentPage = index >= (page - 1) * pageSize && index < page * pageSize}
+		{@const filterOrSearchActive = filterActive || searchActive}
+		{@const inFilter = filterActive && $params.filter?.includes(application.school ?? '')}
+		{@const inSearch =
+			searchActive &&
+			(codenmz(application.id).toLowerCase().includes($params.search.toLowerCase()) ||
+				application.school?.toLowerCase()?.includes($params.search.toLowerCase()))}
+		{#if (!filterOrSearchActive && inCurrentPage) || inFilter || inSearch}
 			<Application {application} startConference={conference?.startConference ?? new Date()} />
 		{/if}
 	{/each}
-	<div class="flex flex-col items-center justify-center gap-4">
-		<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
-		<div class="flex items-center gap-4">
-			<div>Pro Seite:</div>
-			<select class="select select-bordered" bind:value={$params.pageSize}>
-				<option value="10" selected>10</option>
-				<option value="20">20</option>
-				<option value="50">50</option>
-			</select>
+
+	{#if $params.filter.length === 0 && $params.search === ''}
+		<div class="flex flex-col items-center justify-center gap-4">
+			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+			<div class="flex items-center gap-4">
+				<div>Pro Seite:</div>
+				<select class="select select-bordered" bind:value={$params.pageSize}>
+					<option value="10" selected>10</option>
+					<option value="20">20</option>
+					<option value="50">50</option>
+				</select>
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
