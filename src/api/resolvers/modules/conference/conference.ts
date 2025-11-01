@@ -254,7 +254,8 @@ builder.prismaObject('Conference', {
 						delegation: {
 							conferenceId: conference.id,
 							applied: true
-						}
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').DelegationMember]
 					},
 					by: 'delegationId',
 					_count: {
@@ -644,9 +645,10 @@ builder.mutationFields((t) => {
 						}
 					});
 				});
-				return await db.conference.findUnique({
+				return await db.conference.findUniqueOrThrow({
 					where: {
-						id: args.conferenceId
+						id: args.conferenceId,
+						AND: [ctx.permissions.allowDatabaseAccessTo('read').Conference]
 					}
 				});
 			}

@@ -67,7 +67,6 @@
 
 	$effect(() => {
 		if (newSchoolName) {
-			newSchoolName = newSchoolName.trim();
 			newSchoolName = newSchoolName.replace(',', ' ');
 			newSchoolName = newSchoolName.replace('.', ' ');
 		}
