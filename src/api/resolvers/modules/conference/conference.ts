@@ -616,7 +616,7 @@ builder.mutationFields((t) => {
 				newSchoolName: t.arg.string({ required: true })
 			},
 			resolve: async (query, root, args, ctx, info) => {
-				await db.$transaction(async (tx) => {
+				return await db.$transaction(async (tx) => {
 					const { conferenceId, schoolsToMerge } = args;
 
 					await tx.delegation.updateMany({
@@ -644,12 +644,13 @@ builder.mutationFields((t) => {
 							school: args.newSchoolName
 						}
 					});
-				});
-				return await db.conference.findUniqueOrThrow({
-					where: {
-						id: args.conferenceId,
-						AND: [ctx.permissions.allowDatabaseAccessTo('read').Conference]
-					}
+
+					return await tx.conference.findUniqueOrThrow({
+						where: {
+							id: args.conferenceId,
+							AND: [ctx.permissions.allowDatabaseAccessTo('read').Conference]
+						}
+					});
 				});
 			}
 		})
