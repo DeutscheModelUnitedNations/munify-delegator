@@ -650,8 +650,11 @@ input ConferenceScalarRelationFilter {
 }
 
 type ConferenceSchools {
-  count: Int!
+  delegationCount: Int!
+  delegationMembers: Int!
   school: String!
+  singleParticipants: Int!
+  sumParticipants: Int!
 }
 
 enum ConferenceState {

@@ -220,12 +220,23 @@ builder.prismaObject('Conference', {
 				builder.simpleObject('ConferenceSchools', {
 					fields: (t) => ({
 						school: t.string(),
-						count: t.int()
+						delegationCount: t.int(),
+						delegationMembers: t.int(),
+						singleParticipants: t.int(),
+						sumParticipants: t.int()
 					})
 				})
 			],
 			resolve: async (conference, _, ctx) => {
-				const delegations = await db.delegation.groupBy({
+				const res: {
+					school: string;
+					delegationCount: number;
+					delegationMembers: number;
+					singleParticipants: number;
+					sumParticipants: number;
+				}[] = [];
+
+				const delegations = await db.delegation.findMany({
 					where: {
 						conferenceId: conference.id,
 						school: {
@@ -235,13 +246,41 @@ builder.prismaObject('Conference', {
 							equals: true
 						},
 						AND: [ctx.permissions.allowDatabaseAccessTo('list').Delegation]
-					},
-					by: 'school',
-					_count: {
-						school: true
 					}
 				});
 
+				const members = await db.delegationMember.groupBy({
+					where: {
+						delegation: {
+							conferenceId: conference.id,
+							applied: true
+						}
+					},
+					by: 'delegationId',
+					_count: {
+						delegationId: true
+					}
+				});
+
+				for (const delegation of delegations) {
+					if (!delegation.school) continue;
+					const existing = res.find((r) => r.school === delegation.school);
+					const memberCount =
+						members.find((m) => m.delegationId === delegation.id)?._count.delegationId || 0;
+					if (existing) {
+						existing.delegationCount += 1;
+						existing.delegationMembers += memberCount;
+						existing.sumParticipants += memberCount;
+					} else {
+						res.push({
+							school: delegation.school,
+							delegationCount: 1,
+							delegationMembers: memberCount,
+							singleParticipants: 0,
+							sumParticipants: memberCount
+						});
+					}
+				}
 				const singleParticipants = await db.singleParticipant.groupBy({
 					where: {
 						conferenceId: conference.id,
@@ -259,20 +298,21 @@ builder.prismaObject('Conference', {
 					}
 				});
 
-				const res: { school: string; count: number }[] = [];
-
-				for (const delegation of delegations) {
-					if (!delegation.school) continue;
-					res.push({ school: delegation.school, count: delegation._count.school });
-				}
-
 				for (const singleParticipant of singleParticipants) {
 					if (!singleParticipant.school) continue;
 					const existing = res.find((r) => r.school === singleParticipant.school);
+					const singleParticipantCount = singleParticipant._count.school;
 					if (existing) {
-						existing.count += singleParticipant._count.school;
+						existing.singleParticipants += singleParticipantCount;
+						existing.sumParticipants += singleParticipantCount;
 					} else {
-						res.push({ school: singleParticipant.school, count: singleParticipant._count.school });
+						res.push({
+							school: singleParticipant.school,
+							delegationCount: 0,
+							delegationMembers: 0,
+							singleParticipants: singleParticipantCount,
+							sumParticipants: singleParticipantCount
+						});
 					}
 				}
 
