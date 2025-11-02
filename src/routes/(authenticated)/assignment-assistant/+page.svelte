@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { RAW_DATA_KEY } from './local_storage_keys';
+	import { graphql } from '$houdini';
 
 	let projects: {
 		id: string;

@@ -95,6 +95,7 @@ export const DelegationSchema = z.object({
 	id: z.string(),
 	appliedForRoles: z.array(AppliedForDelegationRoleSchema),
 	members: z.array(MemberSchema),
+	school: z.string().optional(),
 	supervisors: z.undefined(),
 	user: z.undefined(),
 	splittedFrom: z.string().nullish(),
@@ -108,6 +109,7 @@ export const SingleParticipantSchema = z.object({
 	id: z.string(),
 	user: UserSchema,
 	appliedForRoles: z.array(AppliedForSingleRoleSchema),
+	school: z.string().optional(),
 	supervisors: z.optional(z.array(SupervisorSchema)),
 	members: z.undefined(),
 	splittedFrom: z.undefined(),
@@ -180,7 +182,34 @@ export const getConference: () => Conference | undefined = () => {
 export const getApplications = () => {
 	const project = getProject();
 	if (!project) return [];
-	return [...project.data.delegations, ...project.data.singleParticipants];
+	return [
+		...project.data.delegations.toSorted((a, b) => {
+			if (a.members?.length !== b.members?.length) {
+				return b.members?.length - a.members?.length;
+			}
+			return a.id.localeCompare(b.id);
+		}),
+		...project.data.singleParticipants
+	];
+};
+
+export const getSchools = () => {
+	const applications = getApplications();
+	const schools: { school: string; count: number; members: number }[] = [];
+	for (const application of applications) {
+		const schoolEntry = schools.find((x) => x.school === application.school);
+		if (schoolEntry) {
+			schoolEntry.count += 1;
+			schoolEntry.members += application?.members?.length ?? 1;
+		} else {
+			schools.push({
+				school: application.school ?? 'No School',
+				count: 1,
+				members: application?.members?.length ?? 1
+			});
+		}
+	}
+	return schools.toSorted((a, b) => a.school.localeCompare(b.school));
 };
 
 export const getDelegationApplications = () => {
@@ -258,9 +287,9 @@ export const getMoreInfoLink = (id: string) => {
 	const project = getProject();
 	if (!project) return '';
 	if (project.data.singleParticipants.find((singleParticipant) => singleParticipant.id === id)) {
-		return `/management/${project.data.conference.id}/individuals?filter=${id}`;
+		return `/management/${project.data.conference.id}/individuals?selected=${id}`;
 	}
-	return `/management/${project.data.conference.id}/delegations?filter=${id}`;
+	return `/management/${project.data.conference.id}/delegations?selected=${id}`;
 };
 
 export const evaluateApplication = (id: string, evaluation: number) => {
