@@ -15,7 +15,7 @@
 				return 'bg-error dark:text-base-300';
 			case 'PENDING':
 				return 'bg-warning dark:text-base-300';
-			case 'NOTYET_POSSIBLE':
+			case 'NOT_YET_POSSIBLE':
 				return 'bg-info dark:text-base-300';
 			default:
 				return 'bg-base-200 dark:text-base-300';

@@ -427,6 +427,12 @@ builder.mutationFields((t) => {
 								}
 							}
 						});
+
+						for (const member of newOrExistingDelegation.members) {
+							for (const supervisor of member.supervisors ?? []) {
+								await reconnectSupervisors(tx as typeof db, supervisor.id, member.id);
+							}
+						}
 					}
 				});
 
