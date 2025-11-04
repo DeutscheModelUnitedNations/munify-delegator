@@ -145,7 +145,11 @@ builder.mutationFields((t) => {
 												: undefined
 									},
 									include: {
-										members: true
+										members: {
+											include: {
+												supervisors: true
+											}
+										}
 									}
 								});
 
