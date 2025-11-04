@@ -153,16 +153,17 @@ builder.mutationFields((t) => {
 									}
 								});
 
-								// Map created member DB ids by userId so we can reconnect supervisors correctly
-								const createdMemberIdByUserId = new Map(
-									childDelegationDB.members.map((m) => [m.userId, m.id] as const)
-								);
+								const userIdToNewMemberIdMap = new Map<string, string>();
+
+								childDelegationDB.members.forEach((member) => {
+									userIdToNewMemberIdMap.set(member.userId, member.id);
+								});
 
 								for (const member of childDelegation.members) {
-									const dbMemberId = createdMemberIdByUserId.get(member.user.id);
-									if (!dbMemberId) continue;
+									const newMemberId = userIdToNewMemberIdMap.get(member.user.id);
+									if (!newMemberId) return;
 									for (const supervisor of member.supervisors ?? []) {
-										await reconnectSupervisors(tx as typeof db, supervisor.id, dbMemberId);
+										await reconnectSupervisors(tx as typeof db, supervisor.id, newMemberId);
 									}
 								}
 
