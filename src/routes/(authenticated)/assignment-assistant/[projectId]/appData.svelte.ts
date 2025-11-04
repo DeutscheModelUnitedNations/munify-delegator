@@ -387,13 +387,16 @@ export const splitDelegation = (delegationId: string, buckets: Member[][]) => {
 		(delegation) => delegation.id === delegationId
 	);
 	if (!delegation) return;
-	const splittedInto = buckets.map((bucket) => {
-		const newDelegation = { ...delegation };
-		newDelegation.id = Math.round(Math.random() * 1000000).toString();
-		newDelegation.members = bucket;
-		newDelegation.splittedFrom = delegation.id;
-		return newDelegation;
-	});
+	const splittedInto = buckets
+		.filter((bucket) => bucket.length > 0) // Don't create empty delegations
+		.map((bucket) => {
+			const newDelegation: Delegation = JSON.parse(JSON.stringify(delegation));
+			newDelegation.id = Math.round(Math.random() * 1000000).toString();
+			newDelegation.members = bucket;
+			newDelegation.splittedFrom = delegation.id;
+			newDelegation.splittedInto = undefined;
+			return newDelegation;
+		});
 	delegation.splittedInto = splittedInto.map((x) => x.id);
 	delegation.disqualified = true;
 	splittedInto.forEach((x) => {
@@ -419,7 +422,16 @@ export const convertSingleToDelegation = (singleId: string) => {
 		splittedFrom: undefined,
 		splittedInto: undefined,
 		supervisors: undefined,
-		user: undefined as never
+		user: undefined as never,
+		// Copy sighting properties from single participant
+		evaluation: single.evaluation,
+		flagged: single.flagged,
+		disqualified: single.disqualified,
+		note: single.note,
+		school: single.school,
+		// Set assignment properties to undefined for delegations
+		assignedNation: undefined,
+		assignedNSA: undefined
 	};
 	selectedProject?.data.delegations.push(newDelegation);
 	selectedProject!.data.singleParticipants = selectedProject!.data.singleParticipants.filter(
