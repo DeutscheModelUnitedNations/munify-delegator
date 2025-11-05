@@ -2,7 +2,6 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { RAW_DATA_KEY } from './local_storage_keys';
-	import { graphql } from '$houdini';
 
 	let projects: {
 		id: string;
@@ -107,7 +106,7 @@
 					{#each projects as project}
 						<tr>
 							<td>{project.fileName}</td>
-							<td>{project.created}</td>
+							<td>{new Date(project.created).toLocaleString()}</td>
 							<td class="flex gap-2">
 								<button
 									class="btn btn-error btn-sm"

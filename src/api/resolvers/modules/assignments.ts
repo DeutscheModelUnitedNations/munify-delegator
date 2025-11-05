@@ -34,6 +34,25 @@ function getNations(committees: Committee[]): {
 	return role;
 }
 
+async function reconnectSupervisors(tx: typeof db, supervisorId: string, memberId: string) {
+	try {
+		await tx.conferenceSupervisor.update({
+			where: {
+				id: supervisorId
+			},
+			data: {
+				supervisedDelegationMembers: {
+					connect: {
+						id: memberId
+					}
+				}
+			}
+		});
+	} catch (error) {
+		console.error(`Failed to reconnect supervisor ${supervisorId} to member ${memberId}:`, error);
+	}
+}
+
 builder.mutationFields((t) => {
 	return {
 		sendAssignmentData: t.field({
@@ -46,8 +65,9 @@ builder.mutationFields((t) => {
 				...findUniqueConferenceQueryArgs,
 				data: t.arg({ type: 'JSONObject' })
 			},
-			resolve: (root, args, ctx) => {
-				const conference = db.conference.findUniqueOrThrow({
+			resolve: async (root, args, ctx) => {
+				// Just check if the conference exists beforehand
+				const conference = await db.conference.findUniqueOrThrow({
 					where: {
 						...args.where,
 						AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
@@ -60,46 +80,113 @@ builder.mutationFields((t) => {
 
 				const data = ProjectDataSchema.parse(args.data);
 
-				db.$transaction(async (tx) => {
+				await db.$transaction(async (tx) => {
 					// Split Delegations and delete parents
 					for (const parentDelegation of data.delegations.filter((x) => !!x.splittedInto)) {
 						const childDelegations = data.delegations.filter((x) =>
 							parentDelegation.splittedInto?.includes(x.id)
 						);
 
-						const parentDelegationDB = await tx.delegation.delete({
-							where: {
-								id: parentDelegation.id
-							}
+						// Fetch parent delegation with members BEFORE deleting
+						const parentDelegationDB = await tx.delegation.findUnique({
+							where: { id: parentDelegation.id },
+							include: { members: true }
+						});
+
+						if (!parentDelegationDB) {
+							throw new GraphQLError(`Parent delegation ${parentDelegation.id} not found`);
+						}
+
+						// Verify all user IDs in child delegations actually exist
+						const allChildUserIds = childDelegations.flatMap((cd) =>
+							cd.members.map((m) => m.user.id)
+						);
+						const existingUsers = await tx.user.findMany({
+							where: { id: { in: allChildUserIds } },
+							select: { id: true }
+						});
+						const existingUserIds = new Set(existingUsers.map((u) => u.id));
+						const missingUserIds = allChildUserIds.filter((id) => !existingUserIds.has(id));
+
+						if (missingUserIds.length > 0) {
+							throw new GraphQLError(
+								`Cannot split delegation ${parentDelegation.id}: The following user IDs do not exist: ${missingUserIds.join(', ')}`
+							);
+						}
+
+						// Now delete the parent delegation
+						await tx.delegation.delete({
+							where: { id: parentDelegation.id }
 						});
 
 						const childDelegationsDB: Awaited<ReturnType<typeof tx.delegation.create>>[] = [];
 
 						for (const childDelegation of childDelegations) {
-							const childDelegationDB = await tx.delegation.create({
-								data: {
-									conferenceId: parentDelegationDB.conferenceId,
-									entryCode: makeEntryCode(),
-									applied: true,
-									school: parentDelegationDB.school,
-									motivation: parentDelegationDB.motivation,
-									experience: parentDelegationDB.experience,
-									members:
-										childDelegation.members.length > 0
-											? {
-													create: childDelegation.members.map((member, i) => ({
-														conferenceId: parentDelegationDB.conferenceId,
-														userId: member.user.id,
-														isHeadDelegate: childDelegation.members.some((x) => x.isHeadDelegate)
-															? member.isHeadDelegate
-															: i === 0
-													}))
-												}
-											: undefined
-								}
-							});
+							try {
+								const childDelegationDB = await tx.delegation.create({
+									data: {
+										conferenceId: conference.id,
+										entryCode: makeEntryCode(),
+										applied: true,
+										school: parentDelegationDB.school,
+										motivation: parentDelegationDB.motivation,
+										experience: parentDelegationDB.experience,
+										members:
+											childDelegation.members.length > 0
+												? {
+														create: childDelegation.members.map((member, i) => ({
+															conferenceId: conference.id,
+															userId: member.user.id,
+															isHeadDelegate: childDelegation.members.some((x) => x.isHeadDelegate)
+																? member.isHeadDelegate
+																: i === 0
+														}))
+													}
+												: undefined
+									},
+									include: {
+										members: {
+											include: {
+												supervisors: true
+											}
+										}
+									}
+								});
 
-							childDelegationsDB.push(childDelegationDB);
+								const userIdToNewMemberIdMap = new Map<string, string>();
+
+								childDelegationDB.members.forEach((member) => {
+									userIdToNewMemberIdMap.set(member.userId, member.id);
+								});
+
+								for (const member of childDelegation.members) {
+									const newMemberId = userIdToNewMemberIdMap.get(member.user.id);
+									if (!newMemberId) {
+										throw new GraphQLError(
+											`Member ID not found for user ${member.user.id} in child delegation`
+										);
+									}
+									for (const supervisor of member.supervisors ?? []) {
+										await reconnectSupervisors(tx as typeof db, supervisor.id, newMemberId);
+									}
+								}
+
+								childDelegationsDB.push(childDelegationDB);
+							} catch (error) {
+								// Provide richer diagnostics to pinpoint the actual cause (e.g., missing user connect)
+								const e = error as any;
+								const details = {
+									code: e?.code,
+									meta: e?.meta,
+									message: e?.message,
+									stack: e?.stack
+								};
+								throw new GraphQLError(
+									`Failed to create child delegation for parent delegation ${parentDelegation.id}. Details: ${JSON.stringify(
+										details
+									)}. Members: ${JSON.stringify(childDelegation.members)}`
+								);
+							}
 						}
 
 						childDelegations.forEach((childDelegation, i) => {
@@ -187,7 +274,7 @@ builder.mutationFields((t) => {
 						});
 
 						// assign the nation to the primary delegation and update the members and supervisors
-						await tx.delegation.upsert({
+						const newOrExistingDelegation = await tx.delegation.upsert({
 							where: {
 								id: primaryDelegation?.id ?? ''
 							},
@@ -223,8 +310,21 @@ builder.mutationFields((t) => {
 												}))
 											}
 										: undefined
+							},
+							include: {
+								members: {
+									include: {
+										supervisors: true
+									}
+								}
 							}
 						});
+
+						for (const member of newOrExistingDelegation.members) {
+							for (const supervisor of member.supervisors ?? []) {
+								await reconnectSupervisors(tx as typeof db, supervisor.id, member.id);
+							}
+						}
 					}
 
 					for (const nsa of data.conference.nonStateActors) {
@@ -235,7 +335,7 @@ builder.mutationFields((t) => {
 
 						// search for all existing Delegations
 						const delegationsDB = (
-							await db.delegation.findMany({
+							await tx.delegation.findMany({
 								where: {
 									id: {
 										in: assignedDelegations.map((x) => x.id)
@@ -257,7 +357,7 @@ builder.mutationFields((t) => {
 
 						// delete all other delegations
 						if (primaryDelegation && newUserIds.length > 0) {
-							await db.delegation.deleteMany({
+							await tx.delegation.deleteMany({
 								where: {
 									AND: [
 										{
@@ -280,7 +380,7 @@ builder.mutationFields((t) => {
 						}
 
 						// delete all other single participants (they were converted to delegations with just one member)
-						await db.singleParticipant.deleteMany({
+						await tx.singleParticipant.deleteMany({
 							where: {
 								id: {
 									// The frontend delivers single participants, that have been converted to delegations
@@ -291,48 +391,56 @@ builder.mutationFields((t) => {
 						});
 
 						// assign the nsa to the primary delegation and update the members and supervisors
-						if (primaryDelegation?.id) {
-							await db.delegation.update({
-								where: {
-									id: primaryDelegation?.id
+						const newOrExistingDelegation = await tx.delegation.upsert({
+							where: {
+								id: primaryDelegation?.id
+							},
+							update: {
+								assignedNonStateActor: {
+									connect: {
+										id: nsa.id
+									}
 								},
-								data: {
-									assignedNonStateActor: {
-										connect: {
-											id: nsa.id
-										}
-									},
-									members:
-										newUserIds.length > 0
-											? {
-													create: newUserIds.map((x, i) => ({
-														conferenceId: data.conference.id,
-														userId: x,
-														isHeadDelegate: false
-													}))
-												}
-											: undefined
+								members:
+									newUserIds.length > 0
+										? {
+												create: newUserIds.map((x, i) => ({
+													conferenceId: data.conference.id,
+													userId: x,
+													isHeadDelegate: false
+												}))
+											}
+										: undefined
+							},
+							create: {
+								applied: true,
+								conferenceId: data.conference.id,
+								entryCode: makeEntryCode(),
+								experience: 'Created during assignment',
+								motivation: 'Created during assignment',
+								school: 'Created during assignment',
+								assignedNonStateActorId: nsa.id,
+								members: {
+									create: newUserIds.map((x, i) => ({
+										conferenceId: data.conference.id,
+										userId: x,
+										isHeadDelegate: i === 0
+									}))
 								}
-							});
-						} else {
-							await db.delegation.create({
-								data: {
-									applied: true,
-									conferenceId: data.conference.id,
-									entryCode: makeEntryCode(),
-									experience: 'Created during assignment',
-									motivation: 'Created during assignment',
-									school: 'Created during assignment',
-									assignedNonStateActorId: nsa.id,
-									members: {
-										create: newUserIds.map((x, i) => ({
-											conferenceId: data.conference.id,
-											userId: x,
-											isHeadDelegate: i === 0
-										}))
+							},
+							include: {
+								members: {
+									include: {
+										supervisors: true
 									}
 								}
-							});
+							}
+						});
+
+						for (const member of newOrExistingDelegation.members) {
+							for (const supervisor of member.supervisors ?? []) {
+								await reconnectSupervisors(tx as typeof db, supervisor.id, member.id);
+							}
 						}
 					}
 				});

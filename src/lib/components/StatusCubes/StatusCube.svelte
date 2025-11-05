@@ -1,6 +1,6 @@
 <script lang="ts">
 	interface Props {
-		status: 'DONE' | 'PROBLEM' | 'PENDING';
+		status: 'DONE' | 'PROBLEM' | 'PENDING' | 'NOT_YET_POSSIBLE';
 		task: string;
 		faIcon: string;
 	}
@@ -15,6 +15,8 @@
 				return 'bg-error dark:text-base-300';
 			case 'PENDING':
 				return 'bg-warning dark:text-base-300';
+			case 'NOT_YET_POSSIBLE':
+				return 'bg-info dark:text-base-300';
 			default:
 				return 'bg-base-200 dark:text-base-300';
 		}
@@ -39,6 +41,8 @@
 			<i class="fas fa-circle-check text-3xl"></i>
 		{:else if status === 'PENDING'}
 			<i class="fas fa-seal-exclamation text-3xl"></i>
+		{:else if status === 'NOT_YET_POSSIBLE'}
+			<i class="fas fa-hourglass-clock text-2xl"></i>
 		{:else}
 			<i class="fas fa-message-exclamation text-2xl"></i>
 		{/if}
