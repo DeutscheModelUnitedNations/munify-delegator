@@ -161,7 +161,11 @@ builder.mutationFields((t) => {
 
 								for (const member of childDelegation.members) {
 									const newMemberId = userIdToNewMemberIdMap.get(member.user.id);
-									if (!newMemberId) return;
+									if (!newMemberId) {
+										throw new GraphQLError(
+											`Member ID not found for user ${member.user.id} in child delegation`
+										);
+									}
 									for (const supervisor of member.supervisors ?? []) {
 										await reconnectSupervisors(tx as typeof db, supervisor.id, newMemberId);
 									}
