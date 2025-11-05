@@ -28,6 +28,7 @@ const requiredListsGlobal = ['DMUN_NEWSLETTER', 'DMUN_TEAM_TENDERS'];
 const requiredListsPerConference = [
 	'REGISTRATION_NOT_COMPLETED',
 	'REGISTRATION_COMPLETED',
+	'REJECTED_PARTICIPANTS',
 	'DELEGATION_MEMBERS_NATIONS',
 	'DELEGATION_MEMBERS_NSA',
 	'SINGLE_PARTICIPANTS',
@@ -291,10 +292,17 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 		) {
 			lists.push(createListName(dm.delegation.conference.title, dm.conferenceId, 'HEAD_DELEGATES'));
 		}
+
 		if (dm.delegation.applied) {
 			lists.push(
 				createListName(dm.delegation.conference.title, dm.conferenceId, 'REGISTRATION_COMPLETED')
 			);
+
+			if (!dm.delegation.assignedNationAlpha3Code && !dm.delegation.assignedNonStateActorId) {
+				lists.push(
+					createListName(dm.delegation.conference.title, dm.conferenceId, 'REJECTED_PARTICIPANTS')
+				);
+			}
 		} else {
 			lists.push(
 				createListName(
@@ -312,11 +320,15 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 			role: 'SINGLE_PARTICIPANT',
 			title: sp.conference.title
 		});
-		if (sp.assignedRoleId) {
-			lists.push(createListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS'));
-		}
+
 		if (sp.applied) {
 			lists.push(createListName(sp.conference.title, sp.conferenceId, 'REGISTRATION_COMPLETED'));
+
+			if (sp.assignedRoleId) {
+				lists.push(createListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS'));
+			} else {
+				lists.push(createListName(sp.conference.title, sp.conferenceId, 'REJECTED_PARTICIPANTS'));
+			}
 		} else {
 			lists.push(
 				createListName(sp.conference.title, sp.conferenceId, 'REGISTRATION_NOT_COMPLETED')
