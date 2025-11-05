@@ -87,13 +87,6 @@ builder.mutationFields((t) => {
 
 				waitingListFormSchema.parse({ ...args, conferenceId: undefined });
 
-				// if the user somehow is already participating in the conference, throw an error
-				await fetchUserParticipations({
-					conferenceId: args.conferenceId,
-					userId: user.sub!,
-					throwIfAnyIsFound: true
-				});
-
 				// guard against the user already being on the waiting list
 				const existingEntry = await db.waitingListEntry.findFirst({
 					where: {
