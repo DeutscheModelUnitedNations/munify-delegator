@@ -293,11 +293,7 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 			lists.push(createListName(dm.delegation.conference.title, dm.conferenceId, 'HEAD_DELEGATES'));
 		}
 
-		if (
-			dm.delegation.conference.state !== 'PARTICIPANT_REGISTRATION' &&
-			!dm.delegation.assignedNationAlpha3Code &&
-			!dm.delegation.assignedNonStateActorId
-		) {
+		if (!dm.delegation.assignedNationAlpha3Code && !dm.delegation.assignedNonStateActorId) {
 			lists.push(
 				createListName(dm.delegation.conference.title, dm.conferenceId, 'REJECTED_PARTICIPANTS')
 			);
@@ -327,7 +323,7 @@ function constructSubscriberObjectFromUser(user: User): SubscriberObj {
 
 		if (sp.assignedRoleId) {
 			lists.push(createListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS'));
-		} else if (sp.conference.state !== 'PARTICIPANT_REGISTRATION') {
+		} else {
 			lists.push(createListName(sp.conference.title, sp.conferenceId, 'REJECTED_PARTICIPANTS'));
 		}
 
