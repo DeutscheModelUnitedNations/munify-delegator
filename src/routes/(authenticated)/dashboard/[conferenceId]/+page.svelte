@@ -20,8 +20,8 @@
 	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
 	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
-	let surveyQuestions = $derived(conferenceQueryData?.findUniqueSurveyQuestions);
-	let surveyAnswers = $derived(conferenceQueryData?.findUniqueSurveyAnswers);
+	let surveyQuestions = $derived(conferenceQueryData?.findManySurveyQuestions);
+	let surveyAnswers = $derived(conferenceQueryData?.findManySurveyAnswers);
 </script>
 
 <div class="flex w-full flex-col items-center">
