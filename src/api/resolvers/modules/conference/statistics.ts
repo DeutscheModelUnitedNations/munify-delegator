@@ -1,7 +1,7 @@
 import { requireToBeConferenceAdmin } from '$api/services/requireUserToBeConferenceAdmin';
 import { conferenceStats } from '$api/services/stats';
 import { db } from '$db/db';
-import { payment, postalRegistration } from '$lib/paraglide/messages';
+import { address, country, payment, postalRegistration } from '$lib/paraglide/messages';
 import { builder } from '../../builder';
 
 const dietVariations = builder.simpleObject('StatisticsResultRegisteredParticipantDietVariations', {
@@ -163,6 +163,38 @@ const StatisticsResult = builder.simpleObject('StatisticsResult', {
 					didAttend: t.int()
 				})
 			})
+		}),
+		addresses: t.field({
+			type: [
+				t.builder
+					.objectRef<{
+						country: string | null;
+						zip: string | null;
+						_count: { zip: number; country: number; _all: number };
+					}>('StatisticsResultAddresses')
+					.implement({
+						fields: (t) => ({
+							_count: t.field({
+								resolve: (parent) => parent._count,
+								type: t.builder
+									.objectRef<{
+										zip: number;
+										country: number;
+										_all: number;
+									}>('StatisticsResultAddressesCount')
+									.implement({
+										fields: (t) => ({
+											country: t.exposeInt('country'),
+											zip: t.exposeInt('zip'),
+											_all: t.exposeInt('_all')
+										})
+									})
+							}),
+							country: t.exposeString('country', { nullable: true }),
+							zip: t.exposeString('zip', { nullable: true })
+						})
+					})
+			]
 		})
 	})
 });
@@ -178,11 +210,18 @@ builder.queryFields((t) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 				await requireToBeConferenceAdmin({ conferenceId: args.conferenceId, user });
 
-				const { countdowns, registrationStatistics, ageStatistics, diet, gender, status } =
-					await conferenceStats({
-						db,
-						conferenceId: args.conferenceId
-					});
+				const {
+					countdowns,
+					registrationStatistics,
+					ageStatistics,
+					diet,
+					gender,
+					status,
+					addresses
+				} = await conferenceStats({
+					db,
+					conferenceId: args.conferenceId
+				});
 
 				return {
 					countdowns,
@@ -196,7 +235,8 @@ builder.queryFields((t) => {
 							value: v
 						}))
 					},
-					status
+					status,
+					addresses
 				};
 			}
 		})

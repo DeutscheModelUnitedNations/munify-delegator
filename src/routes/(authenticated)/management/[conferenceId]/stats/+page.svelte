@@ -21,8 +21,11 @@
 	import DietMatrix from './widgets/DietMatrix.svelte';
 	import GenderMatrix from './widgets/GenderMatrix.svelte';
 	import Status from './widgets/Status.svelte';
+	import Maps from './widgets/Maps.svelte';
+	import { browser } from '$app/environment';
+	import { addToPanel } from 'svelte-inspect-value';
 	let { data }: { data: PageData } = $props();
-
+	addToPanel('Stats Page Data', () => data);
 	onMount(() => {
 		// look for history in local storage
 		const history: StatsTypeHistoryEntry[] = JSON.parse(
@@ -67,6 +70,7 @@
 	<DietMatrix {data} />
 	<GenderMatrix {data} />
 	<Status {data} />
+	<Maps addresses={data.stats.addresses} />
 	<section class="card bg-base-200 col-span-2 shadow-sm md:col-span-12">
 		<div class="card-body">
 			<h3 class="text-xl font-bold">{m.historyComparison()}</h3>

@@ -3213,12 +3213,25 @@ enum SortOrder {
 }
 
 type StatisticsResult {
+  addresses: [StatisticsResultAddresses!]!
   age: StatisticsResultRegisteredAge!
   countdowns: StatisticsResultCountdowns!
   diet: StatisticsResultRegisteredParticipantDiet!
   gender: StatisticsResultRegisteredParticipantGender!
   registered: StatisticsResultRegistered!
   status: StatisticsResultRegisteredParticipantStatus!
+}
+
+type StatisticsResultAddresses {
+  _count: StatisticsResultAddressesCount!
+  country: String
+  zip: String
+}
+
+type StatisticsResultAddressesCount {
+  _all: Int!
+  country: Int!
+  zip: Int!
 }
 
 type StatisticsResultCountdowns {
