@@ -17,7 +17,6 @@
 	let conferencePaymentData = $derived($conferencePaymentDataQuery.data?.findUniqueConference);
 	let conferenceQueryData = $derived(data.conferenceQueryData);
 	let conferencePaymentGroupData = $derived(data.PaymentGroupQuery);
-	let conferenceId = $derived(data.conferenceQueryData.findUniqueConference.id);
 	let supervisorData = $derived(conferenceQueryData.findUniqueConferenceSupervisor);
 	let userData = $derived(supervisorData?.user);
 	let delegationMembers = $derived(supervisorData.supervisedDelegationMembers);
@@ -92,17 +91,17 @@
 	<div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-lg p-4 shadow-lg">
 		<h2 class="text-2xl font-bold">
 			<i class="fa-duotone fa-list-check mr-4"></i>
-			Teilnehmende auswählen
+			{m.selectParticipants()}
 		</h2>
 
 		<div class="join join-horizontal">
 			<button class="btn btn-sm join-item" onclick={() => addDefaultParticipants()}>
 				<i class="fa-duotone fa-check-double"></i>
-				Alle auswählen
+				{m.selectAll()}
 			</button>
 			<button class="btn btn-sm join-item" onclick={() => (selectedParticipants = [])}>
 				<i class="fa-duotone fa-xmark"></i>
-				Alle abwählen
+				{m.deselectAll()}
 			</button>
 		</div>
 
@@ -129,14 +128,17 @@
 						/>
 					{/each}
 					{#if delegationMembers.length === 0}
-						<p class="text-sm italic text-base-content/70">Keine Einzelteilnehmende vorhanden.</p>
+						<p class="text-sm italic text-base-content/70">{m.noSingleParticipants()}</p>
 					{/if}
 				</Selection.Fieldset>
 			{/if}
 
 			<Selection.Fieldset title={m.supervisors()}>
 				<Selection.Item
-					label={`ich selbst (${formatNames(data.user.given_name, userData.family_name)})`}
+					label={m.myself({
+						given_name: data.user.given_name,
+						family_name: userData.family_name
+					})}
 					selected={selectedParticipants.map((x) => x.id).includes(userData.id)}
 					changeSelection={(selected) => addOrRemoveParticipant(userData, selected)}
 				/>
@@ -153,11 +155,9 @@
 		<div class="alert alert-info mt-4">
 			<i class="fa-solid fa-info-circle mr-2 text-2xl"></i>
 			<div>
-				<h3 class="font-bold">Teilnehmende sind nicht aufgeführt?</h3>
+				<h3 class="font-bold">{m.participantsNotFoundTitle()}</h3>
 				<p>
-					Wenn du Beiträge für Teilnehmende überweisen willst, die nicht oben in den Listen
-					aufgeführt sind, setze dich bitte vor Tätigung der Überweisung mit der
-					Teilnehmendenbetreuung in Verbindung und sprich eine individuelle Lösung ab.
+					{m.participantsNotFoundDescription()}
 				</p>
 			</div>
 		</div>

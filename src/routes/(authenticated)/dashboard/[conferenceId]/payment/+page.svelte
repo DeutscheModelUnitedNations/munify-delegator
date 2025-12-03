@@ -32,25 +32,29 @@
 		>
 			<p>{m.singlePaymentDescription()}</p>
 		</UndrawCard>
-		<UndrawCard
-			title={m.delegationPayment()}
-			btnText={m.delegationPaymentBtn()}
-			btnLink="./payment/delegation"
-			img={delegationPayment}
-			disabled={!isDelegation}
-			disabledText={m.paymentMethodNotAvailable()}
-		>
-			<p>{m.delegationPaymentDescription()}</p>
-		</UndrawCard>
-		<UndrawCard
-			title={m.groupPayment()}
-			btnText={m.groupPaymentBtn()}
-			btnLink="./payment/group"
-			img={groupPayment}
-			disabled={!isSupervisor}
-			disabledText={m.paymentMethodNotAvailable()}
-		>
-			<p>{m.groupPaymentDescription()}</p>
-		</UndrawCard>
+		{#if isDelegation}
+			<UndrawCard
+				title={m.delegationPayment()}
+				btnText={m.delegationPaymentBtn()}
+				btnLink="./payment/delegation"
+				img={delegationPayment}
+				disabled={!isDelegation}
+				disabledText={m.paymentMethodNotAvailable()}
+			>
+				<p>{m.delegationPaymentDescription()}</p>
+			</UndrawCard>
+		{/if}
+		{#if isSupervisor}
+			<UndrawCard
+				title={m.groupPayment()}
+				btnText={m.groupPaymentBtn()}
+				btnLink="./payment/group"
+				img={groupPayment}
+				disabled={!isSupervisor}
+				disabledText={m.paymentMethodNotAvailable()}
+			>
+				<p>{m.groupPaymentDescription()}</p>
+			</UndrawCard>
+		{/if}
 	</div>
 </div>
