@@ -1,47 +1,62 @@
-import fs from 'fs';
-import path from 'path';
 import { parse } from 'csv-parse/sync';
+const CSV_URL =
+	'https://raw.githubusercontent.com/WZBSocialScienceCenter/plz_geocoord/refs/heads/master/plz_geocoord.csv';
 
-// CSV einlesen
-const csvFilePath = path.resolve('static/plz.csv');
-const csvContent = fs.readFileSync(csvFilePath, 'utf-8');
-const records = parse(csvContent, {
-  columns: true,
-  skip_empty_lines: true,
-}) as { lat: string; lng: string; zip: string }[];
+let zipMap: Map<string, { lat: number; lng: number }> | null = null;
 
-console.log(records.slice(0, 5));
+async function loadZipMap() {
+	if (zipMap) return zipMap; // Cache!
+	const res = await fetch(CSV_URL);
+	if (!res.ok) throw new Error('Failed to download ZIP CSV');
+	const csvText = await res.text();
+	const records = parse(csvText, {
+		columns: ['zip', 'lat', 'lng'],
+		skip_empty_lines: true
+	}) as { lat: string; lng: string; zip: string }[];
 
+	const map = new Map<string, { lat: number; lng: number }>();
 
-// CSV in ein Map für schnelle Suche umwandeln
-const zipMap = new Map<string, { lat: number; lng: number }>();
-for (const r of records) {
-  if (r.zip && r.lat && r.lng) {
-    zipMap.set(r.zip.trim(), { lat: parseFloat(r.lat), lng: parseFloat(r.lng) });
-  }
+	for (const r of records) {
+		if (r.zip && r.lat && r.lng) {
+			map.set(r.zip.trim(), {
+				lat: parseFloat(r.lat),
+				lng: parseFloat(r.lng)
+			});
+		}
+	}
+
+	zipMap = map; // Cache im RAM behalten
+	return map;
+}
+
+export interface ZipCoordinate {
+	lat?: number;
+	lng?: number;
+	zip: string;
 }
 
 // Funktion für mehrere PLZ
-function getCoordinatesForZips(zips: string[]) {
-  return zips.map(zip => {
-    const coords = zipMap.get(zip.trim());
-    if (!coords) return { zip, error: 'not found' };
-    return { zip, ...coords };
-  });
+function getCoordinatesForZips(
+	zips: string[],
+	map: Map<string, { lat: number; lng: number }>
+): ZipCoordinate[] {
+	return zips.map((zip) => {
+		const coords = map.get(zip.trim());
+		if (!coords) return { zip };
+		return { zip, ...coords };
+	});
 }
 
 // POST-Handler
 export const POST = async ({ request }) => {
-  const body = await request.json();
-  const zips = body
-  .map((item: { zip?: string }) => item.zip)
-  .filter((zip): zip is string => typeof zip === 'string' && zip.trim() !== '');
+	const body = await request.json();
+	const zips = body
+		.map((item: { zip?: string }) => item.zip)
+		.filter((zip): zip is string => typeof zip === 'string' && zip.trim() !== '');
 
+	const map = await loadZipMap();
 
-  //console.log(`Fetching locations for ${zips.join(', ')} (local CSV)`);
+	const results = getCoordinatesForZips(zips, map);
 
-  const results = getCoordinatesForZips(zips);
-
-	//console.log(results);
-  return new Response(JSON.stringify(results), { status: 200 });
+	return new Response(JSON.stringify(results), { status: 200 });
 };
