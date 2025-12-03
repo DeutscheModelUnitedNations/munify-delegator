@@ -56,6 +56,19 @@ export const defineAbilitiesForConferenceSupervisor = (
 			}
 		});
 
+		// supervisors should be able to see other supervisors in the same conference (this should be strickened later)
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			conference: {
+				conferenceSupervisors: {
+					some: {
+						user: {
+							id: user.sub
+						}
+					}
+				}
+			}
+		});
+
 		// supervisors should be able to see each others placeholders if they supervise the same delegation
 		can(['list', 'read'], 'ConferenceSupervisor', {
 			supervisedDelegationMembers: {

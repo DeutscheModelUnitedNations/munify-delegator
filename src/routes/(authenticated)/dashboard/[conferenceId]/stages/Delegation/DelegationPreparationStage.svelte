@@ -13,7 +13,6 @@
 	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
-	import codenamize from '$lib/services/codenamize';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 
 	interface Props {
@@ -117,7 +116,7 @@
 </section>
 
 <section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{codenamize(delegationMember.delegation.id)}</h2>
+	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
 	<DelegationStatusTableWrapper withEmail withCommittee withPostalSatus withPaymentStatus>
 		{#each delegationMember.delegation.members ?? [] as member}
 			{@const participantStatus = member.user.conferenceParticipantStatus.find(

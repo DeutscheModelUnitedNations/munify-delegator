@@ -9,6 +9,7 @@
 	let { data }: { data: PageData } = $props();
 
 	let isDelegation = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
+	let isSupervisor = $derived(!!data.conferenceQueryData?.findUniqueConferenceSupervisor);
 	let supervisorIsNotPresent = $derived(
 		data.conferenceQueryData?.findUniqueConferenceSupervisor
 			? !data.conferenceQueryData.findUniqueConferenceSupervisor.plansOwnAttendenceAtConference
@@ -46,6 +47,8 @@
 			btnText={m.groupPaymentBtn()}
 			btnLink="./payment/group"
 			img={groupPayment}
+			disabled={!isSupervisor}
+			disabledText={m.paymentMethodNotAvailable()}
 		>
 			<p>{m.groupPaymentDescription()}</p>
 		</UndrawCard>
