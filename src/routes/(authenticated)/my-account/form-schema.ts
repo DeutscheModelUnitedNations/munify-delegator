@@ -2,6 +2,7 @@ import valiator from 'validator';
 import { z } from 'zod';
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
+import { isValidPhoneNumber } from '$lib/utils/phoneValidation';
 
 // must be at least 13 years old
 const birthdayMaxDate = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);
@@ -16,7 +17,7 @@ export const userFormSchema = z.object({
 		.string()
 		.transform((s) => s.replaceAll(' ', ''))
 		.transform((s) => s.replaceAll('-', ''))
-		.refine((s) => valiator.isMobilePhone(s, 'any', { strictMode: true }), {
+		.refine((s) => isValidPhoneNumber(s, true), {
 			message: m.pleaseEnterAValidPhoneNumber()
 		}),
 	street: z.string().min(3, {
