@@ -144,7 +144,7 @@
 		</div>
 
 		<div class="flex flex-col gap-4 lg:flex-row">
-			{#if delegationMembers.length > 0}
+			{#if delegationMembers && delegationMembers.length > 0}
 				<Selection.Fieldset title={m.delegationMembers()}>
 					{#each delegationMembers.sort((a, b) => sortByNames(a.user, b.user)) as member}
 						<Selection.Item
@@ -157,7 +157,7 @@
 				</Selection.Fieldset>
 			{/if}
 
-			{#if singleParticipants.length > 0}
+			{#if singleParticipants && singleParticipants.length > 0}
 				<Selection.Fieldset title={m.singleParticipants()}>
 					{#each singleParticipants.sort((a, b) => sortByNames(a.user, b.user)) as participant}
 						<Selection.Item
