@@ -10,7 +10,7 @@ RUN apt-get install -y nodejs
 FROM dual AS runner
 WORKDIR /run
 
-COPY package.json bun.lockb tsconfig.json ./
+COPY package.json bun.lock tsconfig.json ./
 RUN bun install --frozen-lockfile
 
 ARG VERSION
