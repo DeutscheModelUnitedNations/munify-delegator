@@ -114,8 +114,7 @@
 		"vitest": "^4.0.15",
 		"with-csv": "^2.0.0",
 		"world-countries": "^5.1.0",
-		"zod": "^4.1.13",
-		"zod-to-json-schema": "^3.25.0"
+		"zod": "^4.1.13"
 	},
 	"name": "munify-delegator",
 	"private": true,
