@@ -4,11 +4,12 @@ import SchemaBuilder from '@pothos/core';
 import PrismaPlugin from '@pothos/plugin-prisma';
 import PrismaUtils from '@pothos/plugin-prisma-utils';
 import type PrismaTypes from '@pothos/plugin-prisma/generated';
+import { getDatamodel } from '@pothos/plugin-prisma/generated';
 import ComplexityPlugin from '@pothos/plugin-complexity';
 import TracingPlugin, { isRootField } from '@pothos/plugin-tracing';
 import { createOpenTelemetryWrapper } from '@pothos/tracing-opentelemetry';
 import type { Scalars } from 'prisma-generator-pothos-codegen';
-import type { Prisma } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import { type Context } from '$api/context/context';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 import { tracer } from './tracer';
@@ -45,6 +46,7 @@ export const builder = new SchemaBuilder<{
 	plugins: [PrismaPlugin, PrismaUtils, ComplexityPlugin, TracingPlugin, SimpleObjectsPlugin],
 	prisma: {
 		client: db,
+		dmmf: getDatamodel(),
 		exposeDescriptions: true,
 		filterConnectionTotalCount: true,
 		// warn when not using a query parameter correctly

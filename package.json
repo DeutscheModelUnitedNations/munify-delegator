@@ -120,7 +120,8 @@
 	"private": true,
 	"resolutions": {
 		"devalue": "5.3.2",
-		"form-data": "4.0.4"
+		"form-data": "4.0.4",
+		"svelte": "5.45.5"
 	},
 	"scripts": {
 		"add-translation": "bun run scripts/add_new_translation.ts",
