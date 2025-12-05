@@ -2,10 +2,11 @@
 	interface Props {
 		label: string;
 		selected?: boolean;
+		disabled?: boolean;
 		changeSelection?: (selected: boolean) => void;
 	}
 
-	let { label, selected = $bindable(false), changeSelection }: Props = $props();
+	let { label, selected = $bindable(false), disabled = false, changeSelection }: Props = $props();
 </script>
 
 <label class="label cursor-pointer">
@@ -13,6 +14,7 @@
 		type="checkbox"
 		checked={selected}
 		class="checkbox"
+		{disabled}
 		onclick={changeSelection ? () => changeSelection(!selected) : undefined}
 	/>
 	{label}

@@ -3,6 +3,7 @@
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import toast from 'svelte-french-toast';
 	import GiroCode from './GiroCode.svelte';
 
 	interface Props {
@@ -13,9 +14,15 @@
 		}[];
 		ownUserId: string;
 		conferencePaymentData?: PaymentLayoutQuery$result['findUniqueConference'];
+		isReferenceCreated?: boolean;
 	}
 
-	let { users, conferencePaymentData, ownUserId }: Props = $props();
+	let {
+		users,
+		conferencePaymentData,
+		ownUserId,
+		isReferenceCreated = $bindable(false)
+	}: Props = $props();
 
 	let reference = $state<string>();
 	let referenceLoading = $state(false);
@@ -54,6 +61,8 @@
 
 		reference = paymentTransaction.data?.createOnePaymentTransaction.id;
 		referenceLoading = false;
+		isReferenceCreated = true;
+		toast.success(m.referenceGeneratedSuccessfully());
 	}
 </script>
 

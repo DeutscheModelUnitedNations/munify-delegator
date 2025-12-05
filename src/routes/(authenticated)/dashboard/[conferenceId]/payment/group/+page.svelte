@@ -4,6 +4,7 @@
 	import { type PageData } from './$houdini';
 	import Selection from '$lib/components/Selection';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import toast from 'svelte-french-toast';
 
 	type MinimalUserData = {
 		id: string;
@@ -23,7 +24,6 @@
 	let allOtherSupervisors = $derived(
 		$conferencePaymentGroupData.data?.findManyConferenceSupervisors
 	);
-
 	let otherSupervisors = $derived.by(() => {
 		if (!delegationMembers || !singleParticipants || !allOtherSupervisors || !userData) {
 			return [];
@@ -34,6 +34,7 @@
 				.map((participant) => participant.supervisors.map((sup) => sup.id))
 				.flat()
 		]);
+
 		let supervisors: MinimalUserData[] = [];
 
 		presentSupervisorIds.forEach((id) => {
@@ -47,18 +48,35 @@
 	});
 
 	let selectedParticipants = $state<MinimalUserData[]>([]);
+	let isReferenceCreated = $state(false);
+	let isInitialized = $state(false);
 
 	const addParticipant = (user: { id: string; given_name: string; family_name: string }) => {
+		if (isReferenceCreated) {
+			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
+			return;
+		}
+
 		if (!selectedParticipants.map((x) => x.id).includes(user.id)) {
 			selectedParticipants = [...selectedParticipants, user];
 		}
 	};
 
 	const removeParticipant = (user: MinimalUserData) => {
+		if (isReferenceCreated) {
+			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
+			return;
+		}
+
 		selectedParticipants = selectedParticipants.filter((x) => x.id !== user.id);
 	};
 
 	const addOrRemoveParticipant = (user: MinimalUserData, selected: boolean) => {
+		if (isReferenceCreated) {
+			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
+			return;
+		}
+
 		if (selected) {
 			addParticipant(user);
 		} else {
@@ -67,6 +85,11 @@
 	};
 
 	const addDefaultParticipants = () => {
+		if (isReferenceCreated) {
+			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
+			return;
+		}
+
 		selectedParticipants = [
 			...(delegationMembers ?? []).map((member) => member.user),
 			...(singleParticipants ?? []).map((participant) => participant.user),
@@ -74,9 +97,19 @@
 		];
 	};
 
+	const removeAllParticipants = () => {
+		if (isReferenceCreated) {
+			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
+			return;
+		}
+
+		selectedParticipants = [];
+	};
+
 	$effect(() => {
-		if (supervisorData) {
+		if (supervisorData && !isInitialized) {
 			addDefaultParticipants();
+			isInitialized = true;
 		}
 	});
 </script>
@@ -92,11 +125,19 @@
 		</h2>
 
 		<div class="join join-horizontal">
-			<button class="btn btn-sm join-item" onclick={() => addDefaultParticipants()}>
+			<button
+				class="btn btn-sm join-item"
+				onclick={addDefaultParticipants}
+				disabled={isReferenceCreated}
+			>
 				<i class="fa-duotone fa-check-double"></i>
 				{m.selectAll()}
 			</button>
-			<button class="btn btn-sm join-item" onclick={() => (selectedParticipants = [])}>
+			<button
+				class="btn btn-sm join-item"
+				onclick={removeAllParticipants}
+				disabled={isReferenceCreated}
+			>
 				<i class="fa-duotone fa-xmark"></i>
 				{m.deselectAll()}
 			</button>
@@ -110,6 +151,7 @@
 							label={formatNames(member.user.given_name, member.user.family_name)}
 							selected={selectedParticipants.map((x) => x.id).includes(member.user.id)}
 							changeSelection={(selected) => addOrRemoveParticipant(member.user, selected)}
+							disabled={isReferenceCreated}
 						/>
 					{/each}
 				</Selection.Fieldset>
@@ -122,6 +164,7 @@
 							label={formatNames(participant.user.given_name, participant.user.family_name)}
 							selected={selectedParticipants.map((x) => x.id).includes(participant.user.id)}
 							changeSelection={(selected) => addOrRemoveParticipant(participant.user, selected)}
+							disabled={isReferenceCreated}
 						/>
 					{/each}
 				</Selection.Fieldset>
@@ -136,12 +179,14 @@
 						})}
 						selected={selectedParticipants.map((x) => x.id).includes(userData.id)}
 						changeSelection={(selected) => addOrRemoveParticipant(userData, selected)}
+						disabled={isReferenceCreated}
 					/>
 					{#each otherSupervisors.sort((a, b) => sortByNames(a, b)) as supervisorUser}
 						<Selection.Item
 							label={formatNames(supervisorUser.given_name, supervisorUser.family_name)}
 							selected={selectedParticipants.map((x) => x.id).includes(supervisorUser.id)}
 							changeSelection={(selected) => addOrRemoveParticipant(supervisorUser, selected)}
+							disabled={isReferenceCreated}
 						/>
 					{/each}
 				</Selection.Fieldset>
@@ -159,5 +204,10 @@
 		</div>
 	</div>
 
-	<ReferenceMaker users={selectedParticipants} ownUserId={data.user.sub} {conferencePaymentData} />
+	<ReferenceMaker
+		users={selectedParticipants}
+		ownUserId={data.user.sub}
+		{conferencePaymentData}
+		bind:isReferenceCreated
+	/>
 </div>

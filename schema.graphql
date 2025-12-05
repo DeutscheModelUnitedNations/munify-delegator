@@ -32,7 +32,6 @@ type CertificateJWT {
   jwt: String
 }
 
-"""A committee in a conference. E.g. the human rights council"""
 type Committee {
   abbreviation: String!
   agendaItems: [CommitteeAgendaItem!]!
@@ -44,7 +43,6 @@ type Committee {
   numOfSeatsPerDelegation: Int!
 }
 
-"""Agenda Items that are discussed in a committee"""
 type CommitteeAgendaItem {
   committee: Committee!
   id: ID!
@@ -276,7 +274,6 @@ input CommitteeWhereUniqueInput {
   updatedAt: DateTimeFilter
 }
 
-"""A conference in the system"""
 type Conference {
   accountHolder: String
   bankName: String
@@ -665,9 +662,6 @@ enum ConferenceState {
   PREPARATION
 }
 
-"""
-Supervisors are passive participants in conferences. Often they are teachers overseeing their students.
-"""
 type ConferenceSupervisor {
   conference: Conference!
 
@@ -1275,7 +1269,6 @@ input DateTimeWithAggregatesFilter {
   notIn: [DateTime!]
 }
 
-"""A group application. Holds multiple members."""
 type Delegation {
   """
   wether the delegation has submitted their application
@@ -1343,7 +1336,6 @@ input DelegationListRelationFilter {
   some: DelegationWhereInput
 }
 
-"""Member in a delegation"""
 type DelegationMember {
   assignedCommittee: Committee
   conference: Conference!
@@ -2010,7 +2002,6 @@ type Mutation {
   upsertSelf: UpsertSelfResult!
 }
 
-"""A nation of the UN. Mostly gets seeded at application startup"""
 type Nation {
   alpha2Code: String!
   alpha3Code: ID!
@@ -2432,9 +2423,6 @@ input NestedStringWithAggregatesFilter {
   startsWith: String
 }
 
-"""
-Conferences can create custom non state actors which can be selected as roles in applications
-"""
 type NonStateActor {
   abbreviation: String!
   conference: Conference!
@@ -2635,9 +2623,6 @@ type OfflineUserRefresh {
   user: OfflineUser
 }
 
-"""
-The transactions used to reference the payment status of various users in the conference
-"""
 type PaymentTransaction {
   amount: Float!
   conference: Conference!
@@ -2843,9 +2828,6 @@ enum QueryMode {
   insensitive
 }
 
-"""
-Instance of a delegation application selection. When a delegation wants a role they create this entity.
-"""
 type RoleApplication {
   delegation: Delegation!
   id: ID!
@@ -3014,7 +2996,6 @@ type SetAssignmentDataResult {
   success: Boolean!
 }
 
-"""An individual applicant who applies without a delegation."""
 type SingleParticipant {
   applied: Boolean!
   appliedForRoles: [CustomConferenceRole!]!
@@ -3785,9 +3766,6 @@ input SurveyQuestionWhereUniqueInput {
   updatedAt: DateTimeFilter
 }
 
-"""
-A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.
-"""
 type TeamMember {
   conference: Conference!
   id: ID!
@@ -3956,7 +3934,6 @@ type UpsertSelfResult {
   userNeedsAdditionalInfo: Boolean!
 }
 
-"""A user in the system. Often received by our OIDC provider"""
 type User {
   apartment: String
   birthday: DateTime
@@ -4337,7 +4314,6 @@ input UserWhereUniqueInput {
   zip: StringNullableFilter
 }
 
-"""An Entry of a User on a Waiting List for a Conference"""
 type WaitingListEntry {
   assigned: Boolean!
   conference: Conference!
