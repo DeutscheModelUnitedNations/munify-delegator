@@ -21,7 +21,7 @@ import type {
 	SurveyAnswer,
 	WaitingListEntry,
 	TeamMember
-} from '/Users/tadestrehk/Developer/DMUN/delegator/node_modules/@prisma/client/index.js';
+} from '/home/m1212e/Documents/Coding/munify-delegator/node_modules/@prisma/client/index.js';
 import type { PothosPrismaDatamodel } from '@pothos/plugin-prisma';
 export default interface PrismaTypes {
 	Conference: {
