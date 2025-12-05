@@ -71,22 +71,24 @@
 			</button>
 		</div>
 
-		<Selection.Fieldset title={m.delegationMembers()}>
-			{#each delegationMembers.sort((a, b) => sortByNames(a.user, b.user)) as member}
-				<Selection.Item
-					label={formatNames(member.user.given_name, member.user.family_name)}
-					selected={selectedParticipants.map((x) => x.id).includes(member.user.id)}
-					changeSelection={(selected) => addOrRemoveParticipant(member.user, selected)}
-				/>
-			{/each}
-		</Selection.Fieldset>
+		{#if delegationMembers}
+			<Selection.Fieldset title={m.delegationMembers()}>
+				{#each delegationMembers.sort((a, b) => sortByNames(a.user, b.user)) as member}
+					<Selection.Item
+						label={formatNames(member.user.given_name, member.user.family_name)}
+						selected={selectedParticipants.map((x) => x.id).includes(member.user.id)}
+						changeSelection={(selected) => addOrRemoveParticipant(member.user, selected)}
+					/>
+				{/each}
+			</Selection.Fieldset>
+		{/if}
 
 		<div class="alert alert-info mt-4">
 			<i class="fa-solid fa-info-circle mr-2 text-2xl"></i>
 			<div>
-				<h3 class="font-bold">{m.participantsNotFoundDescription()}</h3>
+				<h3 class="font-bold">{m.participantsNotFoundTitle()}</h3>
 				<p>
-					{m.participantsNotFoundTitle()}
+					{m.participantsNotFoundDescription()}
 				</p>
 			</div>
 		</div>

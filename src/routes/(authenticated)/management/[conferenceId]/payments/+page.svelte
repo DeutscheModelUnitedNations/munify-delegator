@@ -65,10 +65,6 @@
 		}
 	});
 
-	$effect(() => {
-		$params.searchValue = $params.searchValue.trim();
-	});
-
 	let { data }: { data: PageData } = $props();
 
 	let paymentTransaction = $derived($paymentReferenceByIdQuery.data?.findUniquePaymentTransaction);

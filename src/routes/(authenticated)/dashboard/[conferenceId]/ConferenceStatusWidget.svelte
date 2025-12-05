@@ -77,7 +77,7 @@
 	{/if}
 	<div class="flex w-full flex-col gap-4 md:flex-row">
 		<a
-			href="./{conferenceId}/payment"
+			href="/dashboard/{conferenceId}/payment"
 			class="btn btn-primary btn-lg w-full md:w-auto {!unlockPayment && 'btn-disabled'}"
 		>
 			<i class="fas fa-hand-holding-circle-dollar"></i>
@@ -85,7 +85,7 @@
 		</a>
 		{#if status?.termsAndConditions !== 'DONE' || (!ofAgeAtConference && status?.guardianConsent !== 'DONE') || status?.mediaConsent !== 'DONE'}
 			<a
-				href="./{conferenceId}/postalRegistration"
+				href="/dashboard/{conferenceId}/postalRegistration"
 				class="btn btn-primary btn-lg w-full md:w-auto {!unlockPostals && 'btn-disabled'}"
 			>
 				<i class="fas fa-envelopes-bulk"></i>

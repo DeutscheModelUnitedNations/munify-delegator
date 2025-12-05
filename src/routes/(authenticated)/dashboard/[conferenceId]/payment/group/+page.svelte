@@ -18,13 +18,16 @@
 	let conferencePaymentGroupData = $derived(data.PaymentGroupQuery);
 	let supervisorData = $derived(conferenceQueryData.findUniqueConferenceSupervisor);
 	let userData = $derived(supervisorData?.user);
-	let delegationMembers = $derived(supervisorData.supervisedDelegationMembers);
-	let singleParticipants = $derived(supervisorData.supervisedSingleParticipants);
+	let delegationMembers = $derived(supervisorData?.supervisedDelegationMembers);
+	let singleParticipants = $derived(supervisorData?.supervisedSingleParticipants);
 	let allOtherSupervisors = $derived(
 		$conferencePaymentGroupData.data?.findManyConferenceSupervisors
 	);
 
 	let otherSupervisors = $derived.by(() => {
+		if (!delegationMembers || !singleParticipants || !allOtherSupervisors || !userData) {
+			return [];
+		}
 		let presentSupervisorIds = new Set<string>([
 			...delegationMembers.map((member) => member.supervisors.map((sup) => sup.id)).flat(),
 			...singleParticipants
@@ -65,8 +68,8 @@
 
 	const addDefaultParticipants = () => {
 		selectedParticipants = [
-			...delegationMembers.map((member) => member.user),
-			...singleParticipants.map((participant) => participant.user),
+			...(delegationMembers ?? []).map((member) => member.user),
+			...(singleParticipants ?? []).map((participant) => participant.user),
 			userData
 		];
 	};
@@ -124,23 +127,25 @@
 				</Selection.Fieldset>
 			{/if}
 
-			<Selection.Fieldset title={m.supervisors()}>
-				<Selection.Item
-					label={m.myself({
-						given_name: userData.given_name,
-						family_name: userData.family_name
-					})}
-					selected={selectedParticipants.map((x) => x.id).includes(userData.id)}
-					changeSelection={(selected) => addOrRemoveParticipant(userData, selected)}
-				/>
-				{#each otherSupervisors.sort((a, b) => sortByNames(a, b)) as supervisorUser}
+			{#if userData}
+				<Selection.Fieldset title={m.supervisors()}>
 					<Selection.Item
-						label={formatNames(supervisorUser.given_name, supervisorUser.family_name)}
-						selected={selectedParticipants.map((x) => x.id).includes(supervisorUser.id)}
-						changeSelection={(selected) => addOrRemoveParticipant(supervisorUser, selected)}
+						label={m.myself({
+							given_name: userData.given_name,
+							family_name: userData.family_name
+						})}
+						selected={selectedParticipants.map((x) => x.id).includes(userData.id)}
+						changeSelection={(selected) => addOrRemoveParticipant(userData, selected)}
 					/>
-				{/each}
-			</Selection.Fieldset>
+					{#each otherSupervisors.sort((a, b) => sortByNames(a, b)) as supervisorUser}
+						<Selection.Item
+							label={formatNames(supervisorUser.given_name, supervisorUser.family_name)}
+							selected={selectedParticipants.map((x) => x.id).includes(supervisorUser.id)}
+							changeSelection={(selected) => addOrRemoveParticipant(supervisorUser, selected)}
+						/>
+					{/each}
+				</Selection.Fieldset>
+			{/if}
 		</div>
 
 		<div class="alert alert-info mt-4">
