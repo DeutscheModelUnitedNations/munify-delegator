@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { addToPanel } from 'svelte-inspect-value';
-
 	interface Props {
 		row: Partial<{ $selected: boolean }>;
 	}

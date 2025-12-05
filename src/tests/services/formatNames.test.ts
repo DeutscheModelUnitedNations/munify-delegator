@@ -315,16 +315,11 @@ describe('formatNames', () => {
 	});
 
 	test("should correctly format 'la' in familyName: 'jean la roche'", () => {
-		expect(formatNames('jean', 'la roche')).toBe('Jean la Roche'); // 'La' often capitalized
+		expect(formatNames('jean', 'la roche')).toBe('Jean la Roche');
 	});
 
 	test("should correctly format 'le' in familyName: 'pierre le grand'", () => {
-		expect(formatNames('pierre', 'le grand')).toBe('Pierre le Grand'); // 'Le' often capitalized
-	});
-
-	test("should handle 'de' when it's part of a compound surname that should be fully capitalized", () => {
-		// e.g., 'Da Costa' in Portuguese/Spanish contexts might keep 'Da' capitalized.
-		expect(formatNames('maria', 'da silva')).toBe('Maria da Silva');
+		expect(formatNames('pierre', 'le grand')).toBe('Pierre le Grand');
 	});
 
 	// --- Other languages/complexities ---

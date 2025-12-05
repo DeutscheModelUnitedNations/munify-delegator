@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { cache, graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { type PageData } from './$houdini';
-	import { fly, fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
 	import { queryParameters } from 'sveltekit-search-params';

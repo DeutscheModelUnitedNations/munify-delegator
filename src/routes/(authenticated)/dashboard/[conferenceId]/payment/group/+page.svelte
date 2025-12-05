@@ -4,7 +4,6 @@
 	import { type PageData } from './$houdini';
 	import Selection from '$lib/components/Selection';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	type MinimalUserData = {
 		id: string;
@@ -25,9 +24,6 @@
 		$conferencePaymentGroupData.data?.findManyConferenceSupervisors
 	);
 
-	addToPanel('allOtherSupervisors', () => allOtherSupervisors);
-	addToPanel('otherSupervisors', () => otherSupervisors);
-
 	let otherSupervisors = $derived.by(() => {
 		let presentSupervisorIds = new Set<string>([
 			...delegationMembers.map((member) => member.supervisors.map((sup) => sup.id)).flat(),
@@ -35,19 +31,17 @@
 				.map((participant) => participant.supervisors.map((sup) => sup.id))
 				.flat()
 		]);
-		let supverisors: MinimalUserData[] = [];
+		let supervisors: MinimalUserData[] = [];
 
 		presentSupervisorIds.forEach((id) => {
 			let supervisor = allOtherSupervisors.find((sup) => sup.id === id);
 			if (supervisor && supervisor.user.id !== userData.id) {
-				supverisors.push(supervisor.user);
+				supervisors.push(supervisor.user);
 			}
 		});
 
-		return supverisors;
+		return supervisors;
 	});
-
-	addToPanel('otherSupervisors', () => otherSupervisors);
 
 	let selectedParticipants = $state<MinimalUserData[]>([]);
 
@@ -127,16 +121,13 @@
 							changeSelection={(selected) => addOrRemoveParticipant(participant.user, selected)}
 						/>
 					{/each}
-					{#if delegationMembers.length === 0}
-						<p class="text-sm italic text-base-content/70">{m.noSingleParticipants()}</p>
-					{/if}
 				</Selection.Fieldset>
 			{/if}
 
 			<Selection.Fieldset title={m.supervisors()}>
 				<Selection.Item
 					label={m.myself({
-						given_name: data.user.given_name,
+						given_name: userData.given_name,
 						family_name: userData.family_name
 					})}
 					selected={selectedParticipants.map((x) => x.id).includes(userData.id)}

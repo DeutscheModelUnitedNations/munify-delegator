@@ -95,7 +95,7 @@
 		"prisma": "^6.19.0",
 		"prisma-generator-pothos-codegen": "^0.7.1",
 		"replace-special-characters": "^1.2.7",
-		"svelte": "^5.45.4",
+		"svelte": "^5.45.5",
 		"svelte-check": "^4.3.4",
 		"svelte-french-toast": "^1.2.0",
 		"svelte-inspect-value": "^0.8.5",
