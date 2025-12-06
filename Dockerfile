@@ -10,7 +10,7 @@ RUN apt-get install -y nodejs
 FROM dual AS runner
 WORKDIR /run
 
-COPY package.json bun.lockb tsconfig.json ./
+COPY package.json bun.lock tsconfig.json ./
 RUN bun install --frozen-lockfile
 
 ARG VERSION
@@ -18,15 +18,11 @@ ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
 
-COPY ./prisma ./prisma/
-RUN bunx prisma generate
-
 COPY . .
-RUN bun run build
-RUN bun run check
+RUN bunx prisma generate
+RUN bun run build && bun run check
 
-RUN mkdir /run/ephemeralData
-RUN chown -R bun:bun /run/ephemeralData
+RUN mkdir /run/ephemeralData && chown -R bun:bun /run/ephemeralData
 
 USER bun
 ENV NODE_ENV=production

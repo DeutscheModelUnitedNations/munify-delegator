@@ -32,10 +32,7 @@ interface GenerateSeededRsaOptions {
 }
 
 /** Generate a deterministic RSA keypair from a seed. */
-export async function generateSeededRsa(
-	seed: string,
-	opts: GenerateSeededRsaOptions = {}
-): Promise<{ publicKey: CryptoKey; privateKey: CryptoKey }> {
+export async function generateSeededRsa(seed: string, opts: GenerateSeededRsaOptions = {}) {
 	if (building) {
 		// Mock the function to return a dummy keypair as Uint8Arrays
 		return {

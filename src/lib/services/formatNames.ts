@@ -1,3 +1,61 @@
+function toTitleCaseNamePart(namePart: string): string {
+	if (!namePart) {
+		return '';
+	}
+
+	const lowercaseParticles = new Set([
+		'von',
+		'van',
+		'der',
+		'de',
+		'des',
+		'di',
+		'da',
+		'dos',
+		'do',
+		'du',
+		'le',
+		'la',
+		'y',
+		'e',
+		'af',
+		'ter',
+		'zu'
+	]);
+
+	const words = namePart.split(' ');
+
+	return words
+		.map((word) => {
+			const lowercasedWord = word.toLowerCase();
+			if (word.includes('-')) {
+				return word
+					.split('-')
+					.map((part) => toTitleCaseNamePart(part))
+					.join('-');
+			}
+
+			if (word.includes("'")) {
+				return word
+					.split("'")
+					.map((part, partIndex) =>
+						partIndex === 0 ? toTitleCaseNamePart(part) : toTitleCaseNamePart(part)
+					)
+					.join("'");
+			}
+
+			if (lowercaseParticles.has(lowercasedWord)) {
+				if (word.charAt(0) === word.charAt(0).toUpperCase()) {
+					return word.charAt(0) + word.slice(1).toLowerCase();
+				}
+				return word.toLowerCase();
+			}
+
+			return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+		})
+		.join(' ');
+}
+
 /**
  * Formats the given and family names based on specified options.
  *
@@ -32,36 +90,58 @@ export default function formatNames(
 		delimiter?: string;
 	}
 ): string {
-	const {
-		givenNameFirst = true,
-		givenNameUppercase = false,
-		familyNameUppercase = true,
-		delimiter = ' '
-	} = options || {};
+	// Normalize inputs: convert undefined to empty string and trim whitespace
+	const normalizedGivenName = givenName ? givenName.trim() : '';
+	const normalizedFamilyName = familyName ? familyName.trim() : '';
 
-	const sentenceCase = (name: string) => {
-		const words = name.trim().split(/\s+/);
-		return words
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-			.join(delimiter);
+	// Set default options
+	const defaultOptions = {
+		givenNameFirst: true, // Default to given name first
+		givenNameUppercase: false,
+		familyNameUppercase: false,
+		delimiter: ' ' // Default delimiter is a space
 	};
 
-	if (!givenName) {
-		return familyName?.toUpperCase().replace(/ /g, delimiter) || 'unknown name';
+	const effectiveOptions = { ...defaultOptions, ...options };
+
+	let formattedGivenName: string;
+	let formattedFamilyName: string;
+
+	// Apply capitalization correction first
+	formattedGivenName = toTitleCaseNamePart(normalizedGivenName);
+	formattedFamilyName = toTitleCaseNamePart(normalizedFamilyName);
+
+	// Then apply uppercase options, which should override the title casing if specified.
+	if (effectiveOptions.givenNameUppercase) {
+		formattedGivenName = normalizedGivenName.toUpperCase(); // Use original for full uppercase
 	}
-	if (!familyName) {
-		return givenName.replace(/ /g, delimiter);
+	if (effectiveOptions.familyNameUppercase) {
+		formattedFamilyName = normalizedFamilyName.toUpperCase(); // Use original for full uppercase
 	}
 
-	const formattedGivenName = givenNameUppercase
-		? givenName.toUpperCase().replace(/ /g, delimiter)
-		: sentenceCase(givenName);
-	const formattedFamilyName = familyNameUppercase
-		? familyName.toUpperCase().replace(/ /g, delimiter)
-		: sentenceCase(familyName);
+	// Handle cases where one or both names are empty after normalization
+	if (!formattedGivenName && !formattedFamilyName) {
+		return ''; // If both are empty, return an empty string
+	} else if (!formattedGivenName) {
+		// If given name is empty, ensure family name is in correct casing if it was
+		// fully uppercased by option, otherwise use title cased.
+		return effectiveOptions.familyNameUppercase
+			? normalizedFamilyName.toUpperCase()
+			: formattedFamilyName;
+	} else if (!formattedFamilyName) {
+		// If family name is empty, ensure given name is in correct casing if it was
+		// fully uppercased by option, otherwise use title cased.
+		return effectiveOptions.givenNameUppercase
+			? normalizedGivenName.toUpperCase()
+			: formattedGivenName;
+	}
 
-	if (givenNameFirst) return `${formattedGivenName}${delimiter}${formattedFamilyName}`;
-	return `${formattedFamilyName}${delimiter}${formattedGivenName}`;
+	// Assemble the full name based on the givenNameFirst option
+	if (effectiveOptions.givenNameFirst) {
+		return `${formattedGivenName}${effectiveOptions.delimiter}${formattedFamilyName}`;
+	} else {
+		return `${formattedFamilyName}${effectiveOptions.delimiter}${formattedGivenName}`;
+	}
 }
 
 /**
@@ -85,10 +165,12 @@ export function formatInitials(
 	return `${givenName.charAt(0).toUpperCase()}${familyName.charAt(0).toUpperCase()}`;
 }
 
-export function sortByNames(
-	a: { given_name: string; family_name: string },
-	b: { given_name: string; family_name: string }
-): number {
+type NameObject = {
+	given_name: string;
+	family_name: string;
+};
+
+export function sortByNames(a: NameObject, b: NameObject): number {
 	const aName = formatNames(a.given_name, a.family_name, { givenNameFirst: false });
 	const bName = formatNames(b.given_name, b.family_name, { givenNameFirst: false });
 	return aName.localeCompare(bName);

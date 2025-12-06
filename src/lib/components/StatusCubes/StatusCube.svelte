@@ -10,15 +10,15 @@
 	const getColor = (status: string) => {
 		switch (status) {
 			case 'DONE':
-				return 'bg-success dark:text-base-300';
+				return 'bg-success text-success-content';
 			case 'PROBLEM':
-				return 'bg-error dark:text-base-300';
+				return 'bg-error text-error-content';
 			case 'PENDING':
-				return 'bg-warning dark:text-base-300';
+				return 'bg-warning text-warning-content';
 			case 'NOT_YET_POSSIBLE':
-				return 'bg-info dark:text-base-300';
+				return 'bg-info text-info-content';
 			default:
-				return 'bg-base-200 dark:text-base-300';
+				return 'bg-info text-info-content';
 		}
 	};
 </script>

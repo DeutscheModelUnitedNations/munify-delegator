@@ -67,11 +67,11 @@
 	<p>Folgende Funktionen stehen zur Verfügung:</p>
 	<ul class="list-disc">
 		<li>
-			<strong>Bewertung:</strong> Die Bewerbungen können mit einer Bewertung versehen werden, um die
-			Zuteilung zu optimieren. Eine bessere Bewertung erhöht die Wahrscheinlichkeit, dass die Bewerbung
-			eine Wunschrolle erhält. Eine schlechtere Bewertung verringert die Wahrscheinlichkeit und kann
-			sogar bei Engpässen zu einer einstweiligen Ablehnung führen. Eine "Grundbewertung" kann festgelegt
-			werden, um die Bewertung zu standardisieren – sie liegt standardmäßig bei 2,5 Sternen.
+			<strong>Bewertung:</strong> Die Bewerbungen können mit einer Bewertung versehen werden, um die Zuteilung
+			zu optimieren. Eine bessere Bewertung erhöht die Wahrscheinlichkeit, dass die Bewerbung eine Wunschrolle
+			erhält. Eine schlechtere Bewertung verringert die Wahrscheinlichkeit und kann sogar bei Engpässen
+			zu einer einstweiligen Ablehnung führen. Eine "Grundbewertung" kann festgelegt werden, um die Bewertung
+			zu standardisieren – sie liegt standardmäßig bei 2,5 Sternen.
 		</li>
 		<li>
 			<strong>Notizen:</strong> Zu jeder Bewerbung kann eine Notiz hinzugefügt werden, um besondere Umstände
@@ -85,8 +85,8 @@
 		</li>
 		<li>
 			<strong>Ausschluss:</strong> Bewerbungen können ausgeschlossen werden, wenn sie nicht den Anforderungen
-			entsprechen oder unvollständig sind. Diese Bewerbungen tauchen dann im folgenden Verfahren gar
-			nicht mehr auf.
+			entsprechen oder unvollständig sind. Diese Bewerbungen tauchen dann im folgenden Verfahren gar nicht
+			mehr auf.
 		</li>
 	</ul>
 	<p>

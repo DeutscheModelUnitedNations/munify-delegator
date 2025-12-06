@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 
 export const GET: RequestHandler = () => {
-	return new Response(JSON.stringify(zodToJsonSchema(ConferenceSeedingSchema), null, 2));
+	return new Response(JSON.stringify(z.toJSONSchema(ConferenceSeedingSchema), null, 2));
 };
