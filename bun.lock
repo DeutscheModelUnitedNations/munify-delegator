@@ -7,6 +7,7 @@
       "dependencies": {
         "commander": "^14.0.2",
         "humanparser": "^2.7.0",
+        "libphonenumber-js": "^1.12.31",
         "prettier-plugin-sort-json": "^4.1.1",
         "svelte-kit": "^1.2.0",
       },
