@@ -1,4 +1,4 @@
-import valiator from 'validator';
+import validator from 'validator';
 import { z } from 'zod';
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
@@ -33,13 +33,13 @@ export const userFormSchema = z.object({
 		message: m.atLeastXChars({ amount: 3 })
 	}),
 	apartment: z.string().nullish(),
-	zip: z.string().refine((s) => valiator.isPostalCode(s, 'any'), {
+	zip: z.string().refine((s) => validator.isPostalCode(s, 'any'), {
 		message: m.pleaseEnterAZipCpode()
 	}),
 	city: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
-	country: z.string().refine(valiator.isISO31661Alpha3),
+	country: z.string().refine(validator.isISO31661Alpha3),
 	gender: z.union([
 		z.literal('MALE'),
 		z.literal('FEMALE'),
