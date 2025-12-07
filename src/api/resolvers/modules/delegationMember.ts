@@ -176,17 +176,6 @@ builder.mutationFields((t) => {
 					assignedCommitteeId
 				} = args;
 
-				if (
-					await isUserAlreadyRegistered({
-						userId,
-						conferenceId
-					})
-				) {
-					throw new GraphQLError(
-						"User is already assigned a different role in the conference. Can't assign delegationMember."
-					);
-				}
-
 				let delegation = await db.delegation.findFirst({
 					where: {
 						conferenceId,
@@ -211,6 +200,39 @@ builder.mutationFields((t) => {
 						school: 'No Info',
 						motivation: 'Assigned by management'
 					};
+
+					if (
+						await isUserAlreadyRegistered({
+							userId,
+							conferenceId
+						})
+					) {
+						try {
+							await tx.delegationMember.delete({
+								where: {
+									conferenceId_userId: {
+										conferenceId: args.conferenceId,
+										userId: userId
+									}
+								}
+							});
+						} catch (e) {
+							try {
+								await tx.singleParticipant.delete({
+									where: {
+										conferenceId_userId: {
+											conferenceId: args.conferenceId,
+											userId: userId
+										}
+									}
+								});
+							} catch (e) {
+								throw new GraphQLError(
+									'User is already part of the conference and records could not be deleted'
+								);
+							}
+						}
+					}
 
 					if (!delegation) {
 						delegation = await tx.delegation.create({

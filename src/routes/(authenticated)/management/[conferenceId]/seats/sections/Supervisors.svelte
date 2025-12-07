@@ -42,11 +42,11 @@
 	};
 </script>
 
-{#snippet downloadSupervisorDataBtn()}
-	<DownloadSupervisorDataBtn {conferenceId} />
-{/snippet}
+<SeatsTableSection title={m.supervisors()}>
+	{#snippet downloadButton()}
+		<DownloadSupervisorDataBtn {conferenceId} />
+	{/snippet}
 
-<SeatsTableSection title={m.supervisors()} downloadButton={downloadSupervisorDataBtn}>
 	<thead>
 		<tr>
 			<td>

@@ -59,6 +59,24 @@ export const defineAbilitiesForUserEntity = (oidc: OIDC, { can }: AbilityBuilder
 			]
 		});
 
+		// supervisors should see other supervisors in the conference (this should be strickened later)
+		// can(['list', 'read'], "User", {
+		// conferenceSupervisor: {
+		//   some: {
+		//     conference: {
+		//       some: {
+		//         conferenceSupervisor: {
+		//           some: {
+		//             user: {
+		//               id: user.sub
+		//             }
+		//           }
+		//         }
+		//       }
+		//     }
+		//   }
+		// }
+
 		// delegates should see their supervisors
 		can(['list', 'read'], 'User', {
 			conferenceSupervisor: {

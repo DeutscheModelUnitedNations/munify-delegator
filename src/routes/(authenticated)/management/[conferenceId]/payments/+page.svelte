@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { cache, graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { type PageData } from './$houdini';
-	import { fly, fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
+	import { queryParameters } from 'sveltekit-search-params';
 
 	const paymentReferenceByIdQuery = graphql(`
 		query PaymentReferenceByIdQuery($reference: String!, $conferenceId: String!) {
@@ -58,10 +57,12 @@
 		}
 	`);
 
-	let searchValue = $state<string>('');
-
-	$effect(() => {
-		searchValue = searchValue.trim();
+	const params = queryParameters({
+		searchValue: {
+			defaultValue: '',
+			encode: (value) => value.trim(),
+			decode: (value) => (value ?? '').trim()
+		}
 	});
 
 	let { data }: { data: PageData } = $props();
@@ -80,29 +81,11 @@
 
 	$effect(() => {
 		paymentReferenceByIdQuery.fetch({
-			variables: { conferenceId: data.conferenceId, reference: searchValue }
+			variables: { conferenceId: data.conferenceId, reference: $params.searchValue }
 		});
 	});
 
-	let confirmDialogOpen = $state(false);
-
-	let recieveDate = $state<string>();
-	let nativeDateInput = $state<HTMLInputElement>();
-
-	function open() {
-		if (!nativeDateInput) throw new Error('Native date input not found');
-		nativeDateInput.showPicker();
-	}
-
-	let localizedDateString = $derived.by(() => {
-		if (!recieveDate) return m.selectADate();
-		const date = new Date(recieveDate);
-		return date.toLocaleDateString(getLocale(), {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric'
-		});
-	});
+	let recieveDate = $state<string>(new Date().toISOString().split('T')[0]);
 
 	let loading = $state(false);
 
@@ -125,7 +108,7 @@
 		});
 		cache.markStale();
 		paymentReferenceByIdQuery.fetch({
-			variables: { conferenceId: data.conferenceId, reference: searchValue }
+			variables: { conferenceId: data.conferenceId, reference: $params.searchValue }
 		});
 		loading = false;
 	};
@@ -141,14 +124,14 @@
 		type="text"
 		placeholder={m.referenceSearch()}
 		class="input input-lg w-full"
-		bind:value={searchValue}
+		bind:value={$params.searchValue}
 	/>
 
 	{#if $paymentReferenceByIdQuery?.fetching}
 		<div class="flex items-center gap-2">
 			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 		</div>
-	{:else if searchValue === ''}
+	{:else if $params.searchValue === ''}
 		<div class="flex items-center gap-2">
 			<i class="fa-duotone fa-pen-field text-3xl"></i>
 			{m.waitingForYourInput()}
@@ -239,7 +222,7 @@
 						{/if}
 						{m.markAsProblem()}
 					</button>
-					<button class="btn btn-success" onclick={() => (confirmDialogOpen = true)}>
+					<button class="btn btn-success" onclick={() => changeTransactionStatus('DONE')}>
 						{#if loading}
 							<i class="fa-duotone fa-spinner fa-spin"></i>
 						{:else}
@@ -252,55 +235,3 @@
 		</div>
 	{/if}
 </div>
-
-<dialog class="modal {confirmDialogOpen && 'modal-open'}">
-	<div class="modal-box">
-		<h3 class="text-lg font-bold">{m.enterDateOfdateReceipt()}</h3>
-		<DatePicker
-			enableFutureDates={false}
-			enablePastDates
-			isMultipane
-			showYearControls
-			isRange={false}
-			includeFont={false}
-		>
-			<div class="relative">
-				<input
-					name="RecievedDate"
-					type="date"
-					id="RecievedDate"
-					bind:value={recieveDate}
-					placeholder={m.selectADate()}
-					class="input w-full"
-					lang={getLocale()}
-					bind:this={nativeDateInput}
-				/>
-				<div
-					aria-hidden={true}
-					onclick={open}
-					onkeydown={open}
-					class="input absolute top-1/2 right-1/2 flex w-full translate-x-1/2 -translate-y-1/2 cursor-pointer items-center"
-				>
-					{localizedDateString}
-				</div>
-				<i class="fa-duotone fa-calendar absolute top-1/2 right-4 -translate-y-1/2 text-lg"></i>
-			</div>
-		</DatePicker>
-		<div class="modal-action justify-between">
-			<button class="btn btn-error" onclick={() => (confirmDialogOpen = false)} aria-label="Exit">
-				<i class="fas fa-xmark text-xl"></i>
-			</button>
-			<button
-				class="btn btn-primary"
-				aria-label="Print"
-				onclick={() => {
-					confirmDialogOpen = false;
-					changeTransactionStatus('DONE');
-				}}
-			>
-				<i class="fas fa-check text-xl"></i>
-				{m.confirm()}
-			</button>
-		</div>
-	</div>
-</dialog>

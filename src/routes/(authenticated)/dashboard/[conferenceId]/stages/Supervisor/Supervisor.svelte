@@ -183,6 +183,11 @@
 			const conferenceData = userDetailsStore?.data?.findUniqueConference;
 
 			if (user) {
+				if (!user.street || !user.zip || !user.city || !user.country || !user.birthday) {
+					toast.error(m.incompleteAddressOrBirthdayForPostalRegistration());
+					return;
+				}
+
 				const recipientData: RecipientData = {
 					name: `${conference?.postalName}`,
 					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
@@ -212,11 +217,15 @@
 					conferenceData?.termsAndConditionsContent ?? undefined,
 					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
 				);
+
+				toast.success(m.postalRegistrationPDFGenerated());
 			} else {
 				console.error('User details not found');
+				toast.error(m.errorGeneratingPostalRegistrationPDF());
 			}
 		} catch (error) {
 			console.error('Error generating PDF:', error);
+			toast.error(m.errorGeneratingPostalRegistrationPDF());
 		}
 	};
 
