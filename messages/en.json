@@ -101,7 +101,7 @@
 	"assistantFlowParticipantOrSupervisorAnswer2": "I would like to register as a supervisor.",
 	"assistantFlowPartnersCreatedDelegation1": "Wonderful! As a group, you are a <em>delegation</em> .",
 	"assistantFlowPartnersCreatedDelegation2": "Since registration as a group must also be closed, you must first clarify whether someone in your group has already created a delegation that you can join.",
-	"assistantFlowPartnersCreatedDelegation3": "The person who created your delegation is automatically your <em>head delegate<em>.",
+	"assistantFlowPartnersCreatedDelegation3": "The person who created your delegation is automatically your <em>head delegate</em>.",
 	"assistantFlowPartnersCreatedDelegation4": "Do you already have a delegation leader who has already created a delegation?",
 	"assistantFlowPartnersCreatedDelegationAnswer1": "Yes, there is already a delegation.",
 	"assistantFlowPartnersCreatedDelegationAnswer2": "No, no one has created a delegation yet.",
