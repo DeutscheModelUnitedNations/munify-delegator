@@ -1,0 +1,24 @@
+name: i18n Check
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  i18n-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: i18n Check
+        run: bun run i18n:check
+
+      - name: i18n Validate Configuration
+        run: bun run i18n:validate
