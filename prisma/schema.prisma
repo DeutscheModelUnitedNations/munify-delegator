@@ -82,6 +82,7 @@ model Conference {
   delegationMembers            DelegationMember[]
   paymentTransactions          PaymentTransaction[]
   surveyQuestions              SurveyQuestion[]
+  papers                       Paper[]
 
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @default(now()) @updatedAt
@@ -101,6 +102,7 @@ model Committee {
   delegationMembers DelegationMember[]
 
   CommitteeAgendaItem CommitteeAgendaItem[]
+  papers              Paper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -173,6 +175,7 @@ model User {
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
   surveyAnswers                 SurveyAnswer[]
   waitingListEntry              WaitingListEntry[]
+  papers                        Paper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -239,6 +242,30 @@ model UserReferenceInPaymentTransaction {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Papers
+enum PaperType {
+  POSITION_PAPER /// Delegates and NonStateActors
+  WORKING_PAPER /// Delegates
+  PRESENTATION_PAPER /// NonStateActors
+}
+
+model Paper {
+  id      String @id @default(nanoid())
+  content Json
+
+  author       User       @relation(fields: [authorId], references: [id])
+  authorId     String
+  delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
+  delegationId String
+  committee    Committee? @relation(fields: [committeeId], references: [id])
+  committeeId  String?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+  Conference   Conference? @relation(fields: [conferenceId], references: [id])
+  conferenceId String?
 }
 
 /// A nation of the UN. Mostly gets seeded at application startup
@@ -353,6 +380,7 @@ model Delegation {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  Paper     Paper[]
 
   @@unique([conferenceId, entryCode])
   @@unique([conferenceId, assignedNationAlpha3Code])
