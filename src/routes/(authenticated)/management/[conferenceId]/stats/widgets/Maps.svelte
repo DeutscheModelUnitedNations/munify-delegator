@@ -1,13 +1,8 @@
 <script lang="ts">
-	export const ssr = false;
 	import { Map, TileLayer, Popup, Marker } from 'sveaflet';
-	import { latLng, divIcon, point } from 'leaflet';
+	import { divIcon, point } from 'leaflet';
 	import { MarkerCluster } from 'sveaflet-markercluster';
-	import { onMount } from 'svelte';
-	import type { PageData } from '../$types';
 	import type { ConferenceStatsQuery$result } from '$houdini';
-	import { addToPanel } from 'svelte-inspect-value';
-	import { country, title } from '$lib/paraglide/messages';
 	import type { ZipCoordinate } from '../zip-api/+server';
 	import { m } from '$lib/paraglide/messages';
 
@@ -101,10 +96,10 @@
 				}}
 			>
 				{#each coordinates as item (`${item.country}_${item.zip}`)}
-					{@const title = `{m.zipCode()}: ${item.zip} (${item.zipCount})`}
+					{@const markerTitle = `${m.zipCode()}: ${item.zip} (${item.zipCount})`}
 					<Marker
 						latLng={[item.lat, item.lng]}
-						options={{ title: title, data: { count: item.zipCount } }}
+						options={{ title: markerTitle, data: { count: item.zipCount } }}
 					>
 						<Popup>
 							<strong>{m.zipCode()}: {item.zip}</strong><br />

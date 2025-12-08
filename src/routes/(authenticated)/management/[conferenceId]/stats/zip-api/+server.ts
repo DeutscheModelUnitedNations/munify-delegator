@@ -6,8 +6,11 @@ let zipMap: Map<string, { lat: number; lng: number }> | null = null;
 
 async function loadZipMap() {
 	if (zipMap) return zipMap; // Cache!
-	const res = await fetch(CSV_URL);
-	if (!res.ok) throw new Error('Failed to download ZIP CSV');
+	try {
+		const res = await fetch(CSV_URL);
+		if (!res.ok) {
+			throw new Error(`Failed to download ZIP CSV: ${res.status} ${res.statusText}`);
+		}
 	const csvText = await res.text();
 	const records = parse(csvText, {
 		columns: ['zip', 'lat', 'lng'],
@@ -25,15 +28,19 @@ async function loadZipMap() {
 		}
 	}
 
-	zipMap = map; // Cache im RAM behalten
+	zipMap = map; // Cache in memory
 	return map;
+	} catch (error) {
+		console.error('Error loading ZIP map:', error);
+		throw new Error('Unable to load geographic data. Please try again later.');
+	}
 }
 
 export interface ZipCoordinate {
 	lat?: number;
 	lng?: number;
 	zip: string;
-}
+} 
 
 // Funktion für mehrere PLZ
 function getCoordinatesForZips(

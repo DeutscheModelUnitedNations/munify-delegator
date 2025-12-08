@@ -1,7 +1,6 @@
 import { requireToBeConferenceAdmin } from '$api/services/requireUserToBeConferenceAdmin';
 import { conferenceStats } from '$api/services/stats';
 import { db } from '$db/db';
-import { address, country, payment, postalRegistration } from '$lib/paraglide/messages';
 import { builder } from '../../builder';
 
 const dietVariations = builder.simpleObject('StatisticsResultRegisteredParticipantDietVariations', {
