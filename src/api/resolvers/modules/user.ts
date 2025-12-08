@@ -22,8 +22,8 @@ import {
 	UserFoodPreferenceFieldObject,
 	UserWantsToReceiveGeneralInformationFieldObject,
 	UserWantsJoinTeamInformationFieldObject,
-	findFirstUserQueryObject,
-	findManyUserQuery,
+	UserPapersFieldObject,
+	UserPaperReviewsFieldObject,
 	UserGlobalNotesFieldObject,
 	UserEmergencyContactsFieldObject
 } from '$db/generated/graphql/User';
@@ -56,6 +56,8 @@ export const GQLUser = builder.prismaObject('User', {
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
 		globalNotes: t.field(UserGlobalNotesFieldObject),
+		papers: t.relation('papers', UserPapersFieldObject),
+		paperReviews: t.relation('paperReviews', UserPaperReviewsFieldObject),
 		delegationMemberships: t.relation('delegationMemberships', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember

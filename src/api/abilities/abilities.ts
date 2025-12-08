@@ -21,7 +21,9 @@ import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
 import { defineAbilitiesForSurveyOption } from './entities/surveyOption';
 import { defineAbilitiesForCommitteeAgendaItem } from './entities/committeeAgendaItem';
 import { defineAbilitiesForWaitingListEntry } from './entities/waitingListEntry';
-import { defineAbilitiesForPaper } from './entities/paper';
+import { defineAbilitiesForPaper } from './entities/paper/paper';
+import { defineAbilitiesForPaperVersion } from './entities/paper/paperVersion';
+import { defineAbilitiesForPaperReview } from './entities/paper/paperReview';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
@@ -139,6 +141,8 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForSurveyAnswer(oidc, builder);
 	defineAbilitiesForWaitingListEntry(oidc, builder);
 	defineAbilitiesForPaper(oidc, builder);
+	defineAbilitiesForPaperVersion(oidc, builder);
+	defineAbilitiesForPaperReview(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

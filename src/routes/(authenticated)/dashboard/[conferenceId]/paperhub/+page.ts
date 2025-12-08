@@ -7,8 +7,6 @@ export const _houdini_load = graphql(`
 			where: { authorId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
 		) {
 			id
-			content
-			public
 			status
 			type
 			createdAt

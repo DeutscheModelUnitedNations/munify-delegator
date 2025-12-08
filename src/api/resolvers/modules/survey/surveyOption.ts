@@ -8,7 +8,7 @@ import {
 	SurveyOptionTitleFieldObject,
 	SurveyOptionUpperLimitFieldObject
 } from '$db/generated/graphql/SurveyOption';
-import { builder } from '../builder';
+import { builder } from '../../builder';
 
 builder.prismaObject('SurveyOption', {
 	fields: (t) => ({

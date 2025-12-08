@@ -25,15 +25,17 @@ import './modules/impersonation';
 import './modules/nation';
 import './modules/nonStateActor';
 import './modules/paymentTransaction';
-import './modules/paper';
+import './modules/paper/paper';
+import './modules/paper/paperReview';
+import './modules/paper/paperVersion';
 import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';
 import './modules/user';
 import './modules/assignments';
-import './modules/surveyQuestion';
-import './modules/surveyOption';
-import './modules/surveyAnswer';
+import './modules/survey/surveyQuestion';
+import './modules/survey/surveyOption';
+import './modules/survey/surveyAnswer';
 import './modules/waitingListEntry';
 
 export const yogaInstance = createYoga<RequestEvent>({

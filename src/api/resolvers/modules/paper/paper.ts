@@ -1,4 +1,4 @@
-import { builder } from '../builder';
+import { builder } from '../../builder';
 import {
 	createOnePaperMutationObject,
 	deleteOnePaperMutationObject,
@@ -6,15 +6,14 @@ import {
 	findUniquePaperQueryObject,
 	PaperAgendaItemFieldObject,
 	PaperAuthorFieldObject,
-	PaperConferenceFieldObject,
-	PaperContentFieldObject,
 	PaperCreatedAtFieldObject,
 	PaperDelegationFieldObject,
 	PaperIdFieldObject,
 	PaperUpdatedAtFieldObject,
-	PaperPublicFieldObject,
+	PaperVersionsFieldObject,
 	PaperTypeFieldObject,
 	PaperStatusFieldObject,
+	PaperConferenceFieldObject,
 	updateOnePaperMutationObject
 } from '$db/generated/graphql/Paper';
 import { db } from '$db/db';
@@ -22,14 +21,13 @@ import { db } from '$db/db';
 builder.prismaObject('Paper', {
 	fields: (t) => ({
 		id: t.field(PaperIdFieldObject),
-		content: t.field(PaperContentFieldObject),
 		type: t.field(PaperTypeFieldObject),
 		status: t.field(PaperStatusFieldObject),
-		public: t.field(PaperPublicFieldObject),
 		author: t.relation('author', PaperAuthorFieldObject),
+		conference: t.relation('conference', PaperConferenceFieldObject),
 		delegation: t.relation('delegation', PaperDelegationFieldObject),
-		conference: t.relation('Conference', PaperConferenceFieldObject),
 		agendaItem: t.relation('agendaItem', PaperAgendaItemFieldObject),
+		versions: t.relation('versions', PaperVersionsFieldObject),
 		createdAt: t.field(PaperCreatedAtFieldObject),
 		updatedAt: t.field(PaperUpdatedAtFieldObject)
 	})

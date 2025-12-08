@@ -27,7 +27,7 @@ const config = {
 				return date;
 			}
 		},
-		JSONObject: {
+		Json: {
 			type: 'JSONObject',
 			unmarshal(val) {
 				return JSON.parse(val);
