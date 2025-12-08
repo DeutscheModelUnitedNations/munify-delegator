@@ -8,7 +8,6 @@
 	import type { PageData } from './$houdini';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { page } from '$app/stores';
-	import { isMobileOrTablet } from '$lib/services/detectMobile';
 
 	interface Props {
 		children: Snippet;

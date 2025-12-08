@@ -40,6 +40,7 @@ model Conference {
   info                                   String?
   linkToPreparationGuide                 String?
   linkToPaperInbox                       String?
+  isOpenPaperSubmission                  Boolean         @default(false)
   state                                  ConferenceState @default(PRE)
   startAssignment                        DateTime
   registrationDeadlineGracePeriodMinutes Int             @default(30)
@@ -83,10 +84,10 @@ model Conference {
   paymentTransactions          PaymentTransaction[]
   surveyQuestions              SurveyQuestion[]
   papers                       Paper[]
+  WaitingListEntry             WaitingListEntry[]
 
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @default(now()) @updatedAt
-  WaitingListEntry WaitingListEntry[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// A committee in a conference. E.g. the human rights council
@@ -102,7 +103,6 @@ model Committee {
   delegationMembers DelegationMember[]
 
   CommitteeAgendaItem CommitteeAgendaItem[]
-  papers              Paper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -116,6 +116,7 @@ model CommitteeAgendaItem {
 
   committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
   committeeId String
+  papers      Paper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -248,19 +249,29 @@ model UserReferenceInPaymentTransaction {
 enum PaperType {
   POSITION_PAPER /// Delegates and NonStateActors
   WORKING_PAPER /// Delegates
-  PRESENTATION_PAPER /// NonStateActors
+  INTRODUCTION_PAPER /// NonStateActors
+}
+
+enum PaperStatus {
+  DRAFT
+  SUBMITTED
+  CHANGES_REQUESTED
+  ACCEPTED
 }
 
 model Paper {
-  id      String @id @default(nanoid())
+  id      String      @id @default(nanoid())
   content Json
+  type    PaperType
+  status  PaperStatus @default(SUBMITTED)
+  public  Boolean     @default(false)
 
-  author       User       @relation(fields: [authorId], references: [id])
+  author       User                 @relation(fields: [authorId], references: [id])
   authorId     String
-  delegation   Delegation @relation(fields: [delegationId], references: [id], onDelete: Cascade)
+  delegation   Delegation           @relation(fields: [delegationId], references: [id], onDelete: Cascade)
   delegationId String
-  committee    Committee? @relation(fields: [committeeId], references: [id])
-  committeeId  String?
+  agendaItem   CommitteeAgendaItem? @relation(fields: [agendaItemId], references: [id])
+  agendaItemId String?
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @default(now()) @updatedAt

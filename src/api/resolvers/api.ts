@@ -25,6 +25,7 @@ import './modules/impersonation';
 import './modules/nation';
 import './modules/nonStateActor';
 import './modules/paymentTransaction';
+import './modules/paper';
 import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';

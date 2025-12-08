@@ -54,6 +54,7 @@ input CommitteeAgendaItemCreateInput {
   committeeId: String!
   createdAt: DateTime
   id: String
+  papers: PaperCreateNestedManyWithoutAgendaItemInput
   teaserText: String
   title: String!
   updatedAt: DateTime
@@ -69,6 +70,11 @@ input CommitteeAgendaItemListRelationFilter {
   some: CommitteeAgendaItemWhereInput
 }
 
+input CommitteeAgendaItemNullableScalarRelationFilter {
+  is: CommitteeAgendaItemWhereInput
+  isNot: CommitteeAgendaItemWhereInput
+}
+
 input CommitteeAgendaItemOrderByRelationAggregateInput {
   _count: SortOrder
 }
@@ -78,6 +84,7 @@ input CommitteeAgendaItemOrderByWithRelationInput {
   committeeId: SortOrder
   createdAt: SortOrder
   id: SortOrder
+  papers: PaperOrderByRelationAggregateInput
   teaserText: SortOrder
   title: SortOrder
   updatedAt: SortOrder
@@ -96,6 +103,7 @@ input CommitteeAgendaItemUpdateInput {
   committeeId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  papers: PaperUpdateManyWithoutAgendaItemNestedInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -123,6 +131,7 @@ input CommitteeAgendaItemWhereInput {
   committeeId: StringFilter
   createdAt: DateTimeFilter
   id: StringFilter
+  papers: PaperListRelationFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -136,6 +145,7 @@ input CommitteeAgendaItemWhereUniqueInput {
   committeeId: StringFilter
   createdAt: DateTimeFilter
   id: String
+  papers: PaperListRelationFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -151,7 +161,6 @@ input CommitteeCreateInput {
   name: String!
   nations: NationCreateNestedManyWithoutCommitteesInput
   numOfSeatsPerDelegation: Int
-  papers: PaperCreateNestedManyWithoutCommitteeInput
   updatedAt: DateTime
 }
 
@@ -189,7 +198,6 @@ input CommitteeOrderByWithRelationInput {
   name: SortOrder
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
-  papers: PaperOrderByRelationAggregateInput
   updatedAt: SortOrder
 }
 
@@ -218,7 +226,6 @@ input CommitteeUpdateInput {
   name: StringFieldUpdateOperationsInput
   nations: NationUpdateManyWithoutCommitteesNestedInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
-  papers: PaperUpdateManyWithoutCommitteeNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -257,7 +264,6 @@ input CommitteeWhereInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
-  papers: PaperListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -275,7 +281,6 @@ input CommitteeWhereUniqueInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
-  papers: PaperListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -306,6 +311,7 @@ type Conference {
   imageDataURL: String
   individualApplicationOptions: [CustomConferenceRole!]!
   info: String
+  isOpenPaperSubmission: Boolean!
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
@@ -364,6 +370,7 @@ input ConferenceCreateInput {
   imageDataURL: String
   individualApplicationOptions: CustomConferenceRoleCreateNestedManyWithoutConferenceInput
   info: String
+  isOpenPaperSubmission: Boolean
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
@@ -421,6 +428,7 @@ input ConferenceOrderByWithRelationInput {
   imageDataURL: SortOrder
   individualApplicationOptions: CustomConferenceRoleOrderByRelationAggregateInput
   info: SortOrder
+  isOpenPaperSubmission: SortOrder
   language: SortOrder
   linkToPaperInbox: SortOrder
   linkToPreparationGuide: SortOrder
@@ -629,6 +637,7 @@ enum ConferenceScalarFieldEnum {
   id
   imageDataURL
   info
+  isOpenPaperSubmission
   language
   linkToPaperInbox
   linkToPreparationGuide
@@ -857,6 +866,7 @@ input ConferenceUpdateDataInput {
   iban: String
   image: File
   info: String
+  isOpenPaperSubmission: Boolean
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
@@ -902,6 +912,7 @@ input ConferenceUpdateInput {
   imageDataURL: NullableStringFieldUpdateOperationsInput
   individualApplicationOptions: CustomConferenceRoleUpdateManyWithoutConferenceNestedInput
   info: NullableStringFieldUpdateOperationsInput
+  isOpenPaperSubmission: BoolFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
   linkToPaperInbox: NullableStringFieldUpdateOperationsInput
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
@@ -947,6 +958,7 @@ input ConferenceUpdateManyMutationInput {
   id: StringFieldUpdateOperationsInput
   imageDataURL: NullableStringFieldUpdateOperationsInput
   info: NullableStringFieldUpdateOperationsInput
+  isOpenPaperSubmission: BoolFieldUpdateOperationsInput
   language: NullableStringFieldUpdateOperationsInput
   linkToPaperInbox: NullableStringFieldUpdateOperationsInput
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
@@ -996,6 +1008,7 @@ input ConferenceWhereInput {
   imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
   info: StringNullableFilter
+  isOpenPaperSubmission: BoolFilter
   language: StringNullableFilter
   linkToPaperInbox: StringNullableFilter
   linkToPreparationGuide: StringNullableFilter
@@ -1051,6 +1064,7 @@ input ConferenceWhereUniqueInput {
   imageDataURL: StringNullableFilter
   individualApplicationOptions: CustomConferenceRoleListRelationFilter
   info: StringNullableFilter
+  isOpenPaperSubmission: BoolFilter
   language: StringNullableFilter
   linkToPaperInbox: StringNullableFilter
   linkToPreparationGuide: StringNullableFilter
@@ -1530,11 +1544,6 @@ input DelegationMemberWhereUniqueInput {
   userId: StringFilter
 }
 
-input DelegationNullableScalarRelationFilter {
-  is: DelegationWhereInput
-  isNot: DelegationWhereInput
-}
-
 input DelegationOrderByRelationAggregateInput {
   _count: SortOrder
 }
@@ -1783,6 +1792,48 @@ input EnumMediaConsentStatusWithAggregatesFilter {
   notIn: [MediaConsentStatus!]
 }
 
+input EnumPaperStatusFieldUpdateOperationsInput {
+  set: PaperStatus
+}
+
+input EnumPaperStatusFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input EnumPaperStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumPaperStatusFilter
+  _min: NestedEnumPaperStatusFilter
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input EnumPaperTypeFieldUpdateOperationsInput {
+  set: PaperType
+}
+
+input EnumPaperTypeFilter {
+  equals: PaperType
+  in: [PaperType!]
+  not: PaperType
+  notIn: [PaperType!]
+}
+
+input EnumPaperTypeWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumPaperTypeFilter
+  _min: NestedEnumPaperTypeFilter
+  equals: PaperType
+  in: [PaperType!]
+  not: PaperType
+  notIn: [PaperType!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -2026,6 +2077,7 @@ type Mutation {
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!
+  createOnePaper(data: PaperCreateInput!): Paper!
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
@@ -2044,6 +2096,7 @@ type Mutation {
   deleteOneDelegationMember(where: DelegationMemberWhereUniqueInput!): DelegationMember
   deleteOneNation(where: NationWhereUniqueInput!): Nation
   deleteOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
+  deleteOnePaper(where: PaperWhereUniqueInput!): Paper
   deleteOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
@@ -2066,6 +2119,7 @@ type Mutation {
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
   updateOneDelegationMemberCommittee(data: UpdateOneDelegationMemberCommitteeInput!, where: DelegationMemberWhereUniqueInput!): DelegationMember
+  updateOnePaper(data: PaperUpdateInput!, where: PaperWhereUniqueInput!): Paper
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
@@ -2324,6 +2378,40 @@ input NestedEnumMediaConsentStatusWithAggregatesFilter {
   in: [MediaConsentStatus!]
   not: MediaConsentStatus
   notIn: [MediaConsentStatus!]
+}
+
+input NestedEnumPaperStatusFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input NestedEnumPaperStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumPaperStatusFilter
+  _min: NestedEnumPaperStatusFilter
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input NestedEnumPaperTypeFilter {
+  equals: PaperType
+  in: [PaperType!]
+  not: PaperType
+  notIn: [PaperType!]
+}
+
+input NestedEnumPaperTypeWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumPaperTypeFilter
+  _min: NestedEnumPaperTypeFilter
+  equals: PaperType
+  in: [PaperType!]
+  not: PaperType
+  notIn: [PaperType!]
 }
 
 input NestedEnumTeamRoleFilter {
@@ -2714,22 +2802,39 @@ type OfflineUserRefresh {
   user: OfflineUser
 }
 
+type Paper {
+  agendaItem: CommitteeAgendaItem
+  author: User!
+  conference: Conference
+  content: Json!
+  createdAt: DateTime!
+  delegation: Delegation!
+  id: ID!
+  public: Boolean!
+  status: PaperStatus!
+  type: PaperType!
+  updatedAt: DateTime!
+}
+
 input PaperCreateInput {
+  agendaItemId: String
   authorId: String!
-  committeeId: String
   conferenceId: String
   content: Json!
   createdAt: DateTime
-  delegationId: String
+  delegationId: String!
   id: String
+  public: Boolean
+  status: PaperStatus
+  type: PaperType!
   updatedAt: DateTime
 }
 
-input PaperCreateNestedManyWithoutAuthorInput {
+input PaperCreateNestedManyWithoutAgendaItemInput {
   connect: [PaperWhereUniqueInput!]
 }
 
-input PaperCreateNestedManyWithoutCommitteeInput {
+input PaperCreateNestedManyWithoutAuthorInput {
   connect: [PaperWhereUniqueInput!]
 }
 
@@ -2753,44 +2858,60 @@ input PaperOrderByRelationAggregateInput {
 
 input PaperOrderByWithRelationInput {
   Conference: ConferenceOrderByWithRelationInput
+  agendaItem: CommitteeAgendaItemOrderByWithRelationInput
+  agendaItemId: SortOrder
   author: UserOrderByWithRelationInput
   authorId: SortOrder
-  committee: CommitteeOrderByWithRelationInput
-  committeeId: SortOrder
   conferenceId: SortOrder
   content: SortOrder
   createdAt: SortOrder
   delegation: DelegationOrderByWithRelationInput
   delegationId: SortOrder
   id: SortOrder
+  public: SortOrder
+  status: SortOrder
+  type: SortOrder
   updatedAt: SortOrder
 }
 
 enum PaperScalarFieldEnum {
+  agendaItemId
   authorId
-  committeeId
   conferenceId
   content
   createdAt
   delegationId
   id
+  public
+  status
+  type
   updatedAt
 }
 
+enum PaperStatus {
+  ACCEPTED
+  CHANGES_REQUESTED
+  DRAFT
+  SUBMITTED
+}
+
 enum PaperType {
+  INTRODUCTION_PAPER
   POSITION_PAPER
-  PRESENTATION_PAPER
   WORKING_PAPER
 }
 
 input PaperUpdateInput {
+  agendaItemId: NullableStringFieldUpdateOperationsInput
   authorId: StringFieldUpdateOperationsInput
-  committeeId: NullableStringFieldUpdateOperationsInput
   conferenceId: NullableStringFieldUpdateOperationsInput
   content: Json
   createdAt: DateTimeFieldUpdateOperationsInput
-  delegationId: NullableStringFieldUpdateOperationsInput
+  delegationId: StringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  public: BoolFieldUpdateOperationsInput
+  status: EnumPaperStatusFieldUpdateOperationsInput
+  type: EnumPaperTypeFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -2798,16 +2919,19 @@ input PaperUpdateManyMutationInput {
   content: Json
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  public: BoolFieldUpdateOperationsInput
+  status: EnumPaperStatusFieldUpdateOperationsInput
+  type: EnumPaperTypeFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
-input PaperUpdateManyWithoutAuthorNestedInput {
+input PaperUpdateManyWithoutAgendaItemNestedInput {
   connect: [PaperWhereUniqueInput!]
   disconnect: [PaperWhereUniqueInput!]
   set: [PaperWhereUniqueInput!]
 }
 
-input PaperUpdateManyWithoutCommitteeNestedInput {
+input PaperUpdateManyWithoutAuthorNestedInput {
   connect: [PaperWhereUniqueInput!]
   disconnect: [PaperWhereUniqueInput!]
   set: [PaperWhereUniqueInput!]
@@ -2830,16 +2954,19 @@ input PaperWhereInput {
   Conference: ConferenceWhereInput
   NOT: [PaperWhereInput!]
   OR: [PaperWhereInput!]
+  agendaItem: CommitteeAgendaItemWhereInput
+  agendaItemId: StringNullableFilter
   author: UserWhereInput
   authorId: StringFilter
-  committee: CommitteeWhereInput
-  committeeId: StringNullableFilter
   conferenceId: StringNullableFilter
   content: JsonFilter
   createdAt: DateTimeFilter
   delegation: DelegationWhereInput
-  delegationId: StringNullableFilter
+  delegationId: StringFilter
   id: StringFilter
+  public: BoolFilter
+  status: EnumPaperStatusFilter
+  type: EnumPaperTypeFilter
   updatedAt: DateTimeFilter
 }
 
@@ -2848,16 +2975,19 @@ input PaperWhereUniqueInput {
   Conference: ConferenceWhereInput
   NOT: [PaperWhereInput!]
   OR: [PaperWhereInput!]
+  agendaItem: CommitteeAgendaItemWhereInput
+  agendaItemId: StringNullableFilter
   author: UserWhereInput
   authorId: StringFilter
-  committee: CommitteeWhereInput
-  committeeId: StringNullableFilter
   conferenceId: StringNullableFilter
   content: JsonFilter
   createdAt: DateTimeFilter
   delegation: DelegationWhereInput
-  delegationId: StringNullableFilter
+  delegationId: StringFilter
   id: String
+  public: BoolFilter
+  status: EnumPaperStatusFilter
+  type: EnumPaperTypeFilter
   updatedAt: DateTimeFilter
 }
 
@@ -3019,6 +3149,7 @@ type Query {
   findManyDelegations(cursor: DelegationWhereUniqueInput, distinct: [DelegationScalarFieldEnum!], orderBy: [DelegationOrderByWithRelationInput!], skip: Int, take: Int, where: DelegationWhereInput): [Delegation!]!
   findManyNations(cursor: NationWhereUniqueInput, distinct: [NationScalarFieldEnum!], orderBy: [NationOrderByWithRelationInput!], skip: Int, take: Int, where: NationWhereInput): [Nation!]!
   findManyNonStateActors(cursor: NonStateActorWhereUniqueInput, distinct: [NonStateActorScalarFieldEnum!], orderBy: [NonStateActorOrderByWithRelationInput!], skip: Int, take: Int, where: NonStateActorWhereInput): [NonStateActor!]!
+  findManyPapers(cursor: PaperWhereUniqueInput, distinct: [PaperScalarFieldEnum!], orderBy: [PaperOrderByWithRelationInput!], skip: Int, take: Int, where: PaperWhereInput): [Paper!]!
   findManyPaymentTransactions(cursor: PaymentTransactionWhereUniqueInput, distinct: [PaymentTransactionScalarFieldEnum!], orderBy: [PaymentTransactionOrderByWithRelationInput!], skip: Int, take: Int, where: PaymentTransactionWhereInput): [PaymentTransaction!]!
   findManyRoleApplications(cursor: RoleApplicationWhereUniqueInput, distinct: [RoleApplicationScalarFieldEnum!], orderBy: [RoleApplicationOrderByWithRelationInput!], skip: Int, take: Int, where: RoleApplicationWhereInput): [RoleApplication!]!
   findManySingleParticipants(cursor: SingleParticipantWhereUniqueInput, distinct: [SingleParticipantScalarFieldEnum!], orderBy: [SingleParticipantOrderByWithRelationInput!], skip: Int, take: Int, where: SingleParticipantWhereInput): [SingleParticipant!]!
@@ -3038,6 +3169,7 @@ type Query {
   findUniqueDelegationMember(where: DelegationMemberWhereUniqueInput!): DelegationMember
   findUniqueNation(where: NationWhereUniqueInput!): Nation
   findUniqueNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
+  findUniquePaper(where: PaperWhereUniqueInput!): Paper
   findUniquePaymentTransaction(where: PaymentTransactionWhereUniqueInput!): PaymentTransaction
   findUniqueRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   findUniqueSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant

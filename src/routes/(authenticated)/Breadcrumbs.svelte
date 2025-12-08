@@ -200,6 +200,10 @@
 		summary: {
 			icon: 'file-chart-column',
 			translation: m.summary()
+		},
+		paperhub: {
+			icon: 'files',
+			translation: m.paperHub()
 		}
 	};
 
