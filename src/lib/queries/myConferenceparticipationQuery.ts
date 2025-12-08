@@ -140,6 +140,11 @@ export const myConferenceparticipationQuery = graphql(`
 			id
 			plansOwnAttendenceAtConference
 			connectionCode
+			user {
+				id
+				family_name
+				given_name
+			}
 			supervisedDelegationMembers {
 				id
 				user {
@@ -217,12 +222,18 @@ export const myConferenceparticipationQuery = graphql(`
 					abbreviation
 					name
 				}
+				supervisors {
+					id
+				}
 			}
 			supervisedSingleParticipants {
 				id
 				school
 				motivation
 				experience
+				supervisors {
+					id
+				}
 				user {
 					id
 					family_name

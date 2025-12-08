@@ -2,10 +2,11 @@
 	import { graphql } from '$houdini';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type {
-		Project,
-		ProjectData
-	} from '../../../../assignment-assistant/[projectId]/appData.svelte';
+	import { prettifyError } from 'zod';
+	import {
+		ProjectDataSchema,
+		type ProjectData
+	} from '../../../../(authenticated)/assignment-assistant/[projectId]/appData.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();
@@ -15,6 +16,8 @@
 	let singleParticipants = $derived($query.data?.findManySingleParticipants);
 
 	let fileInput = $state<string>();
+
+	let validationError = $state<string>();
 
 	const setFileInput = (e: Event) => {
 		const target = e.target as HTMLInputElement;
@@ -29,6 +32,15 @@
 		};
 		reader.readAsText(file);
 	};
+
+	$effect(() => {
+		if (fileInput) {
+			const parsed = ProjectDataSchema.safeParse(JSON.parse(fileInput));
+			if (parsed.error) {
+				validationError = prettifyError(parsed.error);
+			}
+		}
+	});
 
 	const applyAssignment = async () => {
 		if (!fileInput) return;
@@ -88,7 +100,7 @@
 			<h2 class="text-2xl font-bold">{m.adminAssignment()}</h2>
 			<p>{@html m.adminAssignmentDescription()}</p>
 
-			<div class="mt-10 grid grid-cols-[auto,1fr] items-center justify-center gap-6">
+			<div class="mt-10 grid grid-cols-[auto_1fr] items-center justify-center gap-6">
 				<i class="fa-duotone fa-1 text-3xl"></i>
 				<button class="btn btn-primary" onclick={() => downloadCurrentRegistrationData()}>
 					<i class="fas fa-download"></i>
@@ -115,6 +127,8 @@
 					{m.applyAssignment()}
 				</button>
 			</div>
+
+			<pre class="mt-4 break-all whitespace-pre-wrap text-red-600">{validationError}</pre>
 		</div>
 	</div>
 {/if}

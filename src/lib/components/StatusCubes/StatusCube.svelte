@@ -1,6 +1,6 @@
 <script lang="ts">
 	interface Props {
-		status: 'DONE' | 'PROBLEM' | 'PENDING';
+		status: 'DONE' | 'PROBLEM' | 'PENDING' | 'NOT_YET_POSSIBLE';
 		task: string;
 		faIcon: string;
 	}
@@ -10,13 +10,15 @@
 	const getColor = (status: string) => {
 		switch (status) {
 			case 'DONE':
-				return 'bg-success dark:text-base-300';
+				return 'bg-success text-success-content';
 			case 'PROBLEM':
-				return 'bg-error dark:text-base-300';
+				return 'bg-error text-error-content';
 			case 'PENDING':
-				return 'bg-warning dark:text-base-300';
+				return 'bg-warning text-warning-content';
+			case 'NOT_YET_POSSIBLE':
+				return 'bg-info text-info-content';
 			default:
-				return 'bg-base-200 dark:text-base-300';
+				return 'bg-info text-info-content';
 		}
 	};
 </script>
@@ -39,6 +41,8 @@
 			<i class="fas fa-circle-check text-3xl"></i>
 		{:else if status === 'PENDING'}
 			<i class="fas fa-seal-exclamation text-3xl"></i>
+		{:else if status === 'NOT_YET_POSSIBLE'}
+			<i class="fas fa-hourglass-clock text-2xl"></i>
 		{:else}
 			<i class="fas fa-message-exclamation text-2xl"></i>
 		{/if}

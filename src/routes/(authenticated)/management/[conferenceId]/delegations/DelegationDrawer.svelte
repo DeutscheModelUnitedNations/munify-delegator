@@ -145,6 +145,34 @@
 			selectedMember = null;
 		}
 	}
+
+	const changeDelegationSchoolMutation = graphql(`
+		mutation ChangeDelegationSchool($delegationId: String!, $newSchool: String!) {
+			updateOneDelegation(where: { id: $delegationId }, school: $newSchool) {
+				id
+				school
+			}
+		}
+	`);
+
+	const changeSchool = async () => {
+		const newSchool = prompt(m.enterNewSchoolName());
+		if (!newSchool) return;
+
+		try {
+			await toast.promise(
+				changeDelegationSchoolMutation.mutate({
+					delegationId,
+					newSchool
+				}),
+				genericPromiseToastMessages
+			);
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to change school name:', error);
+		}
+	};
 </script>
 
 <Drawer
@@ -198,7 +226,14 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
 					<td>
-						{delegation?.school}
+						<div class="flex items-center">
+							<div class="w-full flex-1">
+								{delegation?.school}
+							</div>
+							<button class="btn btn-xs ml-2" onclick={changeSchool} aria-label="Edit School">
+								<i class="fa-duotone fa-pencil"></i>
+							</button>
+						</div>
 					</td>
 				</tr>
 				<tr>

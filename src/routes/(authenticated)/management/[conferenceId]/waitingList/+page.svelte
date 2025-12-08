@@ -37,7 +37,8 @@
 		{
 			key: 'timestamp',
 			title: m.timestamp(),
-			value: (row) => new Date(row.createdAt).toLocaleString(),
+			value: (row) => new Date(row.createdAt).getTime(),
+			renderValue: (row) => new Date(row.createdAt).toLocaleString(),
 			sortable: true,
 			class: 'whitespace-nowrap'
 		},

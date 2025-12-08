@@ -106,7 +106,7 @@
 					{#each projects as project}
 						<tr>
 							<td>{project.fileName}</td>
-							<td>{project.created}</td>
+							<td>{new Date(project.created).toLocaleString()}</td>
 							<td class="flex gap-2">
 								<button
 									class="btn btn-error btn-sm"

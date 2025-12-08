@@ -2,7 +2,8 @@
 	import { graphql, type PaymentLayoutQuery$result } from '$houdini';
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import toast from 'svelte-french-toast';
 	import GiroCode from './GiroCode.svelte';
 
 	interface Props {
@@ -13,9 +14,15 @@
 		}[];
 		ownUserId: string;
 		conferencePaymentData?: PaymentLayoutQuery$result['findUniqueConference'];
+		isReferenceCreated?: boolean;
 	}
 
-	let { users, conferencePaymentData, ownUserId }: Props = $props();
+	let {
+		users,
+		conferencePaymentData,
+		ownUserId,
+		isReferenceCreated = $bindable(false)
+	}: Props = $props();
 
 	let reference = $state<string>();
 	let referenceLoading = $state(false);
@@ -54,24 +61,29 @@
 
 		reference = paymentTransaction.data?.createOnePaymentTransaction.id;
 		referenceLoading = false;
+		isReferenceCreated = true;
+		toast.success(m.referenceGeneratedSuccessfully());
 	}
 </script>
 
 <div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-lg p-4 shadow-lg">
-	<h1 class="text-2xl font-bold">
+	<h2 class="text-2xl font-bold">
 		<i class="fa-duotone fa-money-bill-transfer mr-4"></i>{m.referenceMaker()}
-	</h1>
+	</h2>
 	<p>{m.referenceMakerDescription()}</p>
 	{#if !reference}
 		<p class="font-bold">{m.youPayForXParticipants({ numParticipants: users.length })}</p>
 		<div class="mb-4 flex flex-wrap gap-1">
-			{#each users as user}
+			{#each users as user (user.id)}
 				<span class="badge badge-neutral">{formatNames(user.given_name, user.family_name)}</span>
 			{/each}
+			{#if users.length == 0}
+				<span class="italic">&mdash;</span>
+			{/if}
 		</div>
 
 		<button
-			class="btn btn-primary max-w-md {referenceLoading && 'btn-disabled'}"
+			class="btn btn-primary max-w-md {(referenceLoading || users.length == 0) && 'btn-disabled'}"
 			onclick={generateReference}
 		>
 			<i class="fas {referenceLoading ? 'fa-spinner fa-spin' : 'fa-sparkles'} mr-2"
@@ -80,7 +92,7 @@
 	{:else}
 		<div class="mt-10 flex w-full flex-col items-start gap-14 xl:flex-row">
 			<div
-				class="grid w-full grid-cols-1 items-center justify-center gap-4 sm:grid-cols-[auto,1fr]"
+				class="grid w-full grid-cols-1 items-center justify-center gap-4 sm:grid-cols-[auto_1fr]"
 			>
 				<div class="col-span-2 flex flex-col gap-4">
 					<h2 class="text-2xl font-bold">{m.transactionDetails()}</h2>

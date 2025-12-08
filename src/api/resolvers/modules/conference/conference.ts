@@ -43,7 +43,6 @@ import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 import { ConferenceState } from '$db/generated/graphql/inputs';
-import { conference } from '$lib/paraglide/messages';
 import { findManyNationQueryObject } from '$db/generated/graphql/Nation';
 
 builder.prismaObject('Conference', {
@@ -215,6 +214,111 @@ builder.prismaObject('Conference', {
 						conferenceId: conference.id
 					}
 				})
+		}),
+		schools: t.field({
+			type: [
+				builder.simpleObject('ConferenceSchools', {
+					fields: (t) => ({
+						school: t.string(),
+						delegationCount: t.int(),
+						delegationMembers: t.int(),
+						singleParticipants: t.int(),
+						sumParticipants: t.int()
+					})
+				})
+			],
+			resolve: async (conference, _, ctx) => {
+				const res: {
+					school: string;
+					delegationCount: number;
+					delegationMembers: number;
+					singleParticipants: number;
+					sumParticipants: number;
+				}[] = [];
+
+				const delegations = await db.delegation.findMany({
+					where: {
+						conferenceId: conference.id,
+						school: {
+							not: null
+						},
+						applied: {
+							equals: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').Delegation]
+					}
+				});
+
+				const members = await db.delegationMember.groupBy({
+					where: {
+						delegation: {
+							conferenceId: conference.id,
+							applied: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').DelegationMember]
+					},
+					by: 'delegationId',
+					_count: {
+						delegationId: true
+					}
+				});
+
+				for (const delegation of delegations) {
+					if (!delegation.school) continue;
+					const existing = res.find((r) => r.school === delegation.school);
+					const memberCount =
+						members.find((m) => m.delegationId === delegation.id)?._count.delegationId || 0;
+					if (existing) {
+						existing.delegationCount += 1;
+						existing.delegationMembers += memberCount;
+						existing.sumParticipants += memberCount;
+					} else {
+						res.push({
+							school: delegation.school,
+							delegationCount: 1,
+							delegationMembers: memberCount,
+							singleParticipants: 0,
+							sumParticipants: memberCount
+						});
+					}
+				}
+				const singleParticipants = await db.singleParticipant.groupBy({
+					where: {
+						conferenceId: conference.id,
+						school: {
+							not: null
+						},
+						applied: {
+							equals: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant]
+					},
+					by: 'school',
+					_count: {
+						school: true
+					}
+				});
+
+				for (const singleParticipant of singleParticipants) {
+					if (!singleParticipant.school) continue;
+					const existing = res.find((r) => r.school === singleParticipant.school);
+					const singleParticipantCount = singleParticipant._count.school;
+					if (existing) {
+						existing.singleParticipants += singleParticipantCount;
+						existing.sumParticipants += singleParticipantCount;
+					} else {
+						res.push({
+							school: singleParticipant.school,
+							delegationCount: 0,
+							delegationMembers: 0,
+							singleParticipants: singleParticipantCount,
+							sumParticipants: singleParticipantCount
+						});
+					}
+				}
+
+				return res;
+			}
 		})
 	})
 });
@@ -496,6 +600,58 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('delete').Conference]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneConferenceMutationObject(t);
+	return {
+		normalizeSchoolsInConference: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.string({ required: true }),
+				schoolsToMerge: t.arg.stringList(),
+				newSchoolName: t.arg.string({ required: true })
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				return await db.$transaction(async (tx) => {
+					const { conferenceId, schoolsToMerge } = args;
+
+					await tx.delegation.updateMany({
+						where: {
+							conferenceId,
+							school: {
+								in: schoolsToMerge
+							},
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+						},
+						data: {
+							school: args.newSchoolName
+						}
+					});
+
+					await tx.singleParticipant.updateMany({
+						where: {
+							conferenceId,
+							school: {
+								in: schoolsToMerge
+							},
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').SingleParticipant]
+						},
+						data: {
+							school: args.newSchoolName
+						}
+					});
+
+					return await tx.conference.findUniqueOrThrow({
+						where: {
+							id: args.conferenceId,
+							AND: [ctx.permissions.allowDatabaseAccessTo('read').Conference]
+						}
+					});
+				});
 			}
 		})
 	};

@@ -51,6 +51,23 @@
 					(x) => x.delegation.assignedNation || x.delegation.assignedNonStateActor
 				)
 	);
+	let rejectedParticipants = $derived.by(() => {
+		const res: Partial<{ given_name: string; family_name: string; id: string }>[] = [];
+		if (isStateParticipantRegistration) return res;
+		supervisor.supervisedDelegationMembers
+			.filter((x) => !x.delegation.assignedNation && !x.delegation.assignedNonStateActor)
+			.forEach((member) => {
+				res.push(member.user);
+			});
+
+		supervisor.supervisedSingleParticipants
+			.filter((x) => !x.assignedRole)
+			.forEach((participant) => {
+				res.push(participant.user);
+			});
+
+		return res;
+	});
 	let delegations = $derived([
 		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
 	]);
@@ -166,6 +183,11 @@
 			const conferenceData = userDetailsStore?.data?.findUniqueConference;
 
 			if (user) {
+				if (!user.street || !user.zip || !user.city || !user.country || !user.birthday) {
+					toast.error(m.incompleteAddressOrBirthdayForPostalRegistration());
+					return;
+				}
+
 				const recipientData: RecipientData = {
 					name: `${conference?.postalName}`,
 					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
@@ -195,11 +217,15 @@
 					conferenceData?.termsAndConditionsContent ?? undefined,
 					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
 				);
+
+				toast.success(m.postalRegistrationPDFGenerated());
 			} else {
 				console.error('User details not found');
+				toast.error(m.errorGeneratingPostalRegistrationPDF());
 			}
 		} catch (error) {
 			console.error('Error generating PDF:', error);
+			toast.error(m.errorGeneratingPostalRegistrationPDF());
 		}
 	};
 
@@ -356,18 +382,19 @@
 							</InfoGrid.Entry>
 						{:else}
 							<InfoGrid.Entry title={m.role()} fontAwesomeIcon="fa-duotone fa-flag">
-								<Flag
-									size="xs"
-									alpha2Code={delegation.assignedNation?.alpha2Code}
-									nsa={!!delegation.assignedNonStateActor}
-									icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
-								/>
-								{#if delegation.assignedNation}
-									{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
-									({alpha3Code(delegation.assignedNation.alpha3Code)})
-								{:else if delegation.assignedNonStateActor}
-									{delegation.assignedNonStateActor.name}
-								{/if}
+								<div class="flex items-center gap-2">
+									<Flag
+										size="xs"
+										alpha2Code={delegation.assignedNation?.alpha2Code}
+										nsa={!!delegation.assignedNonStateActor}
+										icon={delegation.assignedNonStateActor?.fontAwesomeIcon ?? 'fa-hand-point-up'}
+									/>
+									{#if delegation.assignedNation}
+										{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
+									{:else if delegation.assignedNonStateActor}
+										{delegation.assignedNonStateActor.name}
+									{/if}
+								</div>
 							</InfoGrid.Entry>
 						{/if}
 						<InfoGrid.Entry
@@ -574,3 +601,23 @@
 		}}
 	/>
 </DashboardContentCard>
+
+<section class="flex flex-col gap-2">
+	<h2 class="text-2xl font-bold">{m.rejectedParticipants()}</h2>
+	<p class="text-sm">{m.rejectedParticipantsDescription()}</p>
+	{#if rejectedParticipants.length > 0}
+		<DashboardContentCard>
+			<table class="table w-full">
+				<tbody>
+					{#each rejectedParticipants as rejectedParticipant (rejectedParticipant.id)}
+						<tr>
+							<td>
+								{formatNames(rejectedParticipant.given_name, rejectedParticipant.family_name)}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</DashboardContentCard>
+	{/if}
+</section>

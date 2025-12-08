@@ -1,5 +1,4 @@
 import { goto } from '$app/navigation';
-import { graphql } from '$houdini';
 import { RAW_DATA_KEY } from '../local_storage_keys';
 import { z } from 'zod';
 
@@ -40,22 +39,19 @@ export const AppliedForDelegationRoleSchema = z.object({
 });
 
 export const UserSchema = z.object({
+	id: z.string()
+});
+
+export const SupervisorSchema = z.object({
 	id: z.string(),
-	family_name: z.string(),
-	given_name: z.string()
-	// birthday: z.string().nullish()
+	user: UserSchema
 });
 
 export const MemberSchema = z.object({
 	id: z.string(),
 	isHeadDelegate: z.boolean(),
-	user: UserSchema
-});
-
-export const SupervisorSchema = z.object({
-	id: z.string(),
-	delegations: z.array(z.object({ id: z.string() })),
-	user: UserSchema
+	user: UserSchema,
+	supervisors: z.optional(z.array(SupervisorSchema))
 });
 
 export const AppliedForSingleRoleSchema = z.object({
@@ -89,43 +85,38 @@ export const SingleAssignmentSchema = z.object({
 export const ConferenceSchema = z.object({
 	id: z.string(),
 	title: z.string(),
+	startConference: z.coerce.date(),
 	committees: z.array(CommitteeSchema),
 	nonStateActors: z.array(NonStateActorSchema),
 	individualApplicationOptions: z.array(IndividualApplicationOptionSchema)
 });
 
-export const DelegationSchema = z
-	.object({
-		id: z.string(),
-		motivation: z.string().nullish(),
-		experience: z.string().nullish(),
-		school: z.string().nullish(),
-		appliedForRoles: z.array(AppliedForDelegationRoleSchema),
-		members: z.array(MemberSchema),
-		supervisors: z.array(SupervisorSchema),
-		user: z.undefined(),
-		splittedFrom: z.string().nullish(),
-		splittedInto: z.array(z.string()).nullish()
-	})
-	.merge(SightingPropsSchema)
-	.merge(DelegationAssignmentSchema)
-	.merge(NSAAssignmentSchema);
+export const DelegationSchema = z.object({
+	id: z.string(),
+	appliedForRoles: z.array(AppliedForDelegationRoleSchema),
+	members: z.array(MemberSchema),
+	school: z.string().optional(),
+	supervisors: z.undefined(),
+	user: z.undefined(),
+	splittedFrom: z.string().nullish(),
+	splittedInto: z.array(z.string()).nullish(),
+	...SightingPropsSchema.shape,
+	...DelegationAssignmentSchema.shape,
+	...NSAAssignmentSchema.shape
+});
 
-export const SingleParticipantSchema = z
-	.object({
-		id: z.string(),
-		motivation: z.string().nullish(),
-		school: z.string().nullish(),
-		experience: z.string().nullish(),
-		user: UserSchema,
-		appliedForRoles: z.array(AppliedForSingleRoleSchema),
-		supervisors: z.undefined(),
-		members: z.undefined(),
-		splittedFrom: z.undefined(),
-		splittedInto: z.undefined()
-	})
-	.merge(SightingPropsSchema)
-	.merge(SingleAssignmentSchema);
+export const SingleParticipantSchema = z.object({
+	id: z.string(),
+	user: UserSchema,
+	appliedForRoles: z.array(AppliedForSingleRoleSchema),
+	school: z.string().optional(),
+	supervisors: z.optional(z.array(SupervisorSchema)),
+	members: z.undefined(),
+	splittedFrom: z.undefined(),
+	splittedInto: z.undefined(),
+	...SightingPropsSchema.shape,
+	...SingleAssignmentSchema.shape
+});
 
 export const ProjectDataSchema = z.object({
 	conference: ConferenceSchema,
@@ -191,7 +182,34 @@ export const getConference: () => Conference | undefined = () => {
 export const getApplications = () => {
 	const project = getProject();
 	if (!project) return [];
-	return [...project.data.delegations, ...project.data.singleParticipants];
+	return [
+		...project.data.delegations.toSorted((a, b) => {
+			if (a.members?.length !== b.members?.length) {
+				return b.members?.length - a.members?.length;
+			}
+			return a.id.localeCompare(b.id);
+		}),
+		...project.data.singleParticipants
+	];
+};
+
+export const getSchools = () => {
+	const applications = getApplications();
+	const schools: { school: string; count: number; members: number }[] = [];
+	for (const application of applications) {
+		const schoolEntry = schools.find((x) => x.school === application.school);
+		if (schoolEntry) {
+			schoolEntry.count += 1;
+			schoolEntry.members += application?.members?.length ?? 1;
+		} else {
+			schools.push({
+				school: application.school ?? 'No School',
+				count: 1,
+				members: application?.members?.length ?? 1
+			});
+		}
+	}
+	return schools.toSorted((a, b) => a.school.localeCompare(b.school));
 };
 
 export const getDelegationApplications = () => {
@@ -269,9 +287,9 @@ export const getMoreInfoLink = (id: string) => {
 	const project = getProject();
 	if (!project) return '';
 	if (project.data.singleParticipants.find((singleParticipant) => singleParticipant.id === id)) {
-		return `/management/${project.data.conference.id}/individuals?filter=${id}`;
+		return `/management/${project.data.conference.id}/individuals?selected=${id}`;
 	}
-	return `/management/${project.data.conference.id}/delegations?filter=${id}`;
+	return `/management/${project.data.conference.id}/delegations?selected=${id}`;
 };
 
 export const evaluateApplication = (id: string, evaluation: number) => {
@@ -369,13 +387,16 @@ export const splitDelegation = (delegationId: string, buckets: Member[][]) => {
 		(delegation) => delegation.id === delegationId
 	);
 	if (!delegation) return;
-	const splittedInto = buckets.map((bucket) => {
-		const newDelegation = { ...delegation };
-		newDelegation.id = Math.round(Math.random() * 1000000).toString();
-		newDelegation.members = bucket;
-		newDelegation.splittedFrom = delegation.id;
-		return newDelegation;
-	});
+	const splittedInto = buckets
+		.filter((bucket) => bucket.length > 0) // Don't create empty delegations
+		.map((bucket) => {
+			const newDelegation: Delegation = JSON.parse(JSON.stringify(delegation));
+			newDelegation.id = Math.round(Math.random() * 1000000).toString();
+			newDelegation.members = bucket;
+			newDelegation.splittedFrom = delegation.id;
+			newDelegation.splittedInto = undefined;
+			return newDelegation;
+		});
 	delegation.splittedInto = splittedInto.map((x) => x.id);
 	delegation.disqualified = true;
 	splittedInto.forEach((x) => {
@@ -389,21 +410,28 @@ export const convertSingleToDelegation = (singleId: string) => {
 	if (!single) return;
 	const newDelegation: Delegation = {
 		id: single.id,
-		motivation: single.motivation,
-		experience: single.experience,
-		school: single.school,
 		members: [
 			{
 				id: Math.round(Math.random() * 1000000).toString(),
 				isHeadDelegate: true,
-				user: single.user
+				user: single.user,
+				supervisors: single.supervisors
 			}
 		],
 		appliedForRoles: [],
-		supervisors: [],
 		splittedFrom: undefined,
 		splittedInto: undefined,
-		user: undefined as never
+		supervisors: undefined,
+		user: undefined as never,
+		// Copy sighting properties from single participant
+		evaluation: single.evaluation,
+		flagged: single.flagged,
+		disqualified: single.disqualified,
+		note: single.note,
+		school: single.school,
+		// Set assignment properties to undefined for delegations
+		assignedNation: undefined,
+		assignedNSA: undefined
 	};
 	selectedProject?.data.delegations.push(newDelegation);
 	selectedProject!.data.singleParticipants = selectedProject!.data.singleParticipants.filter(

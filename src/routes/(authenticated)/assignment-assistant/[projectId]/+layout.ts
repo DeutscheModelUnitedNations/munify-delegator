@@ -1,12 +1,13 @@
 import { error, redirect } from '@sveltejs/kit';
-import type { PageLoad } from './$types';
+import type { LayoutLoad } from './$types';
 
-export const load: PageLoad = async ({ params }) => {
+export const load: LayoutLoad = async ({ params, route, url }) => {
 	const projectId = params.projectId;
 
 	if (projectId === undefined) error(404, 'Not found');
 
 	return {
-		projectId
+		projectId,
+		tab: route.id?.split('/').pop()
 	};
 };
