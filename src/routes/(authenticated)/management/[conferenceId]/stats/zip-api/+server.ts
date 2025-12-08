@@ -11,25 +11,25 @@ async function loadZipMap() {
 		if (!res.ok) {
 			throw new Error(`Failed to download ZIP CSV: ${res.status} ${res.statusText}`);
 		}
-	const csvText = await res.text();
-	const records = parse(csvText, {
-		columns: ['zip', 'lat', 'lng'],
-		skip_empty_lines: true
-	}) as { lat: string; lng: string; zip: string }[];
+		const csvText = await res.text();
+		const records = parse(csvText, {
+			columns: ['zip', 'lat', 'lng'],
+			skip_empty_lines: true
+		}) as { lat: string; lng: string; zip: string }[];
 
-	const map = new Map<string, { lat: number; lng: number }>();
+		const map = new Map<string, { lat: number; lng: number }>();
 
-	for (const r of records) {
-		if (r.zip && r.lat && r.lng) {
-			map.set(r.zip.trim(), {
-				lat: parseFloat(r.lat),
-				lng: parseFloat(r.lng)
-			});
+		for (const r of records) {
+			if (r.zip && r.lat && r.lng) {
+				map.set(r.zip.trim(), {
+					lat: parseFloat(r.lat),
+					lng: parseFloat(r.lng)
+				});
+			}
 		}
-	}
 
-	zipMap = map; // Cache in memory
-	return map;
+		zipMap = map; // Cache in memory
+		return map;
 	} catch (error) {
 		console.error('Error loading ZIP map:', error);
 		throw new Error('Unable to load geographic data. Please try again later.');
@@ -40,7 +40,7 @@ export interface ZipCoordinate {
 	lat?: number;
 	lng?: number;
 	zip: string;
-} 
+}
 
 // Funktion für mehrere PLZ
 function getCoordinatesForZips(
