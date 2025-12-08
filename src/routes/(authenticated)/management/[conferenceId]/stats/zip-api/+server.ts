@@ -1,3 +1,4 @@
+import type { ConferenceStatsQuery$result } from '$houdini';
 import { parse } from 'csv-parse/sync';
 const CSV_URL =
 	'https://raw.githubusercontent.com/WZBSocialScienceCenter/plz_geocoord/refs/heads/master/plz_geocoord.csv';
@@ -42,7 +43,7 @@ export interface ZipCoordinate {
 	zip: string;
 }
 
-// Funktion für mehrere PLZ
+// Function for multiple Zips
 function getCoordinatesForZips(
 	zips: string[],
 	map: Map<string, { lat: number; lng: number }>
@@ -56,9 +57,9 @@ function getCoordinatesForZips(
 
 // POST-Handler
 export const POST = async ({ request }) => {
-	const body = await request.json();
+	const body: ConferenceStatsQuery$result['getConferenceStatistics']['addresses'] = await request.json();
 	const zips = body
-		.map((item: { zip?: string }) => item.zip)
+		.map((item: { zip: string|null }) => item.zip)
 		.filter((zip): zip is string => typeof zip === 'string' && zip.trim() !== '');
 
 	const map = await loadZipMap();
