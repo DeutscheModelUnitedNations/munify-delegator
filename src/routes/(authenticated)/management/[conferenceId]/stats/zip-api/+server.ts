@@ -1,7 +1,7 @@
 import type { ConferenceStatsQuery$result } from '$houdini';
 import { parse } from 'csv-parse/sync';
 // This is hard coded for now
-// TODO If we expand to other countries than Germany this should be outsourced into an env variable. 
+// TODO If we expand to other countries than Germany this should be outsourced into an env variable.
 const CSV_URL =
 	'https://raw.githubusercontent.com/WZBSocialScienceCenter/plz_geocoord/refs/heads/master/plz_geocoord.csv';
 
@@ -59,9 +59,10 @@ function getCoordinatesForZips(
 
 // POST-Handler
 export const POST = async ({ request }) => {
-	const body: ConferenceStatsQuery$result['getConferenceStatistics']['addresses'] = await request.json();
+	const body: ConferenceStatsQuery$result['getConferenceStatistics']['addresses'] =
+		await request.json();
 	const zips = body
-		.map((item: { zip: string|null }) => item.zip)
+		.map((item: { zip: string | null }) => item.zip)
 		.filter((zip): zip is string => typeof zip === 'string' && zip.trim() !== '');
 
 	const map = await loadZipMap();
