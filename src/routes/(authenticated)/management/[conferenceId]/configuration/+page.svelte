@@ -252,11 +252,12 @@
 				placeholder="https://path-to-your-guide.com"
 				label={m.preparationGuide()}
 			/>
+			<FormCheckbox {form} name="isOpenPaperSubmission" label={m.paperSubmissionOpen()} />
 			<FormTextInput
 				{form}
 				name="linkToPaperInbox"
 				placeholder="https://path-to-your-paper-inbox.com"
-				label={m.paperInbox()}
+				label={m.paperInbox() + ' (DEPRECATED!)'}
 			/>
 			<a class="btn btn-primary self-start" href="./configuration/committees">
 				{m.committeesAndAgendaItems()}

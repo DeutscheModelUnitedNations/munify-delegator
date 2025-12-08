@@ -567,170 +567,126 @@ const mainFunction = async () => {
 				console.info(`  - List ${listmonkList.name} already exists`);
 			}
 		}
-
-		// Update per Conference
-		for (const conference of conferences) {
-			console.info(`Syncing Lists for conference ${conference.title}`);
-
-			// create lists
-			for (const list of requiredListsPerConference) {
-				const listmonkList = lists?.find(
-					(l) => l.name === createListName(conference.title, conference.id, list)
-				);
-				if (!listmonkList) {
-					const listName = createListName(conference.title, conference.id, list);
-					const res = await listmonkClient.POST('/lists', {
-						body: {
-							name: listName,
-							description: `List for ${list} of conference ${conference.title}`,
-							tags: [createTagName(conference.title, conference.id), list.toLowerCase()]
-						}
-					});
-					if (res.error || !res.data.data || !res.data.data.uuid || !res.data.data.name) {
-						taskError(
-							TASK_NAME,
-							`Failed to create list ${list} for conference ${conference.title}. Aborting task.`,
-							res.error ? (res as any).error : undefined
-						);
-						return;
-					}
-					const resData = res.data.data;
-					allLists.push({
-						id: resData.id!,
-						name: resData.name!,
-						type: list
-					});
-					console.info(`  - Created list ${listName}`);
-				} else {
-					allLists.push({
-						id: listmonkList.id!,
-						name: listmonkList.name!,
-						type: list
-					});
-					console.info(`  - List ${listmonkList.name} already exists`);
-				}
-			}
-		}
-
-		console.info('Cleaning up orphan lists');
-		const allListIds = allLists.map((l) => l.id);
-		const listsToDelete = lists?.filter((l) => l.id && !allListIds.includes(l.id));
-		for (const list of listsToDelete || []) {
-			const res = await listmonkClient.DELETE(`/lists/{list_id}`, {
-				params: {
-					path: {
-						list_id: list.id!
-					}
-				}
-			});
-			if (res.error) {
-				console.info(
-					`  ! Failed to delete list ${list.name}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
-				);
-				continue;
-			}
-			console.info(`  - Deleted list ${list.name}`);
-		}
-
-		console.info('\nSTEP 2: Creating, Deleting and Updating Subscribers');
-		console.info('===================================================');
-
-		const usersToCreate = users.filter((u) => {
-			const subscriber = subscribers.find((s) => s.email.toLowerCase() === u.email.toLowerCase());
-			const { lists } = constructSubscriberObjectFromUser(u);
-			return !subscriber && lists.length > 0;
-		});
-		console.info(`Subscribers to create: ${usersToCreate.length}`);
-
-		const subscribersToDelete = subscribers.filter((s) => {
-			const user = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
-			const { lists } = constructSubscriberObjectFromSubscriber(s);
-			return !user || lists.length === 0;
-		});
-		console.info(`Subscribers to delete: ${subscribersToDelete.length}`);
-
-		const subscribersToUpdate = subscribers.filter((s) => {
-			const user = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
-			return user && !compareSubscriberToUser(s, user);
-		});
-		console.info(`Subscribers to update: ${subscribersToUpdate.length}`);
-
-		const usersWithoutLists = users.filter(
-			(u) => constructSubscriberObjectFromUser(u).lists.length === 0
-		);
-		console.info(`Users without lists: ${usersWithoutLists.length}`);
-
-		if (usersToCreate.length > 0) console.info('\nExecuting Create operations:');
-		for (const u of usersToCreate) {
-			const subscriberObj = constructSubscriberObjectFromUser(u);
-			const res = await listmonkClient.POST('/subscribers', {
-				body: {
-					email: u.email,
-					name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
-					attribs: subscriberObj.attribs as Record<string, any>,
-					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id)
-				}
-			});
-			if (res.error) {
-				console.error(
-					`  ! Failed to create subscriber for user ${u.id}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
-				);
-			} else {
-				console.info(`  - Created subscriber for user ${u.id}`);
-			}
-		}
-
-		if (subscribersToDelete.length > 0) console.info('\nExecuting Delete operations:');
-		for (const s of subscribersToDelete) {
-			const res = await listmonkClient.DELETE(`/subscribers/{id}`, {
-				params: {
-					path: {
-						id: s.id
-					}
-				}
-			});
-			if (res.error) {
-				console.error(
-					`  ! Failed to delete subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
-				);
-			} else {
-				console.info(`  - Deleted subscriber ${s.attribs.userId}`);
-			}
-		}
-
-		if (subscribersToUpdate.length > 0) console.info('\nExecuting Update operations:');
-		for (const s of subscribersToUpdate) {
-			const u = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
-			if (!u) {
-				console.error(`  ! Failed to find user for subscriber ${s.attribs.userId}: User not found`);
-				continue;
-			}
-			const subscriberObj = constructSubscriberObjectFromUser(u!);
-			const res = await listmonkClient.PUT(`/subscribers/{id}`, {
-				params: {
-					path: {
-						id: s.id
-					}
-				},
-				body: {
-					email: u.email,
-					name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
-					attribs: subscriberObj.attribs as Record<string, any>,
-					lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id),
-					preconfirm_subscriptions: true
-				}
-			});
-			if (res.error) {
-				console.error(
-					`  ! Failed to update subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
-				);
-			} else {
-				console.info(`  - Updated subscriber ${s.attribs.userId}`);
-			}
-		}
-
-		logTaskEnd(TASK_NAME, startTime);
 	}
+
+	console.info('Cleaning up orphan lists');
+	const allListIds = allLists.map((l) => l.id);
+	const listsToDelete = lists?.filter((l) => l.id && !allListIds.includes(l.id));
+	for (const list of listsToDelete || []) {
+		const res = await listmonkClient.DELETE(`/lists/{list_id}`, {
+			params: {
+				path: {
+					list_id: list.id!
+				}
+			}
+		});
+		if (res.error) {
+			console.info(
+				`  ! Failed to delete list ${list.name}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
+			);
+			continue;
+		}
+		console.info(`  - Deleted list ${list.name}`);
+	}
+
+	console.info('\nSTEP 2: Creating, Deleting and Updating Subscribers');
+	console.info('===================================================');
+
+	const usersToCreate = users.filter((u) => {
+		const subscriber = subscribers.find((s) => s.email.toLowerCase() === u.email.toLowerCase());
+		const { lists } = constructSubscriberObjectFromUser(u);
+		return !subscriber && lists.length > 0;
+	});
+	console.info(`Subscribers to create: ${usersToCreate.length}`);
+
+	const subscribersToDelete = subscribers.filter((s) => {
+		const user = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
+		const { lists } = constructSubscriberObjectFromSubscriber(s);
+		return !user || lists.length === 0;
+	});
+	console.info(`Subscribers to delete: ${subscribersToDelete.length}`);
+
+	const subscribersToUpdate = subscribers.filter((s) => {
+		const user = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
+		return user && !compareSubscriberToUser(s, user);
+	});
+	console.info(`Subscribers to update: ${subscribersToUpdate.length}`);
+
+	const usersWithoutLists = users.filter(
+		(u) => constructSubscriberObjectFromUser(u).lists.length === 0
+	);
+	console.info(`Users without lists: ${usersWithoutLists.length}`);
+
+	if (usersToCreate.length > 0) console.info('\nExecuting Create operations:');
+	for (const u of usersToCreate) {
+		const subscriberObj = constructSubscriberObjectFromUser(u);
+		const res = await listmonkClient.POST('/subscribers', {
+			body: {
+				email: u.email,
+				name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
+				attribs: subscriberObj.attribs as Record<string, any>,
+				lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id)
+			}
+		});
+		if (res.error) {
+			console.error(
+				`  ! Failed to create subscriber for user ${u.id}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
+			);
+		} else {
+			console.info(`  - Created subscriber for user ${u.id}`);
+		}
+	}
+
+	if (subscribersToDelete.length > 0) console.info('\nExecuting Delete operations:');
+	for (const s of subscribersToDelete) {
+		const res = await listmonkClient.DELETE(`/subscribers/{id}`, {
+			params: {
+				path: {
+					id: s.id
+				}
+			}
+		});
+		if (res.error) {
+			console.error(
+				`  ! Failed to delete subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
+			);
+		} else {
+			console.info(`  - Deleted subscriber ${s.attribs.userId}`);
+		}
+	}
+
+	if (subscribersToUpdate.length > 0) console.info('\nExecuting Update operations:');
+	for (const s of subscribersToUpdate) {
+		const u = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
+		if (!u) {
+			console.error(`  ! Failed to find user for subscriber ${s.attribs.userId}: User not found`);
+			continue;
+		}
+		const subscriberObj = constructSubscriberObjectFromUser(u!);
+		const res = await listmonkClient.PUT(`/subscribers/{id}`, {
+			params: {
+				path: {
+					id: s.id
+				}
+			},
+			body: {
+				email: u.email,
+				name: formatNames(u.given_name, u.family_name, { familyNameUppercase: false }),
+				attribs: subscriberObj.attribs as Record<string, any>,
+				lists: allLists.filter((l) => subscriberObj.lists.includes(l.name)).map((l) => l.id),
+				preconfirm_subscriptions: true
+			}
+		});
+		if (res.error) {
+			console.error(
+				`  ! Failed to update subscriber ${s.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as any).error, null, 2)}`
+			);
+		} else {
+			console.info(`  - Updated subscriber ${s.attribs.userId}`);
+		}
+	}
+
+	logTaskEnd(TASK_NAME, startTime);
 };
 
 const program = new Command();

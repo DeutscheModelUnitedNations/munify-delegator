@@ -1,0 +1,38 @@
+<script lang="ts">
+	import type { PaperType$options } from '$houdini';
+	import { translatePaperType } from '$lib/services/enumTranslations';
+	import Common from './Common.svelte';
+
+	interface Props {
+		type: PaperType$options;
+		vertical?: boolean;
+	}
+
+	let { type, vertical }: Props = $props();
+
+	let color = $derived.by(() => {
+		switch (type) {
+			case 'POSITION_PAPER':
+				return 'bg-primary text-primary-content';
+			case 'WORKING_PAPER':
+			case 'INTRODUCTION_PAPER':
+			default:
+				return 'bg-secondary text-secondary-content';
+		}
+	});
+
+	let icon = $derived.by(() => {
+		switch (type) {
+			case 'POSITION_PAPER':
+				return 'fa-file';
+			case 'WORKING_PAPER':
+				return 'fa-scroll';
+			case 'INTRODUCTION_PAPER':
+				return 'fa-megaphone';
+			default:
+				return 'fa-file-alt';
+		}
+	});
+</script>
+
+<Common {icon} {vertical} text={translatePaperType(type)} classes={color} />
