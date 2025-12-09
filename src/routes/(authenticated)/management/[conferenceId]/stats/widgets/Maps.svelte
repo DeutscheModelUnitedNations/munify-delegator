@@ -5,6 +5,7 @@
 	import type { ConferenceStatsQuery$result } from '$houdini';
 	import type { ZipCoordinate } from '../zip-api/+server';
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 
 	interface Props {
 		addresses: ConferenceStatsQuery$result['getConferenceStatistics']['addresses'];
@@ -29,7 +30,7 @@
 		// Build an absolute URL from the current location so we always target the
 		// stats folder (avoids browser relative-URL quirks when the path doesn't
 		// end with a trailing slash). Example result: /management/:conferenceId/stats/zip-api
-		const base = window.location.pathname.replace(/\/?$/, '/');
+		const base = page.url.pathname.replace(/\/?$/, '/');
 		const endpoint = base + 'zip-api';
 		const res = await fetch(endpoint, {
 			method: 'POST',
@@ -62,7 +63,7 @@
 <section
 	class="card bg-primary text-primary-content col-span-2 grow shadow-sm md:col-span-12 xl:col-span-6"
 >
-	<div style="width: 100%; height: 500px;">
+	<div class="w-full h-[500px]">
 		<Map options={{ center: [51.948, 10.2651], zoom: 6 }}>
 			<TileLayer url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'} />
 			<!-- Marker Rendering -->
@@ -75,21 +76,21 @@
 					},
 					iconCreateFunction: (cluster) => {
 						const markers = cluster.getAllChildMarkers();
-						let n = 0;
-						let c = ` marker-cluster-`;
+						let count = 0;
+						let icon_size = ' marker-cluster-';
 						for (let i = 0; i < markers.length; i++) {
-							n += markers[i].options.data.count;
+							count += markers[i].options.data.count;
 						}
-						if (n < 10) {
-							c += 'small';
-						} else if (n < 50) {
-							c += 'medium';
+						if (count < 10) {
+							icon_size += 'small';
+						} else if (count < 50) {
+							icon_size += 'medium';
 						} else {
-							c += 'large';
+							icon_size += 'large';
 						}
 						return divIcon({
-							html: `<div><span>${n}</span></div>`,
-							className: `marker-cluster${c}`,
+							html: `<div><span>${count}</span></div>`,
+							className: `marker-cluster${icon_size}`,
 							iconSize: point(40, 40)
 						});
 					}

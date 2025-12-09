@@ -23,9 +23,7 @@
 	import Status from './widgets/Status.svelte';
 	import Maps from './widgets/Maps.svelte';
 	import { browser } from '$app/environment';
-	import { addToPanel } from 'svelte-inspect-value';
 	let { data }: { data: PageData } = $props();
-	addToPanel('Stats Page Data', () => data);
 	onMount(() => {
 		// look for history in local storage
 		const history: StatsTypeHistoryEntry[] = JSON.parse(
