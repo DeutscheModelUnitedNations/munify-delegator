@@ -1090,6 +1090,16 @@ input ConferenceWhereUniqueInput {
   website: StringNullableFilter
 }
 
+input CreateOnePaperArgs {
+  agendaItemId: String
+  authorId: String!
+  conferenceId: String!
+  content: Json!
+  delegationId: String!
+  status: PaperStatus
+  type: PaperType!
+}
+
 type CustomConferenceRole {
   conference: Conference!
   description: String!
@@ -2072,7 +2082,7 @@ type Mutation {
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!
-  createOnePaper(data: PaperCreateInput!): Paper!
+  createOnePaper(data: CreateOnePaperArgs!): Paper!
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
@@ -3047,6 +3057,7 @@ input PaperUpdateManyWithoutDelegationNestedInput {
 
 type PaperVersion {
   content: Json!
+  contentHash: String!
   createdAt: DateTime!
   id: ID!
   paper: Paper!

@@ -282,7 +282,7 @@ model Paper {
 model PaperVersion {
   id      String      @id @default(nanoid())
   version Int
-  status  PaperStatus @default(SUBMITTED)
+  status  PaperStatus @default(DRAFT)
   content Json        @default("{}")
 
   paper   Paper         @relation(fields: [paperId], references: [id], onDelete: Cascade)

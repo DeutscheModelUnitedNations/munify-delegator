@@ -81,5 +81,5 @@ export const load: PageServerLoad = async (event) => {
 		zod4(newPaperSchema)
 	);
 
-	return { form, getPaperDelegationMemberQuery };
+	return { form, getPaperDelegationMemberQuery, conferenceId, userId: user.id };
 };

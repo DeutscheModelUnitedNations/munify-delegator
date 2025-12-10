@@ -17,6 +17,7 @@ import {
 	updateOnePaperMutationObject
 } from '$db/generated/graphql/Paper';
 import { db } from '$db/db';
+import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('Paper', {
 	fields: (t) => ({
@@ -70,10 +71,46 @@ builder.mutationFields((t) => {
 	return {
 		createOnePaper: t.prismaField({
 			...field,
-
+			args: {
+				data: t.arg({
+					type: t.builder.inputType('CreateOnePaperArgs', {
+						fields: (t) => ({
+							conferenceId: t.string({ required: true }),
+							authorId: t.string({ required: true }),
+							delegationId: t.string({ required: true }),
+							agendaItemId: t.string({ required: false }),
+							type: t.field({ type: PaperType, required: true }),
+							content: t.field({ type: Json, required: true }),
+							status: t.field({ type: PaperStatus, required: false })
+						})
+					})
+				})
+			},
 			resolve: async (query, root, args, ctx, info) => {
 				ctx.permissions.getLoggedInUserOrThrow();
-				return field.resolve(query, root, args, ctx, info);
+
+				const paperDataArgs = {
+					...args.data,
+					status: args.data.status ?? undefined,
+					content: undefined
+				};
+
+				return await db.$transaction(async (tx) => {
+					const paper = await tx.paper.create({
+						data: paperDataArgs
+					});
+
+					await tx.paperVersion.create({
+						data: {
+							content: args.data.content,
+							paperId: paper.id,
+							status: args.data.status ?? undefined,
+							version: 1
+						}
+					});
+
+					return paper;
+				});
 			}
 		})
 	};

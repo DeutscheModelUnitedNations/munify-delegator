@@ -5,10 +5,12 @@
 	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { type PaperType$options } from '$houdini';
+	import { graphql, type PaperType$options } from '$houdini';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
+	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 
@@ -21,7 +23,38 @@
 		data.getPaperDelegationMemberQuery?.data.findManyAgendaItems
 	);
 
-	let form = superForm(data.form);
+	const createPaperMutation = graphql(`
+		mutation CreatePaperMutation(
+			$conferenceId: String!
+			$userId: String!
+			$delegationId: String!
+			$type: PaperType!
+			$content: Json!
+			$agendaItemId: String
+			$status: PaperStatus
+		) {
+			createOnePaper(
+				data: {
+					conferenceId: $conferenceId
+					authorId: $userId
+					delegationId: $delegationId
+					type: $type
+					content: $content
+					status: $status
+					agendaItemId: $agendaItemId
+				}
+			) {
+				id
+			}
+		}
+	`);
+
+	let form = superForm(data.form, {
+		onSubmit: (input) => {
+			// We don't want to send a POST request to the server, instead we are handling the GraphQL mutation locally
+			input.cancel();
+		}
+	});
 	let { form: formData } = $derived(form);
 
 	const typeOptions: { value: PaperType$options; label: string }[] = $derived.by(() => {
@@ -61,10 +94,33 @@
 		}));
 	});
 
-	const saveDraft = async () => {
+	const saveFile = async (options: { submit?: boolean } = {}) => {
+		const { submit = false } = options;
+
 		if (!$formData.agendaItemId && $formData.type !== 'INTRODUCTION_PAPER') {
 			toast.error(m.paperAgendaItemRequired());
 			return;
+		}
+
+		const resposne = await toast.promise(
+			createPaperMutation.mutate({
+				conferenceId: data.conferenceId,
+				userId: data.user.sub,
+				delegationId: delegation?.id,
+				type: $formData.type,
+				content: $editorContentStore,
+				agendaItemId: $formData.type === 'INTRODUCTION_PAPER' ? undefined : $formData.agendaItemId,
+				status: submit ? 'SUBMITTED' : 'DRAFT'
+			}),
+			{
+				loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
+				success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
+				error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
+			}
+		);
+
+		if (resposne?.data.createOnePaper?.id) {
+			goto(`/dashboard/${data.conferenceId}/paperhub/${resposne.data.createOnePaper.id}`);
 		}
 	};
 </script>
@@ -102,10 +158,16 @@
 				{/if}
 			</FormFieldset>
 
-			<button class="btn btn-primary btn-lg" onclick={saveDraft}>
-				<i class="fa-solid fa-save mr-2"></i>
-				{m.paperSaveDraft()}
-			</button>
+			<div class="join join-vertical w-full">
+				<button class="btn btn-primary btn-outline btn-lg join-item" onclick={() => saveFile()}>
+					<i class="fa-solid fa-pencil mr-2"></i>
+					{m.paperSaveDraft()}
+				</button>
+				<button class="btn btn-primary btn-lg join-item" onclick={() => saveFile({ submit: true })}>
+					<i class="fa-solid fa-paper-plane mr-2"></i>
+					{m.paperSubmit()}
+				</button>
+			</div>
 		</div>
 		{#if $formData.type === 'WORKING_PAPER'}
 			<PaperEditor.ResolutionFormat />

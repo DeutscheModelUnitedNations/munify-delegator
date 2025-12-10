@@ -8,6 +8,6 @@ export const defineAbilitiesForPaperVersion = (oidc: OIDC, { can }: AbilityBuild
 
 		// TODO stricken this! This is just for testing purposes
 
-		can(['list', 'read', 'update', 'delete'], 'Paper');
+		can(['list', 'read'], 'PaperVersion');
 	}
 };

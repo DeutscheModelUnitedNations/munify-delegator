@@ -91,7 +91,6 @@
 			description={m.paperHubDescription()}
 			btnText={m.paperHubBtn()}
 			btnLink="/dashboard/{conference.id}/paperhub"
-			btnExternal
 			severity="info"
 		/>
 	{/if}

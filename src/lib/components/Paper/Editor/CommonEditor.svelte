@@ -20,7 +20,7 @@
 	onMount(() => {
 		editor = createEditor({
 			...settings,
-			content: editorContentStore,
+			content: $editorContentStore,
 			editorProps: {
 				attributes: {
 					class: 'prose prose-sm focus:outline-none px-2 pb-2'

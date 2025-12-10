@@ -26,7 +26,7 @@
 	<ImpersonationBanner />
 
 	<div
-		class="no-print navbar bg-base-200 mb-4 justify-between gap-0 rounded-2xl px-4 py-2 shadow-lg sm:gap-2"
+		class="no-print navbar bg-base-200 border-base-300 border-1 mb-4 justify-between gap-0 rounded-box px-4 py-2 sm:gap-2"
 	>
 		{#if headerState.openNavCallback !== undefined}
 			<button

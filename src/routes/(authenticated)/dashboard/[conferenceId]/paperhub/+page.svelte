@@ -41,21 +41,21 @@
 				{@render PaperTypeBlock(
 					'INTRODUCTION_PAPER',
 					m.paperTypeIntroductionPaperDescription(),
-					'./paperhub/new?type=INTRODUCTION_PAPER'
+					'./paperhub/newPaper?type=INTRODUCTION_PAPER'
 				)}
 			{/if}
 
 			{@render PaperTypeBlock(
 				'POSITION_PAPER',
 				m.paperTypePositionPaperDescription(),
-				'./paperhub/new?type=POSITION_PAPER'
+				'./paperhub/newPaper?type=POSITION_PAPER'
 			)}
 
 			{#if !isNSA}
 				{@render PaperTypeBlock(
 					'WORKING_PAPER',
 					m.paperTypeWorkingPaperDescription(),
-					'./paperhub/new?type=WORKING_PAPER'
+					'./paperhub/newPaper?type=WORKING_PAPER'
 				)}
 			{/if}
 		</div>
@@ -63,7 +63,7 @@
 
 	{#if paperQueryData && paperQueryData.length > 0}
 		<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
-			<h3 class="text-xl">{m.yourSubmittedPapers()}</h3>
+			<h3 class="text-xl">{m.yourPapers()}</h3>
 			<div class="overflow-x-auto w-full">
 				<table class="table w-full">
 					<thead>

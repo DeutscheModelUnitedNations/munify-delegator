@@ -1,1 +1,1 @@
-<div class="w-4"></div>
+<div class="w-4 h-4"></div>

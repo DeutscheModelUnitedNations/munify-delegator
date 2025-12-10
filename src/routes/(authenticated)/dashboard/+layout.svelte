@@ -47,7 +47,7 @@
 			{/if}
 			{#if activeConferences && activeConferences.length > 0}
 				<div class="h-6"></div>
-				<p class="pb-2 text-xs text-gray-500">{m.activeConferences()}</p>
+				<p class="pb-2 text-xs">{m.activeConferences()}</p>
 				{#each activeConferences as { id, title }}
 					<NavMenuButton
 						href="/dashboard/{id}"
@@ -74,8 +74,10 @@
 				{/each}
 			{/if}
 			{#if pastConferences && pastConferences.length > 0}
-				<div class="h-6"></div>
-				<p class="pb-2 text-xs text-gray-500">{m.pastConferences()}</p>
+				{#if navbarExpanded}
+					<div class="h-6"></div>
+					<p class="pb-2 text-xs text-gray-500">{m.pastConferences()}</p>
+				{/if}
 				{#each pastConferences as { id, title }}
 					<NavMenuButton
 						href="/dashboard/{id}"
@@ -90,6 +92,6 @@
 	</NavMenu>
 </SideNavigationDrawer>
 
-<div class="flex w-full sm:pl-4">
+<div class="flex w-full sm:pl-8">
 	{@render children()}
 </div>

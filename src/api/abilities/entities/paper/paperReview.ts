@@ -8,6 +8,6 @@ export const defineAbilitiesForPaperReview = (oidc: OIDC, { can }: AbilityBuilde
 
 		// TODO stricken this! This is just for testing purposes
 
-		can(['list', 'read', 'update', 'delete'], 'Paper');
+		can(['list', 'read'], 'PaperReview');
 	}
 };

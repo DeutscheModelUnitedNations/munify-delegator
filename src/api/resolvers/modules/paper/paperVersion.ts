@@ -7,6 +7,7 @@ import {
 	PaperVersionStatusFieldObject,
 	PaperVersionVersionFieldObject
 } from '$db/generated/graphql/PaperVersion';
+import { hashEditorContent } from '$lib/components/Paper/Editor/contentHash';
 import { builder } from '../../builder';
 
 builder.prismaObject('PaperVersion', {
@@ -15,6 +16,12 @@ builder.prismaObject('PaperVersion', {
 		version: t.field(PaperVersionVersionFieldObject),
 		status: t.field(PaperVersionStatusFieldObject),
 		content: t.field(PaperVersionContentFieldObject),
+		contentHash: t.string({
+			resolve: (root) => {
+				if (!root.content) return '';
+				return hashEditorContent(root.content as string);
+			}
+		}),
 		paper: t.relation('paper', PaperVersionPaperFieldObject),
 		reviews: t.relation('reviews', PaperVersionReviewsFieldObject),
 		createdAt: t.field(PaperVersionCreatedAtFieldObject)
