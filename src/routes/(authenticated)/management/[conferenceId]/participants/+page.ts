@@ -5,6 +5,7 @@ export const _houdini_load = graphql(`
 		findUniqueConference(where: { id: $conferenceId }) {
 			endConference
 			startConference
+			nextDocumentNumber
 		}
 		findManyDelegationMembers(where: { conferenceId: { equals: $conferenceId } }) {
 			user {

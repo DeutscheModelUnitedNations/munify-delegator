@@ -12,6 +12,7 @@ export const changeParticipantStatus = graphql(`
 			mediaConsent
 			paymentStatus
 			didAttend
+			assignedDocumentNumber
 		}
 	}
 `);
