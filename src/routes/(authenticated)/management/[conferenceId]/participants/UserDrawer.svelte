@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { givenName, m } from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import {
 		cache,
@@ -29,6 +29,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import ImpersonationButton from './ImpersonationButton.svelte';
+	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
 
 	interface Props {
 		userId: string;
@@ -39,6 +40,14 @@
 	let { userId, conferenceId, open = $bindable(false), onClose }: Props = $props();
 
 	let openGlobalNotes = $state(false);
+	let assignedDocumentNumber = $state<number>();
+
+	$effect(() => {
+		if ($userQuery.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber) {
+			assignedDocumentNumber =
+				$userQuery.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber;
+		}
+	});
 
 	let assignSupervisorModalOpen = $state(false);
 
@@ -90,6 +99,7 @@
 				mediaConsentStatus
 				paymentStatus
 				didAttend
+				assignedDocumentNumber
 			}
 			findManySurveyAnswers(
 				where: {
@@ -127,6 +137,7 @@
 				postalZip
 				postalCity
 				postalCountry
+				nextDocumentNumber
 			}
 		}
 	`);
@@ -620,6 +631,12 @@
 					'NOT_SET'}
 				changeStatus={async (newStatus: MediaConsentStatus$options) =>
 					await changeMediaConsentStatus(newStatus)}
+			/>
+			<ParticipantAssignedDocumentWidget
+				bind:assignedDocumentNumber
+				nextDocumentNumber={$userQuery.data?.findUniqueConference?.nextDocumentNumber}
+				onSave={async (number: number) =>
+					await changeAdministrativeStatus({ assignedDocumentNumber: number })}
 			/>
 			<StatusWidgetBoolean
 				title={m.attendance()}

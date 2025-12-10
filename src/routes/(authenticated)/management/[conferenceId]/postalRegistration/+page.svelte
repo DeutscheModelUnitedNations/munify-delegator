@@ -17,15 +17,23 @@
 	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
+	import { addToPanel } from 'svelte-inspect-value';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	let { data }: { data: PageData } = $props();
+
+	let pageQuery = $derived(data.PostalRegistrationPageQuery);
 
 	let videoElem: HTMLVideoElement;
 	let canvasElem: HTMLCanvasElement;
 	let streaming = false;
 
 	let queryUserId = $state('');
-	// let queryUserId = $state('298967658244603906');
+	let assignedDocumentNumber = $state<number>();
+
+	addToPanel('assignedDocumentNumber', () => assignedDocumentNumber);
 
 	const barcodeDetector: BarcodeDetector = new BarcodeDetector({
 		// make sure the formats are supported
@@ -129,6 +137,7 @@
 				guardianConsent
 				mediaConsent
 				mediaConsentStatus
+				assignedDocumentNumber
 			}
 		}
 	`);
@@ -142,10 +151,13 @@
 			toast.error(m.userNotFound());
 			return;
 		}
-		await changeParticipantStatus.mutate({
-			where: { id: statusId, conferenceId: data.conferenceId, userId },
-			data: mutationData
-		});
+		await toast.promise(
+			changeParticipantStatus.mutate({
+				where: { id: statusId, conferenceId: data.conferenceId, userId },
+				data: mutationData
+			}),
+			genericPromiseToastMessages
+		);
 		cache.markStale();
 		userData.fetch();
 	};
@@ -172,6 +184,15 @@
 			}
 		});
 	});
+
+	$effect(() => {
+		if ($userData?.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber) {
+			assignedDocumentNumber =
+				$userData?.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber ?? 0;
+		}
+	});
+
+	addToPanel('postalRegistration', () => $userData?.data?.findUniqueConferenceParticipantStatus);
 </script>
 
 <div class="flex w-full flex-col gap-8 md:p-10">
@@ -245,16 +266,18 @@
 							})}
 						doneHotkey="1"
 					/>
-					<StatusWidget
-						title={m.guardianAgreement()}
-						faIcon="fa-user-shield"
-						status={postalRegistrationDetails?.guardianConsent ?? 'PENDING'}
-						changeStatus={async (newStatus: AdministrativeStatus) =>
-							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
-								guardianConsent: newStatus
-							})}
-						doneHotkey="2"
-					/>
+					{#if !ofAgeAtConference($pageQuery.data.findUniqueConference.startConference, userDetails?.birthday)}
+						<StatusWidget
+							title={m.guardianAgreement()}
+							faIcon="fa-user-shield"
+							status={postalRegistrationDetails?.guardianConsent ?? 'PENDING'}
+							changeStatus={async (newStatus: AdministrativeStatus) =>
+								await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+									guardianConsent: newStatus
+								})}
+							doneHotkey="2"
+						/>
+					{/if}
 					<StatusWidget
 						title={m.mediaAgreement()}
 						faIcon="fa-camera"
@@ -273,6 +296,14 @@
 								mediaConsentStatus: newStatus
 							})}
 						doneHotkey="4"
+					/>
+					<ParticipantAssignedDocumentWidget
+						{assignedDocumentNumber}
+						onSave={async (number: number) =>
+							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+								assignedDocumentNumber: number
+							})}
+						nextDocumentNumber={$pageQuery.data.findUniqueConference?.nextDocumentNumber}
 					/>
 				{/if}
 				<button class="btn btn-error w-full" onclick={() => (queryUserId = '')}>

@@ -195,13 +195,14 @@ enum MediaConsentStatus {
 
 // administrative status of a user in a conference, used for storing e.g. payment status, postal application status, etc.
 model ConferenceParticipantStatus {
-  id                 String               @id @default(nanoid())
-  termsAndConditions AdministrativeStatus @default(PENDING)
-  guardianConsent    AdministrativeStatus @default(PENDING)
-  mediaConsent       AdministrativeStatus @default(PENDING)
-  paymentStatus      AdministrativeStatus @default(PENDING)
-  mediaConsentStatus MediaConsentStatus   @default(NOT_SET)
-  didAttend          Boolean              @default(false)
+  id                     String               @id @default(nanoid())
+  termsAndConditions     AdministrativeStatus @default(PENDING)
+  guardianConsent        AdministrativeStatus @default(PENDING)
+  mediaConsent           AdministrativeStatus @default(PENDING)
+  paymentStatus          AdministrativeStatus @default(PENDING)
+  mediaConsentStatus     MediaConsentStatus   @default(NOT_SET)
+  didAttend              Boolean              @default(false)
+  assigendDocumentNumber Int?
 
   user         User       @relation(fields: [userId], references: [id])
   userId       String
@@ -212,6 +213,7 @@ model ConferenceParticipantStatus {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([userId, conferenceId])
+  @@unique([conferenceId, assigendDocumentNumber])
 }
 
 /// The transactions used to reference the payment status of various users in the conference

@@ -308,6 +308,7 @@ type Conference {
   longTitle: String
   mediaConsentContent: String
   mediaConsentContentSet: Boolean!
+  nextDocumentNumber: Int!
   nonStateActors: [NonStateActor!]!
   paymentTransactions: [PaymentTransaction!]!
   postalApartment: String
@@ -440,6 +441,7 @@ input ConferenceOrderByWithRelationInput {
 }
 
 type ConferenceParticipantStatus {
+  assignedDocumentNumber: Int
   conference: Conference!
   didAttend: Boolean!
   guardianConsent: AdministrativeStatus!
@@ -451,7 +453,13 @@ type ConferenceParticipantStatus {
   user: User!
 }
 
+input ConferenceParticipantStatusConferenceIdAssigendDocumentNumberCompoundUniqueInput {
+  assigendDocumentNumber: Int!
+  conferenceId: String!
+}
+
 input ConferenceParticipantStatusCreateInput {
+  assigendDocumentNumber: Int
   conferenceId: String!
   createdAt: DateTime
   didAttend: Boolean
@@ -484,6 +492,7 @@ input ConferenceParticipantStatusOrderByRelationAggregateInput {
 }
 
 input ConferenceParticipantStatusOrderByWithRelationInput {
+  assigendDocumentNumber: SortOrder
   conference: ConferenceOrderByWithRelationInput
   conferenceId: SortOrder
   createdAt: SortOrder
@@ -500,6 +509,7 @@ input ConferenceParticipantStatusOrderByWithRelationInput {
 }
 
 enum ConferenceParticipantStatusScalarFieldEnum {
+  assigendDocumentNumber
   conferenceId
   createdAt
   didAttend
@@ -514,6 +524,7 @@ enum ConferenceParticipantStatusScalarFieldEnum {
 }
 
 input ConferenceParticipantStatusUpdateInput {
+  assigendDocumentNumber: NullableIntFieldUpdateOperationsInput
   conferenceId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   didAttend: BoolFieldUpdateOperationsInput
@@ -528,6 +539,7 @@ input ConferenceParticipantStatusUpdateInput {
 }
 
 input ConferenceParticipantStatusUpdateManyMutationInput {
+  assigendDocumentNumber: NullableIntFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   didAttend: BoolFieldUpdateOperationsInput
   guardianConsent: EnumAdministrativeStatusFieldUpdateOperationsInput
@@ -560,6 +572,7 @@ input ConferenceParticipantStatusWhereInput {
   AND: [ConferenceParticipantStatusWhereInput!]
   NOT: [ConferenceParticipantStatusWhereInput!]
   OR: [ConferenceParticipantStatusWhereInput!]
+  assigendDocumentNumber: IntNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
   createdAt: DateTimeFilter
@@ -579,8 +592,10 @@ input ConferenceParticipantStatusWhereUniqueInput {
   AND: [ConferenceParticipantStatusWhereInput!]
   NOT: [ConferenceParticipantStatusWhereInput!]
   OR: [ConferenceParticipantStatusWhereInput!]
+  assigendDocumentNumber: IntNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
+  conferenceId_assigendDocumentNumber: ConferenceParticipantStatusConferenceIdAssigendDocumentNumberCompoundUniqueInput
   createdAt: DateTimeFilter
   didAttend: BoolFilter
   guardianConsent: EnumAdministrativeStatusFilter
@@ -1897,6 +1912,33 @@ input IntFilter {
   notIn: [Int!]
 }
 
+input IntNullableFilter {
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntNullableFilter
+  notIn: [Int!]
+}
+
+input IntNullableWithAggregatesFilter {
+  _avg: NestedFloatNullableFilter
+  _count: NestedIntNullableFilter
+  _max: NestedIntNullableFilter
+  _min: NestedIntNullableFilter
+  _sum: NestedIntNullableFilter
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntNullableWithAggregatesFilter
+  notIn: [Int!]
+}
+
 input IntWithAggregatesFilter {
   _avg: NestedFloatFilter
   _count: NestedIntFilter
@@ -2345,6 +2387,22 @@ input NestedIntNullableFilter {
   notIn: [Int!]
 }
 
+input NestedIntNullableWithAggregatesFilter {
+  _avg: NestedFloatNullableFilter
+  _count: NestedIntNullableFilter
+  _max: NestedIntNullableFilter
+  _min: NestedIntNullableFilter
+  _sum: NestedIntNullableFilter
+  equals: Int
+  gt: Int
+  gte: Int
+  in: [Int!]
+  lt: Int
+  lte: Int
+  not: NestedIntNullableWithAggregatesFilter
+  notIn: [Int!]
+}
+
 input NestedIntWithAggregatesFilter {
   _avg: NestedFloatFilter
   _count: NestedIntFilter
@@ -2591,6 +2649,14 @@ input NullableFloatFieldUpdateOperationsInput {
   increment: Float
   multiply: Float
   set: Float
+}
+
+input NullableIntFieldUpdateOperationsInput {
+  decrement: Int
+  divide: Int
+  increment: Int
+  multiply: Int
+  set: Int
 }
 
 input NullableStringFieldUpdateOperationsInput {
@@ -3904,6 +3970,7 @@ type UpdateAllConferenceParticipantStatusResponse {
 }
 
 input UpdateConferenceParticipantStatusInput {
+  assignedDocumentNumber: Int
   didAttend: Boolean
   guardianConsent: AdministrativeStatus
   mediaConsent: AdministrativeStatus
