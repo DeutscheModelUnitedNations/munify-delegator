@@ -2,9 +2,20 @@ import { graphql } from '$houdini';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
+export const ssr = false;
+
 const statsQuery = graphql(`
 	query ConferenceStatsQuery($conferenceID: ID!) {
 		getConferenceStatistics(conferenceId: $conferenceID) {
+			addresses {
+				country
+				zip
+				_count {
+					zip
+					country
+					_all
+				}
+			}
 			age {
 				average
 				distribution {

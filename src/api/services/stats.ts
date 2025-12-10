@@ -553,12 +553,36 @@ export async function conferenceStats({
 		didAttend: conferenceStatusStats.filter((s) => s.didAttend).length
 	};
 
+	const addresses = await db.user.groupBy({
+		by: ['country', 'zip'],
+		where: {
+			OR: [
+				{ singleParticipant: { some: { conferenceId, applied: true } } },
+				{
+					delegationMemberships: {
+						some: {
+							conferenceId,
+							delegation: {
+								applied: true
+							}
+						}
+					}
+				}
+			]
+		},
+		_count: {
+			zip: true,
+			country: true,
+			_all: true
+		}
+	});
 	return {
 		countdowns,
 		registrationStatistics,
 		ageStatistics,
 		diet,
 		gender,
-		status
+		status,
+		addresses
 	};
 }
