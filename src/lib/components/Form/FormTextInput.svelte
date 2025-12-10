@@ -35,7 +35,7 @@
 	<input
 		{placeholder}
 		{type}
-		class="input validator w-full"
+		class="input disabled:bg-base-300 validator w-full"
 		{name}
 		id={name}
 		bind:value={$formData[name]}

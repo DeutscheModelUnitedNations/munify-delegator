@@ -204,6 +204,14 @@
 		paperhub: {
 			icon: 'files',
 			translation: m.paperHub()
+		},
+		newPaper: {
+			icon: 'file-circle-plus',
+			translation: m.newPaper()
+		},
+		paperId: {
+			icon: 'file-magnifying-glass',
+			translation: m.paper()
 		}
 	};
 

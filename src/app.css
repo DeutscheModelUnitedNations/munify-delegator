@@ -69,3 +69,12 @@
 	min-height: var(--size);
 	@apply py-2;
 }
+
+/* Tiptap Editor Placeholder Style */
+p.is-editor-empty:first-child::before {
+	color: var(--color-base-300);
+	content: attr(data-placeholder);
+	float: left;
+	height: 0;
+	pointer-events: none;
+}
