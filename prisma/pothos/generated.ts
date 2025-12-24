@@ -1,5 +1,5 @@
 /* eslint-disable */
-import type { Prisma, Conference, Committee, CommitteeAgendaItem, User, ConferenceParticipantStatus, PaymentTransaction, UserReferenceInPaymentTransaction, Nation, NonStateActor, CustomConferenceRole, SingleParticipant, Delegation, RoleApplication, DelegationMember, ConferenceSupervisor, SurveyQuestion, SurveyOption, SurveyAnswer, WaitingListEntry, TeamMember } from "/Users/tadestrehk/Developer/DMUN/delegator/node_modules/@prisma/client/index.js";
+import type { Prisma, Conference, Committee, CommitteeAgendaItem, User, ConferenceParticipantStatus, PaymentTransaction, UserReferenceInPaymentTransaction, Nation, NonStateActor, CustomConferenceRole, SingleParticipant, Delegation, RoleApplication, DelegationMember, ConferenceSupervisor, SurveyQuestion, SurveyOption, SurveyAnswer, WaitingListEntry, TeamMember } from "/home/mil/git/munify-delegator/node_modules/@prisma/client/index.js";
 import type { PothosPrismaDatamodel } from "@pothos/plugin-prisma";
 export default interface PrismaTypes {
     Conference: {
