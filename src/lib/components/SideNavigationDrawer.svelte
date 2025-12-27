@@ -50,7 +50,7 @@
 
 <div class="fixed top-0 left-0 z-20 h-full py-4 pl-3 sm:static sm:h-auto sm:py-0 sm:pl-0">
 	<div
-		class="bg-base-200 relative flex flex-col overflow-hidden rounded-xl duration-300 {expanded
+		class="bg-base-200 border-base-300 border-1 relative flex flex-col overflow-hidden rounded-box duration-300 {expanded
 			? 'h-full w-60 shadow sm:shadow-none'
 			: 'h-0 w-0 items-center sm:h-full sm:w-16'}"
 	>

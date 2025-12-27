@@ -1,0 +1,101 @@
+/* --- PREAMBLE STYLES --- */
+
+/* Wrapper: Add some spacing */
+div[data-type='preamble-section'] {
+	margin-bottom: 2rem;
+	font-style: italic; /* Preambles are usually italicized */
+}
+
+/* Clause: Add the comma automatically */
+div[data-type='preamble-clause']::after {
+	content: ',';
+}
+
+/* Exception: The very last preamble clause ends with a comma too, 
+   but sometimes conventions say the last one before operatives 
+   might need specific spacing. For now, comma is standard. */
+
+/* --- OPERATIVE STYLES --- */
+
+/* Wrapper: Reset the counter */
+ol[data-type='operative-section'] {
+	counter-reset: operative-counter;
+	list-style: none;
+	padding-left: 0;
+	margin-top: 1rem;
+}
+
+/* Clause: Flexbox to align number and text */
+li[data-type='operative-clause'] {
+	counter-increment: operative-counter;
+	display: flex;
+	margin-bottom: 1rem;
+}
+
+/* The Number (1, 2, 3...) */
+li[data-type='operative-clause']::before {
+	content: counter(operative-counter) '.';
+	font-weight: bold;
+	margin-right: 1rem;
+	min-width: 1.5rem; /* Ensures alignment even if numbers get to double digits */
+}
+
+/* The Punctuation logic */
+/* Target the paragraph inside the list item */
+li[data-type='operative-clause'] > p {
+	margin: 0;
+	display: inline; /* Keeps text flowing nicely */
+}
+
+/* Default: ends in semicolon */
+li[data-type='operative-clause'] > p::after {
+	content: ';';
+}
+
+/* The Final Clause: ends in dot */
+ol[data-type='operative-section'] > li[data-type='operative-clause']:last-child > p::after {
+	content: '.';
+}
+/* --- SUB-CLAUSE STYLES --- */
+
+/* 1. Level 1 Nesting (a, b, c) */
+ol[data-type='sub-clause-group'] {
+	counter-reset: sub-clause-counter;
+	list-style: none;
+	padding-left: 2rem; /* Indent deeper */
+	margin-top: 0.5rem;
+}
+
+li[data-type='sub-clause'] {
+	counter-increment: sub-clause-counter;
+	display: flex;
+	margin-bottom: 0.5rem;
+}
+
+/* Numbering style: a., b., c. */
+li[data-type='sub-clause']::before {
+	content: counter(sub-clause-counter, lower-alpha) '.'; /* 'lower-alpha' makes it a, b, c */
+	font-weight: normal; /* Usually sub-clauses aren't bold */
+	margin-right: 0.5rem;
+	min-width: 1.5rem;
+}
+
+/* 2. Level 2 Nesting (i, ii, iii) - The Infinite Nesting logic */
+/* If a group is inside another sub-clause, change the style */
+li[data-type='sub-clause'] ol[data-type='sub-clause-group'] {
+	counter-reset: sub-sub-clause-counter;
+}
+
+li[data-type='sub-clause'] li[data-type='sub-clause']::before {
+	/* This selector targets ANY sub-clause inside another sub-clause.
+     Wait, CSS counters nest automatically if you reuse the name, 
+     but standard MUN format changes from (a) to (i). 
+     Here is the specific override for deeper levels: */
+}
+
+/* Specific selector for Level 2 (i, ii, iii) */
+ol[data-type='sub-clause-group']
+	ol[data-type='sub-clause-group']
+	li[data-type='sub-clause']::before {
+	content: counter(sub-clause-counter, lower-roman) '.'; /* changes to i., ii., iii. */
+}

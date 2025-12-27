@@ -36,6 +36,15 @@ const config = {
 				return JSON.stringify(val);
 			}
 		},
+		Json: {
+			type: 'JSONObject',
+			unmarshal(val) {
+				return JSON.parse(val);
+			},
+			marshal(val) {
+				return JSON.stringify(val);
+			}
+		},
 		File: {
 			type: 'File',
 			unmarshal(val) {
