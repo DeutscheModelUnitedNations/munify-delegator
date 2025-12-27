@@ -5,12 +5,12 @@
 	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { graphql, type PaperType$options } from '$houdini';
+	import { cache, graphql, type PaperType$options } from '$houdini';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
 	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 
@@ -119,8 +119,11 @@
 			}
 		);
 
+		cache.markStale();
+		await invalidateAll();
+
 		if (resposne?.data.createOnePaper?.id) {
-			goto(`/dashboard/${data.conferenceId}/paperhub/${resposne.data.createOnePaper.id}`);
+			goto(`/dashboard/${data.conferenceId}/paperhub`);
 		}
 	};
 </script>

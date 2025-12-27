@@ -124,11 +124,61 @@ builder.mutationFields((t) => {
 	return {
 		updateOnePaper: t.prismaField({
 			...field,
+			args: {
+				where: t.arg({
+					type: t.builder.inputType('UpdateOnePaperWhereArgs', {
+						fields: (t) => ({
+							paperId: t.string({ required: true })
+						})
+					})
+				}),
+				data: t.arg({
+					type: t.builder.inputType('UpdateOnePaperArgs', {
+						fields: (t) => ({
+							content: t.field({ type: Json, required: true }),
+							status: t.field({ type: PaperStatus, required: false })
+						})
+					})
+				})
+			},
 			resolve: async (query, root, args, ctx, info) => {
-				const paper = await db.paper.findUniqueOrThrow({
-					where: { ...args.where, AND: [ctx.permissions.allowDatabaseAccessTo('update').Paper] }
+				ctx.permissions.getLoggedInUserOrThrow();
+
+				const paperDBEntry = await db.paper.findUniqueOrThrow({
+					where: {
+						id: args.where.paperId
+					},
+					include: {
+						versions: true
+					}
 				});
-				return field.resolve(query, root, { ...args, where: { id: paper.id } }, ctx, info);
+
+				const isFirstSubmission =
+					paperDBEntry.firstSubmittedAt === null && args.data.status !== 'DRAFT';
+
+				return await db.$transaction(async (tx) => {
+					const paper = await tx.paper.update({
+						where: {
+							id: args.where.paperId
+						},
+						data: {
+							firstSubmittedAt: isFirstSubmission ? new Date() : undefined,
+							updatedAt: new Date(),
+							status: args.data.status ?? undefined
+						}
+					});
+
+					await tx.paperVersion.create({
+						data: {
+							content: args.data.content,
+							paperId: paper.id,
+							status: args.data.status ?? undefined,
+							version: paperDBEntry.versions.length + 1
+						}
+					});
+
+					return paper;
+				});
 			}
 		})
 	};

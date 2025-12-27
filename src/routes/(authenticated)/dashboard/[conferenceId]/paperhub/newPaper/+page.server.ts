@@ -6,6 +6,7 @@ import { graphql, PaperType } from '$houdini';
 import { PaperType as PaperTypePrisma } from '@prisma/client';
 
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+import { error } from '@sveltejs/kit';
 
 const query = graphql(`
 	query getPaperParticipantDelegationMemberQuery($conferenceId: String!, $userId: String!) {
@@ -64,14 +65,18 @@ export const load: PageServerLoad = async (event) => {
 		getPaperDelegationMemberQuery?.data?.findUniqueDelegationMember?.assignedCommittee;
 	const delegation = getPaperDelegationMemberQuery?.data?.findUniqueDelegationMember?.delegation;
 
+	if (!delegation) {
+		error(400, 'Delegation member does not exist');
+	}
+
 	const typeParam = event.url.searchParams.get('type');
 	const type =
 		typeParam && typeParam in PaperType ? (typeParam as PaperTypePrisma) : 'POSITION_PAPER';
 
 	const form = await superValidate(
 		{
-			delegation: delegation.assignedNation
-				? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+			delegation: delegation?.assignedNation
+				? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation?.alpha3Code)
 				: delegation.assignedNonStateActor
 					? delegation.assignedNonStateActor.name
 					: '',

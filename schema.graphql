@@ -2124,7 +2124,7 @@ type Mutation {
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
   updateOneDelegationMemberCommittee(data: UpdateOneDelegationMemberCommitteeInput!, where: DelegationMemberWhereUniqueInput!): DelegationMember
-  updateOnePaper(data: PaperUpdateInput!, where: PaperWhereUniqueInput!): Paper
+  updateOnePaper(data: UpdateOnePaperArgs!, where: UpdateOnePaperWhereArgs!): Paper
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
@@ -4518,6 +4518,15 @@ input UpdateManyDelegationMemberCommitteeInput {
 
 input UpdateOneDelegationMemberCommitteeInput {
   assignedCommitteeId: ID!
+}
+
+input UpdateOnePaperArgs {
+  content: Json!
+  status: PaperStatus
+}
+
+input UpdateOnePaperWhereArgs {
+  paperId: String!
 }
 
 input UpdateOneSurveyAnswerInput {
