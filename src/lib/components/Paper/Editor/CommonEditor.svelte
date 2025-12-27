@@ -11,19 +11,28 @@
 		editable?: boolean;
 		fixedMenu?: Snippet<[Editor]>;
 		bubbleMenu?: Snippet<[Editor]>;
+		baseContent?: EditorOptions['content'];
+		additionalClasses?: string;
 	}
 
-	let { settings, editable = true, fixedMenu, bubbleMenu }: Props = $props();
+	let {
+		settings,
+		editable = true,
+		fixedMenu,
+		bubbleMenu,
+		baseContent,
+		additionalClasses = 'prose prose-sm'
+	}: Props = $props();
 
 	let editor = $state() as Readable<Editor>;
 
 	onMount(() => {
 		editor = createEditor({
 			...settings,
-			content: $editorContentStore,
+			content: $editorContentStore ?? baseContent ?? undefined,
 			editorProps: {
 				attributes: {
-					class: 'prose prose-sm focus:outline-none px-2 pb-2'
+					class: `${additionalClasses} focus:outline-none px-2 pb-2`
 				}
 			},
 			onUpdate: ({ editor }) => {

@@ -11,7 +11,7 @@
 		editable?: boolean;
 	}
 
-	let { editable }: Props = $props();
+	let { editable = false }: Props = $props();
 
 	let settings: Partial<EditorOptions> = {
 		extensions: [

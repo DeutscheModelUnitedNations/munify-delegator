@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PaperStatus$options } from '$houdini';
+	import { getPaperStatusIcon } from '$lib/services/enumIcons';
 	import { translatePaperStatus } from '$lib/services/enumTranslations';
 	import Common from './Common.svelte';
 
@@ -24,19 +25,7 @@
 		}
 	});
 
-	let icon = $derived.by(() => {
-		switch (status) {
-			case 'SUBMITTED':
-				return 'fa-paper-plane';
-			case 'CHANGES_REQUESTED':
-				return 'fa-exclamation-triangle';
-			case 'ACCEPTED':
-				return 'fa-check-circle';
-			case 'DRAFT':
-			default:
-				return 'fa-file-alt';
-		}
-	});
+	let icon = $derived(getPaperStatusIcon(status));
 </script>
 
 <Common {icon} {vertical} text={translatePaperStatus(status)} classes={color} />

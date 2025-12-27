@@ -170,9 +170,18 @@
 			</div>
 		</div>
 		{#if $formData.type === 'WORKING_PAPER'}
-			<PaperEditor.ResolutionFormat />
+			<!-- <PaperEditor.ResolutionFormat editable /> -->
+			<fieldset
+				class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[300px]"
+			>
+				<legend class="fieldset-legend">{m.editor()}</legend>
+				<div class="alert alert-error flex flex-col gap-2 items-center justify-center">
+					<i class="fa-solid fa-construction text-6xl"></i>
+					<div class="text-center text-lg">{m.resolutionEditorNotYetAvailable()}</div>
+				</div>
+			</fieldset>
 		{:else}
-			<PaperEditor.PaperFormat />
+			<PaperEditor.PaperFormat editable />
 		{/if}
 	</Form>
 </div>

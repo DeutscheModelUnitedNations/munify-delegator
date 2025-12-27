@@ -1,119 +1,9 @@
-@import '@deutschemodelunitednations/corporate-identity/css/fonts';
-@import '@deutschemodelunitednations/corporate-identity/css/shades/dmun';
-
-@import 'tailwindcss';
-@plugin "@tailwindcss/typography";
-@plugin "daisyui";
-
-@import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-light';
-@import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-dark';
-
-/* @import './lib/components/Paper/Editor/extensions/style' */
-
-@utility max-ch-sm {
-	max-width: 50ch;
-}
-
-@utility max-ch-md {
-	max-width: 75ch;
-}
-
-@utility max-ch-lg {
-	max-width: 100ch;
-}
-
-@font-face {
-	font-family: 'FontAwesome';
-	src: url('https://dmuncdnstorage.blob.core.windows.net/cdn/fontawesome-pro-6.7.2/webfonts/fa-solid-900.woff2')
-		format('woff2');
-	font-weight: normal;
-	font-style: normal;
-	font-display: swap;
-}
-
-#mermaid .outcome > * {
-	stroke: #000 !important;
-	transition: all 0.3s;
-}
-
-#mermaid .outcome:hover > * {
-	stroke: #3d7dd2 !important;
-	transition: all 0.3s;
-}
-
-#mermaid g.edgelabel {
-	padding: 3px !important;
-	color: blue;
-}
-
-.print-only {
-	display: none;
-}
-
-@media print {
-	.no-print {
-		display: none;
-	}
-
-	.print-only {
-		display: block;
-	}
-}
-
-/* https://github.com/kbrgl/svelte-french-toast/issues/103 */
-.toaster > .wrapper > .base > .indicator > .status {
-	height: auto !important;
-	width: auto !important;
-}
-
-.btn {
-	height: auto;
-	min-height: var(--size);
-	@apply py-2;
-}
-
-/* Tiptap Editor Placeholder Style */
-p.is-editor-empty:first-child::before {
-	color: var(--color-base-300);
-	content: attr(data-placeholder);
-	float: left;
-	height: 0;
-	pointer-events: none;
-}
-
-/* --- RESOLUTION-STYLES --- */
-
-.resolution-document {
-	padding: 2rem;
-	border: 1px solid var(--color-base-300);
-	background-color: #ffffff;
-	color: var(--color-base-800);
-	font-family: 'Times New Roman', Times, serif;
-	font-size: 0.8rem;
-	max-width: 800px;
-	margin: auto;
-}
-
-/* --- RESOLUTION-HEADER STYLES --- */
-
-div[data-type='resolution-header'] {
-	text-transform: uppercase;
-	margin-bottom: 1rem;
-
-	/* Optional: Prevent user selection to make it feel truly locked */
-	user-select: none;
-	cursor: default;
-}
-
 /* --- PREAMBLE STYLES --- */
 
 /* Wrapper: Add some spacing */
 div[data-type='preamble-section'] {
 	margin-bottom: 2rem;
-}
-
-div[data-type='preamble-clause'] {
-	margin-bottom: 1rem;
+	font-style: italic; /* Preambles are usually italicized */
 }
 
 /* Clause: Add the comma automatically */
@@ -139,17 +29,12 @@ ol[data-type='operative-section'] {
 li[data-type='operative-clause'] {
 	counter-increment: operative-counter;
 	display: flex;
-	flex-direction: column;
 	margin-bottom: 1rem;
-	padding-left: 2rem;
-	position: relative;
 }
 
 /* The Number (1, 2, 3...) */
 li[data-type='operative-clause']::before {
 	content: counter(operative-counter) '.';
-	position: absolute;
-	translate: -2rem 0;
 	font-weight: bold;
 	margin-right: 1rem;
 	min-width: 1.5rem; /* Ensures alignment even if numbers get to double digits */
@@ -157,13 +42,13 @@ li[data-type='operative-clause']::before {
 
 /* The Punctuation logic */
 /* Target the paragraph inside the list item */
-li[data-type='operative-clause']:last-child > p::after {
+li[data-type='operative-clause'] > p {
 	margin: 0;
 	display: inline; /* Keeps text flowing nicely */
 }
 
 /* Default: ends in semicolon */
-li[data-type='operative-clause']:last-child:last-child:after {
+li[data-type='operative-clause'] > p::after {
 	content: ';';
 }
 
@@ -177,7 +62,7 @@ ol[data-type='operative-section'] > li[data-type='operative-clause']:last-child 
 ol[data-type='sub-clause-group'] {
 	counter-reset: sub-clause-counter;
 	list-style: none;
-	padding-left: 1.5rem; /* Indent deeper */
+	padding-left: 2rem; /* Indent deeper */
 	margin-top: 0.5rem;
 }
 

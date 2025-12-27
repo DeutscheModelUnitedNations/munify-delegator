@@ -2813,6 +2813,7 @@ type Paper {
   conference: Conference!
   createdAt: DateTime!
   delegation: Delegation!
+  firstSubmittedAt: DateTime
   id: ID!
   status: PaperStatus!
   type: PaperType!
@@ -2826,6 +2827,7 @@ input PaperCreateInput {
   conferenceId: String!
   createdAt: DateTime
   delegationId: String!
+  firstSubmittedAt: DateTime
   id: String
   status: PaperStatus
   type: PaperType!
@@ -2869,6 +2871,7 @@ input PaperOrderByWithRelationInput {
   createdAt: SortOrder
   delegation: DelegationOrderByWithRelationInput
   delegationId: SortOrder
+  firstSubmittedAt: SortOrder
   id: SortOrder
   status: SortOrder
   type: SortOrder
@@ -2986,6 +2989,7 @@ enum PaperScalarFieldEnum {
   conferenceId
   createdAt
   delegationId
+  firstSubmittedAt
   id
   status
   type
@@ -3016,6 +3020,7 @@ input PaperUpdateInput {
   conferenceId: StringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   delegationId: StringFieldUpdateOperationsInput
+  firstSubmittedAt: NullableDateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   status: EnumPaperStatusFieldUpdateOperationsInput
   type: EnumPaperTypeFieldUpdateOperationsInput
@@ -3025,6 +3030,7 @@ input PaperUpdateInput {
 
 input PaperUpdateManyMutationInput {
   createdAt: DateTimeFieldUpdateOperationsInput
+  firstSubmittedAt: NullableDateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   status: EnumPaperStatusFieldUpdateOperationsInput
   type: EnumPaperTypeFieldUpdateOperationsInput
@@ -3186,6 +3192,7 @@ input PaperWhereInput {
   createdAt: DateTimeFilter
   delegation: DelegationWhereInput
   delegationId: StringFilter
+  firstSubmittedAt: DateTimeNullableFilter
   id: StringFilter
   status: EnumPaperStatusFilter
   type: EnumPaperTypeFilter
@@ -3206,6 +3213,7 @@ input PaperWhereUniqueInput {
   createdAt: DateTimeFilter
   delegation: DelegationWhereInput
   delegationId: StringFilter
+  firstSubmittedAt: DateTimeNullableFilter
   id: String
   status: EnumPaperStatusFilter
   type: EnumPaperTypeFilter

@@ -32,6 +32,7 @@ export const _houdini_load = graphql(`
 			}
 			versions {
 				id
+				version
 				content
 				contentHash
 				createdAt
@@ -47,6 +48,7 @@ export const _houdini_load = graphql(`
 					}
 				}
 			}
+			firstSubmittedAt
 			createdAt
 			updatedAt
 		}

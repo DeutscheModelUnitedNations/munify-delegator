@@ -275,6 +275,8 @@ model Paper {
   agendaItemId String?
   versions     PaperVersion[]
 
+  firstSubmittedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }

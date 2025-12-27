@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PaperType$options } from '$houdini';
+	import { getPaperTypeIcon } from '$lib/services/enumIcons';
 	import { translatePaperType } from '$lib/services/enumTranslations';
 	import Common from './Common.svelte';
 
@@ -21,18 +22,7 @@
 		}
 	});
 
-	let icon = $derived.by(() => {
-		switch (type) {
-			case 'POSITION_PAPER':
-				return 'fa-file';
-			case 'WORKING_PAPER':
-				return 'fa-scroll';
-			case 'INTRODUCTION_PAPER':
-				return 'fa-megaphone';
-			default:
-				return 'fa-file-alt';
-		}
-	});
+	let icon = $derived(getPaperTypeIcon(type));
 </script>
 
 <Common {icon} {vertical} text={translatePaperType(type)} classes={color} />

@@ -14,7 +14,8 @@ import {
 	PaperTypeFieldObject,
 	PaperStatusFieldObject,
 	PaperConferenceFieldObject,
-	updateOnePaperMutationObject
+	updateOnePaperMutationObject,
+	PaperFirstSubmittedAtFieldObject
 } from '$db/generated/graphql/Paper';
 import { db } from '$db/db';
 import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
@@ -29,6 +30,7 @@ builder.prismaObject('Paper', {
 		delegation: t.relation('delegation', PaperDelegationFieldObject),
 		agendaItem: t.relation('agendaItem', PaperAgendaItemFieldObject),
 		versions: t.relation('versions', PaperVersionsFieldObject),
+		firstSubmittedAt: t.field(PaperFirstSubmittedAtFieldObject),
 		createdAt: t.field(PaperCreatedAtFieldObject),
 		updatedAt: t.field(PaperUpdatedAtFieldObject)
 	})
@@ -92,6 +94,7 @@ builder.mutationFields((t) => {
 				const paperDataArgs = {
 					...args.data,
 					status: args.data.status ?? undefined,
+					firstSubmittedAt: args.data.status === 'SUBMITTED' ? new Date() : undefined,
 					content: undefined
 				};
 
