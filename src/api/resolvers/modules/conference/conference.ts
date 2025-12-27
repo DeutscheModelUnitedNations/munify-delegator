@@ -321,6 +321,23 @@ builder.prismaObject('Conference', {
 
 				return res;
 			}
+		}),
+		nextDocumentNumber: t.field({
+			type: 'Int',
+			resolve: async (root, args, ctx) => {
+				const nextDocumentNumberQuery = await db.conferenceParticipantStatus.aggregate({
+					_max: {
+						assigendDocumentNumber: true
+					},
+					where: {
+						conferenceId: root.id
+					}
+				});
+
+				return nextDocumentNumberQuery._max.assigendDocumentNumber
+					? nextDocumentNumberQuery._max.assigendDocumentNumber + 1
+					: 1;
+			}
 		})
 	})
 });
