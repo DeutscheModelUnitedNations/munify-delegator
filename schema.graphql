@@ -1352,7 +1352,6 @@ input DelegationConferenceIdEntryCodeCompoundUniqueInput {
 }
 
 input DelegationCreateInput {
-  Paper: PaperCreateNestedManyWithoutDelegationInput
   applied: Boolean
   appliedForRoles: RoleApplicationCreateNestedManyWithoutDelegationInput
   assignedNationAlpha3Code: String
@@ -1364,6 +1363,7 @@ input DelegationCreateInput {
   id: String
   members: DelegationMemberCreateNestedManyWithoutDelegationInput
   motivation: String
+  papers: PaperCreateNestedManyWithoutDelegationInput
   school: String
   updatedAt: DateTime
 }
@@ -1569,7 +1569,6 @@ input DelegationOrderByRelationAggregateInput {
 }
 
 input DelegationOrderByWithRelationInput {
-  Paper: PaperOrderByRelationAggregateInput
   applied: SortOrder
   appliedForRoles: RoleApplicationOrderByRelationAggregateInput
   assignedNation: NationOrderByWithRelationInput
@@ -1584,6 +1583,7 @@ input DelegationOrderByWithRelationInput {
   id: SortOrder
   members: DelegationMemberOrderByRelationAggregateInput
   motivation: SortOrder
+  papers: PaperOrderByRelationAggregateInput
   school: SortOrder
   updatedAt: SortOrder
 }
@@ -1621,7 +1621,6 @@ input DelegationScalarRelationFilter {
 }
 
 input DelegationUpdateInput {
-  Paper: PaperUpdateManyWithoutDelegationNestedInput
   applied: BoolFieldUpdateOperationsInput
   appliedForRoles: RoleApplicationUpdateManyWithoutDelegationNestedInput
   assignedNationAlpha3Code: NullableStringFieldUpdateOperationsInput
@@ -1633,6 +1632,7 @@ input DelegationUpdateInput {
   id: StringFieldUpdateOperationsInput
   members: DelegationMemberUpdateManyWithoutDelegationNestedInput
   motivation: NullableStringFieldUpdateOperationsInput
+  papers: PaperUpdateManyWithoutDelegationNestedInput
   school: NullableStringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
@@ -1670,7 +1670,6 @@ input DelegationWhereInput {
   AND: [DelegationWhereInput!]
   NOT: [DelegationWhereInput!]
   OR: [DelegationWhereInput!]
-  Paper: PaperListRelationFilter
   applied: BoolFilter
   appliedForRoles: RoleApplicationListRelationFilter
   assignedNation: NationWhereInput
@@ -1685,6 +1684,7 @@ input DelegationWhereInput {
   id: StringFilter
   members: DelegationMemberListRelationFilter
   motivation: StringNullableFilter
+  papers: PaperListRelationFilter
   school: StringNullableFilter
   updatedAt: DateTimeFilter
 }
@@ -1693,7 +1693,6 @@ input DelegationWhereUniqueInput {
   AND: [DelegationWhereInput!]
   NOT: [DelegationWhereInput!]
   OR: [DelegationWhereInput!]
-  Paper: PaperListRelationFilter
   applied: BoolFilter
   appliedForRoles: RoleApplicationListRelationFilter
   assignedNation: NationWhereInput
@@ -1711,6 +1710,7 @@ input DelegationWhereUniqueInput {
   id: String
   members: DelegationMemberListRelationFilter
   motivation: StringNullableFilter
+  papers: PaperListRelationFilter
   school: StringNullableFilter
   updatedAt: DateTimeFilter
 }

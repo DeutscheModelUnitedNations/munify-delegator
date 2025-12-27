@@ -17,9 +17,9 @@ builder.prismaObject('PaperVersion', {
 		status: t.field(PaperVersionStatusFieldObject),
 		content: t.field(PaperVersionContentFieldObject),
 		contentHash: t.string({
-			resolve: (root) => {
+			resolve: async (root) => {
 				if (!root.content) return '';
-				return hashEditorContent(root.content as string);
+				return await hashEditorContent(root.content as string);
 			}
 		}),
 		paper: t.relation('paper'),

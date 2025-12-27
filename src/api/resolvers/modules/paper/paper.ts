@@ -18,6 +18,8 @@ import {
 } from '$db/generated/graphql/Paper';
 import { db } from '$db/db';
 import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
+import { GraphQLError } from 'graphql';
+import { m } from '$lib/paraglide/messages';
 
 builder.prismaObject('Paper', {
 	fields: (t) => ({
@@ -98,6 +100,16 @@ builder.mutationFields((t) => {
 				};
 
 				return await db.$transaction(async (tx) => {
+					const conference = await tx.conference.findUniqueOrThrow({
+						where: {
+							id: args.data.conferenceId
+						}
+					});
+
+					if (conference.isOpenPaperSubmission) {
+						throw new GraphQLError(m.paperSubmissionClosed());
+					}
+
 					const paper = await tx.paper.create({
 						data: paperDataArgs
 					});
@@ -143,19 +155,24 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx, info) => {
 				ctx.permissions.getLoggedInUserOrThrow();
 
-				const paperDBEntry = await db.paper.findUniqueOrThrow({
-					where: {
-						id: args.where.paperId
-					},
-					include: {
-						versions: true
-					}
-				});
-
-				const isFirstSubmission =
-					paperDBEntry.firstSubmittedAt === null && args.data.status !== 'DRAFT';
-
 				return await db.$transaction(async (tx) => {
+					const paperDBEntry = await tx.paper.findUniqueOrThrow({
+						where: {
+							id: args.where.paperId
+						},
+						include: {
+							versions: true,
+							conference: true
+						}
+					});
+
+					if (paperDBEntry.conference.isOpenPaperSubmission) {
+						throw new GraphQLError(m.paperSubmissionClosed());
+					}
+
+					const isFirstSubmission =
+						paperDBEntry.firstSubmittedAt === null && args.data.status !== 'DRAFT';
+
 					const paper = await tx.paper.update({
 						where: {
 							id: args.where.paperId
