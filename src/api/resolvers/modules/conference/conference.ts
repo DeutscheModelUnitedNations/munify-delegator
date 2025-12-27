@@ -596,6 +596,10 @@ builder.mutationFields((t) => {
 						endConference: args.data.endConference ?? undefined,
 						unlockPayments:
 							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
+						isOpenPaperSubmission:
+							args.data.isOpenPaperSubmission === null
+								? undefined
+								: args.data.isOpenPaperSubmission,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
 						postalApartment: args.data.postalApartment ?? null,
 						contractContent: contractContentURL,

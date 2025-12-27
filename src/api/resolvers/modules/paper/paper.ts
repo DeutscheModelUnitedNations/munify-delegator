@@ -10,7 +10,6 @@ import {
 	PaperDelegationFieldObject,
 	PaperIdFieldObject,
 	PaperUpdatedAtFieldObject,
-	PaperVersionsFieldObject,
 	PaperTypeFieldObject,
 	PaperStatusFieldObject,
 	PaperConferenceFieldObject,
@@ -29,7 +28,7 @@ builder.prismaObject('Paper', {
 		conference: t.relation('conference', PaperConferenceFieldObject),
 		delegation: t.relation('delegation', PaperDelegationFieldObject),
 		agendaItem: t.relation('agendaItem', PaperAgendaItemFieldObject),
-		versions: t.relation('versions', PaperVersionsFieldObject),
+		versions: t.relation('versions'),
 		firstSubmittedAt: t.field(PaperFirstSubmittedAtFieldObject),
 		createdAt: t.field(PaperCreatedAtFieldObject),
 		updatedAt: t.field(PaperUpdatedAtFieldObject)

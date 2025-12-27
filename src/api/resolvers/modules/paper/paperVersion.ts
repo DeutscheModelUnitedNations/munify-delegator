@@ -22,8 +22,8 @@ builder.prismaObject('PaperVersion', {
 				return hashEditorContent(root.content as string);
 			}
 		}),
-		paper: t.relation('paper', PaperVersionPaperFieldObject),
-		reviews: t.relation('reviews', PaperVersionReviewsFieldObject),
+		paper: t.relation('paper'),
+		reviews: t.relation('reviews'),
 		createdAt: t.field(PaperVersionCreatedAtFieldObject)
 	})
 });

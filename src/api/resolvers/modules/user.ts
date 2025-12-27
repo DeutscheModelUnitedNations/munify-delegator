@@ -56,8 +56,16 @@ export const GQLUser = builder.prismaObject('User', {
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
 		globalNotes: t.field(UserGlobalNotesFieldObject),
-		papers: t.relation('papers', UserPapersFieldObject),
-		paperReviews: t.relation('paperReviews', UserPaperReviewsFieldObject),
+		papers: t.relation('papers', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').Paper
+			})
+		}),
+		paperReviews: t.relation('paperReviews', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').PaperReview
+			})
+		}),
 		delegationMemberships: t.relation('delegationMemberships', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
