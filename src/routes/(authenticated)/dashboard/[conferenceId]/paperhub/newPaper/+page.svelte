@@ -58,7 +58,7 @@
 	let { form: formData } = $derived(form);
 
 	const typeOptions: { value: PaperType$options; label: string }[] = $derived.by(() => {
-		if (!!delegation?.assignedNonStateActor) {
+		if (delegation?.assignedNonStateActor) {
 			return [
 				{ value: 'INTRODUCTION_PAPER', label: m.paperTypeIntroductionPaper() },
 				{ value: 'POSITION_PAPER', label: m.paperTypePositionPaper() }
@@ -72,7 +72,7 @@
 	});
 
 	const agendaItems: { value: string; label: string }[] = $derived.by(() => {
-		if (!!delegation?.assignedNonStateActor) {
+		if (delegation?.assignedNonStateActor) {
 			return conferenceAgendaItems
 				.map((item: NonNullable<typeof conferenceAgendaItems>[number]) => ({
 					value: item.id,
