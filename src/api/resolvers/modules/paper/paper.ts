@@ -106,7 +106,7 @@ builder.mutationFields((t) => {
 						}
 					});
 
-					if (conference.isOpenPaperSubmission) {
+					if (!conference.isOpenPaperSubmission) {
 						throw new GraphQLError(m.paperSubmissionClosed());
 					}
 
@@ -166,7 +166,7 @@ builder.mutationFields((t) => {
 						}
 					});
 
-					if (paperDBEntry.conference.isOpenPaperSubmission) {
+					if (!paperDBEntry.conference.isOpenPaperSubmission) {
 						throw new GraphQLError(m.paperSubmissionClosed());
 					}
 
