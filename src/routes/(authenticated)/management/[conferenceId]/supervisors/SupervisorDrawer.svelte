@@ -6,6 +6,7 @@
 	import { error } from '@sveltejs/kit';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import formatNames from '$lib/services/formatNames';
+	import StatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -84,6 +85,13 @@
 			{m.supervisorDoesNotPlanOwnAttendance()}
 		</div>
 	{/if}
+		<StatusWidgetBoolean
+				title={m.attendance()}
+				faIcon="fa-calendar-check"
+				status={$supervisorQuery?.data?.findUniqueConferenceSupervisor?.plansOwnAttendenceAtConference ?? false}
+				changeStatus={async (newStatus: boolean) =>
+					changeAdministrativeStatus({ didAttend: newStatus })}
+			/>
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{m.delegations()}</h3>
 		<div class="overflow-x-auto">
