@@ -10,7 +10,7 @@ import {
 } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import toast from 'svelte-french-toast';
-import fontkit from '@pdf-lib/fontkit'
+import fontkit from '@pdf-lib/fontkit';
 
 export interface ParticipantData {
 	id: string;
@@ -176,9 +176,13 @@ abstract class PDFPageGenerator {
 		this.courier = await this.pdfDoc.embedFont(StandardFonts.Courier);
 		//Load custom font
 
-		this.pdfDoc.registerFontkit(fontkit)
-		const custfontBytes = await fetch('/fonts/SpaceMono-Regular.ttf').then((res) => res.arrayBuffer());
-		const custfontBoldBytes = await fetch('/fonts/SpaceMono-Bold.ttf').then((res) => res.arrayBuffer());
+		this.pdfDoc.registerFontkit(fontkit);
+		const custfontBytes = await fetch('/fonts/SpaceMono-Regular.ttf').then((res) =>
+			res.arrayBuffer()
+		);
+		const custfontBoldBytes = await fetch('/fonts/SpaceMono-Bold.ttf').then((res) =>
+			res.arrayBuffer()
+		);
 
 		this.custfont = await this.pdfDoc.embedFont(custfontBytes);
 		this.custfontBold = await this.pdfDoc.embedFont(custfontBoldBytes);
