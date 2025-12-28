@@ -21,6 +21,7 @@ export const myConferenceparticipationQuery = graphql(`
 			info
 			linkToPreparationGuide
 			linkToPaperInbox
+			isOpenPaperSubmission
 			state
 			startConference
 			startAssignment

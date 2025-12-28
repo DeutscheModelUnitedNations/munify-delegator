@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "PaperStatus" AS ENUM ('SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED');
+
+-- AlterTable
+ALTER TABLE "Paper" ADD COLUMN     "public" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "status" "PaperStatus" NOT NULL DEFAULT 'SUBMITTED';

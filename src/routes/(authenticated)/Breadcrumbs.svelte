@@ -200,6 +200,18 @@
 		summary: {
 			icon: 'file-chart-column',
 			translation: m.summary()
+		},
+		paperhub: {
+			icon: 'files',
+			translation: m.paperHub()
+		},
+		paperId: {
+			icon: 'file-magnifying-glass',
+			translation: m.paper()
+		},
+		newPaper: {
+			icon: 'file-circle-plus',
+			translation: m.newPaper()
 		}
 	};
 
@@ -256,7 +268,7 @@ import path via the parameter! -->
 		{@const breadcrumb = getBreadcrumb(pathSegment)}
 		<a class="btn btn-ghost btn-sm !no-underline" href={pathSegment.href}>
 			<i class="fa-duotone fa-{breadcrumb.icon}"></i>
-			<p class="ml-2">
+			<p class="ml-1">
 				{#if breadcrumb.delayedLabel}
 					{#await breadcrumb.delayedLabel}
 						<span>

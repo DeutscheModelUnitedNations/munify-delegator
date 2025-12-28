@@ -415,13 +415,6 @@ class CertificateGenerator extends PDFPageGenerator {
 			color: rgb(0, 0, 0)
 		});
 
-		this.page.drawText("Testö Ğ, klein ğ Akın Yağmur", {
-			x: 10,
-			y: 10,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
-
 		const origin = new URL(window.location.href).origin;
 
 		const barcodeData = `${origin}/vc/${this.data.jwt}`;

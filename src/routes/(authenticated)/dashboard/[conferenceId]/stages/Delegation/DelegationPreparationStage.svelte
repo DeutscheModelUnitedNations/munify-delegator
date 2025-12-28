@@ -84,6 +84,16 @@
 			btnExternal
 		/>
 	{/if}
+	{#if conference.isOpenPaperSubmission && user}
+		<TaskAlertCard
+			faIcon="fa-files"
+			title={m.paperHub()}
+			description={m.paperHubDescription()}
+			btnText={m.paperHubBtn()}
+			btnLink="/dashboard/{conference.id}/paperhub"
+			severity="info"
+		/>
+	{/if}
 	{#if conference.linkToPaperInbox && user}
 		<TaskAlertCard
 			faIcon="fa-file-circle-plus"

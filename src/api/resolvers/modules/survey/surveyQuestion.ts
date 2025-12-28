@@ -8,7 +8,7 @@ import {
 	SurveyQuestionTitleFieldObject
 } from '$db/generated/graphql/SurveyQuestion';
 import { SurveyQuestionDraftFieldObject } from '$db/generated/graphql/SurveyQuestion/object.base';
-import { builder } from '../builder';
+import { builder } from '../../builder';
 
 builder.prismaObject('SurveyQuestion', {
 	fields: (t) => ({

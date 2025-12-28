@@ -10,6 +10,7 @@ export const conferenceSettingsFormSchema = z.object({
 	info: z.string().nullish(),
 	linkToPreparationGuide: z.string().nullish(),
 	linkToPaperInbox: z.string().nullish(),
+	isOpenPaperSubmission: z.boolean().default(false),
 	longTitle: z
 		.string()
 		.min(5, {
