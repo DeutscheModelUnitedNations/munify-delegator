@@ -8,7 +8,7 @@
 		type UpdateConferenceParticipantStatusInput
 	} from '$houdini';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import StatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
+	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';

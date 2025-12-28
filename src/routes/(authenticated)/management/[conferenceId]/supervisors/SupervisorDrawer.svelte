@@ -2,11 +2,13 @@
 	import { m, singleParticipants } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
-	import type { SupervisorDrawerQueryVariables } from './$houdini';
+	import {
+		cache,
+	} from '$houdini';
 	import { error } from '@sveltejs/kit';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import formatNames from '$lib/services/formatNames';
-	import StatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
+	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -60,6 +62,31 @@
 	$effect(() => {
 		supervisorQuery.fetch({ variables: { supervisorId } });
 	});
+
+
+	const mutationChangeSupervisorStatus = graphql(`
+	mutation changeSupervisorStatusMutation(
+  $id: String!
+  $plansOwnAttendence: Boolean!
+) {
+  updateOneConferenceSupervisor(
+    where: {id: $id}
+    data: {plansOwnAttendenceAtConference: $plansOwnAttendence}
+  ) {
+    id
+    plansOwnAttendenceAtConference
+  }
+}
+`)
+
+	const changeAdministrativeStatus = async (plansOwnAttendence: boolean) => {
+		await mutationChangeSupervisorStatus.mutate({
+			id: $supervisorQuery?.data?.findUniqueConferenceSupervisor?.id,
+			plansOwnAttendence: plansOwnAttendence
+		});
+		cache.markStale();
+		//userQuery.fetch();
+	};
 </script>
 
 <Drawer
@@ -88,9 +115,12 @@
 		<StatusWidgetBoolean
 				title={m.attendance()}
 				faIcon="fa-calendar-check"
+				falseicon="fa-cloud"
+				trueicon="fa-location-check"
+				falsecolor="btn-info"
 				status={$supervisorQuery?.data?.findUniqueConferenceSupervisor?.plansOwnAttendenceAtConference ?? false}
 				changeStatus={async (newStatus: boolean) =>
-					changeAdministrativeStatus({ didAttend: newStatus })}
+					changeAdministrativeStatus(newStatus)}
 			/>
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{m.delegations()}</h3>
