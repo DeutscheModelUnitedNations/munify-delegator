@@ -1,5 +1,6 @@
 <script lang="ts" generics="Status">
 	import hotkeys from 'hotkeys-js';
+	import { onDestroy } from 'svelte';
 
 	interface Props {
 		title: string;
@@ -31,6 +32,14 @@
 					event.preventDefault();
 					btnClick(s.value);
 				});
+			}
+		}
+	});
+
+	onDestroy(() => {
+		for (const s of status) {
+			if (s.hotkey) {
+				hotkeys.unbind(s.hotkey ?? '');
 			}
 		}
 	});

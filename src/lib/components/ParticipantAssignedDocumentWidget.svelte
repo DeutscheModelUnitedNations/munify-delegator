@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import hotkeys from 'hotkeys-js';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import toast from 'svelte-french-toast';
 
 	interface Props {
@@ -36,6 +36,12 @@
 					onSaveFn();
 				}
 			});
+		}
+	});
+
+	onDestroy(() => {
+		if (!disabledShortcut) {
+			hotkeys.unbind('n');
 		}
 	});
 </script>

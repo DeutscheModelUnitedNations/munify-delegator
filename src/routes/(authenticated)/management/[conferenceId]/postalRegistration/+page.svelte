@@ -208,6 +208,11 @@
 		});
 	});
 
+	onDestroy(() => {
+		hotkeys.unbind('esc');
+		hotkeys.unbind('enter');
+	});
+
 	$effect(() => {
 		if ($userData.data?.findUniqueUser && manualInputElem) {
 			manualInputElem.blur();
@@ -301,7 +306,7 @@
 						<i class="fa-duotone fa-up-right-from-square"></i>
 					</a>
 				</div>
-				<div class="grid gird-cols-1 grid-rows-5 xl:grid-cols-2 xl:grid-rows-3 gap-4 grid-flow-col">
+				<div class="grid grid-cols-1 grid-rows-5 xl:grid-cols-2 xl:grid-rows-3 gap-4 grid-flow-col">
 					<ParticipantAssignedDocumentWidget
 						assignedDocumentNumber={$userData?.data?.findUniqueConferenceParticipantStatus
 							?.assignedDocumentNumber}
