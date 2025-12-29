@@ -2,11 +2,6 @@
 	import { m, singleParticipants } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
-	import {
-		cache,
-	} from '$houdini';
-	import { error } from '@sveltejs/kit';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import formatNames from '$lib/services/formatNames';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 
@@ -84,8 +79,6 @@
 			id: $supervisorQuery?.data?.findUniqueConferenceSupervisor?.id,
 			plansOwnAttendence: plansOwnAttendence
 		});
-		cache.markStale();
-		//userQuery.fetch();
 	};
 </script>
 
