@@ -15,15 +15,6 @@
 	const btnClick = async (status: MediaConsentStatus$options) => {
 		await changeStatus(status);
 	};
-
-	$effect(() => {
-		if (doneHotkey) {
-			hotkeys(doneHotkey ?? '', (event, handler) => {
-				event.preventDefault();
-				btnClick('ALLOWED_ALL');
-			});
-		}
-	});
 </script>
 
 <StatusWidget

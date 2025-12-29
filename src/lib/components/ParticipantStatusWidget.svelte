@@ -16,15 +16,6 @@
 	const btnClick = async (status: AdministrativeStatus) => {
 		await changeStatus(status);
 	};
-
-	$effect(() => {
-		if (doneHotkey) {
-			hotkeys(doneHotkey ?? '', (event, handler) => {
-				event.preventDefault();
-				btnClick('DONE');
-			});
-		}
-	});
 </script>
 
 <StatusWidget
