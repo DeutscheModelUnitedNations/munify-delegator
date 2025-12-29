@@ -9,7 +9,7 @@
 		status: {
 			value: Status;
 			faIcon: string;
-			color: 'success' | 'warning' | 'error' | 'info';
+			color: 'btn-success' | 'btn-warning' | 'btn-error' | 'btn-info';
 			hotkey?: string;
 		}[];
 		changeStatus: (status: Status) => Promise<void>;
@@ -53,7 +53,7 @@
 	<div class="join w-full">
 		{#each status as { value, faIcon, color, hotkey }}
 			<button
-				class="btn {activeStatus === value && `btn-${color}`} join-item flex-1"
+				class="btn {activeStatus === value && `${color}`} join-item flex-1"
 				aria-label={`${value}`}
 				onclick={() => btnClick(value)}
 			>

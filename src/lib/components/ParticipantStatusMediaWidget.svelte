@@ -25,22 +25,22 @@
 		{
 			value: 'NOT_SET',
 			faIcon: 'fa-clipboard-question',
-			color: 'warning'
+			color: 'btn-warning'
 		},
 		{
 			value: 'NOT_ALLOWED',
 			faIcon: 'fa-camera-slash',
-			color: 'error'
+			color: 'btn-error'
 		},
 		{
 			value: 'PARTIALLY_ALLOWED',
 			faIcon: 'fa-magnifying-glass',
-			color: 'warning'
+			color: 'btn-warning'
 		},
 		{
 			value: 'ALLOWED_ALL',
 			faIcon: 'fa-camera',
-			color: 'success',
+			color: 'btn-success',
 			hotkey: doneHotkey
 		}
 	]}
