@@ -145,6 +145,10 @@ builder.mutationFields((t) => {
 							assignedDocumentNumber: t.field({
 								type: 'Int',
 								required: false
+							}),
+							assignNextDocumentNumber: t.field({
+								type: 'Boolean',
+								required: false
 							})
 						})
 					})
@@ -201,9 +205,9 @@ builder.mutationFields((t) => {
 						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
-						assigendDocumentNumber: nextDocumentNumber._max.assigendDocumentNumber
-							? nextDocumentNumber._max.assigendDocumentNumber + 1
-							: 1
+						assigendDocumentNumber: args.data.assignNextDocumentNumber
+							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
+							: args.data.assignedDocumentNumber || undefined
 					},
 					update: {
 						termsAndConditions: args.data.termsAndConditions || undefined,
@@ -212,7 +216,9 @@ builder.mutationFields((t) => {
 						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
-						assigendDocumentNumber: args.data.assignedDocumentNumber || undefined
+						assigendDocumentNumber: args.data.assignNextDocumentNumber
+							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
+							: args.data.assignedDocumentNumber || undefined
 					}
 				});
 			}

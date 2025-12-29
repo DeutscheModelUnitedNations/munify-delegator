@@ -4583,6 +4583,7 @@ type UpdateAllConferenceParticipantStatusResponse {
 }
 
 input UpdateConferenceParticipantStatusInput {
+  assignNextDocumentNumber: Boolean
   assignedDocumentNumber: Int
   didAttend: Boolean
   guardianConsent: AdministrativeStatus

@@ -600,6 +600,16 @@
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ paymentStatus: newStatus })}
 			/>
+			<ParticipantAssignedDocumentWidget
+				assignedDocumentNumber={$userQuery.data?.findUniqueConferenceParticipantStatus
+					?.assignedDocumentNumber}
+				onSave={async (number?: number) =>
+					await changeAdministrativeStatus({
+						assignedDocumentNumber: number,
+						assignNextDocumentNumber: !number
+					})}
+				disabledShortcut
+			/>
 			<ParticipantStatusWidget
 				title={m.userAgreement()}
 				faIcon="fa-file-signature"
@@ -631,12 +641,6 @@
 					'NOT_SET'}
 				changeStatus={async (newStatus: MediaConsentStatus$options) =>
 					await changeMediaConsentStatus(newStatus)}
-			/>
-			<ParticipantAssignedDocumentWidget
-				bind:assignedDocumentNumber
-				nextDocumentNumber={$userQuery.data?.findUniqueConference?.nextDocumentNumber}
-				onSave={async (number: number) =>
-					await changeAdministrativeStatus({ assignedDocumentNumber: number })}
 			/>
 			<StatusWidgetBoolean
 				title={m.attendance()}
