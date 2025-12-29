@@ -26,13 +26,16 @@
 
 	let { data }: { data: PageData } = $props();
 
+	let availableVideoDevices: MediaDeviceInfo[] = $state([]);
+	let selectedVideoDeviceIndex = $state(0);
+
 	let pageQuery = $derived(data.PostalRegistrationPageQuery);
 
 	let videoElem: HTMLVideoElement;
 	let canvasElem: HTMLCanvasElement;
 	let streaming = $state(false);
 
-	let params = queryParameters({ userId: true });
+	let params = queryParameters({ queryUserId: true });
 
 	let useCamera = persisted('useCameraForPostalRegistration', false);
 
@@ -51,12 +54,55 @@
 			return;
 		}
 		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+			if (streaming) {
+				stopVideo();
+			}
+			const devices = await navigator.mediaDevices.enumerateDevices();
+			availableVideoDevices = devices.filter((device) => device.kind === 'videoinput');
+			if (selectedVideoDeviceIndex >= availableVideoDevices.length) {
+				selectedVideoDeviceIndex = 0;
+			}
+			const constraints: MediaStreamConstraints = { video: {} };
+			if (availableVideoDevices.length > 0) {
+				(constraints.video as MediaTrackConstraints).deviceId = {
+					ideal: availableVideoDevices[selectedVideoDeviceIndex].deviceId
+				};
+			}
+			const stream = await navigator.mediaDevices.getUserMedia(constraints);
 			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;
 		} catch (error) {
 			console.error('Error accessing camera:', error);
+			let errorMessage = 'Failed to access camera.';
+			if (error instanceof DOMException) {
+				errorMessage = `Error accessing camera: ${error.name} - ${error.message}`;
+				// Differentiate common user-facing errors
+				if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+					errorMessage = 'Camera access denied. Please grant permission in your browser settings.';
+				} else if (error.name === 'NotFoundError') {
+					errorMessage = 'No camera found. Please ensure a camera is connected.';
+				} else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+					errorMessage = 'Camera is already in use or unavailable.';
+				} else if (error.name === 'OverconstrainedError') {
+					errorMessage =
+						'Camera constraints could not be satisfied. Trying a different camera might help.';
+				} else if (error.name === 'AbortError') {
+					errorMessage =
+						'Camera access was aborted. This might happen if the permission dialog was closed.';
+				}
+			} else if (error instanceof Error) {
+				errorMessage = `Error accessing camera: ${error.message}`;
+			}
+
+			toast.error(errorMessage);
+		}
+	}
+
+	function switchCamera() {
+		if (availableVideoDevices.length > 1) {
+			selectedVideoDeviceIndex = (selectedVideoDeviceIndex + 1) % availableVideoDevices.length;
+			startVideo();
 		}
 	}
 
@@ -105,11 +151,11 @@
 	}
 
 	$effect(() => {
-		if ($useCamera && !$params.queryUserId) {
-			startVideo();
+		let intervalId: ReturnType<typeof setInterval> | undefined;
+		if (streaming && !$params.queryUserId) {
 			// Automatically scan every 500ms
-			setInterval(scanForCode, 500);
-		} else {
+			intervalId = setInterval(scanForCode, 500);
+		} else if ($params.queryUserId) {
 			userData.fetch({
 				variables: {
 					userId: $params.queryUserId,
@@ -117,6 +163,11 @@
 				}
 			});
 		}
+		return () => {
+			if (intervalId) {
+				clearInterval(intervalId);
+			}
+		};
 	});
 
 	onDestroy(() => {
@@ -200,7 +251,7 @@
 							? 'DONE'
 							: undefined,
 						mediaConsentStatus: 'ALLOWED_ALL'
-					}).then(() => {
+					}).finally(() => {
 						hotkeyDebounce = false;
 					});
 				}
@@ -235,6 +286,20 @@
 				/>
 				{m.useCameraForScanning()}</label
 			>
+			{#if $useCamera}
+				<button class="btn btn-primary mt-4" disabled={streaming} onclick={startVideo}>
+					<i class="fa-solid fa-video"></i>
+					{m.startCamera()}
+				</button>
+				<button
+					class="btn btn-secondary mt-2"
+					disabled={availableVideoDevices.length <= 1}
+					onclick={switchCamera}
+				>
+					<i class="fa-solid fa-camera-rotate"></i>
+					{m.switchCamera()}
+				</button>
+			{/if}
 		</FormFieldset>
 	</div>
 
