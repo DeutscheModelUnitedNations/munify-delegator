@@ -58,21 +58,17 @@
 		supervisorQuery.fetch({ variables: { supervisorId } });
 	});
 
-
 	const mutationChangeSupervisorStatus = graphql(`
-	mutation changeSupervisorStatusMutation(
-  $id: String!
-  $plansOwnAttendence: Boolean!
-) {
-  updateOneConferenceSupervisor(
-    where: {id: $id}
-    data: {plansOwnAttendenceAtConference: $plansOwnAttendence}
-  ) {
-    id
-    plansOwnAttendenceAtConference
-  }
-}
-`)
+		mutation changeSupervisorStatusMutation($id: String!, $plansOwnAttendence: Boolean!) {
+			updateOneConferenceSupervisor(
+				where: { id: $id }
+				data: { plansOwnAttendenceAtConference: $plansOwnAttendence }
+			) {
+				id
+				plansOwnAttendenceAtConference
+			}
+		}
+	`);
 
 	const changeAdministrativeStatus = async (plansOwnAttendence: boolean) => {
 		await mutationChangeSupervisorStatus.mutate({
@@ -105,16 +101,16 @@
 			{m.supervisorDoesNotPlanOwnAttendance()}
 		</div>
 	{/if}
-		<StatusWidgetBoolean
-				title={m.attendance()}
-				faIcon="fa-calendar-check"
-				falseicon="fa-cloud"
-				trueicon="fa-location-check"
-				falsecolor="btn-info"
-				status={$supervisorQuery?.data?.findUniqueConferenceSupervisor?.plansOwnAttendenceAtConference ?? false}
-				changeStatus={async (newStatus: boolean) =>
-					changeAdministrativeStatus(newStatus)}
-			/>
+	<StatusWidgetBoolean
+		title={m.attendance()}
+		faIcon="fa-calendar-check"
+		falseicon="fa-cloud"
+		trueicon="fa-location-check"
+		falsecolor="btn-info"
+		status={$supervisorQuery?.data?.findUniqueConferenceSupervisor
+			?.plansOwnAttendenceAtConference ?? false}
+		changeStatus={async (newStatus: boolean) => changeAdministrativeStatus(newStatus)}
+	/>
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{m.delegations()}</h3>
 		<div class="overflow-x-auto">

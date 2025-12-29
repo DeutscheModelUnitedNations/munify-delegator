@@ -12,7 +12,8 @@
 		changeStatus: (status: boolean) => Promise<void>;
 	}
 
-	let { title, faIcon, status, trueicon, falseicon, truecolor, falsecolor, changeStatus }: Props = $props();
+	let { title, faIcon, status, trueicon, falseicon, truecolor, falsecolor, changeStatus }: Props =
+		$props();
 
 	const btnClick = async (status: boolean) => {
 		await changeStatus(status);
