@@ -5,10 +5,9 @@
 	interface Props {
 		assignedDocumentNumber?: number;
 		onSave: (number: number) => Promise<void>;
-		nextDocumentNumber?: number | null;
 	}
 
-	let { assignedDocumentNumber = $bindable(), onSave, nextDocumentNumber }: Props = $props();
+	let { assignedDocumentNumber = $bindable(), onSave }: Props = $props();
 </script>
 
 <div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
@@ -35,10 +34,6 @@
 			class="btn btn-square join-item tooltip"
 			data-tip={m.saveNextDocumentNumber()}
 			onclick={() => {
-				if (!nextDocumentNumber) {
-					toast.error(m.nextDocumentNumberNotAvailable());
-					return;
-				}
 				onSave(nextDocumentNumber);
 			}}
 			aria-label="SaveNext"

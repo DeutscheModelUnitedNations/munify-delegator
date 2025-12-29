@@ -256,6 +256,13 @@
 				{#if $userData.fetching}
 					<div class="skeleton bg-base-300 h-52 w-full"></div>
 				{:else}
+					<ParticipantAssignedDocumentWidget
+						{assignedDocumentNumber}
+						onSave={async (number: number) =>
+							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
+								assignedDocumentNumber: number
+							})}
+					/>
 					<StatusWidget
 						title={m.userAgreement()}
 						faIcon="fa-file-signature"
@@ -296,14 +303,6 @@
 								mediaConsentStatus: newStatus
 							})}
 						doneHotkey="4"
-					/>
-					<ParticipantAssignedDocumentWidget
-						{assignedDocumentNumber}
-						onSave={async (number: number) =>
-							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
-								assignedDocumentNumber: number
-							})}
-						nextDocumentNumber={$pageQuery.data.findUniqueConference?.nextDocumentNumber}
 					/>
 				{/if}
 				<button class="btn btn-error w-full" onclick={() => (queryUserId = '')}>
