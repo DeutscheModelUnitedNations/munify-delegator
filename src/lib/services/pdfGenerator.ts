@@ -9,8 +9,8 @@ import {
 	PDFString
 } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
-import replaceSpecialChars from 'replace-special-characters';
 import toast from 'svelte-french-toast';
+import fontkit from '@pdf-lib/fontkit';
 
 export interface ParticipantData {
 	id: string;
@@ -160,6 +160,8 @@ abstract class PDFPageGenerator {
 	protected helvetica!: PDFFont; // Add font properties
 	protected helveticaBold!: PDFFont; // Add font properties
 	protected courier!: PDFFont; // Add font properties
+	protected custfont!: PDFFont;
+	protected custfontBold!: PDFFont;
 
 	constructor(pdfDoc: PDFDocument, styles = defaultStyles) {
 		this.pdfDoc = pdfDoc;
@@ -172,6 +174,18 @@ abstract class PDFPageGenerator {
 		this.helvetica = await this.pdfDoc.embedFont(StandardFonts.Helvetica);
 		this.helveticaBold = await this.pdfDoc.embedFont(StandardFonts.HelveticaBold);
 		this.courier = await this.pdfDoc.embedFont(StandardFonts.Courier);
+		//Load custom font
+
+		this.pdfDoc.registerFontkit(fontkit);
+		const custfontBytes = await fetch('/fonts/SpaceMono-Regular.ttf').then((res) =>
+			res.arrayBuffer()
+		);
+		const custfontBoldBytes = await fetch('/fonts/SpaceMono-Bold.ttf').then((res) =>
+			res.arrayBuffer()
+		);
+
+		this.custfont = await this.pdfDoc.embedFont(custfontBytes);
+		this.custfontBold = await this.pdfDoc.embedFont(custfontBoldBytes);
 	}
 
 	protected async drawFoldMarks() {
@@ -262,11 +276,11 @@ class ContractGenerator extends PDFPageGenerator {
 
 		// Participant Fields
 		yPosition = height - 320;
-		this.page.drawText(replaceSpecialChars(this.participantData.name), {
+		this.page.drawText(this.participantData.name, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition = height - 380;
@@ -274,7 +288,7 @@ class ContractGenerator extends PDFPageGenerator {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -293,11 +307,11 @@ class GuardianGenerator extends PDFPageGenerator {
 		let yPosition: number;
 
 		yPosition = height - 180;
-		this.page.drawText(replaceSpecialChars(this.participantData.name), {
+		this.page.drawText(this.participantData.name, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition = height - 240;
@@ -305,7 +319,7 @@ class GuardianGenerator extends PDFPageGenerator {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -324,11 +338,11 @@ class MediaGenerator extends PDFPageGenerator {
 		let yPosition: number;
 
 		yPosition = height - 225;
-		this.page.drawText(replaceSpecialChars(this.participantData.name), {
+		this.page.drawText(this.participantData.name, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition -= 42;
@@ -336,15 +350,15 @@ class MediaGenerator extends PDFPageGenerator {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition -= 42;
-		this.page.drawText(replaceSpecialChars(this.participantData.address), {
+		this.page.drawText(this.participantData.address, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: 10,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -393,15 +407,15 @@ class CertificateGenerator extends PDFPageGenerator {
 
 		const { width, height } = this.page.getSize();
 		const yPosition = height - 215;
-		const text = replaceSpecialChars(this.data.fullName);
-		let textWidth = this.courier.widthOfTextAtSize(text, this.styles.fontSize.title);
+		const text = this.data.fullName;
+		let textWidth = this.custfont.widthOfTextAtSize(text, this.styles.fontSize.title);
 		const xPosition = (width - textWidth) / 2;
 
 		this.page.drawText(text, {
 			x: xPosition,
 			y: yPosition,
 			size: this.styles.fontSize.title,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 
@@ -428,13 +442,13 @@ class CertificateGenerator extends PDFPageGenerator {
 		});
 
 		const verifyText = 'Verify Certificate';
-		textWidth = this.courier.widthOfTextAtSize(verifyText, 8);
+		textWidth = this.custfont.widthOfTextAtSize(verifyText, 8);
 		const textX = width - pngDims.width - 10 + (pngDims.width - textWidth) / 2;
 		this.page.drawText(verifyText, {
 			x: textX,
 			y: pngDims.height + 13,
 			size: 8,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 
