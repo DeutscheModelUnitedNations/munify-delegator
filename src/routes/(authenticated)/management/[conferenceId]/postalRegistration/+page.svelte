@@ -226,16 +226,23 @@
 	};
 
 	onMount(() => {
+		if ($params.queryUserId && manualInputElem) {
+			manualInputElem.value = $params.queryUserId;
+		}
+
 		hotkeys('esc', (event) => {
 			if ($params.queryUserId) {
 				$params.queryUserId = '';
+				startVideo();
 			}
 			if (manualInputElem) {
+				manualInputElem.value = '';
+				$params.queryUserId = '';
 				manualInputElem.focus();
 			}
 		});
 
-		hotkeys('enter', (event) => {
+		hotkeys('alt+enter', (event) => {
 			if ($params.queryUserId) {
 				const userDetails = $userData?.data?.findUniqueUser;
 				const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus;
@@ -261,13 +268,7 @@
 
 	onDestroy(() => {
 		hotkeys.unbind('esc');
-		hotkeys.unbind('enter');
-	});
-
-	$effect(() => {
-		if ($userData.data?.findUniqueUser && manualInputElem) {
-			manualInputElem.blur();
-		}
+		hotkeys.unbind('alt+enter');
 	});
 </script>
 
@@ -305,13 +306,30 @@
 
 	{#if !$useCamera}
 		<FormFieldset title={m.userIdInput()}>
-			<input
-				type="text"
-				bind:this={manualInputElem}
-				bind:value={$params.queryUserId}
-				placeholder={m.enterPostalRegistrationCode()}
-				class="input w-full input-lg"
-			/>
+			<div class="join">
+				<input
+					type="text"
+					bind:this={manualInputElem}
+					placeholder={m.enterPostalRegistrationCode()}
+					class="input w-full input-lg join-item"
+					onkeydown={(e) => {
+						if (e.key === 'Enter') {
+							$params.queryUserId = manualInputElem?.value ?? '';
+							manualInputElem?.blur();
+						}
+					}}
+				/>
+				<button
+					class="btn btn-primary btn-lg join-item"
+					aria-label="Search user by ID"
+					onclick={() => {
+						$params.queryUserId = manualInputElem?.value ?? '';
+						manualInputElem?.blur();
+					}}
+				>
+					<i class="fa-solid fa-magnifying-glass"></i>
+				</button>
+			</div>
 		</FormFieldset>
 	{/if}
 
@@ -389,7 +407,7 @@
 							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 								termsAndConditions: newStatus
 							})}
-						doneHotkey="1"
+						doneHotkey="alt+1"
 					/>
 					{#if !ofAgeAtConference($pageQuery.data.findUniqueConference.startConference, userDetails?.birthday)}
 						<StatusWidget
@@ -400,7 +418,7 @@
 								await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 									guardianConsent: newStatus
 								})}
-							doneHotkey="2"
+							doneHotkey="alt+2"
 						/>
 					{:else}
 						<div
@@ -418,7 +436,7 @@
 							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 								mediaConsent: newStatus
 							})}
-						doneHotkey="3"
+						doneHotkey="alt+3"
 					/>
 					<ParticipantStatusMediaWidget
 						title={m.mediaConsentStatus()}
@@ -427,7 +445,7 @@
 							await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails?.id, {
 								mediaConsentStatus: newStatus
 							})}
-						doneHotkey="4"
+						doneHotkey="alt+4"
 					/>
 				</div>
 				<button class="btn btn-error w-full" onclick={() => ($params.queryUserId = '')}>

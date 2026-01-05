@@ -31,7 +31,7 @@
 
 	onMount(() => {
 		if (!disabledShortcut) {
-			hotkeys('n', () => {
+			hotkeys('alt+n', () => {
 				if (editing) {
 					onSaveFn();
 				}
@@ -41,7 +41,7 @@
 
 	onDestroy(() => {
 		if (!disabledShortcut) {
-			hotkeys.unbind('n');
+			hotkeys.unbind('alt+n');
 		}
 	});
 </script>
@@ -91,7 +91,7 @@
 			>
 				<i class="fa-solid fa-arrow-right-to-line"></i>
 				{#if !disabledShortcut}
-					<span class="kbd kbd-xs hidden sm:inline-block">n</span>
+					<span class="kbd kbd-xs hidden sm:inline-block">alt+n</span>
 				{/if}
 			</button>
 		</div>
