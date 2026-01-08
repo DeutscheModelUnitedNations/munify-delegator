@@ -3,7 +3,7 @@ import type { PaperStatus$options } from '$houdini';
 export interface VersionForComparison {
 	id: string;
 	version: number;
-	content: any;
+	content?: any;
 	createdAt: string | Date;
 	status?: PaperStatus$options | null;
 }

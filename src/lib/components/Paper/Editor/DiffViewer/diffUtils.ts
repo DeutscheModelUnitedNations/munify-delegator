@@ -89,3 +89,34 @@ export function areContentsEqual(content1: any, content2: any): boolean {
 	const text2 = extractTextFromTipTapJson(content2);
 	return text1 === text2;
 }
+
+export interface DiffStats {
+	added: number;
+	removed: number;
+}
+
+/**
+ * Compute character change statistics between two TipTap JSON documents
+ * Returns the number of characters added and removed
+ */
+export function computeDiffStats(beforeContent: any, afterContent: any): DiffStats {
+	const dmp = new DiffMatchPatch();
+
+	const beforeText = extractTextFromTipTapJson(beforeContent);
+	const afterText = extractTextFromTipTapJson(afterContent);
+
+	const diffs = dmp.diff_main(beforeText, afterText);
+
+	let added = 0;
+	let removed = 0;
+
+	for (const [operation, text] of diffs) {
+		if (operation === 1) {
+			added += text.length;
+		} else if (operation === -1) {
+			removed += text.length;
+		}
+	}
+
+	return { added, removed };
+}

@@ -10,10 +10,11 @@
 	import InfoChip from './InfoChip.svelte';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
 	import type { PaperStatus$options } from '$houdini';
-	import { VersionCompareModal } from '$lib/components/Paper/Editor/DiffViewer';
+	import { VersionCompareModal, computeDiffStats } from '$lib/components/Paper/Editor/DiffViewer';
 	import type {
 		ComparisonState,
-		VersionForComparison
+		VersionForComparison,
+		DiffStats
 	} from '$lib/components/Paper/Editor/DiffViewer';
 
 	// Status colors for badges
@@ -107,6 +108,23 @@
 		isSelecting: false
 	});
 	let showCompareModal = $state(false);
+
+	// Compute diff stats for each version compared to its previous version
+	let versionStats = $derived.by(() => {
+		if (!paperData?.versions || paperData.versions.length < 2) return new Map<string, DiffStats>();
+
+		const sortedVersions = [...paperData.versions].sort((a, b) => a.version - b.version);
+		const statsMap = new Map<string, DiffStats>();
+
+		for (let i = 1; i < sortedVersions.length; i++) {
+			const prevVersion = sortedVersions[i - 1];
+			const currVersion = sortedVersions[i];
+			const stats = computeDiffStats(prevVersion.content, currVersion.content);
+			statsMap.set(currVersion.id, stats);
+		}
+
+		return statsMap;
+	});
 
 	const handleCompareClick = (version: VersionForComparison) => {
 		if (!comparisonState.isSelecting) {
@@ -345,6 +363,7 @@
 								</div>
 								<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
 									{#if event.type === 'version'}
+										{@const stats = versionStats.get(event.version.id)}
 										<!-- Version submission event -->
 										<div class="flex flex-wrap justify-between items-center gap-2">
 											<div class="flex items-center gap-2">
@@ -352,6 +371,12 @@
 												<span class="font-semibold">
 													{m.versionSubmitted({ version: event.version.version.toString() })}
 												</span>
+												{#if stats}
+													<span class="text-xs font-mono">
+														<span class="text-success">+{stats.added}</span>
+														<span class="text-error">-{stats.removed}</span>
+													</span>
+												{/if}
 											</div>
 											<div class="flex items-center gap-2">
 												{#if event.version.status}
