@@ -17,12 +17,13 @@ export async function sendNewReviewNotification(
 ): Promise<SendEmailResult> {
 	const { recipientEmail, ...templateProps } = params;
 
-	const { html, text } = renderEmail(NewReviewEmail, templateProps);
+	const { html, text } = await renderEmail(NewReviewEmail, templateProps);
 
 	return emailService.sendEmail({
 		to: recipientEmail,
 		subject: `Neues Review für "${params.paperTitle}"`,
 		html,
-		text
+		text,
+		replyTo: params.reviewerEmail
 	});
 }

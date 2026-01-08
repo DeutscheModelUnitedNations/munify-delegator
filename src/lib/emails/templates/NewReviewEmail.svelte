@@ -1,17 +1,27 @@
 <script lang="ts">
-	import { Html, Head, Body, Container, Section, Text, Link, Hr } from 'svelte-email';
+	import { Html, Head, Body, Container, Section, Text, Link, Hr } from 'better-svelte-email';
 
 	interface Props {
 		recipientName: string;
 		paperTitle: string;
 		paperType: string;
 		reviewerName: string;
+		reviewerEmail: string;
+		newStatus: string;
 		conferenceTitle: string;
 		paperUrl: string;
 	}
 
-	let { recipientName, paperTitle, paperType, reviewerName, conferenceTitle, paperUrl }: Props =
-		$props();
+	let {
+		recipientName,
+		paperTitle,
+		paperType,
+		reviewerName,
+		reviewerEmail,
+		newStatus,
+		conferenceTitle,
+		paperUrl
+	}: Props = $props();
 </script>
 
 <Html lang="de">
@@ -38,26 +48,22 @@
 					<strong>"{paperTitle}"</strong>
 					für die Konferenz
 					<strong>{conferenceTitle}</strong>
-					hat ein neues Review von
-					<strong>{reviewerName}</strong>
-					erhalten.
+					hat neues Feedback von {reviewerName}
+					(<Link href={`mailto:${reviewerEmail}`}>{reviewerEmail}</Link>) erhalten.
+				</Text>
+
+				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
+					Neuer Status: <strong>{newStatus}</strong>
 				</Text>
 
 				<Section style="text-align: center; margin: 32px 0;">
 					<Link
 						href={paperUrl}
-						style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block;"
+						style="background-color: #3d7dd2; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block;"
 					>
 						Review ansehen
 					</Link>
 				</Section>
-
-				<Hr style="border-color: #e5e7eb; margin: 24px 0;" />
-
-				<Text style="font-size: 14px; color: #6b7280; line-height: 1.5;">
-					Diese E-Mail wurde automatisch vom MUNIFY Delegator System versendet. Bitte antworte nicht
-					auf diese E-Mail.
-				</Text>
 			</Section>
 		</Container>
 	</Body>

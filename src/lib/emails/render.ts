@@ -1,4 +1,4 @@
-import { render } from 'svelte-email';
+import { Renderer, toPlainText } from 'better-svelte-email';
 import type { Component } from 'svelte';
 
 /**
@@ -8,23 +8,13 @@ import type { Component } from 'svelte';
  * @param props - Props to pass to the component
  * @returns Object containing rendered HTML and plain text versions
  */
-export function renderEmail<Props extends Record<string, unknown>>(
+export async function renderEmail<Props extends Record<string, unknown>>(
 	component: Component<Props>,
 	props: Props
-): { html: string; text: string } {
-	const html = render({ component, props });
-
-	// Generate plain text version by stripping HTML tags
-	const text = html
-		.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-		.replace(/<[^>]+>/g, '')
-		.replace(/&nbsp;/g, ' ')
-		.replace(/&amp;/g, '&')
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&quot;/g, '"')
-		.replace(/\s+/g, ' ')
-		.trim();
+): Promise<{ html: string; text: string }> {
+	const { render } = new Renderer();
+	const html = await render(component, { props });
+	const text = toPlainText(html);
 
 	return { html, text };
 }

@@ -26,6 +26,8 @@ export interface NewReviewEmailProps {
 	paperTitle: string;
 	paperType: string;
 	reviewerName: string;
+	reviewerEmail: string;
+	newStatus: string;
 	conferenceTitle: string;
 	paperUrl: string;
 }
