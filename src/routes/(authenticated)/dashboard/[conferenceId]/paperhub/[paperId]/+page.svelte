@@ -10,6 +10,11 @@
 	import InfoChip from './InfoChip.svelte';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
 	import type { PaperStatus$options } from '$houdini';
+	import { VersionCompareModal } from '$lib/components/Paper/Editor/DiffViewer';
+	import type {
+		ComparisonState,
+		VersionForComparison
+	} from '$lib/components/Paper/Editor/DiffViewer';
 
 	// Status colors for badges
 	const getStatusBadgeClass = (status: PaperStatus$options) => {
@@ -94,6 +99,41 @@
 	let existingReviews = $derived(paperData.versions.flatMap((version) => version.reviews ?? []));
 
 	let unsavedChanges = $state(false);
+
+	// Version comparison state
+	let comparisonState = $state<ComparisonState>({
+		baseVersion: null,
+		compareVersion: null,
+		isSelecting: false
+	});
+	let showCompareModal = $state(false);
+
+	const handleCompareClick = (version: VersionForComparison) => {
+		if (!comparisonState.isSelecting) {
+			// First selection - set as base
+			comparisonState = {
+				baseVersion: version,
+				compareVersion: null,
+				isSelecting: true
+			};
+		} else {
+			// Second selection - set as compare and open modal
+			comparisonState = {
+				...comparisonState,
+				compareVersion: version,
+				isSelecting: false
+			};
+			showCompareModal = true;
+		}
+	};
+
+	const cancelComparison = () => {
+		comparisonState = {
+			baseVersion: null,
+			compareVersion: null,
+			isSelecting: false
+		};
+	};
 
 	$effect(() => {
 		if (paperData && $editorContentStore) {
@@ -313,15 +353,29 @@
 													{m.versionSubmitted({ version: event.version.version.toString() })}
 												</span>
 											</div>
-											{#if event.version.status}
-												<div
-													class="badge {getStatusBadgeClass(event.version.status)} badge-sm gap-1"
-												>
-													<i class="fa-solid {getPaperStatusIcon(event.version.status)} text-xs"
-													></i>
-													{translatePaperStatus(event.version.status)}
-												</div>
-											{/if}
+											<div class="flex items-center gap-2">
+												{#if event.version.status}
+													<div
+														class="badge {getStatusBadgeClass(event.version.status)} badge-sm gap-1"
+													>
+														<i class="fa-solid {getPaperStatusIcon(event.version.status)} text-xs"
+														></i>
+														{translatePaperStatus(event.version.status)}
+													</div>
+												{/if}
+												{#if paperData.versions.length > 1}
+													<button
+														class="btn btn-xs btn-ghost {comparisonState.baseVersion?.id ===
+														event.version.id
+															? 'btn-active'
+															: ''}"
+														onclick={() => handleCompareClick(event.version)}
+														title={m.compareVersion()}
+													>
+														<i class="fa-solid fa-code-compare"></i>
+													</button>
+												{/if}
+											</div>
 										</div>
 									{:else}
 										<!-- Review event -->
@@ -445,4 +499,24 @@
 			<i class="fa-solid fa-exclamation-triangle fa-beat-fade text-4xl"></i>
 		</div>
 	</div>
+{/if}
+
+<!-- Version comparison selection indicator -->
+{#if comparisonState.isSelecting}
+	<div class="alert alert-info fixed bottom-4 right-4 z-50 w-auto max-w-sm shadow-lg">
+		<i class="fa-solid fa-code-compare"></i>
+		<span>{m.selectSecondVersionToCompare()}</span>
+		<button class="btn btn-sm btn-ghost" onclick={cancelComparison}>
+			<i class="fa-solid fa-xmark"></i>
+		</button>
+	</div>
+{/if}
+
+<!-- Version Compare Modal -->
+{#if comparisonState.baseVersion && comparisonState.compareVersion}
+	<VersionCompareModal
+		bind:open={showCompareModal}
+		baseVersion={comparisonState.baseVersion}
+		compareVersion={comparisonState.compareVersion}
+	/>
 {/if}

@@ -1,6 +1,7 @@
 {
 	"dependencies": {
 		"commander": "^14.0.2",
+		"diff-match-patch": "^1.0.5",
 		"humanparser": "^2.7.0",
 		"prettier-plugin-sort-json": "^4.1.1",
 		"svelte-kit": "^1.2.0"
@@ -54,6 +55,7 @@
 		"@tiptap/extension-underline": "^3.13.0",
 		"@tiptap/pm": "^3.13.0",
 		"@tiptap/starter-kit": "^3.13.0",
+		"@types/diff-match-patch": "^1.0.36",
 		"@types/eslint": "^9.6.1",
 		"@types/iban": "^0.0.35",
 		"@types/lodash": "^4.17.21",
