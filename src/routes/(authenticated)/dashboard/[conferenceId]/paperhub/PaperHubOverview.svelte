@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
+	import { goto } from '$app/navigation';
+	import { queryParam } from 'sveltekit-search-params';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/services/enumIcons';
@@ -56,25 +58,26 @@
 		papersGroupedQuery.fetch({ variables: { conferenceId } });
 	});
 
-	let expandedCommittees = $state<Set<string>>(new Set());
-	let expandedAgendaItems = $state<Set<string>>(new Set());
+	// Store expanded state in URL params using sveltekit-search-params
+	const expandedCommittee = queryParam('committee');
+	const expandedAgendaItem = queryParam('topic');
 
 	const toggleCommittee = (committeeId: string) => {
-		if (expandedCommittees.has(committeeId)) {
-			expandedCommittees.delete(committeeId);
+		if ($expandedCommittee === committeeId) {
+			$expandedCommittee = null;
+			$expandedAgendaItem = null; // Collapse topics when collapsing committee
 		} else {
-			expandedCommittees.add(committeeId);
+			$expandedCommittee = committeeId;
+			$expandedAgendaItem = null; // Reset topic when switching committee
 		}
-		expandedCommittees = new Set(expandedCommittees);
 	};
 
 	const toggleAgendaItem = (agendaItemId: string) => {
-		if (expandedAgendaItems.has(agendaItemId)) {
-			expandedAgendaItems.delete(agendaItemId);
+		if ($expandedAgendaItem === agendaItemId) {
+			$expandedAgendaItem = null;
 		} else {
-			expandedAgendaItems.add(agendaItemId);
+			$expandedAgendaItem = agendaItemId;
 		}
-		expandedAgendaItems = new Set(expandedAgendaItems);
 	};
 
 	// Status counting helper
@@ -203,7 +206,7 @@
 				<!-- Committee Header -->
 				<div
 					class="p-4 cursor-pointer rounded-t-lg transition-colors hover:bg-primary/5"
-					class:rounded-b-lg={!expandedCommittees.has(committeeGroup.committee.id)}
+					class:rounded-b-lg={$expandedCommittee !== committeeGroup.committee.id}
 					onclick={() => toggleCommittee(committeeGroup.committee.id)}
 					role="button"
 					tabindex="0"
@@ -212,13 +215,16 @@
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-3">
 							<i
-								class="fa-solid {expandedCommittees.has(committeeGroup.committee.id)
+								class="fa-solid {$expandedCommittee === committeeGroup.committee.id
 									? 'fa-chevron-down'
 									: 'fa-chevron-right'} text-base-content/50"
 							></i>
-							<h3 class="text-lg font-semibold">
-								{committeeGroup.committee.abbreviation}: {committeeGroup.committee.name}
-							</h3>
+							<div class="flex items-center gap-2">
+								<span class="badge badge-primary font-bold"
+									>{committeeGroup.committee.abbreviation}</span
+								>
+								<h3 class="text-lg font-semibold">{committeeGroup.committee.name}</h3>
+							</div>
 						</div>
 						<div class="flex items-center gap-2">
 							<div class="badge badge-ghost gap-1" title={m.total()}>
@@ -251,7 +257,7 @@
 				</div>
 
 				<!-- Agenda Items (expanded) -->
-				{#if expandedCommittees.has(committeeGroup.committee.id)}
+				{#if $expandedCommittee === committeeGroup.committee.id}
 					<div class="p-4 pt-2">
 						{#each committeeGroup.agendaItems as agendaItemGroup, index}
 							{@const agendaCounts = countByStatus(agendaItemGroup.papers)}
@@ -262,7 +268,7 @@
 								<!-- Agenda Item Header -->
 								<div
 									class="p-3 cursor-pointer rounded-t-md transition-colors hover:bg-secondary/5"
-									class:rounded-b-md={!expandedAgendaItems.has(agendaItemGroup.agendaItem.id)}
+									class:rounded-b-md={$expandedAgendaItem !== agendaItemGroup.agendaItem.id}
 									onclick={() => toggleAgendaItem(agendaItemGroup.agendaItem.id)}
 									role="button"
 									tabindex="0"
@@ -272,7 +278,7 @@
 									<div class="flex items-center justify-between">
 										<div class="flex items-center gap-3">
 											<i
-												class="fa-solid {expandedAgendaItems.has(agendaItemGroup.agendaItem.id)
+												class="fa-solid {$expandedAgendaItem === agendaItemGroup.agendaItem.id
 													? 'fa-chevron-down'
 													: 'fa-chevron-right'} text-base-content/40 text-sm"
 											></i>
@@ -309,7 +315,7 @@
 								</div>
 
 								<!-- Papers List (expanded) -->
-								{#if expandedAgendaItems.has(agendaItemGroup.agendaItem.id)}
+								{#if $expandedAgendaItem === agendaItemGroup.agendaItem.id}
 									<div class="px-4 pb-3 border-t border-base-200">
 										<div class="overflow-x-auto">
 											<table class="table table-xs">
@@ -390,12 +396,18 @@
 																></i>
 															</div>
 														</th>
-														<th></th>
 													</tr>
 												</thead>
 												<tbody>
 													{#each getSortedPapers(agendaItemGroup.agendaItem.id, agendaItemGroup.papers) as paper}
-														<tr class="hover:bg-base-200/50">
+														<tr
+															class="hover:bg-base-200/50 cursor-pointer"
+															onclick={() => goto(`./paperhub/${paper.id}`)}
+															role="link"
+															tabindex="0"
+															onkeypress={(e) =>
+																e.key === 'Enter' && goto(`./paperhub/${paper.id}`)}
+														>
 															<td>
 																<div class="flex items-center gap-2">
 																	{#if paper.delegation.assignedNation}
@@ -443,14 +455,6 @@
 															</td>
 															<td class="text-xs text-base-content/70">
 																{formatDate(paper.updatedAt)}
-															</td>
-															<td>
-																<a
-																	href="./paperhub/{paper.id}"
-																	class="btn btn-xs btn-outline btn-primary"
-																>
-																	<i class="fa-solid fa-eye"></i>
-																</a>
 															</td>
 														</tr>
 													{/each}

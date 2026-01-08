@@ -35,10 +35,16 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 			}
 		});
 
-		// Authors can delete their own draft papers only
+		// PROJECT_MANAGEMENT can delete any paper in their conference
 		can(['delete'], 'Paper', {
-			author: { id: user.sub },
-			status: 'DRAFT'
+			conference: {
+				teamMembers: {
+					some: {
+						user: { id: user.sub },
+						role: 'PROJECT_MANAGEMENT'
+					}
+				}
+			}
 		});
 	}
 };

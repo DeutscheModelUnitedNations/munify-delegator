@@ -2,7 +2,6 @@
 	import type { PageData } from './$houdini';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
-	import { onMount } from 'svelte';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -27,12 +26,21 @@
 	};
 	import { cache, graphql } from '$houdini';
 	import toast from 'svelte-french-toast';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import PaperReviewSection from './PaperReviewSection.svelte';
 
 	const updatePaperMutation = graphql(`
 		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
 			updateOnePaper(where: { paperId: $paperId }, data: { content: $content, status: $status }) {
+				id
+			}
+		}
+	`);
+
+	const deletePaperMutation = graphql(`
+		mutation DeletePaperMutation($paperId: String!) {
+			deleteOnePaper(where: { id: $paperId }) {
 				id
 			}
 		}
@@ -55,6 +63,19 @@
 	let editorEditable = $derived(baseViewMode === 'author' || reviewerEditMode);
 
 	let initialized = $state(false);
+	let currentPaperId = $state<string | null>(null);
+
+	// Reset and reinitialize when paper changes (handles client-side navigation)
+	$effect(() => {
+		if (paperData && paperData.id !== currentPaperId) {
+			const latestVer = paperData.versions.reduce((acc, version) =>
+				version.version > acc.version ? version : acc
+			);
+			$editorContentStore = latestVer.content;
+			currentPaperId = paperData.id;
+			initialized = true;
+		}
+	});
 
 	let title = $derived(
 		paperData?.agendaItem?.title
@@ -85,11 +106,6 @@
 		}
 	});
 
-	onMount(() => {
-		$editorContentStore = latestVersion.content;
-		initialized = true;
-	});
-
 	const saveFile = async (options: { submit?: boolean } = {}) => {
 		const { submit = false } = options;
 
@@ -111,6 +127,36 @@
 
 		cache.markStale();
 		await invalidateAll();
+	};
+
+	// Danger Zone state
+	let showDangerZone = $state(false);
+	let deleteConfirmationText = $state('');
+	let entityName = $derived(
+		nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : (nsa?.name ?? '')
+	);
+	let deleteConfirmationExpected = $derived(`${title} - ${entityName}`);
+
+	const handleDeletePaper = async () => {
+		if (deleteConfirmationText !== deleteConfirmationExpected) {
+			toast.error(m.paperDeleteConfirmationMismatch());
+			return;
+		}
+
+		await toast.promise(
+			deletePaperMutation.mutate({
+				paperId: paperData.id
+			}),
+			{
+				loading: m.paperDeleting(),
+				success: m.paperDeletedSuccessfully(),
+				error: (err) => err.message || m.paperDeleteError()
+			}
+		);
+
+		// Navigate back to paperhub
+		const conferenceId = $page.params.conferenceId;
+		goto(`/dashboard/${conferenceId}/paperhub`);
 	};
 </script>
 
@@ -223,61 +269,109 @@
 				/>
 			{/if}
 
-			<!-- Review history for authors -->
-			{#if baseViewMode === 'author' && existingReviews.length > 0}
+			<!-- History for authors (versions + reviews) -->
+			{#if baseViewMode === 'author' && (paperData.versions.length > 0 || existingReviews.length > 0)}
+				{@const authorTimelineEvents = [
+					...paperData.versions.map((v) => ({
+						type: 'version' as const,
+						date: new Date(v.createdAt),
+						version: v
+					})),
+					...existingReviews.map((r) => ({
+						type: 'review' as const,
+						date: new Date(r.createdAt),
+						review: r
+					}))
+				].sort((a, b) => b.date.getTime() - a.date.getTime())}
+
 				<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
-					<legend class="fieldset-legend">{m.reviewHistory()}</legend>
-					<ul class="timeline timeline-vertical timeline-compact">
-						{#each existingReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as review, index}
+					<legend class="fieldset-legend">{m.history()}</legend>
+					<ul class="timeline timeline-vertical timeline-compact py-2">
+						{#each authorTimelineEvents as event, index}
 							<li>
 								{#if index > 0}
 									<hr class="bg-base-300" />
 								{/if}
-								<div class="timeline-start text-xs text-base-content/60 text-right pr-2">
-									<div>{new Date(review.createdAt).toLocaleDateString()}</div>
-									<div>
-										{new Date(review.createdAt).toLocaleTimeString([], {
-											hour: '2-digit',
-											minute: '2-digit'
-										})}
-									</div>
+								<div
+									class="timeline-start text-xs text-base-content/60 text-right pr-4 whitespace-nowrap"
+								>
+									{event.date.toLocaleDateString()} · {event.date.toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit'
+									})}
 								</div>
 								<div class="timeline-middle">
-									<i class="fa-solid fa-circle-dot text-primary"></i>
+									<i class="fa-solid fa-circle-chevron-right text-primary text-lg"></i>
 								</div>
-								<div class="timeline-end timeline-box bg-base-100 w-full">
-									<div class="flex flex-wrap justify-between items-start gap-2 mb-2">
-										<div class="flex items-center gap-2">
-											<i class="fa-solid fa-user-pen text-base-content/50"></i>
-											<span class="font-semibold">
-												{review.reviewer.given_name}
-												{review.reviewer.family_name}
-											</span>
-										</div>
-										{#if review.statusBefore && review.statusAfter}
-											<div class="flex items-center gap-1">
-												<div
-													class="badge {getStatusBadgeClass(review.statusBefore)} badge-sm gap-1"
-												>
-													<i class="fa-solid {getPaperStatusIcon(review.statusBefore)} text-xs"></i>
-													{translatePaperStatus(review.statusBefore)}
-												</div>
-												<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
-												<div class="badge {getStatusBadgeClass(review.statusAfter)} badge-sm gap-1">
-													<i class="fa-solid {getPaperStatusIcon(review.statusAfter)} text-xs"></i>
-													{translatePaperStatus(review.statusAfter)}
-												</div>
+								<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
+									{#if event.type === 'version'}
+										<!-- Version submission event -->
+										<div class="flex flex-wrap justify-between items-center gap-2">
+											<div class="flex items-center gap-2">
+												<i class="fa-solid fa-file-arrow-up text-secondary"></i>
+												<span class="font-semibold">
+													{m.versionSubmitted({ version: event.version.version.toString() })}
+												</span>
 											</div>
-										{/if}
-									</div>
-									<fieldset
-										class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2"
-									>
-										<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
-										<PaperEditor.ReadOnlyContent content={review.comments} />
-									</fieldset>
+											{#if event.version.status}
+												<div
+													class="badge {getStatusBadgeClass(event.version.status)} badge-sm gap-1"
+												>
+													<i class="fa-solid {getPaperStatusIcon(event.version.status)} text-xs"
+													></i>
+													{translatePaperStatus(event.version.status)}
+												</div>
+											{/if}
+										</div>
+									{:else}
+										<!-- Review event -->
+										<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
+											<div class="flex items-center gap-2">
+												<i class="fa-solid fa-user-pen text-base-content/50"></i>
+												<span class="font-semibold">
+													{event.review.reviewer.given_name}
+													{event.review.reviewer.family_name}
+												</span>
+											</div>
+											{#if event.review.statusBefore && event.review.statusAfter}
+												<div class="flex items-center gap-1">
+													<div
+														class="badge {getStatusBadgeClass(
+															event.review.statusBefore
+														)} badge-sm gap-1"
+													>
+														<i
+															class="fa-solid {getPaperStatusIcon(
+																event.review.statusBefore
+															)} text-xs"
+														></i>
+														{translatePaperStatus(event.review.statusBefore)}
+													</div>
+													<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
+													<div
+														class="badge {getStatusBadgeClass(
+															event.review.statusAfter
+														)} badge-sm gap-1"
+													>
+														<i
+															class="fa-solid {getPaperStatusIcon(
+																event.review.statusAfter
+															)} text-xs"
+														></i>
+														{translatePaperStatus(event.review.statusAfter)}
+													</div>
+												</div>
+											{/if}
+										</div>
+										<fieldset
+											class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2"
+										>
+											<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
+											<PaperEditor.ReadOnlyContent content={event.review.comments} />
+										</fieldset>
+									{/if}
 								</div>
-								{#if index < existingReviews.length - 1}
+								{#if index < authorTimelineEvents.length - 1}
 									<hr class="bg-base-300" />
 								{/if}
 							</li>
@@ -288,6 +382,57 @@
 		</div>
 	{:else}
 		<div class="mt-6 w-full h-12 skeleton"></div>
+	{/if}
+
+	<!-- Hidden Danger Zone (team members only) -->
+	{#if paperData && isReviewer}
+		<div class="mt-8">
+			<button
+				class="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
+				onclick={() => (showDangerZone = !showDangerZone)}
+			>
+				<i class="fa-solid {showDangerZone ? 'fa-chevron-down' : 'fa-chevron-right'}"></i>
+				{m.dangerZone()}
+			</button>
+
+			{#if showDangerZone}
+				<div class="mt-2 border border-error/30 rounded-box p-4 bg-error/5">
+					<div class="flex items-center gap-2 text-error mb-3">
+						<i class="fa-solid fa-triangle-exclamation text-lg"></i>
+						<h3 class="font-bold">{m.paperDeleteTitle()}</h3>
+					</div>
+
+					<p class="text-sm text-base-content/70 mb-4">
+						{m.paperDeleteWarning()}
+					</p>
+
+					<div class="form-control mb-4">
+						<label class="label" for="delete-confirmation">
+							<span class="label-text text-sm">{m.paperDeleteConfirmation()}</span>
+						</label>
+						<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded">
+							{deleteConfirmationExpected}
+						</div>
+						<input
+							id="delete-confirmation"
+							type="text"
+							class="input input-bordered input-error w-full"
+							placeholder={deleteConfirmationExpected}
+							bind:value={deleteConfirmationText}
+						/>
+					</div>
+
+					<button
+						class="btn btn-error"
+						disabled={deleteConfirmationText !== deleteConfirmationExpected}
+						onclick={handleDeletePaper}
+					>
+						<i class="fa-solid fa-trash"></i>
+						{m.paperDeleteButton()}
+					</button>
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
 
