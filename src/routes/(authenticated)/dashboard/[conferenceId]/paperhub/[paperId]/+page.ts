@@ -10,6 +10,9 @@ export const _houdini_load = graphql(`
 			author {
 				id
 			}
+			conference {
+				id
+			}
 			delegation {
 				id
 				assignedNation {
@@ -41,7 +44,10 @@ export const _houdini_load = graphql(`
 					id
 					comments
 					createdAt
+					statusBefore
+					statusAfter
 					reviewer {
+						id
 						family_name
 						given_name
 						email

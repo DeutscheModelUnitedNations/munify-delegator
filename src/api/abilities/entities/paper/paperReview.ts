@@ -4,10 +4,29 @@ import type { OIDC } from '$api/context/oidc';
 
 export const defineAbilitiesForPaperReview = (oidc: OIDC, { can }: AbilityBuilder<AppAbility>) => {
 	if (oidc && oidc.user) {
-		// const user = oidc.user;
+		const user = oidc.user;
 
-		// TODO stricken this! This is just for testing purposes
+		// Authors can read reviews on their papers
+		can(['read', 'list'], 'PaperReview', {
+			paperVersion: { paper: { author: { id: user.sub } } }
+		});
 
-		can(['list', 'read'], 'PaperReview');
+		// Team members can read all reviews
+		can(['read', 'list'], 'PaperReview', {
+			paperVersion: {
+				paper: {
+					conference: {
+						teamMembers: {
+							some: {
+								user: { id: user.sub },
+								role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+							}
+						}
+					}
+				}
+			}
+		});
+
+		// Note: Create permission checked in resolver (needs context)
 	}
 };

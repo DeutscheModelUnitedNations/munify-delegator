@@ -13,6 +13,8 @@
 	import { cache, graphql } from '$houdini';
 	import toast from 'svelte-french-toast';
 	import { invalidateAll } from '$app/navigation';
+	import PaperReviewSection from './PaperReviewSection.svelte';
+	import CommonEditor from '$lib/components/Paper/Editor/CommonEditor.svelte';
 
 	const updatePaperMutation = graphql(`
 		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
@@ -26,6 +28,15 @@
 
 	let paperQuery = $derived(data.getPaperDetailsForEditingQuery);
 	let paperData = $derived($paperQuery?.data?.findUniquePaper);
+
+	// View mode detection
+	let isAuthor = $derived(paperData?.author.id === data.user.sub);
+	let isReviewer = $derived(
+		(data.TeamMemberStatusQuery?.data?.findManyTeamMembers?.length ?? 0) > 0
+	);
+	let viewMode = $derived<'author' | 'reviewer'>(
+		isAuthor ? 'author' : isReviewer ? 'reviewer' : 'author'
+	);
 
 	let initialized = $state(false);
 
@@ -43,6 +54,7 @@
 	let latestVersion = $derived(
 		paperData.versions.find((version) => version.version === versionNumber)
 	);
+	let existingReviews = $derived(latestVersion?.reviews ?? []);
 
 	let unsavedChanges = $state(false);
 
@@ -131,26 +143,28 @@
 				tooltip={m.submittedAt()}
 			/>
 		</div>
-		<div class="join join-vertical md:join-horizontal w-full">
-			{#if paperData.status === 'DRAFT'}
+		{#if viewMode === 'author'}
+			<div class="join join-vertical md:join-horizontal w-full">
+				{#if paperData.status === 'DRAFT'}
+					<button
+						class="btn btn-warning btn-lg join-item"
+						onclick={() => saveFile()}
+						disabled={!unsavedChanges}
+					>
+						<i class="fa-solid fa-pencil mr-2"></i>
+						{m.paperSaveDraft()}
+					</button>
+				{/if}
 				<button
-					class="btn btn-warning btn-lg join-item"
-					onclick={() => saveFile()}
-					disabled={!unsavedChanges}
+					class="btn btn-primary btn-lg join-item"
+					onclick={() => saveFile({ submit: true })}
+					disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
 				>
-					<i class="fa-solid fa-pencil mr-2"></i>
-					{m.paperSaveDraft()}
+					<i class="fa-solid fa-paper-plane mr-2"></i>
+					{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
 				</button>
-			{/if}
-			<button
-				class="btn btn-primary btn-lg join-item"
-				onclick={() => saveFile({ submit: true })}
-				disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
-			>
-				<i class="fa-solid fa-paper-plane mr-2"></i>
-				{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
-			</button>
-		</div>
+			</div>
+		{/if}
 	{:else}
 		<div>
 			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
@@ -159,10 +173,64 @@
 	{#if initialized}
 		<div class="w-full flex flex-col xl:flex-row-reverse gap-4">
 			<div class="flex flex-col gap-4 xl:w-1/3"></div>
-			{#if paperData.type === 'WORKING_PAPER'}
-				<PaperEditor.ResolutionFormat editable />
+			{#if viewMode === 'author'}
+				<!-- Author view: editable editor -->
+				{#if paperData.type === 'WORKING_PAPER'}
+					<PaperEditor.ResolutionFormat editable />
+				{:else}
+					<PaperEditor.PaperFormat editable />
+				{/if}
+
+				<!-- Review history for authors -->
+				{#if existingReviews.length > 0}
+					<div class="card bg-base-200 p-4 mt-4">
+						<h3 class="text-lg font-bold mb-4">{m.reviewHistory()}</h3>
+						<div class="flex flex-col gap-3">
+							{#each existingReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as review}
+								<div class="card bg-base-100 p-3">
+									<div class="flex justify-between items-start mb-2">
+										<div>
+											<p class="font-semibold">
+												{review.reviewer.given_name}
+												{review.reviewer.family_name}
+											</p>
+											<p class="text-sm opacity-70">
+												{new Date(review.createdAt).toLocaleString()}
+											</p>
+										</div>
+										{#if review.statusBefore && review.statusAfter}
+											<div class="badge badge-sm">
+												{review.statusBefore} → {review.statusAfter}
+											</div>
+										{/if}
+									</div>
+									<div class="prose prose-sm max-w-none">
+										<CommonEditor
+											contentStore={{ subscribe: (fn) => fn(review.comments) }}
+											editable={false}
+											placeholder=""
+											legend=""
+										/>
+									</div>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			{:else}
-				<PaperEditor.PaperFormat editable />
+				<!-- Reviewer view: read-only editor + review section -->
+				{#if paperData.type === 'WORKING_PAPER'}
+					<PaperEditor.ResolutionFormat editable={false} />
+				{:else}
+					<PaperEditor.PaperFormat editable={false} />
+				{/if}
+
+				<!-- Review interface for reviewers -->
+				<PaperReviewSection
+					paperId={paperData.id}
+					currentStatus={paperData.status}
+					{existingReviews}
+				/>
 			{/if}
 		</div>
 	{:else}

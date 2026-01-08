@@ -317,5 +317,11 @@ export const myConferenceparticipationQuery = graphql(`
 				id
 			}
 		}
+		findUniqueTeamMember(
+			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
+		) {
+			id
+			role
+		}
 	}
 `);
