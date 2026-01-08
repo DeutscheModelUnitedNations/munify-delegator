@@ -11,6 +11,7 @@ import { builder } from '../../builder';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 import { PaperStatus, Json } from '$db/generated/graphql/inputs';
+import { sendNewReviewNotification } from '$api/services/email';
 
 builder.prismaObject('PaperReview', {
 	fields: (t) => ({
@@ -43,6 +44,23 @@ builder.mutationFields((t) => ({
 						versions: {
 							orderBy: { version: 'desc' },
 							take: 1
+						},
+						author: {
+							select: {
+								email: true,
+								given_name: true,
+								family_name: true
+							}
+						},
+						agendaItem: {
+							select: {
+								title: true,
+								committee: {
+									select: {
+										abbreviation: true
+									}
+								}
+							}
 						},
 						conference: {
 							include: {
@@ -102,6 +120,38 @@ builder.mutationFields((t) => ({
 				await tx.paperVersion.update({
 					where: { id: latestVersion.id },
 					data: { status: args.newStatus }
+				});
+
+				// Send email notification to the paper author (fire-and-forget, don't block the response)
+				const paperTypeLabels: Record<string, string> = {
+					POSITION_PAPER: 'Positionspapier',
+					WORKING_PAPER: 'Arbeitspapier',
+					INTRODUCTION_PAPER: 'Einführungspapier'
+				};
+
+				const statusLabels: Record<string, string> = {
+					CHANGES_REQUESTED: 'Änderungen angefordert',
+					ACCEPTED: 'Akzeptiert'
+				};
+
+				// Construct paper title from agenda item (similar to frontend display)
+				const paperTitle = paper.agendaItem
+					? `${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
+					: (paperTypeLabels[paper.type] ?? paper.type);
+
+				const baseUrl = ctx.url.origin;
+				sendNewReviewNotification({
+					recipientEmail: paper.author.email,
+					recipientName: `${paper.author.given_name} ${paper.author.family_name}`,
+					paperTitle,
+					paperType: paperTypeLabels[paper.type] ?? paper.type,
+					reviewerName: `${user.given_name} ${user.family_name}`,
+					reviewerEmail: user.email,
+					newStatus: statusLabels[args.newStatus] ?? args.newStatus,
+					conferenceTitle: paper.conference.title,
+					paperUrl: `${baseUrl}/dashboard/${paper.conferenceId}/paperhub/${paper.id}`
+				}).catch((error) => {
+					console.error('Failed to send review notification email:', error);
 				});
 
 				return review;
