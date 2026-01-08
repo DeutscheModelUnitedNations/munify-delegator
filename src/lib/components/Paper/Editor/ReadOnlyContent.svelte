@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
 	import { getCommonExtensions } from './settings/common.svelte';
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
@@ -42,6 +42,12 @@
 			},
 			editable: false
 		});
+	});
+
+	onDestroy(() => {
+		if ($editor) {
+			$editor.destroy();
+		}
 	});
 </script>
 

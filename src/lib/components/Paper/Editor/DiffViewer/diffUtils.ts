@@ -31,11 +31,19 @@ export function extractTextFromTipTapJson(content: any): string {
 			if (node.type === 'paragraph' || node.type === 'heading') {
 				return extractNodeText(node);
 			}
-			if (node.type === 'bulletList' || node.type === 'orderedList') {
+			if (node.type === 'bulletList') {
 				return node.content
 					?.map((item: any) => {
 						const itemText = extractNodeText(item);
 						return `• ${itemText}`;
+					})
+					.join('\n');
+			}
+			if (node.type === 'orderedList') {
+				return node.content
+					?.map((item: any, index: number) => {
+						const itemText = extractNodeText(item);
+						return `${index + 1}. ${itemText}`;
 					})
 					.join('\n');
 			}

@@ -75,6 +75,12 @@
 	// Reset and reinitialize when paper changes (handles client-side navigation)
 	$effect(() => {
 		if (paperData && paperData.id !== currentPaperId) {
+			if (!paperData.versions || paperData.versions.length === 0) {
+				$editorContentStore = '';
+				currentPaperId = paperData.id;
+				initialized = true;
+				return;
+			}
 			const latestVer = paperData.versions.reduce((acc, version) =>
 				version.version > acc.version ? version : acc
 			);

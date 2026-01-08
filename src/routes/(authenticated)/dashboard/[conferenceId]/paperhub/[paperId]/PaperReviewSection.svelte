@@ -29,6 +29,29 @@
 		}
 	};
 
+	// Check if TipTap JSON content has any actual text
+	const hasContent = (content: any): boolean => {
+		if (!content) return false;
+
+		const checkNode = (node: any): boolean => {
+			if (!node) return false;
+
+			// Check for text node with non-empty content
+			if (node.type === 'text' && node.text?.trim()) {
+				return true;
+			}
+
+			// Recursively check child nodes
+			if (node.content && Array.isArray(node.content)) {
+				return node.content.some(checkNode);
+			}
+
+			return false;
+		};
+
+		return checkNode(content);
+	};
+
 	interface Review {
 		id: string;
 		comments: any;
@@ -137,6 +160,10 @@
 				isSelecting: true
 			};
 		} else {
+			// Ignore if same version is selected twice
+			if (comparisonState.baseVersion?.id === version.id) {
+				return;
+			}
 			comparisonState = {
 				...comparisonState,
 				compareVersion: version,
@@ -192,7 +219,7 @@
 
 	const handleSubmitReview = async () => {
 		const comments = $reviewComments;
-		if (!comments || Object.keys(comments).length === 0) {
+		if (!hasContent(comments)) {
 			toast.error(m.reviewCommentsRequired());
 			return;
 		}

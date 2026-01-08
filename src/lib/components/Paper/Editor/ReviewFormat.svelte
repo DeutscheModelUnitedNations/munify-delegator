@@ -23,9 +23,12 @@
 
 	let editor = $state<Readable<Editor>>();
 
+	// Track last inserted quote to prevent duplicates
+	let lastInsertedQuote = $state<string | null>(null);
+
 	// Insert quote when quoteToInsert changes
 	$effect(() => {
-		if (quoteToInsert && $editor) {
+		if (quoteToInsert && $editor && quoteToInsert !== lastInsertedQuote) {
 			$editor
 				.chain()
 				.focus()
@@ -37,6 +40,7 @@
 					{ type: 'paragraph' }
 				])
 				.run();
+			lastInsertedQuote = quoteToInsert;
 			onQuoteInserted?.();
 		}
 	});

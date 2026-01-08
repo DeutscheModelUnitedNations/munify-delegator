@@ -77,6 +77,9 @@ builder.mutationFields((t) => ({
 				}
 
 				const latestVersion = paper.versions[0];
+				if (!latestVersion) {
+					throw new GraphQLError('Paper has no versions - cannot create review');
+				}
 
 				// Create the review
 				const review = await tx.paperReview.create({
