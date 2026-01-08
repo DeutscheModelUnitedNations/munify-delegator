@@ -21,7 +21,7 @@ export async function sendNewReviewNotification(
 
 	return emailService.sendEmail({
 		to: recipientEmail,
-		subject: `Neues Review für "${params.paperTitle}"`,
+		subject: `Neues Feedback für "${params.paperTitle}"`,
 		html,
 		text,
 		replyTo: params.reviewerEmail
