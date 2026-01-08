@@ -17,20 +17,7 @@
 		DiffStats
 	} from '$lib/components/Paper/Editor/DiffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
-
-	// Status colors for badges
-	const getStatusBadgeClass = (status: PaperStatus$options) => {
-		switch (status) {
-			case 'SUBMITTED':
-				return 'badge-warning';
-			case 'CHANGES_REQUESTED':
-				return 'badge-error';
-			case 'ACCEPTED':
-				return 'badge-success';
-			default:
-				return 'badge-ghost';
-		}
-	};
+	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { cache, graphql } from '$houdini';
 	import toast from 'svelte-french-toast';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -143,6 +130,10 @@
 				isSelecting: true
 			};
 		} else {
+			// Prevent selecting the same version twice
+			if (comparisonState.baseVersion?.id === version.id) {
+				return;
+			}
 			// Second selection - set as compare and open modal
 			comparisonState = {
 				...comparisonState,

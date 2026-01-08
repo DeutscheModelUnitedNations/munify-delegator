@@ -114,6 +114,8 @@ export function computeDiffStats(beforeContent: any, afterContent: any): DiffSta
 	const afterText = extractTextFromTipTapJson(afterContent);
 
 	const diffs = dmp.diff_main(beforeText, afterText);
+	// Apply semantic cleanup to match the visual diff produced by computeDiff
+	dmp.diff_cleanupSemantic(diffs);
 
 	let added = 0;
 	let removed = 0;

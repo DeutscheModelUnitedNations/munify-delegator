@@ -14,20 +14,7 @@
 		DiffStats
 	} from '$lib/components/Paper/Editor/DiffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
-
-	// Status colors for badges
-	const getStatusBadgeClass = (status: PaperStatus$options) => {
-		switch (status) {
-			case 'SUBMITTED':
-				return 'badge-warning';
-			case 'CHANGES_REQUESTED':
-				return 'badge-error';
-			case 'ACCEPTED':
-				return 'badge-success';
-			default:
-				return 'badge-ghost';
-		}
-	};
+	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
