@@ -1,10 +1,26 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql, type PaperStatus$options } from '$houdini';
+	import { cache, graphql, type PaperStatus$options } from '$houdini';
 	import { writable } from 'svelte/store';
 	import toast from 'svelte-french-toast';
 	import { invalidateAll } from '$app/navigation';
-	import CommonEditor from '$lib/components/Paper/Editor/CommonEditor.svelte';
+	import PaperEditor from '$lib/components/Paper/Editor';
+	import { translatePaperStatus } from '$lib/services/enumTranslations';
+	import { getPaperStatusIcon } from '$lib/services/enumIcons';
+
+	// Status colors for badges
+	const getStatusBadgeClass = (status: PaperStatus$options) => {
+		switch (status) {
+			case 'SUBMITTED':
+				return 'badge-warning';
+			case 'CHANGES_REQUESTED':
+				return 'badge-error';
+			case 'ACCEPTED':
+				return 'badge-success';
+			default:
+				return 'badge-ghost';
+		}
+	};
 
 	interface Review {
 		id: string;
@@ -19,13 +35,53 @@
 		};
 	}
 
+	interface Version {
+		id: string;
+		version: number;
+		createdAt: string;
+		status?: PaperStatus$options | null;
+		reviews: Review[];
+	}
+
 	interface Props {
 		paperId: string;
 		currentStatus: PaperStatus$options;
 		existingReviews: Review[];
+		versions?: Version[];
+		authorName?: string;
 	}
 
-	let { paperId, currentStatus, existingReviews }: Props = $props();
+	let { paperId, currentStatus, existingReviews, versions = [], authorName = '' }: Props = $props();
+
+	// Create unified timeline from versions and reviews
+	type TimelineEvent =
+		| { type: 'version'; date: Date; version: Version }
+		| { type: 'review'; date: Date; review: Review };
+
+	let timelineEvents = $derived.by(() => {
+		const events: TimelineEvent[] = [];
+
+		// Add all versions to timeline
+		for (const version of versions) {
+			events.push({
+				type: 'version',
+				date: new Date(version.createdAt),
+				version
+			});
+		}
+
+		// Add reviews
+		for (const review of existingReviews) {
+			events.push({
+				type: 'review',
+				date: new Date(review.createdAt),
+				review
+			});
+		}
+
+		// Sort by date descending (newest first)
+		return events.sort((a, b) => b.date.getTime() - a.date.getTime());
+	});
 
 	// Review form state
 	let reviewComments = writable<any>({});
@@ -87,6 +143,7 @@
 		reviewComments.set({});
 
 		// Reload data
+		cache.markStale();
 		await invalidateAll();
 	};
 </script>
@@ -101,31 +158,17 @@
 		</div>
 	{:else}
 		<!-- Status Selector -->
-		<div class="form-control">
-			<label class="label">
-				<span class="label-text font-semibold">{m.newStatus()}</span>
-			</label>
-			<select class="select select-bordered" bind:value={selectedStatus}>
+		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
+			<legend class="fieldset-legend">{m.newStatus()}</legend>
+			<select class="select select-bordered w-full" bind:value={selectedStatus}>
 				{#each availableTransitions as transition}
 					<option value={transition.value}>{transition.label}</option>
 				{/each}
 			</select>
-		</div>
+		</fieldset>
 
 		<!-- Comments Editor -->
-		<div class="form-control">
-			<label class="label">
-				<span class="label-text font-semibold">{m.reviewComments()}</span>
-			</label>
-			<div class="border border-base-300 rounded-box">
-				<CommonEditor
-					contentStore={reviewComments}
-					editable={true}
-					placeholder={m.enterYourReviewComments()}
-					legend=""
-				/>
-			</div>
-		</div>
+		<PaperEditor.ReviewFormat contentStore={reviewComments} />
 
 		<!-- Submit Button -->
 		<button class="btn btn-primary" onclick={handleSubmitReview}>
@@ -135,34 +178,85 @@
 	{/if}
 </div>
 
-<!-- Review History -->
-{#if existingReviews.length > 0}
-	<div class="card bg-base-200 p-4">
-		<h3 class="text-lg font-bold mb-4">{m.reviewHistory()}</h3>
-		<div class="flex flex-col gap-3">
-			{#each existingReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as review}
-				<div class="card bg-base-100 p-3">
-					<div class="flex justify-between items-start mb-2">
-						<div>
-							<p class="font-semibold">
-								{review.reviewer.given_name}
-								{review.reviewer.family_name}
-							</p>
-							<p class="text-sm opacity-70">
-								{new Date(review.createdAt).toLocaleString()}
-							</p>
-						</div>
-						{#if review.statusBefore && review.statusAfter}
-							<div class="badge badge-sm">
-								{review.statusBefore} → {review.statusAfter}
+<!-- History Timeline -->
+{#if timelineEvents.length > 0}
+	<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
+		<legend class="fieldset-legend">{m.history()}</legend>
+		<ul class="timeline timeline-vertical timeline-compact py-2">
+			{#each timelineEvents as event, index}
+				<li class="">
+					{#if index > 0}
+						<hr class="bg-base-300" />
+					{/if}
+					<div
+						class="timeline-start text-xs text-base-content/60 text-right pr-4 whitespace-nowrap"
+					>
+						{event.date.toLocaleDateString()} · {event.date.toLocaleTimeString([], {
+							hour: '2-digit',
+							minute: '2-digit'
+						})}
+					</div>
+					<div class="timeline-middle">
+						<i class="fa-solid fa-circle-chevron-right text-primary text-lg w-5 text-center"></i>
+					</div>
+					<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
+						{#if event.type === 'version'}
+							<!-- Version submission event -->
+							<div class="flex flex-wrap justify-between items-center gap-2">
+								<div class="flex items-center gap-2">
+									<i class="fa-solid fa-file-arrow-up text-secondary"></i>
+									<span class="font-semibold">
+										{m.versionSubmitted({ version: event.version.version.toString() })}
+									</span>
+								</div>
+								{#if event.version.status}
+									<div class="badge {getStatusBadgeClass(event.version.status)} badge-sm gap-1">
+										<i class="fa-solid {getPaperStatusIcon(event.version.status)} text-xs"></i>
+										{translatePaperStatus(event.version.status)}
+									</div>
+								{/if}
 							</div>
+						{:else}
+							<!-- Review event -->
+							<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
+								<div class="flex items-center gap-2">
+									<i class="fa-solid fa-user-pen text-base-content/50"></i>
+									<span class="font-semibold">
+										{event.review.reviewer.given_name}
+										{event.review.reviewer.family_name}
+									</span>
+								</div>
+								{#if event.review.statusBefore && event.review.statusAfter}
+									<div class="flex items-center gap-1">
+										<div
+											class="badge {getStatusBadgeClass(event.review.statusBefore)} badge-sm gap-1"
+										>
+											<i class="fa-solid {getPaperStatusIcon(event.review.statusBefore)} text-xs"
+											></i>
+											{translatePaperStatus(event.review.statusBefore)}
+										</div>
+										<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
+										<div
+											class="badge {getStatusBadgeClass(event.review.statusAfter)} badge-sm gap-1"
+										>
+											<i class="fa-solid {getPaperStatusIcon(event.review.statusAfter)} text-xs"
+											></i>
+											{translatePaperStatus(event.review.statusAfter)}
+										</div>
+									</div>
+								{/if}
+							</div>
+							<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2">
+								<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
+								<PaperEditor.ReadOnlyContent content={event.review.comments} />
+							</fieldset>
 						{/if}
 					</div>
-					<div class="prose prose-sm max-w-none">
-						{@html review.comments}
-					</div>
-				</div>
+					{#if index < timelineEvents.length - 1}
+						<hr class="bg-base-300" />
+					{/if}
+				</li>
 			{/each}
-		</div>
-	</div>
+		</ul>
+	</fieldset>
 {/if}

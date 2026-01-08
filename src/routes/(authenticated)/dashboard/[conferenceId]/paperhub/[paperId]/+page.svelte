@@ -10,11 +10,25 @@
 	import { m } from '$lib/paraglide/messages';
 	import InfoChip from './InfoChip.svelte';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
+	import type { PaperStatus$options } from '$houdini';
+
+	// Status colors for badges
+	const getStatusBadgeClass = (status: PaperStatus$options) => {
+		switch (status) {
+			case 'SUBMITTED':
+				return 'badge-warning';
+			case 'CHANGES_REQUESTED':
+				return 'badge-error';
+			case 'ACCEPTED':
+				return 'badge-success';
+			default:
+				return 'badge-ghost';
+		}
+	};
 	import { cache, graphql } from '$houdini';
 	import toast from 'svelte-french-toast';
 	import { invalidateAll } from '$app/navigation';
 	import PaperReviewSection from './PaperReviewSection.svelte';
-	import CommonEditor from '$lib/components/Paper/Editor/CommonEditor.svelte';
 
 	const updatePaperMutation = graphql(`
 		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
@@ -31,12 +45,14 @@
 
 	// View mode detection
 	let isAuthor = $derived(paperData?.author.id === data.user.sub);
-	let isReviewer = $derived(
-		(data.TeamMemberStatusQuery?.data?.findManyTeamMembers?.length ?? 0) > 0
-	);
-	let viewMode = $derived<'author' | 'reviewer'>(
+	let isReviewer = $derived((data.teamMembers?.length ?? 0) > 0);
+	let baseViewMode = $derived<'author' | 'reviewer'>(
 		isAuthor ? 'author' : isReviewer ? 'reviewer' : 'author'
 	);
+
+	// Edit mode toggle for reviewers
+	let reviewerEditMode = $state(false);
+	let editorEditable = $derived(baseViewMode === 'author' || reviewerEditMode);
 
 	let initialized = $state(false);
 
@@ -54,7 +70,7 @@
 	let latestVersion = $derived(
 		paperData.versions.find((version) => version.version === versionNumber)
 	);
-	let existingReviews = $derived(latestVersion?.reviews ?? []);
+	let existingReviews = $derived(paperData.versions.flatMap((version) => version.reviews ?? []));
 
 	let unsavedChanges = $state(false);
 
@@ -77,11 +93,14 @@
 	const saveFile = async (options: { submit?: boolean } = {}) => {
 		const { submit = false } = options;
 
+		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
+		const newStatus = reviewerEditMode ? paperData.status : submit ? 'SUBMITTED' : 'DRAFT';
+
 		const resposne = await toast.promise(
 			updatePaperMutation.mutate({
 				paperId: paperData.id,
 				content: $editorContentStore,
-				status: submit ? 'SUBMITTED' : 'DRAFT'
+				status: newStatus
 			}),
 			{
 				loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
@@ -143,94 +162,128 @@
 				tooltip={m.submittedAt()}
 			/>
 		</div>
-		{#if viewMode === 'author'}
-			<div class="join join-vertical md:join-horizontal w-full">
-				{#if paperData.status === 'DRAFT'}
+		<!-- Action buttons -->
+		<div class="flex flex-wrap gap-2">
+			{#if baseViewMode === 'author' || reviewerEditMode}
+				<div class="join join-vertical md:join-horizontal">
+					{#if paperData.status === 'DRAFT'}
+						<button
+							class="btn btn-warning join-item"
+							onclick={() => saveFile()}
+							disabled={!unsavedChanges}
+						>
+							<i class="fa-solid fa-pencil"></i>
+							{m.paperSaveDraft()}
+						</button>
+					{/if}
 					<button
-						class="btn btn-warning btn-lg join-item"
-						onclick={() => saveFile()}
-						disabled={!unsavedChanges}
+						class="btn btn-primary join-item"
+						onclick={() => saveFile({ submit: true })}
+						disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
 					>
-						<i class="fa-solid fa-pencil mr-2"></i>
-						{m.paperSaveDraft()}
+						<i class="fa-solid fa-paper-plane"></i>
+						{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
 					</button>
-				{/if}
+				</div>
+			{/if}
+
+			{#if isReviewer && baseViewMode === 'reviewer'}
 				<button
-					class="btn btn-primary btn-lg join-item"
-					onclick={() => saveFile({ submit: true })}
-					disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
+					class="btn {reviewerEditMode ? 'btn-warning' : 'btn-outline'}"
+					onclick={() => (reviewerEditMode = !reviewerEditMode)}
 				>
-					<i class="fa-solid fa-paper-plane mr-2"></i>
-					{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
+					<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
+					{reviewerEditMode ? m.viewer() : m.edit()}
 				</button>
-			</div>
-		{/if}
+			{/if}
+		</div>
 	{:else}
 		<div>
 			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 		</div>
 	{/if}
 	{#if initialized}
-		<div class="w-full flex flex-col xl:flex-row-reverse gap-4">
-			<div class="flex flex-col gap-4 xl:w-1/3"></div>
-			{#if viewMode === 'author'}
-				<!-- Author view: editable editor -->
+		<div class="w-full flex flex-col gap-4">
+			<!-- Paper Editor - key forces re-creation when editable changes -->
+			{#key editorEditable}
 				{#if paperData.type === 'WORKING_PAPER'}
-					<PaperEditor.ResolutionFormat editable />
+					<PaperEditor.ResolutionFormat editable={editorEditable} />
 				{:else}
-					<PaperEditor.PaperFormat editable />
+					<PaperEditor.PaperFormat editable={editorEditable} />
 				{/if}
+			{/key}
 
-				<!-- Review history for authors -->
-				{#if existingReviews.length > 0}
-					<div class="card bg-base-200 p-4 mt-4">
-						<h3 class="text-lg font-bold mb-4">{m.reviewHistory()}</h3>
-						<div class="flex flex-col gap-3">
-							{#each existingReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as review}
-								<div class="card bg-base-100 p-3">
-									<div class="flex justify-between items-start mb-2">
-										<div>
-											<p class="font-semibold">
-												{review.reviewer.given_name}
-												{review.reviewer.family_name}
-											</p>
-											<p class="text-sm opacity-70">
-												{new Date(review.createdAt).toLocaleString()}
-											</p>
-										</div>
-										{#if review.statusBefore && review.statusAfter}
-											<div class="badge badge-sm">
-												{review.statusBefore} → {review.statusAfter}
-											</div>
-										{/if}
-									</div>
-									<div class="prose prose-sm max-w-none">
-										<CommonEditor
-											contentStore={{ subscribe: (fn) => fn(review.comments) }}
-											editable={false}
-											placeholder=""
-											legend=""
-										/>
-									</div>
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
-			{:else}
-				<!-- Reviewer view: read-only editor + review section -->
-				{#if paperData.type === 'WORKING_PAPER'}
-					<PaperEditor.ResolutionFormat editable={false} />
-				{:else}
-					<PaperEditor.PaperFormat editable={false} />
-				{/if}
-
-				<!-- Review interface for reviewers -->
+			<!-- Review section for reviewers -->
+			{#if baseViewMode === 'reviewer'}
 				<PaperReviewSection
 					paperId={paperData.id}
 					currentStatus={paperData.status}
 					{existingReviews}
+					versions={paperData.versions}
 				/>
+			{/if}
+
+			<!-- Review history for authors -->
+			{#if baseViewMode === 'author' && existingReviews.length > 0}
+				<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
+					<legend class="fieldset-legend">{m.reviewHistory()}</legend>
+					<ul class="timeline timeline-vertical timeline-compact">
+						{#each existingReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as review, index}
+							<li>
+								{#if index > 0}
+									<hr class="bg-base-300" />
+								{/if}
+								<div class="timeline-start text-xs text-base-content/60 text-right pr-2">
+									<div>{new Date(review.createdAt).toLocaleDateString()}</div>
+									<div>
+										{new Date(review.createdAt).toLocaleTimeString([], {
+											hour: '2-digit',
+											minute: '2-digit'
+										})}
+									</div>
+								</div>
+								<div class="timeline-middle">
+									<i class="fa-solid fa-circle-dot text-primary"></i>
+								</div>
+								<div class="timeline-end timeline-box bg-base-100 w-full">
+									<div class="flex flex-wrap justify-between items-start gap-2 mb-2">
+										<div class="flex items-center gap-2">
+											<i class="fa-solid fa-user-pen text-base-content/50"></i>
+											<span class="font-semibold">
+												{review.reviewer.given_name}
+												{review.reviewer.family_name}
+											</span>
+										</div>
+										{#if review.statusBefore && review.statusAfter}
+											<div class="flex items-center gap-1">
+												<div
+													class="badge {getStatusBadgeClass(review.statusBefore)} badge-sm gap-1"
+												>
+													<i class="fa-solid {getPaperStatusIcon(review.statusBefore)} text-xs"></i>
+													{translatePaperStatus(review.statusBefore)}
+												</div>
+												<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
+												<div class="badge {getStatusBadgeClass(review.statusAfter)} badge-sm gap-1">
+													<i class="fa-solid {getPaperStatusIcon(review.statusAfter)} text-xs"></i>
+													{translatePaperStatus(review.statusAfter)}
+												</div>
+											</div>
+										{/if}
+									</div>
+									<fieldset
+										class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2"
+									>
+										<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
+										<PaperEditor.ReadOnlyContent content={review.comments} />
+									</fieldset>
+								</div>
+								{#if index < existingReviews.length - 1}
+									<hr class="bg-base-300" />
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</fieldset>
 			{/if}
 		</div>
 	{:else}
