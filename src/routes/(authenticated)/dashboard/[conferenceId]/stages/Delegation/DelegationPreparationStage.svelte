@@ -41,7 +41,7 @@
 </script>
 
 <TasksWrapper>
-	{#if !!delegationMember.delegation.assignedNation && !!delegationMember.delegation.members.every((member) => !member.assignedCommittee)}
+	{#if !!delegationMember.delegation.assignedNation && delegationMember.delegation.members.some((member) => !member.assignedCommittee)}
 		<TaskAlertCard
 			severity={delegationMember.isHeadDelegate ? 'warning' : 'info'}
 			faIcon="fa-arrows-turn-to-dots"
