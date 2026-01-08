@@ -20,7 +20,18 @@ const schema = z.object({
 	OTEL_SERVICE_VERSION: z.optional(z.string()),
 	OTEL_ENDPOINT_URL: z.optional(z.string()),
 	OTEL_AUTHORIZATION_HEADER: z.optional(z.string()),
-	CERTIFICATE_SECRET: z.string()
+	CERTIFICATE_SECRET: z.string(),
+	// SMTP / Transactional Email Configuration
+	SMTP_HOST: z.string().default('localhost'),
+	SMTP_PORT: z.coerce.number().default(1025),
+	SMTP_SECURE: z
+		.string()
+		.default('false')
+		.transform((v) => v === 'true'),
+	SMTP_USER: z.string().optional(),
+	SMTP_PASSWORD: z.string().optional(),
+	SMTP_FROM_ADDRESS: z.string().email().default('noreply@munify.cloud'),
+	SMTP_FROM_NAME: z.string().default('MUNIFY Delegator')
 });
 
 export const configPrivate = building ? ({} as z.infer<typeof schema>) : schema.parse(env);
