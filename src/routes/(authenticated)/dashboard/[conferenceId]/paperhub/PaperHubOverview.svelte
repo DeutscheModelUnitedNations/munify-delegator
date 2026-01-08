@@ -1,13 +1,10 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { goto } from '$app/navigation';
 	import { queryParam } from 'sveltekit-search-params';
-	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/services/enumIcons';
-	import { translatePaperType, translatePaperStatus } from '$lib/services/enumTranslations';
-	import type { PaperStatus$options, PaperType$options } from '$houdini';
+	import type { PaperStatus$options } from '$houdini';
+	import PaperStatusBadges from './PaperStatusBadges.svelte';
+	import PaperTable from './PaperTable.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -54,9 +51,39 @@
 		}
 	`);
 
+	const introductionPapersQuery = graphql(`
+		query IntroductionPapersQuery($conferenceId: String!) {
+			findIntroductionPapers(conferenceId: $conferenceId) {
+				id
+				type
+				status
+				createdAt
+				updatedAt
+				firstSubmittedAt
+				delegation {
+					id
+					assignedNation {
+						alpha2Code
+						alpha3Code
+					}
+					assignedNonStateActor {
+						id
+						name
+						abbreviation
+						fontAwesomeIcon
+					}
+				}
+			}
+		}
+	`);
+
 	$effect(() => {
 		papersGroupedQuery.fetch({ variables: { conferenceId } });
+		introductionPapersQuery.fetch({ variables: { conferenceId } });
 	});
+
+	let introductionPapers = $derived($introductionPapersQuery?.data?.findIntroductionPapers ?? []);
+	let showIntroductionPapers = $derived(introductionPapers.length > 0);
 
 	// Store expanded state in URL params using sveltekit-search-params
 	const expandedCommittee = queryParam('committee');
@@ -65,10 +92,10 @@
 	const toggleCommittee = (committeeId: string) => {
 		if ($expandedCommittee === committeeId) {
 			$expandedCommittee = null;
-			$expandedAgendaItem = null; // Collapse topics when collapsing committee
+			$expandedAgendaItem = null;
 		} else {
 			$expandedCommittee = committeeId;
-			$expandedAgendaItem = null; // Reset topic when switching committee
+			$expandedAgendaItem = null;
 		}
 	};
 
@@ -149,41 +176,8 @@
 		sortConfig = new Map(sortConfig);
 	};
 
-	const getSortIcon = (agendaItemId: string, key: string) => {
-		const config = sortConfig.get(agendaItemId);
-		if (config?.key !== key) return 'fa-sort';
-		return config.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-	};
-
-	// Type colors for icon badges
-	const getTypeColor = (type: PaperType$options) => {
-		switch (type) {
-			case 'POSITION_PAPER':
-				return 'text-primary';
-			case 'WORKING_PAPER':
-			case 'INTRODUCTION_PAPER':
-			default:
-				return 'text-secondary';
-		}
-	};
-
-	// Status colors for icon badges
-	const getStatusColor = (status: PaperStatus$options) => {
-		switch (status) {
-			case 'SUBMITTED':
-				return 'text-warning';
-			case 'CHANGES_REQUESTED':
-				return 'text-error';
-			case 'ACCEPTED':
-				return 'text-success';
-			default:
-				return 'text-base-content/50';
-		}
-	};
-
-	const formatDate = (date: string | null) => {
-		if (!date) return '-';
-		return new Date(date).toLocaleDateString();
+	const getSortConfig = (agendaItemId: string) => {
+		return sortConfig.get(agendaItemId) ?? null;
 	};
 </script>
 
@@ -226,33 +220,7 @@
 								<h3 class="text-lg font-semibold">{committeeGroup.committee.name}</h3>
 							</div>
 						</div>
-						<div class="flex items-center gap-2">
-							<div class="badge badge-ghost gap-1" title={m.total()}>
-								<i class="fa-solid fa-file-lines text-xs"></i>
-								{committeeCounts.total}
-							</div>
-							<div
-								class="badge badge-warning badge-outline gap-1"
-								title={translatePaperStatus('SUBMITTED')}
-							>
-								<i class="fa-solid fa-paper-plane text-xs"></i>
-								{committeeCounts.SUBMITTED}
-							</div>
-							<div
-								class="badge badge-error badge-outline gap-1"
-								title={translatePaperStatus('CHANGES_REQUESTED')}
-							>
-								<i class="fa-solid fa-exclamation-triangle text-xs"></i>
-								{committeeCounts.CHANGES_REQUESTED}
-							</div>
-							<div
-								class="badge badge-success badge-outline gap-1"
-								title={translatePaperStatus('ACCEPTED')}
-							>
-								<i class="fa-solid fa-check-circle text-xs"></i>
-								{committeeCounts.ACCEPTED}
-							</div>
-						</div>
+						<PaperStatusBadges counts={committeeCounts} />
 					</div>
 				</div>
 
@@ -284,183 +252,22 @@
 											></i>
 											<h4 class="font-medium text-sm">{agendaItemGroup.agendaItem.title}</h4>
 										</div>
-										<div class="flex items-center gap-1">
-											<div class="badge badge-ghost badge-sm gap-1" title={m.total()}>
-												<i class="fa-solid fa-file-lines text-xs"></i>
-												{agendaCounts.total}
-											</div>
-											<div
-												class="badge badge-warning badge-outline badge-sm gap-1"
-												title={translatePaperStatus('SUBMITTED')}
-											>
-												<i class="fa-solid fa-paper-plane text-xs"></i>
-												{agendaCounts.SUBMITTED}
-											</div>
-											<div
-												class="badge badge-error badge-outline badge-sm gap-1"
-												title={translatePaperStatus('CHANGES_REQUESTED')}
-											>
-												<i class="fa-solid fa-exclamation-triangle text-xs"></i>
-												{agendaCounts.CHANGES_REQUESTED}
-											</div>
-											<div
-												class="badge badge-success badge-outline badge-sm gap-1"
-												title={translatePaperStatus('ACCEPTED')}
-											>
-												<i class="fa-solid fa-check-circle text-xs"></i>
-												{agendaCounts.ACCEPTED}
-											</div>
-										</div>
+										<PaperStatusBadges counts={agendaCounts} size="small" />
 									</div>
 								</div>
 
 								<!-- Papers List (expanded) -->
 								{#if $expandedAgendaItem === agendaItemGroup.agendaItem.id}
 									<div class="px-4 pb-3 border-t border-base-200">
-										<div class="overflow-x-auto">
-											<table class="table table-xs">
-												<thead>
-													<tr class="text-xs">
-														<th
-															class="cursor-pointer hover:bg-base-200/50 select-none"
-															onclick={() => toggleSort(agendaItemGroup.agendaItem.id, 'country')}
-														>
-															<div class="flex items-center gap-1">
-																{m.country()}
-																<i
-																	class="fa-solid {getSortIcon(
-																		agendaItemGroup.agendaItem.id,
-																		'country'
-																	)} text-xs opacity-50"
-																></i>
-															</div>
-														</th>
-														<th
-															class="cursor-pointer hover:bg-base-200/50 select-none"
-															onclick={() => toggleSort(agendaItemGroup.agendaItem.id, 'type')}
-															title={m.paperType()}
-														>
-															<div class="flex items-center gap-1">
-																<i class="fa-solid fa-file"></i>
-																<i
-																	class="fa-solid {getSortIcon(
-																		agendaItemGroup.agendaItem.id,
-																		'type'
-																	)} text-xs opacity-50"
-																></i>
-															</div>
-														</th>
-														<th
-															class="cursor-pointer hover:bg-base-200/50 select-none"
-															onclick={() => toggleSort(agendaItemGroup.agendaItem.id, 'status')}
-															title={m.status()}
-														>
-															<div class="flex items-center gap-1">
-																<i class="fa-solid fa-circle-info"></i>
-																<i
-																	class="fa-solid {getSortIcon(
-																		agendaItemGroup.agendaItem.id,
-																		'status'
-																	)} text-xs opacity-50"
-																></i>
-															</div>
-														</th>
-														<th
-															class="cursor-pointer hover:bg-base-200/50 select-none"
-															onclick={() =>
-																toggleSort(agendaItemGroup.agendaItem.id, 'firstSubmittedAt')}
-															title={m.submittedAt()}
-														>
-															<div class="flex items-center gap-1">
-																<i class="fa-solid fa-paper-plane"></i>
-																<i
-																	class="fa-solid {getSortIcon(
-																		agendaItemGroup.agendaItem.id,
-																		'firstSubmittedAt'
-																	)} text-xs opacity-50"
-																></i>
-															</div>
-														</th>
-														<th
-															class="cursor-pointer hover:bg-base-200/50 select-none"
-															onclick={() => toggleSort(agendaItemGroup.agendaItem.id, 'updatedAt')}
-															title={m.paperUpdatedAt()}
-														>
-															<div class="flex items-center gap-1">
-																<i class="fa-solid fa-clock-rotate-left"></i>
-																<i
-																	class="fa-solid {getSortIcon(
-																		agendaItemGroup.agendaItem.id,
-																		'updatedAt'
-																	)} text-xs opacity-50"
-																></i>
-															</div>
-														</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each getSortedPapers(agendaItemGroup.agendaItem.id, agendaItemGroup.papers) as paper}
-														<tr
-															class="hover:bg-base-200/50 cursor-pointer"
-															onclick={() => goto(`./paperhub/${paper.id}`)}
-															role="link"
-															tabindex="0"
-															onkeypress={(e) =>
-																e.key === 'Enter' && goto(`./paperhub/${paper.id}`)}
-														>
-															<td>
-																<div class="flex items-center gap-2">
-																	{#if paper.delegation.assignedNation}
-																		<Flag
-																			size="xs"
-																			alpha2Code={paper.delegation.assignedNation.alpha2Code}
-																		/>
-																		<span class="truncate max-w-32">
-																			{getFullTranslatedCountryNameFromISO3Code(
-																				paper.delegation.assignedNation.alpha3Code
-																			)}
-																		</span>
-																	{:else if paper.delegation.assignedNonStateActor}
-																		<Flag
-																			size="xs"
-																			nsa={paper.delegation.assignedNonStateActor}
-																			icon={paper.delegation.assignedNonStateActor.fontAwesomeIcon}
-																		/>
-																		<span class="truncate max-w-32">
-																			{paper.delegation.assignedNonStateActor.name}
-																		</span>
-																	{/if}
-																</div>
-															</td>
-															<td>
-																<div class="tooltip" data-tip={translatePaperType(paper.type)}>
-																	<i
-																		class="fa-solid {getPaperTypeIcon(paper.type)} {getTypeColor(
-																			paper.type
-																		)} text-base"
-																	></i>
-																</div>
-															</td>
-															<td>
-																<div class="tooltip" data-tip={translatePaperStatus(paper.status)}>
-																	<i
-																		class="fa-solid {getPaperStatusIcon(
-																			paper.status
-																		)} {getStatusColor(paper.status)} text-base"
-																	></i>
-																</div>
-															</td>
-															<td class="text-xs text-base-content/70">
-																{formatDate(paper.firstSubmittedAt)}
-															</td>
-															<td class="text-xs text-base-content/70">
-																{formatDate(paper.updatedAt)}
-															</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										</div>
+										<PaperTable
+											papers={getSortedPapers(
+												agendaItemGroup.agendaItem.id,
+												agendaItemGroup.papers
+											)}
+											sortable={true}
+											sortConfig={getSortConfig(agendaItemGroup.agendaItem.id)}
+											onSort={(key) => toggleSort(agendaItemGroup.agendaItem.id, key)}
+										/>
 									</div>
 								{/if}
 							</div>
@@ -469,6 +276,65 @@
 				{/if}
 			</div>
 		{/each}
+
+		<!-- Introduction Papers Section (NSA papers without agenda items) -->
+		{#if showIntroductionPapers}
+			{@const introCounts = countByStatus(introductionPapers)}
+			<div class="border border-base-300 rounded-lg bg-base-100">
+				<div
+					class="p-4 cursor-pointer rounded-t-lg transition-colors hover:bg-secondary/5"
+					class:rounded-b-lg={$expandedCommittee !== 'introduction'}
+					onclick={() => {
+						if ($expandedCommittee === 'introduction') {
+							$expandedCommittee = null;
+						} else {
+							$expandedCommittee = 'introduction';
+							$expandedAgendaItem = null;
+						}
+					}}
+					role="button"
+					tabindex="0"
+					onkeypress={(e) => {
+						if (e.key === 'Enter') {
+							if ($expandedCommittee === 'introduction') {
+								$expandedCommittee = null;
+							} else {
+								$expandedCommittee = 'introduction';
+								$expandedAgendaItem = null;
+							}
+						}
+					}}
+				>
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-3">
+							<i
+								class="fa-solid {$expandedCommittee === 'introduction'
+									? 'fa-chevron-down'
+									: 'fa-chevron-right'} text-base-content/50"
+							></i>
+							<div class="flex items-center gap-2">
+								<span class="badge badge-secondary font-bold">
+									{m.nonStateActorAbbreviation()}
+								</span>
+								<h3 class="text-lg font-semibold">{m.paperTypeIntroductionPapers()}</h3>
+							</div>
+						</div>
+						<PaperStatusBadges counts={introCounts} />
+					</div>
+				</div>
+
+				{#if $expandedCommittee === 'introduction'}
+					<div class="px-4 pb-3 border-t border-base-200">
+						<PaperTable
+							papers={getSortedPapers('introduction', introductionPapers)}
+							sortable={true}
+							sortConfig={getSortConfig('introduction')}
+							onSort={(key) => toggleSort('introduction', key)}
+						/>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	{:else}
 		<div class="alert alert-info">
 			<i class="fa-solid fa-info-circle"></i>

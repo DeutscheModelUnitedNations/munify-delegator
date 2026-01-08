@@ -253,6 +253,53 @@ CommitteePaperGroupRef.implement({
 	})
 });
 
+// Query for introduction papers (papers without agenda items - typically NSA papers)
+builder.queryFields((t) => ({
+	findIntroductionPapers: t.field({
+		type: ['Paper'],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Verify user is a team member with appropriate role
+			const teamMember = await db.teamMember.findFirst({
+				where: {
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+				}
+			});
+
+			if (!teamMember) {
+				throw new GraphQLError('Access denied - requires team member status');
+			}
+
+			// Fetch papers without agenda items (introduction papers)
+			return db.paper.findMany({
+				where: {
+					conferenceId: args.conferenceId,
+					status: { not: 'DRAFT' },
+					agendaItemId: null
+				},
+				include: {
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					},
+					versions: {
+						orderBy: { version: 'desc' },
+						take: 1
+					}
+				}
+			});
+		}
+	})
+}));
+
 builder.queryFields((t) => ({
 	findPapersGroupedByCommittee: t.field({
 		type: [CommitteePaperGroupRef],

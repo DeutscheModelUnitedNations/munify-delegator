@@ -3502,6 +3502,7 @@ type PreviewConferenceSupervisor {
 
 type Query {
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
+  findIntroductionPapers(conferenceId: String!): [Paper!]!
   findManyAgendaItems(cursor: CommitteeAgendaItemWhereUniqueInput, distinct: [CommitteeAgendaItemScalarFieldEnum!], orderBy: [CommitteeAgendaItemOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeAgendaItemWhereInput): [CommitteeAgendaItem!]!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
   findManyConferenceParticipantStatuss(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
