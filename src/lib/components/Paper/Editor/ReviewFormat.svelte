@@ -5,6 +5,9 @@
 	import { getCommonExtensions } from './settings/common.svelte';
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
 	import Placeholder from '@tiptap/extension-placeholder';
+	import Link from '@tiptap/extension-link';
+	import Blockquote from '@tiptap/extension-blockquote';
+	import Heading from '@tiptap/extension-heading';
 	import Menu from './Menu';
 	import { m } from '$lib/paraglide/messages';
 	import type { Readable } from 'svelte/store';
@@ -18,6 +21,19 @@
 
 	let editor = $state<Readable<Editor>>();
 
+	const setLink = () => {
+		const previousUrl = $editor?.getAttributes('link').href;
+		const url = window.prompt(m.enterUrl(), previousUrl);
+
+		if (url === null) return; // cancelled
+		if (url === '') {
+			$editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+			return;
+		}
+
+		$editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+	};
+
 	onMount(() => {
 		editor = createEditor({
 			extensions: [
@@ -25,6 +41,16 @@
 				OrderedList,
 				BulletList,
 				ListItem,
+				Blockquote,
+				Heading.configure({
+					levels: [2, 3]
+				}),
+				Link.configure({
+					openOnClick: false,
+					HTMLAttributes: {
+						class: 'text-primary underline'
+					}
+				}),
 				Placeholder.configure({
 					placeholder: placeholder || m.enterYourReviewComments(),
 					showOnlyCurrent: true
@@ -50,6 +76,21 @@
 	{#if $editor}
 		<Menu.Wrapper>
 			<Menu.Button
+				onClick={() => $editor.chain().focus().toggleHeading({ level: 2 }).run()}
+				active={$editor.isActive('heading', { level: 2 })}
+				label={m.heading2()}
+				icon="fa-heading"
+			/>
+			<Menu.Button
+				onClick={() => $editor.chain().focus().toggleHeading({ level: 3 }).run()}
+				active={$editor.isActive('heading', { level: 3 })}
+				label={m.heading3()}
+				icon="fa-h"
+			/>
+
+			<Menu.Divider />
+
+			<Menu.Button
 				onClick={() => $editor.chain().focus().toggleBold().run()}
 				active={$editor.isActive('bold')}
 				label={m.bold()}
@@ -67,6 +108,12 @@
 				label={m.underline()}
 				icon="fa-underline"
 			/>
+			<Menu.Button
+				onClick={setLink}
+				active={$editor.isActive('link')}
+				label={m.link()}
+				icon="fa-link"
+			/>
 
 			<Menu.Divider />
 
@@ -81,6 +128,12 @@
 				active={$editor.isActive('orderedList')}
 				label={m.orderedList()}
 				icon="fa-list-ol"
+			/>
+			<Menu.Button
+				onClick={() => $editor.chain().focus().toggleBlockquote().run()}
+				active={$editor.isActive('blockquote')}
+				label={m.blockquote()}
+				icon="fa-quote-left"
 			/>
 		</Menu.Wrapper>
 	{/if}
