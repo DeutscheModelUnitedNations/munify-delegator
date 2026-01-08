@@ -2,12 +2,15 @@ import { graphql } from '$houdini';
 import type { getPaperDetailsForEditingQueryVariables } from './$houdini';
 
 export const _houdini_load = graphql(`
-	query getPaperDetailsForEditingQuery($paperId: String!) {
+	query getPaperDetailsForEditingQuery($paperId: String!) @cache(policy: NetworkOnly) {
 		findUniquePaper(where: { id: $paperId }) {
 			id
 			type
 			status
 			author {
+				id
+			}
+			conference {
 				id
 			}
 			delegation {
@@ -41,7 +44,10 @@ export const _houdini_load = graphql(`
 					id
 					comments
 					createdAt
+					statusBefore
+					statusAfter
 					reviewer {
+						id
 						family_name
 						given_name
 						email

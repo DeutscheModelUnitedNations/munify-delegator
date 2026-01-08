@@ -302,6 +302,9 @@ model PaperReview {
   id       String @id @default(nanoid())
   comments Json
 
+  statusBefore PaperStatus?
+  statusAfter  PaperStatus?
+
   paperVersion   PaperVersion @relation(fields: [paperVersionId], references: [id], onDelete: Cascade)
   paperVersionId String
   reviewer       User         @relation(fields: [reviewerId], references: [id])
@@ -578,6 +581,7 @@ model WaitingListEntry {
 enum TeamRole {
   PROJECT_MANAGEMENT
   PARTICIPANT_CARE
+  REVIEWER
   MEMBER
 }
 

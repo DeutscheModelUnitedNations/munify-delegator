@@ -2,7 +2,6 @@
 	import type { PageData } from './$houdini';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
-	import { onMount } from 'svelte';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -10,13 +9,45 @@
 	import { m } from '$lib/paraglide/messages';
 	import InfoChip from './InfoChip.svelte';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
+	import type { PaperStatus$options } from '$houdini';
+	import { VersionCompareModal, computeDiffStats } from '$lib/components/Paper/Editor/DiffViewer';
+	import type {
+		ComparisonState,
+		VersionForComparison,
+		DiffStats
+	} from '$lib/components/Paper/Editor/DiffViewer';
+	import { SvelteMap } from 'svelte/reactivity';
+
+	// Status colors for badges
+	const getStatusBadgeClass = (status: PaperStatus$options) => {
+		switch (status) {
+			case 'SUBMITTED':
+				return 'badge-warning';
+			case 'CHANGES_REQUESTED':
+				return 'badge-error';
+			case 'ACCEPTED':
+				return 'badge-success';
+			default:
+				return 'badge-ghost';
+		}
+	};
 	import { cache, graphql } from '$houdini';
 	import toast from 'svelte-french-toast';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
+	import PaperReviewSection from './PaperReviewSection.svelte';
 
 	const updatePaperMutation = graphql(`
 		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
 			updateOnePaper(where: { paperId: $paperId }, data: { content: $content, status: $status }) {
+				id
+			}
+		}
+	`);
+
+	const deletePaperMutation = graphql(`
+		mutation DeletePaperMutation($paperId: String!) {
+			deleteOnePaper(where: { id: $paperId }) {
 				id
 			}
 		}
@@ -27,7 +58,37 @@
 	let paperQuery = $derived(data.getPaperDetailsForEditingQuery);
 	let paperData = $derived($paperQuery?.data?.findUniquePaper);
 
+	// View mode detection
+	let isAuthor = $derived(paperData?.author.id === data.user.sub);
+	let isReviewer = $derived((data.teamMembers?.length ?? 0) > 0);
+	let baseViewMode = $derived<'author' | 'reviewer'>(
+		isAuthor ? 'author' : isReviewer ? 'reviewer' : 'author'
+	);
+
+	// Edit mode toggle for reviewers
+	let reviewerEditMode = $state(false);
+	let editorEditable = $derived(baseViewMode === 'author' || reviewerEditMode);
+
 	let initialized = $state(false);
+	let currentPaperId = $state<string | null>(null);
+
+	// Reset and reinitialize when paper changes (handles client-side navigation)
+	$effect(() => {
+		if (paperData && paperData.id !== currentPaperId) {
+			if (!paperData.versions || paperData.versions.length === 0) {
+				$editorContentStore = '';
+				currentPaperId = paperData.id;
+				initialized = true;
+				return;
+			}
+			const latestVer = paperData.versions.reduce((acc, version) =>
+				version.version > acc.version ? version : acc
+			);
+			$editorContentStore = latestVer.content;
+			currentPaperId = paperData.id;
+			initialized = true;
+		}
+	});
 
 	let title = $derived(
 		paperData?.agendaItem?.title
@@ -43,8 +104,62 @@
 	let latestVersion = $derived(
 		paperData.versions.find((version) => version.version === versionNumber)
 	);
+	let existingReviews = $derived(paperData.versions.flatMap((version) => version.reviews ?? []));
 
 	let unsavedChanges = $state(false);
+
+	// Version comparison state
+	let comparisonState = $state<ComparisonState>({
+		baseVersion: null,
+		compareVersion: null,
+		isSelecting: false
+	});
+	let showCompareModal = $state(false);
+
+	// Compute diff stats for each version compared to its previous version
+	let versionStats = $derived.by(() => {
+		if (!paperData?.versions || paperData.versions.length < 2)
+			return new SvelteMap<string, DiffStats>();
+
+		const sortedVersions = [...paperData.versions].sort((a, b) => a.version - b.version);
+		const statsMap = new SvelteMap<string, DiffStats>();
+
+		for (let i = 1; i < sortedVersions.length; i++) {
+			const prevVersion = sortedVersions[i - 1];
+			const currVersion = sortedVersions[i];
+			const stats = computeDiffStats(prevVersion.content, currVersion.content);
+			statsMap.set(currVersion.id, stats);
+		}
+
+		return statsMap;
+	});
+
+	const handleCompareClick = (version: VersionForComparison) => {
+		if (!comparisonState.isSelecting) {
+			// First selection - set as base
+			comparisonState = {
+				baseVersion: version,
+				compareVersion: null,
+				isSelecting: true
+			};
+		} else {
+			// Second selection - set as compare and open modal
+			comparisonState = {
+				...comparisonState,
+				compareVersion: version,
+				isSelecting: false
+			};
+			showCompareModal = true;
+		}
+	};
+
+	const cancelComparison = () => {
+		comparisonState = {
+			baseVersion: null,
+			compareVersion: null,
+			isSelecting: false
+		};
+	};
 
 	$effect(() => {
 		if (paperData && $editorContentStore) {
@@ -57,19 +172,17 @@
 		}
 	});
 
-	onMount(() => {
-		$editorContentStore = latestVersion.content;
-		initialized = true;
-	});
-
 	const saveFile = async (options: { submit?: boolean } = {}) => {
 		const { submit = false } = options;
+
+		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
+		const newStatus = reviewerEditMode ? paperData.status : submit ? 'SUBMITTED' : 'DRAFT';
 
 		const resposne = await toast.promise(
 			updatePaperMutation.mutate({
 				paperId: paperData.id,
 				content: $editorContentStore,
-				status: submit ? 'SUBMITTED' : 'DRAFT'
+				status: newStatus
 			}),
 			{
 				loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
@@ -80,6 +193,47 @@
 
 		cache.markStale();
 		await invalidateAll();
+	};
+
+	// Quote selection state for reviewers
+	let quoteToInsert = $state<string | null>(null);
+
+	const handleQuoteSelection = (text: string) => {
+		quoteToInsert = text;
+	};
+
+	const clearQuote = () => {
+		quoteToInsert = null;
+	};
+
+	// Danger Zone state
+	let showDangerZone = $state(false);
+	let deleteConfirmationText = $state('');
+	let entityName = $derived(
+		nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : (nsa?.name ?? '')
+	);
+	let deleteConfirmationExpected = $derived(`${title} - ${entityName}`);
+
+	const handleDeletePaper = async () => {
+		if (deleteConfirmationText !== deleteConfirmationExpected) {
+			toast.error(m.paperDeleteConfirmationMismatch());
+			return;
+		}
+
+		await toast.promise(
+			deletePaperMutation.mutate({
+				paperId: paperData.id
+			}),
+			{
+				loading: m.paperDeleting(),
+				success: m.paperDeletedSuccessfully(),
+				error: (err) => err.message || m.paperDeleteError()
+			}
+		);
+
+		// Navigate back to paperhub
+		const conferenceId = $page.params.conferenceId;
+		goto(`/dashboard/${conferenceId}/paperhub`);
 	};
 </script>
 
@@ -131,25 +285,40 @@
 				tooltip={m.submittedAt()}
 			/>
 		</div>
-		<div class="join join-vertical md:join-horizontal w-full">
-			{#if paperData.status === 'DRAFT'}
+		<!-- Action buttons -->
+		<div class="flex flex-wrap gap-2">
+			{#if baseViewMode === 'author' || reviewerEditMode}
+				<div class="join join-vertical md:join-horizontal">
+					{#if paperData.status === 'DRAFT'}
+						<button
+							class="btn btn-warning join-item"
+							onclick={() => saveFile()}
+							disabled={!unsavedChanges}
+						>
+							<i class="fa-solid fa-pencil"></i>
+							{m.paperSaveDraft()}
+						</button>
+					{/if}
+					<button
+						class="btn btn-primary join-item"
+						onclick={() => saveFile({ submit: true })}
+						disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
+					>
+						<i class="fa-solid fa-paper-plane"></i>
+						{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
+					</button>
+				</div>
+			{/if}
+
+			{#if isReviewer && baseViewMode === 'reviewer'}
 				<button
-					class="btn btn-warning btn-lg join-item"
-					onclick={() => saveFile()}
-					disabled={!unsavedChanges}
+					class="btn {reviewerEditMode ? 'btn-warning' : 'btn-outline'}"
+					onclick={() => (reviewerEditMode = !reviewerEditMode)}
 				>
-					<i class="fa-solid fa-pencil mr-2"></i>
-					{m.paperSaveDraft()}
+					<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
+					{reviewerEditMode ? m.viewer() : m.edit()}
 				</button>
 			{/if}
-			<button
-				class="btn btn-primary btn-lg join-item"
-				onclick={() => saveFile({ submit: true })}
-				disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
-			>
-				<i class="fa-solid fa-paper-plane mr-2"></i>
-				{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
-			</button>
 		</div>
 	{:else}
 		<div>
@@ -157,16 +326,219 @@
 		</div>
 	{/if}
 	{#if initialized}
-		<div class="w-full flex flex-col xl:flex-row-reverse gap-4">
-			<div class="flex flex-col gap-4 xl:w-1/3"></div>
-			{#if paperData.type === 'WORKING_PAPER'}
-				<PaperEditor.ResolutionFormat editable />
-			{:else}
-				<PaperEditor.PaperFormat editable />
+		<div class="w-full flex flex-col gap-4">
+			<!-- Paper Editor - key forces re-creation when editable changes -->
+			{#key editorEditable}
+				{#if paperData.type === 'WORKING_PAPER'}
+					<PaperEditor.ResolutionFormat
+						editable={editorEditable}
+						onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+					/>
+				{:else}
+					<PaperEditor.PaperFormat
+						editable={editorEditable}
+						onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+					/>
+				{/if}
+			{/key}
+
+			<!-- Review section for reviewers -->
+			{#if baseViewMode === 'reviewer'}
+				<PaperReviewSection
+					paperId={paperData.id}
+					currentStatus={paperData.status}
+					{existingReviews}
+					versions={paperData.versions}
+					quoteToInsert={quoteToInsert ?? undefined}
+					onQuoteInserted={clearQuote}
+				/>
+			{/if}
+
+			<!-- History for authors (versions + reviews) -->
+			{#if baseViewMode === 'author' && (paperData.versions.length > 0 || existingReviews.length > 0)}
+				{@const authorTimelineEvents = [
+					...paperData.versions.map((v) => ({
+						type: 'version' as const,
+						date: new Date(v.createdAt),
+						version: v
+					})),
+					...existingReviews.map((r) => ({
+						type: 'review' as const,
+						date: new Date(r.createdAt),
+						review: r
+					}))
+				].sort((a, b) => b.date.getTime() - a.date.getTime())}
+
+				<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
+					<legend class="fieldset-legend">{m.history()}</legend>
+					<ul class="timeline timeline-vertical timeline-compact py-2">
+						{#each authorTimelineEvents as event, index}
+							<li>
+								{#if index > 0}
+									<hr class="bg-base-300" />
+								{/if}
+								<div
+									class="timeline-start text-xs text-base-content/60 text-right pr-4 whitespace-nowrap"
+								>
+									{event.date.toLocaleDateString()} · {event.date.toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit'
+									})}
+								</div>
+								<div class="timeline-middle">
+									<i class="fa-solid fa-circle-chevron-right text-primary text-lg"></i>
+								</div>
+								<div class="timeline-end timeline-box bg-base-100 w-full p-3 mb-4">
+									{#if event.type === 'version'}
+										{@const stats = versionStats.get(event.version.id)}
+										<!-- Version submission event -->
+										<div class="flex flex-wrap justify-between items-center gap-2">
+											<div class="flex items-center gap-2">
+												<i class="fa-solid fa-file-arrow-up text-secondary"></i>
+												<span class="font-semibold">
+													{m.versionSubmitted({ version: event.version.version.toString() })}
+												</span>
+												{#if stats}
+													<span class="text-xs font-mono">
+														<span class="text-success">+{stats.added}</span>
+														<span class="text-error">-{stats.removed}</span>
+													</span>
+												{/if}
+											</div>
+											<div class="flex items-center gap-2">
+												{#if event.version.status}
+													<div
+														class="badge {getStatusBadgeClass(event.version.status)} badge-sm gap-1"
+													>
+														<i class="fa-solid {getPaperStatusIcon(event.version.status)} text-xs"
+														></i>
+														{translatePaperStatus(event.version.status)}
+													</div>
+												{/if}
+												{#if paperData.versions.length > 1}
+													<button
+														class="btn btn-xs btn-ghost {comparisonState.baseVersion?.id ===
+														event.version.id
+															? 'btn-active'
+															: ''}"
+														onclick={() => handleCompareClick(event.version)}
+														title={m.compareVersion()}
+													>
+														<i class="fa-solid fa-code-compare"></i>
+													</button>
+												{/if}
+											</div>
+										</div>
+									{:else}
+										<!-- Review event -->
+										<div class="flex flex-wrap justify-between items-start gap-2 mb-3">
+											<div class="flex items-center gap-2">
+												<i class="fa-solid fa-user-pen text-base-content/50"></i>
+												<span class="font-semibold">
+													{event.review.reviewer.given_name}
+													{event.review.reviewer.family_name}
+												</span>
+											</div>
+											{#if event.review.statusBefore && event.review.statusAfter}
+												<div class="flex items-center gap-1">
+													<div
+														class="badge {getStatusBadgeClass(
+															event.review.statusBefore
+														)} badge-sm gap-1"
+													>
+														<i
+															class="fa-solid {getPaperStatusIcon(
+																event.review.statusBefore
+															)} text-xs"
+														></i>
+														{translatePaperStatus(event.review.statusBefore)}
+													</div>
+													<i class="fa-solid fa-arrow-right text-xs text-base-content/50"></i>
+													<div
+														class="badge {getStatusBadgeClass(
+															event.review.statusAfter
+														)} badge-sm gap-1"
+													>
+														<i
+															class="fa-solid {getPaperStatusIcon(
+																event.review.statusAfter
+															)} text-xs"
+														></i>
+														{translatePaperStatus(event.review.statusAfter)}
+													</div>
+												</div>
+											{/if}
+										</div>
+										<fieldset
+											class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2"
+										>
+											<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
+											<PaperEditor.ReadOnlyContent content={event.review.comments} />
+										</fieldset>
+									{/if}
+								</div>
+								{#if index < authorTimelineEvents.length - 1}
+									<hr class="bg-base-300" />
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</fieldset>
 			{/if}
 		</div>
 	{:else}
 		<div class="mt-6 w-full h-12 skeleton"></div>
+	{/if}
+
+	<!-- Hidden Danger Zone (team members only) -->
+	{#if paperData && isReviewer}
+		<div class="mt-8">
+			<button
+				class="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
+				onclick={() => (showDangerZone = !showDangerZone)}
+			>
+				<i class="fa-solid {showDangerZone ? 'fa-chevron-down' : 'fa-chevron-right'}"></i>
+				{m.dangerZone()}
+			</button>
+
+			{#if showDangerZone}
+				<div class="mt-2 border border-error/30 rounded-box p-4 bg-error/5">
+					<div class="flex items-center gap-2 text-error mb-3">
+						<i class="fa-solid fa-triangle-exclamation text-lg"></i>
+						<h3 class="font-bold">{m.paperDeleteTitle()}</h3>
+					</div>
+
+					<p class="text-sm text-base-content/70 mb-4">
+						{m.paperDeleteWarning()}
+					</p>
+
+					<div class="form-control mb-4">
+						<label class="label" for="delete-confirmation">
+							<span class="label-text text-sm">{m.paperDeleteConfirmation()}</span>
+						</label>
+						<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded">
+							{deleteConfirmationExpected}
+						</div>
+						<input
+							id="delete-confirmation"
+							type="text"
+							class="input input-bordered input-error w-full"
+							placeholder={deleteConfirmationExpected}
+							bind:value={deleteConfirmationText}
+						/>
+					</div>
+
+					<button
+						class="btn btn-error"
+						disabled={deleteConfirmationText !== deleteConfirmationExpected}
+						onclick={handleDeletePaper}
+					>
+						<i class="fa-solid fa-trash"></i>
+						{m.paperDeleteButton()}
+					</button>
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
 
@@ -179,4 +551,24 @@
 			<i class="fa-solid fa-exclamation-triangle fa-beat-fade text-4xl"></i>
 		</div>
 	</div>
+{/if}
+
+<!-- Version comparison selection indicator -->
+{#if comparisonState.isSelecting}
+	<div class="alert alert-info fixed bottom-4 right-4 z-50 w-auto max-w-sm shadow-lg">
+		<i class="fa-solid fa-code-compare"></i>
+		<span>{m.selectSecondVersionToCompare()}</span>
+		<button class="btn btn-sm btn-ghost" onclick={cancelComparison}>
+			<i class="fa-solid fa-xmark"></i>
+		</button>
+	</div>
+{/if}
+
+<!-- Version Compare Modal -->
+{#if comparisonState.baseVersion && comparisonState.compareVersion}
+	<VersionCompareModal
+		bind:open={showCompareModal}
+		baseVersion={comparisonState.baseVersion}
+		compareVersion={comparisonState.compareVersion}
+	/>
 {/if}

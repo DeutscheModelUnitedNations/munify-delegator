@@ -9,6 +9,7 @@ export const _houdini_load = graphql(`
 					{ conferenceSupervisors: { some: { userId: { equals: $userId } } } }
 					{ delegationMembers: { some: { userId: { equals: $userId } } } }
 					{ singleParticipants: { some: { userId: { equals: $userId } } } }
+					{ teamMembers: { some: { userId: { equals: $userId } } } }
 				]
 			}
 		) {

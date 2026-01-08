@@ -10,6 +10,7 @@ const myConferences = graphql(`
 					{ conferenceSupervisors: { some: { userId: { equals: $userId } } } }
 					{ delegationMembers: { some: { userId: { equals: $userId } } } }
 					{ singleParticipants: { some: { userId: { equals: $userId } } } }
+					{ teamMembers: { some: { userId: { equals: $userId } } } }
 				]
 				AND: [{ startConference: { lt: $now } }]
 			}

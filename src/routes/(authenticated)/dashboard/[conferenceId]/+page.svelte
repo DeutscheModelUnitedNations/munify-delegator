@@ -9,6 +9,8 @@
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import { translateTeamRole } from '$lib/services/enumTranslations';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -19,6 +21,7 @@
 	let delegationMember = $derived(conferenceQueryData?.findUniqueDelegationMember);
 	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
 	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
+	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
 	let surveyQuestions = $derived(conferenceQueryData?.findManySurveyQuestions);
 	let surveyAnswers = $derived(conferenceQueryData?.findManySurveyAnswers);
@@ -121,6 +124,53 @@
 			{:else}
 				<ApplicationRejected />
 			{/if}
+		{:else if teamMember}
+			<div class="card bg-base-200 w-full p-6">
+				<div class="flex flex-col gap-6">
+					<div class="flex items-center gap-4">
+						<div class="bg-primary text-primary-content rounded-box p-4">
+							<i class="fa-solid fa-users-gear text-3xl"></i>
+						</div>
+						<div>
+							<h1 class="text-2xl font-bold">{m.teamMemberDashboard()}</h1>
+							<p class="text-base-content/70">
+								{conference?.title} &bull; {translateTeamRole(teamMember.role)}
+							</p>
+						</div>
+					</div>
+
+					<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+						{#if teamMember.role === 'REVIEWER' || teamMember.role === 'PROJECT_MANAGEMENT'}
+							<a
+								href="/dashboard/{conference?.id}/paperhub"
+								class="card bg-base-100 hover:bg-base-300 transition-colors"
+							>
+								<div class="card-body">
+									<div class="flex items-center gap-3">
+										<i class="fa-duotone fa-files text-2xl text-primary"></i>
+										<h2 class="card-title">{m.paperHub()}</h2>
+									</div>
+									<p class="text-base-content/70">{m.reviewPapers()}</p>
+								</div>
+							</a>
+						{/if}
+						{#if teamMember.role === 'PARTICIPANT_CARE' || teamMember.role === 'PROJECT_MANAGEMENT'}
+							<a
+								href="/management/{conference?.id}"
+								class="card bg-base-100 hover:bg-base-300 transition-colors"
+							>
+								<div class="card-body">
+									<div class="flex items-center gap-3">
+										<i class="fa-duotone fa-bars-progress text-2xl text-primary"></i>
+										<h2 class="card-title">{m.administration()}</h2>
+									</div>
+									<p class="text-base-content/70">{m.manageConference()}</p>
+								</div>
+							</a>
+						{/if}
+					</div>
+				</div>
+			</div>
 		{:else}
 			<NoConferenceIndicator />
 		{/if}

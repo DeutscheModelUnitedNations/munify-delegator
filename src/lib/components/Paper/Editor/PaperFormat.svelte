@@ -9,9 +9,10 @@
 
 	interface Props {
 		editable?: boolean;
+		onQuoteSelection?: (text: string) => void;
 	}
 
-	let { editable = false }: Props = $props();
+	let { editable = false, onQuoteSelection }: Props = $props();
 
 	let settings: Partial<EditorOptions> = {
 		extensions: [
@@ -28,7 +29,7 @@
 </script>
 
 {#if settings}
-	<CommonEditor {settings} {editable}>
+	<CommonEditor {settings} {editable} {onQuoteSelection}>
 		{#snippet fixedMenu(editor)}
 			<Menu.Wrapper>
 				<Menu.Button

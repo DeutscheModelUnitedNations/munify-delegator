@@ -13,6 +13,7 @@
 		bubbleMenu?: Snippet<[Editor]>;
 		baseContent?: EditorOptions['content'];
 		additionalClasses?: string;
+		onQuoteSelection?: (text: string) => void;
 	}
 
 	let {
@@ -21,8 +22,26 @@
 		fixedMenu,
 		bubbleMenu,
 		baseContent,
-		additionalClasses = 'prose prose-sm'
+		additionalClasses = 'prose prose-sm',
+		onQuoteSelection
 	}: Props = $props();
+
+	const handleQuoteClick = () => {
+		if ($editor && onQuoteSelection) {
+			const { from, to } = $editor.state.selection;
+			const selectedText = $editor.state.doc.textBetween(from, to, ' ');
+			if (selectedText.trim()) {
+				onQuoteSelection(selectedText.trim());
+			}
+		}
+	};
+
+	// Custom shouldShow for quote bubble menu - works even in read-only mode
+	const shouldShowQuoteBubble = ({ state }: { state: any }) => {
+		const { from, to } = state.selection;
+		// Show only when there's actual text selected (not just cursor)
+		return from !== to;
+	};
 
 	let editor = $state() as Readable<Editor>;
 
@@ -55,6 +74,19 @@
 	{#if $editor && editable}
 		<BubbleMenu editor={$editor}>
 			{@render bubbleMenu?.($editor)}
+		</BubbleMenu>
+	{/if}
+
+	{#if $editor && !editable && onQuoteSelection}
+		<BubbleMenu editor={$editor} shouldShow={shouldShowQuoteBubble}>
+			<button
+				class="btn btn-sm btn-primary shadow-lg"
+				onclick={handleQuoteClick}
+				title={m.quoteInReview()}
+			>
+				<i class="fa-solid fa-quote-left"></i>
+				{m.quote()}
+			</button>
 		</BubbleMenu>
 	{/if}
 </fieldset>
