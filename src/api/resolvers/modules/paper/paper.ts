@@ -20,8 +20,10 @@ import { db } from '$db/db';
 import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
+import { GQLCommittee } from '../committee';
+import { GQLCommitteeAgendaItem } from '../committeeAgendaItem';
 
-builder.prismaObject('Paper', {
+export const GQLPaper = builder.prismaObject('Paper', {
 	fields: (t) => ({
 		id: t.field(PaperIdFieldObject),
 		type: t.field(PaperTypeFieldObject),
@@ -229,12 +231,12 @@ const CommitteePaperGroupRef = builder.objectRef<{
 AgendaItemPaperGroupRef.implement({
 	fields: (t) => ({
 		agendaItem: t.field({
-			type: 'CommitteeAgendaItem',
+			type: GQLCommitteeAgendaItem,
 			nullable: true,
 			resolve: (parent) => parent.agendaItem
 		}),
 		papers: t.field({
-			type: ['Paper'],
+			type: [GQLPaper],
 			resolve: (parent) => parent.papers
 		})
 	})
@@ -243,7 +245,7 @@ AgendaItemPaperGroupRef.implement({
 CommitteePaperGroupRef.implement({
 	fields: (t) => ({
 		committee: t.field({
-			type: 'Committee',
+			type: GQLCommittee,
 			resolve: (parent) => parent.committee
 		}),
 		agendaItems: t.field({
@@ -256,7 +258,7 @@ CommitteePaperGroupRef.implement({
 // Query for introduction papers (papers without agenda items - typically NSA papers)
 builder.queryFields((t) => ({
 	findIntroductionPapers: t.field({
-		type: ['Paper'],
+		type: [GQLPaper],
 		args: {
 			conferenceId: t.arg.string({ required: true })
 		},
@@ -345,7 +347,13 @@ builder.queryFields((t) => ({
 			});
 
 			// Group by committee and agenda item
-			const grouped = new Map();
+			const grouped = new Map<
+				string,
+				{
+					committee: any;
+					agendaItems: Map<string, { agendaItem: any; papers: any[] }>;
+				}
+			>();
 
 			for (const paper of papers) {
 				if (!paper.agendaItem) continue;
@@ -360,7 +368,7 @@ builder.queryFields((t) => ({
 					});
 				}
 
-				const committeeGroup = grouped.get(committeeId);
+				const committeeGroup = grouped.get(committeeId)!;
 				if (!committeeGroup.agendaItems.has(agendaItemId)) {
 					committeeGroup.agendaItems.set(agendaItemId, {
 						agendaItem: paper.agendaItem,
@@ -368,7 +376,7 @@ builder.queryFields((t) => ({
 					});
 				}
 
-				committeeGroup.agendaItems.get(agendaItemId).papers.push(paper);
+				committeeGroup.agendaItems.get(agendaItemId)!.papers.push(paper);
 			}
 
 			// Convert to array format

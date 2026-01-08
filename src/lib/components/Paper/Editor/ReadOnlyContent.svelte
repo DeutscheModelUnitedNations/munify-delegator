@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createEditor, EditorContent } from 'svelte-tiptap';
+	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
 	import { getCommonExtensions } from './settings/common.svelte';
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
 	import type { Readable } from 'svelte/store';
-	import type { Editor } from '@tiptap/core';
 
 	interface Props {
 		content: any;
@@ -20,7 +19,7 @@
 			content: content || undefined,
 			editorProps: {
 				attributes: {
-					class: 'prose prose-sm focus:outline-none'
+					class: 'prose prose-sm focus:outline-none px-2'
 				}
 			},
 			editable: false
@@ -29,5 +28,7 @@
 </script>
 
 <div class="read-only-content">
-	<EditorContent editor={$editor} />
+	{#if $editor}
+		<EditorContent editor={$editor} />
+	{/if}
 </div>

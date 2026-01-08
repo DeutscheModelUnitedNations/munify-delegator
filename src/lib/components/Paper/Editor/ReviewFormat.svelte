@@ -85,5 +85,7 @@
 		</Menu.Wrapper>
 	{/if}
 
-	<EditorContent editor={$editor} />
+	{#if $editor}
+		<EditorContent editor={$editor} />
+	{/if}
 </fieldset>

@@ -8,8 +8,9 @@
 	import toast from 'svelte-french-toast';
 	import { onMount } from 'svelte';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import type { PageData } from './$houdini';
 
-	let { data } = $props();
+	let { data }: { data: PageData } = $props();
 
 	const teamQuery = data.TeamMembersQuery;
 	let teamMembers = $derived($teamQuery.data?.findManyTeamMembers ?? []);

@@ -10,6 +10,7 @@ import {
 import { builder } from '../../builder';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
+import { PaperStatus, Json } from '$db/generated/graphql/inputs';
 
 builder.prismaObject('PaperReview', {
 	fields: (t) => ({
@@ -28,8 +29,8 @@ builder.mutationFields((t) => ({
 		type: 'PaperReview',
 		args: {
 			paperId: t.arg.string({ required: true }),
-			comments: t.arg({ type: 'Json', required: true }),
-			newStatus: t.arg({ type: 'PaperStatus', required: true })
+			comments: t.arg({ type: Json, required: true }),
+			newStatus: t.arg({ type: PaperStatus, required: true })
 		},
 		resolve: async (query, root, args, ctx) => {
 			const user = ctx.permissions.getLoggedInUserOrThrow();
@@ -81,7 +82,7 @@ builder.mutationFields((t) => ({
 				const review = await tx.paperReview.create({
 					...query,
 					data: {
-						comments: args.comments,
+						comments: args.comments ?? {},
 						paperVersionId: latestVersion.id,
 						reviewerId: user.sub,
 						statusBefore: currentStatus,
