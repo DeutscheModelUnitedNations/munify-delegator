@@ -5,3 +5,4 @@ yarn.lock
 fontawesome
 i18n
 schema.graphql
+.claude

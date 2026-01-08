@@ -13,6 +13,7 @@
 		VersionForComparison,
 		DiffStats
 	} from '$lib/components/Paper/Editor/DiffViewer';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	// Status colors for badges
 	const getStatusBadgeClass = (status: PaperStatus$options) => {
@@ -110,10 +111,10 @@
 
 	// Compute diff stats for each version compared to its previous version
 	let versionStats = $derived.by(() => {
-		if (!versions || versions.length < 2) return new Map<string, DiffStats>();
+		if (!versions || versions.length < 2) return new SvelteMap<string, DiffStats>();
 
 		const sortedVersions = [...versions].sort((a, b) => a.version - b.version);
-		const statsMap = new Map<string, DiffStats>();
+		const statsMap = new SvelteMap<string, DiffStats>();
 
 		for (let i = 1; i < sortedVersions.length; i++) {
 			const prevVersion = sortedVersions[i - 1];

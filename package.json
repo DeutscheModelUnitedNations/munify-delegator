@@ -3,6 +3,7 @@
 		"commander": "^14.0.2",
 		"diff-match-patch": "^1.0.5",
 		"humanparser": "^2.7.0",
+		"preact": "^10.28.2",
 		"prettier-plugin-sort-json": "^4.1.1",
 		"svelte-kit": "^1.2.0"
 	},

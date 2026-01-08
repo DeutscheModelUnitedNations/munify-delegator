@@ -5,6 +5,7 @@
 	import type { PaperStatus$options } from '$houdini';
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperTable from './PaperTable.svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	interface Props {
 		conferenceId: string;
@@ -119,7 +120,7 @@
 	};
 
 	// Sorting state per agenda item
-	let sortConfig = $state<Map<string, { key: string; direction: 'asc' | 'desc' }>>(new Map());
+	let sortConfig = new SvelteMap<string, { key: string; direction: 'asc' | 'desc' }>();
 
 	const getSortedPapers = (agendaItemId: string, papers: any[]) => {
 		const config = sortConfig.get(agendaItemId);
@@ -173,7 +174,6 @@
 		} else {
 			sortConfig.set(agendaItemId, { key, direction: 'asc' });
 		}
-		sortConfig = new Map(sortConfig);
 	};
 
 	const getSortConfig = (agendaItemId: string) => {
