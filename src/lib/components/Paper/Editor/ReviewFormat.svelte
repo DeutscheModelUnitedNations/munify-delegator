@@ -15,11 +15,31 @@
 	interface Props {
 		contentStore: Writable<any>;
 		placeholder?: string;
+		quoteToInsert?: string;
+		onQuoteInserted?: () => void;
 	}
 
-	let { contentStore, placeholder = '' }: Props = $props();
+	let { contentStore, placeholder = '', quoteToInsert, onQuoteInserted }: Props = $props();
 
 	let editor = $state<Readable<Editor>>();
+
+	// Insert quote when quoteToInsert changes
+	$effect(() => {
+		if (quoteToInsert && $editor) {
+			$editor
+				.chain()
+				.focus()
+				.insertContent([
+					{
+						type: 'blockquote',
+						content: [{ type: 'paragraph', content: [{ type: 'text', text: quoteToInsert }] }]
+					},
+					{ type: 'paragraph' }
+				])
+				.run();
+			onQuoteInserted?.();
+		}
+	});
 
 	const setLink = () => {
 		const previousUrl = $editor?.getAttributes('link').href;
@@ -134,6 +154,21 @@
 				active={$editor.isActive('blockquote')}
 				label={m.blockquote()}
 				icon="fa-quote-left"
+			/>
+
+			<Menu.Divider />
+
+			<Menu.Button
+				onClick={() => $editor.chain().focus().liftListItem('listItem').run()}
+				disabled={!$editor.can().liftListItem('listItem')}
+				label={m.outdent()}
+				icon="fa-outdent"
+			/>
+			<Menu.Button
+				onClick={() => $editor.chain().focus().sinkListItem('listItem').run()}
+				disabled={!$editor.can().sinkListItem('listItem')}
+				label={m.indent()}
+				icon="fa-indent"
 			/>
 		</Menu.Wrapper>
 	{/if}

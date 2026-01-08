@@ -56,9 +56,19 @@
 		existingReviews: Review[];
 		versions?: Version[];
 		authorName?: string;
+		quoteToInsert?: string;
+		onQuoteInserted?: () => void;
 	}
 
-	let { paperId, currentStatus, existingReviews, versions = [], authorName = '' }: Props = $props();
+	let {
+		paperId,
+		currentStatus,
+		existingReviews,
+		versions = [],
+		authorName = '',
+		quoteToInsert,
+		onQuoteInserted
+	}: Props = $props();
 
 	// Create unified timeline from versions and reviews
 	type TimelineEvent =
@@ -228,7 +238,7 @@
 		</fieldset>
 
 		<!-- Comments Editor -->
-		<PaperEditor.ReviewFormat contentStore={reviewComments} />
+		<PaperEditor.ReviewFormat contentStore={reviewComments} {quoteToInsert} {onQuoteInserted} />
 
 		<!-- Submit Button -->
 		<button class="btn btn-primary" onclick={handleSubmitReview}>

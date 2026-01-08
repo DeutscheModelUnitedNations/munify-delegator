@@ -187,6 +187,17 @@
 		await invalidateAll();
 	};
 
+	// Quote selection state for reviewers
+	let quoteToInsert = $state<string | null>(null);
+
+	const handleQuoteSelection = (text: string) => {
+		quoteToInsert = text;
+	};
+
+	const clearQuote = () => {
+		quoteToInsert = null;
+	};
+
 	// Danger Zone state
 	let showDangerZone = $state(false);
 	let deleteConfirmationText = $state('');
@@ -311,9 +322,15 @@
 			<!-- Paper Editor - key forces re-creation when editable changes -->
 			{#key editorEditable}
 				{#if paperData.type === 'WORKING_PAPER'}
-					<PaperEditor.ResolutionFormat editable={editorEditable} />
+					<PaperEditor.ResolutionFormat
+						editable={editorEditable}
+						onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+					/>
 				{:else}
-					<PaperEditor.PaperFormat editable={editorEditable} />
+					<PaperEditor.PaperFormat
+						editable={editorEditable}
+						onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+					/>
 				{/if}
 			{/key}
 
@@ -324,6 +341,8 @@
 					currentStatus={paperData.status}
 					{existingReviews}
 					versions={paperData.versions}
+					quoteToInsert={quoteToInsert ?? undefined}
+					onQuoteInserted={clearQuote}
 				/>
 			{/if}
 

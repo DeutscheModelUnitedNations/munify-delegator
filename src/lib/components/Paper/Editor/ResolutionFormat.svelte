@@ -18,9 +18,10 @@
 
 	interface Props {
 		editable?: boolean;
+		onQuoteSelection?: (text: string) => void;
 	}
 
-	let { editable }: Props = $props();
+	let { editable, onQuoteSelection }: Props = $props();
 
 	// const baseContent = `
 	//        <div data-type="preamble-section">
@@ -71,7 +72,13 @@
 </script>
 
 {#if settings}
-	<CommonEditor {settings} {editable} {baseContent} additionalClasses="resolution-document">
+	<CommonEditor
+		{settings}
+		{editable}
+		{baseContent}
+		{onQuoteSelection}
+		additionalClasses="resolution-document"
+	>
 		{#snippet fixedMenu(editor)}
 			<Menu.Wrapper>
 				<!-- ADD PREAMBLE CLAUSE -->
