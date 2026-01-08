@@ -10,14 +10,8 @@
 		paperUrl: string;
 	}
 
-	let {
-		recipientName,
-		paperTitle,
-		paperType,
-		reviewerName,
-		conferenceTitle,
-		paperUrl
-	}: Props = $props();
+	let { recipientName, paperTitle, paperType, reviewerName, conferenceTitle, paperUrl }: Props =
+		$props();
 </script>
 
 <Html lang="de">
@@ -31,9 +25,7 @@
 			style="background-color: #ffffff; margin: 40px auto; padding: 20px; border-radius: 8px; max-width: 600px;"
 		>
 			<Section>
-				<Text
-					style="font-size: 24px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px;"
-				>
+				<Text style="font-size: 24px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px;">
 					Neues Review erhalten
 				</Text>
 
@@ -63,8 +55,8 @@
 				<Hr style="border-color: #e5e7eb; margin: 24px 0;" />
 
 				<Text style="font-size: 14px; color: #6b7280; line-height: 1.5;">
-					Diese E-Mail wurde automatisch vom MUNIFY Delegator System versendet. Bitte
-					antworte nicht auf diese E-Mail.
+					Diese E-Mail wurde automatisch vom MUNIFY Delegator System versendet. Bitte antworte nicht
+					auf diese E-Mail.
 				</Text>
 			</Section>
 		</Container>
