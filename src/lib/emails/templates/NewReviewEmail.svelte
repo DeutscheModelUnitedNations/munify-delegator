@@ -26,7 +26,7 @@
 
 <Html lang="de">
 	<Head>
-		<title>Neues Review für dein Paper</title>
+		<title>Neues Feedback zu deinem Papier</title>
 	</Head>
 	<Body
 		style="background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
