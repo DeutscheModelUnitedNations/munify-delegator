@@ -69,6 +69,7 @@
 		authorName?: string;
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
+		paperContainer?: HTMLElement | null;
 	}
 
 	let {
@@ -78,7 +79,8 @@
 		versions = [],
 		authorName = '',
 		quoteToInsert,
-		onQuoteInserted
+		onQuoteInserted,
+		paperContainer = null
 	}: Props = $props();
 
 	// Create unified timeline from versions and reviews
@@ -256,7 +258,12 @@
 		</fieldset>
 
 		<!-- Comments Editor -->
-		<PaperEditor.ReviewFormat contentStore={reviewComments} {quoteToInsert} {onQuoteInserted} />
+		<PaperEditor.ReviewFormat
+			contentStore={reviewComments}
+			{quoteToInsert}
+			{onQuoteInserted}
+			{paperContainer}
+		/>
 
 		<!-- Submit Button -->
 		<button class="btn btn-primary" onclick={handleSubmitReview} disabled={isSubmitting}>
@@ -361,7 +368,7 @@
 							</div>
 							<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2">
 								<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
-								<PaperEditor.ReadOnlyContent content={event.review.comments} />
+								<PaperEditor.ReadOnlyContent content={event.review.comments} {paperContainer} />
 							</fieldset>
 						{/if}
 					</div>

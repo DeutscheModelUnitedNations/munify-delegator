@@ -214,3 +214,46 @@ ol[data-type='sub-clause-group']
 	li[data-type='sub-clause']::before {
 	content: counter(sub-clause-counter, lower-roman) '.'; /* changes to i., ii., iii. */
 }
+
+/* --- CITE FIND IN PAPER FEATURE --- */
+
+/* Blockquote with find button */
+blockquote {
+	position: relative;
+}
+
+/* The content div inside blockquote */
+blockquote .blockquote-content {
+	padding-right: 2rem; /* Make room for the button */
+}
+
+/* Tooltip wrapper positioning */
+.cite-find-wrapper {
+	position: absolute;
+	top: 0.25rem;
+	right: 0.25rem;
+}
+
+/* Highlight animation for found text in paper */
+.cite-highlight {
+	background-color: var(--color-secondary);
+	border-radius: 2px;
+	padding: 0 2px;
+	margin: 0 -2px;
+	animation: cite-highlight-pulse 2s ease-out forwards;
+}
+
+@keyframes cite-highlight-pulse {
+	0% {
+		background-color: var(--color-secondary);
+		box-shadow: 0 0 0 2px var(--color-secondary);
+	}
+	50% {
+		background-color: rgba(var(--color-secondary-rgb, 255, 193, 7), 0.5);
+		box-shadow: 0 0 0 1px rgba(var(--color-secondary-rgb, 255, 193, 7), 0.3);
+	}
+	100% {
+		background-color: transparent;
+		box-shadow: none;
+	}
+}

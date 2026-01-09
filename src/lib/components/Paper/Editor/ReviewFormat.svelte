@@ -6,7 +6,7 @@
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
 	import Placeholder from '@tiptap/extension-placeholder';
 	import Link from '@tiptap/extension-link';
-	import Blockquote from '@tiptap/extension-blockquote';
+	import { BlockquoteWithFind } from './extensions/BlockquoteWithFind';
 	import Heading from '@tiptap/extension-heading';
 	import Menu from './Menu';
 	import { m } from '$lib/paraglide/messages';
@@ -17,9 +17,16 @@
 		placeholder?: string;
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
+		paperContainer?: HTMLElement | null;
 	}
 
-	let { contentStore, placeholder = '', quoteToInsert, onQuoteInserted }: Props = $props();
+	let {
+		contentStore,
+		placeholder = '',
+		quoteToInsert,
+		onQuoteInserted,
+		paperContainer = null
+	}: Props = $props();
 
 	let editor = $state<Readable<Editor>>();
 
@@ -65,7 +72,11 @@
 				OrderedList,
 				BulletList,
 				ListItem,
-				Blockquote,
+				BlockquoteWithFind.configure({
+					getPaperContainer: () => paperContainer,
+					findInPaperLabel: m.findInPaper(),
+					citeNotFoundLabel: m.citeNotFound()
+				}),
 				Heading.configure({
 					levels: [2, 3]
 				}),

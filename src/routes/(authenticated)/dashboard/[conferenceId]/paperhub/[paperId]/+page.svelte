@@ -197,6 +197,9 @@
 		quoteToInsert = null;
 	};
 
+	// Paper editor container reference for cite navigation
+	let paperEditorContainer = $state<HTMLElement | null>(null);
+
 	// Danger Zone state
 	let showDangerZone = $state(false);
 	let deleteConfirmationText = $state('');
@@ -319,19 +322,21 @@
 	{#if initialized}
 		<div class="w-full flex flex-col gap-4">
 			<!-- Paper Editor - key forces re-creation when editable changes -->
-			{#key editorEditable}
-				{#if paperData.type === 'WORKING_PAPER'}
-					<PaperEditor.ResolutionFormat
-						editable={editorEditable}
-						onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
-					/>
-				{:else}
-					<PaperEditor.PaperFormat
-						editable={editorEditable}
-						onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
-					/>
-				{/if}
-			{/key}
+			<div bind:this={paperEditorContainer}>
+				{#key editorEditable}
+					{#if paperData.type === 'WORKING_PAPER'}
+						<PaperEditor.ResolutionFormat
+							editable={editorEditable}
+							onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+						/>
+					{:else}
+						<PaperEditor.PaperFormat
+							editable={editorEditable}
+							onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+						/>
+					{/if}
+				{/key}
+			</div>
 
 			<!-- Review section for reviewers -->
 			{#if baseViewMode === 'reviewer'}
@@ -342,6 +347,7 @@
 					versions={paperData.versions}
 					quoteToInsert={quoteToInsert ?? undefined}
 					onQuoteInserted={clearQuote}
+					paperContainer={paperEditorContainer}
 				/>
 			{/if}
 
@@ -464,7 +470,10 @@
 											class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-2"
 										>
 											<legend class="fieldset-legend text-xs">{m.reviewComments()}</legend>
-											<PaperEditor.ReadOnlyContent content={event.review.comments} />
+											<PaperEditor.ReadOnlyContent
+												content={event.review.comments}
+												paperContainer={paperEditorContainer}
+											/>
 										</fieldset>
 									{/if}
 								</div>

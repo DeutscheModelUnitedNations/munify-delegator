@@ -4,15 +4,17 @@
 	import { getCommonExtensions } from './settings/common.svelte';
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
 	import Link from '@tiptap/extension-link';
-	import Blockquote from '@tiptap/extension-blockquote';
+	import { BlockquoteWithFind } from './extensions/BlockquoteWithFind';
 	import Heading from '@tiptap/extension-heading';
+	import { m } from '$lib/paraglide/messages';
 	import type { Readable } from 'svelte/store';
 
 	interface Props {
 		content: any;
+		paperContainer?: HTMLElement | null;
 	}
 
-	let { content }: Props = $props();
+	let { content, paperContainer = null }: Props = $props();
 
 	let editor = $state<Readable<Editor>>();
 
@@ -29,7 +31,11 @@
 						class: 'text-primary underline'
 					}
 				}),
-				Blockquote,
+				BlockquoteWithFind.configure({
+					getPaperContainer: () => paperContainer,
+					findInPaperLabel: m.findInPaper(),
+					citeNotFoundLabel: m.citeNotFound()
+				}),
 				Heading.configure({
 					levels: [2, 3]
 				})
