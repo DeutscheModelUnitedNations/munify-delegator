@@ -4,6 +4,11 @@ enum AdministrativeStatus {
   PROBLEM
 }
 
+type AgendaItemPaperGroup {
+  agendaItem: CommitteeAgendaItem
+  papers: [Paper!]!
+}
+
 """Batch payloads from prisma."""
 type BatchPayload {
   """Prisma Batch Payload"""
@@ -199,6 +204,11 @@ input CommitteeOrderByWithRelationInput {
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
   updatedAt: SortOrder
+}
+
+type CommitteePaperGroup {
+  agendaItems: [AgendaItemPaperGroup!]!
+  committee: Committee!
 }
 
 enum CommitteeScalarFieldEnum {
@@ -1823,6 +1833,23 @@ input EnumPaperStatusFilter {
   notIn: [PaperStatus!]
 }
 
+input EnumPaperStatusNullableFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input EnumPaperStatusNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumPaperStatusNullableFilter
+  _min: NestedEnumPaperStatusNullableFilter
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
 input EnumPaperStatusWithAggregatesFilter {
   _count: NestedIntFilter
   _max: NestedEnumPaperStatusFilter
@@ -2128,7 +2155,9 @@ type Mutation {
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
+  createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
+  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): PaperReview!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -2170,6 +2199,7 @@ type Mutation {
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
+  updateOneTeamMember(data: TeamMemberUpdateInput!, where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
@@ -2428,6 +2458,23 @@ input NestedEnumMediaConsentStatusWithAggregatesFilter {
 }
 
 input NestedEnumPaperStatusFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input NestedEnumPaperStatusNullableFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input NestedEnumPaperStatusNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumPaperStatusNullableFilter
+  _min: NestedEnumPaperStatusNullableFilter
   equals: PaperStatus
   in: [PaperStatus!]
   not: PaperStatus
@@ -2827,6 +2874,10 @@ input NullableEnumGenderFieldUpdateOperationsInput {
   set: Gender
 }
 
+input NullableEnumPaperStatusFieldUpdateOperationsInput {
+  set: PaperStatus
+}
+
 input NullableFloatFieldUpdateOperationsInput {
   decrement: Float
   divide: Float
@@ -2951,6 +3002,8 @@ type PaperReview {
   id: ID!
   paperVersion: PaperVersion!
   reviewer: User!
+  statusAfter: PaperStatus
+  statusBefore: PaperStatus
 }
 
 input PaperReviewCreateInput {
@@ -2959,6 +3012,8 @@ input PaperReviewCreateInput {
   id: String
   paperVersionId: String!
   reviewerId: String!
+  statusAfter: PaperStatus
+  statusBefore: PaperStatus
 }
 
 input PaperReviewCreateNestedManyWithoutPaperVersionInput {
@@ -2987,6 +3042,8 @@ input PaperReviewOrderByWithRelationInput {
   paperVersionId: SortOrder
   reviewer: UserOrderByWithRelationInput
   reviewerId: SortOrder
+  statusAfter: SortOrder
+  statusBefore: SortOrder
 }
 
 enum PaperReviewScalarFieldEnum {
@@ -2995,6 +3052,8 @@ enum PaperReviewScalarFieldEnum {
   id
   paperVersionId
   reviewerId
+  statusAfter
+  statusBefore
 }
 
 input PaperReviewUpdateInput {
@@ -3003,12 +3062,16 @@ input PaperReviewUpdateInput {
   id: StringFieldUpdateOperationsInput
   paperVersionId: StringFieldUpdateOperationsInput
   reviewerId: StringFieldUpdateOperationsInput
+  statusAfter: NullableEnumPaperStatusFieldUpdateOperationsInput
+  statusBefore: NullableEnumPaperStatusFieldUpdateOperationsInput
 }
 
 input PaperReviewUpdateManyMutationInput {
   comments: Json
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  statusAfter: NullableEnumPaperStatusFieldUpdateOperationsInput
+  statusBefore: NullableEnumPaperStatusFieldUpdateOperationsInput
 }
 
 input PaperReviewUpdateManyWithoutPaperVersionNestedInput {
@@ -3034,6 +3097,8 @@ input PaperReviewWhereInput {
   paperVersionId: StringFilter
   reviewer: UserWhereInput
   reviewerId: StringFilter
+  statusAfter: EnumPaperStatusNullableFilter
+  statusBefore: EnumPaperStatusNullableFilter
 }
 
 input PaperReviewWhereUniqueInput {
@@ -3047,6 +3112,8 @@ input PaperReviewWhereUniqueInput {
   paperVersionId: StringFilter
   reviewer: UserWhereInput
   reviewerId: StringFilter
+  statusAfter: EnumPaperStatusNullableFilter
+  statusBefore: EnumPaperStatusNullableFilter
 }
 
 enum PaperScalarFieldEnum {
@@ -3435,6 +3502,7 @@ type PreviewConferenceSupervisor {
 
 type Query {
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
+  findIntroductionPapers(conferenceId: String!): [Paper!]!
   findManyAgendaItems(cursor: CommitteeAgendaItemWhereUniqueInput, distinct: [CommitteeAgendaItemScalarFieldEnum!], orderBy: [CommitteeAgendaItemOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeAgendaItemWhereInput): [CommitteeAgendaItem!]!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
   findManyConferenceParticipantStatuss(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
@@ -3455,6 +3523,7 @@ type Query {
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
+  findPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
@@ -4565,6 +4634,7 @@ enum TeamRole {
   MEMBER
   PARTICIPANT_CARE
   PROJECT_MANAGEMENT
+  REVIEWER
 }
 
 enum TransactionIsolationLevel {

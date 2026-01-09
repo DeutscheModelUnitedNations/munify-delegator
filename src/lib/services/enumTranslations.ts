@@ -24,3 +24,18 @@ export function translatePaperType(paperType: PaperType$options) {
 			return m.paperTypeWorkingPaper();
 	}
 }
+
+export function translateTeamRole(role: string) {
+	switch (role) {
+		case 'PROJECT_MANAGEMENT':
+			return m.teamRoleProjectManagement();
+		case 'PARTICIPANT_CARE':
+			return m.teamRoleParticipantCare();
+		case 'REVIEWER':
+			return m.teamRoleReviewer();
+		case 'MEMBER':
+			return m.teamRoleMember();
+		default:
+			return role;
+	}
+}

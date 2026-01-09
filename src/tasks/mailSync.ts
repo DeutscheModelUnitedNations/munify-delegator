@@ -86,6 +86,7 @@ export interface Attribs {
 			| 'PARTICIPANT_CARE'
 			| 'PROJECT_MANAGEMENT'
 			| 'MEMBER' // Team Member
+			| 'REVIEWER'
 			| undefined;
 	}[];
 }

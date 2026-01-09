@@ -20,8 +20,10 @@ import { db } from '$db/db';
 import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
+import { GQLCommittee } from '../committee';
+import { GQLCommitteeAgendaItem } from '../committeeAgendaItem';
 
-builder.prismaObject('Paper', {
+export const GQLPaper = builder.prismaObject('Paper', {
 	fields: (t) => ({
 		id: t.field(PaperIdFieldObject),
 		type: t.field(PaperTypeFieldObject),
@@ -158,7 +160,8 @@ builder.mutationFields((t) => {
 				return await db.$transaction(async (tx) => {
 					const paperDBEntry = await tx.paper.findUniqueOrThrow({
 						where: {
-							id: args.where.paperId
+							id: args.where.paperId,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Paper]
 						},
 						include: {
 							versions: true,
@@ -214,3 +217,174 @@ builder.mutationFields((t) => {
 		})
 	};
 });
+
+// Define types for grouped papers query
+const AgendaItemPaperGroupRef = builder.objectRef<{
+	agendaItem: any;
+	papers: any[];
+}>('AgendaItemPaperGroup');
+
+const CommitteePaperGroupRef = builder.objectRef<{
+	committee: any;
+	agendaItems: Array<{ agendaItem: any; papers: any[] }>;
+}>('CommitteePaperGroup');
+
+AgendaItemPaperGroupRef.implement({
+	fields: (t) => ({
+		agendaItem: t.field({
+			type: GQLCommitteeAgendaItem,
+			nullable: true,
+			resolve: (parent) => parent.agendaItem
+		}),
+		papers: t.field({
+			type: [GQLPaper],
+			resolve: (parent) => parent.papers
+		})
+	})
+});
+
+CommitteePaperGroupRef.implement({
+	fields: (t) => ({
+		committee: t.field({
+			type: GQLCommittee,
+			resolve: (parent) => parent.committee
+		}),
+		agendaItems: t.field({
+			type: [AgendaItemPaperGroupRef],
+			resolve: (parent) => parent.agendaItems
+		})
+	})
+});
+
+// Query for introduction papers (papers without agenda items - typically NSA papers)
+builder.queryFields((t) => ({
+	findIntroductionPapers: t.field({
+		type: [GQLPaper],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Verify user is a team member with appropriate role
+			const teamMember = await db.teamMember.findFirst({
+				where: {
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+				}
+			});
+
+			if (!teamMember) {
+				throw new GraphQLError('Access denied - requires team member status');
+			}
+
+			// Fetch papers without agenda items (introduction papers)
+			return db.paper.findMany({
+				where: {
+					conferenceId: args.conferenceId,
+					status: { not: 'DRAFT' },
+					agendaItemId: null
+				},
+				include: {
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					},
+					versions: {
+						orderBy: { version: 'desc' },
+						take: 1
+					}
+				}
+			});
+		}
+	})
+}));
+
+builder.queryFields((t) => ({
+	findPapersGroupedByCommittee: t.field({
+		type: [CommitteePaperGroupRef],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Verify user is a team member with appropriate role
+			const teamMember = await db.teamMember.findFirst({
+				where: {
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+				}
+			});
+
+			if (!teamMember) {
+				throw new GraphQLError('Access denied - requires team member status');
+			}
+
+			// Fetch all papers with related data (exclude drafts)
+			const papers = await db.paper.findMany({
+				where: { conferenceId: args.conferenceId, status: { not: 'DRAFT' } },
+				include: {
+					agendaItem: {
+						include: {
+							committee: true
+						}
+					},
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					},
+					versions: {
+						orderBy: { version: 'desc' },
+						take: 1
+					}
+				}
+			});
+
+			// Group by committee and agenda item
+			const grouped = new Map<
+				string,
+				{
+					committee: any;
+					agendaItems: Map<string, { agendaItem: any; papers: any[] }>;
+				}
+			>();
+
+			for (const paper of papers) {
+				if (!paper.agendaItem) continue;
+
+				const committeeId = paper.agendaItem.committee.id;
+				const agendaItemId = paper.agendaItem.id;
+
+				if (!grouped.has(committeeId)) {
+					grouped.set(committeeId, {
+						committee: paper.agendaItem.committee,
+						agendaItems: new Map()
+					});
+				}
+
+				const committeeGroup = grouped.get(committeeId)!;
+				if (!committeeGroup.agendaItems.has(agendaItemId)) {
+					committeeGroup.agendaItems.set(agendaItemId, {
+						agendaItem: paper.agendaItem,
+						papers: []
+					});
+				}
+
+				committeeGroup.agendaItems.get(agendaItemId)!.papers.push(paper);
+			}
+
+			// Convert to array format
+			return Array.from(grouped.values()).map((committee) => ({
+				committee: committee.committee,
+				agendaItems: Array.from(committee.agendaItems.values())
+			}));
+		}
+	})
+}));

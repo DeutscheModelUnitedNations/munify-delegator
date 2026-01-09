@@ -4,10 +4,25 @@ import type { OIDC } from '$api/context/oidc';
 
 export const defineAbilitiesForPaperVersion = (oidc: OIDC, { can }: AbilityBuilder<AppAbility>) => {
 	if (oidc && oidc.user) {
-		// const user = oidc.user;
+		const user = oidc.user;
 
-		// TODO stricken this! This is just for testing purposes
+		// Authors can read their own paper versions
+		can(['read', 'list'], 'PaperVersion', {
+			paper: { author: { id: user.sub } }
+		});
 
-		can(['list', 'read'], 'PaperVersion');
+		// Team members can read all versions
+		can(['read', 'list'], 'PaperVersion', {
+			paper: {
+				conference: {
+					teamMembers: {
+						some: {
+							user: { id: user.sub },
+							role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+						}
+					}
+				}
+			}
+		});
 	}
 };

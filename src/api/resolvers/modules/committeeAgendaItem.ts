@@ -11,7 +11,7 @@ import {
 	updateOneCommitteeAgendaItemMutationObject
 } from '$db/generated/graphql/CommitteeAgendaItem';
 
-builder.prismaObject('CommitteeAgendaItem', {
+export const GQLCommitteeAgendaItem = builder.prismaObject('CommitteeAgendaItem', {
 	fields: (t) => ({
 		id: t.field(CommitteeAgendaItemIdFieldObject),
 		title: t.field(CommitteeAgendaItemTitleFieldObject),
