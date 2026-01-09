@@ -80,18 +80,17 @@ builder.mutationFields((t) => ({
 					throw new GraphQLError('Only team members can create reviews');
 				}
 
-				// Validate status transition
+				// Validate status transition - reviews can set any reviewable status
 				const currentStatus = paper.status;
-				const validTransitions: Record<string, string[]> = {
-					SUBMITTED: ['CHANGES_REQUESTED', 'ACCEPTED'],
-					CHANGES_REQUESTED: ['ACCEPTED'],
-					ACCEPTED: ['CHANGES_REQUESTED']
-				};
+				const reviewableStatuses = ['SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED'];
+				const allowedNewStatuses = ['CHANGES_REQUESTED', 'ACCEPTED'];
 
-				if (!validTransitions[currentStatus]?.includes(args.newStatus)) {
-					throw new GraphQLError(
-						`Invalid status transition from ${currentStatus} to ${args.newStatus}`
-					);
+				if (!reviewableStatuses.includes(currentStatus)) {
+					throw new GraphQLError(`Cannot review a paper with status ${currentStatus}`);
+				}
+
+				if (!allowedNewStatuses.includes(args.newStatus)) {
+					throw new GraphQLError(`Invalid review status: ${args.newStatus}`);
 				}
 
 				const latestVersion = paper.versions[0];

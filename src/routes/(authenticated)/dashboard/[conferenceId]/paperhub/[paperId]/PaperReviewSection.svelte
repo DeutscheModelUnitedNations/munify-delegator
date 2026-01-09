@@ -171,6 +171,7 @@
 	// Review form state
 	let reviewComments = writable<any>({});
 	let selectedStatus = $state<PaperStatus$options>(currentStatus);
+	let isSubmitting = $state(false);
 
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
@@ -180,21 +181,16 @@
 		}
 	`);
 
-	// Available status transitions based on current status
+	// Available status options for reviews (both options always available for reviewable statuses)
 	let availableTransitions = $derived.by(() => {
-		switch (currentStatus) {
-			case 'SUBMITTED':
-				return [
-					{ value: 'CHANGES_REQUESTED', label: m.paperStatusChangesRequested() },
-					{ value: 'ACCEPTED', label: m.paperStatusAccepted() }
-				];
-			case 'CHANGES_REQUESTED':
-				return [{ value: 'ACCEPTED', label: m.paperStatusAccepted() }];
-			case 'ACCEPTED':
-				return [{ value: 'CHANGES_REQUESTED', label: m.paperStatusChangesRequested() }];
-			default:
-				return [];
+		// Only allow reviews on papers that have been submitted
+		if (currentStatus === 'DRAFT') {
+			return [];
 		}
+		return [
+			{ value: 'CHANGES_REQUESTED', label: m.paperStatusChangesRequested() },
+			{ value: 'ACCEPTED', label: m.paperStatusAccepted() }
+		];
 	});
 
 	// Set initial selected status to first available transition
@@ -205,31 +201,38 @@
 	});
 
 	const handleSubmitReview = async () => {
+		if (isSubmitting) return;
+
 		const comments = $reviewComments;
 		if (!hasContent(comments)) {
 			toast.error(m.reviewCommentsRequired());
 			return;
 		}
 
-		await toast.promise(
-			createReviewMutation.mutate({
-				paperId,
-				comments,
-				newStatus: selectedStatus
-			}),
-			{
-				loading: m.submittingReview(),
-				success: m.reviewSubmitted(),
-				error: (err) => err.message || m.reviewSubmitError()
-			}
-		);
+		isSubmitting = true;
+		try {
+			await toast.promise(
+				createReviewMutation.mutate({
+					paperId,
+					comments,
+					newStatus: selectedStatus
+				}),
+				{
+					loading: m.submittingReview(),
+					success: m.reviewSubmitted(),
+					error: (err) => err.message || m.reviewSubmitError()
+				}
+			);
 
-		// Clear form
-		reviewComments.set({});
+			// Clear form
+			reviewComments.set({});
 
-		// Reload data
-		cache.markStale();
-		await invalidateAll();
+			// Reload data
+			cache.markStale();
+			await invalidateAll();
+		} finally {
+			isSubmitting = false;
+		}
 	};
 </script>
 
@@ -256,8 +259,12 @@
 		<PaperEditor.ReviewFormat contentStore={reviewComments} {quoteToInsert} {onQuoteInserted} />
 
 		<!-- Submit Button -->
-		<button class="btn btn-primary" onclick={handleSubmitReview}>
-			<i class="fa-solid fa-paper-plane"></i>
+		<button class="btn btn-primary" onclick={handleSubmitReview} disabled={isSubmitting}>
+			{#if isSubmitting}
+				<span class="loading loading-spinner loading-sm"></span>
+			{:else}
+				<i class="fa-solid fa-paper-plane"></i>
+			{/if}
 			{m.submitReview()}
 		</button>
 	{/if}

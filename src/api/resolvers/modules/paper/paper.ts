@@ -160,7 +160,8 @@ builder.mutationFields((t) => {
 				return await db.$transaction(async (tx) => {
 					const paperDBEntry = await tx.paper.findUniqueOrThrow({
 						where: {
-							id: args.where.paperId
+							id: args.where.paperId,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Paper]
 						},
 						include: {
 							versions: true,

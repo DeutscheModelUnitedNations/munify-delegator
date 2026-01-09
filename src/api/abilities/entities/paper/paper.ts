@@ -35,13 +35,13 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 			}
 		});
 
-		// PROJECT_MANAGEMENT can delete any paper in their conference
+		// Team members (REVIEWER, PROJECT_MANAGEMENT, PARTICIPANT_CARE) can delete papers in their conference
 		can(['delete'], 'Paper', {
 			conference: {
 				teamMembers: {
 					some: {
 						user: { id: user.sub },
-						role: 'PROJECT_MANAGEMENT'
+						role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
 					}
 				}
 			}
