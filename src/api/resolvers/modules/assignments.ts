@@ -393,7 +393,7 @@ builder.mutationFields((t) => {
 						// assign the nsa to the primary delegation and update the members and supervisors
 						const newOrExistingDelegation = await tx.delegation.upsert({
 							where: {
-								id: primaryDelegation?.id
+								id: primaryDelegation?.id ?? ''
 							},
 							update: {
 								assignedNonStateActor: {
