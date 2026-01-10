@@ -3615,11 +3615,18 @@ type Query {
   previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
   previewUserByIdOrEmail(emailOrId: String!): UserPreview!
+  reviewerLeaderboard(conferenceId: String!): [ReviewerStat!]!
 }
 
 enum QueryMode {
   default
   insensitive
+}
+
+type ReviewerStat {
+  anonymizedName: String!
+  firstReviews: Int!
+  totalReviews: Int!
 }
 
 type RoleApplication {

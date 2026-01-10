@@ -67,7 +67,7 @@
 		}
 	});
 
-	let isExpanded = $state(true);
+	let isExpanded = $state(false);
 </script>
 
 <div id="flag-collection" class="card bg-base-200 border border-base-300">
