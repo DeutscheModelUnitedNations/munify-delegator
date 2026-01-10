@@ -3,7 +3,8 @@
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
 	import { writable } from 'svelte/store';
 	import toast from 'svelte-french-toast';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import { translatePaperStatus } from '$lib/services/enumTranslations';
 	import { getPaperStatusIcon } from '$lib/services/enumIcons';
@@ -458,5 +459,9 @@
 		foundCount={pieceFoundData.foundCount}
 		totalCount={pieceFoundData.totalCount}
 		onclose={() => (pieceFoundData = null)}
+		onViewCollection={() => {
+			const conferenceId = $page.params.conferenceId;
+			goto(`/dashboard/${conferenceId}/paperhub#flag-collection`);
+		}}
 	/>
 {/if}

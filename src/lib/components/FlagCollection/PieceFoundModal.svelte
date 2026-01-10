@@ -15,6 +15,7 @@
 		foundCount: number;
 		totalCount: number;
 		onclose: () => void;
+		onViewCollection?: () => void;
 	}
 
 	let {
@@ -27,8 +28,14 @@
 		isComplete,
 		foundCount,
 		totalCount,
-		onclose
+		onclose,
+		onViewCollection
 	}: Props = $props();
+
+	const handleViewCollection = () => {
+		open = false;
+		onViewCollection?.();
+	};
 </script>
 
 <Modal bind:open {onclose} title={m.pieceFound()}>
@@ -84,14 +91,22 @@
 	</div>
 
 	{#snippet action()}
-		<button class="btn btn-primary" onclick={() => (open = false)}>
-			{#if isComplete}
-				<i class="fa-solid fa-party-horn"></i>
-				{m.celebrate()}
-			{:else}
-				<i class="fa-solid fa-arrow-right"></i>
-				{m.continueReviewing()}
+		<div class="flex gap-2">
+			{#if onViewCollection}
+				<button class="btn btn-ghost" onclick={handleViewCollection}>
+					<i class="fa-solid fa-puzzle-piece"></i>
+					{m.viewCollection()}
+				</button>
 			{/if}
-		</button>
+			<button class="btn btn-primary" onclick={() => (open = false)}>
+				{#if isComplete}
+					<i class="fa-solid fa-party-horn"></i>
+					{m.celebrate()}
+				{:else}
+					<i class="fa-solid fa-arrow-right"></i>
+					{m.continueReviewing()}
+				{/if}
+			</button>
+		</div>
 	{/snippet}
 </Modal>

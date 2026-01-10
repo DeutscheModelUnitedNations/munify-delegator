@@ -49,7 +49,7 @@
 	});
 
 	// Filter options
-	type FilterOption = 'all' | 'incomplete' | 'complete';
+	type FilterOption = 'all' | 'incomplete' | 'unlocked' | 'complete';
 	let filterState = $state<FilterOption>('all');
 
 	let filteredFlags = $derived(() => {
@@ -57,6 +57,9 @@
 		switch (filterState) {
 			case 'incomplete':
 				return flags.filter((f) => !f.isComplete);
+			case 'unlocked':
+				// Flags with at least one UNLOCKED piece (not found yet)
+				return flags.filter((f) => f.pieces.some((p) => p.state === 'UNLOCKED'));
 			case 'complete':
 				return flags.filter((f) => f.isComplete);
 			default:
@@ -67,7 +70,7 @@
 	let isExpanded = $state(true);
 </script>
 
-<div class="card bg-base-200 border border-base-300">
+<div id="flag-collection" class="card bg-base-200 border border-base-300">
 	<!-- Header -->
 	<div
 		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-lg"
@@ -127,6 +130,15 @@
 							onclick={() => (filterState = 'incomplete')}
 						>
 							{m.filterIncomplete()} ({data.flags.filter((f) => !f.isComplete).length})
+						</button>
+						<button
+							class="tab"
+							class:tab-active={filterState === 'unlocked'}
+							onclick={() => (filterState = 'unlocked')}
+						>
+							{m.filterUnlocked()} ({data.flags.filter((f) =>
+								f.pieces.some((p) => p.state === 'UNLOCKED')
+							).length})
 						</button>
 						<button
 							class="tab"

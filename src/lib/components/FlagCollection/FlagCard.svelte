@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Flag from '$lib/components/Flag.svelte';
-	import PuzzleGrid from './PuzzleGrid.svelte';
+	import FlagRevealGrid from './FlagRevealGrid.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Piece {
 		id: string;
@@ -14,6 +14,7 @@
 		id: string;
 		type: 'NATION' | 'NSA';
 		alpha2Code: string | null;
+		alpha3Code: string | null;
 		name: string;
 		abbreviation: string | null;
 		fontAwesomeIcon: string | null;
@@ -31,6 +32,13 @@
 	let { flag }: Props = $props();
 	let expanded = $state(false);
 
+	// Get translated name for nations, use original name for NSAs
+	let displayName = $derived(
+		flag.type === 'NATION' && flag.alpha3Code
+			? getFullTranslatedCountryNameFromISO3Code(flag.alpha3Code)
+			: flag.name
+	);
+
 	let progressPercent = $derived(
 		flag.totalPieces > 0 ? (flag.foundPieces / flag.totalPieces) * 100 : 0
 	);
@@ -46,21 +54,25 @@
 	role="button"
 	tabindex="0"
 >
-	<div class="p-3">
-		<div class="flex items-center gap-2 mb-2">
-			{#if flag.type === 'NATION' && flag.alpha2Code}
-				<Flag size="xs" alpha2Code={flag.alpha2Code} />
-			{:else}
-				<Flag size="xs" nsa={true} icon={flag.fontAwesomeIcon} />
-			{/if}
-			<span class="font-semibold text-sm truncate flex-1" title={flag.name}>{flag.name}</span>
+	<div class="p-2">
+		<!-- Flag name header -->
+		<div class="flex items-center justify-between gap-2 mb-2">
+			<span class="font-semibold text-sm truncate flex-1" title={displayName}>{displayName}</span>
 			{#if flag.isComplete}
-				<i class="fa-solid fa-trophy text-warning text-xs"></i>
+				<i class="fa-solid fa-trophy text-warning text-sm animate-trophy-shine"></i>
 			{/if}
 		</div>
 
-		<PuzzleGrid pieces={flag.pieces} compact={!expanded} />
+		<!-- Flag reveal puzzle grid -->
+		<FlagRevealGrid
+			pieces={flag.pieces}
+			type={flag.type}
+			alpha2Code={flag.alpha2Code}
+			fontAwesomeIcon={flag.fontAwesomeIcon}
+			compact={!expanded}
+		/>
 
+		<!-- Progress bar -->
 		<div class="flex justify-between items-center mt-2 text-xs">
 			<span class="text-base-content/60">
 				{flag.foundPieces}/{flag.totalPieces}
@@ -69,6 +81,7 @@
 			></progress>
 		</div>
 
+		<!-- Expanded piece list -->
 		{#if expanded && flag.pieces.length > 0}
 			<div class="mt-3 pt-3 border-t border-base-200">
 				<ul class="text-xs space-y-1">

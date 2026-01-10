@@ -183,9 +183,6 @@
 </script>
 
 <div class="flex flex-col gap-3 w-full">
-	<!-- Flag Collection Gamification Section -->
-	<FlagCollectionSection {conferenceId} />
-
 	{#if $papersGroupedQuery.fetching}
 		<div class="flex justify-center p-8">
 			<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
@@ -345,4 +342,9 @@
 			<span>{m.noPapersSubmittedYet()}</span>
 		</div>
 	{/if}
+
+	<!-- Flag Collection Gamification Section -->
+	<div class="mt-6">
+		<FlagCollectionSection {conferenceId} />
+	</div>
 </div>
