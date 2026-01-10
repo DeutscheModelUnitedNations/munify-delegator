@@ -6,6 +6,7 @@
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperTable from './PaperTable.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { FlagCollectionSection } from '$lib/components/FlagCollection';
 
 	interface Props {
 		conferenceId: string;
@@ -182,6 +183,9 @@
 </script>
 
 <div class="flex flex-col gap-3 w-full">
+	<!-- Flag Collection Gamification Section -->
+	<FlagCollectionSection {conferenceId} />
+
 	{#if $papersGroupedQuery.fetching}
 		<div class="flex justify-center p-8">
 			<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>

@@ -1125,6 +1125,12 @@ input CreateOnePaperArgs {
   type: PaperType!
 }
 
+type CreatePaperReviewResult {
+  pieceUnlocked: Boolean!
+  review: PaperReview!
+  unlockedPieceData: UnlockedPieceData
+}
+
 type CustomConferenceRole {
   conference: Conference!
   description: String!
@@ -1904,6 +1910,58 @@ input EnumTeamRoleWithAggregatesFilter {
 
 scalar File
 
+type FlagCollectionData {
+  flags: [FlagProgress!]!
+  stats: FlagCollectionStats!
+}
+
+type FlagCollectionStats {
+  completedFlags: Int!
+  foundPieces: Int!
+  totalFlags: Int!
+  totalPieces: Int!
+  unlockedPieces: Int!
+}
+
+type FlagPiece {
+  agendaItemId: String
+  agendaItemTitle: String
+  committeeAbbreviation: String
+  id: String!
+  state: FlagPieceState!
+}
+
+enum FlagPieceState {
+  FOUND
+  LOCKED
+  UNLOCKED
+}
+
+type FlagProgress {
+  abbreviation: String
+  alpha2Code: String
+  alpha3Code: String
+  fontAwesomeIcon: String
+  foundPieces: Int!
+  id: String!
+  isComplete: Boolean!
+  name: String!
+  pieces: [FlagPiece!]!
+  totalPieces: Int!
+  type: FlagType!
+  unlockedPieces: Int!
+}
+
+enum FlagType {
+  NATION
+  NSA
+}
+
+enum FlagTypeForUnlock {
+  NATION
+  NSA
+}
+
 input FloatFieldUpdateOperationsInput {
   decrement: Float
   divide: Float
@@ -2157,7 +2215,7 @@ type Mutation {
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
-  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): PaperReview!
+  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -3544,6 +3602,7 @@ type Query {
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
   findUniqueWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  flagCollection(conferenceId: String!): FlagCollectionData!
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
@@ -4642,6 +4701,18 @@ enum TransactionIsolationLevel {
   ReadUncommitted
   RepeatableRead
   Serializable
+}
+
+type UnlockedPieceData {
+  flagAlpha2Code: String
+  flagId: String!
+  flagName: String!
+  flagType: FlagTypeForUnlock!
+  fontAwesomeIcon: String
+  foundCount: Int!
+  isComplete: Boolean!
+  pieceName: String!
+  totalCount: Int!
 }
 
 input UpdateAllConferenceParticipantStatusInput {

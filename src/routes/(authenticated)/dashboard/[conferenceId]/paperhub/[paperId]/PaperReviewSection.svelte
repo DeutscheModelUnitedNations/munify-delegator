@@ -15,6 +15,7 @@
 	} from '$lib/components/Paper/Editor/DiffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
+	import { PieceFoundModal } from '$lib/components/FlagCollection';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -178,10 +179,37 @@
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
 			createPaperReview(paperId: $paperId, comments: $comments, newStatus: $newStatus) {
-				id
+				review {
+					id
+				}
+				pieceUnlocked
+				unlockedPieceData {
+					flagId
+					flagName
+					flagType
+					flagAlpha2Code
+					fontAwesomeIcon
+					pieceName
+					foundCount
+					totalCount
+					isComplete
+				}
 			}
 		}
 	`);
+
+	// Piece found modal state
+	let showPieceFoundModal = $state(false);
+	let pieceFoundData = $state<{
+		flagName: string;
+		flagAlpha2Code: string | null;
+		flagType: 'NATION' | 'NSA';
+		fontAwesomeIcon: string | null;
+		pieceName: string;
+		isComplete: boolean;
+		foundCount: number;
+		totalCount: number;
+	} | null>(null);
 
 	// Available status options for reviews (both options always available for reviewable statuses)
 	let availableTransitions = $derived.by(() => {
@@ -213,7 +241,7 @@
 
 		isSubmitting = true;
 		try {
-			await toast.promise(
+			const result = await toast.promise(
 				createReviewMutation.mutate({
 					paperId,
 					comments,
@@ -225,6 +253,22 @@
 					error: (err) => err.message || m.reviewSubmitError()
 				}
 			);
+
+			// Check if a piece was unlocked and show the modal
+			const data = result.data?.createPaperReview;
+			if (data?.pieceUnlocked && data.unlockedPieceData) {
+				pieceFoundData = {
+					flagName: data.unlockedPieceData.flagName,
+					flagAlpha2Code: data.unlockedPieceData.flagAlpha2Code ?? null,
+					flagType: data.unlockedPieceData.flagType,
+					fontAwesomeIcon: data.unlockedPieceData.fontAwesomeIcon ?? null,
+					pieceName: data.unlockedPieceData.pieceName,
+					isComplete: data.unlockedPieceData.isComplete,
+					foundCount: data.unlockedPieceData.foundCount,
+					totalCount: data.unlockedPieceData.totalCount
+				};
+				showPieceFoundModal = true;
+			}
 
 			// Clear form
 			reviewComments.set({});
@@ -398,5 +442,21 @@
 		bind:open={showCompareModal}
 		baseVersion={comparisonState.baseVersion}
 		compareVersion={comparisonState.compareVersion}
+	/>
+{/if}
+
+<!-- Piece Found Modal -->
+{#if pieceFoundData}
+	<PieceFoundModal
+		bind:open={showPieceFoundModal}
+		flagName={pieceFoundData.flagName}
+		flagAlpha2Code={pieceFoundData.flagAlpha2Code}
+		flagType={pieceFoundData.flagType}
+		fontAwesomeIcon={pieceFoundData.fontAwesomeIcon}
+		pieceName={pieceFoundData.pieceName}
+		isComplete={pieceFoundData.isComplete}
+		foundCount={pieceFoundData.foundCount}
+		totalCount={pieceFoundData.totalCount}
+		onclose={() => (pieceFoundData = null)}
 	/>
 {/if}

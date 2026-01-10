@@ -28,6 +28,7 @@ import './modules/paymentTransaction';
 import './modules/paper/paper';
 import './modules/paper/paperReview';
 import './modules/paper/paperVersion';
+import './modules/flagCollection';
 import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';
