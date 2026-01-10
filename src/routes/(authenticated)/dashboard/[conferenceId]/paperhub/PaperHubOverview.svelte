@@ -8,6 +8,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { FlagCollectionSection } from '$lib/components/FlagCollection';
 	import ReviewerLeaderboard from '$lib/components/PaperHub/ReviewerLeaderboard.svelte';
+	import { persisted } from 'svelte-persisted-store';
 
 	interface Props {
 		conferenceId: string;
@@ -15,8 +16,8 @@
 
 	let { conferenceId }: Props = $props();
 
-	// Focus mode state - limits papers to 5 oldest without reviews
-	let focusMode = $state(false);
+	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
+	let focusMode = persisted('paperHubFocusMode', false);
 
 	const papersGroupedQuery = graphql(`
 		query PapersGroupedQuery($conferenceId: String!) {
@@ -93,9 +94,20 @@
 		}
 	`);
 
+	const myReviewStatsQuery = graphql(`
+		query MyReviewStatsQuery($conferenceId: String!) {
+			myReviewStats(conferenceId: $conferenceId) {
+				firstReviews
+				followUpReviews
+				totalReviews
+			}
+		}
+	`);
+
 	$effect(() => {
 		papersGroupedQuery.fetch({ variables: { conferenceId } });
 		introductionPapersQuery.fetch({ variables: { conferenceId } });
+		myReviewStatsQuery.fetch({ variables: { conferenceId } });
 	});
 
 	let introductionPapers = $derived($introductionPapersQuery?.data?.findIntroductionPapers ?? []);
@@ -204,7 +216,7 @@
 		}
 
 		// Apply focus mode: prioritize papers without reviews, then oldest first, limit to 5
-		if (focusMode) {
+		if ($focusMode) {
 			result.sort((a, b) => {
 				const aHasReviews = paperHasReviews(a);
 				const bHasReviews = paperHasReviews(b);
@@ -257,7 +269,7 @@
 							<p class="text-sm text-base-content/60">{m.focusModeDescription()}</p>
 						</div>
 					</div>
-					<input type="checkbox" class="toggle toggle-primary" bind:checked={focusMode} />
+					<input type="checkbox" class="toggle toggle-primary" bind:checked={$focusMode} />
 				</div>
 
 				<!-- Status Distribution Chart -->
@@ -273,7 +285,11 @@
 									title="{m.paperStatusSubmitted()}: {overallStatusCounts.submitted}"
 								>
 									<i class="fa-solid fa-paper-plane"></i>
-									<span class="text-sm font-medium">{overallStatusCounts.submitted}</span>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.submitted}</span
+									>
 								</div>
 							{/if}
 							{#if overallStatusCounts.changesRequested > 0}
@@ -285,7 +301,11 @@
 									title="{m.paperStatusChangesRequested()}: {overallStatusCounts.changesRequested}"
 								>
 									<i class="fa-solid fa-rotate-left"></i>
-									<span class="text-sm font-medium">{overallStatusCounts.changesRequested}</span>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.changesRequested}</span
+									>
 								</div>
 							{/if}
 							{#if overallStatusCounts.accepted > 0}
@@ -295,7 +315,11 @@
 									title="{m.paperStatusAccepted()}: {overallStatusCounts.accepted}"
 								>
 									<i class="fa-solid fa-check"></i>
-									<span class="text-sm font-medium">{overallStatusCounts.accepted}</span>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.accepted}</span
+									>
 								</div>
 							{/if}
 						</div>
@@ -312,6 +336,31 @@
 							<span class="flex items-center gap-1">
 								<span class="inline-block w-3 h-3 bg-success rounded"></span>
 								{m.paperStatusAccepted()}
+							</span>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Personal Review Stats -->
+				{#if $myReviewStatsQuery.data?.myReviewStats}
+					{@const myStats = $myReviewStatsQuery.data.myReviewStats}
+					<div class="border-t border-base-300 pt-4">
+						<h4 class="text-sm font-semibold mb-2">{m.yourReviewStats()}</h4>
+						<div class="flex items-center gap-6">
+							<span class="flex items-center gap-2">
+								<i class="fa-solid fa-star text-primary"></i>
+								<span class="text-sm">{m.firstReviews()}:</span>
+								<span class="font-bold">{myStats.firstReviews}</span>
+							</span>
+							<span class="flex items-center gap-2">
+								<i class="fa-solid fa-plus text-accent"></i>
+								<span class="text-sm">{m.followUpReviews()}:</span>
+								<span class="font-bold">{myStats.followUpReviews}</span>
+							</span>
+							<span class="flex items-center gap-2 text-base-content/60">
+								<i class="fa-solid fa-equals"></i>
+								<span class="text-sm">{m.totalReviews()}:</span>
+								<span class="font-bold">{myStats.totalReviews}</span>
 							</span>
 						</div>
 					</div>
@@ -358,7 +407,7 @@
 								<h3 class="text-lg font-semibold">{committeeGroup.committee.name}</h3>
 							</div>
 						</div>
-						<PaperStatusBadges counts={committeeCounts} />
+						<PaperStatusBadges counts={committeeCounts} blur={$focusMode} />
 					</div>
 				</div>
 
@@ -390,7 +439,7 @@
 											></i>
 											<h4 class="font-medium text-sm">{agendaItemGroup.agendaItem.title}</h4>
 										</div>
-										<PaperStatusBadges counts={agendaCounts} size="small" />
+										<PaperStatusBadges counts={agendaCounts} size="small" blur={$focusMode} />
 									</div>
 								</div>
 
@@ -457,7 +506,7 @@
 								<h3 class="text-lg font-semibold">{m.paperTypeIntroductionPapers()}</h3>
 							</div>
 						</div>
-						<PaperStatusBadges counts={introCounts} />
+						<PaperStatusBadges counts={introCounts} blur={$focusMode} />
 					</div>
 				</div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PuzzlePiece from './PuzzlePiece.svelte';
+	import { getNsaGradients } from '$lib/services/nsaGradient';
 
 	interface Piece {
 		id: string;
@@ -12,10 +13,14 @@
 		type: 'NATION' | 'NSA';
 		alpha2Code?: string | null;
 		fontAwesomeIcon?: string | null;
+		nsaId?: string | null;
 		compact?: boolean;
 	}
 
-	let { pieces, type, alpha2Code, fontAwesomeIcon, compact = false }: Props = $props();
+	let { pieces, type, alpha2Code, fontAwesomeIcon, nsaId, compact = false }: Props = $props();
+
+	// Generate deterministic gradients for NSAs based on their ID
+	let nsaGradients = $derived(nsaId ? getNsaGradients(nsaId) : null);
 
 	// Calculate optimal grid layout ensuring full coverage
 	interface GridCell {
@@ -112,9 +117,11 @@
 		{#if type === 'NATION' && alpha2Code}
 			<span class="fi fi-{alpha2Code.toLowerCase()} flag-background"></span>
 		{:else}
-			<!-- NSA gradient background with icon -->
+			<!-- NSA gradient background with icon - uses deterministic colors from NSA ID -->
 			<div
-				class="w-full h-full bg-gradient-to-br from-primary/80 to-secondary/80 flex items-center justify-center"
+				class="w-full h-full flex items-center justify-center"
+				style="background: linear-gradient(to bottom right, {nsaGradients?.gradient1.from ??
+					'hsl(220, 70%, 45%)'}, {nsaGradients?.gradient1.to ?? 'hsl(260, 70%, 55%)'})"
 			>
 				<i
 					class="fa-solid fa-{cleanIcon} text-white/30"

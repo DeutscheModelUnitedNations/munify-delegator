@@ -69,6 +69,7 @@
 			type={flag.type}
 			alpha2Code={flag.alpha2Code}
 			fontAwesomeIcon={flag.fontAwesomeIcon}
+			nsaId={flag.type === 'NSA' ? flag.id : null}
 			compact={!expanded}
 		/>
 

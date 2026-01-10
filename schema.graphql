@@ -2265,6 +2265,12 @@ type Mutation {
   upsertSelf: UpsertSelfResult!
 }
 
+type MyReviewStats {
+  firstReviews: Int!
+  followUpReviews: Int!
+  totalReviews: Int!
+}
+
 type Nation {
   alpha2Code: String!
   alpha3Code: ID!
@@ -3611,6 +3617,7 @@ type Query {
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
+  myReviewStats(conferenceId: String!): MyReviewStats
   offlineUserRefresh: OfflineUserRefresh!
   previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
@@ -3626,6 +3633,7 @@ enum QueryMode {
 type ReviewerStat {
   anonymizedName: String!
   firstReviews: Int!
+  isCurrentUser: Boolean!
   totalReviews: Int!
 }
 

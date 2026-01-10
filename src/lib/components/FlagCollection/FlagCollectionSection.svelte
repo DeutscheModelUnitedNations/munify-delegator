@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 	import FlagCard from './FlagCard.svelte';
 	import CollectionStats from './CollectionStats.svelte';
 
@@ -9,6 +11,15 @@
 	}
 
 	let { conferenceId }: Props = $props();
+
+	// Collapsed by default, but auto-expand when navigated via #flag-collection hash
+	let isExpanded = $state(false);
+
+	$effect(() => {
+		if (browser && $page.url.hash === '#flag-collection') {
+			isExpanded = true;
+		}
+	});
 
 	const flagCollectionQuery = graphql(`
 		query FlagCollectionQuery($conferenceId: String!) {
@@ -66,8 +77,6 @@
 				return flags;
 		}
 	});
-
-	let isExpanded = $state(false);
 </script>
 
 <div id="flag-collection" class="card bg-base-200 border border-base-300">

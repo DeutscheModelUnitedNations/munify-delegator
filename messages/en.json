@@ -403,6 +403,7 @@
 	"flagComplete": "Flag complete!",
 	"focusModeDescription": "Shows 5 oldest papers without reviews per topic",
 	"focusModeLabel": "Focus Mode",
+	"followUpReviews": "Follow-up Reviews",
 	"forbidden": "Access denied. Please reload the page if necessary! ( {error} )",
 	"foundPiecesLabel": "Found Pieces",
 	"gender": "Gender",
@@ -934,6 +935,7 @@
 	"tooManySeatsForDelegationSize": "Your delegation ({size} members) is smaller than the number of seats ({seats}). An assignment is therefore unlikely.",
 	"tools": "Tools",
 	"total": "Total",
+	"totalReviews": "Total",
 	"transactionDetails": "Transaction Details",
 	"transferHeadDelegateship": "Transfer Head Delegateship",
 	"unauthorized": "Unauthorized. Please reload the page if necessary! ( {error} )",
@@ -996,6 +998,7 @@
 	"willNotBePresentAtConference": "I will <strong><u>not</u></strong> be attending the conference.",
 	"years": "Years",
 	"yes": "Yes",
+	"you": "You",
 	"youAreActingAs": "Acting as: {impersonatedUser} (your account: {originalUser})",
 	"youAreAlreadyDelegationMember": "You are already a delegation member in this conference",
 	"youAreAlreadySingleParticipant": "You are already a single participant in this conference",
@@ -1008,5 +1011,6 @@
 	"yourPapers": "Your papers",
 	"yourPreferences": "Your Preferences",
 	"yourPreferencesDescription": "By specifying the preferences listed here, you participate in the selection process. You can change the order of the preferences by clicking on the arrows. Please provide at least 3 preferences.",
+	"yourReviewStats": "Your Review Stats",
 	"zipCode": "ZIP"
 }

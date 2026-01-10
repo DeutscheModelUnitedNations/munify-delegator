@@ -14,6 +14,7 @@
 				anonymizedName
 				firstReviews
 				totalReviews
+				isCurrentUser
 			}
 		}
 	`);
@@ -70,7 +71,11 @@
 			{:else if $leaderboardQuery.data?.reviewerLeaderboard?.length}
 				<div class="space-y-2">
 					{#each $leaderboardQuery.data.reviewerLeaderboard as reviewer, i}
-						<div class="flex items-center gap-3">
+						<div
+							class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 {reviewer.isCurrentUser
+								? 'bg-primary/10 ring-1 ring-primary/30'
+								: ''}"
+						>
 							<!-- Rank -->
 							<span class="w-8 text-right font-bold text-base-content/50">
 								{#if i === 0}
@@ -85,8 +90,14 @@
 							</span>
 
 							<!-- Name -->
-							<span class="w-48 truncate font-medium" title={reviewer.anonymizedName}>
+							<span
+								class="w-48 truncate font-medium flex items-center gap-2"
+								title={reviewer.anonymizedName}
+							>
 								{reviewer.anonymizedName}
+								{#if reviewer.isCurrentUser}
+									<span class="badge badge-primary badge-xs">{m.you()}</span>
+								{/if}
 							</span>
 
 							<!-- Bar Chart -->

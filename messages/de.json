@@ -403,6 +403,7 @@
 	"flagComplete": "Flagge vollständig!",
 	"focusModeDescription": "Zeigt 5 älteste Papiere ohne Bewertungen pro Thema",
 	"focusModeLabel": "Fokus-Modus",
+	"followUpReviews": "Folgebewertungen",
 	"forbidden": "Zugriff verweigert. Bitte lade ggf. die Seite neu! ({error})",
 	"foundPiecesLabel": "Gefundene Stücke",
 	"gender": "Geschlecht",
@@ -934,6 +935,7 @@
 	"tooManySeatsForDelegationSize": "Deine Delegation ({size} Mitglieder) ist kleiner als die Anzahl der Sitzplätze ({seats}). Eine Zuteilung ist daher unwahrscheinlich.",
 	"tools": "Tools",
 	"total": "Gesamt",
+	"totalReviews": "Gesamt",
 	"transactionDetails": "Überweisungsdaten",
 	"transferHeadDelegateship": "Delegationsleitung übertragen",
 	"unauthorized": "Unauthorisiert. Bitte lade ggf. die Seite neu! ({error})",
@@ -996,6 +998,7 @@
 	"willNotBePresentAtConference": "Ich werde <strong><u>nicht</u></strong> an der Konferenz teilnehmen.",
 	"years": "Jahre",
 	"yes": "Ja",
+	"you": "Du",
 	"youAreActingAs": "Du agierst als: {impersonatedUser} (dein Account: {originalUser})",
 	"youAreAlreadyDelegationMember": "Du bist bereits ein Delegationsmitglied in dieser Konferenz.",
 	"youAreAlreadySingleParticipant": "Du bist bereits ein Einzelteilnehmer in dieser Konferenz.",
@@ -1008,5 +1011,6 @@
 	"yourPapers": "Deine Papiere",
 	"yourPreferences": "Deine Auswahl",
 	"yourPreferencesDescription": "Mit den hier aufgelisteten Präferenzen nimmst am Auswahlverfahren teil. Du kannst die Reihenfolge der Präferenzen ändern, indem du auf die Pfeile klickst. Bitte gib mindestens 3 Präferenzen an.",
+	"yourReviewStats": "Deine Bewertungsstatistik",
 	"zipCode": "Postleitzahl"
 }
