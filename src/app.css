@@ -257,3 +257,164 @@ blockquote .blockquote-content {
 		box-shadow: none;
 	}
 }
+
+/* --- FLAG COLLECTION GAMIFICATION ANIMATIONS --- */
+
+/* Piece shimmer animation for newly unlocked/found pieces */
+@keyframes piece-shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+.animate-piece-shimmer {
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		rgba(255, 255, 255, 0.4) 50%,
+		transparent 100%
+	);
+	background-size: 200% 100%;
+	animation: piece-shimmer 1.5s ease-in-out;
+}
+
+/* Piece glow animation for found state */
+@keyframes piece-glow {
+	0%,
+	100% {
+		box-shadow: 0 0 5px rgba(var(--color-primary-rgb, 59, 130, 246), 0.3);
+	}
+	50% {
+		box-shadow: 0 0 15px rgba(var(--color-primary-rgb, 59, 130, 246), 0.6);
+	}
+}
+
+.animate-piece-glow {
+	animation: piece-glow 2s ease-in-out infinite;
+}
+
+/* Flag completion pulse animation */
+@keyframes flag-complete-pulse {
+	0%,
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 0 0 rgba(var(--color-success-rgb, 34, 197, 94), 0.4);
+	}
+	50% {
+		transform: scale(1.02);
+		box-shadow: 0 0 0 8px rgba(var(--color-success-rgb, 34, 197, 94), 0);
+	}
+}
+
+.animate-flag-complete {
+	animation: flag-complete-pulse 2s ease-in-out infinite;
+}
+
+/* Celebration bounce animation */
+@keyframes celebration-bounce {
+	0%,
+	20%,
+	50%,
+	80%,
+	100% {
+		transform: translateY(0);
+	}
+	40% {
+		transform: translateY(-15px);
+	}
+	60% {
+		transform: translateY(-8px);
+	}
+}
+
+.animate-celebration-bounce {
+	animation: celebration-bounce 1s ease-out;
+}
+
+/* Modal entrance animation */
+@keyframes modal-pop {
+	0% {
+		opacity: 0;
+		transform: scale(0.8);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.animate-modal-pop {
+	animation: modal-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Confetti fall animation */
+@keyframes confetti-fall {
+	0% {
+		transform: translateY(-100vh) rotate(0deg);
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(100vh) rotate(720deg);
+		opacity: 0;
+	}
+}
+
+.animate-confetti {
+	animation: confetti-fall var(--confetti-duration, 3s) linear forwards;
+	animation-delay: var(--confetti-delay, 0s);
+}
+
+/* Progress bar fill animation */
+@keyframes progress-fill {
+	0% {
+		width: 0;
+	}
+	100% {
+		width: var(--progress-width, 100%);
+	}
+}
+
+.animate-progress-fill {
+	animation: progress-fill 1s ease-out forwards;
+}
+
+/* Trophy icon animation on hover */
+@keyframes trophy-shine {
+	0% {
+		filter: drop-shadow(0 0 2px rgba(var(--color-warning-rgb, 234, 179, 8), 0.5));
+	}
+	50% {
+		filter: drop-shadow(0 0 8px rgba(var(--color-warning-rgb, 234, 179, 8), 0.8));
+	}
+	100% {
+		filter: drop-shadow(0 0 2px rgba(var(--color-warning-rgb, 234, 179, 8), 0.5));
+	}
+}
+
+.animate-trophy-shine {
+	animation: trophy-shine 1.5s ease-in-out infinite;
+}
+
+/* Piece reveal dissolve animation (blur to clear) */
+@keyframes piece-reveal-dissolve {
+	0% {
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		background-color: rgba(0, 0, 0, 0.25);
+	}
+	100% {
+		backdrop-filter: blur(0);
+		-webkit-backdrop-filter: blur(0);
+		background-color: transparent;
+	}
+}
+
+.animate-piece-reveal {
+	animation: piece-reveal-dissolve 0.5s ease-out forwards;
+}

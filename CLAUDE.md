@@ -293,6 +293,7 @@ Required variables (see `.env.example`):
 - GraphQL query complexity limiting via Pothos plugin
 - OpenTelemetry tracing for performance monitoring
 - Image optimization: Use WebP format, lazy load images
+- Install dependencies always into the devDependencies section as is best practice for sveltekit projects if not explicitly required at runtime.
 
 ## Security Considerations
 

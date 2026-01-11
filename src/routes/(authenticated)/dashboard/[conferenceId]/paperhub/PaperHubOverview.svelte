@@ -6,12 +6,18 @@
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperTable from './PaperTable.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { FlagCollectionSection } from '$lib/components/FlagCollection';
+	import ReviewerLeaderboard from '$lib/components/PaperHub/ReviewerLeaderboard.svelte';
+	import { persisted } from 'svelte-persisted-store';
 
 	interface Props {
 		conferenceId: string;
 	}
 
 	let { conferenceId }: Props = $props();
+
+	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
+	let focusMode = persisted('paperHubFocusMode', false);
 
 	const papersGroupedQuery = graphql(`
 		query PapersGroupedQuery($conferenceId: String!) {
@@ -25,6 +31,7 @@
 					agendaItem {
 						id
 						title
+						reviewHelpStatus
 					}
 					papers {
 						id
@@ -44,6 +51,11 @@
 								name
 								abbreviation
 								fontAwesomeIcon
+							}
+						}
+						versions {
+							reviews {
+								id
 							}
 						}
 					}
@@ -74,6 +86,30 @@
 						fontAwesomeIcon
 					}
 				}
+				versions {
+					reviews {
+						id
+					}
+				}
+			}
+		}
+	`);
+
+	const myReviewStatsQuery = graphql(`
+		query MyReviewStatsQuery($conferenceId: String!) {
+			myReviewStats(conferenceId: $conferenceId) {
+				firstReviews
+				followUpReviews
+				totalReviews
+			}
+		}
+	`);
+
+	const setReviewHelpStatusMutation = graphql(`
+		mutation SetReviewHelpStatus($agendaItemId: String!, $status: ReviewHelpStatus!) {
+			setAgendaItemReviewHelpStatus(agendaItemId: $agendaItemId, status: $status) {
+				id
+				reviewHelpStatus
 			}
 		}
 	`);
@@ -81,7 +117,29 @@
 	$effect(() => {
 		papersGroupedQuery.fetch({ variables: { conferenceId } });
 		introductionPapersQuery.fetch({ variables: { conferenceId } });
+		myReviewStatsQuery.fetch({ variables: { conferenceId } });
 	});
+
+	// User is a reviewer if myReviewStats returns data (not null/undefined)
+	let isReviewer = $derived($myReviewStatsQuery.data?.myReviewStats != null);
+
+	// Cycle through review help status values
+	const cycleReviewHelpStatus = async (
+		agendaItemId: string,
+		currentStatus: 'UNSPECIFIED' | 'HELP_NEEDED' | 'NO_HELP_WANTED'
+	) => {
+		const nextStatus =
+			currentStatus === 'UNSPECIFIED'
+				? 'HELP_NEEDED'
+				: currentStatus === 'HELP_NEEDED'
+					? 'NO_HELP_WANTED'
+					: 'UNSPECIFIED';
+
+		await setReviewHelpStatusMutation.mutate({
+			agendaItemId,
+			status: nextStatus
+		});
+	};
 
 	let introductionPapers = $derived($introductionPapersQuery?.data?.findIntroductionPapers ?? []);
 	let showIntroductionPapers = $derived(introductionPapers.length > 0);
@@ -119,50 +177,97 @@
 		return counts;
 	};
 
+	// Overall status counts for the distribution chart
+	let overallStatusCounts = $derived.by(() => {
+		const committeePapers =
+			$papersGroupedQuery.data?.findPapersGroupedByCommittee?.flatMap((c) =>
+				c.agendaItems.flatMap((ai) => ai.papers)
+			) ?? [];
+		const introPapers = $introductionPapersQuery.data?.findIntroductionPapers ?? [];
+		const allPapers = [...committeePapers, ...introPapers];
+
+		return {
+			submitted: allPapers.filter((p) => p.status === 'SUBMITTED').length,
+			changesRequested: allPapers.filter((p) => p.status === 'CHANGES_REQUESTED').length,
+			accepted: allPapers.filter((p) => p.status === 'ACCEPTED').length,
+			total: allPapers.length
+		};
+	});
+
+	// Helper to check if a paper has any reviews
+	const paperHasReviews = (paper: any): boolean => {
+		return paper.versions?.some((v: any) => v.reviews?.length > 0) ?? false;
+	};
+
 	// Sorting state per agenda item
 	let sortConfig = new SvelteMap<string, { key: string; direction: 'asc' | 'desc' }>();
 
 	const getSortedPapers = (agendaItemId: string, papers: any[]) => {
+		let result = [...papers];
+
+		// Apply user's sort config if set
 		const config = sortConfig.get(agendaItemId);
-		if (!config) return papers;
+		if (config) {
+			result.sort((a, b) => {
+				let aVal: any, bVal: any;
 
-		return [...papers].sort((a, b) => {
-			let aVal: any, bVal: any;
+				switch (config.key) {
+					case 'country':
+						aVal =
+							a.delegation.assignedNation?.alpha3Code ||
+							a.delegation.assignedNonStateActor?.name ||
+							'';
+						bVal =
+							b.delegation.assignedNation?.alpha3Code ||
+							b.delegation.assignedNonStateActor?.name ||
+							'';
+						break;
+					case 'type':
+						aVal = a.type;
+						bVal = b.type;
+						break;
+					case 'status':
+						aVal = a.status;
+						bVal = b.status;
+						break;
+					case 'createdAt':
+					case 'updatedAt':
+					case 'firstSubmittedAt':
+						aVal = a[config.key] ? new Date(a[config.key]).getTime() : 0;
+						bVal = b[config.key] ? new Date(b[config.key]).getTime() : 0;
+						break;
+					default:
+						return 0;
+				}
 
-			switch (config.key) {
-				case 'country':
-					aVal =
-						a.delegation.assignedNation?.alpha3Code ||
-						a.delegation.assignedNonStateActor?.name ||
-						'';
-					bVal =
-						b.delegation.assignedNation?.alpha3Code ||
-						b.delegation.assignedNonStateActor?.name ||
-						'';
-					break;
-				case 'type':
-					aVal = a.type;
-					bVal = b.type;
-					break;
-				case 'status':
-					aVal = a.status;
-					bVal = b.status;
-					break;
-				case 'createdAt':
-				case 'updatedAt':
-				case 'firstSubmittedAt':
-					aVal = a[config.key] ? new Date(a[config.key]).getTime() : 0;
-					bVal = b[config.key] ? new Date(b[config.key]).getTime() : 0;
-					break;
-				default:
-					return 0;
-			}
+				if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
+				if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
+				return 0;
+			});
+		}
 
-			if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
-			if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
-			return 0;
-		});
+		// Apply focus mode: prioritize papers without reviews, then oldest first, limit to 5
+		if ($focusMode) {
+			result.sort((a, b) => {
+				const aHasReviews = paperHasReviews(a);
+				const bHasReviews = paperHasReviews(b);
+
+				// Papers without reviews come first
+				if (aHasReviews !== bHasReviews) return aHasReviews ? 1 : -1;
+
+				// Then sort by firstSubmittedAt (oldest first)
+				const aTime = a.firstSubmittedAt ? new Date(a.firstSubmittedAt).getTime() : 0;
+				const bTime = b.firstSubmittedAt ? new Date(b.firstSubmittedAt).getTime() : 0;
+				return aTime - bTime;
+			});
+			result = result.slice(0, 5);
+		}
+
+		return result;
 	};
+
+	// Get total papers count for an agenda item (used to show "X of Y" in focus mode)
+	const getTotalPapersCount = (papers: any[]) => papers.length;
 
 	const toggleSort = (agendaItemId: string, key: string) => {
 		const current = sortConfig.get(agendaItemId);
@@ -182,6 +287,119 @@
 </script>
 
 <div class="flex flex-col gap-3 w-full">
+	<!-- Focus Mode Toggle and Status Overview -->
+	{#if !$papersGroupedQuery.fetching && $papersGroupedQuery.data?.findPapersGroupedByCommittee?.length}
+		<div class="card bg-base-200 border border-base-300 p-4">
+			<div class="flex flex-col gap-4">
+				<!-- Focus Mode Toggle -->
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<i class="fa-solid fa-bullseye text-primary text-xl"></i>
+						<div>
+							<h3 class="font-semibold">{m.focusModeLabel()}</h3>
+							<p class="text-sm text-base-content/60">{m.focusModeDescription()}</p>
+						</div>
+					</div>
+					<input type="checkbox" class="toggle toggle-primary" bind:checked={$focusMode} />
+				</div>
+
+				<!-- Status Distribution Chart -->
+				{#if overallStatusCounts.total > 0}
+					<div class="border-t border-base-300 pt-4">
+						<h4 class="text-sm font-semibold mb-2">{m.paperStatusOverview()}</h4>
+						<div class="flex h-12 w-full rounded-lg overflow-hidden">
+							{#if overallStatusCounts.submitted > 0}
+								<div
+									class="tooltip tooltip-right tooltip-warning bg-warning flex items-center justify-center gap-2 text-warning-content transition-all"
+									style="width: {(overallStatusCounts.submitted / overallStatusCounts.total) *
+										100}%"
+									data-tip="{m.paperStatusSubmitted()}: {overallStatusCounts.submitted}"
+								>
+									<i class="fa-solid fa-paper-plane"></i>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.submitted}</span
+									>
+								</div>
+							{/if}
+							{#if overallStatusCounts.changesRequested > 0}
+								<div
+									class="tooltip tooltip-left tooltip-error bg-error flex items-center justify-center gap-2 text-accent-content transition-all"
+									style="width: {(overallStatusCounts.changesRequested /
+										overallStatusCounts.total) *
+										100}%"
+									data-tip="{m.paperStatusChangesRequested()}: {overallStatusCounts.changesRequested}"
+								>
+									<i class="fa-solid fa-rotate-left"></i>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.changesRequested}</span
+									>
+								</div>
+							{/if}
+							{#if overallStatusCounts.accepted > 0}
+								<div
+									class="tooltip tooltip-left tooltip-success bg-success flex items-center justify-center gap-2 text-success-content transition-all"
+									style="width: {(overallStatusCounts.accepted / overallStatusCounts.total) * 100}%"
+									data-tip="{m.paperStatusAccepted()}: {overallStatusCounts.accepted}"
+								>
+									<i class="fa-solid fa-check"></i>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.accepted}</span
+									>
+								</div>
+							{/if}
+						</div>
+						<!-- Legend -->
+						<div class="flex gap-4 text-sm text-base-content/70 mt-2">
+							<span class="flex items-center gap-1">
+								<span class="inline-block w-3 h-3 bg-warning rounded"></span>
+								{m.paperStatusSubmitted()}
+							</span>
+							<span class="flex items-center gap-1">
+								<span class="inline-block w-3 h-3 bg-error rounded"></span>
+								{m.paperStatusChangesRequested()}
+							</span>
+							<span class="flex items-center gap-1">
+								<span class="inline-block w-3 h-3 bg-success rounded"></span>
+								{m.paperStatusAccepted()}
+							</span>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Personal Review Stats -->
+				{#if $myReviewStatsQuery.data?.myReviewStats}
+					{@const myStats = $myReviewStatsQuery.data.myReviewStats}
+					<div class="border-t border-base-300 pt-4">
+						<h4 class="text-sm font-semibold mb-2">{m.yourReviewStats()}</h4>
+						<div class="flex items-center gap-6">
+							<span class="flex items-center gap-2">
+								<i class="fa-solid fa-star text-primary"></i>
+								<span class="text-sm">{m.firstReviews()}:</span>
+								<span class="font-bold">{myStats.firstReviews}</span>
+							</span>
+							<span class="flex items-center gap-2">
+								<i class="fa-solid fa-plus text-accent"></i>
+								<span class="text-sm">{m.followUpReviews()}:</span>
+								<span class="font-bold">{myStats.followUpReviews}</span>
+							</span>
+							<span class="flex items-center gap-2 text-base-content/60">
+								<i class="fa-solid fa-equals"></i>
+								<span class="text-sm">{m.totalReviews()}:</span>
+								<span class="font-bold">{myStats.totalReviews}</span>
+							</span>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	{#if $papersGroupedQuery.fetching}
 		<div class="flex justify-center p-8">
 			<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
@@ -196,6 +414,9 @@
 			{@const committeeCounts = countByStatus(
 				committeeGroup.agendaItems.flatMap((ai) => ai.papers)
 			)}
+			{@const helpNeededCount = committeeGroup.agendaItems.filter(
+				(ai) => ai.agendaItem.reviewHelpStatus === 'HELP_NEEDED'
+			).length}
 			<div class="border border-base-300 rounded-lg bg-base-100">
 				<!-- Committee Header -->
 				<div
@@ -220,7 +441,20 @@
 								<h3 class="text-lg font-semibold">{committeeGroup.committee.name}</h3>
 							</div>
 						</div>
-						<PaperStatusBadges counts={committeeCounts} />
+						<div class="flex items-center gap-2">
+							{#if helpNeededCount > 0}
+								<div
+									class="tooltip tooltip-warning tooltip-left"
+									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
+								>
+									<div class="badge badge-warning gap-1">
+										<i class="fa-solid fa-hand"></i>
+										{helpNeededCount}
+									</div>
+								</div>
+							{/if}
+							<PaperStatusBadges counts={committeeCounts} blur={$focusMode} />
+						</div>
 					</div>
 				</div>
 
@@ -244,15 +478,50 @@
 										e.key === 'Enter' && toggleAgendaItem(agendaItemGroup.agendaItem.id)}
 								>
 									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-3">
+										<div class="flex items-center gap-2">
 											<i
 												class="fa-solid {$expandedAgendaItem === agendaItemGroup.agendaItem.id
 													? 'fa-chevron-down'
 													: 'fa-chevron-right'} text-base-content/40 text-sm"
 											></i>
+											<!-- Review Help Status Toggle -->
+											<div
+												class="tooltip tooltip-right {agendaItemGroup.agendaItem
+													.reviewHelpStatus === 'HELP_NEEDED'
+													? 'tooltip-warning'
+													: agendaItemGroup.agendaItem.reviewHelpStatus === 'NO_HELP_WANTED'
+														? 'tooltip-success'
+														: ''}"
+												data-tip={agendaItemGroup.agendaItem.reviewHelpStatus === 'HELP_NEEDED'
+													? m.reviewHelpNeeded()
+													: agendaItemGroup.agendaItem.reviewHelpStatus === 'NO_HELP_WANTED'
+														? m.reviewHelpNotWanted()
+														: m.reviewHelpStatusTooltip()}
+											>
+												<button
+													class="btn btn-ghost btn-sm btn-square"
+													disabled={!isReviewer}
+													onclick={(e) => {
+														e.stopPropagation();
+														cycleReviewHelpStatus(
+															agendaItemGroup.agendaItem.id,
+															agendaItemGroup.agendaItem.reviewHelpStatus
+														);
+													}}
+												>
+													{#if agendaItemGroup.agendaItem.reviewHelpStatus === 'HELP_NEEDED'}
+														<i class="fa-solid fa-hand text-warning text-base"></i>
+													{:else if agendaItemGroup.agendaItem.reviewHelpStatus === 'NO_HELP_WANTED'}
+														<i class="fa-solid fa-check-circle text-success text-base"></i>
+													{:else}
+														<i class="fa-solid fa-question-circle text-base-content/30 text-base"
+														></i>
+													{/if}
+												</button>
+											</div>
 											<h4 class="font-medium text-sm">{agendaItemGroup.agendaItem.title}</h4>
 										</div>
-										<PaperStatusBadges counts={agendaCounts} size="small" />
+										<PaperStatusBadges counts={agendaCounts} size="small" blur={$focusMode} />
 									</div>
 								</div>
 
@@ -319,7 +588,7 @@
 								<h3 class="text-lg font-semibold">{m.paperTypeIntroductionPapers()}</h3>
 							</div>
 						</div>
-						<PaperStatusBadges counts={introCounts} />
+						<PaperStatusBadges counts={introCounts} blur={$focusMode} />
 					</div>
 				</div>
 
@@ -341,4 +610,14 @@
 			<span>{m.noPapersSubmittedYet()}</span>
 		</div>
 	{/if}
+
+	<!-- Flag Collection Gamification Section -->
+	<div class="mt-6">
+		<FlagCollectionSection {conferenceId} />
+	</div>
+
+	<!-- Reviewer Leaderboard -->
+	<div class="mt-3">
+		<ReviewerLeaderboard {conferenceId} />
+	</div>
 </div>

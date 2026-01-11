@@ -51,6 +51,7 @@ type Committee {
 type CommitteeAgendaItem {
   committee: Committee!
   id: ID!
+  reviewHelpStatus: ReviewHelpStatus!
   teaserText: String
   title: String!
 }
@@ -60,6 +61,7 @@ input CommitteeAgendaItemCreateInput {
   createdAt: DateTime
   id: String
   papers: PaperCreateNestedManyWithoutAgendaItemInput
+  reviewHelpStatus: ReviewHelpStatus
   teaserText: String
   title: String!
   updatedAt: DateTime
@@ -90,6 +92,7 @@ input CommitteeAgendaItemOrderByWithRelationInput {
   createdAt: SortOrder
   id: SortOrder
   papers: PaperOrderByRelationAggregateInput
+  reviewHelpStatus: SortOrder
   teaserText: SortOrder
   title: SortOrder
   updatedAt: SortOrder
@@ -99,6 +102,7 @@ enum CommitteeAgendaItemScalarFieldEnum {
   committeeId
   createdAt
   id
+  reviewHelpStatus
   teaserText
   title
   updatedAt
@@ -109,6 +113,7 @@ input CommitteeAgendaItemUpdateInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   papers: PaperUpdateManyWithoutAgendaItemNestedInput
+  reviewHelpStatus: EnumReviewHelpStatusFieldUpdateOperationsInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -117,6 +122,7 @@ input CommitteeAgendaItemUpdateInput {
 input CommitteeAgendaItemUpdateManyMutationInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  reviewHelpStatus: EnumReviewHelpStatusFieldUpdateOperationsInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -137,6 +143,7 @@ input CommitteeAgendaItemWhereInput {
   createdAt: DateTimeFilter
   id: StringFilter
   papers: PaperListRelationFilter
+  reviewHelpStatus: EnumReviewHelpStatusFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -151,6 +158,7 @@ input CommitteeAgendaItemWhereUniqueInput {
   createdAt: DateTimeFilter
   id: String
   papers: PaperListRelationFilter
+  reviewHelpStatus: EnumReviewHelpStatusFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -1125,6 +1133,12 @@ input CreateOnePaperArgs {
   type: PaperType!
 }
 
+type CreatePaperReviewResult {
+  pieceUnlocked: Boolean!
+  review: PaperReview!
+  unlockedPieceData: UnlockedPieceData
+}
+
 type CustomConferenceRole {
   conference: Conference!
   description: String!
@@ -1881,6 +1895,27 @@ input EnumPaperTypeWithAggregatesFilter {
   notIn: [PaperType!]
 }
 
+input EnumReviewHelpStatusFieldUpdateOperationsInput {
+  set: ReviewHelpStatus
+}
+
+input EnumReviewHelpStatusFilter {
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
+input EnumReviewHelpStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumReviewHelpStatusFilter
+  _min: NestedEnumReviewHelpStatusFilter
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1903,6 +1938,58 @@ input EnumTeamRoleWithAggregatesFilter {
 }
 
 scalar File
+
+type FlagCollectionData {
+  flags: [FlagProgress!]!
+  stats: FlagCollectionStats!
+}
+
+type FlagCollectionStats {
+  completedFlags: Int!
+  foundPieces: Int!
+  totalFlags: Int!
+  totalPieces: Int!
+  unlockedPieces: Int!
+}
+
+type FlagPiece {
+  agendaItemId: String
+  agendaItemTitle: String
+  committeeAbbreviation: String
+  id: String!
+  state: FlagPieceState!
+}
+
+enum FlagPieceState {
+  FOUND
+  LOCKED
+  UNLOCKED
+}
+
+type FlagProgress {
+  abbreviation: String
+  alpha2Code: String
+  alpha3Code: String
+  fontAwesomeIcon: String
+  foundPieces: Int!
+  id: String!
+  isComplete: Boolean!
+  name: String!
+  pieces: [FlagPiece!]!
+  totalPieces: Int!
+  type: FlagType!
+  unlockedPieces: Int!
+}
+
+enum FlagType {
+  NATION
+  NSA
+}
+
+enum FlagTypeForUnlock {
+  NATION
+  NSA
+}
 
 input FloatFieldUpdateOperationsInput {
   decrement: Float
@@ -2157,7 +2244,7 @@ type Mutation {
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
-  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): PaperReview!
+  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -2182,6 +2269,7 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
+  setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
@@ -2205,6 +2293,12 @@ type Mutation {
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   upsertSelf: UpsertSelfResult!
+}
+
+type MyReviewStats {
+  firstReviews: Int!
+  followUpReviews: Int!
+  totalReviews: Int!
 }
 
 type Nation {
@@ -2506,6 +2600,23 @@ input NestedEnumPaperTypeWithAggregatesFilter {
   in: [PaperType!]
   not: PaperType
   notIn: [PaperType!]
+}
+
+input NestedEnumReviewHelpStatusFilter {
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
+input NestedEnumReviewHelpStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumReviewHelpStatusFilter
+  _min: NestedEnumReviewHelpStatusFilter
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
 }
 
 input NestedEnumTeamRoleFilter {
@@ -3544,6 +3655,7 @@ type Query {
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
   findUniqueWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  flagCollection(conferenceId: String!): FlagCollectionData!
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
@@ -3552,15 +3664,30 @@ type Query {
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
+  myReviewStats(conferenceId: String!): MyReviewStats
   offlineUserRefresh: OfflineUserRefresh!
   previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
   previewUserByIdOrEmail(emailOrId: String!): UserPreview!
+  reviewerLeaderboard(conferenceId: String!): [ReviewerStat!]!
 }
 
 enum QueryMode {
   default
   insensitive
+}
+
+enum ReviewHelpStatus {
+  HELP_NEEDED
+  NO_HELP_WANTED
+  UNSPECIFIED
+}
+
+type ReviewerStat {
+  anonymizedName: String!
+  firstReviews: Int!
+  isCurrentUser: Boolean!
+  totalReviews: Int!
 }
 
 type RoleApplication {
@@ -4642,6 +4769,19 @@ enum TransactionIsolationLevel {
   ReadUncommitted
   RepeatableRead
   Serializable
+}
+
+type UnlockedPieceData {
+  flagAlpha2Code: String
+  flagAlpha3Code: String
+  flagId: String!
+  flagName: String!
+  flagType: FlagTypeForUnlock!
+  fontAwesomeIcon: String
+  foundCount: Int!
+  isComplete: Boolean!
+  pieceName: String!
+  totalCount: Int!
 }
 
 input UpdateAllConferenceParticipantStatusInput {
