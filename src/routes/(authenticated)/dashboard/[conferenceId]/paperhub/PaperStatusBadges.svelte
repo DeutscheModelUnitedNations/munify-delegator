@@ -19,29 +19,31 @@
 </script>
 
 <div class="flex items-center gap-{size === 'small' ? '1' : '2'}">
-	<div class="badge badge-ghost {badgeSizeClass} gap-1" title={m.total()}>
-		<i class="fa-solid fa-file-lines text-xs"></i>
-		<span class:blur-sm={blur} class:select-none={blur}>{counts.total}</span>
+	<div class="tooltip tooltip-left" data-tip={m.total()}>
+		<div class="badge badge-ghost {badgeSizeClass} gap-1">
+			<i class="fa-solid fa-file-lines text-xs"></i>
+			<span class:blur-sm={blur} class:select-none={blur}>{counts.total}</span>
+		</div>
+	</div>
+	<div class="tooltip tooltip-left tooltip-warning" data-tip={translatePaperStatus('SUBMITTED')}>
+		<div class="badge badge-warning badge-outline {badgeSizeClass} gap-1">
+			<i class="fa-solid fa-paper-plane text-xs"></i>
+			<span class:blur-sm={blur} class:select-none={blur}>{counts.SUBMITTED}</span>
+		</div>
 	</div>
 	<div
-		class="badge badge-warning badge-outline {badgeSizeClass} gap-1"
-		title={translatePaperStatus('SUBMITTED')}
+		class="tooltip tooltip-left tooltip-error"
+		data-tip={translatePaperStatus('CHANGES_REQUESTED')}
 	>
-		<i class="fa-solid fa-paper-plane text-xs"></i>
-		<span class:blur-sm={blur} class:select-none={blur}>{counts.SUBMITTED}</span>
+		<div class="badge badge-error badge-outline {badgeSizeClass} gap-1">
+			<i class="fa-solid fa-exclamation-triangle text-xs"></i>
+			<span class:blur-sm={blur} class:select-none={blur}>{counts.CHANGES_REQUESTED}</span>
+		</div>
 	</div>
-	<div
-		class="badge badge-error badge-outline {badgeSizeClass} gap-1"
-		title={translatePaperStatus('CHANGES_REQUESTED')}
-	>
-		<i class="fa-solid fa-exclamation-triangle text-xs"></i>
-		<span class:blur-sm={blur} class:select-none={blur}>{counts.CHANGES_REQUESTED}</span>
-	</div>
-	<div
-		class="badge badge-success badge-outline {badgeSizeClass} gap-1"
-		title={translatePaperStatus('ACCEPTED')}
-	>
-		<i class="fa-solid fa-check-circle text-xs"></i>
-		<span class:blur-sm={blur} class:select-none={blur}>{counts.ACCEPTED}</span>
+	<div class="tooltip tooltip-left tooltip-success" data-tip={translatePaperStatus('ACCEPTED')}>
+		<div class="badge badge-success badge-outline {badgeSizeClass} gap-1">
+			<i class="fa-solid fa-check-circle text-xs"></i>
+			<span class:blur-sm={blur} class:select-none={blur}>{counts.ACCEPTED}</span>
+		</div>
 	</div>
 </div>

@@ -31,6 +31,7 @@
 					agendaItem {
 						id
 						title
+						reviewHelpStatus
 					}
 					papers {
 						id
@@ -104,11 +105,41 @@
 		}
 	`);
 
+	const setReviewHelpStatusMutation = graphql(`
+		mutation SetReviewHelpStatus($agendaItemId: String!, $status: ReviewHelpStatus!) {
+			setAgendaItemReviewHelpStatus(agendaItemId: $agendaItemId, status: $status) {
+				id
+				reviewHelpStatus
+			}
+		}
+	`);
+
 	$effect(() => {
 		papersGroupedQuery.fetch({ variables: { conferenceId } });
 		introductionPapersQuery.fetch({ variables: { conferenceId } });
 		myReviewStatsQuery.fetch({ variables: { conferenceId } });
 	});
+
+	// User is a reviewer if myReviewStats returns data (not null)
+	let isReviewer = $derived($myReviewStatsQuery.data?.myReviewStats !== null);
+
+	// Cycle through review help status values
+	const cycleReviewHelpStatus = async (
+		agendaItemId: string,
+		currentStatus: 'UNSPECIFIED' | 'HELP_NEEDED' | 'NO_HELP_WANTED'
+	) => {
+		const nextStatus =
+			currentStatus === 'UNSPECIFIED'
+				? 'HELP_NEEDED'
+				: currentStatus === 'HELP_NEEDED'
+					? 'NO_HELP_WANTED'
+					: 'UNSPECIFIED';
+
+		await setReviewHelpStatusMutation.mutate({
+			agendaItemId,
+			status: nextStatus
+		});
+	};
 
 	let introductionPapers = $derived($introductionPapersQuery?.data?.findIntroductionPapers ?? []);
 	let showIntroductionPapers = $derived(introductionPapers.length > 0);
@@ -279,10 +310,10 @@
 						<div class="flex h-12 w-full rounded-lg overflow-hidden">
 							{#if overallStatusCounts.submitted > 0}
 								<div
-									class="bg-warning flex items-center justify-center gap-2 text-warning-content transition-all"
+									class="tooltip tooltip-right tooltip-warning bg-warning flex items-center justify-center gap-2 text-warning-content transition-all"
 									style="width: {(overallStatusCounts.submitted / overallStatusCounts.total) *
 										100}%"
-									title="{m.paperStatusSubmitted()}: {overallStatusCounts.submitted}"
+									data-tip="{m.paperStatusSubmitted()}: {overallStatusCounts.submitted}"
 								>
 									<i class="fa-solid fa-paper-plane"></i>
 									<span
@@ -294,11 +325,11 @@
 							{/if}
 							{#if overallStatusCounts.changesRequested > 0}
 								<div
-									class="bg-error flex items-center justify-center gap-2 text-accent-content transition-all"
+									class="tooltip tooltip-left tooltip-error bg-error flex items-center justify-center gap-2 text-accent-content transition-all"
 									style="width: {(overallStatusCounts.changesRequested /
 										overallStatusCounts.total) *
 										100}%"
-									title="{m.paperStatusChangesRequested()}: {overallStatusCounts.changesRequested}"
+									data-tip="{m.paperStatusChangesRequested()}: {overallStatusCounts.changesRequested}"
 								>
 									<i class="fa-solid fa-rotate-left"></i>
 									<span
@@ -310,9 +341,9 @@
 							{/if}
 							{#if overallStatusCounts.accepted > 0}
 								<div
-									class="bg-success flex items-center justify-center gap-2 text-success-content transition-all"
+									class="tooltip tooltip-left tooltip-success bg-success flex items-center justify-center gap-2 text-success-content transition-all"
 									style="width: {(overallStatusCounts.accepted / overallStatusCounts.total) * 100}%"
-									title="{m.paperStatusAccepted()}: {overallStatusCounts.accepted}"
+									data-tip="{m.paperStatusAccepted()}: {overallStatusCounts.accepted}"
 								>
 									<i class="fa-solid fa-check"></i>
 									<span
@@ -383,6 +414,9 @@
 			{@const committeeCounts = countByStatus(
 				committeeGroup.agendaItems.flatMap((ai) => ai.papers)
 			)}
+			{@const helpNeededCount = committeeGroup.agendaItems.filter(
+				(ai) => ai.agendaItem.reviewHelpStatus === 'HELP_NEEDED'
+			).length}
 			<div class="border border-base-300 rounded-lg bg-base-100">
 				<!-- Committee Header -->
 				<div
@@ -407,7 +441,20 @@
 								<h3 class="text-lg font-semibold">{committeeGroup.committee.name}</h3>
 							</div>
 						</div>
-						<PaperStatusBadges counts={committeeCounts} blur={$focusMode} />
+						<div class="flex items-center gap-2">
+							{#if helpNeededCount > 0}
+								<div
+									class="tooltip tooltip-warning tooltip-left"
+									data-tip={m.topicsNeedHelp({ count: helpNeededCount })}
+								>
+									<div class="badge badge-warning gap-1">
+										<i class="fa-solid fa-hand"></i>
+										{helpNeededCount}
+									</div>
+								</div>
+							{/if}
+							<PaperStatusBadges counts={committeeCounts} blur={$focusMode} />
+						</div>
 					</div>
 				</div>
 
@@ -431,12 +478,49 @@
 										e.key === 'Enter' && toggleAgendaItem(agendaItemGroup.agendaItem.id)}
 								>
 									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-3">
+										<div class="flex items-center gap-2">
 											<i
 												class="fa-solid {$expandedAgendaItem === agendaItemGroup.agendaItem.id
 													? 'fa-chevron-down'
 													: 'fa-chevron-right'} text-base-content/40 text-sm"
 											></i>
+											<!-- Review Help Status Toggle -->
+											<div
+												class="tooltip tooltip-right {agendaItemGroup.agendaItem
+													.reviewHelpStatus === 'HELP_NEEDED'
+													? 'tooltip-warning'
+													: agendaItemGroup.agendaItem.reviewHelpStatus === 'NO_HELP_WANTED'
+														? 'tooltip-success'
+														: ''}"
+												data-tip={agendaItemGroup.agendaItem.reviewHelpStatus === 'HELP_NEEDED'
+													? m.reviewHelpNeeded()
+													: agendaItemGroup.agendaItem.reviewHelpStatus === 'NO_HELP_WANTED'
+														? m.reviewHelpNotWanted()
+														: m.reviewHelpStatusTooltip()}
+											>
+												<button
+													class="btn btn-ghost btn-sm btn-square"
+													class:btn-disabled={!isReviewer}
+													onclick={(e) => {
+														e.stopPropagation();
+														if (isReviewer) {
+															cycleReviewHelpStatus(
+																agendaItemGroup.agendaItem.id,
+																agendaItemGroup.agendaItem.reviewHelpStatus
+															);
+														}
+													}}
+												>
+													{#if agendaItemGroup.agendaItem.reviewHelpStatus === 'HELP_NEEDED'}
+														<i class="fa-solid fa-hand text-warning text-base"></i>
+													{:else if agendaItemGroup.agendaItem.reviewHelpStatus === 'NO_HELP_WANTED'}
+														<i class="fa-solid fa-check-circle text-success text-base"></i>
+													{:else}
+														<i class="fa-solid fa-question-circle text-base-content/30 text-base"
+														></i>
+													{/if}
+												</button>
+											</div>
 											<h4 class="font-medium text-sm">{agendaItemGroup.agendaItem.title}</h4>
 										</div>
 										<PaperStatusBadges counts={agendaCounts} size="small" blur={$focusMode} />
