@@ -44,6 +44,31 @@
 	let paperQuery = $derived(data.getPaperDetailsForEditingQuery);
 	let paperData = $derived($paperQuery?.data?.findUniquePaper);
 
+	// Query for user's reviewer snippets
+	const mySnippetsStore = graphql(`
+		query MyReviewerSnippetsForPaperQuery {
+			myReviewerSnippets {
+				id
+				name
+				content
+			}
+		}
+	`);
+
+	// Fetch snippets on mount
+	$effect(() => {
+		mySnippetsStore.fetch();
+	});
+
+	// Get snippets for reviewers
+	let snippets = $derived(
+		($mySnippetsStore?.data?.myReviewerSnippets ?? []).map((s) => ({
+			id: s.id,
+			name: s.name,
+			content: s.content as any
+		}))
+	);
+
 	// View mode detection
 	let isAuthor = $derived(paperData?.author.id === data.user.sub);
 	let isReviewer = $derived((data.teamMembers?.length ?? 0) > 0);
@@ -357,6 +382,7 @@
 					quoteToInsert={quoteToInsert ?? undefined}
 					onQuoteInserted={clearQuote}
 					paperContainer={paperEditorContainer}
+					{snippets}
 				/>
 			{/if}
 

@@ -29,6 +29,7 @@ import './modules/paper/paper';
 import './modules/paper/paperReview';
 import './modules/paper/paperVersion';
 import './modules/paper/reviewerLeaderboard';
+import './modules/reviewerSnippet';
 import './modules/flagCollection';
 import './modules/roleApplication';
 import './modules/singleParticipant';

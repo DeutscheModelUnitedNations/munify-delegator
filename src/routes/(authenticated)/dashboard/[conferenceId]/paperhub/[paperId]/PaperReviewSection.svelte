@@ -64,6 +64,12 @@
 		reviews: Review[];
 	}
 
+	interface SnippetItem {
+		id: string;
+		name: string;
+		content: any;
+	}
+
 	interface Props {
 		paperId: string;
 		currentStatus: PaperStatus$options;
@@ -73,6 +79,7 @@
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
 		paperContainer?: HTMLElement | null;
+		snippets?: SnippetItem[];
 	}
 
 	let {
@@ -83,7 +90,8 @@
 		authorName = '',
 		quoteToInsert,
 		onQuoteInserted,
-		paperContainer = null
+		paperContainer = null,
+		snippets = []
 	}: Props = $props();
 
 	// Create unified timeline from versions and reviews
@@ -317,6 +325,7 @@
 			{quoteToInsert}
 			{onQuoteInserted}
 			{paperContainer}
+			{snippets}
 		/>
 
 		<!-- Submit Button -->

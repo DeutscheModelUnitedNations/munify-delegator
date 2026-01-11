@@ -398,6 +398,25 @@
 				{/if}
 			</div>
 		</div>
+
+		<!-- Snippets Section -->
+		{#if isReviewer}
+			<div class="card bg-base-200 border border-base-300 p-4">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<i class="fa-solid fa-bookmark text-primary text-xl"></i>
+						<div>
+							<h3 class="font-semibold">{m.reviewerSnippets()}</h3>
+							<p class="text-sm text-base-content/60">{m.reviewerSnippetsShortDescription()}</p>
+						</div>
+					</div>
+					<a href="./paperhub/snippets" class="btn btn-ghost btn-sm">
+						<i class="fa-solid fa-gear"></i>
+						{m.manageSnippets()}
+					</a>
+				</div>
+			</div>
+		{/if}
 	{/if}
 
 	{#if $papersGroupedQuery.fetching}
