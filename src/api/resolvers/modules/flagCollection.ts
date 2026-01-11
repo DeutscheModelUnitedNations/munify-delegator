@@ -110,16 +110,9 @@ FlagCollectionDataRef.implement({
 	})
 });
 
-// Helper to get localized nation name
+// Helper to get nation name (returns alpha3Code as fallback - client handles translation)
 function getNationName(alpha3Code: string): string {
-	// Use convert-iso-codes or similar for proper localization
-	// For now, return the alpha3Code as a fallback
-	try {
-		const { Alpha3 } = require('convert-iso-codes');
-		return Alpha3.toName(alpha3Code) ?? alpha3Code;
-	} catch {
-		return alpha3Code;
-	}
+	return alpha3Code;
 }
 
 // Query implementation

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PuzzlePiece from './PuzzlePiece.svelte';
 	import { getNsaGradients } from '$lib/services/nsaGradient';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Piece {
 		id: string;
@@ -67,7 +68,7 @@
 		let currentCol = 1;
 
 		// Distribute extra cells evenly among first `extraCells` pieces (they get colspan=2)
-		const piecesWithSpan = new Set<number>();
+		const piecesWithSpan = new SvelteSet<number>();
 		for (let i = 0; i < extraCells; i++) {
 			// Spread the spanning pieces evenly
 			const spanIndex = Math.floor((i * count) / Math.max(extraCells, 1));

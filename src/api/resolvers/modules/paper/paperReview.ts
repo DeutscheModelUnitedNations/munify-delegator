@@ -93,14 +93,9 @@ CreatePaperReviewResultRef.implement({
 	})
 });
 
-// Helper to get nation name
+// Helper to get nation name (returns alpha3Code as fallback - client handles translation)
 function getNationName(alpha3Code: string): string {
-	try {
-		const { Alpha3 } = require('convert-iso-codes');
-		return Alpha3.toName(alpha3Code) ?? alpha3Code;
-	} catch {
-		return alpha3Code;
-	}
+	return alpha3Code;
 }
 
 builder.mutationFields((t) => ({

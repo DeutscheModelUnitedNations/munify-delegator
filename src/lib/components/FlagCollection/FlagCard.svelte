@@ -16,11 +16,9 @@
 		alpha2Code: string | null;
 		alpha3Code: string | null;
 		name: string;
-		abbreviation: string | null;
 		fontAwesomeIcon: string | null;
 		totalPieces: number;
 		foundPieces: number;
-		unlockedPieces: number;
 		pieces: Piece[];
 		isComplete: boolean;
 	}
