@@ -1,5 +1,7 @@
 {
 	"dependencies": {
+		"@tiptap/extension-character-count": "^3.15.3",
+		"@tiptap/extension-hard-break": "^3.15.3",
 		"commander": "^14.0.2",
 		"diff-match-patch": "^1.0.5",
 		"humanparser": "^2.7.0",

@@ -103,6 +103,15 @@
 			editable: true
 		});
 	});
+
+	// Clear editor when store is reset externally (e.g., after review submission)
+	$effect(() => {
+		const content = $contentStore;
+		// Only clear if store is empty object AND editor actually has content
+		if ($editor && content && Object.keys(content).length === 0 && !$editor.isEmpty) {
+			$editor.commands.clearContent();
+		}
+	});
 </script>
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[200px]">
