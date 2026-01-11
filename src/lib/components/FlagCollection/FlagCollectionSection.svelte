@@ -63,7 +63,7 @@
 	type FilterOption = 'all' | 'incomplete' | 'unlocked' | 'complete';
 	let filterState = $state<FilterOption>('all');
 
-	let filteredFlags = $derived(() => {
+	let filteredFlags = $derived.by(() => {
 		const flags = $flagCollectionQuery.data?.flagCollection?.flags ?? [];
 		let filtered: typeof flags;
 		switch (filterState) {
@@ -171,11 +171,11 @@
 				</div>
 
 				<!-- Flags Grid -->
-				{#if filteredFlags().length > 0}
+				{#if filteredFlags.length > 0}
 					<div
 						class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
 					>
-						{#each filteredFlags() as flag (flag.id)}
+						{#each filteredFlags as flag (flag.id)}
 							<FlagCard {flag} />
 						{/each}
 					</div>

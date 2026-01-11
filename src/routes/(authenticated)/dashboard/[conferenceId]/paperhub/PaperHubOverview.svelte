@@ -500,15 +500,13 @@
 											>
 												<button
 													class="btn btn-ghost btn-sm btn-square"
-													class:btn-disabled={!isReviewer}
+													disabled={!isReviewer}
 													onclick={(e) => {
 														e.stopPropagation();
-														if (isReviewer) {
-															cycleReviewHelpStatus(
-																agendaItemGroup.agendaItem.id,
-																agendaItemGroup.agendaItem.reviewHelpStatus
-															);
-														}
+														cycleReviewHelpStatus(
+															agendaItemGroup.agendaItem.id,
+															agendaItemGroup.agendaItem.reviewHelpStatus
+														);
 													}}
 												>
 													{#if agendaItemGroup.agendaItem.reviewHelpStatus === 'HELP_NEEDED'}

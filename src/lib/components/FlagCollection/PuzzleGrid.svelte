@@ -16,7 +16,7 @@
 
 	// Calculate grid dimensions for a visually pleasing layout
 	// For small counts, prefer wider layouts
-	let gridCols = $derived(() => {
+	let gridCols = $derived.by(() => {
 		const count = pieces.length;
 		if (count <= 2) return count;
 		if (count <= 4) return 2;
@@ -26,7 +26,7 @@
 	});
 </script>
 
-<div class="grid gap-0.5" style="grid-template-columns: repeat({gridCols()}, 1fr);">
+<div class="grid gap-0.5" style="grid-template-columns: repeat({gridCols}, 1fr);">
 	{#each pieces as piece (piece.id)}
 		<PuzzlePiece state={piece.state} title={piece.agendaItemTitle} {compact} />
 	{/each}

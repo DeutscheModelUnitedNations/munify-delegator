@@ -11,7 +11,7 @@
 	let { state, title, compact = false, overlay = false }: Props = $props();
 
 	// Original tile-based styling (for backwards compatibility)
-	let bgClass = $derived(() => {
+	let bgClass = $derived.by(() => {
 		if (overlay) return '';
 		switch (state) {
 			case 'LOCKED':
@@ -24,7 +24,7 @@
 	});
 
 	// Overlay-based styling (for flag reveal effect)
-	let overlayClass = $derived(() => {
+	let overlayClass = $derived.by(() => {
 		if (!overlay) return '';
 		switch (state) {
 			case 'LOCKED':
@@ -36,7 +36,9 @@
 		}
 	});
 
-	let tooltipText = $derived(() => {
+	let tooltipText = $derived.by(() => {
+		// Use title prop if provided (e.g., agenda item title), otherwise use state-based tooltip
+		if (title) return title;
 		switch (state) {
 			case 'LOCKED':
 				return m.pieceLockedTooltip();
@@ -47,7 +49,7 @@
 		}
 	});
 
-	let iconClass = $derived(() => {
+	let iconClass = $derived.by(() => {
 		if (overlay) {
 			switch (state) {
 				case 'LOCKED':
@@ -70,18 +72,19 @@
 </script>
 
 <div
-	class="h-full w-full flex items-center justify-center transition-all duration-500 {bgClass()} {overlayClass()}"
+	class="h-full w-full flex items-center justify-center transition-all duration-500 {bgClass} {overlayClass}"
 	class:rounded-sm={!overlay}
 	class:aspect-square={!overlay}
 	class:hover:scale-105={!compact && !overlay}
+	title={tooltipText}
 >
 	{#if state === 'LOCKED'}
-		<i class="fa-solid fa-lock {iconClass()} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="fa-solid fa-lock {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{:else if state === 'UNLOCKED'}
-		<i class="fa-solid fa-puzzle-piece {iconClass()} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="fa-solid fa-puzzle-piece {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{:else if !overlay}
 		<!-- Only show check icon in non-overlay mode (old tile view) -->
-		<i class="fa-solid fa-check {iconClass()} {compact ? 'text-xs' : 'text-sm'}"></i>
+		<i class="fa-solid fa-check {iconClass} {compact ? 'text-xs' : 'text-sm'}"></i>
 	{/if}
 </div>
 
