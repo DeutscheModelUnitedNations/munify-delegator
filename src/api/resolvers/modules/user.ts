@@ -248,7 +248,8 @@ builder.mutationFields((t) => {
 							wantsToReceiveGeneralInformation: t.boolean({
 								required: false
 							}),
-							wantsJoinTeamInformation: t.boolean({ required: false })
+							wantsJoinTeamInformation: t.boolean({ required: false }),
+							canReceiveDelegationMail: t.boolean({ required: false })
 						})
 					})
 				})

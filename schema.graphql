@@ -5133,6 +5133,7 @@ input UserScalarRelationFilter {
 input UserUpdateDataInput {
   apartment: String
   birthday: DateTime!
+  canReceiveDelegationMail: Boolean
   city: String!
   country: String!
   emergencyContacts: String!
