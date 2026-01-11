@@ -3,11 +3,13 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import CompletionCelebration from './CompletionCelebration.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Props {
 		open: boolean;
 		flagName: string;
 		flagAlpha2Code?: string | null;
+		flagAlpha3Code?: string | null;
 		flagType: 'NATION' | 'NSA';
 		fontAwesomeIcon?: string | null;
 		pieceName: string;
@@ -22,6 +24,7 @@
 		open = $bindable(),
 		flagName,
 		flagAlpha2Code,
+		flagAlpha3Code,
 		flagType,
 		fontAwesomeIcon,
 		pieceName,
@@ -31,6 +34,13 @@
 		onclose,
 		onViewCollection
 	}: Props = $props();
+
+	// Get the translated country name for nations, fallback to flagName for NSAs
+	let displayName = $derived(
+		flagType === 'NATION' && flagAlpha3Code
+			? getFullTranslatedCountryNameFromISO3Code(flagAlpha3Code)
+			: flagName
+	);
 
 	const handleViewCollection = () => {
 		open = false;
@@ -69,7 +79,7 @@
 				<Flag size="sm" nsa={true} icon={fontAwesomeIcon} />
 			{/if}
 			<div>
-				<div class="font-semibold">{flagName}</div>
+				<div class="font-semibold">{displayName}</div>
 				<div class="text-sm text-base-content/60">
 					{foundCount}/{totalCount}
 					{m.piecesCollected()}

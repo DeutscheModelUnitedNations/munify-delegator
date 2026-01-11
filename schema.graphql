@@ -4773,6 +4773,7 @@ enum TransactionIsolationLevel {
 
 type UnlockedPieceData {
   flagAlpha2Code: String
+  flagAlpha3Code: String
   flagId: String!
   flagName: String!
   flagType: FlagTypeForUnlock!

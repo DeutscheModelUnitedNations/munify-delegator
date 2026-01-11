@@ -191,6 +191,7 @@
 					flagName
 					flagType
 					flagAlpha2Code
+					flagAlpha3Code
 					fontAwesomeIcon
 					pieceName
 					foundCount
@@ -206,6 +207,7 @@
 	let pieceFoundData = $state<{
 		flagName: string;
 		flagAlpha2Code: string | null;
+		flagAlpha3Code: string | null;
 		flagType: 'NATION' | 'NSA';
 		fontAwesomeIcon: string | null;
 		pieceName: string;
@@ -267,6 +269,7 @@
 				pieceFoundData = {
 					flagName: data.unlockedPieceData.flagName,
 					flagAlpha2Code: data.unlockedPieceData.flagAlpha2Code ?? null,
+					flagAlpha3Code: data.unlockedPieceData.flagAlpha3Code ?? null,
 					flagType: data.unlockedPieceData.flagType,
 					fontAwesomeIcon: data.unlockedPieceData.fontAwesomeIcon ?? null,
 					pieceName: data.unlockedPieceData.pieceName,
@@ -483,6 +486,7 @@
 		bind:open={showPieceFoundModal}
 		flagName={pieceFoundData.flagName}
 		flagAlpha2Code={pieceFoundData.flagAlpha2Code}
+		flagAlpha3Code={pieceFoundData.flagAlpha3Code}
 		flagType={pieceFoundData.flagType}
 		fontAwesomeIcon={pieceFoundData.fontAwesomeIcon}
 		pieceName={pieceFoundData.pieceName}

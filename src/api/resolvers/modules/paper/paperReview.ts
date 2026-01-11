@@ -31,6 +31,7 @@ interface UnlockedPieceData {
 	flagName: string;
 	flagType: 'NATION' | 'NSA';
 	flagAlpha2Code: string | null;
+	flagAlpha3Code: string | null;
 	fontAwesomeIcon: string | null;
 	pieceName: string;
 	foundCount: number;
@@ -51,6 +52,7 @@ UnlockedPieceDataRef.implement({
 		flagName: t.exposeString('flagName'),
 		flagType: t.field({ type: FlagTypeEnum, resolve: (p) => p.flagType }),
 		flagAlpha2Code: t.exposeString('flagAlpha2Code', { nullable: true }),
+		flagAlpha3Code: t.exposeString('flagAlpha3Code', { nullable: true }),
 		fontAwesomeIcon: t.exposeString('fontAwesomeIcon', { nullable: true }),
 		pieceName: t.exposeString('pieceName'),
 		foundCount: t.exposeInt('foundCount'),
@@ -331,6 +333,7 @@ builder.mutationFields((t) => ({
 							flagName: getNationName(nation.alpha3Code),
 							flagType: 'NATION',
 							flagAlpha2Code: nation.alpha2Code,
+							flagAlpha3Code: nation.alpha3Code,
 							fontAwesomeIcon: null,
 							pieceName: paper.agendaItem
 								? `${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
@@ -363,6 +366,7 @@ builder.mutationFields((t) => ({
 							flagName: nsa.name,
 							flagType: 'NSA',
 							flagAlpha2Code: null,
+							flagAlpha3Code: null,
 							fontAwesomeIcon: nsa.fontAwesomeIcon,
 							pieceName:
 								paper.type === 'INTRODUCTION_PAPER'

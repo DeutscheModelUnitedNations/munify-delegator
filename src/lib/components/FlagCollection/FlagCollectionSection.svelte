@@ -65,17 +65,28 @@
 
 	let filteredFlags = $derived(() => {
 		const flags = $flagCollectionQuery.data?.flagCollection?.flags ?? [];
+		let filtered: typeof flags;
 		switch (filterState) {
 			case 'incomplete':
-				return flags.filter((f) => !f.isComplete);
+				filtered = flags.filter((f) => !f.isComplete);
+				break;
 			case 'unlocked':
 				// Flags with at least one UNLOCKED piece (not found yet)
-				return flags.filter((f) => f.pieces.some((p) => p.state === 'UNLOCKED'));
+				filtered = flags.filter((f) => f.pieces.some((p) => p.state === 'UNLOCKED'));
+				break;
 			case 'complete':
-				return flags.filter((f) => f.isComplete);
+				filtered = flags.filter((f) => f.isComplete);
+				break;
 			default:
-				return flags;
+				filtered = [...flags];
 		}
+		// Sort by pieces discovered (descending), then alphabetically by name
+		return filtered.sort((a, b) => {
+			if (b.foundPieces !== a.foundPieces) {
+				return b.foundPieces - a.foundPieces;
+			}
+			return a.name.localeCompare(b.name);
+		});
 	});
 </script>
 

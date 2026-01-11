@@ -71,8 +71,9 @@
 			{:else if $leaderboardQuery.data?.reviewerLeaderboard?.length}
 				<div class="space-y-2">
 					{#each $leaderboardQuery.data.reviewerLeaderboard as reviewer, i}
+						{@const additionalReviews = reviewer.totalReviews - reviewer.firstReviews}
 						<div
-							class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 {reviewer.isCurrentUser
+							class="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 {reviewer.isCurrentUser
 								? 'bg-primary/10 ring-1 ring-primary/30'
 								: ''}"
 						>
@@ -91,10 +92,9 @@
 
 							<!-- Name -->
 							<span
-								class="w-48 truncate font-medium flex items-center gap-2"
-								title={reviewer.anonymizedName}
+								class="w-40 text-sm font-medium flex items-center gap-2 flex-wrap leading-tight"
 							>
-								{reviewer.anonymizedName}
+								<span class="break-words">{reviewer.anonymizedName}</span>
 								{#if reviewer.isCurrentUser}
 									<span class="badge badge-primary badge-xs">{m.you()}</span>
 								{/if}
@@ -103,22 +103,28 @@
 							<!-- Bar Chart -->
 							<div class="flex-1 flex h-6 rounded overflow-hidden bg-base-300">
 								<!-- First reviews bar -->
-								<div
-									class="bg-primary transition-all duration-500"
-									style="width: {(reviewer.firstReviews / maxReviews) * 100}%"
-									title="{m.firstReviews()}: {reviewer.firstReviews}"
-								></div>
+								{#if reviewer.firstReviews > 0}
+									<div
+										class="bg-primary transition-all duration-500 flex items-center justify-center min-w-6"
+										style="width: {(reviewer.firstReviews / maxReviews) * 100}%"
+										title="{m.firstReviews()}: {reviewer.firstReviews}"
+									>
+										<span class="text-xs font-bold text-primary-content"
+											>{reviewer.firstReviews}</span
+										>
+									</div>
+								{/if}
 								<!-- Additional reviews bar -->
-								<div
-									class="bg-accent transition-all duration-500"
-									style="width: {((reviewer.totalReviews - reviewer.firstReviews) / maxReviews) *
-										100}%"
-									title="{m.additionalReviews()}: {reviewer.totalReviews - reviewer.firstReviews}"
-								></div>
+								{#if additionalReviews > 0}
+									<div
+										class="bg-accent transition-all duration-500 flex items-center justify-center min-w-6"
+										style="width: {(additionalReviews / maxReviews) * 100}%"
+										title="{m.additionalReviews()}: {additionalReviews}"
+									>
+										<span class="text-xs font-bold text-accent-content">{additionalReviews}</span>
+									</div>
+								{/if}
 							</div>
-
-							<!-- Total count -->
-							<span class="w-12 text-right text-sm font-mono">{reviewer.totalReviews}</span>
 						</div>
 					{/each}
 
