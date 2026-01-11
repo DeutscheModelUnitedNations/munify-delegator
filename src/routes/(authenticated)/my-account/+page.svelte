@@ -16,8 +16,8 @@
 	import { dev } from '$app/environment';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
-	let { data }: { data: PageData } = $props();
-	let form = superForm(data.form, {
+	const props = $props<{ data: PageData }>();
+	const form = superForm(props.data.form, {
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod4Client(userFormSchema),
@@ -29,7 +29,7 @@
 	//TODO pronoun prefill
 </script>
 
-{#if data.redirectUrl}
+{#if props.data.redirectUrl}
 	<div class="backdrop"></div>
 {/if}
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
@@ -38,7 +38,7 @@
 
 		<!-- If this is set we are likely to call this via the registration flow
 		 and we want to show a hint -->
-		{#if data.redirectUrl}
+		{#if props.data.redirectUrl}
 			<div class="alert alert-warning mt-10">
 				<i class="fas fa-exclamation-triangle text-3xl"></i>
 				<div>
@@ -52,8 +52,8 @@
 	</section>
 	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
 		<div
-			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-full sm:min-w-96 {data.redirectUrl &&
-				'highlight-card'}"
+			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-full sm:min-w-96 {props
+				.data.redirectUrl && 'highlight-card'}"
 		>
 			<div class="card-body bg-base-100 rounded-box">
 				{#if dev}
@@ -134,6 +134,17 @@
 							label={m.receiveJoinTeamInformation()}
 						/>
 					</FormFieldset>
+					<FormFieldset title={m.communicationPreferences()}>
+						<p class="text-sm text-gray-500 mb-4">
+							{m.communicationPreferencesDescription()}
+						</p>
+
+						<FormCheckbox
+							{form}
+							name="canReceiveDelegationMail"
+							label={m.allowDelegationMailer()}
+						/>
+					</FormFieldset>
 				</Form>
 			</div>
 		</div>
@@ -146,7 +157,7 @@
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-envelope"></i></td>
 							<td>{m.email()}</td>
-							<td>{data.user.email}</td>
+							<td>{props.data.user.email}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-key"></i></td>
@@ -162,22 +173,22 @@
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-text"></i></td>
 							<td>{m.firstName()}</td>
-							<td>{data.user.given_name}</td>
+							<td>{props.data.user.given_name}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-text"></i></td>
 							<td>{m.lastName()}</td>
-							<td>{data.user.family_name}</td>
+							<td>{props.data.user.family_name}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-binary"></i></td>
 							<td>{m.userId()}</td>
-							<td>{data.user.sub}</td>
+							<td>{props.data.user.sub}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-user-lock"></i></td>
 							<td>{m.rights()}</td>
-							<td>{data.user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</td>
+							<td>{props.data.user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -185,6 +196,7 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>

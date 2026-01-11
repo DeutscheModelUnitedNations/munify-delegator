@@ -62,5 +62,6 @@ export const userFormSchema = z.object({
 			return res || s;
 		}),
 	wantsToReceiveGeneralInformation: z.boolean().default(false),
-	wantsJoinTeamInformation: z.boolean().default(false)
+	wantsJoinTeamInformation: z.boolean().default(false),
+	canReceiveDelegationMail: z.boolean().default(false).optional()
 });
