@@ -4,6 +4,11 @@ enum AdministrativeStatus {
   PROBLEM
 }
 
+type AgendaItemPaperGroup {
+  agendaItem: CommitteeAgendaItem
+  papers: [Paper!]!
+}
+
 """Batch payloads from prisma."""
 type BatchPayload {
   """Prisma Batch Payload"""
@@ -46,6 +51,7 @@ type Committee {
 type CommitteeAgendaItem {
   committee: Committee!
   id: ID!
+  reviewHelpStatus: ReviewHelpStatus!
   teaserText: String
   title: String!
 }
@@ -55,6 +61,7 @@ input CommitteeAgendaItemCreateInput {
   createdAt: DateTime
   id: String
   papers: PaperCreateNestedManyWithoutAgendaItemInput
+  reviewHelpStatus: ReviewHelpStatus
   teaserText: String
   title: String!
   updatedAt: DateTime
@@ -85,6 +92,7 @@ input CommitteeAgendaItemOrderByWithRelationInput {
   createdAt: SortOrder
   id: SortOrder
   papers: PaperOrderByRelationAggregateInput
+  reviewHelpStatus: SortOrder
   teaserText: SortOrder
   title: SortOrder
   updatedAt: SortOrder
@@ -94,6 +102,7 @@ enum CommitteeAgendaItemScalarFieldEnum {
   committeeId
   createdAt
   id
+  reviewHelpStatus
   teaserText
   title
   updatedAt
@@ -104,6 +113,7 @@ input CommitteeAgendaItemUpdateInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   papers: PaperUpdateManyWithoutAgendaItemNestedInput
+  reviewHelpStatus: EnumReviewHelpStatusFieldUpdateOperationsInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -112,6 +122,7 @@ input CommitteeAgendaItemUpdateInput {
 input CommitteeAgendaItemUpdateManyMutationInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  reviewHelpStatus: EnumReviewHelpStatusFieldUpdateOperationsInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -132,6 +143,7 @@ input CommitteeAgendaItemWhereInput {
   createdAt: DateTimeFilter
   id: StringFilter
   papers: PaperListRelationFilter
+  reviewHelpStatus: EnumReviewHelpStatusFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -146,6 +158,7 @@ input CommitteeAgendaItemWhereUniqueInput {
   createdAt: DateTimeFilter
   id: String
   papers: PaperListRelationFilter
+  reviewHelpStatus: EnumReviewHelpStatusFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -199,6 +212,11 @@ input CommitteeOrderByWithRelationInput {
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
   updatedAt: SortOrder
+}
+
+type CommitteePaperGroup {
+  agendaItems: [AgendaItemPaperGroup!]!
+  committee: Committee!
 }
 
 enum CommitteeScalarFieldEnum {
@@ -1115,6 +1133,12 @@ input CreateOnePaperArgs {
   type: PaperType!
 }
 
+type CreatePaperReviewResult {
+  pieceUnlocked: Boolean!
+  review: PaperReview!
+  unlockedPieceData: UnlockedPieceData
+}
+
 type CustomConferenceRole {
   conference: Conference!
   description: String!
@@ -1823,6 +1847,23 @@ input EnumPaperStatusFilter {
   notIn: [PaperStatus!]
 }
 
+input EnumPaperStatusNullableFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input EnumPaperStatusNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumPaperStatusNullableFilter
+  _min: NestedEnumPaperStatusNullableFilter
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
 input EnumPaperStatusWithAggregatesFilter {
   _count: NestedIntFilter
   _max: NestedEnumPaperStatusFilter
@@ -1854,6 +1895,27 @@ input EnumPaperTypeWithAggregatesFilter {
   notIn: [PaperType!]
 }
 
+input EnumReviewHelpStatusFieldUpdateOperationsInput {
+  set: ReviewHelpStatus
+}
+
+input EnumReviewHelpStatusFilter {
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
+input EnumReviewHelpStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumReviewHelpStatusFilter
+  _min: NestedEnumReviewHelpStatusFilter
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1876,6 +1938,58 @@ input EnumTeamRoleWithAggregatesFilter {
 }
 
 scalar File
+
+type FlagCollectionData {
+  flags: [FlagProgress!]!
+  stats: FlagCollectionStats!
+}
+
+type FlagCollectionStats {
+  completedFlags: Int!
+  foundPieces: Int!
+  totalFlags: Int!
+  totalPieces: Int!
+  unlockedPieces: Int!
+}
+
+type FlagPiece {
+  agendaItemId: String
+  agendaItemTitle: String
+  committeeAbbreviation: String
+  id: String!
+  state: FlagPieceState!
+}
+
+enum FlagPieceState {
+  FOUND
+  LOCKED
+  UNLOCKED
+}
+
+type FlagProgress {
+  abbreviation: String
+  alpha2Code: String
+  alpha3Code: String
+  fontAwesomeIcon: String
+  foundPieces: Int!
+  id: String!
+  isComplete: Boolean!
+  name: String!
+  pieces: [FlagPiece!]!
+  totalPieces: Int!
+  type: FlagType!
+  unlockedPieces: Int!
+}
+
+enum FlagType {
+  NATION
+  NSA
+}
+
+enum FlagTypeForUnlock {
+  NATION
+  NSA
+}
 
 input FloatFieldUpdateOperationsInput {
   decrement: Float
@@ -2128,7 +2242,9 @@ type Mutation {
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
+  createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
+  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -2153,6 +2269,7 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
+  setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
@@ -2170,11 +2287,18 @@ type Mutation {
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
+  updateOneTeamMember(data: TeamMemberUpdateInput!, where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   upsertSelf: UpsertSelfResult!
+}
+
+type MyReviewStats {
+  firstReviews: Int!
+  followUpReviews: Int!
+  totalReviews: Int!
 }
 
 type Nation {
@@ -2434,6 +2558,23 @@ input NestedEnumPaperStatusFilter {
   notIn: [PaperStatus!]
 }
 
+input NestedEnumPaperStatusNullableFilter {
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
+input NestedEnumPaperStatusNullableWithAggregatesFilter {
+  _count: NestedIntNullableFilter
+  _max: NestedEnumPaperStatusNullableFilter
+  _min: NestedEnumPaperStatusNullableFilter
+  equals: PaperStatus
+  in: [PaperStatus!]
+  not: PaperStatus
+  notIn: [PaperStatus!]
+}
+
 input NestedEnumPaperStatusWithAggregatesFilter {
   _count: NestedIntFilter
   _max: NestedEnumPaperStatusFilter
@@ -2459,6 +2600,23 @@ input NestedEnumPaperTypeWithAggregatesFilter {
   in: [PaperType!]
   not: PaperType
   notIn: [PaperType!]
+}
+
+input NestedEnumReviewHelpStatusFilter {
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
+input NestedEnumReviewHelpStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumReviewHelpStatusFilter
+  _min: NestedEnumReviewHelpStatusFilter
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
 }
 
 input NestedEnumTeamRoleFilter {
@@ -2827,6 +2985,10 @@ input NullableEnumGenderFieldUpdateOperationsInput {
   set: Gender
 }
 
+input NullableEnumPaperStatusFieldUpdateOperationsInput {
+  set: PaperStatus
+}
+
 input NullableFloatFieldUpdateOperationsInput {
   decrement: Float
   divide: Float
@@ -2951,6 +3113,8 @@ type PaperReview {
   id: ID!
   paperVersion: PaperVersion!
   reviewer: User!
+  statusAfter: PaperStatus
+  statusBefore: PaperStatus
 }
 
 input PaperReviewCreateInput {
@@ -2959,6 +3123,8 @@ input PaperReviewCreateInput {
   id: String
   paperVersionId: String!
   reviewerId: String!
+  statusAfter: PaperStatus
+  statusBefore: PaperStatus
 }
 
 input PaperReviewCreateNestedManyWithoutPaperVersionInput {
@@ -2987,6 +3153,8 @@ input PaperReviewOrderByWithRelationInput {
   paperVersionId: SortOrder
   reviewer: UserOrderByWithRelationInput
   reviewerId: SortOrder
+  statusAfter: SortOrder
+  statusBefore: SortOrder
 }
 
 enum PaperReviewScalarFieldEnum {
@@ -2995,6 +3163,8 @@ enum PaperReviewScalarFieldEnum {
   id
   paperVersionId
   reviewerId
+  statusAfter
+  statusBefore
 }
 
 input PaperReviewUpdateInput {
@@ -3003,12 +3173,16 @@ input PaperReviewUpdateInput {
   id: StringFieldUpdateOperationsInput
   paperVersionId: StringFieldUpdateOperationsInput
   reviewerId: StringFieldUpdateOperationsInput
+  statusAfter: NullableEnumPaperStatusFieldUpdateOperationsInput
+  statusBefore: NullableEnumPaperStatusFieldUpdateOperationsInput
 }
 
 input PaperReviewUpdateManyMutationInput {
   comments: Json
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  statusAfter: NullableEnumPaperStatusFieldUpdateOperationsInput
+  statusBefore: NullableEnumPaperStatusFieldUpdateOperationsInput
 }
 
 input PaperReviewUpdateManyWithoutPaperVersionNestedInput {
@@ -3034,6 +3208,8 @@ input PaperReviewWhereInput {
   paperVersionId: StringFilter
   reviewer: UserWhereInput
   reviewerId: StringFilter
+  statusAfter: EnumPaperStatusNullableFilter
+  statusBefore: EnumPaperStatusNullableFilter
 }
 
 input PaperReviewWhereUniqueInput {
@@ -3047,6 +3223,8 @@ input PaperReviewWhereUniqueInput {
   paperVersionId: StringFilter
   reviewer: UserWhereInput
   reviewerId: StringFilter
+  statusAfter: EnumPaperStatusNullableFilter
+  statusBefore: EnumPaperStatusNullableFilter
 }
 
 enum PaperScalarFieldEnum {
@@ -3435,6 +3613,7 @@ type PreviewConferenceSupervisor {
 
 type Query {
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
+  findIntroductionPapers(conferenceId: String!): [Paper!]!
   findManyAgendaItems(cursor: CommitteeAgendaItemWhereUniqueInput, distinct: [CommitteeAgendaItemScalarFieldEnum!], orderBy: [CommitteeAgendaItemOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeAgendaItemWhereInput): [CommitteeAgendaItem!]!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
   findManyConferenceParticipantStatuss(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
@@ -3455,6 +3634,7 @@ type Query {
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
+  findPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
@@ -3475,6 +3655,7 @@ type Query {
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
   findUniqueWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  flagCollection(conferenceId: String!): FlagCollectionData!
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
@@ -3483,15 +3664,30 @@ type Query {
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
+  myReviewStats(conferenceId: String!): MyReviewStats
   offlineUserRefresh: OfflineUserRefresh!
   previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
   previewUserByIdOrEmail(emailOrId: String!): UserPreview!
+  reviewerLeaderboard(conferenceId: String!): [ReviewerStat!]!
 }
 
 enum QueryMode {
   default
   insensitive
+}
+
+enum ReviewHelpStatus {
+  HELP_NEEDED
+  NO_HELP_WANTED
+  UNSPECIFIED
+}
+
+type ReviewerStat {
+  anonymizedName: String!
+  firstReviews: Int!
+  isCurrentUser: Boolean!
+  totalReviews: Int!
 }
 
 type RoleApplication {
@@ -4565,6 +4761,7 @@ enum TeamRole {
   MEMBER
   PARTICIPANT_CARE
   PROJECT_MANAGEMENT
+  REVIEWER
 }
 
 enum TransactionIsolationLevel {
@@ -4572,6 +4769,19 @@ enum TransactionIsolationLevel {
   ReadUncommitted
   RepeatableRead
   Serializable
+}
+
+type UnlockedPieceData {
+  flagAlpha2Code: String
+  flagAlpha3Code: String
+  flagId: String!
+  flagName: String!
+  flagType: FlagTypeForUnlock!
+  fontAwesomeIcon: String
+  foundCount: Int!
+  isComplete: Boolean!
+  pieceName: String!
+  totalCount: Int!
 }
 
 input UpdateAllConferenceParticipantStatusInput {

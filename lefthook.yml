@@ -9,4 +9,4 @@ pre-push:
     test:
       run: bun test
     lint:
-      run: bunx eslint "{staged_files}"
+      run: bunx eslint "{push_files}"

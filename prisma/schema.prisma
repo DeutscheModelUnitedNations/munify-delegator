@@ -108,11 +108,20 @@ model Committee {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
+/// Status indicating whether reviewers need help with an agenda item
+enum ReviewHelpStatus {
+  UNSPECIFIED
+  HELP_NEEDED
+  NO_HELP_WANTED
+}
+
 /// Agenda Items that are discussed in a committee
 model CommitteeAgendaItem {
   id         String  @id @default(nanoid())
   title      String
   teaserText String?
+
+  reviewHelpStatus ReviewHelpStatus @default(UNSPECIFIED)
 
   committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
   committeeId String
@@ -301,6 +310,9 @@ model PaperVersion {
 model PaperReview {
   id       String @id @default(nanoid())
   comments Json
+
+  statusBefore PaperStatus?
+  statusAfter  PaperStatus?
 
   paperVersion   PaperVersion @relation(fields: [paperVersionId], references: [id], onDelete: Cascade)
   paperVersionId String
@@ -578,6 +590,7 @@ model WaitingListEntry {
 enum TeamRole {
   PROJECT_MANAGEMENT
   PARTICIPANT_CARE
+  REVIEWER
   MEMBER
 }
 

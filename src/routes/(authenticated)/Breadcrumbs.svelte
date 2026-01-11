@@ -212,6 +212,10 @@
 		newPaper: {
 			icon: 'file-circle-plus',
 			translation: m.newPaper()
+		},
+		team: {
+			icon: 'users-gear',
+			translation: m.teamManagement()
 		}
 	};
 

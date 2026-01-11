@@ -11,6 +11,7 @@ export const _houdini_load = graphql(`
 			type
 			createdAt
 			updatedAt
+			firstSubmittedAt
 
 			agendaItem {
 				id
