@@ -1,65 +1,7 @@
 import { builder } from '../../builder';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
-import { codenamize } from 'codenamize-ts';
-
-// Configure codenamize with UN Secretary-General names
-const generateAnonymizedName = (seed: string): string => {
-	codenamize.use({
-		adverb: [
-			'very',
-			'super',
-			'ultra',
-			'quite',
-			'totally',
-			'absolutely',
-			'fairly',
-			'really',
-			'extremely',
-			'incredibly',
-			'particularly',
-			'remarkably',
-			'exceptionally',
-			'tremendously',
-			'fantastically'
-		],
-		mood: [
-			'happy',
-			'calm',
-			'excited',
-			'energetic',
-			'hopeful',
-			'content',
-			'curious',
-			'motivated',
-			'cheerful',
-			'determined',
-			'optimistic',
-			'confident',
-			'magnificent',
-			'splendid',
-			'glorious'
-		],
-		unNoun: [
-			'Trygve-Lie',
-			'Dag-Hammarskjöld',
-			'U-Thant',
-			'Kurt-Waldheim',
-			'Javier-Perez-de-Cuellar',
-			'Boutros-Boutros-Ghali',
-			'Kofi-Annan',
-			'Ban-Ki-moon',
-			'António-Guterres'
-		]
-	});
-
-	return codenamize({
-		seed,
-		particles: ['adverb', 'mood', 'unNoun'],
-		separator: ' ',
-		capitalize: true
-	});
-};
+import codenmz from '$lib/services/codenamize';
 
 // Define the ReviewerStat type for the leaderboard
 const ReviewerStatType = builder.simpleObject('ReviewerStat', {
@@ -145,7 +87,7 @@ builder.queryFields((t) => ({
 			// Convert to array, anonymize names, sort by first reviews, limit to top 10
 			return Array.from(reviewerStats.entries())
 				.map(([id, stats]) => ({
-					anonymizedName: generateAnonymizedName(id),
+					anonymizedName: codenmz(id),
 					firstReviews: stats.first,
 					totalReviews: stats.total,
 					isCurrentUser: id === user.sub
