@@ -17,6 +17,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { PieceFoundModal } from '$lib/components/FlagCollection';
+	import Modal from '$lib/components/Modal.svelte';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -176,6 +177,7 @@
 	let reviewComments = writable<any>({});
 	let selectedStatus = $state<PaperStatus$options>(currentStatus);
 	let isSubmitting = $state(false);
+	let showConfirmModal = $state(false);
 
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
@@ -231,21 +233,25 @@
 		}
 	});
 
-	const handleSubmitReview = async () => {
-		if (isSubmitting) return;
-
+	const openConfirmModal = () => {
 		const comments = $reviewComments;
 		if (!hasContent(comments)) {
 			toast.error(m.reviewCommentsRequired());
 			return;
 		}
+		showConfirmModal = true;
+	};
 
+	const handleSubmitReview = async () => {
+		if (isSubmitting) return;
+
+		showConfirmModal = false;
 		isSubmitting = true;
 		try {
 			const result = await toast.promise(
 				createReviewMutation.mutate({
 					paperId,
-					comments,
+					comments: $reviewComments,
 					newStatus: selectedStatus
 				}),
 				{
@@ -311,7 +317,7 @@
 		/>
 
 		<!-- Submit Button -->
-		<button class="btn btn-primary" onclick={handleSubmitReview} disabled={isSubmitting}>
+		<button class="btn btn-primary" onclick={openConfirmModal} disabled={isSubmitting}>
 			{#if isSubmitting}
 				<span class="loading loading-spinner loading-sm"></span>
 			{:else}
@@ -321,6 +327,31 @@
 		</button>
 	{/if}
 </div>
+
+<!-- Review Confirmation Modal -->
+<Modal bind:open={showConfirmModal} title={m.confirmReviewSubmission()}>
+	<div class="flex flex-col gap-4">
+		<div class="alert alert-warning">
+			<i class="fa-solid fa-exclamation-triangle"></i>
+			<span>{m.reviewSubmissionWarning()}</span>
+		</div>
+		<p class="text-sm text-base-content/70">
+			{m.reviewSubmissionNotification({ author: authorName || m.theAuthor() })}
+		</p>
+	</div>
+
+	{#snippet action()}
+		<div class="flex gap-2">
+			<button class="btn" onclick={() => (showConfirmModal = false)}>
+				{m.cancel()}
+			</button>
+			<button class="btn btn-primary" onclick={handleSubmitReview}>
+				<i class="fa-solid fa-paper-plane"></i>
+				{m.submitReview()}
+			</button>
+		</div>
+	{/snippet}
+</Modal>
 
 <!-- History Timeline -->
 {#if timelineEvents.length > 0}
