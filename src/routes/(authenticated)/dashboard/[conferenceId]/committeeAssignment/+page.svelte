@@ -80,7 +80,7 @@
 		<h1 class="text-2xl font-bold">{m.committeeAssignment()}</h1>
 	</div>
 
-	{#if members?.some((member) => !!member.assignedCommittee)}
+	{#if members?.every((member) => !!member.assignedCommittee)}
 		<div class="alert alert-success">
 			<i class="fas fa-check-circle text-3xl"></i>
 			<div class="flex flex-col">
