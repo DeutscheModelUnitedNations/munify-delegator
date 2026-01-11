@@ -45,20 +45,24 @@ builder.queryFields((t) => ({
 			}
 
 			// Get all reviews for this conference, ordered by creation time
+			// Use select to minimize payload - only need reviewerId and paperId
 			const reviews = await db.paperReview.findMany({
 				where: {
 					paperVersion: {
 						paper: { conferenceId }
 					}
 				},
-				include: {
+				select: {
+					id: true,
+					reviewerId: true,
+					createdAt: true,
 					paperVersion: {
-						include: {
-							paper: true
+						select: {
+							paperId: true
 						}
 					}
 				},
-				orderBy: { createdAt: 'asc' }
+				orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] // Deterministic ordering with tiebreaker
 			});
 
 			// Track first review per paper and total per reviewer
@@ -66,7 +70,7 @@ builder.queryFields((t) => ({
 			const reviewerStats = new Map<string, { first: number; total: number }>();
 
 			for (const review of reviews) {
-				const paperId = review.paperVersion.paper.id;
+				const paperId = review.paperVersion.paperId;
 				const reviewerId = review.reviewerId;
 
 				// Initialize reviewer stats if needed
@@ -120,20 +124,24 @@ builder.queryFields((t) => ({
 			}
 
 			// Get all reviews for this conference, ordered by creation time
+			// Use select to minimize payload - only need reviewerId and paperId
 			const reviews = await db.paperReview.findMany({
 				where: {
 					paperVersion: {
 						paper: { conferenceId }
 					}
 				},
-				include: {
+				select: {
+					id: true,
+					reviewerId: true,
+					createdAt: true,
 					paperVersion: {
-						include: {
-							paper: true
+						select: {
+							paperId: true
 						}
 					}
 				},
-				orderBy: { createdAt: 'asc' }
+				orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] // Deterministic ordering with tiebreaker
 			});
 
 			// Track first review per paper
@@ -143,7 +151,7 @@ builder.queryFields((t) => ({
 			let totalReviews = 0;
 
 			for (const review of reviews) {
-				const paperId = review.paperVersion.paper.id;
+				const paperId = review.paperVersion.paperId;
 				const reviewerId = review.reviewerId;
 
 				// Track first reviewer per paper

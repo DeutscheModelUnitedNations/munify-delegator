@@ -120,8 +120,8 @@
 		myReviewStatsQuery.fetch({ variables: { conferenceId } });
 	});
 
-	// User is a reviewer if myReviewStats returns data (not null)
-	let isReviewer = $derived($myReviewStatsQuery.data?.myReviewStats !== null);
+	// User is a reviewer if myReviewStats returns data (not null/undefined)
+	let isReviewer = $derived($myReviewStatsQuery.data?.myReviewStats != null);
 
 	// Cycle through review help status values
 	const cycleReviewHelpStatus = async (
