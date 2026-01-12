@@ -11,6 +11,70 @@ import {
 	DeleteOptionFormSchema
 } from '../form-schema';
 
+const SurveyDetailsQuery = graphql(`
+	query SurveyResultsDetailsPage($conferenceId: String!, $surveyId: String!) {
+		findUniqueSurveyQuestion(where: { id: $surveyId }) {
+			id
+			title
+			description
+			deadline
+			draft
+			options {
+				id
+				title
+				description
+				countSurveyAnswers
+				upperLimit
+			}
+			surveyAnswers {
+				id
+				option {
+					id
+				}
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
+		}
+		findManyUsers(
+			where: {
+				surveyAnswers: { none: { questionId: { equals: $surveyId } } }
+				OR: [
+					{
+						delegationMemberships: {
+							some: {
+								conferenceId: { equals: $conferenceId }
+								delegation: {
+									OR: [
+										{ assignedNationAlpha3Code: { not: { equals: null } } }
+										{ assignedNonStateActorId: { not: { equals: null } } }
+									]
+								}
+							}
+						}
+					}
+					{
+						singleParticipant: {
+							some: {
+								AND: [
+									{ conferenceId: { equals: $conferenceId } }
+									{ assignedRoleId: { not: { equals: null } } }
+								]
+							}
+						}
+					}
+				]
+			}
+		) {
+			id
+			given_name
+			family_name
+		}
+	}
+`);
+
 const UpdateSurveyMutation = graphql(`
 	mutation UpdateSurveyQuestionDetail(
 		$id: String!
@@ -73,12 +137,23 @@ const DeleteOptionMutation = graphql(`
 `);
 
 export const load: PageServerLoad = async (event) => {
+	const { data } = await SurveyDetailsQuery.fetch({
+		event,
+		variables: {
+			conferenceId: event.params.conferenceId,
+			surveyId: event.params.surveyId
+		},
+		blocking: true
+	});
+
 	const updateSurveyForm = await superValidate(zod4(UpdateSurveyFormSchema));
 	const createOptionForm = await superValidate(zod4(CreateOptionFormSchema));
 	const updateOptionForm = await superValidate(zod4(UpdateOptionFormSchema));
 	const deleteOptionForm = await superValidate(zod4(DeleteOptionFormSchema));
 
 	return {
+		survey: data?.findUniqueSurveyQuestion ?? null,
+		usersNotAnswered: data?.findManyUsers ?? [],
 		updateSurveyForm,
 		createOptionForm,
 		updateOptionForm,

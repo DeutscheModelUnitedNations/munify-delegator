@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	import { superForm } from 'sveltekit-superforms';
 	import { invalidateAll } from '$app/navigation';
@@ -10,9 +10,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let surveysQuery = $derived(data?.SurveyResultsDetailsPage);
-	let survey = $derived($surveysQuery.data?.findUniqueSurveyQuestion);
-	let notAssignedParticipants = $derived($surveysQuery.data?.findManyUsers ?? []);
+	let survey = $derived(data.survey);
+	let notAssignedParticipants = $derived(data.usersNotAnswered);
 
 	// Update survey form
 	const updateSurveyForm = superForm(data.updateSurveyForm, {

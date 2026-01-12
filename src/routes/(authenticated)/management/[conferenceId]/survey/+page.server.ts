@@ -10,6 +10,25 @@ import {
 	DeleteSurveyFormSchema
 } from './form-schema';
 
+const SurveyResultsQuery = graphql(`
+	query SurveyResultsMainPage($conferenceId: String!) {
+		findManySurveyQuestions(where: { conferenceId: { equals: $conferenceId } }) {
+			id
+			title
+			description
+			deadline
+			draft
+			options {
+				id
+				title
+				description
+				countSurveyAnswers
+				upperLimit
+			}
+		}
+	}
+`);
+
 const CreateSurveyMutation = graphql(`
 	mutation CreateSurveyQuestion(
 		$conferenceId: String!
@@ -57,11 +76,18 @@ const DeleteSurveyMutation = graphql(`
 `);
 
 export const load: PageServerLoad = async (event) => {
+	const { data } = await SurveyResultsQuery.fetch({
+		event,
+		variables: { conferenceId: event.params.conferenceId },
+		blocking: true
+	});
+
 	const createSurveyForm = await superValidate(zod4(CreateSurveyFormSchema));
 	const updateSurveyForm = await superValidate(zod4(UpdateSurveyFormSchema));
 	const deleteSurveyForm = await superValidate(zod4(DeleteSurveyFormSchema));
 
 	return {
+		surveys: data?.findManySurveyQuestions ?? [],
 		createSurveyForm,
 		updateSurveyForm,
 		deleteSurveyForm,

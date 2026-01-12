@@ -1,15 +1,14 @@
 <script lang="ts">
 	import type { SurveyResultsMainPage$result } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { superForm } from 'sveltekit-superforms';
 	import StackChart from '$lib/components/Charts/StackChart.svelte';
 	import { invalidateAll } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 
-	let surveysQuery = $derived(data.SurveyResultsMainPage);
-	let surveys = $derived($surveysQuery.data?.findManySurveyQuestions ?? []);
+	let surveys = $derived(data.surveys);
 
 	// Create survey form
 	const createForm = superForm(data.createSurveyForm, {
