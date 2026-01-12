@@ -86,13 +86,9 @@ export function createSuggestionRenderer(onSelectSnippet?: (snippet: SnippetItem
 	function selectItem(index: number): void {
 		const item = state.items[index];
 		if (item && state.command) {
-			// If onSelectSnippet is provided, use it (for placeholder handling)
-			// Otherwise use the default command
-			if (onSelectSnippet) {
-				state.command(item);
-			} else {
-				state.command(item);
-			}
+			// Always call state.command which handles deleting the trigger text
+			// and internally invokes onSelectSnippet if provided (see SnippetSuggestion.ts)
+			state.command(item);
 		}
 	}
 

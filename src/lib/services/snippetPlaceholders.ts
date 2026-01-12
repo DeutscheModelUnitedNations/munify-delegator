@@ -80,7 +80,12 @@ export function validatePlaceholders(content: JSONContent): PlaceholderValidatio
 		if (!node) return;
 
 		if (node.type === 'text' && node.text) {
-			// First, find all valid placeholders
+			// Check for empty placeholders "{{}}" which PLACEHOLDER_REGEX doesn't match
+			if (node.text.includes('{{}}')) {
+				result.empty.push('{{}}');
+			}
+
+			// Find all valid placeholders
 			PLACEHOLDER_REGEX.lastIndex = 0;
 			let match;
 			while ((match = PLACEHOLDER_REGEX.exec(node.text)) !== null) {

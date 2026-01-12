@@ -139,13 +139,18 @@
 			return;
 		}
 
-		// Check if content has actual text
-		const hasContent = editContent.content?.some((node) => {
-			if (node.type === 'paragraph' && node.content) {
-				return node.content.some((child) => child.type === 'text' && child.text?.trim());
+		// Check if content has actual text (recursively checks all node types)
+		function hasTextNode(node: JSONContent): boolean {
+			if (node.type === 'text' && node.text?.trim()) {
+				return true;
+			}
+			if (node.content && Array.isArray(node.content)) {
+				return node.content.some(hasTextNode);
 			}
 			return false;
-		});
+		}
+
+		const hasContent = editContent.content?.some(hasTextNode) ?? false;
 
 		if (!hasContent) {
 			toast.error(m.snippetContentRequired());

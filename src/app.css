@@ -2,13 +2,14 @@
 @import '@deutschemodelunitednations/corporate-identity/css/shades/dmun';
 
 @import 'tailwindcss';
-@plugin "@tailwindcss/typography";
-@plugin "daisyui";
 
 @import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-light';
 @import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-dark';
 
 @import './lib/components/Paper/Editor/extensions/style.css';
+
+@plugin "@tailwindcss/typography";
+@plugin "daisyui";
 
 @utility max-ch-sm {
 	max-width: 50ch;
