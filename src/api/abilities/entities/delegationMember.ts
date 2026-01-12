@@ -72,15 +72,14 @@ export const defineAbilitiesForDelegationMember = (
 			}
 		});
 
+		// Head delegate can update members that don't have a committee assigned yet
 		can('update', 'DelegationMember', {
+			assignedCommitteeId: null,
 			delegation: {
 				members: {
 					some: {
 						isHeadDelegate: true,
 						userId: user.sub
-					},
-					every: {
-						assignedCommitteeId: null
 					}
 				}
 			}
