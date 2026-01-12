@@ -2245,6 +2245,7 @@ type Mutation {
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
+  createReviewerSnippet(content: Json!, name: String!): ReviewerSnippet!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -2265,6 +2266,7 @@ type Mutation {
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  deleteReviewerSnippet(id: String!): ReviewerSnippet!
   normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
@@ -2292,6 +2294,7 @@ type Mutation {
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  updateReviewerSnippet(content: Json!, id: String!, name: String!): ReviewerSnippet!
   upsertSelf: UpsertSelfResult!
 }
 
@@ -3665,6 +3668,7 @@ type Query {
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
   myReviewStats(conferenceId: String!): MyReviewStats
+  myReviewerSnippets: [ReviewerSnippet!]!
   offlineUserRefresh: OfflineUserRefresh!
   previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
@@ -3681,6 +3685,111 @@ enum ReviewHelpStatus {
   HELP_NEEDED
   NO_HELP_WANTED
   UNSPECIFIED
+}
+
+type ReviewerSnippet {
+  content: Json!
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+input ReviewerSnippetCreateInput {
+  content: Json!
+  createdAt: DateTime
+  id: String
+  name: String!
+  updatedAt: DateTime
+  userId: String!
+}
+
+input ReviewerSnippetCreateNestedManyWithoutUserInput {
+  connect: [ReviewerSnippetWhereUniqueInput!]
+}
+
+input ReviewerSnippetListRelationFilter {
+  every: ReviewerSnippetWhereInput
+  none: ReviewerSnippetWhereInput
+  some: ReviewerSnippetWhereInput
+}
+
+input ReviewerSnippetOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input ReviewerSnippetOrderByWithRelationInput {
+  content: SortOrder
+  createdAt: SortOrder
+  id: SortOrder
+  name: SortOrder
+  updatedAt: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum ReviewerSnippetScalarFieldEnum {
+  content
+  createdAt
+  id
+  name
+  updatedAt
+  userId
+}
+
+input ReviewerSnippetUpdateInput {
+  content: Json
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input ReviewerSnippetUpdateManyMutationInput {
+  content: Json
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input ReviewerSnippetUpdateManyWithoutUserNestedInput {
+  connect: [ReviewerSnippetWhereUniqueInput!]
+  disconnect: [ReviewerSnippetWhereUniqueInput!]
+  set: [ReviewerSnippetWhereUniqueInput!]
+}
+
+input ReviewerSnippetUserIdNameCompoundUniqueInput {
+  name: String!
+  userId: String!
+}
+
+input ReviewerSnippetWhereInput {
+  AND: [ReviewerSnippetWhereInput!]
+  NOT: [ReviewerSnippetWhereInput!]
+  OR: [ReviewerSnippetWhereInput!]
+  content: JsonFilter
+  createdAt: DateTimeFilter
+  id: StringFilter
+  name: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input ReviewerSnippetWhereUniqueInput {
+  AND: [ReviewerSnippetWhereInput!]
+  NOT: [ReviewerSnippetWhereInput!]
+  OR: [ReviewerSnippetWhereInput!]
+  content: JsonFilter
+  createdAt: DateTimeFilter
+  id: String
+  name: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+  userId_name: ReviewerSnippetUserIdNameCompoundUniqueInput
 }
 
 type ReviewerStat {
@@ -5043,6 +5152,7 @@ input UserCreateInput {
   phone: String
   preferred_username: String!
   pronouns: String
+  reviewerSnippets: ReviewerSnippetCreateNestedManyWithoutUserInput
   singleParticipant: SingleParticipantCreateNestedManyWithoutUserInput
   street: String
   surveyAnswers: SurveyAnswerCreateNestedManyWithoutUserInput
@@ -5079,6 +5189,7 @@ input UserOrderByWithRelationInput {
   phone: SortOrder
   preferred_username: SortOrder
   pronouns: SortOrder
+  reviewerSnippets: ReviewerSnippetOrderByRelationAggregateInput
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
   street: SortOrder
   surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
@@ -5264,6 +5375,7 @@ input UserUpdateInput {
   phone: NullableStringFieldUpdateOperationsInput
   preferred_username: StringFieldUpdateOperationsInput
   pronouns: NullableStringFieldUpdateOperationsInput
+  reviewerSnippets: ReviewerSnippetUpdateManyWithoutUserNestedInput
   singleParticipant: SingleParticipantUpdateManyWithoutUserNestedInput
   street: NullableStringFieldUpdateOperationsInput
   surveyAnswers: SurveyAnswerUpdateManyWithoutUserNestedInput
@@ -5328,6 +5440,7 @@ input UserWhereInput {
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
+  reviewerSnippets: ReviewerSnippetListRelationFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
   surveyAnswers: SurveyAnswerListRelationFilter
@@ -5367,6 +5480,7 @@ input UserWhereUniqueInput {
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
+  reviewerSnippets: ReviewerSnippetListRelationFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
   surveyAnswers: SurveyAnswerListRelationFilter

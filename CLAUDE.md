@@ -160,6 +160,16 @@ bun run preview
 - Type-safe generated queries in `.houdini/` directory
 - Queries/mutations in `src/lib/queries/` trigger codegen
 - Config in `houdini.config.js` - runes mode enabled
+- **Cache Invalidation**: After mutations that modify data, you must invalidate Houdini's cache to update the UI:
+
+  ```typescript
+  import { cache } from '$houdini';
+  import { invalidateAll } from '$app/navigation';
+
+  // After a mutation:
+  cache.markStale();
+  await invalidateAll();
+  ```
 
 #### 3. Authentication & Authorization
 
@@ -337,3 +347,7 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 - Prisma MCP can run migrations and open Prisma Studio directly
 - Vitest MCP provides structured test output optimized for AI analysis
 - Memory MCP remembers context across conversation sessions
+
+## Development Workflow
+
+- Never use the git commit command after a task is finished.
