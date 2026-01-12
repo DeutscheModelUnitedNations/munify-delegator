@@ -1,14 +1,18 @@
 import {
+	createOneSurveyQuestionMutationObject,
+	deleteOneSurveyQuestionMutationObject,
 	findManySurveyQuestionQueryObject,
 	findUniqueSurveyQuestionQueryObject,
 	SurveyQuestionConferenceFieldObject,
 	SurveyQuestionDeadlineFieldObject,
 	SurveyQuestionDescriptionFieldObject,
 	SurveyQuestionIdFieldObject,
-	SurveyQuestionTitleFieldObject
+	SurveyQuestionTitleFieldObject,
+	updateOneSurveyQuestionMutationObject
 } from '$db/generated/graphql/SurveyQuestion';
 import { SurveyQuestionDraftFieldObject } from '$db/generated/graphql/SurveyQuestion/object.base';
 import { builder } from '../../builder';
+import { db } from '$db/db';
 
 builder.prismaObject('SurveyQuestion', {
 	fields: (t) => ({
@@ -59,6 +63,70 @@ builder.queryFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('read').SurveyQuestion]
 				};
 
+				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = createOneSurveyQuestionMutationObject(t);
+	return {
+		createOneSurveyQuestion: t.prismaField({
+			...field,
+			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				// Verify user is team member with appropriate role for this conference
+				const conferenceId = args.data.conferenceId;
+				if (!conferenceId) {
+					throw new Error('Conference ID is required');
+				}
+
+				const teamMember = await db.teamMember.findFirst({
+					where: {
+						conferenceId,
+						userId: user.sub,
+						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+					}
+				});
+
+				if (!teamMember) {
+					throw new Error('Access denied - requires team member status');
+				}
+
+				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneSurveyQuestionMutationObject(t);
+	return {
+		updateOneSurveyQuestion: t.prismaField({
+			...field,
+			resolve: (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').SurveyQuestion]
+				};
+				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = deleteOneSurveyQuestionMutationObject(t);
+	return {
+		deleteOneSurveyQuestion: t.prismaField({
+			...field,
+			resolve: (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('delete').SurveyQuestion]
+				};
 				return field.resolve(query, root, args, ctx, info);
 			}
 		})

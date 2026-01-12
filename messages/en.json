@@ -1036,6 +1036,7 @@
 	"survey": "Surveys / Polls",
 	"surveyClosed": "Survey Closed",
 	"surveyDescription": "In the surveys, you register for events, among other things, or the conference team asks you for other important information",
+	"surveyDetails": "Survey Details",
 	"surveyIsDraft": "Survey is stil a draft",
 	"surveyIsLive": "Survey is live",
 	"surveyOpen": "Survey open until {deadline}",

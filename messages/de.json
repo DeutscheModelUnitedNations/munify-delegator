@@ -1036,6 +1036,7 @@
 	"survey": "Umfragen",
 	"surveyClosed": "Umfrage geschlossen",
 	"surveyDescription": "In den Umfragen melden Sie sich u.a. für Wahlveranstaltungen an oder das Konferenzteam fragt andere wichtige Informationen von Ihnen ab",
+	"surveyDetails": "Umfragedetails",
 	"surveyIsDraft": "Umfrage ist noch ein Entwurf",
 	"surveyIsLive": "Umfrage ist live",
 	"surveyOpen": "Umfrage bis {deadline} geöffnet",
