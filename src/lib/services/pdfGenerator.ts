@@ -412,20 +412,20 @@ async function numerateDocument(
 			color: rgb(0, 0, 0)
 		});
 
-		// Draw page number above the barcode (right-aligned)
-		const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
-		page.drawText(pageNumber, {
-			x: rightX - pageNumberWidth,
+		// Draw participant name above the barcode (right-aligned)
+		const nameWidth = helvetica.widthOfTextAtSize(participantName, fontSize);
+		page.drawText(participantName, {
+			x: rightX - nameWidth,
 			y: barcodeY + pngDims.height + 5,
 			size: fontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
 		});
 
-		// Draw participant name at the top (right-aligned, above page number)
-		const nameWidth = helvetica.widthOfTextAtSize(participantName, fontSize);
-		page.drawText(participantName, {
-			x: rightX - nameWidth,
+		// Draw page number at the top (right-aligned, above name)
+		const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
+		page.drawText(pageNumber, {
+			x: rightX - pageNumberWidth,
 			y: barcodeY + pngDims.height + 5 + fontSize + 3,
 			size: fontSize,
 			font: helvetica,
