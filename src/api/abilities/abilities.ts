@@ -24,6 +24,7 @@ import { defineAbilitiesForWaitingListEntry } from './entities/waitingListEntry'
 import { defineAbilitiesForPaper } from './entities/paper/paper';
 import { defineAbilitiesForPaperVersion } from './entities/paper/paperVersion';
 import { defineAbilitiesForPaperReview } from './entities/paper/paperReview';
+import { defineAbilitiesForReviewerSnippet } from './entities/reviewerSnippet';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
@@ -143,6 +144,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForPaper(oidc, builder);
 	defineAbilitiesForPaperVersion(oidc, builder);
 	defineAbilitiesForPaperReview(oidc, builder);
+	defineAbilitiesForReviewerSnippet(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename
