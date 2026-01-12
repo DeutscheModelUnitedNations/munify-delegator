@@ -404,21 +404,21 @@ async function numerateDocument(
 			height: pngDims.height
 		});
 
-		// Draw participant ID to the left of the barcode (bottom line)
+		// Draw participant ID to the left of the barcode (bottom line, hugging bottom)
 		const idTextWidth = helvetica.widthOfTextAtSize(participantId, smallFontSize);
 		page.drawText(participantId, {
 			x: barcodeX - idTextWidth - 5,
-			y: barcodeY + 2,
+			y: barcodeY,
 			size: smallFontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
 		});
 
-		// Draw participant name to the left of the barcode (top line, just above ID)
+		// Draw participant name to the left of the barcode (just above ID, hugging it)
 		const nameWidth = helvetica.widthOfTextAtSize(participantName, smallFontSize);
 		page.drawText(participantName, {
 			x: barcodeX - nameWidth - 5,
-			y: barcodeY + pngDims.height - smallFontSize - 2,
+			y: barcodeY + smallFontSize + 2,
 			size: smallFontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
