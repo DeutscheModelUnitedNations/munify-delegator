@@ -3,8 +3,8 @@
 	import { registrationFilter, getHistory, getSelectedHistory } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
 	import type { PageData } from '../$types';
-	let { data }: { data: PageData } = $props();
-	let stats = $derived(data.stats);
+	let props: { data: PageData } = $props();
+	let stats = $derived(props.data.stats);
 
 	let selectedHistory = $derived.by(() =>
 		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
@@ -28,19 +28,43 @@
 	<div class="stat">
 		<div class="stat-figure xl:hidden"><i class="fa-duotone fa-users-viewfinder text-3xl"></i></div>
 		<div class="stat-title">{m.delegationMembers()}</div>
-		<div class="stat-value">{getFilteredValue(stats?.registered.delegationMembers)}</div>
+		<div class="stat-value">
+			{getFilteredValue(stats?.registered.delegationMembers, stats?.roleBased, 'delegationMembers')}
+		</div>
 		<StatsDesc
-			currentValue={getFilteredValue(stats?.registered.delegationMembers)}
-			historicValue={getFilteredValue(selectedHistory?.stats.registered.delegationMembers)}
+			currentValue={getFilteredValue(
+				stats?.registered.delegationMembers,
+				stats?.roleBased,
+				'delegationMembers'
+			)}
+			historicValue={getFilteredValue(
+				selectedHistory?.stats.registered.delegationMembers,
+				selectedHistory?.stats.roleBased,
+				'delegationMembers'
+			)}
 		/>
 	</div>
 	<div class="stat">
 		<div class="stat-figure xl:hidden"><i class="fa-duotone fa-user-tie text-3xl"></i></div>
 		<div class="stat-title">{m.singleParticipants()}</div>
-		<div class="stat-value">{getFilteredValue(stats?.registered.singleParticipants)}</div>
+		<div class="stat-value">
+			{getFilteredValue(
+				stats?.registered.singleParticipants,
+				stats?.roleBased,
+				'singleParticipants'
+			)}
+		</div>
 		<StatsDesc
-			currentValue={getFilteredValue(stats?.registered.singleParticipants)}
-			historicValue={getFilteredValue(selectedHistory?.stats.registered.singleParticipants)}
+			currentValue={getFilteredValue(
+				stats?.registered.singleParticipants,
+				stats?.roleBased,
+				'singleParticipants'
+			)}
+			historicValue={getFilteredValue(
+				selectedHistory?.stats.registered.singleParticipants,
+				selectedHistory?.stats.roleBased,
+				'singleParticipants'
+			)}
 		/>
 	</div>
 

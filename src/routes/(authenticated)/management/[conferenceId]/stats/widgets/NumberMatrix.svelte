@@ -9,49 +9,51 @@
 	let { data, xLabels, yLabels, title }: Props = $props();
 </script>
 
-<div
-	class="bg-base-200 col-span-2 overflow-x-auto rounded-2xl p-6 shadow-sm sm:col-span-2 md:col-span-12 xl:col-span-6"
->
-	<h1 class="stat-title w-full">{title}</h1>
-	<div class="overflow-x-auto">
-		<table class="table w-full">
-			<!-- head -->
-			<thead>
-				<tr>
-					<th></th>
-					{#each xLabels as label}
-						<th>{label}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each data as rowData, i}
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
+	<div class="card-body p-4">
+		<h2 class="card-title text-base font-semibold">
+			<i class="fa-duotone fa-table text-base-content/70"></i>
+			{title}
+		</h2>
+		<div class="overflow-x-auto">
+			<table class="table table-sm bg-base-100 rounded-lg">
+				<thead>
 					<tr>
-						<th>
-							{#if typeof yLabels[i] === 'string'}
-								{yLabels[i]}
-							{:else}
-								<i class="fa-duotone {yLabels[i].icon}"></i>
-								{yLabels[i].label}
-							{/if}
-						</th>
-						{#each rowData as entry}
-							<td>{entry}</td>
+						<th></th>
+						{#each xLabels as label}
+							<th class="text-center text-xs">{typeof label === 'string' ? label : label.label}</th>
 						{/each}
-						<!-- row sums -->
-						<td><b>{rowData.reduce((a, b) => a + b, 0)}</b></td>
+						<th class="text-center text-xs font-bold">Σ</th>
 					</tr>
-				{/each}
-				<tr>
-					<th></th>
-					<!-- col sums -->
-					{#each data[0] as _, i}
-						<td><b>{data.reduce((a, b) => a + b[i], 0)}</b></td>
+				</thead>
+				<tbody>
+					{#each data as rowData, i}
+						<tr>
+							<th class="text-xs">
+								{#if typeof yLabels[i] === 'string'}
+									{yLabels[i]}
+								{:else}
+									<i class="fa-duotone {yLabels[i].icon} mr-1"></i>
+									{yLabels[i].label}
+								{/if}
+							</th>
+							{#each rowData as entry}
+								<td class="text-center">{entry}</td>
+							{/each}
+							<td class="text-center font-bold">{rowData.reduce((a, b) => a + b, 0)}</td>
+						</tr>
 					{/each}
-					<!-- total -->
-					<td><b>{data.reduce((a, b) => a + b.reduce((a, b) => a + b, 0), 0)}</b></td>
-				</tr>
-			</tbody>
-		</table>
+					<tr class="border-t border-base-300">
+						<th class="text-xs font-bold">Σ</th>
+						{#each data[0] as _, i}
+							<td class="text-center font-bold">{data.reduce((a, b) => a + b[i], 0)}</td>
+						{/each}
+						<td class="text-center font-bold"
+							>{data.reduce((a, b) => a + b.reduce((c, d) => c + d, 0), 0)}</td
+						>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
-</div>
+</section>

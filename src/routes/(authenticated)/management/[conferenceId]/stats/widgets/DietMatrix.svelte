@@ -2,8 +2,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from '../$types';
 	import NumberMatrix from './NumberMatrix.svelte';
-	let { data }: { data: PageData } = $props();
-	let diet = $derived(data.stats.diet);
+	let props: { data: PageData } = $props();
+	let diet = $derived(props.data.stats.diet);
 
 	let matrixData = $derived.by(() => {
 		return [

@@ -3662,7 +3662,7 @@ type Query {
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
-  getConferenceStatistics(conferenceId: ID!): StatisticsResult!
+  getConferenceStatistics(conferenceId: ID!, filter: StatsFilter! = ALL): StatisticsResult!
   impersonatableUsers: [User!]!
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
@@ -4176,12 +4176,21 @@ enum SortOrder {
 
 type StatisticsResult {
   addresses: [StatisticsResultAddresses!]!
-  age: StatisticsResultRegisteredAge!
+  age: StatisticsResultAge!
+  committeeFillRates: [StatisticsResultCommitteeFillRate!]!
   countdowns: StatisticsResultCountdowns!
   diet: StatisticsResultRegisteredParticipantDiet!
   gender: StatisticsResultRegisteredParticipantGender!
+  nationalityDistribution: [StatisticsResultNationality!]!
+  paperStats: StatisticsResultPaperStats!
+  postalPaymentProgress: StatisticsResultPostalPaymentProgress!
   registered: StatisticsResultRegistered!
+  registrationTimeline: [StatisticsResultRegistrationTimeline!]!
+  roleBased: StatisticsResultRoleBased!
+  schoolStats: [StatisticsResultSchool!]!
   status: StatisticsResultRegisteredParticipantStatus!
+  supervisorStats: StatisticsResultSupervisorStats!
+  waitingList: StatisticsResultWaitingList!
 }
 
 type StatisticsResultAddresses {
@@ -4196,9 +4205,109 @@ type StatisticsResultAddressesCount {
   zip: Int!
 }
 
+type StatisticsResultAge {
+  byCategory: [StatisticsResultAgeCategoryStats!]!
+  byCommittee: [StatisticsResultAgeCommitteeStats!]!
+  distribution: [StatisticsResultAgeDistributionEntry!]!
+  overall: StatisticsResultAgeOverall!
+}
+
+type StatisticsResultAgeCategoryBreakdown {
+  categoryId: String!
+  count: Int!
+}
+
+type StatisticsResultAgeCategoryStats {
+  average: Float
+  categoryId: String!
+  categoryName: String!
+  categoryType: String!
+  count: Int!
+}
+
+type StatisticsResultAgeCommitteeStats {
+  abbreviation: String!
+  average: Float
+  committeeId: String!
+  committeeName: String!
+  count: Int!
+}
+
+type StatisticsResultAgeDistributionEntry {
+  age: Int!
+  byCategory: [StatisticsResultAgeCategoryBreakdown!]!
+  count: Int!
+}
+
+type StatisticsResultAgeOverall {
+  average: Float
+  missingBirthdays: Int!
+  total: Int!
+}
+
+type StatisticsResultCommitteeFillRate {
+  abbreviation: String!
+  assignedSeats: Int!
+  committeeId: ID!
+  fillPercentage: Int!
+  name: String!
+  totalSeats: Int!
+}
+
 type StatisticsResultCountdowns {
   daysUntilConference: Int!
   daysUntilEndRegistration: Int!
+}
+
+type StatisticsResultNationality {
+  count: Int!
+  country: String!
+  countryCode: String!
+}
+
+type StatisticsResultPaperStats {
+  byCommittee: [StatisticsResultPapersByCommittee!]!
+  byStatus: StatisticsResultPapersByStatus!
+  byType: StatisticsResultPapersByType!
+  total: Int!
+  withReviews: Int!
+  withoutReviews: Int!
+}
+
+type StatisticsResultPapersByCommittee {
+  abbreviation: String!
+  committeeId: String!
+  count: Int!
+  name: String!
+}
+
+type StatisticsResultPapersByStatus {
+  accepted: Int!
+  changesRequested: Int!
+  draft: Int!
+  submitted: Int!
+}
+
+type StatisticsResultPapersByType {
+  introductionPaper: Int!
+  positionPaper: Int!
+  workingPaper: Int!
+}
+
+type StatisticsResultPostalPaymentProgress {
+  bothComplete: Int!
+  maxParticipants: Int!
+  neitherComplete: Int!
+  paymentDone: Int!
+  paymentOnlyComplete: Int!
+  paymentPending: Int!
+  paymentPercentage: Int!
+  paymentProblem: Int!
+  postalDone: Int!
+  postalOnlyComplete: Int!
+  postalPending: Int!
+  postalPercentage: Int!
+  postalProblem: Int!
 }
 
 type StatisticsResultRegistered {
@@ -4209,16 +4318,6 @@ type StatisticsResultRegistered {
   singleParticipants: StatisticsResultRegisteredSingleParticipants!
   supervisors: Int!
   total: Int!
-}
-
-type StatisticsResultRegisteredAge {
-  average: Float!
-  distribution: [StatisticsResultRegisteredAgeDistribution!]!
-}
-
-type StatisticsResultRegisteredAgeDistribution {
-  key: String!
-  value: Float!
 }
 
 type StatisticsResultRegisteredDelegationMembers {
@@ -4289,6 +4388,59 @@ type StatisticsResultRegisteredSingleParticipantsByRole {
   notApplied: Int!
   role: String!
   total: Int!
+}
+
+type StatisticsResultRegistrationTimeline {
+  cumulativeDelegationMembers: Int!
+  cumulativeDelegations: Int!
+  cumulativeSingleParticipants: Int!
+  cumulativeSupervisors: Int!
+  date: String!
+}
+
+type StatisticsResultRoleBased {
+  delegationMembersWithCommittee: Int!
+  delegationMembersWithRole: Int!
+  delegationMembersWithoutCommittee: Int!
+  delegationMembersWithoutRole: Int!
+  delegationsWithAssignment: Int!
+  delegationsWithoutAssignment: Int!
+  singleParticipantsWithRole: Int!
+  singleParticipantsWithoutRole: Int!
+}
+
+type StatisticsResultSchool {
+  delegationCount: Int!
+  memberCount: Int!
+  school: String!
+}
+
+type StatisticsResultSupervisorStats {
+  accepted: Int!
+  acceptedAndNotPresent: Int!
+  acceptedAndPresent: Int!
+  doesNotPlanAttendance: Int!
+  plansAttendance: Int!
+  rejected: Int!
+  rejectedAndNotPresent: Int!
+  rejectedAndPresent: Int!
+  total: Int!
+}
+
+type StatisticsResultWaitingList {
+  assigned: Int!
+  hidden: Int!
+  total: Int!
+  unassigned: Int!
+  visible: Int!
+}
+
+enum StatsFilter {
+  ALL
+  APPLIED
+  APPLIED_WITHOUT_ROLE
+  APPLIED_WITH_ROLE
+  NOT_APPLIED
 }
 
 input StringFieldUpdateOperationsInput {

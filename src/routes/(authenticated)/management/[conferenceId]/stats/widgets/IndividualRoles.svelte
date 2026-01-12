@@ -1,34 +1,42 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { registrationFilter, getHistory, getSelectedHistory } from '../stats.svelte';
+	import { unifiedFilter, getHistory, getSelectedHistory } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
 	import type { PageData } from '../$types';
-	let { data }: { data: PageData } = $props();
-	let stats = $derived(data.stats);
+	let props: { data: PageData } = $props();
+	let stats = $derived(props.data.stats);
 
-	let { getFilter } = registrationFilter();
+	let { getFilteredValue } = unifiedFilter();
 
 	let selectedHistory = $derived.by(() =>
 		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
 	);
+
+	// Get the filtered value for a role
+	function getRoleValue(role: { total: number; applied: number; notApplied: number }) {
+		return getFilteredValue(role) ?? 0;
+	}
+
+	// Get the filtered value from history for a role
+	function getHistoryRoleValue(index: number) {
+		const historyRole = selectedHistory?.stats.registered.singleParticipants.byRole[index];
+		if (!historyRole) return undefined;
+		return getFilteredValue(historyRole);
+	}
 </script>
 
-<section class="card bg-base-200 col-span-2 shadow-sm md:col-span-12 xl:col-span-9">
-	<div class="card-body">
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-8">
+	<div class="card-body p-4">
+		<h2 class="card-title text-base font-semibold">
+			<i class="fa-duotone fa-user-gear text-base-content/70"></i>
+			{m.singleParticipants()}
+		</h2>
 		<div class="overflow-x-auto">
-			<table class="table">
+			<table class="table table-sm bg-base-100 rounded-lg">
 				<thead>
 					<tr>
-						<th class="w-full">{m.role()}</th>
-						<th class="text-center">
-							<i class="fa-duotone fa-sigma"></i>
-						</th>
-						<th class="text-center">
-							<i class="fa-duotone fa-check"></i>
-						</th>
-						<th class="text-center">
-							<i class="fa-duotone fa-hourglass-half"></i>
-						</th>
+						<th class="w-full text-xs">{m.role()}</th>
+						<th class="text-center text-xs">{m.statsParticipants()}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -39,48 +47,14 @@
 								></i>
 								{role.role}
 							</td>
-							<td
-								class="{getFilter() === 'all' &&
-									'bg-base-300'} text-center transition-all duration-500"
-							>
+							<td class="text-center">
 								<span class="text-lg font-bold">
-									{role.total}
+									{getRoleValue(role)}
 								</span>
 								{#if selectedHistory}
 									<StatsDesc
-										currentValue={role.total}
-										historicValue={selectedHistory?.stats.registered.singleParticipants.byRole[i]
-											.total}
-									/>
-								{/if}
-							</td>
-							<td
-								class="{getFilter() === 'applied' &&
-									'bg-base-300'} text-center transition-all duration-500"
-							>
-								<span class="text-lg font-bold">
-									{role.applied}
-								</span>
-								{#if selectedHistory}
-									<StatsDesc
-										currentValue={role.applied}
-										historicValue={selectedHistory?.stats.registered.singleParticipants.byRole[i]
-											.applied}
-									/>
-								{/if}
-							</td>
-							<td
-								class="{getFilter() === 'notApplied' &&
-									'bg-base-300'} text-center transition-all duration-500"
-							>
-								<span class="text-lg font-bold">
-									{role.notApplied}
-								</span>
-								{#if selectedHistory}
-									<StatsDesc
-										currentValue={role.notApplied}
-										historicValue={selectedHistory?.stats.registered.singleParticipants.byRole[i]
-											.notApplied}
+										currentValue={getRoleValue(role)}
+										historicValue={getHistoryRoleValue(i)}
 									/>
 								{/if}
 							</td>

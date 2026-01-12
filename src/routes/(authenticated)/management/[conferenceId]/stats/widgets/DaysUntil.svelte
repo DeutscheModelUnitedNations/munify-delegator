@@ -1,25 +1,34 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from '../$types';
-	let { data }: { data: PageData } = $props();
-	let stats = $derived(data.stats);
+	let props: { data: PageData } = $props();
+	let stats = $derived(props.data.stats);
 </script>
 
-<section
-	class="stats stats-vertical bg-base-200 xl:stats-horizontal col-span-2 shadow-sm sm:col-span-1 md:col-span-6"
->
-	<div class="stat">
-		<div class="stat-figure"><i class="fa-duotone fa-hourglass-clock text-3xl"></i></div>
-		<div class="stat-title">{m.daysUntilConference()}</div>
-		<div class="stat-value">{stats?.countdowns.daysUntilConference}</div>
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
+	<div class="card-body p-4">
+		<div class="stats bg-base-100 w-full">
+			<div class="stat py-2 px-3">
+				<div class="stat-figure">
+					<i class="fa-duotone fa-hourglass-clock text-2xl text-base-content/70"></i>
+				</div>
+				<div class="stat-title text-xs">{m.daysUntilConference()}</div>
+				<div class="stat-value text-xl">{stats?.countdowns?.daysUntilConference ?? '-'}</div>
+			</div>
+		</div>
 	</div>
 </section>
-<section
-	class="stats stats-vertical bg-base-200 xl:stats-horizontal col-span-2 shadow-sm sm:col-span-1 md:col-span-6"
->
-	<div class="stat">
-		<div class="stat-figure"><i class="fa-duotone fa-check-to-slot text-3xl"></i></div>
-		<div class="stat-title">{m.daysUntilEndRegistration()}</div>
-		<div class="stat-value">{stats?.countdowns.daysUntilEndRegistration || '-'}</div>
+
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
+	<div class="card-body p-4">
+		<div class="stats bg-base-100 w-full">
+			<div class="stat py-2 px-3">
+				<div class="stat-figure">
+					<i class="fa-duotone fa-check-to-slot text-2xl text-base-content/70"></i>
+				</div>
+				<div class="stat-title text-xs">{m.daysUntilEndRegistration()}</div>
+				<div class="stat-value text-xl">{stats?.countdowns?.daysUntilEndRegistration ?? '-'}</div>
+			</div>
+		</div>
 	</div>
 </section>
