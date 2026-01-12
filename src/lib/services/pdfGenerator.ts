@@ -388,6 +388,8 @@ async function numerateDocument(
 	const pngImage = await pdfDoc.embedPng(barcodeImg);
 	const pngDims = pngImage.scale(1);
 
+	const smallFontSize = 8;
+
 	pages.forEach((page, index) => {
 		const pageNumber = `${index + 1} / ${pageCount}`;
 		const rightX = width - defaultStyles.margin.right;
@@ -402,31 +404,31 @@ async function numerateDocument(
 			height: pngDims.height
 		});
 
-		// Draw participant ID text to the left of the barcode (bottom)
-		const idTextWidth = helvetica.widthOfTextAtSize(participantId, fontSize);
+		// Draw participant ID to the left of the barcode (bottom line)
+		const idTextWidth = helvetica.widthOfTextAtSize(participantId, smallFontSize);
 		page.drawText(participantId, {
 			x: barcodeX - idTextWidth - 5,
-			y: barcodeY + (pngDims.height - fontSize) / 2,
-			size: fontSize,
+			y: barcodeY + 2,
+			size: smallFontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
 		});
 
-		// Draw participant name above the barcode (right-aligned)
-		const nameWidth = helvetica.widthOfTextAtSize(participantName, fontSize);
+		// Draw participant name to the left of the barcode (top line, just above ID)
+		const nameWidth = helvetica.widthOfTextAtSize(participantName, smallFontSize);
 		page.drawText(participantName, {
-			x: rightX - nameWidth,
-			y: barcodeY + pngDims.height + 5,
-			size: fontSize,
+			x: barcodeX - nameWidth - 5,
+			y: barcodeY + pngDims.height - smallFontSize - 2,
+			size: smallFontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
 		});
 
-		// Draw page number at the top (right-aligned, above name)
+		// Draw page number at the top (right-aligned, with space above name/barcode)
 		const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
 		page.drawText(pageNumber, {
 			x: rightX - pageNumberWidth,
-			y: barcodeY + pngDims.height + 5 + fontSize + 3,
+			y: barcodeY + pngDims.height + 10,
 			size: fontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
