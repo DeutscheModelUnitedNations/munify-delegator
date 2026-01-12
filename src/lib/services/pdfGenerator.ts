@@ -364,7 +364,11 @@ class MediaGenerator extends PDFPageGenerator {
 	}
 }
 
-async function numerateDocument(pdfDoc: PDFDocument, participantId: string) {
+async function numerateDocument(
+	pdfDoc: PDFDocument,
+	participantId: string,
+	participantName: string
+) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
@@ -386,19 +390,10 @@ async function numerateDocument(pdfDoc: PDFDocument, participantId: string) {
 
 	pages.forEach((page, index) => {
 		const pageNumber = `${index + 1} / ${pageCount}`;
-		const y = defaultStyles.margin.bottom + fontSize;
+		const rightX = width - defaultStyles.margin.right;
 
-		// Draw page number on the left
-		page.drawText(pageNumber, {
-			x: defaultStyles.margin.left,
-			y,
-			size: fontSize,
-			font: helvetica,
-			color: rgb(0, 0, 0)
-		});
-
-		// Draw data-matrix barcode on the right
-		const barcodeX = width - defaultStyles.margin.right - pngDims.width;
+		// Draw data-matrix barcode at bottom right
+		const barcodeX = rightX - pngDims.width;
 		const barcodeY = defaultStyles.margin.bottom;
 		page.drawImage(pngImage, {
 			x: barcodeX,
@@ -407,12 +402,31 @@ async function numerateDocument(pdfDoc: PDFDocument, participantId: string) {
 			height: pngDims.height
 		});
 
-		// Draw participant ID text to the left of the barcode
-		const idText = participantId;
-		const textX = barcodeX - helvetica.widthOfTextAtSize(idText, fontSize) - 5;
-		page.drawText(idText, {
-			x: textX,
+		// Draw participant ID text to the left of the barcode (bottom)
+		const idTextWidth = helvetica.widthOfTextAtSize(participantId, fontSize);
+		page.drawText(participantId, {
+			x: barcodeX - idTextWidth - 5,
 			y: barcodeY + (pngDims.height - fontSize) / 2,
+			size: fontSize,
+			font: helvetica,
+			color: rgb(0, 0, 0)
+		});
+
+		// Draw page number above the barcode (right-aligned)
+		const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
+		page.drawText(pageNumber, {
+			x: rightX - pageNumberWidth,
+			y: barcodeY + pngDims.height + 5,
+			size: fontSize,
+			font: helvetica,
+			color: rgb(0, 0, 0)
+		});
+
+		// Draw participant name at the top (right-aligned, above page number)
+		const nameWidth = helvetica.widthOfTextAtSize(participantName, fontSize);
+		page.drawText(participantName, {
+			x: rightX - nameWidth,
+			y: barcodeY + pngDims.height + 5 + fontSize + 3,
 			size: fontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
@@ -564,8 +578,8 @@ export async function generateCompletePostalRegistrationPDF(
 		});
 	}
 
-	// Add page numbers, data-matrix barcode, and participant ID to each page
-	await numerateDocument(mergedPdfDoc, participant.id);
+	// Add page numbers, participant name, data-matrix barcode, and participant ID to each page
+	await numerateDocument(mergedPdfDoc, participant.id, participant.name);
 
 	// Merge all pages into a single PDF
 	const mergedPdfBytes = await mergedPdfDoc.save();
