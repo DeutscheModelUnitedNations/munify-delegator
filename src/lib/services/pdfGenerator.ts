@@ -364,24 +364,55 @@ class MediaGenerator extends PDFPageGenerator {
 	}
 }
 
-async function numerateDocument(pdfDoc: PDFDocument) {
+async function numerateDocument(pdfDoc: PDFDocument, participantId: string) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
 	const pageCount = pages.length;
-	const { width, height } = pdfDoc.getPage(0).getSize();
+	const { width } = pdfDoc.getPage(0).getSize();
 	const fontSize = 10;
 
-	const pageNumberText = `${pageCount} / ${pageCount}`;
+	// Generate data-matrix barcode for footer
+	const barcodeCanvas = document.createElement('canvas');
+	bwipjs.toCanvas(barcodeCanvas, {
+		bcid: 'datamatrix',
+		text: participantId,
+		scale: 1,
+		rotate: 'N'
+	});
+	const barcodeImg = barcodeCanvas.toDataURL('image/png');
+	const pngImage = await pdfDoc.embedPng(barcodeImg);
+	const pngDims = pngImage.scale(1);
 
 	pages.forEach((page, index) => {
 		const pageNumber = `${index + 1} / ${pageCount}`;
-		const x = width - defaultStyles.margin.right;
 		const y = defaultStyles.margin.bottom + fontSize;
 
+		// Draw page number on the left
 		page.drawText(pageNumber, {
-			x,
+			x: defaultStyles.margin.left,
 			y,
+			size: fontSize,
+			font: helvetica,
+			color: rgb(0, 0, 0)
+		});
+
+		// Draw data-matrix barcode on the right
+		const barcodeX = width - defaultStyles.margin.right - pngDims.width;
+		const barcodeY = defaultStyles.margin.bottom;
+		page.drawImage(pngImage, {
+			x: barcodeX,
+			y: barcodeY,
+			width: pngDims.width,
+			height: pngDims.height
+		});
+
+		// Draw participant ID text to the left of the barcode
+		const idText = participantId;
+		const textX = barcodeX - helvetica.widthOfTextAtSize(idText, fontSize) - 5;
+		page.drawText(idText, {
+			x: textX,
+			y: barcodeY + (pngDims.height - fontSize) / 2,
 			size: fontSize,
 			font: helvetica,
 			color: rgb(0, 0, 0)
@@ -533,8 +564,8 @@ export async function generateCompletePostalRegistrationPDF(
 		});
 	}
 
-	// Add page numbers
-	await numerateDocument(mergedPdfDoc);
+	// Add page numbers, data-matrix barcode, and participant ID to each page
+	await numerateDocument(mergedPdfDoc, participant.id);
 
 	// Merge all pages into a single PDF
 	const mergedPdfBytes = await mergedPdfDoc.save();
