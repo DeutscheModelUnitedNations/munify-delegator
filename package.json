@@ -80,6 +80,7 @@
 		"daisyui": "^5.5.5",
 		"date-fns": "^4.1.0",
 		"dayjs": "^1.11.19",
+		"echarts": "^6.0.0",
 		"eslint": "^9.39.1",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.13.0",

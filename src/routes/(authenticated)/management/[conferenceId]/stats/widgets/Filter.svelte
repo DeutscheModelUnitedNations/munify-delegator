@@ -1,45 +1,33 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { registrationFilter } from '../stats.svelte';
+	import { unifiedFilter, type StatsFilter } from '../stats.svelte';
 
-	let { getFilter, setFilter } = registrationFilter();
+	let { getFilter, setFilter } = unifiedFilter();
+
+	const filterOptions: { value: StatsFilter; label: () => string }[] = [
+		{ value: 'all', label: () => m.statsFilterAll() },
+		{ value: 'applied', label: () => m.statsFilterApplied() },
+		{ value: 'notApplied', label: () => m.statsFilterNotApplied() },
+		{ value: 'appliedWithRole', label: () => m.statsFilterAccepted() },
+		{ value: 'appliedWithoutRole', label: () => m.statsFilterRejected() }
+	];
 </script>
 
-<section class="card bg-base-200 col-span-2 grow shadow-sm md:col-span-4 xl:col-span-3">
-	<div class="card-body items-center justify-center">
-		<fieldset class="fieldset">
-			<div class="flex flex-col items-start justify-start">
-				<label class="label cursor-pointer">
-					<input
-						type="radio"
-						name="filter"
-						class="radio checked:bg-primary"
-						onchange={() => setFilter('all')}
-						checked={getFilter() === 'all'}
-					/>
-					<span class="ml-2">{m.registrationsTotal()}</span>
-				</label>
-				<label class="label cursor-pointer">
-					<input
-						type="radio"
-						name="filter"
-						class="radio checked:bg-primary"
-						onchange={() => setFilter('applied')}
-						checked={getFilter() === 'applied'}
-					/>
-					<span class="ml-2">{m.registrationApplied()}</span>
-				</label>
-				<label class="label cursor-pointer">
-					<input
-						type="radio"
-						name="filter"
-						class="radio checked:bg-primary"
-						onchange={() => setFilter('notApplied')}
-						checked={getFilter() === 'notApplied'}
-					/>
-					<span class="ml-2">{m.registrationNotApplied()}</span>
-				</label>
-			</div>
-		</fieldset>
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
+	<div class="card-body p-4">
+		<h2 class="card-title text-base font-semibold">
+			<i class="fa-duotone fa-filter text-base-content/70"></i>
+			{m.statsFilter()}
+		</h2>
+		<select
+			class="select select-bordered w-full bg-base-100"
+			onchange={(e) => setFilter(e.currentTarget.value as StatsFilter)}
+		>
+			{#each filterOptions as option}
+				<option value={option.value} selected={getFilter() === option.value}>
+					{option.label()}
+				</option>
+			{/each}
+		</select>
 	</div>
 </section>
