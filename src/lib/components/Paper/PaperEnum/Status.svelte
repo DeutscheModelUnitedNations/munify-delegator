@@ -6,26 +6,26 @@
 
 	interface Props {
 		status: PaperStatus$options;
-		vertical?: boolean;
+		size?: 'xs' | 'sm' | 'md';
 	}
 
-	let { status, vertical }: Props = $props();
+	let { status, size = 'sm' }: Props = $props();
 
 	let color = $derived.by(() => {
 		switch (status) {
 			case 'SUBMITTED':
-				return 'bg-warning text-warning-content';
+				return 'badge-warning badge-soft';
 			case 'CHANGES_REQUESTED':
-				return 'bg-error text-error-content';
+				return 'badge-error badge-soft';
 			case 'ACCEPTED':
-				return 'bg-success text-success-content';
+				return 'badge-success badge-soft';
 			case 'DRAFT':
 			default:
-				return 'bg-base-300 text-base-content';
+				return 'badge-ghost';
 		}
 	});
 
 	let icon = $derived(getPaperStatusIcon(status));
 </script>
 
-<Common {icon} {vertical} text={translatePaperStatus(status)} classes={color} />
+<Common {icon} {size} text={translatePaperStatus(status)} {color} />

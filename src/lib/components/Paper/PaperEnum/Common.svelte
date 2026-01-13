@@ -2,18 +2,20 @@
 	interface Props {
 		icon: string;
 		text: string;
-		vertical?: boolean;
-		classes?: string;
+		color?: string;
+		size?: 'xs' | 'sm' | 'md';
 	}
 
-	let { icon, text, classes, vertical }: Props = $props();
+	let { icon, text, color = 'badge-ghost', size = 'sm' }: Props = $props();
+
+	const sizeClasses = {
+		xs: 'badge-xs text-[10px] gap-1',
+		sm: 'badge-sm text-xs gap-1.5',
+		md: 'badge-md text-sm gap-2'
+	};
 </script>
 
-<div
-	class="p-3 {classes} rounded-field flex {vertical
-		? 'flex-col'
-		: 'flex-row'} items-center justify-center shadow-sm"
->
-	<i class="fas fa-{icon.replace('fa-', '')} text-lg"></i>
-	<div class="text-xs {vertical ? 'mt-1' : 'ml-3'}">{text}</div>
-</div>
+<span class="badge {color} {sizeClasses[size]} font-medium">
+	<i class="fa-solid fa-{icon.replace('fa-', '')}"></i>
+	<span>{text}</span>
+</span>

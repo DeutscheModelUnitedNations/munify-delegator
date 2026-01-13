@@ -54,7 +54,7 @@
 
 {#snippet PaperTypeBlock(paperType: PaperType$options, description: string, href: string)}
 	<div class="card w-full bg-base-300 shadow-md flex flex-col items-center p-4 gap-4">
-		<PaperEnum.Type type={paperType} vertical />
+		<PaperEnum.Type type={paperType} size="md" />
 		<p class="text-sm text-center">{description}</p>
 		<a class="btn btn-primary border-b border-base-300" {href}>
 			<i class="fas fa-plus mr-2"></i>
