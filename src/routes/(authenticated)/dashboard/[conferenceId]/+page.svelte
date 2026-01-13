@@ -47,6 +47,13 @@
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
+
+					<div class="mt-4">
+						<a href={'/dashboard/' + conference?.id + '/messaging'} class="btn btn-outline">
+							<i class="fa-solid fa-envelope"></i>
+							Messaging
+						</a>
+					</div>
 					<SingleParticipantPreparationStage
 						{conference}
 						{singleParticipant}
@@ -81,6 +88,13 @@
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
+
+					<div class="mt-4">
+						<a href={'/dashboard/' + conference?.id + '/messaging'} class="btn btn-outline">
+							<i class="fa-solid fa-envelope"></i>
+							messaging
+						</a>
+					</div>
 					<DelegationPreparationStage
 						{delegationMember}
 						{conference}
