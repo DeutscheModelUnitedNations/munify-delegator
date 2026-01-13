@@ -8,6 +8,7 @@
 	import type { PageData } from './$houdini';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { page } from '$app/stores';
+	import { dev } from '$app/environment';
 
 	interface Props {
 		children: Snippet;
@@ -28,7 +29,7 @@
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator - {m.dashboard()}</title>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.dashboard()}</title>
 </svelte:head>
 
 <SideNavigationDrawer bind:expanded={navbarExpanded}>
