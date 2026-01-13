@@ -9,7 +9,6 @@
 		title: string;
 		detailSpace: Snippet;
 		memberSpace: Snippet;
-		paperSpace?: Snippet;
 	}
 
 	let {
@@ -17,8 +16,7 @@
 		applied,
 		title,
 		detailSpace,
-		memberSpace,
-		paperSpace
+		memberSpace
 	}: Props = $props();
 </script>
 
@@ -40,11 +38,6 @@
 	<div class="w-full min-w-0 overflow-x-auto">
 		{@render detailSpace()}
 	</div>
-	{#if paperSpace}
-		<div class="mt-6 pt-4 border-t border-base-300">
-			{@render paperSpace()}
-		</div>
-	{/if}
 	<div class="mt-10">
 		{@render memberSpace()}
 	</div>

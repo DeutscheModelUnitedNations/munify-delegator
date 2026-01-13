@@ -10,6 +10,7 @@
 		withCommittee?: boolean;
 		withPostalSatus?: boolean;
 		withPaymentStatus?: boolean;
+		withPaperCount?: boolean;
 		children: Snippet;
 	}
 
@@ -20,6 +21,7 @@
 		withCommittee = false,
 		withPostalSatus = false,
 		withPaymentStatus = false,
+		withPaperCount = false,
 		children
 	}: Props = $props();
 </script>
@@ -47,6 +49,13 @@
 					<th class="text-center">
 						<div class="tooltip" data-tip="Beitragszahlung">
 							<i class="fa-duotone fa-money-bill-transfer"></i>
+						</div>
+					</th>
+				{/if}
+				{#if withPaperCount}
+					<th class="text-center">
+						<div class="tooltip" data-tip={m.papers()}>
+							<i class="fa-duotone fa-file-lines"></i>
 						</div>
 					</th>
 				{/if}

@@ -221,6 +221,9 @@ export const myConferenceparticipationQuery = graphql(`
 						status
 						type
 						firstSubmittedAt
+						author {
+							id
+						}
 						agendaItem {
 							id
 							title

@@ -25,7 +25,7 @@
 	import { page } from '$app/state';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
-	import SupervisorPaperSummary from './SupervisorPaperSummary.svelte';
+	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
 
 	// TODO these components need some refactoring
@@ -92,7 +92,7 @@
 		{
 			icon: 'users',
 			title: m.members(),
-			value: delegations.reduce((acc, cur) => acc + cur.members.length, 0),
+			value: delegationMembers.length,
 			desc: m.inAllDelegations()
 		},
 		{
@@ -102,6 +102,30 @@
 			desc: m.singleParticipants()
 		}
 	]);
+
+	// Check if all payments are complete (supervisor + all supervised members + single participants)
+	let allPaymentsComplete = $derived.by(() => {
+		// Check supervisor's own payment status
+		const supervisorPaid = status?.paymentStatus === 'DONE';
+
+		// Check all supervised delegation members' payment status
+		const allMembersPaid = delegationMembers.every((member) => {
+			const participantStatus = member.user.conferenceParticipantStatus?.find(
+				(s) => s.conference.id === conference?.id
+			);
+			return participantStatus?.paymentStatus === 'DONE';
+		});
+
+		// Check all single participants' payment status
+		const allSinglesPaid = singleParticipants.every((sp) => {
+			const participantStatus = sp.user.conferenceParticipantStatus?.find(
+				(s) => s.conference.id === conference?.id
+			);
+			return participantStatus?.paymentStatus === 'DONE';
+		});
+
+		return supervisorPaid && allMembersPaid && allSinglesPaid;
+	});
 
 	const getName = (
 		user: { given_name: string; family_name: string } & { [key: string]: any },
@@ -277,14 +301,16 @@
 </section>
 
 {#if !isStateParticipantRegistration}
-	<ConferenceStatusWidget
-		conferenceId={conference!.id}
-		userId={user.sub}
-		ofAgeAtConference={ofAge}
-		{status}
-		unlockPayment={conference?.unlockPayments}
-		unlockPostals={conference?.unlockPostals}
-	/>
+	{#if !allPaymentsComplete}
+		<ConferenceStatusWidget
+			conferenceId={conference!.id}
+			userId={user.sub}
+			ofAgeAtConference={ofAge}
+			{status}
+			unlockPayment={conference?.unlockPayments}
+			unlockPostals={conference?.unlockPostals}
+		/>
+	{/if}
 
 	<TasksWrapper>
 		{#if supervisor.supervisedDelegationMembers.some((x) => !x.assignedCommittee)}
@@ -403,26 +429,27 @@
 							fontAwesomeIcon="fa-duotone fa-users"
 							content={delegation.members.length}
 						/>
-						<InfoGrid.Entry
-							title={m.schoolOrInstitution()}
-							fontAwesomeIcon="school"
-							content={delegation.school}
-						/>
-						<InfoGrid.Entry
-							title={m.experience()}
-							fontAwesomeIcon="compass"
-							content={delegation.experience}
-						/>
-						<InfoGrid.Entry
-							title={m.motivation()}
-							fontAwesomeIcon="fire-flame-curved"
-							content={delegation.motivation}
-						/>
+						{#if isStateParticipantRegistration}
+							<InfoGrid.Entry
+								title={m.schoolOrInstitution()}
+								fontAwesomeIcon="school"
+								content={delegation.school}
+							/>
+							<InfoGrid.Entry
+								title={m.experience()}
+								fontAwesomeIcon="compass"
+								content={delegation.experience}
+							/>
+							<InfoGrid.Entry
+								title={m.motivation()}
+								fontAwesomeIcon="fire-flame-curved"
+								content={delegation.motivation}
+							/>
+						{/if}
 					</InfoGrid.Grid>
-				{/snippet}
-
-				{#snippet paperSpace()}
-					<!-- TODO: Papers are not available on Delegation type - needs separate query -->
+					{#if !isStateParticipantRegistration}
+						<DelegationStatsCharts {members} papers={delegation.papers ?? []} conferenceId={conference.id} />
+					{/if}
 				{/snippet}
 
 				{#snippet memberSpace()}
