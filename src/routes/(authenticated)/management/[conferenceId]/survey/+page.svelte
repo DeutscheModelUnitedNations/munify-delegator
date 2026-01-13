@@ -109,35 +109,40 @@
 					</div>
 				</div>
 
-				<div class="grid grid-cols-[auto,1fr] items-center gap-2 text-sm">
-					<i class="fa-duotone fa-alarm-clock place-self-center"></i>
-					<p>{formatDeadline(survey.deadline)}</p>
-					<i class="fa-duotone fa-users place-self-center"></i>
-					<p>
-						{getTotalAnswers(survey)}
-						{m.answers()}
-					</p>
-				</div>
-
 				{#if survey.options.length > 0}
-					<div class="flex items-center gap-4">
-						<div class="w-32 shrink-0">
+					<div class="flex items-start gap-4">
+						<div class="w-28 shrink-0">
 							<PieChart
 								data={getChartData(survey)}
 								donut={true}
 								showLegend={false}
-								height="120px"
+								showLabels={false}
+								height="112px"
 							/>
 						</div>
-						<div class="flex flex-1 flex-col gap-1">
-							{#each survey.options as option}
-								<div class="flex items-center justify-between text-sm">
-									<span class="truncate">{option.title}</span>
-									<span class="badge badge-sm ml-2">
-										{option.countSurveyAnswers}{#if option.upperLimit > 0}&nbsp;/&nbsp;{option.upperLimit}{/if}
-									</span>
-								</div>
-							{/each}
+						<div class="bg-base-300 flex-1 overflow-hidden rounded-lg">
+							<table class="table table-sm">
+								<tbody>
+									<tr class="border-base-200">
+										<td class="text-base-content/70">{m.deadline()}</td>
+										<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
+									</tr>
+									<tr class="border-base-200">
+										<td class="text-base-content/70">{m.totalAnswers()}</td>
+										<td class="text-right font-medium">{getTotalAnswers(survey)}</td>
+									</tr>
+									{#each survey.options as option}
+										<tr class="border-base-200">
+											<td class="text-base-content/70 truncate">{option.title}</td>
+											<td class="text-right font-medium">
+												{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
+														class="text-base-content/50">/{option.upperLimit}</span
+													>{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						</div>
 					</div>
 				{:else}

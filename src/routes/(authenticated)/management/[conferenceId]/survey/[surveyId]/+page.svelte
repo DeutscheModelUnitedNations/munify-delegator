@@ -141,10 +141,7 @@
 <div class="flex w-full flex-col gap-6 p-10">
 	<!-- Header -->
 	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
-		<div class="flex items-center gap-3">
-			<a href="/management/{data.conferenceId}/survey" class="btn btn-ghost btn-sm">
-				<i class="fas fa-arrow-left"></i>
-			</a>
+		<div class="flex flex-col gap-2">
 			<h2 class="text-2xl font-bold">{survey?.title}</h2>
 			{#if survey?.draft}
 				<span class="badge badge-warning">{m.surveyIsDraft()}</span>
