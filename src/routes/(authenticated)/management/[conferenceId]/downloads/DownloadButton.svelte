@@ -18,7 +18,7 @@
 
 <button
 	class="btn btn-outline btn-sm gap-2 justify-start h-auto py-2 min-h-0"
-	{disabled}
+	disabled={disabled || loading}
 	onclick={() => onclick()}
 >
 	{#if loading}
