@@ -189,7 +189,7 @@
 										<td class="align-middle">
 											{#if paper.agendaItem}
 												{#if paper.agendaItem.committee?.abbreviation}
-													<span class="badge badge-ghost badge-sm mr-1 text-base-content/70">
+													<span class="badge badge-soft badge-primary badge-sm mr-1">
 														{paper.agendaItem.committee.abbreviation}
 													</span>
 												{/if}

@@ -481,6 +481,7 @@
 						withPostalSatus={!isStateParticipantRegistration}
 						withPaymentStatus={!isStateParticipantRegistration}
 						withCommittee={!isStateParticipantRegistration}
+						withPaperCount={!isStateParticipantRegistration}
 						withEmail
 						title={m.members()}
 					>
@@ -488,6 +489,9 @@
 							{@const participantStatus = member.user?.conferenceParticipantStatus.find(
 								(x) => x.conference.id === conference?.id
 							)}
+							{@const memberPaperCount = delegation.papers?.filter(
+								(p) => p.author?.id === member.user.id
+							).length ?? 0}
 							<DelegationStatusTableEntry
 								name={formatNames(member.user.given_name, member.user.family_name)}
 								pronouns={member.user.pronouns ?? ''}
@@ -498,6 +502,8 @@
 									: undefined}
 								withPaymentStatus={!isStateParticipantRegistration}
 								withPostalStatus={!isStateParticipantRegistration}
+								withPaperCount={!isStateParticipantRegistration}
+								paperCount={memberPaperCount}
 								downloadPostalDocuments={conference?.unlockPostals
 									? () => downloadPostalDocuments(member.user.id)
 									: undefined}
