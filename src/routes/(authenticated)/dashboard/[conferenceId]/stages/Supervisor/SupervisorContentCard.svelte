@@ -9,10 +9,17 @@
 		title: string;
 		detailSpace: Snippet;
 		memberSpace: Snippet;
+		paperSpace?: Snippet;
 	}
 
-	let { isStateParticipantRegistration, applied, title, detailSpace, memberSpace }: Props =
-		$props();
+	let {
+		isStateParticipantRegistration,
+		applied,
+		title,
+		detailSpace,
+		memberSpace,
+		paperSpace
+	}: Props = $props();
 </script>
 
 <DashboardContentCard {title} class="bg-base-200 border-base-300 mt-4">
@@ -33,6 +40,11 @@
 	<div class="w-full min-w-0 overflow-x-auto">
 		{@render detailSpace()}
 	</div>
+	{#if paperSpace}
+		<div class="mt-6 pt-4 border-t border-base-300">
+			{@render paperSpace()}
+		</div>
+	{/if}
 	<div class="mt-10">
 		{@render memberSpace()}
 	</div>

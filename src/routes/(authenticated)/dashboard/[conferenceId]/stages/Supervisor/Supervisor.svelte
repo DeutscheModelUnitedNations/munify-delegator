@@ -25,6 +25,7 @@
 	import { page } from '$app/state';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
+	import SupervisorPaperSummary from './SupervisorPaperSummary.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
 
 	// TODO these components need some refactoring
@@ -418,6 +419,10 @@
 							content={delegation.motivation}
 						/>
 					</InfoGrid.Grid>
+				{/snippet}
+
+				{#snippet paperSpace()}
+					<!-- TODO: Papers are not available on Delegation type - needs separate query -->
 				{/snippet}
 
 				{#snippet memberSpace()}

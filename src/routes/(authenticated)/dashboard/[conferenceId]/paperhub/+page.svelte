@@ -4,6 +4,7 @@
 	import PaperEnum from '$lib/components/Paper/PaperEnum';
 	import { type PaperType$options } from '$houdini';
 	import PaperHubOverview from './PaperHubOverview.svelte';
+	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -13,19 +14,37 @@
 	// Check if user is team member with review access (data comes from layout load)
 	let isTeamMember = $derived((data.teamMembers?.length ?? 0) > 0);
 
-	// Check if user is a participant (delegation member, single participant, or supervisor)
-	let isParticipant = $derived(
+	// Check if user is a supervisor with supervised students
+	let isSupervisor = $derived(!!data.supervisor && (data.supervisedDelegationIds?.length ?? 0) > 0);
+
+	// Check if user is a paper author (delegation member or single participant who can create papers)
+	let isPaperAuthor = $derived(
 		!!data.conferenceQueryData?.findUniqueDelegationMember ||
-			!!data.conferenceQueryData?.findUniqueSingleParticipant ||
-			!!data.conferenceQueryData?.findUniqueConferenceSupervisor
+			!!data.conferenceQueryData?.findUniqueSingleParticipant
 	);
 
-	// View toggle state - only used when user is both team member AND participant
-	let viewToggle = $state<'participant' | 'team'>('participant');
+	// Check if user is a participant (delegation member, single participant, or supervisor)
+	let isParticipant = $derived(
+		isPaperAuthor || !!data.conferenceQueryData?.findUniqueConferenceSupervisor
+	);
 
-	// Effective view: team-only members always see team view
-	let currentView = $derived<'participant' | 'team'>(
-		isTeamMember && !isParticipant ? 'team' : viewToggle
+	// View toggle state - supports participant, team, and supervisor views
+	let viewToggle = $state<'participant' | 'team' | 'supervisor'>('participant');
+
+	// Effective view based on user roles
+	let currentView = $derived.by(() => {
+		// Team-only members (no other roles) always see team view
+		if (isTeamMember && !isParticipant && !isSupervisor) return 'team';
+		// Supervisor-only (not a team member, not a paper author) defaults to supervisor view
+		if (isSupervisor && !isTeamMember && !isPaperAuthor) return 'supervisor';
+		return viewToggle;
+	});
+
+	// Determine which view toggle buttons to show
+	let showViewToggle = $derived(
+		(isTeamMember && isParticipant) ||
+			(isTeamMember && isSupervisor) ||
+			(isSupervisor && isPaperAuthor)
 	);
 
 	let isNSA = $derived(
@@ -46,27 +65,41 @@
 
 <div class="flex flex-col gap-6 w-full">
 	<div class="flex flex-col gap-2">
-		<div class="flex justify-between items-center">
+		<div class="flex justify-between items-center flex-wrap gap-2">
 			<h2 class="text-2xl font-bold">{m.paperHub()}</h2>
 
-			{#if isTeamMember && isParticipant}
+			{#if showViewToggle}
 				<div class="btn-group">
-					<button
-						class="btn btn-sm"
-						class:btn-active={viewToggle === 'participant'}
-						onclick={() => (viewToggle = 'participant')}
-					>
-						<i class="fa-solid fa-user"></i>
-						{m.participantView()}
-					</button>
-					<button
-						class="btn btn-sm"
-						class:btn-active={viewToggle === 'team'}
-						onclick={() => (viewToggle = 'team')}
-					>
-						<i class="fa-solid fa-user-group"></i>
-						{m.teamView()}
-					</button>
+					{#if isPaperAuthor}
+						<button
+							class="btn btn-sm"
+							class:btn-active={viewToggle === 'participant'}
+							onclick={() => (viewToggle = 'participant')}
+						>
+							<i class="fa-solid fa-user"></i>
+							{m.participantView()}
+						</button>
+					{/if}
+					{#if isSupervisor}
+						<button
+							class="btn btn-sm"
+							class:btn-active={viewToggle === 'supervisor'}
+							onclick={() => (viewToggle = 'supervisor')}
+						>
+							<i class="fa-solid fa-chalkboard-user"></i>
+							{m.supervisorView()}
+						</button>
+					{/if}
+					{#if isTeamMember}
+						<button
+							class="btn btn-sm"
+							class:btn-active={viewToggle === 'team'}
+							onclick={() => (viewToggle = 'team')}
+						>
+							<i class="fa-solid fa-user-group"></i>
+							{m.teamView()}
+						</button>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -75,6 +108,8 @@
 
 	{#if currentView === 'team' && isTeamMember}
 		<PaperHubOverview conferenceId={data.conferenceId} />
+	{:else if currentView === 'supervisor' && isSupervisor}
+		<SupervisorPaperHubView conferenceId={data.conferenceId} />
 	{:else}
 		{#if paperQueryData && paperQueryData.length > 0}
 			<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">

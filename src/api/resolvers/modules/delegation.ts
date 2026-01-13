@@ -48,6 +48,11 @@ builder.prismaObject('Delegation', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').RoleApplication
 			})
+		}),
+		papers: t.relation('papers', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').Paper
+			})
 		})
 	})
 });
