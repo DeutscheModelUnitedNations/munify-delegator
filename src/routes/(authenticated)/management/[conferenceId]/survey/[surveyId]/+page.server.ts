@@ -18,6 +18,7 @@ const SurveyDetailsQuery = graphql(`
 			}
 			surveyAnswers {
 				id
+				createdAt
 				option {
 					id
 				}

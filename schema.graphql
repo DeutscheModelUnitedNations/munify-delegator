@@ -3644,6 +3644,7 @@ type Query {
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
   findPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
+  findSupervisedPapers(conferenceId: String!): [Paper!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
@@ -4520,6 +4521,7 @@ input StringWithAggregatesFilter {
 }
 
 type SurveyAnswer {
+  createdAt: DateTime!
   id: ID!
   option: SurveyOption!
   question: SurveyQuestion!

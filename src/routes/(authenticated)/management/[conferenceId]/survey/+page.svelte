@@ -212,7 +212,10 @@
 									<table class="table table-sm">
 										<tbody>
 											{#each survey.options as option, i (option.id)}
-												<tr class="border-base-200" class:border-b-0={i === survey.options.length - 1}>
+												<tr
+													class="border-base-200"
+													class:border-b-0={i === survey.options.length - 1}
+												>
 													<td class="text-base-content/60 truncate text-xs">{option.title}</td>
 													<td class="text-base-content/60 text-right text-xs">
 														{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
