@@ -61,6 +61,7 @@
 
 	// Group papers by delegation
 	let papersByDelegation = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Map is temporary, converted to array
 		const groups = new Map<
 			string,
 			{

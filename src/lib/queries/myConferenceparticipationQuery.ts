@@ -216,6 +216,16 @@ export const myConferenceparticipationQuery = graphql(`
 						}
 						isHeadDelegate
 					}
+					papers {
+						id
+						status
+						type
+						firstSubmittedAt
+						agendaItem {
+							id
+							title
+						}
+					}
 				}
 				isHeadDelegate
 				assignedCommittee {
