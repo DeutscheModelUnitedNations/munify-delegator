@@ -1357,6 +1357,7 @@ type Delegation {
   id: ID!
   members: [DelegationMember!]!
   motivation: String
+  papers: [Paper!]!
   school: String
 }
 

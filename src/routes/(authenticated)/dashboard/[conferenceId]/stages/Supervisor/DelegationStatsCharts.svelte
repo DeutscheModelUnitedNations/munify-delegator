@@ -89,7 +89,8 @@
 			{/if}
 		</div>
 		<div class="text-xs text-base-content/70 mt-1">
-			{paymentStats.DONE}/{total(paymentStats)} {m.done()}
+			{paymentStats.DONE}/{total(paymentStats)}
+			{m.done()}
 		</div>
 	</div>
 
@@ -121,7 +122,8 @@
 			{/if}
 		</div>
 		<div class="text-xs text-base-content/70 mt-1">
-			{postalStats.DONE}/{total(postalStats)} {m.done()}
+			{postalStats.DONE}/{total(postalStats)}
+			{m.done()}
 		</div>
 	</div>
 
