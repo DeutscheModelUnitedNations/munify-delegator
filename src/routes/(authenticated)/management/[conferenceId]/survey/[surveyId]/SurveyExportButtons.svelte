@@ -2,6 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import { downloadCSV } from '$lib/services/downloadHelpers';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import DownloadButton from '../../downloads/DownloadButton.svelte';
 
 	interface SurveyOption {
@@ -12,16 +13,37 @@
 		upperLimit: number;
 	}
 
-	interface SurveyAnswer {
+	interface DelegationMembership {
 		id: string;
-		option: { id: string };
-		user: { id: string; given_name: string; family_name: string };
+		conference: { id: string };
+		delegation: {
+			assignedNation: { alpha3Code: string } | null;
+			assignedNonStateActor: { name: string } | null;
+		};
+		assignedCommittee: { name: string } | null;
+	}
+
+	interface SingleParticipant {
+		id: string;
+		conference: { id: string };
+		assignedRole: { name: string } | null;
 	}
 
 	interface User {
 		id: string;
 		given_name: string;
 		family_name: string;
+		email: string | null;
+		pronouns: string | null;
+		birthday: Date | null;
+		delegationMemberships: DelegationMembership[];
+		singleParticipant: SingleParticipant[];
+	}
+
+	interface SurveyAnswer {
+		id: string;
+		option: { id: string };
+		user: User;
 	}
 
 	interface Props {
@@ -29,9 +51,11 @@
 		options: SurveyOption[];
 		surveyAnswers: SurveyAnswer[];
 		notAnsweredParticipants: User[];
+		conferenceId: string;
 	}
 
-	let { surveyTitle, options, surveyAnswers, notAnsweredParticipants }: Props = $props();
+	let { surveyTitle, options, surveyAnswers, notAnsweredParticipants, conferenceId }: Props =
+		$props();
 
 	let loadingStates = $state<Record<string, boolean>>({});
 
@@ -39,22 +63,95 @@
 		loadingStates = { ...loadingStates, [key]: value };
 	};
 
+	// Helper to get user's conference role information
+	const getUserRoleInfo = (
+		user: User
+	): { roleType: string; roleName: string; committee: string } => {
+		// Check delegation memberships for this conference
+		const membership = user.delegationMemberships.find((m) => m.conference.id === conferenceId);
+		if (membership) {
+			const nation = membership.delegation.assignedNation;
+			const nsa = membership.delegation.assignedNonStateActor;
+
+			if (nation) {
+				return {
+					roleType: 'Delegation',
+					roleName: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
+					committee: membership.assignedCommittee?.name ?? ''
+				};
+			}
+			if (nsa) {
+				return {
+					roleType: 'NSA',
+					roleName: nsa.name,
+					committee: ''
+				};
+			}
+		}
+
+		// Check single participant for this conference
+		const singleParticipant = user.singleParticipant.find(
+			(sp) => sp.conference.id === conferenceId
+		);
+		if (singleParticipant?.assignedRole) {
+			return {
+				roleType: 'SingleParticipant',
+				roleName: singleParticipant.assignedRole.name,
+				committee: ''
+			};
+		}
+
+		return { roleType: '', roleName: '', committee: '' };
+	};
+
+	// Format birthday as YYYY-MM-DD
+	const formatBirthday = (birthday: Date | null): string => {
+		if (!birthday) return '';
+		const date = new Date(birthday);
+		return date.toISOString().split('T')[0];
+	};
+
+	// Build a user data row for CSV export
+	const buildUserRow = (user: User, additionalColumns: string[] = []): string[] => {
+		const roleInfo = getUserRoleInfo(user);
+		return [
+			user.id,
+			user.family_name ?? '',
+			user.given_name ?? '',
+			user.email ?? '',
+			user.pronouns ?? '',
+			formatBirthday(user.birthday),
+			roleInfo.roleType,
+			roleInfo.roleName,
+			roleInfo.committee,
+			...additionalColumns
+		];
+	};
+
+	// CSV headers for user data
+	const getUserHeaders = (): string[] => [
+		m.userId(),
+		m.familyName(),
+		m.givenName(),
+		m.email(),
+		m.pronouns(),
+		m.birthDate(),
+		m.roleType(),
+		m.role(),
+		m.committee()
+	];
+
 	const downloadAllResults = () => {
 		const key = 'all';
 		setLoading(key, true);
 		try {
-			const header = [m.name(), m.surveyOption()];
+			const header = [...getUserHeaders(), m.surveyOption()];
 			const data = surveyAnswers
 				.map((answer) => {
 					const option = options.find((o) => o.id === answer.option.id);
-					return [
-						formatNames(answer.user.given_name, answer.user.family_name, {
-							givenNameFirst: false
-						}),
-						option?.title ?? ''
-					];
+					return buildUserRow(answer.user, [option?.title ?? '']);
 				})
-				.sort((a, b) => a[0].localeCompare(b[0]));
+				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
 
 			downloadCSV(header, data, `${surveyTitle}_results.csv`);
 		} finally {
@@ -66,10 +163,10 @@
 		const key = 'not-answered';
 		setLoading(key, true);
 		try {
-			const header = [m.name()];
+			const header = getUserHeaders();
 			const data = notAnsweredParticipants
-				.map((user) => [formatNames(user.given_name, user.family_name, { givenNameFirst: false })])
-				.sort((a, b) => a[0].localeCompare(b[0]));
+				.map((user) => buildUserRow(user))
+				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
 
 			downloadCSV(header, data, `${surveyTitle}_not_answered.csv`);
 		} finally {
@@ -81,15 +178,11 @@
 		const key = `option-${option.id}`;
 		setLoading(key, true);
 		try {
-			const header = [m.name()];
+			const header = getUserHeaders();
 			const data = surveyAnswers
 				.filter((answer) => answer.option.id === option.id)
-				.map((answer) => [
-					formatNames(answer.user.given_name, answer.user.family_name, {
-						givenNameFirst: false
-					})
-				])
-				.sort((a, b) => a[0].localeCompare(b[0]));
+				.map((answer) => buildUserRow(answer.user))
+				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
 
 			downloadCSV(header, data, `${surveyTitle}_${option.title}.csv`);
 		} finally {

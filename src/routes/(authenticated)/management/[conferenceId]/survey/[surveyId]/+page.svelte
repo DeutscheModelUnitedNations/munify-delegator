@@ -372,6 +372,7 @@
 					options={survey.options}
 					surveyAnswers={survey.surveyAnswers}
 					{notAnsweredParticipants}
+					conferenceId={data.conferenceId}
 				/>
 			</DownloadCategoryCard>
 		{/if}

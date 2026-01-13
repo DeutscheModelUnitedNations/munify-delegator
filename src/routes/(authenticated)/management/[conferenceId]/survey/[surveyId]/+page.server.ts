@@ -25,6 +25,35 @@ const SurveyDetailsQuery = graphql(`
 					id
 					given_name
 					family_name
+					email
+					pronouns
+					birthday
+					delegationMemberships {
+						id
+						conference {
+							id
+						}
+						delegation {
+							assignedNation {
+								alpha3Code
+							}
+							assignedNonStateActor {
+								name
+							}
+						}
+						assignedCommittee {
+							name
+						}
+					}
+					singleParticipant {
+						id
+						conference {
+							id
+						}
+						assignedRole {
+							name
+						}
+					}
 				}
 			}
 		}
@@ -61,6 +90,35 @@ const SurveyDetailsQuery = graphql(`
 			id
 			given_name
 			family_name
+			email
+			pronouns
+			birthday
+			delegationMemberships {
+				id
+				conference {
+					id
+				}
+				delegation {
+					assignedNation {
+						alpha3Code
+					}
+					assignedNonStateActor {
+						name
+					}
+				}
+				assignedCommittee {
+					name
+				}
+			}
+			singleParticipant {
+				id
+				conference {
+					id
+				}
+				assignedRole {
+					name
+				}
+			}
 		}
 	}
 `);
