@@ -35,6 +35,12 @@
 					assignedCommittee {
 						name
 					}
+					supervisors {
+						user {
+							given_name
+							family_name
+						}
+					}
 				}
 			}
 		}
@@ -58,6 +64,12 @@
 						id
 						email
 					}
+					supervisors {
+						user {
+							given_name
+							family_name
+						}
+					}
 				}
 			}
 		}
@@ -78,6 +90,12 @@
 				}
 				assignedRole {
 					name
+				}
+				supervisors {
+					user {
+						given_name
+						family_name
+					}
 				}
 			}
 		}
@@ -133,6 +151,15 @@
 		mediaConsentStatus: 'NOT_SET',
 		paymentStatus: 'PENDING',
 		didAttend: false
+	};
+
+	const formatSupervisorNames = (
+		supervisors: Array<{ user: { given_name: string | null; family_name: string | null } }>
+	): string => {
+		return supervisors
+			.map((s) => `${s.user.given_name ?? ''} ${s.user.family_name ?? ''}`.trim())
+			.filter((name) => name.length > 0)
+			.join(', ');
 	};
 
 	const downloadCSV = (header: string[], data: string[][], filename: string) => {
@@ -191,6 +218,7 @@
 					'Delegation',
 					nationName,
 					member.assignedCommittee?.name ?? '',
+					formatSupervisorNames(member.supervisors),
 					status.termsAndConditions,
 					status.guardianConsent,
 					status.mediaConsent,
@@ -212,6 +240,7 @@
 					'NSA',
 					nsaName,
 					'',
+					formatSupervisorNames(member.supervisors),
 					status.termsAndConditions,
 					status.guardianConsent,
 					status.mediaConsent,
@@ -231,6 +260,7 @@
 				'SingleParticipant',
 				participant.assignedRole?.name ?? '',
 				'',
+				formatSupervisorNames(participant.supervisors),
 				status.termsAndConditions,
 				status.guardianConsent,
 				status.mediaConsent,
@@ -249,6 +279,7 @@
 				'Supervisor',
 				'Supervisor',
 				'',
+				'', // Supervisors don't have supervisors
 				status.termsAndConditions,
 				status.guardianConsent,
 				status.mediaConsent,
@@ -271,6 +302,7 @@
 			'roleType',
 			'roleName',
 			'committeeAssignment',
+			'supervisors',
 			'termsAndConditions',
 			'guardianConsent',
 			'mediaConsent',
