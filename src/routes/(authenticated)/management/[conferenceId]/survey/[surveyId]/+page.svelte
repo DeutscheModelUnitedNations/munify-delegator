@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { graphql, cache } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import type { PageData } from './$types';
-	import { superForm } from 'sveltekit-superforms';
 	import { invalidateAll } from '$app/navigation';
 	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
 	import BarChart from '$lib/components/Charts/ECharts/BarChart.svelte';
@@ -16,52 +16,94 @@
 	let survey = $derived(data.survey);
 	let notAnsweredParticipants = $derived(data.usersNotAnswered);
 
+	// Mutations
+	const UpdateSurveyMutation = graphql(`
+		mutation UpdateSurveyQuestionFromDetail(
+			$id: String!
+			$title: StringFieldUpdateOperationsInput
+			$description: StringFieldUpdateOperationsInput
+			$deadline: DateTimeFieldUpdateOperationsInput
+			$draft: BoolFieldUpdateOperationsInput
+		) {
+			updateOneSurveyQuestion(
+				where: { id: $id }
+				data: { title: $title, description: $description, deadline: $deadline, draft: $draft }
+			) {
+				id
+			}
+		}
+	`);
+
+	const CreateOptionMutation = graphql(`
+		mutation CreateSurveyOptionFromDetail(
+			$questionId: String!
+			$title: String!
+			$description: String!
+			$upperLimit: Int!
+		) {
+			createOneSurveyOption(
+				data: {
+					questionId: $questionId
+					title: $title
+					description: $description
+					upperLimit: $upperLimit
+				}
+			) {
+				id
+			}
+		}
+	`);
+
+	const UpdateOptionMutation = graphql(`
+		mutation UpdateSurveyOptionFromDetail(
+			$id: String!
+			$title: StringFieldUpdateOperationsInput
+			$description: StringFieldUpdateOperationsInput
+			$upperLimit: IntFieldUpdateOperationsInput
+		) {
+			updateOneSurveyOption(
+				where: { id: $id }
+				data: { title: $title, description: $description, upperLimit: $upperLimit }
+			) {
+				id
+			}
+		}
+	`);
+
+	const DeleteOptionMutation = graphql(`
+		mutation DeleteSurveyOptionFromDetail($id: String!) {
+			deleteOneSurveyOption(where: { id: $id }) {
+				id
+			}
+		}
+	`);
+
 	// Tab state
 	type SurveyTab = 'settings' | 'results';
 	let activeTab = $state<SurveyTab>('results');
 
-	// Update survey form
-	const updateSurveyForm = superForm(data.updateSurveyForm, {
-		onResult: async () => {
-			await invalidateAll();
-			editingSurvey = false;
-		}
-	});
-	const { form: updateSurveyData, enhance: updateSurveyEnhance } = updateSurveyForm;
-
-	// Create option form
-	const createOptionForm = superForm(data.createOptionForm, {
-		onResult: async () => {
-			await invalidateAll();
-			showCreateOptionModal = false;
-		}
-	});
-	const { form: createOptionData, enhance: createOptionEnhance } = createOptionForm;
-
-	// Update option form
-	const updateOptionForm = superForm(data.updateOptionForm, {
-		onResult: async () => {
-			await invalidateAll();
-			editingOption = null;
-		}
-	});
-	const { form: updateOptionData, enhance: updateOptionEnhance } = updateOptionForm;
-
-	// Delete option form
-	const deleteOptionForm = superForm(data.deleteOptionForm, {
-		onResult: async () => {
-			await invalidateAll();
-			showDeleteOptionModal = false;
-			optionToDelete = null;
-		}
-	});
-	const { enhance: deleteOptionEnhance } = deleteOptionForm;
-
+	// UI state
 	let editingSurvey = $state(false);
 	let showCreateOptionModal = $state(false);
 	let editingOption = $state<string | null>(null);
 	let showDeleteOptionModal = $state(false);
 	let optionToDelete = $state<NonNullable<typeof survey>['options'][0] | null>(null);
+	let isLoading = $state(false);
+
+	// Edit survey form state
+	let editTitle = $state('');
+	let editDescription = $state('');
+	let editDeadline = $state('');
+
+	// Create option form state
+	let createOptionTitle = $state('');
+	let createOptionDescription = $state('');
+	let createOptionUpperLimit = $state(0);
+
+	// Update option form state
+	let updateOptionTitle = $state('');
+	let updateOptionDescription = $state('');
+	let updateOptionUpperLimit = $state(0);
 
 	// Chart data
 	let pieChartData = $derived(
@@ -75,7 +117,7 @@
 		totalEligible > 0 ? Math.round((totalAnswers / totalEligible) * 100) : 0
 	);
 
-	// Participant lists per option
+	// Helpers
 	const getParticipantsForOption = (optionId: string) => {
 		return (
 			survey?.surveyAnswers
@@ -89,45 +131,10 @@
 		);
 	};
 
-	const startEditSurvey = () => {
-		if (survey) {
-			$updateSurveyData.id = survey.id;
-			$updateSurveyData.title = survey.title;
-			$updateSurveyData.description = survey.description;
-			$updateSurveyData.deadline = formatDatetimeLocal(survey.deadline);
-			$updateSurveyData.draft = survey.draft;
-			editingSurvey = true;
-		}
-	};
-
-	const startEditOption = (option: NonNullable<typeof survey>['options'][0]) => {
-		$updateOptionData.id = option.id;
-		$updateOptionData.title = option.title;
-		$updateOptionData.description = option.description;
-		$updateOptionData.upperLimit = option.upperLimit;
-		editingOption = option.id;
-	};
-
-	const confirmDeleteOption = (option: NonNullable<typeof survey>['options'][0]) => {
-		optionToDelete = option;
-		showDeleteOptionModal = true;
-	};
-
-	const openCreateOptionModal = () => {
-		if (survey) {
-			$createOptionData.questionId = survey.id;
-			$createOptionData.title = '';
-			$createOptionData.description = '';
-			$createOptionData.upperLimit = 0;
-			showCreateOptionModal = true;
-		}
-	};
-
 	const formatDeadline = (date: Date) => {
 		return date.toLocaleString();
 	};
 
-	// Format Date for datetime-local input (uses local time, not UTC)
 	const formatDatetimeLocal = (date: Date) => {
 		const year = date.getFullYear();
 		const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -135,6 +142,115 @@
 		const hours = String(date.getHours()).padStart(2, '0');
 		const minutes = String(date.getMinutes()).padStart(2, '0');
 		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	};
+
+	// Actions
+	const toggleDraft = async () => {
+		if (!survey) return;
+		await UpdateSurveyMutation.mutate({
+			id: survey.id,
+			draft: { set: !survey.draft }
+		});
+		cache.markStale();
+		await invalidateAll();
+	};
+
+	const startEditSurvey = () => {
+		if (survey) {
+			editTitle = survey.title;
+			editDescription = survey.description;
+			editDeadline = formatDatetimeLocal(survey.deadline);
+			editingSurvey = true;
+		}
+	};
+
+	const saveSurvey = async () => {
+		if (!survey || !editTitle || !editDescription || !editDeadline) return;
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id: survey.id,
+				title: { set: editTitle },
+				description: { set: editDescription },
+				deadline: { set: new Date(editDeadline) }
+			});
+			cache.markStale();
+			await invalidateAll();
+			editingSurvey = false;
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const openCreateOptionModal = () => {
+		createOptionTitle = '';
+		createOptionDescription = '';
+		createOptionUpperLimit = 0;
+		showCreateOptionModal = true;
+	};
+
+	const createOption = async () => {
+		if (!survey || !createOptionTitle) return;
+		isLoading = true;
+		try {
+			await CreateOptionMutation.mutate({
+				questionId: survey.id,
+				title: createOptionTitle,
+				description: createOptionDescription,
+				upperLimit: createOptionUpperLimit
+			});
+			cache.markStale();
+			await invalidateAll();
+			showCreateOptionModal = false;
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const startEditOption = (option: NonNullable<typeof survey>['options'][0]) => {
+		updateOptionTitle = option.title;
+		updateOptionDescription = option.description;
+		updateOptionUpperLimit = option.upperLimit;
+		editingOption = option.id;
+	};
+
+	const saveOption = async () => {
+		if (!editingOption || !updateOptionTitle) return;
+		isLoading = true;
+		try {
+			await UpdateOptionMutation.mutate({
+				id: editingOption,
+				title: { set: updateOptionTitle },
+				description: { set: updateOptionDescription },
+				upperLimit: { set: updateOptionUpperLimit }
+			});
+			cache.markStale();
+			await invalidateAll();
+			editingOption = null;
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const confirmDeleteOption = (option: NonNullable<typeof survey>['options'][0]) => {
+		optionToDelete = option;
+		showDeleteOptionModal = true;
+	};
+
+	const deleteOption = async () => {
+		if (!optionToDelete) return;
+		isLoading = true;
+		try {
+			await DeleteOptionMutation.mutate({
+				id: optionToDelete.id
+			});
+			cache.markStale();
+			await invalidateAll();
+			showDeleteOptionModal = false;
+			optionToDelete = null;
+		} finally {
+			isLoading = false;
+		}
 	};
 </script>
 
@@ -150,14 +266,10 @@
 			{/if}
 		</div>
 		{#if survey}
-			<form method="POST" action="?/toggleDraft">
-				<input type="hidden" name="id" value={survey.id} />
-				<input type="hidden" name="draft" value={survey.draft.toString()} />
-				<button type="submit" class="btn {survey.draft ? 'btn-success' : 'btn-warning'}">
-					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
-				</button>
-			</form>
+			<button class="btn {survey.draft ? 'btn-success' : 'btn-warning'}" onclick={toggleDraft}>
+				<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
+				{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+			</button>
 		{/if}
 	</div>
 
@@ -281,38 +393,20 @@
 				</div>
 
 				{#if editingSurvey && survey}
-					<form
-						method="POST"
-						action="?/updateSurvey"
-						use:updateSurveyEnhance
-						class="mt-4 flex flex-col gap-4"
-					>
-						<input type="hidden" name="id" value={survey.id} />
+					<div class="mt-4 flex flex-col gap-4">
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">{m.title()}</legend>
-							<input
-								type="text"
-								name="title"
-								bind:value={$updateSurveyData.title}
-								class="input w-full"
-								required
-							/>
+							<input type="text" bind:value={editTitle} class="input w-full" required />
 						</fieldset>
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">{m.description()}</legend>
-							<textarea
-								name="description"
-								bind:value={$updateSurveyData.description}
-								class="textarea w-full"
-								required
-							></textarea>
+							<textarea bind:value={editDescription} class="textarea w-full" required></textarea>
 						</fieldset>
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">{m.deadline()}</legend>
 							<input
 								type="datetime-local"
-								name="deadline"
-								bind:value={$updateSurveyData.deadline}
+								bind:value={editDeadline}
 								class="input w-full"
 								required
 							/>
@@ -321,11 +415,19 @@
 							<button type="button" class="btn" onclick={() => (editingSurvey = false)}>
 								{m.cancel()}
 							</button>
-							<button type="submit" class="btn btn-primary">
+							<button
+								type="button"
+								class="btn btn-primary"
+								onclick={saveSurvey}
+								disabled={isLoading || !editTitle || !editDescription || !editDeadline}
+							>
+								{#if isLoading}
+									<span class="loading loading-spinner loading-sm"></span>
+								{/if}
 								{m.save()}
 							</button>
 						</div>
-					</form>
+					</div>
 				{:else}
 					<div class="mt-2 grid grid-cols-[auto,1fr] items-center gap-x-4 gap-y-2">
 						<i class="fa-duotone fa-text text-base-content/50"></i>
@@ -353,29 +455,19 @@
 						{#each survey.options as option (option.id)}
 							<div class="bg-base-200 rounded-lg p-4">
 								{#if editingOption === option.id}
-									<form
-										method="POST"
-										action="?/updateOption"
-										use:updateOptionEnhance
-										class="flex flex-col gap-4"
-									>
-										<input type="hidden" name="id" value={option.id} />
+									<div class="flex flex-col gap-4">
 										<fieldset class="fieldset">
 											<legend class="fieldset-legend">{m.title()}</legend>
 											<input
 												type="text"
-												name="title"
-												bind:value={$updateOptionData.title}
+												bind:value={updateOptionTitle}
 												class="input w-full"
 												required
 											/>
 										</fieldset>
 										<fieldset class="fieldset">
 											<legend class="fieldset-legend">{m.description()}</legend>
-											<textarea
-												name="description"
-												bind:value={$updateOptionData.description}
-												class="textarea w-full"
+											<textarea bind:value={updateOptionDescription} class="textarea w-full"
 											></textarea>
 										</fieldset>
 										<fieldset class="fieldset">
@@ -384,8 +476,7 @@
 											>
 											<input
 												type="number"
-												name="upperLimit"
-												bind:value={$updateOptionData.upperLimit}
+												bind:value={updateOptionUpperLimit}
 												class="input w-full"
 												min="0"
 											/>
@@ -398,11 +489,19 @@
 											>
 												{m.cancel()}
 											</button>
-											<button type="submit" class="btn btn-primary btn-sm">
+											<button
+												type="button"
+												class="btn btn-primary btn-sm"
+												onclick={saveOption}
+												disabled={isLoading || !updateOptionTitle}
+											>
+												{#if isLoading}
+													<span class="loading loading-spinner loading-sm"></span>
+												{/if}
 												{m.save()}
 											</button>
 										</div>
-									</form>
+									</div>
 								{:else}
 									<div class="flex items-start justify-between gap-4">
 										<div class="flex-1">
@@ -455,50 +554,36 @@
 	<div class="modal modal-open">
 		<div class="modal-box">
 			<h3 class="text-lg font-bold">{m.createOption()}</h3>
-			<form
-				method="POST"
-				action="?/createOption"
-				use:createOptionEnhance
-				class="mt-4 flex flex-col gap-4"
-			>
-				<input type="hidden" name="questionId" value={survey?.id} />
+			<div class="mt-4 flex flex-col gap-4">
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.title()}</legend>
-					<input
-						type="text"
-						name="title"
-						bind:value={$createOptionData.title}
-						class="input w-full"
-						required
-					/>
+					<input type="text" bind:value={createOptionTitle} class="input w-full" required />
 				</fieldset>
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.description()}</legend>
-					<textarea
-						name="description"
-						bind:value={$createOptionData.description}
-						class="textarea w-full"
-					></textarea>
+					<textarea bind:value={createOptionDescription} class="textarea w-full"></textarea>
 				</fieldset>
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.upperLimit()} ({m.zeroForUnlimited()})</legend>
-					<input
-						type="number"
-						name="upperLimit"
-						bind:value={$createOptionData.upperLimit}
-						class="input w-full"
-						min="0"
-					/>
+					<input type="number" bind:value={createOptionUpperLimit} class="input w-full" min="0" />
 				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => (showCreateOptionModal = false)}>
 						{m.cancel()}
 					</button>
-					<button type="submit" class="btn btn-primary">
+					<button
+						type="button"
+						class="btn btn-primary"
+						onclick={createOption}
+						disabled={isLoading || !createOptionTitle}
+					>
+						{#if isLoading}
+							<span class="loading loading-spinner loading-sm"></span>
+						{/if}
 						{m.create()}
 					</button>
 				</div>
-			</form>
+			</div>
 		</div>
 		<div class="modal-backdrop" onclick={() => (showCreateOptionModal = false)}></div>
 	</div>
@@ -512,24 +597,24 @@
 			<p class="py-4">
 				{m.confirmDeleteOptionDescription({ title: optionToDelete.title })}
 			</p>
-			<form method="POST" action="?/deleteOption" use:deleteOptionEnhance>
-				<input type="hidden" name="id" value={optionToDelete.id} />
-				<div class="modal-action">
-					<button
-						type="button"
-						class="btn"
-						onclick={() => {
-							showDeleteOptionModal = false;
-							optionToDelete = null;
-						}}
-					>
-						{m.cancel()}
-					</button>
-					<button type="submit" class="btn btn-error">
-						{m.delete()}
-					</button>
-				</div>
-			</form>
+			<div class="modal-action">
+				<button
+					type="button"
+					class="btn"
+					onclick={() => {
+						showDeleteOptionModal = false;
+						optionToDelete = null;
+					}}
+				>
+					{m.cancel()}
+				</button>
+				<button type="button" class="btn btn-error" onclick={deleteOption} disabled={isLoading}>
+					{#if isLoading}
+						<span class="loading loading-spinner loading-sm"></span>
+					{/if}
+					{m.delete()}
+				</button>
+			</div>
 		</div>
 		<div
 			class="modal-backdrop"
