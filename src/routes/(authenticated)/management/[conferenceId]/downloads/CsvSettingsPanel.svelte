@@ -13,7 +13,10 @@
 	const encodings: CsvEncoding[] = ['utf-8', 'utf-8-bom', 'iso-8859-1'];
 
 	// Only access the store on the client side
-	let currentSettings = $state({ delimiter: ';' as CsvDelimiter, encoding: 'utf-8' as CsvEncoding });
+	let currentSettings = $state({
+		delimiter: ';' as CsvDelimiter,
+		encoding: 'utf-8' as CsvEncoding
+	});
 
 	$effect(() => {
 		if (browser) {
@@ -39,15 +42,19 @@
 
 <div class="collapse collapse-arrow bg-base-100 border border-base-200 shadow-sm">
 	<input type="checkbox" />
-	<div class="collapse-title">
+	<div class="collapse-title p-6">
 		<div class="flex items-center gap-3">
-			<div class="bg-base-300/50 text-base-content/70 rounded-lg p-2">
+			<div
+				class="bg-base-300/50 text-base-content/70 rounded-lg p-3 w-12 h-12 flex justify-center items-center"
+			>
 				<i class="fas fa-cog text-lg"></i>
 			</div>
 			<div>
 				<span class="font-medium">{m.csvExportSettings()}</span>
 				<span class="text-sm text-base-content/60 ml-2">
-					{getDelimiterLabel(currentSettings.delimiter)}, {getEncodingLabel(currentSettings.encoding)}
+					{getDelimiterLabel(currentSettings.delimiter)}, {getEncodingLabel(
+						currentSettings.encoding
+					)}
 				</span>
 			</div>
 		</div>
