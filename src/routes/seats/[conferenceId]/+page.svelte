@@ -5,6 +5,7 @@
 	import { getUniqueNations } from '$lib/services/getUniqueNations';
 	import { m } from '$lib/paraglide/messages';
 	import CommitteePool from './CommitteePool.svelte';
+	import { dev } from '$app/environment';
 
 	let { data }: { data: PageData } = $props();
 	const conferenceQuery = $derived(data.SeatsOfConferenceQuery);
@@ -15,7 +16,7 @@
 </script>
 
 <svelte:head>
-	<title>{conference.title} – {m.conferenceSeats()}</title>
+	<title>{dev ? '[dev] ' : ''}{conference.title} – {m.conferenceSeats()}</title>
 </svelte:head>
 
 <div class="bg-base-200 flex w-full flex-col items-center p-4 md:p-10">

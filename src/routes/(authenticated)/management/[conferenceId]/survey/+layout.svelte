@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
+	import { dev } from '$app/environment';
 
 	interface Props {
 		children: Snippet;
@@ -10,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator - {m.survey()}</title>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.survey()}</title>
 </svelte:head>
 
 {@render children()}

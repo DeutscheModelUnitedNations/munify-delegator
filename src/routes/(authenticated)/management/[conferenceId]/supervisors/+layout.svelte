@@ -2,6 +2,7 @@
 	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
+	import { dev } from '$app/environment';
 
 	interface Props {
 		children: Snippet;
@@ -11,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator - {m.supervisors()}</title>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.supervisors()}</title>
 </svelte:head>
 
 {@render children()}
