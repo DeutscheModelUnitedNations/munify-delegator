@@ -72,6 +72,18 @@
 	let delegations = $derived([
 		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
 	]);
+	// Get all papers from unique delegations (using delegationMembers to access papers)
+	let allPapers = $derived.by(() => {
+		const seenDelegationIds = new Set<string>();
+		const papers: NonNullable<(typeof delegationMembers)[number]['delegation']['papers']> = [];
+		delegationMembers.forEach((member) => {
+			if (!seenDelegationIds.has(member.delegation.id)) {
+				seenDelegationIds.add(member.delegation.id);
+				papers.push(...(member.delegation.papers ?? []));
+			}
+		});
+		return papers;
+	});
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
@@ -312,6 +324,12 @@
 		/>
 	{/if}
 
+	<DelegationStatsCharts
+		members={delegationMembers}
+		papers={allPapers}
+		conferenceId={conference.id}
+	/>
+
 	<TasksWrapper>
 		{#if supervisor.supervisedDelegationMembers.some((x) => !x.assignedCommittee)}
 			<TaskAlertCard
@@ -447,9 +465,6 @@
 							/>
 						{/if}
 					</InfoGrid.Grid>
-					{#if !isStateParticipantRegistration}
-						<DelegationStatsCharts {members} papers={delegation.papers ?? []} conferenceId={conference.id} />
-					{/if}
 				{/snippet}
 
 				{#snippet memberSpace()}

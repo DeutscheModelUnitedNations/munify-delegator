@@ -11,13 +11,8 @@
 		memberSpace: Snippet;
 	}
 
-	let {
-		isStateParticipantRegistration,
-		applied,
-		title,
-		detailSpace,
-		memberSpace
-	}: Props = $props();
+	let { isStateParticipantRegistration, applied, title, detailSpace, memberSpace }: Props =
+		$props();
 </script>
 
 <DashboardContentCard {title} class="bg-base-200 border-base-300 mt-4">

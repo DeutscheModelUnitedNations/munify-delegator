@@ -60,32 +60,32 @@
 	const total = (stats: Record<string, number>) => Object.values(stats).reduce((a, b) => a + b, 0);
 </script>
 
-<div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="flex flex-wrap gap-4">
 	<!-- Payment Status -->
-	<div class="bg-base-100 rounded-lg p-3">
+	<div class="bg-base-100 rounded-lg p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
 			<i class="fa-duotone fa-money-bill-transfer text-primary"></i>
 			<span class="text-sm font-medium">{m.payment()}</span>
 		</div>
-		<div class="flex gap-1">
+		<div class="flex h-2 rounded-full overflow-hidden">
 			{#if total(paymentStats) > 0}
 				<div
-					class="tooltip h-2 bg-success rounded-l"
+					class="tooltip bg-success"
 					style="width: {(paymentStats.DONE / total(paymentStats)) * 100}%"
 					data-tip="{paymentStats.DONE} {m.done()}"
 				></div>
 				<div
-					class="tooltip h-2 bg-warning"
+					class="tooltip bg-warning"
 					style="width: {(paymentStats.PENDING / total(paymentStats)) * 100}%"
 					data-tip="{paymentStats.PENDING} {m.statusPending()}"
 				></div>
 				<div
-					class="tooltip h-2 bg-error rounded-r"
+					class="tooltip bg-error"
 					style="width: {(paymentStats.PROBLEM / total(paymentStats)) * 100}%"
 					data-tip="{paymentStats.PROBLEM} {m.statusProblem()}"
 				></div>
 			{:else}
-				<div class="h-2 bg-base-300 rounded w-full"></div>
+				<div class="bg-base-300 w-full"></div>
 			{/if}
 		</div>
 		<div class="text-xs text-base-content/70 mt-1">
@@ -94,30 +94,30 @@
 	</div>
 
 	<!-- Postal Status -->
-	<div class="bg-base-100 rounded-lg p-3">
+	<div class="bg-base-100 rounded-lg p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
 			<i class="fa-duotone fa-envelopes-bulk text-primary"></i>
 			<span class="text-sm font-medium">{m.postalRegistration()}</span>
 		</div>
-		<div class="flex gap-1">
+		<div class="flex h-2 rounded-full overflow-hidden">
 			{#if total(postalStats) > 0}
 				<div
-					class="tooltip h-2 bg-success rounded-l"
+					class="tooltip bg-success"
 					style="width: {(postalStats.DONE / total(postalStats)) * 100}%"
 					data-tip="{postalStats.DONE} {m.done()}"
 				></div>
 				<div
-					class="tooltip h-2 bg-warning"
+					class="tooltip bg-warning"
 					style="width: {(postalStats.PENDING / total(postalStats)) * 100}%"
 					data-tip="{postalStats.PENDING} {m.statusPending()}"
 				></div>
 				<div
-					class="tooltip h-2 bg-error rounded-r"
+					class="tooltip bg-error"
 					style="width: {(postalStats.PROBLEM / total(postalStats)) * 100}%"
 					data-tip="{postalStats.PROBLEM} {m.statusProblem()}"
 				></div>
 			{:else}
-				<div class="h-2 bg-base-300 rounded w-full"></div>
+				<div class="bg-base-300 w-full"></div>
 			{/if}
 		</div>
 		<div class="text-xs text-base-content/70 mt-1">
@@ -126,30 +126,30 @@
 	</div>
 
 	<!-- Paper Status -->
-	<div class="bg-base-100 rounded-lg p-3">
+	<div class="bg-base-100 rounded-lg p-3 flex-1 min-w-[200px]">
 		<div class="flex items-center gap-2 mb-2">
 			<i class="fa-duotone fa-file-lines text-primary"></i>
 			<span class="text-sm font-medium">{m.papers()}</span>
 		</div>
-		<div class="flex gap-1">
+		<div class="flex h-2 rounded-full overflow-hidden">
 			{#if total(paperStats) > 0}
 				<div
-					class="tooltip h-2 bg-info rounded-l"
+					class="tooltip bg-info"
 					style="width: {(paperStats.SUBMITTED / total(paperStats)) * 100}%"
 					data-tip="{paperStats.SUBMITTED} {m.paperStatusSubmitted()}"
 				></div>
 				<div
-					class="tooltip h-2 bg-warning"
+					class="tooltip bg-warning"
 					style="width: {(paperStats.CHANGES_REQUESTED / total(paperStats)) * 100}%"
 					data-tip="{paperStats.CHANGES_REQUESTED} {m.paperStatusChangesRequested()}"
 				></div>
 				<div
-					class="tooltip h-2 bg-success rounded-r"
+					class="tooltip bg-success"
 					style="width: {(paperStats.ACCEPTED / total(paperStats)) * 100}%"
 					data-tip="{paperStats.ACCEPTED} {m.paperStatusAccepted()}"
 				></div>
 			{:else}
-				<div class="h-2 bg-base-300 rounded w-full"></div>
+				<div class="bg-base-300 w-full"></div>
 			{/if}
 		</div>
 		<div class="text-xs text-base-content/70 mt-1">
