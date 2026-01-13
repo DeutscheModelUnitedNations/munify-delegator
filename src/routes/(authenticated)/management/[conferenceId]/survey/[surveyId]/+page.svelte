@@ -1,17 +1,24 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import formatNames from '$lib/services/formatNames';
 	import type { PageData } from './$types';
-	import { stringify } from 'csv-stringify/browser/esm/sync';
 	import { superForm } from 'sveltekit-superforms';
 	import { invalidateAll } from '$app/navigation';
-	import StackChart from '$lib/components/Charts/StackChart.svelte';
-	import ChartBar from '$lib/components/Charts/ChartBar.svelte';
+	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
+	import BarChart from '$lib/components/Charts/ECharts/BarChart.svelte';
+	import GaugeChart from '$lib/components/Charts/ECharts/GaugeChart.svelte';
+	import CollapsibleParticipantList from '$lib/components/CollapsibleParticipantList.svelte';
+	import DownloadCategoryCard from '../../downloads/DownloadCategoryCard.svelte';
+	import SurveyExportButtons from './SurveyExportButtons.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	let survey = $derived(data.survey);
-	let notAssignedParticipants = $derived(data.usersNotAnswered);
+	let notAnsweredParticipants = $derived(data.usersNotAnswered);
+
+	// Tab state
+	type SurveyTab = 'settings' | 'results';
+	let activeTab = $state<SurveyTab>('results');
 
 	// Update survey form
 	const updateSurveyForm = superForm(data.updateSurveyForm, {
@@ -57,36 +64,29 @@
 	let optionToDelete = $state<NonNullable<typeof survey>['options'][0] | null>(null);
 
 	// Chart data
-	let chartValues = $derived(survey?.options.map((o) => o.countSurveyAnswers) ?? []);
+	let pieChartData = $derived(
+		survey?.options.map((o) => ({ name: o.title, value: o.countSurveyAnswers })) ?? []
+	);
 	let chartLabels = $derived(survey?.options.map((o) => o.title) ?? []);
+	let chartValues = $derived(survey?.options.map((o) => o.countSurveyAnswers) ?? []);
 	let totalAnswers = $derived(survey?.surveyAnswers.length ?? 0);
-	let totalEligible = $derived(totalAnswers + notAssignedParticipants.length);
+	let totalEligible = $derived(totalAnswers + notAnsweredParticipants.length);
 	let participationRate = $derived(
 		totalEligible > 0 ? Math.round((totalAnswers / totalEligible) * 100) : 0
 	);
 
-	const downloadCSV = async (header: string[], csvData: string[][], filename: string) => {
-		const csv = [header, ...csvData];
-		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = filename;
-		a.click();
-		URL.revokeObjectURL(url);
-	};
-
-	const downloadResults = () => {
-		const header = [m.name(), m.surveyOption()];
-		const csvData =
+	// Participant lists per option
+	const getParticipantsForOption = (optionId: string) => {
+		return (
 			survey?.surveyAnswers
-				.sort((a, b) => sortByNames(a.user, b.user))
-				.map((answer) => [
-					formatNames(answer.user.given_name, answer.user.family_name, { givenNameFirst: false }),
-					survey?.options.find((option) => option.id === answer.option.id)?.title ?? ''
-				]) ?? [];
-
-		downloadCSV(header, csvData, `${survey?.title ?? 'survey'}_results.csv`);
+				.filter((answer) => answer.option.id === optionId)
+				.map((answer) => answer.user)
+				.sort((a, b) =>
+					formatNames(a.given_name, a.family_name).localeCompare(
+						formatNames(b.given_name, b.family_name)
+					)
+				) ?? []
+		);
 	};
 
 	const startEditSurvey = () => {
@@ -128,10 +128,13 @@
 	};
 </script>
 
-<div class="flex w-full flex-col gap-8 p-10">
+<div class="flex w-full flex-col gap-6 p-10">
 	<!-- Header -->
 	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-3">
+			<a href="/management/{data.conferenceId}/survey" class="btn btn-ghost btn-sm">
+				<i class="fas fa-arrow-left"></i>
+			</a>
 			<h2 class="text-2xl font-bold">{survey?.title}</h2>
 			{#if survey?.draft}
 				<span class="badge badge-warning">{m.surveyIsDraft()}</span>
@@ -139,290 +142,305 @@
 				<span class="badge badge-success">{m.surveyIsLive()}</span>
 			{/if}
 		</div>
-		<div class="flex flex-wrap gap-2">
-			{#if survey}
-				<form method="POST" action="?/toggleDraft">
-					<input type="hidden" name="id" value={survey.id} />
-					<input type="hidden" name="draft" value={survey.draft.toString()} />
-					<button type="submit" class="btn {survey.draft ? 'btn-success' : 'btn-warning'}">
-						<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-						{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
-					</button>
-				</form>
-			{/if}
-			<button class="btn btn-primary" onclick={downloadResults}>
-				<i class="fas fa-download"></i>
-				{m.downloadResults()}
-			</button>
-		</div>
-	</div>
-
-	<!-- Survey Details Section -->
-	<div class="bg-base-200 rounded-lg p-4">
-		<div class="mb-4 flex items-center justify-between">
-			<h3 class="text-lg font-bold">{m.surveyDetails()}</h3>
-			{#if !editingSurvey}
-				<button class="btn btn-sm" onclick={startEditSurvey}>
-					<i class="fas fa-edit"></i>
-					{m.edit()}
-				</button>
-			{/if}
-		</div>
-
-		{#if editingSurvey && survey}
-			<form
-				method="POST"
-				action="?/updateSurvey"
-				use:updateSurveyEnhance
-				class="flex flex-col gap-4"
-			>
+		{#if survey}
+			<form method="POST" action="?/toggleDraft">
 				<input type="hidden" name="id" value={survey.id} />
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.title()}</legend>
-					<input
-						type="text"
-						id="edit-title"
-						name="title"
-						bind:value={$updateSurveyData.title}
-						class="input w-full"
-						required
-					/>
-				</fieldset>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.description()}</legend>
-					<textarea
-						id="edit-description"
-						name="description"
-						bind:value={$updateSurveyData.description}
-						class="textarea w-full"
-						required
-					></textarea>
-				</fieldset>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.deadline()}</legend>
-					<input
-						type="datetime-local"
-						id="edit-deadline"
-						name="deadline"
-						bind:value={$updateSurveyData.deadline}
-						class="input w-full"
-						required
-					/>
-				</fieldset>
-				<div class="flex gap-2">
-					<button type="button" class="btn" onclick={() => (editingSurvey = false)}>
-						{m.cancel()}
-					</button>
-					<button type="submit" class="btn btn-primary">
-						{m.save()}
-					</button>
-				</div>
+				<input type="hidden" name="draft" value={survey.draft.toString()} />
+				<button type="submit" class="btn {survey.draft ? 'btn-success' : 'btn-warning'}">
+					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
+					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+				</button>
 			</form>
-		{:else}
-			<div class="grid grid-cols-[auto,1fr] items-center gap-2">
-				<i class="fa-duotone fa-info place-self-center"></i>
-				<p>{survey?.description}</p>
-				<i class="fa-duotone fa-alarm-clock place-self-center"></i>
-				<p>{survey ? formatDeadline(survey.deadline) : ''}</p>
-			</div>
 		{/if}
 	</div>
 
-	<!-- Results Visualization Section -->
-	<div class="bg-base-200 rounded-lg p-4">
-		<h3 class="mb-4 text-lg font-bold">{m.results()}</h3>
+	<!-- Tabs -->
+	<div class="tabs tabs-boxed w-fit">
+		<button
+			class="tab"
+			class:tab-active={activeTab === 'results'}
+			onclick={() => (activeTab = 'results')}
+		>
+			<i class="fas fa-chart-pie mr-2"></i>
+			{m.surveyResults()}
+		</button>
+		<button
+			class="tab"
+			class:tab-active={activeTab === 'settings'}
+			onclick={() => (activeTab = 'settings')}
+		>
+			<i class="fas fa-cog mr-2"></i>
+			{m.surveySettings()}
+		</button>
+	</div>
 
-		<div class="grid gap-4 md:grid-cols-2">
-			<!-- Participation Stats -->
-			<div class="bg-base-300 rounded-lg p-4">
-				<h4 class="mb-2 font-semibold">{m.participation()}</h4>
-				<div class="flex items-center gap-4">
-					<div
-						class="radial-progress text-primary"
-						style="--value:{participationRate};"
-						role="progressbar"
-					>
-						{participationRate}%
-					</div>
-					<div>
-						<p class="text-2xl font-bold">{totalAnswers} / {totalEligible}</p>
-						<p class="text-sm opacity-70">{m.participantsAnswered()}</p>
-					</div>
+	<!-- Results Tab -->
+	{#if activeTab === 'results'}
+		<!-- Charts Section -->
+		<div class="grid gap-4 lg:grid-cols-3">
+			<!-- Participation Gauge -->
+			<div class="card bg-base-100 border-base-200 border shadow-sm">
+				<div class="card-body">
+					<h3 class="card-title text-base">{m.participation()}</h3>
+					<GaugeChart value={participationRate} name={m.participantsAnswered()} height="160px" />
+					<p class="text-center text-sm opacity-70">
+						{totalAnswers} / {totalEligible}
+					</p>
 				</div>
 			</div>
 
-			<!-- Distribution Chart -->
-			<div class="bg-base-300 rounded-lg p-4">
-				<h4 class="mb-2 font-semibold">{m.distribution()}</h4>
-				{#if chartValues.length > 0 && chartValues.some((v) => v > 0)}
-					<StackChart values={chartValues} labels={chartLabels} percentage={true} />
+			<!-- Distribution Donut -->
+			<div class="card bg-base-100 border-base-200 border shadow-sm">
+				<div class="card-body">
+					<h3 class="card-title text-base">{m.distribution()}</h3>
+					{#if pieChartData.length > 0 && pieChartData.some((d) => d.value > 0)}
+						<PieChart data={pieChartData} donut={true} showLegend={true} height="200px" />
+					{:else}
+						<div class="flex h-48 items-center justify-center text-sm opacity-50">
+							{m.noDataYet()}
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Bar Comparison -->
+			<div class="card bg-base-100 border-base-200 border shadow-sm">
+				<div class="card-body">
+					<h3 class="card-title text-base">{m.optionComparison()}</h3>
+					{#if chartValues.length > 0 && chartValues.some((v) => v > 0)}
+						<BarChart labels={chartLabels} values={chartValues} showValues={true} height="200px" />
+					{:else}
+						<div class="flex h-48 items-center justify-center text-sm opacity-50">
+							{m.noDataYet()}
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+
+		<!-- Participant Lists -->
+		<div class="flex flex-col gap-3">
+			<h3 class="text-lg font-bold">{m.answers()}</h3>
+			{#each survey?.options ?? [] as option (option.id)}
+				{@const participants = getParticipantsForOption(option.id)}
+				<CollapsibleParticipantList
+					title={option.title}
+					description={option.description}
+					count={option.countSurveyAnswers}
+					limit={option.upperLimit}
+					{participants}
+					conferenceId={data.conferenceId}
+				/>
+			{/each}
+
+			<CollapsibleParticipantList
+				title={m.notAssignedParticipants()}
+				count={notAnsweredParticipants.length}
+				participants={notAnsweredParticipants}
+				conferenceId={data.conferenceId}
+			/>
+		</div>
+
+		<!-- Export Section -->
+		{#if survey}
+			<DownloadCategoryCard
+				title={m.surveyExports()}
+				description={m.surveyExportsDescription()}
+				icon="fas fa-file-export"
+			>
+				<SurveyExportButtons
+					surveyTitle={survey.title}
+					options={survey.options}
+					surveyAnswers={survey.surveyAnswers}
+					{notAnsweredParticipants}
+				/>
+			</DownloadCategoryCard>
+		{/if}
+	{/if}
+
+	<!-- Settings Tab -->
+	{#if activeTab === 'settings'}
+		<!-- Survey Details Card -->
+		<div class="card bg-base-100 border-base-200 border shadow-sm">
+			<div class="card-body">
+				<div class="flex items-center justify-between">
+					<h3 class="card-title">{m.surveyDetails()}</h3>
+					{#if !editingSurvey}
+						<button class="btn btn-sm" onclick={startEditSurvey}>
+							<i class="fas fa-edit"></i>
+							{m.edit()}
+						</button>
+					{/if}
+				</div>
+
+				{#if editingSurvey && survey}
+					<form
+						method="POST"
+						action="?/updateSurvey"
+						use:updateSurveyEnhance
+						class="mt-4 flex flex-col gap-4"
+					>
+						<input type="hidden" name="id" value={survey.id} />
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">{m.title()}</legend>
+							<input
+								type="text"
+								name="title"
+								bind:value={$updateSurveyData.title}
+								class="input w-full"
+								required
+							/>
+						</fieldset>
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">{m.description()}</legend>
+							<textarea
+								name="description"
+								bind:value={$updateSurveyData.description}
+								class="textarea w-full"
+								required
+							></textarea>
+						</fieldset>
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">{m.deadline()}</legend>
+							<input
+								type="datetime-local"
+								name="deadline"
+								bind:value={$updateSurveyData.deadline}
+								class="input w-full"
+								required
+							/>
+						</fieldset>
+						<div class="flex gap-2">
+							<button type="button" class="btn" onclick={() => (editingSurvey = false)}>
+								{m.cancel()}
+							</button>
+							<button type="submit" class="btn btn-primary">
+								{m.save()}
+							</button>
+						</div>
+					</form>
 				{:else}
-					<div class="flex h-24 items-center justify-center text-sm opacity-70">
-						{m.noDataYet()}
+					<div class="mt-2 grid grid-cols-[auto,1fr] items-center gap-x-4 gap-y-2">
+						<i class="fa-duotone fa-text text-base-content/50"></i>
+						<p>{survey?.description}</p>
+						<i class="fa-duotone fa-alarm-clock text-base-content/50"></i>
+						<p>{survey ? formatDeadline(survey.deadline) : ''}</p>
 					</div>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Bar Chart -->
-		{#if chartValues.length > 0}
-			<div class="bg-base-300 mt-4 rounded-lg p-4">
-				<h4 class="mb-2 font-semibold">{m.optionComparison()}</h4>
-				<ChartBar values={chartValues} labels={chartLabels} showLabels={true} />
-			</div>
-		{/if}
-	</div>
+		<!-- Options Management Card -->
+		<div class="card bg-base-100 border-base-200 border shadow-sm">
+			<div class="card-body">
+				<div class="flex items-center justify-between">
+					<h3 class="card-title">{m.options()}</h3>
+					<button class="btn btn-primary btn-sm" onclick={openCreateOptionModal}>
+						<i class="fas fa-plus"></i>
+						{m.createOption()}
+					</button>
+				</div>
 
-	<!-- Options Management Section -->
-	<div class="bg-base-200 rounded-lg p-4">
-		<div class="mb-4 flex items-center justify-between">
-			<h3 class="text-lg font-bold">{m.options()}</h3>
-			<button class="btn btn-primary btn-sm" onclick={openCreateOptionModal}>
-				<i class="fas fa-plus"></i>
-				{m.createOption()}
-			</button>
-		</div>
-
-		{#if survey?.options && survey.options.length > 0}
-			<div class="flex flex-col gap-4">
-				{#each survey.options as option}
-					<div class="bg-base-300 rounded-lg p-4">
-						{#if editingOption === option.id}
-							<form
-								method="POST"
-								action="?/updateOption"
-								use:updateOptionEnhance
-								class="flex flex-col gap-4"
-							>
-								<input type="hidden" name="id" value={option.id} />
-								<fieldset class="fieldset">
-									<legend class="fieldset-legend">{m.title()}</legend>
-									<input
-										type="text"
-										id="option-title-{option.id}"
-										name="title"
-										bind:value={$updateOptionData.title}
-										class="input w-full"
-										required
-									/>
-								</fieldset>
-								<fieldset class="fieldset">
-									<legend class="fieldset-legend">{m.description()}</legend>
-									<textarea
-										id="option-description-{option.id}"
-										name="description"
-										bind:value={$updateOptionData.description}
-										class="textarea w-full"
-									></textarea>
-								</fieldset>
-								<fieldset class="fieldset">
-									<legend class="fieldset-legend">{m.upperLimit()} ({m.zeroForUnlimited()})</legend>
-									<input
-										type="number"
-										id="option-limit-{option.id}"
-										name="upperLimit"
-										bind:value={$updateOptionData.upperLimit}
-										class="input w-full"
-										min="0"
-									/>
-								</fieldset>
-								<div class="flex gap-2">
-									<button type="button" class="btn btn-sm" onclick={() => (editingOption = null)}>
-										{m.cancel()}
-									</button>
-									<button type="submit" class="btn btn-primary btn-sm">
-										{m.save()}
-									</button>
-								</div>
-							</form>
-						{:else}
-							<div class="flex items-start justify-between gap-4">
-								<div class="flex-1">
-									<h4 class="font-semibold">{option.title}</h4>
-									<p class="text-sm opacity-70">{option.description}</p>
-									<div class="mt-2 flex gap-4 text-sm">
-										<span>
-											<i class="fas fa-users"></i>
-											{option.countSurveyAnswers}
-											{m.answers()}
-										</span>
-										<span>
-											<i class="fas fa-users-cog"></i>
-											{option.upperLimit === 0 ? m.noLimit() : `${m.limit()}: ${option.upperLimit}`}
-										</span>
+				{#if survey?.options && survey.options.length > 0}
+					<div class="mt-4 flex flex-col gap-3">
+						{#each survey.options as option (option.id)}
+							<div class="bg-base-200 rounded-lg p-4">
+								{#if editingOption === option.id}
+									<form
+										method="POST"
+										action="?/updateOption"
+										use:updateOptionEnhance
+										class="flex flex-col gap-4"
+									>
+										<input type="hidden" name="id" value={option.id} />
+										<fieldset class="fieldset">
+											<legend class="fieldset-legend">{m.title()}</legend>
+											<input
+												type="text"
+												name="title"
+												bind:value={$updateOptionData.title}
+												class="input w-full"
+												required
+											/>
+										</fieldset>
+										<fieldset class="fieldset">
+											<legend class="fieldset-legend">{m.description()}</legend>
+											<textarea
+												name="description"
+												bind:value={$updateOptionData.description}
+												class="textarea w-full"
+											></textarea>
+										</fieldset>
+										<fieldset class="fieldset">
+											<legend class="fieldset-legend"
+												>{m.upperLimit()} ({m.zeroForUnlimited()})</legend
+											>
+											<input
+												type="number"
+												name="upperLimit"
+												bind:value={$updateOptionData.upperLimit}
+												class="input w-full"
+												min="0"
+											/>
+										</fieldset>
+										<div class="flex gap-2">
+											<button
+												type="button"
+												class="btn btn-sm"
+												onclick={() => (editingOption = null)}
+											>
+												{m.cancel()}
+											</button>
+											<button type="submit" class="btn btn-primary btn-sm">
+												{m.save()}
+											</button>
+										</div>
+									</form>
+								{:else}
+									<div class="flex items-start justify-between gap-4">
+										<div class="flex-1">
+											<h4 class="font-semibold">{option.title}</h4>
+											{#if option.description}
+												<p class="text-sm opacity-70">{option.description}</p>
+											{/if}
+											<div class="mt-2 flex gap-4 text-sm opacity-70">
+												<span>
+													<i class="fas fa-users"></i>
+													{option.countSurveyAnswers}
+													{m.answers()}
+												</span>
+												<span>
+													<i class="fas fa-ban"></i>
+													{option.upperLimit === 0
+														? m.noLimit()
+														: `${m.limit()}: ${option.upperLimit}`}
+												</span>
+											</div>
+										</div>
+										<div class="flex gap-2">
+											<button class="btn btn-ghost btn-sm" onclick={() => startEditOption(option)}>
+												<i class="fas fa-edit"></i>
+											</button>
+											<button
+												class="btn btn-ghost btn-sm text-error"
+												onclick={() => confirmDeleteOption(option)}
+											>
+												<i class="fas fa-trash"></i>
+											</button>
+										</div>
 									</div>
-								</div>
-								<div class="flex gap-2">
-									<button class="btn btn-sm" onclick={() => startEditOption(option)}>
-										<i class="fas fa-edit"></i>
-									</button>
-									<button class="btn btn-error btn-sm" onclick={() => confirmDeleteOption(option)}>
-										<i class="fas fa-trash"></i>
-									</button>
-								</div>
+								{/if}
 							</div>
-						{/if}
+						{/each}
 					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="bg-base-300 rounded p-4 text-center text-sm opacity-70">
-				{m.noOptionsYet()}
-			</div>
-		{/if}
-	</div>
-
-	<!-- Participants by Option -->
-	{#each survey?.options ?? [] as option}
-		{@const users = survey?.surveyAnswers
-			.filter((answer) => answer.option.id === option.id)
-			.sort((a, b) =>
-				formatNames(a.user.given_name, a.user.family_name, { givenNameFirst: false }).localeCompare(
-					formatNames(b.user.given_name, b.user.family_name, { givenNameFirst: false })
-				)
-			)}
-		<div class="bg-base-200 flex w-full flex-col rounded-lg p-4">
-			<div class="flex gap-2">
-				<div class="flex w-full flex-1 flex-col">
-					<h3>{option.title}</h3>
-					<h4 class="text-xs">{option.description}</h4>
-				</div>
-				<h3>
-					<span class="font-bold">{option.countSurveyAnswers}</span>
-					{#if option.upperLimit > 0}
-						&nbsp;/&nbsp;<span class="text-xs">{option.upperLimit}</span>
-					{/if}
-				</h3>
-			</div>
-			<div class="bg-base-300 mt-4 rounded p-2 text-sm shadow-sm">
-				<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4">
-					{#each users ?? [] as u}
-						<p>
-							<a
-								href="/management/{data.conferenceId}/participants?selected={u.user.id}"
-								class="hover:underline">{formatNames(u.user.given_name, u.user.family_name)}</a
-							>
-						</p>
-					{/each}
-				</div>
+				{:else}
+					<div class="bg-base-200 mt-4 rounded-lg p-8 text-center text-sm opacity-50">
+						{m.noOptionsYet()}
+					</div>
+				{/if}
 			</div>
 		</div>
-	{/each}
-
-	<!-- Not Assigned Participants -->
-	<h2 class="text-2xl font-bold">{m.notAssignedParticipants()}</h2>
-	<div class="bg-base-200 flex w-full flex-col rounded-lg p-4 text-sm">
-		<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4">
-			{#each notAssignedParticipants as user}
-				<p>
-					<a
-						href="/management/{data.conferenceId}/participants?selected={user.id}"
-						class="hover:underline">{formatNames(user.given_name, user.family_name)}</a
-					>
-				</p>
-			{/each}
-		</div>
-	</div>
+	{/if}
 </div>
 
 <!-- Create Option Modal -->
@@ -441,7 +459,6 @@
 					<legend class="fieldset-legend">{m.title()}</legend>
 					<input
 						type="text"
-						id="new-option-title"
 						name="title"
 						bind:value={$createOptionData.title}
 						class="input w-full"
@@ -451,7 +468,6 @@
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.description()}</legend>
 					<textarea
-						id="new-option-description"
 						name="description"
 						bind:value={$createOptionData.description}
 						class="textarea w-full"
@@ -461,7 +477,6 @@
 					<legend class="fieldset-legend">{m.upperLimit()} ({m.zeroForUnlimited()})</legend>
 					<input
 						type="number"
-						id="new-option-limit"
 						name="upperLimit"
 						bind:value={$createOptionData.upperLimit}
 						class="input w-full"

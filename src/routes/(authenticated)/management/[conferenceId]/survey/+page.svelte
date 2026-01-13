@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { SurveyResultsMainPage$result } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 	import { superForm } from 'sveltekit-superforms';
-	import StackChart from '$lib/components/Charts/StackChart.svelte';
+	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
 	import { invalidateAll } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
@@ -33,25 +32,15 @@
 	let showDeleteModal = $state(false);
 	let surveyToDelete = $state<(typeof surveys)[0] | null>(null);
 
-	const getBarPercent = (
-		option: SurveyResultsMainPage$result['findManySurveyQuestions'][0]['options'][0]
-	) => {
-		if (option.upperLimit === 0) {
-			return 0;
-		}
-		return Math.min(Math.round((option.countSurveyAnswers / option.upperLimit) * 100), 100);
-	};
-
 	const getTotalAnswers = (survey: (typeof surveys)[0]) => {
 		return survey.options.reduce((sum, opt) => sum + opt.countSurveyAnswers, 0);
 	};
 
-	const getChartValues = (survey: (typeof surveys)[0]) => {
-		return survey.options.map((opt) => opt.countSurveyAnswers);
-	};
-
-	const getChartLabels = (survey: (typeof surveys)[0]) => {
-		return survey.options.map((opt) => opt.title);
+	const getChartData = (survey: (typeof surveys)[0]) => {
+		return survey.options.map((opt) => ({
+			name: opt.title,
+			value: opt.countSurveyAnswers
+		}));
 	};
 
 	const confirmDelete = (survey: (typeof surveys)[0]) => {
@@ -131,35 +120,25 @@
 				</div>
 
 				{#if survey.options.length > 0}
-					<div class="bg-base-300 rounded-lg p-2">
-						<StackChart
-							values={getChartValues(survey)}
-							labels={getChartLabels(survey)}
-							percentage={true}
-						/>
-					</div>
-
-					<div class="flex flex-col gap-2">
-						{#each survey.options as option}
-							<div class="relative flex w-full gap-2 p-2">
-								<div
-									class="absolute top-0 bottom-0 left-0 z-0 flex rounded-md {getBarPercent(
-										option
-									) === 100
-										? 'bg-red-200 dark:bg-red-900'
-										: 'bg-primary-200 dark:bg-primary-900'}"
-									style="width: {getBarPercent(option)}%"
-								></div>
-								<h4 class="z-10 w-full flex-1">{option.title}</h4>
-								<h4 class="z-10">
-									<span class="font-bold">{option.countSurveyAnswers}</span>
-									{#if option.upperLimit > 0}
-										&nbsp;/&nbsp;
-										<span class="text-xs">{option.upperLimit}</span>
-									{/if}
-								</h4>
-							</div>
-						{/each}
+					<div class="flex items-center gap-4">
+						<div class="w-32 shrink-0">
+							<PieChart
+								data={getChartData(survey)}
+								donut={true}
+								showLegend={false}
+								height="120px"
+							/>
+						</div>
+						<div class="flex flex-1 flex-col gap-1">
+							{#each survey.options as option}
+								<div class="flex items-center justify-between text-sm">
+									<span class="truncate">{option.title}</span>
+									<span class="badge badge-sm ml-2">
+										{option.countSurveyAnswers}{#if option.upperLimit > 0}&nbsp;/&nbsp;{option.upperLimit}{/if}
+									</span>
+								</div>
+							{/each}
+						</div>
 					</div>
 				{:else}
 					<div class="bg-base-300 rounded p-4 text-center text-sm opacity-70">
