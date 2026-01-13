@@ -31,6 +31,8 @@
 					user {
 						id
 						email
+						given_name
+						family_name
 					}
 					assignedCommittee {
 						name
@@ -63,6 +65,8 @@
 					user {
 						id
 						email
+						given_name
+						family_name
 					}
 					supervisors {
 						user {
@@ -87,6 +91,8 @@
 				user {
 					id
 					email
+					given_name
+					family_name
 				}
 				assignedRole {
 					name
@@ -113,6 +119,8 @@
 				user {
 					id
 					email
+					given_name
+					family_name
 				}
 			}
 		}
@@ -239,6 +247,8 @@
 				rows.push([
 					member.user.id,
 					member.user.email ?? '',
+					member.user.given_name ?? '',
+					member.user.family_name ?? '',
 					'Delegation',
 					nationName,
 					member.assignedCommittee?.name ?? '',
@@ -246,6 +256,7 @@
 					status.termsAndConditions,
 					status.guardianConsent,
 					status.mediaConsent,
+					summarizePostalStatus(status),
 					status.mediaConsentStatus,
 					status.paymentStatus,
 					status.didAttend.toString(),
@@ -262,6 +273,8 @@
 				rows.push([
 					member.user.id,
 					member.user.email ?? '',
+					member.user.given_name ?? '',
+					member.user.family_name ?? '',
 					'NSA',
 					nsaName,
 					'',
@@ -269,6 +282,7 @@
 					status.termsAndConditions,
 					status.guardianConsent,
 					status.mediaConsent,
+					summarizePostalStatus(status),
 					status.mediaConsentStatus,
 					status.paymentStatus,
 					status.didAttend.toString(),
@@ -283,6 +297,8 @@
 			rows.push([
 				participant.user.id,
 				participant.user.email ?? '',
+				participant.user.given_name ?? '',
+				participant.user.family_name ?? '',
 				'SingleParticipant',
 				participant.assignedRole?.name ?? '',
 				'',
@@ -290,6 +306,7 @@
 				status.termsAndConditions,
 				status.guardianConsent,
 				status.mediaConsent,
+				summarizePostalStatus(status),
 				status.mediaConsentStatus,
 				status.paymentStatus,
 				status.didAttend.toString(),
@@ -303,6 +320,8 @@
 			rows.push([
 				supervisor.user.id,
 				supervisor.user.email ?? '',
+				supervisor.user.given_name ?? '',
+				supervisor.user.family_name ?? '',
 				'Supervisor',
 				'Supervisor',
 				'',
@@ -310,6 +329,7 @@
 				status.termsAndConditions,
 				status.guardianConsent,
 				status.mediaConsent,
+				summarizePostalStatus(status),
 				status.mediaConsentStatus,
 				status.paymentStatus,
 				status.didAttend.toString(),
@@ -327,6 +347,8 @@
 		const header = [
 			'userId',
 			'email',
+			'givenName',
+			'familyName',
 			'roleType',
 			'roleName',
 			'committeeAssignment',
@@ -334,6 +356,7 @@
 			'termsAndConditions',
 			'guardianConsent',
 			'mediaConsent',
+			'postalStatusSummary',
 			'mediaConsentStatus',
 			'paymentStatus',
 			'didAttend',
