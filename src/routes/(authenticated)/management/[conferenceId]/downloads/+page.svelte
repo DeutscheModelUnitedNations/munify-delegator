@@ -5,6 +5,7 @@
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
+	import CsvSettingsPanel from './CsvSettingsPanel.svelte';
 	import DownloadCategoryCard from './DownloadCategoryCard.svelte';
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
 
@@ -18,6 +19,8 @@
 		<h2 class="text-2xl font-bold">{m.downloads()}</h2>
 		<p class="text-base-content/60">{m.downloadsPageDescription()}</p>
 	</div>
+
+	<CsvSettingsPanel />
 
 	<DownloadCategoryCard
 		title={m.badgeDataTitle()}

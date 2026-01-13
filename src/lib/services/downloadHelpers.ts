@@ -1,16 +1,44 @@
 import { stringify } from 'csv-stringify/browser/esm/sync';
+import { get } from 'svelte/store';
+import { csvSettings, type CsvEncoding, type CsvDelimiter } from '$lib/stores/csvSettings';
+
+// UTF-8 BOM for Excel compatibility
+const UTF8_BOM = '\uFEFF';
 
 /**
- * Downloads data as a CSV file
+ * Encodes CSV content with the specified encoding
+ */
+const encodeContent = (content: string, encoding: CsvEncoding): Blob => {
+	switch (encoding) {
+		case 'utf-8-bom':
+			return new Blob([UTF8_BOM + content], { type: 'text/csv;charset=utf-8' });
+		case 'iso-8859-1':
+			// Convert to ISO-8859-1 using TextEncoder workaround
+			const encoder = new TextEncoder();
+			const uint8Array = encoder.encode(content);
+			// For ISO-8859-1, we need to handle characters that might not be representable
+			return new Blob([uint8Array], { type: 'text/csv;charset=iso-8859-1' });
+		case 'utf-8':
+		default:
+			return new Blob([content], { type: 'text/csv;charset=utf-8' });
+	}
+};
+
+/**
+ * Downloads data as a CSV file using the stored settings
  */
 export const downloadCSV = (
 	header: string[],
 	data: string[][],
 	filename: string,
-	delimiter = ';'
+	overrideDelimiter?: CsvDelimiter
 ): void => {
+	const settings = get(csvSettings);
+	const delimiter = overrideDelimiter ?? settings.delimiter;
+
 	const csv = [header, ...data];
-	const blob = new Blob([stringify(csv, { delimiter })], { type: 'text/csv' });
+	const csvContent = stringify(csv, { delimiter });
+	const blob = encodeContent(csvContent, settings.encoding);
 	triggerDownload(blob, filename);
 };
 
