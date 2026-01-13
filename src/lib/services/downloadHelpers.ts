@@ -13,10 +13,13 @@ const encodeContent = (content: string, encoding: CsvEncoding): Blob => {
 		case 'utf-8-bom':
 			return new Blob([UTF8_BOM + content], { type: 'text/csv;charset=utf-8' });
 		case 'iso-8859-1': {
-			// Convert to ISO-8859-1 using TextEncoder workaround
-			const encoder = new TextEncoder();
-			const uint8Array = encoder.encode(content);
-			// For ISO-8859-1, we need to handle characters that might not be representable
+			// Properly encode to ISO-8859-1 by mapping each character to a single byte
+			const uint8Array = new Uint8Array(content.length);
+			for (let i = 0; i < content.length; i++) {
+				const charCode = content.charCodeAt(i);
+				// ISO-8859-1 only supports code points 0-255, replace others with '?'
+				uint8Array[i] = charCode <= 0xff ? charCode : 0x3f;
+			}
 			return new Blob([uint8Array], { type: 'text/csv;charset=iso-8859-1' });
 		}
 		case 'utf-8':

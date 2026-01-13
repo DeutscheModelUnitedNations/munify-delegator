@@ -206,6 +206,21 @@
 					participantStatusExportStatusesQuery.fetch({ variables: { conferenceId } })
 				]);
 
+			// Check for errors in any of the GraphQL responses
+			const errors = [
+				delegationsRes.errors,
+				nsasRes.errors,
+				singleParticipantsRes.errors,
+				supervisorsRes.errors,
+				statusesRes.errors
+			].filter(Boolean);
+
+			if (errors.length > 0) {
+				console.error('GraphQL errors:', errors);
+				alert(m.httpGenericError());
+				return;
+			}
+
 			const statusMap = new Map<string, StatusData>(
 				statusesRes.data?.findManyConferenceParticipantStatuss.map((s) => [
 					s.user.id,
