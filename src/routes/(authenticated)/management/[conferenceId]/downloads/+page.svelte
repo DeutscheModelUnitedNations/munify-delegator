@@ -6,6 +6,7 @@
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
+	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let queryData = $derived(data.DownloadsBaseDataQuery);
@@ -24,6 +25,7 @@
 		conferenceId={data.conferenceId}
 	/>
 	<ConferenceRegistrationList bind:loading conferenceId={data.conferenceId} />
+	<ParticipantStatusExport bind:loading conferenceId={data.conferenceId} />
 	<AllNations bind:loading conferenceId={data.conferenceId} />
 	<ChaseSeedExport bind:loading conferenceId={data.conferenceId} />
 </div>
