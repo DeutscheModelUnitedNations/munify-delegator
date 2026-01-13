@@ -331,7 +331,7 @@
 	/>
 
 	<TasksWrapper>
-		{#if supervisor.supervisedDelegationMembers.some((x) => !x.assignedCommittee)}
+		{#if delegationMembers.some((x) => x.delegation.assignedNation && !x.assignedCommittee)}
 			<TaskAlertCard
 				severity="warning"
 				faIcon="fa-arrows-turn-to-dots"
@@ -356,6 +356,15 @@
 				btnText={m.goToPreparation()}
 				btnLink={conference.linkToPreparationGuide}
 				btnExternal
+			/>
+		{/if}
+		{#if conference.isOpenPaperSubmission}
+			<TaskAlertCard
+				faIcon="fa-file-lines"
+				title={m.paperHub()}
+				description={m.paperHubDescription()}
+				btnText={m.paperHubBtn()}
+				btnLink={`./${conference.id}/paperhub`}
 			/>
 		{/if}
 	</TasksWrapper>
