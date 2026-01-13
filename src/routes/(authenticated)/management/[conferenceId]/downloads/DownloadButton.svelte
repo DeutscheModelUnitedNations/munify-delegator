@@ -7,7 +7,13 @@
 		onclick: () => void;
 	}
 
-	let { title, icon = 'fas fa-file-csv', loading = false, disabled = false, onclick }: Props = $props();
+	let {
+		title,
+		icon = 'fas fa-file-csv',
+		loading = false,
+		disabled = false,
+		onclick
+	}: Props = $props();
 </script>
 
 <button

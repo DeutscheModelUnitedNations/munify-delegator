@@ -183,7 +183,10 @@
 						})?.mediaConsentStatus ?? 'NOT_SET'
 				}));
 
-			exportBadgeCSV(badgeData, `${resData.abbreviation}_badge_data_${new Date().toISOString()}.csv`);
+			exportBadgeCSV(
+				badgeData,
+				`${resData.abbreviation}_badge_data_${new Date().toISOString()}.csv`
+			);
 		} finally {
 			setLoading(key, false);
 		}

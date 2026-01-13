@@ -12,12 +12,13 @@ const encodeContent = (content: string, encoding: CsvEncoding): Blob => {
 	switch (encoding) {
 		case 'utf-8-bom':
 			return new Blob([UTF8_BOM + content], { type: 'text/csv;charset=utf-8' });
-		case 'iso-8859-1':
+		case 'iso-8859-1': {
 			// Convert to ISO-8859-1 using TextEncoder workaround
 			const encoder = new TextEncoder();
 			const uint8Array = encoder.encode(content);
 			// For ISO-8859-1, we need to handle characters that might not be representable
 			return new Blob([uint8Array], { type: 'text/csv;charset=iso-8859-1' });
+		}
 		case 'utf-8':
 		default:
 			return new Blob([content], { type: 'text/csv;charset=utf-8' });

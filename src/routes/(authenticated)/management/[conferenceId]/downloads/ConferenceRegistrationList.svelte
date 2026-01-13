@@ -171,7 +171,9 @@
 
 			const data = delegationData
 				?.sort((a, b) =>
-					getFullTranslatedCountryNameFromISO3Code(a.assignedNation?.alpha3Code ?? '').localeCompare(
+					getFullTranslatedCountryNameFromISO3Code(
+						a.assignedNation?.alpha3Code ?? ''
+					).localeCompare(
 						getFullTranslatedCountryNameFromISO3Code(b.assignedNation?.alpha3Code ?? '')
 					)
 				)
