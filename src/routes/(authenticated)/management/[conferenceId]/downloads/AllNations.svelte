@@ -1,19 +1,18 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import { downloadCSV } from '$lib/services/downloadHelpers';
 	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import DownloadElement from './DownloadElement.svelte';
-	import DownloadSection from './DownloadSection.svelte';
-	import { stringify } from 'csv-stringify/browser/esm/sync';
+	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {
-		loading: boolean;
 		conferenceId: string;
 	}
 
-	let { loading = $bindable(), conferenceId }: Props = $props();
+	let { conferenceId }: Props = $props();
+
+	let loading = $state(false);
 
 	const getAllConferenceNations = graphql(`
 		query GetAllConferenceNations($conferenceId: String!) {
@@ -24,46 +23,33 @@
 		}
 	`);
 
-	const downloadCSV = (nationData: { alpha2Code: string; alpha3Code: string }[]) => {
-		const header = ['alpha2', 'alpha3', 'countryName', 'region'];
-		const csv = [
-			header,
-			...nationData.map((nation: { alpha2Code: string; alpha3Code: string }) => [
+	const getAllNationsData = async () => {
+		loading = true;
+		try {
+			const res = await getAllConferenceNations.fetch({
+				variables: { conferenceId }
+			});
+			const resData = res.data?.getAllConferenceNations;
+
+			if (res.errors || !resData) {
+				console.error(res.errors);
+				alert(m.httpGenericError());
+				return;
+			}
+
+			const header = ['alpha2', 'alpha3', 'countryName', 'region'];
+			const data = resData.map((nation) => [
 				nation.alpha2Code,
 				nation.alpha3Code,
 				getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
 				getNationRegionalGroup(nation.alpha3Code) ?? ''
-			])
-		];
-		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `all_nations_${conferenceId}.csv`;
-		a.click();
-		URL.revokeObjectURL(url);
-	};
+			]);
 
-	// Refactored function for single participants badge data download
-	const getAllNationsData = async () => {
-		loading = true;
-		const res = await getAllConferenceNations.fetch({
-			variables: { conferenceId }
-		});
-		const resData = res.data?.getAllConferenceNations;
-
-		if (res.errors || !resData) {
-			console.error(res.errors);
-			alert(m.httpGenericError());
+			downloadCSV(header, data, `all_nations_${conferenceId}.csv`);
+		} finally {
 			loading = false;
-			return;
 		}
-
-		downloadCSV(resData);
-		loading = false;
 	};
 </script>
 
-<DownloadSection title={m.allNations()}>
-	<DownloadElement btnClick={() => getAllNationsData()} title={m.allNations()} bind:loading />
-</DownloadSection>
+<DownloadButton onclick={() => getAllNationsData()} title={m.allNations()} {loading} />
