@@ -177,44 +177,38 @@
 				class="flex flex-col gap-4"
 			>
 				<input type="hidden" name="id" value={survey.id} />
-				<div class="form-control">
-					<label class="label" for="edit-title">
-						<span class="label-text">{m.title()}</span>
-					</label>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.title()}</legend>
 					<input
 						type="text"
 						id="edit-title"
 						name="title"
 						bind:value={$updateSurveyData.title}
-						class="input input-bordered"
+						class="input w-full"
 						required
 					/>
-				</div>
-				<div class="form-control">
-					<label class="label" for="edit-description">
-						<span class="label-text">{m.description()}</span>
-					</label>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.description()}</legend>
 					<textarea
 						id="edit-description"
 						name="description"
 						bind:value={$updateSurveyData.description}
-						class="textarea textarea-bordered"
+						class="textarea w-full"
 						required
 					></textarea>
-				</div>
-				<div class="form-control">
-					<label class="label" for="edit-deadline">
-						<span class="label-text">{m.deadline()}</span>
-					</label>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.deadline()}</legend>
 					<input
 						type="datetime-local"
 						id="edit-deadline"
 						name="deadline"
 						bind:value={$updateSurveyData.deadline}
-						class="input input-bordered"
+						class="input w-full"
 						required
 					/>
-				</div>
+				</fieldset>
 				<div class="flex gap-2">
 					<button type="button" class="btn" onclick={() => (editingSurvey = false)}>
 						{m.cancel()}
@@ -301,43 +295,37 @@
 								class="flex flex-col gap-4"
 							>
 								<input type="hidden" name="id" value={option.id} />
-								<div class="form-control">
-									<label class="label" for="option-title-{option.id}">
-										<span class="label-text">{m.title()}</span>
-									</label>
+								<fieldset class="fieldset">
+									<legend class="fieldset-legend">{m.title()}</legend>
 									<input
 										type="text"
 										id="option-title-{option.id}"
 										name="title"
 										bind:value={$updateOptionData.title}
-										class="input input-bordered"
+										class="input w-full"
 										required
 									/>
-								</div>
-								<div class="form-control">
-									<label class="label" for="option-description-{option.id}">
-										<span class="label-text">{m.description()}</span>
-									</label>
+								</fieldset>
+								<fieldset class="fieldset">
+									<legend class="fieldset-legend">{m.description()}</legend>
 									<textarea
 										id="option-description-{option.id}"
 										name="description"
 										bind:value={$updateOptionData.description}
-										class="textarea textarea-bordered"
+										class="textarea w-full"
 									></textarea>
-								</div>
-								<div class="form-control">
-									<label class="label" for="option-limit-{option.id}">
-										<span class="label-text">{m.upperLimit()} ({m.zeroForUnlimited()})</span>
-									</label>
+								</fieldset>
+								<fieldset class="fieldset">
+									<legend class="fieldset-legend">{m.upperLimit()} ({m.zeroForUnlimited()})</legend>
 									<input
 										type="number"
 										id="option-limit-{option.id}"
 										name="upperLimit"
 										bind:value={$updateOptionData.upperLimit}
-										class="input input-bordered"
+										class="input w-full"
 										min="0"
 									/>
-								</div>
+								</fieldset>
 								<div class="flex gap-2">
 									<button type="button" class="btn btn-sm" onclick={() => (editingOption = null)}>
 										{m.cancel()}
@@ -449,43 +437,37 @@
 				class="mt-4 flex flex-col gap-4"
 			>
 				<input type="hidden" name="questionId" value={survey?.id} />
-				<div class="form-control">
-					<label class="label" for="new-option-title">
-						<span class="label-text">{m.title()}</span>
-					</label>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.title()}</legend>
 					<input
 						type="text"
 						id="new-option-title"
 						name="title"
 						bind:value={$createOptionData.title}
-						class="input input-bordered"
+						class="input w-full"
 						required
 					/>
-				</div>
-				<div class="form-control">
-					<label class="label" for="new-option-description">
-						<span class="label-text">{m.description()}</span>
-					</label>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.description()}</legend>
 					<textarea
 						id="new-option-description"
 						name="description"
 						bind:value={$createOptionData.description}
-						class="textarea textarea-bordered"
+						class="textarea w-full"
 					></textarea>
-				</div>
-				<div class="form-control">
-					<label class="label" for="new-option-limit">
-						<span class="label-text">{m.upperLimit()} ({m.zeroForUnlimited()})</span>
-					</label>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.upperLimit()} ({m.zeroForUnlimited()})</legend>
 					<input
 						type="number"
 						id="new-option-limit"
 						name="upperLimit"
 						bind:value={$createOptionData.upperLimit}
-						class="input input-bordered"
+						class="input w-full"
 						min="0"
 					/>
-				</div>
+				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => (showCreateOptionModal = false)}>
 						{m.cancel()}

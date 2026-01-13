@@ -186,44 +186,38 @@
 				use:createEnhance
 				class="mt-4 flex flex-col gap-4"
 			>
-				<div class="form-control">
-					<label class="label" for="title">
-						<span class="label-text">{m.title()}</span>
-					</label>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.title()}</legend>
 					<input
 						type="text"
 						id="title"
 						name="title"
 						bind:value={$createFormData.title}
-						class="input input-bordered"
+						class="input w-full"
 						required
 					/>
-				</div>
-				<div class="form-control">
-					<label class="label" for="description">
-						<span class="label-text">{m.description()}</span>
-					</label>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.description()}</legend>
 					<textarea
 						id="description"
 						name="description"
 						bind:value={$createFormData.description}
-						class="textarea textarea-bordered"
+						class="textarea w-full"
 						required
 					></textarea>
-				</div>
-				<div class="form-control">
-					<label class="label" for="deadline">
-						<span class="label-text">{m.deadline()}</span>
-					</label>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.deadline()}</legend>
 					<input
 						type="datetime-local"
 						id="deadline"
 						name="deadline"
 						bind:value={$createFormData.deadline}
-						class="input input-bordered"
+						class="input w-full"
 						required
 					/>
-				</div>
+				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => (showCreateModal = false)}>
 						{m.cancel()}
