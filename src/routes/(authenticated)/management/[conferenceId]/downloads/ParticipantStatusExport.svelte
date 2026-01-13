@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
+	import { downloadCSV } from '$lib/services/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import type { AdministrativeStatus, MediaConsentStatus } from '@prisma/client';
-	import DownloadElement from './DownloadElement.svelte';
-	import DownloadSection from './DownloadSection.svelte';
-	import { stringify } from 'csv-stringify/browser/esm/sync';
+	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {
-		loading: boolean;
 		conferenceId: string;
 	}
 
-	let { loading = $bindable(), conferenceId }: Props = $props();
+	let { conferenceId }: Props = $props();
+
+	let loading = $state(false);
 
 	const participantStatusExportDelegationsQuery = graphql(`
 		query ParticipantStatusExportDelegations($conferenceId: String!) {
@@ -194,91 +194,104 @@
 		return 'Both not pending';
 	};
 
-	const downloadCSV = (header: string[], data: string[][], filename: string) => {
-		const csv = [header, ...data];
-		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = filename;
-		a.click();
-		URL.revokeObjectURL(url);
-	};
-
 	const getParticipantStatusExport = async () => {
 		loading = true;
+		try {
+			const [delegationsRes, nsasRes, singleParticipantsRes, supervisorsRes, statusesRes] =
+				await Promise.all([
+					participantStatusExportDelegationsQuery.fetch({ variables: { conferenceId } }),
+					participantStatusExportNSAsQuery.fetch({ variables: { conferenceId } }),
+					participantStatusExportSingleParticipantsQuery.fetch({ variables: { conferenceId } }),
+					participantStatusExportSupervisorsQuery.fetch({ variables: { conferenceId } }),
+					participantStatusExportStatusesQuery.fetch({ variables: { conferenceId } })
+				]);
 
-		const [delegationsRes, nsasRes, singleParticipantsRes, supervisorsRes, statusesRes] =
-			await Promise.all([
-				participantStatusExportDelegationsQuery.fetch({ variables: { conferenceId } }),
-				participantStatusExportNSAsQuery.fetch({ variables: { conferenceId } }),
-				participantStatusExportSingleParticipantsQuery.fetch({ variables: { conferenceId } }),
-				participantStatusExportSupervisorsQuery.fetch({ variables: { conferenceId } }),
-				participantStatusExportStatusesQuery.fetch({ variables: { conferenceId } })
-			]);
-
-		const statusMap = new Map<string, StatusData>(
-			statusesRes.data?.findManyConferenceParticipantStatuss.map((s) => [
-				s.user.id,
-				{
-					termsAndConditions: s.termsAndConditions,
-					guardianConsent: s.guardianConsent,
-					mediaConsent: s.mediaConsent,
-					mediaConsentStatus: s.mediaConsentStatus,
-					paymentStatus: s.paymentStatus,
-					didAttend: s.didAttend
-				}
-			]) ?? []
-		);
-
-		const getStatus = (userId: string): StatusData => {
-			return statusMap.get(userId) ?? defaultStatus;
-		};
-
-		const rows: string[][] = [];
-
-		// Process delegations (nation assigned)
-		for (const delegation of delegationsRes.data?.findManyDelegations ?? []) {
-			const nationName = getFullTranslatedCountryNameFromISO3Code(
-				delegation.assignedNation?.alpha3Code ?? ''
+			const statusMap = new Map<string, StatusData>(
+				statusesRes.data?.findManyConferenceParticipantStatuss.map((s) => [
+					s.user.id,
+					{
+						termsAndConditions: s.termsAndConditions,
+						guardianConsent: s.guardianConsent,
+						mediaConsent: s.mediaConsent,
+						mediaConsentStatus: s.mediaConsentStatus,
+						paymentStatus: s.paymentStatus,
+						didAttend: s.didAttend
+					}
+				]) ?? []
 			);
-			for (const member of delegation.members) {
-				const status = getStatus(member.user.id);
-				rows.push([
-					member.user.id,
-					member.user.email ?? '',
-					member.user.given_name ?? '',
-					member.user.family_name ?? '',
-					'Delegation',
-					nationName,
-					member.assignedCommittee?.name ?? '',
-					formatSupervisorNames(member.supervisors),
-					status.termsAndConditions,
-					status.guardianConsent,
-					status.mediaConsent,
-					summarizePostalStatus(status),
-					status.mediaConsentStatus,
-					status.paymentStatus,
-					status.didAttend.toString(),
-					calculateCombinedStatus(status)
-				]);
-			}
-		}
 
-		// Process NSAs
-		for (const delegation of nsasRes.data?.findManyDelegations ?? []) {
-			const nsaName = delegation.assignedNonStateActor?.name ?? '';
-			for (const member of delegation.members) {
-				const status = getStatus(member.user.id);
+			const getStatus = (userId: string): StatusData => {
+				return statusMap.get(userId) ?? defaultStatus;
+			};
+
+			const rows: string[][] = [];
+
+			// Process delegations (nation assigned)
+			for (const delegation of delegationsRes.data?.findManyDelegations ?? []) {
+				const nationName = getFullTranslatedCountryNameFromISO3Code(
+					delegation.assignedNation?.alpha3Code ?? ''
+				);
+				for (const member of delegation.members) {
+					const status = getStatus(member.user.id);
+					rows.push([
+						member.user.id,
+						member.user.email ?? '',
+						member.user.given_name ?? '',
+						member.user.family_name ?? '',
+						'Delegation',
+						nationName,
+						member.assignedCommittee?.name ?? '',
+						formatSupervisorNames(member.supervisors),
+						status.termsAndConditions,
+						status.guardianConsent,
+						status.mediaConsent,
+						summarizePostalStatus(status),
+						status.mediaConsentStatus,
+						status.paymentStatus,
+						status.didAttend.toString(),
+						calculateCombinedStatus(status)
+					]);
+				}
+			}
+
+			// Process NSAs
+			for (const delegation of nsasRes.data?.findManyDelegations ?? []) {
+				const nsaName = delegation.assignedNonStateActor?.name ?? '';
+				for (const member of delegation.members) {
+					const status = getStatus(member.user.id);
+					rows.push([
+						member.user.id,
+						member.user.email ?? '',
+						member.user.given_name ?? '',
+						member.user.family_name ?? '',
+						'NSA',
+						nsaName,
+						'',
+						formatSupervisorNames(member.supervisors),
+						status.termsAndConditions,
+						status.guardianConsent,
+						status.mediaConsent,
+						summarizePostalStatus(status),
+						status.mediaConsentStatus,
+						status.paymentStatus,
+						status.didAttend.toString(),
+						calculateCombinedStatus(status)
+					]);
+				}
+			}
+
+			// Process single participants
+			for (const participant of singleParticipantsRes.data?.findManySingleParticipants ?? []) {
+				const status = getStatus(participant.user.id);
 				rows.push([
-					member.user.id,
-					member.user.email ?? '',
-					member.user.given_name ?? '',
-					member.user.family_name ?? '',
-					'NSA',
-					nsaName,
+					participant.user.id,
+					participant.user.email ?? '',
+					participant.user.given_name ?? '',
+					participant.user.family_name ?? '',
+					'SingleParticipant',
+					participant.assignedRole?.name ?? '',
 					'',
-					formatSupervisorNames(member.supervisors),
+					formatSupervisorNames(participant.supervisors),
 					status.termsAndConditions,
 					status.guardianConsent,
 					status.mediaConsent,
@@ -289,89 +302,64 @@
 					calculateCombinedStatus(status)
 				]);
 			}
-		}
 
-		// Process single participants
-		for (const participant of singleParticipantsRes.data?.findManySingleParticipants ?? []) {
-			const status = getStatus(participant.user.id);
-			rows.push([
-				participant.user.id,
-				participant.user.email ?? '',
-				participant.user.given_name ?? '',
-				participant.user.family_name ?? '',
-				'SingleParticipant',
-				participant.assignedRole?.name ?? '',
-				'',
-				formatSupervisorNames(participant.supervisors),
-				status.termsAndConditions,
-				status.guardianConsent,
-				status.mediaConsent,
-				summarizePostalStatus(status),
-				status.mediaConsentStatus,
-				status.paymentStatus,
-				status.didAttend.toString(),
-				calculateCombinedStatus(status)
-			]);
-		}
+			// Process supervisors
+			for (const supervisor of supervisorsRes.data?.findManyConferenceSupervisors ?? []) {
+				const status = getStatus(supervisor.user.id);
+				rows.push([
+					supervisor.user.id,
+					supervisor.user.email ?? '',
+					supervisor.user.given_name ?? '',
+					supervisor.user.family_name ?? '',
+					'Supervisor',
+					'Supervisor',
+					'',
+					'', // Supervisors don't have supervisors
+					status.termsAndConditions,
+					status.guardianConsent,
+					status.mediaConsent,
+					summarizePostalStatus(status),
+					status.mediaConsentStatus,
+					status.paymentStatus,
+					status.didAttend.toString(),
+					calculateCombinedStatus(status)
+				]);
+			}
 
-		// Process supervisors
-		for (const supervisor of supervisorsRes.data?.findManyConferenceSupervisors ?? []) {
-			const status = getStatus(supervisor.user.id);
-			rows.push([
-				supervisor.user.id,
-				supervisor.user.email ?? '',
-				supervisor.user.given_name ?? '',
-				supervisor.user.family_name ?? '',
-				'Supervisor',
-				'Supervisor',
-				'',
-				'', // Supervisors don't have supervisors
-				status.termsAndConditions,
-				status.guardianConsent,
-				status.mediaConsent,
-				summarizePostalStatus(status),
-				status.mediaConsentStatus,
-				status.paymentStatus,
-				status.didAttend.toString(),
-				calculateCombinedStatus(status)
-			]);
-		}
+			if (rows.length === 0) {
+				console.error('No data found');
+				alert(m.httpGenericError());
+				return;
+			}
 
-		if (rows.length === 0) {
-			console.error('No data found');
-			alert(m.httpGenericError());
+			const header = [
+				'userId',
+				'email',
+				'givenName',
+				'familyName',
+				'roleType',
+				'roleName',
+				'committeeAssignment',
+				'supervisors',
+				'termsAndConditions',
+				'guardianConsent',
+				'mediaConsent',
+				'postalStatusSummary',
+				'mediaConsentStatus',
+				'paymentStatus',
+				'didAttend',
+				'combinedStatus'
+			];
+
+			downloadCSV(header, rows, `ParticipantStatus_${conferenceId}.csv`);
+		} finally {
 			loading = false;
-			return;
 		}
-
-		const header = [
-			'userId',
-			'email',
-			'givenName',
-			'familyName',
-			'roleType',
-			'roleName',
-			'committeeAssignment',
-			'supervisors',
-			'termsAndConditions',
-			'guardianConsent',
-			'mediaConsent',
-			'postalStatusSummary',
-			'mediaConsentStatus',
-			'paymentStatus',
-			'didAttend',
-			'combinedStatus'
-		];
-
-		downloadCSV(header, rows, `ParticipantStatus_${conferenceId}.csv`);
-		loading = false;
 	};
 </script>
 
-<DownloadSection title={m.participantStatusExport()}>
-	<DownloadElement
-		btnClick={() => getParticipantStatusExport()}
-		title={m.downloadParticipantStatuses()}
-		bind:loading
-	/>
-</DownloadSection>
+<DownloadButton
+	onclick={() => getParticipantStatusExport()}
+	title={m.downloadParticipantStatuses()}
+	{loading}
+/>
