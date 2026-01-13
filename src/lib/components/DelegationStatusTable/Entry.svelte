@@ -144,7 +144,7 @@
 	{#if withPaperCount}
 		<td class="text-center">
 			{#if paperCount > 0}
-				<span class="badge badge-sm badge-primary">{paperCount}</span>
+				<span class="badge badge-sm badge-soft badge-primary">{paperCount}</span>
 			{:else}
 				<i class="fas fa-dash text-base-300"></i>
 			{/if}
