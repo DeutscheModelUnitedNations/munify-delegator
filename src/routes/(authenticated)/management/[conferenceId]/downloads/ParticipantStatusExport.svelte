@@ -162,6 +162,30 @@
 			.join(', ');
 	};
 
+	// Summarize postal status from termsAndConditions, guardianConsent, mediaConsent
+	// 1. PROBLEM if any are PROBLEM
+	// 2. PENDING if any are PENDING (and none are PROBLEM)
+	// 3. DONE otherwise
+	const summarizePostalStatus = (status: StatusData): AdministrativeStatus => {
+		const postalFields = [status.termsAndConditions, status.guardianConsent, status.mediaConsent];
+		if (postalFields.some((s) => s === 'PROBLEM')) return 'PROBLEM';
+		if (postalFields.some((s) => s === 'PENDING')) return 'PENDING';
+		return 'DONE';
+	};
+
+	// Calculate combined postal and payment status
+	// Returns one of: "Postal and Payment pending", "Only Postal pending", "Only Payment pending", "Both not pending"
+	const calculateCombinedStatus = (status: StatusData): string => {
+		const postalSummary = summarizePostalStatus(status);
+		const postalPending = postalSummary !== 'DONE';
+		const paymentPending = status.paymentStatus !== 'DONE';
+
+		if (postalPending && paymentPending) return 'Postal and Payment pending';
+		if (postalPending && !paymentPending) return 'Only Postal pending';
+		if (!postalPending && paymentPending) return 'Only Payment pending';
+		return 'Both not pending';
+	};
+
 	const downloadCSV = (header: string[], data: string[][], filename: string) => {
 		const csv = [header, ...data];
 		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
@@ -224,7 +248,8 @@
 					status.mediaConsent,
 					status.mediaConsentStatus,
 					status.paymentStatus,
-					status.didAttend.toString()
+					status.didAttend.toString(),
+					calculateCombinedStatus(status)
 				]);
 			}
 		}
@@ -246,7 +271,8 @@
 					status.mediaConsent,
 					status.mediaConsentStatus,
 					status.paymentStatus,
-					status.didAttend.toString()
+					status.didAttend.toString(),
+					calculateCombinedStatus(status)
 				]);
 			}
 		}
@@ -266,7 +292,8 @@
 				status.mediaConsent,
 				status.mediaConsentStatus,
 				status.paymentStatus,
-				status.didAttend.toString()
+				status.didAttend.toString(),
+				calculateCombinedStatus(status)
 			]);
 		}
 
@@ -285,7 +312,8 @@
 				status.mediaConsent,
 				status.mediaConsentStatus,
 				status.paymentStatus,
-				status.didAttend.toString()
+				status.didAttend.toString(),
+				calculateCombinedStatus(status)
 			]);
 		}
 
@@ -308,7 +336,8 @@
 			'mediaConsent',
 			'mediaConsentStatus',
 			'paymentStatus',
-			'didAttend'
+			'didAttend',
+			'combinedStatus'
 		];
 
 		downloadCSV(header, rows, `ParticipantStatus_${conferenceId}.csv`);
