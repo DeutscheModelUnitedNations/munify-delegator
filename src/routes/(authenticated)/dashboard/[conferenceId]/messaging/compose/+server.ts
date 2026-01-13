@@ -8,8 +8,9 @@ export async function POST(event: RequestEvent) {
 
 	const body = await event.request.json();
 	const { recipientId, subject, body: messageBody } = body;
-	if (!recipientId || !subject || !messageBody)
+	if (!recipientId || !subject || !messageBody) {
 		return json({ error: 'Missing fields' }, { status: 400 });
+	}
 
 	// TODO: Rate limit check via MessageAudit counts
 	// TODO: Verify recipient opt-in and eligibility

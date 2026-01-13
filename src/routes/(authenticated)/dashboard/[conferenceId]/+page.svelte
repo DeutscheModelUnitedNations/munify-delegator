@@ -29,6 +29,14 @@
 
 <div class="flex w-full flex-col items-center">
 	<div class="flex w-full flex-col gap-10">
+		{#if conference?.id}
+			<div class="flex justify-end">
+				<a href={`/dashboard/${conference.id}/messaging`} class="btn btn-outline">
+					<i class="fa-solid fa-envelope"></i>
+					Messaging
+				</a>
+			</div>
+		{/if}
 		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
