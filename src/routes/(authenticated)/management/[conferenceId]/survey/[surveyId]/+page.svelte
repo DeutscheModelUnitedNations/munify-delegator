@@ -94,7 +94,7 @@
 			$updateSurveyData.id = survey.id;
 			$updateSurveyData.title = survey.title;
 			$updateSurveyData.description = survey.description;
-			$updateSurveyData.deadline = survey.deadline.toISOString().slice(0, 16);
+			$updateSurveyData.deadline = formatDatetimeLocal(survey.deadline);
 			$updateSurveyData.draft = survey.draft;
 			editingSurvey = true;
 		}
@@ -125,6 +125,16 @@
 
 	const formatDeadline = (date: Date) => {
 		return date.toLocaleString();
+	};
+
+	// Format Date for datetime-local input (uses local time, not UTC)
+	const formatDatetimeLocal = (date: Date) => {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
 	};
 </script>
 
