@@ -190,36 +190,41 @@
 								height="112px"
 							/>
 						</div>
-						<div class="bg-base-300 flex-1 overflow-hidden rounded-lg">
-							<table class="table table-sm">
-								<tbody>
-									<tr class="border-base-200">
-										<td class="font-medium">{m.deadline()}</td>
-										<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
-									</tr>
-									<tr class="border-base-200">
-										<td class="font-medium">{m.totalAnswers()}</td>
-										<td class="text-right font-medium">{getTotalAnswers(survey)}</td>
-									</tr>
-									{#if survey.options.length > 0}
-										<tr>
-											<td colspan="2" class="p-0">
-												<div class="border-base-content/10 my-1 border-t-2"></div>
-											</td>
+						<div class="flex flex-1 flex-col gap-1 overflow-hidden">
+							<!-- Summary stats table -->
+							<div class="bg-base-300 overflow-hidden rounded-t-lg">
+								<table class="table table-sm">
+									<tbody>
+										<tr class="border-base-200">
+											<td class="font-medium">{m.deadline()}</td>
+											<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
 										</tr>
-										{#each survey.options as option (option.id)}
-											<tr class="border-base-200">
-												<td class="text-base-content/60 truncate text-xs">{option.title}</td>
-												<td class="text-base-content/60 text-right text-xs">
-													{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
-															class="text-base-content/40">/{option.upperLimit}</span
-														>{/if}
-												</td>
-											</tr>
-										{/each}
-									{/if}
-								</tbody>
-							</table>
+										<tr class="border-base-200 border-b-0">
+											<td class="font-medium">{m.totalAnswers()}</td>
+											<td class="text-right font-medium">{getTotalAnswers(survey)}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<!-- Per-option stats table -->
+							{#if survey.options.length > 0}
+								<div class="bg-base-300 overflow-hidden rounded-b-lg">
+									<table class="table table-sm">
+										<tbody>
+											{#each survey.options as option, i (option.id)}
+												<tr class="border-base-200" class:border-b-0={i === survey.options.length - 1}>
+													<td class="text-base-content/60 truncate text-xs">{option.title}</td>
+													<td class="text-base-content/60 text-right text-xs">
+														{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
+																class="text-base-content/40">/{option.upperLimit}</span
+															>{/if}
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
 						</div>
 					</div>
 				{:else}
