@@ -285,7 +285,7 @@
 	};
 </script>
 
-<div class="flex w-full flex-col gap-6 py-4">
+<div class="flex w-full flex-col gap-6 p-4">
 	<!-- Header -->
 	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
 		<div class="flex flex-col gap-2">

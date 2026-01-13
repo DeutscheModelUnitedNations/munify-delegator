@@ -127,7 +127,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-6 py-4">
+<div class="flex flex-col gap-6 p-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 		<h2 class="text-2xl font-bold">{m.survey()}</h2>
 		<button class="btn btn-primary" onclick={() => (showCreateModal = true)}>
