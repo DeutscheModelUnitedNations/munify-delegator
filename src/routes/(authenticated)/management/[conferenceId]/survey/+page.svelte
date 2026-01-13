@@ -127,7 +127,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-8 p-10">
+<div class="flex flex-col gap-6 py-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 		<h2 class="text-2xl font-bold">{m.survey()}</h2>
 		<button class="btn btn-primary" onclick={() => (showCreateModal = true)}>
@@ -148,18 +148,14 @@
 	{:else}
 		{#each surveys as survey (survey.id)}
 			<div class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4">
-				<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-					<div class="flex flex-col gap-1">
-						<div class="flex items-center gap-2">
-							<h3 class="text-xl font-bold">{survey.title}</h3>
-							{#if survey.draft}
-								<span class="badge badge-warning">{m.surveyIsDraft()}</span>
-							{:else}
-								<span class="badge badge-success">{m.surveyIsLive()}</span>
-							{/if}
-						</div>
-						<p class="text-sm opacity-70">{survey.description}</p>
-					</div>
+				<div class="flex flex-col gap-2">
+					<h3 class="text-xl font-bold">{survey.title}</h3>
+					{#if survey.draft}
+						<span class="badge badge-warning w-fit">{m.surveyIsDraft()}</span>
+					{:else}
+						<span class="badge badge-success w-fit">{m.surveyIsLive()}</span>
+					{/if}
+					<p class="text-sm opacity-70">{survey.description}</p>
 					<div class="flex flex-wrap gap-2">
 						<button
 							class="btn btn-sm {survey.draft ? 'btn-success' : 'btn-warning'}"

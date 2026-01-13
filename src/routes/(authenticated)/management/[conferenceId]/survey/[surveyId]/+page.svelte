@@ -285,7 +285,7 @@
 	};
 </script>
 
-<div class="flex w-full flex-col gap-6 p-10">
+<div class="flex w-full flex-col gap-6 py-4">
 	<!-- Header -->
 	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
 		<div class="flex flex-col gap-2">
@@ -481,11 +481,15 @@
 						</div>
 					</div>
 				{:else}
-					<div class="mt-2 grid grid-cols-[auto,1fr] items-center gap-x-4 gap-y-2">
-						<i class="fa-duotone fa-text text-base-content/50"></i>
-						<p>{survey?.description}</p>
-						<i class="fa-duotone fa-alarm-clock text-base-content/50"></i>
-						<p>{survey ? formatDeadline(survey.deadline) : ''}</p>
+					<div class="mt-4 flex flex-col gap-4">
+						<div class="flex flex-col gap-1">
+							<span class="text-sm font-medium opacity-60">{m.description()}</span>
+							<p class="text-base">{survey?.description}</p>
+						</div>
+						<div class="flex flex-col gap-1">
+							<span class="text-sm font-medium opacity-60">{m.deadline()}</span>
+							<p class="text-base">{survey ? formatDeadline(survey.deadline) : ''}</p>
+						</div>
 					</div>
 				{/if}
 			</div>
