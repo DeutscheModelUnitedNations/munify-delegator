@@ -20,6 +20,8 @@ ENV PUBLIC_SHA=$SHA
 
 COPY . .
 RUN bunx prisma generate
+# Increase Node.js heap size for build (default is too small for large codebases)
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 RUN bun run build && bun run check
 
 RUN mkdir /run/ephemeralData && chown -R bun:bun /run/ephemeralData

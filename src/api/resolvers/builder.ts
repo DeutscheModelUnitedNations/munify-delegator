@@ -56,7 +56,7 @@ export const builder = new SchemaBuilder<{
 		defaultComplexity: 1,
 		defaultListMultiplier: 10,
 		limit: {
-			complexity: 114780,
+			complexity: 137551,
 			depth: 100,
 			breadth: 1940
 		}

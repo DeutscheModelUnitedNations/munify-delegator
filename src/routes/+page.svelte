@@ -32,7 +32,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let conferencesPreview = $derived(data.ConferencesPreview);
-	let conferenceList = $derived($conferencesPreview.data.findManyConferences);
+	let conferenceList = $derived($conferencesPreview.data?.findManyConferences ?? []);
 
 	let conferencesToDisplay = $derived(conferenceList);
 </script>

@@ -3,7 +3,8 @@
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
 	import { writable } from 'svelte/store';
 	import toast from 'svelte-french-toast';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import { translatePaperStatus } from '$lib/services/enumTranslations';
 	import { getPaperStatusIcon } from '$lib/services/enumIcons';
@@ -15,6 +16,8 @@
 	} from '$lib/components/Paper/Editor/DiffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
+	import { PieceFoundModal } from '$lib/components/FlagCollection';
+	import Modal from '$lib/components/Modal.svelte';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -61,6 +64,12 @@
 		reviews: Review[];
 	}
 
+	interface SnippetItem {
+		id: string;
+		name: string;
+		content: any;
+	}
+
 	interface Props {
 		paperId: string;
 		currentStatus: PaperStatus$options;
@@ -70,6 +79,7 @@
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
 		paperContainer?: HTMLElement | null;
+		snippets?: SnippetItem[];
 	}
 
 	let {
@@ -80,7 +90,8 @@
 		authorName = '',
 		quoteToInsert,
 		onQuoteInserted,
-		paperContainer = null
+		paperContainer = null,
+		snippets = []
 	}: Props = $props();
 
 	// Create unified timeline from versions and reviews
@@ -174,14 +185,44 @@
 	let reviewComments = writable<any>({});
 	let selectedStatus = $state<PaperStatus$options>(currentStatus);
 	let isSubmitting = $state(false);
+	let showConfirmModal = $state(false);
 
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
 			createPaperReview(paperId: $paperId, comments: $comments, newStatus: $newStatus) {
-				id
+				review {
+					id
+				}
+				pieceUnlocked
+				unlockedPieceData {
+					flagId
+					flagName
+					flagType
+					flagAlpha2Code
+					flagAlpha3Code
+					fontAwesomeIcon
+					pieceName
+					foundCount
+					totalCount
+					isComplete
+				}
 			}
 		}
 	`);
+
+	// Piece found modal state
+	let showPieceFoundModal = $state(false);
+	let pieceFoundData = $state<{
+		flagName: string;
+		flagAlpha2Code: string | null;
+		flagAlpha3Code: string | null;
+		flagType: 'NATION' | 'NSA';
+		fontAwesomeIcon: string | null;
+		pieceName: string;
+		isComplete: boolean;
+		foundCount: number;
+		totalCount: number;
+	} | null>(null);
 
 	// Available status options for reviews (both options always available for reviewable statuses)
 	let availableTransitions = $derived.by(() => {
@@ -202,21 +243,25 @@
 		}
 	});
 
-	const handleSubmitReview = async () => {
-		if (isSubmitting) return;
-
+	const openConfirmModal = () => {
 		const comments = $reviewComments;
 		if (!hasContent(comments)) {
 			toast.error(m.reviewCommentsRequired());
 			return;
 		}
+		showConfirmModal = true;
+	};
 
+	const handleSubmitReview = async () => {
+		if (isSubmitting) return;
+
+		showConfirmModal = false;
 		isSubmitting = true;
 		try {
-			await toast.promise(
+			const result = await toast.promise(
 				createReviewMutation.mutate({
 					paperId,
-					comments,
+					comments: $reviewComments,
 					newStatus: selectedStatus
 				}),
 				{
@@ -225,6 +270,23 @@
 					error: (err) => err.message || m.reviewSubmitError()
 				}
 			);
+
+			// Check if a piece was unlocked and show the modal
+			const data = result.data?.createPaperReview;
+			if (data?.pieceUnlocked && data.unlockedPieceData) {
+				pieceFoundData = {
+					flagName: data.unlockedPieceData.flagName,
+					flagAlpha2Code: data.unlockedPieceData.flagAlpha2Code ?? null,
+					flagAlpha3Code: data.unlockedPieceData.flagAlpha3Code ?? null,
+					flagType: data.unlockedPieceData.flagType,
+					fontAwesomeIcon: data.unlockedPieceData.fontAwesomeIcon ?? null,
+					pieceName: data.unlockedPieceData.pieceName,
+					isComplete: data.unlockedPieceData.isComplete,
+					foundCount: data.unlockedPieceData.foundCount,
+					totalCount: data.unlockedPieceData.totalCount
+				};
+				showPieceFoundModal = true;
+			}
 
 			// Clear form
 			reviewComments.set({});
@@ -263,10 +325,11 @@
 			{quoteToInsert}
 			{onQuoteInserted}
 			{paperContainer}
+			{snippets}
 		/>
 
 		<!-- Submit Button -->
-		<button class="btn btn-primary" onclick={handleSubmitReview} disabled={isSubmitting}>
+		<button class="btn btn-primary" onclick={openConfirmModal} disabled={isSubmitting}>
 			{#if isSubmitting}
 				<span class="loading loading-spinner loading-sm"></span>
 			{:else}
@@ -276,6 +339,31 @@
 		</button>
 	{/if}
 </div>
+
+<!-- Review Confirmation Modal -->
+<Modal bind:open={showConfirmModal} title={m.confirmReviewSubmission()}>
+	<div class="flex flex-col gap-4">
+		<div class="alert alert-warning">
+			<i class="fa-solid fa-exclamation-triangle"></i>
+			<span>{m.reviewSubmissionWarning()}</span>
+		</div>
+		<p class="text-sm text-base-content/70">
+			{m.reviewSubmissionNotification({ author: authorName || m.theAuthor() })}
+		</p>
+	</div>
+
+	{#snippet action()}
+		<div class="flex gap-2">
+			<button class="btn" onclick={() => (showConfirmModal = false)}>
+				{m.cancel()}
+			</button>
+			<button class="btn btn-primary" onclick={handleSubmitReview}>
+				<i class="fa-solid fa-paper-plane"></i>
+				{m.submitReview()}
+			</button>
+		</div>
+	{/snippet}
+</Modal>
 
 <!-- History Timeline -->
 {#if timelineEvents.length > 0}
@@ -398,5 +486,26 @@
 		bind:open={showCompareModal}
 		baseVersion={comparisonState.baseVersion}
 		compareVersion={comparisonState.compareVersion}
+	/>
+{/if}
+
+<!-- Piece Found Modal -->
+{#if pieceFoundData}
+	<PieceFoundModal
+		bind:open={showPieceFoundModal}
+		flagName={pieceFoundData.flagName}
+		flagAlpha2Code={pieceFoundData.flagAlpha2Code}
+		flagAlpha3Code={pieceFoundData.flagAlpha3Code}
+		flagType={pieceFoundData.flagType}
+		fontAwesomeIcon={pieceFoundData.fontAwesomeIcon}
+		pieceName={pieceFoundData.pieceName}
+		isComplete={pieceFoundData.isComplete}
+		foundCount={pieceFoundData.foundCount}
+		totalCount={pieceFoundData.totalCount}
+		onclose={() => (pieceFoundData = null)}
+		onViewCollection={() => {
+			const conferenceId = $page.params.conferenceId;
+			goto(`/dashboard/${conferenceId}/paperhub#flag-collection`);
+		}}
 	/>
 {/if}

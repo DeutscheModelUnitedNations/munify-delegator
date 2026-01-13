@@ -78,6 +78,7 @@
 		{baseContent}
 		{onQuoteSelection}
 		additionalClasses="resolution-document"
+		showStats
 	>
 		{#snippet fixedMenu(editor)}
 			<Menu.Wrapper>

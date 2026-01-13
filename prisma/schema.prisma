@@ -109,11 +109,20 @@ model Committee {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
+/// Status indicating whether reviewers need help with an agenda item
+enum ReviewHelpStatus {
+  UNSPECIFIED
+  HELP_NEEDED
+  NO_HELP_WANTED
+}
+
 /// Agenda Items that are discussed in a committee
 model CommitteeAgendaItem {
   id         String  @id @default(nanoid())
   title      String
   teaserText String?
+
+  reviewHelpStatus ReviewHelpStatus @default(UNSPECIFIED)
 
   committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
   committeeId String
@@ -179,12 +188,28 @@ model User {
   waitingListEntry              WaitingListEntry[]
   papers                        Paper[]
   paperReviews                  PaperReview[]
+  reviewerSnippets              ReviewerSnippet[]
   canReceiveDelegationMail      Boolean                             @default(false)
   sentDelegationMessages        MessageAudit[]                      @relation("SentMessages")
   receivedDelegationMessages    MessageAudit[]                      @relation("ReceivedMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Reusable text snippets for paper reviewers
+model ReviewerSnippet {
+  id      String @id @default(nanoid())
+  name    String
+  content Json   // TipTap JSON format to preserve formatting
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, name])
 }
 
 // Status which can be set for various progress tracking fields in the app

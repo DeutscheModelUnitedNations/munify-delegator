@@ -7,7 +7,6 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import InfoChip from './InfoChip.svelte';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
 	import type { PaperStatus$options } from '$houdini';
 	import { VersionCompareModal, computeDiffStats } from '$lib/components/Paper/Editor/DiffViewer';
@@ -44,6 +43,31 @@
 
 	let paperQuery = $derived(data.getPaperDetailsForEditingQuery);
 	let paperData = $derived($paperQuery?.data?.findUniquePaper);
+
+	// Query for user's reviewer snippets
+	const mySnippetsStore = graphql(`
+		query MyReviewerSnippetsForPaperQuery {
+			myReviewerSnippets {
+				id
+				name
+				content
+			}
+		}
+	`);
+
+	// Fetch snippets on mount
+	$effect(() => {
+		mySnippetsStore.fetch();
+	});
+
+	// Get snippets for reviewers
+	let snippets = $derived(
+		($mySnippetsStore?.data?.myReviewerSnippets ?? []).map((s) => ({
+			id: s.id,
+			name: s.name,
+			content: s.content as any
+		}))
+	);
 
 	// View mode detection
 	let isAuthor = $derived(paperData?.author.id === data.user.sub);
@@ -231,88 +255,98 @@
 	};
 </script>
 
-<div class="flex flex-col gap-2 w-full">
+<div class="flex flex-col gap-4 w-full">
 	{#if paperData}
-		<div class="flex flex-row items-center gap-2 flex-wrap">
-			<InfoChip
-				icon={getPaperTypeIcon(paperData.type)}
-				textContent={translatePaperType(paperData.type)}
-			/>
-			<InfoChip
-				textContent={nation
-					? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
-					: nsa.name}
-			>
-				{#snippet startContent()}
-					<Flag size="xs" alpha2Code={nation?.alpha2Code} {nsa} icon={nsa?.fontAwesomeIcon} />
-				{/snippet}
-			</InfoChip>
-			<InfoChip
-				icon={getPaperStatusIcon(paperData.status)}
-				textContent={translatePaperStatus(paperData.status)}
-			/>
-			<InfoChip icon="fa-clock-rotate-left" textContent={m.version()}>
-				{#snippet endContent()}
-					<div class="badge font-bold font-mono">{versionNumber}</div>
-				{/snippet}
-			</InfoChip>
+		<!-- Paper Header Card -->
+		<div class="card bg-base-200 border border-base-300">
+			<div class="card-body p-4">
+				<!-- Top Row: Country/NSA + Status -->
+				<div class="flex items-center justify-between gap-4 flex-wrap">
+					<div class="flex items-center gap-3">
+						<Flag size="md" alpha2Code={nation?.alpha2Code} {nsa} icon={nsa?.fontAwesomeIcon} />
+						<span class="text-lg font-semibold">
+							{nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : nsa.name}
+						</span>
+					</div>
+					<div class="badge {getStatusBadgeClass(paperData.status)} badge-lg gap-2">
+						<i class="fa-solid {getPaperStatusIcon(paperData.status)}"></i>
+						{translatePaperStatus(paperData.status)}
+					</div>
+				</div>
+
+				<!-- Title -->
+				<h1 class="text-2xl font-bold mt-2">{title}</h1>
+
+				<!-- Metadata Row -->
+				<div class="flex items-center gap-3 text-sm text-base-content/70 mt-2 flex-wrap">
+					<span class="flex items-center gap-1">
+						<i class="fa-solid {getPaperTypeIcon(paperData.type)}"></i>
+						{translatePaperType(paperData.type)}
+					</span>
+					<span class="text-base-content/30">•</span>
+					<div class="tooltip" data-tip={m.version()}>
+						<span class="font-mono">v{versionNumber}</span>
+					</div>
+					<span class="text-base-content/30">•</span>
+					<div class="tooltip" data-tip={m.createdAt()}>
+						<span class="flex items-center gap-1">
+							<i class="fa-solid fa-plus text-xs"></i>
+							{paperData.createdAt?.toLocaleDateString()}
+						</span>
+					</div>
+					{#if paperData.firstSubmittedAt}
+						<span class="text-base-content/30">•</span>
+						<div class="tooltip" data-tip={m.submittedAt()}>
+							<span class="flex items-center gap-1">
+								<i class="fa-solid fa-paper-plane text-xs"></i>
+								{paperData.firstSubmittedAt?.toLocaleDateString()}
+							</span>
+						</div>
+					{/if}
+				</div>
+			</div>
 		</div>
 
-		<h2 class="text-2xl font-bold bg-base-200 border-base-300 border-1 rounded-box p-2">
-			{title}
-		</h2>
-
-		<div class="flex flex-row items-center gap-2 flex-wrap">
-			<InfoChip
-				icon="fa-plus"
-				textContent={paperData.createdAt?.toLocaleDateString()}
-				tooltip={m.createdAt()}
-			/>
-			<InfoChip
-				icon="fa-pen"
-				textContent={paperData.updatedAt?.toLocaleDateString()}
-				tooltip={m.updatedAt()}
-			/>
-			<InfoChip
-				icon="fa-inbox"
-				textContent={paperData.firstSubmittedAt?.toLocaleDateString() ?? m.notYetSubmitted()}
-				tooltip={m.submittedAt()}
-			/>
-		</div>
-		<!-- Action buttons -->
-		<div class="flex flex-wrap gap-2">
-			{#if baseViewMode === 'author' || reviewerEditMode}
-				<div class="join join-vertical md:join-horizontal">
-					{#if paperData.status === 'DRAFT'}
+		<!-- Action Bar -->
+		<div class="card bg-base-100 border border-base-300">
+			<div class="card-body p-3 flex-row items-center justify-between flex-wrap gap-2">
+				<!-- Author/Edit Actions (Left) -->
+				<div class="flex gap-2">
+					{#if baseViewMode === 'author' || reviewerEditMode}
+						{#if paperData.status === 'DRAFT'}
+							<button
+								class="btn btn-warning btn-sm"
+								onclick={() => saveFile()}
+								disabled={!unsavedChanges}
+							>
+								<i class="fa-solid fa-save"></i>
+								{m.paperSaveDraft()}
+							</button>
+						{/if}
 						<button
-							class="btn btn-warning join-item"
-							onclick={() => saveFile()}
-							disabled={!unsavedChanges}
+							class="btn btn-primary btn-sm"
+							onclick={() => saveFile({ submit: true })}
+							disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
 						>
-							<i class="fa-solid fa-pencil"></i>
-							{m.paperSaveDraft()}
+							<i class="fa-solid fa-paper-plane"></i>
+							{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
 						</button>
 					{/if}
-					<button
-						class="btn btn-primary join-item"
-						onclick={() => saveFile({ submit: true })}
-						disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
-					>
-						<i class="fa-solid fa-paper-plane"></i>
-						{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
-					</button>
 				</div>
-			{/if}
 
-			{#if isReviewer && baseViewMode === 'reviewer'}
-				<button
-					class="btn {reviewerEditMode ? 'btn-warning' : 'btn-outline'}"
-					onclick={() => (reviewerEditMode = !reviewerEditMode)}
-				>
-					<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
-					{reviewerEditMode ? m.viewer() : m.edit()}
-				</button>
-			{/if}
+				<!-- Reviewer Toggle (Right) -->
+				{#if isReviewer && baseViewMode === 'reviewer'}
+					<div class="flex gap-2">
+						<button
+							class="btn btn-sm {reviewerEditMode ? 'btn-warning' : 'btn-ghost'}"
+							onclick={() => (reviewerEditMode = !reviewerEditMode)}
+						>
+							<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
+							{reviewerEditMode ? m.viewer() : m.edit()}
+						</button>
+					</div>
+				{/if}
+			</div>
 		</div>
 	{:else}
 		<div>
@@ -348,6 +382,7 @@
 					quoteToInsert={quoteToInsert ?? undefined}
 					onQuoteInserted={clearQuote}
 					paperContainer={paperEditorContainer}
+					{snippets}
 				/>
 			{/if}
 

@@ -51,6 +51,7 @@ type Committee {
 type CommitteeAgendaItem {
   committee: Committee!
   id: ID!
+  reviewHelpStatus: ReviewHelpStatus!
   teaserText: String
   title: String!
 }
@@ -60,6 +61,7 @@ input CommitteeAgendaItemCreateInput {
   createdAt: DateTime
   id: String
   papers: PaperCreateNestedManyWithoutAgendaItemInput
+  reviewHelpStatus: ReviewHelpStatus
   teaserText: String
   title: String!
   updatedAt: DateTime
@@ -90,6 +92,7 @@ input CommitteeAgendaItemOrderByWithRelationInput {
   createdAt: SortOrder
   id: SortOrder
   papers: PaperOrderByRelationAggregateInput
+  reviewHelpStatus: SortOrder
   teaserText: SortOrder
   title: SortOrder
   updatedAt: SortOrder
@@ -99,6 +102,7 @@ enum CommitteeAgendaItemScalarFieldEnum {
   committeeId
   createdAt
   id
+  reviewHelpStatus
   teaserText
   title
   updatedAt
@@ -109,6 +113,7 @@ input CommitteeAgendaItemUpdateInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   papers: PaperUpdateManyWithoutAgendaItemNestedInput
+  reviewHelpStatus: EnumReviewHelpStatusFieldUpdateOperationsInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -117,6 +122,7 @@ input CommitteeAgendaItemUpdateInput {
 input CommitteeAgendaItemUpdateManyMutationInput {
   createdAt: DateTimeFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  reviewHelpStatus: EnumReviewHelpStatusFieldUpdateOperationsInput
   teaserText: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -137,6 +143,7 @@ input CommitteeAgendaItemWhereInput {
   createdAt: DateTimeFilter
   id: StringFilter
   papers: PaperListRelationFilter
+  reviewHelpStatus: EnumReviewHelpStatusFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -151,6 +158,7 @@ input CommitteeAgendaItemWhereUniqueInput {
   createdAt: DateTimeFilter
   id: String
   papers: PaperListRelationFilter
+  reviewHelpStatus: EnumReviewHelpStatusFilter
   teaserText: StringNullableFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -1125,6 +1133,12 @@ input CreateOnePaperArgs {
   type: PaperType!
 }
 
+type CreatePaperReviewResult {
+  pieceUnlocked: Boolean!
+  review: PaperReview!
+  unlockedPieceData: UnlockedPieceData
+}
+
 type CustomConferenceRole {
   conference: Conference!
   description: String!
@@ -1881,6 +1895,27 @@ input EnumPaperTypeWithAggregatesFilter {
   notIn: [PaperType!]
 }
 
+input EnumReviewHelpStatusFieldUpdateOperationsInput {
+  set: ReviewHelpStatus
+}
+
+input EnumReviewHelpStatusFilter {
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
+input EnumReviewHelpStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumReviewHelpStatusFilter
+  _min: NestedEnumReviewHelpStatusFilter
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
 input EnumTeamRoleFieldUpdateOperationsInput {
   set: TeamRole
 }
@@ -1903,6 +1938,58 @@ input EnumTeamRoleWithAggregatesFilter {
 }
 
 scalar File
+
+type FlagCollectionData {
+  flags: [FlagProgress!]!
+  stats: FlagCollectionStats!
+}
+
+type FlagCollectionStats {
+  completedFlags: Int!
+  foundPieces: Int!
+  totalFlags: Int!
+  totalPieces: Int!
+  unlockedPieces: Int!
+}
+
+type FlagPiece {
+  agendaItemId: String
+  agendaItemTitle: String
+  committeeAbbreviation: String
+  id: String!
+  state: FlagPieceState!
+}
+
+enum FlagPieceState {
+  FOUND
+  LOCKED
+  UNLOCKED
+}
+
+type FlagProgress {
+  abbreviation: String
+  alpha2Code: String
+  alpha3Code: String
+  fontAwesomeIcon: String
+  foundPieces: Int!
+  id: String!
+  isComplete: Boolean!
+  name: String!
+  pieces: [FlagPiece!]!
+  totalPieces: Int!
+  type: FlagType!
+  unlockedPieces: Int!
+}
+
+enum FlagType {
+  NATION
+  NSA
+}
+
+enum FlagTypeForUnlock {
+  NATION
+  NSA
+}
 
 input FloatFieldUpdateOperationsInput {
   decrement: Float
@@ -2157,7 +2244,8 @@ type Mutation {
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
-  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): PaperReview!
+  createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
+  createReviewerSnippet(content: Json!, name: String!): ReviewerSnippet!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -2178,10 +2266,12 @@ type Mutation {
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  deleteReviewerSnippet(id: String!): ReviewerSnippet!
   normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
+  setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
@@ -2204,7 +2294,14 @@ type Mutation {
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  updateReviewerSnippet(content: Json!, id: String!, name: String!): ReviewerSnippet!
   upsertSelf: UpsertSelfResult!
+}
+
+type MyReviewStats {
+  firstReviews: Int!
+  followUpReviews: Int!
+  totalReviews: Int!
 }
 
 type Nation {
@@ -2506,6 +2603,23 @@ input NestedEnumPaperTypeWithAggregatesFilter {
   in: [PaperType!]
   not: PaperType
   notIn: [PaperType!]
+}
+
+input NestedEnumReviewHelpStatusFilter {
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
+}
+
+input NestedEnumReviewHelpStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumReviewHelpStatusFilter
+  _min: NestedEnumReviewHelpStatusFilter
+  equals: ReviewHelpStatus
+  in: [ReviewHelpStatus!]
+  not: ReviewHelpStatus
+  notIn: [ReviewHelpStatus!]
 }
 
 input NestedEnumTeamRoleFilter {
@@ -3544,23 +3658,145 @@ type Query {
   findUniqueTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   findUniqueUser(where: UserWhereUniqueInput!): User
   findUniqueWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  flagCollection(conferenceId: String!): FlagCollectionData!
   getAllConferenceNations(conferenceId: String!): [Nation!]!
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
-  getConferenceStatistics(conferenceId: ID!): StatisticsResult!
+  getConferenceStatistics(conferenceId: ID!, filter: StatsFilter! = ALL): StatisticsResult!
   impersonatableUsers: [User!]!
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
   myOIDCRoles: [OIDCRolesEnum!]!
+  myReviewStats(conferenceId: String!): MyReviewStats
+  myReviewerSnippets: [ReviewerSnippet!]!
   offlineUserRefresh: OfflineUserRefresh!
   previewConferenceSupervisor(conferenceId: ID!, connectionCode: String!): PreviewConferenceSupervisor!
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
   previewUserByIdOrEmail(emailOrId: String!): UserPreview!
+  reviewerLeaderboard(conferenceId: String!): [ReviewerStat!]!
 }
 
 enum QueryMode {
   default
   insensitive
+}
+
+enum ReviewHelpStatus {
+  HELP_NEEDED
+  NO_HELP_WANTED
+  UNSPECIFIED
+}
+
+type ReviewerSnippet {
+  content: Json!
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+input ReviewerSnippetCreateInput {
+  content: Json!
+  createdAt: DateTime
+  id: String
+  name: String!
+  updatedAt: DateTime
+  userId: String!
+}
+
+input ReviewerSnippetCreateNestedManyWithoutUserInput {
+  connect: [ReviewerSnippetWhereUniqueInput!]
+}
+
+input ReviewerSnippetListRelationFilter {
+  every: ReviewerSnippetWhereInput
+  none: ReviewerSnippetWhereInput
+  some: ReviewerSnippetWhereInput
+}
+
+input ReviewerSnippetOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input ReviewerSnippetOrderByWithRelationInput {
+  content: SortOrder
+  createdAt: SortOrder
+  id: SortOrder
+  name: SortOrder
+  updatedAt: SortOrder
+  user: UserOrderByWithRelationInput
+  userId: SortOrder
+}
+
+enum ReviewerSnippetScalarFieldEnum {
+  content
+  createdAt
+  id
+  name
+  updatedAt
+  userId
+}
+
+input ReviewerSnippetUpdateInput {
+  content: Json
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  userId: StringFieldUpdateOperationsInput
+}
+
+input ReviewerSnippetUpdateManyMutationInput {
+  content: Json
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input ReviewerSnippetUpdateManyWithoutUserNestedInput {
+  connect: [ReviewerSnippetWhereUniqueInput!]
+  disconnect: [ReviewerSnippetWhereUniqueInput!]
+  set: [ReviewerSnippetWhereUniqueInput!]
+}
+
+input ReviewerSnippetUserIdNameCompoundUniqueInput {
+  name: String!
+  userId: String!
+}
+
+input ReviewerSnippetWhereInput {
+  AND: [ReviewerSnippetWhereInput!]
+  NOT: [ReviewerSnippetWhereInput!]
+  OR: [ReviewerSnippetWhereInput!]
+  content: JsonFilter
+  createdAt: DateTimeFilter
+  id: StringFilter
+  name: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+}
+
+input ReviewerSnippetWhereUniqueInput {
+  AND: [ReviewerSnippetWhereInput!]
+  NOT: [ReviewerSnippetWhereInput!]
+  OR: [ReviewerSnippetWhereInput!]
+  content: JsonFilter
+  createdAt: DateTimeFilter
+  id: String
+  name: StringFilter
+  updatedAt: DateTimeFilter
+  user: UserWhereInput
+  userId: StringFilter
+  userId_name: ReviewerSnippetUserIdNameCompoundUniqueInput
+}
+
+type ReviewerStat {
+  anonymizedName: String!
+  firstReviews: Int!
+  isCurrentUser: Boolean!
+  totalReviews: Int!
 }
 
 type RoleApplication {
@@ -3940,12 +4176,21 @@ enum SortOrder {
 
 type StatisticsResult {
   addresses: [StatisticsResultAddresses!]!
-  age: StatisticsResultRegisteredAge!
+  age: StatisticsResultAge!
+  committeeFillRates: [StatisticsResultCommitteeFillRate!]!
   countdowns: StatisticsResultCountdowns!
   diet: StatisticsResultRegisteredParticipantDiet!
   gender: StatisticsResultRegisteredParticipantGender!
+  nationalityDistribution: [StatisticsResultNationality!]!
+  paperStats: StatisticsResultPaperStats!
+  postalPaymentProgress: StatisticsResultPostalPaymentProgress!
   registered: StatisticsResultRegistered!
+  registrationTimeline: [StatisticsResultRegistrationTimeline!]!
+  roleBased: StatisticsResultRoleBased!
+  schoolStats: [StatisticsResultSchool!]!
   status: StatisticsResultRegisteredParticipantStatus!
+  supervisorStats: StatisticsResultSupervisorStats!
+  waitingList: StatisticsResultWaitingList!
 }
 
 type StatisticsResultAddresses {
@@ -3960,9 +4205,109 @@ type StatisticsResultAddressesCount {
   zip: Int!
 }
 
+type StatisticsResultAge {
+  byCategory: [StatisticsResultAgeCategoryStats!]!
+  byCommittee: [StatisticsResultAgeCommitteeStats!]!
+  distribution: [StatisticsResultAgeDistributionEntry!]!
+  overall: StatisticsResultAgeOverall!
+}
+
+type StatisticsResultAgeCategoryBreakdown {
+  categoryId: String!
+  count: Int!
+}
+
+type StatisticsResultAgeCategoryStats {
+  average: Float
+  categoryId: String!
+  categoryName: String!
+  categoryType: String!
+  count: Int!
+}
+
+type StatisticsResultAgeCommitteeStats {
+  abbreviation: String!
+  average: Float
+  committeeId: String!
+  committeeName: String!
+  count: Int!
+}
+
+type StatisticsResultAgeDistributionEntry {
+  age: Int!
+  byCategory: [StatisticsResultAgeCategoryBreakdown!]!
+  count: Int!
+}
+
+type StatisticsResultAgeOverall {
+  average: Float
+  missingBirthdays: Int!
+  total: Int!
+}
+
+type StatisticsResultCommitteeFillRate {
+  abbreviation: String!
+  assignedSeats: Int!
+  committeeId: ID!
+  fillPercentage: Int!
+  name: String!
+  totalSeats: Int!
+}
+
 type StatisticsResultCountdowns {
   daysUntilConference: Int!
   daysUntilEndRegistration: Int!
+}
+
+type StatisticsResultNationality {
+  count: Int!
+  country: String!
+  countryCode: String!
+}
+
+type StatisticsResultPaperStats {
+  byCommittee: [StatisticsResultPapersByCommittee!]!
+  byStatus: StatisticsResultPapersByStatus!
+  byType: StatisticsResultPapersByType!
+  total: Int!
+  withReviews: Int!
+  withoutReviews: Int!
+}
+
+type StatisticsResultPapersByCommittee {
+  abbreviation: String!
+  committeeId: String!
+  count: Int!
+  name: String!
+}
+
+type StatisticsResultPapersByStatus {
+  accepted: Int!
+  changesRequested: Int!
+  draft: Int!
+  submitted: Int!
+}
+
+type StatisticsResultPapersByType {
+  introductionPaper: Int!
+  positionPaper: Int!
+  workingPaper: Int!
+}
+
+type StatisticsResultPostalPaymentProgress {
+  bothComplete: Int!
+  maxParticipants: Int!
+  neitherComplete: Int!
+  paymentDone: Int!
+  paymentOnlyComplete: Int!
+  paymentPending: Int!
+  paymentPercentage: Int!
+  paymentProblem: Int!
+  postalDone: Int!
+  postalOnlyComplete: Int!
+  postalPending: Int!
+  postalPercentage: Int!
+  postalProblem: Int!
 }
 
 type StatisticsResultRegistered {
@@ -3973,16 +4318,6 @@ type StatisticsResultRegistered {
   singleParticipants: StatisticsResultRegisteredSingleParticipants!
   supervisors: Int!
   total: Int!
-}
-
-type StatisticsResultRegisteredAge {
-  average: Float!
-  distribution: [StatisticsResultRegisteredAgeDistribution!]!
-}
-
-type StatisticsResultRegisteredAgeDistribution {
-  key: String!
-  value: Float!
 }
 
 type StatisticsResultRegisteredDelegationMembers {
@@ -4053,6 +4388,59 @@ type StatisticsResultRegisteredSingleParticipantsByRole {
   notApplied: Int!
   role: String!
   total: Int!
+}
+
+type StatisticsResultRegistrationTimeline {
+  cumulativeDelegationMembers: Int!
+  cumulativeDelegations: Int!
+  cumulativeSingleParticipants: Int!
+  cumulativeSupervisors: Int!
+  date: String!
+}
+
+type StatisticsResultRoleBased {
+  delegationMembersWithCommittee: Int!
+  delegationMembersWithRole: Int!
+  delegationMembersWithoutCommittee: Int!
+  delegationMembersWithoutRole: Int!
+  delegationsWithAssignment: Int!
+  delegationsWithoutAssignment: Int!
+  singleParticipantsWithRole: Int!
+  singleParticipantsWithoutRole: Int!
+}
+
+type StatisticsResultSchool {
+  delegationCount: Int!
+  memberCount: Int!
+  school: String!
+}
+
+type StatisticsResultSupervisorStats {
+  accepted: Int!
+  acceptedAndNotPresent: Int!
+  acceptedAndPresent: Int!
+  doesNotPlanAttendance: Int!
+  plansAttendance: Int!
+  rejected: Int!
+  rejectedAndNotPresent: Int!
+  rejectedAndPresent: Int!
+  total: Int!
+}
+
+type StatisticsResultWaitingList {
+  assigned: Int!
+  hidden: Int!
+  total: Int!
+  unassigned: Int!
+  visible: Int!
+}
+
+enum StatsFilter {
+  ALL
+  APPLIED
+  APPLIED_WITHOUT_ROLE
+  APPLIED_WITH_ROLE
+  NOT_APPLIED
 }
 
 input StringFieldUpdateOperationsInput {
@@ -4644,6 +5032,19 @@ enum TransactionIsolationLevel {
   Serializable
 }
 
+type UnlockedPieceData {
+  flagAlpha2Code: String
+  flagAlpha3Code: String
+  flagId: String!
+  flagName: String!
+  flagType: FlagTypeForUnlock!
+  fontAwesomeIcon: String
+  foundCount: Int!
+  isComplete: Boolean!
+  pieceName: String!
+  totalCount: Int!
+}
+
 input UpdateAllConferenceParticipantStatusInput {
   didAttend: Boolean
 }
@@ -4751,6 +5152,7 @@ input UserCreateInput {
   phone: String
   preferred_username: String!
   pronouns: String
+  reviewerSnippets: ReviewerSnippetCreateNestedManyWithoutUserInput
   singleParticipant: SingleParticipantCreateNestedManyWithoutUserInput
   street: String
   surveyAnswers: SurveyAnswerCreateNestedManyWithoutUserInput
@@ -4787,6 +5189,7 @@ input UserOrderByWithRelationInput {
   phone: SortOrder
   preferred_username: SortOrder
   pronouns: SortOrder
+  reviewerSnippets: ReviewerSnippetOrderByRelationAggregateInput
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
   street: SortOrder
   surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
@@ -4973,6 +5376,7 @@ input UserUpdateInput {
   phone: NullableStringFieldUpdateOperationsInput
   preferred_username: StringFieldUpdateOperationsInput
   pronouns: NullableStringFieldUpdateOperationsInput
+  reviewerSnippets: ReviewerSnippetUpdateManyWithoutUserNestedInput
   singleParticipant: SingleParticipantUpdateManyWithoutUserNestedInput
   street: NullableStringFieldUpdateOperationsInput
   surveyAnswers: SurveyAnswerUpdateManyWithoutUserNestedInput
@@ -5037,6 +5441,7 @@ input UserWhereInput {
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
+  reviewerSnippets: ReviewerSnippetListRelationFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
   surveyAnswers: SurveyAnswerListRelationFilter
@@ -5076,6 +5481,7 @@ input UserWhereUniqueInput {
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
+  reviewerSnippets: ReviewerSnippetListRelationFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
   surveyAnswers: SurveyAnswerListRelationFilter

@@ -29,7 +29,7 @@
 </script>
 
 {#if settings}
-	<CommonEditor {settings} {editable} {onQuoteSelection}>
+	<CommonEditor {settings} {editable} {onQuoteSelection} showStats>
 		{#snippet fixedMenu(editor)}
 			<Menu.Wrapper>
 				<Menu.Button

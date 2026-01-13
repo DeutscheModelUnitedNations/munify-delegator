@@ -160,6 +160,16 @@ bun run preview
 - Type-safe generated queries in `.houdini/` directory
 - Queries/mutations in `src/lib/queries/` trigger codegen
 - Config in `houdini.config.js` - runes mode enabled
+- **Cache Invalidation**: After mutations that modify data, you must invalidate Houdini's cache to update the UI:
+
+  ```typescript
+  import { cache } from '$houdini';
+  import { invalidateAll } from '$app/navigation';
+
+  // After a mutation:
+  cache.markStale();
+  await invalidateAll();
+  ```
 
 #### 3. Authentication & Authorization
 
@@ -293,6 +303,7 @@ Required variables (see `.env.example`):
 - GraphQL query complexity limiting via Pothos plugin
 - OpenTelemetry tracing for performance monitoring
 - Image optimization: Use WebP format, lazy load images
+- Install dependencies always into the devDependencies section as is best practice for sveltekit projects if not explicitly required at runtime.
 
 ## Security Considerations
 
@@ -302,3 +313,41 @@ Required variables (see `.env.example`):
 - Environment secrets must never be committed
 - Prisma parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks
+
+## MCP Servers
+
+This project uses Model Context Protocol (MCP) servers to enhance AI-assisted development. Configuration is in `.mcp.json`.
+
+### Configured Servers
+
+| Server                  | Package/URL                                        | Purpose                                                    |
+| ----------------------- | -------------------------------------------------- | ---------------------------------------------------------- |
+| **svelte**              | `@sveltejs/mcp`                                    | Official Svelte 5 documentation, code validation and fixes |
+| **daisyui-github**      | `gitmcp.io/saadeghi/daisyui`                       | DaisyUI component library documentation                    |
+| **tailwind-github**     | `gitmcp.io/tailwindlabs/tailwindcss`               | TailwindCSS documentation                                  |
+| **github**              | `@anthropic-ai/github-mcp-server`                  | GitHub PRs, issues, code search, workflow management       |
+| **prisma**              | `prisma mcp`                                       | Database migrations, schema introspection, Prisma Studio   |
+| **vitest**              | `@djankies/vitest-mcp`                             | Test running with structured output, coverage analysis     |
+| **context7**            | `@upstash/context7-mcp`                            | Up-to-date documentation for any library                   |
+| **memory**              | `@modelcontextprotocol/server-memory`              | Persistent knowledge graph across sessions                 |
+| **sequential-thinking** | `@modelcontextprotocol/server-sequential-thinking` | Complex problem-solving through structured thinking        |
+| **houdini-github**      | `gitmcp.io/HoudiniGraphql/houdini`                 | Houdini GraphQL client documentation                       |
+| **pothos-github**       | `gitmcp.io/hayes/pothos`                           | Pothos GraphQL schema builder documentation                |
+
+### Setup Requirements
+
+**GitHub MCP Server**: Requires a GitHub Personal Access Token. Replace `<YOUR_TOKEN>` in `.mcp.json` with your token, or set the `GITHUB_PERSONAL_ACCESS_TOKEN` environment variable.
+
+**Context7**: Optionally get a free API key at [context7.com/dashboard](https://context7.com/dashboard) for higher rate limits.
+
+### Usage Tips
+
+- Use `use context7` in prompts to fetch current documentation for any library
+- The Svelte MCP server validates Svelte 5 code and suggests fixes
+- Prisma MCP can run migrations and open Prisma Studio directly
+- Vitest MCP provides structured test output optimized for AI analysis
+- Memory MCP remembers context across conversation sessions
+
+## Development Workflow
+
+- Never use the git commit command after a task is finished.

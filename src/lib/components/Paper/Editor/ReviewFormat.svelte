@@ -9,8 +9,13 @@
 	import { BlockquoteWithFind } from './extensions/BlockquoteWithFind';
 	import Heading from '@tiptap/extension-heading';
 	import Menu from './Menu';
+	import SnippetDropdown from './Menu/SnippetDropdown.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Readable } from 'svelte/store';
+	import { SnippetSuggestion, type SnippetItem } from './extensions/SnippetSuggestion';
+	import PlaceholderPromptModal from './PlaceholderPromptModal.svelte';
+	import { extractPlaceholders, replacePlaceholders } from '$lib/services/snippetPlaceholders';
+	import type { JSONContent } from '@tiptap/core';
 
 	interface Props {
 		contentStore: Writable<any>;
@@ -18,6 +23,7 @@
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
 		paperContainer?: HTMLElement | null;
+		snippets?: SnippetItem[];
 	}
 
 	let {
@@ -25,13 +31,56 @@
 		placeholder = '',
 		quoteToInsert,
 		onQuoteInserted,
-		paperContainer = null
+		paperContainer = null,
+		snippets = []
 	}: Props = $props();
 
 	let editor = $state<Readable<Editor>>();
 
 	// Track last inserted quote to prevent duplicates
 	let lastInsertedQuote = $state<string | null>(null);
+
+	// Placeholder modal state
+	let placeholderModalOpen = $state(false);
+	let pendingSnippet = $state<SnippetItem | null>(null);
+	let currentPlaceholders = $state<string[]>([]);
+
+	// Handle snippet selection (from dropdown menu or slash command)
+	function handleSnippetSelect(snippet: SnippetItem) {
+		const placeholders = extractPlaceholders(snippet.content);
+		if (placeholders.length > 0) {
+			// Show placeholder prompt modal
+			pendingSnippet = snippet;
+			currentPlaceholders = placeholders;
+			placeholderModalOpen = true;
+		} else {
+			// No placeholders, insert directly
+			insertSnippetContent(snippet.content);
+		}
+	}
+
+	// Insert snippet content into editor
+	function insertSnippetContent(content: JSONContent) {
+		if ($editor) {
+			$editor.chain().focus().insertContent(content).run();
+		}
+	}
+
+	// Handle placeholder modal confirmation
+	function handlePlaceholderConfirm(values: Record<string, string>) {
+		if (pendingSnippet) {
+			const filledContent = replacePlaceholders(pendingSnippet.content, values);
+			insertSnippetContent(filledContent);
+		}
+		pendingSnippet = null;
+		currentPlaceholders = [];
+	}
+
+	// Handle placeholder modal cancel
+	function handlePlaceholderCancel() {
+		pendingSnippet = null;
+		currentPlaceholders = [];
+	}
 
 	// Insert quote when quoteToInsert changes
 	$effect(() => {
@@ -65,6 +114,8 @@
 		$editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
 	};
 
+	let editorElement: HTMLElement | null = null;
+
 	onMount(() => {
 		editor = createEditor({
 			extensions: [
@@ -89,6 +140,11 @@
 				Placeholder.configure({
 					placeholder: placeholder || m.enterYourReviewComments(),
 					showOnlyCurrent: true
+				}),
+				// Always add snippet suggestion extension - it uses a getter to access current snippets
+				SnippetSuggestion.configure({
+					snippets: () => snippets, // Pass getter function for reactive access
+					onSelectSnippet: handleSnippetSelect
 				})
 			],
 			content: $contentStore || undefined,
@@ -103,9 +159,21 @@
 			editable: true
 		});
 	});
+
+	// Clear editor when store is reset externally (e.g., after review submission)
+	$effect(() => {
+		const content = $contentStore;
+		// Only clear if store is empty object AND editor actually has content
+		if ($editor && content && Object.keys(content).length === 0 && !$editor.isEmpty) {
+			$editor.commands.clearContent();
+		}
+	});
 </script>
 
-<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[200px]">
+<fieldset
+	class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[200px]"
+	bind:this={editorElement}
+>
 	<legend class="fieldset-legend">{m.editor()}</legend>
 
 	{#if $editor}
@@ -185,10 +253,28 @@
 				label={m.indent()}
 				icon="fa-indent"
 			/>
+
+			{#if snippets.length > 0}
+				<Menu.Divider />
+				<SnippetDropdown {snippets} onSelect={handleSnippetSelect} />
+			{/if}
 		</Menu.Wrapper>
 	{/if}
 
 	{#if $editor}
 		<EditorContent editor={$editor} />
+		{#if snippets.length > 0}
+			<p class="text-xs text-base-content/50 mt-2 px-1">
+				{m.typeSlashForSnippets()}
+			</p>
+		{/if}
 	{/if}
 </fieldset>
+
+<!-- Placeholder prompt modal -->
+<PlaceholderPromptModal
+	bind:open={placeholderModalOpen}
+	placeholders={currentPlaceholders}
+	onConfirm={handlePlaceholderConfirm}
+	onCancel={handlePlaceholderCancel}
+/>

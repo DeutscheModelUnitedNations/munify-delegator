@@ -364,28 +364,114 @@ class MediaGenerator extends PDFPageGenerator {
 	}
 }
 
-async function numerateDocument(pdfDoc: PDFDocument) {
+function toRomanNumeral(num: number): string {
+	const romanNumerals: [number, string][] = [
+		[10, 'x'],
+		[9, 'ix'],
+		[5, 'v'],
+		[4, 'iv'],
+		[1, 'i']
+	];
+	let result = '';
+	for (const [value, numeral] of romanNumerals) {
+		while (num >= value) {
+			result += numeral;
+			num -= value;
+		}
+	}
+	return result;
+}
+
+async function numerateDocument(
+	pdfDoc: PDFDocument,
+	participantId: string,
+	participantName: string,
+	mainPageCount: number
+) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-	const pageCount = pages.length;
-	const { width, height } = pdfDoc.getPage(0).getSize();
+	const totalPages = pages.length;
+	const appendixPageCount = totalPages - mainPageCount;
+	const { width } = pdfDoc.getPage(0).getSize();
 	const fontSize = 10;
 
-	const pageNumberText = `${pageCount} / ${pageCount}`;
+	// Generate data-matrix barcode for footer (only needed for main pages)
+	const barcodeCanvas = document.createElement('canvas');
+	bwipjs.toCanvas(barcodeCanvas, {
+		bcid: 'datamatrix',
+		text: participantId,
+		scale: 1,
+		rotate: 'N'
+	});
+	const barcodeImg = barcodeCanvas.toDataURL('image/png');
+	const pngImage = await pdfDoc.embedPng(barcodeImg);
+	const pngDims = pngImage.scale(1);
+
+	const smallFontSize = 8;
 
 	pages.forEach((page, index) => {
-		const pageNumber = `${index + 1} / ${pageCount}`;
-		const x = width - defaultStyles.margin.right;
-		const y = defaultStyles.margin.bottom + fontSize;
+		const isMainPage = index < mainPageCount;
+		const rightX = width - defaultStyles.margin.right;
+		const barcodeY = defaultStyles.margin.bottom;
 
-		page.drawText(pageNumber, {
-			x,
-			y,
-			size: fontSize,
-			font: helvetica,
-			color: rgb(0, 0, 0)
-		});
+		if (isMainPage) {
+			// Main pages: show participant info and barcode
+			const pageNumber = `${index + 1} / ${mainPageCount}`;
+
+			// Draw data-matrix barcode at bottom right
+			const barcodeX = rightX - pngDims.width;
+			page.drawImage(pngImage, {
+				x: barcodeX,
+				y: barcodeY,
+				width: pngDims.width,
+				height: pngDims.height
+			});
+
+			// Draw participant ID to the left of the barcode (bottom line, hugging bottom)
+			const idTextWidth = helvetica.widthOfTextAtSize(participantId, smallFontSize);
+			page.drawText(participantId, {
+				x: barcodeX - idTextWidth - 5,
+				y: barcodeY,
+				size: smallFontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+
+			// Draw participant name to the left of the barcode (just above ID, hugging it)
+			const nameWidth = helvetica.widthOfTextAtSize(participantName, smallFontSize);
+			page.drawText(participantName, {
+				x: barcodeX - nameWidth - 5,
+				y: barcodeY + smallFontSize + 2,
+				size: smallFontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+
+			// Draw page number at the top (right-aligned, with space above name/barcode)
+			const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
+			page.drawText(pageNumber, {
+				x: rightX - pageNumberWidth,
+				y: barcodeY + pngDims.height + 10,
+				size: fontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+		} else {
+			// Appendix pages: roman numerals, no participant info
+			const appendixIndex = index - mainPageCount + 1;
+			const pageNumber = `${toRomanNumeral(appendixIndex)} / ${toRomanNumeral(appendixPageCount)}`;
+
+			// Draw page number at the bottom right
+			const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
+			page.drawText(pageNumber, {
+				x: rightX - pageNumberWidth,
+				y: barcodeY + fontSize,
+				size: fontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+		}
 	});
 }
 
@@ -525,6 +611,9 @@ export async function generateCompletePostalRegistrationPDF(
 		});
 	}
 
+	// Track main page count before adding appendix (terms and conditions)
+	const mainPageCount = mergedPdfDoc.getPageCount();
+
 	if (termsAndConditions) {
 		const termsPdf = await PDFDocument.load(termsAndConditions);
 		const copiedPages = await mergedPdfDoc.copyPages(termsPdf, termsPdf.getPageIndices());
@@ -533,8 +622,8 @@ export async function generateCompletePostalRegistrationPDF(
 		});
 	}
 
-	// Add page numbers
-	await numerateDocument(mergedPdfDoc);
+	// Add page numbers, participant name, data-matrix barcode, and participant ID to each page
+	await numerateDocument(mergedPdfDoc, participant.id, participant.name, mainPageCount);
 
 	// Merge all pages into a single PDF
 	const mergedPdfBytes = await mergedPdfDoc.save();
