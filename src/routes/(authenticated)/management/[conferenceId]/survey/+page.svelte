@@ -190,7 +190,7 @@
 								height="112px"
 							/>
 						</div>
-						<div class="flex flex-1 flex-col gap-1 overflow-hidden">
+						<div class="flex flex-1 flex-col gap-2 overflow-hidden">
 							<!-- Summary stats table -->
 							<div class="bg-base-300 overflow-hidden rounded-t-lg">
 								<table class="table table-sm">
