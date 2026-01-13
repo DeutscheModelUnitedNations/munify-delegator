@@ -115,43 +115,47 @@
 			<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
 				<h3 class="text-xl">{m.yourPapers()}</h3>
 				<div class="overflow-x-auto w-full">
-					<table class="table w-full">
+					<table class="table table-sm w-full">
 						<thead>
 							<tr>
-								<th>{m.paperType()}</th>
-								<th>{m.paperStatus()}</th>
+								<th class="w-0">{m.paperType()}</th>
+								<th class="w-0">{m.paperStatus()}</th>
 								<th>{m.paperTopic()}</th>
-								<th>{m.paperCreatedAt()}</th>
-								<th>{m.paperUpdatedAt()}</th>
-								<th>{m.submittedAt()}</th>
-								<th></th>
+								<th class="w-0 whitespace-nowrap">{m.paperCreatedAt()}</th>
+								<th class="w-0 whitespace-nowrap">{m.paperUpdatedAt()}</th>
+								<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
+								<th class="w-0"></th>
 							</tr>
 						</thead>
 						<tbody>
 							{#each paperQueryData as paper}
 								<tr>
-									<td>
-										<PaperEnum.Type type={paper.type} />
+									<td class="align-middle">
+										<PaperEnum.Type type={paper.type} size="xs" />
 									</td>
-									<td>
-										<PaperEnum.Status status={paper.status} />
+									<td class="align-middle">
+										<PaperEnum.Status status={paper.status} size="xs" />
 									</td>
-									<td>
+									<td class="align-middle">
 										{#if paper.type !== 'INTRODUCTION_PAPER'}
 											{paper.agendaItem?.title}
 										{/if}
 									</td>
-									<td>{new Date(paper.createdAt).toLocaleDateString()}</td>
-									<td>{new Date(paper.updatedAt).toLocaleDateString()}</td>
-									<td>
+									<td class="align-middle whitespace-nowrap text-base-content/60">
+										{new Date(paper.createdAt).toLocaleDateString()}
+									</td>
+									<td class="align-middle whitespace-nowrap text-base-content/60">
+										{new Date(paper.updatedAt).toLocaleDateString()}
+									</td>
+									<td class="align-middle whitespace-nowrap">
 										{#if paper.firstSubmittedAt}
 											{new Date(paper.firstSubmittedAt).toLocaleDateString()}
 										{:else}
-											{m.notYetSubmitted()}
+											<span class="text-base-content/40">{m.notYetSubmitted()}</span>
 										{/if}
 									</td>
-									<td>
-										<a href="./paperhub/{paper.id}" class="btn btn-primary">
+									<td class="align-middle">
+										<a href="./paperhub/{paper.id}" class="btn btn-primary btn-sm">
 											{m.openPaper()}
 											<i class="fas fa-arrow-right"></i>
 										</a>

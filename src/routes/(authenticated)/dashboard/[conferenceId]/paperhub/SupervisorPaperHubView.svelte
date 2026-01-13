@@ -160,15 +160,15 @@
 					</h3>
 
 					<div class="overflow-x-auto">
-						<table class="table table-sm w-full">
+						<table class="table table-sm w-full align-middle">
 							<thead>
 								<tr>
-									<th>{m.paperType()}</th>
-									<th>{m.paperStatus()}</th>
+									<th class="w-0">{m.paperType()}</th>
+									<th class="w-0">{m.paperStatus()}</th>
 									<th>{m.paperTopic()}</th>
-									<th>{m.author()}</th>
-									<th>{m.submittedAt()}</th>
-									<th></th>
+									<th class="w-0 whitespace-nowrap">{m.author()}</th>
+									<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
+									<th class="w-0"></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -180,30 +180,32 @@
 										tabindex="0"
 										onkeypress={(e) => e.key === 'Enter' && handlePaperClick(paper.id)}
 									>
-										<td>
-											<PaperEnum.Type type={paper.type} />
+										<td class="align-middle">
+											<PaperEnum.Type type={paper.type} size="xs" />
 										</td>
-										<td>
-											<PaperEnum.Status status={paper.status} />
+										<td class="align-middle">
+											<PaperEnum.Status status={paper.status} size="xs" />
 										</td>
-										<td class="max-w-48 truncate">
+										<td class="align-middle">
 											{#if paper.agendaItem}
-												<span class="badge badge-ghost badge-sm mr-1">
-													{paper.agendaItem.committee?.abbreviation}
-												</span>
-												{paper.agendaItem.title}
+												{#if paper.agendaItem.committee?.abbreviation}
+													<span class="badge badge-neutral badge-sm mr-1">
+														{paper.agendaItem.committee.abbreviation}
+													</span>
+												{/if}
+												<span class="truncate">{paper.agendaItem.title}</span>
 											{:else}
-												<span class="text-gray-400">-</span>
+												<span class="text-base-content/40">-</span>
 											{/if}
 										</td>
-										<td>
+										<td class="align-middle whitespace-nowrap">
 											{paper.author.given_name}
 											{paper.author.family_name}
 										</td>
-										<td class="text-sm text-gray-500">
+										<td class="align-middle text-sm text-base-content/60 whitespace-nowrap">
 											{formatDate(paper.firstSubmittedAt)}
 										</td>
-										<td>
+										<td class="align-middle">
 											<button class="btn btn-ghost btn-xs" aria-label={m.openPaper()}>
 												<i class="fa-solid fa-arrow-right"></i>
 											</button>
