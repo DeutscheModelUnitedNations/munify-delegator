@@ -134,16 +134,19 @@
 							label={m.receiveJoinTeamInformation()}
 						/>
 					</FormFieldset>
-					<FormFieldset title={m.communicationPreferences()}>
-						<p class="text-sm text-gray-500 mb-4">
-							{m.communicationPreferencesDescription()}
-						</p>
 
+					<div class="divider"></div>
+
+					<FormFieldset title="Messaging">
 						<FormCheckbox
 							{form}
 							name="canReceiveDelegationMail"
-							label={m.allowDelegationMailer()}
+							label="Receive messages from other delegates"
 						/>
+						<div class="text-sm text-base-content/70">
+							By enabling this, other delegates can send you messages via email. Your email address
+							will <strong>not</strong> be shared with them. You can reply directly from the email notification.
+						</div>
 					</FormFieldset>
 				</Form>
 			</div>

@@ -55,6 +55,7 @@ export const GQLUser = builder.prismaObject('User', {
 		emergencyContacts: t.field(UserEmergencyContactsFieldObject),
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
+		canReceiveDelegationMail: t.exposeBoolean('canReceiveDelegationMail', { nullable: false }),
 		globalNotes: t.field(UserGlobalNotesFieldObject),
 		papers: t.relation('papers', {
 			query: (_args, ctx) => ({

@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+
+	export let data;
+
 	let recipients: Array<{ id: string; label: string }> = [];
 	let selectedRecipient = '';
 	let subject = '';
@@ -12,6 +15,8 @@
 	$: basePath = `/dashboard/${conferenceId}/messaging`;
 	$: subjectCount = subject.length;
 	$: bodyCount = body.length;
+
+	$: userCanReceiveMail = data.conferenceQueryData?.findUniqueUser?.canReceiveDelegationMail;
 
 	async function loadRecipients() {
 		loadError = '';
@@ -27,6 +32,11 @@
 
 	onMount(() => {
 		loadRecipients();
+		const recipientIdParam = $page.url.searchParams.get('recipientId');
+		const subjectParam = $page.url.searchParams.get('subject');
+
+		if (recipientIdParam) selectedRecipient = recipientIdParam;
+		if (subjectParam) subject = subjectParam;
 	});
 
 	async function send(e: Event) {
@@ -76,6 +86,16 @@
 				<div class="alert alert-error">
 					<i class="fa-solid fa-triangle-exclamation"></i>
 					<span>{error}</span>
+				</div>
+			{/if}
+
+			{#if !userCanReceiveMail}
+				<div class="alert alert-warning">
+					<i class="fa-solid fa-triangle-exclamation"></i>
+					<span>
+						Messaging is disabled. You cannot receive replies.
+						<a href="/my-account" class="link">Enable it in settings</a>.
+					</span>
 				</div>
 			{/if}
 
