@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PhrasePattern } from '$lib/services/phraseValidation';
 	import { m } from '$lib/paraglide/messages';
+	import toast from 'svelte-french-toast';
 
 	interface Props {
 		patterns: PhrasePattern[];
@@ -79,6 +80,11 @@
 		onClose();
 	}
 
+	async function handleCopy(phrase: string) {
+		await navigator.clipboard.writeText(phrase);
+		toast.success(m.phraseCopied());
+	}
+
 	// Handle dialog close via backdrop or escape
 	function handleDialogClick(e: MouseEvent) {
 		if (e.target === dialogEl) {
@@ -121,13 +127,21 @@
 
 		<ul class="mt-4 max-h-72 overflow-y-auto space-y-1">
 			{#each filteredPhrases as phrase}
-				<li>
+				<li class="flex items-center gap-1">
 					<button
 						type="button"
-						class="btn btn-ghost btn-sm justify-start w-full text-left"
+						class="btn btn-ghost btn-sm justify-start flex-1 text-left"
 						onclick={() => handleSelect(phrase)}
 					>
 						{phrase}
+					</button>
+					<button
+						type="button"
+						class="btn btn-ghost btn-sm btn-square"
+						onclick={() => handleCopy(phrase)}
+						aria-label={m.copy()}
+					>
+						<i class="fa-solid fa-copy"></i>
 					</button>
 				</li>
 			{:else}
