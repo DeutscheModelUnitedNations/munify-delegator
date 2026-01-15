@@ -13,18 +13,66 @@
 
 	let selectedIndex = $state(0);
 
-	// Filter patterns by prefix match on raw phrase (strip optional markers for display)
+	// Expand a pattern into all possible phrase variations
+	function expandPattern(raw: string): string[] {
+		const variations: string[] = [];
+
+		// Check for optional prefix: "(prefix) rest"
+		const prefixMatch = raw.match(/^\(([^)]+)\)\s*(.+)$/);
+		if (prefixMatch) {
+			const prefix = prefixMatch[1];
+			const rest = prefixMatch[2];
+
+			// Check if rest also has optional suffix
+			const suffixMatch = rest.match(/^(.+?)\s*\(([^)]+)\)$/);
+			if (suffixMatch) {
+				const base = suffixMatch[1].trim().replace(/\s+_\s+/g, ' ... ');
+				const suffix = suffixMatch[2];
+				// All 4 combinations: with/without prefix × with/without suffix
+				variations.push(base);
+				variations.push(`${base} ${suffix}`);
+				variations.push(`${prefix} ${base}`);
+				variations.push(`${prefix} ${base} ${suffix}`);
+			} else {
+				// Just prefix optional
+				const base = rest.replace(/\s+_\s+/g, ' ... ');
+				variations.push(base);
+				variations.push(`${prefix} ${base}`);
+			}
+			return variations;
+		}
+
+		// Check for optional suffix only: "base (suffix)"
+		const suffixMatch = raw.match(/^(.+?)\s*\(([^)]+)\)$/);
+		if (suffixMatch) {
+			const base = suffixMatch[1].trim().replace(/\s+_\s+/g, ' ... ');
+			const suffix = suffixMatch[2];
+			variations.push(base);
+			variations.push(`${base} ${suffix}`);
+			return variations;
+		}
+
+		// No optional parts - just return the base form
+		variations.push(raw.replace(/\s+_\s+/g, ' ... '));
+		return variations;
+	}
+
+	// Expand all patterns into their variations
+	let allPhrases = $derived.by(() => {
+		const phrases: string[] = [];
+		for (const pattern of patterns) {
+			phrases.push(...expandPattern(pattern.raw));
+		}
+		// Remove duplicates and sort
+		return [...new Set(phrases)].sort((a, b) => a.localeCompare(b, 'de'));
+	});
+
+	// Filter phrases by prefix match
 	let suggestions = $derived.by(() => {
 		const query = inputValue.toLowerCase().trim();
 		if (!query) return [];
 
-		return patterns
-			.filter((p) => {
-				// Get the display form (strip optional markers)
-				const displayForm = getDisplayForm(p.raw);
-				return displayForm.toLowerCase().startsWith(query);
-			})
-			.slice(0, 7);
+		return allPhrases.filter((phrase) => phrase.toLowerCase().startsWith(query)).slice(0, 7);
 	});
 
 	// Reset selected index when suggestions change
@@ -33,43 +81,6 @@
 			selectedIndex = 0;
 		}
 	});
-
-	// Get display form by stripping optional markers
-	function getDisplayForm(raw: string): string {
-		// Remove optional prefix: "(word) phrase" -> "phrase"
-		// Remove optional suffix: "phrase (word)" -> "phrase"
-		// Remove placeholders: "phrase _ word" -> "phrase ... word"
-		return raw
-			.replace(/^\([^)]+\)\s*/, '') // Remove optional prefix
-			.replace(/\s*\([^)]+\)$/, '') // Remove optional suffix
-			.replace(/\s+_\s+/g, ' ... '); // Replace placeholder with ellipsis
-	}
-
-	// Get all forms of a pattern for display
-	function getAllForms(raw: string): string[] {
-		const forms: string[] = [];
-
-		// Check for optional prefix
-		const prefixMatch = raw.match(/^\(([^)]+)\)\s*(.+)$/);
-		if (prefixMatch) {
-			forms.push(prefixMatch[2]); // Without prefix
-			forms.push(`${prefixMatch[1]} ${prefixMatch[2]}`); // With prefix
-		}
-
-		// Check for optional suffix
-		const suffixMatch = raw.match(/^(.+)\s*\(([^)]+)\)$/);
-		if (suffixMatch && !prefixMatch) {
-			forms.push(suffixMatch[1].trim()); // Without suffix
-			forms.push(`${suffixMatch[1].trim()} ${suffixMatch[2]}`); // With suffix
-		}
-
-		// If no optional parts, just use the base form
-		if (forms.length === 0) {
-			forms.push(raw.replace(/\s+_\s+/g, ' ... '));
-		}
-
-		return forms;
-	}
 
 	// Handle keyboard navigation - returns true if event was handled
 	export function handleKeyDown(e: KeyboardEvent): boolean {
@@ -84,7 +95,7 @@
 				return true;
 			case 'Enter':
 				if (suggestions[selectedIndex]) {
-					onSelect(getDisplayForm(suggestions[selectedIndex].raw));
+					onSelect(suggestions[selectedIndex]);
 					return true;
 				}
 				return false;
@@ -101,7 +112,7 @@
 	<ul
 		class="menu bg-base-100 rounded-box shadow-lg border border-base-300 absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto"
 	>
-		{#each suggestions as suggestion, i}
+		{#each suggestions as phrase, i}
 			<li>
 				<button
 					type="button"
@@ -110,14 +121,11 @@
 					class:bg-base-200={i === selectedIndex}
 					onmousedown={(e) => {
 						e.preventDefault();
-						onSelect(getDisplayForm(suggestion.raw));
+						onSelect(phrase);
 					}}
 					onmouseenter={() => (selectedIndex = i)}
 				>
-					<span class="font-medium">{getDisplayForm(suggestion.raw)}</span>
-					{#if suggestion.raw.includes('(') || suggestion.raw.includes('_')}
-						<span class="text-xs text-base-content/50 ml-2">({suggestion.raw})</span>
-					{/if}
+					{phrase}
 				</button>
 			</li>
 		{/each}

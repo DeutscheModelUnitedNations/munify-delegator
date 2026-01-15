@@ -15,46 +15,64 @@
 	let searchQuery = $state('');
 	let dialogEl: HTMLDialogElement;
 
-	// Filter patterns based on search query
-	let filteredPatterns = $derived(
-		patterns.filter((p) => p.raw.toLowerCase().includes(searchQuery.toLowerCase()))
-	);
+	// Expand a pattern into all possible phrase variations
+	function expandPattern(raw: string): string[] {
+		const variations: string[] = [];
 
-	// Get display form by stripping optional markers
-	function getDisplayForm(raw: string): string {
-		return raw
-			.replace(/^\([^)]+\)\s*/, '') // Remove optional prefix
-			.replace(/\s*\([^)]+\)$/, '') // Remove optional suffix
-			.replace(/\s+_\s+/g, ' ... '); // Replace placeholder with ellipsis
-	}
-
-	// Get all variant forms of a pattern
-	function getVariants(raw: string): string[] {
-		const variants: string[] = [];
-
-		// Check for optional prefix
+		// Check for optional prefix: "(prefix) rest"
 		const prefixMatch = raw.match(/^\(([^)]+)\)\s*(.+)$/);
 		if (prefixMatch) {
-			const base = prefixMatch[2].replace(/\s*\([^)]+\)$/, '').replace(/\s+_\s+/g, ' ... ');
-			variants.push(base);
-			variants.push(`${prefixMatch[1]} ${base}`);
+			const prefix = prefixMatch[1];
+			const rest = prefixMatch[2];
+
+			// Check if rest also has optional suffix
+			const suffixMatch = rest.match(/^(.+?)\s*\(([^)]+)\)$/);
+			if (suffixMatch) {
+				const base = suffixMatch[1].trim().replace(/\s+_\s+/g, ' ... ');
+				const suffix = suffixMatch[2];
+				// All 4 combinations: with/without prefix × with/without suffix
+				variations.push(base);
+				variations.push(`${base} ${suffix}`);
+				variations.push(`${prefix} ${base}`);
+				variations.push(`${prefix} ${base} ${suffix}`);
+			} else {
+				// Just prefix optional
+				const base = rest.replace(/\s+_\s+/g, ' ... ');
+				variations.push(base);
+				variations.push(`${prefix} ${base}`);
+			}
+			return variations;
 		}
 
-		// Check for optional suffix
+		// Check for optional suffix only: "base (suffix)"
 		const suffixMatch = raw.match(/^(.+?)\s*\(([^)]+)\)$/);
-		if (suffixMatch && !prefixMatch) {
-			const base = suffixMatch[1].replace(/^\([^)]+\)\s*/, '').replace(/\s+_\s+/g, ' ... ');
-			variants.push(base);
-			variants.push(`${base} ${suffixMatch[2]}`);
+		if (suffixMatch) {
+			const base = suffixMatch[1].trim().replace(/\s+_\s+/g, ' ... ');
+			const suffix = suffixMatch[2];
+			variations.push(base);
+			variations.push(`${base} ${suffix}`);
+			return variations;
 		}
 
-		// If no optional parts, just use the display form
-		if (variants.length === 0) {
-			variants.push(getDisplayForm(raw));
-		}
-
-		return variants;
+		// No optional parts - just return the base form
+		variations.push(raw.replace(/\s+_\s+/g, ' ... '));
+		return variations;
 	}
+
+	// Expand all patterns into their variations
+	let allPhrases = $derived.by(() => {
+		const phrases: string[] = [];
+		for (const pattern of patterns) {
+			phrases.push(...expandPattern(pattern.raw));
+		}
+		// Remove duplicates and sort alphabetically
+		return [...new Set(phrases)].sort((a, b) => a.localeCompare(b, 'de'));
+	});
+
+	// Filter phrases based on search query
+	let filteredPhrases = $derived(
+		allPhrases.filter((phrase) => phrase.toLowerCase().includes(searchQuery.toLowerCase()))
+	);
 
 	function handleSelect(phrase: string) {
 		onSelect?.(phrase);
@@ -84,7 +102,12 @@
 				<i class="fa-solid fa-book mr-2"></i>
 				{title ?? m.phraseLookupTitle()}
 			</h3>
-			<button type="button" class="btn btn-sm btn-circle btn-ghost" onclick={onClose} aria-label={m.close()}>
+			<button
+				type="button"
+				class="btn btn-sm btn-circle btn-ghost"
+				onclick={onClose}
+				aria-label={m.close()}
+			>
 				<i class="fa-solid fa-xmark"></i>
 			</button>
 		</div>
@@ -97,27 +120,14 @@
 		/>
 
 		<ul class="mt-4 max-h-72 overflow-y-auto space-y-1">
-			{#each filteredPatterns as pattern (pattern.raw)}
-				{@const variants = getVariants(pattern.raw)}
+			{#each filteredPhrases as phrase}
 				<li>
 					<button
 						type="button"
-						class="btn btn-ghost btn-sm justify-start w-full text-left h-auto py-2"
-						onclick={() => handleSelect(getDisplayForm(pattern.raw))}
+						class="btn btn-ghost btn-sm justify-start w-full text-left"
+						onclick={() => handleSelect(phrase)}
 					>
-						<div class="flex flex-col items-start gap-0.5">
-							<span class="font-medium">{variants[0]}</span>
-							{#if variants.length > 1}
-								<span class="text-xs text-base-content/50">
-									{m.phraseLookupAlternative()}: {variants.slice(1).join(', ')}
-								</span>
-							{/if}
-							{#if pattern.raw.includes('_')}
-								<span class="text-xs text-base-content/50">
-									{m.phraseLookupPlaceholder()}
-								</span>
-							{/if}
-						</div>
+						{phrase}
 					</button>
 				</li>
 			{:else}

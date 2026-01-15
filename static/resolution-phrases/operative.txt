@@ -43,7 +43,8 @@ lenkt (die Aufmerksamkeit) auf
 lobt (feierlich)
 macht sich _ zu eigen
 nimmt an
-nimmt (hocherfreut / mit Bedauern) zur Kenntnis
+nimmt hocherfreut zur Kenntnis
+nimmt (mit Bedauern) zur Kenntnis
 räumt ein
 ruft (abermals) _ auf
 schlägt vor
