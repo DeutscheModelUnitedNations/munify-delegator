@@ -76,15 +76,17 @@ export const PreambleClause = Node.create({
 								const firstPhrase = getFirstPhrase(text);
 								const validation = validateOpeningPhrase(text, PREAMBLE_OPENING_PHRASES);
 
-								if (!validation.isValid) {
-									// Add warning decoration to first phrase
-									const phraseEnd = pos + 1 + firstPhrase.length;
-									decorations.push(
-										Decoration.inline(pos + 1, phraseEnd, {
-											class: 'phrase-warning'
-										})
-									);
-								}
+								// Always style the first phrase as italic, add warning if invalid
+								const phraseEnd = pos + 1 + firstPhrase.length;
+								const classes = validation.isValid
+									? 'phrase-italic'
+									: 'phrase-italic phrase-warning';
+
+								decorations.push(
+									Decoration.inline(pos + 1, phraseEnd, {
+										class: classes
+									})
+								);
 							}
 						});
 

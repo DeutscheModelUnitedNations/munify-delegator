@@ -78,16 +78,18 @@ export const OperativeClause = Node.create({
 								const firstPhrase = getFirstPhrase(text);
 								const validation = validateOpeningPhrase(text, OPERATIVE_OPENING_VERBS);
 
-								if (!validation.isValid) {
-									// Position is inside li > p
-									const pPos = pos + 1; // +1 for entering the li
-									const phraseEnd = pPos + 1 + firstPhrase.length; // +1 for entering the p
-									decorations.push(
-										Decoration.inline(pPos + 1, phraseEnd, {
-											class: 'phrase-warning'
-										})
-									);
-								}
+								// Always style the first phrase as italic, add warning if invalid
+								const pPos = pos + 1; // +1 for entering the li
+								const phraseEnd = pPos + 1 + firstPhrase.length; // +1 for entering the p
+								const classes = validation.isValid
+									? 'phrase-italic'
+									: 'phrase-italic phrase-warning';
+
+								decorations.push(
+									Decoration.inline(pPos + 1, phraseEnd, {
+										class: classes
+									})
+								);
 							}
 						});
 

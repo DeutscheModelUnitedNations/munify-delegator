@@ -207,8 +207,14 @@ ol[data-type='sub-clause-group']
 	content: counter(sub-sub-clause-counter, lower-roman) '.';
 }
 
-/* --- PHRASE VALIDATION WARNING STYLES --- */
+/* --- PHRASE STYLING --- */
 
+/* Opening phrases are always italic */
+.phrase-italic {
+	font-style: italic;
+}
+
+/* Warning for unrecognized phrases */
 .phrase-warning {
 	background-color: oklch(90% 0.15 85);
 	border-bottom: 2px wavy oklch(70% 0.2 85);

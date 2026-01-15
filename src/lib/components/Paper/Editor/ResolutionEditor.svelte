@@ -6,7 +6,6 @@
 	import Placeholder from '@tiptap/extension-placeholder';
 	import DragHandle from '@tiptap/extension-drag-handle';
 	import Menu from './Menu';
-	import * as m from '$lib/paraglide/messages';
 	import { ResolutionDocument } from './extensions/ResolutionDocument';
 	import { PreambleSection } from './extensions/PreambleSection';
 	import { OperativeSection } from './extensions/OperativeSection';
@@ -189,28 +188,6 @@
 					disabled={!editor.can().sinkListItem('subClause')}
 					label="Indent"
 					icon="fa-indent"
-				/>
-
-				<Menu.Divider />
-
-				<!-- FORMATTING BUTTONS -->
-				<Menu.Button
-					onClick={() => editor.chain().focus().toggleBold().run()}
-					active={editor.isActive('bold')}
-					label={m.bold()}
-					icon="fa-bold"
-				/>
-				<Menu.Button
-					onClick={() => editor.chain().focus().toggleItalic().run()}
-					active={editor.isActive('italic')}
-					label={m.italic()}
-					icon="fa-italic"
-				/>
-				<Menu.Button
-					onClick={() => editor.chain().focus().toggleUnderline().run()}
-					active={editor.isActive('underline')}
-					label={m.underline()}
-					icon="fa-underline"
 				/>
 			</Menu.Wrapper>
 		{/snippet}

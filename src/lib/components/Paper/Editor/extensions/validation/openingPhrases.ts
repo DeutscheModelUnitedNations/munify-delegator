@@ -185,31 +185,35 @@ export function validateOpeningPhrase(
 }
 
 // Get the first word or phrase from text (handles multi-word phrases)
+// Uses Unicode-aware word matching to support German umlauts (ä, ö, ü, ß)
 export function getFirstPhrase(text: string): string {
 	const trimmed = text.trim();
+	// Word pattern that includes German umlauts and other Unicode letters
+	const word = '[\\p{L}]+';
 	// Check for common multi-word phrase patterns
 	const multiWordPatterns = [
-		/^(In\s+\w+)/i,
-		/^(Unter\s+\w+)/i,
-		/^(Zur\s+\w+)/i,
-		/^(Nach\s+\w+)/i,
-		/^(Im\s+\w+)/i,
-		/^(Deeply\s+\w+)/i,
-		/^(Gravely\s+\w+)/i,
-		/^(Strongly\s+\w+)/i,
-		/^(Taking\s+\w+)/i,
-		/^(Bearing\s+\w+)/i,
-		/^(Keeping\s+\w+)/i,
-		/^(Having\s+\w+)/i,
-		/^(Noting\s+with\s+\w+)/i,
-		/^(Further\s+\w+)/i,
-		/^(Also\s+\w+)/i,
-		/^(Calls\s+\w+)/i,
-		/^(Takes\s+\w+)/i,
-		/^(Nimmt\s+\w+)/i,
-		/^(Fordert\s+\w+)/i,
-		/^(Ruft\s+\w+)/i,
-		/^(Richtet\s+\w+)/i
+		new RegExp(`^(In\\s+${word})`, 'iu'),
+		new RegExp(`^(Unter\\s+${word})`, 'iu'),
+		new RegExp(`^(Zur\\s+${word})`, 'iu'),
+		new RegExp(`^(Nach\\s+${word})`, 'iu'),
+		new RegExp(`^(Im\\s+${word})`, 'iu'),
+		new RegExp(`^(Deeply\\s+${word})`, 'iu'),
+		new RegExp(`^(Gravely\\s+${word})`, 'iu'),
+		new RegExp(`^(Strongly\\s+${word})`, 'iu'),
+		new RegExp(`^(Taking\\s+${word})`, 'iu'),
+		new RegExp(`^(Bearing\\s+${word})`, 'iu'),
+		new RegExp(`^(Keeping\\s+${word})`, 'iu'),
+		new RegExp(`^(Having\\s+${word})`, 'iu'),
+		new RegExp(`^(Noting\\s+with\\s+${word})`, 'iu'),
+		new RegExp(`^(Further\\s+${word})`, 'iu'),
+		new RegExp(`^(Also\\s+${word})`, 'iu'),
+		new RegExp(`^(Calls\\s+${word})`, 'iu'),
+		new RegExp(`^(Takes\\s+${word})`, 'iu'),
+		new RegExp(`^(Nimmt\\s+${word})`, 'iu'),
+		new RegExp(`^(Fordert\\s+${word})`, 'iu'),
+		new RegExp(`^(Ruft\\s+${word})`, 'iu'),
+		new RegExp(`^(Richtet\\s+${word})`, 'iu'),
+		new RegExp(`^(Zutiefst\\s+${word})`, 'iu')
 	];
 
 	for (const pattern of multiWordPatterns) {
@@ -219,6 +223,7 @@ export function getFirstPhrase(text: string): string {
 		}
 	}
 
-	// Fall back to first word
-	return trimmed.split(/[\s,]/)[0];
+	// Fall back to first word (Unicode-aware)
+	const firstWordMatch = trimmed.match(/^[\p{L}]+/u);
+	return firstWordMatch ? firstWordMatch[0] : trimmed.split(/[\s,]/)[0];
 }
