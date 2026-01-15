@@ -149,7 +149,6 @@
 	}
 
 	.preamble-clause {
-		text-indent: 2rem;
 		margin-bottom: 0.25rem;
 	}
 
