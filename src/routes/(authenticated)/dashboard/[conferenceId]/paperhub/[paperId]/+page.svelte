@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
-	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
+	import { validateResolution, type ResolutionHeaderData } from '$lib/schemata/resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import {
 		editorContentStore,
@@ -89,10 +89,16 @@
 
 	let initialized = $state(false);
 	let currentPaperId = $state<string | null>(null);
+	let resolutionValidationError = $state<string | null>(null);
+	let invalidRawContent = $state<unknown>(null);
 
 	// Reset and reinitialize when paper changes (handles client-side navigation)
 	$effect(() => {
 		if (paperData && paperData.id !== currentPaperId) {
+			// Reset validation error and raw content
+			resolutionValidationError = null;
+			invalidRawContent = null;
+
 			if (!paperData.versions || paperData.versions.length === 0) {
 				// Reset both stores, set appropriate one based on paper type
 				if (paperData.type === 'WORKING_PAPER') {
@@ -109,7 +115,15 @@
 			);
 			// Set the correct store based on paper type
 			if (paperData.type === 'WORKING_PAPER') {
-				$resolutionContentStore = latestVer.content;
+				// Validate working paper content before setting
+				const validationResult = validateResolution(latestVer.content);
+				if (validationResult.valid) {
+					$resolutionContentStore = validationResult.data;
+				} else {
+					resolutionValidationError = validationResult.error;
+					invalidRawContent = latestVer.content;
+					$resolutionContentStore = undefined;
+				}
 			} else {
 				$editorContentStore = latestVer.content;
 			}
@@ -298,6 +312,22 @@
 		const conferenceId = $page.params.conferenceId;
 		goto(`/dashboard/${conferenceId}/paperhub`);
 	};
+
+	const downloadRawContent = () => {
+		if (!invalidRawContent || !paperData) return;
+
+		const jsonString = JSON.stringify(invalidRawContent, null, 2);
+		const blob = new Blob([jsonString], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `paper-${paperData.id}-raw-data.json`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	};
 </script>
 
 <div class="flex flex-col gap-4 w-full">
@@ -424,7 +454,24 @@
 			<!-- Paper Editor - key forces re-creation when editable changes -->
 			<div bind:this={paperEditorContainer}>
 				{#key editorEditable}
-					{#if paperData.type === 'WORKING_PAPER'}
+					{#if paperData.type === 'WORKING_PAPER' && resolutionValidationError}
+						<!-- Invalid format error for working papers -->
+						<div class="alert alert-error flex-col items-start gap-3">
+							<div class="flex items-center gap-3">
+								<i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+								<div>
+									<p class="font-semibold">{m.paperInvalidFormat()}</p>
+									<p class="text-sm opacity-80">{m.paperInvalidFormatDescription()}</p>
+									{#if invalidRawContent}
+										<button class="btn btn-sm btn-outline mt-2" onclick={downloadRawContent}>
+											<i class="fa-solid fa-download"></i>
+											{m.paperInvalidFormatDownload()}
+										</button>
+									{/if}
+								</div>
+							</div>
+						</div>
+					{:else if paperData.type === 'WORKING_PAPER'}
 						<PaperEditor.Resolution.ResolutionEditor
 							committeeName={paperData.agendaItem?.committee?.name ?? 'Committee'}
 							editable={editorEditable}

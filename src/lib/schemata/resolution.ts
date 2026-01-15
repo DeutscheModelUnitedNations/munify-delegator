@@ -300,6 +300,20 @@ export function migrateResolution(data: unknown): Resolution {
 	return data as Resolution;
 }
 
+// Validate resolution data and return typed result
+export function validateResolution(
+	data: unknown
+): { valid: true; data: Resolution } | { valid: false; error: string } {
+	// First try migration in case it's legacy format
+	const migrated = migrateResolution(data);
+	const result = ResolutionSchema.safeParse(migrated);
+
+	if (result.success) {
+		return { valid: true, data: result.data };
+	}
+	return { valid: false, error: result.error.message };
+}
+
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================

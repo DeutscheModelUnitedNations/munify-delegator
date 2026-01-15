@@ -73,8 +73,6 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
 <dialog class="modal" class:modal-open={open} bind:this={dialogEl} onclick={handleDialogClick}>
 	<div class="modal-box max-w-2xl">
 		<div class="flex items-center justify-between mb-4">

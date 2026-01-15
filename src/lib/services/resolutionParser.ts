@@ -31,12 +31,12 @@ function detectPattern(line: string): DetectedPattern | null {
 	// Order matters - check more specific patterns first
 	const patterns: Array<{ regex: RegExp; type: PatternType }> = [
 		// Roman numerals (check before letters to avoid confusion with 'i', 'v', etc.)
-		{ regex: /^([IVXLCDM]+)[.\):\s]/i, type: 'roman' },
+		{ regex: /^([IVXLCDM]+)[.):\s]/i, type: 'roman' },
 		// Numbers with various separators
-		{ regex: /^(\d+)[.\):\s]/, type: 'number' },
+		{ regex: /^(\d+)[.):\s]/, type: 'number' },
 		{ regex: /^\((\d+)\)/, type: 'number' },
 		// Letters (single or repeated like aa, aaa)
-		{ regex: /^([a-z]+)[.\):\s]/i, type: 'letter' },
+		{ regex: /^([a-z]+)[.):\s]/i, type: 'letter' },
 		{ regex: /^\(([a-z]+)\)/i, type: 'letter' },
 		// Bullets
 		{ regex: /^[-•*]\s*/, type: 'bullet' }
