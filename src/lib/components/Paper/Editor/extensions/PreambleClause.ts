@@ -24,7 +24,7 @@ export const PreambleClause = Node.create({
 				const { $from } = this.editor.state.selection;
 
 				// Find the end of the current preamble clause
-				let clauseEnd = $from.end();
+				const clauseEnd = $from.end();
 
 				// Insert a new preamble clause after the current one
 				return this.editor
