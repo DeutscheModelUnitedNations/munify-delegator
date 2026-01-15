@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 
 	// Import only the essential styles - no layout components
-	import '../../../../../../app.css';
+	import '../../../../../../../app.css';
 	import 'flag-icons/css/flag-icons.min.css';
 
 	interface Props {
