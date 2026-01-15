@@ -307,7 +307,7 @@
 	}
 
 	.preamble-clause {
-		margin-bottom: 0.25rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.operative-section {

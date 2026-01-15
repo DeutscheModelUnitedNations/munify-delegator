@@ -85,6 +85,28 @@
 			{type === 'preamble' ? m.resolutionImportHintPreamble() : m.resolutionImportHintOperative()}
 		</p>
 
+		<!-- Tips for best results -->
+		<details class="collapse collapse-arrow bg-base-200 mb-4">
+			<summary class="collapse-title text-sm font-medium py-2 min-h-0">
+				<i class="fa-solid fa-lightbulb text-warning mr-2"></i>
+				{m.resolutionImportTipsTitle()}
+			</summary>
+			<div class="collapse-content text-sm">
+				<ul class="list-disc list-inside space-y-1 text-base-content/70">
+					{#if type === 'preamble'}
+						<li>{m.resolutionImportTipsPreamble1()}</li>
+						<li>{m.resolutionImportTipsPreamble2()}</li>
+						<li>{m.resolutionImportTipsPreamble3()}</li>
+					{:else}
+						<li>{m.resolutionImportTipsOperative1()}</li>
+						<li>{m.resolutionImportTipsOperative2()}</li>
+						<li>{m.resolutionImportTipsOperative3()}</li>
+						<li>{m.resolutionImportTipsOperative4()}</li>
+					{/if}
+				</ul>
+			</div>
+		</details>
+
 		<textarea
 			bind:value={inputText}
 			placeholder={type === 'preamble'

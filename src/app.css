@@ -59,6 +59,15 @@
 	.print-only {
 		display: block;
 	}
+
+	/* Force white background everywhere during print */
+	html,
+	body,
+	body > div,
+	.min-h-screen {
+		background: white !important;
+		background-color: white !important;
+	}
 }
 
 /* https://github.com/kbrgl/svelte-french-toast/issues/103 */
