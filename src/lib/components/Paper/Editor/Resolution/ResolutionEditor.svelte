@@ -79,7 +79,10 @@
 	let lastFocusedOperativeIndex = $state<number | null>(null);
 
 	function insertIntoPreamble(phrase: string) {
-		if (lastFocusedPreambleIndex !== null && lastFocusedPreambleIndex < resolution.preamble.length) {
+		if (
+			lastFocusedPreambleIndex !== null &&
+			lastFocusedPreambleIndex < resolution.preamble.length
+		) {
 			const clause = resolution.preamble[lastFocusedPreambleIndex];
 			// Insert phrase at the start, preserving existing content
 			if (clause.content.trim()) {
@@ -91,7 +94,10 @@
 	}
 
 	function insertIntoOperative(phrase: string) {
-		if (lastFocusedOperativeIndex !== null && lastFocusedOperativeIndex < resolution.operative.length) {
+		if (
+			lastFocusedOperativeIndex !== null &&
+			lastFocusedOperativeIndex < resolution.operative.length
+		) {
 			const clause = resolution.operative[lastFocusedOperativeIndex];
 			// Insert phrase at the start of the first text block
 			const firstBlock = clause.blocks[0];

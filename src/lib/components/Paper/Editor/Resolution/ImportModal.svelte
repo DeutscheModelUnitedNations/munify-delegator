@@ -131,9 +131,9 @@
 				<div class="relative">
 					<pre
 						class="bg-base-300 rounded-lg p-3 pr-28 text-xs whitespace-pre-wrap overflow-x-auto max-h-48">{type ===
-					'preamble'
-						? m.resolutionImportLLMPromptPreamble()
-						: m.resolutionImportLLMPromptOperative()}</pre>
+						'preamble'
+							? m.resolutionImportLLMPromptPreamble()
+							: m.resolutionImportLLMPromptOperative()}</pre>
 					<button
 						type="button"
 						class="btn btn-sm btn-ghost absolute top-2 right-2"
@@ -161,14 +161,13 @@
 					{m.resolutionImportPreview({ count: clauseCount.total })}
 					{#if type === 'operative' && clauseCount.sub > 0}
 						<span class="text-base-content/60">
-							({clauseCount.main} {m.resolutionOperativeClauses()}, {clauseCount.sub}
+							({clauseCount.main}
+							{m.resolutionOperativeClauses()}, {clauseCount.sub}
 							{m.resolutionSubClauses()})
 						</span>
 					{/if}
 				</div>
-				<ul
-					class="bg-base-200 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1 text-sm font-mono"
-				>
+				<ul class="bg-base-200 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1 text-sm font-mono">
 					{#if type === 'preamble'}
 						{#each parsedPreamble as clause, i}
 							<li class="flex items-start gap-2">

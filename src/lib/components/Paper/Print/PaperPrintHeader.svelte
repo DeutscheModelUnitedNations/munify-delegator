@@ -64,7 +64,9 @@
 			{#if committeeName}
 				<div class="metadata-row">
 					<span class="metadata-label">{m.committee()}:</span>
-					<span class="metadata-value">{committeeName}{committeeAbbreviation ? ` (${committeeAbbreviation})` : ''}</span>
+					<span class="metadata-value"
+						>{committeeName}{committeeAbbreviation ? ` (${committeeAbbreviation})` : ''}</span
+					>
 				</div>
 			{/if}
 			{#if topic}

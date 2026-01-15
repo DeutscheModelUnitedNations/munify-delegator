@@ -201,7 +201,11 @@
 	{/if}
 
 	<!-- Render blocks of an operative clause -->
-	{#snippet operativeClauseBlocks(clause: OperativeClause, opIndex: number, isLastOperative: boolean)}
+	{#snippet operativeClauseBlocks(
+		clause: OperativeClause,
+		opIndex: number,
+		isLastOperative: boolean
+	)}
 		{#each clause.blocks as block, blockIndex}
 			{@const isLastBlock = blockIndex === clause.blocks.length - 1}
 			{#if block.type === 'text'}
@@ -211,10 +215,13 @@
 				{#if block.content.trim()}
 					{#if blockIndex === 0}
 						<!-- First text block gets italicized phrase -->
-						<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+						<span class="italic">{formatted.firstPhrase}</span
+						>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
 					{:else}
 						<!-- Continuation text blocks (after subclauses) -->
-						<p class="continuation-text">{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}</p>
+						<p class="continuation-text">
+							{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+						</p>
 					{/if}
 				{/if}
 			{:else if block.type === 'subclauses'}
@@ -250,7 +257,9 @@
 						{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
 					{:else}
 						<!-- Continuation text after nested subclauses -->
-						<p class="continuation-text">{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}</p>
+						<p class="continuation-text">
+							{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
+						</p>
 					{/if}
 				{/if}
 			{:else if block.type === 'subclauses'}

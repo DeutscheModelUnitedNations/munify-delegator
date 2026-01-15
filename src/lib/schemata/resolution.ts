@@ -351,7 +351,11 @@ export function isClauseEmpty(clause: OperativeClause | SubClause): boolean {
  * The second text block's content is appended to the first with a space.
  * Returns new blocks array with merged result.
  */
-export function mergeTextBlocks(blocks: ClauseBlock[], index1: number, index2: number): ClauseBlock[] {
+export function mergeTextBlocks(
+	blocks: ClauseBlock[],
+	index1: number,
+	index2: number
+): ClauseBlock[] {
 	const block1 = blocks[index1];
 	const block2 = blocks[index2];
 	if (block1?.type !== 'text' || block2?.type !== 'text') {
@@ -373,7 +377,11 @@ export function mergeTextBlocks(blocks: ClauseBlock[], index1: number, index2: n
  * The second block's items are appended to the first.
  * Returns new blocks array with merged result.
  */
-export function mergeSubclausesBlocks(blocks: ClauseBlock[], index1: number, index2: number): ClauseBlock[] {
+export function mergeSubclausesBlocks(
+	blocks: ClauseBlock[],
+	index1: number,
+	index2: number
+): ClauseBlock[] {
 	const block1 = blocks[index1];
 	const block2 = blocks[index2];
 	if (block1?.type !== 'subclauses' || block2?.type !== 'subclauses') {

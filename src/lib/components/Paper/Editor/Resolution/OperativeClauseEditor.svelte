@@ -62,7 +62,10 @@
 	}
 
 	// Update subclauses in a subclauses block
-	function updateSubClauses(blockIndex: number, items: import('$lib/schemata/resolution').SubClause[]) {
+	function updateSubClauses(
+		blockIndex: number,
+		items: import('$lib/schemata/resolution').SubClause[]
+	) {
 		const block = clause.blocks[blockIndex];
 		if (block.type === 'subclauses') {
 			const newBlocks = [...clause.blocks];

@@ -60,7 +60,9 @@ function getDepthLabel(index: number, depth: number): string {
  */
 function getBlocksTextContent(blocks: ClauseBlock[]): string {
 	return blocks
-		.filter((block): block is { type: 'text'; id: string; content: string } => block.type === 'text')
+		.filter(
+			(block): block is { type: 'text'; id: string; content: string } => block.type === 'text'
+		)
 		.map((block) => block.content.trim())
 		.filter((content) => content.length > 0)
 		.join(' ');
