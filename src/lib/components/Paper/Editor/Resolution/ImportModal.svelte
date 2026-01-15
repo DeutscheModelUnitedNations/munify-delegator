@@ -25,9 +25,15 @@
 			type === 'preamble'
 				? m.resolutionImportLLMPromptPreamble()
 				: m.resolutionImportLLMPromptOperative();
-		navigator.clipboard.writeText(prompt);
-		copied = true;
-		setTimeout(() => (copied = false), 2000);
+		navigator.clipboard.writeText(prompt).then(
+			() => {
+				copied = true;
+				setTimeout(() => (copied = false), 2000);
+			},
+			() => {
+				// Clipboard write failed - silently ignore
+			}
+		);
 	}
 
 	// Parse the input text based on type

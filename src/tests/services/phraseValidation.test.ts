@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePhrasePatterns, validatePhrase } from '$lib/services/phraseValidation';
+import { parsePhrasePatterns, validatePhrase, expandPattern } from '$lib/services/phraseValidation';
 
 describe('phraseValidation', () => {
 	describe('parsePhrasePatterns', () => {
@@ -348,6 +348,141 @@ verurteilt (entschieden)
 
 			expect(validatePhrase('In Anbetracht der Lage', patterns).valid).toBe(false);
 			expect(validatePhrase('Besorgt über die Entwicklung', patterns).valid).toBe(false);
+		});
+	});
+
+	describe('expandPattern', () => {
+		describe('simple patterns (no special syntax)', () => {
+			it('should return single variation for simple pattern', () => {
+				const result = expandPattern('alarmiert');
+				expect(result).toEqual(['alarmiert']);
+			});
+
+			it('should return single variation for multi-word pattern', () => {
+				const result = expandPattern('unter Hinweis auf');
+				expect(result).toEqual(['unter Hinweis auf']);
+			});
+		});
+
+		describe('optional prefix: (prefix) rest', () => {
+			it('should expand pattern with optional prefix into two variations', () => {
+				const result = expandPattern('(zutiefst) bedauernd');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('bedauernd');
+				expect(result).toContain('zutiefst bedauernd');
+			});
+
+			it('should handle multi-word optional prefix', () => {
+				const result = expandPattern('(in der Absicht) feststellend');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('feststellend');
+				expect(result).toContain('in der Absicht feststellend');
+			});
+		});
+
+		describe('optional suffix: base (suffix)', () => {
+			it('should expand pattern with optional suffix into two variations', () => {
+				const result = expandPattern('appelliert (eindringlich)');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('appelliert');
+				expect(result).toContain('appelliert eindringlich');
+			});
+
+			it('should handle multi-word optional suffix', () => {
+				const result = expandPattern('begrüßt (mit Freude)');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('begrüßt');
+				expect(result).toContain('begrüßt mit Freude');
+			});
+		});
+
+		describe('both prefix and suffix: (prefix) base (suffix)', () => {
+			it('should expand pattern with both optional parts into four variations', () => {
+				const result = expandPattern('(erneut) bekräftigend (nachdrücklich)');
+				expect(result).toHaveLength(4);
+				expect(result).toContain('bekräftigend');
+				expect(result).toContain('bekräftigend nachdrücklich');
+				expect(result).toContain('erneut bekräftigend');
+				expect(result).toContain('erneut bekräftigend nachdrücklich');
+			});
+		});
+
+		describe('placeholder replacement: _ to ...', () => {
+			it('should replace placeholder with ellipsis in simple pattern', () => {
+				const result = expandPattern('fordert _ auf');
+				expect(result).toEqual(['fordert ... auf']);
+			});
+
+			it('should replace placeholder with ellipsis in pattern with optional suffix', () => {
+				const result = expandPattern('bittet _ (nachdrücklich)');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('bittet ...');
+				expect(result).toContain('bittet ... nachdrücklich');
+			});
+
+			it('should replace placeholder with ellipsis in pattern with optional prefix', () => {
+				const result = expandPattern('(dringend) fordert _ auf');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('fordert ... auf');
+				expect(result).toContain('dringend fordert ... auf');
+			});
+
+			it('should handle multiple placeholders', () => {
+				const result = expandPattern('überweist _ an _ zur');
+				expect(result).toEqual(['überweist ... an ... zur']);
+			});
+		});
+
+		describe('edge cases', () => {
+			it('should handle empty string', () => {
+				const result = expandPattern('');
+				expect(result).toEqual(['']);
+			});
+
+			it('should handle pattern with only optional part', () => {
+				// This is an edge case - pattern starts with ( but has content after )
+				const result = expandPattern('(optional) required');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('required');
+				expect(result).toContain('optional required');
+			});
+
+			it('should handle German special characters', () => {
+				const result = expandPattern('(höchst) besorgt');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('besorgt');
+				expect(result).toContain('höchst besorgt');
+			});
+
+			it('should handle pattern with parentheses that are not optional markers', () => {
+				// Parentheses in the middle of a word or without proper spacing are treated literally
+				const result = expandPattern('in Anbetracht (der Tatsache)');
+				expect(result).toHaveLength(2);
+				expect(result).toContain('in Anbetracht');
+				expect(result).toContain('in Anbetracht der Tatsache');
+			});
+		});
+
+		describe('real-world patterns', () => {
+			it('should expand common preamble patterns correctly', () => {
+				expect(expandPattern('alarmiert')).toEqual(['alarmiert']);
+				expect(expandPattern('(zutiefst) bedauernd')).toEqual(['bedauernd', 'zutiefst bedauernd']);
+				expect(expandPattern('(höchst) besorgt')).toEqual(['besorgt', 'höchst besorgt']);
+				expect(expandPattern('(fest) überzeugt')).toEqual(['überzeugt', 'fest überzeugt']);
+			});
+
+			it('should expand common operative patterns correctly', () => {
+				expect(expandPattern('beschließt')).toEqual(['beschließt']);
+				expect(expandPattern('appelliert (eindringlich)')).toEqual([
+					'appelliert',
+					'appelliert eindringlich'
+				]);
+				expect(expandPattern('fordert _ auf')).toEqual(['fordert ... auf']);
+				expect(expandPattern('verurteilt (entschieden)')).toEqual([
+					'verurteilt',
+					'verurteilt entschieden'
+				]);
+			});
 		});
 	});
 });

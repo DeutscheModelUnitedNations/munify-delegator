@@ -33,9 +33,6 @@
 	let entityName = $derived(
 		nationAlpha3Code ? getFullTranslatedCountryNameFromISO3Code(nationAlpha3Code) : nsaName
 	);
-
-	// Get disclaimer text
-	let disclaimerText = $derived(m.paperPrintDisclaimer({ conferenceName }));
 </script>
 
 <div class="paper-print-header">

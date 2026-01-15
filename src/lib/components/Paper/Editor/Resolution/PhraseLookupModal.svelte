@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PhrasePattern } from '$lib/services/phraseValidation';
+	import { type PhrasePattern, expandPattern } from '$lib/services/phraseValidation';
 	import { m } from '$lib/paraglide/messages';
 	import toast from 'svelte-french-toast';
 
@@ -15,50 +15,6 @@
 
 	let searchQuery = $state('');
 	let dialogEl: HTMLDialogElement;
-
-	// Expand a pattern into all possible phrase variations
-	function expandPattern(raw: string): string[] {
-		const variations: string[] = [];
-
-		// Check for optional prefix: "(prefix) rest"
-		const prefixMatch = raw.match(/^\(([^)]+)\)\s*(.+)$/);
-		if (prefixMatch) {
-			const prefix = prefixMatch[1];
-			const rest = prefixMatch[2];
-
-			// Check if rest also has optional suffix
-			const suffixMatch = rest.match(/^(.+?)\s*\(([^)]+)\)$/);
-			if (suffixMatch) {
-				const base = suffixMatch[1].trim().replace(/\s+_\s+/g, ' ... ');
-				const suffix = suffixMatch[2];
-				// All 4 combinations: with/without prefix × with/without suffix
-				variations.push(base);
-				variations.push(`${base} ${suffix}`);
-				variations.push(`${prefix} ${base}`);
-				variations.push(`${prefix} ${base} ${suffix}`);
-			} else {
-				// Just prefix optional
-				const base = rest.replace(/\s+_\s+/g, ' ... ');
-				variations.push(base);
-				variations.push(`${prefix} ${base}`);
-			}
-			return variations;
-		}
-
-		// Check for optional suffix only: "base (suffix)"
-		const suffixMatch = raw.match(/^(.+?)\s*\(([^)]+)\)$/);
-		if (suffixMatch) {
-			const base = suffixMatch[1].trim().replace(/\s+_\s+/g, ' ... ');
-			const suffix = suffixMatch[2];
-			variations.push(base);
-			variations.push(`${base} ${suffix}`);
-			return variations;
-		}
-
-		// No optional parts - just return the base form
-		variations.push(raw.replace(/\s+_\s+/g, ' ... '));
-		return variations;
-	}
 
 	// Expand all patterns into their variations
 	let allPhrases = $derived.by(() => {
@@ -81,8 +37,12 @@
 	}
 
 	async function handleCopy(phrase: string) {
-		await navigator.clipboard.writeText(phrase);
-		toast.success(m.phraseCopied());
+		try {
+			await navigator.clipboard.writeText(phrase);
+			toast.success(m.phraseCopied());
+		} catch {
+			toast.error(m.copyFailed());
+		}
 	}
 
 	// Handle dialog close via backdrop or escape

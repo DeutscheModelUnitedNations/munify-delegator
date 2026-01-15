@@ -217,7 +217,13 @@ export function toRoman(num: number): string {
 }
 
 // Convert number to lowercase letter (1 → a, 2 → b, etc.)
+// Wraps to double letters for indices > 26 (27 → aa, 28 → ab, etc.)
 export function toLetter(num: number): string {
+	if (num > 26) {
+		const first = Math.floor((num - 1) / 26);
+		const second = ((num - 1) % 26) + 1;
+		return String.fromCharCode(96 + first) + String.fromCharCode(96 + second);
+	}
 	return String.fromCharCode(96 + num); // 97 is 'a'
 }
 
@@ -296,8 +302,8 @@ export function migrateResolution(data: unknown): Resolution {
 			operative: data.operative.map(migrateLegacyOperativeClause)
 		};
 	}
-	// Already in new format or empty
-	return data as Resolution;
+	// Validate new format
+	return ResolutionSchema.parse(data);
 }
 
 // Validate resolution data and return typed result

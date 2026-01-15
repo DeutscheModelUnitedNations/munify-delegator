@@ -136,7 +136,7 @@
 		const content =
 			$formData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
 
-		const resposne = await toast.promise(
+		const response = await toast.promise(
 			createPaperMutation.mutate({
 				conferenceId: data.conferenceId,
 				userId: data.user.sub,
@@ -156,7 +156,7 @@
 		cache.markStale();
 		await invalidateAll();
 
-		if (resposne?.data.createOnePaper?.id) {
+		if (response?.data.createOnePaper?.id) {
 			// Clear stores so next paper creation starts fresh
 			$editorContentStore = undefined;
 			$resolutionContentStore = undefined;

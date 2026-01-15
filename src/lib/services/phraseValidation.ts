@@ -237,3 +237,63 @@ export async function loadPhrasePatterns(type: 'preamble' | 'operative'): Promis
 export function clearPatternCache(): void {
 	patternCache.clear();
 }
+
+/**
+ * Expand a phrase pattern into all possible human-readable variations.
+ *
+ * This is used for displaying phrase suggestions to users in a lookup modal.
+ * It handles:
+ * - Optional prefix: "(prefix) rest" → ["rest", "prefix rest"]
+ * - Optional suffix: "base (suffix)" → ["base", "base suffix"]
+ * - Both: "(prefix) base (suffix)" → all 4 combinations
+ * - Placeholder replacement: " _ " → " ... " for display
+ *
+ * @param raw - The raw pattern string from the phrase file
+ * @returns Array of expanded phrase variations
+ */
+export function expandPattern(raw: string): string[] {
+	const variations: string[] = [];
+
+	// Helper to replace placeholder _ with ... (handles all positions)
+	const replacePlaceholder = (str: string): string =>
+		str.replace(/ _ /g, ' ... ').replace(/ _$/, ' ...').replace(/^_ /, '... ');
+
+	// Check for optional prefix: "(prefix) rest"
+	const prefixMatch = raw.match(/^\(([^)]+)\)\s*(.+)$/);
+	if (prefixMatch) {
+		const prefix = prefixMatch[1];
+		const rest = prefixMatch[2];
+
+		// Check if rest also has optional suffix
+		const suffixMatch = rest.match(/^(.+?)\s*\(([^)]+)\)$/);
+		if (suffixMatch) {
+			const base = replacePlaceholder(suffixMatch[1].trim());
+			const suffix = suffixMatch[2];
+			// All 4 combinations: with/without prefix × with/without suffix
+			variations.push(base);
+			variations.push(`${base} ${suffix}`);
+			variations.push(`${prefix} ${base}`);
+			variations.push(`${prefix} ${base} ${suffix}`);
+		} else {
+			// Just prefix optional
+			const base = replacePlaceholder(rest);
+			variations.push(base);
+			variations.push(`${prefix} ${base}`);
+		}
+		return variations;
+	}
+
+	// Check for optional suffix only: "base (suffix)"
+	const suffixMatch = raw.match(/^(.+?)\s*\(([^)]+)\)$/);
+	if (suffixMatch) {
+		const base = replacePlaceholder(suffixMatch[1].trim());
+		const suffix = suffixMatch[2];
+		variations.push(base);
+		variations.push(`${base} ${suffix}`);
+		return variations;
+	}
+
+	// No optional parts - just return the base form
+	variations.push(replacePlaceholder(raw));
+	return variations;
+}

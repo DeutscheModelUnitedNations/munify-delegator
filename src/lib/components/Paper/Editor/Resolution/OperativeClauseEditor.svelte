@@ -46,10 +46,9 @@
 	let suggestionComponent: PhraseSuggestions | undefined = $state();
 
 	// Get first text block content for suggestions
-	let firstTextContent = $derived(() => {
-		const firstBlock = clause.blocks[0];
-		return firstBlock?.type === 'text' ? firstBlock.content : '';
-	});
+	let firstTextContent = $derived(
+		clause.blocks[0]?.type === 'text' ? clause.blocks[0].content : ''
+	);
 
 	// Update a specific block's content
 	function updateBlockContent(blockIndex: number, content: string) {
@@ -124,7 +123,7 @@
 	function handleFocus(blockIndex: number) {
 		if (blockIndex === 0) {
 			onFocus?.();
-			const content = firstTextContent();
+			const content = firstTextContent;
 			if (patterns.length > 0 && content.length > 0 && content.length < 30) {
 				showSuggestions = true;
 			}
@@ -182,7 +181,7 @@
 						<PhraseSuggestions
 							bind:this={suggestionComponent}
 							{patterns}
-							inputValue={firstTextContent()}
+							inputValue={firstTextContent}
 							visible={showSuggestions}
 							onSelect={selectSuggestion}
 							onClose={() => (showSuggestions = false)}
