@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
+	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
@@ -116,6 +117,26 @@
 		paperData.versions.find((version) => version.version === versionNumber)
 	);
 	let existingReviews = $derived(paperData.versions.flatMap((version) => version.reviews ?? []));
+
+	// Resolution header data for working papers
+	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
+		if (paperData?.type !== 'WORKING_PAPER') return undefined;
+
+		const nationName = nation
+			? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
+			: undefined;
+		const nsaName = nsa?.name;
+		const year = new Date().getFullYear();
+
+		return {
+			conferenceName: paperData.conference?.title ?? 'Model UN',
+			committeeAbbreviation: paperData.agendaItem?.committee?.abbreviation,
+			committeeFullName: paperData.agendaItem?.committee?.name,
+			documentNumber: `WP/${year}/${paperData.id.slice(-6)}`,
+			topic: paperData.agendaItem?.title,
+			authoringDelegation: nationName ?? nsaName
+		};
+	});
 
 	let unsavedChanges = $state(false);
 
@@ -362,6 +383,7 @@
 						<PaperEditor.Resolution.ResolutionEditor
 							committeeName={paperData.agendaItem?.committee?.name ?? 'Committee'}
 							editable={editorEditable}
+							headerData={resolutionHeaderData}
 						/>
 					{:else}
 						<PaperEditor.PaperFormat

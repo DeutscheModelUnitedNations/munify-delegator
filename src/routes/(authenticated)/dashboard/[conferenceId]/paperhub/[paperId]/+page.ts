@@ -12,6 +12,7 @@ export const _houdini_load = graphql(`
 			}
 			conference {
 				id
+				title
 			}
 			delegation {
 				id
@@ -21,6 +22,7 @@ export const _houdini_load = graphql(`
 				}
 				assignedNonStateActor {
 					id
+					name
 					abbreviation
 					fontAwesomeIcon
 				}

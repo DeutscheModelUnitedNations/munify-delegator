@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g fill="currentColor">
+    <!-- Outer wreath - left side -->
+    <path d="M96.5 393.5c-7.2-12.4-13.3-25.4-18.4-38.9-5.1-13.5-9.1-27.5-12.1-41.9-3-14.4-4.9-29.2-5.7-44.2-.8-15-.5-30.2.8-45.3 1.3-15.1 3.7-30.1 7.1-44.8 3.4-14.7 7.9-29.1 13.3-43 5.4-13.9 11.8-27.4 19-40.3 7.2-12.9 15.3-25.2 24.1-36.8l4.9 3.8c-8.5 11.2-16.2 23.1-23.1 35.5-6.9 12.4-13 25.4-18.2 38.8-5.2 13.4-9.5 27.2-12.8 41.3-3.3 14.1-5.6 28.5-6.8 43.1-1.2 14.6-1.4 29.3-.6 43.9.8 14.6 2.6 29 5.4 43.1 2.8 14.1 6.6 27.8 11.3 41.1 4.7 13.3 10.3 26.1 16.8 38.3l-5 3.3z"/>
+    <!-- Outer wreath - right side -->
+    <path d="M415.5 393.5l-5-3.3c6.5-12.2 12.1-25 16.8-38.3 4.7-13.3 8.5-27 11.3-41.1 2.8-14.1 4.6-28.5 5.4-43.1.8-14.6.6-29.3-.6-43.9-1.2-14.6-3.5-29-6.8-43.1-3.3-14.1-7.6-27.9-12.8-41.3-5.2-13.4-11.3-26.4-18.2-38.8-6.9-12.4-14.6-24.3-23.1-35.5l4.9-3.8c8.8 11.6 16.9 23.9 24.1 36.8 7.2 12.9 13.6 26.4 19 40.3 5.4 13.9 9.9 28.3 13.3 43 3.4 14.7 5.8 29.7 7.1 44.8 1.3 15.1 1.6 30.3.8 45.3-.8 15-2.7 29.8-5.7 44.2-3 14.4-7 28.4-12.1 41.9-5.1 13.5-11.2 26.5-18.4 38.9z"/>
+    <!-- Inner wreath decorations - left -->
+    <path d="M108 370c-4-8-7.5-16.3-10.5-24.8s-5.5-17.2-7.5-26c-2-8.8-3.5-17.8-4.5-26.9s-1.5-18.3-1.5-27.5c0-9.2.5-18.4 1.5-27.5s2.5-18.1 4.5-26.9c2-8.8 4.5-17.5 7.5-26s6.5-16.8 10.5-24.8l5.5 2.8c-3.8 7.7-7.2 15.7-10 23.9s-5.2 16.6-7.1 25.2c-1.9 8.6-3.3 17.3-4.3 26.2-1 8.9-1.4 17.8-1.4 26.9s.5 18 1.4 26.9c1 8.9 2.4 17.6 4.3 26.2 1.9 8.6 4.3 17 7.1 25.2s6.2 16.2 10 23.9l-5.5 2.8z"/>
+    <!-- Inner wreath decorations - right -->
+    <path d="M404 370l-5.5-2.8c3.8-7.7 7.2-15.7 10-23.9s5.2-16.6 7.1-25.2c1.9-8.6 3.3-17.3 4.3-26.2 1-8.9 1.4-17.8 1.4-26.9s-.5-18-1.4-26.9c-1-8.9-2.4-17.6-4.3-26.2-1.9-8.6-4.3-17-7.1-25.2s-6.2-16.2-10-23.9l5.5-2.8c4 8 7.5 16.3 10.5 24.8s5.5 17.2 7.5 26c2 8.8 3.5 17.8 4.5 26.9s1.5 18.3 1.5 27.5c0 9.2-.5 18.4-1.5 27.5s-2.5 18.1-4.5 26.9c-2 8.8-4.5 17.5-7.5 26s-6.5 16.8-10.5 24.8z"/>
+    <!-- Olive branches -->
+    <ellipse cx="85" cy="420" rx="12" ry="20" transform="rotate(-30 85 420)"/>
+    <ellipse cx="95" cy="400" rx="10" ry="16" transform="rotate(-25 95 400)"/>
+    <ellipse cx="105" cy="382" rx="8" ry="14" transform="rotate(-20 105 382)"/>
+    <ellipse cx="427" cy="420" rx="12" ry="20" transform="rotate(30 427 420)"/>
+    <ellipse cx="417" cy="400" rx="10" ry="16" transform="rotate(25 417 400)"/>
+    <ellipse cx="407" cy="382" rx="8" ry="14" transform="rotate(20 407 382)"/>
+    <!-- Center globe -->
+    <circle cx="256" cy="256" r="140" fill="none" stroke="currentColor" stroke-width="8"/>
+    <!-- Globe grid lines - latitude -->
+    <ellipse cx="256" cy="256" rx="140" ry="35" fill="none" stroke="currentColor" stroke-width="3"/>
+    <ellipse cx="256" cy="256" rx="140" ry="70" fill="none" stroke="currentColor" stroke-width="3"/>
+    <ellipse cx="256" cy="256" rx="140" ry="105" fill="none" stroke="currentColor" stroke-width="3"/>
+    <!-- Globe grid lines - longitude -->
+    <ellipse cx="256" cy="256" rx="35" ry="140" fill="none" stroke="currentColor" stroke-width="3"/>
+    <ellipse cx="256" cy="256" rx="70" ry="140" fill="none" stroke="currentColor" stroke-width="3"/>
+    <ellipse cx="256" cy="256" rx="105" ry="140" fill="none" stroke="currentColor" stroke-width="3"/>
+    <!-- Center vertical line -->
+    <line x1="256" y1="116" x2="256" y2="396" stroke="currentColor" stroke-width="3"/>
+    <!-- Center horizontal line -->
+    <line x1="116" y1="256" x2="396" y2="256" stroke="currentColor" stroke-width="3"/>
+    <!-- Polar circles approximation -->
+    <circle cx="256" cy="150" r="25" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="256" cy="362" r="25" fill="none" stroke="currentColor" stroke-width="2"/>
+  </g>
+</svg>

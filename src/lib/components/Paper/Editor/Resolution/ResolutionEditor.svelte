@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		type Resolution,
+		type ResolutionHeaderData,
 		type PreambleClause,
 		type OperativeClause,
 		type SubClause,
@@ -26,9 +27,10 @@
 		committeeName: string;
 		initialContent?: Resolution;
 		editable?: boolean;
+		headerData?: ResolutionHeaderData;
 	}
 
-	let { committeeName, initialContent, editable = true }: Props = $props();
+	let { committeeName, initialContent, editable = true, headerData }: Props = $props();
 
 	// Initialize resolution state
 	let resolution = $state<Resolution>(
@@ -402,7 +404,7 @@
 		</div>
 	{:else}
 		<!-- Preview Mode -->
-		<ResolutionPreview {resolution} />
+		<ResolutionPreview {resolution} {headerData} />
 	{/if}
 </fieldset>
 

@@ -37,6 +37,16 @@ export type PreambleClause = z.infer<typeof PreambleClauseSchema>;
 export type OperativeClause = z.infer<typeof OperativeClauseSchema>;
 export type Resolution = z.infer<typeof ResolutionSchema>;
 
+// Header metadata for UN-style resolution preview
+export interface ResolutionHeaderData {
+	conferenceName?: string;
+	committeeAbbreviation?: string;
+	committeeFullName?: string;
+	documentNumber?: string;
+	topic?: string;
+	authoringDelegation?: string;
+}
+
 // Helper to create a new empty resolution
 export function createEmptyResolution(committeeName: string): Resolution {
 	return {

@@ -1,17 +1,20 @@
 <script lang="ts">
-	import type { Resolution, SubClause } from '$lib/schemata/resolution';
+	import type { Resolution, SubClause, ResolutionHeaderData } from '$lib/schemata/resolution';
 	import { getSubClauseLabel } from '$lib/schemata/resolution';
 	import {
 		type PhrasePattern,
 		loadPhrasePatterns,
 		validatePhrase
 	} from '$lib/services/phraseValidation';
+	import { m } from '$lib/paraglide/messages';
+	import unEmblem from '$assets/un-emblem.svg';
 
 	interface Props {
 		resolution: Resolution;
+		headerData?: ResolutionHeaderData;
 	}
 
-	let { resolution }: Props = $props();
+	let { resolution, headerData }: Props = $props();
 
 	// Filter out empty clauses for preview
 	let nonEmptyPreamble = $derived(resolution.preamble.filter((c) => c.content.trim()));
@@ -57,12 +60,75 @@
 			rest: trimmed.slice(firstSpaceIndex)
 		};
 	}
+
+	// Get disclaimer text with conference name
+	let disclaimerText = $derived(
+		m.resolutionDisclaimer({ conferenceName: headerData?.conferenceName ?? 'Model UN' })
+	);
 </script>
 
 <div class="resolution-preview">
-	<!-- Header -->
+	{#if headerData}
+		<!-- Watermark Disclaimer -->
+		<div class="watermark-disclaimer">
+			{disclaimerText}
+		</div>
+
+		<!-- UN Header Row: "United Nations" left, Document Number right -->
+		<div class="un-header-row">
+			<div class="un-title">{m.resolutionUnitedNations()}</div>
+			{#if headerData.documentNumber}
+				<div class="document-number">
+					<span class="doc-abbrev">{headerData.committeeAbbreviation}</span><span class="doc-rest"
+						>/{headerData.documentNumber}</span
+					>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Thin Divider -->
+		<hr class="thin-divider" />
+
+		<!-- Committee Section with Emblem -->
+		<div class="committee-section">
+			<img src={unEmblem} alt="UN Emblem" class="un-emblem" />
+			<div class="committee-name">
+				{headerData.committeeFullName ?? resolution.committeeName}
+			</div>
+		</div>
+
+		<!-- Topic -->
+		{#if headerData.topic}
+			<div class="metadata-section">
+				<div class="metadata-label">{m.resolutionTopic()}</div>
+				<div class="metadata-value">{headerData.topic}</div>
+			</div>
+		{/if}
+
+		<!-- Authoring Delegation -->
+		{#if headerData.authoringDelegation}
+			<div class="metadata-section">
+				<div class="metadata-label">{m.resolutionAuthoringDelegation()}</div>
+				<div class="metadata-value">{headerData.authoringDelegation}</div>
+			</div>
+		{/if}
+
+		<!-- Small Print Disclaimer -->
+		<div class="small-disclaimer">
+			{disclaimerText}
+		</div>
+
+		<!-- Thick Divider -->
+		<hr class="thick-divider" />
+	{/if}
+
+	<!-- Resolution Content Header -->
 	<div class="resolution-header">
-		{resolution.committeeName.toUpperCase()},
+		{#if headerData?.committeeFullName}
+			{headerData.committeeFullName},
+		{:else}
+			{resolution.committeeName.toUpperCase()},
+		{/if}
 	</div>
 
 	<!-- Preamble Section -->
@@ -137,11 +203,103 @@
 		color: #1a1a1a;
 	}
 
-	.resolution-header {
-		text-transform: uppercase;
-		font-weight: bold;
+	/* Watermark Disclaimer */
+	.watermark-disclaimer {
+		color: #9ca3af;
+		font-size: 0.75rem;
+		text-align: center;
 		margin-bottom: 1.5rem;
-		letter-spacing: 0.05em;
+		line-height: 1.4;
+	}
+
+	/* UN Header Row */
+	.un-header-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		margin-bottom: 0.5rem;
+	}
+
+	.un-title {
+		font-size: 1.1rem;
+	}
+
+	.document-number {
+		text-align: right;
+	}
+
+	.doc-abbrev {
+		font-size: 1.5rem;
+		font-weight: bold;
+	}
+
+	.doc-rest {
+		font-size: 0.9rem;
+	}
+
+	/* Dividers */
+	.thin-divider {
+		border: none;
+		border-top: 1px solid #1a1a1a;
+		margin: 0.5rem 0 1rem 0;
+	}
+
+	.thick-divider {
+		border: none;
+		border-top: 3px solid #1a1a1a;
+		margin: 1.5rem 0 2rem 0;
+	}
+
+	/* Committee Section */
+	.committee-section {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.un-emblem {
+		width: 70px;
+		height: 70px;
+		flex-shrink: 0;
+	}
+
+	.committee-name {
+		font-size: 1.8rem;
+		font-weight: bold;
+		line-height: 1.2;
+		padding-top: 0.25rem;
+	}
+
+	/* Metadata Sections */
+	.metadata-section {
+		margin-bottom: 1rem;
+	}
+
+	.metadata-label {
+		font-weight: bold;
+		text-transform: uppercase;
+		font-size: 0.85rem;
+	}
+
+	.metadata-value {
+		margin-left: 1.5rem;
+		font-size: 1rem;
+	}
+
+	/* Small Disclaimer */
+	.small-disclaimer {
+		color: #6b7280;
+		font-size: 0.65rem;
+		line-height: 1.4;
+		margin-top: 1.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	/* Resolution Content */
+	.resolution-header {
+		font-style: italic;
+		margin-bottom: 1.5rem;
 	}
 
 	.preamble-section {
