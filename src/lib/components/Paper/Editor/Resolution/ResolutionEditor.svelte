@@ -13,11 +13,13 @@
 	import SubClauseEditor from './SubClauseEditor.svelte';
 	import ResolutionPreview from './ResolutionPreview.svelte';
 	import PhraseLookupModal from './PhraseLookupModal.svelte';
+	import ImportModal from './ImportModal.svelte';
 	import {
 		type PhrasePattern,
 		loadPhrasePatterns,
 		validatePhrase
 	} from '$lib/services/phraseValidation';
+	import type { ParsedOperativeClause } from '$lib/services/resolutionParser';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
@@ -54,6 +56,10 @@
 	let showPreambleLookup = $state(false);
 	let showOperativeLookup = $state(false);
 
+	// Import modals
+	let showPreambleImport = $state(false);
+	let showOperativeImport = $state(false);
+
 	// Track last focused clause for insertion from lookup modal
 	let lastFocusedPreambleIndex = $state<number | null>(null);
 	let lastFocusedOperativeIndex = $state<number | null>(null);
@@ -80,6 +86,38 @@
 				clause.content = phrase;
 			}
 		}
+	}
+
+	// Import handlers
+	function handlePreambleImport(clauses: string[] | ParsedOperativeClause[]) {
+		// clauses is string[] for preamble
+		const preambleClauses = clauses as string[];
+		const newClauses: PreambleClause[] = preambleClauses.map((content) => ({
+			id: generateClauseId('p'),
+			content
+		}));
+		resolution.preamble = [...resolution.preamble, ...newClauses];
+	}
+
+	function convertParsedSubClauses(
+		parsed: { content: string; children?: { content: string; children?: any[] }[] }[]
+	): SubClause[] {
+		return parsed.map((p) => ({
+			id: generateSubClauseId(),
+			content: p.content,
+			children: p.children ? convertParsedSubClauses(p.children) : undefined
+		}));
+	}
+
+	function handleOperativeImport(clauses: string[] | ParsedOperativeClause[]) {
+		// clauses is ParsedOperativeClause[] for operative
+		const operativeClauses = clauses as ParsedOperativeClause[];
+		const newClauses: OperativeClause[] = operativeClauses.map((parsed) => ({
+			id: generateClauseId('o'),
+			content: parsed.content,
+			subClauses: parsed.subClauses ? convertParsedSubClauses(parsed.subClauses) : undefined
+		}));
+		resolution.operative = [...resolution.operative, ...newClauses];
 	}
 
 	// Load phrase patterns on mount
@@ -228,6 +266,14 @@
 							<i class="fa-solid fa-book"></i>
 							{m.phraseLookup()}
 						</button>
+						<button
+							type="button"
+							class="btn btn-sm btn-ghost"
+							onclick={() => (showPreambleImport = true)}
+						>
+							<i class="fa-solid fa-file-import"></i>
+							{m.resolutionImport()}
+						</button>
 						<button type="button" class="btn btn-sm btn-ghost" onclick={addPreambleClause}>
 							<i class="fa-solid fa-plus"></i>
 							{m.resolutionAddClause()}
@@ -286,6 +332,14 @@
 						>
 							<i class="fa-solid fa-book"></i>
 							{m.phraseLookup()}
+						</button>
+						<button
+							type="button"
+							class="btn btn-sm btn-ghost"
+							onclick={() => (showOperativeImport = true)}
+						>
+							<i class="fa-solid fa-file-import"></i>
+							{m.resolutionImport()}
 						</button>
 						<button type="button" class="btn btn-sm btn-ghost" onclick={addOperativeClause}>
 							<i class="fa-solid fa-plus"></i>
@@ -367,4 +421,19 @@
 	onClose={() => (showOperativeLookup = false)}
 	onSelect={insertIntoOperative}
 	title="{m.phraseLookupTitle()} ({m.resolutionOperativeClauses()})"
+/>
+
+<!-- Import Modals -->
+<ImportModal
+	bind:open={showPreambleImport}
+	type="preamble"
+	onClose={() => (showPreambleImport = false)}
+	onImport={handlePreambleImport}
+/>
+
+<ImportModal
+	bind:open={showOperativeImport}
+	type="operative"
+	onClose={() => (showOperativeImport = false)}
+	onImport={handleOperativeImport}
 />
