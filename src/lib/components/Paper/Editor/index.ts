@@ -1,12 +1,12 @@
 import PaperFormat from './PaperFormat.svelte';
-import ResolutionFormat from './ResolutionFormat.svelte';
 import ReviewFormat from './ReviewFormat.svelte';
 import ReadOnlyContent from './ReadOnlyContent.svelte';
 import * as DiffViewer from './DiffViewer';
+import * as Resolution from './Resolution';
 
 export const Editor = {
 	PaperFormat,
-	ResolutionFormat,
+	Resolution,
 	ReviewFormat,
 	ReadOnlyContent,
 	DiffViewer

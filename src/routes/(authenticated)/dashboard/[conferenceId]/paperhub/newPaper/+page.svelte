@@ -9,8 +9,13 @@
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
-	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import {
+		editorContentStore,
+		resolutionContentStore
+	} from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
+	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -22,6 +27,7 @@
 	let conferenceAgendaItems = $derived(
 		data.getPaperDelegationMemberQuery?.data.findManyAgendaItems
 	);
+	let conference = $derived(data.conferenceQueryData?.findUniqueConference);
 
 	const createPaperMutation = graphql(`
 		mutation CreatePaperMutation(
@@ -94,6 +100,30 @@
 		}));
 	});
 
+	// Resolution header data for working papers
+	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
+		if ($formData.type !== 'WORKING_PAPER') return undefined;
+
+		const nationName = delegation?.assignedNation
+			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+			: undefined;
+		const nsaName = delegation?.assignedNonStateActor?.name;
+
+		// Get the selected agenda item title
+		const selectedAgendaItem = $formData.agendaItemId
+			? committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)
+			: undefined;
+
+		return {
+			conferenceName: conference?.title ?? 'Model UN',
+			committeeAbbreviation: committee?.abbreviation,
+			committeeFullName: committee?.name,
+			documentNumber: `WP/DRAFT`,
+			topic: selectedAgendaItem?.title,
+			authoringDelegation: nationName ?? nsaName
+		};
+	});
+
 	const saveFile = async (options: { submit?: boolean } = {}) => {
 		const { submit = false } = options;
 
@@ -102,13 +132,23 @@
 			return;
 		}
 
-		const resposne = await toast.promise(
+		// Use the correct store based on paper type
+		const content =
+			$formData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
+
+		// Guard against undefined content
+		if (content === undefined) {
+			toast.error(m.paperContentRequired());
+			return;
+		}
+
+		const response = await toast.promise(
 			createPaperMutation.mutate({
 				conferenceId: data.conferenceId,
 				userId: data.user.sub,
 				delegationId: delegation?.id,
 				type: $formData.type,
-				content: $editorContentStore,
+				content,
 				agendaItemId: $formData.type === 'INTRODUCTION_PAPER' ? undefined : $formData.agendaItemId,
 				status: submit ? 'SUBMITTED' : 'DRAFT'
 			}),
@@ -122,7 +162,10 @@
 		cache.markStale();
 		await invalidateAll();
 
-		if (resposne?.data.createOnePaper?.id) {
+		if (response?.data.createOnePaper?.id) {
+			// Clear stores so next paper creation starts fresh
+			$editorContentStore = undefined;
+			$resolutionContentStore = undefined;
 			goto(`/dashboard/${data.conferenceId}/paperhub`);
 		}
 	};
@@ -173,16 +216,11 @@
 			</div>
 		</div>
 		{#if $formData.type === 'WORKING_PAPER'}
-			<!-- <PaperEditor.ResolutionFormat editable /> -->
-			<fieldset
-				class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[300px]"
-			>
-				<legend class="fieldset-legend">{m.editor()}</legend>
-				<div class="alert alert-error flex flex-col gap-2 items-center justify-center">
-					<i class="fa-solid fa-construction text-6xl"></i>
-					<div class="text-center text-lg">{m.resolutionEditorNotYetAvailable()}</div>
-				</div>
-			</fieldset>
+			<PaperEditor.Resolution.ResolutionEditor
+				committeeName={committee?.name ?? 'Committee'}
+				editable
+				headerData={resolutionHeaderData}
+			/>
 		{:else}
 			<PaperEditor.PaperFormat editable />
 		{/if}

@@ -170,10 +170,6 @@
 
 		<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
 			<h3 class="text-xl">{m.submitAPaper()}</h3>
-			<div class="alert alert-warning mt-4">
-				<i class="fa-solid fa-construction text-3xl"></i>
-				<span>{m.resolutionEditorNotYetAvailable()}</span>
-			</div>
 
 			<div class="flex flex-col md:flex-row justify-center md:justify-start gap-4 mt-4">
 				{#if isNSA}

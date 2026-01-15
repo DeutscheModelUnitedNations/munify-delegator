@@ -1,7 +1,11 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
+	import { validateResolution, type ResolutionHeaderData } from '$lib/schemata/resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
-	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import {
+		editorContentStore,
+		resolutionContentStore
+	} from '$lib/components/Paper/Editor/editorStore';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -85,12 +89,23 @@
 
 	let initialized = $state(false);
 	let currentPaperId = $state<string | null>(null);
+	let resolutionValidationError = $state<string | null>(null);
+	let invalidRawContent = $state<unknown>(null);
 
 	// Reset and reinitialize when paper changes (handles client-side navigation)
 	$effect(() => {
 		if (paperData && paperData.id !== currentPaperId) {
+			// Reset validation error and raw content
+			resolutionValidationError = null;
+			invalidRawContent = null;
+
 			if (!paperData.versions || paperData.versions.length === 0) {
-				$editorContentStore = '';
+				// Reset both stores, set appropriate one based on paper type
+				if (paperData.type === 'WORKING_PAPER') {
+					$resolutionContentStore = undefined;
+				} else {
+					$editorContentStore = '';
+				}
 				currentPaperId = paperData.id;
 				initialized = true;
 				return;
@@ -98,7 +113,20 @@
 			const latestVer = paperData.versions.reduce((acc, version) =>
 				version.version > acc.version ? version : acc
 			);
-			$editorContentStore = latestVer.content;
+			// Set the correct store based on paper type
+			if (paperData.type === 'WORKING_PAPER') {
+				// Validate working paper content before setting
+				const validationResult = validateResolution(latestVer.content);
+				if (validationResult.valid) {
+					$resolutionContentStore = validationResult.data;
+				} else {
+					resolutionValidationError = validationResult.error;
+					invalidRawContent = latestVer.content;
+					$resolutionContentStore = undefined;
+				}
+			} else {
+				$editorContentStore = latestVer.content;
+			}
 			currentPaperId = paperData.id;
 			initialized = true;
 		}
@@ -119,6 +147,26 @@
 		paperData.versions.find((version) => version.version === versionNumber)
 	);
 	let existingReviews = $derived(paperData.versions.flatMap((version) => version.reviews ?? []));
+
+	// Resolution header data for working papers
+	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
+		if (paperData?.type !== 'WORKING_PAPER') return undefined;
+
+		const nationName = nation
+			? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
+			: undefined;
+		const nsaName = nsa?.name;
+		const year = new Date().getFullYear();
+
+		return {
+			conferenceName: paperData.conference?.title ?? 'Model UN',
+			committeeAbbreviation: paperData.agendaItem?.committee?.abbreviation,
+			committeeFullName: paperData.agendaItem?.committee?.name,
+			documentNumber: `WP/${year}/${paperData.id.slice(-6)}`,
+			topic: paperData.agendaItem?.title,
+			authoringDelegation: nationName ?? nsaName
+		};
+	});
 
 	let unsavedChanges = $state(false);
 
@@ -179,14 +227,18 @@
 		};
 	};
 
+	// Get the current content from the correct store based on paper type
+	let currentContent = $derived(
+		paperData?.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore
+	);
+
 	$effect(() => {
-		if (paperData && $editorContentStore) {
-			compareEditorContentHash(
-				JSON.stringify($editorContentStore),
-				latestVersion?.contentHash
-			).then((areEqual) => {
-				unsavedChanges = !areEqual;
-			});
+		if (paperData && currentContent) {
+			compareEditorContentHash(JSON.stringify(currentContent), latestVersion?.contentHash).then(
+				(areEqual) => {
+					unsavedChanges = !areEqual;
+				}
+			);
 		}
 	});
 
@@ -196,10 +248,14 @@
 		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
 		const newStatus = reviewerEditMode ? paperData.status : submit ? 'SUBMITTED' : 'DRAFT';
 
+		// Use the correct store based on paper type
+		const content =
+			paperData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
+
 		const resposne = await toast.promise(
 			updatePaperMutation.mutate({
 				paperId: paperData.id,
-				content: $editorContentStore,
+				content,
 				status: newStatus
 			}),
 			{
@@ -256,6 +312,22 @@
 		const conferenceId = $page.params.conferenceId;
 		goto(`/dashboard/${conferenceId}/paperhub`);
 	};
+
+	const downloadRawContent = () => {
+		if (!invalidRawContent || !paperData) return;
+
+		const jsonString = JSON.stringify(invalidRawContent, null, 2);
+		const blob = new Blob([jsonString], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = `paper-${paperData.id}-raw-data.json`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	};
 </script>
 
 <div class="flex flex-col gap-4 w-full">
@@ -281,31 +353,42 @@
 				<h1 class="text-2xl font-bold mt-2">{title}</h1>
 
 				<!-- Metadata Row -->
-				<div class="flex items-center gap-3 text-sm text-base-content/70 mt-2 flex-wrap">
-					<span class="flex items-center gap-1">
-						<i class="fa-solid {getPaperTypeIcon(paperData.type)}"></i>
-						{translatePaperType(paperData.type)}
-					</span>
-					<span class="text-base-content/30">•</span>
-					<div class="tooltip" data-tip={m.version()}>
-						<span class="font-mono">v{versionNumber}</span>
-					</div>
-					<span class="text-base-content/30">•</span>
-					<div class="tooltip" data-tip={m.createdAt()}>
+				<div class="flex items-center justify-between gap-3 mt-2 flex-wrap">
+					<div class="flex items-center gap-3 text-sm text-base-content/70 flex-wrap">
 						<span class="flex items-center gap-1">
-							<i class="fa-solid fa-plus text-xs"></i>
-							{paperData.createdAt?.toLocaleDateString()}
+							<i class="fa-solid {getPaperTypeIcon(paperData.type)}"></i>
+							{translatePaperType(paperData.type)}
 						</span>
-					</div>
-					{#if paperData.firstSubmittedAt}
 						<span class="text-base-content/30">•</span>
-						<div class="tooltip" data-tip={m.submittedAt()}>
+						<div class="tooltip" data-tip={m.version()}>
+							<span class="font-mono">v{versionNumber}</span>
+						</div>
+						<span class="text-base-content/30">•</span>
+						<div class="tooltip" data-tip={m.createdAt()}>
 							<span class="flex items-center gap-1">
-								<i class="fa-solid fa-paper-plane text-xs"></i>
-								{paperData.firstSubmittedAt?.toLocaleDateString()}
+								<i class="fa-solid fa-plus text-xs"></i>
+								{paperData.createdAt?.toLocaleDateString()}
 							</span>
 						</div>
-					{/if}
+						{#if paperData.firstSubmittedAt}
+							<span class="text-base-content/30">•</span>
+							<div class="tooltip" data-tip={m.submittedAt()}>
+								<span class="flex items-center gap-1">
+									<i class="fa-solid fa-paper-plane text-xs"></i>
+									{paperData.firstSubmittedAt?.toLocaleDateString()}
+								</span>
+							</div>
+						{/if}
+					</div>
+					<a
+						href={`/dashboard/${$page.params.conferenceId}/paperhub/${paperData.id}/print`}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-sm btn-ghost"
+					>
+						<i class="fa-solid fa-file-pdf"></i>
+						{m.paperExportPdf()}
+					</a>
 				</div>
 			</div>
 		</div>
@@ -371,10 +454,28 @@
 			<!-- Paper Editor - key forces re-creation when editable changes -->
 			<div bind:this={paperEditorContainer}>
 				{#key editorEditable}
-					{#if paperData.type === 'WORKING_PAPER'}
-						<PaperEditor.ResolutionFormat
+					{#if paperData.type === 'WORKING_PAPER' && resolutionValidationError}
+						<!-- Invalid format error for working papers -->
+						<div class="alert alert-error flex-col items-start gap-3">
+							<div class="flex items-center gap-3">
+								<i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+								<div>
+									<p class="font-semibold">{m.paperInvalidFormat()}</p>
+									<p class="text-sm opacity-80">{m.paperInvalidFormatDescription()}</p>
+									{#if invalidRawContent}
+										<button class="btn btn-sm btn-outline mt-2" onclick={downloadRawContent}>
+											<i class="fa-solid fa-download"></i>
+											{m.paperInvalidFormatDownload()}
+										</button>
+									{/if}
+								</div>
+							</div>
+						</div>
+					{:else if paperData.type === 'WORKING_PAPER'}
+						<PaperEditor.Resolution.ResolutionEditor
+							committeeName={paperData.agendaItem?.committee?.name ?? 'Committee'}
 							editable={editorEditable}
-							onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
+							headerData={resolutionHeaderData}
 						/>
 					{:else}
 						<PaperEditor.PaperFormat

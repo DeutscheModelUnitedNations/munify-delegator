@@ -5,7 +5,7 @@
 	import { m } from '$lib/paraglide/messages';
 </script>
 
-<div class="w-full p-4">
+<div class="w-full p-4 print:hidden">
 	<footer
 		class="footer footer-center footer-horizontal bg-base-200 text-base-content mt-3 flex-col rounded-xl p-10"
 	>

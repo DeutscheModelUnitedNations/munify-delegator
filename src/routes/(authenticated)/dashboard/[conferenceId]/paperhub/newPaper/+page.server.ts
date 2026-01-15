@@ -20,6 +20,7 @@ const query = graphql(`
 			assignedCommittee {
 				id
 				name
+				abbreviation
 				agendaItems {
 					id
 					title

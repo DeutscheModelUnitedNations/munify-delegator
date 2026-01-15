@@ -1,15 +1,12 @@
 import { graphql } from '$houdini';
-import type { getPaperDetailsForEditingQueryVariables } from './$houdini';
+import type { getPaperForPrintQueryVariables } from './$houdini';
 
 export const _houdini_load = graphql(`
-	query getPaperDetailsForEditingQuery($paperId: String!) @cache(policy: NetworkOnly) {
+	query getPaperForPrintQuery($paperId: String!) @cache(policy: NetworkOnly) {
 		findUniquePaper(where: { id: $paperId }) {
 			id
 			type
 			status
-			author {
-				id
-			}
 			conference {
 				id
 				title
@@ -40,33 +37,12 @@ export const _houdini_load = graphql(`
 				id
 				version
 				content
-				contentHash
-				createdAt
-				status
-				reviews {
-					id
-					comments
-					createdAt
-					statusBefore
-					statusAfter
-					reviewer {
-						id
-						family_name
-						given_name
-						email
-					}
-				}
 			}
-			firstSubmittedAt
-			createdAt
-			updatedAt
 		}
 	}
 `);
 
-export const _getPaperDetailsForEditingQueryVariables: getPaperDetailsForEditingQueryVariables = (
-	event
-) => {
+export const _getPaperForPrintQueryVariables: getPaperForPrintQueryVariables = (event) => {
 	return {
 		paperId: event.params.paperId
 	};
