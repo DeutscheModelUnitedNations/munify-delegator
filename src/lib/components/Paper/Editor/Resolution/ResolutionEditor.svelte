@@ -61,10 +61,9 @@
 	function insertIntoPreamble(phrase: string) {
 		if (lastFocusedPreambleIndex !== null && lastFocusedPreambleIndex < resolution.preamble.length) {
 			const clause = resolution.preamble[lastFocusedPreambleIndex];
-			// Replace beginning of content or set if empty
-			const commaIndex = clause.content.indexOf(',');
-			if (commaIndex > -1) {
-				clause.content = phrase + clause.content.slice(commaIndex);
+			// Insert phrase at the start, preserving existing content
+			if (clause.content.trim()) {
+				clause.content = phrase + ' ' + clause.content;
 			} else {
 				clause.content = phrase;
 			}
@@ -74,10 +73,9 @@
 	function insertIntoOperative(phrase: string) {
 		if (lastFocusedOperativeIndex !== null && lastFocusedOperativeIndex < resolution.operative.length) {
 			const clause = resolution.operative[lastFocusedOperativeIndex];
-			// Replace beginning of content or set if empty
-			const commaIndex = clause.content.indexOf(',');
-			if (commaIndex > -1) {
-				clause.content = phrase + clause.content.slice(commaIndex);
+			// Insert phrase at the start, preserving existing content
+			if (clause.content.trim()) {
+				clause.content = phrase + ' ' + clause.content;
 			} else {
 				clause.content = phrase;
 			}
