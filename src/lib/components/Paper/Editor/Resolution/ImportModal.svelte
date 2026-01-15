@@ -18,6 +18,17 @@
 
 	let inputText = $state('');
 	let dialogEl: HTMLDialogElement;
+	let copied = $state(false);
+
+	function copyPrompt() {
+		const prompt =
+			type === 'preamble'
+				? m.resolutionImportLLMPromptPreamble()
+				: m.resolutionImportLLMPromptOperative();
+		navigator.clipboard.writeText(prompt);
+		copied = true;
+		setTimeout(() => (copied = false), 2000);
+	}
 
 	// Parse the input text based on type
 	let parsedPreamble = $derived(type === 'preamble' ? parsePreambleText(inputText) : []);
@@ -104,6 +115,34 @@
 						<li>{m.resolutionImportTipsOperative4()}</li>
 					{/if}
 				</ul>
+			</div>
+		</details>
+
+		<!-- LLM formatting instructions -->
+		<details class="collapse collapse-arrow bg-base-200 mb-4">
+			<summary class="collapse-title text-sm font-medium py-2 min-h-0">
+				<i class="fa-solid fa-robot text-info mr-2"></i>
+				{m.resolutionImportLLMTitle()}
+			</summary>
+			<div class="collapse-content text-sm">
+				<p class="text-base-content/70 mb-3">
+					{m.resolutionImportLLMInstructions()}
+				</p>
+				<div class="relative">
+					<pre
+						class="bg-base-300 rounded-lg p-3 pr-28 text-xs whitespace-pre-wrap overflow-x-auto max-h-48">{type ===
+					'preamble'
+						? m.resolutionImportLLMPromptPreamble()
+						: m.resolutionImportLLMPromptOperative()}</pre>
+					<button
+						type="button"
+						class="btn btn-sm btn-ghost absolute top-2 right-2"
+						onclick={copyPrompt}
+					>
+						<i class="fa-solid {copied ? 'fa-check text-success' : 'fa-copy'}"></i>
+						{copied ? m.resolutionImportLLMCopied() : m.resolutionImportLLMCopyPrompt()}
+					</button>
+				</div>
 			</div>
 		</details>
 
