@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
+
 	interface Props {
 		content: string;
 		placeholder?: string;
@@ -28,8 +30,9 @@
 	}: Props = $props();
 </script>
 
-<div class="flex flex-col gap-1">
-	<div class="flex gap-2 items-start group">
+<div class="flex flex-col gap-2">
+	<!-- Clause content row -->
+	<div class="flex gap-2 items-start">
 		<!-- Clause label (optional) -->
 		{#if label}
 			<span class="text-sm font-medium text-base-content/70 min-w-8 pt-2">{label}</span>
@@ -43,52 +46,54 @@
 			class:textarea-warning={validationError}
 			rows="2"
 		></textarea>
+	</div>
 
-		<!-- Action buttons -->
-		<div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-			{#if validationError}
-				<div class="tooltip tooltip-left" data-tip={validationError}>
-					<span class="btn btn-ghost btn-xs btn-square text-warning">
-						<i class="fa-solid fa-triangle-exclamation"></i>
-					</span>
-				</div>
-			{/if}
+	<!-- Action buttons row -->
+	<div class="flex flex-wrap gap-1 {label ? 'ml-10' : ''}">
+		{#if validationError}
+			<span class="badge badge-warning badge-sm gap-1">
+				<i class="fa-solid fa-triangle-exclamation"></i>
+				{m.resolutionUnknownPhrase()}
+			</span>
+		{/if}
+
+		<div class="flex-1"></div>
+
 		<button
 			type="button"
-			class="btn btn-ghost btn-xs btn-square"
+			class="btn btn-ghost btn-xs gap-1"
 			onclick={onMoveUp}
 			disabled={!canMoveUp}
-			title="Move up"
 		>
 			<i class="fa-solid fa-chevron-up"></i>
+			{m.resolutionMoveUp()}
 		</button>
 		<button
 			type="button"
-			class="btn btn-ghost btn-xs btn-square"
+			class="btn btn-ghost btn-xs gap-1"
 			onclick={onMoveDown}
 			disabled={!canMoveDown}
-			title="Move down"
 		>
 			<i class="fa-solid fa-chevron-down"></i>
-		</button>
-		<button
-			type="button"
-			class="btn btn-ghost btn-xs btn-square text-error"
-			onclick={onDelete}
-			title="Delete"
-		>
-			<i class="fa-solid fa-trash"></i>
+			{m.resolutionMoveDown()}
 		</button>
 		{#if showAddSubClause && onAddSubClause}
 			<button
 				type="button"
-				class="btn btn-ghost btn-xs btn-square text-primary"
+				class="btn btn-ghost btn-xs gap-1 text-primary"
 				onclick={onAddSubClause}
-				title="Add sub-clause"
 			>
 				<i class="fa-solid fa-indent"></i>
+				{m.resolutionAddSubClause()}
 			</button>
 		{/if}
-		</div>
+		<button
+			type="button"
+			class="btn btn-ghost btn-xs gap-1 text-error"
+			onclick={onDelete}
+		>
+			<i class="fa-solid fa-trash"></i>
+			{m.resolutionDeleteClause()}
+		</button>
 	</div>
 </div>

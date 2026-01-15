@@ -17,6 +17,7 @@
 		loadPhrasePatterns,
 		validatePhrase
 	} from '$lib/services/phraseValidation';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		committeeName: string;
@@ -144,7 +145,7 @@
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 	<legend class="fieldset-legend flex items-center gap-2">
-		<span>{editable ? 'Resolution Editor' : 'Resolution'}</span>
+		<span>{editable ? m.resolutionEditor() : m.resolution()}</span>
 		{#if editable}
 			<div class="join ml-4">
 				<button
@@ -154,7 +155,7 @@
 					onclick={() => (mode = 'edit')}
 				>
 					<i class="fa-solid fa-pen"></i>
-					Edit
+					{m.resolutionEdit()}
 				</button>
 				<button
 					type="button"
@@ -163,7 +164,7 @@
 					onclick={() => (mode = 'preview')}
 				>
 					<i class="fa-solid fa-eye"></i>
-					Preview
+					{m.resolutionPreview()}
 				</button>
 			</div>
 		{/if}
@@ -174,7 +175,7 @@
 		<div class="space-y-6">
 			<!-- Header (non-editable) -->
 			<div class="bg-base-100 rounded-lg p-3 border border-base-300">
-				<div class="text-xs text-base-content/50 mb-1">Committee</div>
+				<div class="text-xs text-base-content/50 mb-1">{m.resolutionCommittee()}</div>
 				<div class="font-bold uppercase tracking-wide">{committeeName},</div>
 			</div>
 
@@ -183,20 +184,20 @@
 				<div class="flex items-center justify-between">
 					<h3 class="font-semibold text-base-content/80">
 						<i class="fa-solid fa-quote-left mr-2"></i>
-						Preamble Clauses
+						{m.resolutionPreambleClauses()}
 					</h3>
 					<button type="button" class="btn btn-sm btn-ghost" onclick={addPreambleClause}>
 						<i class="fa-solid fa-plus"></i>
-						Add Clause
+						{m.resolutionAddClause()}
 					</button>
 				</div>
 
 				{#if resolution.preamble.length === 0}
 					<div class="text-center py-4 text-base-content/50 bg-base-100 rounded-lg border border-dashed border-base-300">
-						<p class="text-sm">No preamble clauses yet.</p>
+						<p class="text-sm">{m.resolutionNoPreambleClauses()}</p>
 						<button type="button" class="btn btn-sm btn-ghost mt-2" onclick={addPreambleClause}>
 							<i class="fa-solid fa-plus"></i>
-							Add First Clause
+							{m.resolutionAddFirstClause()}
 						</button>
 					</div>
 				{:else}
@@ -204,13 +205,13 @@
 						{#each resolution.preamble as clause, index (clause.id)}
 							<ClauseEditor
 								bind:content={clause.content}
-								placeholder="e.g., Recalling the Charter of the United Nations..."
+								placeholder={m.resolutionPreamblePlaceholder()}
 								canMoveUp={index > 0}
 								canMoveDown={index < resolution.preamble.length - 1}
 								onMoveUp={() => movePreambleClause(index, 'up')}
 								onMoveDown={() => movePreambleClause(index, 'down')}
 								onDelete={() => deletePreambleClause(index)}
-								validationError={!preambleValidation[index]?.valid ? 'Unknown opening phrase' : undefined}
+								validationError={!preambleValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
 							/>
 						{/each}
 					</div>
@@ -222,20 +223,20 @@
 				<div class="flex items-center justify-between">
 					<h3 class="font-semibold text-base-content/80">
 						<i class="fa-solid fa-list-ol mr-2"></i>
-						Operative Clauses
+						{m.resolutionOperativeClauses()}
 					</h3>
 					<button type="button" class="btn btn-sm btn-ghost" onclick={addOperativeClause}>
 						<i class="fa-solid fa-plus"></i>
-						Add Clause
+						{m.resolutionAddClause()}
 					</button>
 				</div>
 
 				{#if resolution.operative.length === 0}
 					<div class="text-center py-4 text-base-content/50 bg-base-100 rounded-lg border border-dashed border-base-300">
-						<p class="text-sm">No operative clauses yet.</p>
+						<p class="text-sm">{m.resolutionNoOperativeClauses()}</p>
 						<button type="button" class="btn btn-sm btn-ghost mt-2" onclick={addOperativeClause}>
 							<i class="fa-solid fa-plus"></i>
-							Add First Clause
+							{m.resolutionAddFirstClause()}
 						</button>
 					</div>
 				{:else}
@@ -245,7 +246,7 @@
 								<ClauseEditor
 									bind:content={clause.content}
 									label="{index + 1}."
-									placeholder="e.g., Decides to establish a monitoring mechanism..."
+									placeholder={m.resolutionOperativePlaceholder()}
 									canMoveUp={index > 0}
 									canMoveDown={index < resolution.operative.length - 1}
 									onMoveUp={() => moveOperativeClause(index, 'up')}
@@ -253,7 +254,7 @@
 									onDelete={() => deleteOperativeClause(index)}
 									showAddSubClause={true}
 									onAddSubClause={() => addSubClauseToOperative(index)}
-									validationError={!operativeValidation[index]?.valid ? 'Unknown opening phrase' : undefined}
+									validationError={!operativeValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
 								/>
 
 								<!-- Sub-clauses -->
