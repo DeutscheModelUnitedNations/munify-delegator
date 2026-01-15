@@ -90,7 +90,8 @@ p.is-editor-empty:first-child::before {
 	background-color: #ffffff;
 	color: var(--color-base-800);
 	font-family: 'Times New Roman', Times, serif;
-	font-size: 0.8rem;
+	font-size: 0.9rem;
+	line-height: 1.6;
 	max-width: 800px;
 	margin: auto;
 }
@@ -99,9 +100,9 @@ p.is-editor-empty:first-child::before {
 
 div[data-type='resolution-header'] {
 	text-transform: uppercase;
-	margin-bottom: 1rem;
-
-	/* Optional: Prevent user selection to make it feel truly locked */
+	font-weight: bold;
+	margin-bottom: 1.5rem;
+	letter-spacing: 0.05em;
 	user-select: none;
 	cursor: default;
 }
@@ -114,17 +115,14 @@ div[data-type='preamble-section'] {
 }
 
 div[data-type='preamble-clause'] {
-	margin-bottom: 1rem;
+	margin-bottom: 0.5rem;
+	text-indent: 2rem;
 }
 
 /* Clause: Add the comma automatically */
 div[data-type='preamble-clause']::after {
 	content: ',';
 }
-
-/* Exception: The very last preamble clause ends with a comma too, 
-   but sometimes conventions say the last one before operatives 
-   might need specific spacing. For now, comma is standard. */
 
 /* --- OPERATIVE STYLES --- */
 
@@ -136,84 +134,84 @@ ol[data-type='operative-section'] {
 	margin-top: 1rem;
 }
 
-/* Clause: Flexbox to align number and text */
+/* Clause: Column layout for text and sub-clauses */
 li[data-type='operative-clause'] {
 	counter-increment: operative-counter;
 	display: flex;
 	flex-direction: column;
 	margin-bottom: 1rem;
-	padding-left: 2rem;
+	padding-left: 2.5rem;
 	position: relative;
 }
 
-/* The Number (1, 2, 3...) */
+/* The Number (1., 2., 3...) */
 li[data-type='operative-clause']::before {
 	content: counter(operative-counter) '.';
 	position: absolute;
-	translate: -2rem 0;
+	left: 0;
 	font-weight: bold;
-	margin-right: 1rem;
-	min-width: 1.5rem; /* Ensures alignment even if numbers get to double digits */
+	min-width: 2rem;
 }
 
-/* The Punctuation logic */
-/* Target the paragraph inside the list item */
-li[data-type='operative-clause']:last-child > p::after {
-	margin: 0;
-	display: inline; /* Keeps text flowing nicely */
-}
-
-/* Default: ends in semicolon */
-li[data-type='operative-clause']:last-child:last-child:after {
+/* Default punctuation: semicolon after operative paragraphs */
+li[data-type='operative-clause'] > p:last-of-type::after {
 	content: ';';
 }
 
-/* The Final Clause: ends in dot */
-ol[data-type='operative-section'] > li[data-type='operative-clause']:last-child > p::after {
+/* Final operative clause ends with period */
+ol[data-type='operative-section']
+	> li[data-type='operative-clause']:last-child
+	> p:last-of-type::after {
 	content: '.';
 }
+
 /* --- SUB-CLAUSE STYLES --- */
 
-/* 1. Level 1 Nesting (a, b, c) */
+/* Level 1 Nesting (a., b., c.) */
 ol[data-type='sub-clause-group'] {
 	counter-reset: sub-clause-counter;
 	list-style: none;
-	padding-left: 1.5rem; /* Indent deeper */
-	margin-top: 0.5rem;
+	padding-left: 1.5rem;
+	margin: 0.5rem 0;
 }
 
 li[data-type='sub-clause'] {
 	counter-increment: sub-clause-counter;
-	display: flex;
-	margin-bottom: 0.5rem;
+	margin-bottom: 0.25rem;
+	padding-left: 1.5rem;
+	position: relative;
 }
 
 /* Numbering style: a., b., c. */
 li[data-type='sub-clause']::before {
-	content: counter(sub-clause-counter, lower-alpha) '.'; /* 'lower-alpha' makes it a, b, c */
-	font-weight: normal; /* Usually sub-clauses aren't bold */
-	margin-right: 0.5rem;
+	content: counter(sub-clause-counter, lower-alpha) '.';
+	position: absolute;
+	left: 0;
 	min-width: 1.5rem;
 }
 
-/* 2. Level 2 Nesting (i, ii, iii) - The Infinite Nesting logic */
-/* If a group is inside another sub-clause, change the style */
-li[data-type='sub-clause'] ol[data-type='sub-clause-group'] {
+/* Level 2 Nesting (i., ii., iii.) */
+ol[data-type='sub-clause-group'] ol[data-type='sub-clause-group'] {
 	counter-reset: sub-sub-clause-counter;
 }
 
-li[data-type='sub-clause'] li[data-type='sub-clause']::before {
-	/* This selector targets ANY sub-clause inside another sub-clause.
-     Wait, CSS counters nest automatically if you reuse the name, 
-     but standard MUN format changes from (a) to (i). 
-     Here is the specific override for deeper levels: */
+ol[data-type='sub-clause-group'] ol[data-type='sub-clause-group'] li[data-type='sub-clause'] {
+	counter-increment: sub-sub-clause-counter;
 }
 
-/* Specific selector for Level 2 (i, ii, iii) */
 ol[data-type='sub-clause-group']
 	ol[data-type='sub-clause-group']
 	li[data-type='sub-clause']::before {
-	content: counter(sub-clause-counter, lower-roman) '.'; /* changes to i., ii., iii. */
+	content: counter(sub-sub-clause-counter, lower-roman) '.';
+}
+
+/* --- PHRASE VALIDATION WARNING STYLES --- */
+
+.phrase-warning {
+	background-color: oklch(90% 0.15 85);
+	border-bottom: 2px wavy oklch(70% 0.2 85);
+	padding: 0 2px;
+	border-radius: 2px;
 }
 
 /* --- CITE FIND IN PAPER FEATURE --- */

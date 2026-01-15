@@ -19,7 +19,12 @@ export const SubClause = Node.create({
 
 	addKeyboardShortcuts() {
 		return {
-			Enter: () => this.editor.commands.splitListItem('subClause')
+			// Enter splits into new sub-clause
+			Enter: () => this.editor.commands.splitListItem('subClause'),
+			// Tab indents (sinks into nested list)
+			Tab: () => this.editor.commands.sinkListItem('subClause'),
+			// Shift-Tab outdents (lifts from nested list)
+			'Shift-Tab': () => this.editor.commands.liftListItem('subClause')
 		};
 	}
 });

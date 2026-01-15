@@ -1,6 +1,10 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 
-export const ResolutionHeader = Node.create({
+export interface ResolutionHeaderOptions {
+	committeeName: string;
+}
+
+export const ResolutionHeader = Node.create<ResolutionHeaderOptions>({
 	name: 'resolutionHeader',
 
 	group: 'block',
@@ -18,16 +22,37 @@ export const ResolutionHeader = Node.create({
 	// If the user tries to select it, we want it to select the whole block
 	selectable: false,
 
+	addOptions() {
+		return {
+			committeeName: ''
+		};
+	},
+
+	addAttributes() {
+		return {
+			committeeName: {
+				default: '',
+				parseHTML: (element) => element.getAttribute('data-committee-name') || '',
+				renderHTML: (attributes) => ({
+					'data-committee-name': attributes.committeeName
+				})
+			}
+		};
+	},
+
 	parseHTML() {
 		return [{ tag: 'div[data-type="resolution-header"]' }];
 	},
 
-	renderHTML({ HTMLAttributes }) {
-		// We hardcode the text "DER SICHERHEITSRAT," inside the render function
+	renderHTML({ HTMLAttributes, node }) {
+		// Get committee name from node attributes, options, or fallback
+		const committeeName =
+			node.attrs.committeeName || this.options.committeeName || 'COMMITTEE NAME';
+
 		return [
 			'div',
 			mergeAttributes(HTMLAttributes, { 'data-type': 'resolution-header' }),
-			'DER SICHERHEITSRAT,'
+			committeeName.toUpperCase() + ','
 		];
 	}
 });
