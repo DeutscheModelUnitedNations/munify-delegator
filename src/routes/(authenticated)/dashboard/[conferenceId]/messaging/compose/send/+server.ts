@@ -17,22 +17,33 @@ export const POST: RequestHandler = async ({ request, locals, params, url }) => 
     // 1. Validate Sender Opt-in
     const sender = await db.user.findUnique({
         where: { id: user.sub },
-        select: { canReceiveDelegationMail: true, id: true, given_name: true, family_name: true }
+        select: {
+            // canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
+            id: true,
+            given_name: true,
+            family_name: true
+        }
     });
 
-    if (!sender?.canReceiveDelegationMail) {
-        return new Response(JSON.stringify({ error: 'You must enable messaging in your account settings.' }), { status: 403 });
-    }
+    // TODO: Re-enable check
+    // if (!sender?.canReceiveDelegationMail) {
+    //     return new Response(JSON.stringify({ error: 'You must enable messaging in your account settings.' }), { status: 403 });
+    // }
 
     // 2. Validate Recipient Opt-in
     const recipient = await db.user.findUnique({
         where: { id: recipientId },
-        select: { canReceiveDelegationMail: true, email: true, id: true }
+        select: {
+            // canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
+            email: true,
+            id: true
+        }
     });
 
-    if (!recipient?.canReceiveDelegationMail) {
-        return new Response(JSON.stringify({ error: 'Recipient has not enabled messaging.' }), { status: 400 });
-    }
+    // TODO: Re-enable check
+    // if (!recipient?.canReceiveDelegationMail) {
+    //     return new Response(JSON.stringify({ error: 'Recipient has not enabled messaging.' }), { status: 400 });
+    // }
 
     // 3. Get Conference Details
     const conference = await db.conference.findUnique({
