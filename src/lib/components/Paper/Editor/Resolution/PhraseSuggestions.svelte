@@ -110,13 +110,13 @@
 
 {#if visible && suggestions.length > 0}
 	<ul
-		class="menu bg-base-100 rounded-box shadow-lg border border-base-300 absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto overflow-x-auto"
+		class="menu bg-base-100 rounded-box shadow-lg border border-base-300 absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto flex-nowrap"
 	>
 		{#each suggestions as phrase, i}
 			<li>
 				<button
 					type="button"
-					class="text-left whitespace-nowrap"
+					class="text-left"
 					class:active={i === selectedIndex}
 					class:bg-base-200={i === selectedIndex}
 					onmousedown={(e) => {
