@@ -14,9 +14,10 @@
 		members: DelegationMember[];
 		papers: Paper[];
 		conferenceId: string;
+		conferenceStartDate?: Date | null;
 	}
 
-	let { members, papers, conferenceId }: Props = $props();
+	let { members, papers, conferenceId, conferenceStartDate }: Props = $props();
 
 	// Calculate payment status counts
 	let paymentStats = $derived.by(() => {
@@ -38,9 +39,10 @@
 			const status = member.user.conferenceParticipantStatus?.find(
 				(s) => s.conference.id === conferenceId
 			);
-			// We need conference start date for age check, but we don't have it here
-			// For simplicity, we'll use the raw status values
-			const postalStatus = getSimplifiedPostalStatus(status, true) ?? 'PENDING';
+			const isOfAge = conferenceStartDate
+				? ofAgeAtConference(conferenceStartDate, member.user.birthday)
+				: true;
+			const postalStatus = getSimplifiedPostalStatus(status, isOfAge) ?? 'PENDING';
 			counts[postalStatus]++;
 		});
 		return counts;

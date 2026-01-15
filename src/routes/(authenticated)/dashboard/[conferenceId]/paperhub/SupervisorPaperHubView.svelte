@@ -178,7 +178,7 @@
 										onclick={() => handlePaperClick(paper.id)}
 										role="button"
 										tabindex="0"
-										onkeypress={(e) => e.key === 'Enter' && handlePaperClick(paper.id)}
+										onkeydown={(e) => e.key === 'Enter' && handlePaperClick(paper.id)}
 									>
 										<td class="align-middle">
 											<PaperEnum.Type type={paper.type} size="xs" />

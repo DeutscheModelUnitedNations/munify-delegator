@@ -27,6 +27,7 @@
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	// TODO these components need some refactoring
 
@@ -74,7 +75,7 @@
 	]);
 	// Get all papers from unique delegations (using delegationMembers to access papers)
 	let allPapers = $derived.by(() => {
-		const seenDelegationIds = new Set<string>();
+		const seenDelegationIds = new SvelteSet<string>();
 		const papers: NonNullable<(typeof delegationMembers)[number]['delegation']['papers']> = [];
 		delegationMembers.forEach((member) => {
 			if (!seenDelegationIds.has(member.delegation.id)) {
@@ -328,6 +329,7 @@
 		members={delegationMembers}
 		papers={allPapers}
 		conferenceId={conference.id}
+		conferenceStartDate={conference.startConference}
 	/>
 
 	<TasksWrapper>
