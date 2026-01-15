@@ -1,6 +1,11 @@
 <script lang="ts">
 	import type { Resolution, SubClause } from '$lib/schemata/resolution';
 	import { getSubClauseLabel } from '$lib/schemata/resolution';
+	import {
+		type PhrasePattern,
+		loadPhrasePatterns,
+		validatePhrase
+	} from '$lib/services/phraseValidation';
 
 	interface Props {
 		resolution: Resolution;
@@ -8,42 +13,37 @@
 
 	let { resolution }: Props = $props();
 
-	// Helper to extract and format the first word/phrase for italics
-	function formatClauseContent(content: string): { firstPhrase: string; rest: string } {
+	// Load phrase patterns for italicization
+	let preamblePatterns = $state<PhrasePattern[]>([]);
+	let operativePatterns = $state<PhrasePattern[]>([]);
+
+	$effect(() => {
+		loadPhrasePatterns('preamble').then((patterns) => {
+			preamblePatterns = patterns;
+		});
+		loadPhrasePatterns('operative').then((patterns) => {
+			operativePatterns = patterns;
+		});
+	});
+
+	// Format clause content using phrase validation for italicization
+	function formatClauseContent(
+		content: string,
+		patterns: PhrasePattern[]
+	): { firstPhrase: string; rest: string } {
 		const trimmed = content.trim();
 		if (!trimmed) return { firstPhrase: '', rest: '' };
 
-		// Match first word or multi-word phrase patterns
-		const multiWordPatterns = [
-			/^(In\s+\S+)/i,
-			/^(Unter\s+\S+)/i,
-			/^(Zur\s+\S+)/i,
-			/^(Nach\s+\S+)/i,
-			/^(Im\s+\S+)/i,
-			/^(Deeply\s+\S+)/i,
-			/^(Gravely\s+\S+)/i,
-			/^(Strongly\s+\S+)/i,
-			/^(Taking\s+\S+)/i,
-			/^(Bearing\s+\S+)/i,
-			/^(Having\s+\S+)/i,
-			/^(Noting\s+with\s+\S+)/i,
-			/^(Further\s+\S+)/i,
-			/^(Also\s+\S+)/i,
-			/^(Calls\s+\S+)/i,
-			/^(Zutiefst\s+\S+)/i
-		];
-
-		for (const pattern of multiWordPatterns) {
-			const match = trimmed.match(pattern);
-			if (match) {
-				return {
-					firstPhrase: match[1],
-					rest: trimmed.slice(match[1].length)
-				};
-			}
+		// Try to match against phrase patterns
+		const result = validatePhrase(trimmed, patterns);
+		if (result.valid && result.matchedPhrase) {
+			return {
+				firstPhrase: result.matchedPhrase,
+				rest: trimmed.slice(result.italicEnd ?? result.matchedPhrase.length)
+			};
 		}
 
-		// Fall back to first word
+		// Fall back to first word if no pattern matched
 		const firstSpaceIndex = trimmed.indexOf(' ');
 		if (firstSpaceIndex === -1) {
 			return { firstPhrase: trimmed, rest: '' };
@@ -65,7 +65,7 @@
 	{#if resolution.preamble.length > 0}
 		<div class="preamble-section">
 			{#each resolution.preamble as clause}
-				{@const formatted = formatClauseContent(clause.content)}
+				{@const formatted = formatClauseContent(clause.content, preamblePatterns)}
 				<p class="preamble-clause">
 					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest},
 				</p>
@@ -77,7 +77,7 @@
 	{#if resolution.operative.length > 0}
 		<ol class="operative-section">
 			{#each resolution.operative as clause, index}
-				{@const formatted = formatClauseContent(clause.content)}
+				{@const formatted = formatClauseContent(clause.content, operativePatterns)}
 				{@const isLast = index === resolution.operative.length - 1}
 				{@const hasSubClauses = clause.subClauses && clause.subClauses.length > 0}
 				<li class="operative-clause">
@@ -93,12 +93,12 @@
 	{#snippet subClauseList(subClauses: SubClause[], depth: number, isLastOperative: boolean)}
 		<ol class="sub-clause-section depth-{depth}">
 			{#each subClauses as subClause, index}
-				{@const formatted = formatClauseContent(subClause.content)}
+				{@const formatted = formatClauseContent(subClause.content, [])}
 				{@const isLast = index === subClauses.length - 1}
 				{@const hasChildren = subClause.children && subClause.children.length > 0}
 				<li class="sub-clause">
 					<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
-					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if !hasChildren}{#if isLast && isLastOperative && depth === 1}.{:else};{/if}{/if}
+					{subClause.content.trim()}{#if !hasChildren}{#if isLast && isLastOperative && depth === 1}.{:else};{/if}{/if}
 					{#if hasChildren}
 						{@render subClauseList(subClause.children!, depth + 1, isLastOperative && isLast)}
 					{/if}

@@ -10,6 +10,7 @@
 		canMoveUp?: boolean;
 		canMoveDown?: boolean;
 		showAddSubClause?: boolean;
+		validationError?: string;
 	}
 
 	let {
@@ -22,26 +23,36 @@
 		onAddSubClause,
 		canMoveUp = true,
 		canMoveDown = true,
-		showAddSubClause = false
+		showAddSubClause = false,
+		validationError
 	}: Props = $props();
 </script>
 
-<div class="flex gap-2 items-start group">
-	<!-- Clause label (optional) -->
-	{#if label}
-		<span class="text-sm font-medium text-base-content/70 min-w-8 pt-2">{label}</span>
-	{/if}
+<div class="flex flex-col gap-1">
+	<div class="flex gap-2 items-start group">
+		<!-- Clause label (optional) -->
+		{#if label}
+			<span class="text-sm font-medium text-base-content/70 min-w-8 pt-2">{label}</span>
+		{/if}
 
-	<!-- Textarea for clause content -->
-	<textarea
-		bind:value={content}
-		{placeholder}
-		class="textarea textarea-bordered flex-1 min-h-20 resize-y text-sm leading-relaxed"
-		rows="2"
-	></textarea>
+		<!-- Textarea for clause content -->
+		<textarea
+			bind:value={content}
+			{placeholder}
+			class="textarea textarea-bordered flex-1 min-h-20 resize-y text-sm leading-relaxed"
+			class:textarea-warning={validationError}
+			rows="2"
+		></textarea>
 
-	<!-- Action buttons -->
-	<div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+		<!-- Action buttons -->
+		<div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+			{#if validationError}
+				<div class="tooltip tooltip-left" data-tip={validationError}>
+					<span class="btn btn-ghost btn-xs btn-square text-warning">
+						<i class="fa-solid fa-triangle-exclamation"></i>
+					</span>
+				</div>
+			{/if}
 		<button
 			type="button"
 			class="btn btn-ghost btn-xs btn-square"
@@ -78,5 +89,6 @@
 				<i class="fa-solid fa-indent"></i>
 			</button>
 		{/if}
+		</div>
 	</div>
 </div>

@@ -12,6 +12,11 @@
 	import ClauseEditor from './ClauseEditor.svelte';
 	import SubClauseEditor from './SubClauseEditor.svelte';
 	import ResolutionPreview from './ResolutionPreview.svelte';
+	import {
+		type PhrasePattern,
+		loadPhrasePatterns,
+		validatePhrase
+	} from '$lib/services/phraseValidation';
 
 	interface Props {
 		committeeName: string;
@@ -38,6 +43,36 @@
 
 	// Mode toggle
 	let mode = $state<'edit' | 'preview'>('edit');
+
+	// Phrase validation
+	let preamblePatterns = $state<PhrasePattern[]>([]);
+	let operativePatterns = $state<PhrasePattern[]>([]);
+
+	// Load phrase patterns on mount
+	$effect(() => {
+		loadPhrasePatterns('preamble').then((patterns) => {
+			preamblePatterns = patterns;
+		});
+		loadPhrasePatterns('operative').then((patterns) => {
+			operativePatterns = patterns;
+		});
+	});
+
+	// Compute validation errors for preamble clauses
+	let preambleValidation = $derived(
+		resolution.preamble.map((clause) => {
+			if (!clause.content.trim()) return { valid: true }; // Empty is OK (not yet filled)
+			return validatePhrase(clause.content, preamblePatterns);
+		})
+	);
+
+	// Compute validation errors for operative clauses
+	let operativeValidation = $derived(
+		resolution.operative.map((clause) => {
+			if (!clause.content.trim()) return { valid: true }; // Empty is OK
+			return validatePhrase(clause.content, operativePatterns);
+		})
+	);
 
 	// Preamble clause management
 	function addPreambleClause() {
@@ -175,6 +210,7 @@
 								onMoveUp={() => movePreambleClause(index, 'up')}
 								onMoveDown={() => movePreambleClause(index, 'down')}
 								onDelete={() => deletePreambleClause(index)}
+								validationError={!preambleValidation[index]?.valid ? 'Unknown opening phrase' : undefined}
 							/>
 						{/each}
 					</div>
@@ -217,6 +253,7 @@
 									onDelete={() => deleteOperativeClause(index)}
 									showAddSubClause={true}
 									onAddSubClause={() => addSubClauseToOperative(index)}
+									validationError={!operativeValidation[index]?.valid ? 'Unknown opening phrase' : undefined}
 								/>
 
 								<!-- Sub-clauses -->
