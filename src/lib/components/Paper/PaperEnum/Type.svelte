@@ -6,23 +6,24 @@
 
 	interface Props {
 		type: PaperType$options;
-		vertical?: boolean;
+		size?: 'xs' | 'sm' | 'md';
 	}
 
-	let { type, vertical }: Props = $props();
+	let { type, size = 'sm' }: Props = $props();
 
 	let color = $derived.by(() => {
 		switch (type) {
 			case 'POSITION_PAPER':
-				return 'bg-primary text-primary-content';
+				return 'badge-primary badge-soft';
 			case 'WORKING_PAPER':
+				return 'badge-secondary badge-soft';
 			case 'INTRODUCTION_PAPER':
 			default:
-				return 'bg-secondary text-secondary-content';
+				return 'badge-accent badge-soft';
 		}
 	});
 
 	let icon = $derived(getPaperTypeIcon(type));
 </script>
 
-<Common {icon} {vertical} text={translatePaperType(type)} classes={color} />
+<Common {icon} {size} text={translatePaperType(type)} {color} />

@@ -25,7 +25,9 @@
 	import { page } from '$app/state';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
+	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	// TODO these components need some refactoring
 
@@ -71,6 +73,18 @@
 	let delegations = $derived([
 		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
 	]);
+	// Get all papers from unique delegations (using delegationMembers to access papers)
+	let allPapers = $derived.by(() => {
+		const seenDelegationIds = new SvelteSet<string>();
+		const papers: NonNullable<(typeof delegationMembers)[number]['delegation']['papers']> = [];
+		delegationMembers.forEach((member) => {
+			if (!seenDelegationIds.has(member.delegation.id)) {
+				seenDelegationIds.add(member.delegation.id);
+				papers.push(...(member.delegation.papers ?? []));
+			}
+		});
+		return papers;
+	});
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
@@ -91,7 +105,7 @@
 		{
 			icon: 'users',
 			title: m.members(),
-			value: delegations.reduce((acc, cur) => acc + cur.members.length, 0),
+			value: delegationMembers.length,
 			desc: m.inAllDelegations()
 		},
 		{
@@ -101,6 +115,30 @@
 			desc: m.singleParticipants()
 		}
 	]);
+
+	// Check if all payments are complete (supervisor + all supervised members + single participants)
+	let allPaymentsComplete = $derived.by(() => {
+		// Check supervisor's own payment status
+		const supervisorPaid = status?.paymentStatus === 'DONE';
+
+		// Check all supervised delegation members' payment status
+		const allMembersPaid = delegationMembers.every((member) => {
+			const participantStatus = member.user.conferenceParticipantStatus?.find(
+				(s) => s.conference.id === conference?.id
+			);
+			return participantStatus?.paymentStatus === 'DONE';
+		});
+
+		// Check all single participants' payment status
+		const allSinglesPaid = singleParticipants.every((sp) => {
+			const participantStatus = sp.user.conferenceParticipantStatus?.find(
+				(s) => s.conference.id === conference?.id
+			);
+			return participantStatus?.paymentStatus === 'DONE';
+		});
+
+		return supervisorPaid && allMembersPaid && allSinglesPaid;
+	});
 
 	const getName = (
 		user: { given_name: string; family_name: string } & { [key: string]: any },
@@ -276,17 +314,26 @@
 </section>
 
 {#if !isStateParticipantRegistration}
-	<ConferenceStatusWidget
-		conferenceId={conference!.id}
-		userId={user.sub}
-		ofAgeAtConference={ofAge}
-		{status}
-		unlockPayment={conference?.unlockPayments}
-		unlockPostals={conference?.unlockPostals}
+	{#if !allPaymentsComplete}
+		<ConferenceStatusWidget
+			conferenceId={conference!.id}
+			userId={user.sub}
+			ofAgeAtConference={ofAge}
+			{status}
+			unlockPayment={conference?.unlockPayments}
+			unlockPostals={conference?.unlockPostals}
+		/>
+	{/if}
+
+	<DelegationStatsCharts
+		members={delegationMembers}
+		papers={allPapers}
+		conferenceId={conference.id}
+		conferenceStartDate={conference.startConference}
 	/>
 
 	<TasksWrapper>
-		{#if supervisor.supervisedDelegationMembers.some((x) => !x.assignedCommittee)}
+		{#if delegationMembers.some((x) => x.delegation.assignedNation && !x.assignedCommittee)}
 			<TaskAlertCard
 				severity="warning"
 				faIcon="fa-arrows-turn-to-dots"
@@ -311,6 +358,15 @@
 				btnText={m.goToPreparation()}
 				btnLink={conference.linkToPreparationGuide}
 				btnExternal
+			/>
+		{/if}
+		{#if conference.isOpenPaperSubmission}
+			<TaskAlertCard
+				faIcon="fa-file-lines"
+				title={m.paperHub()}
+				description={m.paperHubDescription()}
+				btnText={m.paperHubBtn()}
+				btnLink={`./${conference.id}/paperhub`}
 			/>
 		{/if}
 	</TasksWrapper>
@@ -402,21 +458,23 @@
 							fontAwesomeIcon="fa-duotone fa-users"
 							content={delegation.members.length}
 						/>
-						<InfoGrid.Entry
-							title={m.schoolOrInstitution()}
-							fontAwesomeIcon="school"
-							content={delegation.school}
-						/>
-						<InfoGrid.Entry
-							title={m.experience()}
-							fontAwesomeIcon="compass"
-							content={delegation.experience}
-						/>
-						<InfoGrid.Entry
-							title={m.motivation()}
-							fontAwesomeIcon="fire-flame-curved"
-							content={delegation.motivation}
-						/>
+						{#if isStateParticipantRegistration}
+							<InfoGrid.Entry
+								title={m.schoolOrInstitution()}
+								fontAwesomeIcon="school"
+								content={delegation.school}
+							/>
+							<InfoGrid.Entry
+								title={m.experience()}
+								fontAwesomeIcon="compass"
+								content={delegation.experience}
+							/>
+							<InfoGrid.Entry
+								title={m.motivation()}
+								fontAwesomeIcon="fire-flame-curved"
+								content={delegation.motivation}
+							/>
+						{/if}
 					</InfoGrid.Grid>
 				{/snippet}
 
@@ -425,6 +483,7 @@
 						withPostalSatus={!isStateParticipantRegistration}
 						withPaymentStatus={!isStateParticipantRegistration}
 						withCommittee={!isStateParticipantRegistration}
+						withPaperCount={!isStateParticipantRegistration}
 						withEmail
 						title={m.members()}
 					>
@@ -432,6 +491,8 @@
 							{@const participantStatus = member.user?.conferenceParticipantStatus.find(
 								(x) => x.conference.id === conference?.id
 							)}
+							{@const memberPaperCount =
+								delegation.papers?.filter((p) => p.author?.id === member.user.id).length ?? 0}
 							<DelegationStatusTableEntry
 								name={formatNames(member.user.given_name, member.user.family_name)}
 								pronouns={member.user.pronouns ?? ''}
@@ -442,6 +503,8 @@
 									: undefined}
 								withPaymentStatus={!isStateParticipantRegistration}
 								withPostalStatus={!isStateParticipantRegistration}
+								withPaperCount={!isStateParticipantRegistration}
+								paperCount={memberPaperCount}
 								downloadPostalDocuments={conference?.unlockPostals
 									? () => downloadPostalDocuments(member.user.id)
 									: undefined}

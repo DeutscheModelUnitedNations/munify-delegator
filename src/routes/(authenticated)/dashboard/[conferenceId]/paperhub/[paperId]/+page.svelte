@@ -72,8 +72,11 @@
 	// View mode detection
 	let isAuthor = $derived(paperData?.author.id === data.user.sub);
 	let isReviewer = $derived((data.teamMembers?.length ?? 0) > 0);
-	let baseViewMode = $derived<'author' | 'reviewer'>(
-		isAuthor ? 'author' : isReviewer ? 'reviewer' : 'author'
+	let isSupervisor = $derived(
+		!!data.supervisedDelegationIds?.includes(paperData?.delegation.id ?? '')
+	);
+	let baseViewMode = $derived<'author' | 'reviewer' | 'supervisor'>(
+		isAuthor ? 'author' : isReviewer ? 'reviewer' : isSupervisor ? 'supervisor' : 'author'
 	);
 
 	// Edit mode toggle for reviewers
@@ -307,47 +310,57 @@
 			</div>
 		</div>
 
-		<!-- Action Bar -->
-		<div class="card bg-base-100 border border-base-300">
-			<div class="card-body p-3 flex-row items-center justify-between flex-wrap gap-2">
-				<!-- Author/Edit Actions (Left) -->
-				<div class="flex gap-2">
-					{#if baseViewMode === 'author' || reviewerEditMode}
-						{#if paperData.status === 'DRAFT'}
+		<!-- Supervisor Read-Only Banner -->
+		{#if baseViewMode === 'supervisor'}
+			<div class="alert alert-info">
+				<i class="fa-solid fa-chalkboard-user"></i>
+				<span>{m.readOnlyViewSupervisor()}</span>
+			</div>
+		{/if}
+
+		<!-- Action Bar (hidden for supervisors) -->
+		{#if baseViewMode !== 'supervisor'}
+			<div class="card bg-base-100 border border-base-300">
+				<div class="card-body p-3 flex-row items-center justify-between flex-wrap gap-2">
+					<!-- Author/Edit Actions (Left) -->
+					<div class="flex gap-2">
+						{#if baseViewMode === 'author' || reviewerEditMode}
+							{#if paperData.status === 'DRAFT'}
+								<button
+									class="btn btn-warning btn-sm"
+									onclick={() => saveFile()}
+									disabled={!unsavedChanges}
+								>
+									<i class="fa-solid fa-save"></i>
+									{m.paperSaveDraft()}
+								</button>
+							{/if}
 							<button
-								class="btn btn-warning btn-sm"
-								onclick={() => saveFile()}
-								disabled={!unsavedChanges}
+								class="btn btn-primary btn-sm"
+								onclick={() => saveFile({ submit: true })}
+								disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
 							>
-								<i class="fa-solid fa-save"></i>
-								{m.paperSaveDraft()}
+								<i class="fa-solid fa-paper-plane"></i>
+								{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
 							</button>
 						{/if}
-						<button
-							class="btn btn-primary btn-sm"
-							onclick={() => saveFile({ submit: true })}
-							disabled={!unsavedChanges && paperData.status !== 'DRAFT'}
-						>
-							<i class="fa-solid fa-paper-plane"></i>
-							{paperData.status === 'DRAFT' ? m.paperSubmit() : m.paperResubmit()}
-						</button>
+					</div>
+
+					<!-- Reviewer Toggle (Right) -->
+					{#if isReviewer && baseViewMode === 'reviewer'}
+						<div class="flex gap-2">
+							<button
+								class="btn btn-sm {reviewerEditMode ? 'btn-warning' : 'btn-ghost'}"
+								onclick={() => (reviewerEditMode = !reviewerEditMode)}
+							>
+								<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
+								{reviewerEditMode ? m.viewer() : m.edit()}
+							</button>
+						</div>
 					{/if}
 				</div>
-
-				<!-- Reviewer Toggle (Right) -->
-				{#if isReviewer && baseViewMode === 'reviewer'}
-					<div class="flex gap-2">
-						<button
-							class="btn btn-sm {reviewerEditMode ? 'btn-warning' : 'btn-ghost'}"
-							onclick={() => (reviewerEditMode = !reviewerEditMode)}
-						>
-							<i class="fa-solid {reviewerEditMode ? 'fa-eye' : 'fa-pen-to-square'}"></i>
-							{reviewerEditMode ? m.viewer() : m.edit()}
-						</button>
-					</div>
-				{/if}
 			</div>
-		</div>
+		{/if}
 	{:else}
 		<div>
 			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
@@ -386,8 +399,8 @@
 				/>
 			{/if}
 
-			<!-- History for authors (versions + reviews) -->
-			{#if baseViewMode === 'author' && (paperData.versions.length > 0 || existingReviews.length > 0)}
+			<!-- History for authors and supervisors (versions + reviews) -->
+			{#if (baseViewMode === 'author' || baseViewMode === 'supervisor') && (paperData.versions.length > 0 || existingReviews.length > 0)}
 				{@const authorTimelineEvents = [
 					...paperData.versions.map((v) => ({
 						type: 'version' as const,

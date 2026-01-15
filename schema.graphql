@@ -1357,6 +1357,7 @@ type Delegation {
   id: ID!
   members: [DelegationMember!]!
   motivation: String
+  papers: [Paper!]!
   school: String
 }
 
@@ -3644,6 +3645,7 @@ type Query {
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
   findPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
+  findSupervisedPapers(conferenceId: String!): [Paper!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
