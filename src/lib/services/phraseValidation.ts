@@ -5,8 +5,7 @@
  *
  * Pattern syntax:
  * - `()` - Optional word/phrase
- * - `_` - Required placeholder (at least 1 word)
- * - `(_)` - Optional placeholder (zero or more words)
+ * - `_` - Optional placeholder (zero or more words)
  */
 
 export interface PhrasePattern {
@@ -36,15 +35,14 @@ function escapeRegex(str: string): string {
  * Examples:
  * - "bedauernd" → /^(bedauernd)/i
  * - "(zutiefst) bedauernd" → /^((?:zutiefst\s+)?bedauernd)/i
- * - "fordert _ (auf)" → /^(fordert\s+\S+(?:\s+\S+)*(?:\s+auf)?)/i
- * - "fordert (_) auf" → /^(fordert(?:\s+\S+(?:\s+\S+)*)?\s+auf)/i
+ * - "fordert _ (auf)" → /^(fordert(?:\s+\S+(?:\s+\S+)*)?(?:\s+auf)?)/i
  */
 function parsePatternToRegex(pattern: string): RegExp {
 	let regexStr = '';
 	let i = 0;
 
 	while (i < pattern.length) {
-		// Handle optional group: (word) or (_)
+		// Handle optional group: (word)
 		if (pattern[i] === '(') {
 			const closeIndex = pattern.indexOf(')', i);
 			if (closeIndex === -1) {
@@ -55,23 +53,17 @@ function parsePatternToRegex(pattern: string): RegExp {
 			}
 
 			const content = pattern.slice(i + 1, closeIndex).trim();
-
-			if (content === '_') {
-				// Optional placeholder: (_) - zero or more words
-				regexStr += '(?:\\s+\\S+(?:\\s+\\S+)*)?';
-			} else {
-				// Optional word/phrase
-				regexStr += '(?:' + escapeRegex(content) + '\\s+)?';
-			}
+			// Optional word/phrase
+			regexStr += '(?:' + escapeRegex(content) + '\\s+)?';
 
 			i = closeIndex + 1;
 			// Skip trailing space after optional group
 			if (pattern[i] === ' ') i++;
 		}
-		// Handle required placeholder: _
+		// Handle optional placeholder: _
 		else if (pattern[i] === '_') {
-			// Required placeholder - at least one word, possibly more
-			regexStr += '\\S+(?:\\s+\\S+)*';
+			// Optional placeholder - zero or more words
+			regexStr += '(?:\\s+\\S+(?:\\s+\\S+)*)?';
 			i++;
 			// Skip trailing space after placeholder
 			if (pattern[i] === ' ') i++;

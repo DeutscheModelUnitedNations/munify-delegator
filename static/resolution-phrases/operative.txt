@@ -6,7 +6,7 @@ bedauert
 bedenkt
 befürwortet
 begrüßt (wärmstens)
-behält sich (_) vor
+behält sich _ vor
 beklagt
 bekräftigt
 bekundet (hocherfreut)
@@ -16,24 +16,24 @@ bestätigt
 betont
 betrachtet
 billigt
-bittet (_) (nachdrücklich)
+bittet _ (nachdrücklich)
 dankt
 drängt
 empfiehlt (dringend)
 entschließt sich
 entsendet
-erinnert (_) (an)
+erinnert _ (an)
 erkennt an
-erklärt (_) (erneut)
+erklärt _ (erneut)
 ernennt
 ermutigt
 ersucht
 erwägt
-fordert (_) (auf)
+fordert _ (auf)
 gratuliert
 hebt hervor
 hofft
-ist sich (_) bewusst
+ist sich _ bewusst
 ist (fest) überzeugt
 kommt überein
 kommt zu dem Schluss
@@ -41,14 +41,14 @@ kommt zu der Überzeugung
 legt (dringend) nahe
 lenkt (die Aufmerksamkeit) auf
 lobt (feierlich)
-macht sich (_) zu eigen
+macht sich _ zu eigen
 nimmt an
 nimmt (hocherfreut / mit Bedauern) zur Kenntnis
 räumt ein
-ruft (abermals) (_) auf
+ruft (abermals) _ auf
 schlägt vor
-schließt sich (_) an
-setzt (_) (von neuem) (_) ein
+schließt sich _ an
+setzt _ (von neuem) _ ein
 stellt fest
 unterstreicht
 unterstützt
@@ -63,4 +63,4 @@ verweist
 wiederholt
 weist auf (die Tatsache) hin
 würdigt
-zieht (_) (ernsthaft) (_) in Erwägung
+zieht _ (ernsthaft) _ in Erwägung
