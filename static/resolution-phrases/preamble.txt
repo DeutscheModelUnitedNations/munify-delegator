@@ -1,45 +1,59 @@
 alarmiert
 anerkennend
-(zutiefst) bedauernd
+bedauernd
+zutiefst bedauernd
 begrüßend
-(erneut) bekräftigend
+bekräftigend
+erneut bekräftigend
 bemerkend
 beobachtend
-(höchst) besorgt
+besorgt
+höchst besorgt
 bestätigend
-(tief) bestürzt
+bestürzt
+tief bestürzt
 betonend
 beunruhigt
 der Hoffnung Ausdruck gebend
 eingedenk
-(tief) entschlossen
+entschlossen
+tief entschlossen
 enttäuscht
 erfreut
 erinnernd
-(erneut) erklärend
+erklärend
+erneut erklärend
 ermutigend
-(von neuem) feststellend
+feststellend
+von neuem feststellend
 geleitet von
 gestützt auf
 hervorhebend
 hinweisend auf
-im (vollen) Bewusstsein
-im (festen) Glauben
+im Bewusstsein
+im vollen Bewusstsein
+im Glauben
+im festen Glauben
 im Hinblick auf
-in Anbetracht (der Tatsache)
-in Anerkennung (der Notwendigkeit)
+in Anbetracht
+in Anbetracht der Tatsache
+in Anerkennung
+in Anerkennung der Notwendigkeit
 in Bekräftigung
 in Betracht ziehend
 in der Absicht
-in Erinnerung (an)
+in Erinnerung
+in Erinnerung an
 in Erkenntnis
 in Erwartung
 in Kenntnis
-in (tiefer) Sorge
+in tiefer Sorge
+in Sorge
 missbilligend
 mit dem Ausdruck der Anerkennung
 mit dem Ausdruck des Bedauerns
-mit dem Ausdruck der (tiefen) Besorgnis
+mit dem Ausdruck der Besorgnis
+mit dem Ausdruck der tiefen Besorgnis
 mit dem Ausdruck des Dankes
 mit dem Ausdruck der Entschlossenheit
 mit dem Ausdruck der Unterstützung
@@ -48,7 +62,8 @@ mit dem Wunsch
 mit einbeziehend
 mit Enttäuschung zur Kenntnis nehmend
 mit Interesse zur Kenntnis nehmend
-mit (tiefer) Sorge zur Kenntnis
+mit Sorge zur Kenntnis
+mit tiefer Sorge zur Kenntnis
 nehmend
 nach Behandlung
 nach Prüfung
@@ -63,9 +78,11 @@ unter Missbilligung
 unter Verurteilung
 unter Zustimmung
 unterstützend
-(fest) überzeugt
+fest überzeugt
+überzeugt
 verlangend
-(entschieden) verurteilend
+verurteilend
+entschieden verurteilend
 würdigend
 zu der Erkenntnis kommend
 zur Kenntnis nehmend

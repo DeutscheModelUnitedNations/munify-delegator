@@ -81,7 +81,8 @@
 				{@const isLast = index === resolution.operative.length - 1}
 				{@const hasSubClauses = clause.subClauses && clause.subClauses.length > 0}
 				<li class="operative-clause">
-					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if !hasSubClauses}{isLast ? '.' : ';'}{/if}
+					<span class="italic">{formatted.firstPhrase}</span
+					>{formatted.rest}{#if !hasSubClauses}{isLast ? '.' : ';'}{/if}
 					{#if hasSubClauses}
 						{@render subClauseList(clause.subClauses!, 1, isLast)}
 					{/if}

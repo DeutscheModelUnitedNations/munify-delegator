@@ -147,11 +147,7 @@
 				{m.resolutionAddSubClause()}
 			</button>
 		{/if}
-		<button
-			type="button"
-			class="btn btn-ghost btn-xs gap-1 text-error"
-			onclick={onDelete}
-		>
+		<button type="button" class="btn btn-ghost btn-xs gap-1 text-error" onclick={onDelete}>
 			<i class="fa-solid fa-trash"></i>
 			{m.resolutionDeleteClause()}
 		</button>

@@ -1,67 +1,86 @@
 akzeptiert
-appelliert (eindringlich)
+appelliert eindringlich
+appelliert
 autorisiert
 beauftragt
 bedauert
 bedenkt
 befürwortet
-begrüßt (wärmstens)
+begrüßt wärmstens
+begrüßt
 behält sich _ vor
 beklagt
 bekräftigt
-bekundet (hocherfreut)
+bekundet
+bekundet hocherfreut
 bemerkt
 beschließt
 bestätigt
 betont
 betrachtet
 billigt
-bittet _ (nachdrücklich)
+bittet
+bittet _ nachdrücklich
 dankt
 drängt
-empfiehlt (dringend)
+empfiehlt dringend
+empfiehlt
 entschließt sich
 entsendet
-erinnert _ (an)
+erinnert
+erinnert _ an
 erkennt an
-erklärt _ (erneut)
+erklärt
+erklärt _ erneut
 ernennt
 ermutigt
 ersucht
 erwägt
-fordert _ (auf)
+fordert
+fordert _ auf
 gratuliert
 hebt hervor
 hofft
 ist sich _ bewusst
-ist (fest) überzeugt
+ist überzeugt
+ist fest überzeugt
 kommt überein
 kommt zu dem Schluss
 kommt zu der Überzeugung
-legt (dringend) nahe
-lenkt (die Aufmerksamkeit) auf
-lobt (feierlich)
+legt dringend nahe
+legt nahe
+lenkt auf
+lenkt die Aufmerksamkeit auf
+lobt
+lobt feierlich
 macht sich _ zu eigen
 nimmt an
 nimmt hocherfreut zur Kenntnis
-nimmt (mit Bedauern) zur Kenntnis
+nimmt zur Kenntnis
+nimmt mit Bedauern zur Kenntnis
 räumt ein
-ruft (abermals) _ auf
+ruft _ auf
+ruft abermals _ auf
 schlägt vor
 schließt sich _ an
-setzt _ (von neuem) _ ein
+setzt _ ein
+setzt _ von neuem _ ein
 stellt fest
 unterstreicht
 unterstützt
 verabschiedet
-verlangt (unmissverständlich)
+verlangt
+verlangt unmissverständlich
 vermerkt
 verpflichtet sich
 verschärft
 versichert
-verurteilt (entschieden)
+verurteilt
+verurteilt entschieden
 verweist
 wiederholt
-weist auf (die Tatsache) hin
+weist auf hin
+weist auf die Tatsache hin
 würdigt
-zieht _ (ernsthaft) _ in Erwägung
+zieht _ in Erwägung
+zieht _ ernsthaft _ in Erwägung

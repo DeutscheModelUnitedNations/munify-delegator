@@ -52,7 +52,10 @@ function parsePatternToRegex(pattern: string): RegExp {
 		if (pattern[j] === '(') {
 			const close = pattern.indexOf(')', j);
 			if (close !== -1) {
-				return pattern.slice(j + 1, close).trim().split(' ')[0];
+				return pattern
+					.slice(j + 1, close)
+					.trim()
+					.split(' ')[0];
 			}
 		}
 		// Collect word

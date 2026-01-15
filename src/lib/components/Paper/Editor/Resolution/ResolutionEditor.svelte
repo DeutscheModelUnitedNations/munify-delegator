@@ -208,7 +208,9 @@
 				</div>
 
 				{#if resolution.preamble.length === 0}
-					<div class="text-center py-4 text-base-content/50 bg-base-100 rounded-lg border border-dashed border-base-300">
+					<div
+						class="text-center py-4 text-base-content/50 bg-base-100 rounded-lg border border-dashed border-base-300"
+					>
 						<p class="text-sm">{m.resolutionNoPreambleClauses()}</p>
 						<button type="button" class="btn btn-sm btn-ghost mt-2" onclick={addPreambleClause}>
 							<i class="fa-solid fa-plus"></i>
@@ -226,7 +228,9 @@
 								onMoveUp={() => movePreambleClause(index, 'up')}
 								onMoveDown={() => movePreambleClause(index, 'down')}
 								onDelete={() => deletePreambleClause(index)}
-								validationError={!preambleValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
+								validationError={!preambleValidation[index]?.valid
+									? m.resolutionUnknownPhrase()
+									: undefined}
 								patterns={preamblePatterns}
 							/>
 						{/each}
@@ -262,7 +266,9 @@
 				</div>
 
 				{#if resolution.operative.length === 0}
-					<div class="text-center py-4 text-base-content/50 bg-base-100 rounded-lg border border-dashed border-base-300">
+					<div
+						class="text-center py-4 text-base-content/50 bg-base-100 rounded-lg border border-dashed border-base-300"
+					>
 						<p class="text-sm">{m.resolutionNoOperativeClauses()}</p>
 						<button type="button" class="btn btn-sm btn-ghost mt-2" onclick={addOperativeClause}>
 							<i class="fa-solid fa-plus"></i>
@@ -284,7 +290,9 @@
 									onDelete={() => deleteOperativeClause(index)}
 									showAddSubClause={true}
 									onAddSubClause={() => addSubClauseToOperative(index)}
-									validationError={!operativeValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
+									validationError={!operativeValidation[index]?.valid
+										? m.resolutionUnknownPhrase()
+										: undefined}
 									patterns={operativePatterns}
 								/>
 
