@@ -12,6 +12,7 @@
 		createSubclausesBlock,
 		createEmptySubClause,
 		generateClauseId,
+		generateSubClauseId,
 		getFirstTextContent,
 		migrateResolution
 	} from '$lib/schemata/resolution';
@@ -125,7 +126,7 @@
 				blocks.push(createSubclausesBlock(convertParsedSubClauses(p.children)));
 			}
 			return {
-				id: generateClauseId('o').replace('o-', 's-'), // Use s- prefix for subclauses
+				id: generateSubClauseId(),
 				blocks
 			};
 		});
