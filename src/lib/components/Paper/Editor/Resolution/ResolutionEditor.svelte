@@ -12,6 +12,7 @@
 	import ClauseEditor from './ClauseEditor.svelte';
 	import SubClauseEditor from './SubClauseEditor.svelte';
 	import ResolutionPreview from './ResolutionPreview.svelte';
+	import PhraseLookupModal from './PhraseLookupModal.svelte';
 	import {
 		type PhrasePattern,
 		loadPhrasePatterns,
@@ -48,6 +49,10 @@
 	// Phrase validation
 	let preamblePatterns = $state<PhrasePattern[]>([]);
 	let operativePatterns = $state<PhrasePattern[]>([]);
+
+	// Lookup modals
+	let showPreambleLookup = $state(false);
+	let showOperativeLookup = $state(false);
 
 	// Load phrase patterns on mount
 	$effect(() => {
@@ -186,10 +191,20 @@
 						<i class="fa-solid fa-quote-left mr-2"></i>
 						{m.resolutionPreambleClauses()}
 					</h3>
-					<button type="button" class="btn btn-sm btn-ghost" onclick={addPreambleClause}>
-						<i class="fa-solid fa-plus"></i>
-						{m.resolutionAddClause()}
-					</button>
+					<div class="flex gap-2">
+						<button
+							type="button"
+							class="btn btn-sm btn-ghost"
+							onclick={() => (showPreambleLookup = true)}
+						>
+							<i class="fa-solid fa-book"></i>
+							{m.phraseLookup()}
+						</button>
+						<button type="button" class="btn btn-sm btn-ghost" onclick={addPreambleClause}>
+							<i class="fa-solid fa-plus"></i>
+							{m.resolutionAddClause()}
+						</button>
+					</div>
 				</div>
 
 				{#if resolution.preamble.length === 0}
@@ -212,6 +227,7 @@
 								onMoveDown={() => movePreambleClause(index, 'down')}
 								onDelete={() => deletePreambleClause(index)}
 								validationError={!preambleValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
+								patterns={preamblePatterns}
 							/>
 						{/each}
 						<button type="button" class="btn btn-sm btn-ghost w-full" onclick={addPreambleClause}>
@@ -229,10 +245,20 @@
 						<i class="fa-solid fa-list-ol mr-2"></i>
 						{m.resolutionOperativeClauses()}
 					</h3>
-					<button type="button" class="btn btn-sm btn-ghost" onclick={addOperativeClause}>
-						<i class="fa-solid fa-plus"></i>
-						{m.resolutionAddClause()}
-					</button>
+					<div class="flex gap-2">
+						<button
+							type="button"
+							class="btn btn-sm btn-ghost"
+							onclick={() => (showOperativeLookup = true)}
+						>
+							<i class="fa-solid fa-book"></i>
+							{m.phraseLookup()}
+						</button>
+						<button type="button" class="btn btn-sm btn-ghost" onclick={addOperativeClause}>
+							<i class="fa-solid fa-plus"></i>
+							{m.resolutionAddClause()}
+						</button>
+					</div>
 				</div>
 
 				{#if resolution.operative.length === 0}
@@ -259,6 +285,7 @@
 									showAddSubClause={true}
 									onAddSubClause={() => addSubClauseToOperative(index)}
 									validationError={!operativeValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
+									patterns={operativePatterns}
 								/>
 
 								<!-- Sub-clauses -->
@@ -286,3 +313,18 @@
 		<ResolutionPreview {resolution} />
 	{/if}
 </fieldset>
+
+<!-- Phrase Lookup Modals -->
+<PhraseLookupModal
+	patterns={preamblePatterns}
+	bind:open={showPreambleLookup}
+	onClose={() => (showPreambleLookup = false)}
+	title="{m.phraseLookupTitle()} ({m.resolutionPreambleClauses()})"
+/>
+
+<PhraseLookupModal
+	patterns={operativePatterns}
+	bind:open={showOperativeLookup}
+	onClose={() => (showOperativeLookup = false)}
+	title="{m.phraseLookupTitle()} ({m.resolutionOperativeClauses()})"
+/>
