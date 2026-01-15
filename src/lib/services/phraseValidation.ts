@@ -35,12 +35,34 @@ function escapeRegex(str: string): string {
  * Examples:
  * - "bedauernd" → /^(bedauernd)/i
  * - "(zutiefst) bedauernd" → /^((?:zutiefst\s+)?bedauernd)/i
- * - "ist sich _ bewusst" → /^(ist\s+sich(?:\s+\S+)*\s+bewusst)/i
- *   Matches: "ist sich bewusst", "ist sich der Tatsache bewusst"
+ * - "appelliert (eindringlich)" → /^(appelliert(?:\s+eindringlich)?)/i
+ * - "fordert _ auf" → /^(fordert(?:\s+(?!auf\b)\S+)*\s+auf)/i
+ * - "fordert _ (auf)" → /^(fordert(?:\s+(?!auf\b)\S+)*(?:\s+auf)?)/i
  */
 function parsePatternToRegex(pattern: string): RegExp {
 	let regexStr = '';
 	let i = 0;
+
+	// Helper to find the next word after a placeholder
+	function findNextWord(startIdx: number): string | null {
+		let j = startIdx;
+		// Skip spaces
+		while (j < pattern.length && pattern[j] === ' ') j++;
+		// Check for optional group
+		if (pattern[j] === '(') {
+			const close = pattern.indexOf(')', j);
+			if (close !== -1) {
+				return pattern.slice(j + 1, close).trim().split(' ')[0];
+			}
+		}
+		// Collect word
+		let word = '';
+		while (j < pattern.length && pattern[j] !== ' ' && pattern[j] !== '(' && pattern[j] !== '_') {
+			word += pattern[j];
+			j++;
+		}
+		return word || null;
+	}
 
 	while (i < pattern.length) {
 		// Handle optional group: (word)
@@ -54,8 +76,17 @@ function parsePatternToRegex(pattern: string): RegExp {
 			}
 
 			const content = pattern.slice(i + 1, closeIndex).trim();
-			// Optional word/phrase
-			regexStr += '(?:' + escapeRegex(content) + '\\s+)?';
+
+			// Check if this is at the start (prefix) or after content (suffix)
+			const isPrefix = regexStr === '';
+
+			if (isPrefix) {
+				// Prefix: "word " is optional (space after)
+				regexStr += '(?:' + escapeRegex(content) + '\\s+)?';
+			} else {
+				// Suffix: " word" is optional (space before)
+				regexStr += '(?:\\s+' + escapeRegex(content) + ')?';
+			}
 
 			i = closeIndex + 1;
 			// Skip trailing space after optional group
@@ -63,21 +94,39 @@ function parsePatternToRegex(pattern: string): RegExp {
 		}
 		// Handle optional placeholder: _
 		else if (pattern[i] === '_') {
-			// Optional placeholder - zero or more words
-			// The preceding space was skipped, so this handles: optional (space + words)
-			regexStr += '(?:\\s+\\S+)*';
 			i++;
-			// DON'T skip trailing space - let it add \s+ for the word that follows
+			// Skip trailing space after placeholder
+			const hadTrailingSpace = pattern[i] === ' ';
+			if (hadTrailingSpace) i++;
+
+			// Find what word follows the placeholder (if any)
+			const nextWord = findNextWord(i);
+
+			if (nextWord) {
+				// There's a word after the placeholder
+				// Pattern: zero or more (space + word that's not the next word)
+				// The negative lookahead ensures we stop before the target word
+				regexStr += '(?:\\s+(?!' + escapeRegex(nextWord) + '\\b)\\S+)*';
+
+				// Check if the next thing is a required word (not optional)
+				// If so, we need \s+ before it
+				if (hadTrailingSpace && pattern[i] !== '(') {
+					regexStr += '\\s+';
+				}
+			} else {
+				// No word follows, just match any words (optional)
+				regexStr += '(?:\\s+\\S+)*';
+			}
 		}
 		// Handle space
 		else if (pattern[i] === ' ') {
-			// If next char is _, don't add \s+ here - let _ handle it
-			if (pattern[i + 1] === '_') {
+			// Peek ahead: if next char is ( or _, the optional group handles the space
+			if (pattern[i + 1] === '(' || pattern[i + 1] === '_') {
 				i++;
-			} else {
-				regexStr += '\\s+';
-				i++;
+				continue;
 			}
+			regexStr += '\\s+';
+			i++;
 		}
 		// Handle regular characters
 		else {
