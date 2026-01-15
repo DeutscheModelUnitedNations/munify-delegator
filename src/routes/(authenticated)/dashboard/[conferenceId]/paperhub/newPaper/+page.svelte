@@ -173,7 +173,10 @@
 			</div>
 		</div>
 		{#if $formData.type === 'WORKING_PAPER'}
-			<PaperEditor.ResolutionEditor committeeName={committee?.name ?? 'Committee'} editable />
+			<PaperEditor.Resolution.ResolutionEditor
+				committeeName={committee?.name ?? 'Committee'}
+				editable
+			/>
 		{:else}
 			<PaperEditor.PaperFormat editable />
 		{/if}

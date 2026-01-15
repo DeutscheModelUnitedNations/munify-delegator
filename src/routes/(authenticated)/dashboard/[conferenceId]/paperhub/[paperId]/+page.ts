@@ -31,6 +31,7 @@ export const _houdini_load = graphql(`
 				committee {
 					id
 					abbreviation
+					name
 				}
 			}
 			versions {

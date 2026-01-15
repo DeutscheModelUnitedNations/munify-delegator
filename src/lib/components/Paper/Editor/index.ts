@@ -1,14 +1,12 @@
 import PaperFormat from './PaperFormat.svelte';
-import ResolutionFormat from './ResolutionFormat.svelte';
-import ResolutionEditor from './ResolutionEditor.svelte';
 import ReviewFormat from './ReviewFormat.svelte';
 import ReadOnlyContent from './ReadOnlyContent.svelte';
 import * as DiffViewer from './DiffViewer';
+import * as Resolution from './Resolution';
 
 export const Editor = {
 	PaperFormat,
-	ResolutionFormat, // Legacy - to be deprecated
-	ResolutionEditor, // New resolution editor with dynamic committee name
+	Resolution,
 	ReviewFormat,
 	ReadOnlyContent,
 	DiffViewer

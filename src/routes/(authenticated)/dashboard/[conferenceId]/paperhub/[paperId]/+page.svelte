@@ -359,9 +359,9 @@
 			<div bind:this={paperEditorContainer}>
 				{#key editorEditable}
 					{#if paperData.type === 'WORKING_PAPER'}
-						<PaperEditor.ResolutionFormat
+						<PaperEditor.Resolution.ResolutionEditor
+							committeeName={paperData.agendaItem?.committee?.name ?? 'Committee'}
 							editable={editorEditable}
-							onQuoteSelection={baseViewMode === 'reviewer' ? handleQuoteSelection : undefined}
 						/>
 					{:else}
 						<PaperEditor.PaperFormat
