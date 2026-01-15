@@ -1,5 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type { DiffResult, DiffSegment } from './types';
+import type { Resolution, SubClause } from '$lib/schemata/resolution';
+import { toRoman, toLetter } from '$lib/schemata/resolution';
 
 /**
  * Extract plain text from a TipTap JSON node recursively
@@ -19,11 +21,108 @@ function extractNodeText(node: any): string {
 }
 
 /**
+ * Check if content is a Resolution (vs TipTap JSON)
+ */
+function isResolutionContent(content: any): content is Resolution {
+	return (
+		content &&
+		typeof content.committeeName === 'string' &&
+		Array.isArray(content.preamble) &&
+		Array.isArray(content.operative)
+	);
+}
+
+/**
+ * Get label for sub-clause based on depth
+ * Depth 1: I, II, III (Roman numerals)
+ * Depth 2: a, b, c
+ * Depth 3: aa, bb, cc
+ * Depth 4: aaa, bbb, ccc
+ */
+function getDepthLabel(index: number, depth: number): string {
+	const num = index + 1;
+	switch (depth) {
+		case 1:
+			return toRoman(num);
+		case 2:
+			return toLetter(num);
+		case 3:
+			return toLetter(num).repeat(2);
+		case 4:
+			return toLetter(num).repeat(3);
+		default:
+			return String(num);
+	}
+}
+
+/**
+ * Serialize sub-clauses recursively with labels
+ */
+function serializeSubClauses(
+	subClauses: SubClause[],
+	parentLabel: string,
+	depth: number,
+	lines: string[]
+): void {
+	subClauses.forEach((sub, index) => {
+		const depthLabel = getDepthLabel(index, depth);
+		if (sub.content.trim()) {
+			lines.push(`[${parentLabel}.${depthLabel}]`);
+			lines.push(sub.content.trim());
+			lines.push('');
+		}
+		if (sub.children && sub.children.length > 0) {
+			serializeSubClauses(sub.children, `${parentLabel}.${depthLabel}`, depth + 1, lines);
+		}
+	});
+}
+
+/**
+ * Serialize a Resolution to labeled plain text for diff comparison
+ * Format: [P 1], [P 2], [O 1], [O 1.I], [O 1.I.a], etc.
+ */
+function serializeResolutionToText(resolution: Resolution): string {
+	const lines: string[] = [];
+
+	// Preamble clauses
+	resolution.preamble.forEach((clause, index) => {
+		if (clause.content.trim()) {
+			lines.push(`[P ${index + 1}]`);
+			lines.push(clause.content.trim());
+			lines.push('');
+		}
+	});
+
+	// Operative clauses
+	resolution.operative.forEach((clause, opIndex) => {
+		if (clause.content.trim()) {
+			lines.push(`[O ${opIndex + 1}]`);
+			lines.push(clause.content.trim());
+			lines.push('');
+		}
+		if (clause.subClauses && clause.subClauses.length > 0) {
+			serializeSubClauses(clause.subClauses, `O ${opIndex + 1}`, 1, lines);
+		}
+	});
+
+	return lines.join('\n').trim();
+}
+
+/**
  * Extract plain text from TipTap JSON content
  * Preserves paragraph structure with double newlines
+ * Also handles Resolution content with labeled clauses
  */
 export function extractTextFromTipTapJson(content: any): string {
-	if (!content || !content.content) return '';
+	if (!content) return '';
+
+	// Check if it's a Resolution
+	if (isResolutionContent(content)) {
+		return serializeResolutionToText(content);
+	}
+
+	// Fall back to TipTap extraction
+	if (!content.content) return '';
 
 	return content.content
 		.map((node: any) => {
