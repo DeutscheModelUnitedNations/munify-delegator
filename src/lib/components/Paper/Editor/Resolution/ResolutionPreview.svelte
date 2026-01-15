@@ -81,7 +81,7 @@
 				{@const isLast = index === resolution.operative.length - 1}
 				{@const hasSubClauses = clause.subClauses && clause.subClauses.length > 0}
 				<li class="operative-clause">
-					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if !hasSubClauses}{isLast ? '.' : ';'}{/if}
+					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if !hasSubClauses}.{/if}
 					{#if hasSubClauses}
 						{@render subClauseList(clause.subClauses!, 1, isLast)}
 					{/if}
@@ -121,8 +121,8 @@
 		font-family: 'Times New Roman', Times, serif;
 		font-size: 0.95rem;
 		line-height: 1.7;
-		max-width: 700px;
-		margin: 0 auto;
+		width: 100%;
+		max-width: 900px;
 		padding: 2rem;
 		background: white;
 		color: #1a1a1a;
