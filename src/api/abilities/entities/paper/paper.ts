@@ -46,5 +46,21 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 				}
 			}
 		});
+
+		// Supervisors can read/list papers of their supervised students' delegations (non-DRAFT only)
+		can(['read', 'list'], 'Paper', {
+			delegation: {
+				members: {
+					some: {
+						supervisors: {
+							some: {
+								user: { id: user.sub }
+							}
+						}
+					}
+				}
+			},
+			status: { not: 'DRAFT' }
+		});
 	}
 };

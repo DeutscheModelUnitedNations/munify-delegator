@@ -388,3 +388,63 @@ builder.queryFields((t) => ({
 		}
 	})
 }));
+
+// Query for papers supervised by the current user (for supervisors viewing their students' papers)
+builder.queryFields((t) => ({
+	findSupervisedPapers: t.field({
+		type: [GQLPaper],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Find delegation IDs where the current user is a supervisor
+			const supervisedDelegationMembers = await db.delegationMember.findMany({
+				where: {
+					conferenceId: args.conferenceId,
+					supervisors: {
+						some: {
+							userId: user.sub
+						}
+					}
+				},
+				select: { delegationId: true },
+				distinct: ['delegationId']
+			});
+
+			if (supervisedDelegationMembers.length === 0) {
+				return [];
+			}
+
+			const delegationIds = supervisedDelegationMembers.map((m) => m.delegationId);
+
+			// Fetch papers from those delegations (exclude DRAFT status to respect student privacy)
+			return db.paper.findMany({
+				where: {
+					conferenceId: args.conferenceId,
+					delegationId: { in: delegationIds },
+					status: { not: 'DRAFT' }
+				},
+				include: {
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					},
+					agendaItem: {
+						include: {
+							committee: true
+						}
+					},
+					author: true,
+					versions: {
+						orderBy: { version: 'desc' },
+						take: 1
+					}
+				}
+			});
+		}
+	})
+}));
