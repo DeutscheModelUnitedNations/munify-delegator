@@ -14,17 +14,10 @@
 		resolutionContentStore
 	} from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	let { data }: { data: PageData } = $props();
-
-	// Reset stores on mount to prevent stale data from previous sessions
-	onMount(() => {
-		$editorContentStore = undefined;
-		$resolutionContentStore = undefined;
-	});
 
 	let delegationMember = $derived(
 		data.getPaperDelegationMemberQuery?.data.findUniqueDelegationMember
