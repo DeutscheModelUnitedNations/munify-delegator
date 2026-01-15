@@ -13,6 +13,10 @@
 
 	let { resolution }: Props = $props();
 
+	// Filter out empty clauses for preview
+	let nonEmptyPreamble = $derived(resolution.preamble.filter((c) => c.content.trim()));
+	let nonEmptyOperative = $derived(resolution.operative.filter((c) => c.content.trim()));
+
 	// Load phrase patterns for italicization
 	let preamblePatterns = $state<PhrasePattern[]>([]);
 	let operativePatterns = $state<PhrasePattern[]>([]);
@@ -62,9 +66,9 @@
 	</div>
 
 	<!-- Preamble Section -->
-	{#if resolution.preamble.length > 0}
+	{#if nonEmptyPreamble.length > 0}
 		<div class="preamble-section">
-			{#each resolution.preamble as clause}
+			{#each nonEmptyPreamble as clause}
 				{@const formatted = formatClauseContent(clause.content, preamblePatterns)}
 				<p class="preamble-clause">
 					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest},
@@ -74,12 +78,13 @@
 	{/if}
 
 	<!-- Operative Section -->
-	{#if resolution.operative.length > 0}
+	{#if nonEmptyOperative.length > 0}
 		<ol class="operative-section">
-			{#each resolution.operative as clause, index}
+			{#each nonEmptyOperative as clause, index}
 				{@const formatted = formatClauseContent(clause.content, operativePatterns)}
-				{@const isLast = index === resolution.operative.length - 1}
-				{@const hasSubClauses = clause.subClauses && clause.subClauses.length > 0}
+				{@const isLast = index === nonEmptyOperative.length - 1}
+				{@const nonEmptySubClauses = clause.subClauses?.filter((c) => c.content.trim()) ?? []}
+				{@const hasSubClauses = nonEmptySubClauses.length > 0}
 				<li class="operative-clause">
 					<span class="italic">{formatted.firstPhrase}</span
 					>{formatted.rest}{#if !hasSubClauses}{isLast ? '.' : ';'}{/if}
@@ -92,24 +97,27 @@
 	{/if}
 
 	{#snippet subClauseList(subClauses: SubClause[], depth: number, isLastOperative: boolean)}
-		<ol class="sub-clause-section depth-{depth}">
-			{#each subClauses as subClause, index}
-				{@const formatted = formatClauseContent(subClause.content, [])}
-				{@const isLast = index === subClauses.length - 1}
-				{@const hasChildren = subClause.children && subClause.children.length > 0}
-				<li class="sub-clause">
-					<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
-					{subClause.content.trim()}{#if !hasChildren}{#if isLast && isLastOperative && depth === 1}.{:else};{/if}{/if}
-					{#if hasChildren}
-						{@render subClauseList(subClause.children!, depth + 1, isLastOperative && isLast)}
-					{/if}
-				</li>
-			{/each}
-		</ol>
+		{@const nonEmptySubClauses = subClauses.filter((c) => c.content.trim())}
+		{#if nonEmptySubClauses.length > 0}
+			<ol class="sub-clause-section depth-{depth}">
+				{#each nonEmptySubClauses as subClause, index}
+					{@const isLast = index === nonEmptySubClauses.length - 1}
+					{@const nonEmptyChildren = subClause.children?.filter((c) => c.content.trim()) ?? []}
+					{@const hasChildren = nonEmptyChildren.length > 0}
+					<li class="sub-clause">
+						<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
+						{subClause.content.trim()}{#if !hasChildren}{#if isLast && isLastOperative && depth === 1}.{:else};{/if}{/if}
+						{#if hasChildren}
+							{@render subClauseList(subClause.children!, depth + 1, isLastOperative && isLast)}
+						{/if}
+					</li>
+				{/each}
+			</ol>
+		{/if}
 	{/snippet}
 
 	<!-- Empty state -->
-	{#if resolution.preamble.length === 0 && resolution.operative.length === 0}
+	{#if nonEmptyPreamble.length === 0 && nonEmptyOperative.length === 0}
 		<div class="text-center text-base-content/50 py-8">
 			<i class="fa-solid fa-file-lines text-4xl mb-2"></i>
 			<p>No clauses yet. Add preamble or operative clauses to see the preview.</p>
