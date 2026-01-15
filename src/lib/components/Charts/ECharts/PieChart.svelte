@@ -8,6 +8,7 @@
 		title?: string;
 		donut?: boolean;
 		showLegend?: boolean;
+		showLabels?: boolean;
 		class?: string;
 		height?: string;
 		loading?: boolean;
@@ -18,10 +19,14 @@
 		title,
 		donut = false,
 		showLegend = true,
+		showLabels,
 		class: className = '',
 		height = '300px',
 		loading = false
 	}: Props = $props();
+
+	// Default: show labels when legend is hidden, unless explicitly set
+	const labelsVisible = $derived(showLabels ?? !showLegend);
 
 	const options = $derived.by<EChartsOption>(() => ({
 		title: title
@@ -56,11 +61,11 @@
 					}
 				},
 				label: {
-					show: !showLegend,
+					show: labelsVisible,
 					formatter: '{b}: {d}%'
 				},
 				labelLine: {
-					show: !showLegend
+					show: labelsVisible
 				}
 			}
 		]

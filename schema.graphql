@@ -2242,6 +2242,8 @@ type Mutation {
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
+  createOneSurveyOption(data: SurveyOptionCreateInput!): SurveyOption!
+  createOneSurveyQuestion(data: SurveyQuestionCreateInput!): SurveyQuestion!
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
@@ -2263,6 +2265,8 @@ type Mutation {
   deleteOnePaper(where: PaperWhereUniqueInput!): Paper
   deleteOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
+  deleteOneSurveyOption(where: SurveyOptionWhereUniqueInput!): SurveyOption
+  deleteOneSurveyQuestion(where: SurveyQuestionWhereUniqueInput!): SurveyQuestion
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
@@ -2289,6 +2293,8 @@ type Mutation {
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
+  updateOneSurveyOption(data: SurveyOptionUpdateInput!, where: SurveyOptionWhereUniqueInput!): SurveyOption
+  updateOneSurveyQuestion(data: SurveyQuestionUpdateInput!, where: SurveyQuestionWhereUniqueInput!): SurveyQuestion
   updateOneTeamMember(data: TeamMemberUpdateInput!, where: TeamMemberWhereUniqueInput!): TeamMember
   updateOneUser(data: UserUpdateDataInput!, where: UserWhereUniqueInput!): User
   updateOneUsersGlobalNotes(globalNotes: String!, where: UserWhereUniqueInput!): User
@@ -4514,6 +4520,7 @@ input StringWithAggregatesFilter {
 }
 
 type SurveyAnswer {
+  createdAt: DateTime!
   id: ID!
   option: SurveyOption!
   question: SurveyQuestion!

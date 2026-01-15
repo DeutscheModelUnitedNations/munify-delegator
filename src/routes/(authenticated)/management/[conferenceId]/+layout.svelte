@@ -129,7 +129,7 @@
 		</NavMenu>
 	</SideNavigationDrawer>
 
-	<div class="flex h-full min-w-0 flex-col px-3">
+	<div class="flex h-full min-w-0 grow flex-col px-3">
 		{@render children()}
 	</div>
 </div>
