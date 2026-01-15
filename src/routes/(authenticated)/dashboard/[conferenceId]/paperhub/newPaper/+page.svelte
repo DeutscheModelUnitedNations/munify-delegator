@@ -11,6 +11,8 @@
 	import toast from 'svelte-french-toast';
 	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
+	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -22,6 +24,7 @@
 	let conferenceAgendaItems = $derived(
 		data.getPaperDelegationMemberQuery?.data.findManyAgendaItems
 	);
+	let conference = $derived(data.conferenceQueryData?.findUniqueConference);
 
 	const createPaperMutation = graphql(`
 		mutation CreatePaperMutation(
@@ -92,6 +95,30 @@
 			value: item.id,
 			label: item.title
 		}));
+	});
+
+	// Resolution header data for working papers
+	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
+		if ($formData.type !== 'WORKING_PAPER') return undefined;
+
+		const nationName = delegation?.assignedNation
+			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+			: undefined;
+		const nsaName = delegation?.assignedNonStateActor?.name;
+
+		// Get the selected agenda item title
+		const selectedAgendaItem = $formData.agendaItemId
+			? committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)
+			: undefined;
+
+		return {
+			conferenceName: conference?.title ?? 'Model UN',
+			committeeAbbreviation: committee?.abbreviation,
+			committeeFullName: committee?.name,
+			documentNumber: `WP/DRAFT`,
+			topic: selectedAgendaItem?.title,
+			authoringDelegation: nationName ?? nsaName
+		};
 	});
 
 	const saveFile = async (options: { submit?: boolean } = {}) => {
@@ -176,6 +203,7 @@
 			<PaperEditor.Resolution.ResolutionEditor
 				committeeName={committee?.name ?? 'Committee'}
 				editable
+				headerData={resolutionHeaderData}
 			/>
 		{:else}
 			<PaperEditor.PaperFormat editable />
