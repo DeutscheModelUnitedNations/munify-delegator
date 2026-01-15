@@ -88,8 +88,7 @@ builder.mutationFields((t) => {
 				}
 
 				const question = await db.surveyQuestion.findUnique({
-					where: { id: questionId },
-					include: { conference: true }
+					where: { id: questionId }
 				});
 
 				if (!question) {

@@ -91,18 +91,27 @@
 			createTitle = '';
 			createDescription = '';
 			createDeadline = '';
+		} catch (error) {
+			console.error('Failed to create survey:', error);
 		} finally {
 			isLoading = false;
 		}
 	};
 
 	const toggleDraft = async (id: string, currentDraft: boolean) => {
-		await UpdateSurveyMutation.mutate({
-			id,
-			draft: { set: !currentDraft }
-		});
-		cache.markStale();
-		await invalidateAll();
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id,
+				draft: { set: !currentDraft }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle draft status:', error);
+		} finally {
+			isLoading = false;
+		}
 	};
 
 	const deleteSurvey = async () => {
@@ -116,6 +125,8 @@
 			await invalidateAll();
 			showDeleteModal = false;
 			surveyToDelete = null;
+		} catch (error) {
+			console.error('Failed to delete survey:', error);
 		} finally {
 			isLoading = false;
 		}

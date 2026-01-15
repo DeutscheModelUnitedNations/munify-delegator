@@ -179,12 +179,19 @@
 	// Actions
 	const toggleDraft = async () => {
 		if (!survey) return;
-		await UpdateSurveyMutation.mutate({
-			id: survey.id,
-			draft: { set: !survey.draft }
-		});
-		cache.markStale();
-		await invalidateAll();
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id: survey.id,
+				draft: { set: !survey.draft }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle draft status:', error);
+		} finally {
+			isLoading = false;
+		}
 	};
 
 	const startEditSurvey = () => {
@@ -209,6 +216,8 @@
 			cache.markStale();
 			await invalidateAll();
 			editingSurvey = false;
+		} catch (error) {
+			console.error('Failed to update survey:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -234,6 +243,8 @@
 			cache.markStale();
 			await invalidateAll();
 			showCreateOptionModal = false;
+		} catch (error) {
+			console.error('Failed to create option:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -259,6 +270,8 @@
 			cache.markStale();
 			await invalidateAll();
 			editingOption = null;
+		} catch (error) {
+			console.error('Failed to update option:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -280,6 +293,8 @@
 			await invalidateAll();
 			showDeleteOptionModal = false;
 			optionToDelete = null;
+		} catch (error) {
+			console.error('Failed to delete option:', error);
 		} finally {
 			isLoading = false;
 		}

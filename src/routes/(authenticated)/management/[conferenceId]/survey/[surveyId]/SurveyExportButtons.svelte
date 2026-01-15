@@ -68,7 +68,7 @@
 		user: User
 	): { roleType: string; roleName: string; committee: string } => {
 		// Check delegation memberships for this conference
-		const membership = user.delegationMemberships.find((m) => m.conference.id === conferenceId);
+		const membership = user.delegationMemberships.find((dm) => dm.conference.id === conferenceId);
 		if (membership) {
 			const nation = membership.delegation.assignedNation;
 			const nsa = membership.delegation.assignedNonStateActor;
