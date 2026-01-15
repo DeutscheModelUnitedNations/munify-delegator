@@ -9,12 +9,22 @@
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
-	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import {
+		editorContentStore,
+		resolutionContentStore
+	} from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	// Reset stores on mount to prevent stale data from previous sessions
+	onMount(() => {
+		$editorContentStore = undefined;
+		$resolutionContentStore = undefined;
+	});
 
 	let delegationMember = $derived(
 		data.getPaperDelegationMemberQuery?.data.findUniqueDelegationMember
@@ -129,13 +139,17 @@
 			return;
 		}
 
+		// Use the correct store based on paper type
+		const content =
+			$formData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
+
 		const resposne = await toast.promise(
 			createPaperMutation.mutate({
 				conferenceId: data.conferenceId,
 				userId: data.user.sub,
 				delegationId: delegation?.id,
 				type: $formData.type,
-				content: $editorContentStore,
+				content,
 				agendaItemId: $formData.type === 'INTRODUCTION_PAPER' ? undefined : $formData.agendaItemId,
 				status: submit ? 'SUBMITTED' : 'DRAFT'
 			}),

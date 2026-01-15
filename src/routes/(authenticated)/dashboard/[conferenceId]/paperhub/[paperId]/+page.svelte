@@ -2,7 +2,10 @@
 	import type { PageData } from './$houdini';
 	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
-	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import {
+		editorContentStore,
+		resolutionContentStore
+	} from '$lib/components/Paper/Editor/editorStore';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -88,7 +91,12 @@
 	$effect(() => {
 		if (paperData && paperData.id !== currentPaperId) {
 			if (!paperData.versions || paperData.versions.length === 0) {
-				$editorContentStore = '';
+				// Reset both stores, set appropriate one based on paper type
+				if (paperData.type === 'WORKING_PAPER') {
+					$resolutionContentStore = undefined;
+				} else {
+					$editorContentStore = '';
+				}
 				currentPaperId = paperData.id;
 				initialized = true;
 				return;
@@ -96,7 +104,12 @@
 			const latestVer = paperData.versions.reduce((acc, version) =>
 				version.version > acc.version ? version : acc
 			);
-			$editorContentStore = latestVer.content;
+			// Set the correct store based on paper type
+			if (paperData.type === 'WORKING_PAPER') {
+				$resolutionContentStore = latestVer.content;
+			} else {
+				$editorContentStore = latestVer.content;
+			}
 			currentPaperId = paperData.id;
 			initialized = true;
 		}
@@ -197,14 +210,18 @@
 		};
 	};
 
+	// Get the current content from the correct store based on paper type
+	let currentContent = $derived(
+		paperData?.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore
+	);
+
 	$effect(() => {
-		if (paperData && $editorContentStore) {
-			compareEditorContentHash(
-				JSON.stringify($editorContentStore),
-				latestVersion?.contentHash
-			).then((areEqual) => {
-				unsavedChanges = !areEqual;
-			});
+		if (paperData && currentContent) {
+			compareEditorContentHash(JSON.stringify(currentContent), latestVersion?.contentHash).then(
+				(areEqual) => {
+					unsavedChanges = !areEqual;
+				}
+			);
 		}
 	});
 
@@ -214,10 +231,14 @@
 		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
 		const newStatus = reviewerEditMode ? paperData.status : submit ? 'SUBMITTED' : 'DRAFT';
 
+		// Use the correct store based on paper type
+		const content =
+			paperData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
+
 		const resposne = await toast.promise(
 			updatePaperMutation.mutate({
 				paperId: paperData.id,
-				content: $editorContentStore,
+				content,
 				status: newStatus
 			}),
 			{

@@ -16,7 +16,7 @@
 		getFirstTextContent,
 		migrateResolution
 	} from '$lib/schemata/resolution';
-	import { editorContentStore } from '../editorStore';
+	import { resolutionContentStore } from '../editorStore';
 	import ClauseEditor from './ClauseEditor.svelte';
 	import OperativeClauseEditor from './OperativeClauseEditor.svelte';
 	import ResolutionPreview from './ResolutionPreview.svelte';
@@ -42,7 +42,7 @@
 	// Initialize resolution state with migration from legacy format
 	let resolution = $state<Resolution>(
 		migrateResolution(
-			initialContent ?? ($editorContentStore as Resolution) ?? createEmptyResolution(committeeName)
+			initialContent ?? $resolutionContentStore ?? createEmptyResolution(committeeName)
 		) as Resolution
 	);
 
@@ -51,9 +51,9 @@
 		resolution.committeeName = committeeName;
 	});
 
-	// Sync resolution to editorContentStore for persistence
+	// Sync resolution to resolutionContentStore for persistence
 	$effect(() => {
-		$editorContentStore = resolution;
+		$resolutionContentStore = resolution;
 	});
 
 	// Preview visibility toggle
