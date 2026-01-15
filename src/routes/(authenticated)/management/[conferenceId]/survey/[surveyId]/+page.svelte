@@ -11,6 +11,7 @@
 	import CollapsibleParticipantList from '$lib/components/CollapsibleParticipantList.svelte';
 	import DownloadCategoryCard from '../../downloads/DownloadCategoryCard.svelte';
 	import SurveyExportButtons from './SurveyExportButtons.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let { data }: { data: PageData } = $props();
 
@@ -125,7 +126,7 @@
 		}
 
 		// Get all unique dates and sort them
-		const dateSet = new Set<string>();
+		const dateSet = new SvelteSet<string>();
 		for (const answer of survey.surveyAnswers) {
 			const date = new Date(answer.createdAt).toLocaleDateString();
 			dateSet.add(date);
