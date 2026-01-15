@@ -299,31 +299,42 @@
 				<h1 class="text-2xl font-bold mt-2">{title}</h1>
 
 				<!-- Metadata Row -->
-				<div class="flex items-center gap-3 text-sm text-base-content/70 mt-2 flex-wrap">
-					<span class="flex items-center gap-1">
-						<i class="fa-solid {getPaperTypeIcon(paperData.type)}"></i>
-						{translatePaperType(paperData.type)}
-					</span>
-					<span class="text-base-content/30">•</span>
-					<div class="tooltip" data-tip={m.version()}>
-						<span class="font-mono">v{versionNumber}</span>
-					</div>
-					<span class="text-base-content/30">•</span>
-					<div class="tooltip" data-tip={m.createdAt()}>
+				<div class="flex items-center justify-between gap-3 mt-2 flex-wrap">
+					<div class="flex items-center gap-3 text-sm text-base-content/70 flex-wrap">
 						<span class="flex items-center gap-1">
-							<i class="fa-solid fa-plus text-xs"></i>
-							{paperData.createdAt?.toLocaleDateString()}
+							<i class="fa-solid {getPaperTypeIcon(paperData.type)}"></i>
+							{translatePaperType(paperData.type)}
 						</span>
-					</div>
-					{#if paperData.firstSubmittedAt}
 						<span class="text-base-content/30">•</span>
-						<div class="tooltip" data-tip={m.submittedAt()}>
+						<div class="tooltip" data-tip={m.version()}>
+							<span class="font-mono">v{versionNumber}</span>
+						</div>
+						<span class="text-base-content/30">•</span>
+						<div class="tooltip" data-tip={m.createdAt()}>
 							<span class="flex items-center gap-1">
-								<i class="fa-solid fa-paper-plane text-xs"></i>
-								{paperData.firstSubmittedAt?.toLocaleDateString()}
+								<i class="fa-solid fa-plus text-xs"></i>
+								{paperData.createdAt?.toLocaleDateString()}
 							</span>
 						</div>
-					{/if}
+						{#if paperData.firstSubmittedAt}
+							<span class="text-base-content/30">•</span>
+							<div class="tooltip" data-tip={m.submittedAt()}>
+								<span class="flex items-center gap-1">
+									<i class="fa-solid fa-paper-plane text-xs"></i>
+									{paperData.firstSubmittedAt?.toLocaleDateString()}
+								</span>
+							</div>
+						{/if}
+					</div>
+					<a
+						href={`/dashboard/${$page.params.conferenceId}/paperhub/${paperData.id}/print`}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-sm btn-ghost"
+					>
+						<i class="fa-solid fa-file-pdf"></i>
+						{m.paperExportPdf()}
+					</a>
 				</div>
 			</div>
 		</div>
