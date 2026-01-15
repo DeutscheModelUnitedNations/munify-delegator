@@ -5,13 +5,19 @@
 		type PreambleClause,
 		type OperativeClause,
 		type SubClause,
+		type ClauseBlock,
 		createEmptyResolution,
+		createEmptyOperativeClause,
+		createTextBlock,
+		createSubclausesBlock,
+		createEmptySubClause,
 		generateClauseId,
-		generateSubClauseId
+		getFirstTextContent,
+		migrateResolution
 	} from '$lib/schemata/resolution';
 	import { editorContentStore } from '../editorStore';
 	import ClauseEditor from './ClauseEditor.svelte';
-	import SubClauseEditor from './SubClauseEditor.svelte';
+	import OperativeClauseEditor from './OperativeClauseEditor.svelte';
 	import ResolutionPreview from './ResolutionPreview.svelte';
 	import PhraseLookupModal from './PhraseLookupModal.svelte';
 	import ImportModal from './ImportModal.svelte';
@@ -32,9 +38,11 @@
 
 	let { committeeName, initialContent, editable = true, headerData }: Props = $props();
 
-	// Initialize resolution state
+	// Initialize resolution state with migration from legacy format
 	let resolution = $state<Resolution>(
-		initialContent ?? ($editorContentStore as Resolution) ?? createEmptyResolution(committeeName)
+		migrateResolution(
+			initialContent ?? ($editorContentStore as Resolution) ?? createEmptyResolution(committeeName)
+		) as Resolution
 	);
 
 	// Ensure committeeName is always current
@@ -81,11 +89,17 @@
 	function insertIntoOperative(phrase: string) {
 		if (lastFocusedOperativeIndex !== null && lastFocusedOperativeIndex < resolution.operative.length) {
 			const clause = resolution.operative[lastFocusedOperativeIndex];
-			// Insert phrase at the start, preserving existing content
-			if (clause.content.trim()) {
-				clause.content = phrase + ' ' + clause.content;
-			} else {
-				clause.content = phrase;
+			// Insert phrase at the start of the first text block
+			const firstBlock = clause.blocks[0];
+			if (firstBlock?.type === 'text') {
+				const newBlocks = [...clause.blocks];
+				if (firstBlock.content.trim()) {
+					newBlocks[0] = { ...firstBlock, content: phrase + ' ' + firstBlock.content };
+				} else {
+					newBlocks[0] = { ...firstBlock, content: phrase };
+				}
+				resolution.operative[lastFocusedOperativeIndex] = { ...clause, blocks: newBlocks };
+				resolution.operative = [...resolution.operative]; // Trigger reactivity
 			}
 		}
 	}
@@ -101,24 +115,35 @@
 		resolution.preamble = [...resolution.preamble, ...newClauses];
 	}
 
+	// Convert parsed subclauses to new block-based format
 	function convertParsedSubClauses(
 		parsed: { content: string; children?: { content: string; children?: any[] }[] }[]
 	): SubClause[] {
-		return parsed.map((p) => ({
-			id: generateSubClauseId(),
-			content: p.content,
-			children: p.children ? convertParsedSubClauses(p.children) : undefined
-		}));
+		return parsed.map((p) => {
+			const blocks: ClauseBlock[] = [createTextBlock(p.content)];
+			if (p.children && p.children.length > 0) {
+				blocks.push(createSubclausesBlock(convertParsedSubClauses(p.children)));
+			}
+			return {
+				id: generateClauseId('o').replace('o-', 's-'), // Use s- prefix for subclauses
+				blocks
+			};
+		});
 	}
 
 	function handleOperativeImport(clauses: string[] | ParsedOperativeClause[]) {
 		// clauses is ParsedOperativeClause[] for operative
 		const operativeClauses = clauses as ParsedOperativeClause[];
-		const newClauses: OperativeClause[] = operativeClauses.map((parsed) => ({
-			id: generateClauseId('o'),
-			content: parsed.content,
-			subClauses: parsed.subClauses ? convertParsedSubClauses(parsed.subClauses) : undefined
-		}));
+		const newClauses: OperativeClause[] = operativeClauses.map((parsed) => {
+			const blocks: ClauseBlock[] = [createTextBlock(parsed.content)];
+			if (parsed.subClauses && parsed.subClauses.length > 0) {
+				blocks.push(createSubclausesBlock(convertParsedSubClauses(parsed.subClauses)));
+			}
+			return {
+				id: generateClauseId('o'),
+				blocks
+			};
+		});
 		resolution.operative = [...resolution.operative, ...newClauses];
 	}
 
@@ -140,11 +165,12 @@
 		})
 	);
 
-	// Compute validation errors for operative clauses
+	// Compute validation errors for operative clauses (check first text block)
 	let operativeValidation = $derived(
 		resolution.operative.map((clause) => {
-			if (!clause.content.trim()) return { valid: true }; // Empty is OK
-			return validatePhrase(clause.content, operativePatterns);
+			const firstContent = getFirstTextContent(clause);
+			if (!firstContent.trim()) return { valid: true }; // Empty is OK
+			return validatePhrase(firstContent, operativePatterns);
 		})
 	);
 
@@ -172,11 +198,7 @@
 
 	// Operative clause management
 	function addOperativeClause() {
-		const newClause: OperativeClause = {
-			id: generateClauseId('o'),
-			content: ''
-		};
-		resolution.operative = [...resolution.operative, newClause];
+		resolution.operative = [...resolution.operative, createEmptyOperativeClause()];
 	}
 
 	function deleteOperativeClause(index: number) {
@@ -192,26 +214,10 @@
 		resolution.operative = newOperative;
 	}
 
-	// Sub-clause management
-	function addSubClauseToOperative(operativeIndex: number) {
-		const newSubClause: SubClause = {
-			id: generateSubClauseId(),
-			content: ''
-		};
+	// Update an operative clause
+	function updateOperativeClause(index: number, clause: OperativeClause) {
 		const newOperative = [...resolution.operative];
-		newOperative[operativeIndex] = {
-			...newOperative[operativeIndex],
-			subClauses: [...(newOperative[operativeIndex].subClauses ?? []), newSubClause]
-		};
-		resolution.operative = newOperative;
-	}
-
-	function updateSubClauses(operativeIndex: number, subClauses: SubClause[]) {
-		const newOperative = [...resolution.operative];
-		newOperative[operativeIndex] = {
-			...newOperative[operativeIndex],
-			subClauses: subClauses.length > 0 ? subClauses : undefined
-		};
+		newOperative[index] = clause;
 		resolution.operative = newOperative;
 	}
 </script>
@@ -363,36 +369,21 @@
 				{:else}
 					<div class="space-y-4">
 						{#each resolution.operative as clause, index (clause.id)}
-							<div class="bg-base-100 rounded-lg p-3 border border-base-300">
-								<ClauseEditor
-									bind:content={clause.content}
-									label="{index + 1}."
-									placeholder={m.resolutionOperativePlaceholder()}
-									canMoveUp={index > 0}
-									canMoveDown={index < resolution.operative.length - 1}
-									onMoveUp={() => moveOperativeClause(index, 'up')}
-									onMoveDown={() => moveOperativeClause(index, 'down')}
-									onDelete={() => deleteOperativeClause(index)}
-									onFocus={() => (lastFocusedOperativeIndex = index)}
-									showAddSubClause={true}
-									onAddSubClause={() => addSubClauseToOperative(index)}
-									validationError={!operativeValidation[index]?.valid
-										? m.resolutionUnknownPhrase()
-										: undefined}
-									patterns={operativePatterns}
-								/>
-
-								<!-- Sub-clauses -->
-								{#if clause.subClauses && clause.subClauses.length > 0}
-									<div class="mt-3 pt-3 border-t border-base-200">
-										<SubClauseEditor
-											subClauses={clause.subClauses}
-											depth={1}
-											onUpdate={(subClauses) => updateSubClauses(index, subClauses)}
-										/>
-									</div>
-								{/if}
-							</div>
+							<OperativeClauseEditor
+								{clause}
+								{index}
+								onUpdate={(updated) => updateOperativeClause(index, updated)}
+								canMoveUp={index > 0}
+								canMoveDown={index < resolution.operative.length - 1}
+								onMoveUp={() => moveOperativeClause(index, 'up')}
+								onMoveDown={() => moveOperativeClause(index, 'down')}
+								onDelete={() => deleteOperativeClause(index)}
+								onFocus={() => (lastFocusedOperativeIndex = index)}
+								validationError={!operativeValidation[index]?.valid
+									? m.resolutionUnknownPhrase()
+									: undefined}
+								patterns={operativePatterns}
+							/>
 						{/each}
 						<button type="button" class="btn btn-sm btn-ghost w-full" onclick={addOperativeClause}>
 							<i class="fa-solid fa-plus"></i>

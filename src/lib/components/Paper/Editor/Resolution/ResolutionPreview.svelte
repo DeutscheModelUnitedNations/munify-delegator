@@ -1,6 +1,17 @@
 <script lang="ts">
-	import type { Resolution, SubClause, ResolutionHeaderData } from '$lib/schemata/resolution';
-	import { getSubClauseLabel } from '$lib/schemata/resolution';
+	import type {
+		Resolution,
+		SubClause,
+		ClauseBlock,
+		OperativeClause,
+		ResolutionHeaderData
+	} from '$lib/schemata/resolution';
+	import {
+		getSubClauseLabel,
+		isClauseEmpty,
+		getFirstTextContent,
+		migrateResolution
+	} from '$lib/schemata/resolution';
 	import {
 		type PhrasePattern,
 		loadPhrasePatterns,
@@ -14,11 +25,14 @@
 		headerData?: ResolutionHeaderData;
 	}
 
-	let { resolution, headerData }: Props = $props();
+	let { resolution: rawResolution, headerData }: Props = $props();
+
+	// Migrate legacy format if needed
+	let resolution = $derived(migrateResolution(rawResolution) as Resolution);
 
 	// Filter out empty clauses for preview
 	let nonEmptyPreamble = $derived(resolution.preamble.filter((c) => c.content.trim()));
-	let nonEmptyOperative = $derived(resolution.operative.filter((c) => c.content.trim()));
+	let nonEmptyOperative = $derived(resolution.operative.filter((c) => !isClauseEmpty(c)));
 
 	// Load phrase patterns for italicization
 	let preamblePatterns = $state<PhrasePattern[]>([]);
@@ -65,6 +79,37 @@
 	let disclaimerText = $derived(
 		m.resolutionDisclaimer({ conferenceName: headerData?.conferenceName ?? 'Model UN' })
 	);
+
+	// Check if this is the last non-empty content in the operative section
+	function isLastContent(
+		operativeIndex: number,
+		blocks: ClauseBlock[],
+		blockIndex: number,
+		subClauseIndex?: number,
+		subClauseBlocks?: ClauseBlock[],
+		subBlockIndex?: number
+	): boolean {
+		const isLastOperative = operativeIndex === nonEmptyOperative.length - 1;
+		if (!isLastOperative) return false;
+
+		const isLastBlock = blockIndex === blocks.length - 1;
+		if (subClauseIndex === undefined) {
+			return isLastBlock;
+		}
+
+		// We're inside a subclauses block
+		const subclausesBlock = blocks[blockIndex];
+		if (subclausesBlock.type !== 'subclauses') return false;
+
+		const isLastSubClause = subClauseIndex === subclausesBlock.items.length - 1;
+		if (!isLastSubClause || !isLastBlock) return false;
+
+		if (subBlockIndex === undefined || subClauseBlocks === undefined) {
+			return true;
+		}
+
+		return subBlockIndex === subClauseBlocks.length - 1;
+	}
 </script>
 
 <div class="resolution-preview">
@@ -146,40 +191,75 @@
 	<!-- Operative Section -->
 	{#if nonEmptyOperative.length > 0}
 		<ol class="operative-section">
-			{#each nonEmptyOperative as clause, index}
-				{@const formatted = formatClauseContent(clause.content, operativePatterns)}
-				{@const isLast = index === nonEmptyOperative.length - 1}
-				{@const nonEmptySubClauses = clause.subClauses?.filter((c) => c.content.trim()) ?? []}
-				{@const hasSubClauses = nonEmptySubClauses.length > 0}
+			{#each nonEmptyOperative as clause, opIndex}
+				{@const isLastOperative = opIndex === nonEmptyOperative.length - 1}
 				<li class="operative-clause">
-					<span class="italic">{formatted.firstPhrase}</span
-					>{formatted.rest}{#if !hasSubClauses}{isLast ? '.' : ';'}{/if}
-					{#if hasSubClauses}
-						{@render subClauseList(clause.subClauses!, 1, isLast)}
-					{/if}
+					{@render operativeClauseBlocks(clause, opIndex, isLastOperative)}
 				</li>
 			{/each}
 		</ol>
 	{/if}
 
-	{#snippet subClauseList(subClauses: SubClause[], depth: number, isLastOperative: boolean)}
-		{@const nonEmptySubClauses = subClauses.filter((c) => c.content.trim())}
-		{#if nonEmptySubClauses.length > 0}
-			<ol class="sub-clause-section depth-{depth}">
-				{#each nonEmptySubClauses as subClause, index}
-					{@const isLast = index === nonEmptySubClauses.length - 1}
-					{@const nonEmptyChildren = subClause.children?.filter((c) => c.content.trim()) ?? []}
-					{@const hasChildren = nonEmptyChildren.length > 0}
-					<li class="sub-clause">
-						<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
-						{subClause.content.trim()}{#if !hasChildren}{#if isLast && isLastOperative && depth === 1}.{:else};{/if}{/if}
-						{#if hasChildren}
-							{@render subClauseList(subClause.children!, depth + 1, isLastOperative && isLast)}
-						{/if}
-					</li>
-				{/each}
-			</ol>
-		{/if}
+	<!-- Render blocks of an operative clause -->
+	{#snippet operativeClauseBlocks(clause: OperativeClause, opIndex: number, isLastOperative: boolean)}
+		{#each clause.blocks as block, blockIndex}
+			{@const isLastBlock = blockIndex === clause.blocks.length - 1}
+			{#if block.type === 'text'}
+				{@const formatted = formatClauseContent(block.content, operativePatterns)}
+				{@const nextBlock = clause.blocks[blockIndex + 1]}
+				{@const hasMoreContent = !isLastBlock || (nextBlock && nextBlock.type === 'subclauses')}
+				{#if block.content.trim()}
+					{#if blockIndex === 0}
+						<!-- First text block gets italicized phrase -->
+						<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+					{:else}
+						<!-- Continuation text blocks (after subclauses) -->
+						<p class="continuation-text">{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}</p>
+					{/if}
+				{/if}
+			{:else if block.type === 'subclauses'}
+				{@const nonEmptyItems = block.items.filter((s) => !isClauseEmpty(s))}
+				{#if nonEmptyItems.length > 0}
+					{@render subClauseList(nonEmptyItems, 1, isLastOperative && isLastBlock)}
+				{/if}
+			{/if}
+		{/each}
+	{/snippet}
+
+	<!-- Render a list of subclauses at a given depth -->
+	{#snippet subClauseList(subClauses: SubClause[], depth: number, isLastInParent: boolean)}
+		<ol class="sub-clause-section depth-{depth}">
+			{#each subClauses as subClause, index}
+				{@const isLastSubClause = index === subClauses.length - 1}
+				<li class="sub-clause">
+					<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
+					{@render subClauseBlocks(subClause, depth, isLastInParent && isLastSubClause)}
+				</li>
+			{/each}
+		</ol>
+	{/snippet}
+
+	<!-- Render blocks within a subclause -->
+	{#snippet subClauseBlocks(subClause: SubClause, depth: number, isLastInParent: boolean)}
+		{#each subClause.blocks as block, blockIndex}
+			{@const isLastBlock = blockIndex === subClause.blocks.length - 1}
+			{#if block.type === 'text'}
+				{#if block.content.trim()}
+					{#if blockIndex === 0}
+						<!-- First text block content -->
+						{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
+					{:else}
+						<!-- Continuation text after nested subclauses -->
+						<p class="continuation-text">{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}</p>
+					{/if}
+				{/if}
+			{:else if block.type === 'subclauses'}
+				{@const nonEmptyItems = block.items.filter((s) => !isClauseEmpty(s))}
+				{#if nonEmptyItems.length > 0 && depth < 4}
+					{@render subClauseList(nonEmptyItems, depth + 1, isLastInParent && isLastBlock)}
+				{/if}
+			{/if}
+		{/each}
 	{/snippet}
 
 	<!-- Empty state -->
@@ -328,6 +408,12 @@
 		position: absolute;
 		left: 0;
 		font-weight: bold;
+	}
+
+	/* Continuation text (text blocks after subclauses) */
+	.continuation-text {
+		margin-top: 0.5rem;
+		margin-bottom: 0.25rem;
 	}
 
 	/* Sub-clause styles */

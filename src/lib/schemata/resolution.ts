@@ -1,30 +1,86 @@
 import { z } from 'zod';
 
-// SubClause type definition (for recursive schema)
-export type SubClause = {
+// =============================================================================
+// BLOCK-BASED SCHEMA (New Structure)
+// =============================================================================
+
+// ClauseBlock: Either a text block or a subclauses array
+export type TextBlock = {
+	type: 'text';
 	id: string;
 	content: string;
-	children?: SubClause[];
 };
 
-// Recursive sub-clause schema (up to 4 nesting levels)
+export type SubclausesBlock = {
+	type: 'subclauses';
+	id: string;
+	items: SubClause[];
+};
+
+export type ClauseBlock = TextBlock | SubclausesBlock;
+
+// SubClause: Recursive wrapper containing blocks
+// RULE: First block MUST always be a text block
+export type SubClause = {
+	id: string;
+	blocks: ClauseBlock[];
+};
+
+// OperativeClause: Top-level clause containing blocks
+// RULE: First block MUST always be a text block
+export type OperativeClause = {
+	id: string;
+	blocks: ClauseBlock[];
+};
+
+// Preamble stays unchanged
+export type PreambleClause = {
+	id: string;
+	content: string;
+};
+
+export type Resolution = {
+	committeeName: string;
+	preamble: PreambleClause[];
+	operative: OperativeClause[];
+};
+
+// =============================================================================
+// ZOD SCHEMAS
+// =============================================================================
+
+export const TextBlockSchema = z.object({
+	type: z.literal('text'),
+	id: z.string(),
+	content: z.string()
+});
+
+// Forward declaration for recursive schema
 export const SubClauseSchema: z.ZodType<SubClause> = z.lazy(() =>
 	z.object({
 		id: z.string(),
-		content: z.string(),
-		children: z.array(SubClauseSchema).optional()
+		blocks: z.array(ClauseBlockSchema)
 	})
+);
+
+export const SubclausesBlockSchema = z.object({
+	type: z.literal('subclauses'),
+	id: z.string(),
+	items: z.array(SubClauseSchema)
+});
+
+export const ClauseBlockSchema: z.ZodType<ClauseBlock> = z.lazy(() =>
+	z.discriminatedUnion('type', [TextBlockSchema, SubclausesBlockSchema])
 );
 
 export const PreambleClauseSchema = z.object({
 	id: z.string(),
-	content: z.string() // Plain text, e.g., "Recalling the Universal Declaration of Human Rights"
+	content: z.string()
 });
 
 export const OperativeClauseSchema = z.object({
 	id: z.string(),
-	content: z.string(),
-	subClauses: z.array(SubClauseSchema).optional()
+	blocks: z.array(ClauseBlockSchema)
 });
 
 export const ResolutionSchema = z.object({
@@ -33,11 +89,32 @@ export const ResolutionSchema = z.object({
 	operative: z.array(OperativeClauseSchema)
 });
 
-export type PreambleClause = z.infer<typeof PreambleClauseSchema>;
-export type OperativeClause = z.infer<typeof OperativeClauseSchema>;
-export type Resolution = z.infer<typeof ResolutionSchema>;
+// =============================================================================
+// LEGACY TYPES (for migration from old format)
+// =============================================================================
 
-// Header metadata for UN-style resolution preview
+export type LegacySubClause = {
+	id: string;
+	content: string;
+	children?: LegacySubClause[];
+};
+
+export type LegacyOperativeClause = {
+	id: string;
+	content: string;
+	subClauses?: LegacySubClause[];
+};
+
+export type LegacyResolution = {
+	committeeName: string;
+	preamble: PreambleClause[];
+	operative: LegacyOperativeClause[];
+};
+
+// =============================================================================
+// HEADER METADATA
+// =============================================================================
+
 export interface ResolutionHeaderData {
 	conferenceName?: string;
 	committeeAbbreviation?: string;
@@ -47,7 +124,55 @@ export interface ResolutionHeaderData {
 	authoringDelegation?: string;
 }
 
-// Helper to create a new empty resolution
+// =============================================================================
+// ID GENERATORS
+// =============================================================================
+
+export function generateClauseId(prefix: 'p' | 'o'): string {
+	return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function generateSubClauseId(): string {
+	return `s-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function generateBlockId(): string {
+	return `b-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// =============================================================================
+// FACTORY FUNCTIONS
+// =============================================================================
+
+export function createTextBlock(content: string = ''): TextBlock {
+	return { type: 'text', id: generateBlockId(), content };
+}
+
+export function createSubclausesBlock(items: SubClause[] = []): SubclausesBlock {
+	return { type: 'subclauses', id: generateBlockId(), items };
+}
+
+export function createEmptySubClause(): SubClause {
+	return {
+		id: generateSubClauseId(),
+		blocks: [createTextBlock()]
+	};
+}
+
+export function createEmptyOperativeClause(): OperativeClause {
+	return {
+		id: generateClauseId('o'),
+		blocks: [createTextBlock()]
+	};
+}
+
+export function createEmptyPreambleClause(): PreambleClause {
+	return {
+		id: generateClauseId('p'),
+		content: ''
+	};
+}
+
 export function createEmptyResolution(committeeName: string): Resolution {
 	return {
 		committeeName,
@@ -56,15 +181,9 @@ export function createEmptyResolution(committeeName: string): Resolution {
 	};
 }
 
-// Helper to generate unique IDs for clauses
-export function generateClauseId(prefix: 'p' | 'o'): string {
-	return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
-// Helper to generate unique IDs for sub-clauses
-export function generateSubClauseId(): string {
-	return `s-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
+// =============================================================================
+// LABEL GENERATION
+// =============================================================================
 
 // Convert number to Roman numerals (1 → I, 2 → II, etc.)
 export function toRoman(num: number): string {
@@ -125,3 +244,100 @@ export function getSubClauseLabel(index: number, depth: number): string {
 
 // Maximum allowed sub-clause nesting depth
 export const MAX_SUBCLAUSE_DEPTH = 4;
+
+// =============================================================================
+// MIGRATION FUNCTIONS
+// =============================================================================
+
+// Check if resolution is in legacy format
+export function isLegacyResolution(data: unknown): data is LegacyResolution {
+	if (!data || typeof data !== 'object') return false;
+	const obj = data as Record<string, unknown>;
+	if (!Array.isArray(obj.operative) || obj.operative.length === 0) return false;
+	// Check first operative clause - if it has 'content' instead of 'blocks', it's legacy
+	const firstOp = obj.operative[0] as Record<string, unknown>;
+	return typeof firstOp.content === 'string' && !Array.isArray(firstOp.blocks);
+}
+
+// Migrate legacy sub-clause to new format
+function migrateLegacySubClause(legacy: LegacySubClause): SubClause {
+	const blocks: ClauseBlock[] = [createTextBlock(legacy.content)];
+
+	if (legacy.children && legacy.children.length > 0) {
+		blocks.push(createSubclausesBlock(legacy.children.map(migrateLegacySubClause)));
+	}
+
+	return {
+		id: legacy.id,
+		blocks
+	};
+}
+
+// Migrate legacy operative clause to new format
+function migrateLegacyOperativeClause(legacy: LegacyOperativeClause): OperativeClause {
+	const blocks: ClauseBlock[] = [createTextBlock(legacy.content)];
+
+	if (legacy.subClauses && legacy.subClauses.length > 0) {
+		blocks.push(createSubclausesBlock(legacy.subClauses.map(migrateLegacySubClause)));
+	}
+
+	return {
+		id: legacy.id,
+		blocks
+	};
+}
+
+// Migrate entire legacy resolution to new format
+export function migrateResolution(data: unknown): Resolution {
+	if (isLegacyResolution(data)) {
+		return {
+			committeeName: data.committeeName,
+			preamble: data.preamble,
+			operative: data.operative.map(migrateLegacyOperativeClause)
+		};
+	}
+	// Already in new format or empty
+	return data as Resolution;
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+// Get the first text block content from a clause (for display purposes)
+export function getFirstTextContent(clause: OperativeClause | SubClause): string {
+	const firstBlock = clause.blocks[0];
+	if (firstBlock && firstBlock.type === 'text') {
+		return firstBlock.content;
+	}
+	return '';
+}
+
+// Check if a clause has any subclauses
+export function hasSubclauses(clause: OperativeClause | SubClause): boolean {
+	return clause.blocks.some((block) => block.type === 'subclauses');
+}
+
+// Get all text content from a clause (concatenated)
+export function getAllTextContent(clause: OperativeClause | SubClause): string {
+	return clause.blocks
+		.filter((block): block is TextBlock => block.type === 'text')
+		.map((block) => block.content)
+		.join(' ');
+}
+
+// Check if clause is empty (all text blocks are empty and no subclauses)
+export function isClauseEmpty(clause: OperativeClause | SubClause): boolean {
+	for (const block of clause.blocks) {
+		if (block.type === 'text' && block.content.trim()) {
+			return false;
+		}
+		if (block.type === 'subclauses' && block.items.length > 0) {
+			// Check if any subclause is non-empty
+			if (block.items.some((sub) => !isClauseEmpty(sub))) {
+				return false;
+			}
+		}
+	}
+	return true;
+}

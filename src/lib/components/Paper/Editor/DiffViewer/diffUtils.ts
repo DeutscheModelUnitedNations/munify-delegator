@@ -1,7 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type { DiffResult, DiffSegment } from './types';
-import type { Resolution, SubClause } from '$lib/schemata/resolution';
-import { toRoman, toLetter } from '$lib/schemata/resolution';
+import type { Resolution, SubClause, OperativeClause, ClauseBlock } from '$lib/schemata/resolution';
+import { toRoman, toLetter, migrateResolution } from '$lib/schemata/resolution';
 
 /**
  * Extract plain text from a TipTap JSON node recursively
@@ -56,7 +56,18 @@ function getDepthLabel(index: number, depth: number): string {
 }
 
 /**
- * Serialize sub-clauses recursively with labels
+ * Get all text content from blocks (concatenated)
+ */
+function getBlocksTextContent(blocks: ClauseBlock[]): string {
+	return blocks
+		.filter((block): block is { type: 'text'; id: string; content: string } => block.type === 'text')
+		.map((block) => block.content.trim())
+		.filter((content) => content.length > 0)
+		.join(' ');
+}
+
+/**
+ * Serialize sub-clauses recursively with labels (block-based structure)
  */
 function serializeSubClauses(
 	subClauses: SubClause[],
@@ -66,13 +77,20 @@ function serializeSubClauses(
 ): void {
 	subClauses.forEach((sub, index) => {
 		const depthLabel = getDepthLabel(index, depth);
-		if (sub.content.trim()) {
+
+		// Get text content from blocks
+		const textContent = getBlocksTextContent(sub.blocks);
+		if (textContent) {
 			lines.push(`[${parentLabel}.${depthLabel}]`);
-			lines.push(sub.content.trim());
+			lines.push(textContent);
 			lines.push('');
 		}
-		if (sub.children && sub.children.length > 0) {
-			serializeSubClauses(sub.children, `${parentLabel}.${depthLabel}`, depth + 1, lines);
+
+		// Process nested subclauses blocks
+		for (const block of sub.blocks) {
+			if (block.type === 'subclauses' && block.items.length > 0) {
+				serializeSubClauses(block.items, `${parentLabel}.${depthLabel}`, depth + 1, lines);
+			}
 		}
 	});
 }
@@ -81,7 +99,10 @@ function serializeSubClauses(
  * Serialize a Resolution to labeled plain text for diff comparison
  * Format: [P 1], [P 2], [O 1], [O 1.I], [O 1.I.a], etc.
  */
-function serializeResolutionToText(resolution: Resolution): string {
+function serializeResolutionToText(rawResolution: Resolution): string {
+	// Migrate legacy format if needed
+	const resolution = migrateResolution(rawResolution) as Resolution;
+
 	const lines: string[] = [];
 
 	// Preamble clauses
@@ -93,15 +114,21 @@ function serializeResolutionToText(resolution: Resolution): string {
 		}
 	});
 
-	// Operative clauses
+	// Operative clauses (block-based)
 	resolution.operative.forEach((clause, opIndex) => {
-		if (clause.content.trim()) {
+		// Get text content from blocks
+		const textContent = getBlocksTextContent(clause.blocks);
+		if (textContent) {
 			lines.push(`[O ${opIndex + 1}]`);
-			lines.push(clause.content.trim());
+			lines.push(textContent);
 			lines.push('');
 		}
-		if (clause.subClauses && clause.subClauses.length > 0) {
-			serializeSubClauses(clause.subClauses, `O ${opIndex + 1}`, 1, lines);
+
+		// Process subclauses blocks
+		for (const block of clause.blocks) {
+			if (block.type === 'subclauses' && block.items.length > 0) {
+				serializeSubClauses(block.items, `O ${opIndex + 1}`, 1, lines);
+			}
 		}
 	});
 
