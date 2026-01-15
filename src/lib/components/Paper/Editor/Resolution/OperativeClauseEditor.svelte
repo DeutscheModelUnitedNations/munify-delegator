@@ -23,6 +23,8 @@
 		canMoveDown?: boolean;
 		validationError?: string;
 		patterns?: PhrasePattern[];
+		// Called when a depth-1 subclause wants to outdent to become a new operative clause
+		onOutdentToOperative?: (newOperative: OperativeClause) => void;
 	}
 
 	let {
@@ -36,7 +38,8 @@
 		canMoveUp = true,
 		canMoveDown = true,
 		validationError,
-		patterns = []
+		patterns = [],
+		onOutdentToOperative
 	}: Props = $props();
 
 	let showSuggestions = $state(false);
@@ -206,6 +209,7 @@
 					subClauses={block.items}
 					depth={1}
 					onUpdate={(items) => updateSubClauses(blockIndex, items)}
+					{onOutdentToOperative}
 				/>
 				<!-- Add continuation text after subclauses -->
 				<div class="mt-2 flex gap-1 ml-4">

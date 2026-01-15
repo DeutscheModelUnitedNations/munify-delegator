@@ -220,6 +220,13 @@
 		newOperative[index] = clause;
 		resolution.operative = newOperative;
 	}
+
+	// Insert a new operative clause after a specific index (used for outdent from depth 1)
+	function insertOperativeClauseAfter(afterIndex: number, newClause: OperativeClause) {
+		const newOperative = [...resolution.operative];
+		newOperative.splice(afterIndex + 1, 0, newClause);
+		resolution.operative = newOperative;
+	}
 </script>
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
@@ -383,6 +390,7 @@
 									? m.resolutionUnknownPhrase()
 									: undefined}
 								patterns={operativePatterns}
+								onOutdentToOperative={(newOp) => insertOperativeClauseAfter(index, newOp)}
 							/>
 						{/each}
 						<button type="button" class="btn btn-sm btn-ghost w-full" onclick={addOperativeClause}>

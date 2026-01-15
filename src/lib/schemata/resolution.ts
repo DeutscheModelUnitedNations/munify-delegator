@@ -341,3 +341,136 @@ export function isClauseEmpty(clause: OperativeClause | SubClause): boolean {
 	}
 	return true;
 }
+
+// =============================================================================
+// BLOCK MANIPULATION HELPERS
+// =============================================================================
+
+/**
+ * Merge two consecutive text blocks into one.
+ * The second text block's content is appended to the first with a space.
+ * Returns new blocks array with merged result.
+ */
+export function mergeTextBlocks(blocks: ClauseBlock[], index1: number, index2: number): ClauseBlock[] {
+	const block1 = blocks[index1];
+	const block2 = blocks[index2];
+	if (block1?.type !== 'text' || block2?.type !== 'text') {
+		return blocks;
+	}
+
+	const mergedContent = [block1.content.trim(), block2.content.trim()]
+		.filter((c) => c.length > 0)
+		.join(' ');
+
+	const newBlocks = [...blocks];
+	newBlocks[index1] = { ...block1, content: mergedContent };
+	newBlocks.splice(index2, 1);
+	return newBlocks;
+}
+
+/**
+ * Merge two consecutive subclauses blocks into one.
+ * The second block's items are appended to the first.
+ * Returns new blocks array with merged result.
+ */
+export function mergeSubclausesBlocks(blocks: ClauseBlock[], index1: number, index2: number): ClauseBlock[] {
+	const block1 = blocks[index1];
+	const block2 = blocks[index2];
+	if (block1?.type !== 'subclauses' || block2?.type !== 'subclauses') {
+		return blocks;
+	}
+
+	const newBlocks = [...blocks];
+	newBlocks[index1] = {
+		...block1,
+		items: [...block1.items, ...block2.items]
+	};
+	newBlocks.splice(index2, 1);
+	return newBlocks;
+}
+
+/**
+ * Clean up blocks array by:
+ * 1. Removing empty subclauses blocks
+ * 2. Merging consecutive text blocks
+ * 3. Merging consecutive subclauses blocks
+ * Returns new blocks array.
+ */
+export function cleanupBlocks(blocks: ClauseBlock[]): ClauseBlock[] {
+	// First pass: remove empty subclauses blocks
+	let result = blocks.filter((block) => {
+		if (block.type === 'subclauses' && block.items.length === 0) {
+			return false;
+		}
+		return true;
+	});
+
+	// Second pass: merge consecutive same-type blocks
+	let i = 0;
+	while (i < result.length - 1) {
+		const current = result[i];
+		const next = result[i + 1];
+
+		if (current.type === 'text' && next.type === 'text') {
+			result = mergeTextBlocks(result, i, i + 1);
+			// Don't increment i, check same position again
+		} else if (current.type === 'subclauses' && next.type === 'subclauses') {
+			result = mergeSubclausesBlocks(result, i, i + 1);
+			// Don't increment i, check same position again
+		} else {
+			i++;
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Convert a SubClause to an OperativeClause.
+ * Used when outdenting from depth 1 to top level.
+ */
+export function subClauseToOperativeClause(subClause: SubClause): OperativeClause {
+	return {
+		id: generateClauseId('o'),
+		blocks: [...subClause.blocks]
+	};
+}
+
+/**
+ * Find the last subclauses block in a blocks array, if any.
+ * Returns the index or -1 if not found.
+ */
+export function findLastSubclausesBlockIndex(blocks: ClauseBlock[]): number {
+	for (let i = blocks.length - 1; i >= 0; i--) {
+		if (blocks[i].type === 'subclauses') {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/**
+ * Add a subclause to the end of a SubClause's nested structure.
+ * If the SubClause already has a subclauses block at the end, adds to that.
+ * Otherwise, creates a new subclauses block.
+ */
+export function appendNestedSubClause(parent: SubClause, child: SubClause): SubClause {
+	const lastBlockIndex = parent.blocks.length - 1;
+	const lastBlock = parent.blocks[lastBlockIndex];
+
+	if (lastBlock?.type === 'subclauses') {
+		// Add to existing subclauses block
+		const newBlocks = [...parent.blocks];
+		newBlocks[lastBlockIndex] = {
+			...lastBlock,
+			items: [...lastBlock.items, child]
+		};
+		return { ...parent, blocks: newBlocks };
+	} else {
+		// Create new subclauses block
+		return {
+			...parent,
+			blocks: [...parent.blocks, createSubclausesBlock([child])]
+		};
+	}
+}
