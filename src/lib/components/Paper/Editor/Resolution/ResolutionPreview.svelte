@@ -266,7 +266,7 @@
 	{#if nonEmptyPreamble.length === 0 && nonEmptyOperative.length === 0}
 		<div class="text-center text-base-content/50 py-8">
 			<i class="fa-solid fa-file-lines text-4xl mb-2"></i>
-			<p>No clauses yet. Add preamble or operative clauses to see the preview.</p>
+			<p>{m.resolutionNoClausesYet()}</p>
 		</div>
 	{/if}
 </div>
