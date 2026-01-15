@@ -11,6 +11,7 @@
 		onMoveDown?: () => void;
 		onDelete?: () => void;
 		onAddSubClause?: () => void;
+		onFocus?: () => void;
 		canMoveUp?: boolean;
 		canMoveDown?: boolean;
 		showAddSubClause?: boolean;
@@ -26,6 +27,7 @@
 		onMoveDown,
 		onDelete,
 		onAddSubClause,
+		onFocus,
 		canMoveUp = true,
 		canMoveDown = true,
 		showAddSubClause = false,
@@ -48,6 +50,7 @@
 	}
 
 	function handleFocus() {
+		onFocus?.();
 		if (patterns.length > 0 && content.length > 0 && content.length < 30) {
 			showSuggestions = true;
 		}

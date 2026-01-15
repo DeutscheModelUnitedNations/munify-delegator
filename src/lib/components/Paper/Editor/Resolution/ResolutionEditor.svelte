@@ -54,6 +54,36 @@
 	let showPreambleLookup = $state(false);
 	let showOperativeLookup = $state(false);
 
+	// Track last focused clause for insertion from lookup modal
+	let lastFocusedPreambleIndex = $state<number | null>(null);
+	let lastFocusedOperativeIndex = $state<number | null>(null);
+
+	function insertIntoPreamble(phrase: string) {
+		if (lastFocusedPreambleIndex !== null && lastFocusedPreambleIndex < resolution.preamble.length) {
+			const clause = resolution.preamble[lastFocusedPreambleIndex];
+			// Replace beginning of content or set if empty
+			const commaIndex = clause.content.indexOf(',');
+			if (commaIndex > -1) {
+				clause.content = phrase + clause.content.slice(commaIndex);
+			} else {
+				clause.content = phrase;
+			}
+		}
+	}
+
+	function insertIntoOperative(phrase: string) {
+		if (lastFocusedOperativeIndex !== null && lastFocusedOperativeIndex < resolution.operative.length) {
+			const clause = resolution.operative[lastFocusedOperativeIndex];
+			// Replace beginning of content or set if empty
+			const commaIndex = clause.content.indexOf(',');
+			if (commaIndex > -1) {
+				clause.content = phrase + clause.content.slice(commaIndex);
+			} else {
+				clause.content = phrase;
+			}
+		}
+	}
+
 	// Load phrase patterns on mount
 	$effect(() => {
 		loadPhrasePatterns('preamble').then((patterns) => {
@@ -228,6 +258,7 @@
 								onMoveUp={() => movePreambleClause(index, 'up')}
 								onMoveDown={() => movePreambleClause(index, 'down')}
 								onDelete={() => deletePreambleClause(index)}
+								onFocus={() => (lastFocusedPreambleIndex = index)}
 								validationError={!preambleValidation[index]?.valid
 									? m.resolutionUnknownPhrase()
 									: undefined}
@@ -288,6 +319,7 @@
 									onMoveUp={() => moveOperativeClause(index, 'up')}
 									onMoveDown={() => moveOperativeClause(index, 'down')}
 									onDelete={() => deleteOperativeClause(index)}
+									onFocus={() => (lastFocusedOperativeIndex = index)}
 									showAddSubClause={true}
 									onAddSubClause={() => addSubClauseToOperative(index)}
 									validationError={!operativeValidation[index]?.valid
@@ -327,6 +359,7 @@
 	patterns={preamblePatterns}
 	bind:open={showPreambleLookup}
 	onClose={() => (showPreambleLookup = false)}
+	onSelect={insertIntoPreamble}
 	title="{m.phraseLookupTitle()} ({m.resolutionPreambleClauses()})"
 />
 
@@ -334,5 +367,6 @@
 	patterns={operativePatterns}
 	bind:open={showOperativeLookup}
 	onClose={() => (showOperativeLookup = false)}
+	onSelect={insertIntoOperative}
 	title="{m.phraseLookupTitle()} ({m.resolutionOperativeClauses()})"
 />

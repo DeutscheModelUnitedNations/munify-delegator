@@ -64,7 +64,8 @@ ruft abermals _ auf
 schlägt vor
 schließt sich _ an
 setzt _ ein
-setzt _ von neuem _ ein
+setzt von neuem _ ein
+setzt _ von neuem ein
 stellt fest
 unterstreicht
 unterstützt
@@ -83,4 +84,5 @@ weist auf hin
 weist auf die Tatsache hin
 würdigt
 zieht _ in Erwägung
-zieht _ ernsthaft _ in Erwägung
+zieht ernsthaft _ in Erwägung
+zieht _ ernsthaft in Erwägung
