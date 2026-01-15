@@ -40,18 +40,21 @@
 	let { committeeName, initialContent, editable = true, headerData }: Props = $props();
 
 	// Initialize resolution state with migration from legacy format
-	let resolution = $state<Resolution>(
-		migrateResolution(
-			initialContent ?? $resolutionContentStore ?? createEmptyResolution(committeeName)
-		) as Resolution
-	);
+	const initialResolution = migrateResolution(
+		initialContent ?? $resolutionContentStore ?? createEmptyResolution(committeeName)
+	) as Resolution;
+
+	// Set store immediately so it's available for save operations
+	$resolutionContentStore = initialResolution;
+
+	let resolution = $state<Resolution>(initialResolution);
 
 	// Ensure committeeName is always current
 	$effect(() => {
 		resolution.committeeName = committeeName;
 	});
 
-	// Sync resolution to resolutionContentStore for persistence
+	// Sync resolution changes to resolutionContentStore for persistence
 	$effect(() => {
 		$resolutionContentStore = resolution;
 	});
