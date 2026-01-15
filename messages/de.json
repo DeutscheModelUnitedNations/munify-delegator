@@ -673,6 +673,7 @@
 	"paperAcrossCommittees": "Gremienübergreifend",
 	"paperAgendaItem": "Tagesordnungspunkt",
 	"paperAgendaItemRequired": "Es muss ein Tagesordnungspunkt angegeben werden",
+	"paperContentRequired": "Es muss ein Inhalt angegeben werden",
 	"paperCreateNew": "Erstellen",
 	"paperCreatedAt": "Erstellt am",
 	"paperDeleteButton": "Paper endgültig löschen",

@@ -673,6 +673,7 @@
 	"paperAcrossCommittees": "Across committees",
 	"paperAgendaItem": "Agenda item",
 	"paperAgendaItemRequired": "An agenda item must be specified",
+	"paperContentRequired": "Content must be provided",
 	"paperCreateNew": "Create",
 	"paperCreatedAt": "Created at",
 	"paperDeleteButton": "Delete Paper Permanently",

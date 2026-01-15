@@ -136,6 +136,12 @@
 		const content =
 			$formData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
 
+		// Guard against undefined content
+		if (content === undefined) {
+			toast.error(m.paperContentRequired());
+			return;
+		}
+
 		const response = await toast.promise(
 			createPaperMutation.mutate({
 				conferenceId: data.conferenceId,
