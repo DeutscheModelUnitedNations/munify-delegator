@@ -16,16 +16,18 @@
 
 	let { subClauses, depth, onUpdate }: Props = $props();
 
-	function addSubClause() {
+	function deleteSubClause(index: number) {
+		onUpdate(subClauses.filter((_, i) => i !== index));
+	}
+
+	function insertSubClauseAfter(index: number) {
 		const newSubClause: SubClause = {
 			id: generateSubClauseId(),
 			content: ''
 		};
-		onUpdate([...subClauses, newSubClause]);
-	}
-
-	function deleteSubClause(index: number) {
-		onUpdate(subClauses.filter((_, i) => i !== index));
+		const newSubClauses = [...subClauses];
+		newSubClauses.splice(index + 1, 0, newSubClause);
+		onUpdate(newSubClauses);
 	}
 
 	function moveSubClause(index: number, direction: 'up' | 'down') {
@@ -114,13 +116,21 @@
 					<i class="fa-solid fa-chevron-down"></i>
 					{m.resolutionMoveDown()}
 				</button>
+				<button
+					type="button"
+					class="btn btn-ghost btn-xs gap-1 text-primary"
+					onclick={() => insertSubClauseAfter(index)}
+				>
+					<i class="fa-solid fa-plus"></i>
+					{m.resolutionAddSibling()}
+				</button>
 				{#if depth < MAX_SUBCLAUSE_DEPTH}
 					<button
 						type="button"
 						class="btn btn-ghost btn-xs gap-1 text-primary"
 						onclick={() => addChildSubClause(index)}
 					>
-						<i class="fa-solid fa-plus"></i>
+						<i class="fa-solid fa-indent"></i>
 						{m.resolutionAddNested()}
 					</button>
 				{/if}
@@ -144,14 +154,4 @@
 			{/if}
 		</div>
 	{/each}
-
-	<!-- Add sub-clause button -->
-	<button
-		type="button"
-		class="btn btn-ghost btn-xs text-base-content/50 hover:text-base-content gap-1"
-		onclick={addSubClause}
-	>
-		<i class="fa-solid fa-plus"></i>
-		{depth === 1 ? m.resolutionAddSubClause() : m.resolutionAddNested()}
-	</button>
 </div>
