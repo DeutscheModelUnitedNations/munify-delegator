@@ -157,6 +157,9 @@
 		await invalidateAll();
 
 		if (resposne?.data.createOnePaper?.id) {
+			// Clear stores so next paper creation starts fresh
+			$editorContentStore = undefined;
+			$resolutionContentStore = undefined;
 			goto(`/dashboard/${data.conferenceId}/paperhub`);
 		}
 	};
