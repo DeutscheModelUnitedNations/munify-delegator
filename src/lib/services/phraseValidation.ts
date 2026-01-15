@@ -35,7 +35,8 @@ function escapeRegex(str: string): string {
  * Examples:
  * - "bedauernd" → /^(bedauernd)/i
  * - "(zutiefst) bedauernd" → /^((?:zutiefst\s+)?bedauernd)/i
- * - "fordert _ (auf)" → /^(fordert(?:\s+\S+(?:\s+\S+)*)?(?:\s+auf)?)/i
+ * - "ist sich _ bewusst" → /^(ist\s+sich(?:\s+\S+)*\s+bewusst)/i
+ *   Matches: "ist sich bewusst", "ist sich der Tatsache bewusst"
  */
 function parsePatternToRegex(pattern: string): RegExp {
 	let regexStr = '';
@@ -63,15 +64,20 @@ function parsePatternToRegex(pattern: string): RegExp {
 		// Handle optional placeholder: _
 		else if (pattern[i] === '_') {
 			// Optional placeholder - zero or more words
-			regexStr += '(?:\\s+\\S+(?:\\s+\\S+)*)?';
+			// The preceding space was skipped, so this handles: optional (space + words)
+			regexStr += '(?:\\s+\\S+)*';
 			i++;
-			// Skip trailing space after placeholder
-			if (pattern[i] === ' ') i++;
+			// DON'T skip trailing space - let it add \s+ for the word that follows
 		}
 		// Handle space
 		else if (pattern[i] === ' ') {
-			regexStr += '\\s+';
-			i++;
+			// If next char is _, don't add \s+ here - let _ handle it
+			if (pattern[i + 1] === '_') {
+				i++;
+			} else {
+				regexStr += '\\s+';
+				i++;
+			}
 		}
 		// Handle regular characters
 		else {
