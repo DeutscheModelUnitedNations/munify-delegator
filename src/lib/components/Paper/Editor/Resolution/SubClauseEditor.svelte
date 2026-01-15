@@ -248,93 +248,101 @@
 								<div class="flex flex-wrap gap-1 mt-1">
 									<!-- Move controls -->
 									<div class="join">
-										<button
-											type="button"
-											class="btn btn-ghost btn-xs join-item px-1.5"
-											onclick={() => moveSubClause(subClauseIndex, 'up')}
-											disabled={subClauseIndex === 0}
-											title={m.resolutionMoveUp()}
-										>
-											<i class="fa-solid fa-chevron-up text-xs"></i>
-										</button>
-										<button
-											type="button"
-											class="btn btn-ghost btn-xs join-item px-1.5"
-											onclick={() => moveSubClause(subClauseIndex, 'down')}
-											disabled={subClauseIndex === subClauses.length - 1}
-											title={m.resolutionMoveDown()}
-										>
-											<i class="fa-solid fa-chevron-down text-xs"></i>
-										</button>
+										<div class="tooltip" data-tip={m.resolutionMoveUp()}>
+											<button
+												type="button"
+												class="btn btn-ghost btn-xs join-item px-1.5"
+												onclick={() => moveSubClause(subClauseIndex, 'up')}
+												disabled={subClauseIndex === 0}
+											>
+												<i class="fa-solid fa-chevron-up text-xs"></i>
+											</button>
+										</div>
+										<div class="tooltip" data-tip={m.resolutionMoveDown()}>
+											<button
+												type="button"
+												class="btn btn-ghost btn-xs join-item px-1.5"
+												onclick={() => moveSubClause(subClauseIndex, 'down')}
+												disabled={subClauseIndex === subClauses.length - 1}
+											>
+												<i class="fa-solid fa-chevron-down text-xs"></i>
+											</button>
+										</div>
 									</div>
 
 									<!-- Indent/Outdent controls -->
 									<div class="join">
-										<button
-											type="button"
-											class="btn btn-ghost btn-xs join-item px-1.5"
-											onclick={() => indentSubClause(subClauseIndex)}
-											disabled={subClauseIndex === 0 || depth >= MAX_SUBCLAUSE_DEPTH}
-											title={m.resolutionIndent()}
-										>
-											<i class="fa-solid fa-indent text-xs"></i>
-										</button>
-										<button
-											type="button"
-											class="btn btn-ghost btn-xs join-item px-1.5"
-											onclick={() => outdentSubClause(subClauseIndex)}
-											title={m.resolutionOutdent()}
-										>
-											<i class="fa-solid fa-outdent text-xs"></i>
-										</button>
+										<div class="tooltip" data-tip={m.resolutionIndent()}>
+											<button
+												type="button"
+												class="btn btn-ghost btn-xs join-item px-1.5"
+												onclick={() => indentSubClause(subClauseIndex)}
+												disabled={subClauseIndex === 0 || depth >= MAX_SUBCLAUSE_DEPTH}
+											>
+												<i class="fa-solid fa-indent text-xs"></i>
+											</button>
+										</div>
+										<div class="tooltip" data-tip={m.resolutionOutdent()}>
+											<button
+												type="button"
+												class="btn btn-ghost btn-xs join-item px-1.5"
+												onclick={() => outdentSubClause(subClauseIndex)}
+											>
+												<i class="fa-solid fa-outdent text-xs"></i>
+											</button>
+										</div>
 									</div>
 
 									<!-- Add controls -->
 									<div class="join">
-										<button
-											type="button"
-											class="btn btn-ghost btn-xs join-item px-1.5 text-primary"
-											onclick={() => insertSubClauseAfter(subClauseIndex)}
-											title={m.resolutionAddSibling()}
-										>
-											<i class="fa-solid fa-plus text-xs"></i>
-										</button>
-										{#if depth < MAX_SUBCLAUSE_DEPTH && !hasSubclausesBlock(subClause)}
+										<div class="tooltip" data-tip={m.resolutionAddSibling()}>
 											<button
 												type="button"
 												class="btn btn-ghost btn-xs join-item px-1.5 text-primary"
-												onclick={() => addNestedSubClause(subClauseIndex)}
-												title={m.resolutionAddNested()}
+												onclick={() => insertSubClauseAfter(subClauseIndex)}
 											>
-												<i class="fa-solid fa-level-down text-xs"></i>
+												<i class="fa-solid fa-plus text-xs"></i>
 											</button>
+										</div>
+										{#if depth < MAX_SUBCLAUSE_DEPTH && !hasSubclausesBlock(subClause)}
+											<div class="tooltip" data-tip={m.resolutionAddNested()}>
+												<button
+													type="button"
+													class="btn btn-ghost btn-xs join-item px-1.5 text-primary"
+													onclick={() => addNestedSubClause(subClauseIndex)}
+												>
+													<i class="fa-solid fa-level-down text-xs"></i>
+												</button>
+											</div>
 										{/if}
 									</div>
 
 									<div class="flex-1"></div>
 
 									<!-- Delete -->
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5 text-error"
-										onclick={() => deleteSubClause(subClauseIndex)}
-										title={m.resolutionDeleteClause()}
-									>
-										<i class="fa-solid fa-trash text-xs"></i>
-									</button>
+									<div class="tooltip" data-tip={m.resolutionDeleteClause()}>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs px-1.5 text-error"
+											onclick={() => deleteSubClause(subClauseIndex)}
+										>
+											<i class="fa-solid fa-trash text-xs"></i>
+										</button>
+									</div>
 								</div>
 							{:else}
 								<!-- Controls for continuation text blocks -->
 								<div class="flex flex-wrap gap-1 mt-1">
 									<div class="flex-1"></div>
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5 text-error"
-										onclick={() => deleteBlock(subClauseIndex, blockIndex)}
-										title={m.resolutionDeleteBlock()}
-									>
-										<i class="fa-solid fa-trash text-xs"></i>
-									</button>
+									<div class="tooltip" data-tip={m.resolutionDeleteBlock()}>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs px-1.5 text-error"
+											onclick={() => deleteBlock(subClauseIndex, blockIndex)}
+										>
+											<i class="fa-solid fa-trash text-xs"></i>
+										</button>
+									</div>
 								</div>
 							{/if}
 						</div>
