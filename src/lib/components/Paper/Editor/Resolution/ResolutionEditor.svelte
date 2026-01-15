@@ -3,11 +3,14 @@
 		type Resolution,
 		type PreambleClause,
 		type OperativeClause,
+		type SubClause,
 		createEmptyResolution,
-		generateClauseId
+		generateClauseId,
+		generateSubClauseId
 	} from '$lib/schemata/resolution';
 	import { editorContentStore } from '../editorStore';
 	import ClauseEditor from './ClauseEditor.svelte';
+	import SubClauseEditor from './SubClauseEditor.svelte';
 	import ResolutionPreview from './ResolutionPreview.svelte';
 
 	interface Props {
@@ -77,6 +80,29 @@
 
 		const newOperative = [...resolution.operative];
 		[newOperative[index], newOperative[newIndex]] = [newOperative[newIndex], newOperative[index]];
+		resolution.operative = newOperative;
+	}
+
+	// Sub-clause management
+	function addSubClauseToOperative(operativeIndex: number) {
+		const newSubClause: SubClause = {
+			id: generateSubClauseId(),
+			content: ''
+		};
+		const newOperative = [...resolution.operative];
+		newOperative[operativeIndex] = {
+			...newOperative[operativeIndex],
+			subClauses: [...(newOperative[operativeIndex].subClauses ?? []), newSubClause]
+		};
+		resolution.operative = newOperative;
+	}
+
+	function updateSubClauses(operativeIndex: number, subClauses: SubClause[]) {
+		const newOperative = [...resolution.operative];
+		newOperative[operativeIndex] = {
+			...newOperative[operativeIndex],
+			subClauses: subClauses.length > 0 ? subClauses : undefined
+		};
 		resolution.operative = newOperative;
 	}
 </script>
@@ -177,18 +203,33 @@
 						</button>
 					</div>
 				{:else}
-					<div class="space-y-2">
+					<div class="space-y-4">
 						{#each resolution.operative as clause, index (clause.id)}
-							<ClauseEditor
-								bind:content={clause.content}
-								label="{index + 1}."
-								placeholder="e.g., Decides to establish a monitoring mechanism..."
-								canMoveUp={index > 0}
-								canMoveDown={index < resolution.operative.length - 1}
-								onMoveUp={() => moveOperativeClause(index, 'up')}
-								onMoveDown={() => moveOperativeClause(index, 'down')}
-								onDelete={() => deleteOperativeClause(index)}
-							/>
+							<div class="bg-base-100 rounded-lg p-3 border border-base-300">
+								<ClauseEditor
+									bind:content={clause.content}
+									label="{index + 1}."
+									placeholder="e.g., Decides to establish a monitoring mechanism..."
+									canMoveUp={index > 0}
+									canMoveDown={index < resolution.operative.length - 1}
+									onMoveUp={() => moveOperativeClause(index, 'up')}
+									onMoveDown={() => moveOperativeClause(index, 'down')}
+									onDelete={() => deleteOperativeClause(index)}
+									showAddSubClause={true}
+									onAddSubClause={() => addSubClauseToOperative(index)}
+								/>
+
+								<!-- Sub-clauses -->
+								{#if clause.subClauses && clause.subClauses.length > 0}
+									<div class="mt-3 pt-3 border-t border-base-200">
+										<SubClauseEditor
+											subClauses={clause.subClauses}
+											depth={1}
+											onUpdate={(subClauses) => updateSubClauses(index, subClauses)}
+										/>
+									</div>
+								{/if}
+							</div>
 						{/each}
 					</div>
 				{/if}

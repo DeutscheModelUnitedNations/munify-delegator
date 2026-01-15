@@ -6,8 +6,10 @@
 		onMoveUp?: () => void;
 		onMoveDown?: () => void;
 		onDelete?: () => void;
+		onAddSubClause?: () => void;
 		canMoveUp?: boolean;
 		canMoveDown?: boolean;
+		showAddSubClause?: boolean;
 	}
 
 	let {
@@ -17,8 +19,10 @@
 		onMoveUp,
 		onMoveDown,
 		onDelete,
+		onAddSubClause,
 		canMoveUp = true,
-		canMoveDown = true
+		canMoveDown = true,
+		showAddSubClause = false
 	}: Props = $props();
 </script>
 
@@ -64,5 +68,15 @@
 		>
 			<i class="fa-solid fa-trash"></i>
 		</button>
+		{#if showAddSubClause && onAddSubClause}
+			<button
+				type="button"
+				class="btn btn-ghost btn-xs btn-square text-primary"
+				onclick={onAddSubClause}
+				title="Add sub-clause"
+			>
+				<i class="fa-solid fa-indent"></i>
+			</button>
+		{/if}
 	</div>
 </div>

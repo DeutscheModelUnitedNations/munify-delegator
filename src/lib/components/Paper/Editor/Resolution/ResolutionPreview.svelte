@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Resolution } from '$lib/schemata/resolution';
+	import type { Resolution, SubClause } from '$lib/schemata/resolution';
+	import { getSubClauseLabel } from '$lib/schemata/resolution';
 
 	interface Props {
 		resolution: Resolution;
@@ -78,12 +79,33 @@
 			{#each resolution.operative as clause, index}
 				{@const formatted = formatClauseContent(clause.content)}
 				{@const isLast = index === resolution.operative.length - 1}
+				{@const hasSubClauses = clause.subClauses && clause.subClauses.length > 0}
 				<li class="operative-clause">
-					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{isLast ? '.' : ';'}
+					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if !hasSubClauses}{isLast ? '.' : ';'}{/if}
+					{#if hasSubClauses}
+						{@render subClauseList(clause.subClauses!, 1, isLast)}
+					{/if}
 				</li>
 			{/each}
 		</ol>
 	{/if}
+
+	{#snippet subClauseList(subClauses: SubClause[], depth: number, isLastOperative: boolean)}
+		<ol class="sub-clause-section depth-{depth}">
+			{#each subClauses as subClause, index}
+				{@const formatted = formatClauseContent(subClause.content)}
+				{@const isLast = index === subClauses.length - 1}
+				{@const hasChildren = subClause.children && subClause.children.length > 0}
+				<li class="sub-clause">
+					<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
+					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest}{#if !hasChildren}{#if isLast && isLastOperative && depth === 1}.{:else};{/if}{/if}
+					{#if hasChildren}
+						{@render subClauseList(subClause.children!, depth + 1, isLastOperative && isLast)}
+					{/if}
+				</li>
+			{/each}
+		</ol>
+	{/snippet}
 
 	<!-- Empty state -->
 	{#if resolution.preamble.length === 0 && resolution.operative.length === 0}
@@ -140,5 +162,42 @@
 		position: absolute;
 		left: 0;
 		font-weight: bold;
+	}
+
+	/* Sub-clause styles */
+	.sub-clause-section {
+		list-style: none;
+		padding-left: 0;
+		margin: 0.5rem 0 0 0;
+	}
+
+	.sub-clause {
+		position: relative;
+		padding-left: 2rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.sub-clause-label {
+		position: absolute;
+		left: 0;
+		font-weight: normal;
+		min-width: 1.8rem;
+	}
+
+	/* Depth-based indentation */
+	.depth-1 {
+		margin-left: 0;
+	}
+
+	.depth-2 {
+		margin-left: 1.5rem;
+	}
+
+	.depth-3 {
+		margin-left: 3rem;
+	}
+
+	.depth-4 {
+		margin-left: 4.5rem;
 	}
 </style>
