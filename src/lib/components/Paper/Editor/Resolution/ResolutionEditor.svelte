@@ -55,8 +55,8 @@
 		$editorContentStore = resolution;
 	});
 
-	// Mode toggle
-	let mode = $state<'edit' | 'preview'>('edit');
+	// Preview visibility toggle
+	let showPreview = $state(true);
 
 	// Phrase validation
 	let preamblePatterns = $state<PhrasePattern[]>([]);
@@ -232,31 +232,9 @@
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 	<legend class="fieldset-legend flex items-center gap-2">
 		<span>{editable ? m.resolutionEditor() : m.resolution()}</span>
-		{#if editable}
-			<div class="join ml-4">
-				<button
-					type="button"
-					class="btn btn-xs join-item"
-					class:btn-active={mode === 'edit'}
-					onclick={() => (mode = 'edit')}
-				>
-					<i class="fa-solid fa-pen"></i>
-					{m.resolutionEdit()}
-				</button>
-				<button
-					type="button"
-					class="btn btn-xs join-item"
-					class:btn-active={mode === 'preview'}
-					onclick={() => (mode = 'preview')}
-				>
-					<i class="fa-solid fa-eye"></i>
-					{m.resolutionPreview()}
-				</button>
-			</div>
-		{/if}
 	</legend>
 
-	{#if mode === 'edit' && editable}
+	{#if editable}
 		<!-- Edit Mode -->
 		<div class="space-y-6">
 			<!-- Header (non-editable) -->
@@ -400,9 +378,32 @@
 					</div>
 				{/if}
 			</div>
+
+			<!-- Live Preview Section -->
+			<div class="border-t border-base-300 pt-6">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="font-semibold text-base-content/80">
+						<i class="fa-solid fa-eye mr-2"></i>
+						{m.resolutionPreview()}
+					</h3>
+					<button
+						type="button"
+						class="btn btn-ghost btn-xs"
+						onclick={() => (showPreview = !showPreview)}
+					>
+						<i class="fa-solid {showPreview ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+						{showPreview ? m.resolutionHidePreview() : m.resolutionShowPreview()}
+					</button>
+				</div>
+				{#if showPreview}
+					<div class="bg-base-100 rounded-lg border border-base-300 p-4">
+						<ResolutionPreview {resolution} {headerData} />
+					</div>
+				{/if}
+			</div>
 		</div>
 	{:else}
-		<!-- Preview Mode -->
+		<!-- Read-only Mode -->
 		<ResolutionPreview {resolution} {headerData} />
 	{/if}
 </fieldset>
