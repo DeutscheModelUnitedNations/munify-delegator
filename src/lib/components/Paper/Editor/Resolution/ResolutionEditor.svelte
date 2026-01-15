@@ -214,6 +214,10 @@
 								validationError={!preambleValidation[index]?.valid ? m.resolutionUnknownPhrase() : undefined}
 							/>
 						{/each}
+						<button type="button" class="btn btn-sm btn-ghost w-full" onclick={addPreambleClause}>
+							<i class="fa-solid fa-plus"></i>
+							{m.resolutionAddClause()}
+						</button>
 					</div>
 				{/if}
 			</div>
@@ -269,6 +273,10 @@
 								{/if}
 							</div>
 						{/each}
+						<button type="button" class="btn btn-sm btn-ghost w-full" onclick={addOperativeClause}>
+							<i class="fa-solid fa-plus"></i>
+							{m.resolutionAddClause()}
+						</button>
 					</div>
 				{/if}
 			</div>
