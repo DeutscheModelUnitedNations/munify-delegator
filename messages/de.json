@@ -735,6 +735,7 @@
 	"phoneNumber": "Telefonnummer",
 	"phraseLookup": "Operatoren nachschlagen",
 	"phraseLookupNoResults": "Keine Operatoren gefunden",
+	"phraseLookupDisclaimer": "Diese Liste ist nicht abschließend. Ähnliche Formulierungen im gleichen Stil sind ebenfalls gültig. Die Warnung \"Unbekannter Operator\" kann ignoriert werden, wenn deine Formulierung dem UN-Resolutionsstil entspricht.",
 	"phraseLookupSearch": "Operatoren suchen...",
 	"phraseLookupTitle": "Verfügbare Operatoren",
 	"phraseCopied": "Operator kopiert",

@@ -125,6 +125,11 @@
 			class="input input-bordered w-full"
 		/>
 
+		<div class="alert alert-info mt-3 py-2 text-sm">
+			<i class="fa-solid fa-circle-info"></i>
+			<span>{m.phraseLookupDisclaimer()}</span>
+		</div>
+
 		<ul class="mt-4 max-h-72 overflow-y-auto space-y-1">
 			{#each filteredPhrases as phrase}
 				<li class="flex items-center gap-1">

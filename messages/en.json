@@ -735,6 +735,7 @@
 	"phoneNumber": "Telephone number",
 	"phraseLookup": "Phrase Lookup",
 	"phraseLookupNoResults": "No phrases found",
+	"phraseLookupDisclaimer": "This list is not exhaustive. Similar phrases in the same spirit are also valid. The \"unknown phrase\" warning can be ignored if your wording follows standard UN resolution style.",
 	"phraseLookupSearch": "Search phrases...",
 	"phraseLookupTitle": "Available Phrases",
 	"phraseCopied": "Phrase copied",
