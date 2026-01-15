@@ -245,73 +245,71 @@
 
 							<!-- Controls row - only show for first text block (main subclause controls) -->
 							{#if blockIndex === 0}
-								<div class="flex flex-wrap gap-0.5 mt-1">
+								<div class="flex flex-wrap gap-1 mt-1">
 									<!-- Move controls -->
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5"
-										onclick={() => moveSubClause(subClauseIndex, 'up')}
-										disabled={subClauseIndex === 0}
-										title={m.resolutionMoveUp()}
-									>
-										<i class="fa-solid fa-chevron-up text-xs"></i>
-									</button>
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5"
-										onclick={() => moveSubClause(subClauseIndex, 'down')}
-										disabled={subClauseIndex === subClauses.length - 1}
-										title={m.resolutionMoveDown()}
-									>
-										<i class="fa-solid fa-chevron-down text-xs"></i>
-									</button>
-
-									<div class="divider divider-horizontal mx-0.5"></div>
-
-									<!-- Indent (disabled for first item or at max depth) -->
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5"
-										onclick={() => indentSubClause(subClauseIndex)}
-										disabled={subClauseIndex === 0 || depth >= MAX_SUBCLAUSE_DEPTH}
-										title={m.resolutionIndent()}
-									>
-										<i class="fa-solid fa-indent text-xs"></i>
-									</button>
-
-									<!-- Outdent (always available, behavior depends on depth) -->
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5"
-										onclick={() => outdentSubClause(subClauseIndex)}
-										title={m.resolutionOutdent()}
-									>
-										<i class="fa-solid fa-outdent text-xs"></i>
-									</button>
-
-									<div class="divider divider-horizontal mx-0.5"></div>
-
-									<!-- Add sibling -->
-									<button
-										type="button"
-										class="btn btn-ghost btn-xs px-1.5 text-primary"
-										onclick={() => insertSubClauseAfter(subClauseIndex)}
-										title={m.resolutionAddSibling()}
-									>
-										<i class="fa-solid fa-plus text-xs"></i>
-									</button>
-
-									<!-- Add nested (only if no subclauses block yet and not at max depth) -->
-									{#if depth < MAX_SUBCLAUSE_DEPTH && !hasSubclausesBlock(subClause)}
+									<div class="join">
 										<button
 											type="button"
-											class="btn btn-ghost btn-xs px-1.5 text-primary"
-											onclick={() => addNestedSubClause(subClauseIndex)}
-											title={m.resolutionAddNested()}
+											class="btn btn-ghost btn-xs join-item px-1.5"
+											onclick={() => moveSubClause(subClauseIndex, 'up')}
+											disabled={subClauseIndex === 0}
+											title={m.resolutionMoveUp()}
 										>
-											<i class="fa-solid fa-level-down text-xs"></i>
+											<i class="fa-solid fa-chevron-up text-xs"></i>
 										</button>
-									{/if}
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs join-item px-1.5"
+											onclick={() => moveSubClause(subClauseIndex, 'down')}
+											disabled={subClauseIndex === subClauses.length - 1}
+											title={m.resolutionMoveDown()}
+										>
+											<i class="fa-solid fa-chevron-down text-xs"></i>
+										</button>
+									</div>
+
+									<!-- Indent/Outdent controls -->
+									<div class="join">
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs join-item px-1.5"
+											onclick={() => indentSubClause(subClauseIndex)}
+											disabled={subClauseIndex === 0 || depth >= MAX_SUBCLAUSE_DEPTH}
+											title={m.resolutionIndent()}
+										>
+											<i class="fa-solid fa-indent text-xs"></i>
+										</button>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs join-item px-1.5"
+											onclick={() => outdentSubClause(subClauseIndex)}
+											title={m.resolutionOutdent()}
+										>
+											<i class="fa-solid fa-outdent text-xs"></i>
+										</button>
+									</div>
+
+									<!-- Add controls -->
+									<div class="join">
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs join-item px-1.5 text-primary"
+											onclick={() => insertSubClauseAfter(subClauseIndex)}
+											title={m.resolutionAddSibling()}
+										>
+											<i class="fa-solid fa-plus text-xs"></i>
+										</button>
+										{#if depth < MAX_SUBCLAUSE_DEPTH && !hasSubclausesBlock(subClause)}
+											<button
+												type="button"
+												class="btn btn-ghost btn-xs join-item px-1.5 text-primary"
+												onclick={() => addNestedSubClause(subClauseIndex)}
+												title={m.resolutionAddNested()}
+											>
+												<i class="fa-solid fa-level-down text-xs"></i>
+											</button>
+										{/if}
+									</div>
 
 									<div class="flex-1"></div>
 
