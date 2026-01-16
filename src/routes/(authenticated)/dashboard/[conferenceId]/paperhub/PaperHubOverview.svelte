@@ -331,7 +331,7 @@
 										100}%"
 									data-tip="{m.paperStatusRevised()}: {overallStatusCounts.revised}"
 								>
-									<i class="fa-solid fa-sync"></i>
+									<i class="fa-solid fa-rotate"></i>
 									<span
 										class="text-sm font-medium"
 										class:blur-sm={$focusMode}

@@ -34,7 +34,7 @@
 	</div>
 	<div class="tooltip tooltip-left tooltip-info" data-tip={translatePaperStatus('REVISED')}>
 		<div class="badge badge-info badge-outline {badgeSizeClass} gap-1">
-			<i class="fa-solid fa-sync text-xs"></i>
+			<i class="fa-solid fa-rotate text-xs"></i>
 			<span class:blur-sm={blur} class:select-none={blur}>{counts.REVISED}</span>
 		</div>
 	</div>
