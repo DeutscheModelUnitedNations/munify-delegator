@@ -131,6 +131,21 @@ builder.queryFields((t) => ({
 									}
 								}
 							}
+						},
+						// Conference supervisors from conferences where user is team member
+						{
+							conferenceSupervisor: {
+								some: {
+									conference: {
+										teamMembers: {
+											some: {
+												user: { id: user.sub },
+												role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+											}
+										}
+									}
+								}
+							}
 						}
 					]
 				},
@@ -207,6 +222,21 @@ builder.mutationFields((t) => ({
 							// Single participants from conferences where user is team member
 							{
 								singleParticipant: {
+									some: {
+										conference: {
+											teamMembers: {
+												some: {
+													user: { id: user.sub },
+													role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+												}
+											}
+										}
+									}
+								}
+							},
+							// Conference supervisors from conferences where user is team member
+							{
+								conferenceSupervisor: {
 									some: {
 										conference: {
 											teamMembers: {
