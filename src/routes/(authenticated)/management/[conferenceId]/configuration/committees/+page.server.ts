@@ -15,6 +15,7 @@ const ConfigurationCommitteesQuery = graphql(`
 			abbreviation
 			name
 			numOfSeatsPerDelegation
+			resolutionHeadline
 			nations {
 				alpha2Code
 				alpha3Code
@@ -23,6 +24,9 @@ const ConfigurationCommitteesQuery = graphql(`
 				id
 				title
 				teaserText
+				papers {
+					id
+				}
 			}
 		}
 	}

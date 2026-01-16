@@ -21,6 +21,7 @@ const query = graphql(`
 				id
 				name
 				abbreviation
+				resolutionHeadline
 				agendaItems {
 					id
 					title

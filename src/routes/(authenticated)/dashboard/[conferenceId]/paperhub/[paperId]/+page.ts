@@ -34,6 +34,7 @@ export const _houdini_load = graphql(`
 					id
 					abbreviation
 					name
+					resolutionHeadline
 				}
 			}
 			versions {

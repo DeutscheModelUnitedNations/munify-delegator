@@ -21,6 +21,7 @@ const conferenceQuery = graphql(`
 			website
 			endConference
 			imageDataURL
+			emblemDataURL
 			language
 			linkToPreparationGuide
 			linkToPaperInbox
@@ -84,6 +85,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		form,
 		imageDataURL: conference.imageDataURL,
+		emblemDataURL: conference.emblemDataURL,
 		certificateContentSet: conference.certificateContentSet,
 		termsAndConditionsContentSet: conference.termsAndConditionsContentSet,
 		mediaConsentContentSet: conference.mediaConsentContentSet,

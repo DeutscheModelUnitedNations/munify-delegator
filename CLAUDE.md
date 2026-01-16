@@ -221,6 +221,13 @@ $houdini → .houdini
 - **Maps**: Leaflet via `sveaflet` for delegation locations
 - **External APIs**: Listmonk email service integration in `src/tasks/apis/`
 
+### UI Component Patterns
+
+- **Form inputs**: Always group and label form inputs using `FormFieldset` component (`src/lib/components/Form/FormFieldset.svelte`). This provides consistent visual grouping with a legend/title.
+- **Modals**: Use the `Modal` component (`src/lib/components/Modal.svelte`) for dialogs. It handles backdrop clicks, accessibility, and consistent styling.
+- **Form components**: Prefer the Form components in `src/lib/components/Form/` (FormTextInput, FormTextArea, FormSelect, etc.) when working with superforms. For standalone inputs in modals, use native DaisyUI form controls with `form-control` and `label` classes.
+- **Layout**: Use DaisyUI's utility classes for consistent spacing and styling.
+
 ## Commit Conventions
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):

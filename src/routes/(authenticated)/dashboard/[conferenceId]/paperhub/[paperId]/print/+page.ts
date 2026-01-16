@@ -10,6 +10,7 @@ export const _houdini_load = graphql(`
 			conference {
 				id
 				title
+				emblemDataURL
 			}
 			delegation {
 				id
@@ -31,6 +32,7 @@ export const _houdini_load = graphql(`
 					id
 					abbreviation
 					name
+					resolutionHeadline
 				}
 			}
 			versions {

@@ -46,11 +46,17 @@ type Committee {
   name: String!
   nations: [Nation!]!
   numOfSeatsPerDelegation: Int!
+
+  """
+  Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
+  """
+  resolutionHeadline: String
 }
 
 type CommitteeAgendaItem {
   committee: Committee!
   id: ID!
+  papers: [Paper!]!
   reviewHelpStatus: ReviewHelpStatus!
   teaserText: String
   title: String!
@@ -174,6 +180,7 @@ input CommitteeCreateInput {
   name: String!
   nations: NationCreateNestedManyWithoutCommitteesInput
   numOfSeatsPerDelegation: Int
+  resolutionHeadline: String
   updatedAt: DateTime
 }
 
@@ -211,6 +218,7 @@ input CommitteeOrderByWithRelationInput {
   name: SortOrder
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
+  resolutionHeadline: SortOrder
   updatedAt: SortOrder
 }
 
@@ -226,12 +234,19 @@ enum CommitteeScalarFieldEnum {
   id
   name
   numOfSeatsPerDelegation
+  resolutionHeadline
   updatedAt
 }
 
 input CommitteeScalarRelationFilter {
   is: CommitteeWhereInput
   isNot: CommitteeWhereInput
+}
+
+input CommitteeUpdateDataInput {
+  abbreviation: String
+  name: String
+  resolutionHeadline: String
 }
 
 input CommitteeUpdateInput {
@@ -244,6 +259,7 @@ input CommitteeUpdateInput {
   name: StringFieldUpdateOperationsInput
   nations: NationUpdateManyWithoutCommitteesNestedInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+  resolutionHeadline: NullableStringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -253,6 +269,7 @@ input CommitteeUpdateManyMutationInput {
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+  resolutionHeadline: NullableStringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -282,6 +299,7 @@ input CommitteeWhereInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
+  resolutionHeadline: StringNullableFilter
   updatedAt: DateTimeFilter
 }
 
@@ -299,6 +317,7 @@ input CommitteeWhereUniqueInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
+  resolutionHeadline: StringNullableFilter
   updatedAt: DateTimeFilter
 }
 
@@ -320,6 +339,9 @@ type Conference {
   currency: String
   delegationMembers: [DelegationMember!]!
   delegations: [Delegation!]!
+
+  """SVG data URL for conference emblem (falls back to UN emblem if null)"""
+  emblemDataURL: String
   endConference: DateTime!
   feeAmount: Float
   guardianConsentContent: String
@@ -381,6 +403,7 @@ input ConferenceCreateInput {
   currency: String
   delegationMembers: DelegationMemberCreateNestedManyWithoutConferenceInput
   delegations: DelegationCreateNestedManyWithoutConferenceInput
+  emblemDataURL: String
   endConference: DateTime!
   feeAmount: Float
   guardianConsentContent: String
@@ -434,6 +457,7 @@ input ConferenceOrderByWithRelationInput {
   currency: SortOrder
   delegationMembers: DelegationMemberOrderByRelationAggregateInput
   delegations: DelegationOrderByRelationAggregateInput
+  emblemDataURL: SortOrder
   endConference: SortOrder
   feeAmount: SortOrder
   guardianConsentContent: SortOrder
@@ -658,6 +682,7 @@ enum ConferenceScalarFieldEnum {
   contractContent
   createdAt
   currency
+  emblemDataURL
   endConference
   feeAmount
   guardianConsentContent
@@ -888,6 +913,7 @@ input ConferenceUpdateDataInput {
   certificateBasePDF: File
   contractBasePDF: File
   currency: String
+  emblem: File
   endConference: DateTime
   feeAmount: Float
   guardianConsentBasePDF: File
@@ -932,6 +958,7 @@ input ConferenceUpdateInput {
   currency: NullableStringFieldUpdateOperationsInput
   delegationMembers: DelegationMemberUpdateManyWithoutConferenceNestedInput
   delegations: DelegationUpdateManyWithoutConferenceNestedInput
+  emblemDataURL: NullableStringFieldUpdateOperationsInput
   endConference: DateTimeFieldUpdateOperationsInput
   feeAmount: NullableFloatFieldUpdateOperationsInput
   guardianConsentContent: NullableStringFieldUpdateOperationsInput
@@ -979,6 +1006,7 @@ input ConferenceUpdateManyMutationInput {
   contractContent: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
   currency: NullableStringFieldUpdateOperationsInput
+  emblemDataURL: NullableStringFieldUpdateOperationsInput
   endConference: DateTimeFieldUpdateOperationsInput
   feeAmount: NullableFloatFieldUpdateOperationsInput
   guardianConsentContent: NullableStringFieldUpdateOperationsInput
@@ -1028,6 +1056,7 @@ input ConferenceWhereInput {
   currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
   delegations: DelegationListRelationFilter
+  emblemDataURL: StringNullableFilter
   endConference: DateTimeFilter
   feeAmount: FloatNullableFilter
   guardianConsentContent: StringNullableFilter
@@ -1084,6 +1113,7 @@ input ConferenceWhereUniqueInput {
   currency: StringNullableFilter
   delegationMembers: DelegationMemberListRelationFilter
   delegations: DelegationListRelationFilter
+  emblemDataURL: StringNullableFilter
   endConference: DateTimeFilter
   feeAmount: FloatNullableFilter
   guardianConsentContent: StringNullableFilter
@@ -2284,6 +2314,7 @@ type Mutation {
   updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
   updateManyDelegationMemberCommittee(data: UpdateManyDelegationMemberCommitteeInput!, where: DelegationMemberWhereInput): BatchPayload!
   updateOneAgendaItem(data: CommitteeAgendaItemUpdateInput!, where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
+  updateOneCommittee(data: CommitteeUpdateDataInput!, where: CommitteeWhereUniqueInput!): Committee
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(data: UpdateConferenceParticipantStatusInput!, where: ConferenceParticipantStatusWhereUniqueInputNotRequired!): ConferenceParticipantStatus
   updateOneConferenceSupervisor(data: ConferenceSupervisorUpdateDataInput!, where: ConferenceSupervisorWhereUniqueInput!): ConferenceSupervisor
