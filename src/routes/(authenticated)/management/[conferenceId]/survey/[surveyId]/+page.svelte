@@ -437,8 +437,7 @@
 				<SurveyExportButtons
 					surveyTitle={survey.title}
 					options={survey.options}
-					surveyAnswers={survey.surveyAnswers}
-					{notAnsweredParticipants}
+					surveyId={data.surveyId}
 					conferenceId={data.conferenceId}
 				/>
 			</DownloadCategoryCard>

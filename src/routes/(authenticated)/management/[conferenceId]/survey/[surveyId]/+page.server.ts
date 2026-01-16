@@ -26,99 +26,38 @@ const SurveyDetailsQuery = graphql(`
 					id
 					given_name
 					family_name
-					email
-					pronouns
-					birthday
-					delegationMemberships {
-						id
-						conference {
-							id
-						}
-						delegation {
-							assignedNation {
-								alpha3Code
-							}
-							assignedNonStateActor {
-								name
-							}
-						}
-						assignedCommittee {
-							name
-						}
-					}
-					singleParticipant {
-						id
-						conference {
-							id
-						}
-						assignedRole {
-							name
-						}
-					}
 				}
 			}
 		}
-		findManyUsers(
+		findManyDelegationMembers(
 			where: {
-				surveyAnswers: { none: { questionId: { equals: $surveyId } } }
-				OR: [
-					{
-						delegationMemberships: {
-							some: {
-								conferenceId: { equals: $conferenceId }
-								delegation: {
-									OR: [
-										{ assignedNationAlpha3Code: { not: { equals: null } } }
-										{ assignedNonStateActorId: { not: { equals: null } } }
-									]
-								}
-							}
-						}
-					}
-					{
-						singleParticipant: {
-							some: {
-								AND: [
-									{ conferenceId: { equals: $conferenceId } }
-									{ assignedRoleId: { not: { equals: null } } }
-								]
-							}
-						}
-					}
-				]
+				conferenceId: { equals: $conferenceId }
+				delegation: {
+					OR: [
+						{ assignedNationAlpha3Code: { not: { equals: null } } }
+						{ assignedNonStateActorId: { not: { equals: null } } }
+					]
+				}
+				user: { surveyAnswers: { none: { questionId: { equals: $surveyId } } } }
 			}
 		) {
-			id
-			given_name
-			family_name
-			email
-			pronouns
-			birthday
-			delegationMemberships {
+			user {
 				id
-				conference {
-					id
-				}
-				delegation {
-					assignedNation {
-						alpha3Code
-					}
-					assignedNonStateActor {
-						name
-					}
-				}
-				assignedCommittee {
-					name
-				}
+				given_name
+				family_name
 			}
-			singleParticipant {
+		}
+		findManySingleParticipants(
+			where: {
+				conferenceId: { equals: $conferenceId }
+				assignedRoleId: { not: { equals: null } }
+				user: { surveyAnswers: { none: { questionId: { equals: $surveyId } } } }
+			}
+		) {
+			user {
 				id
-				conference {
-					id
-				}
-				assignedRole {
-					name
-				}
+				given_name
+				family_name
 			}
 		}
 	}
@@ -134,9 +73,20 @@ export const load: PageServerLoad = async (event) => {
 		blocking: true
 	});
 
+	// Combine delegation members and single participants into a single array
+	// Use a Map to deduplicate users who might appear in both lists
+	const userMap = new Map<string, { id: string; given_name: string; family_name: string }>();
+
+	for (const dm of data?.findManyDelegationMembers ?? []) {
+		userMap.set(dm.user.id, dm.user);
+	}
+	for (const sp of data?.findManySingleParticipants ?? []) {
+		userMap.set(sp.user.id, sp.user);
+	}
+
 	return {
 		survey: data?.findUniqueSurveyQuestion ?? null,
-		usersNotAnswered: data?.findManyUsers ?? [],
+		usersNotAnswered: Array.from(userMap.values()),
 		conferenceId: event.params.conferenceId,
 		surveyId: event.params.surveyId
 	};
