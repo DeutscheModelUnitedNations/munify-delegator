@@ -6,6 +6,7 @@
 		counts: {
 			total: number;
 			SUBMITTED: number;
+			REVISED: number;
 			CHANGES_REQUESTED: number;
 			ACCEPTED: number;
 		};
@@ -29,6 +30,12 @@
 		<div class="badge badge-warning badge-outline {badgeSizeClass} gap-1">
 			<i class="fa-solid fa-paper-plane text-xs"></i>
 			<span class:blur-sm={blur} class:select-none={blur}>{counts.SUBMITTED}</span>
+		</div>
+	</div>
+	<div class="tooltip tooltip-left tooltip-info" data-tip={translatePaperStatus('REVISED')}>
+		<div class="badge badge-info badge-outline {badgeSizeClass} gap-1">
+			<i class="fa-solid fa-sync text-xs"></i>
+			<span class:blur-sm={blur} class:select-none={blur}>{counts.REVISED}</span>
 		</div>
 	</div>
 	<div
