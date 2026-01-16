@@ -93,7 +93,7 @@ builder.mutationFields((t) => {
 					where: {
 						conferenceId_userId: {
 							conferenceId: args.conferenceId,
-							userId: userId
+							userId: user.sub
 						},
 						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
 					}
