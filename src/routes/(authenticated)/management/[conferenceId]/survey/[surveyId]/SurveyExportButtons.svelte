@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
 	import { downloadCSV } from '$lib/services/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import DownloadButton from '../../downloads/DownloadButton.svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	interface SurveyOption {
 		id: string;
@@ -13,9 +14,30 @@
 		upperLimit: number;
 	}
 
-	interface DelegationMembership {
+	interface Props {
+		surveyTitle: string;
+		options: SurveyOption[];
+		surveyId: string;
+		conferenceId: string;
+	}
+
+	let { surveyTitle, options, surveyId, conferenceId }: Props = $props();
+
+	let loadingStates = $state<Record<string, boolean>>({});
+	let exportDataCache: ExportData | null = null;
+
+	// Types for the export data
+	interface ExportUser {
 		id: string;
-		conference: { id: string };
+		given_name: string;
+		family_name: string;
+		email: string | null;
+		pronouns: string | null;
+		birthday: Date | null;
+	}
+
+	interface ExportDelegationMember {
+		user: ExportUser;
 		delegation: {
 			assignedNation: { alpha3Code: string } | null;
 			assignedNonStateActor: { name: string } | null;
@@ -23,85 +45,154 @@
 		assignedCommittee: { name: string } | null;
 	}
 
-	interface SingleParticipant {
-		id: string;
-		conference: { id: string };
+	interface ExportSingleParticipant {
+		user: ExportUser;
 		assignedRole: { name: string } | null;
 	}
 
-	interface User {
-		id: string;
-		given_name: string;
-		family_name: string;
-		email: string | null;
-		pronouns: string | null;
-		birthday: Date | null;
-		delegationMemberships: DelegationMembership[];
-		singleParticipant: SingleParticipant[];
-	}
-
-	interface SurveyAnswer {
+	interface ExportSurveyAnswer {
 		id: string;
 		option: { id: string };
-		user: User;
+		user: ExportUser;
 	}
 
-	interface Props {
-		surveyTitle: string;
-		options: SurveyOption[];
-		surveyAnswers: SurveyAnswer[];
-		notAnsweredParticipants: User[];
-		conferenceId: string;
+	interface ExportData {
+		surveyAnswers: ExportSurveyAnswer[];
+		delegationMembers: ExportDelegationMember[];
+		singleParticipants: ExportSingleParticipant[];
+		userRoleMap: SvelteMap<string, { roleType: string; roleName: string; committee: string }>;
 	}
 
-	let { surveyTitle, options, surveyAnswers, notAnsweredParticipants, conferenceId }: Props =
-		$props();
-
-	let loadingStates = $state<Record<string, boolean>>({});
+	// Query for fetching full export data on-demand
+	const SurveyExportDataQuery = graphql(`
+		query SurveyExportData($conferenceId: String!, $surveyId: String!) {
+			findUniqueSurveyQuestion(where: { id: $surveyId }) {
+				surveyAnswers {
+					id
+					option {
+						id
+					}
+					user {
+						id
+						given_name
+						family_name
+						email
+						pronouns
+						birthday
+					}
+				}
+			}
+			findManyDelegationMembers(
+				where: {
+					conferenceId: { equals: $conferenceId }
+					delegation: {
+						OR: [
+							{ assignedNationAlpha3Code: { not: { equals: null } } }
+							{ assignedNonStateActorId: { not: { equals: null } } }
+						]
+					}
+				}
+			) {
+				user {
+					id
+					given_name
+					family_name
+					email
+					pronouns
+					birthday
+				}
+				delegation {
+					assignedNation {
+						alpha3Code
+					}
+					assignedNonStateActor {
+						name
+					}
+				}
+				assignedCommittee {
+					name
+				}
+			}
+			findManySingleParticipants(
+				where: {
+					conferenceId: { equals: $conferenceId }
+					assignedRoleId: { not: { equals: null } }
+				}
+			) {
+				user {
+					id
+					given_name
+					family_name
+					email
+					pronouns
+					birthday
+				}
+				assignedRole {
+					name
+				}
+			}
+		}
+	`);
 
 	const setLoading = (key: string, value: boolean) => {
 		loadingStates = { ...loadingStates, [key]: value };
 	};
 
-	// Helper to get user's conference role information
-	const getUserRoleInfo = (
-		user: User
-	): { roleType: string; roleName: string; committee: string } => {
-		// Check delegation memberships for this conference
-		const membership = user.delegationMemberships.find((dm) => dm.conference.id === conferenceId);
-		if (membership) {
-			const nation = membership.delegation.assignedNation;
-			const nsa = membership.delegation.assignedNonStateActor;
+	// Fetch and cache export data
+	const fetchExportData = async (): Promise<ExportData> => {
+		if (exportDataCache) return exportDataCache;
+
+		const { data } = await SurveyExportDataQuery.fetch({
+			variables: { conferenceId, surveyId }
+		});
+
+		const surveyAnswers = data?.findUniqueSurveyQuestion?.surveyAnswers ?? [];
+		const delegationMembers = data?.findManyDelegationMembers ?? [];
+		const singleParticipants = data?.findManySingleParticipants ?? [];
+
+		// Build a map of userId -> role info
+		const userRoleMap = new SvelteMap<
+			string,
+			{ roleType: string; roleName: string; committee: string }
+		>();
+
+		for (const dm of delegationMembers) {
+			const nation = dm.delegation.assignedNation;
+			const nsa = dm.delegation.assignedNonStateActor;
 
 			if (nation) {
-				return {
+				userRoleMap.set(dm.user.id, {
 					roleType: 'Delegation',
 					roleName: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
-					committee: membership.assignedCommittee?.name ?? ''
-				};
-			}
-			if (nsa) {
-				return {
+					committee: dm.assignedCommittee?.name ?? ''
+				});
+			} else if (nsa) {
+				userRoleMap.set(dm.user.id, {
 					roleType: 'NSA',
 					roleName: nsa.name,
 					committee: ''
-				};
+				});
 			}
 		}
 
-		// Check single participant for this conference
-		const singleParticipant = user.singleParticipant.find(
-			(sp) => sp.conference.id === conferenceId
-		);
-		if (singleParticipant?.assignedRole) {
-			return {
-				roleType: 'SingleParticipant',
-				roleName: singleParticipant.assignedRole.name,
-				committee: ''
-			};
+		for (const sp of singleParticipants) {
+			if (sp.assignedRole) {
+				userRoleMap.set(sp.user.id, {
+					roleType: 'SingleParticipant',
+					roleName: sp.assignedRole.name,
+					committee: ''
+				});
+			}
 		}
 
-		return { roleType: '', roleName: '', committee: '' };
+		exportDataCache = {
+			surveyAnswers,
+			delegationMembers,
+			singleParticipants,
+			userRoleMap
+		};
+
+		return exportDataCache;
 	};
 
 	// Format birthday as YYYY-MM-DD
@@ -112,8 +203,11 @@
 	};
 
 	// Build a user data row for CSV export
-	const buildUserRow = (user: User, additionalColumns: string[] = []): string[] => {
-		const roleInfo = getUserRoleInfo(user);
+	const buildUserRow = (
+		user: ExportUser,
+		roleInfo: { roleType: string; roleName: string; committee: string },
+		additionalColumns: string[] = []
+	): string[] => {
 		return [
 			user.id,
 			user.family_name ?? '',
@@ -141,15 +235,21 @@
 		m.committee()
 	];
 
-	const downloadAllResults = () => {
+	const downloadAllResults = async () => {
 		const key = 'all';
 		setLoading(key, true);
 		try {
+			const exportData = await fetchExportData();
 			const header = [...getUserHeaders(), m.surveyOption()];
-			const data = surveyAnswers
+			const data = exportData.surveyAnswers
 				.map((answer) => {
 					const option = options.find((o) => o.id === answer.option.id);
-					return buildUserRow(answer.user, [option?.title ?? '']);
+					const roleInfo = exportData.userRoleMap.get(answer.user.id) ?? {
+						roleType: '',
+						roleName: '',
+						committee: ''
+					};
+					return buildUserRow(answer.user, roleInfo, [option?.title ?? '']);
 				})
 				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
 
@@ -159,13 +259,45 @@
 		}
 	};
 
-	const downloadNotAnswered = () => {
+	const downloadNotAnswered = async () => {
 		const key = 'not-answered';
 		setLoading(key, true);
 		try {
+			const exportData = await fetchExportData();
+
+			// Get all users who answered
+			const answeredUserIds = new Set(exportData.surveyAnswers.map((a) => a.user.id));
+
+			// Collect all conference participants who haven't answered
+			const notAnsweredUsers: {
+				user: ExportUser;
+				roleInfo: typeof exportData.userRoleMap extends Map<string, infer V> ? V : never;
+			}[] = [];
+
+			for (const dm of exportData.delegationMembers) {
+				if (!answeredUserIds.has(dm.user.id)) {
+					const roleInfo = exportData.userRoleMap.get(dm.user.id);
+					if (roleInfo) {
+						notAnsweredUsers.push({ user: dm.user, roleInfo });
+					}
+				}
+			}
+
+			for (const sp of exportData.singleParticipants) {
+				if (
+					!answeredUserIds.has(sp.user.id) &&
+					!notAnsweredUsers.some((u) => u.user.id === sp.user.id)
+				) {
+					const roleInfo = exportData.userRoleMap.get(sp.user.id);
+					if (roleInfo) {
+						notAnsweredUsers.push({ user: sp.user, roleInfo });
+					}
+				}
+			}
+
 			const header = getUserHeaders();
-			const data = notAnsweredParticipants
-				.map((user) => buildUserRow(user))
+			const data = notAnsweredUsers
+				.map(({ user, roleInfo }) => buildUserRow(user, roleInfo))
 				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
 
 			downloadCSV(header, data, `${surveyTitle}_not_answered.csv`);
@@ -174,14 +306,22 @@
 		}
 	};
 
-	const downloadByOption = (option: SurveyOption) => {
+	const downloadByOption = async (option: SurveyOption) => {
 		const key = `option-${option.id}`;
 		setLoading(key, true);
 		try {
+			const exportData = await fetchExportData();
 			const header = getUserHeaders();
-			const data = surveyAnswers
+			const data = exportData.surveyAnswers
 				.filter((answer) => answer.option.id === option.id)
-				.map((answer) => buildUserRow(answer.user))
+				.map((answer) => {
+					const roleInfo = exportData.userRoleMap.get(answer.user.id) ?? {
+						roleType: '',
+						roleName: '',
+						committee: ''
+					};
+					return buildUserRow(answer.user, roleInfo);
+				})
 				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
 
 			downloadCSV(header, data, `${surveyTitle}_${option.title}.csv`);
