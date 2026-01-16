@@ -1,160 +1,200 @@
 import type { RequestHandler } from './$types';
 import { db } from '$db/db';
 import { emailService } from '$api/services/email/emailService';
+import { renderDelegationMessageEmail } from '$api/services/email/delegationMessageTemplates';
 import { getDelegateLabel } from '../../utils';
 
 export const POST: RequestHandler = async ({ request, locals, params, url }) => {
-	const user = locals.user;
-	if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+	const authUser = (locals as { user?: { sub?: string } }).user;
+	if (!authUser?.sub) {
+		return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+	}
 
-    const conferenceId = params.conferenceId;
+	const conferenceId = params.conferenceId;
+	if (!conferenceId) {
+		return new Response(JSON.stringify({ error: 'Missing conference id' }), { status: 400 });
+	}
 
 	const bodyData = await request.json();
 	const { recipientId, subject, body: messageBody } = bodyData;
-	if (!recipientId || !subject || !messageBody)
+	if (!recipientId || !subject || !messageBody) {
 		return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 });
+	}
 
-    // 1. Validate Sender Opt-in
-    const sender = await db.user.findUnique({
-        where: { id: user.sub },
-        select: {
-            // canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
-            id: true,
-            given_name: true,
-            family_name: true
-        }
-    });
+	if (recipientId === authUser.sub) {
+		return new Response(JSON.stringify({ error: 'Cannot send to yourself' }), { status: 400 });
+	}
 
-    // TODO: Re-enable check
-    // if (!sender?.canReceiveDelegationMail) {
-    //     return new Response(JSON.stringify({ error: 'You must enable messaging in your account settings.' }), { status: 403 });
-    // }
+	// 1. Validate Sender Opt-in
+	const sender = await db.user.findUnique({
+		where: { id: authUser.sub },
+		select: {
+			// canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
+			id: true,
+			given_name: true,
+			family_name: true
+		}
+	});
 
-    // 2. Validate Recipient Opt-in
-    const recipient = await db.user.findUnique({
-        where: { id: recipientId },
-        select: {
-            // canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
-            email: true,
-            id: true
-        }
-    });
+	if (!sender) {
+		return new Response(JSON.stringify({ error: 'Sender not found' }), { status: 404 });
+	}
 
-    // TODO: Re-enable check
-    // if (!recipient?.canReceiveDelegationMail) {
-    //     return new Response(JSON.stringify({ error: 'Recipient has not enabled messaging.' }), { status: 400 });
-    // }
+	// TODO: Re-enable check
+	// if (!sender?.canReceiveDelegationMail) {
+	//     return new Response(JSON.stringify({ error: 'You must enable messaging in your account settings.' }), { status: 403 });
+	// }
 
-    // 3. Get Conference Details
-    const conference = await db.conference.findUnique({
-        where: { id: conferenceId },
-        select: { title: true }
-    });
+	// 2. Validate Recipient Opt-in
+	const recipient = await db.user.findUnique({
+		where: { id: recipientId },
+		select: {
+			// canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
+			email: true,
+			id: true
+		}
+	});
 
-    if (!conference) {
-         return new Response(JSON.stringify({ error: 'Conference not found' }), { status: 404 });
-    }
+	if (!recipient) {
+		return new Response(JSON.stringify({ error: 'Recipient not found' }), { status: 404 });
+	}
 
-    // 4. Determine Sender Label (Role)
-    const dm = await db.delegationMember.findUnique({
-        where: {
-            conferenceId_userId: {
-                conferenceId: conferenceId,
-                userId: sender.id
-            }
-        },
-        include: {
-            delegation: {
-                include: {
-                    assignedNation: true,
-                    assignedNonStateActor: true
-                }
-            },
-            assignedCommittee: true
-        }
-    });
+	// TODO: Re-enable check
+	// if (!recipient?.canReceiveDelegationMail) {
+	//     return new Response(JSON.stringify({ error: 'Recipient has not enabled messaging.' }), { status: 400 });
+	// }
 
-    let sp = null;
-    if (!dm) {
-        sp = await db.singleParticipant.findUnique({
-             where: {
-                conferenceId_userId: {
-                    conferenceId: conferenceId,
-                    userId: sender.id
-                }
-            },
-            include: {
-                assignedRole: true
-            }
-        });
-    }
+	// 3. Get Conference Details
+	const conference = await db.conference.findUnique({
+		where: { id: conferenceId },
+		select: { title: true }
+	});
 
-    const senderLabel = getDelegateLabel(sender, dm, sp);
+	if (!conference) {
+		return new Response(JSON.stringify({ error: 'Conference not found' }), { status: 404 });
+	}
 
-    // 5. Create MessageAudit (Optimistic)
-    const audit = await db.messageAudit.create({
-        data: {
-            subject,
-            body: messageBody,
-            senderUserId: sender.id,
-            recipientUserId: recipient.id,
-            conferenceId,
-            status: 'SENT'
-        }
-    });
+	// 4. Determine Sender Label (Role)
+	const senderDelegationMember = await db.delegationMember.findUnique({
+		where: {
+			conferenceId_userId: {
+				conferenceId: conferenceId,
+				userId: sender.id
+			}
+		},
+		include: {
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
 
-    // 6. Send Email
-    const replyLink = `${url.origin}/dashboard/${conferenceId}/messaging/compose?recipientId=${sender.id}&subject=Re: ${encodeURIComponent(subject)}`;
-    const safeBody = escapeHtml(messageBody).replace(/\n/g, '<br>');
+	let senderSingleParticipant: Awaited<ReturnType<typeof db.singleParticipant.findUnique>> = null;
+	if (!senderDelegationMember) {
+		senderSingleParticipant = await db.singleParticipant.findUnique({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conferenceId,
+					userId: sender.id
+				}
+			},
+			include: {
+				assignedRole: true
+			}
+		});
+	}
 
-    const html = `
-    <p>Hallo,</p>
-    <p>Du hast eine neue Nachricht von <strong>${escapeHtml(senderLabel)}</strong> erhalten.</p>
-    <p><strong>Betreff:</strong> ${escapeHtml(subject)}</p>
-    <p><strong>Nachricht:</strong></p>
-    <div style="border-left: 3px solid #ccc; padding-left: 10px; margin: 10px 0;">
-        ${safeBody}
-    </div>
-    <p><a href="${replyLink}">Hier klicken, um zu antworten</a></p>
-    <p>Viele Grüße,<br>Das ${escapeHtml(conference.title)} Team</p>
-    <p style="font-size: small; color: #888;">Diese Nachricht wurde über das Messaging-System von ${escapeHtml(conference.title)} gesendet. Deine E-Mail-Adresse wurde dem Absender nicht offengelegt.</p>
-    `;
+	if (!senderDelegationMember && !senderSingleParticipant) {
+		return new Response(JSON.stringify({ error: 'Sender is not part of this conference' }), {
+			status: 403
+		});
+	}
 
-    const result = await emailService.sendEmail({
-        to: recipient.email,
-        subject: `[${conference.title}] Neue Nachricht: ${subject}`,
-        html: html,
-    });
+	const senderLabel = getDelegateLabel(sender, senderDelegationMember, senderSingleParticipant);
 
-    if (!result.success) {
-        console.error("Email sending failed", result.error);
+	const recipientDelegationMember = await db.delegationMember.findUnique({
+		where: {
+			conferenceId_userId: {
+				conferenceId: conferenceId,
+				userId: recipient.id
+			}
+		}
+	});
 
-        await db.messageAudit.update({
-            where: { id: audit.id },
-            data: { status: 'FAILED' }
-        });
+	let recipientSingleParticipant: Awaited<ReturnType<typeof db.singleParticipant.findUnique>> =
+		null;
+	if (!recipientDelegationMember) {
+		recipientSingleParticipant = await db.singleParticipant.findUnique({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conferenceId,
+					userId: recipient.id
+				}
+			}
+		});
+	}
 
-        return new Response(JSON.stringify({ error: 'Failed to send email' }), { status: 500 });
-    } else {
-        // Update with messageId if available
-        if (result.messageId) {
-             await db.messageAudit.update({
-                where: { id: audit.id },
-                data: { messageId: result.messageId }
-            });
-        }
-    }
+	if (!recipientDelegationMember && !recipientSingleParticipant) {
+		return new Response(JSON.stringify({ error: 'Recipient is not part of this conference' }), {
+			status: 400
+		});
+	}
+
+	// 5. Create MessageAudit (Optimistic)
+	const audit = await db.messageAudit.create({
+		data: {
+			subject,
+			body: messageBody,
+			senderUserId: sender.id,
+			recipientUserId: recipient.id,
+			conferenceId,
+			status: 'SENT'
+		}
+	});
+
+	// 6. Send Email
+	const replySubject = `Re: ${subject}`;
+	const replyLink = `${url.origin}/dashboard/${conferenceId}/messaging/compose?recipientId=${encodeURIComponent(sender.id)}&subject=${encodeURIComponent(replySubject)}`;
+
+	const { html, text } = await renderDelegationMessageEmail({
+		senderLabel,
+		subject,
+		messageBody,
+		conferenceTitle: conference.title,
+		replyUrl: replyLink
+	});
+
+	const result = await emailService.sendEmail({
+		to: recipient.email,
+		subject: `[${conference.title}] Neue Nachricht: ${subject}`,
+		html,
+		text
+	});
+
+	if (!result.success) {
+		console.error('Email sending failed', result.error);
+
+		await db.messageAudit.update({
+			where: { id: audit.id },
+			data: { status: 'FAILED' }
+		});
+
+		return new Response(JSON.stringify({ error: 'Failed to send email' }), { status: 500 });
+	} else {
+		// Update with messageId if available
+		if (result.messageId) {
+			await db.messageAudit.update({
+				where: { id: audit.id },
+				data: { messageId: result.messageId }
+			});
+		}
+	}
 
 	return new Response(JSON.stringify({ status: 'ok' }), {
 		headers: { 'content-type': 'application/json' }
 	});
 };
-
-function escapeHtml(text: string) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}

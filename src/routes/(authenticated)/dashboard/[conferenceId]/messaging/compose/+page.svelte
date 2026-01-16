@@ -21,7 +21,7 @@
 	async function loadRecipients() {
 		loadError = '';
 		loadingRecipients = true;
-		const res = await fetch('../search');
+		const res = await fetch(`/dashboard/${conferenceId}/messaging/search`);
 		if (res.ok) {
 			recipients = await res.json();
 		} else {
