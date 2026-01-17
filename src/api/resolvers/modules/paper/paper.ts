@@ -185,9 +185,16 @@ builder.mutationFields((t) => {
 						(version) => version.reviews.length > 0
 					);
 
+					// Normalize client-supplied status: 'REVISED' cannot be set directly by clients.
+					// It is automatically applied when a paper with reviews is submitted.
+					let normalizedStatus = args.data.status;
+					if (normalizedStatus === 'REVISED') {
+						normalizedStatus = 'SUBMITTED';
+					}
+
 					// Determine the effective status:
 					// If submitting (not DRAFT) and paper has reviews, use REVISED instead of SUBMITTED
-					let effectiveStatus = args.data.status;
+					let effectiveStatus = normalizedStatus;
 					if (
 						effectiveStatus === 'SUBMITTED' &&
 						hasAnyReviews
