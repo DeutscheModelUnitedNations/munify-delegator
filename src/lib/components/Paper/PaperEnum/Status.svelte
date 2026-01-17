@@ -15,6 +15,8 @@
 		switch (status) {
 			case 'SUBMITTED':
 				return 'badge-warning badge-soft';
+			case 'REVISED':
+				return 'badge-info badge-soft';
 			case 'CHANGES_REQUESTED':
 				return 'badge-error badge-soft';
 			case 'ACCEPTED':

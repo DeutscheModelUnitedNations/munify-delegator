@@ -715,6 +715,7 @@
 	"paperStatusChangesRequested": "Revisions requested",
 	"paperStatusDraft": "Draft",
 	"paperStatusOverview": "Paper Status Overview",
+	"paperStatusRevised": "Revised",
 	"paperStatusSubmitted": "Submitted",
 	"paperSubmissionClosed": "Paper cannot be submitted because the paper mailbox is closed.",
 	"paperSubmissionOpen": "Paper Submission Open",

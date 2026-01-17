@@ -50,7 +50,7 @@
 
 	// Calculate paper status counts
 	let paperStats = $derived.by(() => {
-		const counts = { SUBMITTED: 0, CHANGES_REQUESTED: 0, ACCEPTED: 0 };
+		const counts = { SUBMITTED: 0, REVISED: 0, CHANGES_REQUESTED: 0, ACCEPTED: 0 };
 		papers.forEach((paper) => {
 			if (paper.status !== 'DRAFT' && paper.status in counts) {
 				counts[paper.status as keyof typeof counts]++;
@@ -138,12 +138,17 @@
 		<div class="flex h-2 rounded-full overflow-hidden">
 			{#if total(paperStats) > 0}
 				<div
-					class="tooltip bg-info"
+					class="tooltip bg-warning"
 					style="width: {(paperStats.SUBMITTED / total(paperStats)) * 100}%"
 					data-tip="{paperStats.SUBMITTED} {m.paperStatusSubmitted()}"
 				></div>
 				<div
-					class="tooltip bg-warning"
+					class="tooltip bg-info"
+					style="width: {(paperStats.REVISED / total(paperStats)) * 100}%"
+					data-tip="{paperStats.REVISED} {m.paperStatusRevised()}"
+				></div>
+				<div
+					class="tooltip bg-error"
 					style="width: {(paperStats.CHANGES_REQUESTED / total(paperStats)) * 100}%"
 					data-tip="{paperStats.CHANGES_REQUESTED} {m.paperStatusChangesRequested()}"
 				></div>

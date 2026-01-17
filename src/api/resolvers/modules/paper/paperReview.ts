@@ -177,7 +177,7 @@ builder.mutationFields((t) => ({
 
 				// Validate status transition - reviews can set any reviewable status
 				const currentStatus = paper.status;
-				const reviewableStatuses = ['SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED'];
+				const reviewableStatuses = ['SUBMITTED', 'REVISED', 'CHANGES_REQUESTED', 'ACCEPTED'];
 				const allowedNewStatuses = ['CHANGES_REQUESTED', 'ACCEPTED'];
 
 				if (!reviewableStatuses.includes(currentStatus)) {

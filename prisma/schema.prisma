@@ -283,6 +283,7 @@ enum PaperType {
 enum PaperStatus {
   DRAFT
   SUBMITTED
+  REVISED
   CHANGES_REQUESTED
   ACCEPTED
 }
