@@ -518,7 +518,7 @@
 				<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 					<legend class="fieldset-legend">{m.history()}</legend>
 					<ul class="timeline timeline-vertical timeline-compact py-2">
-						{#each authorTimelineEvents as event, index}
+						{#each authorTimelineEvents as event, index (event.type === 'review' ? event.review.id : event.version.id)}
 							<li>
 								{#if index > 0}
 									<hr class="bg-base-300" />
