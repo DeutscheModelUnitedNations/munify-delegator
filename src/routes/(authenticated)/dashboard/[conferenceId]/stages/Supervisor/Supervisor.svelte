@@ -307,9 +307,11 @@
 		</fieldset>
 	</div>
 	<p class="text-xs text-gray-500">
-		{@html supervisor.plansOwnAttendenceAtConference
-			? m.willBePresentAtConference()
-			: m.willNotBePresentAtConference()}
+		{#if supervisor.plansOwnAttendenceAtConference}
+			{@html m.willBePresentAtConference()}
+		{:else}
+			{@html m.willNotBePresentAtConference()}
+		{/if}
 	</p>
 </section>
 
