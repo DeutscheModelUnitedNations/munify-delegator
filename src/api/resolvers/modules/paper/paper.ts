@@ -18,6 +18,7 @@ import {
 } from '$db/generated/graphql/Paper';
 import { db } from '$db/db';
 import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
+import { PaperStatus as PrismaPaperStatus } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import { GQLCommittee } from '../committee';
@@ -181,9 +182,7 @@ builder.mutationFields((t) => {
 						paperDBEntry.firstSubmittedAt === null && args.data.status !== 'DRAFT';
 
 					// Check if the paper has any reviews across all versions
-					const hasAnyReviews = paperDBEntry.versions.some(
-						(version) => version.reviews.length > 0
-					);
+					const hasAnyReviews = paperDBEntry.versions.some((version) => version.reviews.length > 0);
 
 					// Normalize client-supplied status: 'REVISED' cannot be set directly by clients.
 					// It is automatically applied when a paper with reviews is submitted.
@@ -194,11 +193,8 @@ builder.mutationFields((t) => {
 
 					// Determine the effective status:
 					// If submitting (not DRAFT) and paper has reviews, use REVISED instead of SUBMITTED
-					let effectiveStatus = normalizedStatus;
-					if (
-						effectiveStatus === 'SUBMITTED' &&
-						hasAnyReviews
-					) {
+					let effectiveStatus: PrismaPaperStatus | null | undefined = normalizedStatus;
+					if (effectiveStatus === 'SUBMITTED' && hasAnyReviews) {
 						effectiveStatus = 'REVISED';
 					}
 

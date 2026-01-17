@@ -168,7 +168,13 @@
 
 	// Status counting helper
 	const countByStatus = (papers: Array<{ status: PaperStatus$options }>) => {
-		const counts = { total: papers.length, SUBMITTED: 0, REVISED: 0, CHANGES_REQUESTED: 0, ACCEPTED: 0 };
+		const counts = {
+			total: papers.length,
+			SUBMITTED: 0,
+			REVISED: 0,
+			CHANGES_REQUESTED: 0,
+			ACCEPTED: 0
+		};
 		for (const paper of papers) {
 			if (paper.status in counts) {
 				counts[paper.status as keyof typeof counts]++;
@@ -327,8 +333,7 @@
 							{#if overallStatusCounts.revised > 0}
 								<div
 									class="tooltip tooltip-right tooltip-info bg-info flex items-center justify-center gap-2 text-info-content transition-all"
-									style="width: {(overallStatusCounts.revised / overallStatusCounts.total) *
-										100}%"
+									style="width: {(overallStatusCounts.revised / overallStatusCounts.total) * 100}%"
 									data-tip="{m.paperStatusRevised()}: {overallStatusCounts.revised}"
 								>
 									<i class="fa-solid fa-rotate"></i>
