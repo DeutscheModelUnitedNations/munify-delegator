@@ -52,7 +52,7 @@ export const POST: RequestHandler = async ({ request, cookies, params, url }) =>
 	const recipient = await db.user.findUnique({
 		where: { id: recipientId },
 		select: {
-			// canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
+			canReceiveDelegationMail: true,
 			email: true,
 			id: true
 		}
@@ -62,10 +62,11 @@ export const POST: RequestHandler = async ({ request, cookies, params, url }) =>
 		return new Response(JSON.stringify({ error: 'Recipient not found' }), { status: 404 });
 	}
 
-	// TODO: Re-enable check
-	// if (!recipient?.canReceiveDelegationMail) {
-	//     return new Response(JSON.stringify({ error: 'Recipient has not enabled messaging.' }), { status: 400 });
-	// }
+	if (!recipient?.canReceiveDelegationMail) {
+		return new Response(JSON.stringify({ error: 'Recipient has not enabled messaging.' }), {
+			status: 400
+		});
+	}
 
 	// 3. Get Conference Details
 	const conference = await db.conference.findUnique({
