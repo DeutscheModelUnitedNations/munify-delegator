@@ -1,9 +1,10 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
+import { oidc } from '$api/context/oidc';
 
 export async function POST(event: RequestEvent) {
 	const conferenceId = event.params.conferenceId;
-	const user = event.locals.user;
+	const { user } = await oidc(event.cookies);
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
 
 	const body = await event.request.json();
