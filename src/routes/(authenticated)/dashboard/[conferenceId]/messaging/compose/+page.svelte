@@ -1,17 +1,38 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
 	import toast from 'svelte-french-toast';
+	import type { SubmitFunction } from '@sveltejs/kit';
+	import type { PageData } from './$types';
 
-	export let data;
+	type Recipient = { id: string; label: string };
+	type ComposePageData = PageData & {
+		recipients?: Recipient[];
+		recipientLoadError?: string;
+	};
+	type ComposeActionData = { error?: string } | null | undefined;
 
-	let recipients: Array<{ id: string; label: string }> = [];
+	export let data: ComposePageData;
+	export let form: ComposeActionData;
+
+	let recipients: Recipient[] = [];
 	let selectedRecipient = '';
 	let subject = '';
 	let body = '';
-	let error = '';
-	let loadingRecipients = true;
+	let actionError = '';
 	let loadError = '';
+	let prefilled = false;
+
+	const getActionError = (value: unknown) => {
+		if (!value || typeof value !== 'object') return '';
+		const maybeError = (value as { error?: unknown }).error;
+		return typeof maybeError === 'string' ? maybeError : '';
+	};
+
+	$: recipients = data.recipients ?? [];
+	$: loadError = data.recipientLoadError ?? '';
+	$: actionError = getActionError(form);
+
 	$: conferenceId = $page.params.conferenceId;
 	$: basePath = `/dashboard/${conferenceId}/messaging`;
 	$: subjectCount = subject.length;
@@ -20,46 +41,30 @@
 	$: userCanReceiveMail = data.conferenceQueryData?.findUniqueUser?.canReceiveDelegationMail;
 	$: showReceiveMailWarning = userCanReceiveMail === false;
 
-	async function loadRecipients() {
-		loadError = '';
-		loadingRecipients = true;
-		const res = await fetch(`/dashboard/${conferenceId}/messaging/search`);
-		if (res.ok) {
-			recipients = await res.json();
-		} else {
-			loadError = 'Unable to load recipients';
-		}
-		loadingRecipients = false;
-	}
-
-	onMount(() => {
-		loadRecipients();
+	$: if (!prefilled) {
 		const recipientIdParam = $page.url.searchParams.get('recipientId');
 		const subjectParam = $page.url.searchParams.get('subject');
-
 		if (recipientIdParam) selectedRecipient = recipientIdParam;
 		if (subjectParam) subject = subjectParam;
-	});
-
-	async function send(e: Event) {
-		e.preventDefault();
-		error = '';
-		const res = await fetch(`${basePath}/compose/send`, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ recipientId: selectedRecipient, subject, body })
-		});
-		if (res.ok) {
-			await res.json();
-		} else {
-			const errorPayload = await res.json().catch(() => null);
-			const errorMessage = errorPayload?.error;
-			if (errorMessage === 'Recipient has not enabled messaging.') {
-				toast.error('Recipient has not enabled messaging.');
-			}
-			error = errorMessage || 'Failed to send message';
-		}
+		prefilled = true;
 	}
+
+	const enhanceForm: SubmitFunction = () => {
+		return async ({ result, update }) => {
+			if (result.type === 'success') {
+				toast.success('Message sent.');
+				selectedRecipient = '';
+				subject = '';
+				body = '';
+			} else if (result.type === 'failure') {
+				const errorMessage = getActionError(result.data);
+				if (errorMessage === 'Recipient has not enabled messaging.') {
+					toast.error('Recipient has not enabled messaging.');
+				}
+			}
+			await update();
+		};
+	};
 </script>
 
 <div class="mx-auto max-w-5xl space-y-6">
@@ -84,10 +89,10 @@
 	</div>
 
 	<!-- Alerts -->
-	{#if error}
+	{#if actionError}
 		<div class="alert alert-error shadow-lg">
 			<i class="fa-solid fa-circle-exclamation text-xl"></i>
-			<span class="font-medium">{error}</span>
+			<span class="font-medium">{actionError}</span>
 		</div>
 	{/if}
 
@@ -124,7 +129,7 @@
 	</div>
 
 	<!-- Main Form -->
-	<form on:submit|preventDefault={send} class="space-y-6">
+	<form method="POST" action="?/send" use:enhance={enhanceForm} class="space-y-6">
 		<div class="rounded-xl border border-base-300 bg-base-100 shadow-lg">
 			<!-- Form Header -->
 			<div class="border-b border-base-300 bg-base-200/50 px-6 py-4">
@@ -150,13 +155,14 @@
 					<select
 						class="select select-bordered select-lg w-full"
 						bind:value={selectedRecipient}
+						name="recipientId"
 						required
 					>
 						<option value="">Select a recipient...</option>
-						{#if loadingRecipients}
-							<option disabled value="">Loading recipients...</option>
-						{:else if loadError}
+						{#if loadError}
 							<option disabled value="">{loadError}</option>
+						{:else if recipients.length === 0}
+							<option disabled value="">No eligible recipients found</option>
 						{:else}
 							{#each recipients as r}
 								<option value={r.id}>{r.label}</option>
@@ -192,6 +198,7 @@
 						class="input input-bordered input-lg w-full"
 						type="text"
 						bind:value={subject}
+						name="subject"
 						maxlength="200"
 						placeholder="e.g., Committee agenda lock - 18:00 CET"
 						required
@@ -218,6 +225,7 @@
 					<textarea
 						class="textarea textarea-bordered h-80 w-full resize-y text-base leading-relaxed"
 						bind:value={body}
+						name="body"
 						maxlength="2000"
 						placeholder="Share key details, action items, and deadlines here...&#10;&#10;Keep it clear and concise. You can include links for additional information."
 						required
