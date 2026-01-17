@@ -146,6 +146,23 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # Bugsink - Self-hosted error tracking (Sentry-compatible)
+  # Web UI: http://localhost:8000
+  bugsink:
+    image: bugsink/bugsink:latest
+    container_name: bugsink-dev-delegator
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      SECRET_KEY: 'django-insecure-dev-only-key-change-in-prod'
+      CREATE_SUPERUSER: 'admin@delegator.local:admin123'
+      BEHIND_HTTPS_PROXY: 'false'
+      BASE_URL: 'http://localhost:8000'
+    volumes:
+      - bugsink-data:/app/data
+
 volumes:
   delegator-dev:
   listmonk-data:
+  bugsink-data:

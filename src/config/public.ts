@@ -15,7 +15,9 @@ const schema = z.object({
 	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: z.coerce.number().default(100),
 
 	PUBLIC_MAINTENANCE_WINDOW_START: z.iso.datetime({ offset: true }).optional(),
-	PUBLIC_MAINTENANCE_WINDOW_END: z.iso.datetime({ offset: true }).optional()
+	PUBLIC_MAINTENANCE_WINDOW_END: z.iso.datetime({ offset: true }).optional(),
+	// Sentry/Bugsink error tracking
+	PUBLIC_SENTRY_DSN: z.string().url().optional()
 });
 
 export const configPublic = building ? ({} as z.infer<typeof schema>) : schema.parse(env);
