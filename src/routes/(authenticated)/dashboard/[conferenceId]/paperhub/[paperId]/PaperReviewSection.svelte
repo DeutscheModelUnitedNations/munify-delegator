@@ -190,9 +190,6 @@
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
 			createPaperReview(paperId: $paperId, comments: $comments, newStatus: $newStatus) {
-				review {
-					id
-				}
 				pieceUnlocked
 				unlockedPieceData {
 					flagId
