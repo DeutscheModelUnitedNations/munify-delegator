@@ -155,7 +155,7 @@ services:
     ports:
       - '8000:8000'
     environment:
-      SECRET_KEY: 'django-insecure-dev-only-key-change-in-prod'
+      SECRET_KEY: 'k8Qz7mP3xL9wR2vN5tY1cF6hJ4aS0dG8bU3iE7oA2nM9pW5qX1zC4vB6y'
       CREATE_SUPERUSER: 'admin@delegator.local:admin123'
       BEHIND_HTTPS_PROXY: 'false'
       BASE_URL: 'http://localhost:8000'
