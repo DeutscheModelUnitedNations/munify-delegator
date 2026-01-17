@@ -7,7 +7,7 @@ if (!building && env.PUBLIC_SENTRY_DSN) {
 		dsn: env.PUBLIC_SENTRY_DSN,
 		environment: import.meta.env.MODE,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		sendDefaultPii: true
+		sendDefaultPii: env.PUBLIC_SENTRY_SEND_DEFAULT_PII === 'true'
 	});
 }
 

@@ -11,7 +11,7 @@ if (!building && env.SENTRY_DSN) {
 		dsn: env.SENTRY_DSN,
 		environment: env.NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		sendDefaultPii: true
+		sendDefaultPii: env.SENTRY_SEND_DEFAULT_PII === 'true'
 	});
 }
 

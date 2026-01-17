@@ -17,7 +17,8 @@ const schema = z.object({
 	PUBLIC_MAINTENANCE_WINDOW_START: z.iso.datetime({ offset: true }).optional(),
 	PUBLIC_MAINTENANCE_WINDOW_END: z.iso.datetime({ offset: true }).optional(),
 	// Sentry/Bugsink error tracking
-	PUBLIC_SENTRY_DSN: z.string().url().optional()
+	PUBLIC_SENTRY_DSN: z.string().url().optional(),
+	PUBLIC_SENTRY_SEND_DEFAULT_PII: z.string().optional()
 });
 
 export const configPublic = building ? ({} as z.infer<typeof schema>) : schema.parse(env);
