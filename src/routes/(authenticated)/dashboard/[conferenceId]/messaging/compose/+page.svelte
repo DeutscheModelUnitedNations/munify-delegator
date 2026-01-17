@@ -17,6 +17,7 @@
 	$: bodyCount = body.length;
 
 	$: userCanReceiveMail = data.conferenceQueryData?.findUniqueUser?.canReceiveDelegationMail;
+	$: showReceiveMailWarning = userCanReceiveMail === false;
 
 	async function loadRecipients() {
 		loadError = '';
@@ -42,15 +43,13 @@
 	async function send(e: Event) {
 		e.preventDefault();
 		error = '';
-		const res = await fetch('./send', {
+		const res = await fetch(`${basePath}/compose/send`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ recipientId: selectedRecipient, subject, body })
 		});
 		if (res.ok) {
-			const data = await res.json();
-			// redirect to history
-			location.href = '../history';
+			await res.json();
 		} else {
 			error = 'Failed to send message';
 		}
@@ -89,7 +88,7 @@
 				</div>
 			{/if}
 
-			{#if !userCanReceiveMail}
+			{#if showReceiveMailWarning}
 				<div class="alert alert-warning">
 					<i class="fa-solid fa-triangle-exclamation"></i>
 					<span>

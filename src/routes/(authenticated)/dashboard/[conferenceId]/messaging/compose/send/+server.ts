@@ -3,9 +3,10 @@ import { db } from '$db/db';
 import { emailService } from '$api/services/email/emailService';
 import { renderDelegationMessageEmail } from '$api/services/email/delegationMessageTemplates';
 import { getDelegateLabel } from '../../utils';
+import { oidc } from '$api/context/oidc';
 
-export const POST: RequestHandler = async ({ request, locals, params, url }) => {
-	const authUser = (locals as { user?: { sub?: string } }).user;
+export const POST: RequestHandler = async ({ request, cookies, params, url }) => {
+	const { user: authUser } = await oidc(cookies);
 	if (!authUser?.sub) {
 		return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 	}
@@ -29,7 +30,7 @@ export const POST: RequestHandler = async ({ request, locals, params, url }) => 
 	const sender = await db.user.findUnique({
 		where: { id: authUser.sub },
 		select: {
-			// canReceiveDelegationMail: true, // TODO: Re-enable after prisma generate
+			canReceiveDelegationMail: true,
 			id: true,
 			given_name: true,
 			family_name: true
@@ -40,10 +41,12 @@ export const POST: RequestHandler = async ({ request, locals, params, url }) => 
 		return new Response(JSON.stringify({ error: 'Sender not found' }), { status: 404 });
 	}
 
-	// TODO: Re-enable check
-	// if (!sender?.canReceiveDelegationMail) {
-	//     return new Response(JSON.stringify({ error: 'You must enable messaging in your account settings.' }), { status: 403 });
-	// }
+	if (!sender?.canReceiveDelegationMail) {
+		return new Response(
+			JSON.stringify({ error: 'You must enable messaging in your account settings.' }),
+			{ status: 403 }
+		);
+	}
 
 	// 2. Validate Recipient Opt-in
 	const recipient = await db.user.findUnique({
