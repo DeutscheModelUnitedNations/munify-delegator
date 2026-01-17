@@ -1,22 +1,43 @@
 import type { RequestHandler } from './$types';
 import { db } from '$db/db';
 import { getDelegateLabel } from '../utils';
+import { oidc } from '$api/context/oidc';
 
-export const GET: RequestHandler = async ({ params, locals }) => {
+export const GET: RequestHandler = async ({ params, cookies }) => {
 	try {
 		const conferenceId = params.conferenceId;
 		if (!conferenceId) {
 			return new Response(JSON.stringify({ error: 'Missing conference id' }), { status: 400 });
 		}
 
-		const currentUserId = (locals as { user?: { sub?: string } }).user?.sub ?? null;
+		const { user } = await oidc(cookies);
+		const currentUserId = user?.sub ?? null;
+		if (!currentUserId) {
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+		}
 
-		// Fetch DelegationMembers
+		const currentDelegationMember = await db.delegationMember.findUnique({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conferenceId,
+					userId: currentUserId
+				}
+			},
+			select: {
+				delegationId: true
+			}
+		});
+
+		if (!currentDelegationMember?.delegationId) {
+			return new Response(JSON.stringify([]), { headers: { 'content-type': 'application/json' } });
+		}
+
+		// Fetch DelegationMembers in the same delegation
 		// TODO: Re-enable canReceiveDelegationMail filter after prisma generate is run
 		const delegationMembers = await db.delegationMember.findMany({
 			where: {
-				conferenceId: conferenceId,
-				...(currentUserId ? { userId: { not: currentUserId } } : {})
+				delegationId: currentDelegationMember.delegationId,
+				userId: { not: currentUserId }
 				// user: {
 				//     canReceiveDelegationMail: true
 				// }
@@ -39,50 +60,17 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			}
 		});
 
-		// Fetch SingleParticipants
-		// TODO: Re-enable canReceiveDelegationMail filter after prisma generate is run
-		const singleParticipants = await db.singleParticipant.findMany({
-			where: {
-				conferenceId: conferenceId,
-				...(currentUserId ? { userId: { not: currentUserId } } : {})
-				// user: {
-				//     canReceiveDelegationMail: true
-				// }
-			},
-			include: {
-				user: {
-					select: {
-						id: true,
-						family_name: true,
-						given_name: true
-					}
-				},
-				assignedRole: true
-			}
-		});
-
 		const items: Array<{ id: string; label: string }> = [];
 
 		// Process DelegationMembers
 		for (const dm of delegationMembers) {
-			const label = getDelegateLabel(dm.user, dm, null);
-			if (label) {
-				items.push({
-					id: dm.user.id,
-					label: label
-				});
-			}
-		}
-
-		// Process SingleParticipants
-		for (const sp of singleParticipants) {
-			if (sp.assignedRole) {
-				const label = getDelegateLabel(sp.user, null, sp);
-				items.push({
-					id: sp.user.id,
-					label: label
-				});
-			}
+			const name = `${dm.user.given_name} ${dm.user.family_name}`;
+			const roleLabel = getDelegateLabel(dm.user, dm, null);
+			const label = roleLabel ? `${name} - ${roleLabel}` : name;
+			items.push({
+				id: dm.user.id,
+				label: label
+			});
 		}
 
 		// Sort items by label
