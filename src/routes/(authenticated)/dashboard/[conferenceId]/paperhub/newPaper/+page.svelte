@@ -14,8 +14,15 @@
 		resolutionContentStore
 	} from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+
+	// Reset stores on page mount to ensure a clean slate for new papers
+	onMount(() => {
+		$editorContentStore = undefined;
+		$resolutionContentStore = undefined;
+	});
 
 	let { data }: { data: PageData } = $props();
 
