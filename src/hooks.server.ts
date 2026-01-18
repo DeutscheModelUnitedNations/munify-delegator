@@ -3,15 +3,15 @@ import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { building } from '$app/environment';
-import { env } from '$env/dynamic/private';
+import { configPrivate } from '$config/private';
 
 // Initialize Sentry (only if DSN provided and not building)
-if (!building && env.SENTRY_DSN) {
+if (!building && configPrivate.SENTRY_DSN) {
 	Sentry.init({
-		dsn: env.SENTRY_DSN,
-		environment: env.NODE_ENV,
+		dsn: configPrivate.SENTRY_DSN,
+		environment: configPrivate.NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		sendDefaultPii: env.SENTRY_SEND_DEFAULT_PII === 'true'
+		sendDefaultPii: configPrivate.SENTRY_SEND_DEFAULT_PII ?? false
 	});
 }
 
