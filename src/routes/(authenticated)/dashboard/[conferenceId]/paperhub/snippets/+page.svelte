@@ -35,6 +35,10 @@
 	import Menu from '$lib/components/Paper/Editor/Menu';
 	import { validatePlaceholders } from '$lib/services/snippetPlaceholders';
 	import { PlaceholderHighlight } from '$lib/components/Paper/Editor/extensions/PlaceholderHighlight';
+	import {
+		isValidTipTapContent,
+		getEmptyTipTapDocument
+	} from '$lib/components/Paper/Editor/contentValidation';
 
 	let { data }: { data: PageData } = $props();
 
@@ -118,7 +122,10 @@
 	function openEditModal(snippet: { id: string; name: string; content: unknown }) {
 		editingId = snippet.id;
 		editName = snippet.name;
-		editContent = snippet.content as JSONContent;
+		// Validate content before using it, fallback to empty document if invalid
+		editContent = isValidTipTapContent(snippet.content)
+			? (snippet.content as JSONContent)
+			: getEmptyTipTapDocument();
 		initEditor(editContent);
 		isEditing = true;
 	}

@@ -8,6 +8,7 @@
 	import Heading from '@tiptap/extension-heading';
 	import { m } from '$lib/paraglide/messages';
 	import type { Readable } from 'svelte/store';
+	import { getSafeTipTapContent } from './contentValidation';
 
 	interface Props {
 		content: any;
@@ -40,7 +41,7 @@
 					levels: [2, 3]
 				})
 			],
-			content: content || undefined,
+			content: getSafeTipTapContent(content),
 			editorProps: {
 				attributes: {
 					class: 'prose prose-sm focus:outline-none px-2'
