@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { createEditor, Editor, EditorContent } from 'svelte-tiptap';
 	import { getCommonExtensions } from './settings/common.svelte';
@@ -170,6 +170,12 @@
 		// Only clear if store is empty document AND editor actually has content
 		if ($editor && isEmptyDocument && !$editor.isEmpty) {
 			$editor.commands.clearContent();
+		}
+	});
+
+	onDestroy(() => {
+		if ($editor) {
+			$editor.destroy();
 		}
 	});
 </script>

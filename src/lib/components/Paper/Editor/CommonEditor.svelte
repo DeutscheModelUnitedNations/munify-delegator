@@ -100,6 +100,12 @@
 			editable
 		});
 	});
+
+	onDestroy(() => {
+		if ($editor) {
+			$editor.destroy();
+		}
+	});
 </script>
 
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[300px]">
