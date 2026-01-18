@@ -46,13 +46,159 @@
 		return m.timeAgoDays({ count: days });
 	}
 
-	// Reset stores on page mount to ensure a clean slate for new papers
-	onMount(() => {
-		$editorContentStore = undefined;
-		$resolutionContentStore = undefined;
-	});
+	// Types for draft persistence (Position/Introduction Papers only)
+	interface PaperDraft {
+		type: 'POSITION_PAPER' | 'INTRODUCTION_PAPER';
+		agendaItemId?: string;
+		content: unknown;
+		savedAt: number;
+	}
+
+	const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+	// State for recovery modal
+	let showRecoveryModal = $state(false);
+	let savedDraft: PaperDraft | null = $state(null);
+	// Key to force editor remount when restoring draft
+	let editorKey = $state(0);
+
+	// Helper to format relative time
+	function formatRelativeTime(timestamp: number | undefined): string {
+		if (!timestamp) return '';
+		const seconds = Math.floor((Date.now() - timestamp) / 1000);
+		if (seconds < 60) return m.timeAgoSeconds({ count: seconds });
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) return m.timeAgoMinutes({ count: minutes });
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return m.timeAgoHours({ count: hours });
+		const days = Math.floor(hours / 24);
+		return m.timeAgoDays({ count: days });
+	}
 
 	let { data }: { data: PageData } = $props();
+
+	// Create persisted store for this conference's paper draft (only on browser)
+	const draftStore = browser
+		? persisted<PaperDraft | null>(`paperDraft_${data.conferenceId}`, null)
+		: null;
+
+	// Check for existing draft SYNCHRONOUSLY before render
+	// This must happen BEFORE child components mount
+	if (browser && draftStore) {
+		const storedDraft = get(draftStore);
+		if (storedDraft) {
+			// Check if draft is expired (older than 7 days)
+			if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
+				draftStore.set(null);
+				$editorContentStore = undefined;
+			} else {
+				// Valid draft found - set state for modal
+				savedDraft = storedDraft;
+				showRecoveryModal = true;
+			}
+		} else {
+			// No draft - clear store before editor mounts
+			$editorContentStore = undefined;
+		}
+	} else {
+		// SSR or no draftStore - clear store
+		$editorContentStore = undefined;
+	}
+
+	// Recovery functions
+	function restoreDraft() {
+		if (savedDraft) {
+			// Set form data
+			$formData.type = savedDraft.type;
+			if (savedDraft.agendaItemId) {
+				$formData.agendaItemId = savedDraft.agendaItemId;
+			}
+			// Set content to the editor store
+			$editorContentStore = savedDraft.content as any;
+			// Increment key to force editor remount with new content
+			editorKey++;
+		}
+		showRecoveryModal = false;
+	}
+
+	function startFresh() {
+		if (draftStore) {
+			draftStore.set(null);
+		}
+		$editorContentStore = undefined;
+		// Increment key to force editor remount with cleared content
+		editorKey++;
+		showRecoveryModal = false;
+	}
+
+	// Auto-save: Use interval-based polling for TipTap content
+	let saveInterval: ReturnType<typeof setInterval>;
+	let lastSavedContent: string | null = null;
+
+	// Function to save current content to localStorage
+	function saveCurrentDraft() {
+		if (!browser || !draftStore || showRecoveryModal) return;
+
+		// Read form data for current paper type
+		const currentFormData = get(form.form);
+		const paperType = currentFormData.type as 'POSITION_PAPER' | 'INTRODUCTION_PAPER';
+
+		// Use get() to explicitly read current store value
+		const rawContent = get(editorContentStore);
+
+		if (rawContent === undefined) {
+			return;
+		}
+
+		// Stringify to create a plain JSON snapshot
+		let contentString: string;
+		try {
+			contentString = JSON.stringify(rawContent);
+		} catch (e) {
+			return;
+		}
+
+		// Skip if content hasn't changed
+		if (contentString === lastSavedContent) {
+			return;
+		}
+		lastSavedContent = contentString;
+
+		draftStore.set({
+			type: paperType,
+			agendaItemId: currentFormData.agendaItemId,
+			content: JSON.parse(contentString),
+			savedAt: Date.now()
+		});
+	}
+
+	// Set up auto-save interval when component mounts
+	onMount(() => {
+		if (!browser || !draftStore) return;
+
+		// Poll every second for changes
+		saveInterval = setInterval(() => {
+			if (!showRecoveryModal) {
+				saveCurrentDraft();
+			}
+		}, 1000);
+
+		return () => {
+			if (saveInterval) clearInterval(saveInterval);
+		};
+	});
+
+	// Safety net: save on page unload
+	$effect(() => {
+		if (!browser || !draftStore) return;
+
+		const handleBeforeUnload = () => {
+			saveCurrentDraft();
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+	});
 
 	// Create persisted store for this conference's paper draft (only on browser)
 	const draftStore = browser
