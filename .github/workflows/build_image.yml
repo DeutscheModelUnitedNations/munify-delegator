@@ -103,6 +103,47 @@ jobs:
           trivyignores: .trivyignore
           scanners: ${{ github.event_name == 'pull_request' && 'vuln' || 'vuln,secret,misconfig'}}
 
+      - name: Upload sourcemaps to Bugsink
+        if: github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN != '' && secrets.SENTRY_URL != ''
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_URL: ${{ secrets.SENTRY_URL }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
+        run: |
+          echo "::group::Extracting build artifacts from Docker image"
+          # Create a temporary container to copy build artifacts
+          CONTAINER_ID=$(docker create ${{ steps.split-tags.outputs.fragment }})
+          mkdir -p ./build-artifacts
+          docker cp "$CONTAINER_ID:/run/build" ./build-artifacts/
+          docker rm "$CONTAINER_ID"
+          echo "Extracted build artifacts to ./build-artifacts/build"
+          ls -la ./build-artifacts/build
+          echo "::endgroup::"
+
+          echo "::group::Installing sentry-cli"
+          bun add -g @sentry/cli
+          echo "::endgroup::"
+
+          echo "::group::Injecting debug IDs into sourcemaps"
+          sentry-cli sourcemaps inject ./build-artifacts/build
+          echo "::endgroup::"
+
+          echo "::group::Uploading sourcemaps to Bugsink (project: $SENTRY_PROJECT)"
+          sentry-cli --url "$SENTRY_URL" sourcemaps \
+            --org bugsink \
+            --project "$SENTRY_PROJECT" \
+            upload ./build-artifacts/build
+          echo "Sourcemaps uploaded successfully"
+          echo "::endgroup::"
+
+      - name: Sourcemap upload skipped
+        if: github.event_name != 'pull_request' && (secrets.SENTRY_AUTH_TOKEN == '' || secrets.SENTRY_URL == '')
+        run: |
+          echo "::warning::Sourcemap upload skipped - SENTRY_AUTH_TOKEN or SENTRY_URL not configured"
+          echo "To enable sourcemap uploads, add the following secrets to your repository:"
+          echo "  - SENTRY_AUTH_TOKEN: Your Bugsink authentication token"
+          echo "  - SENTRY_URL: Your Bugsink instance URL (e.g., https://bugsink.example.com/)"
+
       - name: Publish docker image
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
