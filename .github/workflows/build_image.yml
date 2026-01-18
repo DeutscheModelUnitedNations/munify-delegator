@@ -14,6 +14,9 @@ jobs:
   build:
     name: Build and publish container images
     runs-on: ubuntu-latest
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_URL: ${{ secrets.SENTRY_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,10 +107,8 @@ jobs:
           scanners: ${{ github.event_name == 'pull_request' && 'vuln' || 'vuln,secret,misconfig'}}
 
       - name: Upload sourcemaps to Bugsink
-        if: github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN != '' && secrets.SENTRY_URL != ''
+        if: github.event_name != 'pull_request' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_URL: ${{ secrets.SENTRY_URL }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
         run: |
           echo "::group::Extracting build artifacts from Docker image"
@@ -137,7 +138,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Sourcemap upload skipped
-        if: github.event_name != 'pull_request' && (secrets.SENTRY_AUTH_TOKEN == '' || secrets.SENTRY_URL == '')
+        if: github.event_name != 'pull_request' && (env.SENTRY_AUTH_TOKEN == '' || env.SENTRY_URL == '')
         run: |
           echo "::warning::Sourcemap upload skipped - SENTRY_AUTH_TOKEN or SENTRY_URL not configured"
           echo "To enable sourcemap uploads, add the following secrets to your repository:"
