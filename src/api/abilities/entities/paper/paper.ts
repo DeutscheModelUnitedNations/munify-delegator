@@ -23,13 +23,13 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 			}
 		});
 
-		// PROJECT_MANAGEMENT can update any paper (admin override)
+		// Team members (REVIEWER, PROJECT_MANAGEMENT, PARTICIPANT_CARE) can update any paper
 		can(['update'], 'Paper', {
 			conference: {
 				teamMembers: {
 					some: {
 						user: { id: user.sub },
-						role: 'PROJECT_MANAGEMENT'
+						role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
 					}
 				}
 			}
