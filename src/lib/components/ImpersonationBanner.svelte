@@ -38,17 +38,17 @@
 	async function stopImpersonation() {
 		if (isLoading) return;
 		isLoading = true;
-		toast
-			.promise(stopImpersonationMutation.mutate(null), genericPromiseToastMessages)
-			.then(() => {
-				goto('/dashboard').then(() => window.location.reload());
-			})
-			.catch((error) => {
-				console.error('Failed to stop impersonation:', error);
-			})
-			.finally(() => {
-				isLoading = false;
-			});
+		const promise = stopImpersonationMutation.mutate(null);
+		toast.promise(promise, genericPromiseToastMessages);
+		try {
+			await promise;
+			await goto('/dashboard');
+			window.location.reload();
+		} catch (error) {
+			console.error('Failed to stop impersonation:', error);
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 

@@ -8,7 +8,7 @@
 	import { cache, graphql } from '$houdini';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { resolutionContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
