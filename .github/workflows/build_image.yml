@@ -108,6 +108,7 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_URL: ${{ secrets.SENTRY_URL }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
         run: |
           echo "::group::Extracting build artifacts from Docker image"
           # Create a temporary container to copy build artifacts
@@ -127,10 +128,10 @@ jobs:
           sentry-cli sourcemaps inject ./build-artifacts/build
           echo "::endgroup::"
 
-          echo "::group::Uploading sourcemaps to Bugsink"
+          echo "::group::Uploading sourcemaps to Bugsink (project: $SENTRY_PROJECT)"
           sentry-cli --url "$SENTRY_URL" sourcemaps \
             --org bugsink \
-            --project delegator \
+            --project "$SENTRY_PROJECT" \
             upload ./build-artifacts/build
           echo "Sourcemaps uploaded successfully"
           echo "::endgroup::"
