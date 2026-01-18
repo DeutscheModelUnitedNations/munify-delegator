@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dev } from '$app/environment';
 	import { configPublic } from '$config/public';
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
@@ -26,7 +27,9 @@
 	<ImpersonationBanner />
 
 	<div
-		class="no-print navbar bg-base-200 border-base-300 border-1 mb-4 justify-between gap-0 rounded-box px-4 py-2 sm:gap-2"
+		class="no-print navbar bg-base-200 border-base-300 border-1 mb-4 justify-between gap-0 rounded-box px-4 py-2 sm:gap-2 {dev
+			? 'shadow-[0_0_15px_rgba(255,0,0,0.6)] border-red-500 !bg-red-200/70 dark:!bg-red-900/50'
+			: ''}"
 	>
 		{#if headerState.openNavCallback !== undefined}
 			<button
