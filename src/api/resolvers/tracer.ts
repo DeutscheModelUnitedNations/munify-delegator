@@ -5,7 +5,8 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Resource } from '@opentelemetry/resources';
 import { configPrivate } from '$config/private';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { trace } from '@opentelemetry/api';
+import { trace, context as otelContext } from '@opentelemetry/api';
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import type { Plugin } from 'graphql-yoga';
 import {
 	SimpleSpanProcessor,
@@ -90,13 +91,17 @@ registerInstrumentations({
 	instrumentations: [new HttpInstrumentation()]
 });
 
-provider.register();
+provider.register({
+	propagator: new W3CTraceContextPropagator()
+});
 
 export const tracer = trace.getTracer('graphql');
 
 export const graphqlYogaTracerPlugin: Plugin = {
 	onExecute: ({ setExecuteFn, executeFn }) => {
 		setExecuteFn((options) => {
+			const activeContext = otelContext.active();
+
 			return tracer.startActiveSpan(
 				SpanNames.EXECUTE,
 				{
@@ -105,10 +110,10 @@ export const graphqlYogaTracerPlugin: Plugin = {
 						[AttributeNames.SOURCE]: print(options.document)
 					}
 				},
+				activeContext, // Link to parent HTTP span
 				async (span) => {
 					try {
 						const result = await executeFn(options);
-
 						return result;
 					} catch (error) {
 						span.recordException(error as Error);

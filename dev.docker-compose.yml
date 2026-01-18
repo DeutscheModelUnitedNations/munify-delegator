@@ -8,6 +8,8 @@ services:
   postgres:
     image: postgres:17
     container_name: postgres-dev-delegator
+    profiles:
+      - core
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -33,6 +35,8 @@ services:
   # }
   mockoidc:
     image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    profiles:
+      - core
     ports:
       - 8080:8080
     environment:
@@ -84,6 +88,8 @@ services:
     image: listmonk/listmonk:latest
     container_name: listmonk_app
     restart: unless-stopped
+    profiles:
+      - listmonk
     ports:
       - '9000:9000' # To change the externally exposed port, change to: $custom_port:9000
     hostname: localhost:9000 # Recommend using FQDN for hostname
@@ -119,6 +125,8 @@ services:
     image: postgres:17-alpine
     container_name: listmonk_db
     restart: unless-stopped
+    profiles:
+      - listmonk
     ports:
       - '5433:5432' # Only bind on the local interface. To connect to Postgres externally, change this to 0.0.0.0
     environment:
@@ -139,6 +147,8 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     container_name: mailpit-dev-delegator
+    profiles:
+      - core
     ports:
       - '1025:1025' # SMTP server
       - '8025:8025' # Web UI
@@ -152,6 +162,8 @@ services:
     image: bugsink/bugsink:latest
     container_name: bugsink-dev-delegator
     restart: unless-stopped
+    profiles:
+      - observability
     ports:
       - '8000:8000'
     environment:
@@ -162,7 +174,25 @@ services:
     volumes:
       - bugsink-data:/app/data
 
+  # Jaeger - Distributed tracing backend
+  # UI: http://localhost:16686
+  # OTLP HTTP: http://localhost:4318/v1/traces
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger-dev-delegator
+    restart: unless-stopped
+    profiles:
+      - observability
+    ports:
+      - '16686:16686' # Jaeger UI
+      - '4318:4318' # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    volumes:
+      - jaeger-data:/badger
+
 volumes:
   delegator-dev:
   listmonk-data:
   bugsink-data:
+  jaeger-data:
