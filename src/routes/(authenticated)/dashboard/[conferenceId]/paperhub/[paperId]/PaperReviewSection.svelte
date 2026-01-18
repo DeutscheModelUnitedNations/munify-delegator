@@ -18,6 +18,7 @@
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { PieceFoundModal } from '$lib/components/FlagCollection';
 	import Modal from '$lib/components/Modal.svelte';
+	import { getEmptyTipTapDocument } from '$lib/components/Paper/Editor/contentValidation';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -182,7 +183,7 @@
 	};
 
 	// Review form state
-	let reviewComments = writable<any>({});
+	let reviewComments = writable<any>(getEmptyTipTapDocument());
 	let selectedStatus = $state<PaperStatus$options>(currentStatus);
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
@@ -286,7 +287,7 @@
 			}
 
 			// Clear form
-			reviewComments.set({});
+			reviewComments.set(getEmptyTipTapDocument());
 
 			// Reload data
 			cache.markStale();
