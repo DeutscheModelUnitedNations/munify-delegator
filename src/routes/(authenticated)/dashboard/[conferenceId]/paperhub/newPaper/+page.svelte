@@ -46,6 +46,12 @@
 		return m.timeAgoDays({ count: days });
 	}
 
+	// Reset stores on page mount to ensure a clean slate for new papers
+	onMount(() => {
+		$editorContentStore = undefined;
+		$resolutionContentStore = undefined;
+	});
+
 	let { data }: { data: PageData } = $props();
 
 	// Create persisted store for this conference's paper draft (only on browser)
