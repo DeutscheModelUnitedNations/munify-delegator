@@ -354,15 +354,7 @@
 			</div>
 		</div>
 		{#key editorKey}
-			{#if $formData.type === 'WORKING_PAPER'}
-				<PaperEditor.Resolution.ResolutionEditor
-					committeeName={committee?.name ?? 'Committee'}
-					editable
-					headerData={resolutionHeaderData}
-				/>
-			{:else}
-				<PaperEditor.PaperFormat editable />
-			{/if}
+			<PaperEditor.PaperFormat editable />
 		{/key}
 	</Form>
 </div>

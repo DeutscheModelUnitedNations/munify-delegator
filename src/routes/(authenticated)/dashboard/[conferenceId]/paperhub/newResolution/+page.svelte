@@ -12,7 +12,7 @@
 	import { resolutionContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import type { ResolutionHeaderData, Resolution } from '$lib/schemata/resolution';
+	import { type ResolutionHeaderData, type Resolution, isClauseEmpty } from '$lib/schemata/resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { browser } from '$app/environment';
@@ -33,6 +33,21 @@
 	let savedDraft: ResolutionDraft | null = $state(null);
 	// Key to force editor remount when restoring draft
 	let editorKey = $state(0);
+
+	// Helper to check if resolution has any meaningful content
+	function isResolutionEmpty(resolution: Resolution): boolean {
+		// Check if all preamble clauses are empty
+		const preambleEmpty =
+			resolution.preamble.length === 0 ||
+			resolution.preamble.every((clause) => !clause.content.trim());
+
+		// Check if all operative clauses are empty
+		const operativeEmpty =
+			resolution.operative.length === 0 ||
+			resolution.operative.every((clause) => isClauseEmpty(clause));
+
+		return preambleEmpty && operativeEmpty;
+	}
 
 	// Helper to format relative time
 	function formatRelativeTime(timestamp: number | undefined): string {
@@ -119,6 +134,11 @@
 		const rawContent = get(resolutionContentStore);
 
 		if (rawContent === undefined) {
+			return;
+		}
+
+		// Skip saving if resolution has no meaningful content
+		if (isResolutionEmpty(rawContent)) {
 			return;
 		}
 
@@ -305,11 +325,6 @@
 
 <div class="flex flex-col gap-2 w-full">
 	<h2 class="text-2xl font-bold">{m.paperTypeWorkingPaper()}</h2>
-
-	<div class="alert alert-warning">
-		<i class="fa-solid fa-exclamation-triangle"></i>
-		<span>{m.paperEditCautionAlert()}</span>
-	</div>
 
 	<Form {form} class="w-full flex flex-col xl:flex-row-reverse gap-4" showSubmitButton={false}>
 		<div class="flex flex-col gap-4 xl:w-1/3">

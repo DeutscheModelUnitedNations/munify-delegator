@@ -232,17 +232,15 @@
 			{@const isLastBlock = blockIndex === clause.blocks.length - 1}
 			{#if block.type === 'text'}
 				{@const formatted = formatClauseContent(block.content, operativePatterns)}
-				{@const nextBlock = clause.blocks[blockIndex + 1]}
-				{@const hasMoreContent = !isLastBlock || (nextBlock && nextBlock.type === 'subclauses')}
 				{#if block.content.trim()}
 					{#if blockIndex === 0}
 						<!-- First text block gets italicized phrase (inline) -->
 						<span class="italic">{formatted.firstPhrase}</span
-						>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+						>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else};{/if}
 					{:else}
 						<!-- Continuation text blocks (after subclauses) -->
 						<p class="mt-2 mb-1 text-justify indent-8">
-							{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+							{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else};{/if}
 						</p>
 					{/if}
 				{/if}
@@ -260,7 +258,8 @@
 		<ol class="list-none p-0 mt-2">
 			{#each subClauses as subClause, index}
 				{@const isLastSubClause = index === subClauses.length - 1}
-				<li class="mb-1 text-justify indent-8">
+				<!-- Depth 1: first-line indent only; Depth 2+: all lines indented equally (no first-line indent) -->
+				<li class="mb-1 text-justify {depth === 1 ? 'indent-8' : 'pl-8 indent-0'}">
 					<span>{getSubClauseLabel(index, depth)}</span>
 					{@render subClauseBlocks(subClause, depth, isLastInParent && isLastSubClause)}
 				</li>
@@ -276,11 +275,11 @@
 				{#if block.content.trim()}
 					{#if blockIndex === 0}
 						<!-- First text block content (inline) -->
-						{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
+						{block.content.trim()}{#if isLastBlock && isLastInParent}.{:else};{/if}
 					{:else}
-						<!-- Continuation text after nested subclauses -->
-						<p class="mt-2 mb-1 text-justify indent-8">
-							{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
+						<!-- Continuation text after nested subclauses (parent li already has base indent) -->
+						<p class="mt-2 mb-1 text-justify {depth === 1 ? 'indent-8' : 'indent-0'}">
+							{block.content.trim()}{#if isLastBlock && isLastInParent}.{:else};{/if}
 						</p>
 					{/if}
 				{/if}
