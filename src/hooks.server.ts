@@ -1,3 +1,7 @@
+// Initialize OpenTelemetry tracing FIRST - before any other imports that make HTTP connections
+// This ensures HttpInstrumentation can properly patch the http modules
+import '$api/resolvers/tracer';
+
 import * as Sentry from '@sentry/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';

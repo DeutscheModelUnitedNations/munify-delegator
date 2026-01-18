@@ -18,6 +18,7 @@ import {
 import { configPublic } from '$config/public';
 import { AttributeNames, SpanNames } from '@pothos/tracing-opentelemetry';
 import { print } from 'graphql';
+import { building } from '$app/environment';
 
 class PrettyConsoleSpanExporter implements SpanExporter {
 	export(spans: ReadableSpan[], resultCallback: (result: any) => void): void {
@@ -36,64 +37,72 @@ class PrettyConsoleSpanExporter implements SpanExporter {
 	}
 }
 
-// Create fallback console exporter
-const consoleExporter = new PrettyConsoleSpanExporter();
-const fallbackProcessor = new SimpleSpanProcessor(consoleExporter);
+// Only initialize OpenTelemetry at runtime, not during build
+if (!building) {
+	// Create fallback console exporter
+	const consoleExporter = new PrettyConsoleSpanExporter();
+	const fallbackProcessor = new SimpleSpanProcessor(consoleExporter);
 
-let activeProcessor: SpanProcessor | undefined;
+	let activeProcessor: SpanProcessor | undefined;
 
-try {
-	if (configPrivate.OTEL_ENDPOINT_URL) {
-		const otlpExporter = new OTLPTraceExporter({
-			url: configPrivate.OTEL_ENDPOINT_URL,
-			headers: configPrivate.OTEL_AUTHORIZATION_HEADER
-				? { authorization: configPrivate.OTEL_AUTHORIZATION_HEADER }
-				: {},
-			timeoutMillis: 5000, // 5 second timeout
-			concurrencyLimit: 10 // Limit concurrent exports
-		});
+	try {
+		if (configPrivate.OTEL_ENDPOINT_URL) {
+			const otlpExporter = new OTLPTraceExporter({
+				url: configPrivate.OTEL_ENDPOINT_URL,
+				headers: configPrivate.OTEL_AUTHORIZATION_HEADER
+					? { authorization: configPrivate.OTEL_AUTHORIZATION_HEADER }
+					: {},
+				timeoutMillis: 5000, // 5 second timeout
+				concurrencyLimit: 10 // Limit concurrent exports
+			});
 
-		// Configure processor based on environment
-		activeProcessor =
-			configPrivate.NODE_ENV === 'production'
-				? new BatchSpanProcessor(otlpExporter, {
-						maxQueueSize: 2000,
-						scheduledDelayMillis: 5000,
-						exportTimeoutMillis: 5000
-				  })
-				: new SimpleSpanProcessor(otlpExporter);
-	} else {
-		console.info('No OTEL exporter configured, using console logging fallback');
+			// Configure processor based on environment
+			activeProcessor =
+				configPrivate.NODE_ENV === 'production'
+					? new BatchSpanProcessor(otlpExporter, {
+							maxQueueSize: 2000,
+							scheduledDelayMillis: 5000,
+							exportTimeoutMillis: 5000
+						})
+					: new SimpleSpanProcessor(otlpExporter);
+
+			console.info(
+				`OpenTelemetry initialized with OTLP exporter: ${configPrivate.OTEL_ENDPOINT_URL}`
+			);
+		} else {
+			console.info('No OTEL exporter configured, using console logging fallback');
+			activeProcessor = fallbackProcessor;
+		}
+	} catch (error) {
+		console.warn('Failed to initialize OTLP exporter, using console logging fallback:', error);
 		activeProcessor = fallbackProcessor;
 	}
-} catch (error) {
-	console.warn('Failed to initialize OTLP exporter, using console logging fallback:', error);
-	activeProcessor = fallbackProcessor;
+
+	const provider = new NodeTracerProvider({
+		resource: new Resource({
+			[ATTR_SERVICE_NAME]: configPrivate.OTEL_SERVICE_NAME,
+			[ATTR_SERVICE_VERSION]:
+				configPrivate.OTEL_SERVICE_VERSION ?? configPublic.PUBLIC_VERSION ?? 'unknown'
+		})
+	});
+
+	// Always add fallback processor first
+	provider.addSpanProcessor(fallbackProcessor);
+
+	// Add OTLP processor if available and different from fallback
+	if (activeProcessor && activeProcessor !== fallbackProcessor) {
+		provider.addSpanProcessor(activeProcessor);
+	}
+
+	registerInstrumentations({
+		tracerProvider: provider,
+		instrumentations: [new HttpInstrumentation()]
+	});
+
+	provider.register({
+		propagator: new W3CTraceContextPropagator()
+	});
 }
-
-const provider = new NodeTracerProvider({
-	resource: new Resource({
-		[ATTR_SERVICE_NAME]: configPrivate.OTEL_SERVICE_NAME,
-		[ATTR_SERVICE_VERSION]: configPrivate.OTEL_SERVICE_VERSION ?? configPublic.PUBLIC_VERSION ?? 'unknown'
-	})
-});
-
-// Always add fallback processor first
-provider.addSpanProcessor(fallbackProcessor);
-
-// Add OTLP processor if available and different from fallback
-if (activeProcessor && activeProcessor !== fallbackProcessor) {
-	provider.addSpanProcessor(activeProcessor);
-}
-
-registerInstrumentations({
-	tracerProvider: provider,
-	instrumentations: [new HttpInstrumentation()]
-});
-
-provider.register({
-	propagator: new W3CTraceContextPropagator()
-});
 
 export const tracer = trace.getTracer('graphql');
 
