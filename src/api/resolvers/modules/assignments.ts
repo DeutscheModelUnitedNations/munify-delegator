@@ -5,7 +5,7 @@ import {
 	ProjectDataSchema,
 	type Committee,
 	type Nation
-} from '../../../routes/(authenticated)/assignment-assistant/[projectId]/appData.svelte';
+} from '../../../routes/(authenticated)/assignment-assistant/[projectId]/schemas';
 import { builder } from '../builder';
 import { m } from '$lib/paraglide/messages';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';

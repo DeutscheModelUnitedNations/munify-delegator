@@ -4,7 +4,7 @@ import { graphql } from '$houdini';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
 
 const getMessageRecipientsQuery = graphql(`
-	query GetMessageRecipientsQuery($conferenceId: String!) {
+	query GetReplyMessageRecipientsQuery($conferenceId: String!) {
 		getMessageRecipients(conferenceId: $conferenceId) {
 			id
 			label
@@ -13,7 +13,7 @@ const getMessageRecipientsQuery = graphql(`
 `);
 
 const sendDelegationMessageMutation = graphql(`
-	mutation SendDelegationMessageMutation(
+	mutation SendReplyMessageMutation(
 		$conferenceId: String!
 		$recipientId: String!
 		$subject: String!
@@ -42,27 +42,38 @@ export const load: PageServerLoad = async (event) => {
 		throw error(400, 'Missing conference id');
 	}
 
+	const recipientId = event.url.searchParams.get('recipientId');
+	const subject = event.url.searchParams.get('subject') || '';
+
+	if (!recipientId) {
+		throw error(400, 'Missing recipient');
+	}
+
 	try {
-		console.log('[Messaging] Fetching recipients for conference:', conferenceId);
 		const result = await getMessageRecipientsQuery.fetch({
 			event,
 			variables: { conferenceId },
 			blocking: true
 		});
 
-		console.log('[Messaging] Query result:', result);
 		const recipients = result.data?.getMessageRecipients ?? [];
-		console.log('[Messaging] Recipients found:', recipients.length);
+		const recipient = recipients.find((r) => r.id === recipientId);
+
+		if (!recipient) {
+			throw error(404, 'Recipient not found or not eligible');
+		}
 
 		return {
-			recipients
+			recipient,
+			prefilledSubject: subject
 		};
 	} catch (loadError) {
 		console.error('Messaging recipients load error:', loadError);
-		return {
-			recipients: [],
-			recipientLoadError: 'Unable to load recipients'
-		};
+		// If we can't load recipients, we can't verify the recipient.
+		if (loadError instanceof Error && (loadError.message.includes('404') || loadError.message.includes('Missing recipient'))) {
+			throw loadError;
+		}
+		throw error(500, 'Unable to load recipient details');
 	}
 };
 
@@ -104,7 +115,7 @@ export const actions = {
 			return fail(400, { error: 'Cannot send to yourself' });
 		}
 
-		const replySubject = `Re: ${subject}`;
+		const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 		const replyUrl = `${event.url.origin}/dashboard/${conferenceId}/messaging/reply?recipientId=${encodeURIComponent(authUser.sub)}&subject=${encodeURIComponent(replySubject)}`;
 
 		try {
