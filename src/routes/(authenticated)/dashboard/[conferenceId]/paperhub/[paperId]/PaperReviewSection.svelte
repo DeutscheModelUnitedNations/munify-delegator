@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
-	import { writable } from 'svelte/store';
+	import { writable, get } from 'svelte/store';
 	import toast from 'svelte-french-toast';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -19,6 +19,9 @@
 	import { PieceFoundModal } from '$lib/components/FlagCollection';
 	import Modal from '$lib/components/Modal.svelte';
 	import { getEmptyTipTapDocument } from '$lib/components/Paper/Editor/contentValidation';
+	import { browser } from '$app/environment';
+	import { persisted } from 'svelte-persisted-store';
+	import { onMount } from 'svelte';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -94,6 +97,52 @@
 		paperContainer = null,
 		snippets = []
 	}: Props = $props();
+
+	// Types for draft persistence
+	interface ReviewDraft {
+		comments: any;
+		selectedStatus: PaperStatus$options;
+		savedAt: number;
+	}
+
+	const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+	// State for recovery modal
+	let showRecoveryModal = $state(false);
+	let savedDraft: ReviewDraft | null = $state(null);
+
+	// Helper to format relative time
+	function formatRelativeTime(timestamp: number | undefined): string {
+		if (!timestamp) return '';
+		const seconds = Math.floor((Date.now() - timestamp) / 1000);
+		if (seconds < 60) return m.timeAgoSeconds({ count: seconds });
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) return m.timeAgoMinutes({ count: minutes });
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return m.timeAgoHours({ count: hours });
+		const days = Math.floor(hours / 24);
+		return m.timeAgoDays({ count: days });
+	}
+
+	// Create persisted store for this paper's review draft (only on browser)
+	const draftStore = browser
+		? persisted<ReviewDraft | null>(`reviewDraft_${paperId}`, null)
+		: null;
+
+	// Check for existing draft SYNCHRONOUSLY before render
+	if (browser && draftStore) {
+		const storedDraft = get(draftStore);
+		if (storedDraft) {
+			// Check if draft is expired (older than 7 days)
+			if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
+				draftStore.set(null);
+			} else {
+				// Valid draft found - set state for modal
+				savedDraft = storedDraft;
+				showRecoveryModal = true;
+			}
+		}
+	}
 
 	// Create unified timeline from versions and reviews
 	type TimelineEvent =
@@ -187,6 +236,90 @@
 	let selectedStatus = $state<PaperStatus$options>(currentStatus);
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
+	// Key to force editor remount when restoring draft
+	let editorKey = $state(0);
+
+	// Recovery functions
+	function restoreDraft() {
+		if (savedDraft) {
+			reviewComments.set(savedDraft.comments);
+			selectedStatus = savedDraft.selectedStatus;
+			// Increment key to force editor remount with new content
+			editorKey++;
+		}
+		showRecoveryModal = false;
+	}
+
+	function startFresh() {
+		if (draftStore) {
+			draftStore.set(null);
+		}
+		showRecoveryModal = false;
+	}
+
+	// Auto-save: Use interval-based polling for TipTap content
+	let saveInterval: ReturnType<typeof setInterval>;
+	let lastSavedContent: string | null = null;
+
+	// Function to save current content to localStorage
+	function saveCurrentDraft() {
+		if (!browser || !draftStore || showRecoveryModal) return;
+
+		const rawContent = get(reviewComments);
+
+		// Skip if content is empty
+		if (!hasContent(rawContent)) {
+			return;
+		}
+
+		// Stringify to create a plain JSON snapshot
+		let contentString: string;
+		try {
+			contentString = JSON.stringify(rawContent);
+		} catch (e) {
+			return;
+		}
+
+		// Skip if content hasn't changed
+		if (contentString === lastSavedContent) {
+			return;
+		}
+		lastSavedContent = contentString;
+
+		draftStore.set({
+			comments: JSON.parse(contentString),
+			selectedStatus,
+			savedAt: Date.now()
+		});
+	}
+
+	// Set up auto-save interval when component mounts
+	onMount(() => {
+		if (!browser || !draftStore) return;
+
+		// Poll every second for changes
+		saveInterval = setInterval(() => {
+			if (!showRecoveryModal) {
+				saveCurrentDraft();
+			}
+		}, 1000);
+
+		return () => {
+			if (saveInterval) clearInterval(saveInterval);
+		};
+	});
+
+	// Safety net: save on page unload
+	$effect(() => {
+		if (!browser || !draftStore) return;
+
+		const handleBeforeUnload = () => {
+			saveCurrentDraft();
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+	});
 
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
@@ -286,8 +419,11 @@
 				showPieceFoundModal = true;
 			}
 
-			// Clear form
+			// Clear form and localStorage draft
 			reviewComments.set(getEmptyTipTapDocument());
+			if (draftStore) {
+				draftStore.set(null);
+			}
 
 			// Reload data
 			cache.markStale();
@@ -298,6 +434,18 @@
 	};
 </script>
 
+<!-- Draft Recovery Modal -->
+<Modal bind:open={showRecoveryModal} title={m.paperDraftRecoveryTitle()}>
+	<p class="mb-2">{m.paperDraftRecoveryMessage()}</p>
+	<p class="text-sm text-base-content/70">
+		{m.paperDraftSavedAgo({ time: formatRelativeTime(savedDraft?.savedAt) })}
+	</p>
+	{#snippet action()}
+		<button class="btn" onclick={startFresh}>{m.paperStartFresh()}</button>
+		<button class="btn btn-primary" onclick={restoreDraft}>{m.paperRestoreDraft()}</button>
+	{/snippet}
+</Modal>
+
 <div class="card bg-base-200 p-4 flex flex-col gap-4">
 	<h3 class="text-lg font-bold">{m.addReview()}</h3>
 
@@ -307,24 +455,46 @@
 			<span>{m.noStatusTransitionsAvailable()}</span>
 		</div>
 	{:else}
+		<!-- Comments Editor -->
+		{#key editorKey}
+			<PaperEditor.ReviewFormat
+				contentStore={reviewComments}
+				{quoteToInsert}
+				{onQuoteInserted}
+				{paperContainer}
+				{snippets}
+			/>
+		{/key}
+
 		<!-- Status Selector -->
 		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 			<legend class="fieldset-legend">{m.newStatus()}</legend>
-			<select class="select select-bordered w-full" bind:value={selectedStatus}>
+			<div class="flex w-full gap-2">
 				{#each availableTransitions as transition}
-					<option value={transition.value}>{transition.label}</option>
+					{@const isSelected = selectedStatus === transition.value}
+					{@const isChangesRequested = transition.value === 'CHANGES_REQUESTED'}
+					<label class="flex-1 cursor-pointer">
+						<input
+							type="radio"
+							name="status_tabs"
+							class="hidden"
+							checked={isSelected}
+							onchange={() => (selectedStatus = transition.value as PaperStatus$options)}
+						/>
+						<div
+							class="btn w-full {isSelected
+								? isChangesRequested
+									? 'btn-warning'
+									: 'btn-success'
+								: 'btn-ghost'}"
+						>
+							<i class="fa-solid {getPaperStatusIcon(transition.value as PaperStatus$options)}"></i>
+							{transition.label}
+						</div>
+					</label>
 				{/each}
-			</select>
+			</div>
 		</fieldset>
-
-		<!-- Comments Editor -->
-		<PaperEditor.ReviewFormat
-			contentStore={reviewComments}
-			{quoteToInsert}
-			{onQuoteInserted}
-			{paperContainer}
-			{snippets}
-		/>
 
 		<!-- Submit Button -->
 		<button class="btn btn-primary" onclick={openConfirmModal} disabled={isSubmitting}>

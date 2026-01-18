@@ -312,11 +312,6 @@
 <div class="flex flex-col gap-2 w-full">
 	<h2 class="text-2xl font-bold">{m.newPaper()}</h2>
 
-	<div class="alert alert-warning">
-		<i class="fa-solid fa-exclamation-triangle"></i>
-		<span>{m.paperEditCautionAlert()}</span>
-	</div>
-
 	<Form {form} class="w-full flex flex-col xl:flex-row-reverse gap-4" showSubmitButton={false}>
 		<div class="flex flex-col gap-4 xl:w-1/3">
 			<FormFieldset title={m.paperDetails()}>

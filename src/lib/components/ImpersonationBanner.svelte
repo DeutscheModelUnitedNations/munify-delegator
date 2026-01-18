@@ -41,7 +41,7 @@
 		toast
 			.promise(stopImpersonationMutation.mutate(null), genericPromiseToastMessages)
 			.then(() => {
-				goto('/management').then(() => window.location.reload());
+				goto('/dashboard').then(() => window.location.reload());
 			})
 			.catch((error) => {
 				console.error('Failed to stop impersonation:', error);
