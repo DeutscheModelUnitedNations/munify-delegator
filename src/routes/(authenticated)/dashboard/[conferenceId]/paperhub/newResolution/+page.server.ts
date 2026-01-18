@@ -1,14 +1,14 @@
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$houdini';
-import { newPaperSchema } from './form-schema';
+import { newResolutionSchema } from './form-schema';
 import { graphql } from '$houdini';
 
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 import { error } from '@sveltejs/kit';
 
 const query = graphql(`
-	query getPaperParticipantDelegationMemberQuery($conferenceId: String!, $userId: String!) {
+	query getResolutionParticipantDelegationMemberQuery($conferenceId: String!, $userId: String!) {
 		findUniqueDelegationMember(
 			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
 		) {
@@ -27,6 +27,7 @@ const query = graphql(`
 				}
 			}
 			delegation {
+				id
 				assignedNation {
 					alpha2Code
 					alpha3Code
@@ -39,14 +40,6 @@ const query = graphql(`
 				}
 			}
 		}
-
-		findManyAgendaItems(where: { committee: { conferenceId: { equals: $conferenceId } } }) {
-			id
-			title
-			committee {
-				abbreviation
-			}
-		}
 	}
 `);
 
@@ -54,7 +47,7 @@ export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
 	const conferenceId = event.params.conferenceId;
 
-	const getPaperDelegationMemberQuery = await query.fetch({
+	const getResolutionDelegationMemberQuery = await query.fetch({
 		event,
 		variables: {
 			conferenceId,
@@ -63,19 +56,13 @@ export const load: PageServerLoad = async (event) => {
 	});
 
 	const committee =
-		getPaperDelegationMemberQuery?.data?.findUniqueDelegationMember?.assignedCommittee;
-	const delegation = getPaperDelegationMemberQuery?.data?.findUniqueDelegationMember?.delegation;
+		getResolutionDelegationMemberQuery?.data?.findUniqueDelegationMember?.assignedCommittee;
+	const delegation =
+		getResolutionDelegationMemberQuery?.data?.findUniqueDelegationMember?.delegation;
 
 	if (!delegation) {
 		error(400, 'Delegation member does not exist');
 	}
-
-	const typeParam = event.url.searchParams.get('type');
-	const validTypes = ['POSITION_PAPER', 'INTRODUCTION_PAPER'] as const;
-	const type =
-		typeParam && validTypes.includes(typeParam as (typeof validTypes)[number])
-			? (typeParam as (typeof validTypes)[number])
-			: 'POSITION_PAPER';
 
 	const form = await superValidate(
 		{
@@ -84,11 +71,10 @@ export const load: PageServerLoad = async (event) => {
 				: delegation.assignedNonStateActor
 					? delegation.assignedNonStateActor.name
 					: '',
-			committee: committee?.name,
-			type
+			committee: committee?.name
 		},
-		zod4(newPaperSchema)
+		zod4(newResolutionSchema)
 	);
 
-	return { form, getPaperDelegationMemberQuery, conferenceId, userId: user.id };
+	return { form, getResolutionDelegationMemberQuery, conferenceId, userId: user.id };
 };

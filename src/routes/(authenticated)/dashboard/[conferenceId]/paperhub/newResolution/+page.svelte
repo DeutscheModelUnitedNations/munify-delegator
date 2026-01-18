@@ -5,23 +5,24 @@
 	import type { PageData } from './$houdini';
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { cache, graphql, type PaperType$options } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import toast from 'svelte-french-toast';
-	import { editorContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import { resolutionContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import type { ResolutionHeaderData, Resolution } from '$lib/schemata/resolution';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { browser } from '$app/environment';
 	import { persisted } from 'svelte-persisted-store';
 	import { get } from 'svelte/store';
 
-	// Types for draft persistence (Position/Introduction Papers only)
-	interface PaperDraft {
-		type: 'POSITION_PAPER' | 'INTRODUCTION_PAPER';
+	// Types for draft persistence
+	interface ResolutionDraft {
 		agendaItemId?: string;
-		content: unknown;
+		content: Resolution;
 		savedAt: number;
 	}
 
@@ -29,7 +30,7 @@
 
 	// State for recovery modal
 	let showRecoveryModal = $state(false);
-	let savedDraft: PaperDraft | null = $state(null);
+	let savedDraft: ResolutionDraft | null = $state(null);
 	// Key to force editor remount when restoring draft
 	let editorKey = $state(0);
 
@@ -48,20 +49,20 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Create persisted store for this conference's paper draft (only on browser)
+	// Create persisted store for this conference's resolution draft (only on browser)
 	const draftStore = browser
-		? persisted<PaperDraft | null>(`paperDraft_${data.conferenceId}`, null)
+		? persisted<ResolutionDraft | null>(`resolutionDraft_${data.conferenceId}`, null)
 		: null;
 
 	// Check for existing draft SYNCHRONOUSLY before render
-	// This must happen BEFORE child components mount
+	// This must happen BEFORE child components (like ResolutionEditor) mount
 	if (browser && draftStore) {
 		const storedDraft = get(draftStore);
 		if (storedDraft) {
 			// Check if draft is expired (older than 7 days)
 			if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
 				draftStore.set(null);
-				$editorContentStore = undefined;
+				$resolutionContentStore = undefined;
 			} else {
 				// Valid draft found - set state for modal
 				savedDraft = storedDraft;
@@ -69,23 +70,22 @@
 			}
 		} else {
 			// No draft - clear store before editor mounts
-			$editorContentStore = undefined;
+			$resolutionContentStore = undefined;
 		}
 	} else {
 		// SSR or no draftStore - clear store
-		$editorContentStore = undefined;
+		$resolutionContentStore = undefined;
 	}
 
 	// Recovery functions
 	function restoreDraft() {
 		if (savedDraft) {
 			// Set form data
-			$formData.type = savedDraft.type;
 			if (savedDraft.agendaItemId) {
 				$formData.agendaItemId = savedDraft.agendaItemId;
 			}
-			// Set content to the editor store
-			$editorContentStore = savedDraft.content as any;
+			// Set content to the resolution store
+			$resolutionContentStore = savedDraft.content;
 			// Increment key to force editor remount with new content
 			editorKey++;
 		}
@@ -96,13 +96,15 @@
 		if (draftStore) {
 			draftStore.set(null);
 		}
-		$editorContentStore = undefined;
+		$resolutionContentStore = undefined;
 		// Increment key to force editor remount with cleared content
 		editorKey++;
 		showRecoveryModal = false;
 	}
 
-	// Auto-save: Use interval-based polling for TipTap content
+	// Auto-save: Use interval-based polling for resolution editor.
+	// The ResolutionEditor stores a $state proxy in $resolutionContentStore,
+	// and proxy mutations don't trigger store subscriptions.
 	let saveInterval: ReturnType<typeof setInterval>;
 	let lastSavedContent: string | null = null;
 
@@ -110,12 +112,11 @@
 	function saveCurrentDraft() {
 		if (!browser || !draftStore || showRecoveryModal) return;
 
-		// Read form data for current paper type
+		// Read form data for current agenda item
 		const currentFormData = get(form.form);
-		const paperType = currentFormData.type as 'POSITION_PAPER' | 'INTRODUCTION_PAPER';
 
 		// Use get() to explicitly read current store value
-		const rawContent = get(editorContentStore);
+		const rawContent = get(resolutionContentStore);
 
 		if (rawContent === undefined) {
 			return;
@@ -136,7 +137,6 @@
 		lastSavedContent = contentString;
 
 		draftStore.set({
-			type: paperType,
 			agendaItemId: currentFormData.agendaItemId,
 			content: JSON.parse(contentString),
 			savedAt: Date.now()
@@ -172,20 +172,17 @@
 	});
 
 	let delegationMember = $derived(
-		data.getPaperDelegationMemberQuery?.data.findUniqueDelegationMember
+		data.getResolutionDelegationMemberQuery?.data.findUniqueDelegationMember
 	);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
-	let conferenceAgendaItems = $derived(
-		data.getPaperDelegationMemberQuery?.data.findManyAgendaItems
-	);
+	let conference = $derived(data.conferenceQueryData?.findUniqueConference);
 
 	const createPaperMutation = graphql(`
-		mutation CreatePaperMutation(
+		mutation CreateResolutionPaperMutation(
 			$conferenceId: String!
 			$userId: String!
 			$delegationId: String!
-			$type: PaperType!
 			$content: Json!
 			$agendaItemId: String
 			$status: PaperStatus
@@ -195,7 +192,7 @@
 					conferenceId: $conferenceId
 					authorId: $userId
 					delegationId: $delegationId
-					type: $type
+					type: WORKING_PAPER
 					content: $content
 					status: $status
 					agendaItemId: $agendaItemId
@@ -214,50 +211,48 @@
 	});
 	let { form: formData } = $derived(form);
 
-	const typeOptions: { value: PaperType$options; label: string }[] = $derived.by(() => {
-		if (delegation?.assignedNonStateActor) {
-			return [
-				{ value: 'INTRODUCTION_PAPER', label: m.paperTypeIntroductionPaper() },
-				{ value: 'POSITION_PAPER', label: m.paperTypePositionPaper() }
-			];
-		} else {
-			return [{ value: 'POSITION_PAPER', label: m.paperTypePositionPaper() }];
-		}
+	const agendaItems: { value: string; label: string }[] = $derived.by(() => {
+		return (
+			committee?.agendaItems.map((item) => ({
+				value: item.id,
+				label: item.title
+			})) ?? []
+		);
 	});
 
-	const agendaItems: { value: string; label: string }[] = $derived.by(() => {
-		if (delegation?.assignedNonStateActor) {
-			return conferenceAgendaItems
-				.map((item: NonNullable<typeof conferenceAgendaItems>[number]) => ({
-					value: item.id,
-					label: `${item.committee.abbreviation}: ${item.title}`
-				}))
-				.sort((a, b) => a.label.localeCompare(b.label));
-		}
-		if ($formData.type === 'INTRODUCTION_PAPER') {
-			return [
-				{
-					value: 'INTRODUCTION_PAPER',
-					label: m.paperAcrossCommittees()
-				}
-			];
-		}
-		return committee?.agendaItems.map((item) => ({
-			value: item.id,
-			label: item.title
-		}));
+	// Resolution header data for working papers
+	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
+		const nationName = delegation?.assignedNation
+			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+			: undefined;
+		const nsaName = delegation?.assignedNonStateActor?.name;
+
+		// Get the selected agenda item title
+		const selectedAgendaItem = $formData.agendaItemId
+			? committee?.agendaItems.find((item) => item.id === $formData.agendaItemId)
+			: undefined;
+
+		return {
+			conferenceName: conference?.title ?? 'Model UN',
+			committeeAbbreviation: committee?.abbreviation,
+			committeeFullName: committee?.name,
+			committeeResolutionHeadline: committee?.resolutionHeadline ?? undefined,
+			documentNumber: `WP/DRAFT`,
+			topic: selectedAgendaItem?.title,
+			authoringDelegation: nationName ?? nsaName
+		};
 	});
 
 	const saveFile = async (options: { submit?: boolean } = {}) => {
 		const { submit = false } = options;
 
-		if (!$formData.agendaItemId && $formData.type !== 'INTRODUCTION_PAPER') {
+		if (!$formData.agendaItemId) {
 			toast.error(m.paperAgendaItemRequired());
 			return;
 		}
 
-		// Use TipTap editor content store
-		const content = $editorContentStore;
+		// Use resolution content store
+		const content = $resolutionContentStore;
 
 		// Guard against undefined content
 		if (content === undefined) {
@@ -270,9 +265,8 @@
 				conferenceId: data.conferenceId,
 				userId: data.user.sub,
 				delegationId: delegation?.id,
-				type: $formData.type,
 				content,
-				agendaItemId: $formData.type === 'INTRODUCTION_PAPER' ? undefined : $formData.agendaItemId,
+				agendaItemId: $formData.agendaItemId,
 				status: submit ? 'SUBMITTED' : 'DRAFT'
 			}),
 			{
@@ -287,7 +281,7 @@
 
 		if (response?.data.createOnePaper?.id) {
 			// Clear store so next paper creation starts fresh
-			$editorContentStore = undefined;
+			$resolutionContentStore = undefined;
 			// Clear localStorage draft on successful submission
 			if (draftStore) {
 				draftStore.set(null);
@@ -310,7 +304,7 @@
 </Modal>
 
 <div class="flex flex-col gap-2 w-full">
-	<h2 class="text-2xl font-bold">{m.newPaper()}</h2>
+	<h2 class="text-2xl font-bold">{m.paperTypeWorkingPaper()}</h2>
 
 	<div class="alert alert-warning">
 		<i class="fa-solid fa-exclamation-triangle"></i>
@@ -321,25 +315,11 @@
 		<div class="flex flex-col gap-4 xl:w-1/3">
 			<FormFieldset title={m.paperDetails()}>
 				<FormTextInput {form} name="delegation" disabled label={m.delegation()} />
-				<FormSelect
-					name="type"
-					label={m.paperType()}
-					{form}
-					options={typeOptions}
-					placeholder={m.paperType()}
-				/>
 
 				{#if $formData.committee}
 					<FormTextInput {form} name="committee" disabled label={m.committee()} />
 				{/if}
-				{#if $formData.type !== 'INTRODUCTION_PAPER'}
-					<FormSelect
-						name="agendaItemId"
-						label={m.paperAgendaItem()}
-						{form}
-						options={agendaItems}
-					/>
-				{/if}
+				<FormSelect name="agendaItemId" label={m.paperAgendaItem()} {form} options={agendaItems} />
 			</FormFieldset>
 
 			<div class="join join-vertical w-full">
@@ -354,15 +334,11 @@
 			</div>
 		</div>
 		{#key editorKey}
-			{#if $formData.type === 'WORKING_PAPER'}
-				<PaperEditor.Resolution.ResolutionEditor
-					committeeName={committee?.name ?? 'Committee'}
-					editable
-					headerData={resolutionHeaderData}
-				/>
-			{:else}
-				<PaperEditor.PaperFormat editable />
-			{/if}
+			<PaperEditor.Resolution.ResolutionEditor
+				committeeName={committee?.name ?? 'Committee'}
+				editable
+				headerData={resolutionHeaderData}
+			/>
 		{/key}
 	</Form>
 </div>

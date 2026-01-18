@@ -190,7 +190,7 @@
 					{@render PaperTypeBlock(
 						'WORKING_PAPER',
 						m.paperTypeWorkingPaperDescription(),
-						'./paperhub/newPaper?type=WORKING_PAPER'
+						'./paperhub/newResolution'
 					)}
 				{/if}
 			</div>

@@ -60,7 +60,7 @@
 		if (result.valid && result.matchedPhrase) {
 			return {
 				firstPhrase: result.matchedPhrase,
-				rest: trimmed.slice(result.italicEnd ?? result.matchedPhrase.length)
+				rest: trimmed.slice(result.matchedPhrase.length)
 			};
 		}
 
