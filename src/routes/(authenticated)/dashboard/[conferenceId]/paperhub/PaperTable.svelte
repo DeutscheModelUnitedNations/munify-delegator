@@ -85,8 +85,19 @@
 		}
 	};
 
-	const handleRowClick = (paperId: string) => {
-		goto(`./paperhub/${paperId}`);
+	const handleRowClick = (e: MouseEvent, paperId: string) => {
+		if (e.ctrlKey) {
+			open(`./paperhub/${paperId}`, '_blank');
+		} else {
+			goto(`./paperhub/${paperId}`);
+		}
+	};
+
+ 	const handleRowAuxclick = (e: MouseEvent, paperId: string) => {
+		if (e.button === 1) {
+			e.preventDefault();
+			open(`./paperhub/${paperId}`, '_blank', 'noopener,noreferrer');
+		}
 	};
 
 	const handleRowKeypress = (e: KeyboardEvent, paperId: string) => {
@@ -165,7 +176,8 @@
 			{#each papers as paper}
 				<tr
 					class="hover:bg-base-200/50 cursor-pointer"
-					onclick={() => handleRowClick(paper.id)}
+					onclick={(e) => handleRowClick(e, paper.id)}
+					onmousedown={(e) => handleRowAuxclick(e, paper.id)}
 					role="link"
 					tabindex="0"
 					onkeypress={(e) => handleRowKeypress(e, paper.id)}
