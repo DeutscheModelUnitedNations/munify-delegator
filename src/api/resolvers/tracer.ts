@@ -86,11 +86,8 @@ if (!building) {
 		})
 	});
 
-	// Always add fallback processor first
-	provider.addSpanProcessor(fallbackProcessor);
-
-	// Add OTLP processor if available and different from fallback
-	if (activeProcessor && activeProcessor !== fallbackProcessor) {
+	// Add the active processor (either OTLP or console fallback, not both)
+	if (activeProcessor) {
 		provider.addSpanProcessor(activeProcessor);
 	}
 
