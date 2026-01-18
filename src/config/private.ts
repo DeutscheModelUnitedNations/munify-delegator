@@ -34,7 +34,7 @@ const schema = z.object({
 	SMTP_FROM_NAME: z.string().default('MUNIFY Delegator'),
 	// Sentry/Bugsink error tracking
 	SENTRY_DSN: z.string().url().optional(),
-	SENTRY_SEND_DEFAULT_PII: z.string().optional()
+	SENTRY_SEND_DEFAULT_PII: z.stringbool().optional()
 });
 
 export const configPrivate = building ? ({} as z.infer<typeof schema>) : schema.parse(env);
