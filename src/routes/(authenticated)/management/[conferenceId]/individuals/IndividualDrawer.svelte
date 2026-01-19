@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/services/formatNames';
+	import { toast } from 'svelte-sonner';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		conferenceId: string;
@@ -23,7 +26,7 @@
 		};
 
 	const singleParticipantQuery = graphql(`
-		query SingleParticipantDrawerQuery($singleParticipantId: String!) @load {
+		query SingleParticipantDrawerQuery($singleParticipantId: String!) {
 			findUniqueSingleParticipant(where: { id: $singleParticipantId }) {
 				id
 				applied
@@ -44,9 +47,26 @@
 					name
 					fontAwesomeIcon
 				}
+				supervisors {
+					id
+					plansOwnAttendenceAtConference
+					user {
+						id
+						given_name
+						family_name
+					}
+				}
 			}
 		}
 	`);
+
+	$effect(() => {
+		singleParticipantQuery.fetch({ variables: { singleParticipantId } });
+	});
+
+	let supervisors = $derived(
+		$singleParticipantQuery.data?.findUniqueSingleParticipant?.supervisors ?? []
+	);
 </script>
 
 <Drawer
@@ -116,11 +136,11 @@
 					<td class="text-center"><i class="fa-duotone fa-check-to-slot text-lg"></i></td>
 					<td>
 						<div class="flex items-center gap-2">
-							<div class="h-full rounded-md bg-base-300 px-3 py-[2px]">
+							<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
 								{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles.length}
 							</div>
 							<div class="flex flex-col">
-								{#each $singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles ?? [] as role}
+								{#each $singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles ?? [] as role (role.id)}
 									<div>
 										<i class="fa-duotone fa-{(role?.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
 										{role.name}
@@ -135,28 +155,83 @@
 	</div>
 
 	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
+
+		{#if supervisors.length === 0}
+			<div class="alert alert-info">
+				<i class="fa-solid fa-user-slash"></i>
+				{m.noSupervisors()}
+			</div>
+		{:else}
+			<table class="table">
+				<thead>
+					<tr>
+						<th></th>
+						<th class="w-full"></th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each supervisors as supervisor, i (i)}
+						<tr>
+							<td>
+								{#if supervisor.plansOwnAttendenceAtConference}
+									<i class="fa-duotone fa-location-check text-lg"></i>
+								{:else}
+									<i class="fa-duotone fa-cloud text-lg"></i>
+								{/if}
+							</td>
+							<td>
+								<span class="capitalize">{supervisor.user.given_name}</span>
+								<span class="uppercase">{supervisor.user.family_name}</span>
+							</td>
+							<td>
+								<a
+									class="btn btn-sm"
+									href="/management/{conferenceId}/supervisors?selected={supervisor.id}"
+									aria-label="Details"
+								>
+									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+								</a>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
+	</div>
+
+	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<a
 			class="btn"
-			href={`/management/${conferenceId}/participants?filter=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id}`}
+			href={`/management/${conferenceId}/participants?selected=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id}`}
 		>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 		</a>
-		{#if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
-			<button
-				class="btn"
-				onclick={async () => {
-					if (!confirm('Willst du wirklich den Bewerbungsstatus zurücksetzen?')) return;
-					await singleParticipantResetMutation.mutate({
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
+		<button
+			class="btn {!$singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied &&
+				'btn-disabled'} btn-error"
+			onclick={async () => {
+				if (!confirm(m.confirmRevokeApplication())) return;
+				await toast.promise(
+					singleParticipantResetMutation.mutate({
 						singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
 						applied: false
-					});
-				}}
-			>
-				{m.revokeApplication()}
-				<i class="fa-duotone fa-file-slash"></i>
-			</button>
-		{/if}
+					}),
+					genericPromiseToastMessages
+				);
+				cache.markStale();
+				await invalidateAll();
+			}}
+		>
+			{m.revokeApplication()}
+			<i class="fa-solid fa-file-slash"></i>
+		</button>
 	</div>
 </Drawer>

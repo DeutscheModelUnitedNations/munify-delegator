@@ -4,6 +4,7 @@
 	import type { DelegationPreviewComponentQueryVariables } from './$houdini';
 	import Spinner from './Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { goto } from '$app/navigation';
 
 	interface Props {
 		conferenceId: string;
@@ -18,7 +19,7 @@
 		};
 
 	const delegationQuery = graphql(`
-		query DelegationPreviewComponentQuery($conferenceId: String!, $entryCode: String!) @load {
+		query DelegationPreviewComponentQuery($conferenceId: String!, $entryCode: String!) {
 			previewDelegation(conferenceId: $conferenceId, entryCode: $entryCode) {
 				memberCount
 				applied
@@ -29,40 +30,72 @@
 		}
 	`);
 
-	let delegation = $derived($delegationQuery.data!.previewDelegation!);
+	$effect(() => {
+		if (entryCode) {
+			delegationQuery.fetch({ variables: { conferenceId, entryCode } });
+		}
+	});
+
+	let delegation = $derived($delegationQuery?.data?.previewDelegation);
+
+	const memberMutation = graphql(`
+		mutation CreateDelegationMemberMutation($entryCode: String!, $conferenceId: ID!) {
+			createOneDelegationMember(entryCode: $entryCode, conferenceId: $conferenceId) {
+				id
+			}
+		}
+	`);
 </script>
 
-{#if $delegationQuery.fetching}
+{#if !$delegationQuery || $delegationQuery?.fetching}
 	<Spinner />
-{:else}
+{:else if $delegationQuery?.errors}
+	<div
+		class="alert alert-warning"
+		in:fly={{ x: 50, duration: 300, delay: 300 }}
+		out:fly={{ x: 50, duration: 300 }}
+	>
+		<i class="fas fa-triangle-exclamation"></i>
+		<div>
+			{m.noDelegationsFound()}
+		</div>
+	</div>
+{:else if $delegationQuery?.data}
 	<div
 		class="mb-10 flex flex-col items-center"
 		in:fly={{ x: 50, duration: 300, delay: 300 }}
 		out:fly={{ x: 50, duration: 300 }}
 	>
-		<div class="rounded-lg bg-base-100 p-4 shadow-lg dark:bg-base-200 dark:stroke-slate-300">
+		<div class="bg-base-100 dark:bg-base-200 rounded-lg p-4 shadow-lg dark:stroke-slate-300">
 			<div class="overflow-x-auto">
 				<table class="table">
 					<tbody>
 						<tr>
 							<td>{m.conference()}</td>
-							<td>{delegation.conferenceTitle}</td>
+							<td>{delegation?.conferenceTitle}</td>
 						</tr>
 						<tr>
 							<td>{m.schoolOrInstitution()}</td>
-							<td>{delegation.school}</td>
+							<td>{delegation?.school}</td>
 						</tr>
 						<tr>
 							<td>{m.headDelegate()}</td>
-							<td>{delegation.headDelegateFullName}</td>
+							<td>{delegation?.headDelegateFullName}</td>
 						</tr>
 						<tr>
 							<td>{m.amountOfDelegates()}</td>
-							<td>{delegation.memberCount}</td>
+							<td>{delegation?.memberCount}</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 		</div>
+		<button
+			class="btn btn-primary mt-10"
+			onclick={async () => {
+				await memberMutation.mutate({ entryCode, conferenceId });
+				goto(`/dashboard/${conferenceId}`);
+			}}>{m.confirm()}</button
+		>
 	</div>
 {/if}

@@ -5,8 +5,10 @@
 	import { m } from '$lib/paraglide/messages';
 </script>
 
-<div class="w-full p-4">
-	<footer class="footer footer-center mt-3 rounded-xl bg-base-200 p-10 text-base-content">
+<div class="w-full p-4 print:hidden">
+	<footer
+		class="footer footer-center footer-horizontal bg-base-200 text-base-content mt-3 flex-col rounded-xl p-10"
+	>
 		<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
 			<a class="link-hover link" href="/">{m.home()}</a>
 			<a class="link-hover link" href="/registration">{m.registration()}</a>
@@ -15,22 +17,12 @@
 			<a class="link-hover link" href="https://dmun.de/impressum" target="_blank"
 				>{@html m.imprintAndPrivacy()}</a
 			>
-			<a class="link-hover link" href="/management">{m.admininstration()}</a>
 		</nav>
 		<LanguageSwitcher />
 		<nav>
 			<div class="grid grid-flow-col gap-4" id="socials">
 				<a href="https://www.instagram.com/dmun_ev/" aria-label="Instagram">
 					<i class="fa-brands fa-instagram text-3xl"></i>
-				</a>
-				<a href="https://x.com/DMUN_eV" aria-label="X / Twitter">
-					<i class="fa-brands fa-x-twitter text-3xl"></i>
-				</a>
-				<a href="https://www.facebook.com/deutschemodelunitednations/" aria-label="Facebook">
-					<i class="fa-brands fa-facebook text-3xl"></i>
-				</a>
-				<a href="https://www.youtube.com/user/DeutscheMUNeV" aria-label="YouTube">
-					<i class="fa-brands fa-youtube text-3xl"></i>
 				</a>
 				<a href="https://github.com/deutschemodelunitednations" aria-label="GitHub">
 					<i class="fa-brands fa-github text-3xl"></i>
@@ -59,7 +51,7 @@
 				</div>
 				<div class="flex max-w-[15ch] flex-col sm:flex-row sm:gap-2 md:max-w-max">
 					<div>{m.sha()}:</div>
-					<div class="overflow-hidden overflow-ellipsis font-mono">
+					<div class="overflow-hidden font-mono overflow-ellipsis">
 						{#if !configPublic.PUBLIC_SHA || configPublic.PUBLIC_SHA.length === 0}
 							unknown
 						{:else}

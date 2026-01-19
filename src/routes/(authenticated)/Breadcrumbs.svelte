@@ -26,7 +26,7 @@
 
 	const breadcrumbs: { [key: string]: LocalizedBreadcrumb } = {
 		management: {
-			translation: m.admininstration(),
+			translation: m.administration(),
 			icon: 'bars-progress'
 		},
 		conferenceId: {
@@ -65,7 +65,7 @@
 			translation: m.role(),
 			icon: 'gavel'
 		},
-		'join-delegation-supervisor': {
+		supervisor: {
 			translation: m.supervisor(),
 			icon: 'eye'
 		},
@@ -148,10 +148,80 @@
 		helper: {
 			icon: 'gear-code',
 			translation: m.helper()
+		},
+		import: {
+			icon: 'file-import',
+			translation: m.import()
+		},
+		connectSupervisor: {
+			icon: 'eye',
+			translation: m.connectSupervisorTitle()
+		},
+		seed: {
+			icon: 'seedling',
+			translation: m.seedConference()
+		},
+		committees: {
+			icon: 'podium',
+			translation: m.committees()
+		},
+		'waiting-list': {
+			icon: 'user-clock',
+			translation: m.waitingList()
+		},
+		waitingList: {
+			icon: 'user-clock',
+			translation: m.waitingList()
+		},
+		'assignment-assistant': {
+			icon: 'robot',
+			translation: m.assignmentAssistant()
+		},
+		projectId: {
+			icon: 'folder-open',
+			translation: m.project()
+		},
+		sighting: {
+			icon: 'binoculars',
+			translation: m.sightings()
+		},
+		weighting: {
+			icon: 'scale-unbalanced',
+			translation: m.weighting()
+		},
+		singles: {
+			icon: 'user',
+			translation: m.singleParticipants()
+		},
+		assignment: {
+			icon: 'arrows-turn-to-dots',
+			translation: m.assignment()
+		},
+		summary: {
+			icon: 'file-chart-column',
+			translation: m.summary()
+		},
+		paperhub: {
+			icon: 'files',
+			translation: m.paperHub()
+		},
+		paperId: {
+			icon: 'file-magnifying-glass',
+			translation: m.paper()
+		},
+		newPaper: {
+			icon: 'file-circle-plus',
+			translation: m.newPaper()
+		},
+		team: {
+			icon: 'users-gear',
+			translation: m.teamManagement()
 		}
 	};
 
-	function getBreadcrumb(segment: PathSegment<Parameters, boolean>): LocalizedBreadcrumb {
+	type PathSegmentType = PathSegment<Parameters, boolean>;
+
+	function getBreadcrumb(segment: PathSegmentType): LocalizedBreadcrumb {
 		const breadcrumb = breadcrumbs[segment.key];
 		if (!breadcrumb) {
 			console.warn(`Breadcrumb not found: ${segment.key}`);
@@ -198,11 +268,11 @@ import path via the parameter! -->
 	delimeterSnippet="disabled"
 	homePath="/"
 >
-	{#snippet pathSnippet(pathSegment: PathSegment<Parameters, boolean>)}
+	{#snippet pathSnippet(pathSegment: PathSegmentType)}
 		{@const breadcrumb = getBreadcrumb(pathSegment)}
-		<a class="btn btn-ghost btn-sm" href={pathSegment.href}>
+		<a class="btn btn-ghost btn-sm !no-underline" href={pathSegment.href}>
 			<i class="fa-duotone fa-{breadcrumb.icon}"></i>
-			<p class="ml-2">
+			<p class="ml-1">
 				{#if breadcrumb.delayedLabel}
 					{#await breadcrumb.delayedLabel}
 						<span>

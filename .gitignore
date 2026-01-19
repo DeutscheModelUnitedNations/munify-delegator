@@ -10,6 +10,9 @@ node_modules
 .DS_Store
 Thumbs.db
 
+# Cache
+cache
+
 # Env
 .env
 .env.*
@@ -28,6 +31,12 @@ src/lib/paraglide
 empheralData/*
 
 $houdini
+.houdini
 tasksOut
 
 dev-get-data.sh
+
+tailwindcss*.log
+*.json.backup.*
+
+prisma/pothos/*

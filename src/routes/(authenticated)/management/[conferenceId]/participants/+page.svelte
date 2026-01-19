@@ -1,6 +1,4 @@
 <script lang="ts">
-	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
 	import UserDrawer from './UserDrawer.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
@@ -9,13 +7,16 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { ParticipationType, UserRowData } from './types';
-	import { cache } from '$houdini';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import { cache, query } from '$houdini';
+	import { getAgeAtConference, ofAgeAtConference } from '$lib/services/ageChecker';
+	import { queryParam } from 'sveltekit-search-params';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
 	const conference = $derived($queryData.data?.findUniqueConference);
 	const participationStatuses = $derived($queryData.data?.findManyConferenceParticipantStatuss);
+
+	let selectedUserRow = queryParam('selected');
 
 	const users = $derived.by(() => {
 		const getParticipationStatus = (userId: string) => {
@@ -30,7 +31,9 @@
 			ret.push({
 				...user,
 				participationType: 'SUPERVISOR',
-				status: getParticipationStatus(user.id)
+				status: getParticipationStatus(user.id),
+				email: user.email,
+				participationCount: user.conferenceParticipationsCount ?? 0
 			});
 		}
 		for (const userRaw of $queryData.data?.findManyDelegationMembers ?? []) {
@@ -38,7 +41,9 @@
 			ret.push({
 				...user,
 				participationType: 'DELEGATION_MEMBER',
-				status: getParticipationStatus(user.id)
+				status: getParticipationStatus(user.id),
+				email: user.email,
+				participationCount: user.conferenceParticipationsCount ?? 0
 			});
 		}
 		for (const userRaw of $queryData.data?.findManySingleParticipants ?? []) {
@@ -46,7 +51,9 @@
 			ret.push({
 				...user,
 				participationType: 'SINGLE_PARTICIPANT',
-				status: getParticipationStatus(user.id)
+				status: getParticipationStatus(user.id),
+				email: user.email,
+				participationCount: user.conferenceParticipationsCount ?? 0
 			});
 		}
 		return ret;
@@ -63,14 +70,6 @@
 		}
 	};
 
-	const calculateConferenceAge = (birthday: Date) => {
-		if (!conference?.startConference) return undefined;
-		const age = conference.startConference.getFullYear() - birthday.getFullYear();
-		const m = conference.startConference.getMonth() - birthday.getMonth();
-		const d = conference.startConference.getDate() - birthday.getDate();
-		return (m < 0 || (m === 0 && d < 0) ? age - 1 : age).toString();
-	};
-
 	const { getTableSize } = getTableSettings();
 
 	const columns: TableColumns<UserRowData> = [
@@ -84,6 +83,12 @@
 			key: 'given_name',
 			title: m.givenName(),
 			value: (row) => capitalizeFirstLetter(row.given_name),
+			sortable: true
+		},
+		{
+			key: 'email',
+			title: m.email(),
+			value: (row) => row.email,
 			sortable: true
 		},
 		{
@@ -112,8 +117,16 @@
 			title: m.conferenceAge(),
 			value: (row) =>
 				row.birthday && conference?.endConference
-					? (calculateConferenceAge(row.birthday) ?? 'N/A')
+					? (getAgeAtConference(row.birthday, conference.startConference) ?? 'N/A')
 					: 'N/A',
+			sortable: true,
+			class: 'text-center',
+			headerClass: 'text-center'
+		},
+		{
+			key: 'participationCount',
+			title: m.participationCount(),
+			value: (row) => row.participationCount.toString(),
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'
@@ -223,8 +236,6 @@
 	// 	];
 	// });
 
-	let selectedUserRow = $state<UserRowData>();
-
 	// <!-- <ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions /> -->
 	// <PrintHeader title={m.adminUsers()} globalSearchValue={filterValue ?? undefined} />
 	// <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
@@ -237,17 +248,17 @@
 	enableSearch={true}
 	queryParamKey="filter"
 	rowSelected={(row) => {
-		selectedUserRow = row;
+		$selectedUserRow = row.id;
 	}}
 />
 
-{#if selectedUserRow}
+{#if $selectedUserRow}
 	<UserDrawer
-		user={selectedUserRow}
+		userId={$selectedUserRow}
 		conferenceId={data.conferenceId}
-		open={selectedUserRow !== undefined}
+		open={$selectedUserRow !== null}
 		onClose={() => {
-			selectedUserRow = undefined;
+			$selectedUserRow = null;
 			cache.markStale();
 			data.ConferenceParticipantsByParticipationTypeQuery.fetch();
 		}}

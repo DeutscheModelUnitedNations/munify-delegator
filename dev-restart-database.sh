@@ -23,7 +23,7 @@ docker compose -f dev.docker-compose.yml up -d postgres
 
 # Wait for the database to be ready
 echo "Waiting for the database to be ready..."
-sleep 1
+sleep 3
 
 # Restore the database from the backup file
 echo "Restoring the database from the backup file..."

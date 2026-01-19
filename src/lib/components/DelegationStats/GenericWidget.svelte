@@ -2,7 +2,7 @@
 	import Wrapper from './Wrapper.svelte';
 
 	interface Props {
-		content: { icon: string; title: string; value?: string | number; desc: string }[];
+		content: { icon: string; title: string; value?: string | number; desc?: string }[];
 	}
 
 	let { content }: Props = $props();
@@ -16,13 +16,15 @@
 			</div>
 			<div class="stat-title">{stat.title}</div>
 			<div class="stat-value">
-				{#if stat.value}
+				{#if stat.value || stat.value === 0}
 					{stat.value}
 				{:else}
 					<span class="loading loading-dots loading-md"></span>
 				{/if}
 			</div>
-			<div class="stat-desc">{stat.desc}</div>
+			{#if stat.desc}
+				<div class="stat-desc">{stat.desc}</div>
+			{/if}
 		</div>
 	{/each}
 </Wrapper>

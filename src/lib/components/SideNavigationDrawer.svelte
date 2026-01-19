@@ -43,19 +43,21 @@
 	<button
 		aria-label="Close navigation drawer"
 		aria-hidden="true"
-		class="fixed left-0 top-0 z-10 h-full w-full bg-black opacity-40 sm:hidden"
+		class="fixed top-0 left-0 z-10 h-full w-full bg-black opacity-40 sm:hidden"
 		onclick={() => (expanded = false)}
 	></button>
 {/if}
 
-<div class="fixed left-0 top-0 z-20 h-full py-4 pl-3 sm:static sm:h-auto sm:py-0 sm:pl-0">
+<div class="fixed top-0 left-0 z-20 h-full py-4 pl-3 sm:static sm:h-auto sm:py-0 sm:pl-0">
 	<div
-		class="relative flex flex-col overflow-hidden rounded-xl bg-base-200 duration-300 {expanded
+		class="bg-base-200 border-base-300 border-1 relative flex flex-col overflow-hidden rounded-box duration-300 {expanded
 			? 'h-full w-60 shadow sm:shadow-none'
 			: 'h-0 w-0 items-center sm:h-full sm:w-16'}"
 	>
 		<button
-			class="btn right-2 top-2 z-10 flex items-center p-3 {expanded ? 'absolute' : ''}"
+			class="btn btn-ghost btn-circle top-0 right-2 z-10 mt-2 flex items-center p-3 {expanded
+				? 'absolute'
+				: ''}"
 			onclick={() => {
 				expanded = !expanded;
 			}}
@@ -101,7 +103,7 @@
 							bind:expanded
 						/>
 					{/if}
-					<NavMenuButton href="/" icon="fa-home" title={m.home()} bind:expanded />
+					<NavMenuButton href="/" icon="fa-globe-pointer" title={m.home()} bind:expanded />
 				</div>
 			</NavMenu>
 		{/if}

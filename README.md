@@ -80,7 +80,7 @@ By contributing you agree to release your contribution under the projects licens
 
 This aspect is work in progress since the project is currently in its development phase. If you want to use the project or one of its components nonetheless, please contact us via the discussion section.
 
-[LICENSE.md](LICENSE.md)
+[LICENSE](LICENSE)
 
 ## Support us / Donations
 

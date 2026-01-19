@@ -17,12 +17,13 @@ import {
 } from '$db/generated/graphql/Delegation';
 import { fetchUserParticipations } from '$api/services/fetchUserParticipations';
 import { db } from '$db/db';
-import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
-import { createDelegationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/create-delegation/form-schema';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/services/formatNames';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
+import dayjs from 'dayjs';
 
 builder.prismaObject('Delegation', {
 	fields: (t) => ({
@@ -43,14 +44,14 @@ builder.prismaObject('Delegation', {
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
 			})
 		}),
-		supervisors: t.relation('supervisors', {
-			query: (_args, ctx) => ({
-				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceSupervisor
-			})
-		}),
 		appliedForRoles: t.relation('appliedForRoles', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').RoleApplication
+			})
+		}),
+		papers: t.relation('papers', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').Paper
 			})
 		})
 	})
@@ -104,7 +105,7 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				createDelegationFormSchema.parse({ ...args, conferenceId: undefined });
+				applicationFormSchema.parse({ ...args, conferenceId: undefined });
 
 				// if the user somehow is already participating in the conference, throw an error
 				await fetchUserParticipations({
@@ -125,7 +126,7 @@ builder.mutationFields((t) => {
 							motivation: args.motivation,
 							school: args.school,
 							experience: args.experience,
-							entryCode: makeDelegationEntryCode()
+							entryCode: makeEntryCode()
 						}
 					});
 
@@ -207,12 +208,16 @@ builder.mutationFields((t) => {
 							delegation.experience.length === 0 ||
 							!delegation.motivation ||
 							delegation.motivation.length === 0 ||
-							!createDelegationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+							!applicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 						) {
 							throw new GraphQLError(m.missingInformation());
 						}
 
-						if (Date.now() > delegation.conference.startAssignment.getTime()) {
+						if (
+							dayjs(delegation.conference.startAssignment)
+								.add(delegation.conference.registrationDeadlineGracePeriodMinutes, 'minute')
+								.isBefore(dayjs())
+						) {
 							throw new GraphQLError(m.applicationTimeframeClosed());
 						}
 					}
@@ -249,7 +254,7 @@ builder.mutationFields((t) => {
 							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
 						},
 						data: {
-							entryCode: makeDelegationEntryCode()
+							entryCode: makeEntryCode()
 						}
 					});
 				}

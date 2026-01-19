@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { cache, graphql } from '$houdini';
-	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';
+	import { cache, graphql, type getUserInfo$result } from '$houdini';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import type { Snippet } from 'svelte';
+	import { queryParameters } from 'sveltekit-search-params';
 
 	interface Props {
 		open: boolean;
@@ -34,7 +34,11 @@
 		}
 	`);
 
-	let search = $state('');
+	const params = queryParameters({
+		assignUserId: true
+	});
+
+	let search = $state($params.assignUserId ?? '');
 	let loading = $state(false);
 
 	$effect(() => {
@@ -79,7 +83,10 @@
 			open = false;
 			user = undefined;
 			cache.markStale();
-			invalidateAll();
+			await invalidateAll();
+			if ($params.assignUserId) {
+				$params.assignUserId = null;
+			}
 		}}>{m.addUser()}</button
 	>
 {/snippet}
@@ -91,12 +98,12 @@
 			id="emailOrId"
 			bind:value={search}
 			placeholder={m.emailOrId()}
-			class="input input-bordered w-full"
+			class="input w-full"
 		/>
 
 		<div class="flex w-full flex-col gap-4">
 			<div
-				class="flex w-full flex-col items-center justify-center gap-1 rounded-lg bg-base-200 p-4"
+				class="bg-base-200 flex w-full flex-col items-center justify-center gap-1 rounded-lg p-4"
 			>
 				{#if loading}
 					<div>

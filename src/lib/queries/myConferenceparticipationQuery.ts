@@ -18,9 +18,11 @@ export const myConferenceparticipationQuery = graphql(`
 		findUniqueConference(where: { id: $conferenceId }) {
 			id
 			title
+			longTitle
 			info
 			linkToPreparationGuide
 			linkToPaperInbox
+			isOpenPaperSubmission
 			state
 			startConference
 			startAssignment
@@ -33,6 +35,7 @@ export const myConferenceparticipationQuery = graphql(`
 			postalZip
 			postalCity
 			postalCountry
+			emblemDataURL
 			committees {
 				id
 				abbreviation
@@ -48,6 +51,7 @@ export const myConferenceparticipationQuery = graphql(`
 				name
 				seatAmount
 				description
+				fontAwesomeIcon
 			}
 		}
 
@@ -122,14 +126,14 @@ export const myConferenceparticipationQuery = graphql(`
 						alpha2Code
 					}
 				}
-				supervisors {
-					id
-					user {
-						given_name
-						family_name
-						pronouns
-						email
-					}
+			}
+			supervisors {
+				id
+				user {
+					given_name
+					family_name
+					pronouns
+					email
 				}
 			}
 		}
@@ -138,72 +142,144 @@ export const myConferenceparticipationQuery = graphql(`
 		) {
 			id
 			plansOwnAttendenceAtConference
-			delegations {
+			connectionCode
+			user {
 				id
-				applied
-				entryCode
-				school
-				motivation
-				experience
-				assignedNation {
-					alpha3Code
-					alpha2Code
-				}
-				assignedNonStateActor {
+				family_name
+				given_name
+			}
+			supervisedDelegationMembers {
+				id
+				user {
 					id
-					abbreviation
-					name
-					description
-					fontAwesomeIcon
-					seatAmount
-				}
-				appliedForRoles {
-					id
-					rank
-					nonStateActor {
+					family_name
+					given_name
+					pronouns
+					email
+					birthday
+					conferenceParticipantStatus {
 						id
-						name
-					}
-					nation {
-						alpha3Code
-						alpha2Code
-					}
-				}
-				supervisors {
-					id
-					user {
-						id
-						given_name
-						family_name
-						email
-					}
-				}
-				members {
-					id
-					isHeadDelegate
-					assignedCommittee {
-						id
-						abbreviation
-						name
-					}
-					user {
-						id
-						given_name
-						family_name
-						pronouns
-						birthday
-						conferenceParticipantStatus {
+						guardianConsent
+						mediaConsent
+						termsAndConditions
+						paymentStatus
+						didAttend
+						conference {
 							id
-							conference {
-								id
-							}
-							paymentStatus
-							termsAndConditions
-							guardianConsent
-							mediaConsent
 						}
 					}
 				}
+				delegation {
+					id
+					applied
+					entryCode
+					school
+					experience
+					motivation
+					appliedForRoles {
+						id
+						rank
+						nation {
+							alpha2Code
+							alpha3Code
+							committees {
+								abbreviation
+								name
+								numOfSeatsPerDelegation
+							}
+						}
+						nonStateActor {
+							id
+							name
+							abbreviation
+							fontAwesomeIcon
+							seatAmount
+						}
+					}
+					assignedNation {
+						alpha2Code
+						alpha3Code
+						committees {
+							numOfSeatsPerDelegation
+						}
+					}
+					assignedNonStateActor {
+						id
+						abbreviation
+						name
+						fontAwesomeIcon
+					}
+					members {
+						id
+						assignedCommittee {
+							id
+							abbreviation
+							name
+						}
+						isHeadDelegate
+					}
+					papers {
+						id
+						status
+						type
+						firstSubmittedAt
+						author {
+							id
+						}
+						agendaItem {
+							id
+							title
+						}
+					}
+				}
+				isHeadDelegate
+				assignedCommittee {
+					id
+					abbreviation
+					name
+				}
+				supervisors {
+					id
+				}
+			}
+			supervisedSingleParticipants {
+				id
+				school
+				motivation
+				experience
+				supervisors {
+					id
+				}
+				user {
+					id
+					family_name
+					given_name
+					pronouns
+					email
+					birthday
+					conferenceParticipantStatus {
+						id
+						guardianConsent
+						mediaConsent
+						termsAndConditions
+						paymentStatus
+						didAttend
+						conference {
+							id
+						}
+					}
+				}
+				appliedForRoles {
+					id
+					name
+					fontAwesomeIcon
+				}
+				assignedRole {
+					id
+					name
+					fontAwesomeIcon
+				}
+				applied
 			}
 		}
 		findUniqueSingleParticipant(
@@ -232,6 +308,15 @@ export const myConferenceparticipationQuery = graphql(`
 				family_name
 				pronouns
 			}
+			supervisors {
+				id
+				user {
+					given_name
+					family_name
+					pronouns
+					email
+				}
+			}
 		}
 		findManySurveyQuestions(
 			where: { conferenceId: { equals: $conferenceId }, draft: { equals: false } }
@@ -246,6 +331,12 @@ export const myConferenceparticipationQuery = graphql(`
 			question {
 				id
 			}
+		}
+		findUniqueTeamMember(
+			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
+		) {
+			id
+			role
 		}
 	}
 `);

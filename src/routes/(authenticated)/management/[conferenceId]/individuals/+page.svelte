@@ -7,11 +7,14 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import IndividualDrawer from './IndividualDrawer.svelte';
+	import { queryParam } from 'sveltekit-search-params';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceSingleParticipantsQuery);
 	const singleParticipants = $derived($queryData?.data?.findManySingleParticipants ?? []);
 	const { getTableSize } = getTableSettings();
+
+	let selectedParticipantRow = queryParam('selected');
 
 	const columns: TableColumns<(typeof singleParticipants)[number]> = [
 		{
@@ -86,7 +89,6 @@
 		}
 	];
 
-	let selectedParticipantRow = $state<(typeof singleParticipants)[number]>();
 	// TODO export data
 </script>
 
@@ -96,15 +98,15 @@
 	enableSearch={true}
 	queryParamKey="filter"
 	rowSelected={(row) => {
-		selectedParticipantRow = row;
+		$selectedParticipantRow = row.id;
 	}}
 />
 
-{#if selectedParticipantRow}
+{#if $selectedParticipantRow}
 	<IndividualDrawer
-		singleParticipantId={selectedParticipantRow.id}
+		singleParticipantId={$selectedParticipantRow}
 		conferenceId={data.conferenceId}
-		open={selectedParticipantRow !== undefined}
-		onClose={() => (selectedParticipantRow = undefined)}
+		open={$selectedParticipantRow !== null}
+		onClose={() => ($selectedParticipantRow = null)}
 	/>
 {/if}

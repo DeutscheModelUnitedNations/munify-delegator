@@ -23,13 +23,21 @@
 			return true;
 		}
 
+		if (
+			$conferenceQuery.data?.findManyConferenceSupervisors.find(
+				(x) => x.conference.id === conferenceId
+			)
+		) {
+			return true;
+		}
+
 		return false;
 	}
 </script>
 
-<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<p>{m.selectConference()}</p>
+		<h1 class="text-xl">{m.selectConference()}</h1>
 	</hero>
 
 	<main>
@@ -37,7 +45,7 @@
 			<section class="flex w-full flex-col items-center gap-4">
 				<img src={svgempty} alt="Empty" class="mb-10 w-1/2" />
 				<h1 class="text-center text-3xl">{m.noConferenceOpenForRegistration()}</h1>
-				<p class="text-center max-ch-md">{m.noConferenceOpenForRegistrationText()}</p>
+				<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
 				<div class="flex flex-col gap-4 md:flex-row-reverse">
 					<a class="btn mt-10" href="/">{m.backToHome()}</a>
 				</div>

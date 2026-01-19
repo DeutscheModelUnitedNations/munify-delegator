@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$houdini';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { redirect, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
-import { individualApplicationFormSchema } from './form-schema';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 const createSingleParticipant = graphql(`
 	mutation IndividualApplicationFromFormMutation(
@@ -62,7 +62,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const form = await superValidate(
 		found.data?.findUniqueSingleParticipant ?? undefined,
-		zod(individualApplicationFormSchema)
+		zod4(applicationFormSchema)
 	);
 	return {
 		form,
@@ -74,7 +74,8 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(individualApplicationFormSchema));
+		const form = await superValidate(event.request, zod4(applicationFormSchema));
+
 		if (!form.valid) {
 			return fail(400, { form });
 		}

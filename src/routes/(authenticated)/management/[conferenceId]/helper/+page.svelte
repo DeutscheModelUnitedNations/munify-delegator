@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import ParticipantStatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
+	import ParticipantStatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
-	import { toast } from '@zerodevx/svelte-toast';
+	import { toast } from 'svelte-sonner';
 	import Section from './Section.svelte';
 
 	let { data } = $props();
@@ -30,9 +30,7 @@
 			didAttend: value
 		});
 		if (!$updateAllConferenceParticipantStatusQuery.errors) {
-			toast.push(m.changesSuccessful(), {
-				duration: 5000
-			});
+			toast.success(m.changesSuccessful());
 		}
 		loading = false;
 	};

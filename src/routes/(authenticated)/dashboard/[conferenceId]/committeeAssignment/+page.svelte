@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { onMount } from 'svelte';
 	import type { PageData } from './$houdini';
 	import formatNames from '$lib/services/formatNames';
 
@@ -20,6 +19,7 @@
 		{
 			delegationMemberId: string;
 			committeeId: string | null;
+			alreadyAssigned: boolean;
 		}[]
 	>([]);
 
@@ -28,7 +28,8 @@
 			membersWithCommittees = members.map((member) => {
 				return {
 					delegationMemberId: member.id,
-					committeeId: null
+					committeeId: member.assignedCommittee?.id ?? null,
+					alreadyAssigned: !!member.assignedCommittee
 				};
 			});
 		}
@@ -48,21 +49,25 @@
 	`);
 
 	const sendCommitteeAssignment = async () => {
-		if (membersWithCommittees.some((x) => !x.committeeId)) {
+		// Only validate unassigned members - already assigned ones are locked
+		const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned);
+
+		if (unassignedMembers.some((x) => !x.committeeId)) {
 			alert(m.pleaseAssignAllMembers());
 			return;
 		}
 
-		if (membersWithCommittees.some((x) => !x.delegationMemberId || !x.committeeId)) {
+		if (unassignedMembers.some((x) => !x.delegationMemberId || !x.committeeId)) {
 			alert(m.failedToAssignCommittees());
 			throw new Error('Failed to assign committees');
 		}
 
+		// Only send unassigned members to the mutation
 		const req = await assignCommitteeMutation.mutate({
-			data: membersWithCommittees as {
-				delegationMemberId: string;
-				committeeId: string;
-			}[]
+			data: unassignedMembers.map((x) => ({
+				delegationMemberId: x.delegationMemberId,
+				committeeId: x.committeeId as string
+			}))
 		});
 		if (!req.data?.assignCommitteesToDelegationMembers) {
 			alert(m.failedToAssignCommittees());
@@ -80,7 +85,7 @@
 		<h1 class="text-2xl font-bold">{m.committeeAssignment()}</h1>
 	</div>
 
-	{#if members?.some((member) => !!member.assignedCommittee)}
+	{#if members?.every((member) => !!member.assignedCommittee)}
 		<div class="alert alert-success">
 			<i class="fas fa-check-circle text-3xl"></i>
 			<div class="flex flex-col">
@@ -101,7 +106,7 @@
 			{/each}
 		</div>
 
-		<table class="table table-lg">
+		<table class="table-lg table">
 			<thead>
 				<tr>
 					<th>{m.name()}</th>
@@ -114,33 +119,47 @@
 					<tr>
 						<td>{formatNames(member?.user.given_name, member?.user.family_name)}</td>
 						<td>
-							<select class="select select-bordered" bind:value={memberWithCommittee.committeeId}>
-								<option value="" selected>{m.pleaseSelect()}</option>
-								{#each committees ?? [] as committee}
-									<option
-										value={committee.id}
-										disabled={membersWithCommittees.some(
-											(x) =>
-												x.delegationMemberId !== member?.id &&
-												committee.numOfSeatsPerDelegation <=
-													membersWithCommittees.filter((y) => y.committeeId === committee.id).length
-										)}
-									>
-										{committee.abbreviation}
-									</option>
-								{/each}
-							</select>
+							{#if memberWithCommittee.alreadyAssigned}
+								{@const assignedCommittee = committees?.find(
+									(c) => c.id === memberWithCommittee.committeeId
+								)}
+								<div class="flex items-center gap-2">
+									<span class="badge badge-success">{assignedCommittee?.abbreviation}</span>
+									<span class="text-xs text-gray-500">({m.alreadyAssigned()})</span>
+								</div>
+							{:else}
+								<select class="select" bind:value={memberWithCommittee.committeeId}>
+									<option value="" selected>{m.pleaseSelect()}</option>
+									{#each committees ?? [] as committee}
+										<option
+											value={committee.id}
+											disabled={membersWithCommittees.some(
+												(x) =>
+													x.delegationMemberId !== member?.id &&
+													committee.numOfSeatsPerDelegation <=
+														membersWithCommittees.filter((y) => y.committeeId === committee.id)
+															.length
+											)}
+										>
+											{committee.abbreviation}
+										</option>
+									{/each}
+								</select>
+							{/if}
 						</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
 		{#if $assignmentData.data?.findUniqueDelegationMember?.isHeadDelegate}
-			<button
-				class="btn btn-primary"
-				disabled={membersWithCommittees.some((x) => !x.committeeId)}
-				onclick={sendCommitteeAssignment}>{m.save()}</button
-			>
+			{@const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned)}
+			{#if unassignedMembers.length > 0}
+				<button
+					class="btn btn-primary"
+					disabled={unassignedMembers.some((x) => !x.committeeId)}
+					onclick={sendCommitteeAssignment}>{m.save()}</button
+				>
+			{/if}
 		{:else}
 			<div class="alert alert-warning">
 				<i class="fas fa-exclamation-triangle text-3xl"></i>

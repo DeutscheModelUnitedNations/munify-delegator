@@ -1,0 +1,27 @@
+language: 'en-US'
+reviews:
+  profile: 'chill'
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+
+  pre_merge_checks:
+    custom_checks:
+      - name: 'Boy Scout Scope'
+        instructions: |
+          If the PR includes changes beyond the primary issue/task, verify:
+          - All opportunistic fixes are confined to files already edited for the main change
+          - Changes are small, low-risk, and improve clarity/maintainability
+          - The PR description contains a "Boy Scout changes" section listing these edits
+          - No unrelated module-wide refactor is included
+
+      - name: 'German Gender-Inclusive Language'
+        instructions: |
+          When changes are made to `messages/de.json`, verify that German translations use gender-inclusive language:
+          - Person-related nouns must use the gender star (*) or neutral participle forms
+          - Examples of correct forms: "Teilnehmende", "Nutzer*in", "Betreuer*innen", "Administrator*in", "Delegierte*r"
+          - Examples of incorrect forms: "Teilnehmer", "Benutzer", "Betreuer", "Administrator", "Delegierter"
+          - Exceptions: Technical terms (e.g., "Benutzer-ID"), non-person references (e.g., "Helfer-Skripte"), and historical references
+          - Compound words referring to people should also be gendered (e.g., "Delegationsleiter*in" not "Delegationsleiter")
+          - Neutral words like "Mitglied" or "Person" do not need gendering

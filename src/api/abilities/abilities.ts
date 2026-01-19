@@ -19,9 +19,15 @@ import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransact
 import { defineAbilitiesForSurveyQuestion } from './entities/surveyQuestion';
 import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
 import { defineAbilitiesForSurveyOption } from './entities/surveyOption';
+import { defineAbilitiesForCommitteeAgendaItem } from './entities/committeeAgendaItem';
+import { defineAbilitiesForWaitingListEntry } from './entities/waitingListEntry';
+import { defineAbilitiesForPaper } from './entities/paper/paper';
+import { defineAbilitiesForPaperVersion } from './entities/paper/paperVersion';
+import { defineAbilitiesForPaperReview } from './entities/paper/paperReview';
+import { defineAbilitiesForReviewerSnippet } from './entities/reviewerSnippet';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ['list', 'read', 'update', 'delete'] as const;
+const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
 
 /**
  * Actions which can be run on entities in the system:
@@ -67,7 +73,72 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 		builder.can('manage' as any, 'all' as any);
 	}
 
+	// Grant impersonation permissions
+	if (oidc && oidc.user) {
+		const user = oidc.user;
+
+		// Admins can impersonate anyone
+		if (user.hasRole('admin')) {
+			builder.can('impersonate', 'User' as any);
+		}
+
+		// Team members with PROJECT_MANAGEMENT or PARTICIPANT_CARE can impersonate users from their conferences
+		// This is handled more granularly in the resolver logic
+		builder.can('impersonate', 'User' as any, {
+			OR: [
+				// Delegation members from conferences where user is team member
+				{
+					delegationMemberships: {
+						some: {
+							delegation: {
+								conference: {
+									teamMembers: {
+										some: {
+											user: { id: user.sub },
+											role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				// Single participants from conferences where user is team member
+				{
+					singleParticipant: {
+						some: {
+							conference: {
+								teamMembers: {
+									some: {
+										user: { id: user.sub },
+										role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+									}
+								}
+							}
+						}
+					}
+				},
+				// Conference supervisors from conferences where user is team member
+				{
+					conferenceSupervisor: {
+						some: {
+							conference: {
+								teamMembers: {
+									some: {
+										user: { id: user.sub },
+										role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+									}
+								}
+							}
+						}
+					}
+				}
+			]
+		});
+	}
+
 	defineAbilitiesForCommittee(oidc, builder);
+	defineAbilitiesForCommitteeAgendaItem(oidc, builder);
 	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForConferenceParticipantStatus(oidc, builder);
 	defineAbilitiesForConferenceSupervisor(oidc, builder);
@@ -84,6 +155,11 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForSurveyQuestion(oidc, builder);
 	defineAbilitiesForSurveyOption(oidc, builder);
 	defineAbilitiesForSurveyAnswer(oidc, builder);
+	defineAbilitiesForWaitingListEntry(oidc, builder);
+	defineAbilitiesForPaper(oidc, builder);
+	defineAbilitiesForPaperVersion(oidc, builder);
+	defineAbilitiesForPaperReview(oidc, builder);
+	defineAbilitiesForReviewerSnippet(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

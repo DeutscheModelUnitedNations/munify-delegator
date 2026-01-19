@@ -7,14 +7,13 @@ changelog:
   categories:
     - title: ✨ Features
       labels:
-        - feature
+        - 'PR: Feature'
     - title: 🚀 Enhancment
       labels:
         - enhancement
     - title: 🐞 Bug Fixes
       labels:
-        - bug
-        - bug (high priority)
+        - 'PR: Bug'
     - title: 📚 Documentation
       labels:
         - documentation

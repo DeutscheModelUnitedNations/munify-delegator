@@ -17,7 +17,7 @@
 
 	let showAssistant = $state(false);
 
-	let delegationBlocked = $derived(() => {
+	let alreadyRegistered = $derived.by(() => {
 		if (!$conferenceQuery?.data?.findManySingleParticipants) return false;
 		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
 		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
@@ -32,36 +32,25 @@
 		}
 	});
 
-	let individualBlocked = $derived(() => {
+	let individualBlocked = $derived.by(() => {
 		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
 		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
 		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
 			return true;
 		}
 		if ($conferenceQuery.data.findManyConferenceSupervisors.length > 0) {
-			return true;
-		}
-	});
-
-	let supervisorBlocked = $derived(() => {
-		if (!$conferenceQuery?.data?.findManySingleParticipants) return false;
-		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
-		if ($conferenceQuery.data.findManySingleParticipants.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
 			return true;
 		}
 	});
 </script>
 
-<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<h1 class="mb-3 text-3xl uppercase tracking-wider">{m.signup()}</h1>
+		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signup()}</h1>
 		<p class="max-ch-md">
 			{@html m.conferenceSignupIntroduction()}
 		</p>
-		<div role="alert" class="alert mt-10">
+		<div role="alert " class="alert md:alert-horizontal alert-vertical mt-10">
 			<i class="fa-duotone fa-message-question mx-1 text-xl"></i>
 			<div class="flex flex-col">
 				<div class="font-bold tracking-wider">{m.signUpAssistant()}</div>
@@ -86,7 +75,7 @@
 				img={UndrawNew}
 				btnText={m.createDelegation()}
 				btnLink={`${data.conferenceId}/create-delegation`}
-				disabled={delegationBlocked()}
+				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -103,7 +92,7 @@
 				img={UndrawTeam}
 				btnText={m.enterCode()}
 				btnLink={`${data.conferenceId}/join-delegation`}
-				disabled={delegationBlocked()}
+				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -120,7 +109,7 @@
 				img={UndrawLetter}
 				btnText={m.individualApplication()}
 				btnLink={`${data.conferenceId}/individual`}
-				disabled={individualBlocked()}
+				disabled={individualBlocked}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -136,8 +125,8 @@
 				title={m.supervisor()}
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
-				btnLink={`${data.conferenceId}/join-delegation-supervisor`}
-				disabled={supervisorBlocked()}
+				btnLink={`${data.conferenceId}/supervisor`}
+				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
 					items={[
@@ -196,7 +185,7 @@
 						click E "/registration/${data.conferenceId}/create-delegation"
 						click D "/registration/${data.conferenceId}/join-delegation"
 						click Individual "/registration/${data.conferenceId}/individual"
-						click G "/registration/${data.conferenceId}/join-delegation-supervisor"
+						click G "/registration/${data.conferenceId}/supervisor"
 				`}
 				></MermaidWrapper>
 			</div>

@@ -12,7 +12,7 @@
 </script>
 
 <div class="modal {open && 'modal-open'}">
-	<div class="modal-backdrop" onclick={closeModal} />
+	<button class="modal-backdrop" onclick={closeModal} aria-label="Close modal"></button>
 	<div class="modal-box relative flex flex-col gap-4">
 		<h1 class="text-2xl font-bold">{modalData?.message}</h1>
 		<p>{m.deleted()}: <span class="badge badge-primary">{modalData?.count}</span></p>
@@ -21,8 +21,12 @@
 				<div class="badge badge-neutral badge-sm font-mono">{id}</div>
 			{/each}
 		</div>
-		<button class="btn btn-ghost absolute right-4 top-4" onclick={closeModal}>
-			<i class="fa fa-xmark" />
+		<button
+			class="btn btn-ghost absolute top-4 right-4"
+			onclick={closeModal}
+			aria-label="Close modal"
+		>
+			<i class="fa fa-xmark"></i>
 		</button>
 	</div>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import {
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
@@ -9,6 +9,9 @@
 	} from '$lib/services/pdfGenerator';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
+	import { page } from '$app/state';
 
 	let { data }: { data: PageData } = $props();
 
@@ -41,18 +44,41 @@
 		}
 	`);
 
+	let userQueryData = $derived($userQuery.data?.findUniqueUser);
+	let userDataNotComplete = $derived(
+		!(
+			userQueryData?.street &&
+			userQueryData?.zip &&
+			userQueryData?.city &&
+			userQueryData?.country &&
+			userQueryData?.birthday
+		)
+	);
+
 	let loading = $state(false);
+
+	$effect(() => {
+		userQuery.fetch({
+			variables: { id: userId, conferenceId: conference!.id }
+		});
+	});
 
 	async function handleGeneratePDF() {
 		loading = true;
 		try {
-			const userDetailsStore = await userQuery.fetch({
-				variables: { id: userId, conferenceId: conference!.id }
-			});
-			const user = userDetailsStore?.data?.findUniqueUser;
-			const conferenceData = userDetailsStore?.data?.findUniqueConference;
+			cache.markStale();
+			await invalidateAll();
+
+			const user = $userQuery?.data?.findUniqueUser;
+			const conferenceData = $userQuery?.data?.findUniqueConference;
 
 			if (user) {
+				if (!user.street || !user.zip || !user.city || !user.country || !user.birthday) {
+					toast.error(m.incompleteAddressOrBirthdayForPostalRegistration());
+					loading = false;
+					return;
+				}
+
 				const recipientData: RecipientData = {
 					name: `${conference?.postalName}`,
 					address: `${conference?.postalStreet} ${conference?.postalApartment ? conference?.postalApartment : ''}`,
@@ -82,11 +108,15 @@
 					conferenceData?.termsAndConditionsContent ?? undefined,
 					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
 				);
+
+				toast.success(m.postalRegistrationPDFGenerated());
 			} else {
 				console.error('User details not found');
+				toast.error(m.errorGeneratingPostalRegistrationPDF());
 			}
 		} catch (error) {
 			console.error('Error generating PDF:', error);
+			toast.error(m.errorGeneratingPostalRegistrationPDF());
 		} finally {
 			loading = false;
 		}
@@ -101,17 +131,79 @@
 		{@html m.postalRegistrationInstructions({
 			conferenceStart: conference?.startConference
 				? new Date(conference.startConference!).toLocaleDateString()
-				: 'Datum unbekannt'
+				: 'Date unknown'
 		})}
-		<button class="btn btn-primary mt-4" onclick={handleGeneratePDF} disabled={loading}>
-			{#if loading}
-				<i class="fas fa-spinner fa-spin"></i>
-				Dokumente werden generiert...
+
+		{#if $userQuery.data}
+			{#if userDataNotComplete}
+				<div class="alert alert-warning mt-4">
+					<i class="fas fa-exclamation-triangle text-3xl"></i>
+					<div class="flex flex-col gap-2 items-start">
+						<div>{m.completeAddressAndBirthdayForPostalRegistration()}</div>
+						<a
+							class="btn no-underline"
+							href={`/my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${page.params.conferenceId}`)}`}
+						>
+							{m.updateProfile()}
+							<i class="fas fa-user-edit"></i>
+						</a>
+					</div>
+				</div>
 			{:else}
-				<i class="fas fa-download"></i>
-				Dokumente herunterladen
+				<div class="alert alert-info mt-4">
+					<div class="flex flex-col gap-2 items-start">
+						<div>{m.checkYourAddressAndBirthday()}</div>
+						<div class="grid grid-cols-[auto_1fr] gap-4 items-center bg-base-100 p-4 rounded-box">
+							<i class="fa-duotone fa-user"></i>
+							<div>
+								{userQueryData?.given_name}
+								{userQueryData?.family_name}
+							</div>
+							<i class="fa-duotone fa-home"></i>
+							<div>
+								{userQueryData?.street}
+								{userQueryData?.apartment ? `, ${userQueryData.apartment}` : ''}<br />
+								{userQueryData?.zip}
+								{userQueryData?.city}<br />
+								{userQueryData?.country}
+							</div>
+							<i class="fa-duotone fa-cake-candles"></i>
+							<div>
+								{userQueryData?.birthday
+									? new Date(userQueryData.birthday).toLocaleDateString()
+									: ''}
+							</div>
+						</div>
+						<a class="btn no-underline" href="/my-account">
+							{m.updateProfile()}
+							<i class="fas fa-user-edit"></i>
+						</a>
+					</div>
+				</div>
 			{/if}
-		</button>
+
+			<button
+				class="btn btn-primary btn-xl mt-8"
+				onclick={handleGeneratePDF}
+				disabled={loading || userDataNotComplete}
+			>
+				{#if loading}
+					<i class="fas fa-spinner fa-spin"></i>
+					{m.documentsAreBeingPrepared()}
+				{:else if userDataNotComplete}
+					<i class="fas fa-lock"></i>
+					{m.downloadDocuments()}
+				{:else}
+					<i class="fas fa-download"></i>
+					{m.downloadDocuments()}
+				{/if}
+			</button>
+		{:else}
+			<div class="mt-4">
+				<i class="fas fa-spinner fa-spin text-3xl"></i>
+			</div>
+		{/if}
+
 		{@html m.postalRegistrationFAQ1()}
 		<div class="card bg-base-200 shadow-lg">
 			<div class="card-body gap-10 sm:flex-row">

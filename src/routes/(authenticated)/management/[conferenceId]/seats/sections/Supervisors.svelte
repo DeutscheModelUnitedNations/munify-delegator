@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { graphql, type SeatsQuery$result } from '$houdini';
-	import { type getUserInfo$result } from '$houdini/artifacts/getUserInfo';
+	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
@@ -43,11 +42,11 @@
 	};
 </script>
 
-{#snippet downloadSupervisorDataBtn()}
-	<DownloadSupervisorDataBtn {conferenceId} />
-{/snippet}
+<SeatsTableSection title={m.supervisors()}>
+	{#snippet downloadButton()}
+		<DownloadSupervisorDataBtn {conferenceId} />
+	{/snippet}
 
-<SeatsTableSection title={m.supervisors()} downloadButton={downloadSupervisorDataBtn}>
 	<thead>
 		<tr>
 			<td>
@@ -63,25 +62,25 @@
 			<td>
 				{#if supervisors.length > 0}
 					<div class="flex flex-wrap gap-1">
-						{#each supervisors as supervisor}
+						{#each supervisors as supervisor (supervisor.id)}
 							<InitialsButton
 								given_name={supervisor.user.given_name}
 								family_name={supervisor.user.family_name}
-								href={`/management/${conferenceId}/participants?filter=${supervisor.user.id}`}
+								href={`/management/${conferenceId}/participants?selected=${supervisor.user.id}`}
 							/>
 						{/each}
 
 						{#snippet plansOwnAttendenceCheck()}
-							<div class="form-control">
+							<fieldset class="fieldset">
 								<label class="label cursor-pointer">
-									<span class="label-text mr-4">{m.supervisorPlansOwnAttendance()}</span>
+									<span class="mr-4">{m.supervisorPlansOwnAttendance()}</span>
 									<input
 										type="checkbox"
 										bind:checked={plansOwnAttendenceAtConference}
 										class="checkbox"
 									/>
 								</label>
-							</div>
+							</fieldset>
 						{/snippet}
 
 						<AddParticipantBtn

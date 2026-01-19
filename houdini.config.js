@@ -18,7 +18,13 @@ const config = {
 				return val ? new Date(val) : null;
 			},
 			marshal(date) {
-				return date && date.getTime();
+				if (date instanceof Date) {
+					return date.getTime();
+				}
+				if (typeof date === 'string') {
+					return new Date(date).getTime();
+				}
+				return date;
 			}
 		},
 		JSONObject: {
@@ -28,6 +34,24 @@ const config = {
 			},
 			marshal(val) {
 				return JSON.stringify(val);
+			}
+		},
+		Json: {
+			type: 'JSONObject',
+			unmarshal(val) {
+				return JSON.parse(val);
+			},
+			marshal(val) {
+				return JSON.stringify(val);
+			}
+		},
+		File: {
+			type: 'File',
+			unmarshal(val) {
+				return val;
+			},
+			marshal(val) {
+				return val;
 			}
 		}
 	},

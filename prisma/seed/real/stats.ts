@@ -1,6 +1,10 @@
-import committees from './countries_munbw_2025.json';
+import data from './sh26_countries.json';
 
-const nations = {};
+const nations: {
+	[nation: string]: string[];
+} = {};
+
+const committees = data.data;
 
 for (const committee of committees) {
 	for (const nation of committee.nations) {
@@ -8,6 +12,11 @@ for (const committee of committees) {
 			nations[nation] = [];
 		}
 		nations[nation].push(committee.abbreviation);
+
+		// Hard Coded Double Delegates for SR
+		if (committee.abbreviation === 'SR') {
+			nations[nation].push(committee.abbreviation);
+		}
 	}
 }
 

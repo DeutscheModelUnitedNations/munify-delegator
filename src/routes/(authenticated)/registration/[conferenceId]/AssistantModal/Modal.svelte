@@ -34,8 +34,8 @@
 	});
 </script>
 
-<dialog id="assistent_modal" class="modal modal-open modal-bottom h-screen sm:modal-middle">
-	<div class="modal-box h-full overflow-y-auto overflow-x-hidden">
+<dialog id="assistent_modal" class="modal modal-open modal-bottom sm:modal-middle h-screen">
+	<div class="modal-box h-full overflow-x-hidden overflow-y-auto">
 		<h3 class="text-lg font-bold">
 			<i class="fa-duotone fa-message-question mr-2"></i>
 			Anmeldeassistent
@@ -75,7 +75,7 @@
 				<FinalJoinDelegation {conferenceId}></FinalJoinDelegation>
 			{/if}
 		</div>
-		<div class="fixed right-6 top-6">
+		<div class="fixed top-6 right-6">
 			<form method="dialog">
 				<button class="btn btn-circle btn-sm" onclick={onClose} aria-label="Close">
 					<i class="fas fa-xmark"></i>

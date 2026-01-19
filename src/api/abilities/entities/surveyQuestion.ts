@@ -13,6 +13,7 @@ export const defineAbilitiesForSurveyQuestion = (
 		can(['read', 'list'], 'SurveyQuestion');
 
 		// team members should be able to edit the SurveyQuestions of their conferences
+		// Note: 'create' is handled directly in the mutation resolver
 		can(['read', 'list', 'update', 'delete'], 'SurveyQuestion', {
 			conference: {
 				teamMembers: {

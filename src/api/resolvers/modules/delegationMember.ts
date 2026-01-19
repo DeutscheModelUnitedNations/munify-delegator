@@ -21,7 +21,7 @@ import {
 } from '$api/services/fetchUserParticipations';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
 import { GraphQLError } from 'graphql';
-import { makeDelegationEntryCode } from '$api/services/delegationEntryCodeGenerator';
+import { makeEntryCode } from '$api/services/entryCodeGenerator';
 
 builder.prismaObject('DelegationMember', {
 	fields: (t) => ({
@@ -30,7 +30,15 @@ builder.prismaObject('DelegationMember', {
 		conference: t.relation('conference', DelegationMemberConferenceFieldObject),
 		delegation: t.relation('delegation', DelegationMemberDelegationFieldObject),
 		user: t.relation('user', DelegationMemberUserFieldObject),
-		assignedCommittee: t.relation('assignedCommittee', DelegationMemberAssignedCommitteeFieldObject)
+		assignedCommittee: t.relation(
+			'assignedCommittee',
+			DelegationMemberAssignedCommitteeFieldObject
+		),
+		supervisors: t.relation('supervisors', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceSupervisor
+			})
+		})
 	})
 });
 
@@ -168,17 +176,6 @@ builder.mutationFields((t) => {
 					assignedCommitteeId
 				} = args;
 
-				if (
-					await isUserAlreadyRegistered({
-						userId,
-						conferenceId
-					})
-				) {
-					throw new GraphQLError(
-						"User is already assigned a different role in the conference. Can't assign delegationMember."
-					);
-				}
-
 				let delegation = await db.delegation.findFirst({
 					where: {
 						conferenceId,
@@ -204,13 +201,46 @@ builder.mutationFields((t) => {
 						motivation: 'Assigned by management'
 					};
 
+					if (
+						await isUserAlreadyRegistered({
+							userId,
+							conferenceId
+						})
+					) {
+						try {
+							await tx.delegationMember.delete({
+								where: {
+									conferenceId_userId: {
+										conferenceId: args.conferenceId,
+										userId: userId
+									}
+								}
+							});
+						} catch (e) {
+							try {
+								await tx.singleParticipant.delete({
+									where: {
+										conferenceId_userId: {
+											conferenceId: args.conferenceId,
+											userId: userId
+										}
+									}
+								});
+							} catch (e) {
+								throw new GraphQLError(
+									'User is already part of the conference and records could not be deleted'
+								);
+							}
+						}
+					}
+
 					if (!delegation) {
 						delegation = await tx.delegation.create({
 							data: {
 								conferenceId,
 								assignedNationAlpha3Code,
 								assignedNonStateActorId,
-								entryCode: makeDelegationEntryCode(),
+								entryCode: makeEntryCode(),
 								...delegationInfos
 							},
 							include: {
@@ -225,6 +255,18 @@ builder.mutationFields((t) => {
 							data: delegationInfos
 						});
 					}
+
+					await tx.waitingListEntry
+						.update({
+							where: {
+								conferenceId_userId: {
+									conferenceId,
+									userId
+								}
+							},
+							data: { assigned: true }
+						})
+						.catch(() => {});
 
 					return await tx.delegationMember.create({
 						...query,

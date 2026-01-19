@@ -10,6 +10,7 @@ import {
 	ConferenceIbanFieldObject,
 	ConferenceIdFieldObject,
 	ConferenceImageDataURLFieldObject,
+	ConferenceEmblemDataURLFieldObject,
 	ConferenceInfoFieldObject,
 	ConferenceLanguageFieldObject,
 	ConferenceLinkToPaperInboxFieldObject,
@@ -31,18 +32,19 @@ import {
 	ConferenceUnlockPaymentsFieldObject,
 	ConferenceUnlockPostalsFieldObject,
 	ConferenceWebsiteFieldObject,
+	ConferenceIsOpenPaperSubmissionFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
 	updateOneConferenceMutationObject,
 	ConferenceCertificateContentFieldObject,
+	ConferenceRegistrationDeadlineGracePeriodMinutesFieldObject,
 	ConferenceContractContentFieldObject
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 import { ConferenceState } from '$db/generated/graphql/inputs';
-import { conference } from '$lib/paraglide/messages';
 import { findManyNationQueryObject } from '$db/generated/graphql/Nation';
 
 builder.prismaObject('Conference', {
@@ -52,13 +54,18 @@ builder.prismaObject('Conference', {
 		info: t.field(ConferenceInfoFieldObject),
 		linkToPreparationGuide: t.field(ConferenceLinkToPreparationGuideFieldObject),
 		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
+		isOpenPaperSubmission: t.field(ConferenceIsOpenPaperSubmissionFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
 		location: t.field(ConferenceLocationFieldObject),
 		language: t.field(ConferenceLanguageFieldObject),
 		website: t.field(ConferenceWebsiteFieldObject),
 		imageDataURL: t.field(ConferenceImageDataURLFieldObject),
+		emblemDataURL: t.field(ConferenceEmblemDataURLFieldObject),
 		state: t.field(ConferenceStateFieldObject),
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
+		registrationDeadlineGracePeriodMinutes: t.field(
+			ConferenceRegistrationDeadlineGracePeriodMinutesFieldObject
+		),
 		startConference: t.field(ConferenceStartConferenceFieldObject),
 		endConference: t.field(ConferenceEndConferenceFieldObject),
 		unlockPayments: t.field(ConferenceUnlockPaymentsFieldObject),
@@ -149,6 +156,190 @@ builder.prismaObject('Conference', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyQuestion
 			})
+		}),
+		totalParticipants: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				const delegationMembersCount = await db.delegationMember.count({
+					where: {
+						delegation: {
+							conferenceId: conference.id,
+							OR: [
+								{
+									NOT: {
+										assignedNationAlpha3Code: null
+									}
+								},
+								{
+									NOT: {
+										assignedNonStateActorId: null
+									}
+								}
+							]
+						}
+					}
+				});
+
+				const individualsCount = await db.singleParticipant.count({
+					where: {
+						conferenceId: conference.id,
+						NOT: {
+							assignedRoleId: null
+						}
+					}
+				});
+
+				return delegationMembersCount + individualsCount;
+			}
+		}),
+		totalSeats: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				let count = 0;
+
+				const committees = await db.committee.findMany({
+					where: { conferenceId: conference.id },
+					include: { nations: true }
+				});
+				for (const committee of committees) {
+					count += committee.nations.length;
+				}
+
+				count += await db.nonStateActor.count({ where: { conferenceId: conference.id } });
+
+				return count;
+			}
+		}),
+		waitingListLength: t.field({
+			type: 'Int',
+			resolve: async (conference) =>
+				await db.waitingListEntry.count({
+					where: {
+						conferenceId: conference.id
+					}
+				})
+		}),
+		schools: t.field({
+			type: [
+				builder.simpleObject('ConferenceSchools', {
+					fields: (t) => ({
+						school: t.string(),
+						delegationCount: t.int(),
+						delegationMembers: t.int(),
+						singleParticipants: t.int(),
+						sumParticipants: t.int()
+					})
+				})
+			],
+			resolve: async (conference, _, ctx) => {
+				const res: {
+					school: string;
+					delegationCount: number;
+					delegationMembers: number;
+					singleParticipants: number;
+					sumParticipants: number;
+				}[] = [];
+
+				const delegations = await db.delegation.findMany({
+					where: {
+						conferenceId: conference.id,
+						school: {
+							not: null
+						},
+						applied: {
+							equals: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').Delegation]
+					}
+				});
+
+				const members = await db.delegationMember.groupBy({
+					where: {
+						delegation: {
+							conferenceId: conference.id,
+							applied: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').DelegationMember]
+					},
+					by: 'delegationId',
+					_count: {
+						delegationId: true
+					}
+				});
+
+				for (const delegation of delegations) {
+					if (!delegation.school) continue;
+					const existing = res.find((r) => r.school === delegation.school);
+					const memberCount =
+						members.find((m) => m.delegationId === delegation.id)?._count.delegationId || 0;
+					if (existing) {
+						existing.delegationCount += 1;
+						existing.delegationMembers += memberCount;
+						existing.sumParticipants += memberCount;
+					} else {
+						res.push({
+							school: delegation.school,
+							delegationCount: 1,
+							delegationMembers: memberCount,
+							singleParticipants: 0,
+							sumParticipants: memberCount
+						});
+					}
+				}
+				const singleParticipants = await db.singleParticipant.groupBy({
+					where: {
+						conferenceId: conference.id,
+						school: {
+							not: null
+						},
+						applied: {
+							equals: true
+						},
+						AND: [ctx.permissions.allowDatabaseAccessTo('list').SingleParticipant]
+					},
+					by: 'school',
+					_count: {
+						school: true
+					}
+				});
+
+				for (const singleParticipant of singleParticipants) {
+					if (!singleParticipant.school) continue;
+					const existing = res.find((r) => r.school === singleParticipant.school);
+					const singleParticipantCount = singleParticipant._count.school;
+					if (existing) {
+						existing.singleParticipants += singleParticipantCount;
+						existing.sumParticipants += singleParticipantCount;
+					} else {
+						res.push({
+							school: singleParticipant.school,
+							delegationCount: 0,
+							delegationMembers: 0,
+							singleParticipants: singleParticipantCount,
+							sumParticipants: singleParticipantCount
+						});
+					}
+				}
+
+				return res;
+			}
+		}),
+		nextDocumentNumber: t.field({
+			type: 'Int',
+			resolve: async (root, args, ctx) => {
+				const nextDocumentNumberQuery = await db.conferenceParticipantStatus.aggregate({
+					_max: {
+						assigendDocumentNumber: true
+					},
+					where: {
+						conferenceId: root.id
+					}
+				});
+
+				return nextDocumentNumberQuery._max.assigendDocumentNumber
+					? nextDocumentNumberQuery._max.assigendDocumentNumber + 1
+					: 1;
+			}
 		})
 	})
 });
@@ -266,6 +457,9 @@ builder.mutationFields((t) => {
 							linkToPaperInbox: t.string({
 								required: false
 							}),
+							isOpenPaperSubmission: t.boolean({
+								required: false
+							}),
 							longTitle: t.string({
 								required: false
 							}),
@@ -282,8 +476,13 @@ builder.mutationFields((t) => {
 								type: 'File',
 								required: false
 							}),
+							emblem: t.field({
+								type: 'File',
+								required: false
+							}),
 							state: t.field({ type: ConferenceState, required: false }),
 							startAssignment: t.field({ type: 'DateTime', required: false }),
+							registrationDeadlineGracePeriodMinutes: t.int({ required: false }),
 							startConference: t.field({ type: 'DateTime', required: false }),
 							endConference: t.field({ type: 'DateTime', required: false }),
 							unlockPayments: t.boolean({
@@ -363,6 +562,11 @@ builder.mutationFields((t) => {
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;
 
+				const emblemDataURL = args.data.emblem
+					? await toDataURL(args.data.emblem)
+					: args.data.emblem;
+				args.data.emblem = undefined;
+
 				const contractContentURL = args.data.contractBasePDF
 					? await toDataURL(args.data.contractBasePDF)
 					: args.data.contractBasePDF;
@@ -393,14 +597,21 @@ builder.mutationFields((t) => {
 					data: {
 						...args.data,
 						imageDataURL: dataURL,
+						emblemDataURL: emblemDataURL,
 						title: args.data.title ?? undefined,
 						info: args.data.info ?? undefined,
 						state: args.data.state ?? undefined,
 						startAssignment: args.data.startAssignment ?? undefined,
+						registrationDeadlineGracePeriodMinutes:
+							args.data.registrationDeadlineGracePeriodMinutes ?? undefined,
 						startConference: args.data.startConference ?? undefined,
 						endConference: args.data.endConference ?? undefined,
 						unlockPayments:
 							args.data.unlockPayments === null ? undefined : args.data.unlockPayments,
+						isOpenPaperSubmission:
+							args.data.isOpenPaperSubmission === null
+								? undefined
+								: args.data.isOpenPaperSubmission,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
 						postalApartment: args.data.postalApartment ?? null,
 						contractContent: contractContentURL,
@@ -427,6 +638,58 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('delete').Conference]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneConferenceMutationObject(t);
+	return {
+		normalizeSchoolsInConference: t.prismaField({
+			...field,
+			args: {
+				conferenceId: t.arg.string({ required: true }),
+				schoolsToMerge: t.arg.stringList(),
+				newSchoolName: t.arg.string({ required: true })
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				return await db.$transaction(async (tx) => {
+					const { conferenceId, schoolsToMerge } = args;
+
+					await tx.delegation.updateMany({
+						where: {
+							conferenceId,
+							school: {
+								in: schoolsToMerge
+							},
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+						},
+						data: {
+							school: args.newSchoolName
+						}
+					});
+
+					await tx.singleParticipant.updateMany({
+						where: {
+							conferenceId,
+							school: {
+								in: schoolsToMerge
+							},
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').SingleParticipant]
+						},
+						data: {
+							school: args.newSchoolName
+						}
+					});
+
+					return await tx.conference.findUniqueOrThrow({
+						where: {
+							id: args.conferenceId,
+							AND: [ctx.permissions.allowDatabaseAccessTo('read').Conference]
+						}
+					});
+				});
 			}
 		})
 	};

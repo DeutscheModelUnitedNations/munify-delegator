@@ -3,21 +3,25 @@
 	import { registrationFilter, getHistory, getSelectedHistory } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
 	import type { PageData } from '../$types';
-	let { data }: { data: PageData } = $props();
-	let stats = $derived(data.stats);
+	let props: { data: PageData } = $props();
+	let stats = $derived(props.data.stats);
 
 	let selectedHistory = $derived.by(() =>
 		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
 	);
 </script>
 
-<section class="card col-span-2 bg-base-200 shadow-sm md:col-span-12">
-	<div class="card-body">
+<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-6 xl:col-span-6">
+	<div class="card-body p-4">
+		<h2 class="card-title text-base font-semibold">
+			<i class="fa-duotone fa-clipboard-check text-base-content/70"></i>
+			{m.status()}
+		</h2>
 		<div class="overflow-x-auto">
-			<table class="table">
+			<table class="table table-sm bg-base-100 rounded-lg">
 				<thead>
 					<tr>
-						<th class="w-full">{m.status()}</th>
+						<th class="w-full text-xs"></th>
 						<th class="text-center">
 							<i class="fas fa-triangle-exclamation text-error"></i>
 						</th>
@@ -33,20 +37,20 @@
 							{m.postalRegistration()}
 						</td>
 						<td class="text-center">
-							<span class="text-lg font-bold"> {stats.status.postalStatus.problem} </span>
+							<span class="text-lg font-bold"> {stats.status?.postalStatus?.problem} </span>
 							{#if selectedHistory}
 								<StatsDesc
-									currentValue={stats.status.postalStatus.problem}
-									historicValue={selectedHistory?.stats.status?.postalStatus.problem}
+									currentValue={stats.status?.postalStatus?.problem}
+									historicValue={selectedHistory?.stats.status?.postalStatus?.problem}
 								/>
 							{/if}
 						</td>
 						<td class="text-center">
-							<span class="text-lg font-bold">{stats.status.postalStatus.done}</span>
+							<span class="text-lg font-bold">{stats.status?.postalStatus?.done}</span>
 							{#if selectedHistory}
 								<StatsDesc
-									currentValue={stats.status.postalStatus.done}
-									historicValue={selectedHistory?.stats.status?.postalStatus.done}
+									currentValue={stats.status?.postalStatus?.done}
+									historicValue={selectedHistory?.stats.status?.postalStatus?.done}
 								/>
 							{/if}
 						</td>
@@ -57,20 +61,20 @@
 							{m.payment()}
 						</td>
 						<td class="text-center">
-							<span class="text-lg font-bold"> {stats.status.paymentStatus.problem} </span>
+							<span class="text-lg font-bold"> {stats.status?.paymentStatus?.problem} </span>
 							{#if selectedHistory}
 								<StatsDesc
-									currentValue={stats.status.paymentStatus.problem}
-									historicValue={selectedHistory?.stats.status?.paymentStatus.problem}
+									currentValue={stats.status?.paymentStatus?.problem}
+									historicValue={selectedHistory?.stats.status?.paymentStatus?.problem}
 								/>
 							{/if}
 						</td>
 						<td class="text-center">
-							<span class="text-lg font-bold">{stats.status.paymentStatus.done}</span>
+							<span class="text-lg font-bold">{stats.status?.paymentStatus?.done}</span>
 							{#if selectedHistory}
 								<StatsDesc
-									currentValue={stats.status.paymentStatus.done}
-									historicValue={selectedHistory?.stats.status?.paymentStatus.done}
+									currentValue={stats.status?.paymentStatus?.done}
+									historicValue={selectedHistory?.stats.status?.paymentStatus?.done}
 								/>
 							{/if}
 						</td>
@@ -82,10 +86,10 @@
 						</td>
 						<td class="text-center"><i class="fa-duotone fa-slash"></i></td>
 						<td class="text-center">
-							<span class="text-lg font-bold">{stats.status.didAttend}</span>
+							<span class="text-lg font-bold">{stats.status?.didAttend}</span>
 							{#if selectedHistory}
 								<StatsDesc
-									currentValue={stats.status.didAttend}
+									currentValue={stats.status?.didAttend}
 									historicValue={selectedHistory?.stats.status?.didAttend}
 								/>
 							{/if}

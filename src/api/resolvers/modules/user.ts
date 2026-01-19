@@ -22,17 +22,17 @@ import {
 	UserFoodPreferenceFieldObject,
 	UserWantsToReceiveGeneralInformationFieldObject,
 	UserWantsJoinTeamInformationFieldObject,
-	findFirstUserQueryObject,
-	findManyUserQuery
+	UserPapersFieldObject,
+	UserPaperReviewsFieldObject,
+	UserGlobalNotesFieldObject,
+	UserEmergencyContactsFieldObject
 } from '$db/generated/graphql/User';
 import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
-import { z } from 'zod';
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
-import { TeamRole } from '@prisma/client';
 
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
@@ -52,8 +52,20 @@ export const GQLUser = builder.prismaObject('User', {
 		gender: t.field(UserGenderFieldObject),
 		pronouns: t.field(UserPronounsFieldObject),
 		foodPreference: t.field(UserFoodPreferenceFieldObject),
+		emergencyContacts: t.field(UserEmergencyContactsFieldObject),
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
+		globalNotes: t.field(UserGlobalNotesFieldObject),
+		papers: t.relation('papers', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').Paper
+			})
+		}),
+		paperReviews: t.relation('paperReviews', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').PaperReview
+			})
+		}),
 		delegationMemberships: t.relation('delegationMemberships', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
@@ -83,6 +95,37 @@ export const GQLUser = builder.prismaObject('User', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').SurveyAnswer
 			})
+		}),
+		conferenceParticipationsCount: t.field({
+			type: 'Int',
+			resolve: async (parent, args, ctx, info) => {
+				const delegationMembershipsCount = await db.delegationMember.count({
+					where: {
+						userId: parent.id,
+						delegation: {
+							OR: [
+								{ assignedNationAlpha3Code: { not: null } },
+								{ assignedNonStateActorId: { not: null } }
+							]
+						}
+					}
+				});
+
+				const singleParticipantsCount = await db.singleParticipant.count({
+					where: {
+						userId: parent.id,
+						assignedRoleId: { not: null }
+					}
+				});
+
+				const conferenceSupervisorsCount = await db.conferenceSupervisor.count({
+					where: {
+						userId: parent.id
+					}
+				});
+
+				return delegationMembershipsCount + singleParticipantsCount + conferenceSupervisorsCount;
+			}
 		})
 	})
 });
@@ -201,6 +244,7 @@ builder.mutationFields((t) => {
 							gender: t.field({ type: Gender }),
 							pronouns: t.string({ required: false }),
 							foodPreference: t.string(),
+							emergencyContacts: t.string(),
 							wantsToReceiveGeneralInformation: t.boolean({
 								required: false
 							}),
@@ -233,6 +277,61 @@ builder.mutationFields((t) => {
 					AND: [ctx.permissions.allowDatabaseAccessTo('delete').User]
 				};
 				return field.resolve(query, root, args, ctx, info);
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneUserMutationObject(t);
+	return {
+		updateOneUsersNewsletterPreferences: t.prismaField({
+			...field,
+			args: {
+				email: t.arg.string(),
+				wantsToReceiveGeneralInformation: t.arg.boolean({
+					required: false
+				}),
+				wantsJoinTeamInformation: t.arg.boolean({ required: false })
+			},
+			resolve: async (query, root, args, ctx) => {
+				return await db.user.update({
+					where: {
+						email: args.email
+					},
+					data: {
+						wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
+						wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneUserMutationObject(t);
+	return {
+		updateOneUsersGlobalNotes: t.prismaField({
+			...field,
+			args: {
+				where: field.args.where,
+				globalNotes: t.arg.string()
+			},
+			resolve: async (query, root, args, ctx, info) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
+				};
+
+				const res = await db.user.update({
+					where: args.where,
+					data: {
+						globalNotes: args.globalNotes
+					}
+				});
+
+				return res;
 			}
 		})
 	};

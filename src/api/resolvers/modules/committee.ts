@@ -6,18 +6,21 @@ import {
 	CommitteeIdFieldObject,
 	CommitteeNameFieldObject,
 	CommitteeNumOfSeatsPerDelegationFieldObject,
+	CommitteeResolutionHeadlineFieldObject,
 	deleteOneCommitteeMutationObject,
 	findManyCommitteeQueryObject,
 	findUniqueCommitteeQueryObject,
 	updateOneCommitteeMutationObject
 } from '$db/generated/graphql/Committee';
+import { db } from '$db/db';
 
-builder.prismaObject('Committee', {
+export const GQLCommittee = builder.prismaObject('Committee', {
 	fields: (t) => ({
 		id: t.field(CommitteeIdFieldObject),
 		name: t.field(CommitteeNameFieldObject),
 		abbreviation: t.field(CommitteeAbbreviationFieldObject),
 		numOfSeatsPerDelegation: t.field(CommitteeNumOfSeatsPerDelegationFieldObject),
+		resolutionHeadline: t.field(CommitteeResolutionHeadlineFieldObject),
 		conference: t.relation('conference', CommitteeConferenceFieldObject),
 		nations: t.relation('nations', {
 			query: (_args, ctx) => ({
@@ -27,6 +30,11 @@ builder.prismaObject('Committee', {
 		delegationMembers: t.relation('delegationMembers', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').DelegationMember
+			})
+		}),
+		agendaItems: t.relation('CommitteeAgendaItem', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').CommitteeAgendaItem
 			})
 		})
 	})
@@ -81,22 +89,40 @@ builder.queryFields((t) => {
 // 	};
 // });
 
-// builder.mutationFields((t) => {
-// 	const field = updateOneCommitteeMutationObject(t);
-// 	return {
-// 		updateOneCommittee: t.prismaField({
-// 			...field,
-// 			args: { where: field.args.where },
-// 			resolve: (query, root, args, ctx, info) => {
-// 				args.where = {
-// 					...args.where,
-// 					AND: [ctx.permissions.allowDatabaseAccessTo('update').Committee]
-// 				};
-// 				return field.resolve(query, root, args, ctx, info);
-// 			}
-// 		})
-// 	};
-// });
+builder.mutationFields((t) => {
+	const field = updateOneCommitteeMutationObject(t);
+	return {
+		updateOneCommittee: t.prismaField({
+			...field,
+			args: {
+				where: field.args.where,
+				data: t.arg({
+					type: t.builder.inputType('CommitteeUpdateDataInput', {
+						fields: (t) => ({
+							name: t.string({ required: false }),
+							abbreviation: t.string({ required: false }),
+							resolutionHeadline: t.string({ required: false })
+						})
+					})
+				})
+			},
+			resolve: async (query, root, args, ctx) => {
+				return await db.committee.update({
+					where: {
+						...args.where,
+						AND: [ctx.permissions.allowDatabaseAccessTo('update').Committee]
+					},
+					data: {
+						name: args.data.name ?? undefined,
+						abbreviation: args.data.abbreviation ?? undefined,
+						resolutionHeadline: args.data.resolutionHeadline
+					},
+					...query
+				});
+			}
+		})
+	};
+});
 
 builder.mutationFields((t) => {
 	const field = deleteOneCommitteeMutationObject(t);

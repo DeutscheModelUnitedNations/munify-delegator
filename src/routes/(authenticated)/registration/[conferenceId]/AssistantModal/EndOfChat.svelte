@@ -22,9 +22,9 @@
 
 <div
 	id={randId}
-	class="flex items-center justify-center gap-3 pb-4 text-success"
+	class="text-success flex items-center justify-center gap-3 pb-4"
 	in:fly={{ y: 0, duration: 300, delay }}
 >
 	<i class="fa-solid fa-circle-check"></i>
-	<p class="text-center uppercase tracking-wider">Chat beendet</p>
+	<p class="text-center tracking-wider uppercase">Chat beendet</p>
 </div>

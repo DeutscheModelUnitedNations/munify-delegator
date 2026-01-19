@@ -1,5 +1,6 @@
 <script lang="ts" generics="Status">
 	import hotkeys from 'hotkeys-js';
+	import { onDestroy } from 'svelte';
 
 	interface Props {
 		title: string;
@@ -8,7 +9,7 @@
 		status: {
 			value: Status;
 			faIcon: string;
-			color: 'success' | 'warning' | 'error' | 'info';
+			color: 'btn-success' | 'btn-warning' | 'btn-error' | 'btn-info';
 			hotkey?: string;
 		}[];
 		changeStatus: (status: Status) => Promise<void>;
@@ -34,9 +35,17 @@
 			}
 		}
 	});
+
+	onDestroy(() => {
+		for (const s of status) {
+			if (s.hotkey) {
+				hotkeys.unbind(s.hotkey ?? '');
+			}
+		}
+	});
 </script>
 
-<div class="card flex flex-col gap-2 bg-base-100 p-4 shadow-md">
+<div class="card bg-base-100 flex flex-col gap-2 p-4 shadow-md">
 	<h3 class="font-bold">
 		<i class="fa-duotone fa-{faIcon.replace('fa-', '')} mr-2"></i>
 		{title}
@@ -44,7 +53,7 @@
 	<div class="join w-full">
 		{#each status as { value, faIcon, color, hotkey }}
 			<button
-				class="btn {activeStatus === value && `btn-${color}`} join-item flex-1"
+				class="btn {activeStatus === value && `${color}`} join-item flex-1"
 				aria-label={`${value}`}
 				onclick={() => btnClick(value)}
 			>

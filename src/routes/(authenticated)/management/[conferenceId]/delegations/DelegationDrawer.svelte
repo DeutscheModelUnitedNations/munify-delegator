@@ -1,30 +1,29 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import type { DelegationDrawerQueryVariables } from './$houdini';
 	import { delegaitonResetMutation } from './delegationResetMutation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
+	import { type PageData } from './$houdini';
+	import { invalidateAll } from '$app/navigation';
+	import codenmz from '$lib/services/codenamize';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		conferenceId: string;
 		delegationId: string;
 		open?: boolean;
 		onClose?: () => void;
+		userData: PageData['user'];
 	}
-	let { delegationId, open = $bindable(false), onClose, conferenceId }: Props = $props();
-
-	export const _DelegationDrawerQueryVariables: DelegationDrawerQueryVariables = () => {
-		return {
-			delegationId,
-			conferenceId
-		};
-	};
+	let { delegationId, open = $bindable(false), onClose, conferenceId, userData }: Props = $props();
 
 	const delegationQuery = graphql(`
-		query DelegationDrawerQuery($delegationId: String!) @load {
+		query DelegationDrawerQuery($delegationId: String!) {
 			findUniqueDelegation(where: { id: $delegationId }) {
 				applied
 				entryCode
@@ -44,6 +43,15 @@
 						abbreviation
 						name
 					}
+					supervisors {
+						id
+						plansOwnAttendenceAtConference
+						user {
+							id
+							given_name
+							family_name
+						}
+					}
 				}
 				appliedForRoles {
 					nonStateActor {
@@ -51,14 +59,6 @@
 					}
 					nation {
 						alpha3Code
-					}
-				}
-				supervisors {
-					id
-					plansOwnAttendenceAtConference
-					user {
-						given_name
-						family_name
 					}
 				}
 				assignedNation {
@@ -75,6 +75,24 @@
 		}
 	`);
 
+	$effect(() => {
+		if (delegationId) {
+			delegationQuery.fetch({ variables: { delegationId } });
+		}
+	});
+
+	const makeHeadDelegateAdminMutation = graphql(`
+		mutation MakeHeadDelegateAdminMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
+			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
+				id
+				members {
+					id
+					isHeadDelegate
+				}
+			}
+		}
+	`);
+
 	let delegation = $derived($delegationQuery.data?.findUniqueDelegation);
 	let members = $derived(
 		delegation?.members.sort((a, b) => {
@@ -82,15 +100,86 @@
 			return bothNames(a).localeCompare(bothNames(b));
 		})
 	);
+	let supervisors = $derived(
+		delegation?.members
+			.flatMap((m) => m.supervisors)
+			.filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
+	);
+
+	// Define member type to properly type selectedMember
+	type MemberType = {
+		id: string;
+		isHeadDelegate: boolean;
+		user: {
+			id: string;
+			given_name: string;
+			family_name: string;
+		};
+		assignedCommittee: {
+			id: string;
+			abbreviation: string;
+			name: string;
+		} | null;
+	};
 
 	let committeeAssignmentModalOpen = $state(false);
+	let headDelegateModalOpen = $state(false);
+	let selectedMember = $state<MemberType | null>(null);
+	let isUpdatingHeadDelegate = $state(false);
+
+	async function handleConfirmHeadDelegate() {
+		if (!selectedMember || selectedMember.isHeadDelegate) return;
+		isUpdatingHeadDelegate = true;
+		try {
+			await makeHeadDelegateAdminMutation.mutate({
+				where: { id: delegationId },
+				userId: selectedMember.user?.id
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to update head delegate:', error);
+		} finally {
+			isUpdatingHeadDelegate = false;
+			headDelegateModalOpen = false;
+			selectedMember = null;
+		}
+	}
+
+	const changeDelegationSchoolMutation = graphql(`
+		mutation ChangeDelegationSchool($delegationId: String!, $newSchool: String!) {
+			updateOneDelegation(where: { id: $delegationId }, school: $newSchool) {
+				id
+				school
+			}
+		}
+	`);
+
+	const changeSchool = async () => {
+		const newSchool = prompt(m.enterNewSchoolName());
+		if (!newSchool) return;
+
+		try {
+			await toast.promise(
+				changeDelegationSchoolMutation.mutate({
+					delegationId,
+					newSchool
+				}),
+				genericPromiseToastMessages
+			);
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to change school name:', error);
+		}
+	};
 </script>
 
 <Drawer
 	bind:open
 	{onClose}
 	id={delegationId}
-	title={delegation?.entryCode ?? 'XXXXXX'}
+	title={codenmz(delegationId)}
 	category={m.delegation()}
 	loading={$delegationQuery.fetching}
 >
@@ -137,7 +226,14 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
 					<td>
-						{delegation?.school}
+						<div class="flex items-center">
+							<div class="w-full flex-1">
+								{delegation?.school}
+							</div>
+							<button class="btn btn-xs ml-2" onclick={changeSchool} aria-label="Edit School">
+								<i class="fa-duotone fa-pencil"></i>
+							</button>
+						</div>
 					</td>
 				</tr>
 				<tr>
@@ -155,7 +251,7 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-flag text-lg"></i></td>
 					<td>
-						<span class="mr-1 rounded-md bg-base-300 px-3 py-[2px]"
+						<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
 							>{delegation?.appliedForRoles.length}</span
 						>
 						{delegation?.appliedForRoles
@@ -189,7 +285,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each members ?? [] as member}
+					{#each members ?? [] as member, i (i)}
 						<tr>
 							<td>
 								{#if member.isHeadDelegate}
@@ -210,7 +306,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/participants?filter={member.user.id}"
+									href="/management/{conferenceId}/participants?selected={member.user?.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -226,7 +322,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
 
-		{#if !delegation?.supervisors || delegation?.supervisors.length === 0}
+		{#if !supervisors || supervisors.length === 0}
 			<div class="alert alert-info">
 				<i class="fa-solid fa-user-slash"></i>
 				{m.noSupervisors()}
@@ -241,7 +337,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each delegation?.supervisors ?? [] as supervisor}
+					{#each supervisors as supervisor, i (i)}
 						<tr>
 							<td>
 								{#if supervisor.plansOwnAttendenceAtConference}
@@ -257,7 +353,7 @@
 							<td>
 								<a
 									class="btn btn-sm"
-									href="/management/{conferenceId}/supervisors?filter={supervisor.id}"
+									href="/management/{conferenceId}/supervisors?selected={supervisor.id}"
 									aria-label="Details"
 								>
 									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -289,6 +385,18 @@
 			<i class="fa-duotone fa-grid-2"></i>
 			{m.committeeAssignment()}
 		</button>
+		{#if userData?.myOIDCRoles?.includes('admin')}
+			<button
+				class="btn"
+				onclick={() => {
+					selectedMember = members?.find((m) => m.isHeadDelegate) ?? null;
+					headDelegateModalOpen = true;
+				}}
+			>
+				<i class="fa-duotone fa-medal"></i>
+				{m.headDelegate ? m.headDelegate() : 'Change Head Delegate'}
+			</button>
+		{/if}
 	</div>
 
 	<div class="flex flex-col gap-2">
@@ -297,10 +405,15 @@
 			class="btn {!delegation?.applied && 'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				await delegaitonResetMutation.mutate({
-					delegationId,
-					applied: delegation?.applied
-				});
+				await toast.promise(
+					delegaitonResetMutation.mutate({
+						delegationId,
+						applied: false
+					}),
+					genericPromiseToastMessages
+				);
+				cache.markStale();
+				await invalidateAll();
 			}}
 		>
 			<i class="fas fa-file-slash"></i>
@@ -308,6 +421,53 @@
 		</button>
 	</div>
 </Drawer>
+
+<!-- Head Delegate Selection Modal -->
+<div class="modal" class:modal-open={headDelegateModalOpen}>
+	<div class="modal-box">
+		<h3 class="text-lg font-bold">{m.headDelegate ? m.headDelegate() : m.delegationMembers()}</h3>
+		<div class="max-h-60 overflow-y-auto">
+			{#each members ?? [] as member, i (i)}
+				<label class="hover:bg-base-200 flex cursor-pointer items-center gap-2 rounded-md p-2">
+					<input
+						type="radio"
+						name="head-delegate"
+						checked={selectedMember?.id === member.id}
+						onclick={() => (selectedMember = member)}
+						disabled={member.isHeadDelegate || isUpdatingHeadDelegate}
+						class="radio"
+					/>
+					<span>{member.user.given_name} {member.user.family_name}</span>
+					{#if member.isHeadDelegate}
+						<span class="badge badge-primary">
+							<i class="fas fa-medal"></i>
+						</span>
+					{/if}
+				</label>
+			{/each}
+		</div>
+		<div class="modal-action">
+			<button
+				class="btn"
+				onclick={() => {
+					selectedMember = null;
+					headDelegateModalOpen = false;
+				}}
+				disabled={isUpdatingHeadDelegate}>{m.close ? m.close() : 'Cancel'}</button
+			>
+			<button
+				class="btn btn-primary"
+				onclick={handleConfirmHeadDelegate}
+				disabled={!selectedMember || selectedMember.isHeadDelegate || isUpdatingHeadDelegate}
+			>
+				{#if isUpdatingHeadDelegate}
+					<span class="loading loading-spinner"></span>
+				{/if}
+				{m.confirm()}
+			</button>
+		</div>
+	</div>
+</div>
 
 <CommitteeAssignmentModal
 	bind:open={committeeAssignmentModalOpen}

@@ -22,7 +22,8 @@ import {
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
-import { individualApplicationFormSchema } from '../../../routes/(authenticated)/registration/[conferenceId]/individual/[roleId]/form-schema';
+import { applicationFormSchema } from '$lib/schemata/applicationForm';
+import dayjs from 'dayjs';
 
 builder.prismaObject('SingleParticipant', {
 	fields: (t) => ({
@@ -38,6 +39,11 @@ builder.prismaObject('SingleParticipant', {
 		appliedForRoles: t.relation('appliedForRoles', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').CustomConferenceRole
+			})
+		}),
+		supervisors: t.relation('supervisors', {
+			query: (_args, ctx) => ({
+				where: ctx.permissions.allowDatabaseAccessTo('list').ConferenceSupervisor
 			})
 		})
 	})
@@ -92,7 +98,7 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				individualApplicationFormSchema.parse({ ...args, conferenceId: undefined });
+				applicationFormSchema.parse({ ...args, conferenceId: undefined });
 
 				const { foundDelegationMember, foundSupervisor, foundTeamMember } =
 					await fetchUserParticipations({
@@ -202,14 +208,28 @@ builder.mutationFields((t) => {
 					);
 				}
 
-				return await db.singleParticipant.create({
-					...query,
-					data: {
-						conferenceId: args.conferenceId,
-						userId: args.userId,
-						applied: true,
-						assignedRoleId: args.roleId
-					}
+				return await db.$transaction(async (tx) => {
+					await tx.waitingListEntry
+						.update({
+							where: {
+								conferenceId_userId: {
+									conferenceId: args.conferenceId,
+									userId: args.userId
+								}
+							},
+							data: { assigned: true }
+						})
+						.catch(() => {});
+
+					return await tx.singleParticipant.create({
+						...query,
+						data: {
+							conferenceId: args.conferenceId,
+							userId: args.userId,
+							applied: true,
+							assignedRoleId: args.roleId
+						}
+					});
 				});
 			}
 		})
@@ -260,15 +280,25 @@ builder.mutationFields((t) => {
 						singleParticipant.experience.length === 0 ||
 						!singleParticipant.motivation ||
 						singleParticipant.motivation.length === 0 ||
-						!individualApplicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
+						!applicationFormSchema.safeParse({ ...args, conferenceId: undefined }).success
 					) {
 						throw new GraphQLError(m.missingInformation());
 					}
 
-					if (Date.now() > singleParticipant.conference.startAssignment.getTime()) {
+					if (
+						dayjs(singleParticipant.conference.startAssignment)
+							.add(singleParticipant.conference.registrationDeadlineGracePeriodMinutes, 'minute')
+							.isBefore(dayjs())
+					) {
 						throw new GraphQLError(m.applicationTimeframeClosed());
 					}
 				}
+
+				applicationFormSchema.parse({
+					school: args.school,
+					experience: args.experience,
+					motivation: args.motivation
+				});
 
 				return await db.singleParticipant.update({
 					...query,

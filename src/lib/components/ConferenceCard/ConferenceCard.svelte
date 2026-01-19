@@ -1,27 +1,18 @@
 <script lang="ts">
 	import CardInfoSectionWithIcons from './CardInfoSectionWithIcons.svelte';
 	import { getLocale } from '$lib/paraglide/runtime.js';
-	import { onMount } from 'svelte';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 	import { m } from '$lib/paraglide/messages';
-	import type { Conference } from '@prisma/client';
+	import type { ConferenceOpenForRegistrationQuery$result } from '$houdini';
+	import { getRegistrationStatus, type RegistrationStatus } from '$lib/services/registrationStatus';
+	import { getWaitingListStatus } from '$lib/services/waitingListStatus';
+	import StatusLight from '../StatusLight.svelte';
+	import RegistrationStatusLight from '../RegistrationStatusLight.svelte';
 
 	interface ConferenceCardProps {
-		conference: Pick<
-			Conference,
-			| 'id'
-			| 'imageDataURL'
-			| 'language'
-			| 'title'
-			| 'location'
-			| 'website'
-			| 'endConference'
-			| 'longTitle'
-			| 'startAssignment'
-			| 'startConference'
-			| 'state'
-		>;
-
+		conference: NonNullable<
+			ConferenceOpenForRegistrationQuery$result['findManyConferences']
+		>[number];
 		baseSlug: string;
 		btnText?: string;
 		alreadyRegistered?: boolean;
@@ -36,29 +27,55 @@
 		alwaysEnableButton = false
 	}: ConferenceCardProps = $props();
 
-	let registrationStatus: 'OPEN' | 'CLOSED' | 'NOT_YET_OPEN' | 'UNKNOWN' = $derived.by(() => {
-		if (conference.state === 'PRE') {
-			return 'NOT_YET_OPEN';
-		}
+	let registrationStatus = $derived(
+		getRegistrationStatus(conference.state, new Date(conference.startAssignment))
+	);
 
-		if (new Date().getTime() > new Date(conference.startAssignment).getTime()) {
-			return 'CLOSED';
-		}
-
-		if (
-			conference.state === 'PARTICIPANT_REGISTRATION' &&
-			new Date().getTime() <= new Date(conference.startAssignment).getTime()
-		) {
-			return 'OPEN';
-		}
-
-		return 'UNKNOWN';
-	});
+	let waitingListStatus = $derived(
+		getWaitingListStatus(
+			conference.totalSeats,
+			conference.totalParticipants,
+			conference.waitingListLength
+		)
+	);
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
 		month: 'long',
 		day: 'numeric'
+	};
+
+	const dateTimeOptions: Intl.DateTimeFormatOptions = {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit'
+	};
+
+	const registrationInfoText = () => {
+		switch (registrationStatus) {
+			case 'WAITING_LIST':
+				switch (waitingListStatus) {
+					case 'VACANCIES':
+						return m.vacancies();
+					case 'SHORT_LIST':
+						return m.shortWaitingList();
+					case 'LONG_LIST':
+						return m.longWaitingList();
+				}
+				break;
+			case 'OPEN':
+				return m.registrationOpen({
+					date: `${new Date(conference.startAssignment as unknown as string)?.toLocaleString(getLocale(), dateTimeOptions) ?? ''}`
+				});
+			case 'CLOSED':
+				return m.registrationClosed();
+			case 'NOT_YET_OPEN':
+				return m.registrationNotYetOpen();
+			case 'UNKNOWN':
+				return m.unknownRegistrationStatus();
+		}
 	};
 
 	const cardInfoItems = () => {
@@ -73,19 +90,7 @@
 			},
 			{ fontAwesomeIcon: 'fa-map-marker-alt', text: conference.location ?? m.unknownLocation() },
 			{ fontAwesomeIcon: 'fa-comments', text: conference.language ?? m.unknownLanguage() },
-			{
-				fontAwesomeIcon: 'fa-calendar-plus',
-				text:
-					registrationStatus === 'OPEN'
-						? m.registrationOpen({
-								date: `${new Date(conference.startAssignment as unknown as string)?.toLocaleDateString(getLocale(), dateOptions) ?? ''}`
-							})
-						: registrationStatus === 'CLOSED'
-							? m.registrationClosed()
-							: registrationStatus === 'NOT_YET_OPEN'
-								? m.registrationNotYetOpen()
-								: m.unknownRegistrationStatus()
-			}
+			{ fontAwesomeIcon: 'fa-calendar-plus', text: registrationInfoText() }
 		];
 
 		if (conference.website) {
@@ -101,7 +106,7 @@
 </script>
 
 <div
-	class="card carousel-item w-[90%] max-w-96 bg-base-100 shadow-xl transition-all duration-300 hover:scale-[1.01] dark:bg-base-200"
+	class="card carousel-item bg-base-100 border-base-200 w-[90%] max-w-96 border shadow-xl transition-all duration-300 hover:scale-[1.01]"
 >
 	<figure class="relative aspect-video">
 		<img
@@ -116,20 +121,37 @@
 		{/if}
 	</figure>
 	<div class="card-body">
-		<h2 class="card-title mb-2">{conference.title}</h2>
+		<div class="mb-2 flex items-center gap-4">
+			<h2 class="card-title">{conference.title}</h2>
+			<RegistrationStatusLight {registrationStatus} {waitingListStatus} size="xl" />
+		</div>
 		<CardInfoSectionWithIcons items={cardInfoItems()} />
-		<div class="card-actions mt-4 h-full items-end justify-end">
-			{#if (registrationStatus === 'OPEN' && !alreadyRegistered) || alwaysEnableButton}
-				<a href={`${baseSlug}/${conference.id}`} class="btn btn-primary">
+		<div class="card-actions mt-4 h-full flex-col items-end justify-end">
+			{#if alreadyRegistered && !alwaysEnableButton}
+				<a href={`/dashboard/${conference.id}`} class="btn btn-success">
+					{btnText ?? m.dashboard()}
+					<i class="fas fa-arrow-right"></i>
+				</a>
+			{:else if registrationStatus === 'OPEN' || alwaysEnableButton}
+				<a href="{baseSlug}/{conference.id}" class="btn btn-primary">
 					{btnText ?? m.signup()}
 					<i class="fas fa-arrow-right"></i>
 				</a>
-			{:else}
-				<button class="btn" disabled>
-					{btnText ?? m.signup()}
+			{:else if registrationStatus === 'WAITING_LIST'}
+				<a href="{baseSlug}/{conference.id}/waiting-list" class="btn btn-accent">
+					{btnText ?? (waitingListStatus === 'VACANCIES' ? m.vacanciesBtn() : m.waitingListBtn())}
 					<i class="fas fa-arrow-right"></i>
+				</a>
+			{:else}
+				<button class="btn btn-disabled">
+					<i class="fas fa-lock"></i>
+					{btnText ?? m.signup()}
 				</button>
 			{/if}
+			<a href="/seats/{conference.id}" target="_blank" class="btn btn-outline btn-primary">
+				{m.conferenceSeats()}
+				<i class="fas fa-arrow-up-right-from-square"></i>
+			</a>
 		</div>
 	</div>
 </div>

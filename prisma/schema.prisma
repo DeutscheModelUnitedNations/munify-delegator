@@ -11,6 +11,7 @@ generator client {
 generator pothos {
   provider    = "prisma-pothos-types"
   prismaUtils = "true"
+  output      = "./pothos/generated.ts"
 }
 
 generator pothosCrud {
@@ -29,20 +30,24 @@ enum ConferenceState {
 
 /// A conference in the system
 model Conference {
-  id                     String          @id @default(nanoid())
-  title                  String
-  longTitle              String?
-  location               String?
-  language               String?
-  website                String?
-  imageDataURL           String?
-  info                   String?
-  linkToPreparationGuide String?
-  linkToPaperInbox       String?
-  state                  ConferenceState @default(PRE)
-  startAssignment        DateTime
-  startConference        DateTime
-  endConference          DateTime
+  id                                     String          @id @default(nanoid())
+  title                                  String
+  longTitle                              String?
+  location                               String?
+  language                               String?
+  website                                String?
+  imageDataURL                           String?
+  /// SVG data URL for conference emblem (falls back to UN emblem if null)
+  emblemDataURL                          String?
+  info                                   String?
+  linkToPreparationGuide                 String?
+  linkToPaperInbox                       String?
+  isOpenPaperSubmission                  Boolean         @default(false)
+  state                                  ConferenceState @default(PRE)
+  startAssignment                        DateTime
+  registrationDeadlineGracePeriodMinutes Int             @default(30)
+  startConference                        DateTime
+  endConference                          DateTime
 
   /// Payment and Postal information
   unlockPayments  Boolean @default(false)
@@ -80,6 +85,8 @@ model Conference {
   delegationMembers            DelegationMember[]
   paymentTransactions          PaymentTransaction[]
   surveyQuestions              SurveyQuestion[]
+  WaitingListEntry             WaitingListEntry[]
+  papers                       Paper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -91,11 +98,38 @@ model Committee {
   name                    String
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
+  /// Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
+  resolutionHeadline      String?
 
   conference        Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
   nations           Nation[]
   delegationMembers DelegationMember[]
+
+  CommitteeAgendaItem CommitteeAgendaItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Status indicating whether reviewers need help with an agenda item
+enum ReviewHelpStatus {
+  UNSPECIFIED
+  HELP_NEEDED
+  NO_HELP_WANTED
+}
+
+/// Agenda Items that are discussed in a committee
+model CommitteeAgendaItem {
+  id         String  @id @default(nanoid())
+  title      String
+  teaserText String?
+
+  reviewHelpStatus ReviewHelpStatus @default(UNSPECIFIED)
+
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  committeeId String
+  papers      Paper[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -128,31 +162,54 @@ model User {
   preferred_username String
 
   // custom data fields
-  birthday       DateTime?
-  phone          String?
-  street         String?
-  apartment      String?
-  zip            String?
-  city           String?
-  country        String?
-  gender         Gender?
-  pronouns       String?
-  foodPreference FoodPreference?
+  birthday          DateTime?
+  phone             String?
+  street            String?
+  apartment         String?
+  zip               String?
+  city              String?
+  country           String?
+  gender            Gender?
+  pronouns          String?
+  foodPreference    FoodPreference?
+  emergencyContacts String?
 
   wantsToReceiveGeneralInformation Boolean @default(false)
   wantsJoinTeamInformation         Boolean @default(false)
 
-  delegationMemberships         DelegationMember[]
+  globalNotes String?
+
+  delegationMemberships DelegationMember[]
+  singleParticipant     SingleParticipant[]
+
   conferenceSupervisor          ConferenceSupervisor[]
   conferenceParticipantStatus   ConferenceParticipantStatus[]
   teamMember                    TeamMember[]
-  singleParticipant             SingleParticipant[]
   ownPaymentTransactions        PaymentTransaction[]
   paymentTransactionsReferences UserReferenceInPaymentTransaction[]
   surveyAnswers                 SurveyAnswer[]
+  waitingListEntry              WaitingListEntry[]
+  papers                        Paper[]
+  paperReviews                  PaperReview[]
+  reviewerSnippets              ReviewerSnippet[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Reusable text snippets for paper reviewers
+model ReviewerSnippet {
+  id      String @id @default(nanoid())
+  name    String
+  content Json   // TipTap JSON format to preserve formatting
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, name])
 }
 
 // Status which can be set for various progress tracking fields in the app
@@ -172,13 +229,14 @@ enum MediaConsentStatus {
 
 // administrative status of a user in a conference, used for storing e.g. payment status, postal application status, etc.
 model ConferenceParticipantStatus {
-  id                 String               @id @default(nanoid())
-  termsAndConditions AdministrativeStatus @default(PENDING)
-  guardianConsent    AdministrativeStatus @default(PENDING)
-  mediaConsent       AdministrativeStatus @default(PENDING)
-  paymentStatus      AdministrativeStatus @default(PENDING)
-  mediaConsentStatus MediaConsentStatus   @default(NOT_SET)
-  didAttend          Boolean              @default(false)
+  id                     String               @id @default(nanoid())
+  termsAndConditions     AdministrativeStatus @default(PENDING)
+  guardianConsent        AdministrativeStatus @default(PENDING)
+  mediaConsent           AdministrativeStatus @default(PENDING)
+  paymentStatus          AdministrativeStatus @default(PENDING)
+  mediaConsentStatus     MediaConsentStatus   @default(NOT_SET)
+  didAttend              Boolean              @default(false)
+  assigendDocumentNumber Int?
 
   user         User       @relation(fields: [userId], references: [id])
   userId       String
@@ -189,6 +247,7 @@ model ConferenceParticipantStatus {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([userId, conferenceId])
+  @@unique([conferenceId, assigendDocumentNumber])
 }
 
 /// The transactions used to reference the payment status of various users in the conference
@@ -216,6 +275,72 @@ model UserReferenceInPaymentTransaction {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Papers
+enum PaperType {
+  POSITION_PAPER /// Delegates and NonStateActors
+  WORKING_PAPER /// Delegates
+  INTRODUCTION_PAPER /// NonStateActors
+}
+
+enum PaperStatus {
+  DRAFT
+  SUBMITTED
+  REVISED
+  CHANGES_REQUESTED
+  ACCEPTED
+}
+
+model Paper {
+  id     String      @id @default(nanoid())
+  type   PaperType
+  status PaperStatus @default(SUBMITTED)
+
+  author       User                 @relation(fields: [authorId], references: [id])
+  authorId     String
+  conference   Conference           @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId String
+  delegation   Delegation           @relation(fields: [delegationId], references: [id], onDelete: Cascade)
+  delegationId String
+  agendaItem   CommitteeAgendaItem? @relation(fields: [agendaItemId], references: [id])
+  agendaItemId String?
+  versions     PaperVersion[]
+
+  firstSubmittedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model PaperVersion {
+  id      String      @id @default(nanoid())
+  version Int
+  status  PaperStatus @default(DRAFT)
+  content Json        @default("{}")
+
+  paper   Paper         @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  paperId String
+  reviews PaperReview[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([paperId, version])
+}
+
+model PaperReview {
+  id       String @id @default(nanoid())
+  comments Json
+
+  statusBefore PaperStatus?
+  statusAfter  PaperStatus?
+
+  paperVersion   PaperVersion @relation(fields: [paperVersionId], references: [id], onDelete: Cascade)
+  paperVersionId String
+  reviewer       User         @relation(fields: [reviewerId], references: [id])
+  reviewerId     String
+
+  createdAt DateTime @default(now())
 }
 
 /// A nation of the UN. Mostly gets seeded at application startup
@@ -262,6 +387,7 @@ model CustomConferenceRole {
   name            String
   description     String
   fontAwesomeIcon String?
+  seatAmount      Int     @default(1)
 
   conference        Conference          @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
@@ -296,6 +422,8 @@ model SingleParticipant {
 
   appliedForRoles CustomConferenceRole[]
 
+  supervisors ConferenceSupervisor[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -314,10 +442,9 @@ model Delegation {
   // this will always be auto generated
   entryCode  String
 
-  conference      Conference             @relation(fields: [conferenceId], references: [id])
+  conference      Conference         @relation(fields: [conferenceId], references: [id])
   conferenceId    String
   members         DelegationMember[]
-  supervisors     ConferenceSupervisor[]
   appliedForRoles RoleApplication[]
 
   assignedNation           Nation? @relation(fields: [assignedNationAlpha3Code], references: [alpha3Code])
@@ -328,6 +455,7 @@ model Delegation {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  papers    Paper[]
 
   @@unique([conferenceId, entryCode])
   @@unique([conferenceId, assignedNationAlpha3Code])
@@ -369,7 +497,7 @@ model DelegationMember {
   assignedCommittee   Committee? @relation(fields: [assignedCommitteeId], references: [id])
   assignedCommitteeId String?
 
-  postAssignmentConferenceSupervisors ConferenceSupervisor[]
+  supervisors ConferenceSupervisor[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -387,23 +515,21 @@ model ConferenceSupervisor {
 
   // since this entity can be edited by the users themselves we
   // want to prevent the following fields to ever show up in input models 
-  conference   Conference   @relation(fields: [conferenceId], references: [id])
-  conferenceId String
-  user         User         @relation(fields: [userId], references: [id])
-  userId       String
-  // this also never will be set directly but via a check of the entry code for delegations
-  // therefore no update/create call ever should include this
-  delegations  Delegation[]
+  conference                   Conference          @relation(fields: [conferenceId], references: [id])
+  conferenceId                 String
+  user                         User                @relation(fields: [userId], references: [id])
+  userId                       String
+  supervisedDelegationMembers  DelegationMember[]
+  supervisedSingleParticipants SingleParticipant[]
 
-  // after assignment the supervisors lose their delegation access and gain a member access
-  // this is for pricacy reasons since the assignment process might add user which are not
-  // related to the supervisor in any way to a delegation they are supervising
-  // which would render their data open to read for a completely unknown person
-  postAssignmentDelegeationMembers DelegationMember[]
+  // this will always be auto generated
+  /// code the participants have to enter to allow this supervisor access to their data
+  connectionCode String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  @@unique([conferenceId, connectionCode])
   @@unique([conferenceId, userId])
 }
 
@@ -459,10 +585,33 @@ model SurveyAnswer {
   @@unique([questionId, userId])
 }
 
+/// An Entry of a User on a Waiting List for a Conference
+model WaitingListEntry {
+  id           String     @id @default(nanoid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+
+  school     String
+  experience String
+  motivation String
+  requests   String?
+
+  hidden   Boolean @default(false)
+  assigned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, userId])
+}
+
 /// Role a team member can have
 enum TeamRole {
   PROJECT_MANAGEMENT
   PARTICIPANT_CARE
+  REVIEWER
   MEMBER
 }
 

@@ -9,8 +9,8 @@ import {
 	PDFString
 } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
-import replaceSpecialChars from 'replace-special-characters';
-import { toast } from '@zerodevx/svelte-toast';
+import { toast } from 'svelte-sonner';
+import fontkit from '@pdf-lib/fontkit';
 
 export interface ParticipantData {
 	id: string;
@@ -160,6 +160,8 @@ abstract class PDFPageGenerator {
 	protected helvetica!: PDFFont; // Add font properties
 	protected helveticaBold!: PDFFont; // Add font properties
 	protected courier!: PDFFont; // Add font properties
+	protected custfont!: PDFFont;
+	protected custfontBold!: PDFFont;
 
 	constructor(pdfDoc: PDFDocument, styles = defaultStyles) {
 		this.pdfDoc = pdfDoc;
@@ -172,6 +174,18 @@ abstract class PDFPageGenerator {
 		this.helvetica = await this.pdfDoc.embedFont(StandardFonts.Helvetica);
 		this.helveticaBold = await this.pdfDoc.embedFont(StandardFonts.HelveticaBold);
 		this.courier = await this.pdfDoc.embedFont(StandardFonts.Courier);
+		//Load custom font
+
+		this.pdfDoc.registerFontkit(fontkit);
+		const custfontBytes = await fetch('/fonts/SpaceMono-Regular.ttf').then((res) =>
+			res.arrayBuffer()
+		);
+		const custfontBoldBytes = await fetch('/fonts/SpaceMono-Bold.ttf').then((res) =>
+			res.arrayBuffer()
+		);
+
+		this.custfont = await this.pdfDoc.embedFont(custfontBytes);
+		this.custfontBold = await this.pdfDoc.embedFont(custfontBoldBytes);
 	}
 
 	protected async drawFoldMarks() {
@@ -262,11 +276,11 @@ class ContractGenerator extends PDFPageGenerator {
 
 		// Participant Fields
 		yPosition = height - 320;
-		this.page.drawText(replaceSpecialChars(this.participantData.name), {
+		this.page.drawText(this.participantData.name, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition = height - 380;
@@ -274,7 +288,7 @@ class ContractGenerator extends PDFPageGenerator {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -293,11 +307,11 @@ class GuardianGenerator extends PDFPageGenerator {
 		let yPosition: number;
 
 		yPosition = height - 180;
-		this.page.drawText(replaceSpecialChars(this.participantData.name), {
+		this.page.drawText(this.participantData.name, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition = height - 240;
@@ -305,7 +319,7 @@ class GuardianGenerator extends PDFPageGenerator {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 	}
@@ -324,11 +338,11 @@ class MediaGenerator extends PDFPageGenerator {
 		let yPosition: number;
 
 		yPosition = height - 225;
-		this.page.drawText(replaceSpecialChars(this.participantData.name), {
+		this.page.drawText(this.participantData.name, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition -= 42;
@@ -336,42 +350,128 @@ class MediaGenerator extends PDFPageGenerator {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: this.styles.fontSize.heading,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 		yPosition -= 42;
-		this.page.drawText(replaceSpecialChars(this.participantData.address), {
+		this.page.drawText(this.participantData.address, {
 			x: this.styles.margin.left,
 			y: yPosition,
 			size: 10,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 	}
 }
 
-async function numerateDocument(pdfDoc: PDFDocument) {
+function toRomanNumeral(num: number): string {
+	const romanNumerals: [number, string][] = [
+		[10, 'x'],
+		[9, 'ix'],
+		[5, 'v'],
+		[4, 'iv'],
+		[1, 'i']
+	];
+	let result = '';
+	for (const [value, numeral] of romanNumerals) {
+		while (num >= value) {
+			result += numeral;
+			num -= value;
+		}
+	}
+	return result;
+}
+
+async function numerateDocument(
+	pdfDoc: PDFDocument,
+	participantId: string,
+	participantName: string,
+	mainPageCount: number
+) {
 	const pages = pdfDoc.getPages();
 	const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-	const pageCount = pages.length;
-	const { width, height } = pdfDoc.getPage(0).getSize();
+	const totalPages = pages.length;
+	const appendixPageCount = totalPages - mainPageCount;
+	const { width } = pdfDoc.getPage(0).getSize();
 	const fontSize = 10;
 
-	const pageNumberText = `${pageCount} / ${pageCount}`;
+	// Generate data-matrix barcode for footer (only needed for main pages)
+	const barcodeCanvas = document.createElement('canvas');
+	bwipjs.toCanvas(barcodeCanvas, {
+		bcid: 'datamatrix',
+		text: participantId,
+		scale: 1,
+		rotate: 'N'
+	});
+	const barcodeImg = barcodeCanvas.toDataURL('image/png');
+	const pngImage = await pdfDoc.embedPng(barcodeImg);
+	const pngDims = pngImage.scale(1);
+
+	const smallFontSize = 8;
 
 	pages.forEach((page, index) => {
-		const pageNumber = `${index + 1} / ${pageCount}`;
-		const x = width - defaultStyles.margin.right;
-		const y = defaultStyles.margin.bottom + fontSize;
+		const isMainPage = index < mainPageCount;
+		const rightX = width - defaultStyles.margin.right;
+		const barcodeY = defaultStyles.margin.bottom;
 
-		page.drawText(pageNumber, {
-			x,
-			y,
-			size: fontSize,
-			font: helvetica,
-			color: rgb(0, 0, 0)
-		});
+		if (isMainPage) {
+			// Main pages: show participant info and barcode
+			const pageNumber = `${index + 1} / ${mainPageCount}`;
+
+			// Draw data-matrix barcode at bottom right
+			const barcodeX = rightX - pngDims.width;
+			page.drawImage(pngImage, {
+				x: barcodeX,
+				y: barcodeY,
+				width: pngDims.width,
+				height: pngDims.height
+			});
+
+			// Draw participant ID to the left of the barcode (bottom line, hugging bottom)
+			const idTextWidth = helvetica.widthOfTextAtSize(participantId, smallFontSize);
+			page.drawText(participantId, {
+				x: barcodeX - idTextWidth - 5,
+				y: barcodeY,
+				size: smallFontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+
+			// Draw participant name to the left of the barcode (just above ID, hugging it)
+			const nameWidth = helvetica.widthOfTextAtSize(participantName, smallFontSize);
+			page.drawText(participantName, {
+				x: barcodeX - nameWidth - 5,
+				y: barcodeY + smallFontSize + 2,
+				size: smallFontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+
+			// Draw page number at the top (right-aligned, with space above name/barcode)
+			const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
+			page.drawText(pageNumber, {
+				x: rightX - pageNumberWidth,
+				y: barcodeY + pngDims.height + 10,
+				size: fontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+		} else {
+			// Appendix pages: roman numerals, no participant info
+			const appendixIndex = index - mainPageCount + 1;
+			const pageNumber = `${toRomanNumeral(appendixIndex)} / ${toRomanNumeral(appendixPageCount)}`;
+
+			// Draw page number at the bottom right
+			const pageNumberWidth = helvetica.widthOfTextAtSize(pageNumber, fontSize);
+			page.drawText(pageNumber, {
+				x: rightX - pageNumberWidth,
+				y: barcodeY + fontSize,
+				size: fontSize,
+				font: helvetica,
+				color: rgb(0, 0, 0)
+			});
+		}
 	});
 }
 
@@ -393,15 +493,15 @@ class CertificateGenerator extends PDFPageGenerator {
 
 		const { width, height } = this.page.getSize();
 		const yPosition = height - 215;
-		const text = replaceSpecialChars(this.data.fullName);
-		let textWidth = this.courier.widthOfTextAtSize(text, this.styles.fontSize.title);
+		const text = this.data.fullName;
+		let textWidth = this.custfont.widthOfTextAtSize(text, this.styles.fontSize.title);
 		const xPosition = (width - textWidth) / 2;
 
 		this.page.drawText(text, {
 			x: xPosition,
 			y: yPosition,
 			size: this.styles.fontSize.title,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 
@@ -428,13 +528,13 @@ class CertificateGenerator extends PDFPageGenerator {
 		});
 
 		const verifyText = 'Verify Certificate';
-		textWidth = this.courier.widthOfTextAtSize(verifyText, 8);
+		textWidth = this.custfont.widthOfTextAtSize(verifyText, 8);
 		const textX = width - pngDims.width - 10 + (pngDims.width - textWidth) / 2;
 		this.page.drawText(verifyText, {
 			x: textX,
 			y: pngDims.height + 13,
 			size: 8,
-			font: this.courier,
+			font: this.custfont,
 			color: rgb(0, 0, 0)
 		});
 
@@ -467,7 +567,7 @@ export async function generateCompletePostalRegistrationPDF(
 	termsAndConditions?: string
 ): Promise<Uint8Array> {
 	// Determine which pages to include based on age
-	const pageGenerators = [];
+	const pageGenerators: any[] = [];
 
 	// First PDF is always included
 	pageGenerators.push(
@@ -495,7 +595,7 @@ export async function generateCompletePostalRegistrationPDF(
 		new MediaGenerator(await PDFDocument.load(medialAgreement || ''), defaultStyles, participant)
 	);
 
-	const singlePDFs = [];
+	const singlePDFs: any[] = [];
 
 	// Generate all pages
 	for (const generator of pageGenerators) {
@@ -511,6 +611,9 @@ export async function generateCompletePostalRegistrationPDF(
 		});
 	}
 
+	// Track main page count before adding appendix (terms and conditions)
+	const mainPageCount = mergedPdfDoc.getPageCount();
+
 	if (termsAndConditions) {
 		const termsPdf = await PDFDocument.load(termsAndConditions);
 		const copiedPages = await mergedPdfDoc.copyPages(termsPdf, termsPdf.getPageIndices());
@@ -519,8 +622,8 @@ export async function generateCompletePostalRegistrationPDF(
 		});
 	}
 
-	// Add page numbers
-	await numerateDocument(mergedPdfDoc);
+	// Add page numbers, participant name, data-matrix barcode, and participant ID to each page
+	await numerateDocument(mergedPdfDoc, participant.id, participant.name, mainPageCount);
 
 	// Merge all pages into a single PDF
 	const mergedPdfBytes = await mergedPdfDoc.save();
@@ -539,19 +642,19 @@ export async function downloadCompletePostalRegistrationPDF(
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
 	if (!contract) {
-		toast.push('Missing contract content');
+		toast.error('Missing contract content');
 		throw new Error('Missing required PDF content');
 	}
 	if (!guardianAgreement) {
-		toast.push('Missing guardian agreement content');
+		toast.error('Missing guardian agreement content');
 		throw new Error('Missing required PDF content');
 	}
 	if (!medialAgreement) {
-		toast.push('Missing media agreement content');
+		toast.error('Missing media agreement content');
 		throw new Error('Missing required PDF content');
 	}
 	if (!termsAndConditions) {
-		toast.push('Missing terms and conditions content');
+		toast.error('Missing terms and conditions content');
 		throw new Error('Missing required PDF content');
 	}
 	try {
@@ -565,7 +668,7 @@ export async function downloadCompletePostalRegistrationPDF(
 			termsAndConditions
 		);
 
-		const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+		const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
@@ -602,12 +705,12 @@ export async function downloadCompleteCertificate(
 ): Promise<void> {
 	try {
 		if (!certificate) {
-			toast.push('Missing certificate content');
+			toast.error('Missing certificate content');
 			throw new Error('Missing required PDF content');
 		}
 		const pdfBytes = await generateCertificatePDF(data, certificate);
 
-		const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+		const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;

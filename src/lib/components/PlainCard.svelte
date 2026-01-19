@@ -17,7 +17,7 @@
 </script>
 
 <div
-	class="card max-w-96 bg-base-100 shadow-lg transition-all duration-300 hover:scale-[1.01] dark:bg-base-200"
+	class="card bg-base-100 border-base-200 max-w-96 border shadow-lg transition-all duration-300 hover:scale-[1.01]"
 >
 	<div class="card-body">
 		<h1 class="card-title">{title}</h1>

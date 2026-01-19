@@ -1,11 +1,12 @@
 import type { PageServerLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
-import { zod } from 'sveltekit-superforms/adapters';
+import { zod4 } from 'sveltekit-superforms/adapters';
 import { graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { conferenceSettingsFormSchema } from './form-schema';
+import dayjs from 'dayjs';
 
 const conferenceQuery = graphql(`
 	query ConferenceFormPrepopulationQuery($id: String!) {
@@ -14,14 +15,17 @@ const conferenceQuery = graphql(`
 			location
 			longTitle
 			startAssignment
+			registrationDeadlineGracePeriodMinutes
 			startConference
 			state
 			website
 			endConference
 			imageDataURL
+			emblemDataURL
 			language
 			linkToPreparationGuide
 			linkToPaperInbox
+			isOpenPaperSubmission
 			info
 			unlockPayments
 			unlockPostals
@@ -76,23 +80,27 @@ export const load: PageServerLoad = async (event) => {
 
 	const form = await superValidate(
 		nullFieldsToUndefined(conference) as any,
-		zod(conferenceSettingsFormSchema)
+		zod4(conferenceSettingsFormSchema)
 	);
 
 	return {
 		form,
 		imageDataURL: conference.imageDataURL,
+		emblemDataURL: conference.emblemDataURL,
 		certificateContentSet: conference.certificateContentSet,
 		termsAndConditionsContentSet: conference.termsAndConditionsContentSet,
 		mediaConsentContentSet: conference.mediaConsentContentSet,
 		guardianConsentContentSet: conference.guardianConsentContentSet,
-		contractContentSet: conference.contractContentSet
+		contractContentSet: conference.contractContentSet,
+		technicalRegistrationDeadline: dayjs(conference.startAssignment)
+			.add(conference.registrationDeadlineGracePeriodMinutes, 'minute')
+			.toDate()
 	};
 };
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event.request, zod(conferenceSettingsFormSchema));
+		const form = await superValidate(event.request, zod4(conferenceSettingsFormSchema));
 		if (!form.valid) {
 			return fail(400, { form });
 		}

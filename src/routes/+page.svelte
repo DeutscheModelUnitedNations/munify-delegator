@@ -8,6 +8,7 @@
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import { configPublic } from '$config/public';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import ConferenceStatusLight from './ConferenceStatusLight.svelte';
 
 	const munSh = {
 		name: 'MUN-SH',
@@ -30,28 +31,18 @@
 	};
 
 	let { data }: { data: PageData } = $props();
-	let { ConferencesPreview } = $derived(data);
+	let conferencesPreview = $derived(data.ConferencesPreview);
+	let conferenceList = $derived($conferencesPreview.data?.findManyConferences ?? []);
 
-	const openRegistrations = $derived(
-		$ConferencesPreview.data?.findManyConferences
-			.filter((c) => {
-				return (
-					c.state === 'PARTICIPANT_REGISTRATION' &&
-					new Date(c.startAssignment).getTime() > new Date().getTime()
-				);
-			})
-			.sort(
-				(a, b) => new Date(b.startAssignment!).getTime() - new Date(a.startAssignment!).getTime()
-			) ?? []
-	);
+	let conferencesToDisplay = $derived(conferenceList);
 </script>
 
-<div class="bg-light-blue-500 flex min-h-screen w-full flex-col items-center p-4">
+<div class="flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
-		<i class="fa-duotone fa-id-card-clip mb-6 text-6xl text-base-content"></i>
-		<h2 class="text-2xl font-thin text-base-content">MUNify</h2>
-		<h1 class="text-4xl font-bold uppercase tracking-widest text-base-content">Delegator</h1>
-		<p class="mt-4 text-lg text-base-content">{m.homeHeroSub()}</p>
+		<i class="fa-duotone fa-id-card-clip text-base-content mb-6 text-6xl"></i>
+		<h2 class="text-base-content text-2xl font-thin">MUNify</h2>
+		<h1 class="text-base-content text-4xl font-bold tracking-widest uppercase">Delegator</h1>
+		<p class="text-base-content mt-4 text-lg">{m.homeHeroSub()}</p>
 	</hero>
 
 	<main class="flex flex-col gap-20">
@@ -65,16 +56,11 @@
 				btnLink="/registration"
 			>
 				<p>{m.homeRegistrationSub()}</p>
-				{#if openRegistrations.length > 0}
-					<ul class="live-list mt-2">
-						{#each openRegistrations as conference}
-							<li>
-								<span></span>
-								{conference.title}
-							</li>
-						{/each}
-					</ul>
-				{/if}
+				{#each conferencesToDisplay as conference (conference.id)}
+					<div class="mt-2 flex flex-col">
+						<ConferenceStatusLight {conference} />
+					</div>
+				{/each}
 			</UndrawCard>
 
 			<UndrawCard
@@ -103,7 +89,7 @@
 						<a
 							href={configPublic.PUBLIC_FEEDBACK_URL}
 							target="_blank"
-							class="btn btn-primary shadow-md sm:btn-wide"
+							class="btn btn-primary sm:btn-wide shadow-md"
 						>
 							<i class="fas fa-bullhorn"></i>
 							{m.feedbackBoard()}
@@ -122,8 +108,8 @@
 		<section class="flex flex-col items-center gap-6">
 			<h2 class="text-center text-3xl">{m.homeOurConferences()}</h2>
 			<div class="flex flex-col gap-4 md:flex-row">
-				<div class="card bg-base-100 shadow-lg dark:bg-base-200">
-					<figure class="flex h-60 items-center justify-center bg-base-300 p-6">
+				<div class="card bg-base-100 border-base-200 border shadow-lg">
+					<figure class="bg-base-300 flex h-60 items-center justify-center p-6">
 						<img src={munSh.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
@@ -139,8 +125,8 @@
 						/>
 					</div>
 				</div>
-				<div class="card bg-base-100 shadow-lg dark:bg-base-200">
-					<figure class="flex h-60 items-center justify-center bg-base-300 p-6">
+				<div class="card bg-base-100 border-base-200 border shadow-lg">
+					<figure class="bg-base-300 flex h-60 items-center justify-center p-6">
 						<img src={munBw.logo} alt="Conference" class="h-full" />
 					</figure>
 					<div class="card-body">
@@ -164,44 +150,3 @@
 		</section>
 	</main>
 </div>
-
-<style lang="postcss">
-	.live-list {
-		list-style: none;
-		@apply mt-4;
-	}
-
-	.live-list li {
-		position: relative;
-
-		@apply mx-2 my-1 pl-6;
-	}
-
-	.live-list span {
-		position: absolute;
-		left: 0;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 10px; /* Size of the dot */
-		height: 10px; /* Size of the dot */
-		background-color: green; /* Dot color */
-		border-radius: 50%; /* Make it a circle */
-		box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); /* Initial glow */
-		animation: pulsate 1.5s infinite; /* Animation */
-	}
-
-	@keyframes pulsate {
-		0% {
-			box-shadow: 0 0 3px rgba(0, 115, 0, 0.2);
-			transform: translateY(-50%) scale(1);
-		}
-		50% {
-			box-shadow: 0 0 10px rgb(0, 115, 0); /* Glow effect */
-			transform: translateY(-50%) scale(1.1); /* Slightly enlarge */
-		}
-		100% {
-			box-shadow: 0 0 5px rgba(0, 115, 0, 0.2);
-			transform: translateY(-50%) scale(1);
-		}
-	}
-</style>

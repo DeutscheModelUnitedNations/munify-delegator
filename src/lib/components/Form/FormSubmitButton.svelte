@@ -13,18 +13,20 @@
 	let { validateForm } = $derived(form);
 </script>
 
-<button
-	onclick={async (e) => {
-		const val = await validateForm({ update: true });
-		if (!val.valid) {
-			e.preventDefault();
-		}
-	}}
-	disabled={disabled || loading}
-	class="btn btn-primary mt-10 w-full"
-	>{m.save()}
+<div class="{!disabled ? 'sticky bottom-4 shadow-sm' : ''} mt-6 w-full">
+	<button
+		onclick={async (e) => {
+			const val = await validateForm({ update: true });
+			if (!val.valid) {
+				e.preventDefault();
+			}
+		}}
+		disabled={disabled || loading}
+		class="btn btn-primary w-full"
+		>{m.save()}
 
-	{#if loading}
-		<Spinner />
-	{/if}
-</button>
+		{#if loading}
+			<Spinner />
+		{/if}
+	</button>
+</div>

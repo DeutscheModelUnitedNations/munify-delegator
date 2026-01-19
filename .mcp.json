@@ -1,0 +1,53 @@
+{
+	"mcpServers": {
+		"context7": {
+			"args": ["-y", "@upstash/context7-mcp"],
+			"command": "bunx"
+		},
+		"daisyui-github": {
+			"args": ["-y", "mcp-remote", "https://gitmcp.io/saadeghi/daisyui"],
+			"command": "bunx"
+		},
+		"github": {
+			"args": ["-y", "@anthropic-ai/github-mcp-server"],
+			"command": "bunx",
+			"env": {
+				"GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
+			}
+		},
+		"houdini-github": {
+			"args": ["-y", "mcp-remote", "https://gitmcp.io/HoudiniGraphql/houdini"],
+			"command": "bunx"
+		},
+		"memory": {
+			"args": ["-y", "@modelcontextprotocol/server-memory"],
+			"command": "bunx"
+		},
+		"pothos-github": {
+			"args": ["-y", "mcp-remote", "https://gitmcp.io/hayes/pothos"],
+			"command": "bunx"
+		},
+		"prisma": {
+			"args": ["-y", "prisma", "mcp"],
+			"command": "bunx"
+		},
+		"sequential-thinking": {
+			"args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+			"command": "bunx"
+		},
+		"svelte": {
+			"args": ["-y", "@sveltejs/mcp"],
+			"command": "bunx",
+			"env": {},
+			"type": "stdio"
+		},
+		"tailwind-github": {
+			"args": ["-y", "mcp-remote", "https://gitmcp.io/tailwindlabs/tailwindcss"],
+			"command": "bunx"
+		},
+		"vitest": {
+			"args": ["-y", "@djankies/vitest-mcp"],
+			"command": "bunx"
+		}
+	}
+}

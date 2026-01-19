@@ -57,7 +57,7 @@ const { config, cryptr, jwks } = await (async () => {
 			cryptr: undefined as unknown as Cryptr
 		};
 	}
-	const execute = [];
+	const execute: any[] = [];
 	if (configPrivate.NODE_ENV === 'development') {
 		execute.push(allowInsecureRequests);
 	}
@@ -202,6 +202,157 @@ export function getLogoutUrl(visitedUrl: URL) {
 	});
 }
 
+/**
+ * Retrieve user information for an access token from the issuer.
+ *
+ * @param access_token - The access token presented to the issuer's userinfo endpoint
+ * @param expectedSubject - The expected `sub` (subject) to validate against the issuer's response
+ * @returns The user info object returned by the issuer
+ */
 export function fetchUserInfoFromIssuer(access_token: string, expectedSubject: string) {
 	return fetchUserInfo(config, access_token, expectedSubject);
+}
+
+/**
+ * Perform an OAuth 2.0 Token Exchange to obtain a JWT for acting as a specified subject.
+ *
+ * @param actorToken - The actor's access token used to authorize the exchange.
+ * @param subjectUserId - The user identifier of the subject to impersonate (subject token).
+ * @param scope - Optional scope to request for the exchanged token.
+ * @param audience - Optional audience to request for the exchanged token.
+ * @returns The token endpoint response from the issuer as a `TokenEndpointResponse`.
+ * @throws When the OIDC configuration is not initialized, when the token endpoint returns an error (includes provider error details when available), or when the exchange request fails or times out.
+ */
+export async function performTokenExchange(
+	actorToken: string,
+	subjectUserId: string,
+	scope?: string,
+	audience?: string
+): Promise<TokenEndpointResponse> {
+	if (!config) {
+		throw new Error('OIDC configuration not initialized');
+	}
+
+	let actor = 'unknown';
+	if (jwks) {
+		try {
+			const { payload } = await jwtVerify(actorToken, jwks);
+			if (payload.sub) {
+				actor = payload.sub;
+			}
+		} catch (err) {
+			console.warn(
+				`Could not determine actor from token for audit purposes: ${
+					err instanceof Error ? err.message : 'Unknown error'
+				}`
+			);
+		}
+	} else {
+		console.warn('No jwks available for decoding actor token for audit purposes.');
+	}
+
+	const tokenExchangeParams: Record<string, string> = {
+		grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+		subject_token: subjectUserId,
+		subject_token_type: 'urn:zitadel:params:oauth:token-type:user_id',
+		actor_token: actorToken,
+		actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+		requested_token_type: 'urn:ietf:params:oauth:token-type:jwt'
+	};
+
+	if (scope) {
+		tokenExchangeParams.scope = scope;
+	}
+
+	if (audience) {
+		tokenExchangeParams.audience = audience;
+	}
+
+	try {
+		// Add a timeout so the token exchange does not hang indefinitely
+		const signal = AbortSignal.timeout(10_000); // 10s timeout
+		const response = await fetch(config.serverMetadata().token_endpoint!, {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/x-www-form-urlencoded',
+				...(configPrivate.OIDC_CLIENT_SECRET
+					? {
+							Authorization: `Basic ${Buffer.from(`${configPublic.PUBLIC_OIDC_CLIENT_ID}:${configPrivate.OIDC_CLIENT_SECRET}`).toString('base64')}`
+						}
+					: {})
+			},
+			body: new URLSearchParams({
+				...tokenExchangeParams,
+				...(configPrivate.OIDC_CLIENT_SECRET
+					? {}
+					: { client_id: configPublic.PUBLIC_OIDC_CLIENT_ID })
+			}),
+			signal
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			let errorDetail;
+			try {
+				errorDetail = JSON.parse(errorText);
+			} catch {
+				errorDetail = errorText;
+			}
+
+			// Specific error handling for different error types
+			if (
+				errorDetail?.error === 'unauthorized_client' &&
+				errorDetail?.error_description?.includes('token-exchange')
+			) {
+				throw new Error(
+					`OIDC Client not configured for Token Exchange. Please add the grant type 'urn:ietf:params:oauth:grant-type:token-exchange' to your Zitadel OIDC application configuration.`
+				);
+			}
+
+			if (
+				errorDetail?.error === 'invalid_request' &&
+				errorDetail?.error_description?.includes('No matching permissions found')
+			) {
+				throw new Error(
+					`Impersonation not allowed. The user lacks permission to impersonate the target user. Please check:\n1. User has 'ORG_END_USER_IMPERSONATOR' role\n2. User has 'ORG_USER_SELF_MANAGEMENT' role or project-specific impersonation permissions\n3. Target user is in the same organization/project scope`
+				);
+			}
+
+			console.error('Token exchange error details:', {
+				status: response.status,
+				error: errorDetail,
+				tokenExchangeParams: {
+					...tokenExchangeParams,
+					actor_token: '[REDACTED]',
+					subject_token: '[REDACTED]'
+				}
+			});
+
+			throw new Error(
+				`Token exchange failed: ${response.status} ${typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail)}`
+			);
+		}
+
+		const tokenResponse = await response.json();
+		console.info({
+			event: 'impersonation_attempt',
+			outcome: 'success',
+			actor,
+			subject: subjectUserId
+		});
+		return tokenResponse as TokenEndpointResponse;
+	} catch (error) {
+		console.info({
+			event: 'impersonation_attempt',
+			outcome: 'failure',
+			actor,
+			subject: subjectUserId,
+			reason: error instanceof Error ? error.message : 'Unknown error'
+		});
+		console.error('Token exchange error:', error);
+		throw new Error(
+			`Token exchange failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+		);
+	}
 }

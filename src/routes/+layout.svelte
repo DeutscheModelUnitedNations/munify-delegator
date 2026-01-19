@@ -1,7 +1,10 @@
 <script lang="ts">
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
+	import MaintenanceBanner from '$lib/components/MaintenanceBanner.svelte';
 	import Footer from './Footer.svelte';
-	import { SvelteToast } from '@zerodevx/svelte-toast';
+	import { Toaster } from 'svelte-sonner';
+	import Inspect from 'svelte-inspect-value';
+	import { locales, localizeHref } from '$lib/paraglide/runtime';
 
 	// import GlobalErrorToast from '$lib/components/ErrorToast.svelte';
 	// import CookieBanner from '$lib/components/CookieBanner.svelte';
@@ -9,40 +12,14 @@
 	// global stylesheet
 	import '../app.css';
 
-	// various fonts
-	import '@fontsource/outfit/100.css';
-	import '@fontsource/outfit/200.css';
-	import '@fontsource/outfit/300.css';
-	import '@fontsource/outfit/400.css';
-	import '@fontsource/outfit/500.css';
-	import '@fontsource/outfit/600.css';
-	import '@fontsource/outfit/700.css';
-	import '@fontsource/outfit/800.css';
-	import '@fontsource/outfit/900.css';
-	import '@fontsource/roboto-mono/100.css';
-	import '@fontsource/roboto-mono/200.css';
-	import '@fontsource/roboto-mono/300.css';
-	import '@fontsource/roboto-mono/400.css';
-	import '@fontsource/roboto-mono/500.css';
-	import '@fontsource/roboto-mono/600.css';
-	import '@fontsource/roboto-mono/700.css';
-	import '@fontsource/vollkorn/400.css';
-	import '@fontsource/vollkorn/500.css';
-	import '@fontsource/vollkorn/600.css';
-	import '@fontsource/vollkorn/700.css';
-	import '@fontsource/vollkorn/800.css';
-	import '@fontsource/vollkorn/900.css';
-
 	// flag icons
 	import 'flag-icons/css/flag-icons.min.css';
-	import type { Snippet } from 'svelte';
-	import { browser } from '$app/environment';
+	import { browser, dev } from '$app/environment';
+	import type { LayoutProps } from './$types';
+	import { page } from '$app/state';
+	import DevTools from '$lib/components/DevTools.svelte';
 
-	interface Props {
-		children: Snippet;
-	}
-
-	let { children }: Props = $props();
+	let { children }: LayoutProps = $props();
 
 	const changeFaDuotoneTheme = () => {
 		const r = document.querySelector(':root');
@@ -71,7 +48,7 @@
 </script>
 
 <svelte:head>
-	<title>MUNify Delegator</title>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator</title>
 	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -81,11 +58,23 @@
 	<meta name="theme-color" content="#ffffff" />
 </svelte:head>
 
-<SvelteToast options={{}} />
+<Toaster richColors position="top-center" />
 <CookieBanner />
+<MaintenanceBanner />
 <div class="flex min-h-screen">
 	<!-- {@render children()} -->
 	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
 	{@render children()}
 </div>
 <Footer />
+
+{#if dev}
+	<Inspect.Panel />
+	<DevTools />
+{/if}
+
+<div style="display:none">
+	{#each locales as locale}
+		<a href={localizeHref(page.url.pathname, { locale })}>{locale}</a>
+	{/each}
+</div>

@@ -16,10 +16,10 @@
 </script>
 
 <div
-	class="card w-full max-w-96 bg-base-100 shadow-lg transition-all duration-300 hover:scale-[1.01] dark:bg-base-200"
+	class="card bg-base-100 border-base-200 w-full max-w-96 border shadow-lg transition-all duration-300 hover:scale-[1.01]"
 >
 	<figure
-		class="relative flex h-60 items-center justify-center bg-base-200 p-6 dark:bg-base-content"
+		class="bg-base-200 dark:bg-base-content relative flex h-60 items-center justify-center p-6"
 	>
 		<img src={img} alt="Illustration" class="h-full w-full {disabled && 'blur-sm'}" />
 		{#if disabled}

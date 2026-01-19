@@ -25,9 +25,74 @@ export const defineAbilitiesForConferenceSupervisor = (
 			}
 		});
 
-		// other supervisors should be able to see the supervisors of their delegations
+		// supervised participants should be able to see their supervisors
 		can(['list', 'read'], 'ConferenceSupervisor', {
-			delegations: {
+			OR: [
+				{
+					supervisedDelegationMembers: {
+						some: {
+							user: {
+								id: user.sub
+							}
+						}
+					}
+				},
+				{
+					supervisedSingleParticipants: {
+						some: {
+							user: {
+								id: user.sub
+							}
+						}
+					}
+				}
+			]
+		});
+
+		// supervisors should be able to update/delete themselves
+		can(['list', 'read', 'update', 'delete'], 'ConferenceSupervisor', {
+			user: {
+				id: user.sub
+			}
+		});
+
+		// supervisors should be able to see other supervisors in the same conference (this should be strickened later)
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			conference: {
+				conferenceSupervisors: {
+					some: {
+						user: {
+							id: user.sub
+						}
+					}
+				}
+			}
+		});
+
+		// supervisors should be able to see each others placeholders if they supervise the same delegation
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			supervisedDelegationMembers: {
+				some: {
+					delegation: {
+						members: {
+							some: {
+								supervisors: {
+									some: {
+										user: {
+											id: user.sub
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+
+		// supervisors should be able to see each others placeholders if they supervise the same single participant
+		can(['list', 'read'], 'ConferenceSupervisor', {
+			supervisedSingleParticipants: {
 				some: {
 					supervisors: {
 						some: {
@@ -37,28 +102,6 @@ export const defineAbilitiesForConferenceSupervisor = (
 						}
 					}
 				}
-			}
-		});
-
-		// delegates should be able to see their supervisors
-		can(['list', 'read'], 'ConferenceSupervisor', {
-			delegations: {
-				some: {
-					members: {
-						some: {
-							user: {
-								id: user.sub
-							}
-						}
-					}
-				}
-			}
-		});
-
-		// supervisors should be able to update/delete themselves
-		can(['list', 'read', 'update', 'delete'], 'ConferenceSupervisor', {
-			user: {
-				id: user.sub
 			}
 		});
 	}

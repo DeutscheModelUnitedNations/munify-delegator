@@ -7,8 +7,8 @@
 </script>
 
 <div class="flex w-full flex-col items-center gap-4 p-10">
-	<h1 class="text-2xl font-bold">{m.admininstration()}</h1>
-	<p class="text-center max-ch-md">
+	<h1 class="text-2xl font-bold">{m.administration()}</h1>
+	<p class="max-ch-md text-center">
 		{m.administrationConferenceSelection()}
 	</p>
 	<div class="flex justify-center">
@@ -22,7 +22,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each conferences as conference}
+					{#each conferences as conference (conference.id)}
 						<tr>
 							<td>{conference.title}</td>
 							<td>{conference.myMembership}</td>
@@ -39,4 +39,8 @@
 			{m.noResults()}
 		{/if}
 	</div>
+	<a class="btn btn-ghost btn-sm self-center" href="/management/seed">
+		<i class="fa-duotone fa-seedling"></i>
+		{m.seedConference()}
+	</a>
 </div>

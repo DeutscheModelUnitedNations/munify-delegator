@@ -34,7 +34,7 @@
 <div class="flex {getTextSizeClass()}">
 	{#if rating && changeRating}
 		<i
-			class="fas fa-times text-md mr-2 cursor-pointer text-base-300 hover:text-red-500"
+			class="fas fa-times text-md text-base-300 mr-2 cursor-pointer hover:text-red-500"
 			onclick={deleteRating}
 		></i>
 	{/if}

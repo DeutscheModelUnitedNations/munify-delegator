@@ -10,6 +10,7 @@ export const conferenceSettingsFormSchema = z.object({
 	info: z.string().nullish(),
 	linkToPreparationGuide: z.string().nullish(),
 	linkToPaperInbox: z.string().nullish(),
+	isOpenPaperSubmission: z.boolean().default(false),
 	longTitle: z
 		.string()
 		.min(5, {
@@ -38,9 +39,14 @@ export const conferenceSettingsFormSchema = z.object({
 		.instanceof(File)
 		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
 		.optional(),
+	emblem: z
+		.instanceof(File)
+		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
+		.optional(),
 	startAssignment: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),
+	registrationDeadlineGracePeriodMinutes: z.coerce.number(),
 	startConference: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),

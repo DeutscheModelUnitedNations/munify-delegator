@@ -1,35 +1,40 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
 	import { type SuperForm } from 'sveltekit-superforms';
 	import FormFieldErrors from './FormFieldErrors.svelte';
+	import FormLabel from './FormLabel.svelte';
+	import FormDescription from './FormDescription.svelte';
+	import FormConstraints from './FormConstraints.svelte';
 
 	interface Props {
 		name: string;
 		label?: string;
+		description?: string;
 		placeholder?: string;
 		form: SuperForm<A, B>;
+		disabled?: boolean;
 	}
 
-	let { form, label, name, placeholder }: Props = $props();
+	let { form, label, name, placeholder, description, disabled = false }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
-	let errors = $derived(($formErrors as any)[name]);
-	let constraints = $derived(($formConstraints as any)[name]);
+	let errors = $derived($formErrors[name]);
+	let constraints = $derived($formConstraints[name]);
 </script>
 
-<label for={name} class="form-control w-full">
-	{#if label}
-		<span class="label-text mb-2">{label}</span>
-	{/if}
+<label for={name} class="flex w-full flex-col text-left">
+	<FormLabel {label} />
+	<FormDescription {description} />
 	<textarea
 		{placeholder}
 		type="text"
-		class="textarea textarea-bordered"
+		class="textarea validator w-full"
 		{name}
 		id={name}
 		bind:value={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
+		{disabled}
 		{...constraints}
 	></textarea>
-
+	<FormConstraints {form} {name} />
 	<FormFieldErrors {errors} />
 </label>
 

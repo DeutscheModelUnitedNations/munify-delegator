@@ -13,7 +13,8 @@ import {
 	ConferenceParticipantStatusMediaConsentFieldObject,
 	updateOneConferenceParticipantStatusMutationObject,
 	ConferenceParticipantStatusMediaConsentStatusFieldObject,
-	updateManyConferenceParticipantStatusMutationObject
+	updateManyConferenceParticipantStatusMutationObject,
+	ConferenceParticipantStatusAssigendDocumentNumberFieldObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 import { db } from '$db/db';
 import { AdministrativeStatus, MediaConsentStatus } from '$db/generated/graphql/inputs';
@@ -27,6 +28,7 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		paymentStatus: t.field(ConferenceParticipantStatusPaymentStatusFieldObject),
 		mediaConsentStatus: t.field(ConferenceParticipantStatusMediaConsentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
+		assignedDocumentNumber: t.field(ConferenceParticipantStatusAssigendDocumentNumberFieldObject),
 		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),
 		conference: t.relation('conference', ConferenceParticipantStatusConferenceFieldObject)
 	})
@@ -100,7 +102,11 @@ builder.mutationFields((t) => {
 							}),
 							userId: t.field({
 								type: 'ID',
-								required: true
+								required: false
+							}),
+							userEmail: t.field({
+								type: 'ID',
+								required: false
 							}),
 							conferenceId: t.field({
 								type: 'ID',
@@ -135,15 +141,48 @@ builder.mutationFields((t) => {
 							didAttend: t.field({
 								type: 'Boolean',
 								required: false
+							}),
+							assignedDocumentNumber: t.field({
+								type: 'Int',
+								required: false
+							}),
+							assignNextDocumentNumber: t.field({
+								type: 'Boolean',
+								required: false
 							})
 						})
 					})
 				})
 			},
-			resolve: (query, root, args, ctx, info) => {
-				if (!args.where.id && (!args.where.userId || !args.where.conferenceId)) {
-					throw new Error('You must provide either an id or a userId and conferenceId');
+			resolve: async (query, root, args, ctx, info) => {
+				if (
+					!args.where.id &&
+					(!args.where.userId || !args.where.conferenceId) &&
+					(!args.where.userEmail || !args.where.conferenceId)
+				) {
+					throw new Error(
+						'You must provide either an id, a userId and conferenceId or a userEmail and conferenceId'
+					);
 				}
+
+				if (!args.where.userId) {
+					const found = await db.user.findUniqueOrThrow({
+						where: {
+							email: args.where.userEmail!
+						}
+					});
+
+					args.where.userId = found.id;
+				}
+
+				const nextDocumentNumber = await db.conferenceParticipantStatus.aggregate({
+					_max: {
+						assigendDocumentNumber: true
+					},
+					where: {
+						conferenceId: args.where.conferenceId
+					}
+				});
 
 				return db.conferenceParticipantStatus.upsert({
 					where: {
@@ -157,7 +196,6 @@ builder.mutationFields((t) => {
 							undefined,
 						AND: [ctx.permissions.allowDatabaseAccessTo('update').ConferenceParticipantStatus]
 					},
-
 					create: {
 						userId: args.where.userId!,
 						conferenceId: args.where.conferenceId!,
@@ -166,7 +204,10 @@ builder.mutationFields((t) => {
 						mediaConsent: args.data.mediaConsent || undefined,
 						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
-						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
+						assigendDocumentNumber: args.data.assignNextDocumentNumber
+							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
+							: args.data.assignedDocumentNumber || undefined
 					},
 					update: {
 						termsAndConditions: args.data.termsAndConditions || undefined,
@@ -174,7 +215,10 @@ builder.mutationFields((t) => {
 						mediaConsent: args.data.mediaConsent || undefined,
 						mediaConsentStatus: args.data.mediaConsentStatus || undefined,
 						paymentStatus: args.data.paymentStatus || undefined,
-						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend
+						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
+						assigendDocumentNumber: args.data.assignNextDocumentNumber
+							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
+							: args.data.assignedDocumentNumber || undefined
 					}
 				});
 			}

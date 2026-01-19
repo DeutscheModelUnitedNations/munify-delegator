@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { UserRowData } from './types';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import {
 		cache,
@@ -8,15 +7,14 @@
 		type MediaConsentStatus$options,
 		type UpdateConferenceParticipantStatusInput
 	} from '$houdini';
-	import type { UserDrawerQueryVariables } from './$houdini';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import StatusWidgetBoolean from '$lib/components/ParticipantStatusWidgetBoolean.svelte';
+	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
-	import StatusWidget from '$lib/components/StatusWidget.svelte';
+	import GlobalNotes from './GlobalNotes.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -25,30 +23,42 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import { toast } from '@zerodevx/svelte-toast';
+	import { toast } from 'svelte-sonner';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
+	import { configPublic } from '$config/public';
+	import Modal from '$lib/components/Modal.svelte';
+	import { invalidateAll } from '$app/navigation';
+	import ImpersonationButton from './ImpersonationButton.svelte';
+	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Props {
-		user: UserRowData;
+		userId: string;
 		conferenceId: string;
 		open?: boolean;
 		onClose?: () => void;
 	}
-	let { user, conferenceId, open = $bindable(false), onClose }: Props = $props();
+	let { userId, conferenceId, open = $bindable(false), onClose }: Props = $props();
 
-	export const _UserDrawerQueryVariables: UserDrawerQueryVariables = () => {
-		return {
-			userId: user.id,
-			conferenceId
-		};
-	};
+	let openGlobalNotes = $state(false);
+	let assignedDocumentNumber = $state<number>();
+
+	$effect(() => {
+		if ($userQuery.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber) {
+			assignedDocumentNumber =
+				$userQuery.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber;
+		}
+	});
+
+	let assignSupervisorModalOpen = $state(false);
 
 	const userQuery = graphql(`
-		query UserDrawerQuery($userId: String!, $conferenceId: String!) @load {
+		query UserDrawerQuery($userId: String!, $conferenceId: String!) {
 			findUniqueUser(where: { id: $userId }) {
 				id
 				given_name
 				family_name
+				birthday
 				pronouns
 				phone
 				email
@@ -58,13 +68,23 @@
 				city
 				country
 				foodPreference
+				emergencyContacts
 				gender
+				globalNotes
+				conferenceParticipationsCount
 			}
 			findManyDelegationMembers(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
 			) {
 				delegation {
 					id
+					assignedNation {
+						alpha2Code
+						alpha3Code
+					}
+				}
+				assignedCommittee {
+					abbreviation
 				}
 			}
 			findManyConferenceSupervisors(
@@ -87,6 +107,7 @@
 				mediaConsentStatus
 				paymentStatus
 				didAttend
+				assignedDocumentNumber
 			}
 			findManySurveyAnswers(
 				where: {
@@ -124,15 +145,40 @@
 				postalZip
 				postalCity
 				postalCountry
+				nextDocumentNumber
 			}
 		}
 	`);
 
-	const status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
-	const surveys = $derived($userQuery?.data?.findManySurveyQuestions);
-	const surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
-	const ofAge = $derived(
-		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user.birthday)
+	$effect(() => {
+		userQuery.fetch({
+			variables: {
+				userId,
+				conferenceId
+			}
+		});
+	});
+
+	const supervisorListQuery = graphql(`
+		query ListSupervisors($conferenceId: String!) {
+			findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
+				id
+				connectionCode
+				user {
+					id
+					given_name
+					family_name
+				}
+			}
+		}
+	`);
+
+	let status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
+	let surveys = $derived($userQuery?.data?.findManySurveyQuestions);
+	let surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
+	let user = $derived($userQuery?.data?.findUniqueUser);
+	let ofAge = $derived(
+		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user?.birthday)
 	);
 
 	let loadingDownloadPostalDocuments = $state(false);
@@ -140,7 +186,7 @@
 
 	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
 		await changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			where: { id: status?.id, conferenceId: conferenceId, userId: userId },
 			data
 		});
 		cache.markStale();
@@ -149,7 +195,7 @@
 
 	const changeMediaConsentStatus = async (data: MediaConsentStatus$options) => {
 		await changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId: conferenceId, userId: user.id },
+			where: { id: status?.id, conferenceId: conferenceId, userId: user?.id },
 			data: { mediaConsentStatus: data }
 		});
 		cache.markStale();
@@ -164,11 +210,44 @@
 		}
 	`);
 
+	const assignSupervisorMutation = graphql(`
+		mutation assignSupervisorAsManagementMutation(
+			$conferenceId: ID!
+			$userId: ID!
+			$connectionCode: String!
+		) {
+			connectToConferenceSupervisor(
+				conferenceId: $conferenceId
+				userId: $userId
+				connectionCode: $connectionCode
+			) {
+				id
+			}
+		}
+	`);
+
+	const assigneSupervisor = async (connectionCode: string) => {
+		const promise = assignSupervisorMutation.mutate({
+			conferenceId,
+			userId,
+			connectionCode
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
+		assignSupervisorModalOpen = false;
+		cache.markStale();
+		await invalidateAll();
+	};
+
 	const deleteParticipant = async () => {
 		const c = confirm(m.deleteParticipantConfirm());
 		if (!c) return;
 		await deleteParticipantQuery.mutate({
-			userId: user.id,
+			userId: user?.id ?? '',
 			conferenceId
 		});
 		if (onClose) {
@@ -188,7 +267,7 @@
 			});
 
 			if (baseContent.errors) {
-				toast.push(m.httpGenericError());
+				toast.error(m.httpGenericError());
 			}
 
 			if (
@@ -198,7 +277,7 @@
 				!conference?.postalCity ||
 				!conference?.postalCountry
 			) {
-				toast.push('Missing postal information for the conference');
+				toast.error('Missing postal information for the conference');
 				return;
 			}
 
@@ -251,7 +330,7 @@
 		const certificateData = await certificateQuery.fetch({
 			variables: {
 				conferenceId,
-				userId: user.id
+				userId: user?.id ?? ''
 			}
 		});
 
@@ -259,7 +338,7 @@
 		const jwtData = certificateData.data?.getCertificateJWT;
 
 		if (!jwtData?.fullName || !jwtData?.jwt) {
-			toast.push(m.certificateDownloadError());
+			toast.error(m.certificateDownloadError());
 			return;
 		}
 
@@ -282,6 +361,12 @@
 			loadingDownloadCertificate = false;
 		}
 	};
+
+	$effect(() => {
+		if (assignSupervisorModalOpen) {
+			supervisorListQuery.fetch({ variables: { conferenceId } });
+		}
+	});
 </script>
 
 {#snippet titleSnippet()}
@@ -300,7 +385,7 @@
 <Drawer
 	bind:open
 	{onClose}
-	id={user.id}
+	id={userId}
 	category={m.adminUserCard()}
 	{titleSnippet}
 	loading={$userQuery.fetching}
@@ -320,7 +405,7 @@
 					{#if $userQuery.data?.findUniqueUser?.phone}
 						<td class="font-mono">
 							<a
-								class="cursor-pointer rounded-md bg-base-300 px-2 py-1 hover:underline"
+								class="bg-base-300 cursor-pointer rounded-md px-2 py-1 hover:underline"
 								href={`tel:${$userQuery.data?.findUniqueUser?.phone}`}
 								>{$userQuery.data?.findUniqueUser?.phone}</a
 							>
@@ -333,7 +418,7 @@
 					<td class="text-center"><i class="fa-duotone fa-envelope text-lg"></i></td>
 					<td class="font-mono">
 						<a
-							class="cursor-pointer rounded-md bg-base-300 px-2 py-1 hover:underline"
+							class="bg-base-300 cursor-pointer rounded-md px-2 py-1 hover:underline"
 							href={`mailto:${$userQuery.data?.findUniqueUser?.email}`}
 						>
 							{$userQuery.data?.findUniqueUser?.email}
@@ -409,9 +494,43 @@
 						<td>N/A</td>
 					{/if}
 				</tr>
+				<tr>
+					<td><i class="fa-duotone fa-light-emergency-on text-lg"></i></td>
+					{#if $userQuery.data?.findUniqueUser?.emergencyContacts}
+						<td class="whitespace-pre-wrap">{$userQuery.data?.findUniqueUser?.emergencyContacts}</td
+						>
+					{:else}
+						<td>N/A</td>
+					{/if}
+				</tr>
 			</tbody>
 		</table>
 	</div>
+
+	{#if configPublic.PUBLIC_GLOBAL_USER_NOTES_ACTIVE}
+		<div class="flex flex-col gap-2">
+			<h3 class="text-xl font-bold">{m.globalNotes()}</h3>
+			<p class="text-sm">{m.globalNotesDescription()}</p>
+
+			{#if $userQuery.data?.findUniqueUser?.globalNotes}
+				<div class="card bg-base-200">
+					<div class="card-body whitespace-pre-wrap">
+						{$userQuery.data.findUniqueUser?.globalNotes}
+					</div>
+				</div>
+			{/if}
+			<button class="btn" aria-label="open global Notes" onclick={() => (openGlobalNotes = true)}>
+				<i class="fa-duotone fa-pencil"></i>
+				{m.editGlobalNotes()}
+			</button>
+
+			<GlobalNotes
+				globalNotes={$userQuery.data?.findUniqueUser?.globalNotes ?? ''}
+				bind:open={openGlobalNotes}
+				id={$userQuery.data?.findUniqueUser?.id}
+			/>
+		</div>
+	{/if}
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
@@ -420,7 +539,7 @@
 				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/individuals?filter={$userQuery.data
+						href="/management/{conferenceId}/individuals?selected={$userQuery.data
 							?.findManySingleParticipants[0].id}"
 					>
 						{m.individualApplication()}
@@ -429,7 +548,7 @@
 				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/delegations?filter={$userQuery.data
+						href="/management/{conferenceId}/delegations?selected={$userQuery.data
 							?.findManyDelegationMembers[0].delegation.id}"
 					>
 						{m.delegation()}
@@ -438,13 +557,21 @@
 				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/supervisors?filter={$userQuery.data
+						href="/management/{conferenceId}/supervisors?selected={$userQuery.data
 							?.findManyConferenceSupervisors[0].id}"
 					>
 						{m.supervisor()}
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
 				{/if}
+
+				<ImpersonationButton {userId} />
+
+				<button class="btn" onclick={() => (assignSupervisorModalOpen = true)}>
+					<i class="fa-duotone fa-chalkboard-user"></i>
+					{m.assignSupervisor()}
+				</button>
+
 				<button
 					class="btn {loadingDownloadPostalDocuments && 'btn-disabled'}"
 					onclick={() => downloadPostalDocuments()}
@@ -463,6 +590,84 @@
 					></i>
 					{m.certificate()}
 				</button>
+
+				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
+					{@const delegationMember = $userQuery.data?.findManyDelegationMembers?.[0]}
+					{@const assignedNation = delegationMember?.delegation?.assignedNation}
+					<button
+						class="btn"
+						onclick={async () => {
+							const body: {
+								name?: string;
+								countryName?: string;
+								countryAlpha2Code?: string;
+								committee?: string;
+								pronouns?: string;
+								id?: string;
+								mediaConsentStatus?: string;
+							} = {};
+							if (user?.given_name && user?.family_name) {
+								body.name = `${user.given_name} ${user.family_name}`;
+							}
+							if (assignedNation?.alpha3Code) {
+								body.countryName = getFullTranslatedCountryNameFromISO3Code(
+									assignedNation.alpha3Code
+								);
+							}
+							if (assignedNation?.alpha2Code) {
+								body.countryAlpha2Code = assignedNation.alpha2Code;
+							}
+							if (delegationMember?.assignedCommittee?.abbreviation) {
+								body.committee = delegationMember.assignedCommittee.abbreviation;
+							}
+							if (user?.pronouns) {
+								body.pronouns = user.pronouns;
+							}
+							if (user?.id) {
+								body.id = user.id;
+							}
+							if (status?.mediaConsentStatus) {
+								body.mediaConsentStatus = status.mediaConsentStatus;
+							}
+							try {
+								const res = await fetch(
+									`${configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create`,
+									{
+										method: 'POST',
+										headers: { 'Content-Type': 'application/json' },
+										body: JSON.stringify(body)
+									}
+								);
+								if (!res.ok) {
+									const errorText = await res.text();
+									console.error(`Badge generator API error (${res.status}): ${errorText}`);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const data: unknown = await res.json();
+								if (
+									typeof data !== 'object' ||
+									data === null ||
+									!('url' in data) ||
+									typeof (data as { url: unknown }).url !== 'string' ||
+									(data as { url: string }).url.trim() === ''
+								) {
+									console.error('Badge generator returned invalid response:', data);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const { url } = data as { url: string };
+								window.open(url.replace('http://', 'https://'), '_blank');
+							} catch (e) {
+								console.error('Failed to open badge generator', e);
+								toast.error(m.genericToastError());
+							}
+						}}
+					>
+						<i class="fa-duotone fa-id-badge"></i>
+						{m.generateBadge()}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -476,6 +681,16 @@
 				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.paymentStatus ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ paymentStatus: newStatus })}
+			/>
+			<ParticipantAssignedDocumentWidget
+				assignedDocumentNumber={$userQuery.data?.findUniqueConferenceParticipantStatus
+					?.assignedDocumentNumber}
+				onSave={async (number?: number) =>
+					await changeAdministrativeStatus({
+						assignedDocumentNumber: number,
+						assignNextDocumentNumber: !number
+					})}
+				disabledShortcut
 			/>
 			<ParticipantStatusWidget
 				title={m.userAgreement()}
@@ -526,7 +741,7 @@
 				{survey}
 				surveyAnswer={surveyAnswers?.find((a) => a.question.id === survey.id)}
 				{conferenceId}
-				userId={user.id}
+				{userId}
 			/>
 		{/each}
 	</div>
@@ -543,3 +758,54 @@
 		</div>
 	</div>
 </Drawer>
+
+{#if assignSupervisorModalOpen}
+	<Modal bind:open={assignSupervisorModalOpen} title={m.assignSupervisor()}>
+		<div class="h-full max-h-[70vh] overflow-y-auto">
+			<table class="table w-full">
+				<thead>
+					<tr>
+						<th></th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#if $supervisorListQuery.fetching}
+						{#each Array(3) as _, i}
+							<tr>
+								<td colspan="2"><div class="skeleton h-8 w-32"></div></td>
+							</tr>
+						{/each}
+					{:else if $supervisorListQuery.data?.findManyConferenceSupervisors && $supervisorListQuery.data?.findManyConferenceSupervisors.length !== 0}
+						{#each $supervisorListQuery.data?.findManyConferenceSupervisors.sort( (a, b) => `${a.user.family_name}${a.user.given_name}`.localeCompare(`${b.user.family_name}${b.user.given_name}`) ) as supervisor (supervisor.id)}
+							<tr>
+								<td>
+									<button
+										class="btn btn-sm"
+										aria-label="Details"
+										onclick={() => assigneSupervisor(supervisor.connectionCode)}
+									>
+										<i class="fa-duotone fa-plus"></i>
+									</button>
+								</td>
+								<td>
+									<span class="capitalize">{supervisor.user.given_name}</span>
+									<span class="uppercase">{supervisor.user.family_name}</span>
+								</td>
+							</tr>
+						{/each}
+					{:else}
+						<tr>
+							<td colspan="2">
+								<div class="alert alert-info">
+									<i class="fa-solid fa-user-slash"></i>
+									{m.noSingleParticipantsFound()}
+								</div>
+							</td>
+						</tr>
+					{/if}
+				</tbody>
+			</table>
+		</div>
+	</Modal>
+{/if}

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	// @ts-expect-error - This library has no types
 	import { girocode } from '@dipser/epc-qr-code.js';
 
 	interface Props {
@@ -13,17 +12,15 @@
 
 	let { name, iban, amount, currency, reason }: Props = $props();
 
-	let qrCode = $state<string>();
-
-	$effect(() => {
-		qrCode = girocode({
+	let qrCode = $derived(
+		girocode({
 			name,
 			iban,
 			amount,
 			currency,
 			reason
-		}).svg_data_url();
-	});
+		}).svg_data_url()
+	);
 </script>
 
 <div class="flex flex-col gap-4">

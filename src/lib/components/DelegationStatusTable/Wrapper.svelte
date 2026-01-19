@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
-	import DashboardContentCard from '../DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 
 	interface Props {
 		title?: string;
@@ -10,6 +10,7 @@
 		withCommittee?: boolean;
 		withPostalSatus?: boolean;
 		withPaymentStatus?: boolean;
+		withPaperCount?: boolean;
 		children: Snippet;
 	}
 
@@ -20,6 +21,7 @@
 		withCommittee = false,
 		withPostalSatus = false,
 		withPaymentStatus = false,
+		withPaperCount = false,
 		children
 	}: Props = $props();
 </script>
@@ -39,14 +41,21 @@
 				{#if withPostalSatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Postialische Anmeldung">
-							<i class="fa-duotone fa-envelopes-bulk text-xl"></i>
+							<i class="fa-duotone fa-envelopes-bulk"></i>
 						</div>
 					</th>
 				{/if}
 				{#if withPaymentStatus}
 					<th class="text-center">
 						<div class="tooltip" data-tip="Beitragszahlung">
-							<i class="fa-duotone fa-money-bill-transfer text-xl"></i>
+							<i class="fa-duotone fa-money-bill-transfer"></i>
+						</div>
+					</th>
+				{/if}
+				{#if withPaperCount}
+					<th class="text-center">
+						<div class="tooltip" data-tip={m.papers()}>
+							<i class="fa-duotone fa-file-lines"></i>
 						</div>
 					</th>
 				{/if}

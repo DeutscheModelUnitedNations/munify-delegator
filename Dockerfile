@@ -1,66 +1,32 @@
-FROM oven/bun:1.1.40-slim AS base
+FROM oven/bun:1.3-slim AS base
 
 FROM base AS dual
 WORKDIR /temp
 RUN apt-get -y update; apt-get -y install curl
 # we need to use node and bun for generating prisma files, see https://github.com/prisma/prisma/issues/21241
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash
 RUN apt-get install -y nodejs
 
-# TODO separate dependencies and build to prevent reinstall if
-# lockfile didnt change
+FROM dual AS runner
+WORKDIR /run
 
-FROM dual AS builder
-WORKDIR /app
+COPY package.json bun.lock tsconfig.json ./
+RUN bun install --frozen-lockfile
 
 ARG VERSION
 ENV PUBLIC_VERSION=$VERSION
 ARG SHA
 ENV PUBLIC_SHA=$SHA
-
-COPY package.json bun.lockb tsconfig.json ./
-RUN  bun install --frozen-lockfile
-# we need to generate prisma files before building to prevent type errors
-COPY ./prisma/migrations ./prisma/migrations/
-COPY ./prisma/schema.prisma ./prisma/schema.prisma
-COPY ./prisma/pothos.config.cjs ./prisma/pothos.config.cjs
-RUN bunx prisma generate
 
 COPY . .
-# the build command generates a few things, such as i18n outputs
-# therefore we need to run the build command BEFORE we check for correctness
-RUN bun run build
-RUN bun run check
-# remove all dependencies which are unused
-# TODO https://github.com/oven-sh/bun/issues/3605
+RUN bunx prisma generate
+# Increase Node.js heap size for build (default is too small for large codebases)
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+RUN bun run build && bun run check
 
-FROM base AS release
-WORKDIR /app
+RUN mkdir /run/ephemeralData && chown -R bun:bun /run/ephemeralData
 
-ARG VERSION
-ENV PUBLIC_VERSION=$VERSION
-ARG SHA
-ENV PUBLIC_SHA=$SHA
-
-# the runtime dependencies
-COPY --from=builder /app/node_modules ./node_modules/
-
-# the sveltekit output
-COPY --from=builder /app/build .
-# the tasks build output
-COPY --from=builder /app/tasksOut .
-# the prisma schema and migrations
-COPY --from=builder /app/prisma ./prisma/
-
-# TODO check if user is created
-
-# Make a folder called /app/ephemeralData
-RUN mkdir /app/ephemeralData
-# Change ownership to the bun user
-RUN chown -R bun:bun /app/node_modules /app/prisma /app/ephemeralData
-
-ENV NODE_ENV=production
 USER bun
+ENV NODE_ENV=production
 EXPOSE 3000/tcp
-# HEALTHCHECK --interval=15s --timeout=10s --retries=3 CMD curl -f http://0.0.0.0:3000/api/health/ready || exit 1
-CMD bunx prisma migrate deploy && bun ./index.js
+CMD ["sh", "-c", "bunx prisma migrate deploy && bun ./build/index.js"]

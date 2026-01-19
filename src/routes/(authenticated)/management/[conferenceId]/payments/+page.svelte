@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { cache, graphql } from '$houdini';
-	import { PaymentReferenceByIdQueryStore } from '$houdini/plugins/houdini-svelte/stores/PaymentReferenceByIdQuery';
 	import { m } from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
-	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { type PageData } from './$houdini';
-	import { fly, fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/services/formatNames';
+	import { queryParameters } from 'sveltekit-search-params';
 
 	const paymentReferenceByIdQuery = graphql(`
 		query PaymentReferenceByIdQuery($reference: String!, $conferenceId: String!) {
@@ -59,10 +57,12 @@
 		}
 	`);
 
-	let searchValue = $state<string>('');
-
-	$effect(() => {
-		searchValue = searchValue.trim();
+	const params = queryParameters({
+		searchValue: {
+			defaultValue: '',
+			encode: (value) => value.trim(),
+			decode: (value) => (value ?? '').trim()
+		}
 	});
 
 	let { data }: { data: PageData } = $props();
@@ -81,29 +81,11 @@
 
 	$effect(() => {
 		paymentReferenceByIdQuery.fetch({
-			variables: { conferenceId: data.conferenceId, reference: searchValue }
+			variables: { conferenceId: data.conferenceId, reference: $params.searchValue }
 		});
 	});
 
-	let confirmDialogOpen = $state(false);
-
-	let recieveDate = $state<string>();
-	let nativeDateInput = $state<HTMLInputElement>();
-
-	function open() {
-		if (!nativeDateInput) throw new Error('Native date input not found');
-		nativeDateInput.showPicker();
-	}
-
-	let localizedDateString = $derived.by(() => {
-		if (!recieveDate) return m.selectADate();
-		const date = new Date(recieveDate);
-		return date.toLocaleDateString(getLocale(), {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric'
-		});
-	});
+	let recieveDate = $state<string>(new Date().toISOString().split('T')[0]);
 
 	let loading = $state(false);
 
@@ -126,7 +108,7 @@
 		});
 		cache.markStale();
 		paymentReferenceByIdQuery.fetch({
-			variables: { conferenceId: data.conferenceId, reference: searchValue }
+			variables: { conferenceId: data.conferenceId, reference: $params.searchValue }
 		});
 		loading = false;
 	};
@@ -141,15 +123,15 @@
 	<input
 		type="text"
 		placeholder={m.referenceSearch()}
-		class="input input-lg input-bordered w-full"
-		bind:value={searchValue}
+		class="input input-lg w-full"
+		bind:value={$params.searchValue}
 	/>
 
 	{#if $paymentReferenceByIdQuery?.fetching}
 		<div class="flex items-center gap-2">
 			<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 		</div>
-	{:else if searchValue === ''}
+	{:else if $params.searchValue === ''}
 		<div class="flex items-center gap-2">
 			<i class="fa-duotone fa-pen-field text-3xl"></i>
 			{m.waitingForYourInput()}
@@ -161,7 +143,7 @@
 		</div>
 	{:else}
 		<div
-			class="flex w-full flex-col gap-4 rounded-lg bg-base-200 p-4 shadow-md md:p-10"
+			class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4 shadow-md md:p-10"
 			in:fly={{ y: -10, duration: 300 }}
 		>
 			<div>
@@ -191,7 +173,7 @@
 				</div>
 			{/if}
 
-			<div class="w-fit max-w-sm rounded-md bg-base-100 p-2">
+			<div class="bg-base-100 w-fit max-w-sm rounded-md p-2">
 				<div class="font-mono text-3xl font-bold">
 					{paymentTransaction?.amount.toLocaleString(undefined, {
 						style: 'currency',
@@ -204,7 +186,7 @@
 				<h2 class="text-xl font-bold">{m.referencedUsers()}</h2>
 				<div class="flex flex-col gap-2">
 					{#each referencedUsers ?? [] as user}
-						<div class="flex w-full items-center gap-4 rounded-md bg-base-100 px-4 py-2">
+						<div class="bg-base-100 flex w-full items-center gap-4 rounded-md px-4 py-2">
 							{#if getPaymentStatus(user.id) === 'DONE'}
 								{#if paymentTransaction?.recievedAt}
 									<i class="fa-duotone fa-check text-2xl"></i>
@@ -220,7 +202,7 @@
 							<div>{user.id}</div>
 							<a
 								class="btn btn-ghost btn-sm"
-								href="/management/{data.conferenceId}/participants?filter={user.id}"
+								href="/management/{data.conferenceId}/participants?selected={user.id}"
 								aria-label="Details for {formatNames(user.given_name, user.family_name)}"
 							>
 								<i class="fa-duotone fa-up-right-from-square"></i>
@@ -240,7 +222,7 @@
 						{/if}
 						{m.markAsProblem()}
 					</button>
-					<button class="btn btn-success" onclick={() => (confirmDialogOpen = true)}>
+					<button class="btn btn-success" onclick={() => changeTransactionStatus('DONE')}>
 						{#if loading}
 							<i class="fa-duotone fa-spinner fa-spin"></i>
 						{:else}
@@ -253,55 +235,3 @@
 		</div>
 	{/if}
 </div>
-
-<dialog class="modal {confirmDialogOpen && 'modal-open'}">
-	<div class="modal-box">
-		<h3 class="text-lg font-bold">{m.enterDateOfdateReceipt()}</h3>
-		<DatePicker
-			enableFutureDates={false}
-			enablePastDates
-			isMultipane
-			showYearControls
-			isRange={false}
-			includeFont={false}
-		>
-			<div class="relative">
-				<input
-					name="RecievedDate"
-					type="date"
-					id="RecievedDate"
-					bind:value={recieveDate}
-					placeholder={m.selectADate()}
-					class="input input-bordered w-full"
-					lang={getLocale()}
-					bind:this={nativeDateInput}
-				/>
-				<div
-					aria-hidden={true}
-					onclick={open}
-					onkeydown={open}
-					class="input input-bordered absolute right-1/2 top-1/2 flex w-full -translate-y-1/2 translate-x-1/2 cursor-pointer items-center"
-				>
-					{localizedDateString}
-				</div>
-				<i class="fa-duotone fa-calendar absolute right-4 top-1/2 -translate-y-1/2 text-lg"></i>
-			</div>
-		</DatePicker>
-		<div class="modal-action justify-between">
-			<button class="btn btn-error" onclick={() => (confirmDialogOpen = false)} aria-label="Exit">
-				<i class="fas fa-xmark text-xl"></i>
-			</button>
-			<button
-				class="btn btn-primary"
-				aria-label="Print"
-				onclick={() => {
-					confirmDialogOpen = false;
-					changeTransactionStatus('DONE');
-				}}
-			>
-				<i class="fas fa-check text-xl"></i>
-				{m.confirm()}
-			</button>
-		</div>
-	</div>
-</dialog>
