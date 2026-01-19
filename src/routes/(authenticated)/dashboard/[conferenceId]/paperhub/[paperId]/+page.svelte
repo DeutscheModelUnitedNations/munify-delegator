@@ -22,7 +22,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { cache, graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperReviewSection from './PaperReviewSection.svelte';
@@ -318,7 +318,7 @@
 			{
 				loading: m.paperDeleting(),
 				success: m.paperDeletedSuccessfully(),
-				error: (err) => err.message || m.paperDeleteError()
+				error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
 			}
 		);
 

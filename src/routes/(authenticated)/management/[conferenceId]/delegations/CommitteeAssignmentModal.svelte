@@ -4,7 +4,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import type { GetCommitteeDataForCommitteeAssignmentVariables } from './$houdini';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 

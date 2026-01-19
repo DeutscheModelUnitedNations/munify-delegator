@@ -4,7 +4,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import type { PageData } from './$types';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { waitingListFormSchema } from './form-schema';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';

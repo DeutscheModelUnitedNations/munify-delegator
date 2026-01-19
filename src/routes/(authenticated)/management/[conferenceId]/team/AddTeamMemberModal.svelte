@@ -2,7 +2,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { cache, graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
@@ -83,7 +83,7 @@
 			{
 				loading: m.addingTeamMember(),
 				success: m.teamMemberAdded(),
-				error: (err) => err.message || m.addTeamMemberError()
+				error: (err) => (err instanceof Error ? err.message : null) || m.addTeamMemberError()
 			}
 		);
 		cache.markStale();

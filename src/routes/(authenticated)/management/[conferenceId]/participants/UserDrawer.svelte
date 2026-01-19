@@ -23,7 +23,7 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
@@ -219,24 +219,20 @@
 	`);
 
 	const assigneSupervisor = async (connectionCode: string) => {
-		await toast
-			.promise(
-				assignSupervisorMutation.mutate({
-					conferenceId,
-					userId,
-					connectionCode
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.genericToastSuccess(),
-					error: m.genericToastError()
-				}
-			)
-			.then(async () => {
-				assignSupervisorModalOpen = false;
-				cache.markStale();
-				await invalidateAll();
-			});
+		const promise = assignSupervisorMutation.mutate({
+			conferenceId,
+			userId,
+			connectionCode
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
+		assignSupervisorModalOpen = false;
+		cache.markStale();
+		await invalidateAll();
 	};
 
 	const deleteParticipant = async () => {

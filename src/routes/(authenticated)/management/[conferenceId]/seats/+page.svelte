@@ -9,7 +9,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	let { data }: { data: PageData } = $props();
 	let conferenceId = $derived(data.conferenceId);
@@ -40,12 +40,9 @@
 
 	$effect(() => {
 		if ($params.assignUserId) {
-			toast
-				.promise(
-					LookupUserToAssignQuery.fetch({ variables: { id: $params.assignUserId } }),
-					genericPromiseToastMessages
-				)
-				.then((res) => (assignUser = res.data?.findUniqueUser));
+			const promise = LookupUserToAssignQuery.fetch({ variables: { id: $params.assignUserId } });
+			toast.promise(promise, genericPromiseToastMessages);
+			promise.then((res) => (assignUser = res?.data?.findUniqueUser));
 		} else {
 			assignUser = undefined;
 		}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import Footer from '../Footer.svelte';
 	import type { PageProps } from './$types';
 	import { m } from '$lib/paraglide/messages';
@@ -33,22 +33,21 @@
 			return;
 		}
 		loading = true;
-		toast
-			.promise(
-				unsubscribeAllMutation.mutate({
-					email,
-					all: false
-				}),
-				{
-					success: m.unsubscribeSuccess(),
-					error: m.unsubscribeError(),
-					loading: m.unsubscribeLoading()
-				}
-			)
-			.then(() => {
-				unsubscribed = true;
-				loading = false;
-			});
+		const promise = unsubscribeAllMutation.mutate({
+			email,
+			all: false
+		});
+		toast.promise(promise, {
+			success: m.unsubscribeSuccess(),
+			error: m.unsubscribeError(),
+			loading: m.unsubscribeLoading()
+		});
+		try {
+			await promise;
+			unsubscribed = true;
+		} finally {
+			loading = false;
+		}
 	};
 </script>
 

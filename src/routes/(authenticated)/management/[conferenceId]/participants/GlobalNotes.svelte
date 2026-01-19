@@ -2,7 +2,7 @@
 	import { graphql } from '$houdini';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		globalNotes: string;

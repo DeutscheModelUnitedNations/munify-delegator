@@ -4,7 +4,7 @@
 	import { type PageData } from './$houdini';
 	import Selection from '$lib/components/Selection';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	type MinimalUserData = {
 		id: string;

@@ -8,7 +8,7 @@
 	import { cache, graphql } from '$houdini';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { resolutionContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -286,26 +286,26 @@
 			return;
 		}
 
-		const response = await toast.promise(
-			createPaperMutation.mutate({
-				conferenceId: data.conferenceId,
-				userId: data.user.sub,
-				delegationId: delegation?.id,
-				content,
-				agendaItemId: $formData.agendaItemId,
-				status: submit ? 'SUBMITTED' : 'DRAFT'
-			}),
-			{
-				loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
-				success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
-				error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
-			}
-		);
+		const promise = createPaperMutation.mutate({
+			conferenceId: data.conferenceId,
+			userId: data.user.sub,
+			delegationId: delegation?.id,
+			content,
+			agendaItemId: $formData.agendaItemId,
+			status: submit ? 'SUBMITTED' : 'DRAFT'
+		});
+		toast.promise(promise, {
+			loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
+			success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
+			error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
+		});
+
+		const response = await promise;
 
 		cache.markStale();
 		await invalidateAll();
 
-		if (response?.data.createOnePaper?.id) {
+		if (response?.data?.createOnePaper?.id) {
 			// Clear store so next paper creation starts fresh
 			$resolutionContentStore = undefined;
 			// Clear localStorage draft on successful submission

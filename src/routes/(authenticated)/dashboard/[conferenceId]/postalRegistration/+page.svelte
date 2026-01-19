@@ -10,7 +10,7 @@
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import formatNames, { formatInitials } from '$lib/services/formatNames';
 	import { goto, invalidateAll } from '$app/navigation';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 
 	let { data }: { data: PageData } = $props();

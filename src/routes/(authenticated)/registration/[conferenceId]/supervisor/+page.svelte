@@ -4,7 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import { graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	const createSupervisorMutation = graphql(`
 		mutation CreateConferenceSupervisorMutation(
@@ -24,22 +24,18 @@
 
 	let plansOwnAttendenceAtConference = $state(true);
 
-	const signup = () => {
-		toast
-			.promise(
-				createSupervisorMutation.mutate({
-					conferenceId: data.conferenceId,
-					plansOwnAttendenceAtConference
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.genericToastSuccess(),
-					error: m.genericToastError()
-				}
-			)
-			.then(() => {
-				goto(`/dashboard/${data.conferenceId}`);
-			});
+	const signup = async () => {
+		const promise = createSupervisorMutation.mutate({
+			conferenceId: data.conferenceId,
+			plansOwnAttendenceAtConference
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
+		goto(`/dashboard/${data.conferenceId}`);
 	};
 </script>
 

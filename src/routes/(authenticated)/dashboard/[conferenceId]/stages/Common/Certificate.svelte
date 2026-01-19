@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		conferenceId: string | undefined;

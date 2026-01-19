@@ -6,7 +6,7 @@
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import { invalidateAll } from '$app/navigation';
 
