@@ -597,7 +597,15 @@
 					<button
 						class="btn"
 						onclick={async () => {
-							const body: Record = {};
+							const body: {
+								name?: string;
+								countryName?: string;
+								countryAlpha2Code?: string;
+								committee?: string;
+								pronouns?: string;
+								id?: string;
+								mediaConsentStatus?: string;
+							} = {};
 							if (user?.given_name && user?.family_name) {
 								body.name = `${user.given_name} ${user.family_name}`;
 							}
@@ -630,7 +638,25 @@
 										body: JSON.stringify(body)
 									}
 								);
-								const { url } = await res.json();
+								if (!res.ok) {
+									const errorText = await res.text();
+									console.error(`Badge generator API error (${res.status}): ${errorText}`);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const data: unknown = await res.json();
+								if (
+									typeof data !== 'object' ||
+									data === null ||
+									!('url' in data) ||
+									typeof (data as { url: unknown }).url !== 'string' ||
+									(data as { url: string }).url.trim() === ''
+								) {
+									console.error('Badge generator returned invalid response:', data);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const { url } = data as { url: string };
 								window.open(url.replace('http://', 'https://'), '_blank');
 							} catch (e) {
 								console.error('Failed to open badge generator', e);
