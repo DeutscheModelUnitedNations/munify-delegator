@@ -12,6 +12,12 @@ import {
 const birthdayMaxDate = new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);
 
 export const userFormSchema = z.object({
+	given_name: z.string().min(1, {
+		message: m.atLeastXChars({ amount: 1 })
+	}),
+	family_name: z.string().min(1, {
+		message: m.atLeastXChars({ amount: 1 })
+	}),
 	birthday: z.date().max(birthdayMaxDate, {
 		message: m.dateMustBeBefore({
 			date: birthdayMaxDate.toLocaleDateString(getLocale())
