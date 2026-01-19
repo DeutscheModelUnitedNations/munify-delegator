@@ -35,15 +35,15 @@
 		if (!conferenceId || !$code || !$previewSupervisorQuery.data?.previewConferenceSupervisor)
 			return;
 
-		const res = await toast.promise(
-			connectSupervisorMutation.mutate({
-				conferenceId,
-				connectionCode: $code
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = connectSupervisorMutation.mutate({
+			conferenceId,
+			connectionCode: $code
+		});
+		toast.promise(promise, genericPromiseToastMessages);
 
-		if (res.errors) {
+		const res = await promise;
+
+		if (res?.errors) {
 			console.error(res.errors);
 			return;
 		}

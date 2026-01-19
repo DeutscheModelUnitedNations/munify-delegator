@@ -318,7 +318,7 @@
 			{
 				loading: m.paperDeleting(),
 				success: m.paperDeletedSuccessfully(),
-				error: (err) => err.message || m.paperDeleteError()
+				error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
 			}
 		);
 

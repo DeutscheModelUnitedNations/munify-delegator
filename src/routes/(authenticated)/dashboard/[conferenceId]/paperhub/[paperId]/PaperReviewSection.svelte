@@ -387,21 +387,21 @@
 		showConfirmModal = false;
 		isSubmitting = true;
 		try {
-			const result = await toast.promise(
-				createReviewMutation.mutate({
-					paperId,
-					comments: $reviewComments,
-					newStatus: selectedStatus
-				}),
-				{
-					loading: m.submittingReview(),
-					success: m.reviewSubmitted(),
-					error: (err) => err.message || m.reviewSubmitError()
-				}
-			);
+			const promise = createReviewMutation.mutate({
+				paperId,
+				comments: $reviewComments,
+				newStatus: selectedStatus
+			});
+			toast.promise(promise, {
+				loading: m.submittingReview(),
+				success: m.reviewSubmitted(),
+				error: (err) => (err instanceof Error ? err.message : null) || m.reviewSubmitError()
+			});
+
+			const result = await promise;
 
 			// Check if a piece was unlocked and show the modal
-			const data = result.data?.createPaperReview;
+			const data = result?.data?.createPaperReview;
 			if (data?.pieceUnlocked && data.unlockedPieceData) {
 				pieceFoundData = {
 					flagName: data.unlockedPieceData.flagName,

@@ -24,22 +24,18 @@
 
 	let plansOwnAttendenceAtConference = $state(true);
 
-	const signup = () => {
-		toast
-			.promise(
-				createSupervisorMutation.mutate({
-					conferenceId: data.conferenceId,
-					plansOwnAttendenceAtConference
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.genericToastSuccess(),
-					error: m.genericToastError()
-				}
-			)
-			.then(() => {
-				goto(`/dashboard/${data.conferenceId}`);
-			});
+	const signup = async () => {
+		const promise = createSupervisorMutation.mutate({
+			conferenceId: data.conferenceId,
+			plansOwnAttendenceAtConference
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
+		goto(`/dashboard/${data.conferenceId}`);
 	};
 </script>
 

@@ -40,12 +40,9 @@
 
 	$effect(() => {
 		if ($params.assignUserId) {
-			toast
-				.promise(
-					LookupUserToAssignQuery.fetch({ variables: { id: $params.assignUserId } }),
-					genericPromiseToastMessages
-				)
-				.then((res) => (assignUser = res.data?.findUniqueUser));
+			const promise = LookupUserToAssignQuery.fetch({ variables: { id: $params.assignUserId } });
+			toast.promise(promise, genericPromiseToastMessages);
+			promise.then((res) => (assignUser = res?.data?.findUniqueUser));
 		} else {
 			assignUser = undefined;
 		}

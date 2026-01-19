@@ -83,7 +83,7 @@
 			{
 				loading: m.addingTeamMember(),
 				success: m.teamMemberAdded(),
-				error: (err) => err.message || m.addTeamMemberError()
+				error: (err) => (err instanceof Error ? err.message : null) || m.addTeamMemberError()
 			}
 		);
 		cache.markStale();

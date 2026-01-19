@@ -219,24 +219,20 @@
 	`);
 
 	const assigneSupervisor = async (connectionCode: string) => {
-		await toast
-			.promise(
-				assignSupervisorMutation.mutate({
-					conferenceId,
-					userId,
-					connectionCode
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.genericToastSuccess(),
-					error: m.genericToastError()
-				}
-			)
-			.then(async () => {
-				assignSupervisorModalOpen = false;
-				cache.markStale();
-				await invalidateAll();
-			});
+		const promise = assignSupervisorMutation.mutate({
+			conferenceId,
+			userId,
+			connectionCode
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
+		assignSupervisorModalOpen = false;
+		cache.markStale();
+		await invalidateAll();
 	};
 
 	const deleteParticipant = async () => {
