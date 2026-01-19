@@ -11,7 +11,7 @@
 	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
 	import type { PageData } from './$houdini';
 	import FakeUser from './FakeUser.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import { dev } from '$app/environment';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';

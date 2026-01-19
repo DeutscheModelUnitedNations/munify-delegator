@@ -2,7 +2,7 @@
 	import CookieBanner from '$lib/components/CookieBanner.svelte';
 	import MaintenanceBanner from '$lib/components/MaintenanceBanner.svelte';
 	import Footer from './Footer.svelte';
-	import { Toaster } from 'svelte-french-toast';
+	import { Toaster } from 'svelte-sonner';
 	import Inspect from 'svelte-inspect-value';
 	import { locales, localizeHref } from '$lib/paraglide/runtime';
 
@@ -58,7 +58,7 @@
 	<meta name="theme-color" content="#ffffff" />
 </svelte:head>
 
-<Toaster />
+<Toaster richColors position="top-center" />
 <CookieBanner />
 <MaintenanceBanner />
 <div class="flex min-h-screen">

@@ -4,7 +4,7 @@
 	import ParticipantStatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import Section from './Section.svelte';
 
 	let { data } = $props();

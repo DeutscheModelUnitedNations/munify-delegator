@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type PhrasePattern } from '$lib/services/phraseValidation';
 	import { m } from '$lib/paraglide/messages';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		patterns: PhrasePattern[];

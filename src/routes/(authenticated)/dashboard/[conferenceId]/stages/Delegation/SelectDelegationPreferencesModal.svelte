@@ -10,7 +10,7 @@
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	interface Props {

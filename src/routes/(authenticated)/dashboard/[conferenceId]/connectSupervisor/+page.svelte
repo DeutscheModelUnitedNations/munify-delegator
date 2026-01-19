@@ -4,7 +4,7 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { cache, graphql } from '$houdini';
 

@@ -21,7 +21,7 @@
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';

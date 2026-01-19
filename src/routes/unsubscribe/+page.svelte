@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import Footer from '../Footer.svelte';
 	import type { PageProps } from './$types';
 	import { m } from '$lib/paraglide/messages';

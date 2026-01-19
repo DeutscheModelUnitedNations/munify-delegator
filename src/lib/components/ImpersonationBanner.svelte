@@ -3,7 +3,7 @@
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	const checkImpersonationStatusQuery = graphql(`
 		query checkImpersonationStatus {

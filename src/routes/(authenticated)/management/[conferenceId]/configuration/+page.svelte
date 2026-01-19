@@ -8,7 +8,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';

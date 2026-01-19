@@ -3,7 +3,7 @@
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import GiroCode from './GiroCode.svelte';
 
 	interface Props {
