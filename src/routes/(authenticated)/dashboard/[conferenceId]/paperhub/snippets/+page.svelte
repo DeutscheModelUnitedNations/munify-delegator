@@ -23,7 +23,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { graphql, cache } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import type { PageData } from './$houdini';
 	import Modal from '$lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';

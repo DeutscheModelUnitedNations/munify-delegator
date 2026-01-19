@@ -5,7 +5,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';

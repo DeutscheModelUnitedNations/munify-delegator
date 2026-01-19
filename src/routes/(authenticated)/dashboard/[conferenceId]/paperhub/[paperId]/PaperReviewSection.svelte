@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
 	import { writable, get } from 'svelte/store';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperEditor from '$lib/components/Paper/Editor';

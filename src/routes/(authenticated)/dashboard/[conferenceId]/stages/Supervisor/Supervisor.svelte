@@ -19,7 +19,7 @@
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { page } from '$app/state';

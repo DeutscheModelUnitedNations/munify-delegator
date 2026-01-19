@@ -11,7 +11,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import codenmz from '$lib/services/codenamize';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		conferenceId: string;

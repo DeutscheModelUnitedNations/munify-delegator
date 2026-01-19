@@ -6,7 +6,7 @@
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { AddAgendaItemFormSchema } from './form-schema';

@@ -4,7 +4,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import { graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	const createSupervisorMutation = graphql(`
 		mutation CreateConferenceSupervisorMutation(

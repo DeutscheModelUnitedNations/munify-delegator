@@ -5,7 +5,7 @@
 	import type { TableColumns } from 'svelte-table';
 	import type { PageData } from './$houdini';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/Modal.svelte';
 	import { getLocale } from '$lib/paraglide/runtime';
 

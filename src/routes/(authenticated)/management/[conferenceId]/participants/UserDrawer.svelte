@@ -23,7 +23,7 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
