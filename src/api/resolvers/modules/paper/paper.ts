@@ -480,6 +480,19 @@ builder.queryFields((t) => ({
 		},
 		resolve: async (root, args, ctx) => {
 			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Verify user is a team member with appropriate role
+			const teamMember = await db.teamMember.findFirst({
+				where: {
+					conferenceId: args.conferenceId,
+					userId: user.sub,
+					role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+				}
+			});
+
+			if (!teamMember) {
+				throw new GraphQLError('Access denied - requires team member status');
+			}
 			const agendaItemPapers = await db.paper.findMany({
 				where: {
 					agendaItemId: args.agendaItemId,
