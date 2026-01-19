@@ -117,11 +117,17 @@ export type LegacyResolution = {
 
 export interface ResolutionHeaderData {
 	conferenceName?: string;
+	conferenceTitle?: string;
 	committeeAbbreviation?: string;
 	committeeFullName?: string;
+	/** Custom committee headline for resolution body (e.g., "Der Sicherheitsrat" or "The Security Council") */
+	committeeResolutionHeadline?: string;
 	documentNumber?: string;
 	topic?: string;
 	authoringDelegation?: string;
+	lastEdited?: Date | string;
+	/** Conference emblem data URL (SVG), falls back to UN emblem if not provided */
+	conferenceEmblem?: string;
 }
 
 // =============================================================================
@@ -227,24 +233,30 @@ export function toLetter(num: number): string {
 	return String.fromCharCode(96 + num); // 97 is 'a'
 }
 
+// Convert number to lowercase roman numeral (1 → i, 2 → ii, etc.)
+export function toLowerRoman(num: number): string {
+	return toRoman(num).toLowerCase();
+}
+
 // Generate sub-clause label based on depth and index
-// Depth 1: I. II. III. (Roman numerals)
-// Depth 2: a) b) c)
-// Depth 3: aa) bb) cc)
-// Depth 4: aaa) bbb) ccc)
+// Following UN resolution formatting rules:
+// Depth 1: (a), (b), (c) - lowercase letters
+// Depth 2: (i), (ii), (iii) - lowercase roman numerals
+// Depth 3: (aa), (bb), (cc) - double lowercase letters
+// Depth 4: (aaa), (bbb), (ccc) - triple lowercase letters
 export function getSubClauseLabel(index: number, depth: number): string {
 	const num = index + 1;
 	switch (depth) {
 		case 1:
-			return `${toRoman(num)}.`;
+			return `(${toLetter(num)})`;
 		case 2:
-			return `${toLetter(num)})`;
+			return `(${toLowerRoman(num)})`;
 		case 3:
-			return `${toLetter(num).repeat(2)})`;
+			return `(${toLetter(num).repeat(2)})`;
 		case 4:
-			return `${toLetter(num).repeat(3)})`;
+			return `(${toLetter(num).repeat(3)})`;
 		default:
-			return `${num}.`;
+			return `(${num})`;
 	}
 }
 

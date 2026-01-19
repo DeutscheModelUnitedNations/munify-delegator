@@ -166,11 +166,15 @@
 
 		return {
 			conferenceName: paperData.conference?.title ?? 'Model UN',
+			conferenceTitle:
+				paperData.conference?.longTitle ?? paperData.conference?.title ?? 'Model United Nations',
 			committeeAbbreviation: paperData.agendaItem?.committee?.abbreviation,
 			committeeFullName: paperData.agendaItem?.committee?.name,
+			committeeResolutionHeadline: paperData.agendaItem?.committee?.resolutionHeadline ?? undefined,
 			documentNumber: `WP/${year}/${paperData.id.slice(-6)}`,
 			topic: paperData.agendaItem?.title,
-			authoringDelegation: nationName ?? nsaName
+			authoringDelegation: nationName ?? nsaName,
+			conferenceEmblem: paperData.conference?.emblemDataURL ?? undefined
 		};
 	});
 

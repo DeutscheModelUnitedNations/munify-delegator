@@ -10,6 +10,7 @@ import {
 	ConferenceIbanFieldObject,
 	ConferenceIdFieldObject,
 	ConferenceImageDataURLFieldObject,
+	ConferenceEmblemDataURLFieldObject,
 	ConferenceInfoFieldObject,
 	ConferenceLanguageFieldObject,
 	ConferenceLinkToPaperInboxFieldObject,
@@ -59,6 +60,7 @@ builder.prismaObject('Conference', {
 		language: t.field(ConferenceLanguageFieldObject),
 		website: t.field(ConferenceWebsiteFieldObject),
 		imageDataURL: t.field(ConferenceImageDataURLFieldObject),
+		emblemDataURL: t.field(ConferenceEmblemDataURLFieldObject),
 		state: t.field(ConferenceStateFieldObject),
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		registrationDeadlineGracePeriodMinutes: t.field(
@@ -474,6 +476,10 @@ builder.mutationFields((t) => {
 								type: 'File',
 								required: false
 							}),
+							emblem: t.field({
+								type: 'File',
+								required: false
+							}),
 							state: t.field({ type: ConferenceState, required: false }),
 							startAssignment: t.field({ type: 'DateTime', required: false }),
 							registrationDeadlineGracePeriodMinutes: t.int({ required: false }),
@@ -556,6 +562,11 @@ builder.mutationFields((t) => {
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;
 
+				const emblemDataURL = args.data.emblem
+					? await toDataURL(args.data.emblem)
+					: args.data.emblem;
+				args.data.emblem = undefined;
+
 				const contractContentURL = args.data.contractBasePDF
 					? await toDataURL(args.data.contractBasePDF)
 					: args.data.contractBasePDF;
@@ -586,6 +597,7 @@ builder.mutationFields((t) => {
 					data: {
 						...args.data,
 						imageDataURL: dataURL,
+						emblemDataURL: emblemDataURL,
 						title: args.data.title ?? undefined,
 						info: args.data.info ?? undefined,
 						state: args.data.state ?? undefined,

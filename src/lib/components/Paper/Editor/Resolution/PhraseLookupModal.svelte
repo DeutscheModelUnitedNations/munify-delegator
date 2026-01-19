@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type PhrasePattern, expandPattern } from '$lib/services/phraseValidation';
+	import { type PhrasePattern } from '$lib/services/phraseValidation';
 	import { m } from '$lib/paraglide/messages';
 	import toast from 'svelte-french-toast';
 
@@ -16,15 +16,10 @@
 	let searchQuery = $state('');
 	let dialogEl: HTMLDialogElement;
 
-	// Expand all patterns into their variations
-	let allPhrases = $derived.by(() => {
-		const phrases: string[] = [];
-		for (const pattern of patterns) {
-			phrases.push(...expandPattern(pattern.raw));
-		}
-		// Remove duplicates and sort alphabetically
-		return [...new Set(phrases)].sort((a, b) => a.localeCompare(b, 'de'));
-	});
+	// Get all phrases from patterns
+	let allPhrases = $derived(
+		[...new Set(patterns.map((p) => p.phrase))].sort((a, b) => a.localeCompare(b, 'de'))
+	);
 
 	// Filter phrases based on search query
 	let filteredPhrases = $derived(

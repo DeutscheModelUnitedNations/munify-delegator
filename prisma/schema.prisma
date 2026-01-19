@@ -37,6 +37,8 @@ model Conference {
   language                               String?
   website                                String?
   imageDataURL                           String?
+  /// SVG data URL for conference emblem (falls back to UN emblem if null)
+  emblemDataURL                          String?
   info                                   String?
   linkToPreparationGuide                 String?
   linkToPaperInbox                       String?
@@ -96,6 +98,8 @@ model Committee {
   name                    String
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
+  /// Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
+  resolutionHeadline      String?
 
   conference        Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String

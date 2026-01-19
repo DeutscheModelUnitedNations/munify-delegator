@@ -60,7 +60,7 @@
 		if (result.valid && result.matchedPhrase) {
 			return {
 				firstPhrase: result.matchedPhrase,
-				rest: trimmed.slice(result.italicEnd ?? result.matchedPhrase.length)
+				rest: trimmed.slice(result.matchedPhrase.length)
 			};
 		}
 
@@ -110,66 +110,87 @@
 
 		return subBlockIndex === subClauseBlocks.length - 1;
 	}
+
+	// Format date for display (localized)
+	function formatDate(date: Date | string | undefined): string {
+		const d = date ? new Date(date) : new Date();
+		return d.toLocaleDateString(undefined, {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric'
+		});
+	}
 </script>
 
-<div class="resolution-preview">
+<div
+	class="resolution-preview w-full max-w-[900px] px-16 py-8 bg-white text-gray-900 text-[0.95rem] leading-[1.7]"
+>
 	{#if headerData}
-		<!-- Watermark Disclaimer -->
-		<div class="watermark-disclaimer">
-			{disclaimerText}
-		</div>
-
-		<!-- UN Header Row: "United Nations" left, Document Number right -->
-		<div class="un-header-row">
-			<div class="un-title">{m.resolutionUnitedNations()}</div>
+		<!-- Header Row: Conference Title left, Document Number right -->
+		<div class="flex justify-between items-baseline mb-2">
+			<div class="text-sm">
+				{headerData.conferenceTitle ?? headerData.conferenceName ?? 'Model United Nations'}
+			</div>
 			{#if headerData.documentNumber}
-				<div class="document-number">
-					<span class="doc-abbrev">{headerData.committeeAbbreviation}</span><span class="doc-rest"
-						>/{headerData.documentNumber}</span
+				<div class="text-right">
+					<span class="text-2xl font-bold">{headerData.committeeAbbreviation}</span><span
+						class="text-sm">/{headerData.documentNumber}</span
 					>
 				</div>
 			{/if}
 		</div>
 
 		<!-- Thin Divider -->
-		<hr class="thin-divider" />
+		<hr class="border-t border-gray-900 my-2 mb-4" />
 
 		<!-- Committee Section with Emblem -->
-		<div class="committee-section">
-			<img src={unEmblem} alt="UN Emblem" class="un-emblem" />
-			<div class="committee-name">
-				{headerData.committeeFullName ?? resolution.committeeName}
+		<div class="flex justify-between">
+			<div class="flex items-start gap-4 mb-6">
+				<img
+					src={headerData.conferenceEmblem ?? unEmblem}
+					alt="Conference Emblem"
+					class="w-[70px] h-[70px] shrink-0"
+				/>
+				<div class="text-3xl font-bold leading-tight pt-1">
+					{headerData.committeeFullName ?? resolution.committeeName}
+				</div>
+			</div>
+
+			<!-- Date below divider -->
+			<div class="text-right text-sm mb-4">
+				{formatDate(headerData.lastEdited)}
 			</div>
 		</div>
 
-		<!-- Topic -->
-		{#if headerData.topic}
-			<div class="metadata-section">
-				<div class="metadata-label">{m.resolutionTopic()}</div>
-				<div class="metadata-value">{headerData.topic}</div>
-			</div>
-		{/if}
-
 		<!-- Authoring Delegation -->
 		{#if headerData.authoringDelegation}
-			<div class="metadata-section">
-				<div class="metadata-label">{m.resolutionAuthoringDelegation()}</div>
-				<div class="metadata-value">{headerData.authoringDelegation}</div>
+			<div class="mb-4">
+				<div class="font-bold uppercase text-sm">{m.resolutionAuthoringDelegation()}</div>
+				<div class="ml-6">{headerData.authoringDelegation}</div>
 			</div>
 		{/if}
 
 		<!-- Small Print Disclaimer -->
-		<div class="small-disclaimer">
+		<div class="text-gray-500 text-[0.65rem] leading-snug mt-6 mb-2">
 			{disclaimerText}
 		</div>
 
 		<!-- Thick Divider -->
-		<hr class="thick-divider" />
+		<hr class="border-t-[3px] border-gray-900 mt-6 mb-8" />
+	{/if}
+
+	<!-- Topic below thick divider -->
+	{#if headerData?.topic}
+		<div class="font-bold mb-6">
+			{headerData.topic}
+		</div>
 	{/if}
 
 	<!-- Resolution Content Header -->
-	<div class="resolution-header">
-		{#if headerData?.committeeFullName}
+	<div class="italic mb-6">
+		{#if headerData?.committeeResolutionHeadline}
+			{headerData.committeeResolutionHeadline},
+		{:else if headerData?.committeeFullName}
 			{headerData.committeeFullName},
 		{:else}
 			{resolution.committeeName.toUpperCase()},
@@ -178,10 +199,10 @@
 
 	<!-- Preamble Section -->
 	{#if nonEmptyPreamble.length > 0}
-		<div class="preamble-section">
+		<div class="mb-6">
 			{#each nonEmptyPreamble as clause}
 				{@const formatted = formatClauseContent(clause.content, preamblePatterns)}
-				<p class="preamble-clause">
+				<p class="mb-3 text-justify indent-8">
 					<span class="italic">{formatted.firstPhrase}</span>{formatted.rest},
 				</p>
 			{/each}
@@ -190,10 +211,11 @@
 
 	<!-- Operative Section -->
 	{#if nonEmptyOperative.length > 0}
-		<ol class="operative-section">
+		<ol class="list-none p-0">
 			{#each nonEmptyOperative as clause, opIndex}
 				{@const isLastOperative = opIndex === nonEmptyOperative.length - 1}
-				<li class="operative-clause">
+				<li class="mb-2 text-justify indent-8">
+					<span class="font-bold">{opIndex + 1}.</span>
 					{@render operativeClauseBlocks(clause, opIndex, isLastOperative)}
 				</li>
 			{/each}
@@ -210,17 +232,15 @@
 			{@const isLastBlock = blockIndex === clause.blocks.length - 1}
 			{#if block.type === 'text'}
 				{@const formatted = formatClauseContent(block.content, operativePatterns)}
-				{@const nextBlock = clause.blocks[blockIndex + 1]}
-				{@const hasMoreContent = !isLastBlock || (nextBlock && nextBlock.type === 'subclauses')}
 				{#if block.content.trim()}
 					{#if blockIndex === 0}
-						<!-- First text block gets italicized phrase -->
+						<!-- First text block gets italicized phrase (inline) -->
 						<span class="italic">{formatted.firstPhrase}</span
-						>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+						>{formatted.rest}{#if isLastBlock && isLastOperative}.{:else};{/if}
 					{:else}
 						<!-- Continuation text blocks (after subclauses) -->
-						<p class="continuation-text">
-							{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else if !hasMoreContent};{/if}
+						<p class="mt-2 mb-1 text-justify indent-8">
+							{block.content.trim()}{#if isLastBlock && isLastOperative}.{:else};{/if}
 						</p>
 					{/if}
 				{/if}
@@ -235,11 +255,12 @@
 
 	<!-- Render a list of subclauses at a given depth -->
 	{#snippet subClauseList(subClauses: SubClause[], depth: number, isLastInParent: boolean)}
-		<ol class="sub-clause-section depth-{depth}">
+		<ol class="list-none p-0 mt-2">
 			{#each subClauses as subClause, index}
 				{@const isLastSubClause = index === subClauses.length - 1}
-				<li class="sub-clause">
-					<span class="sub-clause-label">{getSubClauseLabel(index, depth)}</span>
+				<!-- Depth 1: first-line indent only; Depth 2+: all lines indented equally (no first-line indent) -->
+				<li class="mb-1 text-justify {depth === 1 ? 'indent-8' : 'pl-8 indent-0'}">
+					<span>{getSubClauseLabel(index, depth)}</span>
 					{@render subClauseBlocks(subClause, depth, isLastInParent && isLastSubClause)}
 				</li>
 			{/each}
@@ -253,12 +274,12 @@
 			{#if block.type === 'text'}
 				{#if block.content.trim()}
 					{#if blockIndex === 0}
-						<!-- First text block content -->
-						{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
+						<!-- First text block content (inline) -->
+						{block.content.trim()}{#if isLastBlock && isLastInParent}.{:else};{/if}
 					{:else}
-						<!-- Continuation text after nested subclauses -->
-						<p class="continuation-text">
-							{block.content.trim()}{#if isLastBlock}{#if isLastInParent && depth === 1}.{:else};{/if}{/if}
+						<!-- Continuation text after nested subclauses (parent li already has base indent) -->
+						<p class="mt-2 mb-1 text-justify {depth === 1 ? 'indent-8' : 'indent-0'}">
+							{block.content.trim()}{#if isLastBlock && isLastInParent}.{:else};{/if}
 						</p>
 					{/if}
 				{/if}
@@ -281,184 +302,8 @@
 </div>
 
 <style>
+	/* Font family for official document styling */
 	.resolution-preview {
 		font-family: 'Times New Roman', Times, serif;
-		font-size: 0.95rem;
-		line-height: 1.7;
-		width: 100%;
-		max-width: 900px;
-		padding: 2rem;
-		background: white;
-		color: #1a1a1a;
-	}
-
-	/* Watermark Disclaimer */
-	.watermark-disclaimer {
-		color: #9ca3af;
-		font-size: 0.75rem;
-		text-align: center;
-		margin-bottom: 1.5rem;
-		line-height: 1.4;
-	}
-
-	/* UN Header Row */
-	.un-header-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: 0.5rem;
-	}
-
-	.un-title {
-		font-size: 1.1rem;
-	}
-
-	.document-number {
-		text-align: right;
-	}
-
-	.doc-abbrev {
-		font-size: 1.5rem;
-		font-weight: bold;
-	}
-
-	.doc-rest {
-		font-size: 0.9rem;
-	}
-
-	/* Dividers */
-	.thin-divider {
-		border: none;
-		border-top: 1px solid #1a1a1a;
-		margin: 0.5rem 0 1rem 0;
-	}
-
-	.thick-divider {
-		border: none;
-		border-top: 3px solid #1a1a1a;
-		margin: 1.5rem 0 2rem 0;
-	}
-
-	/* Committee Section */
-	.committee-section {
-		display: flex;
-		align-items: flex-start;
-		gap: 1rem;
-		margin-bottom: 1.5rem;
-	}
-
-	.un-emblem {
-		width: 70px;
-		height: 70px;
-		flex-shrink: 0;
-	}
-
-	.committee-name {
-		font-size: 1.8rem;
-		font-weight: bold;
-		line-height: 1.2;
-		padding-top: 0.25rem;
-	}
-
-	/* Metadata Sections */
-	.metadata-section {
-		margin-bottom: 1rem;
-	}
-
-	.metadata-label {
-		font-weight: bold;
-		text-transform: uppercase;
-		font-size: 0.85rem;
-	}
-
-	.metadata-value {
-		margin-left: 1.5rem;
-		font-size: 1rem;
-	}
-
-	/* Small Disclaimer */
-	.small-disclaimer {
-		color: #6b7280;
-		font-size: 0.65rem;
-		line-height: 1.4;
-		margin-top: 1.5rem;
-		margin-bottom: 0.5rem;
-	}
-
-	/* Resolution Content */
-	.resolution-header {
-		font-style: italic;
-		margin-bottom: 1.5rem;
-	}
-
-	.preamble-section {
-		margin-bottom: 1.5rem;
-	}
-
-	.preamble-clause {
-		margin-bottom: 0.75rem;
-	}
-
-	.operative-section {
-		list-style: none;
-		padding-left: 0;
-		counter-reset: operative-counter;
-	}
-
-	.operative-clause {
-		counter-increment: operative-counter;
-		padding-left: 2.5rem;
-		position: relative;
-		margin-bottom: 0.5rem;
-	}
-
-	.operative-clause::before {
-		content: counter(operative-counter) '.';
-		position: absolute;
-		left: 0;
-		font-weight: bold;
-	}
-
-	/* Continuation text (text blocks after subclauses) */
-	.continuation-text {
-		margin-top: 0.5rem;
-		margin-bottom: 0.25rem;
-	}
-
-	/* Sub-clause styles */
-	.sub-clause-section {
-		list-style: none;
-		padding-left: 0;
-		margin: 0.5rem 0 0 0;
-	}
-
-	.sub-clause {
-		position: relative;
-		padding-left: 2rem;
-		margin-bottom: 0.25rem;
-	}
-
-	.sub-clause-label {
-		position: absolute;
-		left: 0;
-		font-weight: normal;
-		min-width: 1.8rem;
-	}
-
-	/* Depth-based indentation */
-	.depth-1 {
-		margin-left: 0;
-	}
-
-	.depth-2 {
-		margin-left: 1.5rem;
-	}
-
-	.depth-3 {
-		margin-left: 3rem;
-	}
-
-	.depth-4 {
-		margin-left: 4.5rem;
 	}
 </style>
