@@ -77,6 +77,12 @@
 			) {
 				delegation {
 					id
+					assignedNation {
+						alpha2Code
+					}
+				}
+				assignedCommittee {
+					abbreviation
 				}
 			}
 			findManyConferenceSupervisors(
@@ -582,6 +588,39 @@
 					></i>
 					{m.certificate()}
 				</button>
+
+				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
+					{@const delegationMember = $userQuery.data?.findManyDelegationMembers?.[0]}
+					{@const badgeUrl = (() => {
+						const url = new URL(configPublic.PUBLIC_BADGE_GENERATOR_URL);
+						if (user?.given_name && user?.family_name) {
+							url.searchParams.set('name', `${user.given_name} ${user.family_name}`);
+						}
+						if (delegationMember?.delegation?.assignedNation?.alpha2Code) {
+							url.searchParams.set(
+								'country',
+								delegationMember.delegation.assignedNation.alpha2Code
+							);
+						}
+						if (delegationMember?.assignedCommittee?.abbreviation) {
+							url.searchParams.set('committee', delegationMember.assignedCommittee.abbreviation);
+						}
+						if (user?.pronouns) {
+							url.searchParams.set('pronouns', user.pronouns);
+						}
+						if (user?.id) {
+							url.searchParams.set('id', user.id);
+						}
+						if (status?.mediaConsentStatus) {
+							url.searchParams.set('media', status.mediaConsentStatus);
+						}
+						return url;
+					})()}
+					<a class="btn" href={badgeUrl.toString()} target="_blank" rel="noopener noreferrer">
+						<i class="fa-duotone fa-id-badge"></i>
+						{m.generateBadge()}
+					</a>
+				{/if}
 			</div>
 		</div>
 	</div>

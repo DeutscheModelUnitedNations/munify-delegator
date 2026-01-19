@@ -457,6 +457,7 @@
 	"foundPiecesLabel": "Gefundene Stücke",
 	"gender": "Geschlecht",
 	"general": "Allgemeines",
+	"generateBadge": "Namensschild generieren",
 	"generateReference": "Überweisungs-Referenz generieren",
 	"genericError": "Ein Fehler ist aufgetreten",
 	"genericToastError": "Fehler",

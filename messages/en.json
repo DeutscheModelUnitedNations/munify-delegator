@@ -457,6 +457,7 @@
 	"foundPiecesLabel": "Found Pieces",
 	"gender": "Gender",
 	"general": "General",
+	"generateBadge": "Generate Badge",
 	"generateReference": "Generate Transaction Reference",
 	"genericError": "An error occurred",
 	"genericToastError": "Error",
