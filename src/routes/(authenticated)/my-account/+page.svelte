@@ -52,7 +52,7 @@
 	</section>
 	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
 		<div
-			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-full sm:min-w-96 {data.redirectUrl &&
+			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-md {data.redirectUrl &&
 				'highlight-card'}"
 		>
 			<div class="card-body bg-base-100 rounded-box">
@@ -61,6 +61,24 @@
 				{/if}
 				<div class="card-title block text-center">{m.personalData()}</div>
 				<Form {form}>
+					<FormFieldset title={m.legalName()}>
+						<div class="alert alert-info mb-4">
+							<i class="fa-duotone fa-info-circle shrink-0"></i>
+							<span class="flex-1 min-w-0">{m.legalNameDisclaimer()}</span>
+						</div>
+						<FormTextInput
+							{form}
+							name="given_name"
+							label={m.firstName()}
+							placeholder={m.firstName()}
+						/>
+						<FormTextInput
+							{form}
+							name="family_name"
+							label={m.lastName()}
+							placeholder={m.lastName()}
+						/>
+					</FormFieldset>
 					<FormFieldset title={m.contactInformation()}>
 						<FormTextInput
 							{form}
@@ -138,7 +156,7 @@
 			</div>
 		</div>
 
-		<div class="card bg-base-100 border-base-200 w-full border shadow-xl md:w-auto md:min-w-96">
+		<div class="card bg-base-100 border-base-200 w-full max-w-80 border shadow-xl sm:max-w-md">
 			<div class="card-body">
 				<div class="card-title block text-center">{m.loginInformation()}</div>
 				<table class="table">
@@ -158,16 +176,6 @@
 								<i class="fa-solid fa-asterisk text-xs"></i>
 								<i class="fa-solid fa-asterisk text-xs"></i>
 							</td>
-						</tr>
-						<tr>
-							<td class="text-center"><i class="fa-duotone fa-text"></i></td>
-							<td>{m.firstName()}</td>
-							<td>{data.user.given_name}</td>
-						</tr>
-						<tr>
-							<td class="text-center"><i class="fa-duotone fa-text"></i></td>
-							<td>{m.lastName()}</td>
-							<td>{data.user.family_name}</td>
 						</tr>
 						<tr>
 							<td class="text-center"><i class="fa-duotone fa-binary"></i></td>

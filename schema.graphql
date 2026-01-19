@@ -5381,8 +5381,10 @@ input UserUpdateDataInput {
   city: String!
   country: String!
   emergencyContacts: String!
+  family_name: String!
   foodPreference: String!
   gender: Gender!
+  given_name: String!
   phone: String!
   pronouns: String
   street: String!
