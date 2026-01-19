@@ -12,7 +12,11 @@
 	import { resolutionContentStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { type ResolutionHeaderData, type Resolution, isClauseEmpty } from '$lib/schemata/resolution';
+	import {
+		type ResolutionHeaderData,
+		type Resolution,
+		isClauseEmpty
+	} from '$lib/schemata/resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { browser } from '$app/environment';
@@ -254,12 +258,14 @@
 
 		return {
 			conferenceName: conference?.title ?? 'Model UN',
+			conferenceTitle: conference?.longTitle ?? conference?.title ?? 'Model United Nations',
 			committeeAbbreviation: committee?.abbreviation,
 			committeeFullName: committee?.name,
 			committeeResolutionHeadline: committee?.resolutionHeadline ?? undefined,
 			documentNumber: `WP/DRAFT`,
 			topic: selectedAgendaItem?.title,
-			authoringDelegation: nationName ?? nsaName
+			authoringDelegation: nationName ?? nsaName,
+			conferenceEmblem: conference?.emblemDataURL ?? undefined
 		};
 	});
 

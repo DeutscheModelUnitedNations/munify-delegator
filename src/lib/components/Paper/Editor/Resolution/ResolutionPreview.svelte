@@ -128,7 +128,7 @@
 	{#if headerData}
 		<!-- Header Row: Conference Title left, Document Number right -->
 		<div class="flex justify-between items-baseline mb-2">
-			<div class="text-lg">
+			<div class="text-sm">
 				{headerData.conferenceTitle ?? headerData.conferenceName ?? 'Model United Nations'}
 			</div>
 			{#if headerData.documentNumber}

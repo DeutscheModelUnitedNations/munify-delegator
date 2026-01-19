@@ -239,7 +239,11 @@
 					<div class="label">
 						<span class="label-text break-words">{m.name()}</span>
 					</div>
-					<input type="text" class="input input-bordered w-full" bind:value={editingCommittee.name} />
+					<input
+						type="text"
+						class="input input-bordered w-full"
+						bind:value={editingCommittee.name}
+					/>
 				</label>
 				<label class="form-control w-full">
 					<div class="label">

@@ -32,7 +32,6 @@ function isResolutionContent(content: any): content is Resolution {
 	);
 }
 
-
 /**
  * Get all text content from blocks (concatenated)
  */

@@ -125,9 +125,7 @@
 	}
 
 	// Create persisted store for this paper's review draft (only on browser)
-	const draftStore = browser
-		? persisted<ReviewDraft | null>(`reviewDraft_${paperId}`, null)
-		: null;
+	const draftStore = browser ? persisted<ReviewDraft | null>(`reviewDraft_${paperId}`, null) : null;
 
 	// Check for existing draft SYNCHRONOUSLY before render
 	if (browser && draftStore) {
