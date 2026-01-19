@@ -30,6 +30,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Props {
 		userId: string;
@@ -77,6 +78,13 @@
 			) {
 				delegation {
 					id
+					assignedNation {
+						alpha2Code
+						alpha3Code
+					}
+				}
+				assignedCommittee {
+					abbreviation
 				}
 			}
 			findManyConferenceSupervisors(
@@ -582,6 +590,51 @@
 					></i>
 					{m.certificate()}
 				</button>
+
+				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
+					{@const delegationMember = $userQuery.data?.findManyDelegationMembers?.[0]}
+					{@const assignedNation = delegationMember?.delegation?.assignedNation}
+					<form
+						action="{configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create"
+						method="POST"
+						target="_blank"
+						class="w-full"
+					>
+						{#if user?.given_name && user?.family_name}
+							<input type="hidden" name="name" value="{user.given_name} {user.family_name}" />
+						{/if}
+						{#if assignedNation?.alpha3Code}
+							<input
+								type="hidden"
+								name="countryName"
+								value={getFullTranslatedCountryNameFromISO3Code(assignedNation.alpha3Code)}
+							/>
+						{/if}
+						{#if assignedNation?.alpha2Code}
+							<input type="hidden" name="countryAlpha2Code" value={assignedNation.alpha2Code} />
+						{/if}
+						{#if delegationMember?.assignedCommittee?.abbreviation}
+							<input
+								type="hidden"
+								name="committee"
+								value={delegationMember.assignedCommittee.abbreviation}
+							/>
+						{/if}
+						{#if user?.pronouns}
+							<input type="hidden" name="pronouns" value={user.pronouns} />
+						{/if}
+						{#if user?.id}
+							<input type="hidden" name="id" value={user.id} />
+						{/if}
+						{#if status?.mediaConsentStatus}
+							<input type="hidden" name="mediaConsentStatus" value={status.mediaConsentStatus} />
+						{/if}
+						<button type="submit" class="btn w-full">
+							<i class="fa-duotone fa-id-badge"></i>
+							{m.generateBadge()}
+						</button>
+					</form>
+				{/if}
 			</div>
 		</div>
 	</div>
