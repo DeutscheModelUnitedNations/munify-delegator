@@ -234,6 +234,8 @@ builder.mutationFields((t) => {
 				data: t.arg({
 					type: t.builder.inputType('UserUpdateDataInput', {
 						fields: (t) => ({
+							given_name: t.string(),
+							family_name: t.string(),
 							birthday: t.field({ type: 'DateTime' }),
 							phone: t.string(),
 							street: t.string(),
@@ -377,8 +379,6 @@ builder.mutationFields((t) => {
 					},
 					update: {
 						email: issuerUserData.email,
-						family_name: issuerUserData.family_name,
-						given_name: issuerUserData.given_name,
 						preferred_username: issuerUserData.preferred_username,
 						locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
 						phone: (issuerUserData as any).phone ?? user.phone

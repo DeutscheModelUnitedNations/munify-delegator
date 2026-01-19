@@ -7,6 +7,8 @@ export const getStatusBadgeClass = (status: PaperStatus$options): string => {
 	switch (status) {
 		case 'SUBMITTED':
 			return 'badge-warning';
+		case 'REVISED':
+			return 'badge-info';
 		case 'CHANGES_REQUESTED':
 			return 'badge-error';
 		case 'ACCEPTED':

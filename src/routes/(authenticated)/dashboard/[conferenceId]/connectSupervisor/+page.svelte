@@ -4,7 +4,7 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { cache, graphql } from '$houdini';
 
@@ -35,15 +35,15 @@
 		if (!conferenceId || !$code || !$previewSupervisorQuery.data?.previewConferenceSupervisor)
 			return;
 
-		const res = await toast.promise(
-			connectSupervisorMutation.mutate({
-				conferenceId,
-				connectionCode: $code
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = connectSupervisorMutation.mutate({
+			conferenceId,
+			connectionCode: $code
+		});
+		toast.promise(promise, genericPromiseToastMessages);
 
-		if (res.errors) {
+		const res = await promise;
+
+		if (res?.errors) {
 			console.error(res.errors);
 			return;
 		}

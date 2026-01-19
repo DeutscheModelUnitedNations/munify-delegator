@@ -9,7 +9,7 @@ import {
 	PDFString
 } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
-import toast from 'svelte-french-toast';
+import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
 
 export interface ParticipantData {

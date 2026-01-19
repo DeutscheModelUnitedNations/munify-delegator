@@ -60,6 +60,8 @@
 		switch (status) {
 			case 'SUBMITTED':
 				return 'text-warning';
+			case 'REVISED':
+				return 'text-info';
 			case 'CHANGES_REQUESTED':
 				return 'text-error';
 			case 'ACCEPTED':

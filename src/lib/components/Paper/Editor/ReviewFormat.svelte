@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import { createEditor, Editor, EditorContent } from 'svelte-tiptap';
 	import { getCommonExtensions } from './settings/common.svelte';
@@ -16,6 +16,7 @@
 	import PlaceholderPromptModal from './PlaceholderPromptModal.svelte';
 	import { extractPlaceholders, replacePlaceholders } from '$lib/services/snippetPlaceholders';
 	import type { JSONContent } from '@tiptap/core';
+	import { getSafeTipTapContent } from './contentValidation';
 
 	interface Props {
 		contentStore: Writable<any>;
@@ -147,7 +148,7 @@
 					onSelectSnippet: handleSnippetSelect
 				})
 			],
-			content: $contentStore || undefined,
+			content: getSafeTipTapContent($contentStore),
 			editorProps: {
 				attributes: {
 					class: 'prose prose-sm focus:outline-none p-3 min-h-[150px]'
@@ -163,9 +164,18 @@
 	// Clear editor when store is reset externally (e.g., after review submission)
 	$effect(() => {
 		const content = $contentStore;
-		// Only clear if store is empty object AND editor actually has content
-		if ($editor && content && Object.keys(content).length === 0 && !$editor.isEmpty) {
+		// Check if store contains an empty TipTap document (reset state)
+		const isEmptyDocument =
+			content?.type === 'doc' && (!content.content || content.content.length === 0);
+		// Only clear if store is empty document AND editor actually has content
+		if ($editor && isEmptyDocument && !$editor.isEmpty) {
 			$editor.commands.clearContent();
+		}
+	});
+
+	onDestroy(() => {
+		if ($editor) {
+			$editor.destroy();
 		}
 	});
 </script>

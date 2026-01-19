@@ -39,6 +39,10 @@ export const conferenceSettingsFormSchema = z.object({
 		.instanceof(File)
 		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
 		.optional(),
+	emblem: z
+		.instanceof(File)
+		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
+		.optional(),
 	startAssignment: z.date({
 		message: m.pleaseEnterAValidDate()
 	}),

@@ -70,12 +70,6 @@
 	}
 }
 
-/* https://github.com/kbrgl/svelte-french-toast/issues/103 */
-.toaster > .wrapper > .base > .indicator > .status {
-	height: auto !important;
-	width: auto !important;
-}
-
 .btn {
 	height: auto;
 	min-height: var(--size);

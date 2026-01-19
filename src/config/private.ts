@@ -31,7 +31,10 @@ const schema = z.object({
 	SMTP_USER: z.string().optional(),
 	SMTP_PASSWORD: z.string().optional(),
 	SMTP_FROM_ADDRESS: z.string().email().default('noreply@munify.cloud'),
-	SMTP_FROM_NAME: z.string().default('MUNIFY Delegator')
+	SMTP_FROM_NAME: z.string().default('MUNIFY Delegator'),
+	// Sentry/Bugsink error tracking
+	SENTRY_DSN: z.string().url().optional(),
+	SENTRY_SEND_DEFAULT_PII: z.stringbool().optional()
 });
 
 export const configPrivate = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

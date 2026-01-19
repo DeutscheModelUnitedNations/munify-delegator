@@ -19,7 +19,7 @@
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { page } from '$app/state';
@@ -307,9 +307,11 @@
 		</fieldset>
 	</div>
 	<p class="text-xs text-gray-500">
-		{@html supervisor.plansOwnAttendenceAtConference
-			? m.willBePresentAtConference()
-			: m.willNotBePresentAtConference()}
+		{#if supervisor.plansOwnAttendenceAtConference}
+			{@html m.willBePresentAtConference()}
+		{:else}
+			{@html m.willNotBePresentAtConference()}
+		{/if}
 	</p>
 </section>
 

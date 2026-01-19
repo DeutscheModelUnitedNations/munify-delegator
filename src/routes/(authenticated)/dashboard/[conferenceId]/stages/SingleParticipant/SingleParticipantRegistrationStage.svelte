@@ -10,7 +10,7 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import Form from '$lib/components/Form/Form.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';

@@ -5,7 +5,7 @@
 	import { cache, graphql, type WaitingListManagementQuery$result } from '$houdini';
 	import { capitalizeFirstLetter } from '$lib/services/capitalizeFirstLetter';
 	import { m } from '$lib/paraglide/messages';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 

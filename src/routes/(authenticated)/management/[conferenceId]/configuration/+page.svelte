@@ -8,7 +8,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import Markdown from '$lib/components/Markdown/Markdown.svelte';
@@ -203,6 +203,18 @@
 				/>
 			{/if}
 			<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
+			<div class="mt-4">
+				<p class="text-sm opacity-70 mb-2">{m.conferenceEmblem()}</p>
+				{#if $formData.emblem || data.emblemDataURL}
+					<img
+						src={$formData.emblem ? URL.createObjectURL($formData.emblem) : data.emblemDataURL}
+						class="h-24 w-24 mb-2"
+						alt="Emblem preview"
+					/>
+				{/if}
+				<FormFileInput {form} name="emblem" label={m.conferenceEmblem()} accept="image/svg+xml" />
+				<p class="text-xs opacity-50 mt-1">{m.conferenceEmblemHint()}</p>
+			</div>
 			<FormDateTimeInput
 				{form}
 				name="startAssignment"

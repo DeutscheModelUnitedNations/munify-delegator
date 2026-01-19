@@ -13,7 +13,7 @@
 	import hotkeys from 'hotkeys-js';
 
 	import { onDestroy, onMount } from 'svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';

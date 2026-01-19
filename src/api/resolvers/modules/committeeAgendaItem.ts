@@ -21,7 +21,8 @@ export const GQLCommitteeAgendaItem = builder.prismaObject('CommitteeAgendaItem'
 		title: t.field(CommitteeAgendaItemTitleFieldObject),
 		teaserText: t.field(CommitteeAgendaItemTeaserTextFieldObject),
 		reviewHelpStatus: t.field(CommitteeAgendaItemReviewHelpStatusFieldObject),
-		committee: t.relation('committee', CommitteeAgendaItemCommitteeFieldObject)
+		committee: t.relation('committee', CommitteeAgendaItemCommitteeFieldObject),
+		papers: t.relation('papers')
 	})
 });
 

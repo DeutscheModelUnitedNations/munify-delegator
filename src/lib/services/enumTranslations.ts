@@ -7,6 +7,8 @@ export function translatePaperStatus(paperStatus: PaperStatus$options) {
 			return m.paperStatusDraft();
 		case 'SUBMITTED':
 			return m.paperStatusSubmitted();
+		case 'REVISED':
+			return m.paperStatusRevised();
 		case 'CHANGES_REQUESTED':
 			return m.paperStatusChangesRequested();
 		case 'ACCEPTED':

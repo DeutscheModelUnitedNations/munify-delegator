@@ -22,7 +22,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { cache, graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperReviewSection from './PaperReviewSection.svelte';
@@ -135,18 +135,24 @@
 	let title = $derived(
 		paperData?.agendaItem?.title
 			? `${paperData.agendaItem.committee.abbreviation}: ${paperData.agendaItem.title}`
-			: `${translatePaperType(paperData.type)}`
+			: paperData?.type
+				? `${translatePaperType(paperData.type)}`
+				: ''
 	);
-	let nation = $derived(paperData.delegation.assignedNation);
-	let nsa = $derived(paperData.delegation.assignedNonStateActor);
-	let versionNumber = $derived(
-		paperData.versions.reduce((acc, version) => (version.version > acc.version ? version : acc))
-			.version
-	);
+	let nation = $derived(paperData?.delegation?.assignedNation);
+	let nsa = $derived(paperData?.delegation?.assignedNonStateActor);
+	let versionNumber = $derived.by(() => {
+		const versions = paperData?.versions;
+		if (!versions || versions.length === 0) return 0;
+		return versions.reduce((acc, version) => (version.version > acc.version ? version : acc))
+			.version;
+	});
 	let latestVersion = $derived(
-		paperData.versions.find((version) => version.version === versionNumber)
+		paperData?.versions?.find((version) => version.version === versionNumber)
 	);
-	let existingReviews = $derived(paperData.versions.flatMap((version) => version.reviews ?? []));
+	let existingReviews = $derived(
+		paperData?.versions?.flatMap((version) => version.reviews ?? []) ?? []
+	);
 
 	// Resolution header data for working papers
 	let resolutionHeaderData = $derived.by((): ResolutionHeaderData | undefined => {
@@ -160,11 +166,15 @@
 
 		return {
 			conferenceName: paperData.conference?.title ?? 'Model UN',
+			conferenceTitle:
+				paperData.conference?.longTitle ?? paperData.conference?.title ?? 'Model United Nations',
 			committeeAbbreviation: paperData.agendaItem?.committee?.abbreviation,
 			committeeFullName: paperData.agendaItem?.committee?.name,
+			committeeResolutionHeadline: paperData.agendaItem?.committee?.resolutionHeadline ?? undefined,
 			documentNumber: `WP/${year}/${paperData.id.slice(-6)}`,
 			topic: paperData.agendaItem?.title,
-			authoringDelegation: nationName ?? nsaName
+			authoringDelegation: nationName ?? nsaName,
+			conferenceEmblem: paperData.conference?.emblemDataURL ?? undefined
 		};
 	});
 
@@ -243,6 +253,8 @@
 	});
 
 	const saveFile = async (options: { submit?: boolean } = {}) => {
+		if (!paperData) return;
+
 		const { submit = false } = options;
 
 		// Determine status: reviewers keep current status, authors change to SUBMITTED/DRAFT
@@ -292,6 +304,8 @@
 	let deleteConfirmationExpected = $derived(`${title} - ${entityName}`);
 
 	const handleDeletePaper = async () => {
+		if (!paperData) return;
+
 		if (deleteConfirmationText !== deleteConfirmationExpected) {
 			toast.error(m.paperDeleteConfirmationMismatch());
 			return;
@@ -304,7 +318,7 @@
 			{
 				loading: m.paperDeleting(),
 				success: m.paperDeletedSuccessfully(),
-				error: (err) => err.message || m.paperDeleteError()
+				error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
 			}
 		);
 
@@ -340,7 +354,7 @@
 					<div class="flex items-center gap-3">
 						<Flag size="md" alpha2Code={nation?.alpha2Code} {nsa} icon={nsa?.fontAwesomeIcon} />
 						<span class="text-lg font-semibold">
-							{nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : nsa.name}
+							{nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : nsa?.name}
 						</span>
 					</div>
 					<div class="badge {getStatusBadgeClass(paperData.status)} badge-lg gap-2">
@@ -519,7 +533,7 @@
 				<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 					<legend class="fieldset-legend">{m.history()}</legend>
 					<ul class="timeline timeline-vertical timeline-compact py-2">
-						{#each authorTimelineEvents as event, index}
+						{#each authorTimelineEvents as event, index (event.type === 'review' ? event.review.id : event.version.id)}
 							<li>
 								{#if index > 0}
 									<hr class="bg-base-300" />

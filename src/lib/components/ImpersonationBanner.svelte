@@ -3,7 +3,7 @@
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	const checkImpersonationStatusQuery = graphql(`
 		query checkImpersonationStatus {
@@ -38,17 +38,17 @@
 	async function stopImpersonation() {
 		if (isLoading) return;
 		isLoading = true;
-		toast
-			.promise(stopImpersonationMutation.mutate(null), genericPromiseToastMessages)
-			.then(() => {
-				goto('/management').then(() => window.location.reload());
-			})
-			.catch((error) => {
-				console.error('Failed to stop impersonation:', error);
-			})
-			.finally(() => {
-				isLoading = false;
-			});
+		const promise = stopImpersonationMutation.mutate(null);
+		toast.promise(promise, genericPromiseToastMessages);
+		try {
+			await promise;
+			await goto('/dashboard');
+			window.location.reload();
+		} catch (error) {
+			console.error('Failed to stop impersonation:', error);
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 

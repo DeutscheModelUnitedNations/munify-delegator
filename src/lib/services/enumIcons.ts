@@ -17,6 +17,8 @@ export function getPaperStatusIcon(s: PaperStatus$options) {
 	switch (s) {
 		case 'SUBMITTED':
 			return 'fa-paper-plane';
+		case 'REVISED':
+			return 'fa-rotate';
 		case 'CHANGES_REQUESTED':
 			return 'fa-exclamation-triangle';
 		case 'ACCEPTED':

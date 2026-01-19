@@ -168,7 +168,13 @@
 
 	// Status counting helper
 	const countByStatus = (papers: Array<{ status: PaperStatus$options }>) => {
-		const counts = { total: papers.length, SUBMITTED: 0, CHANGES_REQUESTED: 0, ACCEPTED: 0 };
+		const counts = {
+			total: papers.length,
+			SUBMITTED: 0,
+			REVISED: 0,
+			CHANGES_REQUESTED: 0,
+			ACCEPTED: 0
+		};
 		for (const paper of papers) {
 			if (paper.status in counts) {
 				counts[paper.status as keyof typeof counts]++;
@@ -188,6 +194,7 @@
 
 		return {
 			submitted: allPapers.filter((p) => p.status === 'SUBMITTED').length,
+			revised: allPapers.filter((p) => p.status === 'REVISED').length,
 			changesRequested: allPapers.filter((p) => p.status === 'CHANGES_REQUESTED').length,
 			accepted: allPapers.filter((p) => p.status === 'ACCEPTED').length,
 			total: allPapers.length
@@ -323,6 +330,20 @@
 									>
 								</div>
 							{/if}
+							{#if overallStatusCounts.revised > 0}
+								<div
+									class="tooltip tooltip-right tooltip-info bg-info flex items-center justify-center gap-2 text-info-content transition-all"
+									style="width: {(overallStatusCounts.revised / overallStatusCounts.total) * 100}%"
+									data-tip="{m.paperStatusRevised()}: {overallStatusCounts.revised}"
+								>
+									<i class="fa-solid fa-rotate"></i>
+									<span
+										class="text-sm font-medium"
+										class:blur-sm={$focusMode}
+										class:select-none={$focusMode}>{overallStatusCounts.revised}</span
+									>
+								</div>
+							{/if}
 							{#if overallStatusCounts.changesRequested > 0}
 								<div
 									class="tooltip tooltip-left tooltip-error bg-error flex items-center justify-center gap-2 text-accent-content transition-all"
@@ -359,6 +380,10 @@
 							<span class="flex items-center gap-1">
 								<span class="inline-block w-3 h-3 bg-warning rounded"></span>
 								{m.paperStatusSubmitted()}
+							</span>
+							<span class="flex items-center gap-1">
+								<span class="inline-block w-3 h-3 bg-info rounded"></span>
+								{m.paperStatusRevised()}
 							</span>
 							<span class="flex items-center gap-1">
 								<span class="inline-block w-3 h-3 bg-error rounded"></span>

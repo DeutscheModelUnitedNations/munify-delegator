@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { z } from 'zod';
 	import { graphql } from '$houdini';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	let rawFile = $state<File | null>(null);

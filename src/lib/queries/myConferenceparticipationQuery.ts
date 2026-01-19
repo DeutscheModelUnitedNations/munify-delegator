@@ -18,6 +18,7 @@ export const myConferenceparticipationQuery = graphql(`
 		findUniqueConference(where: { id: $conferenceId }) {
 			id
 			title
+			longTitle
 			info
 			linkToPreparationGuide
 			linkToPaperInbox
@@ -34,6 +35,7 @@ export const myConferenceparticipationQuery = graphql(`
 			postalZip
 			postalCity
 			postalCountry
+			emblemDataURL
 			committees {
 				id
 				abbreviation

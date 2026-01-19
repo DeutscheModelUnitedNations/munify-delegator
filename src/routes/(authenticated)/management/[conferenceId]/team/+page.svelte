@@ -5,7 +5,7 @@
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { cache, graphql } from '$houdini';
 	import { goto, invalidateAll } from '$app/navigation';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import type { PageData } from './$houdini';
