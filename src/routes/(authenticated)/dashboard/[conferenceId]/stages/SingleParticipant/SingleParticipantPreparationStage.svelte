@@ -62,6 +62,13 @@
 			severity="info"
 		/>
 	{/if}
+	<TaskAlertCard
+		faIcon="fa-file-lines"
+		title={m.paperHub()}
+		description={m.paperHubSingleParticipantDescription()}
+		btnText={m.goToPaperHub()}
+		btnLink={`./${conference?.id}/paperhub`}
+	/>
 </TasksWrapper>
 
 <section class="flex w-full flex-col gap-4">

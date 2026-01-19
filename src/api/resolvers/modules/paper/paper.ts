@@ -470,3 +470,240 @@ builder.queryFields((t) => ({
 		}
 	})
 }));
+
+// Query for global papers view - all conference participants can see non-DRAFT papers with limited info
+builder.queryFields((t) => ({
+	findGlobalPapersGroupedByCommittee: t.field({
+		type: [CommitteePaperGroupRef],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Verify user is a conference participant (delegation member, single participant, or supervisor)
+			const [delegationMember, singleParticipant, supervisor] = await Promise.all([
+				db.delegationMember.findFirst({
+					where: { conferenceId: args.conferenceId, userId: user.sub }
+				}),
+				db.singleParticipant.findFirst({
+					where: { conferenceId: args.conferenceId, userId: user.sub }
+				}),
+				db.conferenceSupervisor.findFirst({
+					where: { conferenceId: args.conferenceId, userId: user.sub }
+				})
+			]);
+
+			if (!delegationMember && !singleParticipant && !supervisor) {
+				throw new GraphQLError('Access denied - requires conference participant status');
+			}
+
+			// Fetch all papers with limited data (exclude drafts)
+			const papers = await db.paper.findMany({
+				where: { conferenceId: args.conferenceId, status: { not: 'DRAFT' } },
+				include: {
+					agendaItem: {
+						include: {
+							committee: true
+						}
+					},
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					}
+				}
+			});
+
+			// Group by committee and agenda item
+			const grouped = new Map<
+				string,
+				{
+					committee: any;
+					agendaItems: Map<string, { agendaItem: any; papers: any[] }>;
+				}
+			>();
+
+			for (const paper of papers) {
+				if (!paper.agendaItem) continue;
+
+				const committeeId = paper.agendaItem.committee.id;
+				const agendaItemId = paper.agendaItem.id;
+
+				if (!grouped.has(committeeId)) {
+					grouped.set(committeeId, {
+						committee: paper.agendaItem.committee,
+						agendaItems: new Map()
+					});
+				}
+
+				const committeeGroup = grouped.get(committeeId)!;
+				if (!committeeGroup.agendaItems.has(agendaItemId)) {
+					committeeGroup.agendaItems.set(agendaItemId, {
+						agendaItem: paper.agendaItem,
+						papers: []
+					});
+				}
+
+				committeeGroup.agendaItems.get(agendaItemId)!.papers.push(paper);
+			}
+
+			// Convert to array format
+			return Array.from(grouped.values()).map((committee) => ({
+				committee: committee.committee,
+				agendaItems: Array.from(committee.agendaItems.values())
+			}));
+		}
+	})
+}));
+
+// Query for global introduction papers - all conference participants can see non-DRAFT introduction papers
+builder.queryFields((t) => ({
+	findGlobalIntroductionPapers: t.field({
+		type: [GQLPaper],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Verify user is a conference participant
+			const [delegationMember, singleParticipant, supervisor] = await Promise.all([
+				db.delegationMember.findFirst({
+					where: { conferenceId: args.conferenceId, userId: user.sub }
+				}),
+				db.singleParticipant.findFirst({
+					where: { conferenceId: args.conferenceId, userId: user.sub }
+				}),
+				db.conferenceSupervisor.findFirst({
+					where: { conferenceId: args.conferenceId, userId: user.sub }
+				})
+			]);
+
+			if (!delegationMember && !singleParticipant && !supervisor) {
+				throw new GraphQLError('Access denied - requires conference participant status');
+			}
+
+			// Fetch introduction papers (papers without agenda items)
+			return db.paper.findMany({
+				where: {
+					conferenceId: args.conferenceId,
+					status: { not: 'DRAFT' },
+					agendaItemId: null
+				},
+				include: {
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					}
+				}
+			});
+		}
+	})
+}));
+
+// Query for public paper content - for viewing a paper with minimal info
+builder.queryFields((t) => ({
+	findPublicPaperContent: t.field({
+		type: GQLPaper,
+		args: {
+			paperId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+
+			// Fetch the paper first to get conference ID
+			const paper = await db.paper.findUniqueOrThrow({
+				where: { id: args.paperId },
+				include: {
+					conference: true
+				}
+			});
+
+			// Check if user is author or has elevated access
+			const isAuthor = paper.authorId === user.sub;
+
+			// Check if user is team member with review access
+			const teamMember = await db.teamMember.findFirst({
+				where: {
+					conferenceId: paper.conferenceId,
+					userId: user.sub,
+					role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+				}
+			});
+
+			// If author or team member, return full data
+			if (isAuthor || teamMember) {
+				return db.paper.findUniqueOrThrow({
+					where: { id: args.paperId },
+					include: {
+						delegation: {
+							include: {
+								assignedNation: true,
+								assignedNonStateActor: true
+							}
+						},
+						agendaItem: {
+							include: {
+								committee: true
+							}
+						},
+						conference: true,
+						versions: {
+							orderBy: { version: 'desc' },
+							take: 1
+						}
+					}
+				});
+			}
+
+			// For other participants, verify they're a conference participant
+			const [delegationMember, singleParticipant, supervisor] = await Promise.all([
+				db.delegationMember.findFirst({
+					where: { conferenceId: paper.conferenceId, userId: user.sub }
+				}),
+				db.singleParticipant.findFirst({
+					where: { conferenceId: paper.conferenceId, userId: user.sub }
+				}),
+				db.conferenceSupervisor.findFirst({
+					where: { conferenceId: paper.conferenceId, userId: user.sub }
+				})
+			]);
+
+			if (!delegationMember && !singleParticipant && !supervisor) {
+				throw new GraphQLError('Access denied - requires conference participant status');
+			}
+
+			// Verify paper is not a draft
+			if (paper.status === 'DRAFT') {
+				throw new GraphQLError('Access denied - cannot view draft papers');
+			}
+
+			// Return paper with limited data (only latest version content)
+			return db.paper.findUniqueOrThrow({
+				where: { id: args.paperId },
+				include: {
+					delegation: {
+						include: {
+							assignedNation: true,
+							assignedNonStateActor: true
+						}
+					},
+					agendaItem: {
+						include: {
+							committee: true
+						}
+					},
+					conference: true,
+					versions: {
+						orderBy: { version: 'desc' },
+						take: 1
+					}
+				}
+			});
+		}
+	})
+}));

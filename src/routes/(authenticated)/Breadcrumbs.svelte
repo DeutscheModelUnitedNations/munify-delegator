@@ -216,6 +216,10 @@
 		team: {
 			icon: 'users-gear',
 			translation: m.teamManagement()
+		},
+		view: {
+			icon: 'eye',
+			translation: m.view()
 		}
 	};
 
