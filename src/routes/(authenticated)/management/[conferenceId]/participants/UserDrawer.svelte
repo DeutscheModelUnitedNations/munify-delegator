@@ -598,6 +598,7 @@
 						action="{configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create"
 						method="POST"
 						target="_blank"
+						class="w-full"
 					>
 						{#if user?.given_name && user?.family_name}
 							<input type="hidden" name="name" value="{user.given_name} {user.family_name}" />
@@ -628,7 +629,7 @@
 						{#if status?.mediaConsentStatus}
 							<input type="hidden" name="mediaConsentStatus" value={status.mediaConsentStatus} />
 						{/if}
-						<button type="submit" class="btn">
+						<button type="submit" class="btn w-full">
 							<i class="fa-duotone fa-id-badge"></i>
 							{m.generateBadge()}
 						</button>
