@@ -448,3 +448,35 @@ builder.queryFields((t) => ({
 		}
 	})
 }));
+
+// Query for oldest paper in one agenda item
+builder.queryFields((t) => ({
+	findNextPaperToReview: t.field({
+		type: GQLPaper,
+		args: {
+			agendaItemId: t.arg.string({ required: true })
+		},
+		resolve: async (root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+			const agendaItemPapers = await db.paper.findMany({
+				where: {
+					agendaItemId: args.agendaItemId,
+					status: {
+						in: ['SUBMITTED', 'REVISED']
+					}
+				},
+				orderBy: { updatedAt: 'asc' }
+			});
+
+			if (agendaItemPapers.length === 0) {
+				throw new GraphQLError('No papers found for the specified agenda item.');
+			}
+			const submittedPapers = agendaItemPapers.filter((paper) => paper.status === 'SUBMITTED');
+			if (submittedPapers.length > 0) {
+				return submittedPapers[0];
+			} else {
+				return agendaItemPapers[0];
+			}
+		}
+	})
+}));

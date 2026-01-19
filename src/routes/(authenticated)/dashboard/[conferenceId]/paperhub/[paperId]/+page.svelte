@@ -496,6 +496,7 @@
 					quoteToInsert={quoteToInsert ?? undefined}
 					onQuoteInserted={clearQuote}
 					paperContainer={paperEditorContainer}
+					agendaItemId={paperData.agendaItem?.id}
 					{snippets}
 				/>
 			{/if}

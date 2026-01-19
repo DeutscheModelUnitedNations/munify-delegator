@@ -93,7 +93,7 @@
 		}
 	};
 
- 	const handleRowAuxclick = (e: MouseEvent, paperId: string) => {
+	const handleRowAuxclick = (e: MouseEvent, paperId: string) => {
 		if (e.button === 1) {
 			e.preventDefault();
 			open(`./paperhub/${paperId}`, '_blank', 'noopener,noreferrer');

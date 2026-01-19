@@ -3644,6 +3644,7 @@ type Query {
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
+  findNextPaperToReview(agendaItemId: String!): Paper!
   findPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
   findSupervisedPapers(conferenceId: String!): [Paper!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem

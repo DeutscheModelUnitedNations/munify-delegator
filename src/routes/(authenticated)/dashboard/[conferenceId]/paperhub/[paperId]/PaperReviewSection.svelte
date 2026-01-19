@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
+	import { m, next } from '$lib/paraglide/messages';
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
 	import { writable } from 'svelte/store';
 	import toast from 'svelte-french-toast';
@@ -18,6 +18,7 @@
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { PieceFoundModal } from '$lib/components/FlagCollection';
 	import Modal from '$lib/components/Modal.svelte';
+	import { addToPanel } from 'svelte-inspect-value';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -80,6 +81,7 @@
 		onQuoteInserted?: () => void;
 		paperContainer?: HTMLElement | null;
 		snippets?: SnippetItem[];
+		agendaItemId?: string;
 	}
 
 	let {
@@ -91,8 +93,12 @@
 		quoteToInsert,
 		onQuoteInserted,
 		paperContainer = null,
-		snippets = []
+		snippets = [],
+		agendaItemId
 	}: Props = $props();
+
+	let reviewed = $state(false);
+	let nextPaperId = $state<string | null>(null);
 
 	// Create unified timeline from versions and reviews
 	type TimelineEvent =
@@ -252,6 +258,18 @@
 		showConfirmModal = true;
 	};
 
+	const nextPaperQuery = graphql(`
+		query NextPaper($agendaItemId: String!) {
+			findNextPaperToReview(agendaItemId: $agendaItemId) {
+				id
+			}
+		}
+	`);
+
+	const jumpToNextPaper = () => {
+		goto(`../paperhub/${nextPaperId}`);
+	};
+
 	const handleSubmitReview = async () => {
 		if (isSubmitting) return;
 
@@ -288,6 +306,13 @@
 				showPieceFoundModal = true;
 			}
 
+			reviewed = true;
+			if (agendaItemId) {
+				nextPaperId = await nextPaperQuery
+					.fetch({ variables: { agendaItemId: agendaItemId } })
+					.then((res) => res.data.findNextPaperToReview?.id || null);
+			}
+
 			// Clear form
 			reviewComments.set({});
 
@@ -302,6 +327,20 @@
 
 <div class="card bg-base-200 p-4 flex flex-col gap-4">
 	<h3 class="text-lg font-bold">{m.addReview()}</h3>
+
+	{#if reviewed}
+		<!-- Options after review has been saved -->
+		<div class="alert alert-success">
+			<i class="fa-solid fa-check-circle"></i>
+			<span>{m.reviewAddedSuccessfully()}</span>
+		</div>
+		{#if nextPaperId}
+			<button class="btn btn-outline" onclick={jumpToNextPaper}>
+				<i class="fa-solid fa-angles-right"></i>
+				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
+			</button>
+		{/if}
+	{/if}
 
 	{#if availableTransitions.length === 0}
 		<div class="alert alert-info">
@@ -509,3 +548,56 @@
 		}}
 	/>
 {/if}
+
+<style lang="postcss">
+	.runway-text-swoop {
+		/* 1. Define the gradient: Base Color -> Shine Color -> Base Color */
+		/* We use a wide gradient (200%) so we can slide it across */
+		background: linear-gradient(
+			110deg,
+			#374151 45%,
+			/* Left: Standard Text Color (Dark Grey) */ #ffffff 50%,
+			/* Center: The "Swoop" highlight (White) */ #374151 55%
+				/* Right: Standard Text Color (Dark Grey) */
+		);
+
+		/* 2. Key: Clip the background to the text shape */
+		background-clip: text;
+		-webkit-background-clip: text;
+
+		/* 3. Make the text transparent so the background shows through */
+		color: transparent;
+		-webkit-text-fill-color: transparent;
+
+		/* 4. Sizing: Make background double width to allow movement */
+		background-size: 225% 100%;
+
+		/* 5. Animation */
+		animation: shine-pass 2.5s infinite;
+	}
+
+	/* Dark Mode Support (If your app uses class="dark" or media queries) */
+	@media (prefers-color-scheme: dark) {
+		.runway-text-swoop {
+			background: linear-gradient(
+				110deg,
+				#9ca3af 45%,
+				/* Base: Light Grey */ #ffffff 50%,
+				/* Shine: Bright White */ #9ca3af 55% /* Base: Light Grey */
+			);
+			background-clip: text;
+			-webkit-background-clip: text;
+			background-size: 225% 100%;
+		}
+	}
+
+	/* The Movement Logic */
+	@keyframes shine-pass {
+		0% {
+			background-position: 100% 50%; /* Start: Highlight off to the right */
+		}
+		100% {
+			background-position: 0% 50%; /* End: Highlight moves to the left */
+		}
+	}
+</style>
