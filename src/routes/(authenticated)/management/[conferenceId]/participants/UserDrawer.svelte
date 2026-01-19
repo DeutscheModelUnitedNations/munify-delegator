@@ -594,46 +594,79 @@
 				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
 					{@const delegationMember = $userQuery.data?.findManyDelegationMembers?.[0]}
 					{@const assignedNation = delegationMember?.delegation?.assignedNation}
-					<form
-						action="{configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create"
-						method="POST"
-						target="_blank"
-						class="w-full"
+					<button
+						class="btn"
+						onclick={async () => {
+							const body: {
+								name?: string;
+								countryName?: string;
+								countryAlpha2Code?: string;
+								committee?: string;
+								pronouns?: string;
+								id?: string;
+								mediaConsentStatus?: string;
+							} = {};
+							if (user?.given_name && user?.family_name) {
+								body.name = `${user.given_name} ${user.family_name}`;
+							}
+							if (assignedNation?.alpha3Code) {
+								body.countryName = getFullTranslatedCountryNameFromISO3Code(
+									assignedNation.alpha3Code
+								);
+							}
+							if (assignedNation?.alpha2Code) {
+								body.countryAlpha2Code = assignedNation.alpha2Code;
+							}
+							if (delegationMember?.assignedCommittee?.abbreviation) {
+								body.committee = delegationMember.assignedCommittee.abbreviation;
+							}
+							if (user?.pronouns) {
+								body.pronouns = user.pronouns;
+							}
+							if (user?.id) {
+								body.id = user.id;
+							}
+							if (status?.mediaConsentStatus) {
+								body.mediaConsentStatus = status.mediaConsentStatus;
+							}
+							try {
+								const res = await fetch(
+									`${configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create`,
+									{
+										method: 'POST',
+										headers: { 'Content-Type': 'application/json' },
+										body: JSON.stringify(body)
+									}
+								);
+								if (!res.ok) {
+									const errorText = await res.text();
+									console.error(`Badge generator API error (${res.status}): ${errorText}`);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const data: unknown = await res.json();
+								if (
+									typeof data !== 'object' ||
+									data === null ||
+									!('url' in data) ||
+									typeof (data as { url: unknown }).url !== 'string' ||
+									(data as { url: string }).url.trim() === ''
+								) {
+									console.error('Badge generator returned invalid response:', data);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const { url } = data as { url: string };
+								window.open(url.replace('http://', 'https://'), '_blank');
+							} catch (e) {
+								console.error('Failed to open badge generator', e);
+								toast.error(m.genericToastError());
+							}
+						}}
 					>
-						{#if user?.given_name && user?.family_name}
-							<input type="hidden" name="name" value="{user.given_name} {user.family_name}" />
-						{/if}
-						{#if assignedNation?.alpha3Code}
-							<input
-								type="hidden"
-								name="countryName"
-								value={getFullTranslatedCountryNameFromISO3Code(assignedNation.alpha3Code)}
-							/>
-						{/if}
-						{#if assignedNation?.alpha2Code}
-							<input type="hidden" name="countryAlpha2Code" value={assignedNation.alpha2Code} />
-						{/if}
-						{#if delegationMember?.assignedCommittee?.abbreviation}
-							<input
-								type="hidden"
-								name="committee"
-								value={delegationMember.assignedCommittee.abbreviation}
-							/>
-						{/if}
-						{#if user?.pronouns}
-							<input type="hidden" name="pronouns" value={user.pronouns} />
-						{/if}
-						{#if user?.id}
-							<input type="hidden" name="id" value={user.id} />
-						{/if}
-						{#if status?.mediaConsentStatus}
-							<input type="hidden" name="mediaConsentStatus" value={status.mediaConsentStatus} />
-						{/if}
-						<button type="submit" class="btn w-full">
-							<i class="fa-duotone fa-id-badge"></i>
-							{m.generateBadge()}
-						</button>
-					</form>
+						<i class="fa-duotone fa-id-badge"></i>
+						{m.generateBadge()}
+					</button>
 				{/if}
 			</div>
 		</div>
