@@ -102,7 +102,7 @@
 
 	let reviewed = $state(false);
 	let nextPaperId = $state<string | null>(null);
-    
+
 	// Types for draft persistence
 	interface ReviewDraft {
 		comments: any;
@@ -395,6 +395,7 @@
 	`);
 
 	const jumpToNextPaper = () => {
+		reviewed = false;
 		goto(`../paperhub/${nextPaperId}`);
 	};
 
@@ -472,18 +473,33 @@
 
 <div class="card bg-base-200 p-4 flex flex-col gap-4">
 	<h3 class="text-lg font-bold">{m.addReview()}</h3>
+	<div class="alert alert-success alert-celebration">
+		<span class="confetti-overlay"></span>
 
+		<i class="fa-solid fa-check-circle text-success text-xl"></i>
+
+		<div class="flex flex-col">
+			<span class="text-celebrate font-bold text-lg">
+				{m.allPapersReviewed()}
+			</span>
+		</div>
+	</div>
 	{#if reviewed}
 		<!-- Options after review has been saved -->
 		<div class="alert alert-success">
 			<i class="fa-solid fa-check-circle"></i>
 			<span>{m.reviewAddedSuccessfully()}</span>
 		</div>
-		{#if nextPaperId}
+		{#if nextPaperId && agendaItemId}
 			<button class="btn btn-outline" onclick={jumpToNextPaper}>
 				<i class="fa-solid fa-angles-right"></i>
 				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
 			</button>
+		{:else if agendaItemId}
+			<div class="alert alert-success">
+				<i class="fa-solid fa-check-circle"></i>
+				<span>{m.allPapersReviewed()}</span>
+			</div>
 		{/if}
 	{/if}
 
@@ -765,6 +781,72 @@
 		}
 		100% {
 			background-position: 0% 50%; /* End: Highlight moves to the left */
+		}
+	}
+
+	/* 1. The Alert Container */
+	.alert-celebration {
+		position: relative;
+		overflow: hidden; /* Keeps the confetti inside the banner */
+		background: #f0fdf4; /* Light emerald */
+		border: 1px solid #86efac;
+		z-index: 1;
+	}
+
+	/* 2. The Confetti Layer */
+	.confetti-overlay::before {
+		content: '';
+		position: absolute;
+		top: -10px;
+		left: 0;
+		width: 100%;
+		height: 10px;
+		z-index: -1; /* Place behind the text */
+
+		/* Creating multiple colorful particles using box-shadow */
+		/* Format: x-offset y-offset color */
+		box-shadow:
+			50px 0 #fbbf24,
+			100px 0 #f87171,
+			150px 0 #60a5fa,
+			200px 0 #34d399,
+			250px 0 #fbbf24,
+			300px 0 #f87171,
+			350px 0 #60a5fa,
+			400px 0 #34d399;
+
+		animation: confetti-fall 3s linear infinite;
+	}
+
+	/* 3. The Falling Animation */
+	@keyframes confetti-fall {
+		0% {
+			transform: translateY(0) rotate(0deg);
+			opacity: 1;
+		}
+		80% {
+			opacity: 1;
+		}
+		100% {
+			/* Moves the particles down and rotates them */
+			transform: translateY(100px) rotate(360deg);
+			opacity: 0;
+		}
+	}
+
+	/* 4. Text Shine (Refined for Success) */
+	.text-celebrate {
+		background: linear-gradient(90deg, #166534, #22c55e, #166534);
+		background-size: 200% auto;
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		animation: text-shimmer 2s linear infinite;
+	}
+
+	@keyframes text-shimmer {
+		to {
+			background-position: 200% center;
 		}
 	}
 </style>
