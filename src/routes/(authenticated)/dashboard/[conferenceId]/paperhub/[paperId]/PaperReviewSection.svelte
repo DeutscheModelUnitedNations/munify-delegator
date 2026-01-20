@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m, next } from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
 	import { writable, get } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
@@ -387,7 +387,7 @@
 	};
 
 	const nextPaperQuery = graphql(`
-		query NextPaper($agendaItemId: String!) {
+		query NextPaper($agendaItemId: String!) @cache(policy: NetworkOnly) {
 			findNextPaperToReview(agendaItemId: $agendaItemId) {
 				id
 			}
