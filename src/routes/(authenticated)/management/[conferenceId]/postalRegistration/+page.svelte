@@ -214,13 +214,12 @@
 			toast.error(m.userNotFound());
 			return;
 		}
-		await toast.promise(
-			changeParticipantStatus.mutate({
-				where: { id: statusId, conferenceId: data.conferenceId, userId },
-				data: mutationData
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = changeParticipantStatus.mutate({
+			where: { id: statusId, conferenceId: data.conferenceId, userId },
+			data: mutationData
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		userData.fetch();
 	};
