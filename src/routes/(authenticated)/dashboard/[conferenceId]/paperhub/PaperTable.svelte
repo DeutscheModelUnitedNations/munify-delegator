@@ -88,7 +88,7 @@
 	};
 
 	const handleRowClick = (e: MouseEvent, paperId: string) => {
-		if (e.ctrlKey) {
+		if (e.ctrlKey || e.metaKey) {
 			open(`./paperhub/${paperId}`, '_blank');
 		} else {
 			goto(`./paperhub/${paperId}`);
