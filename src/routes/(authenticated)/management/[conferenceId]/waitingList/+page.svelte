@@ -185,13 +185,12 @@
 				<button
 					class="btn btn-outline"
 					onclick={async () => {
-						await toast.promise(
-							updateWaitingListEntryMutation.mutate({
-								id: row.id,
-								hidden: !row.hidden
-							}),
-							genericPromiseToastMessages
-						);
+						const promise = updateWaitingListEntryMutation.mutate({
+							id: row.id,
+							hidden: !row.hidden
+						});
+						toast.promise(promise, genericPromiseToastMessages);
+						await promise;
 						cache.markStale();
 						await invalidateAll();
 					}}
@@ -206,10 +205,9 @@
 					class="btn btn-outline btn-error"
 					onclick={async () => {
 						if (!confirm(m.areYouSure())) return;
-						await toast.promise(
-							deleteWaitingListEntryMutation.mutate({ id: row.id }),
-							genericPromiseToastMessages
-						);
+						const promise = deleteWaitingListEntryMutation.mutate({ id: row.id });
+						toast.promise(promise, genericPromiseToastMessages);
+						await promise;
 
 						cache.markStale();
 						await invalidateAll();

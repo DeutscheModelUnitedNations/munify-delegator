@@ -95,39 +95,36 @@
 	`);
 
 	async function saveCommittee() {
-		await toast.promise(
-			UpdateCommitteeMutation.mutate({
-				id: editingCommittee.id,
-				name: editingCommittee.name,
-				abbreviation: editingCommittee.abbreviation,
-				resolutionHeadline: editingCommittee.resolutionHeadline
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = UpdateCommitteeMutation.mutate({
+			id: editingCommittee.id,
+			name: editingCommittee.name,
+			abbreviation: editingCommittee.abbreviation,
+			resolutionHeadline: editingCommittee.resolutionHeadline
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		editCommitteeModalOpen = false;
 		cache.markStale();
 		invalidateAll();
 	}
 
 	async function saveAgendaItem() {
-		await toast.promise(
-			UpdateAgendaItemMutation.mutate({
-				id: editingAgendaItem.id,
-				title: editingAgendaItem.title,
-				teaserText: editingAgendaItem.teaserText
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = UpdateAgendaItemMutation.mutate({
+			id: editingAgendaItem.id,
+			title: editingAgendaItem.title,
+			teaserText: editingAgendaItem.teaserText
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		editAgendaItemModalOpen = false;
 		cache.markStale();
 		invalidateAll();
 	}
 
 	async function confirmDelete() {
-		await toast.promise(
-			DeleteAgendaItemMutation.mutate({ id: deleteConfirmation.id }),
-			genericPromiseToastMessages
-		);
+		const promise = DeleteAgendaItemMutation.mutate({ id: deleteConfirmation.id });
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		deleteModalOpen = false;
 		cache.markStale();
 		invalidateAll();

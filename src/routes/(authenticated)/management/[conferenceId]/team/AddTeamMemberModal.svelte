@@ -74,18 +74,17 @@
 			return;
 		}
 
-		await toast.promise(
-			createTeamMemberMutation.mutate({
-				conferenceId,
-				userId: foundUser.id,
-				role: selectedRole as any
-			}),
-			{
-				loading: m.addingTeamMember(),
-				success: m.teamMemberAdded(),
-				error: (err) => (err instanceof Error ? err.message : null) || m.addTeamMemberError()
-			}
-		);
+		const promise = createTeamMemberMutation.mutate({
+			conferenceId,
+			userId: foundUser.id,
+			role: selectedRole as any
+		});
+		toast.promise(promise, {
+			loading: m.addingTeamMember(),
+			success: m.teamMemberAdded(),
+			error: (err) => (err instanceof Error ? err.message : null) || m.addTeamMemberError()
+		});
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 		open = false;

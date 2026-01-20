@@ -51,13 +51,12 @@
 			toast.error(e.result.error.message);
 		},
 		onSubmit: async () => {
-			await toast.promise(
-				updateFieldMutation.mutate({
-					where: { id: delegationMember.delegation.id },
-					...$formData
-				}),
-				genericPromiseToastMessages
-			);
+			const promise = updateFieldMutation.mutate({
+				where: { id: delegationMember.delegation.id },
+				...$formData
+			});
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
 			// TODO this is weird. When I invalidate the cache and make him refetch here, the form resets and the data is back to the old version. Fix this!
 			cache.markStale();
 			invalidateAll();
@@ -203,10 +202,9 @@
 			return;
 		}
 		if (!confirm(m.leaveDelegationConfirmation())) return;
-		await toast.promise(
-			deleteMemberMutation.mutate({ where: { id: delegationMember.id } }),
-			genericPromiseToastMessages
-		);
+		const promise = deleteMemberMutation.mutate({ where: { id: delegationMember.id } });
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
@@ -218,10 +216,11 @@
 			return;
 		}
 		if (!confirm(m.deleteDelegationConfirmation())) return;
-		await toast.promise(
-			deleteDelegationMutation.mutate({ where: { id: delegationMember.delegation.id } }),
-			genericPromiseToastMessages
-		);
+		const promise = deleteDelegationMutation.mutate({
+			where: { id: delegationMember.delegation.id }
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
@@ -233,13 +232,12 @@
 			return;
 		}
 		if (!confirm(m.makeHeadDelegateConfirmation())) return;
-		await toast.promise(
-			makeHeadDelegateMutation.mutate({
-				where: { id: delegationMember.delegation.id },
-				userId
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = makeHeadDelegateMutation.mutate({
+			where: { id: delegationMember.delegation.id },
+			userId
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 	};
@@ -250,10 +248,9 @@
 			return;
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
-		await toast.promise(
-			deleteMemberMutation.mutate({ where: { id: memberId } }),
-			genericPromiseToastMessages
-		);
+		const promise = deleteMemberMutation.mutate({ where: { id: memberId } });
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 	};
@@ -264,10 +261,9 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		await toast.promise(
-			applyMutation.mutate({ where: { id: delegationMember.delegation.id } }),
-			genericPromiseToastMessages
-		);
+		const promise = applyMutation.mutate({ where: { id: delegationMember.delegation.id } });
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 	};
@@ -343,12 +339,11 @@
 					{referralLink}
 					userHasRotationPermission={userIsHeadDelegate}
 					rotationFn={async () => {
-						await toast.promise(
-							resetEntryCodeMutation.mutate({
-								where: { id: delegationMember.delegation.id }
-							}),
-							{ ...genericPromiseToastMessages, success: m.codeRotated() }
-						);
+						const promise = resetEntryCodeMutation.mutate({
+							where: { id: delegationMember.delegation.id }
+						});
+						toast.promise(promise, { ...genericPromiseToastMessages, success: m.codeRotated() });
+						await promise;
 						cache.markStale();
 						await invalidateAll();
 					}}
