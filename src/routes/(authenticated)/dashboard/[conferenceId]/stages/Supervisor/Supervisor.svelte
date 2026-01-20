@@ -163,24 +163,23 @@
 	`);
 
 	const handlePresenceChange = async (e: Event) => {
-		await toast.promise(
-			updateQuery.mutate({
-				where: {
-					conferenceId_userId: {
-						conferenceId: conference.id,
-						userId: user.sub
-					}
-				},
-				data: {
-					plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
+		const promise = updateQuery.mutate({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conference.id,
+					userId: user.sub
 				}
-			}),
-			{
-				loading: m.genericToastLoading(),
-				success: m.genericToastSuccess(),
-				error: m.genericToastError()
+			},
+			data: {
+				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
 			}
-		);
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
 
 		cache.markStale();
 		await invalidateAll();
@@ -651,16 +650,15 @@
 		referralLink={connectionLink}
 		userHasRotationPermission={true}
 		rotationFn={async () => {
-			await toast.promise(
-				rotateConnectionCodeMutation.mutate({
-					id: supervisor.id
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.codeRotated(),
-					error: m.genericToastError()
-				}
-			);
+			const promise = rotateConnectionCodeMutation.mutate({
+				id: supervisor.id
+			});
+			toast.promise(promise, {
+				loading: m.genericToastLoading(),
+				success: m.codeRotated(),
+				error: m.genericToastError()
+			});
+			await promise;
 			cache.markStale();
 			await invalidateAll();
 		}}

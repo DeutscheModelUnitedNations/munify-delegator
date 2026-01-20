@@ -135,16 +135,17 @@
 	`);
 
 	const swapEntry = async (firstId: string, secondId: string) => {
-		await toast.promise(
-			swapEntryMutation.mutate({ a: firstId, b: secondId }),
-			genericPromiseToastMessages
-		);
+		const promise = swapEntryMutation.mutate({ a: firstId, b: secondId });
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 	};
 
 	const deleteEntry = async (id: string) => {
-		await toast.promise(deleteEntryMutation.mutate({ where: { id } }), genericPromiseToastMessages);
+		const promise = deleteEntryMutation.mutate({ where: { id } });
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 	};
@@ -276,13 +277,12 @@
 									cssClass="bg-base-300"
 									onClick={async () => {
 										if (!delegationMember.delegation) return;
-										await toast.promise(
-											createEntryMutation.mutate({
-												nationId: nation.alpha3Code,
-												delegationId: delegationMember.delegation.id
-											}),
-											genericPromiseToastMessages
-										);
+										const promise = createEntryMutation.mutate({
+											nationId: nation.alpha3Code,
+											delegationId: delegationMember.delegation.id
+										});
+										toast.promise(promise, genericPromiseToastMessages);
+										await promise;
 										cache.markStale();
 										await invalidateAll();
 									}}
@@ -309,13 +309,12 @@
 									cssClass="bg-base-300"
 									onClick={async () => {
 										if (!delegationMember.delegation) return;
-										await toast.promise(
-											createEntryMutation.mutate({
-												nonStateActorId: nsa.id,
-												delegationId: delegationMember.delegation.id
-											}),
-											genericPromiseToastMessages
-										);
+										const promise = createEntryMutation.mutate({
+											nonStateActorId: nsa.id,
+											delegationId: delegationMember.delegation.id
+										});
+										toast.promise(promise, genericPromiseToastMessages);
+										await promise;
 										cache.markStale();
 										await invalidateAll();
 									}}

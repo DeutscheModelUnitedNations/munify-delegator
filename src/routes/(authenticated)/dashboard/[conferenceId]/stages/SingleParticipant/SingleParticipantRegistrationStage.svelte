@@ -36,13 +36,12 @@
 			toast.error(e.result.error.message);
 		},
 		onSubmit: async () => {
-			await toast.promise(
-				updateMutation.mutate({
-					where: { id: singleParticipant.id },
-					...$formData
-				}),
-				genericPromiseToastMessages
-			);
+			const promise = updateMutation.mutate({
+				where: { id: singleParticipant.id },
+				...$formData
+			});
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
 			cache.markStale();
 			await invalidateAll();
 		}
@@ -91,13 +90,12 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		await toast.promise(
-			updateMutation.mutate({
-				where: { id: singleParticipant.id },
-				applied: true
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = updateMutation.mutate({
+			where: { id: singleParticipant.id },
+			applied: true
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 	};
@@ -109,12 +107,11 @@
 		}
 		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
 
-		await toast.promise(
-			deleteMutation.mutate({
-				where: { id: singleParticipant.id }
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = deleteMutation.mutate({
+			where: { id: singleParticipant.id }
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
@@ -126,13 +123,12 @@
 			return;
 		}
 		if (!confirm(m.deleteApplicationConfirmation())) return;
-		await toast.promise(
-			updateMutation.mutate({
-				where: { id: singleParticipant.id },
-				unApplyForRolesIdList: [id]
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = updateMutation.mutate({
+			where: { id: singleParticipant.id },
+			unApplyForRolesIdList: [id]
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');

@@ -264,18 +264,17 @@
 		const content =
 			paperData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
 
-		const resposne = await toast.promise(
-			updatePaperMutation.mutate({
-				paperId: paperData.id,
-				content,
-				status: newStatus
-			}),
-			{
-				loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
-				success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
-				error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
-			}
-		);
+		const promise = updatePaperMutation.mutate({
+			paperId: paperData.id,
+			content,
+			status: newStatus
+		});
+		toast.promise(promise, {
+			loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
+			success: submit ? m.paperSubmittedSuccessfully() : m.paperDraftSavedSuccessfully(),
+			error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
+		});
+		await promise;
 
 		cache.markStale();
 		await invalidateAll();
@@ -311,16 +310,15 @@
 			return;
 		}
 
-		await toast.promise(
-			deletePaperMutation.mutate({
-				paperId: paperData.id
-			}),
-			{
-				loading: m.paperDeleting(),
-				success: m.paperDeletedSuccessfully(),
-				error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
-			}
-		);
+		const promise = deletePaperMutation.mutate({
+			paperId: paperData.id
+		});
+		toast.promise(promise, {
+			loading: m.paperDeleting(),
+			success: m.paperDeletedSuccessfully(),
+			error: (err) => (err instanceof Error ? err.message : null) || m.paperDeleteError()
+		});
+		await promise;
 
 		// Navigate back to paperhub
 		const conferenceId = $page.params.conferenceId;
