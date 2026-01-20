@@ -37,15 +37,6 @@
 		{#if !conferences}
 			<Spinner />
 		{:else}
-			{#if conferences.length > 1}
-				<NavMenuButton
-					href="/dashboard"
-					icon="fa-house"
-					active={$page.url.pathname.endsWith('dashboard')}
-					title={m.dashboard()}
-					bind:expanded={navbarExpanded}
-				/>
-			{/if}
 			{#if activeConferences && activeConferences.length > 0}
 				<div class="h-6"></div>
 				<p class="pb-2 text-xs">{m.activeConferences()}</p>

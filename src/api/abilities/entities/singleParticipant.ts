@@ -10,7 +10,7 @@ export const defineAbilitiesForSingleParticipant = (
 		const user = oidc.user;
 
 		// the user should be able to see their own entities
-		can('read', 'SingleParticipant', {
+		can(['read', 'list'], 'SingleParticipant', {
 			user: { id: user.sub }
 		});
 

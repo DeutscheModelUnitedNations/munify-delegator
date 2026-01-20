@@ -288,3 +288,43 @@ blockquote .blockquote-content {
 .animate-piece-reveal {
 	animation: piece-reveal-dissolve 0.5s ease-out forwards;
 }
+
+/* --- REGISTRATION MODE ANIMATIONS --- */
+
+/* Animated gradient border for DataMatrix */
+@keyframes registration-border-spin {
+	0% {
+		background-position: 0% 50%;
+	}
+	100% {
+		background-position: 200% 50%;
+	}
+}
+
+.animate-registration-border {
+	background: linear-gradient(
+		90deg,
+		var(--color-primary) 0%,
+		var(--color-secondary) 25%,
+		var(--color-accent) 50%,
+		var(--color-secondary) 75%,
+		var(--color-primary) 100%
+	);
+	background-size: 200% 100%;
+	animation: registration-border-spin 3s linear infinite;
+}
+
+/* Pulsing glow effect for DataMatrix container */
+@keyframes registration-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 15px rgba(var(--color-primary-rgb, 59, 130, 246), 0.4);
+	}
+	50% {
+		box-shadow: 0 0 30px rgba(var(--color-primary-rgb, 59, 130, 246), 0.7);
+	}
+}
+
+.animate-registration-pulse {
+	animation: registration-pulse 2s ease-in-out infinite;
+}

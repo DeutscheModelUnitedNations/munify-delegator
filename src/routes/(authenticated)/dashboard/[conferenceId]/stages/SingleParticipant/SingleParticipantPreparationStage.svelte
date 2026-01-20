@@ -2,9 +2,10 @@
 	import type { PageData } from '../../$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
-	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
-	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
-	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
+	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
+	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 
@@ -19,62 +20,46 @@
 	}
 
 	let { surveyQuestions, surveyAnswers, conference, singleParticipant, user }: Props = $props();
+
+	const linkContext = $derived<DashboardLinkContext>({
+		conferenceId: conference.id,
+		userType: 'singleParticipant',
+		conferenceState: conference.state,
+		unlockPayments: conference.unlockPayments,
+		unlockPostals: conference.unlockPostals,
+		hasConferenceInfo: !!conference.info,
+		linkToPreparationGuide: conference.linkToPreparationGuide,
+		linkToPaperInbox: conference.linkToPaperInbox,
+		surveyQuestionCount: surveyQuestions?.length ?? 0,
+		surveyAnswerCount: surveyAnswers?.length ?? 0,
+		user
+	});
+
+	const visibleLinks = $derived(getLinksForUserType('singleParticipant', linkContext));
 </script>
 
-<TasksWrapper>
-	{#if surveyQuestions && surveyQuestions.length > 0}
-		<TaskAlertCard
-			faIcon="fa-square-poll-horizontal"
-			title={m.survey()}
-			description={m.surveyDescription()}
-			btnText={m.goToSurvey()}
-			btnLink={`./${conference?.id}/survey`}
-			severity={surveyQuestions.length > surveyAnswers.length ? 'warning' : 'info'}
-		/>
-	{/if}
-	{#if conference?.info}
-		<TaskAlertCard
-			faIcon="fa-info-circle"
-			title={m.conferenceInfo()}
-			description={m.conferenceInfoDescription()}
-			btnText={m.goToConferenceInfo()}
-			btnLink={`./${conference?.id}/info`}
-		/>
-	{/if}
-	{#if conference?.linkToPreparationGuide}
-		<TaskAlertCard
-			faIcon="fa-book-bookmark"
-			title={m.preparation()}
-			description={m.preparationDescription()}
-			btnText={m.goToPreparation()}
-			btnLink={conference?.linkToPreparationGuide}
-			btnExternal
-		/>
-	{/if}
-	{#if conference?.linkToPaperInbox && user}
-		<TaskAlertCard
-			faIcon="fa-file-circle-plus"
-			title={m.paperInbox()}
-			description={m.paperInboxDescription()}
-			btnText={m.paperInboxBtn()}
-			btnLink={generatePaperInboxLinkWithParams(conference?.linkToPaperInbox, user)}
-			btnExternal
-			severity="info"
-		/>
-	{/if}
-	<TaskAlertCard
-		faIcon="fa-file-lines"
-		title={m.paperHub()}
-		description={m.paperHubSingleParticipantDescription()}
-		btnText={m.goToPaperHub()}
-		btnLink={`./${conference?.id}/paperhub`}
-	/>
-</TasksWrapper>
+<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
+	<DashboardLinksGrid>
+		{#each visibleLinks as link (link.id)}
+			{@const badge = link.getBadge?.(linkContext)}
+			<DashboardLinkCard
+				href={link.getHref(linkContext)}
+				icon={link.icon}
+				title={link.getTitle()}
+				description={link.getDescription()}
+				external={link.external}
+				disabled={link.isDisabled(linkContext)}
+				badge={badge?.value}
+				badgeType={badge?.type}
+			/>
+		{/each}
+	</DashboardLinksGrid>
+</DashboardSection>
 
-<section class="flex w-full flex-col gap-4">
-	<h2 class="text-2xl font-bold">{m.role()}</h2>
+<DashboardSection icon="masks-theater" title={m.role()} description={m.roleDescription()}>
 	<div class="stats bg-base-200 shadow">
 		<RoleWidget customConferenceRole={singleParticipant?.assignedRole} />
 	</div>
-	<SupervisorTable supervisors={singleParticipant.supervisors} conferenceId={conference.id} />
-</section>
+</DashboardSection>
+
+<SupervisorTable supervisors={singleParticipant.supervisors} conferenceId={conference.id} />
