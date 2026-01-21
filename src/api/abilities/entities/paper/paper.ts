@@ -62,5 +62,18 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 			},
 			status: { not: 'DRAFT' }
 		});
+
+		// Any conference participant can list non-DRAFT papers (for global papers view)
+		// This includes delegation members, single participants, and supervisors
+		can(['list'], 'Paper', {
+			conference: {
+				OR: [
+					{ delegations: { some: { members: { some: { userId: user.sub } } } } },
+					{ singleParticipants: { some: { userId: user.sub } } },
+					{ conferenceSupervisors: { some: { userId: user.sub } } }
+				]
+			},
+			status: { not: 'DRAFT' }
+		});
 	}
 };

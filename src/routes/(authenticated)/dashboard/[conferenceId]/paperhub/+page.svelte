@@ -5,6 +5,8 @@
 	import { type PaperType$options } from '$houdini';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
+	import GlobalPapersView from './GlobalPapersView.svelte';
+	import { queryParam } from 'sveltekit-search-params';
 
 	let { data }: { data: PageData } = $props();
 
@@ -17,34 +19,55 @@
 	// Check if user is a supervisor with supervised students
 	let isSupervisor = $derived(!!data.supervisor && (data.supervisedDelegationIds?.length ?? 0) > 0);
 
-	// Check if user is a paper author (delegation member or single participant who can create papers)
-	let isPaperAuthor = $derived(
-		!!data.conferenceQueryData?.findUniqueDelegationMember ||
-			!!data.conferenceQueryData?.findUniqueSingleParticipant
+	// Check if user is a paper author (only delegation members can submit papers)
+	let isPaperAuthor = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
+
+	// Check if user is a single participant (they can only view papers, not submit)
+	let isSingleParticipant = $derived(
+		!!data.conferenceQueryData?.findUniqueSingleParticipant &&
+			!data.conferenceQueryData?.findUniqueDelegationMember
 	);
 
 	// Check if user is a participant (delegation member, single participant, or supervisor)
 	let isParticipant = $derived(
-		isPaperAuthor || !!data.conferenceQueryData?.findUniqueConferenceSupervisor
+		!!data.conferenceQueryData?.findUniqueDelegationMember ||
+			!!data.conferenceQueryData?.findUniqueSingleParticipant ||
+			!!data.conferenceQueryData?.findUniqueConferenceSupervisor
 	);
 
-	// View toggle state - supports participant, team, and supervisor views
-	let viewToggle = $state<'participant' | 'team' | 'supervisor'>('participant');
+	// View toggle state persisted in URL search params
+	const viewParam = queryParam('view');
+	let viewToggle = $derived(
+		($viewParam as 'participant' | 'team' | 'supervisor' | 'global' | null) ?? 'participant'
+	);
 
 	// Effective view based on user roles
 	let currentView = $derived.by(() => {
-		// Team-only members (no other roles) always see team view
-		if (isTeamMember && !isParticipant && !isSupervisor) return 'team';
-		// Supervisor-only (not a team member, not a paper author) defaults to supervisor view
-		if (isSupervisor && !isTeamMember && !isPaperAuthor) return 'supervisor';
-		return viewToggle;
+		// Single participants only see global view - no toggle needed
+		if (isSingleParticipant && !isTeamMember && !isSupervisor) return 'global';
+
+		// Respect viewToggle if the user has access to that view
+		if (viewToggle === 'team' && isTeamMember) return 'team';
+		if (viewToggle === 'supervisor' && isSupervisor) return 'supervisor';
+		if (viewToggle === 'global' && isParticipant) return 'global';
+		if (viewToggle === 'participant' && isPaperAuthor) return 'participant';
+
+		// Default views for users who don't have access to their selected view
+		if (isPaperAuthor) return 'participant';
+		if (isSupervisor) return 'supervisor';
+		if (isTeamMember) return 'team';
+		return 'global'; // participant without paper authoring ability
 	});
 
 	// Determine which view toggle buttons to show
+	// Single participants only see global view - no toggle needed
+	// Show toggle if user has multiple roles or can switch between views
 	let showViewToggle = $derived(
-		(isTeamMember && isParticipant) ||
-			(isTeamMember && isSupervisor) ||
-			(isSupervisor && isPaperAuthor)
+		!isSingleParticipant &&
+			((isTeamMember && isParticipant) ||
+				(isTeamMember && isSupervisor) ||
+				isSupervisor || // Supervisors can switch between supervisor and global views
+				isPaperAuthor) // Paper authors can switch between my papers and global
 	);
 
 	let isNSA = $derived(
@@ -65,51 +88,65 @@
 
 <div class="flex flex-col gap-6 w-full">
 	<div class="flex flex-col gap-2">
-		<div class="flex justify-between items-center flex-wrap gap-2">
-			<h2 class="text-2xl font-bold">{m.paperHub()}</h2>
-
-			{#if showViewToggle}
-				<div class="btn-group">
-					{#if isPaperAuthor}
-						<button
-							class="btn btn-sm"
-							class:btn-active={viewToggle === 'participant'}
-							onclick={() => (viewToggle = 'participant')}
-						>
-							<i class="fa-solid fa-user"></i>
-							{m.participantView()}
-						</button>
-					{/if}
-					{#if isSupervisor}
-						<button
-							class="btn btn-sm"
-							class:btn-active={viewToggle === 'supervisor'}
-							onclick={() => (viewToggle = 'supervisor')}
-						>
-							<i class="fa-solid fa-chalkboard-user"></i>
-							{m.supervisorView()}
-						</button>
-					{/if}
-					{#if isTeamMember}
-						<button
-							class="btn btn-sm"
-							class:btn-active={viewToggle === 'team'}
-							onclick={() => (viewToggle = 'team')}
-						>
-							<i class="fa-solid fa-user-group"></i>
-							{m.teamView()}
-						</button>
-					{/if}
-				</div>
-			{/if}
-		</div>
+		<h2 class="text-2xl font-bold">{m.paperHub()}</h2>
 		<p>{m.paperHubDescription()}</p>
+
+		{#if showViewToggle}
+			<div role="tablist" class="tabs tabs-border mt-2">
+				{#if isPaperAuthor}
+					<button
+						role="tab"
+						class="tab"
+						class:tab-active={viewToggle === 'participant'}
+						onclick={() => ($viewParam = 'participant')}
+					>
+						<i class="fa-solid fa-file-lines mr-1"></i>
+						{m.myPapers()}
+					</button>
+				{/if}
+				{#if isSupervisor}
+					<button
+						role="tab"
+						class="tab"
+						class:tab-active={viewToggle === 'supervisor'}
+						onclick={() => ($viewParam = 'supervisor')}
+					>
+						<i class="fa-solid fa-chalkboard-user mr-1"></i>
+						{m.supervisorView()}
+					</button>
+				{/if}
+				{#if isTeamMember}
+					<button
+						role="tab"
+						class="tab"
+						class:tab-active={viewToggle === 'team'}
+						onclick={() => ($viewParam = 'team')}
+					>
+						<i class="fa-solid fa-user-group mr-1"></i>
+						{m.teamView()}
+					</button>
+				{/if}
+				{#if isParticipant}
+					<button
+						role="tab"
+						class="tab"
+						class:tab-active={viewToggle === 'global'}
+						onclick={() => ($viewParam = 'global')}
+					>
+						<i class="fa-solid fa-globe mr-1"></i>
+						{m.conferencePapers()}
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	{#if currentView === 'team' && isTeamMember}
 		<PaperHubOverview conferenceId={data.conferenceId} />
 	{:else if currentView === 'supervisor' && isSupervisor}
 		<SupervisorPaperHubView conferenceId={data.conferenceId} />
+	{:else if currentView === 'global' && isParticipant}
+		<GlobalPapersView conferenceId={data.conferenceId} />
 	{:else}
 		{#if paperQueryData && paperQueryData.length > 0}
 			<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">
