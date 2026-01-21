@@ -40,6 +40,8 @@ model Conference {
   /// SVG data URL for conference emblem (falls back to UN emblem if null)
   emblemDataURL                          String?
   info                                   String?
+  /// When true, dashboard announcement shows full content; when false, truncated with expand button
+  showInfoExpanded                       Boolean         @default(false)
   linkToPreparationGuide                 String?
   linkToPaperInbox                       String?
   isOpenPaperSubmission                  Boolean         @default(false)

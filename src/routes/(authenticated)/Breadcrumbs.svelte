@@ -220,6 +220,10 @@
 		view: {
 			icon: 'eye',
 			translation: m.view()
+		},
+		'registration-mode': {
+			icon: 'id-card',
+			translation: m.registrationMode()
 		}
 	};
 
@@ -267,7 +271,7 @@
 <!-- ATTENTION: importObject is dir route specific. You cannot move this file without adjusting this
 import path via the parameter! -->
 <Breadcrumbs
-	importObject={import.meta.glob('./**/+page.svelte')}
+	importObject={import.meta.glob('./**/+page*.svelte')}
 	availableLanguageTags={locales as any as string[]}
 	delimeterSnippet="disabled"
 	homePath="/"

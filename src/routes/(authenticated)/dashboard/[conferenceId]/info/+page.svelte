@@ -1,3 +1,9 @@
+<!--
+	@deprecated LEGACY PAGE - No links lead to this page anymore.
+	Conference info/announcements are now displayed directly on the dashboard
+	via the AnnouncementContent component. This page is kept for backwards
+	compatibility with any bookmarked URLs but may be removed in the future.
+-->
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { m } from '$lib/paraglide/messages';

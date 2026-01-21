@@ -258,6 +258,8 @@
 					{m.preview()}
 				</button>
 			</div>
+			<FormCheckbox {form} name="showInfoExpanded" label={m.showInfoExpandedLabel()} />
+			<p class="-mt-2 ml-1 text-xs opacity-50">{m.showInfoExpandedDescription()}</p>
 			<FormTextInput
 				{form}
 				name="linkToPreparationGuide"

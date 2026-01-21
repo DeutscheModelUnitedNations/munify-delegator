@@ -9,16 +9,17 @@ if [ -z "$POSTGRES_BACKUP_FILE" ]; then
   exit 1
 fi
 
-# Stop any running containers
-echo "Stopping any running containers..."
-docker compose -f dev.docker-compose.yml down
+# Stop the postgres container
+echo "Stopping the postgres container..."
+docker compose -f dev.docker-compose.yml stop postgres
+docker compose -f dev.docker-compose.yml rm -f postgres
 
 # Remove the database volume
 echo "Removing the database volume..."
 docker volume rm delegator_delegator-dev
 
-# Start just the database container
-echo "Starting the database container..."
+# Start the postgres container
+echo "Starting the postgres container..."
 docker compose -f dev.docker-compose.yml up -d postgres
 
 # Wait for the database to be ready
@@ -33,8 +34,8 @@ docker exec -i postgres-dev-delegator psql -U postgres -d postgres <$POSTGRES_BA
 echo "Applying latest migrations..."
 bunx prisma migrate dev
 
-# Stop the database container
-echo "Stopping the database container..."
-docker compose -f dev.docker-compose.yml down
+# Stop the postgres container
+echo "Stopping the postgres container..."
+docker compose -f dev.docker-compose.yml stop postgres
 
 echo "Database restart complete."

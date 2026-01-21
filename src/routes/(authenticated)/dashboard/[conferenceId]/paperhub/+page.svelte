@@ -36,9 +36,11 @@
 	);
 
 	// View toggle state persisted in URL search params
+	const validViews = ['participant', 'team', 'supervisor', 'global'] as const;
+	type ViewType = (typeof validViews)[number];
 	const viewParam = queryParam('view');
-	let viewToggle = $derived(
-		($viewParam as 'participant' | 'team' | 'supervisor' | 'global' | null) ?? 'participant'
+	let viewToggle = $derived<ViewType>(
+		validViews.includes($viewParam as ViewType) ? ($viewParam as ViewType) : 'participant'
 	);
 
 	// Effective view based on user roles
@@ -97,7 +99,7 @@
 					<button
 						role="tab"
 						class="tab"
-						class:tab-active={viewToggle === 'participant'}
+						class:tab-active={currentView === 'participant'}
 						onclick={() => ($viewParam = 'participant')}
 					>
 						<i class="fa-solid fa-file-lines mr-1"></i>
@@ -108,7 +110,7 @@
 					<button
 						role="tab"
 						class="tab"
-						class:tab-active={viewToggle === 'supervisor'}
+						class:tab-active={currentView === 'supervisor'}
 						onclick={() => ($viewParam = 'supervisor')}
 					>
 						<i class="fa-solid fa-chalkboard-user mr-1"></i>
@@ -119,7 +121,7 @@
 					<button
 						role="tab"
 						class="tab"
-						class:tab-active={viewToggle === 'team'}
+						class:tab-active={currentView === 'team'}
 						onclick={() => ($viewParam = 'team')}
 					>
 						<i class="fa-solid fa-user-group mr-1"></i>
@@ -130,7 +132,7 @@
 					<button
 						role="tab"
 						class="tab"
-						class:tab-active={viewToggle === 'global'}
+						class:tab-active={currentView === 'global'}
 						onclick={() => ($viewParam = 'global')}
 					>
 						<i class="fa-solid fa-globe mr-1"></i>
