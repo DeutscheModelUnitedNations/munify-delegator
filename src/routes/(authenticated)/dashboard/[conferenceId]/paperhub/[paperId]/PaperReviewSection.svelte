@@ -84,6 +84,7 @@
 		onQuoteInserted?: () => void;
 		paperContainer?: HTMLElement | null;
 		snippets?: SnippetItem[];
+		agendaItemId?: string;
 	}
 
 	let {
@@ -95,8 +96,12 @@
 		quoteToInsert,
 		onQuoteInserted,
 		paperContainer = null,
-		snippets = []
+		snippets = [],
+		agendaItemId
 	}: Props = $props();
+
+	let reviewed = $state(false);
+	let nextPaperId = $state<string | null>(null);
 
 	// Types for draft persistence
 	interface ReviewDraft {
@@ -381,6 +386,19 @@
 		showConfirmModal = true;
 	};
 
+	const nextPaperQuery = graphql(`
+		query NextPaper($agendaItemId: String!) @cache(policy: NetworkOnly) {
+			findNextPaperToReview(agendaItemId: $agendaItemId) {
+				id
+			}
+		}
+	`);
+
+	const jumpToNextPaper = () => {
+		reviewed = false;
+		goto(`../paperhub/${nextPaperId}`);
+	};
+
 	const handleSubmitReview = async () => {
 		if (isSubmitting) return;
 
@@ -417,6 +435,18 @@
 				showPieceFoundModal = true;
 			}
 
+			reviewed = true;
+			if (agendaItemId) {
+				try {
+					const res = await nextPaperQuery.fetch({ variables: { agendaItemId } });
+					nextPaperId = res.data.findNextPaperToReview?.id ?? null;
+				} catch {
+					nextPaperId = null;
+				}
+			}
+
+			// Clear form
+			reviewComments.set({});
 			// Clear form and localStorage draft
 			reviewComments.set(getEmptyTipTapDocument());
 			if (draftStore) {
@@ -446,6 +476,26 @@
 
 <div class="card bg-base-200 p-4 flex flex-col gap-4">
 	<h3 class="text-lg font-bold">{m.addReview()}</h3>
+
+	{#if reviewed}
+		<!-- Options after review has been saved -->
+		<div class="alert alert-success">
+			<i class="fa-solid fa-check-circle"></i>
+			<span>{m.reviewAddedSuccessfully()}</span>
+		</div>
+		{#if nextPaperId && agendaItemId}
+			<button class="btn btn-outline" onclick={jumpToNextPaper}>
+				<i class="fa-solid fa-angles-right"></i>
+				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
+			</button>
+		{:else if agendaItemId}
+			<div class="flex flex-col items-center justify-center w-full">
+				<span class="text-celebrate font-bold text-lg text-center">
+					{m.allPapersReviewed()}
+				</span>
+			</div>
+		{/if}
+	{/if}
 
 	{#if availableTransitions.length === 0}
 		<div class="alert alert-info">
@@ -675,3 +725,72 @@
 		}}
 	/>
 {/if}
+
+<style lang="postcss">
+	.runway-text-swoop {
+		/* 1. Define the gradient: Base Color -> Shine Color -> Base Color */
+		/* We use a wide gradient (200%) so we can slide it across */
+		background: linear-gradient(
+			110deg,
+			#374151 45%,
+			/* Left: Standard Text Color (Dark Grey) */ #ffffff 50%,
+			/* Center: The "Swoop" highlight (White) */ #374151 55%
+				/* Right: Standard Text Color (Dark Grey) */
+		);
+
+		/* 2. Key: Clip the background to the text shape */
+		background-clip: text;
+		-webkit-background-clip: text;
+
+		/* 3. Make the text transparent so the background shows through */
+		color: transparent;
+		-webkit-text-fill-color: transparent;
+
+		/* 4. Sizing: Make background double width to allow movement */
+		background-size: 225% 100%;
+
+		/* 5. Animation */
+		animation: shine-pass 2.5s infinite;
+	}
+
+	/* Dark Mode Support (If your app uses class="dark" or media queries) */
+	@media (prefers-color-scheme: dark) {
+		.runway-text-swoop {
+			background: linear-gradient(
+				110deg,
+				#9ca3af 45%,
+				/* Base: Light Grey */ #ffffff 50%,
+				/* Shine: Bright White */ #9ca3af 55% /* Base: Light Grey */
+			);
+			background-clip: text;
+			-webkit-background-clip: text;
+			background-size: 225% 100%;
+		}
+	}
+
+	/* The Movement Logic */
+	@keyframes shine-pass {
+		0% {
+			background-position: 100% 50%; /* Start: Highlight off to the right */
+		}
+		100% {
+			background-position: 0% 50%; /* End: Highlight moves to the left */
+		}
+	}
+
+	/* Text Shine (Refined for Success) */
+	.text-celebrate {
+		background: linear-gradient(90deg, #166534, #22c55e, #166534);
+		background-size: 200% auto;
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		animation: text-shimmer 2s linear infinite;
+	}
+
+	@keyframes text-shimmer {
+		to {
+			background-position: 200% center;
+		}
+	}
+</style>
