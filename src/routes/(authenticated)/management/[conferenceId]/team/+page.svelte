@@ -34,11 +34,13 @@
 	const handleDelete = async (id: string) => {
 		if (!confirm(m.confirmDeleteTeamMember())) return;
 
-		await toast.promise(deleteTeamMemberMutation.mutate({ id }), {
+		const promise = deleteTeamMemberMutation.mutate({ id });
+		toast.promise(promise, {
 			loading: m.deletingTeamMember(),
 			success: m.teamMemberDeleted(),
 			error: m.deleteTeamMemberError()
 		});
+		await promise;
 
 		cache.markStale();
 		await invalidateAll();
@@ -46,10 +48,9 @@
 
 	const handleImpersonate = async (userId: string) => {
 		try {
-			await toast.promise(
-				startImpersonationMutation.mutate({ targetUserId: userId }),
-				genericPromiseToastMessages
-			);
+			const promise = startImpersonationMutation.mutate({ targetUserId: userId });
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
 			await goto('/dashboard');
 			window.location.reload();
 		} catch (error) {

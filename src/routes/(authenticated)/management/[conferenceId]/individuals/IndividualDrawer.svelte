@@ -219,13 +219,12 @@
 				'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				await toast.promise(
-					singleParticipantResetMutation.mutate({
-						singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
-						applied: false
-					}),
-					genericPromiseToastMessages
-				);
+				const promise = singleParticipantResetMutation.mutate({
+					singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
+					applied: false
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
 				cache.markStale();
 				await invalidateAll();
 			}}
