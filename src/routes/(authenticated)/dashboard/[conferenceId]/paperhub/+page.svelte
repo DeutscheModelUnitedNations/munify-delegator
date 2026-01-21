@@ -99,7 +99,7 @@
 					<button
 						role="tab"
 						class="tab"
-						class:tab-active={viewToggle === 'participant'}
+						class:tab-active={currentView === 'participant'}
 						onclick={() => ($viewParam = 'participant')}
 					>
 						<i class="fa-solid fa-file-lines mr-1"></i>

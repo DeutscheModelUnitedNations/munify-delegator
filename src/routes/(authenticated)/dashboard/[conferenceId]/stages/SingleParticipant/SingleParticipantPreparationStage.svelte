@@ -29,6 +29,7 @@
 		unlockPostals: conference.unlockPostals,
 		hasConferenceInfo: !!conference.info,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
+		isOpenPaperSubmission: conference.isOpenPaperSubmission,
 		linkToPaperInbox: conference.linkToPaperInbox,
 		surveyQuestionCount: surveyQuestions?.length ?? 0,
 		surveyAnswerCount: surveyAnswers?.length ?? 0,

@@ -46,6 +46,17 @@ export interface DashboardLink {
 
 export const dashboardLinks: DashboardLink[] = [
 	{
+		id: 'committeeAssignment',
+		icon: 'arrows-turn-to-dots',
+		getTitle: () => m.committeeAssignment(),
+		getDescription: () => m.committeeAssignmentLinkDescription(),
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/committeeAssignment`,
+		showFor: ['delegation'],
+		isVisible: (ctx) =>
+			!!ctx.isHeadDelegate && !!ctx.hasNationAssigned && !!ctx.membersLackCommittees,
+		isDisabled: () => false
+	},
+	{
 		id: 'payment',
 		icon: 'hand-holding-circle-dollar',
 		getTitle: () => m.payment(),
@@ -118,8 +129,8 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'folder-open',
 		getTitle: () => m.paperHubGlobal(),
 		getDescription: () => m.paperHubGlobalDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/paperhub?view=team`,
-		showFor: ['delegation', 'supervisor'],
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/paperhub?view=global`,
+		showFor: ['delegation', 'supervisor', 'singleParticipant'],
 		isVisible: (ctx) => !!ctx.isOpenPaperSubmission,
 		isDisabled: () => false
 	},
@@ -135,17 +146,6 @@ export const dashboardLinks: DashboardLink[] = [
 		external: true,
 		showFor: ['delegation', 'singleParticipant'],
 		isVisible: (ctx) => !!ctx.linkToPaperInbox && !!ctx.user,
-		isDisabled: () => false
-	},
-	{
-		id: 'committeeAssignment',
-		icon: 'arrows-turn-to-dots',
-		getTitle: () => m.committeeAssignment(),
-		getDescription: () => m.committeeAssignmentLinkDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/committeeAssignment`,
-		showFor: ['delegation'],
-		isVisible: (ctx) =>
-			!!ctx.isHeadDelegate && !!ctx.hasNationAssigned && !!ctx.membersLackCommittees,
 		isDisabled: () => false
 	},
 	{
