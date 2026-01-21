@@ -36,9 +36,11 @@
 	);
 
 	// View toggle state persisted in URL search params
+	const validViews = ['participant', 'team', 'supervisor', 'global'] as const;
+	type ViewType = (typeof validViews)[number];
 	const viewParam = queryParam('view');
-	let viewToggle = $derived(
-		($viewParam as 'participant' | 'team' | 'supervisor' | 'global' | null) ?? 'participant'
+	let viewToggle = $derived<ViewType>(
+		validViews.includes($viewParam as ViewType) ? ($viewParam as ViewType) : 'participant'
 	);
 
 	// Effective view based on user roles

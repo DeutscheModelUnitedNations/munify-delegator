@@ -227,6 +227,18 @@ $houdini → .houdini
 - **Modals**: Use the `Modal` component (`src/lib/components/Modal.svelte`) for dialogs. It handles backdrop clicks, accessibility, and consistent styling.
 - **Form components**: Prefer the Form components in `src/lib/components/Form/` (FormTextInput, FormTextArea, FormSelect, etc.) when working with superforms. For standalone inputs in modals, use native DaisyUI form controls with `form-control` and `label` classes.
 - **Layout**: Use DaisyUI's utility classes for consistent spacing and styling.
+- **URL Query Parameters**: Use `sveltekit-search-params` for managing URL query parameters in components. This provides type-safe, reactive URL state management that persists across navigation. Example:
+  ```typescript
+  import { queryParam } from 'sveltekit-search-params';
+
+  const validViews = ['list', 'grid', 'table'] as const;
+  type ViewType = (typeof validViews)[number];
+  const viewParam = queryParam('view');
+  let currentView = $derived<ViewType>(
+    validViews.includes($viewParam as ViewType) ? ($viewParam as ViewType) : 'list'
+  );
+  // Update URL: $viewParam = 'grid';
+  ```
 
 ## Commit Conventions
 

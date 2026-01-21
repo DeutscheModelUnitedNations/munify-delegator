@@ -113,13 +113,13 @@
 				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
 			{/if}
 		{:else if supervisor}
-			{@const everybodyGotRejected =
+			{@const atLeastOneAccepted =
 				conference!.state !== 'PARTICIPANT_REGISTRATION' &&
 				(supervisor.supervisedDelegationMembers
 					.flatMap((x) => x.delegation)
 					.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0 ||
 					supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole).length > 0)}
-			{#if everybodyGotRejected || conference!.state === 'PARTICIPANT_REGISTRATION'}
+			{#if atLeastOneAccepted || conference!.state === 'PARTICIPANT_REGISTRATION'}
 				{#if conference!.state === 'POST'}
 					{@const acceptedDelegations = supervisor.supervisedDelegationMembers
 						.map((x) => x.delegation)
