@@ -588,18 +588,6 @@
 								content={singleParticipant.motivation}
 								fontAwesomeIcon="fire-flame-curved"
 							/>
-						{:else}
-							<InfoGrid.Entry title={m.role()} fontAwesomeIcon="masks-theater">
-								<div class="flex items-center gap-2">
-									<i
-										class="fa-duotone fa-{singleParticipant.assignedRole?.fontAwesomeIcon?.replace(
-											'fa-',
-											''
-										)}"
-									></i>
-									{singleParticipant.assignedRole?.name}
-								</div>
-							</InfoGrid.Entry>
 						{/if}
 					</InfoGrid.Grid>
 				{/snippet}

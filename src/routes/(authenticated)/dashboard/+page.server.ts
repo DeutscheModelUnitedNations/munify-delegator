@@ -112,9 +112,6 @@ export const load: PageServerLoad = async (event) => {
 	const supervisors = data?.findManyConferenceSupervisors ?? [];
 	const teamMembers = data?.findManyTeamMembers ?? [];
 
-	// Debug logging
-	console.log('Single participants from server load:', JSON.stringify(singleParticipants, null, 2));
-
 	if (conferences.length === 1) {
 		redirect(303, `/dashboard/${conferences[0].id}`);
 	}
