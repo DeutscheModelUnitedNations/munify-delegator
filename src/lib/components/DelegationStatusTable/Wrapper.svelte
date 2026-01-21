@@ -1,11 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '$lib/paraglide/messages';
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 
 	interface Props {
 		title?: string;
-		description?: string;
 		withEmail?: boolean;
 		withCommittee?: boolean;
 		withPostalSatus?: boolean;
@@ -16,7 +14,6 @@
 
 	let {
 		title,
-		description,
 		withEmail = false,
 		withCommittee = false,
 		withPostalSatus = false,
@@ -26,7 +23,10 @@
 	}: Props = $props();
 </script>
 
-<DashboardContentCard {title} {description} class="overflow-x-auto">
+<div class="overflow-x-auto">
+	{#if title}
+		<h3 class="mb-2 font-semibold">{title}</h3>
+	{/if}
 	<table class="table">
 		<thead>
 			<tr>
@@ -72,4 +72,4 @@
 			{/if}
 		</tbody>
 	</table>
-</DashboardContentCard>
+</div>

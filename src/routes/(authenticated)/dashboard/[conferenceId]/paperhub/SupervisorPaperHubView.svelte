@@ -186,14 +186,14 @@
 										<td class="align-middle">
 											<PaperEnum.Status status={paper.status} size="xs" />
 										</td>
-										<td class="align-middle">
+										<td class="align-middle break-words">
 											{#if paper.agendaItem}
 												{#if paper.agendaItem.committee?.abbreviation}
 													<span class="badge badge-soft badge-primary badge-sm mr-1">
 														{paper.agendaItem.committee.abbreviation}
 													</span>
 												{/if}
-												<span class="truncate">{paper.agendaItem.title}</span>
+												{paper.agendaItem.title}
 											{:else}
 												<span class="text-base-content/40">-</span>
 											{/if}

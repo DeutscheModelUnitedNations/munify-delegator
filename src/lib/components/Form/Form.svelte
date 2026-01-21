@@ -8,6 +8,8 @@
 		form: SuperForm<A, B>;
 		showSubmitButton?: boolean;
 		requireTaintedToSubmit?: boolean;
+		formElement?: HTMLFormElement;
+		action?: string;
 	}
 
 	let {
@@ -15,12 +17,21 @@
 		form,
 		children,
 		showSubmitButton = true,
-		requireTaintedToSubmit = true
+		requireTaintedToSubmit = true,
+		formElement = $bindable(),
+		action
 	}: Props = $props();
 	let { message, enhance, allErrors, submitting, tainted, isTainted } = $derived(form);
 </script>
 
-<form class="flex flex-col gap-2 {class_}" method="post" enctype="multipart/form-data" use:enhance>
+<form
+	bind:this={formElement}
+	class="flex flex-col gap-2 {class_}"
+	method="post"
+	enctype="multipart/form-data"
+	use:enhance
+	{action}
+>
 	{@render children()}
 	{#if $message}
 		<div class="alert alert-success mt-5 justify-center font-bold">{$message}</div>

@@ -15,6 +15,8 @@ import {
 	ConferenceLanguageFieldObject,
 	ConferenceLinkToPaperInboxFieldObject,
 	ConferenceLinkToPreparationGuideFieldObject,
+	ConferenceLinkToTeamWikiFieldObject,
+	ConferenceLinkToServicesPageFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
 	ConferenceMediaConsentContentFieldObject,
@@ -33,6 +35,7 @@ import {
 	ConferenceUnlockPostalsFieldObject,
 	ConferenceWebsiteFieldObject,
 	ConferenceIsOpenPaperSubmissionFieldObject,
+	ConferenceShowInfoExpandedFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
@@ -52,7 +55,10 @@ builder.prismaObject('Conference', {
 		id: t.field(ConferenceIdFieldObject),
 		title: t.field(ConferenceTitleFieldObject),
 		info: t.field(ConferenceInfoFieldObject),
+		showInfoExpanded: t.field(ConferenceShowInfoExpandedFieldObject),
 		linkToPreparationGuide: t.field(ConferenceLinkToPreparationGuideFieldObject),
+		linkToTeamWiki: t.field(ConferenceLinkToTeamWikiFieldObject),
+		linkToServicesPage: t.field(ConferenceLinkToServicesPageFieldObject),
 		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
 		isOpenPaperSubmission: t.field(ConferenceIsOpenPaperSubmissionFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
@@ -454,10 +460,19 @@ builder.mutationFields((t) => {
 							linkToPreparationGuide: t.string({
 								required: false
 							}),
+							linkToTeamWiki: t.string({
+								required: false
+							}),
+							linkToServicesPage: t.string({
+								required: false
+							}),
 							linkToPaperInbox: t.string({
 								required: false
 							}),
 							isOpenPaperSubmission: t.boolean({
+								required: false
+							}),
+							showInfoExpanded: t.boolean({
 								required: false
 							}),
 							longTitle: t.string({
@@ -612,6 +627,8 @@ builder.mutationFields((t) => {
 							args.data.isOpenPaperSubmission === null
 								? undefined
 								: args.data.isOpenPaperSubmission,
+						showInfoExpanded:
+							args.data.showInfoExpanded === null ? undefined : args.data.showInfoExpanded,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
 						postalApartment: args.data.postalApartment ?? null,
 						contractContent: contractContentURL,

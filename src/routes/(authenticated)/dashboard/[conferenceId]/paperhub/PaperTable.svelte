@@ -39,9 +39,20 @@
 		sortable?: boolean;
 		sortConfig?: SortConfig | null;
 		onSort?: (key: string) => void;
+		showStatus?: boolean;
+		showUpdatedAt?: boolean;
+		linkPrefix?: string;
 	}
 
-	let { papers, sortable = false, sortConfig = null, onSort }: Props = $props();
+	let {
+		papers,
+		sortable = false,
+		sortConfig = null,
+		onSort,
+		showStatus = true,
+		showUpdatedAt = true,
+		linkPrefix = './paperhub/'
+	}: Props = $props();
 
 	// Type colors for icon badges
 	const getTypeColor = (type: PaperType$options) => {
@@ -89,22 +100,22 @@
 
 	const handleRowClick = (e: MouseEvent, paperId: string) => {
 		if (e.ctrlKey || e.metaKey) {
-			open(`./paperhub/${paperId}`, '_blank');
+			open(`${linkPrefix}${paperId}`, '_blank');
 		} else {
-			goto(`./paperhub/${paperId}`);
+			goto(`${linkPrefix}${paperId}`);
 		}
 	};
 
 	const handleRowAuxclick = (e: MouseEvent, paperId: string) => {
 		if (e.button === 1) {
 			e.preventDefault();
-			open(`./paperhub/${paperId}`, '_blank', 'noopener,noreferrer');
+			open(`${linkPrefix}${paperId}`, '_blank', 'noopener,noreferrer');
 		}
 	};
 
 	const handleRowKeypress = (e: KeyboardEvent, paperId: string) => {
 		if (e.key === 'Enter') {
-			goto(`./paperhub/${paperId}`);
+			goto(`${linkPrefix}${paperId}`);
 		}
 	};
 </script>
@@ -136,18 +147,20 @@
 						{/if}
 					</div>
 				</th>
-				<th
-					class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-					onclick={() => handleSort('status')}
-					title={m.status()}
-				>
-					<div class="flex items-center gap-1">
-						<i class="fa-solid fa-circle-info"></i>
-						{#if sortable}
-							<i class="fa-solid {getSortIcon('status')} text-xs opacity-50"></i>
-						{/if}
-					</div>
-				</th>
+				{#if showStatus}
+					<th
+						class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
+						onclick={() => handleSort('status')}
+						title={m.status()}
+					>
+						<div class="flex items-center gap-1">
+							<i class="fa-solid fa-circle-info"></i>
+							{#if sortable}
+								<i class="fa-solid {getSortIcon('status')} text-xs opacity-50"></i>
+							{/if}
+						</div>
+					</th>
+				{/if}
 				<th
 					class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
 					onclick={() => handleSort('firstSubmittedAt')}
@@ -160,18 +173,20 @@
 						{/if}
 					</div>
 				</th>
-				<th
-					class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-					onclick={() => handleSort('updatedAt')}
-					title={m.paperUpdatedAt()}
-				>
-					<div class="flex items-center gap-1">
-						<i class="fa-solid fa-clock-rotate-left"></i>
-						{#if sortable}
-							<i class="fa-solid {getSortIcon('updatedAt')} text-xs opacity-50"></i>
-						{/if}
-					</div>
-				</th>
+				{#if showUpdatedAt}
+					<th
+						class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
+						onclick={() => handleSort('updatedAt')}
+						title={m.paperUpdatedAt()}
+					>
+						<div class="flex items-center gap-1">
+							<i class="fa-solid fa-clock-rotate-left"></i>
+							{#if sortable}
+								<i class="fa-solid {getSortIcon('updatedAt')} text-xs opacity-50"></i>
+							{/if}
+						</div>
+					</th>
+				{/if}
 			</tr>
 		</thead>
 		<tbody>
@@ -212,21 +227,25 @@
 							></i>
 						</div>
 					</td>
-					<td>
-						<div class="tooltip" data-tip={translatePaperStatus(paper.status)}>
-							<i
-								class="fa-solid {getPaperStatusIcon(paper.status)} {getStatusColor(
-									paper.status
-								)} text-base"
-							></i>
-						</div>
-					</td>
+					{#if showStatus}
+						<td>
+							<div class="tooltip" data-tip={translatePaperStatus(paper.status)}>
+								<i
+									class="fa-solid {getPaperStatusIcon(paper.status)} {getStatusColor(
+										paper.status
+									)} text-base"
+								></i>
+							</div>
+						</td>
+					{/if}
 					<td class="text-xs text-base-content/70">
 						{formatDate(paper.firstSubmittedAt)}
 					</td>
-					<td class="text-xs text-base-content/70">
-						{formatDate(paper.updatedAt)}
-					</td>
+					{#if showUpdatedAt}
+						<td class="text-xs text-base-content/70">
+							{formatDate(paper.updatedAt)}
+						</td>
+					{/if}
 				</tr>
 			{/each}
 		</tbody>

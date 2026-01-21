@@ -187,6 +187,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
+- **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
 
@@ -223,10 +224,26 @@ $houdini → .houdini
 
 ### UI Component Patterns
 
-- **Form inputs**: Always group and label form inputs using `FormFieldset` component (`src/lib/components/Form/FormFieldset.svelte`). This provides consistent visual grouping with a legend/title.
-- **Modals**: Use the `Modal` component (`src/lib/components/Modal.svelte`) for dialogs. It handles backdrop clicks, accessibility, and consistent styling.
-- **Form components**: Prefer the Form components in `src/lib/components/Form/` (FormTextInput, FormTextArea, FormSelect, etc.) when working with superforms. For standalone inputs in modals, use native DaisyUI form controls with `form-control` and `label` classes.
-- **Layout**: Use DaisyUI's utility classes for consistent spacing and styling.
+See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation including:
+
+- Form components and `FormFieldset` grouping patterns
+- Modal and Drawer usage
+- Dashboard section layouts
+- DataTable configuration
+- Navigation components (Tabs, NavMenu)
+- Status indicators and badges
+- Color theming and icons
+- Code examples for common patterns
+
+**Quick reference**:
+
+- **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping
+- **Modals**: Use `Modal` component with `action` snippet for footer buttons
+- **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
+- **Icons**: Use FontAwesome Duotone (`fa-duotone fa-icon-name`)
+- **URL State**: Use `sveltekit-search-params` for URL-persisted state
+
+**Maintenance**: When creating new UI components, significantly modifying existing ones (props, usage patterns), or deprecating components, update CLAUDE-UI.md accordingly. Keep documentation in sync with the actual component implementations.
 
 ## Commit Conventions
 
@@ -320,6 +337,41 @@ Required variables (see `.env.example`):
 - Environment secrets must never be committed
 - Prisma parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks
+
+## Type Safety (CRITICAL)
+
+This codebase supports **100% end-to-end type safety** from database to frontend. The type system is your primary defense against bugs—use it properly.
+
+### Rules
+
+1. **NEVER use `any`** - The `any` type defeats the purpose of TypeScript. Only use it when absolutely unavoidable (e.g., third-party library limitations), and always add a comment explaining why.
+
+2. **NEVER use type casting (`as Type`)** - Type assertions bypass the compiler's checks. If you feel the need to cast, it indicates a type definition problem that should be fixed at the source.
+
+3. **Trust the generated types** - Prisma, Pothos, and Houdini generate accurate types. If types don't match your expectations, investigate why rather than casting.
+
+4. **Fix type errors at the source** - When encountering type mismatches:
+   - Check if the GraphQL query/mutation needs updating
+   - Verify the Prisma schema is correct
+   - Ensure Houdini codegen has run (`bun run dev` triggers this)
+   - Never silence errors with `as any` or `@ts-ignore`
+
+5. **Use type narrowing** - Prefer type guards, discriminated unions, and proper null checks over assertions.
+
+### Why This Matters
+
+- **Prisma** generates types from `schema.prisma`
+- **Pothos** generates GraphQL schema types from Prisma
+- **Houdini** generates frontend types from GraphQL operations
+- This chain provides compile-time guarantees that data flows correctly through the entire stack
+
+### Exceptions (Rare)
+
+If `any` or casting is truly unavoidable, you MUST:
+
+1. Add a `// TYPE-SAFETY-EXCEPTION:` comment explaining why
+2. Keep the scope as narrow as possible
+3. Consider opening an issue to fix it properly later
 
 ## MCP Servers
 

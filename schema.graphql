@@ -355,6 +355,8 @@ type Conference {
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
+  linkToServicesPage: String
+  linkToTeamWiki: String
   location: String
   longTitle: String
   mediaConsentContent: String
@@ -370,6 +372,11 @@ type Conference {
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int!
   schools: [ConferenceSchools!]!
+
+  """
+  When true, dashboard announcement shows full content; when false, truncated with expand button
+  """
+  showInfoExpanded: Boolean!
   singleParticipants: [SingleParticipant!]!
   startAssignment: DateTime!
   startConference: DateTime!
@@ -416,6 +423,8 @@ input ConferenceCreateInput {
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
+  linkToServicesPage: String
+  linkToTeamWiki: String
   location: String
   longTitle: String
   mediaConsentContent: String
@@ -429,6 +438,7 @@ input ConferenceCreateInput {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int
+  showInfoExpanded: Boolean
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
   startAssignment: DateTime!
   startConference: DateTime!
@@ -470,6 +480,8 @@ input ConferenceOrderByWithRelationInput {
   language: SortOrder
   linkToPaperInbox: SortOrder
   linkToPreparationGuide: SortOrder
+  linkToServicesPage: SortOrder
+  linkToTeamWiki: SortOrder
   location: SortOrder
   longTitle: SortOrder
   mediaConsentContent: SortOrder
@@ -483,6 +495,7 @@ input ConferenceOrderByWithRelationInput {
   postalStreet: SortOrder
   postalZip: SortOrder
   registrationDeadlineGracePeriodMinutes: SortOrder
+  showInfoExpanded: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
   startAssignment: SortOrder
   startConference: SortOrder
@@ -694,6 +707,8 @@ enum ConferenceScalarFieldEnum {
   language
   linkToPaperInbox
   linkToPreparationGuide
+  linkToServicesPage
+  linkToTeamWiki
   location
   longTitle
   mediaConsentContent
@@ -704,6 +719,7 @@ enum ConferenceScalarFieldEnum {
   postalStreet
   postalZip
   registrationDeadlineGracePeriodMinutes
+  showInfoExpanded
   startAssignment
   startConference
   state
@@ -924,6 +940,8 @@ input ConferenceUpdateDataInput {
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
+  linkToServicesPage: String
+  linkToTeamWiki: String
   location: String
   longTitle: String
   mediaConsentBasePDF: File
@@ -934,6 +952,7 @@ input ConferenceUpdateDataInput {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int
+  showInfoExpanded: Boolean
   startAssignment: DateTime
   startConference: DateTime
   state: ConferenceState
@@ -971,6 +990,8 @@ input ConferenceUpdateInput {
   language: NullableStringFieldUpdateOperationsInput
   linkToPaperInbox: NullableStringFieldUpdateOperationsInput
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
+  linkToServicesPage: NullableStringFieldUpdateOperationsInput
+  linkToTeamWiki: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
@@ -984,6 +1005,7 @@ input ConferenceUpdateInput {
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
   registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
+  showInfoExpanded: BoolFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
@@ -1018,6 +1040,8 @@ input ConferenceUpdateManyMutationInput {
   language: NullableStringFieldUpdateOperationsInput
   linkToPaperInbox: NullableStringFieldUpdateOperationsInput
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
+  linkToServicesPage: NullableStringFieldUpdateOperationsInput
+  linkToTeamWiki: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
@@ -1028,6 +1052,7 @@ input ConferenceUpdateManyMutationInput {
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
   registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
+  showInfoExpanded: BoolFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
@@ -1069,6 +1094,8 @@ input ConferenceWhereInput {
   language: StringNullableFilter
   linkToPaperInbox: StringNullableFilter
   linkToPreparationGuide: StringNullableFilter
+  linkToServicesPage: StringNullableFilter
+  linkToTeamWiki: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
@@ -1082,6 +1109,7 @@ input ConferenceWhereInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
@@ -1126,6 +1154,8 @@ input ConferenceWhereUniqueInput {
   language: StringNullableFilter
   linkToPaperInbox: StringNullableFilter
   linkToPreparationGuide: StringNullableFilter
+  linkToServicesPage: StringNullableFilter
+  linkToTeamWiki: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
@@ -1139,6 +1169,7 @@ input ConferenceWhereUniqueInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
   startConference: DateTimeFilter
@@ -3655,6 +3686,8 @@ type PreviewConferenceSupervisor {
 
 type Query {
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
+  findGlobalIntroductionPapers(conferenceId: String!): [Paper!]!
+  findGlobalPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
   findIntroductionPapers(conferenceId: String!): [Paper!]!
   findManyAgendaItems(cursor: CommitteeAgendaItemWhereUniqueInput, distinct: [CommitteeAgendaItemScalarFieldEnum!], orderBy: [CommitteeAgendaItemOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeAgendaItemWhereInput): [CommitteeAgendaItem!]!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
@@ -3678,6 +3711,7 @@ type Query {
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
   findNextPaperToReview(agendaItemId: String!): Paper!
   findPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
+  findPublicPaperContent(paperId: String!): Paper!
   findSupervisedPapers(conferenceId: String!): [Paper!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee

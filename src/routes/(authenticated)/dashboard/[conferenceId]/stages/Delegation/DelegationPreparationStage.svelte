@@ -5,12 +5,13 @@
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import CountryStats from '$lib/components/CountryStats/CountryStats.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
-	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
+	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
+	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
 	import formatNames from '$lib/services/formatNames';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
-	import generatePaperInboxLinkWithParams from '$lib/services/paperInboxLink';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
@@ -38,77 +39,53 @@
 			desc: m.inTheDelegation()
 		}
 	]);
+
+	const linkContext = $derived<DashboardLinkContext>({
+		conferenceId: conference.id,
+		userType: 'delegation',
+		conferenceState: conference.state,
+		isHeadDelegate: delegationMember.isHeadDelegate,
+		unlockPayments: conference.unlockPayments,
+		unlockPostals: conference.unlockPostals,
+		hasConferenceInfo: !!conference.info,
+		linkToPreparationGuide: conference.linkToPreparationGuide,
+		isOpenPaperSubmission: conference.isOpenPaperSubmission,
+		linkToPaperInbox: conference.linkToPaperInbox,
+		surveyQuestionCount: surveyQuestions?.length ?? 0,
+		surveyAnswerCount: surveyAnswers?.length ?? 0,
+		hasNationAssigned: !!delegationMember.delegation.assignedNation,
+		membersLackCommittees: delegationMember.delegation.members.some(
+			(member) => !member.assignedCommittee
+		),
+		user
+	});
+
+	const visibleLinks = $derived(getLinksForUserType('delegation', linkContext));
 </script>
 
-<TasksWrapper>
-	{#if !!delegationMember.delegation.assignedNation && delegationMember.delegation.members.some((member) => !member.assignedCommittee)}
-		<TaskAlertCard
-			severity={delegationMember.isHeadDelegate ? 'warning' : 'info'}
-			faIcon="fa-arrows-turn-to-dots"
-			title={m.committeeAssignment()}
-			description={delegationMember.isHeadDelegate
-				? m.committeeAssignmentAlertDescription()
-				: m.committeeAssignmentAlertDescriptionNonHeadDelegate()}
-			btnText={delegationMember.isHeadDelegate ? m.assignCommittees() : undefined}
-			btnLink={delegationMember.isHeadDelegate
-				? `./${conference.id}/committeeAssignment`
-				: undefined}
-		/>
-	{/if}
-	{#if surveyQuestions && surveyQuestions.length > 0}
-		<TaskAlertCard
-			faIcon="fa-square-poll-horizontal"
-			title={m.survey()}
-			description={m.surveyDescription()}
-			btnText={m.goToSurvey()}
-			btnLink={`./${conference.id}/survey`}
-			severity={surveyQuestions.length > surveyAnswers.length ? 'warning' : 'info'}
-		/>
-	{/if}
-	{#if conference.info}
-		<TaskAlertCard
-			faIcon="fa-info-circle"
-			title={m.conferenceInfo()}
-			description={m.conferenceInfoDescription()}
-			btnText={m.goToConferenceInfo()}
-			btnLink={`./${conference.id}/info`}
-		/>
-	{/if}
-	{#if conference.linkToPreparationGuide}
-		<TaskAlertCard
-			faIcon="fa-book-bookmark"
-			title={m.preparation()}
-			description={m.preparationDescription()}
-			btnText={m.goToPreparation()}
-			btnLink={conference.linkToPreparationGuide}
-			btnExternal
-		/>
-	{/if}
-	{#if conference.isOpenPaperSubmission && user}
-		<TaskAlertCard
-			faIcon="fa-files"
-			title={m.paperHub()}
-			description={m.paperHubDescription()}
-			btnText={m.paperHubBtn()}
-			btnLink="/dashboard/{conference.id}/paperhub"
-			severity="info"
-		/>
-	{/if}
-	{#if conference.linkToPaperInbox && user}
-		<TaskAlertCard
-			faIcon="fa-file-circle-plus"
-			title={m.paperInbox()}
-			description={m.paperInboxDescription()}
-			btnText={m.paperInboxBtn()}
-			btnLink={generatePaperInboxLinkWithParams(conference.linkToPaperInbox, user)}
-			btnExternal
-			severity="info"
-		/>
-	{/if}
-</TasksWrapper>
+<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
+	<DashboardLinksGrid>
+		{#each visibleLinks as link (link.id)}
+			{@const badge = link.getBadge?.(linkContext)}
+			<DashboardLinkCard
+				href={link.getHref(linkContext)}
+				icon={link.icon}
+				title={link.getTitle()}
+				description={link.getDescription()}
+				external={link.external}
+				disabled={link.isDisabled(linkContext)}
+				badge={badge?.value}
+				badgeType={badge?.type}
+			/>
+		{/each}
+	</DashboardLinksGrid>
+</DashboardSection>
 
-<section class="flex flex-col gap-4">
-	<h2 class="text-2xl font-bold">{m.delegationStatus()}</h2>
+<DashboardSection
+	icon="chart-line"
+	title={m.delegationStatus()}
+	description={m.delegationStatusDescription()}
+>
 	<div class="stats bg-base-200 shadow">
 		<RoleWidget
 			country={delegationMember.delegation.assignedNation}
@@ -123,10 +100,13 @@
 	</div>
 	<GenericWidget content={delegationStats} />
 	<DelegationNameDisplay delegationId={delegationMember.delegation.id} />
-</section>
+</DashboardSection>
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.delegationMembers()}</h2>
+<DashboardSection
+	icon="users"
+	title={m.delegationMembers()}
+	description={m.delegationMembersDescription()}
+>
 	<DelegationStatusTableWrapper withEmail withCommittee withPostalSatus withPaymentStatus>
 		{#each delegationMember.delegation.members ?? [] as member}
 			{@const participantStatus = member.user.conferenceParticipantStatus.find(
@@ -148,19 +128,28 @@
 			/>
 		{/each}
 	</DelegationStatusTableWrapper>
-	<div class="h-4"></div>
-	<SupervisorTable supervisors={delegationMember.supervisors} conferenceId={conference.id} />
-</section>
-<section class="flex flex-col">
-	{#if delegationMember.delegation.assignedNation}
-		<h2 class="mb-4 text-2xl font-bold">{m.informationOnYourCountry()}</h2>
+</DashboardSection>
+
+<SupervisorTable supervisors={delegationMember.supervisors} conferenceId={conference.id} />
+
+{#if delegationMember.delegation.assignedNation}
+	<DashboardSection
+		icon="globe"
+		title={m.informationOnYourCountry()}
+		description={m.informationOnYourCountryDescription()}
+	>
 		<CountryStats countryCode={delegationMember.delegation.assignedNation?.alpha3Code} />
-	{:else if delegationMember.delegation.assignedNonStateActor}
-		{@const nsa = delegationMember.delegation.assignedNonStateActor}
-		<h2 class="mb-4 text-2xl font-bold">{m.informationOnYourNSA()}</h2>
+	</DashboardSection>
+{:else if delegationMember.delegation.assignedNonStateActor}
+	{@const nsa = delegationMember.delegation.assignedNonStateActor}
+	<DashboardSection
+		icon="building-ngo"
+		title={m.informationOnYourNSA()}
+		description={m.informationOnYourNSADescription()}
+	>
 		<div class="prose">
 			<h3 class="font-bold">{nsa.name}</h3>
 			<p>{nsa.description}</p>
 		</div>
-	{/if}
-</section>
+	</DashboardSection>
+{/if}

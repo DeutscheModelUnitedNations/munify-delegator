@@ -20,7 +20,10 @@ export const myConferenceparticipationQuery = graphql(`
 			title
 			longTitle
 			info
+			showInfoExpanded
 			linkToPreparationGuide
+			linkToTeamWiki
+			linkToServicesPage
 			linkToPaperInbox
 			isOpenPaperSubmission
 			state
