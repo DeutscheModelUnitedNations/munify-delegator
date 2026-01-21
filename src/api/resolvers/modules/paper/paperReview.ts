@@ -212,23 +212,56 @@ builder.mutationFields((t) => ({
 					});
 					wasFirstReviewForPiece = existingReviewCount === 0;
 				} else if (paper.delegation.assignedNonStateActorId) {
-					// For NSAs: check the review count for this NSA's papers
-					const reviewedPaperCount = await tx.paper.count({
-						where: {
-							delegationId: paper.delegationId,
-							conferenceId: paper.conferenceId,
-							status: { not: 'DRAFT' },
-							versions: {
-								some: {
-									reviews: {
-										some: {}
+					if (paper.type === 'INTRODUCTION_PAPER') {
+						// For introduction papers: check if at least one review exists for any introduction paper
+						const reviewedIntroPaperCount = await tx.paper.count({
+							where: {
+								delegationId: paper.delegationId,
+								conferenceId: paper.conferenceId,
+								type: 'INTRODUCTION_PAPER',
+								status: { not: 'DRAFT' },
+								versions: {
+									some: {
+										reviews: {
+											some: {}
+										}
 									}
 								}
 							}
+						});
+						wasFirstReviewForPiece = reviewedIntroPaperCount === 0;
+					} else {
+						// For regular papers there are 2 pieces to unlock.
+						const reviewedPaperCount = await tx.paper.count({
+							where: {
+								delegationId: paper.delegationId,
+								conferenceId: paper.conferenceId,
+								status: { not: 'DRAFT' },
+								versions: {
+									some: {
+										reviews: {
+											some: {}
+										}
+									}
+								}
+							}
+						});
+						if (reviewedPaperCount < 2) {
+							// If there are fewer than 2 reviewed papers, ensure this paper hasn't been reviewed yet
+							const existingReviewCount = await tx.paperReview.count({
+								where: {
+									paperVersion: {
+										paper: {
+											id: paper.id
+										}
+									}
+								}
+							});
+							wasFirstReviewForPiece = existingReviewCount === 0;
+						} else {
+							wasFirstReviewForPiece = false;
 						}
-					});
-					// NSAs have 3 pieces, so we unlock a new piece if we have fewer than 3 reviewed papers
-					wasFirstReviewForPiece = reviewedPaperCount < 3;
+					}
 				}
 
 				// Create the review
