@@ -36,69 +36,69 @@ Forms use `sveltekit-superforms` for validation and state management. Always str
 
 ```svelte
 <script lang="ts">
-  import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-  import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-  import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 </script>
 
 <FormFieldset title="Personal Information">
-  <FormTextInput {form} name="firstName" label="First Name" />
-  <FormTextInput {form} name="lastName" label="Last Name" />
-  <FormTextInput {form} name="email" label="Email" type="email" />
+	<FormTextInput {form} name="firstName" label="First Name" />
+	<FormTextInput {form} name="lastName" label="Last Name" />
+	<FormTextInput {form} name="email" label="Email" type="email" />
 </FormFieldset>
 
 <FormFieldset title="Preferences">
-  <FormSelect {form} name="language" label="Language" options={languageOptions} />
+	<FormSelect {form} name="language" label="Language" options={languageOptions} />
 </FormFieldset>
 ```
 
 ### Available Form Components
 
-| Component | Purpose | Key Props |
-|-----------|---------|-----------|
-| `Form` | Form wrapper with submit button | `form`, `showSubmitButton`, `action` |
-| `FormFieldset` | Visual grouping with legend | `title` |
-| `FormTextInput` | Text/email/password input | `form`, `name`, `label`, `type`, `placeholder` |
-| `FormTextArea` | Multi-line text | `form`, `name`, `label` |
-| `FormSelect` | Dropdown select | `form`, `name`, `label`, `options` |
-| `FormCheckbox` | Checkbox toggle | `form`, `name`, `label` |
-| `FormDateTimeInput` | Date/time picker | `form`, `name`, `label` |
-| `FormFile` | File upload | `form`, `name`, `label` |
-| `FormSubmitButton` | Submit with loading state | `form`, `disabled`, `loading` |
+| Component           | Purpose                         | Key Props                                      |
+| ------------------- | ------------------------------- | ---------------------------------------------- |
+| `Form`              | Form wrapper with submit button | `form`, `showSubmitButton`, `action`           |
+| `FormFieldset`      | Visual grouping with legend     | `title`                                        |
+| `FormTextInput`     | Text/email/password input       | `form`, `name`, `label`, `type`, `placeholder` |
+| `FormTextArea`      | Multi-line text                 | `form`, `name`, `label`                        |
+| `FormSelect`        | Dropdown select                 | `form`, `name`, `label`, `options`             |
+| `FormCheckbox`      | Checkbox toggle                 | `form`, `name`, `label`                        |
+| `FormDateTimeInput` | Date/time picker                | `form`, `name`, `label`                        |
+| `FormFile`          | File upload                     | `form`, `name`, `label`                        |
+| `FormSubmitButton`  | Submit with loading state       | `form`, `disabled`, `loading`                  |
 
 ### Complete Form Example
 
 ```svelte
 <script lang="ts">
-  import Form from '$lib/components/Form/Form.svelte';
-  import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-  import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-  import FormSelect from '$lib/components/Form/FormSelect.svelte';
-  import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
-  import { superForm } from 'sveltekit-superforms';
+	import Form from '$lib/components/Form/Form.svelte';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import { superForm } from 'sveltekit-superforms';
 
-  let { data } = $props();
-  const form = superForm(data.form);
+	let { data } = $props();
+	const form = superForm(data.form);
 </script>
 
 <Form {form}>
-  <FormFieldset title="Account Details">
-    <FormTextInput {form} name="username" label="Username" placeholder="Enter username" />
-    <FormTextInput {form} name="email" label="Email" type="email" />
-  </FormFieldset>
+	<FormFieldset title="Account Details">
+		<FormTextInput {form} name="username" label="Username" placeholder="Enter username" />
+		<FormTextInput {form} name="email" label="Email" type="email" />
+	</FormFieldset>
 
-  <FormFieldset title="Settings">
-    <FormSelect
-      {form}
-      name="role"
-      label="Role"
-      options={[
-        { value: 'user', label: 'User' },
-        { value: 'admin', label: 'Admin' }
-      ]}
-    />
-    <FormCheckbox {form} name="notifications" label="Enable notifications" />
-  </FormFieldset>
+	<FormFieldset title="Settings">
+		<FormSelect
+			{form}
+			name="role"
+			label="Role"
+			options={[
+				{ value: 'user', label: 'User' },
+				{ value: 'admin', label: 'Admin' }
+			]}
+		/>
+		<FormCheckbox {form} name="notifications" label="Enable notifications" />
+	</FormFieldset>
 </Form>
 ```
 
@@ -110,39 +110,39 @@ Use `Modal` for dialogs. It handles backdrop clicks and accessibility.
 
 ### Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `open` | `boolean` (bindable) | Controls visibility |
-| `title` | `string` | Modal title |
-| `fullWidth` | `boolean` | Expand to 90% width |
-| `children` | `Snippet` | Modal body content |
-| `action` | `Snippet` | Footer actions (buttons) |
-| `onclose` | `() => void` | Callback when closed |
+| Prop        | Type                 | Description              |
+| ----------- | -------------------- | ------------------------ |
+| `open`      | `boolean` (bindable) | Controls visibility      |
+| `title`     | `string`             | Modal title              |
+| `fullWidth` | `boolean`            | Expand to 90% width      |
+| `children`  | `Snippet`            | Modal body content       |
+| `action`    | `Snippet`            | Footer actions (buttons) |
+| `onclose`   | `() => void`         | Callback when closed     |
 
 ### Modal Example
 
 ```svelte
 <script lang="ts">
-  import Modal from '$lib/components/Modal.svelte';
-  import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 
-  let modalOpen = $state(false);
+	let modalOpen = $state(false);
 </script>
 
 <button class="btn btn-primary" onclick={() => (modalOpen = true)}>Open Modal</button>
 
 <Modal bind:open={modalOpen} title="Edit Item">
-  <FormFieldset title="Item Details">
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Name</span></div>
-      <input type="text" class="input input-bordered w-full" placeholder="Enter name" />
-    </label>
-  </FormFieldset>
+	<FormFieldset title="Item Details">
+		<label class="form-control w-full">
+			<div class="label"><span class="label-text">Name</span></div>
+			<input type="text" class="input input-bordered w-full" placeholder="Enter name" />
+		</label>
+	</FormFieldset>
 
-  {#snippet action()}
-    <button class="btn" onclick={() => (modalOpen = false)}>Cancel</button>
-    <button class="btn btn-primary" onclick={handleSave}>Save</button>
-  {/snippet}
+	{#snippet action()}
+		<button class="btn" onclick={() => (modalOpen = false)}>Cancel</button>
+		<button class="btn btn-primary" onclick={handleSave}>Save</button>
+	{/snippet}
 </Modal>
 ```
 
@@ -152,17 +152,17 @@ When using superforms inside a modal, integrate the Form component:
 
 ```svelte
 <Modal bind:open={modalOpen} title="Create Item">
-  <Form {form} showSubmitButton={false}>
-    <FormFieldset title="Details">
-      <FormTextInput {form} name="name" label="Name" />
-      <FormTextInput {form} name="description" label="Description" />
-    </FormFieldset>
-  </Form>
+	<Form {form} showSubmitButton={false}>
+		<FormFieldset title="Details">
+			<FormTextInput {form} name="name" label="Name" />
+			<FormTextInput {form} name="description" label="Description" />
+		</FormFieldset>
+	</Form>
 
-  {#snippet action()}
-    <button class="btn" onclick={() => (modalOpen = false)}>Cancel</button>
-    <button class="btn btn-primary" onclick={submitForm}>Create</button>
-  {/snippet}
+	{#snippet action()}
+		<button class="btn" onclick={() => (modalOpen = false)}>Cancel</button>
+		<button class="btn btn-primary" onclick={submitForm}>Create</button>
+	{/snippet}
 </Modal>
 ```
 
@@ -174,31 +174,31 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ### Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `open` | `boolean` (bindable) | Controls visibility |
-| `category` | `string` | Category label |
-| `title` | `string` | Panel title |
-| `loading` | `boolean` | Show loading spinner |
-| `width` | `string` | Panel width (default: `34rem`) |
-| `onClose` | `() => void` | Callback when closed |
+| Prop       | Type                 | Description                    |
+| ---------- | -------------------- | ------------------------------ |
+| `open`     | `boolean` (bindable) | Controls visibility            |
+| `category` | `string`             | Category label                 |
+| `title`    | `string`             | Panel title                    |
+| `loading`  | `boolean`            | Show loading spinner           |
+| `width`    | `string`             | Panel width (default: `34rem`) |
+| `onClose`  | `() => void`         | Callback when closed           |
 
 ### Drawer Example
 
 ```svelte
 <script lang="ts">
-  import Drawer from '$lib/components/Drawer.svelte';
+	import Drawer from '$lib/components/Drawer.svelte';
 
-  let drawerOpen = $state(false);
-  let loading = $state(false);
+	let drawerOpen = $state(false);
+	let loading = $state(false);
 </script>
 
 <button class="btn" onclick={() => (drawerOpen = true)}>View Details</button>
 
 <Drawer bind:open={drawerOpen} category="Delegation" title="Germany" {loading}>
-  <div class="flex flex-col gap-4">
-    <p>Delegation details go here...</p>
-  </div>
+	<div class="flex flex-col gap-4">
+		<p>Delegation details go here...</p>
+	</div>
 </Drawer>
 ```
 
@@ -214,20 +214,21 @@ Main section wrapper with icon, title, and description:
 
 ```svelte
 <script lang="ts">
-  import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
 </script>
 
 <DashboardSection
-  icon="users"
-  title="Team Members"
-  description="Manage your conference team"
-  variant="default"
+	icon="users"
+	title="Team Members"
+	description="Manage your conference team"
+	variant="default"
 >
-  <!-- Section content -->
+	<!-- Section content -->
 </DashboardSection>
 ```
 
 **Props:**
+
 - `icon`: FontAwesome icon name (without `fa-` prefix)
 - `title`: Section heading
 - `description`: Optional subtitle
@@ -240,11 +241,11 @@ Simple card container for content:
 
 ```svelte
 <script lang="ts">
-  import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 </script>
 
 <DashboardContentCard title="Statistics" description="Overview of current data">
-  <p>Card content here...</p>
+	<p>Card content here...</p>
 </DashboardContentCard>
 ```
 
@@ -254,12 +255,12 @@ Conference title header with emblem and status:
 
 ```svelte
 <ConferenceHeader
-  title={conference.title}
-  longTitle={conference.longTitle}
-  state={conference.state}
-  startDate={conference.startConference}
-  endDate={conference.endConference}
-  emblemDataURL={conference.emblemDataURL}
+	title={conference.title}
+	longTitle={conference.longTitle}
+	state={conference.state}
+	startDate={conference.startConference}
+	endDate={conference.endConference}
+	emblemDataURL={conference.emblemDataURL}
 />
 ```
 
@@ -269,15 +270,15 @@ Checklist table with status icons:
 
 ```svelte
 <script lang="ts">
-  import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
+	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
 </script>
 
 <TodoTable
-  todos={[
-    { title: 'Complete registration', completed: true },
-    { title: 'Upload photo', completed: false, help: 'Required for badge' },
-    { title: 'Pay fees', completed: undefined } // Shows loading spinner
-  ]}
+	todos={[
+		{ title: 'Complete registration', completed: true },
+		{ title: 'Upload photo', completed: false, help: 'Required for badge' },
+		{ title: 'Pay fees', completed: undefined } // Shows loading spinner
+	]}
 />
 ```
 
@@ -291,20 +292,20 @@ Searchable, sortable table with optional row expansion:
 
 ```svelte
 <script lang="ts">
-  import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 
-  const columns = [
-    { key: 'name', title: 'Name', value: (row) => row.name, sortable: true },
-    { key: 'email', title: 'Email', value: (row) => row.email }
-  ];
+	const columns = [
+		{ key: 'name', title: 'Name', value: (row) => row.name, sortable: true },
+		{ key: 'email', title: 'Email', value: (row) => row.email }
+	];
 </script>
 
 <DataTable
-  {columns}
-  rows={data}
-  enableSearch={true}
-  sortBy="name"
-  rowSelected={(row) => handleRowClick(row)}
+	{columns}
+	rows={data}
+	enableSearch={true}
+	sortBy="name"
+	rowSelected={(row) => handleRowClick(row)}
 />
 ```
 
@@ -312,11 +313,11 @@ With expandable rows:
 
 ```svelte
 <DataTable {columns} rows={data} showExpandIcon={true}>
-  {#snippet expandedRowContent(row)}
-    <div class="p-4">
-      <p>Expanded content for {row.name}</p>
-    </div>
-  {/snippet}
+	{#snippet expandedRowContent(row)}
+		<div class="p-4">
+			<p>Expanded content for {row.name}</p>
+		</div>
+	{/snippet}
 </DataTable>
 ```
 
@@ -326,15 +327,15 @@ Statistics widgets using DaisyUI stats component:
 
 ```svelte
 <script lang="ts">
-  import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
+	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 </script>
 
 <GenericWidget
-  content={[
-    { icon: 'users', title: 'Total Members', value: 42, desc: '+5 this week' },
-    { icon: 'check-circle', title: 'Confirmed', value: 38 },
-    { icon: 'clock', title: 'Pending', value: 4 }
-  ]}
+	content={[
+		{ icon: 'users', title: 'Total Members', value: 42, desc: '+5 this week' },
+		{ icon: 'check-circle', title: 'Confirmed', value: 38 },
+		{ icon: 'clock', title: 'Pending', value: 4 }
+	]}
 />
 ```
 
@@ -344,16 +345,16 @@ Key-value pair display:
 
 ```svelte
 <script lang="ts">
-  import Grid from '$lib/components/InfoGrid/Grid.svelte';
-  import Entry from '$lib/components/InfoGrid/Entry.svelte';
+	import Grid from '$lib/components/InfoGrid/Grid.svelte';
+	import Entry from '$lib/components/InfoGrid/Entry.svelte';
 </script>
 
 <Grid>
-  <Entry title="Name" fontAwesomeIcon="user" content="John Doe" />
-  <Entry title="Email" fontAwesomeIcon="envelope" content="john@example.com" />
-  <Entry title="Status" fontAwesomeIcon="circle-check">
-    <span class="badge badge-success">Active</span>
-  </Entry>
+	<Entry title="Name" fontAwesomeIcon="user" content="John Doe" />
+	<Entry title="Email" fontAwesomeIcon="envelope" content="john@example.com" />
+	<Entry title="Status" fontAwesomeIcon="circle-check">
+		<span class="badge badge-success">Active</span>
+	</Entry>
 </Grid>
 ```
 
@@ -367,19 +368,19 @@ Sidebar navigation:
 
 ```svelte
 <script lang="ts">
-  import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-  import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
-  import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
+	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
 
-  let expanded = $state(true);
+	let expanded = $state(true);
 </script>
 
 <NavMenu>
-  <NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" bind:expanded />
-  <NavMenuDetails title="Settings" icon="fa-cog">
-    <NavMenuButton title="General" href="/settings/general" icon="fa-gear" bind:expanded />
-    <NavMenuButton title="Security" href="/settings/security" icon="fa-shield" bind:expanded />
-  </NavMenuDetails>
+	<NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" bind:expanded />
+	<NavMenuDetails title="Settings" icon="fa-cog">
+		<NavMenuButton title="General" href="/settings/general" icon="fa-gear" bind:expanded />
+		<NavMenuButton title="Security" href="/settings/security" icon="fa-shield" bind:expanded />
+	</NavMenuDetails>
 </NavMenu>
 ```
 
@@ -389,31 +390,31 @@ Tab navigation:
 
 ```svelte
 <script lang="ts">
-  import Tabs from '$lib/components/Tabs/Tabs.svelte';
-  import Tab from '$lib/components/Tabs/Tab.svelte';
+	import Tabs from '$lib/components/Tabs/Tabs.svelte';
+	import Tab from '$lib/components/Tabs/Tab.svelte';
 
-  let activeTab = $state('overview');
+	let activeTab = $state('overview');
 </script>
 
 <Tabs>
-  <Tab
-    title="Overview"
-    icon="chart-pie"
-    active={activeTab === 'overview'}
-    onclick={() => (activeTab = 'overview')}
-  />
-  <Tab
-    title="Members"
-    icon="users"
-    active={activeTab === 'members'}
-    onclick={() => (activeTab = 'members')}
-  />
+	<Tab
+		title="Overview"
+		icon="chart-pie"
+		active={activeTab === 'overview'}
+		onclick={() => (activeTab = 'overview')}
+	/>
+	<Tab
+		title="Members"
+		icon="users"
+		active={activeTab === 'members'}
+		onclick={() => (activeTab = 'members')}
+	/>
 </Tabs>
 
 {#if activeTab === 'overview'}
-  <!-- Overview content -->
+	<!-- Overview content -->
 {:else if activeTab === 'members'}
-  <!-- Members content -->
+	<!-- Members content -->
 {/if}
 ```
 
@@ -427,7 +428,7 @@ Colored status indicator with optional blink:
 
 ```svelte
 <script lang="ts">
-  import StatusLight from '$lib/components/StatusLight.svelte';
+	import StatusLight from '$lib/components/StatusLight.svelte';
 </script>
 
 <StatusLight color="success" blink={true} tooltip="Online" />
@@ -478,23 +479,27 @@ Use FontAwesome Duotone icons throughout the application:
 Use DaisyUI semantic color classes:
 
 ### Background Colors
+
 - `bg-base-100` - Primary background
 - `bg-base-200` - Secondary/muted background
 - `bg-base-300` - Tertiary/hover background
 
 ### Text Colors
+
 - `text-base-content` - Primary text
 - `text-base-content/60` - Muted text
 - `text-primary` - Primary accent
 - `text-secondary` - Secondary accent
 
 ### Status Colors
+
 - `text-success` / `bg-success` - Success/positive
 - `text-warning` / `bg-warning` - Warning/caution
 - `text-error` / `bg-error` - Error/danger
 - `text-info` / `bg-info` - Information
 
 ### Borders
+
 - `border-base-200` - Light border
 - `border-base-300` - Medium border
 
@@ -508,9 +513,9 @@ For centered content pages:
 
 ```svelte
 <div class="flex w-full flex-col items-center">
-  <div class="w-full max-w-4xl">
-    <!-- Page content -->
-  </div>
+	<div class="w-full max-w-4xl">
+		<!-- Page content -->
+	</div>
 </div>
 ```
 
@@ -520,13 +525,13 @@ For dashboard pages with multiple sections:
 
 ```svelte
 <div class="flex w-full flex-col gap-10">
-  <ConferenceHeader ... />
-  <DashboardSection ...>
-    <!-- Section 1 content -->
-  </DashboardSection>
-  <DashboardSection ...>
-    <!-- Section 2 content -->
-  </DashboardSection>
+	<ConferenceHeader ... />
+	<DashboardSection ...>
+		<!-- Section 1 content -->
+	</DashboardSection>
+	<DashboardSection ...>
+		<!-- Section 2 content -->
+	</DashboardSection>
 </div>
 ```
 
@@ -536,11 +541,11 @@ For card-based layouts:
 
 ```svelte
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-  <div class="card bg-base-100 border border-base-200 shadow-sm">
-    <div class="card-body">
-      <!-- Card content -->
-    </div>
-  </div>
+	<div class="card bg-base-100 border border-base-200 shadow-sm">
+		<div class="card-body">
+			<!-- Card content -->
+		</div>
+	</div>
 </div>
 ```
 
@@ -565,8 +570,8 @@ For card-based layouts:
 
 ```svelte
 <div class="flex flex-col items-center justify-center py-12 text-center">
-  <i class="fa-duotone fa-inbox text-4xl text-base-content/30 mb-4"></i>
-  <p class="text-base-content/60">No items found</p>
+	<i class="fa-duotone fa-inbox text-4xl text-base-content/30 mb-4"></i>
+	<p class="text-base-content/60">No items found</p>
 </div>
 ```
 
@@ -584,7 +589,7 @@ For card-based layouts:
 
 <!-- Icon button -->
 <button class="btn btn-square btn-ghost btn-sm">
-  <i class="fa-duotone fa-pencil"></i>
+	<i class="fa-duotone fa-pencil"></i>
 </button>
 ```
 
@@ -596,14 +601,14 @@ Use `sveltekit-search-params` for URL-persisted state:
 
 ```svelte
 <script lang="ts">
-  import { queryParam } from 'sveltekit-search-params';
+	import { queryParam } from 'sveltekit-search-params';
 
-  const tabParam = queryParam('tab');
-  let activeTab = $derived($tabParam ?? 'overview');
+	const tabParam = queryParam('tab');
+	let activeTab = $derived($tabParam ?? 'overview');
 
-  function setTab(tab: string) {
-    $tabParam = tab;
-  }
+	function setTab(tab: string) {
+		$tabParam = tab;
+	}
 </script>
 ```
 
@@ -620,4 +625,4 @@ Before implementing new UI:
 5. Include loading and empty states
 6. Test responsive behavior (mobile-first)
 7. Add proper aria labels for accessibility
-8. Use the `m()` function for all user-facing text (i18n)
+8. Use the `$t()` function from Paraglide-JS for all user-facing text (i18n)

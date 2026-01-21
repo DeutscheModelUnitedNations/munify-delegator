@@ -5,7 +5,10 @@
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import type { TeamRole } from '@prisma/client';
-	import { getTeamLinksForRole, type TeamDashboardLinkContext } from '$lib/config/teamDashboardLinks';
+	import {
+		getTeamLinksForRole,
+		type TeamDashboardLinkContext
+	} from '$lib/config/teamDashboardLinks';
 
 	interface Props {
 		conferenceId: string;

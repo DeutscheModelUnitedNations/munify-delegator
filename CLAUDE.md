@@ -187,6 +187,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
+- **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
 
@@ -235,6 +236,7 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - Code examples for common patterns
 
 **Quick reference**:
+
 - **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping
 - **Modals**: Use `Modal` component with `action` snippet for footer buttons
 - **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
