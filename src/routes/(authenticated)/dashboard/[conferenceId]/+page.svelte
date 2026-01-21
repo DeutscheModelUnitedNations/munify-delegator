@@ -2,6 +2,9 @@
 	import type { PageData } from './$houdini';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceHeader from '$lib/components/Dashboard/ConferenceHeader.svelte';
+	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import AnnouncementContent from '$lib/components/Dashboard/AnnouncementContent.svelte';
+	import { m } from '$lib/paraglide/messages';
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
@@ -38,6 +41,16 @@
 				endDate={conference.endConference}
 				emblemDataURL={conference.emblemDataURL}
 			/>
+			{#if conference.info && !teamMember}
+				<DashboardSection
+					icon="bullhorn"
+					title={m.announcementSectionTitle()}
+					description={m.announcementSectionDescription()}
+					variant="info"
+				>
+					<AnnouncementContent info={conference.info} showExpanded={conference.showInfoExpanded} />
+				</DashboardSection>
+			{/if}
 		{/if}
 		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}

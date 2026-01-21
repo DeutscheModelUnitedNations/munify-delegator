@@ -104,16 +104,6 @@ export const dashboardLinks: DashboardLink[] = [
 		}
 	},
 	{
-		id: 'conferenceInfo',
-		icon: 'info-circle',
-		getTitle: () => m.conferenceInfo(),
-		getDescription: () => m.conferenceInfoDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/info`,
-		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => !!ctx.hasConferenceInfo,
-		isDisabled: () => false
-	},
-	{
 		id: 'preparation',
 		icon: 'book-bookmark',
 		getTitle: () => m.preparation(),

@@ -334,6 +334,41 @@ Required variables (see `.env.example`):
 - Prisma parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks
 
+## Type Safety (CRITICAL)
+
+This codebase supports **100% end-to-end type safety** from database to frontend. The type system is your primary defense against bugs—use it properly.
+
+### Rules
+
+1. **NEVER use `any`** - The `any` type defeats the purpose of TypeScript. Only use it when absolutely unavoidable (e.g., third-party library limitations), and always add a comment explaining why.
+
+2. **NEVER use type casting (`as Type`)** - Type assertions bypass the compiler's checks. If you feel the need to cast, it indicates a type definition problem that should be fixed at the source.
+
+3. **Trust the generated types** - Prisma, Pothos, and Houdini generate accurate types. If types don't match your expectations, investigate why rather than casting.
+
+4. **Fix type errors at the source** - When encountering type mismatches:
+   - Check if the GraphQL query/mutation needs updating
+   - Verify the Prisma schema is correct
+   - Ensure Houdini codegen has run (`bun run dev` triggers this)
+   - Never silence errors with `as any` or `@ts-ignore`
+
+5. **Use type narrowing** - Prefer type guards, discriminated unions, and proper null checks over assertions.
+
+### Why This Matters
+
+- **Prisma** generates types from `schema.prisma`
+- **Pothos** generates GraphQL schema types from Prisma
+- **Houdini** generates frontend types from GraphQL operations
+- This chain provides compile-time guarantees that data flows correctly through the entire stack
+
+### Exceptions (Rare)
+
+If `any` or casting is truly unavoidable, you MUST:
+
+1. Add a `// TYPE-SAFETY-EXCEPTION:` comment explaining why
+2. Keep the scope as narrow as possible
+3. Consider opening an issue to fix it properly later
+
 ## MCP Servers
 
 This project uses Model Context Protocol (MCP) servers to enhance AI-assisted development. Configuration is in `.mcp.json`.
