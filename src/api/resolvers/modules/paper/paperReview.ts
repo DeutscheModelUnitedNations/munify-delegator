@@ -236,6 +236,7 @@ builder.mutationFields((t) => ({
 							where: {
 								delegationId: paper.delegationId,
 								conferenceId: paper.conferenceId,
+								type: { not: 'INTRODUCTION_PAPER' },
 								status: { not: 'DRAFT' },
 								versions: {
 									some: {
