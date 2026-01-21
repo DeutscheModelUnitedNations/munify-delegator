@@ -57,6 +57,16 @@ export const dashboardLinks: DashboardLink[] = [
 		isDisabled: () => false
 	},
 	{
+		id: 'registrationMode',
+		icon: 'id-badge',
+		getTitle: () => m.registrationMode(),
+		getDescription: () => m.registrationModeLinkDescription(),
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/registration-mode`,
+		showFor: ['delegation', 'singleParticipant', 'supervisor'],
+		isVisible: (ctx) => ctx.conferenceState === 'ACTIVE',
+		isDisabled: () => false
+	},
+	{
 		id: 'payment',
 		icon: 'hand-holding-circle-dollar',
 		getTitle: () => m.payment(),
@@ -146,16 +156,6 @@ export const dashboardLinks: DashboardLink[] = [
 		external: true,
 		showFor: ['delegation', 'singleParticipant'],
 		isVisible: (ctx) => !!ctx.linkToPaperInbox && !!ctx.user,
-		isDisabled: () => false
-	},
-	{
-		id: 'registrationMode',
-		icon: 'id-badge',
-		getTitle: () => m.registrationMode(),
-		getDescription: () => m.registrationModeLinkDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/registration-mode`,
-		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => ctx.conferenceState === 'ACTIVE',
 		isDisabled: () => false
 	}
 ];

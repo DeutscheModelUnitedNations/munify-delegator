@@ -16,7 +16,8 @@
 				bcid: 'datamatrix',
 				text: data,
 				scale: 3,
-				padding: 1
+				paddingheight: 1,
+				paddingwidth: 1
 			});
 		}
 	});
