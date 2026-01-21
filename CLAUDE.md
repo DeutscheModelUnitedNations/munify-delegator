@@ -187,6 +187,7 @@ bun run preview
 - Source translations in `messages/` directory
 - Use `$t()` function in components for translated strings
 - Generate translations via Inlang CLI
+- **German gender-inclusive language**: Use gender-neutral forms when possible (e.g., "Teilnehmende" instead of "Teilnehmer"). When neutral forms aren't available, use the gender-asterisk format (e.g., "der/die Teilnehmer\*in", "Delegationsleiter\*in").
 
 #### 5. Database Patterns
 
@@ -223,23 +224,26 @@ $houdini → .houdini
 
 ### UI Component Patterns
 
-- **Form inputs**: Always group and label form inputs using `FormFieldset` component (`src/lib/components/Form/FormFieldset.svelte`). This provides consistent visual grouping with a legend/title.
-- **Modals**: Use the `Modal` component (`src/lib/components/Modal.svelte`) for dialogs. It handles backdrop clicks, accessibility, and consistent styling.
-- **Form components**: Prefer the Form components in `src/lib/components/Form/` (FormTextInput, FormTextArea, FormSelect, etc.) when working with superforms. For standalone inputs in modals, use native DaisyUI form controls with `form-control` and `label` classes.
-- **Layout**: Use DaisyUI's utility classes for consistent spacing and styling.
-- **URL Query Parameters**: Use `sveltekit-search-params` for managing URL query parameters in components. This provides type-safe, reactive URL state management that persists across navigation. Example:
+See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation including:
 
-  ```typescript
-  import { queryParam } from 'sveltekit-search-params';
+- Form components and `FormFieldset` grouping patterns
+- Modal and Drawer usage
+- Dashboard section layouts
+- DataTable configuration
+- Navigation components (Tabs, NavMenu)
+- Status indicators and badges
+- Color theming and icons
+- Code examples for common patterns
 
-  const validViews = ['list', 'grid', 'table'] as const;
-  type ViewType = (typeof validViews)[number];
-  const viewParam = queryParam('view');
-  let currentView = $derived<ViewType>(
-  	validViews.includes($viewParam as ViewType) ? ($viewParam as ViewType) : 'list'
-  );
-  // Update URL: $viewParam = 'grid';
-  ```
+**Quick reference**:
+
+- **Forms**: Always wrap related inputs with `FormFieldset` for visual grouping
+- **Modals**: Use `Modal` component with `action` snippet for footer buttons
+- **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
+- **Icons**: Use FontAwesome Duotone (`fa-duotone fa-icon-name`)
+- **URL State**: Use `sveltekit-search-params` for URL-persisted state
+
+**Maintenance**: When creating new UI components, significantly modifying existing ones (props, usage patterns), or deprecating components, update CLAUDE-UI.md accordingly. Keep documentation in sync with the actual component implementations.
 
 ## Commit Conventions
 

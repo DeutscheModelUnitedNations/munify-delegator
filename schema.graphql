@@ -355,6 +355,8 @@ type Conference {
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
+  linkToServicesPage: String
+  linkToTeamWiki: String
   location: String
   longTitle: String
   mediaConsentContent: String
@@ -421,6 +423,8 @@ input ConferenceCreateInput {
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
+  linkToServicesPage: String
+  linkToTeamWiki: String
   location: String
   longTitle: String
   mediaConsentContent: String
@@ -476,6 +480,8 @@ input ConferenceOrderByWithRelationInput {
   language: SortOrder
   linkToPaperInbox: SortOrder
   linkToPreparationGuide: SortOrder
+  linkToServicesPage: SortOrder
+  linkToTeamWiki: SortOrder
   location: SortOrder
   longTitle: SortOrder
   mediaConsentContent: SortOrder
@@ -701,6 +707,8 @@ enum ConferenceScalarFieldEnum {
   language
   linkToPaperInbox
   linkToPreparationGuide
+  linkToServicesPage
+  linkToTeamWiki
   location
   longTitle
   mediaConsentContent
@@ -932,6 +940,8 @@ input ConferenceUpdateDataInput {
   language: String
   linkToPaperInbox: String
   linkToPreparationGuide: String
+  linkToServicesPage: String
+  linkToTeamWiki: String
   location: String
   longTitle: String
   mediaConsentBasePDF: File
@@ -980,6 +990,8 @@ input ConferenceUpdateInput {
   language: NullableStringFieldUpdateOperationsInput
   linkToPaperInbox: NullableStringFieldUpdateOperationsInput
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
+  linkToServicesPage: NullableStringFieldUpdateOperationsInput
+  linkToTeamWiki: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
@@ -1028,6 +1040,8 @@ input ConferenceUpdateManyMutationInput {
   language: NullableStringFieldUpdateOperationsInput
   linkToPaperInbox: NullableStringFieldUpdateOperationsInput
   linkToPreparationGuide: NullableStringFieldUpdateOperationsInput
+  linkToServicesPage: NullableStringFieldUpdateOperationsInput
+  linkToTeamWiki: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
@@ -1080,6 +1094,8 @@ input ConferenceWhereInput {
   language: StringNullableFilter
   linkToPaperInbox: StringNullableFilter
   linkToPreparationGuide: StringNullableFilter
+  linkToServicesPage: StringNullableFilter
+  linkToTeamWiki: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
@@ -1138,6 +1154,8 @@ input ConferenceWhereUniqueInput {
   language: StringNullableFilter
   linkToPaperInbox: StringNullableFilter
   linkToPreparationGuide: StringNullableFilter
+  linkToServicesPage: StringNullableFilter
+  linkToTeamWiki: StringNullableFilter
   location: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter

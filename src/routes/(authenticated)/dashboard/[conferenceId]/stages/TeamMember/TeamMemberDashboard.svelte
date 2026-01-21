@@ -5,19 +5,41 @@
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import type { TeamRole } from '@prisma/client';
+	import {
+		getTeamLinksForRole,
+		type TeamDashboardLinkContext
+	} from '$lib/config/teamDashboardLinks';
 
 	interface Props {
 		conferenceId: string;
 		conferenceTitle: string;
 		role: TeamRole;
+		linkToTeamWiki?: string | null;
+		linkToServicesPage?: string | null;
+		linkToPreparationGuide?: string | null;
+		docsUrl?: string | null;
 	}
 
-	let { conferenceId, conferenceTitle, role }: Props = $props();
+	let {
+		conferenceId,
+		conferenceTitle,
+		role,
+		linkToTeamWiki,
+		linkToServicesPage,
+		linkToPreparationGuide,
+		docsUrl
+	}: Props = $props();
 
-	let canAccessPaperHub = $derived(role === 'REVIEWER' || role === 'PROJECT_MANAGEMENT');
-	let canAccessAdministration = $derived(
-		role === 'PARTICIPANT_CARE' || role === 'PROJECT_MANAGEMENT'
-	);
+	let linkContext = $derived<TeamDashboardLinkContext>({
+		conferenceId,
+		role,
+		linkToTeamWiki,
+		linkToServicesPage,
+		linkToPreparationGuide,
+		docsUrl
+	});
+
+	let visibleLinks = $derived(getTeamLinksForRole(linkContext));
 </script>
 
 <DashboardSection
@@ -26,21 +48,14 @@
 	description={`${conferenceTitle} · ${translateTeamRole(role)}`}
 >
 	<DashboardLinksGrid>
-		{#if canAccessPaperHub}
+		{#each visibleLinks as link (link.id)}
 			<DashboardLinkCard
-				href="/dashboard/{conferenceId}/paperhub"
-				icon="files"
-				title={m.paperHub()}
-				description={m.reviewPapers()}
+				href={link.getHref(linkContext)}
+				icon={link.icon}
+				title={link.getTitle()}
+				description={link.getDescription()}
+				external={link.external}
 			/>
-		{/if}
-		{#if canAccessAdministration}
-			<DashboardLinkCard
-				href="/management/{conferenceId}"
-				icon="bars-progress"
-				title={m.administration()}
-				description={m.manageConference()}
-			/>
-		{/if}
+		{/each}
 	</DashboardLinksGrid>
 </DashboardSection>
