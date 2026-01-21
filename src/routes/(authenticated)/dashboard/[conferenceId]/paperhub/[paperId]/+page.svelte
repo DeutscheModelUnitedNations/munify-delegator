@@ -92,9 +92,21 @@
 	let resolutionValidationError = $state<string | null>(null);
 	let invalidRawContent = $state<unknown>(null);
 
-	// Reset and reinitialize when paper changes (handles client-side navigation)
+	// Watch route param directly - this is guaranteed to change on navigation
+	// The Houdini store chain may not trigger reactivity correctly in Svelte 5
 	$effect(() => {
-		if (paperData && paperData.id !== currentPaperId) {
+		const routePaperId = $page.params.paperId;
+		if (routePaperId && routePaperId !== currentPaperId) {
+			// Route changed - reset initialized to show loading state
+			// and wait for paperData to arrive
+			initialized = false;
+		}
+	});
+
+	// Initialize stores when paper data arrives
+	$effect(() => {
+		const routePaperId = $page.params.paperId;
+		if (paperData && paperData.id === routePaperId && routePaperId !== currentPaperId) {
 			// Reset validation error and raw content
 			resolutionValidationError = null;
 			invalidRawContent = null;
@@ -463,9 +475,9 @@
 	{/if}
 	{#if initialized}
 		<div class="w-full flex flex-col gap-4">
-			<!-- Paper Editor - key forces re-creation when editable changes -->
+			<!-- Paper Editor - key forces re-creation when paper or editable changes -->
 			<div bind:this={paperEditorContainer}>
-				{#key editorEditable}
+				{#key `${paperData.id}-${editorEditable}`}
 					{#if paperData.type === 'WORKING_PAPER' && resolutionValidationError}
 						<!-- Invalid format error for working papers -->
 						<div class="alert alert-error flex-col items-start gap-3">
