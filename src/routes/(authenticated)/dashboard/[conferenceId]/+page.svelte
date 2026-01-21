@@ -14,6 +14,7 @@
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
+	import { configPublic } from '$config/public';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -169,6 +170,10 @@
 				conferenceId={conference!.id}
 				conferenceTitle={conference!.title}
 				role={teamMember.role}
+				linkToTeamWiki={conference?.linkToTeamWiki}
+				linkToServicesPage={conference?.linkToServicesPage}
+				linkToPreparationGuide={conference?.linkToPreparationGuide}
+				docsUrl={configPublic.PUBLIC_DOCS_URL}
 			/>
 		{:else}
 			<NoConferenceIndicator />

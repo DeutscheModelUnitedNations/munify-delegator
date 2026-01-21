@@ -43,6 +43,8 @@ model Conference {
   /// When true, dashboard announcement shows full content; when false, truncated with expand button
   showInfoExpanded                       Boolean         @default(false)
   linkToPreparationGuide                 String?
+  linkToTeamWiki                         String?
+  linkToServicesPage                     String?
   linkToPaperInbox                       String?
   isOpenPaperSubmission                  Boolean         @default(false)
   state                                  ConferenceState @default(PRE)

@@ -15,6 +15,8 @@ import {
 	ConferenceLanguageFieldObject,
 	ConferenceLinkToPaperInboxFieldObject,
 	ConferenceLinkToPreparationGuideFieldObject,
+	ConferenceLinkToTeamWikiFieldObject,
+	ConferenceLinkToServicesPageFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
 	ConferenceMediaConsentContentFieldObject,
@@ -55,6 +57,8 @@ builder.prismaObject('Conference', {
 		info: t.field(ConferenceInfoFieldObject),
 		showInfoExpanded: t.field(ConferenceShowInfoExpandedFieldObject),
 		linkToPreparationGuide: t.field(ConferenceLinkToPreparationGuideFieldObject),
+		linkToTeamWiki: t.field(ConferenceLinkToTeamWikiFieldObject),
+		linkToServicesPage: t.field(ConferenceLinkToServicesPageFieldObject),
 		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
 		isOpenPaperSubmission: t.field(ConferenceIsOpenPaperSubmissionFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
@@ -454,6 +458,12 @@ builder.mutationFields((t) => {
 								required: false
 							}),
 							linkToPreparationGuide: t.string({
+								required: false
+							}),
+							linkToTeamWiki: t.string({
+								required: false
+							}),
+							linkToServicesPage: t.string({
 								required: false
 							}),
 							linkToPaperInbox: t.string({
