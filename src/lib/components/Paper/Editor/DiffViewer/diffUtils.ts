@@ -1,7 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type { DiffResult, DiffSegment } from './types';
-import type { Resolution, SubClause, ClauseBlock } from '$lib/schemata/resolution';
-import { getSubClauseLabel, migrateResolution } from '$lib/schemata/resolution';
+import type { Resolution, SubClause, ClauseBlock } from '$lib/components/Paper/Editor/Resolution';
+import { getSubClauseLabel, migrateResolution } from '$lib/components/Paper/Editor/Resolution';
 
 /**
  * Extract plain text from a TipTap JSON node recursively

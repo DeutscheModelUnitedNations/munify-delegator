@@ -1,6 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
-	import { validateResolution, type ResolutionHeaderData } from '$lib/schemata/resolution';
+	import {
+		validateResolution,
+		type ResolutionHeaderData
+	} from '$lib/components/Paper/Editor/Resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
 	import {
 		editorContentStore,

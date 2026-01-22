@@ -1,6 +1,6 @@
 import { addToPanel } from 'svelte-inspect-value';
 import { writable } from 'svelte/store';
-import type { Resolution } from '$lib/schemata/resolution';
+import type { Resolution } from '$lib/components/Paper/Editor/Resolution';
 
 // TipTap content for Position Papers and Introduction Papers
 export const editorContentStore = writable<any>();
