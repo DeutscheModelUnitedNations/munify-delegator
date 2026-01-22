@@ -4,6 +4,7 @@
 	import { getCommonExtensions } from './settings/common.svelte';
 	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
 	import Placeholder from '@tiptap/extension-placeholder';
+	import { UndoRedo } from '@tiptap/extensions';
 	import Menu from './Menu';
 	import { m } from '$lib/paraglide/messages';
 
@@ -20,6 +21,7 @@
 			OrderedList,
 			BulletList,
 			ListItem,
+			UndoRedo,
 			Placeholder.configure({
 				placeholder: m.editorPlaceholder(),
 				showOnlyCurrent: true
