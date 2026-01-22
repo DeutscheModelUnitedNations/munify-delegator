@@ -63,13 +63,13 @@ export function getResolutionLabels(): ResolutionEditorLabels {
 		phraseCopied: m.phraseCopied(),
 		copyFailed: m.copyFailed(),
 
-		// Import - Note: {count} interpolation is handled by the library
+		// Import - {count} interpolation is handled by the library
 		resolutionImport: m.resolutionImport(),
 		resolutionImportPreamble: m.resolutionImportPreamble(),
 		resolutionImportOperative: m.resolutionImportOperative(),
-		// For interpolated messages, we pass a template that the library will process
-		resolutionImportButton: '{count} Clauses', // Default, overridden per-language
-		resolutionImportPreview: '{count} clauses detected', // Default
+		// Pass localized templates with {count} as literal placeholder for library interpolation
+		resolutionImportButton: m.resolutionImportButton({ count: '{count}' }),
+		resolutionImportPreview: m.resolutionImportPreview({ count: '{count}' }),
 		resolutionImportHintPreamble: m.resolutionImportHintPreamble(),
 		resolutionImportHintOperative: m.resolutionImportHintOperative(),
 		resolutionImportTipsTitle: m.resolutionImportTipsTitle(),
