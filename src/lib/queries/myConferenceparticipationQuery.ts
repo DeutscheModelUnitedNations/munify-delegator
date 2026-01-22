@@ -39,6 +39,7 @@ export const myConferenceparticipationQuery = graphql(`
 			postalCity
 			postalCountry
 			emblemDataURL
+			logoDataURL
 			committees {
 				id
 				abbreviation
