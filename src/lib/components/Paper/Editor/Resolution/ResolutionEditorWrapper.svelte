@@ -47,7 +47,9 @@
 	}: Props = $props();
 
 	// Get current resolution from store, or create empty one
-	let resolution = $derived($resolutionContentStore ?? { committeeName, preamble: [], operative: [] });
+	let resolution = $derived(
+		$resolutionContentStore ?? { committeeName, preamble: [], operative: [] }
+	);
 
 	// Get i18n labels
 	const labels = getResolutionLabels();
