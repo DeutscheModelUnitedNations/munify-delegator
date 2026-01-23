@@ -16,7 +16,7 @@
 		type ResolutionHeaderData,
 		type Resolution,
 		isClauseEmpty
-	} from '$lib/schemata/resolution';
+	} from '$lib/components/Paper/Editor/Resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { browser } from '$app/environment';

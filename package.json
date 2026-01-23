@@ -10,6 +10,7 @@
 		"@casl/ability": "^6.7.3",
 		"@casl/prisma": "^1.5.2",
 		"@deutschemodelunitednations/corporate-identity": "^1.1.10",
+		"@deutschemodelunitednations/munify-resolution-editor": "^0.1.1",
 		"@dipser/epc-qr-code.js": "^1.0.3",
 		"@eslint/compat": "^1.4.1",
 		"@faker-js/faker": "^9.9.0",
