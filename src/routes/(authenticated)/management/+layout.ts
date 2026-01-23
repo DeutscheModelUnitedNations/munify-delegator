@@ -14,7 +14,7 @@ const conferencesWhereImMoreThanMember = graphql(`
 			where: {
 				teamMembers: {
 					some: {
-						role: { in: [PROJECT_MANAGEMENT, PARTICIPANT_CARE, TEAM_COORDINATOR] }
+						role: { in: [PROJECT_MANAGEMENT, PARTICIPANT_CARE] }
 						userId: { equals: $myUserId }
 					}
 				}

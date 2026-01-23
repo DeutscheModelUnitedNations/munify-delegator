@@ -25,7 +25,7 @@
 	let { invitations }: Props = $props();
 
 	const revokeInvitationMutation = graphql(`
-		mutation RevokeTeamMemberInvitation($invitationId: String!) {
+		mutation RevokeTeamMemberInvitationShared($invitationId: String!) {
 			revokeTeamMemberInvitation(invitationId: $invitationId) {
 				success
 				message
@@ -34,7 +34,7 @@
 	`);
 
 	const regenerateInvitationMutation = graphql(`
-		mutation RegenerateTeamMemberInvitation($invitationId: String!, $sendEmail: Boolean!) {
+		mutation RegenerateTeamMemberInvitationShared($invitationId: String!, $sendEmail: Boolean!) {
 			regenerateTeamMemberInvitation(invitationId: $invitationId, sendEmail: $sendEmail) {
 				success
 				newToken

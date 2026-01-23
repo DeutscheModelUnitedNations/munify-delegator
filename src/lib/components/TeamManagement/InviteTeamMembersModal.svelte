@@ -37,7 +37,7 @@
 	const organizationDomain = configPublic.PUBLIC_TEAM_ORGANIZATION_DOMAIN;
 
 	const checkEmailsQuery = graphql(`
-		query CheckTeamInvitationEmails($conferenceId: String!, $emails: [CheckEmailInput!]!) {
+		query CheckTeamInvitationEmailsShared($conferenceId: String!, $emails: [CheckEmailInput!]!) {
 			checkTeamInvitationEmails(conferenceId: $conferenceId, emails: $emails) {
 				email
 				status
@@ -48,7 +48,7 @@
 	`);
 
 	const createInvitationsMutation = graphql(`
-		mutation CreateTeamMemberInvitations(
+		mutation CreateTeamMemberInvitationsShared(
 			$conferenceId: String!
 			$invitations: [CreateInvitationInput!]!
 		) {

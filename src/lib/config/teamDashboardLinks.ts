@@ -30,7 +30,17 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		getHref: (ctx) => `/management/${ctx.conferenceId}`,
 		external: false,
 		isVisible: () => true,
-		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT', 'TEAM_COORDINATOR']
+		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+	},
+	{
+		id: 'teamCoordination',
+		icon: 'user-group',
+		getTitle: () => m.teamCoordination(),
+		getDescription: () => m.teamCoordinationDescription(),
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/team-management`,
+		external: false,
+		isVisible: () => true,
+		allowedRoles: ['PROJECT_MANAGEMENT', 'TEAM_COORDINATOR']
 	},
 	{
 		id: 'paperHub',
