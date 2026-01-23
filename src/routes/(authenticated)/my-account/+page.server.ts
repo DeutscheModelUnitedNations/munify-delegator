@@ -24,6 +24,7 @@ const userQuery = graphql(`
 			emergencyContacts
 			wantsToReceiveGeneralInformation
 			wantsJoinTeamInformation
+			canReceiveDelegationMail
 		}
 	}
 `);

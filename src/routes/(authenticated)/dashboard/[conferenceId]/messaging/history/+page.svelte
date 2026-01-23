@@ -1,24 +1,27 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	let messages: Array<any> = [];
-	let loading = true;
+	import type { PageData } from './$types';
+
+	type HistoryItem = {
+		recipientLabel: string;
+		subject: string;
+		sentAt: string;
+		status: string;
+	};
+	type HistoryPageData = PageData & {
+		items?: HistoryItem[];
+		historyLoadError?: string;
+	};
+
+	export let data: HistoryPageData;
+
+	let messages: HistoryItem[] = [];
 	let loadError = '';
+
 	$: conferenceId = $page.params.conferenceId;
 	$: basePath = `/dashboard/${conferenceId}/messaging`;
-
-	async function load() {
-		loadError = '';
-		loading = true;
-		const res = await fetch('./list');
-		if (res.ok) {
-			messages = await res.json();
-		} else {
-			loadError = 'Unable to load history';
-		}
-		loading = false;
-	}
-	onMount(load);
+	$: messages = data.items ?? [];
+	$: loadError = data.historyLoadError ?? '';
 </script>
 
 <section class="mb-6 rounded-box bg-base-200/70 p-5 sm:p-6">
@@ -66,16 +69,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#if loading}
-						<tr>
-							<td colspan="4">
-								<div class="flex items-center gap-3">
-									<span class="loading loading-spinner loading-sm"></span>
-									<span class="text-sm text-base-content/60">Loading sent messages...</span>
-								</div>
-							</td>
-						</tr>
-					{:else if messages.length === 0}
+					{#if messages.length === 0}
 						<tr>
 							<td colspan="4">
 								<div class="text-sm text-base-content/60">
