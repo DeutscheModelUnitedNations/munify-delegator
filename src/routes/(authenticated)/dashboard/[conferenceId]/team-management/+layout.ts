@@ -18,10 +18,13 @@ export const load: LayoutLoad = async (event) => {
 	const { user } = await event.parent();
 	const conferenceId = event.params.conferenceId;
 
+	const isAdmin = user.myOIDCRoles.includes('admin');
+
 	// System admins can access
-	if (user.myOIDCRoles.includes('admin')) {
+	if (isAdmin) {
 		return {
-			conferenceId
+			conferenceId,
+			isAdmin
 		};
 	}
 
@@ -40,6 +43,7 @@ export const load: LayoutLoad = async (event) => {
 	}
 
 	return {
-		conferenceId
+		conferenceId,
+		isAdmin
 	};
 };

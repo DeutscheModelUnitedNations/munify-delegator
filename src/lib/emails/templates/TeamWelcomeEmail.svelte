@@ -40,13 +40,13 @@
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					{inviterName} hat dich zum Organisationsteam der Konferenz
+					{inviterName} hat dich zum Team der Konferenz
 					<strong>{conferenceTitle}</strong>
 					hinzugefügt. Du hast die Rolle <strong>{roleName}</strong> erhalten.
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					Du kannst jetzt auf das Konferenz-Dashboard zugreifen und mit der Organisation beginnen.
+					Du kannst jetzt auf das Konferenz-Dashboard zugreifen.
 				</Text>
 
 				<Section style="text-align: center; margin: 32px 0;">

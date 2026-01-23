@@ -32,9 +32,9 @@
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">Hallo,</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">
-					{inviterName} hat dich eingeladen, dem Organisationsteam der Konferenz
+					{inviterName} hat dich eingeladen, dich als Teammitglied der Konferenz
 					<strong>{conferenceTitle}</strong>
-					als <strong>{roleName}</strong> beizutreten.
+					als <strong>{roleName}</strong> zu akreditieren.
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">

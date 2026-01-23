@@ -4,16 +4,18 @@
 	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { cache, graphql } from '$houdini';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$houdini';
 	import { userFormSchema } from '../../../../my-account/form-schema';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	let { data }: { data: PageData } = $props();
 
 	const teamQuery = data.TeamManagementMembersQuery;
 	let teamMembers = $derived($teamQuery.data?.findManyTeamMembers ?? []);
+	let isAdmin = data.isAdmin;
 
 	let inviteMembersModalOpen = $state(false);
 
@@ -38,6 +40,12 @@
 		}
 	`);
 
+	const startImpersonationMutation = graphql(`
+		mutation StartImpersonationFromTeamManagement($targetUserId: String!) {
+			startImpersonation(targetUserId: $targetUserId)
+		}
+	`);
+
 	const handleDelete = async (id: string) => {
 		if (!confirm(m.confirmDeleteTeamMember())) return;
 
@@ -53,11 +61,26 @@
 		await invalidateAll();
 	};
 
-	// Expose function globally for onclick handlers in rendered HTML
+	const handleImpersonate = async (userId: string) => {
+		try {
+			const promise = startImpersonationMutation.mutate({ targetUserId: userId });
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
+			await goto('/dashboard');
+			window.location.reload();
+		} catch (error) {
+			console.error('Failed to start impersonation:', error);
+			toast.error(m.impersonationFailed());
+		}
+	};
+
+	// Expose functions globally for onclick handlers in rendered HTML
 	onMount(() => {
 		(window as any).handleTeamMemberDelete = handleDelete;
+		(window as any).handleTeamMemberImpersonate = handleImpersonate;
 		return () => {
 			delete (window as any).handleTeamMemberDelete;
+			delete (window as any).handleTeamMemberImpersonate;
 		};
 	});
 
@@ -118,7 +141,14 @@
 			parseHTML: true,
 			renderValue: (row: (typeof teamMembers)[number]) => `
 				<div class="flex gap-2 justify-end">
-					<button class="btn btn-sm btn-error" onclick="window.handleTeamMemberDelete('${row.id}')" tooltip data-tip="${m.delete()}" title="${m.delete()}">
+					${
+						isAdmin
+							? `<button class="btn btn-sm" onclick="window.handleTeamMemberImpersonate('${row.user.id}')" title="${m.impersonation()}">
+							<i class="fa-duotone fa-user-secret"></i>
+						</button>`
+							: ''
+					}
+					<button class="btn btn-sm btn-error" onclick="window.handleTeamMemberDelete('${row.id}')" title="${m.delete()}">
 						<i class="fa-solid fa-trash"></i>
 					</button>
 				</div>
