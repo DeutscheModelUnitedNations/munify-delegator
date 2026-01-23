@@ -2,6 +2,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import AddTeamMemberModal from './AddTeamMemberModal.svelte';
+	import InviteTeamMembersModal from './InviteTeamMembersModal.svelte';
+	import PendingInvitationsTable from './PendingInvitationsTable.svelte';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { cache, graphql } from '$houdini';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -9,13 +11,29 @@
 	import { onMount } from 'svelte';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import type { PageData } from './$houdini';
+	import { userFormSchema } from '../../../my-account/form-schema';
 
 	let { data }: { data: PageData } = $props();
 
 	const teamQuery = data.TeamMembersQuery;
 	let teamMembers = $derived($teamQuery.data?.findManyTeamMembers ?? []);
+	let pendingInvitations = $derived($teamQuery.data?.findManyTeamMemberInvitations ?? []);
 
 	let addMemberModalOpen = $state(false);
+	let inviteMembersModalOpen = $state(false);
+
+	function isProfileComplete(user: {
+		birthday: string | null;
+		phone: string | null;
+		street: string | null;
+		zip: string | null;
+		city: string | null;
+		country: string | null;
+		gender: string | null;
+		foodPreference: string | null;
+	}): boolean {
+		return userFormSchema.safeParse(user).success;
+	}
 
 	const deleteTeamMemberMutation = graphql(`
 		mutation DeleteTeamMember($id: String!) {
@@ -73,7 +91,8 @@
 		PROJECT_MANAGEMENT: 'badge-primary',
 		PARTICIPANT_CARE: 'badge-secondary',
 		REVIEWER: 'badge-accent',
-		MEMBER: 'badge-ghost'
+		MEMBER: 'badge-ghost',
+		TEAM_COORDINATOR: 'badge-info'
 	};
 
 	const columns = [
@@ -105,6 +124,19 @@
 				`<span class="badge ${roleColors[row.role] ?? 'badge-ghost'}">${translateTeamRole(row.role)}</span>`
 		},
 		{
+			key: 'profileStatus',
+			title: m.profileStatus(),
+			value: (row) => (isProfileComplete(row.user) ? m.complete() : m.incomplete()),
+			sortable: true,
+			parseHTML: true,
+			renderValue: (row) => {
+				const complete = isProfileComplete(row.user);
+				return complete
+					? `<span class="badge badge-success">${m.complete()}</span>`
+					: `<span class="badge badge-warning" title="${m.profileIncompleteHint()}">${m.incomplete()}</span>`;
+			}
+		},
+		{
 			key: 'actions',
 			title: '',
 			value: () => '',
@@ -126,15 +158,27 @@
 <div class="flex flex-col gap-4 p-6">
 	<div class="flex justify-between items-center">
 		<h1 class="text-3xl font-bold">{m.teamManagement()}</h1>
-		<button class="btn btn-primary" onclick={() => (addMemberModalOpen = true)}>
-			<i class="fa-solid fa-plus"></i>
-			{m.addTeamMember()}
-		</button>
+		<div class="flex gap-2">
+			<button class="btn btn-secondary" onclick={() => (inviteMembersModalOpen = true)}>
+				<i class="fa-duotone fa-envelope"></i>
+				{m.inviteTeamMembers()}
+			</button>
+			<button class="btn btn-primary" onclick={() => (addMemberModalOpen = true)}>
+				<i class="fa-solid fa-plus"></i>
+				{m.addTeamMember()}
+			</button>
+		</div>
 	</div>
 
 	<DataTable {columns} rows={teamMembers} />
+
+	<PendingInvitationsTable invitations={pendingInvitations} />
 </div>
 
 {#if addMemberModalOpen}
 	<AddTeamMemberModal bind:open={addMemberModalOpen} conferenceId={data.conferenceId} />
+{/if}
+
+{#if inviteMembersModalOpen}
+	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={data.conferenceId} />
 {/if}

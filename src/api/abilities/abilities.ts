@@ -13,6 +13,7 @@ import { defineAbilitiesForNonStateActor } from './entities/nonStateActor';
 import { defineAbilitiesForRoleApplication } from './entities/roleApplication';
 import { defineAbilitiesForSingleParticipant } from './entities/singleParticipant';
 import { defineAbilitiesForTeamMember } from './entities/teamMember';
+import { defineAbilitiesForTeamMemberInvitation } from './entities/teamMemberInvitation';
 import { defineAbilitiesForUserEntity } from './entities/user';
 import type { OIDC } from '$api/context/oidc';
 import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransaction';
@@ -151,6 +152,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForRoleApplication(oidc, builder);
 	defineAbilitiesForSingleParticipant(oidc, builder);
 	defineAbilitiesForTeamMember(oidc, builder);
+	defineAbilitiesForTeamMemberInvitation(oidc, builder);
 	defineAbilitiesForUserEntity(oidc, builder);
 	defineAbilitiesForSurveyQuestion(oidc, builder);
 	defineAbilitiesForSurveyOption(oidc, builder);

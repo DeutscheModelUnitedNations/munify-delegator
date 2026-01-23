@@ -10,6 +10,31 @@ export const _houdini_load = graphql(`
 				given_name
 				family_name
 				email
+				birthday
+				phone
+				street
+				zip
+				city
+				country
+				gender
+				foodPreference
+			}
+		}
+		findManyTeamMemberInvitations(
+			where: {
+				conferenceId: { equals: $conferenceId }
+				usedAt: { equals: null }
+				revokedAt: { equals: null }
+			}
+		) {
+			id
+			email
+			role
+			expiresAt
+			userExists
+			invitedBy {
+				given_name
+				family_name
 			}
 		}
 	}

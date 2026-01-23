@@ -11,8 +11,13 @@ export const defineAbilitiesForTeamMember = (oidc: OIDC, { can }: AbilityBuilder
 			conference: { teamMembers: { some: { user: { id: user.sub } } } }
 		});
 
+		// PROJECT_MANAGEMENT and TEAM_COORDINATOR can manage team members
 		can(['update', 'delete'], 'TeamMember', {
-			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
+			conference: {
+				teamMembers: {
+					some: { user: { id: user.sub }, role: { in: ['PROJECT_MANAGEMENT', 'TEAM_COORDINATOR'] } }
+				}
+			}
 		});
 	}
 };
