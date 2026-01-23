@@ -148,13 +148,14 @@
 			<div class="space-y-6 p-6 sm:p-8">
 				<!-- Recipient -->
 				<div class="form-control">
-					<label class="label">
+					<label class="label" for="recipient-select">
 						<span class="label-text font-semibold">
 							<i class="fa-solid fa-user mr-2 text-primary"></i>
 							{m.messageRecipient()}
 						</span>
 					</label>
 					<select
+						id="recipient-select"
 						class="select select-bordered select-lg w-full"
 						bind:value={selectedRecipient}
 						name="recipientId"
@@ -171,19 +172,19 @@
 							{/each}
 						{/if}
 					</select>
-					<label class="label">
+					<div class="label">
 						<span class="label-text-alt text-base-content/60">
 							<i class="fa-solid fa-info-circle mr-1"></i>
 							{m.messagingOnlyEnabledUsers()}
 						</span>
-					</label>
+					</div>
 				</div>
 
 				<div class="divider"></div>
 
 				<!-- Subject -->
 				<div class="form-control">
-					<label class="label">
+					<label class="label" for="subject-input">
 						<span class="label-text font-semibold">
 							<i class="fa-solid fa-heading mr-2 text-primary"></i>
 							{m.messageSubject()}
@@ -197,6 +198,7 @@
 						</span>
 					</label>
 					<input
+						id="subject-input"
 						class="input input-bordered input-lg w-full"
 						type="text"
 						bind:value={subject}
@@ -211,7 +213,7 @@
 
 				<!-- Message Body -->
 				<div class="form-control">
-					<label class="label">
+					<label class="label" for="message-body">
 						<span class="label-text font-semibold">
 							<i class="fa-solid fa-message mr-2 text-primary"></i>
 							{m.messageMessageBody()}
@@ -225,6 +227,7 @@
 						</span>
 					</label>
 					<textarea
+						id="message-body"
 						class="textarea textarea-bordered h-80 w-full resize-y text-base leading-relaxed"
 						bind:value={body}
 						name="body"
@@ -232,12 +235,12 @@
 						placeholder={m.messageMessagePlaceholder()}
 						required
 					></textarea>
-					<label class="label">
+					<div class="label">
 						<span class="label-text-alt text-base-content/60">
 							<i class="fa-solid fa-lightbulb mr-1"></i>
 							{m.messagingTipSubjectLine()}
 						</span>
-					</label>
+					</div>
 				</div>
 			</div>
 
