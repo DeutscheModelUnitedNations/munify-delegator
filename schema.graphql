@@ -5089,11 +5089,6 @@ type TeamMemberInvitation {
   userExists: Boolean!
 }
 
-input TeamMemberInvitationConferenceIdEmailCompoundUniqueInput {
-  conferenceId: String!
-  email: String!
-}
-
 input TeamMemberInvitationCreateInput {
   acceptedById: String
   conferenceId: String!
@@ -5238,7 +5233,6 @@ input TeamMemberInvitationWhereUniqueInput {
   acceptedById: StringNullableFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
-  conferenceId_email: TeamMemberInvitationConferenceIdEmailCompoundUniqueInput
   createdAt: DateTimeFilter
   email: StringFilter
   expiresAt: DateTimeFilter

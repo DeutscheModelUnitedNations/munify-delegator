@@ -661,7 +661,7 @@ model TeamMemberInvitation {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@unique([conferenceId, email])
   @@index([token])
   @@index([conferenceId])
+  @@index([conferenceId, email])
 }
