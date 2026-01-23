@@ -538,6 +538,18 @@
 					<FormFileInput {form} name="emblem" label={m.conferenceEmblem()} accept="image/svg+xml" />
 					<p class="text-xs opacity-50 mt-1">{m.conferenceEmblemHint()}</p>
 				</div>
+				<div class="mt-4">
+					<p class="text-sm opacity-70 mb-2">{m.conferenceLogo()}</p>
+					{#if $formData.logo || data.logoDataURL}
+						<img
+							src={$formData.logo ? URL.createObjectURL($formData.logo) : data.logoDataURL}
+							class="h-24 w-24 mb-2"
+							alt="Logo preview"
+						/>
+					{/if}
+					<FormFileInput {form} name="logo" label={m.conferenceLogo()} accept="image/*" />
+					<p class="text-xs opacity-50 mt-1">{m.conferenceLogoHint()}</p>
+				</div>
 				<FormDateTimeInput
 					{form}
 					name="startAssignment"

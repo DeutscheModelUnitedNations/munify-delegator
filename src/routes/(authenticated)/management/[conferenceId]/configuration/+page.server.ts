@@ -23,6 +23,7 @@ const conferenceQuery = graphql(`
 			endConference
 			imageDataURL
 			emblemDataURL
+			logoDataURL
 			language
 			linkToPreparationGuide
 			linkToTeamWiki
@@ -140,6 +141,7 @@ export const load: PageServerLoad = async (event) => {
 		committeesData: committeesResult.data?.findManyCommittees ?? [],
 		imageDataURL: conference.imageDataURL,
 		emblemDataURL: conference.emblemDataURL,
+		logoDataURL: conference.logoDataURL,
 		certificateContentSet: conference.certificateContentSet,
 		termsAndConditionsContentSet: conference.termsAndConditionsContentSet,
 		mediaConsentContentSet: conference.mediaConsentContentSet,
