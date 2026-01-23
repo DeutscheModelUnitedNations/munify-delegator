@@ -41,6 +41,7 @@
 				startDate={conference.startConference}
 				endDate={conference.endConference}
 				emblemDataURL={conference.emblemDataURL}
+				logoDataURL={conference.logoDataURL}
 			/>
 			{#if conference.info && !teamMember}
 				<DashboardSection

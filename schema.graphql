@@ -358,6 +358,9 @@ type Conference {
   linkToServicesPage: String
   linkToTeamWiki: String
   location: String
+
+  """Data URL for conference logo (displayed in dashboard header)"""
+  logoDataURL: String
   longTitle: String
   mediaConsentContent: String
   mediaConsentContentSet: Boolean!
@@ -426,6 +429,7 @@ input ConferenceCreateInput {
   linkToServicesPage: String
   linkToTeamWiki: String
   location: String
+  logoDataURL: String
   longTitle: String
   mediaConsentContent: String
   nonStateActors: NonStateActorCreateNestedManyWithoutConferenceInput
@@ -483,6 +487,7 @@ input ConferenceOrderByWithRelationInput {
   linkToServicesPage: SortOrder
   linkToTeamWiki: SortOrder
   location: SortOrder
+  logoDataURL: SortOrder
   longTitle: SortOrder
   mediaConsentContent: SortOrder
   nonStateActors: NonStateActorOrderByRelationAggregateInput
@@ -710,6 +715,7 @@ enum ConferenceScalarFieldEnum {
   linkToServicesPage
   linkToTeamWiki
   location
+  logoDataURL
   longTitle
   mediaConsentContent
   postalApartment
@@ -943,6 +949,7 @@ input ConferenceUpdateDataInput {
   linkToServicesPage: String
   linkToTeamWiki: String
   location: String
+  logo: File
   longTitle: String
   mediaConsentBasePDF: File
   postalApartment: String
@@ -993,6 +1000,7 @@ input ConferenceUpdateInput {
   linkToServicesPage: NullableStringFieldUpdateOperationsInput
   linkToTeamWiki: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
+  logoDataURL: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
   nonStateActors: NonStateActorUpdateManyWithoutConferenceNestedInput
@@ -1043,6 +1051,7 @@ input ConferenceUpdateManyMutationInput {
   linkToServicesPage: NullableStringFieldUpdateOperationsInput
   linkToTeamWiki: NullableStringFieldUpdateOperationsInput
   location: NullableStringFieldUpdateOperationsInput
+  logoDataURL: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
   postalApartment: NullableStringFieldUpdateOperationsInput
@@ -1097,6 +1106,7 @@ input ConferenceWhereInput {
   linkToServicesPage: StringNullableFilter
   linkToTeamWiki: StringNullableFilter
   location: StringNullableFilter
+  logoDataURL: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
   nonStateActors: NonStateActorListRelationFilter
@@ -1157,6 +1167,7 @@ input ConferenceWhereUniqueInput {
   linkToServicesPage: StringNullableFilter
   linkToTeamWiki: StringNullableFilter
   location: StringNullableFilter
+  logoDataURL: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
   nonStateActors: NonStateActorListRelationFilter

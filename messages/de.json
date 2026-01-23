@@ -276,6 +276,8 @@
 	"conferenceInfoDescription": "Bleib über alles konferenzrelevante auf dem Laufenden, indem du dir die aktuellen Konferenzinformationen durchliest und schaue immer mal wieder nach, ob neue Inhalte hinzugefügt wurden.",
 	"conferenceLanguage": "Konferenzsprache",
 	"conferenceLocation": "Ort",
+	"conferenceLogo": "Konferenz-Logo",
+	"conferenceLogoHint": "Bilddatei für das Logo im Dashboard-Header. Falls nicht gesetzt, wird das Emblem als Fallback verwendet.",
 	"conferenceLongTitle": "Voller Name",
 	"conferencePapers": "Konferenz-Papiere",
 	"conferenceSeats": "Plätze der Konferenz",
