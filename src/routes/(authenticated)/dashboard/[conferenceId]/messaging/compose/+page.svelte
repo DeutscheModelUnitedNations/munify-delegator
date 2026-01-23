@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
 	import toast from 'svelte-french-toast';
@@ -52,14 +53,14 @@
 	const enhanceForm: SubmitFunction = () => {
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
-				toast.success('Message sent.');
+				toast.success(m.messageSent());
 				selectedRecipient = '';
 				subject = '';
 				body = '';
 			} else if (result.type === 'failure') {
 				const errorMessage = getActionError(result.data);
 				if (errorMessage === 'Recipient has not enabled messaging.') {
-					toast.error('Recipient has not enabled messaging.');
+					toast.error(m.messageRecipientNotEnabled());
 				}
 			}
 			await update();
@@ -76,15 +77,17 @@
 					<i class="fa-solid fa-pen-to-square text-lg text-primary"></i>
 				</div>
 				<div>
-					<h1 class="text-2xl font-bold">Compose Message</h1>
-					<p class="text-sm text-base-content/60">Send a message to conference participants</p>
+					<h1 class="text-2xl font-bold">{m.messageComposeMessage()}</h1>
+					<p class="text-sm text-base-content/60">{m.messageSendToParticipants()}</p>
 				</div>
 			</div>
 		</div>
 		<nav class="tabs tabs-boxed bg-base-200">
-			<a class="tab" href={basePath}>Overview</a>
-			<a class="tab tab-active" href={`${basePath}/compose`} aria-current="page">Compose</a>
-			<a class="tab" href={`${basePath}/history`}>History</a>
+			<a class="tab" href={basePath}>{m.messagingOverview()}</a>
+			<a class="tab tab-active" href={`${basePath}/compose`} aria-current="page"
+				>{m.messageCompose()}</a
+			>
+			<a class="tab" href={`${basePath}/history`}>{m.messageHistory()}</a>
 		</nav>
 	</div>
 
@@ -100,11 +103,10 @@
 		<div class="alert alert-warning shadow-lg">
 			<i class="fa-solid fa-triangle-exclamation text-xl"></i>
 			<div>
-				<span class="font-medium">Messaging is disabled for your account.</span>
+				<span class="font-medium">{m.messagingDisabledForAccount()}</span>
 				<p class="text-sm opacity-80">
-					You cannot receive replies. <a href="/my-account" class="link font-semibold"
-						>Enable it in settings</a
-					>
+					{m.messagingNoReplyWarning()}
+					<a href="/my-account" class="link font-semibold">{m.messagingEnableInSettings()}</a>
 				</p>
 			</div>
 		</div>
@@ -115,15 +117,15 @@
 		<div class="flex flex-wrap items-start gap-6 text-sm">
 			<div class="flex items-center gap-2">
 				<i class="fa-solid fa-circle-check text-success"></i>
-				<span class="text-base-content/70">Verify recipient and conference</span>
+				<span class="text-base-content/70">{m.messagingVerifyRecipient()}</span>
 			</div>
 			<div class="flex items-center gap-2">
 				<i class="fa-solid fa-circle-check text-success"></i>
-				<span class="text-base-content/70">Include deadlines when applicable</span>
+				<span class="text-base-content/70">{m.messagingClearActionDeadlines()}</span>
 			</div>
 			<div class="flex items-center gap-2">
 				<i class="fa-solid fa-circle-check text-success"></i>
-				<span class="text-base-content/70">Keep it concise and actionable</span>
+				<span class="text-base-content/70">{m.messagingKeepConcise()}</span>
 			</div>
 		</div>
 	</div>
@@ -134,10 +136,10 @@
 			<!-- Form Header -->
 			<div class="border-b border-base-300 bg-base-200/50 px-6 py-4">
 				<div class="flex items-center justify-between">
-					<h2 class="text-lg font-semibold">Message Details</h2>
+					<h2 class="text-lg font-semibold">{m.messagingMessageDetails()}</h2>
 					<div class="badge badge-neutral gap-2">
 						<i class="fa-solid fa-circle-dot text-xs"></i>
-						Draft
+						{m.messageDraft()}
 					</div>
 				</div>
 			</div>
@@ -149,7 +151,7 @@
 					<label class="label">
 						<span class="label-text font-semibold">
 							<i class="fa-solid fa-user mr-2 text-primary"></i>
-							Recipient
+							{m.messageRecipient()}
 						</span>
 					</label>
 					<select
@@ -158,11 +160,11 @@
 						name="recipientId"
 						required
 					>
-						<option value="">Select a recipient...</option>
+						<option value="">{m.messagingSelectRecipient()}</option>
 						{#if loadError}
 							<option disabled value="">{loadError}</option>
 						{:else if recipients.length === 0}
-							<option disabled value="">No eligible recipients found</option>
+							<option disabled value="">{m.messagingNoEligibleRecipients()}</option>
 						{:else}
 							{#each recipients as r}
 								<option value={r.id}>{r.label}</option>
@@ -172,7 +174,7 @@
 					<label class="label">
 						<span class="label-text-alt text-base-content/60">
 							<i class="fa-solid fa-info-circle mr-1"></i>
-							Only users who have enabled messaging will appear in this list
+							{m.messagingOnlyEnabledUsers()}
 						</span>
 					</label>
 				</div>
@@ -184,7 +186,7 @@
 					<label class="label">
 						<span class="label-text font-semibold">
 							<i class="fa-solid fa-heading mr-2 text-primary"></i>
-							Subject
+							{m.messageSubject()}
 						</span>
 						<span class="label-text-alt">
 							<span
@@ -200,7 +202,7 @@
 						bind:value={subject}
 						name="subject"
 						maxlength="200"
-						placeholder="e.g., Committee agenda lock - 18:00 CET"
+						placeholder={m.messageSubjectPlaceholder()}
 						required
 					/>
 				</div>
@@ -212,7 +214,7 @@
 					<label class="label">
 						<span class="label-text font-semibold">
 							<i class="fa-solid fa-message mr-2 text-primary"></i>
-							Message
+							{m.messageMessageBody()}
 						</span>
 						<span class="label-text-alt">
 							<span
@@ -227,13 +229,13 @@
 						bind:value={body}
 						name="body"
 						maxlength="2000"
-						placeholder="Share key details, action items, and deadlines here...&#10;&#10;Keep it clear and concise. You can include links for additional information."
+						placeholder={m.messageMessagePlaceholder()}
 						required
 					></textarea>
 					<label class="label">
 						<span class="label-text-alt text-base-content/60">
 							<i class="fa-solid fa-lightbulb mr-1"></i>
-							Tip: Use clear subject lines like "Committee agenda lock - 18:00" to improve response rates
+							{m.messagingTipSubjectLine()}
 						</span>
 					</label>
 				</div>
@@ -244,16 +246,16 @@
 				<div class="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<p class="flex items-center gap-2 text-sm text-base-content/60">
 						<i class="fa-solid fa-clock-rotate-left"></i>
-						This message will be saved in delivery history
+						{m.messagingSavedInHistory()}
 					</p>
 					<div class="flex gap-3">
 						<a href={basePath} class="btn btn-ghost btn-lg gap-2">
 							<i class="fa-solid fa-xmark"></i>
-							Cancel
+							{m.messageCancelButton()}
 						</a>
 						<button type="submit" class="btn btn-primary btn-lg gap-2">
 							<i class="fa-solid fa-paper-plane"></i>
-							Send Message
+							{m.messageSendButton()}
 						</button>
 					</div>
 				</div>
