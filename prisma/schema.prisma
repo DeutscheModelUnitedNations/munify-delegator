@@ -39,6 +39,8 @@ model Conference {
   imageDataURL                           String?
   /// SVG data URL for conference emblem (falls back to UN emblem if null)
   emblemDataURL                          String?
+  /// Data URL for conference logo (displayed in dashboard header)
+  logoDataURL                            String?
   info                                   String?
   /// When true, dashboard announcement shows full content; when false, truncated with expand button
   showInfoExpanded                       Boolean         @default(false)

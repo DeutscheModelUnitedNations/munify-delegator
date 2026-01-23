@@ -9,6 +9,7 @@
 	import { FlagCollectionSection } from '$lib/components/FlagCollection';
 	import ReviewerLeaderboard from '$lib/components/PaperHub/ReviewerLeaderboard.svelte';
 	import { persisted } from 'svelte-persisted-store';
+	import DetailedPaperStats from '$lib/components/PaperHub/DetailedPaperStats.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -201,6 +202,37 @@
 		};
 	});
 
+	// All papers combined (for statistics)
+	let allPapers = $derived.by(() => {
+		const committeePapers =
+			$papersGroupedQuery.data?.findPapersGroupedByCommittee?.flatMap((c) =>
+				c.agendaItems.flatMap((ai) => ai.papers)
+			) ?? [];
+		const introPapers = $introductionPapersQuery.data?.findIntroductionPapers ?? [];
+		return [...committeePapers, ...introPapers];
+	});
+
+	// Committees with their papers (for detailed stats chart)
+	let committeesWithPapers = $derived.by(() => {
+		const grouped = $papersGroupedQuery.data?.findPapersGroupedByCommittee ?? [];
+		const committees = grouped.map((c) => ({
+			name: c.committee.name,
+			abbreviation: c.committee.abbreviation,
+			papers: c.agendaItems.flatMap((ai) => ai.papers)
+		}));
+
+		// Add introduction papers as a pseudo-committee (NSA)
+		if (introductionPapers.length > 0) {
+			committees.push({
+				name: m.paperTypeIntroductionPapers(),
+				abbreviation: m.nonStateActorAbbreviation(),
+				papers: introductionPapers
+			});
+		}
+
+		return committees;
+	});
+
 	// Helper to check if a paper has any reviews
 	const paperHasReviews = (paper: any): boolean => {
 		return paper.versions?.some((v: any) => v.reviews?.length > 0) ?? false;
@@ -212,7 +244,7 @@
 	const getSortedPapers = (agendaItemId: string, papers: any[]) => {
 		let result = [...papers];
 
-		// Apply user's sort config if set
+		// Apply user's sort config if set, otherwise default to updatedAt ascending (oldest first)
 		const config = sortConfig.get(agendaItemId);
 		if (config) {
 			result.sort((a, b) => {
@@ -251,6 +283,13 @@
 				if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
 				return 0;
 			});
+		} else {
+			// Default sort: updatedAt ascending (oldest paper on top)
+			result.sort((a, b) => {
+				const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+				const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+				return aTime - bTime;
+			});
 		}
 
 		// Apply focus mode: prioritize papers without reviews, then oldest first, limit to 5
@@ -275,6 +314,18 @@
 
 	// Get total papers count for an agenda item (used to show "X of Y" in focus mode)
 	const getTotalPapersCount = (papers: any[]) => papers.length;
+
+	// Calculate review progress percentage (papers that have received at least one review)
+	const getReviewProgress = (
+		papers: Array<{
+			status: PaperStatus$options;
+			versions?: Array<{ reviews?: Array<{ id: string }> }>;
+		}>
+	) => {
+		if (papers.length === 0) return 0;
+		const reviewed = papers.filter((p) => paperHasReviews(p)).length;
+		return Math.round((reviewed / papers.length) * 100);
+	};
 
 	const toggleSort = (agendaItemId: string, key: string) => {
 		const current = sortConfig.get(agendaItemId);
@@ -461,6 +512,8 @@
 			{@const helpNeededCount = committeeGroup.agendaItems.filter(
 				(ai) => ai.agendaItem.reviewHelpStatus === 'HELP_NEEDED'
 			).length}
+			{@const committeePapers = committeeGroup.agendaItems.flatMap((ai) => ai.papers)}
+			{@const committeeReviewProgress = getReviewProgress(committeePapers)}
 			<div class="border border-base-300 rounded-lg bg-base-100">
 				<!-- Committee Header -->
 				<div
@@ -498,6 +551,11 @@
 								</div>
 							{/if}
 							<PaperStatusBadges counts={committeeCounts} blur={$focusMode} />
+							<div class="tooltip tooltip-left" data-tip={m.reviewProgressTooltip()}>
+								<span class="text-sm text-base-content/60 ml-2" class:blur-sm={$focusMode}>
+									{committeeReviewProgress}%
+								</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -507,6 +565,7 @@
 					<div class="p-4 pt-2">
 						{#each committeeGroup.agendaItems as agendaItemGroup, index}
 							{@const agendaCounts = countByStatus(agendaItemGroup.papers)}
+							{@const agendaReviewProgress = getReviewProgress(agendaItemGroup.papers)}
 							<div
 								class="border border-base-200 rounded-md mb-2 last:mb-0"
 								class:bg-base-50={index % 2 === 0}
@@ -565,7 +624,14 @@
 											</div>
 											<h4 class="font-medium text-sm">{agendaItemGroup.agendaItem.title}</h4>
 										</div>
-										<PaperStatusBadges counts={agendaCounts} size="small" blur={$focusMode} />
+										<div class="flex items-center gap-2">
+											<PaperStatusBadges counts={agendaCounts} size="small" blur={$focusMode} />
+											<div class="tooltip tooltip-left" data-tip={m.reviewProgressTooltip()}>
+												<span class="text-xs text-base-content/60 ml-2" class:blur-sm={$focusMode}>
+													{agendaReviewProgress}%
+												</span>
+											</div>
+										</div>
 									</div>
 								</div>
 
@@ -593,6 +659,7 @@
 		<!-- Introduction Papers Section (NSA papers without agenda items) -->
 		{#if showIntroductionPapers}
 			{@const introCounts = countByStatus(introductionPapers)}
+			{@const introReviewProgress = getReviewProgress(introductionPapers)}
 			<div class="border border-base-300 rounded-lg bg-base-100">
 				<div
 					class="p-4 cursor-pointer rounded-t-lg transition-colors hover:bg-secondary/5"
@@ -632,7 +699,14 @@
 								<h3 class="text-lg font-semibold">{m.paperTypeIntroductionPapers()}</h3>
 							</div>
 						</div>
-						<PaperStatusBadges counts={introCounts} blur={$focusMode} />
+						<div class="flex items-center gap-2">
+							<PaperStatusBadges counts={introCounts} blur={$focusMode} />
+							<div class="tooltip tooltip-left" data-tip={m.reviewProgressTooltip()}>
+								<span class="text-sm text-base-content/60 ml-2" class:blur-sm={$focusMode}>
+									{introReviewProgress}%
+								</span>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -664,4 +738,11 @@
 	<div class="mt-3">
 		<ReviewerLeaderboard {conferenceId} />
 	</div>
+
+	<!-- Detailed Paper Statistics Section -->
+	{#if !$papersGroupedQuery.fetching && allPapers.length > 0}
+		<div class="mt-6">
+			<DetailedPaperStats {allPapers} {committeesWithPapers} />
+		</div>
+	{/if}
 </div>
