@@ -11,6 +11,7 @@
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import { onMount } from 'svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -28,6 +29,28 @@
 	let isDelegatee = $derived(
 		!!delegationMember?.id && !singleParticipant?.id && !supervisor?.id && !teamMember?.id
 	);
+	let showNewBadge = $state(false);
+
+	const getContentSignature = () =>
+		JSON.stringify({
+			conference,
+			delegationMember,
+			singleParticipant,
+			supervisor,
+			teamMember,
+			status,
+			surveyQuestions,
+			surveyAnswers
+		});
+
+	onMount(() => {
+		if (!conference?.id || !data.user?.sub) return;
+		const storageKey = `dashboard-content:${conference.id}:${data.user.sub}`;
+		const signature = getContentSignature();
+		const previousSignature = localStorage.getItem(storageKey);
+		showNewBadge = !!previousSignature && previousSignature !== signature;
+		localStorage.setItem(storageKey, signature);
+	});
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -40,7 +63,11 @@
 				</a>
 			</div>
 		{/if}
-		<!-- TODO add "new" badge if content of this changes -->
+		{#if showNewBadge}
+			<div class="flex justify-end">
+				<span class="badge badge-primary badge-outline uppercase">new</span>
+			</div>
+		{/if}
 		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 				<SingleParticipantRegistrationStage
