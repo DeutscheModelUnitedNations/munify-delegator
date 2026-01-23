@@ -23,6 +23,72 @@ Components are located in `src/lib/components/`. Key directories:
 - `DelegationStats/` - Statistics display widgets
 - `InfoGrid/` - Key-value pair display grids
 - `Charts/` - ECharts-based visualizations
+- `PaperHub/` - Paper management components including statistics
+
+---
+
+## DetailedPaperStats Component
+
+`src/lib/components/PaperHub/DetailedPaperStats.svelte`
+
+Displays comprehensive paper statistics with multiple charts and gauges for the Paper Hub dashboard.
+
+### Props Interface
+
+```typescript
+interface Paper {
+	type: PaperType$options; // 'POSITION_PAPER' | 'WORKING_PAPER' | 'INTRODUCTION_PAPER'
+	status: PaperStatus$options; // 'DRAFT' | 'SUBMITTED' | 'REVISED' | 'CHANGES_REQUESTED' | 'ACCEPTED'
+	versions: Array<{ reviews: Array<{ id: string }> }>;
+}
+
+interface CommitteeWithPapers {
+	name: string; // Full committee name
+	abbreviation: string; // Short committee code (e.g., "GA", "SC")
+	papers: Paper[];
+}
+
+interface Props {
+	allPapers: Paper[];
+	committeesWithPapers: CommitteeWithPapers[];
+}
+```
+
+### Usage Example
+
+```svelte
+<script lang="ts">
+	import DetailedPaperStats from '$lib/components/PaperHub/DetailedPaperStats.svelte';
+
+	// allPapers: flat array of all papers across committees
+	// committeesWithPapers: array of committees with their papers grouped
+	let { allPapers, committeesWithPapers } = $props();
+</script>
+
+{#if allPapers.length > 0}
+	<DetailedPaperStats {allPapers} {committeesWithPapers} />
+{/if}
+```
+
+### Chart Subcomponents
+
+This component uses the following chart components from `$lib/components/Charts/ECharts/`:
+
+| Component             | Purpose                                    |
+| --------------------- | ------------------------------------------ |
+| `BarChart`            | Papers by type distribution                |
+| `MultiSeriesBarChart` | Status breakdown by paper type (stacked)   |
+| `GaugeChart`          | Review progress and acceptance rate gauges |
+| `EChartsBase`         | Committee breakdown horizontal bar chart   |
+
+### Features
+
+- Summary stats row (total papers, with/without reviews, accepted)
+- Review progress gauge (papers with at least one review)
+- Acceptance rate gauge (accepted papers / non-draft papers)
+- Papers by type bar chart
+- Status by type stacked bar chart
+- Committee breakdown with grouped stacked horizontal bars
 
 ---
 

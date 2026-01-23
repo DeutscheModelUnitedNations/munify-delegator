@@ -315,10 +315,15 @@
 	// Get total papers count for an agenda item (used to show "X of Y" in focus mode)
 	const getTotalPapersCount = (papers: any[]) => papers.length;
 
-	// Calculate review progress percentage (papers that are not in SUBMITTED status)
-	const getReviewProgress = (papers: Array<{ status: PaperStatus$options }>) => {
+	// Calculate review progress percentage (papers that have received at least one review)
+	const getReviewProgress = (
+		papers: Array<{
+			status: PaperStatus$options;
+			versions?: Array<{ reviews?: Array<{ id: string }> }>;
+		}>
+	) => {
 		if (papers.length === 0) return 0;
-		const reviewed = papers.filter((p) => p.status !== 'SUBMITTED').length;
+		const reviewed = papers.filter((p) => paperHasReviews(p)).length;
 		return Math.round((reviewed / papers.length) * 100);
 	};
 
