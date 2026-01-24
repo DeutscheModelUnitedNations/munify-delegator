@@ -1,5 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type { DiffResult, DiffSegment } from './types';
+import type { Resolution, SubClause, ClauseBlock } from '$lib/components/Paper/Editor/Resolution';
+import { getSubClauseLabel, migrateResolution } from '$lib/components/Paper/Editor/Resolution';
 
 /**
  * Extract plain text from a TipTap JSON node recursively
@@ -19,11 +21,103 @@ function extractNodeText(node: any): string {
 }
 
 /**
+ * Check if content is a Resolution (vs TipTap JSON)
+ */
+function isResolutionContent(content: any): content is Resolution {
+	return (
+		content &&
+		typeof content.committeeName === 'string' &&
+		Array.isArray(content.preamble) &&
+		Array.isArray(content.operative)
+	);
+}
+
+/**
+ * Get all text content from blocks (concatenated)
+ */
+function getBlocksTextContent(blocks: ClauseBlock[]): string {
+	return blocks
+		.filter(
+			(block): block is { type: 'text'; id: string; content: string } => block.type === 'text'
+		)
+		.map((block) => block.content.trim())
+		.filter((content) => content.length > 0)
+		.join(' ');
+}
+
+/**
+ * Serialize sub-clauses recursively with inline labels (block-based structure)
+ */
+function serializeSubClauses(subClauses: SubClause[], depth: number, lines: string[]): void {
+	subClauses.forEach((sub, index) => {
+		const label = getSubClauseLabel(index, depth);
+
+		// Get text content from blocks
+		const textContent = getBlocksTextContent(sub.blocks);
+		if (textContent) {
+			lines.push(`${label} ${textContent}`);
+		}
+
+		// Process nested subclauses blocks
+		for (const block of sub.blocks) {
+			if (block.type === 'subclauses' && block.items.length > 0) {
+				serializeSubClauses(block.items, depth + 1, lines);
+			}
+		}
+	});
+}
+
+/**
+ * Serialize a Resolution to plain text for diff comparison
+ * Uses inline prefixes: "1. text" for operative, "(a) text" for subclauses
+ */
+function serializeResolutionToText(rawResolution: Resolution): string {
+	// Migrate legacy format if needed
+	const resolution = migrateResolution(rawResolution) as Resolution;
+
+	const lines: string[] = [];
+
+	// Preamble clauses (no numbering, just the text)
+	resolution.preamble.forEach((clause) => {
+		if (clause.content.trim()) {
+			lines.push(clause.content.trim());
+		}
+	});
+
+	// Operative clauses (block-based)
+	resolution.operative.forEach((clause, opIndex) => {
+		// Get text content from blocks
+		const textContent = getBlocksTextContent(clause.blocks);
+		if (textContent) {
+			lines.push(`${opIndex + 1}. ${textContent}`);
+		}
+
+		// Process subclauses blocks
+		for (const block of clause.blocks) {
+			if (block.type === 'subclauses' && block.items.length > 0) {
+				serializeSubClauses(block.items, 1, lines);
+			}
+		}
+	});
+
+	return lines.join('\n').trim();
+}
+
+/**
  * Extract plain text from TipTap JSON content
  * Preserves paragraph structure with double newlines
+ * Also handles Resolution content with labeled clauses
  */
 export function extractTextFromTipTapJson(content: any): string {
-	if (!content || !content.content) return '';
+	if (!content) return '';
+
+	// Check if it's a Resolution
+	if (isResolutionContent(content)) {
+		return serializeResolutionToText(content);
+	}
+
+	// Fall back to TipTap extraction
+	if (!content.content) return '';
 
 	return content.content
 		.map((node: any) => {

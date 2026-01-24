@@ -93,7 +93,7 @@ builder.mutationFields((t) => {
 					where: {
 						conferenceId_userId: {
 							conferenceId: args.conferenceId,
-							userId: userId
+							userId: user.sub
 						},
 						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
 					}
@@ -352,7 +352,7 @@ builder.mutationFields((t) => {
 					}
 				});
 
-				if (supervisor.userId !== user.sub || !user.hasRole('admin')) {
+				if (supervisor.userId !== user.sub && !user.hasRole('admin')) {
 					throw new GraphQLError('You are not allowed to rotate this connection code.');
 				}
 

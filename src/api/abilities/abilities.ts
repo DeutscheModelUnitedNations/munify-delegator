@@ -117,6 +117,21 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 							}
 						}
 					}
+				},
+				// Conference supervisors from conferences where user is team member
+				{
+					conferenceSupervisor: {
+						some: {
+							conference: {
+								teamMembers: {
+									some: {
+										user: { id: user.sub },
+										role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+									}
+								}
+							}
+						}
+					}
 				}
 			]
 		});

@@ -10,10 +10,14 @@ import {
 	ConferenceIbanFieldObject,
 	ConferenceIdFieldObject,
 	ConferenceImageDataURLFieldObject,
+	ConferenceEmblemDataURLFieldObject,
+	ConferenceLogoDataURLFieldObject,
 	ConferenceInfoFieldObject,
 	ConferenceLanguageFieldObject,
 	ConferenceLinkToPaperInboxFieldObject,
 	ConferenceLinkToPreparationGuideFieldObject,
+	ConferenceLinkToTeamWikiFieldObject,
+	ConferenceLinkToServicesPageFieldObject,
 	ConferenceLocationFieldObject,
 	ConferenceLongTitleFieldObject,
 	ConferenceMediaConsentContentFieldObject,
@@ -32,6 +36,7 @@ import {
 	ConferenceUnlockPostalsFieldObject,
 	ConferenceWebsiteFieldObject,
 	ConferenceIsOpenPaperSubmissionFieldObject,
+	ConferenceShowInfoExpandedFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
@@ -51,7 +56,10 @@ builder.prismaObject('Conference', {
 		id: t.field(ConferenceIdFieldObject),
 		title: t.field(ConferenceTitleFieldObject),
 		info: t.field(ConferenceInfoFieldObject),
+		showInfoExpanded: t.field(ConferenceShowInfoExpandedFieldObject),
 		linkToPreparationGuide: t.field(ConferenceLinkToPreparationGuideFieldObject),
+		linkToTeamWiki: t.field(ConferenceLinkToTeamWikiFieldObject),
+		linkToServicesPage: t.field(ConferenceLinkToServicesPageFieldObject),
 		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
 		isOpenPaperSubmission: t.field(ConferenceIsOpenPaperSubmissionFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
@@ -59,6 +67,8 @@ builder.prismaObject('Conference', {
 		language: t.field(ConferenceLanguageFieldObject),
 		website: t.field(ConferenceWebsiteFieldObject),
 		imageDataURL: t.field(ConferenceImageDataURLFieldObject),
+		emblemDataURL: t.field(ConferenceEmblemDataURLFieldObject),
+		logoDataURL: t.field(ConferenceLogoDataURLFieldObject),
 		state: t.field(ConferenceStateFieldObject),
 		startAssignment: t.field(ConferenceStartAssignmentFieldObject),
 		registrationDeadlineGracePeriodMinutes: t.field(
@@ -452,10 +462,19 @@ builder.mutationFields((t) => {
 							linkToPreparationGuide: t.string({
 								required: false
 							}),
+							linkToTeamWiki: t.string({
+								required: false
+							}),
+							linkToServicesPage: t.string({
+								required: false
+							}),
 							linkToPaperInbox: t.string({
 								required: false
 							}),
 							isOpenPaperSubmission: t.boolean({
+								required: false
+							}),
+							showInfoExpanded: t.boolean({
 								required: false
 							}),
 							longTitle: t.string({
@@ -471,6 +490,14 @@ builder.mutationFields((t) => {
 								required: false
 							}),
 							image: t.field({
+								type: 'File',
+								required: false
+							}),
+							emblem: t.field({
+								type: 'File',
+								required: false
+							}),
+							logo: t.field({
 								type: 'File',
 								required: false
 							}),
@@ -556,6 +583,14 @@ builder.mutationFields((t) => {
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;
 
+				const emblemDataURL = args.data.emblem
+					? await toDataURL(args.data.emblem)
+					: args.data.emblem;
+				args.data.emblem = undefined;
+
+				const logoDataURL = args.data.logo ? await toDataURL(args.data.logo) : args.data.logo;
+				args.data.logo = undefined;
+
 				const contractContentURL = args.data.contractBasePDF
 					? await toDataURL(args.data.contractBasePDF)
 					: args.data.contractBasePDF;
@@ -586,6 +621,8 @@ builder.mutationFields((t) => {
 					data: {
 						...args.data,
 						imageDataURL: dataURL,
+						emblemDataURL: emblemDataURL,
+						logoDataURL: logoDataURL,
 						title: args.data.title ?? undefined,
 						info: args.data.info ?? undefined,
 						state: args.data.state ?? undefined,
@@ -600,6 +637,8 @@ builder.mutationFields((t) => {
 							args.data.isOpenPaperSubmission === null
 								? undefined
 								: args.data.isOpenPaperSubmission,
+						showInfoExpanded:
+							args.data.showInfoExpanded === null ? undefined : args.data.showInfoExpanded,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
 						postalApartment: args.data.postalApartment ?? null,
 						contractContent: contractContentURL,

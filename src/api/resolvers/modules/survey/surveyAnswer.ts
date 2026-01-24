@@ -6,6 +6,7 @@ import {
 	SurveyAnswerOptionFieldObject,
 	SurveyAnswerQuestionFieldObject,
 	SurveyAnswerUserFieldObject,
+	SurveyAnswerCreatedAtFieldObject,
 	updateOneSurveyAnswerMutationObject
 } from '$db/generated/graphql/SurveyAnswer';
 import { builder } from '../../builder';
@@ -18,7 +19,8 @@ builder.prismaObject('SurveyAnswer', {
 		id: t.field(SurveyAnswerIdFieldObject),
 		question: t.relation('question', SurveyAnswerQuestionFieldObject),
 		option: t.relation('option', SurveyAnswerOptionFieldObject),
-		user: t.relation('user', SurveyAnswerUserFieldObject)
+		user: t.relation('user', SurveyAnswerUserFieldObject),
+		createdAt: t.field(SurveyAnswerCreatedAtFieldObject)
 	})
 });
 

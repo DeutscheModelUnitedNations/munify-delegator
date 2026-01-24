@@ -23,13 +23,13 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 			}
 		});
 
-		// PROJECT_MANAGEMENT can update any paper (admin override)
+		// Team members (REVIEWER, PROJECT_MANAGEMENT, PARTICIPANT_CARE) can update any paper
 		can(['update'], 'Paper', {
 			conference: {
 				teamMembers: {
 					some: {
 						user: { id: user.sub },
-						role: 'PROJECT_MANAGEMENT'
+						role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
 					}
 				}
 			}
@@ -45,6 +45,35 @@ export const defineAbilitiesForPaper = (oidc: OIDC, { can }: AbilityBuilder<AppA
 					}
 				}
 			}
+		});
+
+		// Supervisors can read/list papers of their supervised students' delegations (non-DRAFT only)
+		can(['read', 'list'], 'Paper', {
+			delegation: {
+				members: {
+					some: {
+						supervisors: {
+							some: {
+								user: { id: user.sub }
+							}
+						}
+					}
+				}
+			},
+			status: { not: 'DRAFT' }
+		});
+
+		// Any conference participant can list non-DRAFT papers (for global papers view)
+		// This includes delegation members, single participants, and supervisors
+		can(['list'], 'Paper', {
+			conference: {
+				OR: [
+					{ delegations: { some: { members: { some: { userId: user.sub } } } } },
+					{ singleParticipants: { some: { userId: user.sub } } },
+					{ conferenceSupervisors: { some: { userId: user.sub } } }
+				]
+			},
+			status: { not: 'DRAFT' }
 		});
 	}
 };

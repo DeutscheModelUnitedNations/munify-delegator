@@ -6,7 +6,7 @@
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import { invalidateAll } from '$app/navigation';
 
@@ -219,13 +219,12 @@
 				'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				await toast.promise(
-					singleParticipantResetMutation.mutate({
-						singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
-						applied: false
-					}),
-					genericPromiseToastMessages
-				);
+				const promise = singleParticipantResetMutation.mutate({
+					singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
+					applied: false
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
 				cache.markStale();
 				await invalidateAll();
 			}}

@@ -2,7 +2,7 @@
 	import { graphql, type ConferenceSchools$result } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { type TableColumns } from 'svelte-table';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import CheckboxForTable from './CheckboxForTable.svelte';
 	import hotkeys from 'hotkeys-js';

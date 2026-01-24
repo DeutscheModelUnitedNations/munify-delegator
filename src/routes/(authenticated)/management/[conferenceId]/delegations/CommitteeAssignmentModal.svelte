@@ -4,7 +4,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/services/formatNames';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import type { GetCommitteeDataForCommitteeAssignmentVariables } from './$houdini';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 
@@ -81,12 +81,11 @@
 			if (!members) return;
 			loading = true;
 			try {
-				await toast.promise(
-					resetCommitteeAssignmentForAllDelegationMembers.mutate({
-						delegationMemberIds: members.map((m) => m.id)
-					}),
-					genericPromiseToastMessages
-				);
+				const promise = resetCommitteeAssignmentForAllDelegationMembers.mutate({
+					delegationMemberIds: members.map((m) => m.id)
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
 
 				cache.markStale();
 				await invalidateAll();
@@ -138,13 +137,12 @@
 									onclick={async () => {
 										loading = true;
 										try {
-											await toast.promise(
-												updateDelegationMemberAssignedCommittee.mutate({
-													committeeId: committee.id,
-													delegationMemberId: member.id
-												}),
-												genericPromiseToastMessages
-											);
+											const promise = updateDelegationMemberAssignedCommittee.mutate({
+												committeeId: committee.id,
+												delegationMemberId: member.id
+											});
+											toast.promise(promise, genericPromiseToastMessages);
+											await promise;
 
 											cache.markStale();
 											await invalidateAll();

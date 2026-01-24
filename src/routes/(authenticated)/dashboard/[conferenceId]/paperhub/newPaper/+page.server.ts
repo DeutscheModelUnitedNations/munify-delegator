@@ -2,8 +2,7 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$houdini';
 import { newPaperSchema } from './form-schema';
-import { graphql, PaperType } from '$houdini';
-import { PaperType as PaperTypePrisma } from '@prisma/client';
+import { graphql } from '$houdini';
 
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 import { error } from '@sveltejs/kit';
@@ -20,6 +19,8 @@ const query = graphql(`
 			assignedCommittee {
 				id
 				name
+				abbreviation
+				resolutionHeadline
 				agendaItems {
 					id
 					title
@@ -70,8 +71,11 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const typeParam = event.url.searchParams.get('type');
+	const validTypes = ['POSITION_PAPER', 'INTRODUCTION_PAPER'] as const;
 	const type =
-		typeParam && typeParam in PaperType ? (typeParam as PaperTypePrisma) : 'POSITION_PAPER';
+		typeParam && validTypes.includes(typeParam as (typeof validTypes)[number])
+			? (typeParam as (typeof validTypes)[number])
+			: 'POSITION_PAPER';
 
 	const form = await superValidate(
 		{

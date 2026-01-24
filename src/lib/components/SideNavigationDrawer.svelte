@@ -103,6 +103,7 @@
 							bind:expanded
 						/>
 					{/if}
+					<NavMenuButton href="/dashboard" icon="fa-grid-2" title={m.dashboard()} bind:expanded />
 					<NavMenuButton href="/" icon="fa-globe-pointer" title={m.home()} bind:expanded />
 				</div>
 			</NavMenu>

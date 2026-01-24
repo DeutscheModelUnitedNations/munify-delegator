@@ -8,8 +8,10 @@ export const conferenceSettingsFormSchema = z.object({
 		message: m.atLeastXChars({ amount: 3 })
 	}),
 	info: z.string().nullish(),
+	showInfoExpanded: z.boolean().default(false),
 	linkToPreparationGuide: z.string().nullish(),
-	linkToPaperInbox: z.string().nullish(),
+	linkToTeamWiki: z.string().nullish(),
+	linkToServicesPage: z.string().nullish(),
 	isOpenPaperSubmission: z.boolean().default(false),
 	longTitle: z
 		.string()
@@ -36,6 +38,14 @@ export const conferenceSettingsFormSchema = z.object({
 		})
 		.optional(),
 	image: z
+		.instanceof(File)
+		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
+		.optional(),
+	emblem: z
+		.instanceof(File)
+		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
+		.optional(),
+	logo: z
 		.instanceof(File)
 		.refine((f) => f.size < 1_000_000, 'Max 1mb upload size.')
 		.optional(),

@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
+	import { invalidateAll } from '$app/navigation';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		globalNotes: string;
@@ -25,19 +26,20 @@
 
 	const saveGlobalNotes = async () => {
 		if (!id) return;
-		await toast.promise(
-			saveGlobalNotesMutation.mutate({
-				where: {
-					id
-				},
-				globalNotes: value
-			}),
-			{
-				success: m.saved(),
-				error: m.httpGenericError(),
-				loading: m.saving()
-			}
-		);
+		const promise = saveGlobalNotesMutation.mutate({
+			where: {
+				id
+			},
+			globalNotes: value
+		});
+		toast.promise(promise, {
+			success: m.saved(),
+			error: m.httpGenericError(),
+			loading: m.saving()
+		});
+		await promise;
+		cache.markStale();
+		await invalidateAll();
 
 		open = false;
 	};

@@ -16,21 +16,53 @@ const TeamMemberStatusQuery = graphql(`
 	}
 `);
 
+const SupervisorStatusQuery = graphql(`
+	query SupervisorStatusQuery($userId: String!, $conferenceId: String!) {
+		findUniqueConferenceSupervisor(
+			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
+		) {
+			id
+			supervisedDelegationMembers {
+				delegation {
+					id
+				}
+			}
+		}
+	}
+`);
+
 export const load: LayoutLoad = async (event) => {
 	const { user } = await event.parent();
 	const conferenceId = event.params.conferenceId;
 
-	const teamMemberResult = await TeamMemberStatusQuery.fetch({
-		event,
-		variables: {
-			userId: user.sub,
-			conferenceId
-		},
-		blocking: true
-	});
+	const [teamMemberResult, supervisorResult] = await Promise.all([
+		TeamMemberStatusQuery.fetch({
+			event,
+			variables: {
+				userId: user.sub,
+				conferenceId
+			},
+			blocking: true
+		}),
+		SupervisorStatusQuery.fetch({
+			event,
+			variables: {
+				userId: user.sub,
+				conferenceId
+			},
+			blocking: true
+		})
+	]);
+
+	const supervisor = supervisorResult.data?.findUniqueConferenceSupervisor;
+	const supervisedDelegationIds = [
+		...new Set(supervisor?.supervisedDelegationMembers?.map((m) => m.delegation.id) ?? [])
+	];
 
 	return {
 		conferenceId,
-		teamMembers: teamMemberResult.data?.findManyTeamMembers ?? []
+		teamMembers: teamMemberResult.data?.findManyTeamMembers ?? [],
+		supervisor: supervisor ?? null,
+		supervisedDelegationIds
 	};
 };

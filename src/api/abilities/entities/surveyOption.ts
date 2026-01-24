@@ -9,7 +9,8 @@ export const defineAbilitiesForSurveyOption = (oidc: OIDC, { can }: AbilityBuild
 		// Everyone should be able to read the survey questions
 		can(['read', 'list'], 'SurveyOption');
 
-		// team members should be able to edit the SurveyQuestions of their conferences
+		// team members should be able to edit the SurveyOptions of their conferences
+		// Note: 'create' is handled directly in the mutation resolver
 		can(['read', 'list', 'update', 'delete'], 'SurveyOption', {
 			question: {
 				conference: {

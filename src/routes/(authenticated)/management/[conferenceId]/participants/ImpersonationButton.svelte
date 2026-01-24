@@ -3,7 +3,7 @@
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		userId: string;
@@ -22,10 +22,9 @@
 		if (isLoading) return;
 		isLoading = true;
 		try {
-			await toast.promise(
-				StartImpersonationMutation.mutate({ targetUserId: userId }),
-				genericPromiseToastMessages
-			);
+			const promise = StartImpersonationMutation.mutate({ targetUserId: userId });
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
 			await goto('/dashboard');
 			window.location.reload();
 		} catch (error) {

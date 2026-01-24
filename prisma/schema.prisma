@@ -37,8 +37,16 @@ model Conference {
   language                               String?
   website                                String?
   imageDataURL                           String?
+  /// SVG data URL for conference emblem (falls back to UN emblem if null)
+  emblemDataURL                          String?
+  /// Data URL for conference logo (displayed in dashboard header)
+  logoDataURL                            String?
   info                                   String?
+  /// When true, dashboard announcement shows full content; when false, truncated with expand button
+  showInfoExpanded                       Boolean         @default(false)
   linkToPreparationGuide                 String?
+  linkToTeamWiki                         String?
+  linkToServicesPage                     String?
   linkToPaperInbox                       String?
   isOpenPaperSubmission                  Boolean         @default(false)
   state                                  ConferenceState @default(PRE)
@@ -97,6 +105,8 @@ model Committee {
   name                    String
   abbreviation            String
   numOfSeatsPerDelegation Int    @default(1)
+  /// Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
+  resolutionHeadline      String?
 
   conference        Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
@@ -287,6 +297,7 @@ enum PaperType {
 enum PaperStatus {
   DRAFT
   SUBMITTED
+  REVISED
   CHANGES_REQUESTED
   ACCEPTED
 }

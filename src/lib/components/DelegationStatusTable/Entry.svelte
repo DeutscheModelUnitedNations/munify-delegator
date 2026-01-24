@@ -14,6 +14,8 @@
 		downloadPostalDocuments?: () => Promise<void>;
 		withPostalStatus?: boolean;
 		withPaymentStatus?: boolean;
+		withPaperCount?: boolean;
+		paperCount?: number;
 		children?: Snippet;
 	}
 
@@ -28,6 +30,8 @@
 		downloadPostalDocuments,
 		withPostalStatus = false,
 		withPaymentStatus = false,
+		withPaperCount = false,
+		paperCount = 0,
 		children
 	}: Props = $props();
 
@@ -135,6 +139,15 @@
 					<i class="fas fa-hourglass-half text-warning"></i>
 				{/if}
 			</div>
+		</td>
+	{/if}
+	{#if withPaperCount}
+		<td class="text-center">
+			{#if paperCount > 0}
+				<span class="badge badge-sm badge-soft badge-primary">{paperCount}</span>
+			{:else}
+				<i class="fas fa-dash text-base-300"></i>
+			{/if}
 		</td>
 	{/if}
 	<td class="text-right">

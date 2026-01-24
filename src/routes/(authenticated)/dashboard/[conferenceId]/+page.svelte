@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
+	import ConferenceHeader from '$lib/components/Dashboard/ConferenceHeader.svelte';
+	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import AnnouncementContent from '$lib/components/Dashboard/AnnouncementContent.svelte';
+	import { m } from '$lib/paraglide/messages';
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
@@ -12,6 +16,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { onMount } from 'svelte';
+	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
+	import { configPublic } from '$config/public';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -68,6 +74,28 @@
 				<span class="badge badge-primary badge-outline uppercase">new</span>
 			</div>
 		{/if}
+		{#if conference}
+			<ConferenceHeader
+				title={conference.title}
+				longTitle={conference.longTitle}
+				state={conference.state}
+				startDate={conference.startConference}
+				endDate={conference.endConference}
+				emblemDataURL={conference.emblemDataURL}
+				logoDataURL={conference.logoDataURL}
+			/>
+			{#if conference.info && !teamMember}
+				<DashboardSection
+					icon="bullhorn"
+					title={m.announcementSectionTitle()}
+					description={m.announcementSectionDescription()}
+					variant="info"
+				>
+					<AnnouncementContent info={conference.info} showExpanded={conference.showInfoExpanded} />
+				</DashboardSection>
+			{/if}
+		{/if}
+		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
 				<SingleParticipantRegistrationStage
@@ -98,6 +126,7 @@
 						conferenceId={conference!.id}
 						userId={data.user.sub}
 						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
+						customConferenceRole={singleParticipant.assignedRole}
 					/>
 				{/if}
 			{:else}
@@ -139,24 +168,40 @@
 						conferenceId={conference!.id}
 						userId={data.user.sub}
 						didAttend={!!status?.didAttend}
+						country={delegationMember.delegation.assignedNation}
+						nonStateActor={delegationMember.delegation.assignedNonStateActor}
+						assignedCommittee={delegationMember.assignedCommittee}
 					/>
 				{/if}
 			{:else}
 				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
 			{/if}
 		{:else if supervisor}
-			{@const everybodyGotRejected =
+			{@const atLeastOneAccepted =
 				conference!.state !== 'PARTICIPANT_REGISTRATION' &&
 				(supervisor.supervisedDelegationMembers
 					.flatMap((x) => x.delegation)
 					.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor).length > 0 ||
 					supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole).length > 0)}
-			{#if everybodyGotRejected || conference!.state === 'PARTICIPANT_REGISTRATION'}
+			{#if atLeastOneAccepted || conference!.state === 'PARTICIPANT_REGISTRATION'}
 				{#if conference!.state === 'POST'}
+					{@const acceptedDelegations = supervisor.supervisedDelegationMembers
+						.map((x) => x.delegation)
+						.filter((x) => !!x.assignedNation || !!x.assignedNonStateActor)}
+					{@const acceptedSingleParticipants = supervisor.supervisedSingleParticipants.filter(
+						(x) => !!x.assignedRole
+					)}
+					{@const totalStudents =
+						supervisor.supervisedDelegationMembers.length +
+						supervisor.supervisedSingleParticipants.length}
+					{@const acceptedStudents = acceptedDelegations.length + acceptedSingleParticipants.length}
 					<Certificate
 						conferenceId={conference!.id}
 						userId={data.user.sub}
 						didAttend={!!status?.didAttend}
+						isSupervisor={true}
+						totalStudentsCount={totalStudents}
+						acceptedStudentsCount={acceptedStudents}
 					/>
 				{:else}
 					<Supervisor
@@ -171,52 +216,15 @@
 				<ApplicationRejected />
 			{/if}
 		{:else if teamMember}
-			<div class="card bg-base-200 w-full p-6">
-				<div class="flex flex-col gap-6">
-					<div class="flex items-center gap-4">
-						<div class="bg-primary text-primary-content rounded-box p-4">
-							<i class="fa-solid fa-users-gear text-3xl"></i>
-						</div>
-						<div>
-							<h1 class="text-2xl font-bold">{m.teamMemberDashboard()}</h1>
-							<p class="text-base-content/70">
-								{conference?.title} &bull; {translateTeamRole(teamMember.role)}
-							</p>
-						</div>
-					</div>
-
-					<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-						{#if teamMember.role === 'REVIEWER' || teamMember.role === 'PROJECT_MANAGEMENT'}
-							<a
-								href="/dashboard/{conference?.id}/paperhub"
-								class="card bg-base-100 hover:bg-base-300 transition-colors"
-							>
-								<div class="card-body">
-									<div class="flex items-center gap-3">
-										<i class="fa-duotone fa-files text-2xl text-primary"></i>
-										<h2 class="card-title">{m.paperHub()}</h2>
-									</div>
-									<p class="text-base-content/70">{m.reviewPapers()}</p>
-								</div>
-							</a>
-						{/if}
-						{#if teamMember.role === 'PARTICIPANT_CARE' || teamMember.role === 'PROJECT_MANAGEMENT'}
-							<a
-								href="/management/{conference?.id}"
-								class="card bg-base-100 hover:bg-base-300 transition-colors"
-							>
-								<div class="card-body">
-									<div class="flex items-center gap-3">
-										<i class="fa-duotone fa-bars-progress text-2xl text-primary"></i>
-										<h2 class="card-title">{m.administration()}</h2>
-									</div>
-									<p class="text-base-content/70">{m.manageConference()}</p>
-								</div>
-							</a>
-						{/if}
-					</div>
-				</div>
-			</div>
+			<TeamMemberDashboard
+				conferenceId={conference!.id}
+				conferenceTitle={conference!.title}
+				role={teamMember.role}
+				linkToTeamWiki={conference?.linkToTeamWiki}
+				linkToServicesPage={conference?.linkToServicesPage}
+				linkToPreparationGuide={conference?.linkToPreparationGuide}
+				docsUrl={configPublic.PUBLIC_DOCS_URL}
+			/>
 		{:else}
 			<NoConferenceIndicator />
 		{/if}

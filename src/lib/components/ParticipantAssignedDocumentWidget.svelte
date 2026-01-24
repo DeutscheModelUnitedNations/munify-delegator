@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		assignedDocumentNumber?: number;

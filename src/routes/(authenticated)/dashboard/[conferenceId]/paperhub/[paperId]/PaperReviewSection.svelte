@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { cache, graphql, type PaperStatus$options } from '$houdini';
-	import { writable } from 'svelte/store';
-	import toast from 'svelte-french-toast';
+	import { writable, get } from 'svelte/store';
+	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperEditor from '$lib/components/Paper/Editor';
@@ -18,6 +18,10 @@
 	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
 	import { PieceFoundModal } from '$lib/components/FlagCollection';
 	import Modal from '$lib/components/Modal.svelte';
+	import { getEmptyTipTapDocument } from '$lib/components/Paper/Editor/contentValidation';
+	import { browser } from '$app/environment';
+	import { persisted } from 'svelte-persisted-store';
+	import { onMount } from 'svelte';
 
 	// Check if TipTap JSON content has any actual text
 	const hasContent = (content: any): boolean => {
@@ -80,6 +84,7 @@
 		onQuoteInserted?: () => void;
 		paperContainer?: HTMLElement | null;
 		snippets?: SnippetItem[];
+		agendaItemId?: string;
 	}
 
 	let {
@@ -91,8 +96,56 @@
 		quoteToInsert,
 		onQuoteInserted,
 		paperContainer = null,
-		snippets = []
+		snippets = [],
+		agendaItemId
 	}: Props = $props();
+
+	let reviewed = $state(false);
+	let nextPaperId = $state<string | null>(null);
+
+	// Types for draft persistence
+	interface ReviewDraft {
+		comments: any;
+		selectedStatus: PaperStatus$options;
+		savedAt: number;
+	}
+
+	const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+	// State for recovery modal
+	let showRecoveryModal = $state(false);
+	let savedDraft: ReviewDraft | null = $state(null);
+
+	// Helper to format relative time
+	function formatRelativeTime(timestamp: number | undefined): string {
+		if (!timestamp) return '';
+		const seconds = Math.floor((Date.now() - timestamp) / 1000);
+		if (seconds < 60) return m.timeAgoSeconds({ count: seconds });
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) return m.timeAgoMinutes({ count: minutes });
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) return m.timeAgoHours({ count: hours });
+		const days = Math.floor(hours / 24);
+		return m.timeAgoDays({ count: days });
+	}
+
+	// Create persisted store for this paper's review draft (only on browser)
+	const draftStore = browser ? persisted<ReviewDraft | null>(`reviewDraft_${paperId}`, null) : null;
+
+	// Check for existing draft SYNCHRONOUSLY before render
+	if (browser && draftStore) {
+		const storedDraft = get(draftStore);
+		if (storedDraft) {
+			// Check if draft is expired (older than 7 days)
+			if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
+				draftStore.set(null);
+			} else {
+				// Valid draft found - set state for modal
+				savedDraft = storedDraft;
+				showRecoveryModal = true;
+			}
+		}
+	}
 
 	// Create unified timeline from versions and reviews
 	type TimelineEvent =
@@ -182,17 +235,98 @@
 	};
 
 	// Review form state
-	let reviewComments = writable<any>({});
+	let reviewComments = writable<any>(getEmptyTipTapDocument());
 	let selectedStatus = $state<PaperStatus$options>(currentStatus);
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
+	// Key to force editor remount when restoring draft
+	let editorKey = $state(0);
+
+	// Recovery functions
+	function restoreDraft() {
+		if (savedDraft) {
+			reviewComments.set(savedDraft.comments);
+			selectedStatus = savedDraft.selectedStatus;
+			// Increment key to force editor remount with new content
+			editorKey++;
+		}
+		showRecoveryModal = false;
+	}
+
+	function startFresh() {
+		if (draftStore) {
+			draftStore.set(null);
+		}
+		showRecoveryModal = false;
+	}
+
+	// Auto-save: Use interval-based polling for TipTap content
+	let saveInterval: ReturnType<typeof setInterval>;
+	let lastSavedContent: string | null = null;
+
+	// Function to save current content to localStorage
+	function saveCurrentDraft() {
+		if (!browser || !draftStore || showRecoveryModal) return;
+
+		const rawContent = get(reviewComments);
+
+		// Skip if content is empty
+		if (!hasContent(rawContent)) {
+			return;
+		}
+
+		// Stringify to create a plain JSON snapshot
+		let contentString: string;
+		try {
+			contentString = JSON.stringify(rawContent);
+		} catch (e) {
+			return;
+		}
+
+		// Skip if content hasn't changed
+		if (contentString === lastSavedContent) {
+			return;
+		}
+		lastSavedContent = contentString;
+
+		draftStore.set({
+			comments: JSON.parse(contentString),
+			selectedStatus,
+			savedAt: Date.now()
+		});
+	}
+
+	// Set up auto-save interval when component mounts
+	onMount(() => {
+		if (!browser || !draftStore) return;
+
+		// Poll every second for changes
+		saveInterval = setInterval(() => {
+			if (!showRecoveryModal) {
+				saveCurrentDraft();
+			}
+		}, 1000);
+
+		return () => {
+			if (saveInterval) clearInterval(saveInterval);
+		};
+	});
+
+	// Safety net: save on page unload
+	$effect(() => {
+		if (!browser || !draftStore) return;
+
+		const handleBeforeUnload = () => {
+			saveCurrentDraft();
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+	});
 
 	const createReviewMutation = graphql(`
 		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
 			createPaperReview(paperId: $paperId, comments: $comments, newStatus: $newStatus) {
-				review {
-					id
-				}
 				pieceUnlocked
 				unlockedPieceData {
 					flagId
@@ -252,27 +386,40 @@
 		showConfirmModal = true;
 	};
 
+	const nextPaperQuery = graphql(`
+		query NextPaper($agendaItemId: String!) @cache(policy: NetworkOnly) {
+			findNextPaperToReview(agendaItemId: $agendaItemId) {
+				id
+			}
+		}
+	`);
+
+	const jumpToNextPaper = () => {
+		reviewed = false;
+		goto(`../paperhub/${nextPaperId}`);
+	};
+
 	const handleSubmitReview = async () => {
 		if (isSubmitting) return;
 
 		showConfirmModal = false;
 		isSubmitting = true;
 		try {
-			const result = await toast.promise(
-				createReviewMutation.mutate({
-					paperId,
-					comments: $reviewComments,
-					newStatus: selectedStatus
-				}),
-				{
-					loading: m.submittingReview(),
-					success: m.reviewSubmitted(),
-					error: (err) => err.message || m.reviewSubmitError()
-				}
-			);
+			const promise = createReviewMutation.mutate({
+				paperId,
+				comments: $reviewComments,
+				newStatus: selectedStatus
+			});
+			toast.promise(promise, {
+				loading: m.submittingReview(),
+				success: m.reviewSubmitted(),
+				error: (err) => (err instanceof Error ? err.message : null) || m.reviewSubmitError()
+			});
+
+			const result = await promise;
 
 			// Check if a piece was unlocked and show the modal
-			const data = result.data?.createPaperReview;
+			const data = result?.data?.createPaperReview;
 			if (data?.pieceUnlocked && data.unlockedPieceData) {
 				pieceFoundData = {
 					flagName: data.unlockedPieceData.flagName,
@@ -288,8 +435,23 @@
 				showPieceFoundModal = true;
 			}
 
+			reviewed = true;
+			if (agendaItemId) {
+				try {
+					const res = await nextPaperQuery.fetch({ variables: { agendaItemId } });
+					nextPaperId = res.data.findNextPaperToReview?.id ?? null;
+				} catch {
+					nextPaperId = null;
+				}
+			}
+
 			// Clear form
 			reviewComments.set({});
+			// Clear form and localStorage draft
+			reviewComments.set(getEmptyTipTapDocument());
+			if (draftStore) {
+				draftStore.set(null);
+			}
 
 			// Reload data
 			cache.markStale();
@@ -300,8 +462,40 @@
 	};
 </script>
 
+<!-- Draft Recovery Modal -->
+<Modal bind:open={showRecoveryModal} title={m.paperDraftRecoveryTitle()}>
+	<p class="mb-2">{m.paperDraftRecoveryMessage()}</p>
+	<p class="text-sm text-base-content/70">
+		{m.paperDraftSavedAgo({ time: formatRelativeTime(savedDraft?.savedAt) })}
+	</p>
+	{#snippet action()}
+		<button class="btn" onclick={startFresh}>{m.paperStartFresh()}</button>
+		<button class="btn btn-primary" onclick={restoreDraft}>{m.paperRestoreDraft()}</button>
+	{/snippet}
+</Modal>
+
 <div class="card bg-base-200 p-4 flex flex-col gap-4">
 	<h3 class="text-lg font-bold">{m.addReview()}</h3>
+
+	{#if reviewed}
+		<!-- Options after review has been saved -->
+		<div class="alert alert-success">
+			<i class="fa-solid fa-check-circle"></i>
+			<span>{m.reviewAddedSuccessfully()}</span>
+		</div>
+		{#if nextPaperId && agendaItemId}
+			<button class="btn btn-outline" onclick={jumpToNextPaper}>
+				<i class="fa-solid fa-angles-right"></i>
+				<span class="runway-text-swoop">{m.jumpToNextPaper()}</span>
+			</button>
+		{:else if agendaItemId}
+			<div class="flex flex-col items-center justify-center w-full">
+				<span class="text-celebrate font-bold text-lg text-center">
+					{m.allPapersReviewed()}
+				</span>
+			</div>
+		{/if}
+	{/if}
 
 	{#if availableTransitions.length === 0}
 		<div class="alert alert-info">
@@ -309,24 +503,46 @@
 			<span>{m.noStatusTransitionsAvailable()}</span>
 		</div>
 	{:else}
+		<!-- Comments Editor -->
+		{#key editorKey}
+			<PaperEditor.ReviewFormat
+				contentStore={reviewComments}
+				{quoteToInsert}
+				{onQuoteInserted}
+				{paperContainer}
+				{snippets}
+			/>
+		{/key}
+
 		<!-- Status Selector -->
 		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 			<legend class="fieldset-legend">{m.newStatus()}</legend>
-			<select class="select select-bordered w-full" bind:value={selectedStatus}>
+			<div class="flex w-full gap-2">
 				{#each availableTransitions as transition}
-					<option value={transition.value}>{transition.label}</option>
+					{@const isSelected = selectedStatus === transition.value}
+					{@const isChangesRequested = transition.value === 'CHANGES_REQUESTED'}
+					<label class="flex-1 cursor-pointer">
+						<input
+							type="radio"
+							name="status_tabs"
+							class="hidden"
+							checked={isSelected}
+							onchange={() => (selectedStatus = transition.value as PaperStatus$options)}
+						/>
+						<div
+							class="btn w-full {isSelected
+								? isChangesRequested
+									? 'btn-warning'
+									: 'btn-success'
+								: 'btn-ghost'}"
+						>
+							<i class="fa-solid {getPaperStatusIcon(transition.value as PaperStatus$options)}"></i>
+							{transition.label}
+						</div>
+					</label>
 				{/each}
-			</select>
+			</div>
 		</fieldset>
-
-		<!-- Comments Editor -->
-		<PaperEditor.ReviewFormat
-			contentStore={reviewComments}
-			{quoteToInsert}
-			{onQuoteInserted}
-			{paperContainer}
-			{snippets}
-		/>
 
 		<!-- Submit Button -->
 		<button class="btn btn-primary" onclick={openConfirmModal} disabled={isSubmitting}>
@@ -370,7 +586,7 @@
 	<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 		<legend class="fieldset-legend">{m.history()}</legend>
 		<ul class="timeline timeline-vertical timeline-compact py-2">
-			{#each timelineEvents as event, index}
+			{#each timelineEvents as event, index (event.type === 'review' ? event.review.id : event.version.id)}
 				<li class="">
 					{#if index > 0}
 						<hr class="bg-base-300" />
@@ -509,3 +725,72 @@
 		}}
 	/>
 {/if}
+
+<style lang="postcss">
+	.runway-text-swoop {
+		/* 1. Define the gradient: Base Color -> Shine Color -> Base Color */
+		/* We use a wide gradient (200%) so we can slide it across */
+		background: linear-gradient(
+			110deg,
+			#374151 45%,
+			/* Left: Standard Text Color (Dark Grey) */ #ffffff 50%,
+			/* Center: The "Swoop" highlight (White) */ #374151 55%
+				/* Right: Standard Text Color (Dark Grey) */
+		);
+
+		/* 2. Key: Clip the background to the text shape */
+		background-clip: text;
+		-webkit-background-clip: text;
+
+		/* 3. Make the text transparent so the background shows through */
+		color: transparent;
+		-webkit-text-fill-color: transparent;
+
+		/* 4. Sizing: Make background double width to allow movement */
+		background-size: 225% 100%;
+
+		/* 5. Animation */
+		animation: shine-pass 2.5s infinite;
+	}
+
+	/* Dark Mode Support (If your app uses class="dark" or media queries) */
+	@media (prefers-color-scheme: dark) {
+		.runway-text-swoop {
+			background: linear-gradient(
+				110deg,
+				#9ca3af 45%,
+				/* Base: Light Grey */ #ffffff 50%,
+				/* Shine: Bright White */ #9ca3af 55% /* Base: Light Grey */
+			);
+			background-clip: text;
+			-webkit-background-clip: text;
+			background-size: 225% 100%;
+		}
+	}
+
+	/* The Movement Logic */
+	@keyframes shine-pass {
+		0% {
+			background-position: 100% 50%; /* Start: Highlight off to the right */
+		}
+		100% {
+			background-position: 0% 50%; /* End: Highlight moves to the left */
+		}
+	}
+
+	/* Text Shine (Refined for Success) */
+	.text-celebrate {
+		background: linear-gradient(90deg, #166534, #22c55e, #166534);
+		background-size: 200% auto;
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		animation: text-shimmer 2s linear infinite;
+	}
+
+	@keyframes text-shimmer {
+		to {
+			background-position: 200% center;
+		}
+	}
+</style>

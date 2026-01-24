@@ -5,8 +5,10 @@
 	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
-	import TasksWrapper from '$lib/components/TasksAlert/TasksWrapper.svelte';
-	import TaskAlertCard from '$lib/components/TasksAlert/TaskAlertCard.svelte';
+	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
+	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
 	import Flag from '$lib/components/Flag.svelte';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
@@ -19,13 +21,14 @@
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
 	import { page } from '$app/state';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
+	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
 	import InfoGrid from '$lib/components/InfoGrid';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	// TODO these components need some refactoring
 
@@ -71,10 +74,33 @@
 	let delegations = $derived([
 		...new Map(delegationMembers.map((x) => [x.delegation.id, x.delegation])).values()
 	]);
+	// Get all papers from unique delegations (using delegationMembers to access papers)
+	let allPapers = $derived.by(() => {
+		const seenDelegationIds = new SvelteSet<string>();
+		const papers: NonNullable<(typeof delegationMembers)[number]['delegation']['papers']> = [];
+		delegationMembers.forEach((member) => {
+			if (!seenDelegationIds.has(member.delegation.id)) {
+				seenDelegationIds.add(member.delegation.id);
+				papers.push(...(member.delegation.papers ?? []));
+			}
+		});
+		return papers;
+	});
 	let singleParticipants = $derived(
 		isStateParticipantRegistration
 			? supervisor.supervisedSingleParticipants
 			: supervisor.supervisedSingleParticipants.filter((x) => x.assignedRole)
+	);
+
+	// Calculate total and accepted students for the students overview
+	let totalStudentsCount = $derived(
+		supervisor.supervisedDelegationMembers.length + supervisor.supervisedSingleParticipants.length
+	);
+	let acceptedStudentsCount = $derived(delegationMembers.length + singleParticipants.length);
+	let allStudentsAccepted = $derived(
+		!isStateParticipantRegistration &&
+			totalStudentsCount > 0 &&
+			acceptedStudentsCount === totalStudentsCount
 	);
 
 	let connectionLink = $derived(
@@ -91,7 +117,7 @@
 		{
 			icon: 'users',
 			title: m.members(),
-			value: delegations.reduce((acc, cur) => acc + cur.members.length, 0),
+			value: delegationMembers.length,
 			desc: m.inAllDelegations()
 		},
 		{
@@ -101,6 +127,30 @@
 			desc: m.singleParticipants()
 		}
 	]);
+
+	// Check if all payments are complete (supervisor + all supervised members + single participants)
+	let allPaymentsComplete = $derived.by(() => {
+		// Check supervisor's own payment status
+		const supervisorPaid = status?.paymentStatus === 'DONE';
+
+		// Check all supervised delegation members' payment status
+		const allMembersPaid = delegationMembers.every((member) => {
+			const participantStatus = member.user.conferenceParticipantStatus?.find(
+				(s) => s.conference.id === conference?.id
+			);
+			return participantStatus?.paymentStatus === 'DONE';
+		});
+
+		// Check all single participants' payment status
+		const allSinglesPaid = singleParticipants.every((sp) => {
+			const participantStatus = sp.user.conferenceParticipantStatus?.find(
+				(s) => s.conference.id === conference?.id
+			);
+			return participantStatus?.paymentStatus === 'DONE';
+		});
+
+		return supervisorPaid && allMembersPaid && allSinglesPaid;
+	});
 
 	const getName = (
 		user: { given_name: string; family_name: string } & { [key: string]: any },
@@ -125,24 +175,23 @@
 	`);
 
 	const handlePresenceChange = async (e: Event) => {
-		await toast.promise(
-			updateQuery.mutate({
-				where: {
-					conferenceId_userId: {
-						conferenceId: conference.id,
-						userId: user.sub
-					}
-				},
-				data: {
-					plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
+		const promise = updateQuery.mutate({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conference.id,
+					userId: user.sub
 				}
-			}),
-			{
-				loading: m.genericToastLoading(),
-				success: m.genericToastSuccess(),
-				error: m.genericToastError()
+			},
+			data: {
+				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
 			}
-		);
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
 
 		cache.markStale();
 		await invalidateAll();
@@ -237,6 +286,20 @@
 			}
 		}
 	`);
+
+	const linkContext = $derived<DashboardLinkContext>({
+		conferenceId: conference.id,
+		userType: 'supervisor',
+		conferenceState: conference.state,
+		unlockPayments: conference.unlockPayments,
+		unlockPostals: conference.unlockPostals,
+		hasConferenceInfo: !!conference.info,
+		linkToPreparationGuide: conference.linkToPreparationGuide,
+		isOpenPaperSubmission: conference.isOpenPaperSubmission,
+		user
+	});
+
+	const visibleLinks = $derived(getLinksForUserType('supervisor', linkContext));
 </script>
 
 {#if isStateParticipantRegistration}
@@ -246,14 +309,15 @@
 	</section>
 {/if}
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.overview()}</h2>
+<DashboardSection icon="chart-pie" title={m.overview()} description={m.overviewDescription()}>
 	<GenericWidget content={stats} />
-</section>
+</DashboardSection>
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.ownPresence()}</h2>
-	<p class="text-sm">{m.ownPresenceDescription()}</p>
+<DashboardSection
+	icon="user-check"
+	title={m.ownPresence()}
+	description={m.ownPresenceDescription()}
+>
 	<div class="card bg-base-100 dark:bg-base-200 max-w-80 p-6 shadow-md">
 		<fieldset class="fieldset">
 			<label class="label cursor-pointer">
@@ -269,81 +333,65 @@
 		</fieldset>
 	</div>
 	<p class="text-xs text-gray-500">
-		{@html supervisor.plansOwnAttendenceAtConference
-			? m.willBePresentAtConference()
-			: m.willNotBePresentAtConference()}
+		{#if supervisor.plansOwnAttendenceAtConference}
+			{@html m.willBePresentAtConference()}
+		{:else}
+			{@html m.willNotBePresentAtConference()}
+		{/if}
 	</p>
-</section>
+</DashboardSection>
 
 {#if !isStateParticipantRegistration}
-	<ConferenceStatusWidget
-		conferenceId={conference!.id}
-		userId={user.sub}
-		ofAgeAtConference={ofAge}
-		{status}
-		unlockPayment={conference?.unlockPayments}
-		unlockPostals={conference?.unlockPostals}
-	/>
+	{#if !allPaymentsComplete}
+		<ConferenceStatusWidget
+			conferenceId={conference!.id}
+			userId={user.sub}
+			ofAgeAtConference={ofAge}
+			{status}
+			unlockPayment={conference?.unlockPayments}
+			unlockPostals={conference?.unlockPostals}
+		/>
+	{/if}
 
-	<TasksWrapper>
-		{#if supervisor.supervisedDelegationMembers.some((x) => !x.assignedCommittee)}
-			<TaskAlertCard
-				severity="warning"
-				faIcon="fa-arrows-turn-to-dots"
-				title={m.committeeAssignment()}
-				description={m.committeeAssignmentAlertDescriptionSupervisor()}
-			/>
-		{/if}
-		{#if conference.info}
-			<TaskAlertCard
-				faIcon="fa-info"
-				title={m.conferenceInfo()}
-				description={m.conferenceInfoDescription()}
-				btnText={m.goToConferenceInfo()}
-				btnLink={`./${conference.id}/info`}
-			/>
-		{/if}
-		{#if conference.linkToPreparationGuide}
-			<TaskAlertCard
-				faIcon="fa-book-bookmark"
-				title={m.preparation()}
-				description={m.preparationDescription()}
-				btnText={m.goToPreparation()}
-				btnLink={conference.linkToPreparationGuide}
-				btnExternal
-			/>
-		{/if}
-	</TasksWrapper>
+	<DashboardSection icon="chart-bar" title={m.delegationStatistics()}>
+		<DelegationStatsCharts
+			members={delegationMembers}
+			papers={allPapers}
+			conferenceId={conference.id}
+			conferenceStartDate={conference.startConference}
+		/>
+	</DashboardSection>
+
+	{#if delegationMembers.some((x) => x.delegation.assignedNation && !x.assignedCommittee)}
+		<div class="alert alert-warning">
+			<i class="fas fa-arrows-turn-to-dots text-2xl"></i>
+			<div>
+				<h3 class="font-bold">{m.committeeAssignment()}</h3>
+				<p>{m.committeeAssignmentAlertDescriptionSupervisor()}</p>
+			</div>
+		</div>
+	{/if}
+
+	<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
+		<DashboardLinksGrid>
+			{#each visibleLinks as link (link.id)}
+				{@const badge = link.getBadge?.(linkContext)}
+				<DashboardLinkCard
+					href={link.getHref(linkContext)}
+					icon={link.icon}
+					title={link.getTitle()}
+					description={link.getDescription()}
+					external={link.external}
+					disabled={link.isDisabled(linkContext)}
+					badge={badge?.value}
+					badgeType={badge?.type}
+				/>
+			{/each}
+		</DashboardLinksGrid>
+	</DashboardSection>
 {/if}
 
-<!-- <section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.participantStatus()}</h2>
-<DelegationStatusTableWrapper withPostalSatus withPaymentStatus>
-		{#each allParticipants ?? [] as user}
-			{@const participantStatus = user.conferenceParticipantStatus.find(
-				(x) => x.conference.id === conference.id
-			)}
-			<DelegationStatusTableEntry
-				name={formatNames(user.given_name, user.family_name)}
-				pronouns={user.pronouns ?? ''}
-				withPaymentStatus
-				withPostalStatus
-				downloadPostalDocuments={conference?.unlockPostals
-					? () => downloadPostalDocuments(user.id)
-					: undefined}
-				paymentStatus={participantStatus?.paymentStatus ?? 'PENDING'}
-				postalSatus={getSimplifiedPostalStatus(
-					participantStatus,
-					ofAgeAtConference(conference.startConference, user.birthday)
-				)}
-			/>
-		{/each}
-	</DelegationStatusTableWrapper>
-</section> -->
-
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.delegations()}</h2>
-	<p class="text-sm">{m.delegationsDescription()}</p>
+<DashboardSection icon="flag" title={m.delegations()} description={m.delegationsDescription()}>
 	{#if delegations.length > 0}
 		{#each delegations as delegation (delegation.id)}
 			{@const members = delegationMembers.filter((x) => x.delegation.id === delegation.id)}
@@ -402,21 +450,23 @@
 							fontAwesomeIcon="fa-duotone fa-users"
 							content={delegation.members.length}
 						/>
-						<InfoGrid.Entry
-							title={m.schoolOrInstitution()}
-							fontAwesomeIcon="school"
-							content={delegation.school}
-						/>
-						<InfoGrid.Entry
-							title={m.experience()}
-							fontAwesomeIcon="compass"
-							content={delegation.experience}
-						/>
-						<InfoGrid.Entry
-							title={m.motivation()}
-							fontAwesomeIcon="fire-flame-curved"
-							content={delegation.motivation}
-						/>
+						{#if isStateParticipantRegistration}
+							<InfoGrid.Entry
+								title={m.schoolOrInstitution()}
+								fontAwesomeIcon="school"
+								content={delegation.school}
+							/>
+							<InfoGrid.Entry
+								title={m.experience()}
+								fontAwesomeIcon="compass"
+								content={delegation.experience}
+							/>
+							<InfoGrid.Entry
+								title={m.motivation()}
+								fontAwesomeIcon="fire-flame-curved"
+								content={delegation.motivation}
+							/>
+						{/if}
 					</InfoGrid.Grid>
 				{/snippet}
 
@@ -425,6 +475,7 @@
 						withPostalSatus={!isStateParticipantRegistration}
 						withPaymentStatus={!isStateParticipantRegistration}
 						withCommittee={!isStateParticipantRegistration}
+						withPaperCount={!isStateParticipantRegistration}
 						withEmail
 						title={m.members()}
 					>
@@ -432,6 +483,8 @@
 							{@const participantStatus = member.user?.conferenceParticipantStatus.find(
 								(x) => x.conference.id === conference?.id
 							)}
+							{@const memberPaperCount =
+								delegation.papers?.filter((p) => p.author?.id === member.user.id).length ?? 0}
 							<DelegationStatusTableEntry
 								name={formatNames(member.user.given_name, member.user.family_name)}
 								pronouns={member.user.pronouns ?? ''}
@@ -442,6 +495,8 @@
 									: undefined}
 								withPaymentStatus={!isStateParticipantRegistration}
 								withPostalStatus={!isStateParticipantRegistration}
+								withPaperCount={!isStateParticipantRegistration}
+								paperCount={memberPaperCount}
 								downloadPostalDocuments={conference?.unlockPostals
 									? () => downloadPostalDocuments(member.user.id)
 									: undefined}
@@ -474,11 +529,9 @@
 			{m.noDelegationsFound()}
 		</div>
 	{/if}
-</section>
+</DashboardSection>
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.singleParticipants()}</h2>
-
+<DashboardSection icon="user" title={m.singleParticipants()}>
 	{#if singleParticipants.length > 0}
 		{#each singleParticipants as singleParticipant (singleParticipant.id)}
 			<SupervisorContentCard
@@ -519,21 +572,23 @@
 								{singleParticipant.assignedRole?.name}
 							</InfoGrid.Entry>
 						{/if}
-						<InfoGrid.Entry
-							title={m.schoolOrInstitution()}
-							content={singleParticipant.school}
-							fontAwesomeIcon="school"
-						/>
-						<InfoGrid.Entry
-							title={m.experience()}
-							content={singleParticipant.experience}
-							fontAwesomeIcon="compass"
-						/>
-						<InfoGrid.Entry
-							title={m.motivation()}
-							content={singleParticipant.motivation}
-							fontAwesomeIcon="fire-flame-curved"
-						/>
+						{#if isStateParticipantRegistration}
+							<InfoGrid.Entry
+								title={m.schoolOrInstitution()}
+								content={singleParticipant.school}
+								fontAwesomeIcon="school"
+							/>
+							<InfoGrid.Entry
+								title={m.experience()}
+								content={singleParticipant.experience}
+								fontAwesomeIcon="compass"
+							/>
+							<InfoGrid.Entry
+								title={m.motivation()}
+								content={singleParticipant.motivation}
+								fontAwesomeIcon="fire-flame-curved"
+							/>
+						{/if}
 					</InfoGrid.Grid>
 				{/snippet}
 
@@ -575,9 +630,10 @@
 			{m.noSingleParticipantsFound()}
 		</div>
 	{/if}
-</section>
+</DashboardSection>
 
-<DashboardContentCard
+<DashboardSection
+	icon="users-line"
 	title={m.connectWithStudents()}
 	description={m.connectWithStudentsDescription()}
 >
@@ -586,38 +642,62 @@
 		referralLink={connectionLink}
 		userHasRotationPermission={true}
 		rotationFn={async () => {
-			await toast.promise(
-				rotateConnectionCodeMutation.mutate({
-					id: supervisor.id
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.codeRotated(),
-					error: m.genericToastError()
-				}
-			);
+			const promise = rotateConnectionCodeMutation.mutate({
+				id: supervisor.id
+			});
+			toast.promise(promise, {
+				loading: m.genericToastLoading(),
+				success: m.codeRotated(),
+				error: m.genericToastError()
+			});
+			await promise;
 			cache.markStale();
 			await invalidateAll();
 		}}
 	/>
-</DashboardContentCard>
+</DashboardSection>
 
-<section class="flex flex-col gap-2">
-	<h2 class="text-2xl font-bold">{m.rejectedParticipants()}</h2>
-	<p class="text-sm">{m.rejectedParticipantsDescription()}</p>
-	{#if rejectedParticipants.length > 0}
-		<DashboardContentCard>
-			<table class="table w-full">
-				<tbody>
-					{#each rejectedParticipants as rejectedParticipant (rejectedParticipant.id)}
-						<tr>
-							<td>
-								{formatNames(rejectedParticipant.given_name, rejectedParticipant.family_name)}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</DashboardContentCard>
-	{/if}
-</section>
+{#if !isStateParticipantRegistration && totalStudentsCount > 0}
+	<DashboardSection
+		icon={allStudentsAccepted ? 'circle-check' : 'user-xmark'}
+		title={allStudentsAccepted ? m.yourStudents() : m.rejectedParticipants()}
+		description={allStudentsAccepted
+			? m.yourStudentsPostDescription()
+			: m.rejectedParticipantsDescription()}
+	>
+		<div class="stats bg-base-200 shadow">
+			<div class="stat">
+				<div class="stat-figure text-primary">
+					<i
+						class="fa-duotone text-4xl"
+						class:fa-circle-check={allStudentsAccepted}
+						class:text-success={allStudentsAccepted}
+						class:fa-users={!allStudentsAccepted}
+					></i>
+				</div>
+				<div class="stat-title">{m.studentsAccepted()}</div>
+				<div class="stat-value">{acceptedStudentsCount} / {totalStudentsCount}</div>
+				{#if allStudentsAccepted}
+					<div class="stat-desc text-success">{m.allStudentsAcceptedMessage()}</div>
+				{/if}
+			</div>
+		</div>
+
+		{#if rejectedParticipants.length > 0}
+			<div class="card bg-base-100 border-base-200 mt-4 border p-4 shadow-md">
+				<h4 class="mb-2 font-semibold">{m.rejectedParticipants()}</h4>
+				<table class="table w-full">
+					<tbody>
+						{#each rejectedParticipants as rejectedParticipant (rejectedParticipant.id)}
+							<tr>
+								<td>
+									{formatNames(rejectedParticipant.given_name, rejectedParticipant.family_name)}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</DashboardSection>
+{/if}

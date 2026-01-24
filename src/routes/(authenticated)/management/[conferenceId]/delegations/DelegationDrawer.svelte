@@ -11,7 +11,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import codenmz from '$lib/services/codenamize';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		conferenceId: string;
@@ -160,13 +160,12 @@
 		if (!newSchool) return;
 
 		try {
-			await toast.promise(
-				changeDelegationSchoolMutation.mutate({
-					delegationId,
-					newSchool
-				}),
-				genericPromiseToastMessages
-			);
+			const promise = changeDelegationSchoolMutation.mutate({
+				delegationId,
+				newSchool
+			});
+			toast.promise(promise, genericPromiseToastMessages);
+			await promise;
 			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
@@ -405,13 +404,12 @@
 			class="btn {!delegation?.applied && 'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				await toast.promise(
-					delegaitonResetMutation.mutate({
-						delegationId,
-						applied: false
-					}),
-					genericPromiseToastMessages
-				);
+				const promise = delegaitonResetMutation.mutate({
+					delegationId,
+					applied: false
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
 				cache.markStale();
 				await invalidateAll();
 			}}

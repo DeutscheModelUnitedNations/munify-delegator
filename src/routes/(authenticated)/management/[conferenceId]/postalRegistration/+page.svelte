@@ -13,7 +13,7 @@
 	import hotkeys from 'hotkeys-js';
 
 	import { onDestroy, onMount } from 'svelte';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
@@ -214,13 +214,12 @@
 			toast.error(m.userNotFound());
 			return;
 		}
-		await toast.promise(
-			changeParticipantStatus.mutate({
-				where: { id: statusId, conferenceId: data.conferenceId, userId },
-				data: mutationData
-			}),
-			genericPromiseToastMessages
-		);
+		const promise = changeParticipantStatus.mutate({
+			where: { id: statusId, conferenceId: data.conferenceId, userId },
+			data: mutationData
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 		cache.markStale();
 		userData.fetch();
 	};

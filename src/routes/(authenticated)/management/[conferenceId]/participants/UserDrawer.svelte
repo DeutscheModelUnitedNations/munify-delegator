@@ -23,13 +23,14 @@
 		type RecipientData
 	} from '$lib/services/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Props {
 		userId: string;
@@ -77,6 +78,13 @@
 			) {
 				delegation {
 					id
+					assignedNation {
+						alpha2Code
+						alpha3Code
+					}
+				}
+				assignedCommittee {
+					abbreviation
 				}
 			}
 			findManyConferenceSupervisors(
@@ -219,24 +227,20 @@
 	`);
 
 	const assigneSupervisor = async (connectionCode: string) => {
-		await toast
-			.promise(
-				assignSupervisorMutation.mutate({
-					conferenceId,
-					userId,
-					connectionCode
-				}),
-				{
-					loading: m.genericToastLoading(),
-					success: m.genericToastSuccess(),
-					error: m.genericToastError()
-				}
-			)
-			.then(async () => {
-				assignSupervisorModalOpen = false;
-				cache.markStale();
-				await invalidateAll();
-			});
+		const promise = assignSupervisorMutation.mutate({
+			conferenceId,
+			userId,
+			connectionCode
+		});
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
+		await promise;
+		assignSupervisorModalOpen = false;
+		cache.markStale();
+		await invalidateAll();
 	};
 
 	const deleteParticipant = async () => {
@@ -586,6 +590,84 @@
 					></i>
 					{m.certificate()}
 				</button>
+
+				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
+					{@const delegationMember = $userQuery.data?.findManyDelegationMembers?.[0]}
+					{@const assignedNation = delegationMember?.delegation?.assignedNation}
+					<button
+						class="btn"
+						onclick={async () => {
+							const body: {
+								name?: string;
+								countryName?: string;
+								countryAlpha2Code?: string;
+								committee?: string;
+								pronouns?: string;
+								id?: string;
+								mediaConsentStatus?: string;
+							} = {};
+							if (user?.given_name && user?.family_name) {
+								body.name = `${user.given_name} ${user.family_name}`;
+							}
+							if (assignedNation?.alpha3Code) {
+								body.countryName = getFullTranslatedCountryNameFromISO3Code(
+									assignedNation.alpha3Code
+								);
+							}
+							if (assignedNation?.alpha2Code) {
+								body.countryAlpha2Code = assignedNation.alpha2Code;
+							}
+							if (delegationMember?.assignedCommittee?.abbreviation) {
+								body.committee = delegationMember.assignedCommittee.abbreviation;
+							}
+							if (user?.pronouns) {
+								body.pronouns = user.pronouns;
+							}
+							if (user?.id) {
+								body.id = user.id;
+							}
+							if (status?.mediaConsentStatus) {
+								body.mediaConsentStatus = status.mediaConsentStatus;
+							}
+							try {
+								const res = await fetch(
+									`${configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create`,
+									{
+										method: 'POST',
+										headers: { 'Content-Type': 'application/json' },
+										body: JSON.stringify(body)
+									}
+								);
+								if (!res.ok) {
+									const errorText = await res.text();
+									console.error(`Badge generator API error (${res.status}): ${errorText}`);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const data: unknown = await res.json();
+								if (
+									typeof data !== 'object' ||
+									data === null ||
+									!('url' in data) ||
+									typeof (data as { url: unknown }).url !== 'string' ||
+									(data as { url: string }).url.trim() === ''
+								) {
+									console.error('Badge generator returned invalid response:', data);
+									toast.error(m.genericToastError());
+									return;
+								}
+								const { url } = data as { url: string };
+								window.open(url.replace('http://', 'https://'), '_blank');
+							} catch (e) {
+								console.error('Failed to open badge generator', e);
+								toast.error(m.genericToastError());
+							}
+						}}
+					>
+						<i class="fa-duotone fa-id-badge"></i>
+						{m.generateBadge()}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>

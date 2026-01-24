@@ -11,6 +11,8 @@ import { fastUserQuery } from '$lib/queries/fastUserQuery';
 const userQuery = graphql(`
 	query FullUserMyAccountQuery($id: String!) {
 		findUniqueUser(where: { id: $id }) {
+			given_name
+			family_name
 			birthday
 			phone
 			street
