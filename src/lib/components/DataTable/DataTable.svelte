@@ -140,7 +140,7 @@
 	});
 </script>
 
-<div class="flex min-w-0 items-center overflow-hidden">
+<div class="no-print flex min-w-0 items-center overflow-hidden">
 	{#if enableSearch}
 		<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
 			<input type="text" class="grow" bind:value={$searchPattern} placeholder={m.search()} />

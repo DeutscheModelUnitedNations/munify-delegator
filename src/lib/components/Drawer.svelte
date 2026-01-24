@@ -43,7 +43,7 @@
 	<div
 		aria-hidden="true"
 		onclick={close}
-		class="fixed top-0 left-0 z-30 h-screen w-screen bg-black opacity-30"
+		class="no-print fixed top-0 left-0 z-30 h-screen w-screen bg-black opacity-30"
 	></div>
 	<div
 		class="no-scrollbar fixed top-0 right-0 z-40 h-screen overflow-y-auto duration-300"
