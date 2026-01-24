@@ -86,6 +86,7 @@ model Conference {
   conferenceSupervisors        ConferenceSupervisor[]
   conferenceUserStatus         ConferenceParticipantStatus[]
   teamMembers                  TeamMember[]
+  teamMemberInvitations        TeamMemberInvitation[]
   committees                   Committee[]
   singleParticipants           SingleParticipant[]
   delegationMembers            DelegationMember[]
@@ -198,6 +199,9 @@ model User {
   papers                        Paper[]
   paperReviews                  PaperReview[]
   reviewerSnippets              ReviewerSnippet[]
+
+  invitationsSent     TeamMemberInvitation[] @relation("InvitedByUser")
+  invitationsAccepted TeamMemberInvitation[] @relation("AcceptedByUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -619,6 +623,7 @@ enum TeamRole {
   PARTICIPANT_CARE
   REVIEWER
   MEMBER
+  TEAM_COORDINATOR
 }
 
 /// A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.
@@ -634,4 +639,29 @@ model TeamMember {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, userId])
+}
+
+/// An invitation to join the team for a conference
+model TeamMemberInvitation {
+  id        String    @id @default(nanoid())
+  email     String
+  role      TeamRole
+  token     String    @unique /// SHA-256 hashed token
+  expiresAt DateTime
+  usedAt    DateTime?
+  revokedAt DateTime?
+
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId String
+  invitedBy    User       @relation("InvitedByUser", fields: [invitedById], references: [id])
+  invitedById  String
+  acceptedBy   User?      @relation("AcceptedByUser", fields: [acceptedById], references: [id])
+  acceptedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([token])
+  @@index([conferenceId])
+  @@index([conferenceId, email])
 }

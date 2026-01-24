@@ -37,6 +37,8 @@ export function translateTeamRole(role: string) {
 			return m.teamRoleReviewer();
 		case 'MEMBER':
 			return m.teamRoleMember();
+		case 'TEAM_COORDINATOR':
+			return m.teamRoleTeamCoordinator();
 		default:
 			return role;
 	}

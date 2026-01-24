@@ -87,6 +87,7 @@ export interface Attribs {
 			| 'PROJECT_MANAGEMENT'
 			| 'MEMBER' // Team Member
 			| 'REVIEWER'
+			| 'TEAM_COORDINATOR'
 			| undefined;
 	}[];
 }

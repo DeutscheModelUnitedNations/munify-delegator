@@ -1,24 +1,39 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import AddTeamMemberModal from './AddTeamMemberModal.svelte';
+	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { cache, graphql } from '$houdini';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import type { PageData } from './$houdini';
+	import { userFormSchema } from '../../../../my-account/form-schema';
+	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	let { data }: { data: PageData } = $props();
 
-	const teamQuery = data.TeamMembersQuery;
+	const teamQuery = data.TeamManagementMembersQuery;
 	let teamMembers = $derived($teamQuery.data?.findManyTeamMembers ?? []);
+	let isAdmin = data.isAdmin;
 
-	let addMemberModalOpen = $state(false);
+	let inviteMembersModalOpen = $state(false);
+
+	function isProfileComplete(user: {
+		birthday: string | null;
+		phone: string | null;
+		street: string | null;
+		zip: string | null;
+		city: string | null;
+		country: string | null;
+		gender: string | null;
+		foodPreference: string | null;
+	}): boolean {
+		return userFormSchema.safeParse(user).success;
+	}
 
 	const deleteTeamMemberMutation = graphql(`
-		mutation DeleteTeamMember($id: String!) {
+		mutation DeleteTeamMemberFromManagement($id: String!) {
 			deleteOneTeamMember(where: { id: $id }) {
 				id
 			}
@@ -26,7 +41,7 @@
 	`);
 
 	const startImpersonationMutation = graphql(`
-		mutation StartImpersonationFromTeam($targetUserId: String!) {
+		mutation StartImpersonationFromTeamManagement($targetUserId: String!) {
 			startImpersonation(targetUserId: $targetUserId)
 		}
 	`);
@@ -73,48 +88,67 @@
 		PROJECT_MANAGEMENT: 'badge-primary',
 		PARTICIPANT_CARE: 'badge-secondary',
 		REVIEWER: 'badge-accent',
-		MEMBER: 'badge-ghost'
+		MEMBER: 'badge-ghost',
+		TEAM_COORDINATOR: 'badge-info'
 	};
 
 	const columns = [
 		{
 			key: 'family_name',
 			title: m.familyName(),
-			value: (row) => row.user.family_name,
+			value: (row: (typeof teamMembers)[number]) => row.user.family_name,
 			sortable: true
 		},
 		{
 			key: 'given_name',
 			title: m.givenName(),
-			value: (row) => row.user.given_name,
+			value: (row: (typeof teamMembers)[number]) => row.user.given_name,
 			sortable: true
 		},
 		{
 			key: 'email',
 			title: m.email(),
-			value: (row) => row.user.email,
+			value: (row: (typeof teamMembers)[number]) => row.user.email,
 			sortable: true
 		},
 		{
 			key: 'role',
 			title: m.role(),
-			value: (row) => translateTeamRole(row.role),
+			value: (row: (typeof teamMembers)[number]) => translateTeamRole(row.role),
 			sortable: true,
 			parseHTML: true,
-			renderValue: (row) =>
+			renderValue: (row: (typeof teamMembers)[number]) =>
 				`<span class="badge ${roleColors[row.role] ?? 'badge-ghost'}">${translateTeamRole(row.role)}</span>`
+		},
+		{
+			key: 'profileStatus',
+			title: m.profileStatus(),
+			value: (row: (typeof teamMembers)[number]) =>
+				isProfileComplete(row.user) ? m.complete() : m.incomplete(),
+			sortable: true,
+			parseHTML: true,
+			renderValue: (row: (typeof teamMembers)[number]) => {
+				const complete = isProfileComplete(row.user);
+				return complete
+					? `<span class="badge badge-success">${m.complete()}</span>`
+					: `<span class="badge badge-warning" title="${m.profileIncompleteHint()}">${m.incomplete()}</span>`;
+			}
 		},
 		{
 			key: 'actions',
 			title: '',
 			value: () => '',
 			parseHTML: true,
-			renderValue: (row) => `
+			renderValue: (row: (typeof teamMembers)[number]) => `
 				<div class="flex gap-2 justify-end">
-					<button class="btn btn-sm" onclick="window.handleTeamMemberImpersonate('${row.user.id}')" tooltip data-tip="${m.impersonation()}" title="${m.impersonation()}">
-						<i class="fa-duotone fa-user-secret"></i>
-					</button>
-					<button class="btn btn-sm btn-error" onclick="window.handleTeamMemberDelete('${row.id}')" tooltip data-tip="${m.delete()}" title="${m.delete()}">
+					${
+						isAdmin
+							? `<button class="btn btn-sm" onclick="window.handleTeamMemberImpersonate('${row.user.id}')" title="${m.impersonation()}">
+							<i class="fa-duotone fa-user-secret"></i>
+						</button>`
+							: ''
+					}
+					<button class="btn btn-sm btn-error" onclick="window.handleTeamMemberDelete('${row.id}')" title="${m.delete()}">
 						<i class="fa-solid fa-trash"></i>
 					</button>
 				</div>
@@ -125,16 +159,18 @@
 
 <div class="flex flex-col gap-4 p-6">
 	<div class="flex justify-between items-center">
-		<h1 class="text-3xl font-bold">{m.teamManagement()}</h1>
-		<button class="btn btn-primary" onclick={() => (addMemberModalOpen = true)}>
-			<i class="fa-solid fa-plus"></i>
-			{m.addTeamMember()}
-		</button>
+		<h1 class="text-3xl font-bold">{m.teamMembers()}</h1>
+		<div class="flex gap-2">
+			<button class="btn btn-primary" onclick={() => (inviteMembersModalOpen = true)}>
+				<i class="fa-duotone fa-envelope"></i>
+				{m.inviteTeamMembers()}
+			</button>
+		</div>
 	</div>
 
 	<DataTable {columns} rows={teamMembers} />
 </div>
 
-{#if addMemberModalOpen}
-	<AddTeamMemberModal bind:open={addMemberModalOpen} conferenceId={data.conferenceId} />
+{#if inviteMembersModalOpen}
+	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={data.conferenceId} />
 {/if}

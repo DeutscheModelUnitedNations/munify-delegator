@@ -117,86 +117,93 @@
 	});
 </script>
 
-<div class="grid grid-cols-2 gap-3 md:grid-cols-12 relative">
-	<!-- Loading overlay -->
-	{#if isLoading}
-		<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-lg">
-			<span class="loading loading-spinner loading-lg text-primary"></span>
-		</div>
-	{/if}
+{#if !data.stats}
+	<div class="flex flex-col items-center justify-center gap-4 py-16">
+		<i class="fa-duotone fa-chart-simple text-6xl text-base-content/30"></i>
+		<p class="text-base-content/70">{m.noStatsAvailable()}</p>
+	</div>
+{:else}
+	<div class="grid grid-cols-2 gap-3 md:grid-cols-12 relative">
+		<!-- Loading overlay -->
+		{#if isLoading}
+			<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-lg">
+				<span class="loading loading-spinner loading-lg text-primary"></span>
+			</div>
+		{/if}
 
-	<Filter />
-	<DaysUntil data={reactiveData} />
+		<Filter />
+		<DaysUntil data={reactiveData} />
 
-	<AppliedChartAndStats stats={data.stats} />
+		<AppliedChartAndStats stats={data.stats} />
 
-	{#if reactiveData.stats.roleBased}
-		<RoleStats roleBased={reactiveData.stats.roleBased} />
-	{/if}
+		{#if reactiveData.stats.roleBased}
+			<RoleStats roleBased={reactiveData.stats.roleBased} />
+		{/if}
 
-	{#if data.stats.supervisorStats}
-		<SupervisorStats supervisorStats={data.stats.supervisorStats} />
-	{/if}
-	{#if reactiveData.stats.waitingList}
-		<WaitingListStats data={reactiveData} />
-	{/if}
-	<DistributionChart data={reactiveData} />
+		{#if data.stats.supervisorStats}
+			<SupervisorStats supervisorStats={data.stats.supervisorStats} />
+		{/if}
+		{#if reactiveData.stats.waitingList}
+			<WaitingListStats data={reactiveData} />
+		{/if}
+		<DistributionChart data={reactiveData} />
 
-	<IndividualRoles data={reactiveData} />
+		<IndividualRoles data={reactiveData} />
 
-	{#if data.stats.postalPaymentProgress}
-		<PostalPaymentProgress progress={data.stats.postalPaymentProgress} />
-	{/if}
+		{#if data.stats.postalPaymentProgress}
+			<PostalPaymentProgress progress={data.stats.postalPaymentProgress} />
+		{/if}
 
-	{#if reactiveData.stats.committeeFillRates && reactiveData.stats.committeeFillRates.length > 0}
-		<CommitteeFillRates committeeFillRates={reactiveData.stats.committeeFillRates} />
-	{/if}
+		{#if reactiveData.stats.committeeFillRates && reactiveData.stats.committeeFillRates.length > 0}
+			<CommitteeFillRates committeeFillRates={reactiveData.stats.committeeFillRates} />
+		{/if}
 
-	{#if data.stats.paperStats && data.stats.paperStats.total > 0}
-		<PaperStats paperStats={data.stats.paperStats} />
-	{/if}
+		{#if data.stats.paperStats && data.stats.paperStats.total > 0}
+			<PaperStats paperStats={data.stats.paperStats} />
+		{/if}
 
-	{#if reactiveData.stats.registrationTimeline && reactiveData.stats.registrationTimeline.length > 0}
-		<RegistrationTimeline registrationTimeline={reactiveData.stats.registrationTimeline} />
-	{/if}
+		{#if reactiveData.stats.registrationTimeline && reactiveData.stats.registrationTimeline.length > 0}
+			<RegistrationTimeline registrationTimeline={reactiveData.stats.registrationTimeline} />
+		{/if}
 
-	<AgeChart data={reactiveData} />
+		<AgeChart data={reactiveData} />
 
-	{#if reactiveData.stats.nationalityDistribution && reactiveData.stats.nationalityDistribution.length > 0}
-		<NationalityChart nationalityDistribution={reactiveData.stats.nationalityDistribution} />
-	{/if}
-	{#if reactiveData.stats.schoolStats && reactiveData.stats.schoolStats.length > 0}
-		<SchoolStats schoolStats={reactiveData.stats.schoolStats} />
-	{/if}
+		{#if reactiveData.stats.nationalityDistribution && reactiveData.stats.nationalityDistribution.length > 0}
+			<NationalityChart nationalityDistribution={reactiveData.stats.nationalityDistribution} />
+		{/if}
+		{#if reactiveData.stats.schoolStats && reactiveData.stats.schoolStats.length > 0}
+			<SchoolStats schoolStats={reactiveData.stats.schoolStats} />
+		{/if}
 
-	<!-- Row 9: Diet and Gender Matrix -->
-	<DietMatrix data={reactiveData} />
-	<GenderMatrix data={reactiveData} />
+		<!-- Row 9: Diet and Gender Matrix -->
+		<DietMatrix data={reactiveData} />
+		<GenderMatrix data={reactiveData} />
 
-	<!-- Row 10: Map -->
-	<Maps addresses={reactiveData.stats.addresses} />
+		<!-- Row 10: Map -->
+		<Maps addresses={reactiveData.stats.addresses} />
 
-	<!-- Row 11: History Comparison (Full width) -->
-	<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12">
-		<div class="card-body p-4">
-			<h2 class="card-title text-base font-semibold">
-				<i class="fa-duotone fa-clock-rotate-left text-base-content/70"></i>
-				{m.historyComparison()}
-			</h2>
-			<p class="text-sm text-base-content/70">{@html m.historyComparisonDescription()}</p>
-			<select
-				class="select select-bordered w-full max-w-xs bg-base-100"
-				onchange={(e) => setSelectedHistory((e.target as any)?.value)}
-			>
-				{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}
-					<option selected={timestamp === getSelectedHistory()}>
-						{timestamp}
-					</option>
-				{/each}
-				{#if getHistory()?.length === 0 || getHistory() === undefined}
-					<option selected disabled>{m.noHistory()}</option>
-				{/if}
-			</select>
-		</div>
-	</section>
-</div>
+		<!-- Row 11: History Comparison (Full width) -->
+		<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12">
+			<div class="card-body p-4">
+				<h2 class="card-title text-base font-semibold">
+					<i class="fa-duotone fa-clock-rotate-left text-base-content/70"></i>
+					{m.historyComparison()}
+				</h2>
+				<p class="text-sm text-base-content/70">{@html m.historyComparisonDescription()}</p>
+				<select
+					class="select select-bordered w-full max-w-xs bg-base-100"
+					onchange={(e) => setSelectedHistory((e.target as any)?.value)}
+				>
+					{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}
+						<option selected={timestamp === getSelectedHistory()}>
+							{timestamp}
+						</option>
+					{/each}
+					{#if getHistory()?.length === 0 || getHistory() === undefined}
+						<option selected disabled>{m.noHistory()}</option>
+					{/if}
+				</select>
+			</div>
+		</section>
+	</div>
+{/if}

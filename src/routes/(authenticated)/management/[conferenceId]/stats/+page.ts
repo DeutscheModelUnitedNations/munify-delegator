@@ -1,4 +1,3 @@
-import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import { statsQuery } from './statsQuery';
 
@@ -12,11 +11,8 @@ export const load: PageLoad = async (event) => {
 		blocking: true
 	});
 
-	if (!data) {
-		throw error(404, 'Data not found');
-	}
 	return {
-		stats: data.getConferenceStatistics,
+		stats: data?.getConferenceStatistics ?? null,
 		conferenceId
 	};
 };
