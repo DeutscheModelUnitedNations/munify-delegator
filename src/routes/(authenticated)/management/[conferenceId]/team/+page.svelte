@@ -132,7 +132,7 @@
 		</button>
 	</div>
 
-	<DataTable {columns} rows={teamMembers} />
+	<DataTable {columns} rows={teamMembers} downloadDescription="team_members" />
 </div>
 
 {#if addMemberModalOpen}

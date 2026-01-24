@@ -180,6 +180,7 @@
 			rowKey="school"
 			bind:selected={selectedSchools}
 			sortBy="school"
+			downloadDescription="schools"
 		/>
 
 		<div class="my-4 flex flex-col gap-2">

@@ -27,6 +27,7 @@
 		additionallyIndexedKeys?: string[];
 		rowSelected?: (row: RowData) => void;
 		tableClass?: string;
+		downloadDescription?: string;
 	}
 
 	let {
@@ -45,7 +46,8 @@
 		additionallyIndexedKeys = [],
 		title = page.url.pathname.split('/').pop()!,
 		tableClass,
-		rowSelected
+		rowSelected,
+		downloadDescription
 	}: Props = $props();
 	const { getTableSize, getZebra } = getTableSettings();
 
@@ -156,7 +158,10 @@
 		</label>
 	{/if}
 	<DataTableSettingsButton />
-	<ExportButton exportedData={rows as any} />
+	<ExportButton
+		exportedData={rows as any}
+		downloadDescription={downloadDescription ?? 'delegator'}
+	/>
 </div>
 
 <PrintHeader {title} searchPattern={$searchPattern ?? ''} />

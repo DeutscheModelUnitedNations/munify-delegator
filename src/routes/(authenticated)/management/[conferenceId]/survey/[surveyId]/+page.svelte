@@ -430,7 +430,7 @@
 		<!-- Export Section -->
 		{#if survey}
 			<DownloadCategoryCard
-				title={m.surveyExports()}
+				title={m.dataExport()}
 				description={m.surveyExportsDescription()}
 				icon="fas fa-file-export"
 			>

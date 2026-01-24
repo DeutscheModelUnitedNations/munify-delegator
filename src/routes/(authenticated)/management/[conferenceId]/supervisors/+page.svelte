@@ -75,6 +75,7 @@
 	rows={supervisors}
 	enableSearch={true}
 	queryParamKey="filter"
+	downloadDescription="supervisors"
 	rowSelected={(row) => {
 		$selectedSupervisorId = row.id;
 	}}

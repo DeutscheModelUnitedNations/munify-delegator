@@ -137,6 +137,7 @@
 	enableSearch={true}
 	queryParamKey="filter"
 	sortBy="timestamp"
+	downloadDescription="waiting_list"
 	showExpandIcon
 >
 	{#snippet expandedRowContent(row)}

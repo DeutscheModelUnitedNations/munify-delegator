@@ -97,6 +97,7 @@
 	rows={singleParticipants}
 	enableSearch={true}
 	queryParamKey="filter"
+	downloadDescription="single_participants"
 	rowSelected={(row) => {
 		$selectedParticipantRow = row.id;
 	}}

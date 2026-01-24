@@ -98,6 +98,7 @@
 	enableSearch={true}
 	additionallyIndexedKeys={['assignedNation.name']}
 	queryParamKey="filter"
+	downloadDescription="delegations"
 	rowSelected={(row) => {
 		$selectedDelegationRow = row.id;
 	}}

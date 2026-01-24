@@ -250,6 +250,7 @@
 	rowSelected={(row) => {
 		$selectedUserRow = row.id;
 	}}
+	downloadDescription="participants"
 />
 
 {#if $selectedUserRow}

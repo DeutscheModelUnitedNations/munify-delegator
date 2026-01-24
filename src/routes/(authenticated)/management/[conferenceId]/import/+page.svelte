@@ -215,6 +215,7 @@
 				enableSearch={true}
 				tableClass="max-h-80"
 				rowSelected={selectUser}
+				downloadDescription="presence"
 			/>
 			<button class="btn btn-primary" onclick={applyPresent}>
 				{#if loading}
@@ -234,6 +235,7 @@
 				enableSearch={true}
 				tableClass="max-h-80"
 				rowSelected={selectUser}
+				downloadDescription="absence"
 			/>
 			<button class="btn btn-primary" onclick={applyAbsent}>
 				{#if loading}

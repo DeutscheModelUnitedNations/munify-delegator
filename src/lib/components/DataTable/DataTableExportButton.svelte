@@ -3,15 +3,29 @@
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	interface Props {
 		exportedData: Record<string, string>[];
+		downloadDescription?: string;
 	}
 
-	let { exportedData }: Props = $props();
+	let { exportedData, downloadDescription }: Props = $props();
 
 	let confirmDialogOpen = $state(false);
 
+	const pad = (n: number) => n.toString().padStart(2, '0');
+	const d = new Date(Date.now());
+	const timestamp =
+		d.getFullYear().toString() +
+		pad(d.getMonth() + 1) +
+		pad(d.getDate()) +
+		pad(d.getHours()) +
+		pad(d.getMinutes()) +
+		pad(d.getSeconds());
+
 	const exportPdf = () => {
 		confirmDialogOpen = false;
-		window.print();
+		// Use setTimeout to allow dialog to close before printing
+		setTimeout(() => {
+			window.print();
+		}, 0);
 	};
 
 	const exportJson = () => {
@@ -21,7 +35,7 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = 'export.json';
+		a.download = `${downloadDescription}_${timestamp}_export.json`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
@@ -41,19 +55,21 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = 'export.csv';
+		a.download = `${downloadDescription}_${timestamp}_export.csv`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
 </script>
 
-<button
-	class="btn btn-square btn-ghost"
-	onclick={() => (confirmDialogOpen = true)}
-	aria-label="Export"
->
-	<i class="fa-duotone fa-file-export text-xl"></i>
-</button>
+<div class="tooltip tooltip-left" data-tip={m.dataExport()}>
+	<button
+		class="btn btn-square btn-ghost"
+		onclick={() => (confirmDialogOpen = true)}
+		aria-label="Export"
+	>
+		<i class="fa-duotone fa-file-export text-xl"></i>
+	</button>
+</div>
 
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
 	<div class="modal-box">
