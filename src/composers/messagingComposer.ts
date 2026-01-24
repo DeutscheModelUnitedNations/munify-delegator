@@ -68,10 +68,7 @@ export async function getMessageRecipients(conferenceId: string, userId: string)
 		return [];
 	}
 
-	console.log(
-		'[getMessageRecipients] User delegation ID:',
-		currentDelegationMember.delegationId
-	);
+	console.log('[getMessageRecipients] User delegation ID:', currentDelegationMember.delegationId);
 
 	// Fetch delegation members in the SAME delegation (excluding current user)
 	const delegationMembers = await db.delegationMember.findMany({
@@ -163,9 +160,7 @@ export async function getMessageHistory(conferenceId: string, userId: string) {
 		}
 	});
 
-	const delegationByUserId = new Map(
-		delegationMembers.map((member) => [member.userId, member])
-	);
+	const delegationByUserId = new Map(delegationMembers.map((member) => [member.userId, member]));
 
 	const singleParticipants = await db.singleParticipant.findMany({
 		where: {

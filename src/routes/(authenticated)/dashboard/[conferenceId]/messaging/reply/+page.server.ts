@@ -70,7 +70,10 @@ export const load: PageServerLoad = async (event) => {
 	} catch (loadError) {
 		console.error('Messaging recipients load error:', loadError);
 		// If we can't load recipients, we can't verify the recipient.
-		if (loadError instanceof Error && (loadError.message.includes('404') || loadError.message.includes('Missing recipient'))) {
+		if (
+			loadError instanceof Error &&
+			(loadError.message.includes('404') || loadError.message.includes('Missing recipient'))
+		) {
 			throw loadError;
 		}
 		throw error(500, 'Unable to load recipient details');

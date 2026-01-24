@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
-	import toast from 'svelte-french-toast';
+	import { toast } from 'svelte-sonner';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { PageData } from './$types';
 

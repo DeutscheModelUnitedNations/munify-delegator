@@ -13,7 +13,6 @@
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
-	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { onMount } from 'svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';

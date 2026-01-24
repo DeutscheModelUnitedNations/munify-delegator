@@ -221,6 +221,10 @@
 			icon: 'eye',
 			translation: m.view()
 		},
+		messaging: {
+			icon: 'envelope',
+			translation: m.messagingMessaging()
+		},
 		'registration-mode': {
 			icon: 'id-card',
 			translation: m.registrationMode()
