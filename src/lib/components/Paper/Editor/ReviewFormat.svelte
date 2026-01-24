@@ -190,6 +190,13 @@
 
 	{#if $editor}
 		<Menu.Wrapper>
+			<Menu.Button onClick={() => $editor.commands.undo()} label={m.undo()} icon="fa-rotate-left" />
+			<Menu.Button
+				onClick={() => $editor.commands.redo()}
+				label={m.redo()}
+				icon="fa-rotate-right"
+			/>
+			<Menu.Divider />
 			<Menu.Button
 				onClick={() => $editor.chain().focus().toggleHeading({ level: 2 }).run()}
 				active={$editor.isActive('heading', { level: 2 })}

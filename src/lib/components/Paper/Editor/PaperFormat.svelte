@@ -35,6 +35,17 @@
 		{#snippet fixedMenu(editor)}
 			<Menu.Wrapper>
 				<Menu.Button
+					onClick={() => editor.commands.undo()}
+					label={m.undo()}
+					icon="fa-rotate-left"
+				/>
+				<Menu.Button
+					onClick={() => editor.commands.redo()}
+					label={m.redo()}
+					icon="fa-rotate-right"
+				/>
+				<Menu.Divider />
+				<Menu.Button
 					onClick={() => editor.chain().focus().toggleOrderedList().run()}
 					active={editor.isActive('orderedList')}
 					label={m.orderedList()}
