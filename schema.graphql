@@ -432,6 +432,7 @@ input ConferenceCreateInput {
   logoDataURL: String
   longTitle: String
   mediaConsentContent: String
+  messageAudits: MessageAuditCreateNestedManyWithoutConferenceInput
   nonStateActors: NonStateActorCreateNestedManyWithoutConferenceInput
   papers: PaperCreateNestedManyWithoutConferenceInput
   paymentTransactions: PaymentTransactionCreateNestedManyWithoutConferenceInput
@@ -490,6 +491,7 @@ input ConferenceOrderByWithRelationInput {
   logoDataURL: SortOrder
   longTitle: SortOrder
   mediaConsentContent: SortOrder
+  messageAudits: MessageAuditOrderByRelationAggregateInput
   nonStateActors: NonStateActorOrderByRelationAggregateInput
   papers: PaperOrderByRelationAggregateInput
   paymentTransactions: PaymentTransactionOrderByRelationAggregateInput
@@ -1003,6 +1005,7 @@ input ConferenceUpdateInput {
   logoDataURL: NullableStringFieldUpdateOperationsInput
   longTitle: NullableStringFieldUpdateOperationsInput
   mediaConsentContent: NullableStringFieldUpdateOperationsInput
+  messageAudits: MessageAuditUpdateManyWithoutConferenceNestedInput
   nonStateActors: NonStateActorUpdateManyWithoutConferenceNestedInput
   papers: PaperUpdateManyWithoutConferenceNestedInput
   paymentTransactions: PaymentTransactionUpdateManyWithoutConferenceNestedInput
@@ -1109,6 +1112,7 @@ input ConferenceWhereInput {
   logoDataURL: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
+  messageAudits: MessageAuditListRelationFilter
   nonStateActors: NonStateActorListRelationFilter
   papers: PaperListRelationFilter
   paymentTransactions: PaymentTransactionListRelationFilter
@@ -1170,6 +1174,7 @@ input ConferenceWhereUniqueInput {
   logoDataURL: StringNullableFilter
   longTitle: StringNullableFilter
   mediaConsentContent: StringNullableFilter
+  messageAudits: MessageAuditListRelationFilter
   nonStateActors: NonStateActorListRelationFilter
   papers: PaperListRelationFilter
   paymentTransactions: PaymentTransactionListRelationFilter
@@ -1909,6 +1914,27 @@ input EnumMediaConsentStatusWithAggregatesFilter {
   notIn: [MediaConsentStatus!]
 }
 
+input EnumMessageStatusFieldUpdateOperationsInput {
+  set: MessageStatus
+}
+
+input EnumMessageStatusFilter {
+  equals: MessageStatus
+  in: [MessageStatus!]
+  not: MessageStatus
+  notIn: [MessageStatus!]
+}
+
+input EnumMessageStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumMessageStatusFilter
+  _min: NestedEnumMessageStatusFilter
+  equals: MessageStatus
+  in: [MessageStatus!]
+  not: MessageStatus
+  notIn: [MessageStatus!]
+}
+
 input EnumPaperStatusFieldUpdateOperationsInput {
   set: PaperStatus
 }
@@ -2302,6 +2328,178 @@ enum MediaConsentStatus {
   PARTIALLY_ALLOWED
 }
 
+type MessageAudit {
+  body: String!
+  conference: Conference!
+  conferenceId: String!
+  createdAt: DateTime!
+  id: ID!
+  messageId: String
+  recipientUser: User!
+  recipientUserId: String!
+  senderUser: User!
+  senderUserId: String!
+  status: MessageStatus!
+  subject: String!
+  updatedAt: DateTime!
+}
+
+input MessageAuditCreateInput {
+  body: String!
+  conferenceId: String!
+  createdAt: DateTime
+  id: String
+  messageId: String
+  recipientUserId: String!
+  senderUserId: String!
+  status: MessageStatus
+  subject: String!
+  updatedAt: DateTime
+}
+
+input MessageAuditCreateNestedManyWithoutConferenceInput {
+  connect: [MessageAuditWhereUniqueInput!]
+}
+
+input MessageAuditCreateNestedManyWithoutRecipientUserInput {
+  connect: [MessageAuditWhereUniqueInput!]
+}
+
+input MessageAuditCreateNestedManyWithoutSenderUserInput {
+  connect: [MessageAuditWhereUniqueInput!]
+}
+
+input MessageAuditListRelationFilter {
+  every: MessageAuditWhereInput
+  none: MessageAuditWhereInput
+  some: MessageAuditWhereInput
+}
+
+input MessageAuditOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input MessageAuditOrderByWithRelationInput {
+  body: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  id: SortOrder
+  messageId: SortOrder
+  recipientUser: UserOrderByWithRelationInput
+  recipientUserId: SortOrder
+  senderUser: UserOrderByWithRelationInput
+  senderUserId: SortOrder
+  status: SortOrder
+  subject: SortOrder
+  updatedAt: SortOrder
+}
+
+enum MessageAuditScalarFieldEnum {
+  body
+  conferenceId
+  createdAt
+  id
+  messageId
+  recipientUserId
+  senderUserId
+  status
+  subject
+  updatedAt
+}
+
+input MessageAuditUpdateInput {
+  body: StringFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  messageId: NullableStringFieldUpdateOperationsInput
+  recipientUserId: StringFieldUpdateOperationsInput
+  senderUserId: StringFieldUpdateOperationsInput
+  status: EnumMessageStatusFieldUpdateOperationsInput
+  subject: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input MessageAuditUpdateManyMutationInput {
+  body: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  messageId: NullableStringFieldUpdateOperationsInput
+  status: EnumMessageStatusFieldUpdateOperationsInput
+  subject: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input MessageAuditUpdateManyWithoutConferenceNestedInput {
+  connect: [MessageAuditWhereUniqueInput!]
+  disconnect: [MessageAuditWhereUniqueInput!]
+  set: [MessageAuditWhereUniqueInput!]
+}
+
+input MessageAuditUpdateManyWithoutRecipientUserNestedInput {
+  connect: [MessageAuditWhereUniqueInput!]
+  disconnect: [MessageAuditWhereUniqueInput!]
+  set: [MessageAuditWhereUniqueInput!]
+}
+
+input MessageAuditUpdateManyWithoutSenderUserNestedInput {
+  connect: [MessageAuditWhereUniqueInput!]
+  disconnect: [MessageAuditWhereUniqueInput!]
+  set: [MessageAuditWhereUniqueInput!]
+}
+
+input MessageAuditWhereInput {
+  AND: [MessageAuditWhereInput!]
+  NOT: [MessageAuditWhereInput!]
+  OR: [MessageAuditWhereInput!]
+  body: StringFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  id: StringFilter
+  messageId: StringNullableFilter
+  recipientUser: UserWhereInput
+  recipientUserId: StringFilter
+  senderUser: UserWhereInput
+  senderUserId: StringFilter
+  status: EnumMessageStatusFilter
+  subject: StringFilter
+  updatedAt: DateTimeFilter
+}
+
+input MessageAuditWhereUniqueInput {
+  AND: [MessageAuditWhereInput!]
+  NOT: [MessageAuditWhereInput!]
+  OR: [MessageAuditWhereInput!]
+  body: StringFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  id: String
+  messageId: StringNullableFilter
+  recipientUser: UserWhereInput
+  recipientUserId: StringFilter
+  senderUser: UserWhereInput
+  senderUserId: StringFilter
+  status: EnumMessageStatusFilter
+  subject: StringFilter
+  updatedAt: DateTimeFilter
+}
+
+type MessageHistoryItem {
+  recipientLabel: String!
+  sentAt: String!
+  status: String!
+  subject: String!
+}
+
+enum MessageStatus {
+  BLOCKED
+  FAILED
+  SENT
+}
+
 type Mutation {
   assignCommitteesToDelegationMembers(assignments: [updateManyDelegationMemberInputTypeArrayValue!]!): [DelegationMember!]!
   connectToConferenceSupervisor(conferenceId: ID!, connectionCode: String!, userId: ID): ConferenceSupervisor
@@ -2348,6 +2546,7 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
+  sendDelegationMessage(body: String!, conferenceId: String!, recipientId: String!, replyUrl: String!, subject: String!): String!
   setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
@@ -2632,6 +2831,23 @@ input NestedEnumMediaConsentStatusWithAggregatesFilter {
   in: [MediaConsentStatus!]
   not: MediaConsentStatus
   notIn: [MediaConsentStatus!]
+}
+
+input NestedEnumMessageStatusFilter {
+  equals: MessageStatus
+  in: [MessageStatus!]
+  not: MessageStatus
+  notIn: [MessageStatus!]
+}
+
+input NestedEnumMessageStatusWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumMessageStatusFilter
+  _min: NestedEnumMessageStatusFilter
+  equals: MessageStatus
+  in: [MessageStatus!]
+  not: MessageStatus
+  notIn: [MessageStatus!]
 }
 
 input NestedEnumPaperStatusFilter {
@@ -3708,6 +3924,7 @@ type Query {
   findManyCustomConferenceRoles(cursor: CustomConferenceRoleWhereUniqueInput, distinct: [CustomConferenceRoleScalarFieldEnum!], orderBy: [CustomConferenceRoleOrderByWithRelationInput!], skip: Int, take: Int, where: CustomConferenceRoleWhereInput): [CustomConferenceRole!]!
   findManyDelegationMembers(cursor: DelegationMemberWhereUniqueInput, distinct: [DelegationMemberScalarFieldEnum!], orderBy: [DelegationMemberOrderByWithRelationInput!], skip: Int, take: Int, where: DelegationMemberWhereInput): [DelegationMember!]!
   findManyDelegations(cursor: DelegationWhereUniqueInput, distinct: [DelegationScalarFieldEnum!], orderBy: [DelegationOrderByWithRelationInput!], skip: Int, take: Int, where: DelegationWhereInput): [Delegation!]!
+  findManyMessageAudits(cursor: MessageAuditWhereUniqueInput, distinct: [MessageAuditScalarFieldEnum!], orderBy: [MessageAuditOrderByWithRelationInput!], skip: Int, take: Int, where: MessageAuditWhereInput): [MessageAudit!]!
   findManyNations(cursor: NationWhereUniqueInput, distinct: [NationScalarFieldEnum!], orderBy: [NationOrderByWithRelationInput!], skip: Int, take: Int, where: NationWhereInput): [Nation!]!
   findManyNonStateActors(cursor: NonStateActorWhereUniqueInput, distinct: [NonStateActorScalarFieldEnum!], orderBy: [NonStateActorOrderByWithRelationInput!], skip: Int, take: Int, where: NonStateActorWhereInput): [NonStateActor!]!
   findManyPapers(cursor: PaperWhereUniqueInput, distinct: [PaperScalarFieldEnum!], orderBy: [PaperOrderByWithRelationInput!], skip: Int, take: Int, where: PaperWhereInput): [Paper!]!
@@ -3732,6 +3949,7 @@ type Query {
   findUniqueCustomConferenceRole(where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   findUniqueDelegation(where: DelegationWhereUniqueInput!): Delegation
   findUniqueDelegationMember(where: DelegationMemberWhereUniqueInput!): DelegationMember
+  findUniqueMessageAudit(where: MessageAuditWhereUniqueInput!): MessageAudit
   findUniqueNation(where: NationWhereUniqueInput!): Nation
   findUniqueNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   findUniquePaper(where: PaperWhereUniqueInput!): Paper
@@ -3749,6 +3967,8 @@ type Query {
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!, filter: StatsFilter! = ALL): StatisticsResult!
+  getMessageHistory(conferenceId: String!): [MessageHistoryItem!]!
+  getMessageRecipients(conferenceId: String!): [RecipientInfo!]!
   impersonatableUsers: [User!]!
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
@@ -3765,6 +3985,11 @@ type Query {
 enum QueryMode {
   default
   insensitive
+}
+
+type RecipientInfo {
+  id: String!
+  label: String!
 }
 
 enum ReviewHelpStatus {
@@ -5185,6 +5410,7 @@ type UpsertSelfResult {
 type User {
   apartment: String
   birthday: DateTime
+  canReceiveDelegationMail: Boolean!
   city: String
   conferenceParticipantStatus: [ConferenceParticipantStatus!]!
   conferenceParticipationsCount: Int!
@@ -5217,6 +5443,7 @@ type User {
 input UserCreateInput {
   apartment: String
   birthday: DateTime
+  canReceiveDelegationMail: Boolean
   city: String
   conferenceParticipantStatus: ConferenceParticipantStatusCreateNestedManyWithoutUserInput
   conferenceSupervisor: ConferenceSupervisorCreateNestedManyWithoutUserInput
@@ -5239,7 +5466,9 @@ input UserCreateInput {
   phone: String
   preferred_username: String!
   pronouns: String
+  receivedDelegationMessages: MessageAuditCreateNestedManyWithoutRecipientUserInput
   reviewerSnippets: ReviewerSnippetCreateNestedManyWithoutUserInput
+  sentDelegationMessages: MessageAuditCreateNestedManyWithoutSenderUserInput
   singleParticipant: SingleParticipantCreateNestedManyWithoutUserInput
   street: String
   surveyAnswers: SurveyAnswerCreateNestedManyWithoutUserInput
@@ -5254,6 +5483,7 @@ input UserCreateInput {
 input UserOrderByWithRelationInput {
   apartment: SortOrder
   birthday: SortOrder
+  canReceiveDelegationMail: SortOrder
   city: SortOrder
   conferenceParticipantStatus: ConferenceParticipantStatusOrderByRelationAggregateInput
   conferenceSupervisor: ConferenceSupervisorOrderByRelationAggregateInput
@@ -5276,7 +5506,9 @@ input UserOrderByWithRelationInput {
   phone: SortOrder
   preferred_username: SortOrder
   pronouns: SortOrder
+  receivedDelegationMessages: MessageAuditOrderByRelationAggregateInput
   reviewerSnippets: ReviewerSnippetOrderByRelationAggregateInput
+  sentDelegationMessages: MessageAuditOrderByRelationAggregateInput
   singleParticipant: SingleParticipantOrderByRelationAggregateInput
   street: SortOrder
   surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
@@ -5394,6 +5626,7 @@ input UserReferenceInPaymentTransactionWhereUniqueInput {
 enum UserScalarFieldEnum {
   apartment
   birthday
+  canReceiveDelegationMail
   city
   country
   createdAt
@@ -5424,6 +5657,7 @@ input UserScalarRelationFilter {
 input UserUpdateDataInput {
   apartment: String
   birthday: DateTime!
+  canReceiveDelegationMail: Boolean
   city: String!
   country: String!
   emergencyContacts: String!
@@ -5442,6 +5676,7 @@ input UserUpdateDataInput {
 input UserUpdateInput {
   apartment: NullableStringFieldUpdateOperationsInput
   birthday: NullableDateTimeFieldUpdateOperationsInput
+  canReceiveDelegationMail: BoolFieldUpdateOperationsInput
   city: NullableStringFieldUpdateOperationsInput
   conferenceParticipantStatus: ConferenceParticipantStatusUpdateManyWithoutUserNestedInput
   conferenceSupervisor: ConferenceSupervisorUpdateManyWithoutUserNestedInput
@@ -5464,7 +5699,9 @@ input UserUpdateInput {
   phone: NullableStringFieldUpdateOperationsInput
   preferred_username: StringFieldUpdateOperationsInput
   pronouns: NullableStringFieldUpdateOperationsInput
+  receivedDelegationMessages: MessageAuditUpdateManyWithoutRecipientUserNestedInput
   reviewerSnippets: ReviewerSnippetUpdateManyWithoutUserNestedInput
+  sentDelegationMessages: MessageAuditUpdateManyWithoutSenderUserNestedInput
   singleParticipant: SingleParticipantUpdateManyWithoutUserNestedInput
   street: NullableStringFieldUpdateOperationsInput
   surveyAnswers: SurveyAnswerUpdateManyWithoutUserNestedInput
@@ -5479,6 +5716,7 @@ input UserUpdateInput {
 input UserUpdateManyMutationInput {
   apartment: NullableStringFieldUpdateOperationsInput
   birthday: NullableDateTimeFieldUpdateOperationsInput
+  canReceiveDelegationMail: BoolFieldUpdateOperationsInput
   city: NullableStringFieldUpdateOperationsInput
   country: NullableStringFieldUpdateOperationsInput
   createdAt: DateTimeFieldUpdateOperationsInput
@@ -5507,6 +5745,7 @@ input UserWhereInput {
   OR: [UserWhereInput!]
   apartment: StringNullableFilter
   birthday: DateTimeNullableFilter
+  canReceiveDelegationMail: BoolFilter
   city: StringNullableFilter
   conferenceParticipantStatus: ConferenceParticipantStatusListRelationFilter
   conferenceSupervisor: ConferenceSupervisorListRelationFilter
@@ -5529,7 +5768,9 @@ input UserWhereInput {
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
+  receivedDelegationMessages: MessageAuditListRelationFilter
   reviewerSnippets: ReviewerSnippetListRelationFilter
+  sentDelegationMessages: MessageAuditListRelationFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
   surveyAnswers: SurveyAnswerListRelationFilter
@@ -5547,6 +5788,7 @@ input UserWhereUniqueInput {
   OR: [UserWhereInput!]
   apartment: StringNullableFilter
   birthday: DateTimeNullableFilter
+  canReceiveDelegationMail: BoolFilter
   city: StringNullableFilter
   conferenceParticipantStatus: ConferenceParticipantStatusListRelationFilter
   conferenceSupervisor: ConferenceSupervisorListRelationFilter
@@ -5569,7 +5811,9 @@ input UserWhereUniqueInput {
   phone: StringNullableFilter
   preferred_username: StringFilter
   pronouns: StringNullableFilter
+  receivedDelegationMessages: MessageAuditListRelationFilter
   reviewerSnippets: ReviewerSnippetListRelationFilter
+  sentDelegationMessages: MessageAuditListRelationFilter
   singleParticipant: SingleParticipantListRelationFilter
   street: StringNullableFilter
   surveyAnswers: SurveyAnswerListRelationFilter

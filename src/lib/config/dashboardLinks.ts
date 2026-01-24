@@ -104,6 +104,16 @@ export const dashboardLinks: DashboardLink[] = [
 		}
 	},
 	{
+		id: 'messaging',
+		icon: 'envelope',
+		getTitle: () => m.messaging(),
+		getDescription: () => m.messagingDescription(),
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/messaging`,
+		showFor: ['delegation', 'singleParticipant', 'supervisor'],
+		isVisible: () => true,
+		isDisabled: () => false
+	},
+	{
 		id: 'preparation',
 		icon: 'book-bookmark',
 		getTitle: () => m.preparation(),

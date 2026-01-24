@@ -4,6 +4,7 @@ export const myConferenceparticipationQuery = graphql(`
 	query MyConferenceparticipationQuery($userId: String!, $conferenceId: String!) {
 		findUniqueUser(where: { id: $userId }) {
 			birthday
+			canReceiveDelegationMail
 		}
 		findUniqueConferenceParticipantStatus(
 			where: { userId_conferenceId: { userId: $userId, conferenceId: $conferenceId } }
