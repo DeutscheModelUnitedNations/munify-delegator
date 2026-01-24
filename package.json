@@ -57,6 +57,7 @@
 		"@tiptap/extension-subscript": "^3.15.3",
 		"@tiptap/extension-superscript": "^3.15.3",
 		"@tiptap/extension-underline": "^3.15.3",
+		"@tiptap/extensions": "^3.15.3",
 		"@tiptap/pm": "^3.15.3",
 		"@tiptap/starter-kit": "^3.15.3",
 		"@tiptap/suggestion": "^3.15.3",
