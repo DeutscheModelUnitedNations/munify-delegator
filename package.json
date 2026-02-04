@@ -156,6 +156,7 @@
 	"private": true,
 	"resolutions": {
 		"devalue": "5.6.2",
+		"fast-xml-parser": "5.3.4",
 		"form-data": "4.0.4",
 		"preact": "10.28.2",
 		"svelte": "5.45.5"
