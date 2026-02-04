@@ -19,11 +19,12 @@ export async function sendTeamInvitationEmail(
 ): Promise<SendEmailResult> {
 	const { recipientEmail, conferenceTitle, roleName, inviterName, inviteUrl, expiresAt } = params;
 
-	const formattedExpiresAt = expiresAt.toLocaleDateString('de-DE', {
+	const formattedExpiresAt = new Intl.DateTimeFormat('de-DE', {
 		year: 'numeric',
 		month: 'long',
-		day: 'numeric'
-	});
+		day: 'numeric',
+		timeZone: 'Europe/Berlin'
+	}).format(expiresAt);
 
 	const { html, text } = await renderEmail(TeamInvitationEmail, {
 		recipientEmail,

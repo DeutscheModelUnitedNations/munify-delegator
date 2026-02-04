@@ -117,7 +117,7 @@
 	});
 </script>
 
-{#if !data.stats}
+{#if !statsData}
 	<div class="flex flex-col items-center justify-center gap-4 py-16">
 		<i class="fa-duotone fa-chart-simple text-6xl text-base-content/30"></i>
 		<p class="text-base-content/70">{m.noStatsAvailable()}</p>
@@ -134,14 +134,14 @@
 		<Filter />
 		<DaysUntil data={reactiveData} />
 
-		<AppliedChartAndStats stats={data.stats} />
+		<AppliedChartAndStats stats={reactiveData.stats} />
 
 		{#if reactiveData.stats.roleBased}
 			<RoleStats roleBased={reactiveData.stats.roleBased} />
 		{/if}
 
-		{#if data.stats.supervisorStats}
-			<SupervisorStats supervisorStats={data.stats.supervisorStats} />
+		{#if reactiveData.stats.supervisorStats}
+			<SupervisorStats supervisorStats={reactiveData.stats.supervisorStats} />
 		{/if}
 		{#if reactiveData.stats.waitingList}
 			<WaitingListStats data={reactiveData} />
@@ -150,16 +150,16 @@
 
 		<IndividualRoles data={reactiveData} />
 
-		{#if data.stats.postalPaymentProgress}
-			<PostalPaymentProgress progress={data.stats.postalPaymentProgress} />
+		{#if reactiveData.stats.postalPaymentProgress}
+			<PostalPaymentProgress progress={reactiveData.stats.postalPaymentProgress} />
 		{/if}
 
 		{#if reactiveData.stats.committeeFillRates && reactiveData.stats.committeeFillRates.length > 0}
 			<CommitteeFillRates committeeFillRates={reactiveData.stats.committeeFillRates} />
 		{/if}
 
-		{#if data.stats.paperStats && data.stats.paperStats.total > 0}
-			<PaperStats paperStats={data.stats.paperStats} />
+		{#if reactiveData.stats.paperStats && reactiveData.stats.paperStats.total > 0}
+			<PaperStats paperStats={reactiveData.stats.paperStats} />
 		{/if}
 
 		{#if reactiveData.stats.registrationTimeline && reactiveData.stats.registrationTimeline.length > 0}

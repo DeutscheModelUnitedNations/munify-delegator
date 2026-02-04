@@ -21,13 +21,32 @@
 	let isChecking = $state(false);
 	let isSending = $state(false);
 
+	type EmailStatusValue = 'exists' | 'new_user' | 'pending_invitation' | 'already_member';
+	type TeamRoleValue =
+		| 'MEMBER'
+		| 'REVIEWER'
+		| 'PARTICIPANT_CARE'
+		| 'TEAM_COORDINATOR'
+		| 'PROJECT_MANAGEMENT';
+
+	const validEmailStatuses: EmailStatusValue[] = [
+		'exists',
+		'new_user',
+		'pending_invitation',
+		'already_member'
+	];
+
+	function isEmailStatusValue(value: string): value is EmailStatusValue {
+		return validEmailStatuses.includes(value as EmailStatusValue);
+	}
+
 	type EmailStatus = {
 		email: string;
-		status: 'exists' | 'new_user' | 'pending_invitation' | 'already_member';
+		status: EmailStatusValue;
 		userId: string | null;
 		pendingInvitationId: string | null;
 		selected: boolean;
-		role: string;
+		role: TeamRoleValue;
 		isExternal: boolean;
 	};
 
@@ -70,10 +89,11 @@
 	`);
 
 	function parseEmails(input: string): string[] {
-		return input
+		const normalized = input
 			.split(/[,;\n]+/)
 			.map((e) => e.trim().toLowerCase())
 			.filter((e) => e.length > 0 && e.includes('@'));
+		return [...new Set(normalized)];
 	}
 
 	function isExternalEmail(email: string): boolean {
@@ -101,11 +121,11 @@
 			if (result.data?.checkTeamInvitationEmails) {
 				emailStatuses = result.data.checkTeamInvitationEmails.map((s) => ({
 					email: s.email,
-					status: s.status as EmailStatus['status'],
+					status: isEmailStatusValue(s.status) ? s.status : 'new_user',
 					userId: s.userId,
 					pendingInvitationId: s.pendingInvitationId,
 					selected: s.status !== 'already_member',
-					role: 'MEMBER',
+					role: 'MEMBER' as TeamRoleValue,
 					isExternal: isExternalEmail(s.email)
 				}));
 				step = 'review';
@@ -134,7 +154,7 @@
 				conferenceId,
 				invitations: selectedEmails.map((e) => ({
 					email: e.email,
-					role: e.role as any
+					role: e.role
 				}))
 			});
 
@@ -289,7 +309,7 @@
 											class="select select-bordered select-sm"
 											value={emailStatus.role}
 											onchange={(e) => {
-												emailStatuses[i].role = e.currentTarget.value;
+												emailStatuses[i].role = e.currentTarget.value as TeamRoleValue;
 											}}
 										>
 											<option value="MEMBER">{translateTeamRole('MEMBER')}</option>

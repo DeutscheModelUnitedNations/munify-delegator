@@ -8,7 +8,7 @@
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$houdini';
-	import { userFormSchema } from '../../../../my-account/form-schema';
+	import { z } from 'zod';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 
 	let { data }: { data: PageData } = $props();
@@ -18,6 +18,42 @@
 	let isAdmin = data.isAdmin;
 
 	let inviteMembersModalOpen = $state(false);
+
+	// Dedicated schema for profile completeness validation
+	const profileCompletenessSchema = z.object({
+		birthday: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null, { message: 'Birthday required' }),
+		phone: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'Phone required' }),
+		street: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'Street required' }),
+		zip: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'Zip required' }),
+		city: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'City required' }),
+		country: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'Country required' }),
+		gender: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'Gender required' }),
+		foodPreference: z
+			.string()
+			.nullable()
+			.refine((val) => val !== null && val.length > 0, { message: 'Food preference required' })
+	});
 
 	function isProfileComplete(user: {
 		birthday: string | null;
@@ -29,7 +65,7 @@
 		gender: string | null;
 		foodPreference: string | null;
 	}): boolean {
-		return userFormSchema.safeParse(user).success;
+		return profileCompletenessSchema.safeParse(user).success;
 	}
 
 	const deleteTeamMemberMutation = graphql(`
@@ -76,11 +112,11 @@
 
 	// Expose functions globally for onclick handlers in rendered HTML
 	onMount(() => {
-		(window as any).handleTeamMemberDelete = handleDelete;
-		(window as any).handleTeamMemberImpersonate = handleImpersonate;
+		window.handleTeamMemberDelete = handleDelete;
+		window.handleTeamMemberImpersonate = handleImpersonate;
 		return () => {
-			delete (window as any).handleTeamMemberDelete;
-			delete (window as any).handleTeamMemberImpersonate;
+			delete window.handleTeamMemberDelete;
+			delete window.handleTeamMemberImpersonate;
 		};
 	});
 

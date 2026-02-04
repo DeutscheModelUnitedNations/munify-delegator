@@ -92,6 +92,96 @@ This component uses the following chart components from `$lib/components/Charts/
 
 ---
 
+## Team Management Components
+
+Components in `src/lib/components/TeamManagement/` for managing team invitations.
+
+### InviteTeamMembersModal
+
+`src/lib/components/TeamManagement/InviteTeamMembersModal.svelte`
+
+Modal for inviting team members via email. Supports batch email input, status checking, and role assignment.
+
+#### Props Interface
+
+```typescript
+interface Props {
+	open: boolean; // Controls modal visibility (bindable)
+	conferenceId: string; // Conference to invite members to
+}
+```
+
+#### Usage Example
+
+```svelte
+<script lang="ts">
+	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
+
+	let inviteModalOpen = $state(false);
+</script>
+
+<button class="btn btn-primary" onclick={() => (inviteModalOpen = true)}>
+	Invite Team Members
+</button>
+
+<InviteTeamMembersModal bind:open={inviteModalOpen} conferenceId={data.conferenceId} />
+```
+
+#### Features
+
+- Two-step flow: enter emails → review and assign roles
+- Email status checking (existing user, new user, pending invitation, already member)
+- Role assignment per invitee (MEMBER, REVIEWER, PARTICIPANT_CARE, TEAM_COORDINATOR, PROJECT_MANAGEMENT)
+- External domain warning when inviting non-organization emails
+- Batch email parsing with comma/semicolon/newline separators
+
+---
+
+### PendingInvitationsTable
+
+`src/lib/components/TeamManagement/PendingInvitationsTable.svelte`
+
+Table displaying pending team member invitations with actions.
+
+#### Props Interface
+
+```typescript
+interface Invitation {
+	id: string;
+	email: string;
+	role: string;
+	expiresAt: string;
+	userExists: boolean;
+	invitedBy: {
+		given_name: string;
+		family_name: string;
+	};
+}
+
+interface Props {
+	invitations: Invitation[];
+}
+```
+
+#### Usage Example
+
+```svelte
+<script lang="ts">
+	import PendingInvitationsTable from '$lib/components/TeamManagement/PendingInvitationsTable.svelte';
+</script>
+
+<PendingInvitationsTable invitations={data.pendingInvitations} />
+```
+
+#### Features
+
+- Displays email, role, status (account exists/new user), expiration date, and inviter
+- Expiration status highlighting (expired invitations shown with reduced opacity)
+- Actions: copy invitation link, resend email, revoke invitation
+- Automatic cache invalidation after actions
+
+---
+
 ## Form Components (Critical)
 
 Forms use `sveltekit-superforms` for validation and state management. Always structure forms consistently.
