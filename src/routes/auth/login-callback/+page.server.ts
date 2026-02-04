@@ -40,9 +40,13 @@ function isEmailConflictError(
 //TODO best would be to put all this logic in an elysia handler
 export const load: PageServerLoad = async (event) => {
 	const verifier = event.cookies.get(codeVerifierCookieName);
-	if (!verifier) error(400, 'No code verifier cookie found.');
 	const oidcState = event.cookies.get(oidcStateCookieName);
-	if (!oidcState) error(400, 'No oidc state cookie found.');
+
+	// If cookies are missing, the login session expired or was invalid
+	// Redirect to a friendly error page instead of showing a raw 400 error
+	if (!verifier || !oidcState) {
+		redirect(302, '/auth/session-expired');
+	}
 
 	const { state, tokens } = await resolveSignin(event.url, verifier, oidcState);
 
