@@ -24,7 +24,10 @@ const schema = z.object({
 	PUBLIC_BADGE_GENERATOR_URL: z.string().url().optional(),
 
 	// Documentation URL (optional) - global link to DELEGATOR app documentation
-	PUBLIC_DOCS_URL: z.string().url().optional()
+	PUBLIC_DOCS_URL: z.string().url().optional(),
+
+	// Team organization domain (optional) - warn when inviting emails from other domains
+	PUBLIC_TEAM_ORGANIZATION_DOMAIN: z.string().optional()
 });
 
 export const configPublic = building ? ({} as z.infer<typeof schema>) : schema.parse(env);

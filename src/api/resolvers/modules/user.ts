@@ -344,7 +344,8 @@ builder.mutationFields((t) => {
 		upsertSelf: t.field({
 			type: builder.simpleObject('UpsertSelfResult', {
 				fields: (t) => ({
-					userNeedsAdditionalInfo: t.boolean()
+					userNeedsAdditionalInfo: t.boolean(),
+					userId: t.string()
 				})
 			}),
 			resolve: async (root, args, ctx) => {
@@ -385,7 +386,10 @@ builder.mutationFields((t) => {
 					}
 				});
 
-				return { userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success };
+				return {
+					userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success,
+					userId: updatedUser.id
+				};
 			}
 		})
 	};
