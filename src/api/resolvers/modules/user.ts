@@ -35,17 +35,17 @@ import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
 
+// Helper for type narrowing without casting
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
+}
+
 // Helper to check for Prisma unique constraint violations
 // Using duck-typing instead of instanceof to avoid module boundary issues
 function isPrismaUniqueConstraintError(
 	error: unknown
 ): error is { code: string; meta?: { target?: string[] } } {
-	return (
-		typeof error === 'object' &&
-		error !== null &&
-		'code' in error &&
-		(error as { code: unknown }).code === 'P2002'
-	);
+	return isRecord(error) && error.code === 'P2002';
 }
 
 function maskEmail(email: string): string {
@@ -401,13 +401,13 @@ builder.mutationFields((t) => {
 							given_name: issuerUserData.given_name,
 							preferred_username: issuerUserData.preferred_username,
 							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-							phone: (issuerUserData as any).phone ?? user.phone
+							phone: issuerUserData.phone ?? user.phone
 						},
 						update: {
 							email: issuerUserData.email,
 							preferred_username: issuerUserData.preferred_username,
 							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-							phone: (issuerUserData as any).phone ?? user.phone
+							phone: issuerUserData.phone ?? user.phone
 						}
 					});
 
@@ -428,15 +428,16 @@ builder.mutationFields((t) => {
 							: undefined;
 						const refId = issuerUserData.sub.slice(-8);
 
-						// Log full details for admin debugging
+						// Log details for admin debugging (using masked emails to reduce PII exposure)
 						console.error(`[EMAIL_CONFLICT] ${isNewUser ? 'New user' : 'Email change'} conflict:`, {
 							userSubject: issuerUserData.sub,
-							conflictingEmail: issuerUserData.email,
-							existingUserEmail: existingUserById?.email ?? 'N/A',
+							conflictingEmail: maskedConflictingEmail,
+							existingUserEmail: maskedExistingEmail ?? 'N/A',
+							refId,
 							timestamp: new Date().toISOString()
 						});
 
-						// Report to Sentry for monitoring
+						// Report to Sentry for monitoring (using masked emails to reduce PII exposure)
 						Sentry.captureException(error, {
 							level: 'warning',
 							tags: {
@@ -445,8 +446,8 @@ builder.mutationFields((t) => {
 							},
 							extra: {
 								userSubject: issuerUserData.sub,
-								conflictingEmail: issuerUserData.email,
-								existingUserEmail: existingUserById?.email ?? 'N/A',
+								conflictingEmail: maskedConflictingEmail,
+								existingUserEmail: maskedExistingEmail ?? 'N/A',
 								refId
 							}
 						});

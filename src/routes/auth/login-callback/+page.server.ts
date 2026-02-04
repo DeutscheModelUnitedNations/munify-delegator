@@ -26,13 +26,28 @@ interface EmailConflictExtensions {
 	refId: string;
 }
 
+// Validate and extract email conflict extensions with proper runtime checks
 function isEmailConflictError(
 	errors: readonly { extensions?: Record<string, unknown> }[] | null | undefined
 ): EmailConflictExtensions | null {
 	if (!errors) return null;
 	for (const err of errors) {
-		if (err.extensions?.code === 'EMAIL_CONFLICT') {
-			return err.extensions as unknown as EmailConflictExtensions;
+		const ext = err.extensions;
+		if (
+			ext &&
+			ext.code === 'EMAIL_CONFLICT' &&
+			typeof ext.isNewUser === 'boolean' &&
+			typeof ext.maskedConflictingEmail === 'string' &&
+			typeof ext.refId === 'string'
+		) {
+			return {
+				code: 'EMAIL_CONFLICT',
+				isNewUser: ext.isNewUser,
+				maskedConflictingEmail: ext.maskedConflictingEmail,
+				maskedExistingEmail:
+					typeof ext.maskedExistingEmail === 'string' ? ext.maskedExistingEmail : undefined,
+				refId: ext.refId
+			};
 		}
 	}
 	return null;

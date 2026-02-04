@@ -1,5 +1,6 @@
 import { HoudiniClient } from '$houdini';
 import { error, redirect } from '@sveltejs/kit';
+import { goto } from '$app/navigation';
 import { toast } from 'svelte-sonner';
 import { browser } from '$app/environment';
 
@@ -11,12 +12,27 @@ interface EmailConflictExtensions {
 	refId: string;
 }
 
+// Validate and extract email conflict extensions with proper runtime checks
 function getEmailConflictExtensions(
 	errors: readonly { message: string; extensions?: Record<string, unknown> }[]
 ): EmailConflictExtensions | null {
 	for (const err of errors) {
-		if (err.extensions?.code === 'EMAIL_CONFLICT') {
-			return err.extensions as unknown as EmailConflictExtensions;
+		const ext = err.extensions;
+		if (
+			ext &&
+			ext.code === 'EMAIL_CONFLICT' &&
+			typeof ext.isNewUser === 'boolean' &&
+			typeof ext.maskedConflictingEmail === 'string' &&
+			typeof ext.refId === 'string'
+		) {
+			return {
+				code: 'EMAIL_CONFLICT',
+				isNewUser: ext.isNewUser,
+				maskedConflictingEmail: ext.maskedConflictingEmail,
+				maskedExistingEmail:
+					typeof ext.maskedExistingEmail === 'string' ? ext.maskedExistingEmail : undefined,
+				refId: ext.refId
+			};
 		}
 	}
 	return null;
@@ -38,8 +54,14 @@ export default new HoudiniClient({
 				if (emailConflict.maskedExistingEmail) {
 					params.set('existingEmail', emailConflict.maskedExistingEmail);
 				}
-				// This throws a redirect (works on server-side)
-				redirect(302, `/auth/email-conflict?${params.toString()}`);
+				const url = `/auth/email-conflict?${params.toString()}`;
+				if (browser) {
+					// Use goto for client-side navigation
+					goto(url);
+					return; // Prevent further error handling
+				}
+				// Server-side: throw redirect
+				redirect(302, url);
 			}
 
 			const err = errors.at(0);
