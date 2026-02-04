@@ -39,6 +39,19 @@ function isEmailConflictError(
 
 //TODO best would be to put all this logic in an elysia handler
 export const load: PageServerLoad = async (event) => {
+	// 1. Check for OIDC error parameters first
+	// The OIDC provider may redirect back with an error instead of an auth code
+	const oidcError = event.url.searchParams.get('error');
+	if (oidcError) {
+		const errorDescription = event.url.searchParams.get('error_description');
+		const params = new URLSearchParams({
+			type: oidcError,
+			...(errorDescription && { description: errorDescription })
+		});
+		redirect(302, `/auth/error?${params.toString()}`);
+	}
+
+	// 2. Check for required cookies
 	const verifier = event.cookies.get(codeVerifierCookieName);
 	const oidcState = event.cookies.get(oidcStateCookieName);
 
@@ -48,7 +61,37 @@ export const load: PageServerLoad = async (event) => {
 		redirect(302, '/auth/session-expired');
 	}
 
-	const { state, tokens } = await resolveSignin(event.url, verifier, oidcState);
+	// 3. Try to complete the token exchange
+	let state: { visitedUrl: string };
+	let tokens: Awaited<ReturnType<typeof resolveSignin>>['tokens'];
+
+	try {
+		const result = await resolveSignin(event.url, verifier, oidcState);
+		state = result.state;
+		tokens = result.tokens;
+	} catch (err) {
+		console.error('[AUTH] Token exchange failed:', err);
+
+		// Determine the error type for better user messaging
+		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+		let errorType = 'token_exchange_failed';
+
+		if (errorMessage.includes('state') || errorMessage.includes('State')) {
+			errorType = 'state_mismatch';
+		} else if (
+			errorMessage.includes('network') ||
+			errorMessage.includes('fetch') ||
+			errorMessage.includes('ECONNREFUSED')
+		) {
+			errorType = 'network_error';
+		}
+
+		const params = new URLSearchParams({
+			type: errorType,
+			description: errorMessage
+		});
+		redirect(302, `/auth/error?${params.toString()}`);
+	}
 
 	// we want to ensure throughout the app we match the TokenCookieSchemaType
 	const cookieValue: TokenCookieSchemaType = {
