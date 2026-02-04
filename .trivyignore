@@ -13,3 +13,6 @@ CVE-2025-64756
 CVE-2025-61729
 CVE-2025-66020
 CVE-2025-68973
+# Go stdlib vulnerabilities from oven/bun base image - not exploitable in Node.js/Bun app
+CVE-2025-61726
+CVE-2025-61728
