@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/sveltekit';
 import type { TokenCookieSchemaType } from '$api/context/oidc';
 import {
 	codeVerifierCookieName,
@@ -7,7 +8,7 @@ import {
 } from '$api/services/OIDC';
 import { graphql } from '$houdini';
 import type { PageServerLoad } from './$types';
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 
 const upsertMutation = graphql(`
 	mutation UpserSelf {
@@ -44,6 +45,19 @@ export const load: PageServerLoad = async (event) => {
 	const oidcError = event.url.searchParams.get('error');
 	if (oidcError) {
 		const errorDescription = event.url.searchParams.get('error_description');
+
+		// Report OIDC provider errors to Sentry
+		Sentry.captureMessage(`OIDC provider error: ${oidcError}`, {
+			level: 'warning',
+			tags: {
+				error_type: 'oidc_provider_error',
+				oidc_error: oidcError
+			},
+			extra: {
+				errorDescription
+			}
+		});
+
 		const params = new URLSearchParams({
 			type: oidcError,
 			...(errorDescription && { description: errorDescription })
@@ -85,6 +99,17 @@ export const load: PageServerLoad = async (event) => {
 		) {
 			errorType = 'network_error';
 		}
+
+		// Report token exchange failures to Sentry
+		Sentry.captureException(err, {
+			level: 'error',
+			tags: {
+				error_type: errorType
+			},
+			extra: {
+				errorMessage
+			}
+		});
 
 		const params = new URLSearchParams({
 			type: errorType,

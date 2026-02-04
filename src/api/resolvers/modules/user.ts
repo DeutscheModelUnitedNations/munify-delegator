@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/sveltekit';
 import { builder } from '../builder';
 import {
 	UserEmailFieldObject,
@@ -433,6 +434,21 @@ builder.mutationFields((t) => {
 							conflictingEmail: issuerUserData.email,
 							existingUserEmail: existingUserById?.email ?? 'N/A',
 							timestamp: new Date().toISOString()
+						});
+
+						// Report to Sentry for monitoring
+						Sentry.captureException(error, {
+							level: 'warning',
+							tags: {
+								error_type: 'email_conflict',
+								scenario: isNewUser ? 'new_user' : 'email_change'
+							},
+							extra: {
+								userSubject: issuerUserData.sub,
+								conflictingEmail: issuerUserData.email,
+								existingUserEmail: existingUserById?.email ?? 'N/A',
+								refId
+							}
 						});
 
 						throw new GraphQLError('Email address is already in use by another account', {
