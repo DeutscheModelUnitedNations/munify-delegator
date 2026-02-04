@@ -17,6 +17,26 @@ const upsertMutation = graphql(`
 	}
 `);
 
+interface EmailConflictExtensions {
+	code: 'EMAIL_CONFLICT';
+	isNewUser: boolean;
+	maskedConflictingEmail: string;
+	maskedExistingEmail?: string;
+	refId: string;
+}
+
+function isEmailConflictError(
+	errors: readonly { extensions?: Record<string, unknown> }[] | null | undefined
+): EmailConflictExtensions | null {
+	if (!errors) return null;
+	for (const err of errors) {
+		if (err.extensions?.code === 'EMAIL_CONFLICT') {
+			return err.extensions as unknown as EmailConflictExtensions;
+		}
+	}
+	return null;
+}
+
 //TODO best would be to put all this logic in an elysia handler
 export const load: PageServerLoad = async (event) => {
 	const verifier = event.cookies.get(codeVerifierCookieName);
@@ -50,7 +70,21 @@ export const load: PageServerLoad = async (event) => {
 	event.cookies.delete(codeVerifierCookieName, { path: '/' });
 	event.cookies.delete(oidcStateCookieName, { path: '/' });
 
-	const { data } = await upsertMutation.mutate(null, { event });
+	const { data, errors } = await upsertMutation.mutate(null, { event });
+
+	// Check for email conflict error
+	const emailConflict = isEmailConflictError(errors);
+	if (emailConflict) {
+		const params = new URLSearchParams({
+			scenario: emailConflict.isNewUser ? 'new' : 'change',
+			email: emailConflict.maskedConflictingEmail,
+			ref: emailConflict.refId
+		});
+		if (emailConflict.maskedExistingEmail) {
+			params.set('existingEmail', emailConflict.maskedExistingEmail);
+		}
+		redirect(302, `/auth/email-conflict?${params.toString()}`);
+	}
 
 	if (data?.upsertSelf?.userNeedsAdditionalInfo) {
 		redirect(302, `/my-account?redirect=${encodeURIComponent(state.visitedUrl)}`);

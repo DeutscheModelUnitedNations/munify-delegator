@@ -34,6 +34,30 @@ import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
 
+// Helper to check for Prisma unique constraint violations
+// Using duck-typing instead of instanceof to avoid module boundary issues
+function isPrismaUniqueConstraintError(
+	error: unknown
+): error is { code: string; meta?: { target?: string[] } } {
+	return (
+		typeof error === 'object' &&
+		error !== null &&
+		'code' in error &&
+		(error as { code: unknown }).code === 'P2002'
+	);
+}
+
+function maskEmail(email: string): string {
+	const [localPart, domain] = email.split('@');
+	if (!localPart || !domain) {
+		return '***@***';
+	}
+	if (localPart.length <= 2) {
+		return `${localPart[0]}***@${domain}`;
+	}
+	return `${localPart.slice(0, 2)}***@${domain}`;
+}
+
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
 		id: t.field(UserIdFieldObject),
@@ -366,26 +390,63 @@ builder.mutationFields((t) => {
 					throw new GraphQLError('OIDC result is missing required fields!');
 				}
 
-				const updatedUser = await db.user.upsert({
-					where: { id: issuerUserData.sub },
-					create: {
-						id: issuerUserData.sub,
-						email: issuerUserData.email,
-						family_name: issuerUserData.family_name,
-						given_name: issuerUserData.given_name,
-						preferred_username: issuerUserData.preferred_username,
-						locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-						phone: (issuerUserData as any).phone ?? user.phone
-					},
-					update: {
-						email: issuerUserData.email,
-						preferred_username: issuerUserData.preferred_username,
-						locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-						phone: (issuerUserData as any).phone ?? user.phone
-					}
-				});
+				try {
+					const updatedUser = await db.user.upsert({
+						where: { id: issuerUserData.sub },
+						create: {
+							id: issuerUserData.sub,
+							email: issuerUserData.email,
+							family_name: issuerUserData.family_name,
+							given_name: issuerUserData.given_name,
+							preferred_username: issuerUserData.preferred_username,
+							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
+							phone: (issuerUserData as any).phone ?? user.phone
+						},
+						update: {
+							email: issuerUserData.email,
+							preferred_username: issuerUserData.preferred_username,
+							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
+							phone: (issuerUserData as any).phone ?? user.phone
+						}
+					});
 
-				return { userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success };
+					return { userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success };
+				} catch (error) {
+					if (isPrismaUniqueConstraintError(error)) {
+						// Unique constraint violation on email field
+						// Check if the user already exists in our database to determine the scenario
+						const existingUserById = await db.user.findUnique({
+							where: { id: issuerUserData.sub },
+							select: { email: true }
+						});
+
+						const isNewUser = existingUserById === null;
+						const maskedConflictingEmail = maskEmail(issuerUserData.email);
+						const maskedExistingEmail = existingUserById?.email
+							? maskEmail(existingUserById.email)
+							: undefined;
+						const refId = issuerUserData.sub.slice(-8);
+
+						// Log full details for admin debugging
+						console.error(`[EMAIL_CONFLICT] ${isNewUser ? 'New user' : 'Email change'} conflict:`, {
+							userSubject: issuerUserData.sub,
+							conflictingEmail: issuerUserData.email,
+							existingUserEmail: existingUserById?.email ?? 'N/A',
+							timestamp: new Date().toISOString()
+						});
+
+						throw new GraphQLError('Email address is already in use by another account', {
+							extensions: {
+								code: 'EMAIL_CONFLICT',
+								isNewUser,
+								maskedConflictingEmail,
+								maskedExistingEmail,
+								refId
+							}
+						});
+					}
+					throw error;
+				}
 			}
 		})
 	};
