@@ -2,9 +2,11 @@
 	import type { PageData } from './$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import type { ResolutionHeaderData } from '$lib/schemata/resolution';
+	import {
+		ResolutionPreview,
+		type ResolutionHeaderData
+	} from '$lib/components/Paper/Editor/Resolution';
 	import PaperPrintPreview from '$lib/components/Paper/Print/PaperPrintPreview.svelte';
-	import ResolutionPreview from '$lib/components/Paper/Editor/Resolution/ResolutionPreview.svelte';
 
 	let { data }: { data: PageData } = $props();
 
