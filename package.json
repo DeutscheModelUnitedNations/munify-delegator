@@ -155,9 +155,6 @@
 	"name": "munify-delegator",
 	"private": true,
 	"overrides": {
-		"@isaacs/brace-expansion": "5.0.1"
-	},
-	"resolutions": {
 		"@isaacs/brace-expansion": "5.0.1",
 		"devalue": "5.6.2",
 		"fast-xml-parser": "5.3.4",
