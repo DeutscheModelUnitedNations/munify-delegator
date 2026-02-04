@@ -413,7 +413,15 @@ builder.mutationFields((t) => {
 
 					return { userNeedsAdditionalInfo: !userFormSchema.safeParse(updatedUser).success };
 				} catch (error) {
-					if (isPrismaUniqueConstraintError(error)) {
+					// Check for unique constraint violation specifically on email field
+					// This defensive check future-proofs against other unique constraints being added
+					const isEmailConstraintViolation =
+						isPrismaUniqueConstraintError(error) &&
+						(Array.isArray(error.meta?.target)
+							? error.meta.target.includes('email')
+							: String(error.meta?.target ?? '').includes('email'));
+
+					if (isEmailConstraintViolation) {
 						// Unique constraint violation on email field
 						// Check if the user already exists in our database to determine the scenario
 						const existingUserById = await db.user.findUnique({

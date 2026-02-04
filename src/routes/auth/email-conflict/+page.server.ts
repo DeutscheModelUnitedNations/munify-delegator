@@ -25,7 +25,8 @@ function sanitizeMaskedEmail(email: string | null): string {
 // Sanitize reference ID - only allow alphanumeric characters
 function sanitizeRefId(ref: string | null): string {
 	if (!ref) return 'unknown';
-	return ref.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+	const sanitized = ref.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+	return sanitized.length > 0 ? sanitized : 'unknown';
 }
 
 export const load: PageServerLoad = async ({ url }) => {
