@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   # ============================================
-  # PARALLEL CI JOBS (run on all events)
+  # LAYER 1: PARALLEL CI JOBS
   # ============================================
 
   lint:
@@ -46,28 +46,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx svelte-kit sync
       - run: bun run test
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
-      - run: bunx svelte-kit sync
-      - name: Generate Prisma client and Pothos types
-        run: bunx prisma generate
-      - name: Generate Paraglide types
-        run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
-      - name: Generate Houdini types
-        run: bunx houdini generate
-      - run: bun run check
 
   i18n:
     runs-on: ubuntu-latest
@@ -110,13 +88,92 @@ jobs:
           trivyignores: .trivyignore
           scanners: ${{ github.event_name == 'pull_request' && 'vuln,license' || 'vuln,secret,misconfig,license' }}
 
+  prepare-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bunx svelte-kit sync
+      - name: Generate Prisma client and Pothos types
+        run: bunx prisma generate
+      - name: Generate Paraglide types
+        run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
+      - name: Generate Houdini types
+        run: bunx houdini generate
+      - name: Upload generated types
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-types
+          retention-days: 1
+          path: |
+            node_modules/.prisma
+            node_modules/@prisma
+            prisma/pothos
+            prisma/generated
+            src/lib/paraglide
+            .houdini
+            .svelte-kit
+
   # ============================================
-  # DOCKER BUILD (only on push, needs all CI)
+  # LAYER 2: JOBS NEEDING GENERATED TYPES
+  # ============================================
+
+  typecheck:
+    needs: prepare-types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: Download generated types
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-types
+      - run: bun run check
+
+  build:
+    if: github.event_name == 'pull_request'
+    needs: prepare-types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: Download generated types
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-types
+      - run: bun run build
+
+  # ============================================
+  # LAYER 3: DOCKER BUILD (push only)
   # ============================================
 
   docker-build:
     if: github.event_name == 'push'
-    needs: [lint, test, typecheck, i18n, security]
+    needs: [lint, test, i18n, security, typecheck]
     runs-on: ubuntu-latest
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -214,7 +271,7 @@ jobs:
           echo "  - SENTRY_URL: Your Bugsink instance URL (e.g., https://bugsink.example.com/)"
 
   # ============================================
-  # RELEASE (only on tag push, needs docker)
+  # LAYER 4: RELEASE (tag push only)
   # ============================================
 
   release:
