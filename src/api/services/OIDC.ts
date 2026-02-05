@@ -209,8 +209,11 @@ export function getLogoutUrl(visitedUrl: URL) {
  * @param expectedSubject - The expected `sub` (subject) to validate against the issuer's response
  * @returns The user info object returned by the issuer
  */
-export function fetchUserInfoFromIssuer(access_token: string, expectedSubject: string) {
-	return fetchUserInfo(config, access_token, expectedSubject);
+export function fetchUserInfoFromIssuer(
+	access_token: string,
+	expectedSubject: string
+): Promise<OIDCUser> {
+	return fetchUserInfo(config, access_token, expectedSubject) as Promise<OIDCUser>;
 }
 
 /**

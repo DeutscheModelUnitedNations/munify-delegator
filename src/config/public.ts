@@ -26,6 +26,9 @@ const schema = z.object({
 	// Documentation URL (optional) - global link to DELEGATOR app documentation
 	PUBLIC_DOCS_URL: z.string().url().optional(),
 
+	// Support email for error pages and help requests
+	PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@dmun.de'),
+
 	// Team organization domain (optional) - warn when inviting emails from other domains
 	PUBLIC_TEAM_ORGANIZATION_DOMAIN: z.string().optional()
 });
