@@ -17,7 +17,7 @@
 		<h1 class="text-3xl font-bold">{m.pendingInvitations()}</h1>
 		<div class="flex gap-2">
 			<button class="btn btn-primary" onclick={() => (inviteMembersModalOpen = true)}>
-				<i class="fa-duotone fa-envelope"></i>
+				<i class="fa-solid fa-envelope"></i>
 				{m.inviteTeamMembers()}
 			</button>
 		</div>
