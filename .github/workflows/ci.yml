@@ -15,6 +15,21 @@ jobs:
   # LAYER 1: PARALLEL CI JOBS
   # ============================================
 
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run format:check
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -173,7 +188,7 @@ jobs:
 
   docker-build:
     if: github.event_name == 'push'
-    needs: [lint, test, i18n, security, typecheck]
+    needs: [format, lint, test, i18n, security, typecheck]
     runs-on: ubuntu-latest
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
