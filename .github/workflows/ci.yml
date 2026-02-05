@@ -152,7 +152,7 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
       - name: Upload sourcemaps to Bugsink
-        if: env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
+        if: github.ref_type == 'tag' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
         env:
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
         run: |
@@ -165,8 +165,8 @@ jobs:
           ls -la ./build-artifacts/build
           echo "::endgroup::"
 
-          echo "::group::Installing sentry-cli"
-          npm install -g @sentry/cli
+          echo "::group::Installing sentry-cli v2 (v3 has Bugsink compatibility issues)"
+          npm install -g @sentry/cli@2
           echo "::endgroup::"
 
           echo "::group::Injecting debug IDs into sourcemaps"
@@ -175,14 +175,14 @@ jobs:
 
           echo "::group::Uploading sourcemaps to Bugsink (project: $SENTRY_PROJECT)"
           sentry-cli --url "$SENTRY_URL" sourcemaps \
-            --org bugsink \
+            --org bugsinkhasnoorgs \
             --project "$SENTRY_PROJECT" \
             upload ./build-artifacts/build
           echo "Sourcemaps uploaded successfully"
           echo "::endgroup::"
 
       - name: Sourcemap upload skipped
-        if: env.SENTRY_AUTH_TOKEN == '' || env.SENTRY_URL == ''
+        if: github.ref_type == 'tag' && (env.SENTRY_AUTH_TOKEN == '' || env.SENTRY_URL == '')
         run: |
           echo "::warning::Sourcemap upload skipped - SENTRY_AUTH_TOKEN or SENTRY_URL not configured"
           echo "To enable sourcemap uploads, add the following secrets to your repository:"
