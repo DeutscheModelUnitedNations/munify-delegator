@@ -37,6 +37,10 @@ type CertificateJWT {
   jwt: String
 }
 
+input CheckEmailInput {
+  email: String!
+}
+
 type Committee {
   abbreviation: String!
   agendaItems: [CommitteeAgendaItem!]!
@@ -449,6 +453,7 @@ input ConferenceCreateInput {
   startConference: DateTime!
   state: ConferenceState
   surveyQuestions: SurveyQuestionCreateNestedManyWithoutConferenceInput
+  teamMemberInvitations: TeamMemberInvitationCreateNestedManyWithoutConferenceInput
   teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
   termsAndConditionsContent: String
   title: String!
@@ -508,6 +513,7 @@ input ConferenceOrderByWithRelationInput {
   startConference: SortOrder
   state: SortOrder
   surveyQuestions: SurveyQuestionOrderByRelationAggregateInput
+  teamMemberInvitations: TeamMemberInvitationOrderByRelationAggregateInput
   teamMembers: TeamMemberOrderByRelationAggregateInput
   termsAndConditionsContent: SortOrder
   title: SortOrder
@@ -1022,6 +1028,7 @@ input ConferenceUpdateInput {
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
   surveyQuestions: SurveyQuestionUpdateManyWithoutConferenceNestedInput
+  teamMemberInvitations: TeamMemberInvitationUpdateManyWithoutConferenceNestedInput
   teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
   termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
@@ -1129,6 +1136,7 @@ input ConferenceWhereInput {
   startConference: DateTimeFilter
   state: EnumConferenceStateFilter
   surveyQuestions: SurveyQuestionListRelationFilter
+  teamMemberInvitations: TeamMemberInvitationListRelationFilter
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
   title: StringFilter
@@ -1191,6 +1199,7 @@ input ConferenceWhereUniqueInput {
   startConference: DateTimeFilter
   state: EnumConferenceStateFilter
   surveyQuestions: SurveyQuestionListRelationFilter
+  teamMemberInvitations: TeamMemberInvitationListRelationFilter
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
   title: StringFilter
@@ -1198,6 +1207,16 @@ input ConferenceWhereUniqueInput {
   unlockPostals: BoolFilter
   updatedAt: DateTimeFilter
   website: StringNullableFilter
+}
+
+input CreateInvitationInput {
+  email: String!
+  role: TeamRole!
+}
+
+type CreateInvitationsResult {
+  created: [CreatedInvitation!]!
+  errors: [InvitationError!]!
 }
 
 input CreateOnePaperArgs {
@@ -1214,6 +1233,15 @@ type CreatePaperReviewResult {
   pieceUnlocked: Boolean!
   review: PaperReview!
   unlockedPieceData: UnlockedPieceData
+}
+
+type CreatedInvitation {
+  addedDirectly: Boolean!
+  email: String!
+  expiresAt: DateTime!
+  id: String!
+  role: String!
+  token: String
 }
 
 type CustomConferenceRole {
@@ -1817,6 +1845,13 @@ input DelegationWhereUniqueInput {
   updatedAt: DateTimeFilter
 }
 
+type EmailStatusResult {
+  email: String!
+  pendingInvitationId: String
+  status: String!
+  userId: String
+}
+
 input EnumAdministrativeStatusFieldUpdateOperationsInput {
   set: AdministrativeStatus
 }
@@ -2249,6 +2284,11 @@ input IntWithAggregatesFilter {
   notIn: [Int!]
 }
 
+type InvitationError {
+  email: String!
+  error: String!
+}
+
 scalar JSONObject
 
 type JWK {
@@ -2519,6 +2559,7 @@ type Mutation {
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
   createReviewerSnippet(content: Json!, name: String!): ReviewerSnippet!
+  createTeamMemberInvitations(conferenceId: String!, invitations: [CreateInvitationInput!]!): CreateInvitationsResult!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
   deleteDeadSingleParticipants(conferenceId: ID!): [SingleParticipant!]!
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
@@ -2543,6 +2584,8 @@ type Mutation {
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   deleteReviewerSnippet(id: String!): ReviewerSnippet!
   normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
+  regenerateTeamMemberInvitation(invitationId: String!, sendEmail: Boolean! = false): RegenerateInvitationResult!
+  revokeTeamMemberInvitation(invitationId: String!): RevokeInvitationResult!
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
@@ -3912,6 +3955,7 @@ type PreviewConferenceSupervisor {
 }
 
 type Query {
+  checkTeamInvitationEmails(conferenceId: String!, emails: [CheckEmailInput!]!): [EmailStatusResult!]!
   conferencePlausibility(conferenceId: String!): PlausibilityResult!
   findGlobalIntroductionPapers(conferenceId: String!): [Paper!]!
   findGlobalPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
@@ -3934,6 +3978,7 @@ type Query {
   findManySurveyAnswers(cursor: SurveyAnswerWhereUniqueInput, distinct: [SurveyAnswerScalarFieldEnum!], orderBy: [SurveyAnswerOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyAnswerWhereInput): [SurveyAnswer!]!
   findManySurveyOptions(cursor: SurveyOptionWhereUniqueInput, distinct: [SurveyOptionScalarFieldEnum!], orderBy: [SurveyOptionOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyOptionWhereInput): [SurveyOption!]!
   findManySurveyQuestions(cursor: SurveyQuestionWhereUniqueInput, distinct: [SurveyQuestionScalarFieldEnum!], orderBy: [SurveyQuestionOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyQuestionWhereInput): [SurveyQuestion!]!
+  findManyTeamMemberInvitations(cursor: TeamMemberInvitationWhereUniqueInput, distinct: [TeamMemberInvitationScalarFieldEnum!], orderBy: [TeamMemberInvitationOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberInvitationWhereInput): [TeamMemberInvitation!]!
   findManyTeamMembers(cursor: TeamMemberWhereUniqueInput, distinct: [TeamMemberScalarFieldEnum!], orderBy: [TeamMemberOrderByWithRelationInput!], skip: Int, take: Int, where: TeamMemberWhereInput): [TeamMember!]!
   findManyUsers(cursor: UserWhereUniqueInput, distinct: [UserScalarFieldEnum!], orderBy: [UserOrderByWithRelationInput!], skip: Int, take: Int, where: UserWhereInput): [User!]!
   findManyWaitingListEntry(cursor: WaitingListEntryWhereUniqueInput, distinct: [WaitingListEntryScalarFieldEnum!], orderBy: [WaitingListEntryOrderByWithRelationInput!], skip: Int, take: Int, where: WaitingListEntryWhereInput): [WaitingListEntry!]!
@@ -3990,6 +4035,13 @@ enum QueryMode {
 type RecipientInfo {
   id: String!
   label: String!
+}
+
+type RegenerateInvitationResult {
+  message: String
+  newExpiresAt: DateTime
+  newToken: String
+  success: Boolean!
 }
 
 enum ReviewHelpStatus {
@@ -4108,6 +4160,11 @@ type ReviewerStat {
   firstReviews: Int!
   isCurrentUser: Boolean!
   totalReviews: Int!
+}
+
+type RevokeInvitationResult {
+  message: String
+  success: Boolean!
 }
 
 type RoleApplication {
@@ -5243,6 +5300,177 @@ input TeamMemberCreateNestedManyWithoutUserInput {
   connect: [TeamMemberWhereUniqueInput!]
 }
 
+type TeamMemberInvitation {
+  acceptedBy: User
+  conference: Conference!
+  createdAt: DateTime!
+  email: String!
+  expiresAt: DateTime!
+  id: ID!
+  invitedBy: User!
+  revokedAt: DateTime
+  role: TeamRole!
+  usedAt: DateTime
+  userExists: Boolean!
+}
+
+input TeamMemberInvitationCreateInput {
+  acceptedById: String
+  conferenceId: String!
+  createdAt: DateTime
+  email: String!
+  expiresAt: DateTime!
+  id: String
+  invitedById: String!
+  revokedAt: DateTime
+  role: TeamRole!
+  token: String!
+  updatedAt: DateTime
+  usedAt: DateTime
+}
+
+input TeamMemberInvitationCreateNestedManyWithoutAcceptedByInput {
+  connect: [TeamMemberInvitationWhereUniqueInput!]
+}
+
+input TeamMemberInvitationCreateNestedManyWithoutConferenceInput {
+  connect: [TeamMemberInvitationWhereUniqueInput!]
+}
+
+input TeamMemberInvitationCreateNestedManyWithoutInvitedByInput {
+  connect: [TeamMemberInvitationWhereUniqueInput!]
+}
+
+input TeamMemberInvitationListRelationFilter {
+  every: TeamMemberInvitationWhereInput
+  none: TeamMemberInvitationWhereInput
+  some: TeamMemberInvitationWhereInput
+}
+
+input TeamMemberInvitationOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input TeamMemberInvitationOrderByWithRelationInput {
+  acceptedBy: UserOrderByWithRelationInput
+  acceptedById: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  email: SortOrder
+  expiresAt: SortOrder
+  id: SortOrder
+  invitedBy: UserOrderByWithRelationInput
+  invitedById: SortOrder
+  revokedAt: SortOrder
+  role: SortOrder
+  token: SortOrder
+  updatedAt: SortOrder
+  usedAt: SortOrder
+}
+
+enum TeamMemberInvitationScalarFieldEnum {
+  acceptedById
+  conferenceId
+  createdAt
+  email
+  expiresAt
+  id
+  invitedById
+  revokedAt
+  role
+  token
+  updatedAt
+  usedAt
+}
+
+input TeamMemberInvitationUpdateInput {
+  acceptedById: NullableStringFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  email: StringFieldUpdateOperationsInput
+  expiresAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  invitedById: StringFieldUpdateOperationsInput
+  revokedAt: NullableDateTimeFieldUpdateOperationsInput
+  role: EnumTeamRoleFieldUpdateOperationsInput
+  token: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  usedAt: NullableDateTimeFieldUpdateOperationsInput
+}
+
+input TeamMemberInvitationUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  email: StringFieldUpdateOperationsInput
+  expiresAt: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  revokedAt: NullableDateTimeFieldUpdateOperationsInput
+  role: EnumTeamRoleFieldUpdateOperationsInput
+  token: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  usedAt: NullableDateTimeFieldUpdateOperationsInput
+}
+
+input TeamMemberInvitationUpdateManyWithoutAcceptedByNestedInput {
+  connect: [TeamMemberInvitationWhereUniqueInput!]
+  disconnect: [TeamMemberInvitationWhereUniqueInput!]
+  set: [TeamMemberInvitationWhereUniqueInput!]
+}
+
+input TeamMemberInvitationUpdateManyWithoutConferenceNestedInput {
+  connect: [TeamMemberInvitationWhereUniqueInput!]
+  disconnect: [TeamMemberInvitationWhereUniqueInput!]
+  set: [TeamMemberInvitationWhereUniqueInput!]
+}
+
+input TeamMemberInvitationUpdateManyWithoutInvitedByNestedInput {
+  connect: [TeamMemberInvitationWhereUniqueInput!]
+  disconnect: [TeamMemberInvitationWhereUniqueInput!]
+  set: [TeamMemberInvitationWhereUniqueInput!]
+}
+
+input TeamMemberInvitationWhereInput {
+  AND: [TeamMemberInvitationWhereInput!]
+  NOT: [TeamMemberInvitationWhereInput!]
+  OR: [TeamMemberInvitationWhereInput!]
+  acceptedBy: UserWhereInput
+  acceptedById: StringNullableFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  email: StringFilter
+  expiresAt: DateTimeFilter
+  id: StringFilter
+  invitedBy: UserWhereInput
+  invitedById: StringFilter
+  revokedAt: DateTimeNullableFilter
+  role: EnumTeamRoleFilter
+  token: StringFilter
+  updatedAt: DateTimeFilter
+  usedAt: DateTimeNullableFilter
+}
+
+input TeamMemberInvitationWhereUniqueInput {
+  AND: [TeamMemberInvitationWhereInput!]
+  NOT: [TeamMemberInvitationWhereInput!]
+  OR: [TeamMemberInvitationWhereInput!]
+  acceptedBy: UserWhereInput
+  acceptedById: StringNullableFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  email: StringFilter
+  expiresAt: DateTimeFilter
+  id: String
+  invitedBy: UserWhereInput
+  invitedById: StringFilter
+  revokedAt: DateTimeNullableFilter
+  role: EnumTeamRoleFilter
+  token: String
+  updatedAt: DateTimeFilter
+  usedAt: DateTimeNullableFilter
+}
+
 input TeamMemberListRelationFilter {
   every: TeamMemberWhereInput
   none: TeamMemberWhereInput
@@ -5335,6 +5563,7 @@ enum TeamRole {
   PARTICIPANT_CARE
   PROJECT_MANAGEMENT
   REVIEWER
+  TEAM_COORDINATOR
 }
 
 enum TransactionIsolationLevel {
@@ -5404,6 +5633,7 @@ input UpdateOneSurveyAnswerWhereUniqueInput {
 }
 
 type UpsertSelfResult {
+  userId: String!
   userNeedsAdditionalInfo: Boolean!
 }
 
@@ -5458,6 +5688,8 @@ input UserCreateInput {
   given_name: String!
   globalNotes: String
   id: String
+  invitationsAccepted: TeamMemberInvitationCreateNestedManyWithoutAcceptedByInput
+  invitationsSent: TeamMemberInvitationCreateNestedManyWithoutInvitedByInput
   locale: String!
   ownPaymentTransactions: PaymentTransactionCreateNestedManyWithoutUserInput
   paperReviews: PaperReviewCreateNestedManyWithoutReviewerInput
@@ -5480,6 +5712,11 @@ input UserCreateInput {
   zip: String
 }
 
+input UserNullableScalarRelationFilter {
+  is: UserWhereInput
+  isNot: UserWhereInput
+}
+
 input UserOrderByWithRelationInput {
   apartment: SortOrder
   birthday: SortOrder
@@ -5498,6 +5735,8 @@ input UserOrderByWithRelationInput {
   given_name: SortOrder
   globalNotes: SortOrder
   id: SortOrder
+  invitationsAccepted: TeamMemberInvitationOrderByRelationAggregateInput
+  invitationsSent: TeamMemberInvitationOrderByRelationAggregateInput
   locale: SortOrder
   ownPaymentTransactions: PaymentTransactionOrderByRelationAggregateInput
   paperReviews: PaperReviewOrderByRelationAggregateInput
@@ -5691,6 +5930,8 @@ input UserUpdateInput {
   given_name: StringFieldUpdateOperationsInput
   globalNotes: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  invitationsAccepted: TeamMemberInvitationUpdateManyWithoutAcceptedByNestedInput
+  invitationsSent: TeamMemberInvitationUpdateManyWithoutInvitedByNestedInput
   locale: StringFieldUpdateOperationsInput
   ownPaymentTransactions: PaymentTransactionUpdateManyWithoutUserNestedInput
   paperReviews: PaperReviewUpdateManyWithoutReviewerNestedInput
@@ -5760,6 +6001,8 @@ input UserWhereInput {
   given_name: StringFilter
   globalNotes: StringNullableFilter
   id: StringFilter
+  invitationsAccepted: TeamMemberInvitationListRelationFilter
+  invitationsSent: TeamMemberInvitationListRelationFilter
   locale: StringFilter
   ownPaymentTransactions: PaymentTransactionListRelationFilter
   paperReviews: PaperReviewListRelationFilter
@@ -5803,6 +6046,8 @@ input UserWhereUniqueInput {
   given_name: StringFilter
   globalNotes: StringNullableFilter
   id: String
+  invitationsAccepted: TeamMemberInvitationListRelationFilter
+  invitationsSent: TeamMemberInvitationListRelationFilter
   locale: StringFilter
   ownPaymentTransactions: PaymentTransactionListRelationFilter
   paperReviews: PaperReviewListRelationFilter

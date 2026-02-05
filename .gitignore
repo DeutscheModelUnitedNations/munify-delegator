@@ -40,3 +40,4 @@ tailwindcss*.log
 *.json.backup.*
 
 prisma/pothos/*
+.eslintcache

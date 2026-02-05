@@ -35,6 +35,7 @@ import './modules/flagCollection';
 import './modules/roleApplication';
 import './modules/singleParticipant';
 import './modules/teamMember';
+import './modules/teamMemberInvitation';
 import './modules/user';
 import './modules/assignments';
 import './modules/survey/surveyQuestion';

@@ -61,19 +61,21 @@ bun run studio
 # Format code
 bun run format
 
-# Lint
-bun run lint
-
-# Type checking
-bun run check          # Single run
+# Type checking (PREFERRED for development - fast feedback)
+bun run check          # Single run - use this to verify changes
 bun run check:watch    # Watch mode
 bun run typecheck      # TypeScript only
+
+# Lint (slow - runs automatically on git push via lefthook)
+bun run lint           # Only run manually when specifically needed
 
 # Testing
 bun test               # Run tests once
 bun run test:watch     # Watch mode
 bun run coverage       # With coverage report
 ```
+
+**Note:** Prefer `bun run check` over `bun run lint` during development. Linting is slow (~2 min) and runs automatically on push via lefthook pre-push hooks. Use `bun run check` for quick type-checking feedback.
 
 ### i18n (Internationalization)
 

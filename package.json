@@ -57,6 +57,7 @@
 		"@tiptap/extension-subscript": "^3.15.3",
 		"@tiptap/extension-superscript": "^3.15.3",
 		"@tiptap/extension-underline": "^3.15.3",
+		"@tiptap/extensions": "^3.15.3",
 		"@tiptap/pm": "^3.15.3",
 		"@tiptap/starter-kit": "^3.15.3",
 		"@tiptap/suggestion": "^3.15.3",
@@ -153,8 +154,10 @@
 	},
 	"name": "munify-delegator",
 	"private": true,
-	"resolutions": {
+	"overrides": {
+		"@isaacs/brace-expansion": "5.0.1",
 		"devalue": "5.6.2",
+		"fast-xml-parser": "5.3.4",
 		"form-data": "4.0.4",
 		"preact": "10.28.2",
 		"svelte": "5.45.5"
@@ -166,10 +169,11 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
-		"dev:server": "while true; do svelte-kit sync && vite; echo '🔄 Server crashed, restarting...'; sleep 1; done",
+		"dev:server": "svelte-kit sync && vite",
 		"format": "prettier --write .",
+		"format:check": "prettier --check .",
 		"install-git-hooks": "bunx lefthook install",
-		"lint": "prettier --check . && eslint .",
+		"lint": "eslint . --cache --cache-strategy content",
 		"i18n:check": "i18n-check --source \"de\" --locales ./messages --format \"i18next\"",
 		"i18n:validate": "inlang validate --project project.inlang",
 		"i18n:translate": "inlang machine translate --project project.inlang",

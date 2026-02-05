@@ -16,14 +16,19 @@
 	let value = $state<string>();
 
 	onMount(() => {
-		fetchWBStat(countryCode, wbIndicator).then((data) => {
-			if (!data) {
+		fetchWBStat(countryCode, wbIndicator)
+			.then((data) => {
+				if (!data) {
+					value = '–';
+				} else {
+					const formattedValue = formatter ? formatter(data) : data.toLocaleString();
+					value = formattedValue;
+				}
+			})
+			.catch(() => {
+				// Fallback in case of unexpected errors
 				value = '–';
-			} else {
-				const formattedValue = formatter ? formatter(data) : data.toLocaleString();
-				value = formattedValue;
-			}
-		});
+			});
 	});
 </script>
 

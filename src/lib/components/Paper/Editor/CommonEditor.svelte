@@ -74,7 +74,8 @@
 		return from !== to;
 	};
 
-	let editor = $state() as Readable<Editor>;
+	let editor = $state<Readable<Editor> | null>(null);
+	let isDestroyed = $state(false);
 
 	onMount(() => {
 		editor = createEditor({
@@ -85,16 +86,17 @@
 					class: `${additionalClasses} focus:outline-none px-2 pb-2`
 				}
 			},
-			onUpdate: ({ editor }) => {
-				$editorContentStore = editor.getJSON();
+			onUpdate: ({ editor: e }) => {
+				if (isDestroyed) return;
+				$editorContentStore = e.getJSON();
 				if (showStats) {
-					calculateStats(editor);
+					calculateStats(e);
 				}
 			},
-			onCreate: ({ editor }) => {
+			onCreate: ({ editor: e }) => {
 				// Calculate initial stats on editor creation (for both edit and view mode)
 				if (showStats) {
-					calculateStats(editor);
+					calculateStats(e);
 				}
 			},
 			editable
@@ -102,8 +104,12 @@
 	});
 
 	onDestroy(() => {
-		if ($editor) {
-			$editor.destroy();
+		isDestroyed = true;
+		if (editor) {
+			const e = $editor;
+			if (e && !e.isDestroyed) {
+				e.destroy();
+			}
 		}
 	});
 </script>
@@ -111,29 +117,35 @@
 <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 min-h-[300px]">
 	<legend class="fieldset-legend">{editable ? m.editor() : m.viewer()}</legend>
 
-	{#if $editor && editable}
-		{@render fixedMenu?.($editor)}
-	{/if}
+	{#if editor && $editor}
+		{#if editable}
+			{@render fixedMenu?.($editor)}
+		{/if}
 
-	<EditorContent editor={$editor} />
+		<EditorContent editor={$editor} />
 
-	{#if $editor && editable}
-		<BubbleMenu editor={$editor}>
-			{@render bubbleMenu?.($editor)}
-		</BubbleMenu>
-	{/if}
+		{#if editable}
+			<BubbleMenu editor={$editor}>
+				{@render bubbleMenu?.($editor)}
+			</BubbleMenu>
+		{/if}
 
-	{#if $editor && !editable && onQuoteSelection}
-		<BubbleMenu editor={$editor} shouldShow={shouldShowQuoteBubble}>
-			<button
-				class="btn btn-sm btn-primary shadow-lg"
-				onclick={handleQuoteClick}
-				title={m.quoteInReview()}
-			>
-				<i class="fa-solid fa-quote-left"></i>
-				{m.quote()}
-			</button>
-		</BubbleMenu>
+		{#if !editable && onQuoteSelection}
+			<BubbleMenu editor={$editor} shouldShow={shouldShowQuoteBubble}>
+				<button
+					class="btn btn-sm btn-primary shadow-lg"
+					onclick={handleQuoteClick}
+					title={m.quoteInReview()}
+				>
+					<i class="fa-solid fa-quote-left"></i>
+					{m.quote()}
+				</button>
+			</BubbleMenu>
+		{/if}
+	{:else}
+		<div class="flex justify-center items-center h-32">
+			<span class="loading loading-spinner loading-md"></span>
+		</div>
 	{/if}
 
 	{#if showStats}

@@ -17,6 +17,7 @@
 	import { extractPlaceholders, replacePlaceholders } from '$lib/services/snippetPlaceholders';
 	import type { JSONContent } from '@tiptap/core';
 	import { getSafeTipTapContent } from './contentValidation';
+	import { UndoRedo } from '@tiptap/extensions';
 
 	interface Props {
 		contentStore: Writable<any>;
@@ -124,6 +125,7 @@
 				OrderedList,
 				BulletList,
 				ListItem,
+				UndoRedo,
 				BlockquoteWithFind.configure({
 					getPaperContainer: () => paperContainer,
 					findInPaperLabel: m.findInPaper(),
@@ -188,6 +190,13 @@
 
 	{#if $editor}
 		<Menu.Wrapper>
+			<Menu.Button onClick={() => $editor.commands.undo()} label={m.undo()} icon="fa-rotate-left" />
+			<Menu.Button
+				onClick={() => $editor.commands.redo()}
+				label={m.redo()}
+				icon="fa-rotate-right"
+			/>
+			<Menu.Divider />
 			<Menu.Button
 				onClick={() => $editor.chain().focus().toggleHeading({ level: 2 }).run()}
 				active={$editor.isActive('heading', { level: 2 })}
