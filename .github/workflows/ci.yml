@@ -61,6 +61,8 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bunx svelte-kit sync
+      - name: Generate Prisma client and Pothos types
+        run: bunx prisma generate
       - name: Generate Paraglide types
         run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
       - name: Generate Houdini types
