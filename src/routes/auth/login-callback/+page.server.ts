@@ -133,10 +133,7 @@ export const load: PageServerLoad = async (event) => {
 			}
 		});
 
-		const params = new URLSearchParams({
-			type: errorType,
-			description: errorMessage
-		});
+		const params = new URLSearchParams({ type: errorType });
 		redirect(302, `/auth/error?${params.toString()}`);
 	}
 
