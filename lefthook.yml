@@ -10,6 +10,6 @@ pre-push:
     test:
       run: bun test
     lint:
-      run: bunx eslint "{push_files}"
+      run: bunx eslint "{push_files}" --cache --cache-strategy content
     format:
-      run: bunx prettier --check "{push_files}"
+      run: bunx prettier --check --ignore-unknown "{push_files}"
