@@ -7,6 +7,8 @@
 
 	let userId = $derived(data.user.sub);
 	let surveyData = $derived(data?.DashboardSurveyPageQuery);
+	let isLoading = $derived($surveyData.fetching);
+	let hasError = $derived($surveyData.errors && $surveyData.errors.length > 0);
 	let surveyQuestions = $derived($surveyData.data?.findManySurveyQuestions ?? []);
 	let surveyAnswers = $derived($surveyData.data?.findManySurveyAnswers ?? []);
 </script>
@@ -15,13 +17,24 @@
 	<h2 class="text-2xl font-bold">{m.survey()}</h2>
 	<p>{m.surveyDescription()}</p>
 
-	<div class="mt-10 flex w-full max-w-3xl flex-col gap-4">
-		{#each surveyQuestions as question}
-			<SurveyEntry
-				{question}
-				answer={surveyAnswers.find((a) => a.question.id === question.id)}
-				{userId}
-			/>
-		{/each}
-	</div>
+	{#if isLoading}
+		<div class="mt-10 flex justify-center">
+			<span class="loading loading-spinner loading-lg"></span>
+		</div>
+	{:else if hasError}
+		<div class="alert alert-error mt-10">
+			<i class="fa-solid fa-triangle-exclamation"></i>
+			<span>{m.genericError()}</span>
+		</div>
+	{:else}
+		<div class="mt-10 flex w-full max-w-3xl flex-col gap-4">
+			{#each surveyQuestions as question}
+				<SurveyEntry
+					{question}
+					answer={surveyAnswers.find((a) => a.question.id === question.id)}
+					{userId}
+				/>
+			{/each}
+		</div>
+	{/if}
 </div>

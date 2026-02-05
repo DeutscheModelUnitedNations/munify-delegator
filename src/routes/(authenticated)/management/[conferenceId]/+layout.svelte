@@ -65,12 +65,6 @@
 				/>
 			</NavMenuDetails>
 			<NavMenuButton
-				href="/management/{data.conferenceId}/team"
-				icon="fa-user-group"
-				title={m.teamManagement()}
-				bind:expanded={navbarExpanded}
-			/>
-			<NavMenuButton
 				href="/management/{data.conferenceId}/survey"
 				icon="fa-chart-pie"
 				title={m.survey()}
@@ -124,6 +118,12 @@
 				href="/management/{data.conferenceId}/downloads"
 				icon="fa-download"
 				title={m.downloads()}
+				bind:expanded={navbarExpanded}
+			/>
+			<NavMenuButton
+				href="/dashboard/{data.conferenceId}/team-management"
+				icon="fa-user-group"
+				title={m.teamManagement()}
 				bind:expanded={navbarExpanded}
 			/>
 		</NavMenu>

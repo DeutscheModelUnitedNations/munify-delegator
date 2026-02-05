@@ -29,6 +29,18 @@
 			translation: m.administration(),
 			icon: 'bars-progress'
 		},
+		'team-management': {
+			translation: m.teamCoordination(),
+			icon: 'user-group'
+		},
+		members: {
+			translation: m.teamMembers(),
+			icon: 'users'
+		},
+		invitations: {
+			translation: m.pendingInvitations(),
+			icon: 'envelope'
+		},
 		conferenceId: {
 			translation: m.conference(),
 			icon: 'flag'
