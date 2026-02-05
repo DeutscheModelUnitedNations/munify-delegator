@@ -61,6 +61,10 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bunx svelte-kit sync
+      - name: Generate Paraglide types
+        run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
+      - name: Generate Houdini types
+        run: bunx houdini generate
       - run: bun run check
 
   i18n:
