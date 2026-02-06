@@ -95,8 +95,9 @@ model Conference {
   WaitingListEntry             WaitingListEntry[]
   papers                       Paper[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
+  messageAudits MessageAudit[]
 }
 
 /// A committee in a conference. E.g. the human rights council
@@ -199,6 +200,9 @@ model User {
   papers                        Paper[]
   paperReviews                  PaperReview[]
   reviewerSnippets              ReviewerSnippet[]
+  canReceiveDelegationMail      Boolean                             @default(false)
+  sentDelegationMessages        MessageAudit[]                      @relation("SentMessages")
+  receivedDelegationMessages    MessageAudit[]                      @relation("ReceivedMessages")
 
   invitationsSent     TeamMemberInvitation[] @relation("InvitedByUser")
   invitationsAccepted TeamMemberInvitation[] @relation("AcceptedByUser")
@@ -640,6 +644,36 @@ model TeamMember {
 
   @@unique([conferenceId, userId])
 }
+
+model MessageAudit {
+  id String @id @default(nanoid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  subject String
+  body    String
+
+  //tracibility
+  senderUserId String
+  senderUser   User   @relation("SentMessages", fields: [senderUserId], references: [id], onDelete: Cascade)
+
+  recipientUserId String
+  recipientUser   User   @relation("ReceivedMessages", fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  conferenceId String
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
+  // Technical meta-data
+  messageId String? // The ID from the email provider
+  status    MessageStatus @default(SENT)
+}
+
+/// Status for message audit entries
+enum MessageStatus {
+  SENT
+  FAILED
+  BLOCKED
 
 /// An invitation to join the team for a conference
 model TeamMemberInvitation {

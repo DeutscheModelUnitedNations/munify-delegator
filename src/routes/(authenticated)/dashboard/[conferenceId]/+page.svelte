@@ -13,6 +13,8 @@
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import Supervisor from './stages/Supervisor/Supervisor.svelte';
+	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import { onMount } from 'svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import { configPublic } from '$config/public';
 
@@ -29,10 +31,48 @@
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
 	let surveyQuestions = $derived(conferenceQueryData?.findManySurveyQuestions);
 	let surveyAnswers = $derived(conferenceQueryData?.findManySurveyAnswers);
+	let isDelegatee = $derived(
+		!!delegationMember?.id && !singleParticipant?.id && !supervisor?.id && !teamMember?.id
+	);
+	let showNewBadge = $state(false);
+
+	const getContentSignature = () =>
+		JSON.stringify({
+			conference,
+			delegationMember,
+			singleParticipant,
+			supervisor,
+			teamMember,
+			status,
+			surveyQuestions,
+			surveyAnswers
+		});
+
+	onMount(() => {
+		if (!conference?.id || !data.user?.sub) return;
+		const storageKey = `dashboard-content:${conference.id}:${data.user.sub}`;
+		const signature = getContentSignature();
+		const previousSignature = localStorage.getItem(storageKey);
+		showNewBadge = !!previousSignature && previousSignature !== signature;
+		localStorage.setItem(storageKey, signature);
+	});
 </script>
 
 <div class="flex w-full flex-col items-center">
 	<div class="flex w-full flex-col gap-10">
+		{#if conference?.id && isDelegatee}
+			<div class="flex justify-end">
+				<a href={`/dashboard/${conference.id}/messaging`} class="btn btn-outline">
+					<i class="fa-solid fa-envelope"></i>
+					{m.messagingMessaging()}
+				</a>
+			</div>
+		{/if}
+		{#if showNewBadge}
+			<div class="flex justify-end">
+				<span class="badge badge-primary badge-outline uppercase">new</span>
+			</div>
+		{/if}
 		{#if conference}
 			<ConferenceHeader
 				title={conference.title}
@@ -72,6 +112,7 @@
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
+
 					<SingleParticipantPreparationStage
 						{conference}
 						{singleParticipant}
@@ -107,6 +148,13 @@
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
+
+					<div class="mt-4">
+						<a href={'/dashboard/' + conference?.id + '/messaging'} class="btn btn-outline">
+							<i class="fa-solid fa-envelope"></i>
+							{m.messagingMessaging()}
+						</a>
+					</div>
 					<DelegationPreparationStage
 						{delegationMember}
 						{conference}

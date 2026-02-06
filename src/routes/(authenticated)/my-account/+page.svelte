@@ -152,6 +152,20 @@
 							label={m.receiveJoinTeamInformation()}
 						/>
 					</FormFieldset>
+
+					<div class="divider"></div>
+
+					<FormFieldset title="Messaging">
+						<FormCheckbox
+							{form}
+							name="canReceiveDelegationMail"
+							label="Receive messages from other delegates"
+						/>
+						<div class="text-sm text-base-content/70">
+							By enabling this, other delegates can send you messages via email. Your email address
+							will <strong>not</strong> be shared with them. You can reply directly from the email notification.
+						</div>
+					</FormFieldset>
 				</Form>
 			</div>
 		</div>
@@ -193,6 +207,7 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
