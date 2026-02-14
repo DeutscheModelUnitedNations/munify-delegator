@@ -39,7 +39,7 @@
 
 <button
 	type="button"
-	class="{colorConfig.bg} {colorConfig.border} flex h-full w-full flex-col overflow-hidden rounded border-l-4 px-2 py-1 text-left transition-opacity hover:opacity-80"
+	class="{colorConfig.bg} {colorConfig.border} flex h-full w-full cursor-pointer flex-col overflow-hidden rounded border-l-4 px-2 py-1 text-left transition-opacity hover:opacity-80"
 	{onclick}
 	disabled={!onclick}
 >
@@ -58,11 +58,15 @@
 			</span>
 		{/if}
 	{:else}
-		<div class="flex items-center gap-1.5">
+		<div class="flex items-start gap-1.5">
 			{#if fontAwesomeIcon}
-				<i class="fa-duotone fa-{fontAwesomeIcon} {colorConfig.text} shrink-0 text-sm"></i>
+				<i class="fa-duotone fa-{fontAwesomeIcon} {colorConfig.text} mt-0.5 shrink-0 text-sm"></i>
 			{/if}
 			<span class="truncate text-sm font-semibold">{name}</span>
+			{#if description}
+				<i class="fa-solid fa-circle-info {colorConfig.text} ml-auto shrink-0 text-xs opacity-60"
+				></i>
+			{/if}
 		</div>
 		<span class="text-base-content/60 text-xs">{timeLabel}</span>
 		{#if locationLabel}
@@ -70,9 +74,6 @@
 				<i class="fa-duotone fa-location-dot text-[10px]"></i>
 				{locationLabel}
 			</span>
-		{/if}
-		{#if description}
-			<span class="text-base-content/50 mt-0.5 line-clamp-2 text-xs">{description}</span>
 		{/if}
 	{/if}
 </button>

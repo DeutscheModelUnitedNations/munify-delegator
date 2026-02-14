@@ -107,12 +107,14 @@
 		return `top: ${top}px; height: ${height}px;`;
 	}
 
+	let columnCount = $derived(Math.max(visibleTracks.length, 1));
+
 	function getColumnForEntry(entry: Entry): { start: number; span: number } {
 		if (!entry.calendarTrackId) {
-			return { start: 1, span: visibleTracks.length };
+			return { start: 1, span: columnCount };
 		}
 		const idx = visibleTracks.findIndex((t) => t.id === entry.calendarTrackId);
-		if (idx === -1) return { start: 1, span: visibleTracks.length };
+		if (idx === -1) return { start: 1, span: columnCount };
 		return { start: idx + 1, span: 1 };
 	}
 
@@ -160,13 +162,7 @@
 		</div>
 	{/if}
 
-	<div
-		class="grid"
-		style="grid-template-columns: 3.5rem repeat({Math.max(
-			visibleTracks.length,
-			1
-		)}, minmax(0, 1fr));"
-	>
+	<div class="grid" style="grid-template-columns: 3.5rem repeat({columnCount}, minmax(0, 1fr));">
 		<!-- Time gutter -->
 		<div class="relative" style="height: {totalHeight}px;">
 			{#each hours as hour (hour)}
@@ -180,10 +176,7 @@
 		</div>
 
 		<!-- Entries area -->
-		<div
-			class="relative"
-			style="height: {totalHeight}px; grid-column: 2 / {Math.max(visibleTracks.length, 1) + 2};"
-		>
+		<div class="relative" style="height: {totalHeight}px; grid-column: 2 / {columnCount + 2};">
 			<!-- Gridlines -->
 			{#each hours as hour (hour)}
 				<div
@@ -200,29 +193,24 @@
 			{/each}
 
 			<!-- Vertical track dividers -->
-			{#each { length: Math.max(visibleTracks.length, 1) - 1 } as _, i}
+			{#each { length: columnCount - 1 } as _, i}
 				<div
 					class="border-base-200/40 absolute top-0 bottom-0 border-l border-dashed"
-					style="left: calc((100% / {Math.max(visibleTracks.length, 1)}) * {i + 1});"
+					style="left: calc((100% / {columnCount}) * {i + 1});"
 				></div>
 			{/each}
 
 			<!-- Entry cards -->
 			<div
 				class="absolute inset-0 grid"
-				style="grid-template-columns: repeat({Math.max(visibleTracks.length, 1)}, minmax(0, 1fr));"
+				style="grid-template-columns: repeat({columnCount}, minmax(0, 1fr));"
 			>
 				{#each visibleEntries as entry (entry.id)}
 					{@const col = getColumnForEntry(entry)}
 					<div
 						class="absolute px-0.5 pb-px"
-						style="{getEntryStyle(entry)} left: calc((100% / {Math.max(
-							visibleTracks.length,
-							1
-						)}) * {col.start - 1}); width: calc((100% / {Math.max(
-							visibleTracks.length,
-							1
-						)}) * {col.span});"
+						style="{getEntryStyle(entry)} left: calc((100% / {columnCount}) * {col.start -
+							1}); width: calc((100% / {columnCount}) * {col.span});"
 					>
 						<CalendarEntryCard
 							name={entry.name}

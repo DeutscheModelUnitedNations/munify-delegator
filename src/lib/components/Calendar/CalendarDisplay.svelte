@@ -28,6 +28,7 @@
 			directions?: string | null;
 			info?: string | null;
 			websiteUrl?: string | null;
+			sitePlanDataURL?: string | null;
 		} | null;
 		room?: string | null;
 		calendarTrackId?: string | null;
@@ -48,7 +49,20 @@
 
 	let { days }: Props = $props();
 
-	let selectedDayIndex = $state(0);
+	function getTodayIndex() {
+		const today = new Date();
+		const idx = days.findIndex((d) => {
+			const dd = new Date(d.date);
+			return (
+				dd.getFullYear() === today.getFullYear() &&
+				dd.getMonth() === today.getMonth() &&
+				dd.getDate() === today.getDate()
+			);
+		});
+		return idx >= 0 ? idx : 0;
+	}
+
+	let selectedDayIndex = $state(getTodayIndex());
 	let filterTrackId = $state<string | null>(null);
 
 	let selectedDay = $derived(days[selectedDayIndex]);

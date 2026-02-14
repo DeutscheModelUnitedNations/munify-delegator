@@ -34,6 +34,7 @@ const CalendarManagementQuery = graphql(`
 					directions
 					info
 					websiteUrl
+					sitePlanDataURL
 				}
 				placeId
 				room

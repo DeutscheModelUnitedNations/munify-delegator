@@ -37,6 +37,28 @@
 			: sortedEntriesForSelectedDay
 	);
 
+	// Detect overlapping entries (same track, overlapping time ranges)
+	let overlappingEntryIds = $derived.by(() => {
+		const entries = sortedEntriesForSelectedDay;
+		const ids = new Set<string>();
+		for (let i = 0; i < entries.length; i++) {
+			for (let j = i + 1; j < entries.length; j++) {
+				const a = entries[i];
+				const b = entries[j];
+				if (a.calendarTrackId !== b.calendarTrackId) continue;
+				const aStart = new Date(a.startTime).getTime();
+				const aEnd = new Date(a.endTime).getTime();
+				const bStart = new Date(b.startTime).getTime();
+				const bEnd = new Date(b.endTime).getTime();
+				if (aStart < bEnd && bStart < aEnd) {
+					ids.add(a.id);
+					ids.add(b.id);
+				}
+			}
+		}
+		return ids;
+	});
+
 	// Ensure selectedDayId is valid
 	$effect(() => {
 		if (
@@ -1075,12 +1097,20 @@
 					<tbody>
 						{#each entriesForSelectedDay as entry (entry.id)}
 							{@const track = tracksForSelectedDay.find((t) => t.id === entry.calendarTrackId)}
-							<tr>
+							{@const hasOverlap = overlappingEntryIds.has(entry.id)}
+							<tr class={hasOverlap ? 'bg-warning/10' : ''}>
 								<td>
-									{#if entry.fontAwesomeIcon}
-										<i class="fa-duotone fa-{entry.fontAwesomeIcon} mr-1"></i>
-									{/if}
-									{entry.name}
+									<div class="flex items-center gap-1.5">
+										{#if hasOverlap}
+											<div class="tooltip tooltip-right" data-tip={m.calendarEntryOverlap()}>
+												<i class="fa-solid fa-triangle-exclamation text-warning text-xs"></i>
+											</div>
+										{/if}
+										{#if entry.fontAwesomeIcon}
+											<i class="fa-duotone fa-{entry.fontAwesomeIcon}"></i>
+										{/if}
+										{entry.name}
+									</div>
 								</td>
 								<td
 									>{new Date(entry.startTime).toLocaleTimeString([], {

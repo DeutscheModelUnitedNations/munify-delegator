@@ -16,6 +16,7 @@
 		directions?: string | null;
 		info?: string | null;
 		websiteUrl?: string | null;
+		sitePlanDataURL?: string | null;
 	}
 
 	interface EntryDetail {
@@ -230,16 +231,30 @@
 									</div>
 								{/if}
 
-								{#if entry.place?.websiteUrl}
-									<a
-										href={entry.place.websiteUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="btn btn-outline btn-sm gap-1.5"
-									>
-										<i class="fa-duotone fa-globe"></i>
-										{m.calendarPlaceWebsite()}
-									</a>
+								{#if entry.place?.websiteUrl || entry.place?.sitePlanDataURL}
+									<div class="flex flex-wrap gap-2">
+										{#if entry.place?.websiteUrl}
+											<a
+												href={entry.place.websiteUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="btn btn-outline btn-sm gap-1.5"
+											>
+												<i class="fa-duotone fa-globe"></i>
+												{m.calendarPlaceWebsite()}
+											</a>
+										{/if}
+										{#if entry.place?.sitePlanDataURL}
+											<a
+												href={entry.place.sitePlanDataURL}
+												download="{entry.place.name} - {m.calendarPlaceSitePlan()}.pdf"
+												class="btn btn-outline btn-sm gap-1.5"
+											>
+												<i class="fa-duotone fa-map"></i>
+												{m.calendarPlaceSitePlanDownload()}
+											</a>
+										{/if}
+									</div>
 								{/if}
 
 								<!-- Map -->
