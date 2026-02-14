@@ -21,7 +21,21 @@
 
 	let selectedDay = $derived(calendarDays.find((d) => d.id === selectedDayId));
 	let tracksForSelectedDay = $derived(selectedDay?.tracks ?? []);
-	let entriesForSelectedDay = $derived(selectedDay?.entries ?? []);
+	let filterEntryTrackId = $state<string | null>(null);
+	let sortedEntriesForSelectedDay = $derived(
+		[...(selectedDay?.entries ?? [])].sort((a, b) => {
+			const timeDiff = new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+			if (timeDiff !== 0) return timeDiff;
+			const trackA = selectedDay?.tracks.find((t) => t.id === a.calendarTrackId);
+			const trackB = selectedDay?.tracks.find((t) => t.id === b.calendarTrackId);
+			return (trackA?.sortOrder ?? -1) - (trackB?.sortOrder ?? -1);
+		})
+	);
+	let entriesForSelectedDay = $derived(
+		filterEntryTrackId
+			? sortedEntriesForSelectedDay.filter((e) => e.calendarTrackId === filterEntryTrackId)
+			: sortedEntriesForSelectedDay
+	);
 
 	// Ensure selectedDayId is valid
 	$effect(() => {
@@ -31,6 +45,12 @@
 		) {
 			selectedDayId = calendarDays[0].id;
 		}
+	});
+
+	// Reset track filter when day changes
+	$effect(() => {
+		selectedDayId;
+		filterEntryTrackId = null;
 	});
 
 	// Loading state
@@ -331,6 +351,7 @@
 			$placeId: NullableStringFieldUpdateOperationsInput
 			$room: NullableStringFieldUpdateOperationsInput
 			$calendarTrackId: NullableStringFieldUpdateOperationsInput
+			$calendarDayId: StringFieldUpdateOperationsInput
 		) {
 			updateOneCalendarEntry(
 				where: { id: $id }
@@ -344,6 +365,7 @@
 					placeId: $placeId
 					room: $room
 					calendarTrackId: $calendarTrackId
+					calendarDayId: $calendarDayId
 				}
 			) {
 				id
@@ -362,8 +384,11 @@
 	let showCreateEntryModal = $state(false);
 	let showEditEntryModal = $state(false);
 	let showDeleteEntryModal = $state(false);
+	let showChangeDayModal = $state(false);
 	let entryToEdit = $state<(typeof entriesForSelectedDay)[0] | null>(null);
 	let entryToDelete = $state<(typeof entriesForSelectedDay)[0] | null>(null);
+	let entryToMove = $state<(typeof entriesForSelectedDay)[0] | null>(null);
+	let targetDayId = $state<string | null>(null);
 
 	let entryName = $state('');
 	let entryDescription = $state('');
@@ -411,6 +436,57 @@
 		entryRoom = '';
 		entryTrackId = null;
 		showCreateEntryModal = true;
+	}
+
+	function duplicateEntry(entry: (typeof entriesForSelectedDay)[0]) {
+		entryName = entry.name;
+		entryDescription = entry.description ?? '';
+		entryStartTime = toTimeString(new Date(entry.startTime));
+		entryEndTime = toTimeString(new Date(entry.endTime));
+		entryEndTimeManuallySet = true;
+		entryIcon = entry.fontAwesomeIcon ?? '';
+		entryColor = entry.color;
+		entryPlaceId = entry.placeId ?? null;
+		entryRoom = entry.room ?? '';
+		entryTrackId = entry.calendarTrackId ?? null;
+		showCreateEntryModal = true;
+	}
+
+	function openChangeDay(entry: (typeof entriesForSelectedDay)[0]) {
+		entryToMove = entry;
+		targetDayId = selectedDayId;
+		showChangeDayModal = true;
+	}
+
+	async function changeDay() {
+		if (!entryToMove || !targetDayId || targetDayId === selectedDayId) return;
+		isLoading = true;
+		try {
+			const targetDay = calendarDays.find((d) => d.id === targetDayId);
+			if (!targetDay) return;
+			const oldStart = new Date(entryToMove.startTime);
+			const oldEnd = new Date(entryToMove.endTime);
+			const newDayDate = new Date(targetDay.date);
+			const newStart = new Date(newDayDate);
+			newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+			const newEnd = new Date(newDayDate);
+			newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
+			await UpdateEntryMutation.mutate({
+				id: entryToMove.id,
+				calendarDayId: { set: targetDayId },
+				startTime: { set: newStart },
+				endTime: { set: newEnd },
+				calendarTrackId: { set: null }
+			});
+			cache.markStale();
+			await invalidateAll();
+			showChangeDayModal = false;
+			entryToMove = null;
+		} catch (error) {
+			console.error('Failed to move entry:', error);
+		} finally {
+			isLoading = false;
+		}
 	}
 
 	function openEditEntry(entry: (typeof entriesForSelectedDay)[0]) {
@@ -955,13 +1031,23 @@
 	<!-- Entries Tab -->
 	{#if activeTab === 'entries'}
 		<div class="flex flex-wrap items-center justify-between gap-2">
-			{#if calendarDays.length > 0}
-				<select class="select select-bordered select-sm" bind:value={selectedDayId}>
-					{#each calendarDays as day (day.id)}
-						<option value={day.id}>{day.name}</option>
-					{/each}
-				</select>
-			{/if}
+			<div class="flex flex-wrap items-center gap-2">
+				{#if calendarDays.length > 0}
+					<select class="select select-bordered select-sm" bind:value={selectedDayId}>
+						{#each calendarDays as day (day.id)}
+							<option value={day.id}>{day.name}</option>
+						{/each}
+					</select>
+				{/if}
+				{#if tracksForSelectedDay.length > 1}
+					<select class="select select-bordered select-sm" bind:value={filterEntryTrackId}>
+						<option value={null}>{m.calendarAllTracks()}</option>
+						{#each tracksForSelectedDay as track (track.id)}
+							<option value={track.id}>{track.name}</option>
+						{/each}
+					</select>
+				{/if}
+			</div>
 			<button class="btn btn-primary btn-sm" onclick={openCreateEntry} disabled={!selectedDayId}>
 				<i class="fas fa-plus"></i>
 				{m.calendarAddEntry()}
@@ -1014,6 +1100,12 @@
 									></td
 								>
 								<td class="flex gap-2">
+									<button class="btn btn-ghost btn-sm" onclick={() => duplicateEntry(entry)}>
+										<i class="fas fa-copy"></i>
+									</button>
+									<button class="btn btn-ghost btn-sm" onclick={() => openChangeDay(entry)}>
+										<i class="fas fa-calendar-arrow-down"></i>
+									</button>
 									<button class="btn btn-ghost btn-sm" onclick={() => openEditEntry(entry)}>
 										<i class="fas fa-edit"></i>
 									</button>
@@ -1476,6 +1568,54 @@
 			onclick={() => {
 				showDeleteEntryModal = false;
 				entryToDelete = null;
+			}}
+		></div>
+	</div>
+{/if}
+
+<!-- Change Day Modal -->
+{#if showChangeDayModal && entryToMove}
+	<div class="modal modal-open">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">{m.calendarChangeDay()}</h3>
+			<p class="text-base-content/60 mt-1 text-sm">{entryToMove.name}</p>
+			<div class="mt-4 flex flex-col gap-4">
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarTargetDay()}</legend>
+					<select class="select w-full" bind:value={targetDayId}>
+						{#each calendarDays as day (day.id)}
+							<option value={day.id}>{day.name} – {new Date(day.date).toLocaleDateString()}</option>
+						{/each}
+					</select>
+				</fieldset>
+				<div class="modal-action">
+					<button
+						type="button"
+						class="btn"
+						onclick={() => {
+							showChangeDayModal = false;
+							entryToMove = null;
+						}}
+					>
+						{m.cancel()}
+					</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+						onclick={changeDay}
+						disabled={isLoading || targetDayId === selectedDayId}
+					>
+						{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
+						{m.save()}
+					</button>
+				</div>
+			</div>
+		</div>
+		<div
+			class="modal-backdrop"
+			onclick={() => {
+				showChangeDayModal = false;
+				entryToMove = null;
 			}}
 		></div>
 	</div>
