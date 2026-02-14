@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { CalendarEntryColor } from '@prisma/client';
 	import CalendarDayView from './CalendarDayView.svelte';
+	import CalendarEntryDrawer from './CalendarEntryDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Track {
@@ -18,7 +19,16 @@
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
 		color: CalendarEntryColor;
-		place?: { name: string } | null;
+		place?: {
+			id: string;
+			name: string;
+			address?: string | null;
+			latitude?: number | null;
+			longitude?: number | null;
+			directions?: string | null;
+			info?: string | null;
+			websiteUrl?: string | null;
+		} | null;
 		room?: string | null;
 		calendarTrackId?: string | null;
 	}
@@ -43,6 +53,23 @@
 
 	let selectedDay = $derived(days[selectedDayIndex]);
 	let selectedDayTracks = $derived(selectedDay?.tracks ?? []);
+
+	// Drawer state
+	let drawerOpen = $state(false);
+	let selectedEntry = $state<Entry | null>(null);
+	let selectedDayForDrawer = $state<Day | null>(null);
+
+	let selectedTrack = $derived(
+		selectedEntry?.calendarTrackId && selectedDayForDrawer
+			? (selectedDayForDrawer.tracks.find((t) => t.id === selectedEntry?.calendarTrackId) ?? null)
+			: null
+	);
+
+	function handleEntryClick(entry: Entry, day: Day) {
+		selectedEntry = entry;
+		selectedDayForDrawer = day;
+		drawerOpen = true;
+	}
 
 	// Reset track filter when switching days since tracks differ
 	$effect(() => {
@@ -110,6 +137,7 @@
 				tracks={selectedDay.tracks}
 				entries={selectedDay.entries}
 				{filterTrackId}
+				onEntryClick={(entry) => handleEntryClick(entry, selectedDay)}
 			/>
 		{/if}
 	</div>
@@ -123,7 +151,16 @@
 				tracks={day.tracks}
 				entries={day.entries}
 				{filterTrackId}
+				onEntryClick={(entry) => handleEntryClick(entry, day)}
 			/>
 		{/each}
 	</div>
+
+	<CalendarEntryDrawer
+		bind:open={drawerOpen}
+		entry={selectedEntry}
+		track={selectedTrack}
+		dayName={selectedDayForDrawer?.name}
+		dayDate={selectedDayForDrawer?.date}
+	/>
 {/if}

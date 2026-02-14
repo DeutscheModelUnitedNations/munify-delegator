@@ -28,7 +28,7 @@
 {#if visible}
 	<div class="pointer-events-none absolute left-0 right-0 z-20" style="top: {topPosition}px">
 		<div class="flex items-center">
-			<div class="bg-error h-3 w-3 shrink-0 rounded-full"></div>
+			<div class="bg-error h-3 w-3 shrink-0 rounded-full -translate-x-0.5"></div>
 			<div class="bg-error h-0.5 flex-1"></div>
 		</div>
 	</div>

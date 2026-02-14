@@ -6,6 +6,7 @@
 	import CalendarDisplay from '$lib/components/Calendar/CalendarDisplay.svelte';
 	import ColorPaletteSelector from '$lib/components/Calendar/ColorPaletteSelector.svelte';
 	import type { CalendarEntryColor } from '@prisma/client';
+	import { translateCalendarEntryColor } from '$lib/services/enumTranslations';
 
 	let { data }: { data: PageData } = $props();
 
@@ -1008,7 +1009,10 @@
 									})}</td
 								>
 								<td>{track?.name ?? m.calendarAllTracks()}</td>
-								<td><span class="badge badge-sm">{entry.color}</span></td>
+								<td
+									><span class="badge badge-sm">{translateCalendarEntryColor(entry.color)}</span
+									></td
+								>
 								<td class="flex gap-2">
 									<button class="btn btn-ghost btn-sm" onclick={() => openEditEntry(entry)}>
 										<i class="fas fa-edit"></i>

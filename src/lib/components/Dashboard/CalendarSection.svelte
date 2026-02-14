@@ -37,6 +37,12 @@
 					place {
 						id
 						name
+						address
+						latitude
+						longitude
+						directions
+						info
+						websiteUrl
 					}
 					room
 					calendarTrackId

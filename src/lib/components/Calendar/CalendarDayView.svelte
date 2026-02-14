@@ -18,7 +18,16 @@
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
 		color: CalendarEntryColor;
-		place?: { name: string } | null;
+		place?: {
+			id: string;
+			name: string;
+			address?: string | null;
+			latitude?: number | null;
+			longitude?: number | null;
+			directions?: string | null;
+			info?: string | null;
+			websiteUrl?: string | null;
+		} | null;
 		room?: string | null;
 		calendarTrackId?: string | null;
 	}
@@ -30,6 +39,7 @@
 		entries: Entry[];
 		filterTrackId?: string | null;
 		hourHeight?: number;
+		onEntryClick?: (entry: Entry) => void;
 	}
 
 	let {
@@ -38,7 +48,8 @@
 		tracks,
 		entries,
 		filterTrackId = null,
-		hourHeight = 90
+		hourHeight = 90,
+		onEntryClick
 	}: Props = $props();
 
 	let formattedDate = $derived(
@@ -223,6 +234,7 @@
 							place={entry.place}
 							room={entry.room}
 							compact={isCompact(entry)}
+							onclick={onEntryClick ? () => onEntryClick(entry) : undefined}
 						/>
 					</div>
 				{/each}

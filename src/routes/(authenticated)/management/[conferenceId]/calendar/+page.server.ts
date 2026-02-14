@@ -28,6 +28,12 @@ const CalendarManagementQuery = graphql(`
 				place {
 					id
 					name
+					address
+					latitude
+					longitude
+					directions
+					info
+					websiteUrl
 				}
 				placeId
 				room

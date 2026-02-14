@@ -12,6 +12,7 @@
 		place?: { name: string } | null;
 		room?: string | null;
 		compact?: boolean;
+		onclick?: () => void;
 	}
 
 	let {
@@ -23,7 +24,8 @@
 		endTime,
 		place,
 		room,
-		compact = false
+		compact = false,
+		onclick
 	}: Props = $props();
 
 	let colorConfig = $derived(getColorConfig(color));
@@ -35,8 +37,11 @@
 	let locationLabel = $derived([place?.name, room].filter(Boolean).join(' · '));
 </script>
 
-<div
-	class="{colorConfig.bg} {colorConfig.border} flex h-full flex-col overflow-hidden rounded border-l-4 px-2 py-1"
+<button
+	type="button"
+	class="{colorConfig.bg} {colorConfig.border} flex h-full w-full flex-col overflow-hidden rounded border-l-4 px-2 py-1 text-left transition-opacity hover:opacity-80"
+	{onclick}
+	disabled={!onclick}
 >
 	{#if compact}
 		<div class="flex items-center gap-1 truncate text-[11px] font-medium leading-tight">
@@ -70,4 +75,4 @@
 			<span class="text-base-content/50 mt-0.5 line-clamp-2 text-xs">{description}</span>
 		{/if}
 	{/if}
-</div>
+</button>

@@ -146,6 +146,7 @@
 		"uuid": "^11.1.0",
 		"validator": "^13.15.23",
 		"vanilla-cookieconsent": "^3.1.0",
+		"vaul-svelte": "^0.3.2",
 		"vite": "^7.2.6",
 		"vitest": "^4.0.15",
 		"with-csv": "^2.0.0",

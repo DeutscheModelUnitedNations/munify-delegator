@@ -27,6 +27,12 @@ export const calendarQuery = graphql(`
 				place {
 					id
 					name
+					address
+					latitude
+					longitude
+					directions
+					info
+					websiteUrl
 				}
 				room
 				calendarTrackId
