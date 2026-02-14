@@ -18,6 +18,7 @@ import { makeSeedConferenceSupervisor } from './conferenceSupervisor';
 import { makeSeedSingleParticipant } from './singleParticipant';
 import { makeSeedTeamMember } from './teamMember';
 import { makeSeedPaymentTransaction } from './paymentTransaction';
+import { makeSeedCalendarDay, makeSeedCalendarTrack, makeSeedCalendarEntry } from './calendarDay';
 
 // force static seed for reproducible data
 faker.seed(123);
@@ -578,6 +579,316 @@ await _db.$transaction(async (db) => {
 					});
 				})
 			);
+
+			// Calendar data for ACTIVE conference
+			if (conference.state === 'ACTIVE') {
+				const baseDate = new Date(conference.startConference);
+
+				const day1 = makeSeedCalendarDay({
+					conferenceId: conference.id,
+					name: 'Donnerstag',
+					date: baseDate,
+					sortOrder: 0
+				});
+				const day2Date = new Date(baseDate);
+				day2Date.setDate(day2Date.getDate() + 1);
+				const day2 = makeSeedCalendarDay({
+					conferenceId: conference.id,
+					name: 'Freitag',
+					date: day2Date,
+					sortOrder: 1
+				});
+				const day3Date = new Date(baseDate);
+				day3Date.setDate(day3Date.getDate() + 2);
+				const day3 = makeSeedCalendarDay({
+					conferenceId: conference.id,
+					name: 'Samstag',
+					date: day3Date,
+					sortOrder: 2
+				});
+
+				const calendarDays = [day1, day2, day3];
+				await Promise.all(
+					calendarDays.map((d) =>
+						db.calendarDay.upsert({ where: { id: d.id }, update: d, create: d })
+					)
+				);
+
+				// Tracks for each day
+				const makeTracksForDay = (dayId: string) => [
+					makeSeedCalendarTrack({ calendarDayId: dayId, name: 'GV Presse', sortOrder: 0 }),
+					makeSeedCalendarTrack({ calendarDayId: dayId, name: 'IMO MRR', sortOrder: 1 }),
+					makeSeedCalendarTrack({
+						calendarDayId: dayId,
+						name: 'Sicherheitsrat',
+						sortOrder: 2
+					})
+				];
+
+				const day1Tracks = makeTracksForDay(day1.id);
+				const day2Tracks = makeTracksForDay(day2.id);
+				const day3Tracks = makeTracksForDay(day3.id);
+				const allTracks = [...day1Tracks, ...day2Tracks, ...day3Tracks];
+
+				await Promise.all(
+					allTracks.map((t) =>
+						db.calendarTrack.upsert({ where: { id: t.id }, update: t, create: t })
+					)
+				);
+
+				// Helper to create a datetime on a specific day at a given hour:minute
+				function makeTime(date: Date, hours: number, minutes: number): Date {
+					const d = new Date(date);
+					d.setHours(hours, minutes, 0, 0);
+					return d;
+				}
+
+				const day1Entries = [
+					// Opening ceremony (cross-track)
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						name: 'Eröffnungsfeier',
+						startTime: makeTime(baseDate, 10, 0),
+						endTime: makeTime(baseDate, 11, 30),
+						color: 'CEREMONY',
+						fontAwesomeIcon: 'flag',
+						place: 'Landtag Niedersachsen',
+						room: 'Plenarsaal'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						name: 'Mittagspause',
+						startTime: makeTime(baseDate, 11, 30),
+						endTime: makeTime(baseDate, 12, 30),
+						color: 'BREAK',
+						fontAwesomeIcon: 'utensils'
+					}),
+					// Afternoon sessions (per-track)
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						calendarTrackId: day1Tracks[0].id,
+						name: 'Sitzung I',
+						startTime: makeTime(baseDate, 12, 30),
+						endTime: makeTime(baseDate, 14, 30),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 201'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						calendarTrackId: day1Tracks[1].id,
+						name: 'Sitzung I',
+						startTime: makeTime(baseDate, 12, 30),
+						endTime: makeTime(baseDate, 14, 30),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 202'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						calendarTrackId: day1Tracks[2].id,
+						name: 'Sitzung I',
+						startTime: makeTime(baseDate, 12, 30),
+						endTime: makeTime(baseDate, 14, 30),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 203'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						name: 'Kaffeepause',
+						startTime: makeTime(baseDate, 14, 30),
+						endTime: makeTime(baseDate, 15, 0),
+						color: 'BREAK',
+						fontAwesomeIcon: 'mug-hot'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						calendarTrackId: day1Tracks[0].id,
+						name: 'Sitzung II',
+						startTime: makeTime(baseDate, 15, 0),
+						endTime: makeTime(baseDate, 17, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 201'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						calendarTrackId: day1Tracks[1].id,
+						name: 'Sitzung II',
+						startTime: makeTime(baseDate, 15, 0),
+						endTime: makeTime(baseDate, 17, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 202'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						calendarTrackId: day1Tracks[2].id,
+						name: 'Sitzung II',
+						startTime: makeTime(baseDate, 15, 0),
+						endTime: makeTime(baseDate, 17, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 203'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day1.id,
+						name: 'Abendessen',
+						startTime: makeTime(baseDate, 17, 30),
+						endTime: makeTime(baseDate, 18, 30),
+						color: 'SOCIAL',
+						fontAwesomeIcon: 'utensils'
+					})
+				];
+
+				const day2Entries = [
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						calendarTrackId: day2Tracks[0].id,
+						name: 'Sitzung III',
+						startTime: makeTime(day2Date, 9, 0),
+						endTime: makeTime(day2Date, 11, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 201'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						calendarTrackId: day2Tracks[1].id,
+						name: 'Sitzung III',
+						startTime: makeTime(day2Date, 9, 0),
+						endTime: makeTime(day2Date, 11, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 202'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						calendarTrackId: day2Tracks[2].id,
+						name: 'Sitzung III',
+						startTime: makeTime(day2Date, 9, 0),
+						endTime: makeTime(day2Date, 11, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 203'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						name: 'Mittagspause',
+						startTime: makeTime(day2Date, 11, 0),
+						endTime: makeTime(day2Date, 12, 0),
+						color: 'BREAK',
+						fontAwesomeIcon: 'utensils'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						name: 'Workshop: Diplomatische Verhandlungen',
+						startTime: makeTime(day2Date, 12, 0),
+						endTime: makeTime(day2Date, 13, 30),
+						color: 'WORKSHOP',
+						fontAwesomeIcon: 'chalkboard-user',
+						room: 'Saal A'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						calendarTrackId: day2Tracks[0].id,
+						name: 'Sitzung IV',
+						startTime: makeTime(day2Date, 13, 30),
+						endTime: makeTime(day2Date, 15, 30),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 201'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						calendarTrackId: day2Tracks[1].id,
+						name: 'Sitzung IV',
+						startTime: makeTime(day2Date, 13, 30),
+						endTime: makeTime(day2Date, 15, 30),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 202'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						calendarTrackId: day2Tracks[2].id,
+						name: 'Sitzung IV',
+						startTime: makeTime(day2Date, 13, 30),
+						endTime: makeTime(day2Date, 15, 30),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 203'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day2.id,
+						name: 'Delegiertenabend',
+						startTime: makeTime(day2Date, 18, 0),
+						endTime: makeTime(day2Date, 22, 0),
+						color: 'SOCIAL',
+						fontAwesomeIcon: 'party-horn',
+						place: 'Kulturzentrum'
+					})
+				];
+
+				const day3Entries = [
+					makeSeedCalendarEntry({
+						calendarDayId: day3.id,
+						calendarTrackId: day3Tracks[0].id,
+						name: 'Sitzung V',
+						startTime: makeTime(day3Date, 9, 0),
+						endTime: makeTime(day3Date, 11, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 201'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day3.id,
+						calendarTrackId: day3Tracks[1].id,
+						name: 'Sitzung V',
+						startTime: makeTime(day3Date, 9, 0),
+						endTime: makeTime(day3Date, 11, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 202'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day3.id,
+						calendarTrackId: day3Tracks[2].id,
+						name: 'Sitzung V',
+						startTime: makeTime(day3Date, 9, 0),
+						endTime: makeTime(day3Date, 11, 0),
+						color: 'SESSION',
+						fontAwesomeIcon: 'gavel',
+						room: 'Raum 203'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day3.id,
+						name: 'Mittagspause',
+						startTime: makeTime(day3Date, 11, 0),
+						endTime: makeTime(day3Date, 12, 0),
+						color: 'BREAK',
+						fontAwesomeIcon: 'utensils'
+					}),
+					makeSeedCalendarEntry({
+						calendarDayId: day3.id,
+						name: 'Abschlussfeier',
+						startTime: makeTime(day3Date, 12, 0),
+						endTime: makeTime(day3Date, 14, 0),
+						color: 'CEREMONY',
+						fontAwesomeIcon: 'award',
+						place: 'Landtag Niedersachsen',
+						room: 'Plenarsaal'
+					})
+				];
+
+				const allEntries = [...day1Entries, ...day2Entries, ...day3Entries];
+				await Promise.all(
+					allEntries.map((e) =>
+						db.calendarEntry.upsert({ where: { id: e.id }, update: e, create: e })
+					)
+				);
+			}
 		})
 	);
 });

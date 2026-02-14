@@ -605,6 +605,15 @@
 						/>
 						<span class="label-text">{m.paperSubmissionOpen()}</span>
 					</label>
+					<label class="label cursor-pointer justify-start gap-3">
+						<input
+							type="checkbox"
+							class="toggle toggle-primary"
+							name="showCalendar"
+							bind:checked={$formData.showCalendar}
+						/>
+						<span class="label-text">{m.showCalendar()}</span>
+					</label>
 				</div>
 			</FormFieldset>
 

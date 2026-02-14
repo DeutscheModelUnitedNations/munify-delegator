@@ -29,6 +29,7 @@ const conferenceQuery = graphql(`
 			linkToTeamWiki
 			linkToServicesPage
 			isOpenPaperSubmission
+			showCalendar
 			info
 			showInfoExpanded
 			unlockPayments

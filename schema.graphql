@@ -32,6 +32,441 @@ input BoolWithAggregatesFilter {
   not: NestedBoolWithAggregatesFilter
 }
 
+type CalendarDay {
+  conference: Conference!
+  conferenceId: String!
+  date: DateTime!
+  entries: [CalendarEntry!]!
+  id: ID!
+  name: String!
+  sortOrder: Int!
+  tracks: [CalendarTrack!]!
+}
+
+input CalendarDayConferenceIdSortOrderCompoundUniqueInput {
+  conferenceId: String!
+  sortOrder: Int!
+}
+
+input CalendarDayCreateInput {
+  conferenceId: String!
+  createdAt: DateTime
+  date: DateTime!
+  entries: CalendarEntryCreateNestedManyWithoutCalendarDayInput
+  id: String
+  name: String!
+  sortOrder: Int!
+  tracks: CalendarTrackCreateNestedManyWithoutCalendarDayInput
+  updatedAt: DateTime
+}
+
+input CalendarDayCreateNestedManyWithoutConferenceInput {
+  connect: [CalendarDayWhereUniqueInput!]
+}
+
+input CalendarDayListRelationFilter {
+  every: CalendarDayWhereInput
+  none: CalendarDayWhereInput
+  some: CalendarDayWhereInput
+}
+
+input CalendarDayOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input CalendarDayOrderByWithRelationInput {
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  date: SortOrder
+  entries: CalendarEntryOrderByRelationAggregateInput
+  id: SortOrder
+  name: SortOrder
+  sortOrder: SortOrder
+  tracks: CalendarTrackOrderByRelationAggregateInput
+  updatedAt: SortOrder
+}
+
+enum CalendarDayScalarFieldEnum {
+  conferenceId
+  createdAt
+  date
+  id
+  name
+  sortOrder
+  updatedAt
+}
+
+input CalendarDayScalarRelationFilter {
+  is: CalendarDayWhereInput
+  isNot: CalendarDayWhereInput
+}
+
+input CalendarDayUpdateInput {
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  date: DateTimeFieldUpdateOperationsInput
+  entries: CalendarEntryUpdateManyWithoutCalendarDayNestedInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  sortOrder: IntFieldUpdateOperationsInput
+  tracks: CalendarTrackUpdateManyWithoutCalendarDayNestedInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CalendarDayUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  date: DateTimeFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  sortOrder: IntFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CalendarDayUpdateManyWithoutConferenceNestedInput {
+  connect: [CalendarDayWhereUniqueInput!]
+  disconnect: [CalendarDayWhereUniqueInput!]
+  set: [CalendarDayWhereUniqueInput!]
+}
+
+input CalendarDayWhereInput {
+  AND: [CalendarDayWhereInput!]
+  NOT: [CalendarDayWhereInput!]
+  OR: [CalendarDayWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  date: DateTimeFilter
+  entries: CalendarEntryListRelationFilter
+  id: StringFilter
+  name: StringFilter
+  sortOrder: IntFilter
+  tracks: CalendarTrackListRelationFilter
+  updatedAt: DateTimeFilter
+}
+
+input CalendarDayWhereUniqueInput {
+  AND: [CalendarDayWhereInput!]
+  NOT: [CalendarDayWhereInput!]
+  OR: [CalendarDayWhereInput!]
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_sortOrder: CalendarDayConferenceIdSortOrderCompoundUniqueInput
+  createdAt: DateTimeFilter
+  date: DateTimeFilter
+  entries: CalendarEntryListRelationFilter
+  id: String
+  name: StringFilter
+  sortOrder: IntFilter
+  tracks: CalendarTrackListRelationFilter
+  updatedAt: DateTimeFilter
+}
+
+type CalendarEntry {
+  calendarDay: CalendarDay!
+  calendarDayId: String!
+
+  """If null, entry spans all tracks of the day"""
+  calendarTrack: CalendarTrack
+  calendarTrackId: String
+  color: CalendarEntryColor!
+  description: String
+  endTime: DateTime!
+  fontAwesomeIcon: String
+  id: ID!
+  name: String!
+  place: String
+  room: String
+  startTime: DateTime!
+}
+
+enum CalendarEntryColor {
+  BREAK
+  CEREMONY
+  HIGHLIGHT
+  INFO
+  LOGISTICS
+  SESSION
+  SOCIAL
+  WORKSHOP
+}
+
+input CalendarEntryCreateInput {
+  calendarDayId: String!
+  calendarTrackId: String
+  color: CalendarEntryColor
+  createdAt: DateTime
+  description: String
+  endTime: DateTime!
+  fontAwesomeIcon: String
+  id: String
+  name: String!
+  place: String
+  room: String
+  startTime: DateTime!
+  updatedAt: DateTime
+}
+
+input CalendarEntryCreateNestedManyWithoutCalendarDayInput {
+  connect: [CalendarEntryWhereUniqueInput!]
+}
+
+input CalendarEntryCreateNestedManyWithoutCalendarTrackInput {
+  connect: [CalendarEntryWhereUniqueInput!]
+}
+
+input CalendarEntryListRelationFilter {
+  every: CalendarEntryWhereInput
+  none: CalendarEntryWhereInput
+  some: CalendarEntryWhereInput
+}
+
+input CalendarEntryOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input CalendarEntryOrderByWithRelationInput {
+  calendarDay: CalendarDayOrderByWithRelationInput
+  calendarDayId: SortOrder
+  calendarTrack: CalendarTrackOrderByWithRelationInput
+  calendarTrackId: SortOrder
+  color: SortOrder
+  createdAt: SortOrder
+  description: SortOrder
+  endTime: SortOrder
+  fontAwesomeIcon: SortOrder
+  id: SortOrder
+  name: SortOrder
+  place: SortOrder
+  room: SortOrder
+  startTime: SortOrder
+  updatedAt: SortOrder
+}
+
+enum CalendarEntryScalarFieldEnum {
+  calendarDayId
+  calendarTrackId
+  color
+  createdAt
+  description
+  endTime
+  fontAwesomeIcon
+  id
+  name
+  place
+  room
+  startTime
+  updatedAt
+}
+
+input CalendarEntryUpdateInput {
+  calendarDayId: StringFieldUpdateOperationsInput
+  calendarTrackId: NullableStringFieldUpdateOperationsInput
+  color: EnumCalendarEntryColorFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  description: NullableStringFieldUpdateOperationsInput
+  endTime: DateTimeFieldUpdateOperationsInput
+  fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  place: NullableStringFieldUpdateOperationsInput
+  room: NullableStringFieldUpdateOperationsInput
+  startTime: DateTimeFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CalendarEntryUpdateManyMutationInput {
+  color: EnumCalendarEntryColorFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  description: NullableStringFieldUpdateOperationsInput
+  endTime: DateTimeFieldUpdateOperationsInput
+  fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  place: NullableStringFieldUpdateOperationsInput
+  room: NullableStringFieldUpdateOperationsInput
+  startTime: DateTimeFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CalendarEntryUpdateManyWithoutCalendarDayNestedInput {
+  connect: [CalendarEntryWhereUniqueInput!]
+  disconnect: [CalendarEntryWhereUniqueInput!]
+  set: [CalendarEntryWhereUniqueInput!]
+}
+
+input CalendarEntryUpdateManyWithoutCalendarTrackNestedInput {
+  connect: [CalendarEntryWhereUniqueInput!]
+  disconnect: [CalendarEntryWhereUniqueInput!]
+  set: [CalendarEntryWhereUniqueInput!]
+}
+
+input CalendarEntryWhereInput {
+  AND: [CalendarEntryWhereInput!]
+  NOT: [CalendarEntryWhereInput!]
+  OR: [CalendarEntryWhereInput!]
+  calendarDay: CalendarDayWhereInput
+  calendarDayId: StringFilter
+  calendarTrack: CalendarTrackWhereInput
+  calendarTrackId: StringNullableFilter
+  color: EnumCalendarEntryColorFilter
+  createdAt: DateTimeFilter
+  description: StringNullableFilter
+  endTime: DateTimeFilter
+  fontAwesomeIcon: StringNullableFilter
+  id: StringFilter
+  name: StringFilter
+  place: StringNullableFilter
+  room: StringNullableFilter
+  startTime: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input CalendarEntryWhereUniqueInput {
+  AND: [CalendarEntryWhereInput!]
+  NOT: [CalendarEntryWhereInput!]
+  OR: [CalendarEntryWhereInput!]
+  calendarDay: CalendarDayWhereInput
+  calendarDayId: StringFilter
+  calendarTrack: CalendarTrackWhereInput
+  calendarTrackId: StringNullableFilter
+  color: EnumCalendarEntryColorFilter
+  createdAt: DateTimeFilter
+  description: StringNullableFilter
+  endTime: DateTimeFilter
+  fontAwesomeIcon: StringNullableFilter
+  id: String
+  name: StringFilter
+  place: StringNullableFilter
+  room: StringNullableFilter
+  startTime: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+type CalendarTrack {
+  calendarDay: CalendarDay!
+  calendarDayId: String!
+  description: String
+  entries: [CalendarEntry!]!
+  id: ID!
+  name: String!
+  sortOrder: Int!
+}
+
+input CalendarTrackCalendarDayIdSortOrderCompoundUniqueInput {
+  calendarDayId: String!
+  sortOrder: Int!
+}
+
+input CalendarTrackCreateInput {
+  calendarDayId: String!
+  createdAt: DateTime
+  description: String
+  entries: CalendarEntryCreateNestedManyWithoutCalendarTrackInput
+  id: String
+  name: String!
+  sortOrder: Int!
+  updatedAt: DateTime
+}
+
+input CalendarTrackCreateNestedManyWithoutCalendarDayInput {
+  connect: [CalendarTrackWhereUniqueInput!]
+}
+
+input CalendarTrackListRelationFilter {
+  every: CalendarTrackWhereInput
+  none: CalendarTrackWhereInput
+  some: CalendarTrackWhereInput
+}
+
+input CalendarTrackNullableScalarRelationFilter {
+  is: CalendarTrackWhereInput
+  isNot: CalendarTrackWhereInput
+}
+
+input CalendarTrackOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input CalendarTrackOrderByWithRelationInput {
+  calendarDay: CalendarDayOrderByWithRelationInput
+  calendarDayId: SortOrder
+  createdAt: SortOrder
+  description: SortOrder
+  entries: CalendarEntryOrderByRelationAggregateInput
+  id: SortOrder
+  name: SortOrder
+  sortOrder: SortOrder
+  updatedAt: SortOrder
+}
+
+enum CalendarTrackScalarFieldEnum {
+  calendarDayId
+  createdAt
+  description
+  id
+  name
+  sortOrder
+  updatedAt
+}
+
+input CalendarTrackUpdateInput {
+  calendarDayId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  description: NullableStringFieldUpdateOperationsInput
+  entries: CalendarEntryUpdateManyWithoutCalendarTrackNestedInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  sortOrder: IntFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CalendarTrackUpdateManyMutationInput {
+  createdAt: DateTimeFieldUpdateOperationsInput
+  description: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  sortOrder: IntFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input CalendarTrackUpdateManyWithoutCalendarDayNestedInput {
+  connect: [CalendarTrackWhereUniqueInput!]
+  disconnect: [CalendarTrackWhereUniqueInput!]
+  set: [CalendarTrackWhereUniqueInput!]
+}
+
+input CalendarTrackWhereInput {
+  AND: [CalendarTrackWhereInput!]
+  NOT: [CalendarTrackWhereInput!]
+  OR: [CalendarTrackWhereInput!]
+  calendarDay: CalendarDayWhereInput
+  calendarDayId: StringFilter
+  createdAt: DateTimeFilter
+  description: StringNullableFilter
+  entries: CalendarEntryListRelationFilter
+  id: StringFilter
+  name: StringFilter
+  sortOrder: IntFilter
+  updatedAt: DateTimeFilter
+}
+
+input CalendarTrackWhereUniqueInput {
+  AND: [CalendarTrackWhereInput!]
+  NOT: [CalendarTrackWhereInput!]
+  OR: [CalendarTrackWhereInput!]
+  calendarDay: CalendarDayWhereInput
+  calendarDayId: StringFilter
+  calendarDayId_sortOrder: CalendarTrackCalendarDayIdSortOrderCompoundUniqueInput
+  createdAt: DateTimeFilter
+  description: StringNullableFilter
+  entries: CalendarEntryListRelationFilter
+  id: String
+  name: StringFilter
+  sortOrder: IntFilter
+  updatedAt: DateTimeFilter
+}
+
 type CertificateJWT {
   fullName: String
   jwt: String
@@ -379,6 +814,7 @@ type Conference {
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int!
   schools: [ConferenceSchools!]!
+  showCalendar: Boolean!
 
   """
   When true, dashboard announcement shows full content; when false, truncated with expand button
@@ -408,6 +844,7 @@ input ConferenceCreateInput {
   accountHolder: String
   bankName: String
   bic: String
+  calendarDays: CalendarDayCreateNestedManyWithoutConferenceInput
   certificateContent: String
   committees: CommitteeCreateNestedManyWithoutConferenceInput
   conferenceSupervisors: ConferenceSupervisorCreateNestedManyWithoutConferenceInput
@@ -446,6 +883,7 @@ input ConferenceCreateInput {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int
+  showCalendar: Boolean
   showInfoExpanded: Boolean
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
   startAssignment: DateTime!
@@ -467,6 +905,7 @@ input ConferenceOrderByWithRelationInput {
   accountHolder: SortOrder
   bankName: SortOrder
   bic: SortOrder
+  calendarDays: CalendarDayOrderByRelationAggregateInput
   certificateContent: SortOrder
   committees: CommitteeOrderByRelationAggregateInput
   conferenceSupervisors: ConferenceSupervisorOrderByRelationAggregateInput
@@ -505,6 +944,7 @@ input ConferenceOrderByWithRelationInput {
   postalStreet: SortOrder
   postalZip: SortOrder
   registrationDeadlineGracePeriodMinutes: SortOrder
+  showCalendar: SortOrder
   showInfoExpanded: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
   startAssignment: SortOrder
@@ -731,6 +1171,7 @@ enum ConferenceScalarFieldEnum {
   postalStreet
   postalZip
   registrationDeadlineGracePeriodMinutes
+  showCalendar
   showInfoExpanded
   startAssignment
   startConference
@@ -965,6 +1406,7 @@ input ConferenceUpdateDataInput {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int
+  showCalendar: Boolean
   showInfoExpanded: Boolean
   startAssignment: DateTime
   startConference: DateTime
@@ -981,6 +1423,7 @@ input ConferenceUpdateInput {
   accountHolder: NullableStringFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
+  calendarDays: CalendarDayUpdateManyWithoutConferenceNestedInput
   certificateContent: NullableStringFieldUpdateOperationsInput
   committees: CommitteeUpdateManyWithoutConferenceNestedInput
   conferenceSupervisors: ConferenceSupervisorUpdateManyWithoutConferenceNestedInput
@@ -1019,6 +1462,7 @@ input ConferenceUpdateInput {
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
   registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
+  showCalendar: BoolFieldUpdateOperationsInput
   showInfoExpanded: BoolFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
   startAssignment: DateTimeFieldUpdateOperationsInput
@@ -1068,6 +1512,7 @@ input ConferenceUpdateManyMutationInput {
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
   registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
+  showCalendar: BoolFieldUpdateOperationsInput
   showInfoExpanded: BoolFieldUpdateOperationsInput
   startAssignment: DateTimeFieldUpdateOperationsInput
   startConference: DateTimeFieldUpdateOperationsInput
@@ -1088,6 +1533,7 @@ input ConferenceWhereInput {
   accountHolder: StringNullableFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
+  calendarDays: CalendarDayListRelationFilter
   certificateContent: StringNullableFilter
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
@@ -1126,6 +1572,7 @@ input ConferenceWhereInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  showCalendar: BoolFilter
   showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
@@ -1150,6 +1597,7 @@ input ConferenceWhereUniqueInput {
   accountHolder: StringNullableFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
+  calendarDays: CalendarDayListRelationFilter
   certificateContent: StringNullableFilter
   committees: CommitteeListRelationFilter
   conferenceSupervisors: ConferenceSupervisorListRelationFilter
@@ -1188,6 +1636,7 @@ input ConferenceWhereUniqueInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  showCalendar: BoolFilter
   showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
   startAssignment: DateTimeFilter
@@ -1868,6 +2317,27 @@ input EnumAdministrativeStatusWithAggregatesFilter {
   notIn: [AdministrativeStatus!]
 }
 
+input EnumCalendarEntryColorFieldUpdateOperationsInput {
+  set: CalendarEntryColor
+}
+
+input EnumCalendarEntryColorFilter {
+  equals: CalendarEntryColor
+  in: [CalendarEntryColor!]
+  not: CalendarEntryColor
+  notIn: [CalendarEntryColor!]
+}
+
+input EnumCalendarEntryColorWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumCalendarEntryColorFilter
+  _min: NestedEnumCalendarEntryColorFilter
+  equals: CalendarEntryColor
+  in: [CalendarEntryColor!]
+  not: CalendarEntryColor
+  notIn: [CalendarEntryColor!]
+}
+
 input EnumConferenceStateFieldUpdateOperationsInput {
   set: ConferenceState
 }
@@ -2348,6 +2818,9 @@ type Mutation {
   createOneAgendaItem(data: CommitteeAgendaItemCreateInput!): CommitteeAgendaItem!
   createOneAppliedDelegationMember(assignedCommitteeId: ID, assignedNationAlpha3Code: String, assignedNonStateActorId: ID, conferenceId: ID!, userId: ID!): DelegationMember!
   createOneAppliedSingleParticipant(conferenceId: ID!, roleId: ID!, userId: ID!): SingleParticipant!
+  createOneCalendarDay(data: CalendarDayCreateInput!): CalendarDay!
+  createOneCalendarEntry(data: CalendarEntryCreateInput!): CalendarEntry!
+  createOneCalendarTrack(data: CalendarTrackCreateInput!): CalendarTrack!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!
@@ -2367,6 +2840,9 @@ type Mutation {
   deleteDeadSupervisors(conferenceId: ID!): [ConferenceSupervisor!]!
   deleteEmptyDelegations(conferenceId: ID!): [Delegation!]!
   deleteOneAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
+  deleteOneCalendarDay(where: CalendarDayWhereUniqueInput!): CalendarDay
+  deleteOneCalendarEntry(where: CalendarEntryWhereUniqueInput!): CalendarEntry
+  deleteOneCalendarTrack(where: CalendarTrackWhereUniqueInput!): CalendarTrack
   deleteOneCommittee(where: CommitteeWhereUniqueInput!): Committee
   deleteOneConference(where: ConferenceWhereUniqueInput!): Conference
   deleteOneConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
@@ -2399,6 +2875,9 @@ type Mutation {
   updateAllConferenceParticipantStatus(conferenceId: String!, data: UpdateAllConferenceParticipantStatusInput!): UpdateAllConferenceParticipantStatusResponse!
   updateManyDelegationMemberCommittee(data: UpdateManyDelegationMemberCommitteeInput!, where: DelegationMemberWhereInput): BatchPayload!
   updateOneAgendaItem(data: CommitteeAgendaItemUpdateInput!, where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
+  updateOneCalendarDay(data: CalendarDayUpdateInput!, where: CalendarDayWhereUniqueInput!): CalendarDay
+  updateOneCalendarEntry(data: CalendarEntryUpdateInput!, where: CalendarEntryWhereUniqueInput!): CalendarEntry
+  updateOneCalendarTrack(data: CalendarTrackUpdateInput!, where: CalendarTrackWhereUniqueInput!): CalendarTrack
   updateOneCommittee(data: CommitteeUpdateDataInput!, where: CommitteeWhereUniqueInput!): Committee
   updateOneConference(data: ConferenceUpdateDataInput!, where: ConferenceWhereUniqueInput!): Conference
   updateOneConferenceParticipantStatus(data: UpdateConferenceParticipantStatusInput!, where: ConferenceParticipantStatusWhereUniqueInputNotRequired!): ConferenceParticipantStatus
@@ -2607,6 +3086,23 @@ input NestedEnumAdministrativeStatusWithAggregatesFilter {
   in: [AdministrativeStatus!]
   not: AdministrativeStatus
   notIn: [AdministrativeStatus!]
+}
+
+input NestedEnumCalendarEntryColorFilter {
+  equals: CalendarEntryColor
+  in: [CalendarEntryColor!]
+  not: CalendarEntryColor
+  notIn: [CalendarEntryColor!]
+}
+
+input NestedEnumCalendarEntryColorWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumCalendarEntryColorFilter
+  _min: NestedEnumCalendarEntryColorFilter
+  equals: CalendarEntryColor
+  in: [CalendarEntryColor!]
+  not: CalendarEntryColor
+  notIn: [CalendarEntryColor!]
 }
 
 input NestedEnumConferenceStateFilter {
@@ -3745,6 +4241,9 @@ type Query {
   findGlobalPapersGroupedByCommittee(conferenceId: String!): [CommitteePaperGroup!]!
   findIntroductionPapers(conferenceId: String!): [Paper!]!
   findManyAgendaItems(cursor: CommitteeAgendaItemWhereUniqueInput, distinct: [CommitteeAgendaItemScalarFieldEnum!], orderBy: [CommitteeAgendaItemOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeAgendaItemWhereInput): [CommitteeAgendaItem!]!
+  findManyCalendarDays(cursor: CalendarDayWhereUniqueInput, distinct: [CalendarDayScalarFieldEnum!], orderBy: [CalendarDayOrderByWithRelationInput!], skip: Int, take: Int, where: CalendarDayWhereInput): [CalendarDay!]!
+  findManyCalendarEntries(cursor: CalendarEntryWhereUniqueInput, distinct: [CalendarEntryScalarFieldEnum!], orderBy: [CalendarEntryOrderByWithRelationInput!], skip: Int, take: Int, where: CalendarEntryWhereInput): [CalendarEntry!]!
+  findManyCalendarTracks(cursor: CalendarTrackWhereUniqueInput, distinct: [CalendarTrackScalarFieldEnum!], orderBy: [CalendarTrackOrderByWithRelationInput!], skip: Int, take: Int, where: CalendarTrackWhereInput): [CalendarTrack!]!
   findManyCommittees(cursor: CommitteeWhereUniqueInput, distinct: [CommitteeScalarFieldEnum!], orderBy: [CommitteeOrderByWithRelationInput!], skip: Int, take: Int, where: CommitteeWhereInput): [Committee!]!
   findManyConferenceParticipantStatuss(cursor: ConferenceParticipantStatusWhereUniqueInput, distinct: [ConferenceParticipantStatusScalarFieldEnum!], orderBy: [ConferenceParticipantStatusOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceParticipantStatusWhereInput): [ConferenceParticipantStatus!]!
   findManyConferenceSupervisors(cursor: ConferenceSupervisorWhereUniqueInput, distinct: [ConferenceSupervisorScalarFieldEnum!], orderBy: [ConferenceSupervisorOrderByWithRelationInput!], skip: Int, take: Int, where: ConferenceSupervisorWhereInput): [ConferenceSupervisor!]!
@@ -3770,6 +4269,9 @@ type Query {
   findPublicPaperContent(paperId: String!): Paper!
   findSupervisedPapers(conferenceId: String!): [Paper!]!
   findUniqueAgendaItem(where: CommitteeAgendaItemWhereUniqueInput!): CommitteeAgendaItem
+  findUniqueCalendarDay(where: CalendarDayWhereUniqueInput!): CalendarDay
+  findUniqueCalendarEntry(where: CalendarEntryWhereUniqueInput!): CalendarEntry
+  findUniqueCalendarTrack(where: CalendarTrackWhereUniqueInput!): CalendarTrack
   findUniqueCommittee(where: CommitteeWhereUniqueInput!): Committee
   findUniqueConference(where: ConferenceWhereUniqueInput!): Conference
   findUniqueConferenceParticipantStatus(where: ConferenceParticipantStatusWhereUniqueInput!): ConferenceParticipantStatus
