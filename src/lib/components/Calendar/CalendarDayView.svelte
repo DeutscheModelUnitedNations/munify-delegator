@@ -6,6 +6,7 @@
 	interface Track {
 		id: string;
 		name: string;
+		description?: string | null;
 		sortOrder: number;
 	}
 
@@ -17,7 +18,7 @@
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
 		color: CalendarEntryColor;
-		place?: string | null;
+		place?: { name: string } | null;
 		room?: string | null;
 		calendarTrackId?: string | null;
 	}
@@ -37,7 +38,7 @@
 		tracks,
 		entries,
 		filterTrackId = null,
-		hourHeight = 120
+		hourHeight = 90
 	}: Props = $props();
 
 	let formattedDate = $derived(
@@ -127,12 +128,23 @@
 		>
 			<div></div>
 			{#each visibleTracks as track (track.id)}
-				<div
-					class="bg-base-200 truncate rounded-t px-2 py-2 text-center text-xs font-medium"
-					title={track.name}
-				>
-					{track.name}
-				</div>
+				{#if track.description}
+					<div class="tooltip tooltip-bottom" data-tip={track.description}>
+						<div
+							class="bg-base-200 truncate rounded-t px-2 py-2 text-center text-xs font-medium"
+							title={track.name}
+						>
+							{track.name}
+						</div>
+					</div>
+				{:else}
+					<div
+						class="bg-base-200 truncate rounded-t px-2 py-2 text-center text-xs font-medium"
+						title={track.name}
+					>
+						{track.name}
+					</div>
+				{/if}
 			{/each}
 		</div>
 	{/if}

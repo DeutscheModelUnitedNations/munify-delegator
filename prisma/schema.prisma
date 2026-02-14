@@ -108,6 +108,7 @@ model Conference {
   WaitingListEntry             WaitingListEntry[]
   papers                       Paper[]
   calendarDays                 CalendarDay[]
+  places                       Place[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -717,6 +718,29 @@ model CalendarTrack {
   @@unique([calendarDayId, sortOrder])
 }
 
+/// A reusable venue/location for calendar entries
+model Place {
+  id              String  @id @default(nanoid())
+  name            String
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  directions      String?
+  info            String?
+  websiteUrl      String?
+  sitePlanDataURL String? /// Base64 data URL of a site plan PDF (max 10MB)
+
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId String
+
+  calendarEntries CalendarEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, name])
+}
+
 /// A scheduled entry within a calendar day, optionally assigned to a track
 model CalendarEntry {
   id              String             @id @default(nanoid())
@@ -726,8 +750,10 @@ model CalendarEntry {
   description     String?
   fontAwesomeIcon String?
   color           CalendarEntryColor @default(SESSION)
-  place           String?
   room            String?
+
+  place           Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  placeId         String?
 
   calendarDay     CalendarDay    @relation(fields: [calendarDayId], references: [id], onDelete: Cascade)
   calendarDayId   String

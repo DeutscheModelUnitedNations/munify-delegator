@@ -25,10 +25,25 @@ const CalendarManagementQuery = graphql(`
 				description
 				fontAwesomeIcon
 				color
-				place
+				place {
+					id
+					name
+				}
+				placeId
 				room
 				calendarTrackId
 			}
+		}
+		findManyPlaces(where: { conferenceId: { equals: $conferenceId } }, orderBy: { name: asc }) {
+			id
+			name
+			address
+			latitude
+			longitude
+			directions
+			info
+			websiteUrl
+			sitePlanDataURL
 		}
 	}
 `);
@@ -42,6 +57,7 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		calendarDays: data?.findManyCalendarDays ?? [],
+		places: data?.findManyPlaces ?? [],
 		conferenceId: event.params.conferenceId
 	};
 };

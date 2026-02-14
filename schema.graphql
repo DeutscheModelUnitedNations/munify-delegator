@@ -175,7 +175,8 @@ type CalendarEntry {
   fontAwesomeIcon: String
   id: ID!
   name: String!
-  place: String
+  place: Place
+  placeId: String
   room: String
   startTime: DateTime!
 }
@@ -201,7 +202,7 @@ input CalendarEntryCreateInput {
   fontAwesomeIcon: String
   id: String
   name: String!
-  place: String
+  placeId: String
   room: String
   startTime: DateTime!
   updatedAt: DateTime
@@ -212,6 +213,10 @@ input CalendarEntryCreateNestedManyWithoutCalendarDayInput {
 }
 
 input CalendarEntryCreateNestedManyWithoutCalendarTrackInput {
+  connect: [CalendarEntryWhereUniqueInput!]
+}
+
+input CalendarEntryCreateNestedManyWithoutPlaceInput {
   connect: [CalendarEntryWhereUniqueInput!]
 }
 
@@ -237,7 +242,8 @@ input CalendarEntryOrderByWithRelationInput {
   fontAwesomeIcon: SortOrder
   id: SortOrder
   name: SortOrder
-  place: SortOrder
+  place: PlaceOrderByWithRelationInput
+  placeId: SortOrder
   room: SortOrder
   startTime: SortOrder
   updatedAt: SortOrder
@@ -253,7 +259,7 @@ enum CalendarEntryScalarFieldEnum {
   fontAwesomeIcon
   id
   name
-  place
+  placeId
   room
   startTime
   updatedAt
@@ -269,7 +275,7 @@ input CalendarEntryUpdateInput {
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
-  place: NullableStringFieldUpdateOperationsInput
+  placeId: NullableStringFieldUpdateOperationsInput
   room: NullableStringFieldUpdateOperationsInput
   startTime: DateTimeFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -283,7 +289,6 @@ input CalendarEntryUpdateManyMutationInput {
   fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
-  place: NullableStringFieldUpdateOperationsInput
   room: NullableStringFieldUpdateOperationsInput
   startTime: DateTimeFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -296,6 +301,12 @@ input CalendarEntryUpdateManyWithoutCalendarDayNestedInput {
 }
 
 input CalendarEntryUpdateManyWithoutCalendarTrackNestedInput {
+  connect: [CalendarEntryWhereUniqueInput!]
+  disconnect: [CalendarEntryWhereUniqueInput!]
+  set: [CalendarEntryWhereUniqueInput!]
+}
+
+input CalendarEntryUpdateManyWithoutPlaceNestedInput {
   connect: [CalendarEntryWhereUniqueInput!]
   disconnect: [CalendarEntryWhereUniqueInput!]
   set: [CalendarEntryWhereUniqueInput!]
@@ -316,7 +327,8 @@ input CalendarEntryWhereInput {
   fontAwesomeIcon: StringNullableFilter
   id: StringFilter
   name: StringFilter
-  place: StringNullableFilter
+  place: PlaceWhereInput
+  placeId: StringNullableFilter
   room: StringNullableFilter
   startTime: DateTimeFilter
   updatedAt: DateTimeFilter
@@ -337,7 +349,8 @@ input CalendarEntryWhereUniqueInput {
   fontAwesomeIcon: StringNullableFilter
   id: String
   name: StringFilter
-  place: StringNullableFilter
+  place: PlaceWhereInput
+  placeId: StringNullableFilter
   room: StringNullableFilter
   startTime: DateTimeFilter
   updatedAt: DateTimeFilter
@@ -876,6 +889,7 @@ input ConferenceCreateInput {
   nonStateActors: NonStateActorCreateNestedManyWithoutConferenceInput
   papers: PaperCreateNestedManyWithoutConferenceInput
   paymentTransactions: PaymentTransactionCreateNestedManyWithoutConferenceInput
+  places: PlaceCreateNestedManyWithoutConferenceInput
   postalApartment: String
   postalCity: String
   postalCountry: String
@@ -937,6 +951,7 @@ input ConferenceOrderByWithRelationInput {
   nonStateActors: NonStateActorOrderByRelationAggregateInput
   papers: PaperOrderByRelationAggregateInput
   paymentTransactions: PaymentTransactionOrderByRelationAggregateInput
+  places: PlaceOrderByRelationAggregateInput
   postalApartment: SortOrder
   postalCity: SortOrder
   postalCountry: SortOrder
@@ -1455,6 +1470,7 @@ input ConferenceUpdateInput {
   nonStateActors: NonStateActorUpdateManyWithoutConferenceNestedInput
   papers: PaperUpdateManyWithoutConferenceNestedInput
   paymentTransactions: PaymentTransactionUpdateManyWithoutConferenceNestedInput
+  places: PlaceUpdateManyWithoutConferenceNestedInput
   postalApartment: NullableStringFieldUpdateOperationsInput
   postalCity: NullableStringFieldUpdateOperationsInput
   postalCountry: NullableStringFieldUpdateOperationsInput
@@ -1565,6 +1581,7 @@ input ConferenceWhereInput {
   nonStateActors: NonStateActorListRelationFilter
   papers: PaperListRelationFilter
   paymentTransactions: PaymentTransactionListRelationFilter
+  places: PlaceListRelationFilter
   postalApartment: StringNullableFilter
   postalCity: StringNullableFilter
   postalCountry: StringNullableFilter
@@ -1629,6 +1646,7 @@ input ConferenceWhereUniqueInput {
   nonStateActors: NonStateActorListRelationFilter
   papers: PaperListRelationFilter
   paymentTransactions: PaymentTransactionListRelationFilter
+  places: PlaceListRelationFilter
   postalApartment: StringNullableFilter
   postalCity: StringNullableFilter
   postalCountry: StringNullableFilter
@@ -2826,6 +2844,7 @@ type Mutation {
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!
   createOnePaper(data: CreateOnePaperArgs!): Paper!
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
+  createOnePlace(data: PlaceCreateInput!): Place!
   createOneRoleApplication(delegationId: ID!, nationId: ID, nonStateActorId: ID): RoleApplication!
   createOneSingleParticipant(conferenceId: ID!, experience: String, motivation: String, roleId: ID!, school: String): SingleParticipant!
   createOneSurveyOption(data: SurveyOptionCreateInput!): SurveyOption!
@@ -2853,6 +2872,7 @@ type Mutation {
   deleteOneNation(where: NationWhereUniqueInput!): Nation
   deleteOneNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   deleteOnePaper(where: PaperWhereUniqueInput!): Paper
+  deleteOnePlace(where: PlaceWhereUniqueInput!): Place
   deleteOneRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   deleteOneSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   deleteOneSurveyOption(where: SurveyOptionWhereUniqueInput!): SurveyOption
@@ -2887,6 +2907,7 @@ type Mutation {
   updateOneDelegationMemberCommittee(data: UpdateOneDelegationMemberCommitteeInput!, where: DelegationMemberWhereUniqueInput!): DelegationMember
   updateOnePaper(data: UpdateOnePaperArgs!, where: UpdateOnePaperWhereArgs!): Paper
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
+  updateOnePlace(data: PlaceUpdateInput!, where: PlaceWhereUniqueInput!): Place
   updateOneSingleParticipant(applied: Boolean, applyForRolesIdList: [ID!], experience: String, motivation: String, school: String, unApplyForRolesIdList: [ID!], where: SingleParticipantWhereUniqueInput!): SingleParticipant
   updateOneSurveyAnswer(data: UpdateOneSurveyAnswerInput!, where: UpdateOneSurveyAnswerWhereUniqueInput!): SurveyAnswer
   updateOneSurveyOption(data: SurveyOptionUpdateInput!, where: SurveyOptionWhereUniqueInput!): SurveyOption
@@ -4221,6 +4242,172 @@ input PaymentTransactionWhereUniqueInput {
   userId: StringFilter
 }
 
+type Place {
+  address: String
+  calendarEntries: [CalendarEntry!]!
+  conference: Conference!
+  conferenceId: String!
+  directions: String
+  id: ID!
+  info: String
+  latitude: Float
+  longitude: Float
+  name: String!
+
+  """Base64 data URL of a site plan PDF (max 10MB)"""
+  sitePlanDataURL: String
+  websiteUrl: String
+}
+
+input PlaceConferenceIdNameCompoundUniqueInput {
+  conferenceId: String!
+  name: String!
+}
+
+input PlaceCreateInput {
+  address: String
+  calendarEntries: CalendarEntryCreateNestedManyWithoutPlaceInput
+  conferenceId: String!
+  createdAt: DateTime
+  directions: String
+  id: String
+  info: String
+  latitude: Float
+  longitude: Float
+  name: String!
+  sitePlanDataURL: String
+  updatedAt: DateTime
+  websiteUrl: String
+}
+
+input PlaceCreateNestedManyWithoutConferenceInput {
+  connect: [PlaceWhereUniqueInput!]
+}
+
+input PlaceListRelationFilter {
+  every: PlaceWhereInput
+  none: PlaceWhereInput
+  some: PlaceWhereInput
+}
+
+input PlaceNullableScalarRelationFilter {
+  is: PlaceWhereInput
+  isNot: PlaceWhereInput
+}
+
+input PlaceOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input PlaceOrderByWithRelationInput {
+  address: SortOrder
+  calendarEntries: CalendarEntryOrderByRelationAggregateInput
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  createdAt: SortOrder
+  directions: SortOrder
+  id: SortOrder
+  info: SortOrder
+  latitude: SortOrder
+  longitude: SortOrder
+  name: SortOrder
+  sitePlanDataURL: SortOrder
+  updatedAt: SortOrder
+  websiteUrl: SortOrder
+}
+
+enum PlaceScalarFieldEnum {
+  address
+  conferenceId
+  createdAt
+  directions
+  id
+  info
+  latitude
+  longitude
+  name
+  sitePlanDataURL
+  updatedAt
+  websiteUrl
+}
+
+input PlaceUpdateInput {
+  address: NullableStringFieldUpdateOperationsInput
+  calendarEntries: CalendarEntryUpdateManyWithoutPlaceNestedInput
+  conferenceId: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  directions: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  info: NullableStringFieldUpdateOperationsInput
+  latitude: NullableFloatFieldUpdateOperationsInput
+  longitude: NullableFloatFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  sitePlanDataURL: NullableStringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  websiteUrl: NullableStringFieldUpdateOperationsInput
+}
+
+input PlaceUpdateManyMutationInput {
+  address: NullableStringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  directions: NullableStringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  info: NullableStringFieldUpdateOperationsInput
+  latitude: NullableFloatFieldUpdateOperationsInput
+  longitude: NullableFloatFieldUpdateOperationsInput
+  name: StringFieldUpdateOperationsInput
+  sitePlanDataURL: NullableStringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+  websiteUrl: NullableStringFieldUpdateOperationsInput
+}
+
+input PlaceUpdateManyWithoutConferenceNestedInput {
+  connect: [PlaceWhereUniqueInput!]
+  disconnect: [PlaceWhereUniqueInput!]
+  set: [PlaceWhereUniqueInput!]
+}
+
+input PlaceWhereInput {
+  AND: [PlaceWhereInput!]
+  NOT: [PlaceWhereInput!]
+  OR: [PlaceWhereInput!]
+  address: StringNullableFilter
+  calendarEntries: CalendarEntryListRelationFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  createdAt: DateTimeFilter
+  directions: StringNullableFilter
+  id: StringFilter
+  info: StringNullableFilter
+  latitude: FloatNullableFilter
+  longitude: FloatNullableFilter
+  name: StringFilter
+  sitePlanDataURL: StringNullableFilter
+  updatedAt: DateTimeFilter
+  websiteUrl: StringNullableFilter
+}
+
+input PlaceWhereUniqueInput {
+  AND: [PlaceWhereInput!]
+  NOT: [PlaceWhereInput!]
+  OR: [PlaceWhereInput!]
+  address: StringNullableFilter
+  calendarEntries: CalendarEntryListRelationFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  conferenceId_name: PlaceConferenceIdNameCompoundUniqueInput
+  createdAt: DateTimeFilter
+  directions: StringNullableFilter
+  id: String
+  info: StringNullableFilter
+  latitude: FloatNullableFilter
+  longitude: FloatNullableFilter
+  name: StringFilter
+  sitePlanDataURL: StringNullableFilter
+  updatedAt: DateTimeFilter
+  websiteUrl: StringNullableFilter
+}
+
 type PlausibilityResult {
   dataMissing: [User!]!
   shouldBeSupervisor: [User!]!
@@ -4255,6 +4442,7 @@ type Query {
   findManyNonStateActors(cursor: NonStateActorWhereUniqueInput, distinct: [NonStateActorScalarFieldEnum!], orderBy: [NonStateActorOrderByWithRelationInput!], skip: Int, take: Int, where: NonStateActorWhereInput): [NonStateActor!]!
   findManyPapers(cursor: PaperWhereUniqueInput, distinct: [PaperScalarFieldEnum!], orderBy: [PaperOrderByWithRelationInput!], skip: Int, take: Int, where: PaperWhereInput): [Paper!]!
   findManyPaymentTransactions(cursor: PaymentTransactionWhereUniqueInput, distinct: [PaymentTransactionScalarFieldEnum!], orderBy: [PaymentTransactionOrderByWithRelationInput!], skip: Int, take: Int, where: PaymentTransactionWhereInput): [PaymentTransaction!]!
+  findManyPlaces(cursor: PlaceWhereUniqueInput, distinct: [PlaceScalarFieldEnum!], orderBy: [PlaceOrderByWithRelationInput!], skip: Int, take: Int, where: PlaceWhereInput): [Place!]!
   findManyRoleApplications(cursor: RoleApplicationWhereUniqueInput, distinct: [RoleApplicationScalarFieldEnum!], orderBy: [RoleApplicationOrderByWithRelationInput!], skip: Int, take: Int, where: RoleApplicationWhereInput): [RoleApplication!]!
   findManySingleParticipants(cursor: SingleParticipantWhereUniqueInput, distinct: [SingleParticipantScalarFieldEnum!], orderBy: [SingleParticipantOrderByWithRelationInput!], skip: Int, take: Int, where: SingleParticipantWhereInput): [SingleParticipant!]!
   findManySurveyAnswers(cursor: SurveyAnswerWhereUniqueInput, distinct: [SurveyAnswerScalarFieldEnum!], orderBy: [SurveyAnswerOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyAnswerWhereInput): [SurveyAnswer!]!
@@ -4283,6 +4471,7 @@ type Query {
   findUniqueNonStateActor(where: NonStateActorWhereUniqueInput!): NonStateActor
   findUniquePaper(where: PaperWhereUniqueInput!): Paper
   findUniquePaymentTransaction(where: PaymentTransactionWhereUniqueInput!): PaymentTransaction
+  findUniquePlace(where: PlaceWhereUniqueInput!): Place
   findUniqueRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   findUniqueSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   findUniqueSurveyAnswer(where: SurveyAnswerWhereUniqueInput!): SurveyAnswer

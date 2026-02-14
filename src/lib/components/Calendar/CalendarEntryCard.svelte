@@ -9,7 +9,7 @@
 		color: CalendarEntryColor;
 		startTime: Date;
 		endTime: Date;
-		place?: string | null;
+		place?: { name: string } | null;
 		room?: string | null;
 		compact?: boolean;
 	}
@@ -32,7 +32,7 @@
 		`${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
 	);
 
-	let locationLabel = $derived([place, room].filter(Boolean).join(' · '));
+	let locationLabel = $derived([place?.name, room].filter(Boolean).join(' · '));
 </script>
 
 <div

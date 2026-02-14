@@ -10,9 +10,10 @@
 	let { data }: { data: PageData } = $props();
 
 	let calendarDays = $derived(data.calendarDays);
+	let places = $derived(data.places);
 
 	// Tab state
-	let activeTab = $state<'preview' | 'days' | 'tracks' | 'entries'>('preview');
+	let activeTab = $state<'preview' | 'days' | 'tracks' | 'places' | 'entries'>('preview');
 
 	// Day/Track selector state for tracks and entries tabs
 	let selectedDayId = $state<string | null>(null);
@@ -295,7 +296,7 @@
 			$endTime: DateTime!
 			$fontAwesomeIcon: String
 			$color: CalendarEntryColor!
-			$place: String
+			$placeId: String
 			$room: String
 		) {
 			createOneCalendarEntry(
@@ -308,7 +309,7 @@
 					endTime: $endTime
 					fontAwesomeIcon: $fontAwesomeIcon
 					color: $color
-					place: $place
+					placeId: $placeId
 					room: $room
 				}
 			) {
@@ -326,7 +327,7 @@
 			$endTime: DateTimeFieldUpdateOperationsInput
 			$fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
 			$color: EnumCalendarEntryColorFieldUpdateOperationsInput
-			$place: NullableStringFieldUpdateOperationsInput
+			$placeId: NullableStringFieldUpdateOperationsInput
 			$room: NullableStringFieldUpdateOperationsInput
 			$calendarTrackId: NullableStringFieldUpdateOperationsInput
 		) {
@@ -339,7 +340,7 @@
 					endTime: $endTime
 					fontAwesomeIcon: $fontAwesomeIcon
 					color: $color
-					place: $place
+					placeId: $placeId
 					room: $room
 					calendarTrackId: $calendarTrackId
 				}
@@ -369,7 +370,7 @@
 	let entryEndTime = $state('');
 	let entryIcon = $state('');
 	let entryColor = $state<CalendarEntryColor>('SESSION');
-	let entryPlace = $state('');
+	let entryPlaceId = $state<string | null>(null);
 	let entryRoom = $state('');
 	let entryTrackId = $state<string | null>(null);
 
@@ -405,7 +406,7 @@
 		entryEndTimeManuallySet = false;
 		entryIcon = '';
 		entryColor = 'SESSION';
-		entryPlace = '';
+		entryPlaceId = null;
 		entryRoom = '';
 		entryTrackId = null;
 		showCreateEntryModal = true;
@@ -420,7 +421,7 @@
 		entryEndTimeManuallySet = true;
 		entryIcon = entry.fontAwesomeIcon ?? '';
 		entryColor = entry.color;
-		entryPlace = entry.place ?? '';
+		entryPlaceId = entry.placeId ?? null;
 		entryRoom = entry.room ?? '';
 		entryTrackId = entry.calendarTrackId ?? null;
 		showEditEntryModal = true;
@@ -440,7 +441,7 @@
 				endTime: combineDateTime(dayDate, entryEndTime),
 				fontAwesomeIcon: entryIcon || null,
 				color: entryColor,
-				place: entryPlace || null,
+				placeId: entryPlaceId || null,
 				room: entryRoom || null
 			});
 			cache.markStale();
@@ -466,7 +467,7 @@
 				endTime: { set: combineDateTime(dayDate, entryEndTime) },
 				fontAwesomeIcon: { set: entryIcon || null },
 				color: { set: entryColor },
-				place: { set: entryPlace || null },
+				placeId: { set: entryPlaceId || null },
 				room: { set: entryRoom || null },
 				calendarTrackId: { set: entryTrackId || null }
 			});
@@ -492,6 +493,198 @@
 			entryToDelete = null;
 		} catch (error) {
 			console.error('Failed to delete entry:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// === Place CRUD ===
+	const CreatePlaceMutation = graphql(`
+		mutation CreatePlace(
+			$conferenceId: String!
+			$name: String!
+			$address: String
+			$latitude: Float
+			$longitude: Float
+			$directions: String
+			$info: String
+			$websiteUrl: String
+			$sitePlanDataURL: String
+		) {
+			createOnePlace(
+				data: {
+					conferenceId: $conferenceId
+					name: $name
+					address: $address
+					latitude: $latitude
+					longitude: $longitude
+					directions: $directions
+					info: $info
+					websiteUrl: $websiteUrl
+					sitePlanDataURL: $sitePlanDataURL
+				}
+			) {
+				id
+			}
+		}
+	`);
+
+	const UpdatePlaceMutation = graphql(`
+		mutation UpdatePlace(
+			$id: String!
+			$name: StringFieldUpdateOperationsInput
+			$address: NullableStringFieldUpdateOperationsInput
+			$latitude: NullableFloatFieldUpdateOperationsInput
+			$longitude: NullableFloatFieldUpdateOperationsInput
+			$directions: NullableStringFieldUpdateOperationsInput
+			$info: NullableStringFieldUpdateOperationsInput
+			$websiteUrl: NullableStringFieldUpdateOperationsInput
+			$sitePlanDataURL: NullableStringFieldUpdateOperationsInput
+		) {
+			updateOnePlace(
+				where: { id: $id }
+				data: {
+					name: $name
+					address: $address
+					latitude: $latitude
+					longitude: $longitude
+					directions: $directions
+					info: $info
+					websiteUrl: $websiteUrl
+					sitePlanDataURL: $sitePlanDataURL
+				}
+			) {
+				id
+			}
+		}
+	`);
+
+	const DeletePlaceMutation = graphql(`
+		mutation DeletePlace($id: String!) {
+			deleteOnePlace(where: { id: $id }) {
+				id
+			}
+		}
+	`);
+
+	let showCreatePlaceModal = $state(false);
+	let showEditPlaceModal = $state(false);
+	let showDeletePlaceModal = $state(false);
+	let placeToEdit = $state<(typeof places)[0] | null>(null);
+	let placeToDelete = $state<(typeof places)[0] | null>(null);
+
+	let placeName = $state('');
+	let placeAddress = $state('');
+	let placeLatitude = $state('');
+	let placeLongitude = $state('');
+	let placeDirections = $state('');
+	let placeInfo = $state('');
+	let placeWebsiteUrl = $state('');
+	let placeSitePlanDataURL = $state<string | null>(null);
+
+	function openCreatePlace() {
+		placeName = '';
+		placeAddress = '';
+		placeLatitude = '';
+		placeLongitude = '';
+		placeDirections = '';
+		placeInfo = '';
+		placeWebsiteUrl = '';
+		placeSitePlanDataURL = null;
+		showCreatePlaceModal = true;
+	}
+
+	function openEditPlace(place: (typeof places)[0]) {
+		placeToEdit = place;
+		placeName = place.name;
+		placeAddress = place.address ?? '';
+		placeLatitude = place.latitude != null ? String(place.latitude) : '';
+		placeLongitude = place.longitude != null ? String(place.longitude) : '';
+		placeDirections = place.directions ?? '';
+		placeInfo = place.info ?? '';
+		placeWebsiteUrl = place.websiteUrl ?? '';
+		placeSitePlanDataURL = place.sitePlanDataURL ?? null;
+		showEditPlaceModal = true;
+	}
+
+	function handleSitePlanUpload(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		if (file.size > 10 * 1024 * 1024) {
+			alert('File too large (max 10MB)');
+			input.value = '';
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = () => {
+			placeSitePlanDataURL = reader.result as string;
+		};
+		reader.readAsDataURL(file);
+	}
+
+	async function createPlace() {
+		if (!placeName) return;
+		isLoading = true;
+		try {
+			await CreatePlaceMutation.mutate({
+				conferenceId: data.conferenceId,
+				name: placeName,
+				address: placeAddress || null,
+				latitude: placeLatitude ? parseFloat(placeLatitude) : null,
+				longitude: placeLongitude ? parseFloat(placeLongitude) : null,
+				directions: placeDirections || null,
+				info: placeInfo || null,
+				websiteUrl: placeWebsiteUrl || null,
+				sitePlanDataURL: placeSitePlanDataURL
+			});
+			cache.markStale();
+			await invalidateAll();
+			showCreatePlaceModal = false;
+		} catch (error) {
+			console.error('Failed to create place:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function updatePlace() {
+		if (!placeToEdit || !placeName) return;
+		isLoading = true;
+		try {
+			await UpdatePlaceMutation.mutate({
+				id: placeToEdit.id,
+				name: { set: placeName },
+				address: { set: placeAddress || null },
+				latitude: { set: placeLatitude ? parseFloat(placeLatitude) : null },
+				longitude: { set: placeLongitude ? parseFloat(placeLongitude) : null },
+				directions: { set: placeDirections || null },
+				info: { set: placeInfo || null },
+				websiteUrl: { set: placeWebsiteUrl || null },
+				sitePlanDataURL: { set: placeSitePlanDataURL }
+			});
+			cache.markStale();
+			await invalidateAll();
+			showEditPlaceModal = false;
+			placeToEdit = null;
+		} catch (error) {
+			console.error('Failed to update place:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function deletePlace() {
+		if (!placeToDelete) return;
+		isLoading = true;
+		try {
+			await DeletePlaceMutation.mutate({ id: placeToDelete.id });
+			cache.markStale();
+			await invalidateAll();
+			showDeletePlaceModal = false;
+			placeToDelete = null;
+		} catch (error) {
+			console.error('Failed to delete place:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -541,6 +734,13 @@
 			onclick={() => (activeTab = 'tracks')}
 		>
 			{m.calendarTracks()}
+		</button>
+		<button
+			role="tab"
+			class="tab {activeTab === 'places' ? 'tab-active' : ''}"
+			onclick={() => (activeTab = 'places')}
+		>
+			{m.calendarPlaces()}
 		</button>
 		<button
 			role="tab"
@@ -667,6 +867,77 @@
 										onclick={() => {
 											trackToDelete = track;
 											showDeleteTrackModal = true;
+										}}
+									>
+										<i class="fas fa-trash"></i>
+									</button>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	{/if}
+
+	<!-- Places Tab -->
+	{#if activeTab === 'places'}
+		<div class="flex justify-end">
+			<button class="btn btn-primary btn-sm" onclick={openCreatePlace}>
+				<i class="fas fa-plus"></i>
+				{m.calendarAddPlace()}
+			</button>
+		</div>
+
+		{#if places.length === 0}
+			<div class="bg-base-200 flex flex-col items-center justify-center rounded-lg p-12">
+				<i class="fas fa-location-dot text-5xl opacity-50"></i>
+				<p class="mt-4 text-lg opacity-70">{m.calendarNoPlaces()}</p>
+				<button class="btn btn-primary mt-4" onclick={openCreatePlace}>
+					<i class="fas fa-plus"></i>
+					{m.calendarAddPlace()}
+				</button>
+			</div>
+		{:else}
+			<div class="overflow-x-auto">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>{m.calendarPlaceName()}</th>
+							<th>{m.calendarPlaceAddress()}</th>
+							<th>{m.calendarPlaceLatitude()} / {m.calendarPlaceLongitude()}</th>
+							<th>{m.calendarPlaceSitePlan()}</th>
+							<th>{m.actions()}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each places as place (place.id)}
+							<tr>
+								<td>{place.name}</td>
+								<td class="max-w-xs truncate">{place.address ?? '–'}</td>
+								<td>
+									{#if place.latitude != null && place.longitude != null}
+										{place.latitude.toFixed(4)}, {place.longitude.toFixed(4)}
+									{:else}
+										–
+									{/if}
+								</td>
+								<td>
+									{#if place.sitePlanDataURL}
+										<i class="fas fa-file-pdf text-success"></i>
+									{:else}
+										–
+									{/if}
+								</td>
+								<td class="flex gap-2">
+									<button class="btn btn-ghost btn-sm" onclick={() => openEditPlace(place)}>
+										<i class="fas fa-edit"></i>
+									</button>
+									<button
+										class="btn btn-ghost btn-error btn-sm"
+										onclick={() => {
+											placeToDelete = place;
+											showDeletePlaceModal = true;
 										}}
 									>
 										<i class="fas fa-trash"></i>
@@ -1027,30 +1298,35 @@
 					<legend class="fieldset-legend">{m.calendarColor()}</legend>
 					<ColorPaletteSelector value={entryColor} onchange={(c) => (entryColor = c)} />
 				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarIcon()}</legend>
+					<div class="flex items-center gap-2">
+						<input
+							type="text"
+							bind:value={entryIcon}
+							class="input flex-1"
+							placeholder="e.g. gavel"
+						/>
+						{#if entryIcon}
+							<i class="fa-duotone fa-{entryIcon} text-base-content/60 text-lg"></i>
+						{/if}
+					</div>
+				</fieldset>
 				<div class="grid grid-cols-2 gap-4">
 					<fieldset class="fieldset">
-						<legend class="fieldset-legend">{m.calendarIcon()}</legend>
-						<div class="flex items-center gap-2">
-							<input
-								type="text"
-								bind:value={entryIcon}
-								class="input flex-1"
-								placeholder="e.g. gavel"
-							/>
-							{#if entryIcon}
-								<i class="fa-duotone fa-{entryIcon} text-base-content/60 text-lg"></i>
-							{/if}
-						</div>
+						<legend class="fieldset-legend">{m.calendarPlace()}</legend>
+						<select class="select w-full" bind:value={entryPlaceId}>
+							<option value={null}>{m.calendarNoPlace()}</option>
+							{#each places as place (place.id)}
+								<option value={place.id}>{place.name}</option>
+							{/each}
+						</select>
 					</fieldset>
 					<fieldset class="fieldset">
-						<legend class="fieldset-legend">{m.calendarPlace()}</legend>
-						<input type="text" bind:value={entryPlace} class="input w-full" />
+						<legend class="fieldset-legend">{m.calendarRoom()}</legend>
+						<input type="text" bind:value={entryRoom} class="input w-full" />
 					</fieldset>
 				</div>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.calendarRoom()}</legend>
-					<input type="text" bind:value={entryRoom} class="input w-full" />
-				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => (showCreateEntryModal = false)}>
 						{m.cancel()}
@@ -1119,30 +1395,35 @@
 					<legend class="fieldset-legend">{m.calendarColor()}</legend>
 					<ColorPaletteSelector value={entryColor} onchange={(c) => (entryColor = c)} />
 				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarIcon()}</legend>
+					<div class="flex items-center gap-2">
+						<input
+							type="text"
+							bind:value={entryIcon}
+							class="input flex-1"
+							placeholder="e.g. gavel"
+						/>
+						{#if entryIcon}
+							<i class="fa-duotone fa-{entryIcon} text-base-content/60 text-lg"></i>
+						{/if}
+					</div>
+				</fieldset>
 				<div class="grid grid-cols-2 gap-4">
 					<fieldset class="fieldset">
-						<legend class="fieldset-legend">{m.calendarIcon()}</legend>
-						<div class="flex items-center gap-2">
-							<input
-								type="text"
-								bind:value={entryIcon}
-								class="input flex-1"
-								placeholder="e.g. gavel"
-							/>
-							{#if entryIcon}
-								<i class="fa-duotone fa-{entryIcon} text-base-content/60 text-lg"></i>
-							{/if}
-						</div>
+						<legend class="fieldset-legend">{m.calendarPlace()}</legend>
+						<select class="select w-full" bind:value={entryPlaceId}>
+							<option value={null}>{m.calendarNoPlace()}</option>
+							{#each places as place (place.id)}
+								<option value={place.id}>{place.name}</option>
+							{/each}
+						</select>
 					</fieldset>
 					<fieldset class="fieldset">
-						<legend class="fieldset-legend">{m.calendarPlace()}</legend>
-						<input type="text" bind:value={entryPlace} class="input w-full" />
+						<legend class="fieldset-legend">{m.calendarRoom()}</legend>
+						<input type="text" bind:value={entryRoom} class="input w-full" />
 					</fieldset>
 				</div>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.calendarRoom()}</legend>
-					<input type="text" bind:value={entryRoom} class="input w-full" />
-				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => (showEditEntryModal = false)}>
 						{m.cancel()}
@@ -1191,6 +1472,190 @@
 			onclick={() => {
 				showDeleteEntryModal = false;
 				entryToDelete = null;
+			}}
+		></div>
+	</div>
+{/if}
+
+<!-- Create Place Modal -->
+{#if showCreatePlaceModal}
+	<div class="modal modal-open">
+		<div class="modal-box max-w-2xl">
+			<h3 class="text-lg font-bold">{m.calendarAddPlace()}</h3>
+			<div class="mt-4 flex flex-col gap-4">
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceName()}</legend>
+					<input type="text" bind:value={placeName} class="input w-full" required />
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceAddress()}</legend>
+					<input type="text" bind:value={placeAddress} class="input w-full" />
+				</fieldset>
+				<div class="grid grid-cols-2 gap-4">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">{m.calendarPlaceLatitude()}</legend>
+						<input type="number" step="any" bind:value={placeLatitude} class="input w-full" />
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">{m.calendarPlaceLongitude()}</legend>
+						<input type="number" step="any" bind:value={placeLongitude} class="input w-full" />
+					</fieldset>
+				</div>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceDirections()}</legend>
+					<textarea bind:value={placeDirections} class="textarea w-full"></textarea>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceInfo()}</legend>
+					<textarea bind:value={placeInfo} class="textarea w-full"></textarea>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceWebsite()}</legend>
+					<input type="url" bind:value={placeWebsiteUrl} class="input w-full" />
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceSitePlan()}</legend>
+					<input
+						type="file"
+						accept="application/pdf"
+						class="file-input w-full"
+						onchange={handleSitePlanUpload}
+					/>
+					{#if placeSitePlanDataURL}
+						<span class="text-success mt-1 text-xs">
+							<i class="fas fa-check-circle"></i>
+							PDF
+						</span>
+					{/if}
+				</fieldset>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick={() => (showCreatePlaceModal = false)}>
+						{m.cancel()}
+					</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+						onclick={createPlace}
+						disabled={isLoading || !placeName}
+					>
+						{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
+						{m.create()}
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop" onclick={() => (showCreatePlaceModal = false)}></div>
+	</div>
+{/if}
+
+<!-- Edit Place Modal -->
+{#if showEditPlaceModal && placeToEdit}
+	<div class="modal modal-open">
+		<div class="modal-box max-w-2xl">
+			<h3 class="text-lg font-bold">{m.calendarEditPlace()}</h3>
+			<div class="mt-4 flex flex-col gap-4">
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceName()}</legend>
+					<input type="text" bind:value={placeName} class="input w-full" required />
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceAddress()}</legend>
+					<input type="text" bind:value={placeAddress} class="input w-full" />
+				</fieldset>
+				<div class="grid grid-cols-2 gap-4">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">{m.calendarPlaceLatitude()}</legend>
+						<input type="number" step="any" bind:value={placeLatitude} class="input w-full" />
+					</fieldset>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">{m.calendarPlaceLongitude()}</legend>
+						<input type="number" step="any" bind:value={placeLongitude} class="input w-full" />
+					</fieldset>
+				</div>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceDirections()}</legend>
+					<textarea bind:value={placeDirections} class="textarea w-full"></textarea>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceInfo()}</legend>
+					<textarea bind:value={placeInfo} class="textarea w-full"></textarea>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceWebsite()}</legend>
+					<input type="url" bind:value={placeWebsiteUrl} class="input w-full" />
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlaceSitePlan()}</legend>
+					<input
+						type="file"
+						accept="application/pdf"
+						class="file-input w-full"
+						onchange={handleSitePlanUpload}
+					/>
+					{#if placeSitePlanDataURL}
+						<div class="mt-1 flex items-center gap-2">
+							<span class="text-success text-xs">
+								<i class="fas fa-check-circle"></i>
+								PDF
+							</span>
+							<a
+								href={placeSitePlanDataURL}
+								download="site-plan.pdf"
+								class="link link-primary text-xs"
+							>
+								{m.calendarPlaceSitePlanDownload()}
+							</a>
+						</div>
+					{/if}
+				</fieldset>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick={() => (showEditPlaceModal = false)}>
+						{m.cancel()}
+					</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+						onclick={updatePlace}
+						disabled={isLoading || !placeName}
+					>
+						{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
+						{m.save()}
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop" onclick={() => (showEditPlaceModal = false)}></div>
+	</div>
+{/if}
+
+<!-- Delete Place Modal -->
+{#if showDeletePlaceModal && placeToDelete}
+	<div class="modal modal-open">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">{m.calendarDeletePlace()}</h3>
+			<p class="py-4">{m.calendarConfirmDeletePlace()}</p>
+			<div class="modal-action">
+				<button
+					type="button"
+					class="btn"
+					onclick={() => {
+						showDeletePlaceModal = false;
+						placeToDelete = null;
+					}}
+				>
+					{m.cancel()}
+				</button>
+				<button type="button" class="btn btn-error" onclick={deletePlace} disabled={isLoading}>
+					{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
+					{m.delete()}
+				</button>
+			</div>
+		</div>
+		<div
+			class="modal-backdrop"
+			onclick={() => {
+				showDeletePlaceModal = false;
+				placeToDelete = null;
 			}}
 		></div>
 	</div>

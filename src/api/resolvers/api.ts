@@ -44,6 +44,7 @@ import './modules/waitingListEntry';
 import './modules/calendar/calendarDay';
 import './modules/calendar/calendarTrack';
 import './modules/calendar/calendarEntry';
+import './modules/calendar/place';
 
 export const yogaInstance = createYoga<RequestEvent>({
 	plugins: [graphqlYogaTracerPlugin],

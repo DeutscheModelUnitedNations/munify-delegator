@@ -1,4 +1,10 @@
-import type { CalendarDay, CalendarTrack, CalendarEntry, CalendarEntryColor } from '@prisma/client';
+import type {
+	CalendarDay,
+	CalendarTrack,
+	CalendarEntry,
+	CalendarEntryColor,
+	Place
+} from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 export function makeSeedCalendarDay(
@@ -30,10 +36,44 @@ export function makeSeedCalendarTrack(
 	};
 }
 
+export function makeSeedPlace(
+	options: Pick<Place, 'conferenceId' | 'name'> &
+		Partial<
+			Pick<
+				Place,
+				| 'address'
+				| 'latitude'
+				| 'longitude'
+				| 'directions'
+				| 'info'
+				| 'websiteUrl'
+				| 'sitePlanDataURL'
+			>
+		>
+): Place {
+	return {
+		id: faker.database.mongodbObjectId(),
+		name: options.name,
+		address: options.address ?? null,
+		latitude: options.latitude ?? null,
+		longitude: options.longitude ?? null,
+		directions: options.directions ?? null,
+		info: options.info ?? null,
+		websiteUrl: options.websiteUrl ?? null,
+		sitePlanDataURL: options.sitePlanDataURL ?? null,
+		conferenceId: options.conferenceId,
+		createdAt: faker.date.past(),
+		updatedAt: faker.date.past()
+	};
+}
+
 export function makeSeedCalendarEntry(
 	options: Pick<CalendarEntry, 'calendarDayId' | 'name' | 'startTime' | 'endTime' | 'color'> &
 		Partial<
-			Pick<CalendarEntry, 'calendarTrackId' | 'description' | 'fontAwesomeIcon' | 'place' | 'room'>
+			Pick<
+				CalendarEntry,
+				'calendarTrackId' | 'description' | 'fontAwesomeIcon' | 'placeId' | 'room'
+			>
 		>
 ): CalendarEntry {
 	return {
@@ -44,8 +84,8 @@ export function makeSeedCalendarEntry(
 		endTime: options.endTime,
 		fontAwesomeIcon: options.fontAwesomeIcon ?? null,
 		color: options.color,
-		place: options.place ?? null,
 		room: options.room ?? null,
+		placeId: options.placeId ?? null,
 		calendarDayId: options.calendarDayId,
 		calendarTrackId: options.calendarTrackId ?? null,
 		createdAt: faker.date.past(),

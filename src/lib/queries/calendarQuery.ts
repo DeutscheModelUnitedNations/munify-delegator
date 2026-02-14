@@ -24,7 +24,10 @@ export const calendarQuery = graphql(`
 				description
 				fontAwesomeIcon
 				color
-				place
+				place {
+					id
+					name
+				}
 				room
 				calendarTrackId
 			}

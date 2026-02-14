@@ -34,7 +34,10 @@
 					description
 					fontAwesomeIcon
 					color
-					place
+					place {
+						id
+						name
+					}
 					room
 					calendarTrackId
 				}

@@ -6,6 +6,7 @@
 	interface Track {
 		id: string;
 		name: string;
+		description?: string | null;
 		sortOrder: number;
 	}
 
@@ -17,7 +18,7 @@
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
 		color: CalendarEntryColor;
-		place?: string | null;
+		place?: { name: string } | null;
 		room?: string | null;
 		calendarTrackId?: string | null;
 	}
@@ -40,27 +41,17 @@
 	let selectedDayIndex = $state(0);
 	let filterTrackId = $state<string | null>(null);
 
-	let allTracks = $derived(
-		days.flatMap((d) => d.tracks).filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i)
-	);
-
 	let selectedDay = $derived(days[selectedDayIndex]);
+	let selectedDayTracks = $derived(selectedDay?.tracks ?? []);
+
+	// Reset track filter when switching days since tracks differ
+	$effect(() => {
+		selectedDayIndex;
+		filterTrackId = null;
+	});
 </script>
 
 {#if days.length > 0}
-	<!-- Track filter -->
-	{#if allTracks.length > 1}
-		<div class="mb-4 flex items-center gap-2">
-			<label for="track-filter" class="text-sm font-medium">{m.calendarTrack()}:</label>
-			<select id="track-filter" class="select select-sm select-bordered" bind:value={filterTrackId}>
-				<option value={null}>{m.calendarAllTracks()}</option>
-				{#each allTracks as track (track.id)}
-					<option value={track.id}>{track.name}</option>
-				{/each}
-			</select>
-		</div>
-	{/if}
-
 	<!-- Small screens: tabs + single day -->
 	<div class="3xl:hidden">
 		{#if days.length > 1}
@@ -74,6 +65,41 @@
 						{day.name}
 					</button>
 				{/each}
+			</div>
+		{/if}
+
+		{#if selectedDayTracks.length > 1}
+			<div
+				class="border-base-300 bg-base-200/50 mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2"
+			>
+				<span class="text-sm font-medium">{m.calendarTrack()}:</span>
+				<div class="flex flex-wrap gap-1">
+					<button
+						class="btn btn-xs {filterTrackId === null ? 'btn-primary' : 'btn-ghost'}"
+						onclick={() => (filterTrackId = null)}
+					>
+						{m.calendarAllTracks()}
+					</button>
+					{#each selectedDayTracks as track (track.id)}
+						{#if track.description}
+							<div class="tooltip" data-tip={track.description}>
+								<button
+									class="btn btn-xs {filterTrackId === track.id ? 'btn-primary' : 'btn-ghost'}"
+									onclick={() => (filterTrackId = track.id)}
+								>
+									{track.name}
+								</button>
+							</div>
+						{:else}
+							<button
+								class="btn btn-xs {filterTrackId === track.id ? 'btn-primary' : 'btn-ghost'}"
+								onclick={() => (filterTrackId = track.id)}
+							>
+								{track.name}
+							</button>
+						{/if}
+					{/each}
+				</div>
 			</div>
 		{/if}
 

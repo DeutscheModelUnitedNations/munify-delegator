@@ -18,7 +18,12 @@ import { makeSeedConferenceSupervisor } from './conferenceSupervisor';
 import { makeSeedSingleParticipant } from './singleParticipant';
 import { makeSeedTeamMember } from './teamMember';
 import { makeSeedPaymentTransaction } from './paymentTransaction';
-import { makeSeedCalendarDay, makeSeedCalendarTrack, makeSeedCalendarEntry } from './calendarDay';
+import {
+	makeSeedCalendarDay,
+	makeSeedCalendarTrack,
+	makeSeedCalendarEntry,
+	makeSeedPlace
+} from './calendarDay';
 
 // force static seed for reproducible data
 faker.seed(123);
@@ -636,6 +641,31 @@ await _db.$transaction(async (db) => {
 					)
 				);
 
+				// Places
+				const landtag = makeSeedPlace({
+					conferenceId: conference.id,
+					name: 'Landtag Niedersachsen',
+					address: 'Hannah-Arendt-Platz 1, 30159 Hannover',
+					latitude: 52.3613,
+					longitude: 9.7414,
+					directions:
+						'Vom Hauptbahnhof mit der U-Bahn Linie 3 oder 7 bis Waterloo, dann 5 Min zu Fuß.',
+					info: 'Bitte Personalausweis mitbringen. Keine Getränke im Plenarsaal.'
+				});
+
+				const kulturzentrum = makeSeedPlace({
+					conferenceId: conference.id,
+					name: 'Kulturzentrum',
+					address: 'Beispielstr. 42, 30159 Hannover',
+					latitude: 52.374,
+					longitude: 9.7385
+				});
+
+				const allPlaces = [landtag, kulturzentrum];
+				await Promise.all(
+					allPlaces.map((p) => db.place.upsert({ where: { id: p.id }, update: p, create: p }))
+				);
+
 				// Helper to create a datetime on a specific day at a given hour:minute
 				function makeTime(date: Date, hours: number, minutes: number): Date {
 					const d = new Date(date);
@@ -652,7 +682,7 @@ await _db.$transaction(async (db) => {
 						endTime: makeTime(baseDate, 11, 30),
 						color: 'CEREMONY',
 						fontAwesomeIcon: 'flag',
-						place: 'Landtag Niedersachsen',
+						placeId: landtag.id,
 						room: 'Plenarsaal'
 					}),
 					makeSeedCalendarEntry({
@@ -827,7 +857,7 @@ await _db.$transaction(async (db) => {
 						endTime: makeTime(day2Date, 22, 0),
 						color: 'SOCIAL',
 						fontAwesomeIcon: 'party-horn',
-						place: 'Kulturzentrum'
+						placeId: kulturzentrum.id
 					})
 				];
 
@@ -877,7 +907,7 @@ await _db.$transaction(async (db) => {
 						endTime: makeTime(day3Date, 14, 0),
 						color: 'CEREMONY',
 						fontAwesomeIcon: 'award',
-						place: 'Landtag Niedersachsen',
+						placeId: landtag.id,
 						room: 'Plenarsaal'
 					})
 				];
