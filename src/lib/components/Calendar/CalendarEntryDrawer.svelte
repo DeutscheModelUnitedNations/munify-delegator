@@ -92,10 +92,10 @@
 
 	let appleMapsUrl = $derived.by(() => {
 		if (!mapCenter) return null;
-		const params = new URLSearchParams({ ll: `${mapCenter.lat},${mapCenter.lng}` });
+		let url = `https://maps.apple.com/?ll=${mapCenter.lat},${mapCenter.lng}`;
 		const name = entry?.place?.name;
-		if (name) params.set('q', name);
-		return `https://maps.apple.com/?${params.toString()}`;
+		if (name) url += `&q=${encodeURIComponent(name)}`;
+		return url;
 	});
 
 	let googleMapsUrl = $derived(

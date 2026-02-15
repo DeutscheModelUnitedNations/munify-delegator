@@ -121,6 +121,7 @@
 	// Detect overlapping entries (same track, overlapping time ranges)
 	let overlappingEntryIds = $derived.by(() => {
 		const entries = sortedEntriesForSelectedDay;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- not reactive state, just a local accumulator
 		const ids = new Set<string>();
 		for (let i = 0; i < entries.length; i++) {
 			for (let j = i + 1; j < entries.length; j++) {
@@ -152,7 +153,7 @@
 
 	// Reset track filter when day changes
 	$effect(() => {
-		selectedDayId;
+		void selectedDayId;
 		filterEntryTrackId = null;
 	});
 
@@ -620,6 +621,7 @@
 	}
 
 	function combineDateTime(dayDate: Date, timeStr: string): Date {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 		const d = new Date(dayDate);
 		const [h, min] = timeStr.split(':').map(Number);
 		d.setHours(h, min, 0, 0);
@@ -669,8 +671,10 @@
 			const oldStart = new Date(entryToMove.startTime);
 			const oldEnd = new Date(entryToMove.endTime);
 			const newDayDate = new Date(targetDay.date);
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 			const newStart = new Date(newDayDate);
 			newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 			const newEnd = new Date(newDayDate);
 			newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
 			await UpdateEntryMutation.mutate({
@@ -710,8 +714,10 @@
 				}
 				const oldStart = new Date(entry.startTime);
 				const oldEnd = new Date(entry.endTime);
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 				const newStart = new Date(targetDate);
 				newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 				const newEnd = new Date(targetDate);
 				newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
 				await CreateEntryMutation.mutate({

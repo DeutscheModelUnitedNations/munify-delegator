@@ -87,7 +87,7 @@
 
 	// Reset track filter when switching days since tracks differ
 	$effect(() => {
-		selectedDayIndex;
+		void selectedDayIndex;
 		filterTrackId = null;
 	});
 </script>
