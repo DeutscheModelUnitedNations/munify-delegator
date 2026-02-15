@@ -1,4 +1,4 @@
-import type { PaperStatus$options, PaperType$options } from '$houdini';
+import type { CalendarEntryColor$options, PaperStatus$options, PaperType$options } from '$houdini';
 import { m } from '$lib/paraglide/messages';
 
 export function translatePaperStatus(paperStatus: PaperStatus$options) {
@@ -24,6 +24,27 @@ export function translatePaperType(paperType: PaperType$options) {
 			return m.paperTypeIntroductionPaper();
 		case 'WORKING_PAPER':
 			return m.paperTypeWorkingPaper();
+	}
+}
+
+export function translateCalendarEntryColor(color: CalendarEntryColor$options) {
+	switch (color) {
+		case 'SESSION':
+			return m.calendarSession();
+		case 'WORKSHOP':
+			return m.calendarWorkshop();
+		case 'LOGISTICS':
+			return m.calendarLogistics();
+		case 'SOCIAL':
+			return m.calendarSocial();
+		case 'CEREMONY':
+			return m.calendarCeremony();
+		case 'BREAK':
+			return m.calendarBreak();
+		case 'HIGHLIGHT':
+			return m.calendarHighlight();
+		case 'INFO':
+			return m.calendarInfo();
 	}
 }
 

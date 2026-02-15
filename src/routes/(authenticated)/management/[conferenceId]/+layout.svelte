@@ -65,6 +65,12 @@
 				/>
 			</NavMenuDetails>
 			<NavMenuButton
+				href="/management/{data.conferenceId}/calendar"
+				icon="fa-calendar-days"
+				title={m.calendar()}
+				bind:expanded={navbarExpanded}
+			/>
+			<NavMenuButton
 				href="/management/{data.conferenceId}/survey"
 				icon="fa-chart-pie"
 				title={m.survey()}

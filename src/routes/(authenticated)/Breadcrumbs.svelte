@@ -149,6 +149,10 @@
 			icon: 'download',
 			translation: m.downloads()
 		},
+		calendar: {
+			icon: 'calendar-days',
+			translation: m.calendar()
+		},
 		survey: {
 			icon: 'square-poll-horizontal',
 			translation: m.survey()

@@ -37,6 +37,8 @@ import {
 	ConferenceWebsiteFieldObject,
 	ConferenceIsOpenPaperSubmissionFieldObject,
 	ConferenceShowInfoExpandedFieldObject,
+	ConferenceShowCalendarFieldObject,
+	ConferenceTimezoneFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
 	findUniqueConferenceQueryObject,
@@ -62,6 +64,8 @@ builder.prismaObject('Conference', {
 		linkToServicesPage: t.field(ConferenceLinkToServicesPageFieldObject),
 		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
 		isOpenPaperSubmission: t.field(ConferenceIsOpenPaperSubmissionFieldObject),
+		showCalendar: t.field(ConferenceShowCalendarFieldObject),
+		timezone: t.field(ConferenceTimezoneFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
 		location: t.field(ConferenceLocationFieldObject),
 		language: t.field(ConferenceLanguageFieldObject),
@@ -474,6 +478,12 @@ builder.mutationFields((t) => {
 							isOpenPaperSubmission: t.boolean({
 								required: false
 							}),
+							showCalendar: t.boolean({
+								required: false
+							}),
+							timezone: t.string({
+								required: false
+							}),
 							showInfoExpanded: t.boolean({
 								required: false
 							}),
@@ -637,6 +647,8 @@ builder.mutationFields((t) => {
 							args.data.isOpenPaperSubmission === null
 								? undefined
 								: args.data.isOpenPaperSubmission,
+						showCalendar: args.data.showCalendar === null ? undefined : args.data.showCalendar,
+						timezone: args.data.timezone ?? undefined,
 						showInfoExpanded:
 							args.data.showInfoExpanded === null ? undefined : args.data.showInfoExpanded,
 						unlockPostals: args.data.unlockPostals === null ? undefined : args.data.unlockPostals,
