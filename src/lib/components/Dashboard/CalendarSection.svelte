@@ -76,6 +76,8 @@
 		icon="calendar-days"
 		title={m.calendarSectionTitle()}
 		description={m.calendarSectionDescription()}
+		collapsible
+		defaultCollapsed
 	>
 		<CalendarDisplay {days} />
 	</DashboardSection>
