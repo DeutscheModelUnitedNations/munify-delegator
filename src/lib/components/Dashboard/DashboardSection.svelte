@@ -47,6 +47,7 @@
 			class:mb-4={!collapsed}
 			role={collapsible ? 'button' : undefined}
 			tabindex={collapsible ? 0 : undefined}
+			aria-expanded={collapsible ? !collapsed : undefined}
 			onclick={collapsible ? () => (collapsed = !collapsed) : undefined}
 			onkeydown={collapsible
 				? (e: KeyboardEvent) => {

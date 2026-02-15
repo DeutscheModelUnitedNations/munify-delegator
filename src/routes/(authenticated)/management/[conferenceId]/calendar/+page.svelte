@@ -966,6 +966,10 @@
 				`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityPart)}&format=json&limit=1`,
 				{ headers: { 'User-Agent': 'MUNify-Delegator' } }
 			);
+			if (!response.ok) {
+				plusCodeError = m.calendarPlacePlusCodeCityNotFound();
+				return;
+			}
 			const data: { lat: string; lon: string }[] = await response.json();
 			if (!data.length) {
 				plusCodeError = m.calendarPlacePlusCodeCityNotFound();

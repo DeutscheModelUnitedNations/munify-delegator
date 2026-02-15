@@ -33,8 +33,16 @@ builder.mutationFields((t) => ({
 
 			// JSONObject scalar parseValue may or may not call JSON.parse depending
 			// on the transport — handle both string and object values
-			const rawData =
-				typeof args.importData === 'string' ? JSON.parse(args.importData) : args.importData;
+			let rawData: unknown;
+			if (typeof args.importData === 'string') {
+				try {
+					rawData = JSON.parse(args.importData);
+				} catch {
+					throw new Error('Invalid import data: malformed JSON');
+				}
+			} else {
+				rawData = args.importData;
+			}
 			const parsed = calendarDayExportSchema.safeParse(rawData);
 			if (!parsed.success) {
 				throw new Error(`Invalid import data: ${parsed.error.message}`);
@@ -106,10 +114,10 @@ builder.mutationFields((t) => ({
 					const [endH, endM] = entry.endTime.split(':').map(Number);
 
 					const startTime = new Date(args.date);
-					startTime.setHours(startH, startM, 0, 0);
+					startTime.setUTCHours(startH, startM, 0, 0);
 
 					const endTime = new Date(args.date);
-					endTime.setHours(endH, endM, 0, 0);
+					endTime.setUTCHours(endH, endM, 0, 0);
 
 					await tx.calendarEntry.create({
 						data: {
