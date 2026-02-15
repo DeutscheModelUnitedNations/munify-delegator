@@ -7,6 +7,82 @@
 	import ColorPaletteSelector from '$lib/components/Calendar/ColorPaletteSelector.svelte';
 	import type { CalendarEntryColor } from '@prisma/client';
 	import { translateCalendarEntryColor } from '$lib/services/enumTranslations';
+	// === Plus Code (Open Location Code) utilities ===
+	const PLUS_CODE_ALPHABET = '23456789CFGHJMPQRVWX';
+
+	/** Decode a full Plus Code (8 chars before '+') to lat/lng center. */
+	function decodePlusCodeFull(code: string): { latitude: number; longitude: number } | null {
+		const cleaned = code.toUpperCase().replace(/0+\+$/, '+');
+		const sepIdx = cleaned.indexOf('+');
+		if (sepIdx !== 8) return null;
+		const stripped = cleaned.replace('+', '');
+		for (const ch of stripped) {
+			if (ch !== '0' && !PLUS_CODE_ALPHABET.includes(ch)) return null;
+		}
+		const pairs = Math.min(stripped.length, 10);
+		let lat = 0;
+		let lng = 0;
+		let latRes = 400;
+		let lngRes = 400;
+		for (let i = 0; i < pairs; i += 2) {
+			latRes /= 20;
+			lngRes /= 20;
+			lat += PLUS_CODE_ALPHABET.indexOf(stripped[i]) * latRes;
+			lng += PLUS_CODE_ALPHABET.indexOf(stripped[i + 1]) * lngRes;
+		}
+		if (stripped.length > 10) {
+			for (let i = 10; i < stripped.length; i++) {
+				const row = Math.floor(PLUS_CODE_ALPHABET.indexOf(stripped[i]) / 4);
+				const col = PLUS_CODE_ALPHABET.indexOf(stripped[i]) % 4;
+				latRes /= 5;
+				lngRes /= 4;
+				lat += row * latRes;
+				lng += col * lngRes;
+			}
+		}
+		return { latitude: lat + latRes / 2 - 90, longitude: lng + lngRes / 2 - 180 };
+	}
+
+	/** Encode lat/lng to a 10-digit full Plus Code. */
+	function encodePlusCode(lat: number, lng: number): string {
+		lat = Math.min(90, Math.max(-90, lat));
+		lng = (((lng % 360) + 540) % 360) - 180;
+		let adjLat = Math.min(lat + 90, 180 - 1e-10);
+		let adjLng = lng + 180;
+		let code = '';
+		let pv = 20;
+		for (let i = 0; i < 5; i++) {
+			const latIdx = Math.min(Math.floor(adjLat / pv), 19);
+			const lngIdx = Math.min(Math.floor(adjLng / pv), 19);
+			adjLat -= latIdx * pv;
+			adjLng -= lngIdx * pv;
+			code += PLUS_CODE_ALPHABET[latIdx] + PLUS_CODE_ALPHABET[lngIdx];
+			pv /= 20;
+		}
+		return code.substring(0, 8) + '+' + code.substring(8);
+	}
+
+	/** Recover a full Plus Code from a short code + reference coordinates. */
+	function recoverPlusCode(shortCode: string, refLat: number, refLng: number): string {
+		const sepIdx = shortCode.indexOf('+');
+		const paddingLen = 8 - sepIdx;
+		const resolution = Math.pow(20, 2 - sepIdx / 2);
+		const halfRes = resolution / 2;
+
+		const refCode = encodePlusCode(refLat, refLng);
+		const candidate = refCode.substring(0, paddingLen) + shortCode;
+
+		const decoded = decodePlusCodeFull(candidate);
+		if (!decoded) return candidate;
+
+		let { latitude: cLat, longitude: cLng } = decoded;
+		if (refLat + halfRes < cLat && cLat - resolution >= -90) cLat -= resolution;
+		else if (refLat - halfRes > cLat && cLat + resolution <= 90) cLat += resolution;
+		if (refLng + halfRes < cLng) cLng -= resolution;
+		else if (refLng - halfRes > cLng) cLng += resolution;
+
+		return encodePlusCode(cLat, cLng);
+	}
 
 	let { data }: { data: PageData } = $props();
 
@@ -728,6 +804,77 @@
 	let placeInfo = $state('');
 	let placeWebsiteUrl = $state('');
 	let placeSitePlanDataURL = $state<string | null>(null);
+	let placePlusCode = $state('');
+	let plusCodeError = $state('');
+	let plusCodeLoading = $state(false);
+
+	async function decodePlusCode() {
+		const input = placePlusCode.trim();
+		if (!input) {
+			plusCodeError = '';
+			return;
+		}
+
+		// Extract the code part (before any whitespace) and optional city name
+		const codeMatch = input.match(
+			/^([23456789CFGHJMPQRVWXcfghjmpqrvwx0]+\+[23456789CFGHJMPQRVWXcfghjmpqrvwx0]*)/
+		);
+		if (!codeMatch) {
+			plusCodeError = m.calendarPlacePlusCodeInvalid();
+			return;
+		}
+		const code = codeMatch[1].toUpperCase();
+		const cityPart = input.substring(codeMatch[0].length).trim();
+		const sepIdx = code.indexOf('+');
+
+		if (sepIdx === 8) {
+			// Full code — decode directly
+			const result = decodePlusCodeFull(code);
+			if (!result) {
+				plusCodeError = m.calendarPlacePlusCodeInvalid();
+				return;
+			}
+			placeLatitude = String(result.latitude);
+			placeLongitude = String(result.longitude);
+			plusCodeError = '';
+			return;
+		}
+
+		// Short code — needs a reference city
+		if (!cityPart) {
+			plusCodeError = m.calendarPlacePlusCodeShort();
+			return;
+		}
+
+		plusCodeLoading = true;
+		try {
+			const response = await fetch(
+				`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityPart)}&format=json&limit=1`,
+				{ headers: { 'User-Agent': 'MUNify-Delegator' } }
+			);
+			const data: { lat: string; lon: string }[] = await response.json();
+			if (!data.length) {
+				plusCodeError = m.calendarPlacePlusCodeCityNotFound();
+				return;
+			}
+
+			const refLat = parseFloat(data[0].lat);
+			const refLng = parseFloat(data[0].lon);
+			const fullCode = recoverPlusCode(code, refLat, refLng);
+			const result = decodePlusCodeFull(fullCode);
+			if (!result) {
+				plusCodeError = m.calendarPlacePlusCodeInvalid();
+				return;
+			}
+			placeLatitude = String(result.latitude);
+			placeLongitude = String(result.longitude);
+			plusCodeError = '';
+		} catch {
+			plusCodeError = m.calendarPlacePlusCodeCityNotFound();
+		} finally {
+			plusCodeLoading = false;
+		}
+	}
 
 	function openCreatePlace() {
 		placeName = '';
@@ -738,6 +885,8 @@
 		placeInfo = '';
 		placeWebsiteUrl = '';
 		placeSitePlanDataURL = null;
+		placePlusCode = '';
+		plusCodeError = '';
 		showCreatePlaceModal = true;
 	}
 
@@ -751,6 +900,8 @@
 		placeInfo = place.info ?? '';
 		placeWebsiteUrl = place.websiteUrl ?? '';
 		placeSitePlanDataURL = place.sitePlanDataURL ?? null;
+		placePlusCode = '';
+		plusCodeError = '';
 		showEditPlaceModal = true;
 	}
 
@@ -1770,6 +1921,33 @@
 					<legend class="fieldset-legend">{m.calendarPlaceAddress()}</legend>
 					<input type="text" bind:value={placeAddress} class="input w-full" />
 				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlacePlusCode()}</legend>
+					<div class="flex gap-2">
+						<input
+							type="text"
+							bind:value={placePlusCode}
+							class="input flex-1"
+							placeholder="e.g. 84W3+7X Kiel"
+						/>
+						<button
+							type="button"
+							class="btn btn-ghost btn-sm"
+							onclick={decodePlusCode}
+							disabled={!placePlusCode.trim() || plusCodeLoading}
+						>
+							{#if plusCodeLoading}
+								<span class="loading loading-spinner loading-xs"></span>
+							{:else}
+								<i class="fas fa-location-crosshairs"></i>
+							{/if}
+						</button>
+					</div>
+					{#if plusCodeError}
+						<p class="text-error mt-1 text-xs">{plusCodeError}</p>
+					{/if}
+					<p class="text-base-content/50 mt-1 text-xs">{m.calendarPlacePlusCodeHint()}</p>
+				</fieldset>
 				<div class="grid grid-cols-2 gap-4">
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">{m.calendarPlaceLatitude()}</legend>
@@ -1780,6 +1958,28 @@
 						<input type="number" step="any" bind:value={placeLongitude} class="input w-full" />
 					</fieldset>
 				</div>
+				{#if placeLatitude && placeLongitude && !isNaN(parseFloat(placeLatitude)) && !isNaN(parseFloat(placeLongitude))}
+					<div class="h-[200px] w-full overflow-hidden rounded-lg">
+						{#await import('sveaflet') then { Map, TileLayer, Marker }}
+							<Map
+								options={{
+									center: [parseFloat(placeLatitude), parseFloat(placeLongitude)],
+									zoom: 15,
+									scrollWheelZoom: false
+								}}
+							>
+								<TileLayer
+									url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}
+									options={{
+										attribution:
+											'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+									}}
+								/>
+								<Marker latLng={[parseFloat(placeLatitude), parseFloat(placeLongitude)]} />
+							</Map>
+						{/await}
+					</div>
+				{/if}
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.calendarPlaceDirections()}</legend>
 					<textarea bind:value={placeDirections} class="textarea w-full"></textarea>
@@ -1841,6 +2041,33 @@
 					<legend class="fieldset-legend">{m.calendarPlaceAddress()}</legend>
 					<input type="text" bind:value={placeAddress} class="input w-full" />
 				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarPlacePlusCode()}</legend>
+					<div class="flex gap-2">
+						<input
+							type="text"
+							bind:value={placePlusCode}
+							class="input flex-1"
+							placeholder="e.g. 84W3+7X Kiel"
+						/>
+						<button
+							type="button"
+							class="btn btn-ghost btn-sm"
+							onclick={decodePlusCode}
+							disabled={!placePlusCode.trim() || plusCodeLoading}
+						>
+							{#if plusCodeLoading}
+								<span class="loading loading-spinner loading-xs"></span>
+							{:else}
+								<i class="fas fa-location-crosshairs"></i>
+							{/if}
+						</button>
+					</div>
+					{#if plusCodeError}
+						<p class="text-error mt-1 text-xs">{plusCodeError}</p>
+					{/if}
+					<p class="text-base-content/50 mt-1 text-xs">{m.calendarPlacePlusCodeHint()}</p>
+				</fieldset>
 				<div class="grid grid-cols-2 gap-4">
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">{m.calendarPlaceLatitude()}</legend>
@@ -1851,6 +2078,28 @@
 						<input type="number" step="any" bind:value={placeLongitude} class="input w-full" />
 					</fieldset>
 				</div>
+				{#if placeLatitude && placeLongitude && !isNaN(parseFloat(placeLatitude)) && !isNaN(parseFloat(placeLongitude))}
+					<div class="h-[200px] w-full overflow-hidden rounded-lg">
+						{#await import('sveaflet') then { Map, TileLayer, Marker }}
+							<Map
+								options={{
+									center: [parseFloat(placeLatitude), parseFloat(placeLongitude)],
+									zoom: 15,
+									scrollWheelZoom: false
+								}}
+							>
+								<TileLayer
+									url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}
+									options={{
+										attribution:
+											'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+									}}
+								/>
+								<Marker latLng={[parseFloat(placeLatitude), parseFloat(placeLongitude)]} />
+							</Map>
+						{/await}
+					</div>
+				{/if}
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.calendarPlaceDirections()}</legend>
 					<textarea bind:value={placeDirections} class="textarea w-full"></textarea>
