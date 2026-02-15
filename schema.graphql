@@ -2684,6 +2684,10 @@ type ImpersonationUser {
   sub: String!
 }
 
+type ImportCalendarDayResult {
+  id: String!
+}
+
 input IntFieldUpdateOperationsInput {
   decrement: Int
   divide: Int
@@ -2881,6 +2885,7 @@ type Mutation {
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   deleteReviewerSnippet(id: String!): ReviewerSnippet!
+  importCalendarDay(conferenceId: String!, date: DateTime!, importData: JSONObject!, name: String!, sortOrder: Int!): ImportCalendarDayResult!
   normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
   regenerateTeamMemberInvitation(invitationId: String!, sendEmail: Boolean! = false): RegenerateInvitationResult!
   revokeTeamMemberInvitation(invitationId: String!): RevokeInvitationResult!

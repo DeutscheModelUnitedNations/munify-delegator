@@ -7,6 +7,11 @@
 	import ColorPaletteSelector from '$lib/components/Calendar/ColorPaletteSelector.svelte';
 	import type { CalendarEntryColor } from '@prisma/client';
 	import { translateCalendarEntryColor } from '$lib/services/enumTranslations';
+	import { downloadJSON } from '$lib/services/downloadHelpers';
+	import {
+		calendarDayExportSchema,
+		type CalendarDayExportData
+	} from '$lib/schemata/calendarDayExport';
 	// === Plus Code (Open Location Code) utilities ===
 	const PLUS_CODE_ALPHABET = '23456789CFGHJMPQRVWX';
 
@@ -205,10 +210,97 @@
 	let dayDate = $state('');
 	let daySortOrder = $state(0);
 
+	// === Day Export/Import ===
+	const ImportCalendarDayMutation = graphql(`
+		mutation ImportCalendarDay(
+			$conferenceId: String!
+			$name: String!
+			$date: DateTime!
+			$sortOrder: Int!
+			$importData: JSONObject!
+		) {
+			importCalendarDay(
+				conferenceId: $conferenceId
+				name: $name
+				date: $date
+				sortOrder: $sortOrder
+				importData: $importData
+			) {
+				id
+			}
+		}
+	`);
+
+	let importData = $state<CalendarDayExportData | null>(null);
+	let importError = $state('');
+
+	function exportDay(day: (typeof calendarDays)[0]) {
+		const exportObj: CalendarDayExportData = {
+			version: 1,
+			tracks: day.tracks.map((t) => ({
+				name: t.name,
+				description: t.description ?? null,
+				sortOrder: t.sortOrder
+			})),
+			entries: day.entries.map((e) => {
+				const place = e.placeId ? places.find((p) => p.id === e.placeId) : null;
+				const track = e.calendarTrackId ? day.tracks.find((t) => t.id === e.calendarTrackId) : null;
+				return {
+					name: e.name,
+					description: e.description ?? null,
+					startTime: toTimeString(new Date(e.startTime)),
+					endTime: toTimeString(new Date(e.endTime)),
+					fontAwesomeIcon: e.fontAwesomeIcon ?? null,
+					color: e.color,
+					room: e.room ?? null,
+					trackName: track?.name ?? null,
+					place: place
+						? {
+								name: place.name,
+								address: place.address ?? null,
+								latitude: place.latitude ?? null,
+								longitude: place.longitude ?? null,
+								directions: place.directions ?? null,
+								info: place.info ?? null,
+								websiteUrl: place.websiteUrl ?? null
+							}
+						: null
+				};
+			})
+		};
+		downloadJSON(exportObj, `calendar-day-${day.name}.json`);
+	}
+
+	function handleImportFileUpload(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			try {
+				const raw = JSON.parse(reader.result as string);
+				const result = calendarDayExportSchema.safeParse(raw);
+				if (!result.success) {
+					importData = null;
+					importError = m.calendarImportInvalidJSON();
+					return;
+				}
+				importData = result.data;
+				importError = '';
+			} catch {
+				importData = null;
+				importError = m.calendarImportInvalidJSON();
+			}
+		};
+		reader.readAsText(file);
+	}
+
 	function openCreateDay() {
 		dayName = '';
 		dayDate = '';
 		daySortOrder = calendarDays.length;
+		importData = null;
+		importError = '';
 		showCreateDayModal = true;
 	}
 
@@ -224,12 +316,22 @@
 		if (!dayName || !dayDate) return;
 		isLoading = true;
 		try {
-			await CreateDayMutation.mutate({
-				conferenceId: data.conferenceId,
-				name: dayName,
-				date: new Date(dayDate),
-				sortOrder: daySortOrder
-			});
+			if (importData) {
+				await ImportCalendarDayMutation.mutate({
+					conferenceId: data.conferenceId,
+					name: dayName,
+					date: new Date(dayDate),
+					sortOrder: daySortOrder,
+					importData: JSON.stringify(importData)
+				});
+			} else {
+				await CreateDayMutation.mutate({
+					conferenceId: data.conferenceId,
+					name: dayName,
+					date: new Date(dayDate),
+					sortOrder: daySortOrder
+				});
+			}
 			cache.markStale();
 			await invalidateAll();
 			showCreateDayModal = false;
@@ -1097,6 +1199,13 @@
 								<td>{day.name}</td>
 								<td>{new Date(day.date).toLocaleDateString()}</td>
 								<td class="flex gap-2">
+									<button
+										class="btn btn-ghost btn-sm"
+										onclick={() => exportDay(day)}
+										title={m.calendarExportDay()}
+									>
+										<i class="fas fa-download"></i>
+									</button>
 									<button class="btn btn-ghost btn-sm" onclick={() => openEditDay(day)}>
 										<i class="fas fa-edit"></i>
 									</button>
@@ -1389,6 +1498,27 @@
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.calendarSortOrder()}</legend>
 					<input type="number" bind:value={daySortOrder} class="input w-full" min="0" />
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarImportFromFile()}</legend>
+					<input
+						type="file"
+						accept=".json"
+						class="file-input w-full"
+						onchange={handleImportFileUpload}
+					/>
+					{#if importError}
+						<p class="text-error mt-1 text-xs">{importError}</p>
+					{/if}
+					{#if importData}
+						<p class="text-success mt-1 text-xs">
+							<i class="fas fa-check-circle"></i>
+							{m.calendarImportPreview({
+								tracks: importData.tracks.length.toString(),
+								entries: importData.entries.length.toString()
+							})}
+						</p>
+					{/if}
 				</fieldset>
 				<div class="modal-action">
 					<button type="button" class="btn" onclick={() => (showCreateDayModal = false)}>
