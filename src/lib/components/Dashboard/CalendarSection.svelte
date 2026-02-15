@@ -6,9 +6,10 @@
 
 	interface Props {
 		conferenceId: string;
+		timezone?: string;
 	}
 
-	let { conferenceId }: Props = $props();
+	let { conferenceId, timezone = 'UTC' }: Props = $props();
 
 	const calendarStore = graphql(`
 		query DashboardCalendarQuery($conferenceId: String!) {
@@ -79,6 +80,6 @@
 		collapsible
 		defaultCollapsed
 	>
-		<CalendarDisplay {days} />
+		<CalendarDisplay {days} {timezone} />
 	</DashboardSection>
 {/if}

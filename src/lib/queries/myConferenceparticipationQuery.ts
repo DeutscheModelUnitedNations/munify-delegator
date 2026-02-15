@@ -27,6 +27,7 @@ export const myConferenceparticipationQuery = graphql(`
 			linkToPaperInbox
 			isOpenPaperSubmission
 			showCalendar
+			timezone
 			state
 			startConference
 			startAssignment

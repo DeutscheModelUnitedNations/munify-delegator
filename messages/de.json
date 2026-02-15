@@ -399,6 +399,8 @@
 	"conferenceStatusPreparation": "Vorbereitung",
 	"conferenceStatusPreparationDescription": "Anmeldung geschlossen. Teilnehmende bereiten sich auf die Konferenz vor.",
 	"conferenceTimeSettings": "Einstellung der Konferenzphasen",
+	"conferenceTimezone": "Zeitzone der Konferenz",
+	"conferenceTimezoneHint": "Bestimmt die Position der 'Jetzt'-Markierung im Kalender. Wähle die Zeitzone des Konferenzortes.",
 	"conferenceTitle": "Konferenzname",
 	"conferenceWebsite": "Website",
 	"confirm": "Bestätigen",

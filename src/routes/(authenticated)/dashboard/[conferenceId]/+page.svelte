@@ -55,7 +55,7 @@
 				</DashboardSection>
 			{/if}
 			{#if conference.showCalendar || teamMember}
-				<CalendarSection conferenceId={conference.id} />
+				<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
 			{/if}
 		{/if}
 		<!-- TODO add "new" badge if content of this changes -->

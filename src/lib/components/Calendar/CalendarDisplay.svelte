@@ -45,18 +45,19 @@
 
 	interface Props {
 		days: Day[];
+		timezone?: string;
 	}
 
-	let { days }: Props = $props();
+	let { days, timezone = 'UTC' }: Props = $props();
 
 	function getTodayIndex() {
 		const today = new Date();
 		const idx = days.findIndex((d) => {
 			const dd = new Date(d.date);
 			return (
-				dd.getFullYear() === today.getFullYear() &&
-				dd.getMonth() === today.getMonth() &&
-				dd.getDate() === today.getDate()
+				dd.getUTCFullYear() === today.getUTCFullYear() &&
+				dd.getUTCMonth() === today.getUTCMonth() &&
+				dd.getUTCDate() === today.getUTCDate()
 			);
 		});
 		return idx >= 0 ? idx : 0;
@@ -151,6 +152,7 @@
 				tracks={selectedDay.tracks}
 				entries={selectedDay.entries}
 				{filterTrackId}
+				{timezone}
 				onEntryClick={(entry) => handleEntryClick(entry, selectedDay)}
 			/>
 		{/if}
@@ -165,6 +167,7 @@
 				tracks={day.tracks}
 				entries={day.entries}
 				{filterTrackId}
+				{timezone}
 				onEntryClick={(entry) => handleEntryClick(entry, day)}
 			/>
 		{/each}

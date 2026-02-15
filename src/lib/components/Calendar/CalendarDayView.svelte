@@ -39,6 +39,7 @@
 		entries: Entry[];
 		filterTrackId?: string | null;
 		hourHeight?: number;
+		timezone?: string;
 		onEntryClick?: (entry: Entry) => void;
 	}
 
@@ -49,6 +50,7 @@
 		entries,
 		filterTrackId = null,
 		hourHeight = 90,
+		timezone = 'UTC',
 		onEntryClick
 	}: Props = $props();
 
@@ -58,7 +60,8 @@
 					weekday: 'long',
 					day: '2-digit',
 					month: '2-digit',
-					year: 'numeric'
+					year: 'numeric',
+					timeZone: 'UTC'
 				})
 			: null
 	);
@@ -80,8 +83,8 @@
 		for (const entry of entries) {
 			const start = new Date(entry.startTime);
 			const end = new Date(entry.endTime);
-			const startH = start.getHours() + start.getMinutes() / 60;
-			const endH = end.getHours() + end.getMinutes() / 60;
+			const startH = start.getUTCHours() + start.getUTCMinutes() / 60;
+			const endH = end.getUTCHours() + end.getUTCMinutes() / 60;
 			if (startH < earliest) earliest = startH;
 			if (endH > latest) latest = endH;
 		}
@@ -100,8 +103,8 @@
 	function getEntryStyle(entry: Entry): string {
 		const start = new Date(entry.startTime);
 		const end = new Date(entry.endTime);
-		const startH = start.getHours() + start.getMinutes() / 60;
-		const endH = end.getHours() + end.getMinutes() / 60;
+		const startH = start.getUTCHours() + start.getUTCMinutes() / 60;
+		const endH = end.getUTCHours() + end.getUTCMinutes() / 60;
 		const top = (startH - timeRange.startHour) * hourHeight;
 		const height = (endH - startH) * hourHeight;
 		return `top: ${top}px; height: ${height}px;`;
@@ -233,6 +236,7 @@
 				startHour={timeRange.startHour}
 				endHour={timeRange.endHour}
 				{hourHeight}
+				{timezone}
 			/>
 		</div>
 	</div>

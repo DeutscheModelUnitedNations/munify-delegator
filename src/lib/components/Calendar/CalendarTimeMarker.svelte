@@ -3,17 +3,32 @@
 		startHour: number;
 		endHour: number;
 		hourHeight: number;
+		timezone?: string;
 	}
 
-	let { startHour, endHour, hourHeight }: Props = $props();
+	let { startHour, endHour, hourHeight, timezone = 'UTC' }: Props = $props();
 
 	let now = $state(new Date());
+
+	function getCurrentHour(date: Date): number {
+		const fmt = new Intl.DateTimeFormat('en-US', {
+			timeZone: timezone,
+			hour: 'numeric',
+			minute: 'numeric',
+			hour12: false
+		});
+		const parts = fmt.formatToParts(date);
+		const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
+		const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
+		return hour + minute / 60;
+	}
+
 	let visible = $derived.by(() => {
-		const currentHour = now.getHours() + now.getMinutes() / 60;
+		const currentHour = getCurrentHour(now);
 		return currentHour >= startHour && currentHour <= endHour;
 	});
 	let topPosition = $derived.by(() => {
-		const currentHour = now.getHours() + now.getMinutes() / 60;
+		const currentHour = getCurrentHour(now);
 		return (currentHour - startHour) * hourHeight;
 	});
 

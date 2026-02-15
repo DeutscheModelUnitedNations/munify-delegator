@@ -1,6 +1,14 @@
 import { graphql } from '$houdini';
 import type { PageServerLoad } from './$types';
 
+const ConferenceTimezoneQuery = graphql(`
+	query ConferenceTimezoneQuery($conferenceId: String!) {
+		findUniqueConference(where: { id: $conferenceId }) {
+			timezone
+		}
+	}
+`);
+
 const CalendarManagementQuery = graphql(`
 	query CalendarManagementQuery($conferenceId: String!) {
 		findManyCalendarDays(
@@ -56,15 +64,23 @@ const CalendarManagementQuery = graphql(`
 `);
 
 export const load: PageServerLoad = async (event) => {
-	const { data } = await CalendarManagementQuery.fetch({
-		event,
-		variables: { conferenceId: event.params.conferenceId },
-		blocking: true
-	});
+	const [{ data }, { data: conferenceData }] = await Promise.all([
+		CalendarManagementQuery.fetch({
+			event,
+			variables: { conferenceId: event.params.conferenceId },
+			blocking: true
+		}),
+		ConferenceTimezoneQuery.fetch({
+			event,
+			variables: { conferenceId: event.params.conferenceId },
+			blocking: true
+		})
+	]);
 
 	return {
 		calendarDays: data?.findManyCalendarDays ?? [],
 		places: data?.findManyPlaces ?? [],
-		conferenceId: event.params.conferenceId
+		conferenceId: event.params.conferenceId,
+		timezone: conferenceData?.findUniqueConference?.timezone ?? 'Europe/Berlin'
 	};
 };

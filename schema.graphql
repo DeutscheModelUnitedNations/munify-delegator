@@ -841,6 +841,7 @@ type Conference {
   teamMembers: [TeamMember!]!
   termsAndConditionsContent: String
   termsAndConditionsContentSet: Boolean!
+  timezone: String!
   title: String!
   totalParticipants: Int!
   totalSeats: Int!
@@ -907,6 +908,7 @@ input ConferenceCreateInput {
   teamMemberInvitations: TeamMemberInvitationCreateNestedManyWithoutConferenceInput
   teamMembers: TeamMemberCreateNestedManyWithoutConferenceInput
   termsAndConditionsContent: String
+  timezone: String
   title: String!
   unlockPayments: Boolean
   unlockPostals: Boolean
@@ -969,6 +971,7 @@ input ConferenceOrderByWithRelationInput {
   teamMemberInvitations: TeamMemberInvitationOrderByRelationAggregateInput
   teamMembers: TeamMemberOrderByRelationAggregateInput
   termsAndConditionsContent: SortOrder
+  timezone: SortOrder
   title: SortOrder
   unlockPayments: SortOrder
   unlockPostals: SortOrder
@@ -1192,6 +1195,7 @@ enum ConferenceScalarFieldEnum {
   startConference
   state
   termsAndConditionsContent
+  timezone
   title
   unlockPayments
   unlockPostals
@@ -1427,6 +1431,7 @@ input ConferenceUpdateDataInput {
   startConference: DateTime
   state: ConferenceState
   termsAndConditionsBasePDF: File
+  timezone: String
   title: String
   unlockPayments: Boolean
   unlockPostals: Boolean
@@ -1488,6 +1493,7 @@ input ConferenceUpdateInput {
   teamMemberInvitations: TeamMemberInvitationUpdateManyWithoutConferenceNestedInput
   teamMembers: TeamMemberUpdateManyWithoutConferenceNestedInput
   termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
+  timezone: StringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   unlockPayments: BoolFieldUpdateOperationsInput
   unlockPostals: BoolFieldUpdateOperationsInput
@@ -1534,6 +1540,7 @@ input ConferenceUpdateManyMutationInput {
   startConference: DateTimeFieldUpdateOperationsInput
   state: EnumConferenceStateFieldUpdateOperationsInput
   termsAndConditionsContent: NullableStringFieldUpdateOperationsInput
+  timezone: StringFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   unlockPayments: BoolFieldUpdateOperationsInput
   unlockPostals: BoolFieldUpdateOperationsInput
@@ -1599,6 +1606,7 @@ input ConferenceWhereInput {
   teamMemberInvitations: TeamMemberInvitationListRelationFilter
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
+  timezone: StringFilter
   title: StringFilter
   unlockPayments: BoolFilter
   unlockPostals: BoolFilter
@@ -1664,6 +1672,7 @@ input ConferenceWhereUniqueInput {
   teamMemberInvitations: TeamMemberInvitationListRelationFilter
   teamMembers: TeamMemberListRelationFilter
   termsAndConditionsContent: StringNullableFilter
+  timezone: StringFilter
   title: StringFilter
   unlockPayments: BoolFilter
   unlockPostals: BoolFilter

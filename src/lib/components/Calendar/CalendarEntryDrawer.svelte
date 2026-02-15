@@ -69,7 +69,7 @@
 
 	let timeLabel = $derived(
 		entry
-			? `${new Date(entry.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${new Date(entry.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+			? `${new Date(entry.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} – ${new Date(entry.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
 			: ''
 	);
 
@@ -79,7 +79,8 @@
 					weekday: 'long',
 					day: '2-digit',
 					month: '2-digit',
-					year: 'numeric'
+					year: 'numeric',
+					timeZone: 'UTC'
 				})
 			: null
 	);

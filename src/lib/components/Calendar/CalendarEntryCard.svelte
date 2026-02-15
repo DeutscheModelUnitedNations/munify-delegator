@@ -31,7 +31,7 @@
 	let colorConfig = $derived(getColorConfig(color));
 
 	let timeLabel = $derived(
-		`${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+		`${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} – ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}`
 	);
 
 	let locationLabel = $derived([place?.name, room].filter(Boolean).join(' · '));

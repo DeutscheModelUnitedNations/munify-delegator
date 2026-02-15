@@ -30,6 +30,7 @@ const conferenceQuery = graphql(`
 			linkToServicesPage
 			isOpenPaperSubmission
 			showCalendar
+			timezone
 			info
 			showInfoExpanded
 			unlockPayments

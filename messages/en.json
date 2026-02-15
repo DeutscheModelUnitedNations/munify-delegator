@@ -399,6 +399,8 @@
 	"conferenceStatusPreparation": "Preparation Phase",
 	"conferenceStatusPreparationDescription": "Registration is closed. Participants are preparing for the conference.",
 	"conferenceTimeSettings": "Settings for the conference phases",
+	"conferenceTimezone": "Conference Timezone",
+	"conferenceTimezoneHint": "Controls the position of the 'now' marker in the calendar. Select the timezone of the conference location.",
 	"conferenceTitle": "Conference Name",
 	"conferenceWebsite": "Website",
 	"confirm": "Confirm",

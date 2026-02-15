@@ -249,8 +249,8 @@
 				return {
 					name: e.name,
 					description: e.description ?? null,
-					startTime: toUTCTimeString(new Date(e.startTime)),
-					endTime: toUTCTimeString(new Date(e.endTime)),
+					startTime: toTimeString(new Date(e.startTime)),
+					endTime: toTimeString(new Date(e.endTime)),
 					fontAwesomeIcon: e.fontAwesomeIcon ?? null,
 					color: e.color,
 					room: e.room ?? null,
@@ -618,11 +618,6 @@
 
 	function toTimeString(d: Date): string {
 		const pad = (n: number) => n.toString().padStart(2, '0');
-		return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-	}
-
-	function toUTCTimeString(d: Date): string {
-		const pad = (n: number) => n.toString().padStart(2, '0');
 		return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 	}
 
@@ -630,7 +625,7 @@
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 		const d = new Date(dayDate);
 		const [h, min] = timeStr.split(':').map(Number);
-		d.setHours(h, min, 0, 0);
+		d.setUTCHours(h, min, 0, 0);
 		return d;
 	}
 
@@ -679,10 +674,10 @@
 			const newDayDate = new Date(targetDay.date);
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 			const newStart = new Date(newDayDate);
-			newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+			newStart.setUTCHours(oldStart.getUTCHours(), oldStart.getUTCMinutes(), 0, 0);
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 			const newEnd = new Date(newDayDate);
-			newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
+			newEnd.setUTCHours(oldEnd.getUTCHours(), oldEnd.getUTCMinutes(), 0, 0);
 			await UpdateEntryMutation.mutate({
 				id: entryToMove.id,
 				calendarDayId: { set: targetDayId },
@@ -722,10 +717,10 @@
 				const oldEnd = new Date(entry.endTime);
 				// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 				const newStart = new Date(targetDate);
-				newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+				newStart.setUTCHours(oldStart.getUTCHours(), oldStart.getUTCMinutes(), 0, 0);
 				// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 				const newEnd = new Date(targetDate);
-				newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
+				newEnd.setUTCHours(oldEnd.getUTCHours(), oldEnd.getUTCMinutes(), 0, 0);
 				return CreateEntryMutation.mutate({
 					calendarDayId: copyTargetDayId!,
 					calendarTrackId: targetTrackId,
@@ -1182,7 +1177,7 @@
 				<p class="mt-4 text-lg opacity-70">{m.calendarNoDays()}</p>
 			</div>
 		{:else}
-			<CalendarDisplay days={previewDays} />
+			<CalendarDisplay days={previewDays} timezone={data.timezone} />
 		{/if}
 	{/if}
 
@@ -1461,13 +1456,15 @@
 								<td
 									>{new Date(entry.startTime).toLocaleTimeString([], {
 										hour: '2-digit',
-										minute: '2-digit'
+										minute: '2-digit',
+										timeZone: 'UTC'
 									})}</td
 								>
 								<td
 									>{new Date(entry.endTime).toLocaleTimeString([], {
 										hour: '2-digit',
-										minute: '2-digit'
+										minute: '2-digit',
+										timeZone: 'UTC'
 									})}</td
 								>
 								<td>{track?.name ?? m.calendarAllTracks()}</td>
