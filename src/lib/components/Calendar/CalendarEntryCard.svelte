@@ -64,7 +64,7 @@
 			{/if}
 			<span class="truncate text-sm font-semibold">{name}</span>
 			{#if description}
-				<i class="fa-solid fa-circle-info {colorConfig.text} ml-auto shrink-0 text-xs opacity-60"
+				<i class="fa-duotone fa-circle-info {colorConfig.text} ml-auto shrink-0 text-xs opacity-60"
 				></i>
 			{/if}
 		</div>

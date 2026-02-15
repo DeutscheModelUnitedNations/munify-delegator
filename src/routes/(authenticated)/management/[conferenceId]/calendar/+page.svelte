@@ -273,13 +273,14 @@
 	}
 
 	function handleImportFileUpload(event: Event) {
-		const input = event.target as HTMLInputElement;
-		const file = input.files?.[0];
+		if (!(event.target instanceof HTMLInputElement)) return;
+		const file = event.target.files?.[0];
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = () => {
 			try {
-				const raw = JSON.parse(reader.result as string);
+				if (typeof reader.result !== 'string') return;
+				const raw = JSON.parse(reader.result);
 				const result = calendarDayExportSchema.safeParse(raw);
 				if (!result.success) {
 					importData = null;
@@ -610,7 +611,7 @@
 	$effect(() => {
 		if (entryStartTime && !entryEndTimeManuallySet) {
 			const [h, min] = entryStartTime.split(':').map(Number);
-			const endH = h + 1;
+			const endH = (h + 1) % 24;
 			entryEndTime = `${endH.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
 		}
 	});
@@ -703,10 +704,10 @@
 		try {
 			const targetDate = new Date(targetDay.date);
 			const targetTracks = targetDay.tracks;
-			for (const entry of selectedDay.entries) {
+			const mutations = selectedDay.entries.map((entry) => {
 				let targetTrackId: string | null = null;
 				if (entry.calendarTrackId) {
-					const sourceTrack = selectedDay.tracks.find((t) => t.id === entry.calendarTrackId);
+					const sourceTrack = selectedDay!.tracks.find((t) => t.id === entry.calendarTrackId);
 					if (sourceTrack) {
 						const matchedTrack = targetTracks.find((t) => t.name === sourceTrack.name);
 						targetTrackId = matchedTrack?.id ?? null;
@@ -720,8 +721,8 @@
 				// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 				const newEnd = new Date(targetDate);
 				newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
-				await CreateEntryMutation.mutate({
-					calendarDayId: copyTargetDayId,
+				return CreateEntryMutation.mutate({
+					calendarDayId: copyTargetDayId!,
 					calendarTrackId: targetTrackId,
 					name: entry.name,
 					description: entry.description ?? null,
@@ -732,6 +733,11 @@
 					placeId: entry.placeId ?? null,
 					room: entry.room ?? null
 				});
+			});
+			const results = await Promise.allSettled(mutations);
+			const failures = results.filter((r) => r.status === 'rejected');
+			if (failures.length > 0) {
+				console.error(`Failed to copy ${failures.length} entries:`, failures);
 			}
 			cache.markStale();
 			await invalidateAll();
@@ -1014,17 +1020,19 @@
 	}
 
 	function handleSitePlanUpload(event: Event) {
-		const input = event.target as HTMLInputElement;
-		const file = input.files?.[0];
+		if (!(event.target instanceof HTMLInputElement)) return;
+		const file = event.target.files?.[0];
 		if (!file) return;
 		if (file.size > 10 * 1024 * 1024) {
 			alert('File too large (max 10MB)');
-			input.value = '';
+			event.target.value = '';
 			return;
 		}
 		const reader = new FileReader();
 		reader.onload = () => {
-			placeSitePlanDataURL = reader.result as string;
+			if (typeof reader.result === 'string') {
+				placeSitePlanDataURL = reader.result;
+			}
 		};
 		reader.readAsDataURL(file);
 	}

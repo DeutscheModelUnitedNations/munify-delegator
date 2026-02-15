@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { CalendarEntryColor } from '@prisma/client';
 
-const timeRegex = /^\d{2}:\d{2}$/;
+const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const placeSchema = z.object({
 	name: z.string().min(1),
@@ -18,16 +19,7 @@ const entrySchema = z.object({
 	startTime: z.string().regex(timeRegex),
 	endTime: z.string().regex(timeRegex),
 	fontAwesomeIcon: z.string().nullable(),
-	color: z.enum([
-		'SESSION',
-		'WORKSHOP',
-		'LOGISTICS',
-		'SOCIAL',
-		'CEREMONY',
-		'BREAK',
-		'HIGHLIGHT',
-		'INFO'
-	]),
+	color: z.nativeEnum(CalendarEntryColor),
 	room: z.string().nullable(),
 	trackName: z.string().nullable(),
 	place: placeSchema.nullable()

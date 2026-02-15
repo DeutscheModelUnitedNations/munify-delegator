@@ -42,12 +42,20 @@
 
 <section class="{cardClasses} {class_}">
 	<div class="card-body">
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="flex items-start gap-4 {collapsible ? 'cursor-pointer select-none' : ''}"
 			class:mb-4={!collapsed}
+			role={collapsible ? 'button' : undefined}
+			tabindex={collapsible ? 0 : undefined}
 			onclick={collapsible ? () => (collapsed = !collapsed) : undefined}
+			onkeydown={collapsible
+				? (e: KeyboardEvent) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							collapsed = !collapsed;
+						}
+					}
+				: undefined}
 		>
 			<div class={iconClasses}>
 				<i class="fa-duotone fa-{icon} text-xl"></i>
@@ -57,12 +65,16 @@
 					<h2 class="card-title text-lg">{title}</h2>
 					<div class="flex items-center gap-2">
 						{#if headerAction}
-							{@render headerAction()}
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div onclick={(e: MouseEvent) => e.stopPropagation()}>
+								{@render headerAction()}
+							</div>
 						{/if}
 						{#if collapsible}
 							<div class="btn btn-ghost btn-sm btn-circle text-base-content/60">
 								<i
-									class="fas fa-chevron-down transition-transform duration-200 {collapsed
+									class="fa-duotone fa-chevron-down transition-transform duration-200 {collapsed
 										? '-rotate-90'
 										: ''}"
 								></i>

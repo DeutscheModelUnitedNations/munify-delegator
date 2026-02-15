@@ -1,7 +1,6 @@
 import { builder } from '../../builder';
 import { db } from '$db/db';
 import { calendarDayExportSchema } from '$lib/schemata/calendarDayExport';
-import type { CalendarEntryColor } from '@prisma/client';
 
 builder.mutationFields((t) => ({
 	importCalendarDay: t.field({
@@ -35,9 +34,7 @@ builder.mutationFields((t) => ({
 			// JSONObject scalar parseValue may or may not call JSON.parse depending
 			// on the transport — handle both string and object values
 			const rawData =
-				typeof args.importData === 'string'
-					? JSON.parse(args.importData as string)
-					: args.importData;
+				typeof args.importData === 'string' ? JSON.parse(args.importData) : args.importData;
 			const parsed = calendarDayExportSchema.safeParse(rawData);
 			if (!parsed.success) {
 				throw new Error(`Invalid import data: ${parsed.error.message}`);
@@ -122,7 +119,7 @@ builder.mutationFields((t) => ({
 							startTime,
 							endTime,
 							fontAwesomeIcon: entry.fontAwesomeIcon,
-							color: entry.color as CalendarEntryColor,
+							color: entry.color,
 							room: entry.room,
 							calendarTrackId: entry.trackName
 								? (trackNameToId.get(entry.trackName) ?? null)

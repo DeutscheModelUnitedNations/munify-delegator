@@ -62,13 +62,4 @@ export function getColorConfig(color: CalendarEntryColor): ColorConfig {
 	return colorMap[color];
 }
 
-export const allColors: CalendarEntryColor[] = [
-	'SESSION',
-	'WORKSHOP',
-	'LOGISTICS',
-	'SOCIAL',
-	'CEREMONY',
-	'BREAK',
-	'HIGHLIGHT',
-	'INFO'
-];
+export const allColors = Object.keys(colorMap) as CalendarEntryColor[];
