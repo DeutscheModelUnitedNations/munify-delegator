@@ -411,6 +411,8 @@
 	let entryToDelete = $state<(typeof entriesForSelectedDay)[0] | null>(null);
 	let entryToMove = $state<(typeof entriesForSelectedDay)[0] | null>(null);
 	let targetDayId = $state<string | null>(null);
+	let showCopyDayModal = $state(false);
+	let copyTargetDayId = $state<string | null>(null);
 
 	let entryName = $state('');
 	let entryDescription = $state('');
@@ -506,6 +508,52 @@
 			entryToMove = null;
 		} catch (error) {
 			console.error('Failed to move entry:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function copyDayEntries() {
+		if (!selectedDay || !copyTargetDayId || copyTargetDayId === selectedDayId) return;
+		const targetDay = calendarDays.find((d) => d.id === copyTargetDayId);
+		if (!targetDay) return;
+		isLoading = true;
+		try {
+			const targetDate = new Date(targetDay.date);
+			const targetTracks = targetDay.tracks;
+			for (const entry of selectedDay.entries) {
+				let targetTrackId: string | null = null;
+				if (entry.calendarTrackId) {
+					const sourceTrack = selectedDay.tracks.find((t) => t.id === entry.calendarTrackId);
+					if (sourceTrack) {
+						const matchedTrack = targetTracks.find((t) => t.name === sourceTrack.name);
+						targetTrackId = matchedTrack?.id ?? null;
+					}
+				}
+				const oldStart = new Date(entry.startTime);
+				const oldEnd = new Date(entry.endTime);
+				const newStart = new Date(targetDate);
+				newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+				const newEnd = new Date(targetDate);
+				newEnd.setHours(oldEnd.getHours(), oldEnd.getMinutes(), 0, 0);
+				await CreateEntryMutation.mutate({
+					calendarDayId: copyTargetDayId,
+					calendarTrackId: targetTrackId,
+					name: entry.name,
+					description: entry.description ?? null,
+					startTime: newStart,
+					endTime: newEnd,
+					fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
+					color: entry.color,
+					placeId: entry.placeId ?? null,
+					room: entry.room ?? null
+				});
+			}
+			cache.markStale();
+			await invalidateAll();
+			showCopyDayModal = false;
+		} catch (error) {
+			console.error('Failed to copy entries:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -1070,10 +1118,25 @@
 					</select>
 				{/if}
 			</div>
-			<button class="btn btn-primary btn-sm" onclick={openCreateEntry} disabled={!selectedDayId}>
-				<i class="fas fa-plus"></i>
-				{m.calendarAddEntry()}
-			</button>
+			<div class="flex items-center gap-2">
+				<button
+					class="btn btn-ghost btn-sm"
+					onclick={() => {
+						copyTargetDayId = calendarDays.find((d) => d.id !== selectedDayId)?.id ?? null;
+						showCopyDayModal = true;
+					}}
+					disabled={!selectedDayId ||
+						sortedEntriesForSelectedDay.length === 0 ||
+						calendarDays.length < 2}
+				>
+					<i class="fas fa-clone"></i>
+					{m.calendarCopyDayEntries()}
+				</button>
+				<button class="btn btn-primary btn-sm" onclick={openCreateEntry} disabled={!selectedDayId}>
+					<i class="fas fa-plus"></i>
+					{m.calendarAddEntry()}
+				</button>
+			</div>
 		</div>
 
 		{#if entriesForSelectedDay.length === 0}
@@ -1648,6 +1711,48 @@
 				entryToMove = null;
 			}}
 		></div>
+	</div>
+{/if}
+
+<!-- Copy Day Entries Modal -->
+{#if showCopyDayModal && selectedDay}
+	<div class="modal modal-open">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">{m.calendarCopyDayEntries()}</h3>
+			<p class="text-base-content/60 mt-1 text-sm">
+				{m.calendarCopyDayEntriesDescription({
+					count: selectedDay.entries.length.toString(),
+					day: selectedDay.name
+				})}
+			</p>
+			<div class="mt-4 flex flex-col gap-4">
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.calendarTargetDay()}</legend>
+					<select class="select w-full" bind:value={copyTargetDayId}>
+						{#each calendarDays.filter((d) => d.id !== selectedDayId) as day (day.id)}
+							<option value={day.id}>{day.name} – {new Date(day.date).toLocaleDateString()}</option>
+						{/each}
+					</select>
+				</fieldset>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick={() => (showCopyDayModal = false)}>
+						{m.cancel()}
+					</button>
+					<button
+						type="button"
+						class="btn btn-primary"
+						onclick={copyDayEntries}
+						disabled={isLoading || !copyTargetDayId || copyTargetDayId === selectedDayId}
+					>
+						{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
+						{m.calendarCopyDayEntriesConfirm({
+							count: selectedDay.entries.length.toString()
+						})}
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop" onclick={() => (showCopyDayModal = false)}></div>
 	</div>
 {/if}
 
