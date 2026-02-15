@@ -249,8 +249,8 @@
 				return {
 					name: e.name,
 					description: e.description ?? null,
-					startTime: toTimeString(new Date(e.startTime)),
-					endTime: toTimeString(new Date(e.endTime)),
+					startTime: toUTCTimeString(new Date(e.startTime)),
+					endTime: toUTCTimeString(new Date(e.endTime)),
 					fontAwesomeIcon: e.fontAwesomeIcon ?? null,
 					color: e.color,
 					room: e.room ?? null,
@@ -619,6 +619,11 @@
 	function toTimeString(d: Date): string {
 		const pad = (n: number) => n.toString().padStart(2, '0');
 		return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+	}
+
+	function toUTCTimeString(d: Date): string {
+		const pad = (n: number) => n.toString().padStart(2, '0');
+		return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 	}
 
 	function combineDateTime(dayDate: Date, timeStr: string): Date {
