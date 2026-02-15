@@ -15,7 +15,8 @@
 			timeZone: timezone,
 			hour: 'numeric',
 			minute: 'numeric',
-			hour12: false
+			hour12: false,
+			hourCycle: 'h23'
 		});
 		const parts = fmt.formatToParts(date);
 		const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);

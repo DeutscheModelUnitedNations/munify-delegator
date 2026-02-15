@@ -9,7 +9,14 @@ export const defineAbilitiesForCalendarDay = (oidc: OIDC, { can }: AbilityBuilde
 		const user = oidc.user;
 
 		can(['update', 'delete'], 'CalendarDay', {
-			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
+			conference: {
+				teamMembers: {
+					some: {
+						user: { id: user.sub },
+						OR: [{ role: 'PROJECT_MANAGEMENT' }, { role: 'PARTICIPANT_CARE' }]
+					}
+				}
+			}
 		});
 	}
 };

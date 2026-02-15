@@ -14,7 +14,12 @@ export const defineAbilitiesForCalendarEntry = (
 		can(['update', 'delete'], 'CalendarEntry', {
 			calendarDay: {
 				conference: {
-					teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } }
+					teamMembers: {
+						some: {
+							user: { id: user.sub },
+							OR: [{ role: 'PROJECT_MANAGEMENT' }, { role: 'PARTICIPANT_CARE' }]
+						}
+					}
 				}
 			}
 		});

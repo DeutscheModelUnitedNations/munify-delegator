@@ -51,13 +51,24 @@
 	let { days, timezone = 'UTC' }: Props = $props();
 
 	function getTodayIndex() {
-		const today = new Date();
+		const now = new Date();
+		const fmt = new Intl.DateTimeFormat('en-US', {
+			timeZone: timezone,
+			year: 'numeric',
+			month: 'numeric',
+			day: 'numeric'
+		});
+		const parts = fmt.formatToParts(now);
+		const todayYear = Number(parts.find((p) => p.type === 'year')?.value);
+		const todayMonth = Number(parts.find((p) => p.type === 'month')?.value) - 1;
+		const todayDay = Number(parts.find((p) => p.type === 'day')?.value);
+
 		const idx = days.findIndex((d) => {
 			const dd = new Date(d.date);
 			return (
-				dd.getUTCFullYear() === today.getUTCFullYear() &&
-				dd.getUTCMonth() === today.getUTCMonth() &&
-				dd.getUTCDate() === today.getUTCDate()
+				dd.getUTCFullYear() === todayYear &&
+				dd.getUTCMonth() === todayMonth &&
+				dd.getUTCDate() === todayDay
 			);
 		});
 		return idx >= 0 ? idx : 0;

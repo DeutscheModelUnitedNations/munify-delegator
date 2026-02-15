@@ -14,7 +14,12 @@ export const defineAbilitiesForCalendarTrack = (
 		can(['update', 'delete'], 'CalendarTrack', {
 			calendarDay: {
 				conference: {
-					teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } }
+					teamMembers: {
+						some: {
+							user: { id: user.sub },
+							OR: [{ role: 'PROJECT_MANAGEMENT' }, { role: 'PARTICIPANT_CARE' }]
+						}
+					}
 				}
 			}
 		});

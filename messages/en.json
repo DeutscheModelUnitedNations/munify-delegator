@@ -226,6 +226,7 @@
 	"calendarEndTime": "End time",
 	"calendarEntries": "Entries",
 	"calendarEntryDetails": "Event details",
+	"calendarEntryEndBeforeStart": "End time must be after start time",
 	"calendarEntryLocation": "Location",
 	"calendarEntryOverlap": "This entry overlaps with another entry on the same track",
 	"calendarEntryTime": "Time",

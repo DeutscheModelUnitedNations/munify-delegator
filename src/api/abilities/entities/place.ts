@@ -9,7 +9,14 @@ export const defineAbilitiesForPlace = (oidc: OIDC, { can }: AbilityBuilder<AppA
 		const user = oidc.user;
 
 		can(['update', 'delete'], 'Place', {
-			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
+			conference: {
+				teamMembers: {
+					some: {
+						user: { id: user.sub },
+						OR: [{ role: 'PROJECT_MANAGEMENT' }, { role: 'PARTICIPANT_CARE' }]
+					}
+				}
+			}
 		});
 	}
 };

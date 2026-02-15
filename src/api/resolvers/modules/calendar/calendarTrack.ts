@@ -87,12 +87,12 @@ builder.mutationFields((t) => {
 					where: {
 						conferenceId: calendarDay.conferenceId,
 						userId: user.sub,
-						role: 'PROJECT_MANAGEMENT'
+						OR: [{ role: 'PROJECT_MANAGEMENT' }, { role: 'PARTICIPANT_CARE' }]
 					}
 				});
 
 				if (!teamMember) {
-					throw new Error('Access denied - requires PROJECT_MANAGEMENT role');
+					throw new Error('Access denied - requires PROJECT_MANAGEMENT or PARTICIPANT_CARE role');
 				}
 
 				return field.resolve(query, root, args, ctx, info);

@@ -607,6 +607,10 @@
 	// Track whether end time was manually edited (to avoid overwriting user input)
 	let entryEndTimeManuallySet = $state(false);
 
+	let entryTimeInvalid = $derived(
+		Boolean(entryStartTime && entryEndTime && entryEndTime <= entryStartTime)
+	);
+
 	// Auto-set end time to 1h after start time when start time changes
 	$effect(() => {
 		if (entryStartTime && !entryEndTimeManuallySet) {
@@ -1770,11 +1774,17 @@
 							type="time"
 							bind:value={entryEndTime}
 							oninput={() => (entryEndTimeManuallySet = true)}
-							class="input w-full"
+							class="input w-full {entryTimeInvalid ? 'input-error' : ''}"
 							required
 						/>
 					</fieldset>
 				</div>
+				{#if entryTimeInvalid}
+					<p class="text-error -mt-2 text-xs">
+						<i class="fas fa-triangle-exclamation"></i>
+						{m.calendarEntryEndBeforeStart()}
+					</p>
+				{/if}
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.calendarTrack()}</legend>
 					<select class="select w-full" bind:value={entryTrackId}>
@@ -1825,7 +1835,11 @@
 						type="button"
 						class="btn btn-primary"
 						onclick={createEntry}
-						disabled={isLoading || !entryName || !entryStartTime || !entryEndTime}
+						disabled={isLoading ||
+							!entryName ||
+							!entryStartTime ||
+							!entryEndTime ||
+							entryTimeInvalid}
 					>
 						{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
 						{m.create()}
@@ -1867,11 +1881,17 @@
 							type="time"
 							bind:value={entryEndTime}
 							oninput={() => (entryEndTimeManuallySet = true)}
-							class="input w-full"
+							class="input w-full {entryTimeInvalid ? 'input-error' : ''}"
 							required
 						/>
 					</fieldset>
 				</div>
+				{#if entryTimeInvalid}
+					<p class="text-error -mt-2 text-xs">
+						<i class="fas fa-triangle-exclamation"></i>
+						{m.calendarEntryEndBeforeStart()}
+					</p>
+				{/if}
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">{m.calendarTrack()}</legend>
 					<select class="select w-full" bind:value={entryTrackId}>
@@ -1922,7 +1942,11 @@
 						type="button"
 						class="btn btn-primary"
 						onclick={updateEntry}
-						disabled={isLoading || !entryName || !entryStartTime || !entryEndTime}
+						disabled={isLoading ||
+							!entryName ||
+							!entryStartTime ||
+							!entryEndTime ||
+							entryTimeInvalid}
 					>
 						{#if isLoading}<span class="loading loading-spinner loading-sm"></span>{/if}
 						{m.save()}
