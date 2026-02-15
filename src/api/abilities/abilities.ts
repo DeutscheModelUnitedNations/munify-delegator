@@ -26,6 +26,10 @@ import { defineAbilitiesForPaper } from './entities/paper/paper';
 import { defineAbilitiesForPaperVersion } from './entities/paper/paperVersion';
 import { defineAbilitiesForPaperReview } from './entities/paper/paperReview';
 import { defineAbilitiesForReviewerSnippet } from './entities/reviewerSnippet';
+import { defineAbilitiesForCalendarDay } from './entities/calendarDay';
+import { defineAbilitiesForCalendarTrack } from './entities/calendarTrack';
+import { defineAbilitiesForCalendarEntry } from './entities/calendarEntry';
+import { defineAbilitiesForPlace } from './entities/place';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
@@ -162,6 +166,10 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForPaperVersion(oidc, builder);
 	defineAbilitiesForPaperReview(oidc, builder);
 	defineAbilitiesForReviewerSnippet(oidc, builder);
+	defineAbilitiesForCalendarDay(oidc, builder);
+	defineAbilitiesForCalendarTrack(oidc, builder);
+	defineAbilitiesForCalendarEntry(oidc, builder);
+	defineAbilitiesForPlace(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

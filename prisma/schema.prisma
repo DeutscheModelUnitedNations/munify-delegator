@@ -19,6 +19,18 @@ generator pothosCrud {
   generatorConfigPath = "./pothos.config.cjs"
 }
 
+/// Color categories for calendar entries
+enum CalendarEntryColor {
+  SESSION
+  WORKSHOP
+  LOGISTICS
+  SOCIAL
+  CEREMONY
+  BREAK
+  HIGHLIGHT
+  INFO
+}
+
 /// The state a conference can be in
 enum ConferenceState {
   PRE // the conference is created but applying is not possible yet
@@ -49,6 +61,7 @@ model Conference {
   linkToServicesPage                     String?
   linkToPaperInbox                       String?
   isOpenPaperSubmission                  Boolean         @default(false)
+  showCalendar                           Boolean         @default(false)
   state                                  ConferenceState @default(PRE)
   startAssignment                        DateTime
   registrationDeadlineGracePeriodMinutes Int             @default(30)
@@ -94,6 +107,8 @@ model Conference {
   surveyQuestions              SurveyQuestion[]
   WaitingListEntry             WaitingListEntry[]
   papers                       Paper[]
+  calendarDays                 CalendarDay[]
+  places                       Place[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -664,4 +679,89 @@ model TeamMemberInvitation {
   @@index([token])
   @@index([conferenceId])
   @@index([conferenceId, email])
+}
+
+/// A day within a conference calendar schedule
+model CalendarDay {
+  id           String   @id @default(nanoid())
+  date         DateTime
+  name         String
+  sortOrder    Int
+
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId String
+
+  tracks       CalendarTrack[]
+  entries      CalendarEntry[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, sortOrder])
+}
+
+/// A parallel track within a calendar day (e.g. a committee or working group)
+model CalendarTrack {
+  id            String  @id @default(nanoid())
+  name          String
+  description   String?
+  sortOrder     Int
+
+  calendarDay   CalendarDay @relation(fields: [calendarDayId], references: [id], onDelete: Cascade)
+  calendarDayId String
+
+  entries       CalendarEntry[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@unique([calendarDayId, sortOrder])
+}
+
+/// A reusable venue/location for calendar entries
+model Place {
+  id              String  @id @default(nanoid())
+  name            String
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  directions      String?
+  info            String?
+  websiteUrl      String?
+  sitePlanDataURL String? /// Base64 data URL of a site plan PDF (max 10MB)
+
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId String
+
+  calendarEntries CalendarEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([conferenceId, name])
+}
+
+/// A scheduled entry within a calendar day, optionally assigned to a track
+model CalendarEntry {
+  id              String             @id @default(nanoid())
+  startTime       DateTime
+  endTime         DateTime
+  name            String
+  description     String?
+  fontAwesomeIcon String?
+  color           CalendarEntryColor @default(SESSION)
+  room            String?
+
+  place           Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  placeId         String?
+
+  calendarDay     CalendarDay    @relation(fields: [calendarDayId], references: [id], onDelete: Cascade)
+  calendarDayId   String
+
+  /// If null, entry spans all tracks of the day
+  calendarTrack   CalendarTrack? @relation(fields: [calendarTrackId], references: [id], onDelete: SetNull)
+  calendarTrackId String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
 }
