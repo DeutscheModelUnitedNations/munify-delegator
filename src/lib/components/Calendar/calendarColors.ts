@@ -10,49 +10,49 @@ interface ColorConfig {
 const colorMap: Record<CalendarEntryColor, ColorConfig> = {
 	SESSION: {
 		bg: 'bg-primary/15',
-		border: 'border-primary/40',
+		border: 'border-primary',
 		text: 'text-base-content',
 		ring: 'ring-base-content'
 	},
 	WORKSHOP: {
-		bg: 'bg-error/15',
-		border: 'border-error/40',
+		bg: 'bg-error/20',
+		border: 'border-error',
 		text: 'text-error',
 		ring: 'ring-error'
 	},
 	LOGISTICS: {
-		bg: 'bg-base-200',
-		border: 'border-base-content/20',
+		bg: 'bg-base-200/20',
+		border: 'border-base-content',
 		text: 'text-base-content/70',
 		ring: 'ring-base-content'
 	},
 	SOCIAL: {
 		bg: 'bg-success/15',
-		border: 'border-success/40',
+		border: 'border-success',
 		text: 'text-success',
 		ring: 'ring-success'
 	},
 	CEREMONY: {
 		bg: 'bg-accent/30',
-		border: 'border-accent/40',
+		border: 'border-accent',
 		text: 'text-accent',
 		ring: 'ring-accent'
 	},
 	BREAK: {
 		bg: 'bg-warning/15',
-		border: 'border-warning/40',
+		border: 'border-warning',
 		text: 'text-warning',
 		ring: 'ring-warning'
 	},
 	HIGHLIGHT: {
-		bg: 'bg-error/30',
-		border: 'border-error/40',
+		bg: 'bg-error/40',
+		border: 'border-error',
 		text: 'text-error',
 		ring: 'ring-error'
 	},
 	INFO: {
 		bg: 'bg-info/15',
-		border: 'border-info/40',
+		border: 'border-info',
 		text: 'text-info',
 		ring: 'ring-info'
 	}
