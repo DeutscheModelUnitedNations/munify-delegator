@@ -2,7 +2,7 @@
 	"dependencies": {
 		"diff-match-patch": "^1.0.5",
 		"humanparser": "^2.7.0",
-		"nodemailer": "^6.9.16",
+		"nodemailer": "^7.0.11",
 		"commander": "^14.0.2"
 	},
 	"devDependencies": {
