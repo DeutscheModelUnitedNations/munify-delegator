@@ -1112,6 +1112,17 @@
 		}
 	}
 
+	// Drawer → edit handlers for preview tab
+	function handleDrawerEditEntry(entryId: string) {
+		const entry = calendarDays.flatMap((d) => d.entries).find((e) => e.id === entryId);
+		if (entry) openEditEntry(entry);
+	}
+
+	function handleDrawerEditPlace(placeId: string) {
+		const place = places.find((p) => p.id === placeId);
+		if (place) openEditPlace(place);
+	}
+
 	// Preview data
 	let previewDays = $derived(
 		calendarDays.map((day) => ({
@@ -1181,7 +1192,12 @@
 				<p class="mt-4 text-lg opacity-70">{m.calendarNoDays()}</p>
 			</div>
 		{:else}
-			<CalendarDisplay days={previewDays} timezone={data.timezone} />
+			<CalendarDisplay
+				days={previewDays}
+				timezone={data.timezone}
+				onEditEntry={handleDrawerEditEntry}
+				onEditPlace={handleDrawerEditPlace}
+			/>
 		{/if}
 	{/if}
 

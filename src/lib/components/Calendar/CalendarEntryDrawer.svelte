@@ -44,9 +44,19 @@
 		track?: Track | null;
 		dayName?: string;
 		dayDate?: Date | null;
+		onEditEntry?: (entryId: string) => void;
+		onEditPlace?: (placeId: string) => void;
 	}
 
-	let { open = $bindable(), entry, track = null, dayName, dayDate = null }: Props = $props();
+	let {
+		open = $bindable(),
+		entry,
+		track = null,
+		dayName,
+		dayDate = null,
+		onEditEntry,
+		onEditPlace
+	}: Props = $props();
 
 	// Responsive direction: bottom on mobile, right on desktop
 	let isMobile = $state(browser ? window.innerWidth < 768 : true);
@@ -322,6 +332,39 @@
 							{/if}
 						</div>
 					</div>
+
+					{#if onEditEntry || onEditPlace}
+						<div class="border-base-300 bg-base-100 flex flex-wrap gap-2 border-t px-5 py-3">
+							{#if onEditEntry}
+								<button
+									class="btn btn-soft btn-sm gap-1.5"
+									onclick={() => {
+										if (entry) {
+											open = false;
+											onEditEntry(entry.id);
+										}
+									}}
+								>
+									<i class="fa-duotone fa-pen-to-square"></i>
+									{m.calendarEditEntry()}
+								</button>
+							{/if}
+							{#if onEditPlace && entry?.place}
+								<button
+									class="btn btn-soft btn-sm gap-1.5"
+									onclick={() => {
+										if (entry?.place) {
+											open = false;
+											onEditPlace(entry.place.id);
+										}
+									}}
+								>
+									<i class="fa-duotone fa-location-pen"></i>
+									{m.calendarEditPlace()}
+								</button>
+							{/if}
+						</div>
+					{/if}
 				{/if}
 			</Drawer.Content>
 		</Drawer.Portal>

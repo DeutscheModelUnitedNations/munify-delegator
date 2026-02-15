@@ -46,9 +46,11 @@
 	interface Props {
 		days: Day[];
 		timezone?: string;
+		onEditEntry?: (entryId: string) => void;
+		onEditPlace?: (placeId: string) => void;
 	}
 
-	let { days, timezone = 'UTC' }: Props = $props();
+	let { days, timezone = 'UTC', onEditEntry, onEditPlace }: Props = $props();
 
 	function getTodayIndex() {
 		const now = new Date();
@@ -190,5 +192,7 @@
 		track={selectedTrack}
 		dayName={selectedDayForDrawer?.name}
 		dayDate={selectedDayForDrawer?.date}
+		{onEditEntry}
+		{onEditPlace}
 	/>
 {/if}
