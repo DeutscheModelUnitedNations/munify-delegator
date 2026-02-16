@@ -57,7 +57,7 @@ export function classifyUserBatch(
 			continue;
 		}
 
-		const emailKey = user.email.toLowerCase();
+		const emailKey = user.email.toLowerCase().trim();
 		const subscriber = subscriberMap.get(emailKey);
 
 		if (!subscriber) {

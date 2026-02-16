@@ -33,7 +33,7 @@ export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscrib
 			// TYPE-SAFETY-EXCEPTION: openapi-fetch generates optional fields for Listmonk API responses,
 			// but the API guarantees these fields are present when the request succeeds
 			const s = subscriber as unknown as ListmonkSubscriber;
-			subscriberMap.set(s.email.toLowerCase(), s);
+			subscriberMap.set(s.email.toLowerCase().trim(), s);
 		}
 
 		totalEntries = res.data.data.total;
