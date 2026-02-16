@@ -58,8 +58,7 @@ if (config.SLACK_NOTIFICATION_WEBHOOK) {
 	logLoading(TASK_NAME, CRON);
 
 	const _conferenceStatusSlackNotifiaction = schedule.scheduleJob(
-		// TODO: we should allow passing the TZ via env var to the container
-		{ rule: CRON, tz: 'Etc/GMT-2' },
+		{ rule: CRON, tz: config.TASKS_TZ },
 		async function () {
 			const startTime = logTaskStart(TASK_NAME);
 
