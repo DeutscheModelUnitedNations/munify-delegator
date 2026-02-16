@@ -20,9 +20,6 @@ services:
       - postgres
     ports:
       - 3000:3000
-    # if you want to utilize a tasks container you can start the image with this instead
-    # command: ["bun", "tasksMain.js"]
-
     # for config options, please refer to the '/src/config' directory
     environment:
       # - PORT=3000
@@ -45,6 +42,22 @@ services:
       #
       # for login and logout callbacks.
       # You can set those in the redirect settings of your auth provider!
+
+  delegator-tasks:
+    image: deutschemodelunitednations/delegator-tasks:latest
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
+      - TASK_CRON_MAIL_SYNC=default
+      - TASK_CRON_CONFERENCE_STATUS=default
+      # Required when TASK_CRON_MAIL_SYNC is set:
+      # - LISTMONK_API_URL=http://listmonk:9000/api
+      # - LISTMONK_API_USER=admin
+      # - LISTMONK_API_KEY=admin
+      # Optional:
+      # - SLACK_NOTIFICATION_WEBHOOK=https://hooks.slack.com/...
+      # - SLACK_ERROR_WEBHOOK=https://hooks.slack.com/...
 
 volumes:
   delegator:

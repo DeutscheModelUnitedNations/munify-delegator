@@ -1,0 +1,80 @@
+# =============================================================================
+# Dockerfile.tasks — Dedicated image for background tasks (mail sync, cron jobs)
+# =============================================================================
+# Produces a minimal image that only runs tasksMain.js via bun.
+# The main SvelteKit app image (Dockerfile) handles migrations on startup;
+# this container assumes the database is already migrated.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Stage 0: shared base
+# ---------------------------------------------------------------------------
+FROM oven/bun:1.3-slim AS base
+
+# ---------------------------------------------------------------------------
+# Stage 1: install Node.js (needed for prisma generate)
+# ---------------------------------------------------------------------------
+FROM base AS dual
+WORKDIR /temp
+RUN apt-get -y update; apt-get -y install curl
+# we need to use node and bun for generating prisma files, see https://github.com/prisma/prisma/issues/21241
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash
+RUN apt-get install -y nodejs
+
+# ---------------------------------------------------------------------------
+# Stage 2: build the tasks bundle with tsup
+# ---------------------------------------------------------------------------
+FROM dual AS builder
+WORKDIR /build
+
+COPY package.json bun.lock tsconfig.json svelte.config.js ./
+COPY prisma ./prisma
+COPY project.inlang ./project.inlang
+COPY messages ./messages
+COPY src ./src
+COPY scripts ./scripts
+COPY static ./static
+
+RUN bun install --frozen-lockfile
+
+# Generate path aliases (.svelte-kit/tsconfig.json) that tsconfig.json extends
+RUN bunx svelte-kit sync
+
+# Generate Prisma client + query engine for linux
+RUN bunx prisma generate
+
+# Generate i18n runtime (imported by conferenceStatus task)
+RUN bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
+
+# Bundle tasks into a single file
+RUN bun run build:tasks
+
+# ---------------------------------------------------------------------------
+# Stage 3: minimal runtime
+# ---------------------------------------------------------------------------
+FROM base AS runner
+WORKDIR /run
+
+# Install only the npm packages that tsup externalizes and tasks import at runtime.
+# Keep versions in sync with the main package.json devDependencies.
+# Packages:
+#   @prisma/client  — DB ORM
+#   node-schedule   — cron scheduling
+#   @slack/webhook  — error/status notifications
+#   zod             — config validation
+#   dayjs           — date handling
+#   openapi-fetch   — Listmonk API client
+RUN bun add @prisma/client node-schedule @slack/webhook zod dayjs openapi-fetch
+
+# Copy generated Prisma query engine binary from builder
+COPY --from=builder /build/node_modules/.prisma ./node_modules/.prisma
+
+# Copy the bundled tasks entrypoint
+COPY --from=builder /build/tasksOut/tasksMain.js ./tasksMain.js
+
+# Create writable directory for conference status historic stats
+RUN mkdir /run/ephemeralData && chown -R bun:bun /run/ephemeralData
+
+USER bun
+ENV NODE_ENV=production
+CMD ["bun", "./tasksMain.js"]
