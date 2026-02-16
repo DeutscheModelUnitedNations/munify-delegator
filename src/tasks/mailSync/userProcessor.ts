@@ -41,7 +41,6 @@ export async function processUsersInBatches(
 		]
 	};
 
-	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const batch = await tasksDb.user.findMany({
 			take: batchSize,
