@@ -1,6 +1,6 @@
 import { config } from '../config';
 import { tasksDb } from '../tasksDb';
-import type { MailSyncUser } from './types';
+import { mailSyncUserArgs, type MailSyncUser } from './types';
 import dayjs from 'dayjs';
 
 /**
@@ -41,47 +41,13 @@ export async function processUsersInBatches(
 		]
 	};
 
-	const includeClause = {
-		delegationMemberships: {
-			include: {
-				delegation: {
-					include: {
-						conference: true
-					}
-				}
-			}
-		},
-		singleParticipant: {
-			include: {
-				conference: true
-			}
-		},
-		conferenceSupervisor: {
-			include: {
-				conference: true,
-				supervisedDelegationMembers: {
-					include: {
-						delegation: true
-					}
-				},
-				supervisedSingleParticipants: true
-			}
-		},
-		teamMember: {
-			include: {
-				conference: true
-			}
-		}
-	};
-
-	// eslint-disable-next-line no-constant-condition
 	while (true) {
-		const batch: MailSyncUser[] = await tasksDb.user.findMany({
+		const batch = await tasksDb.user.findMany({
 			take: batchSize,
 			...(lastId ? { skip: 1, cursor: { id: lastId } } : {}),
 			orderBy: { id: 'asc' },
 			where: whereClause,
-			include: includeClause
+			...mailSyncUserArgs
 		});
 
 		if (batch.length === 0) break;

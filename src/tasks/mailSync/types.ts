@@ -1,12 +1,4 @@
-import type {
-	User as BaseUser,
-	Conference,
-	ConferenceSupervisor,
-	Delegation,
-	DelegationMember,
-	SingleParticipant,
-	TeamMember
-} from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 // List type constants
 
@@ -28,26 +20,78 @@ export const CONFERENCE_LIST_TYPES = [
 export type GlobalListType = (typeof GLOBAL_LIST_TYPES)[number];
 export type ConferenceListType = (typeof CONFERENCE_LIST_TYPES)[number];
 
-// User type with all relations needed for mail sync
+// Prisma query args for fetching only the fields needed by computeSubscriberState().
+// Avoids loading large Conference fields (data URL images, legal documents)
+// that cause ~5-13 MB per user in memory.
 
-export interface MailSyncUser extends BaseUser {
-	delegationMemberships: (DelegationMember & {
-		delegation: Delegation & {
-			conference: Conference;
-		};
-	})[];
-	singleParticipant: (SingleParticipant & {
-		conference: Conference;
-	})[];
-	conferenceSupervisor: (ConferenceSupervisor & {
-		conference: Conference;
-		supervisedDelegationMembers: (DelegationMember & { delegation: Delegation })[];
-		supervisedSingleParticipants: SingleParticipant[];
-	})[];
-	teamMember: (TeamMember & {
-		conference: Conference;
-	})[];
-}
+const conferenceSelect = {
+	select: { id: true, title: true, state: true }
+} as const;
+
+export const mailSyncUserArgs = {
+	select: {
+		id: true,
+		email: true,
+		given_name: true,
+		family_name: true,
+		wantsToReceiveGeneralInformation: true,
+		wantsJoinTeamInformation: true,
+		delegationMemberships: {
+			select: {
+				conferenceId: true,
+				isHeadDelegate: true,
+				delegation: {
+					select: {
+						applied: true,
+						assignedNationAlpha3Code: true,
+						assignedNonStateActorId: true,
+						conference: conferenceSelect
+					}
+				}
+			}
+		},
+		singleParticipant: {
+			select: {
+				conferenceId: true,
+				applied: true,
+				assignedRoleId: true,
+				conference: conferenceSelect
+			}
+		},
+		conferenceSupervisor: {
+			select: {
+				conferenceId: true,
+				conference: conferenceSelect,
+				supervisedDelegationMembers: {
+					select: {
+						delegation: {
+							select: {
+								applied: true,
+								assignedNationAlpha3Code: true,
+								assignedNonStateActorId: true
+							}
+						}
+					}
+				},
+				supervisedSingleParticipants: {
+					select: {
+						applied: true,
+						assignedRoleId: true
+					}
+				}
+			}
+		},
+		teamMember: {
+			select: {
+				conferenceId: true,
+				role: true,
+				conference: conferenceSelect
+			}
+		}
+	}
+} as const satisfies Prisma.UserDefaultArgs;
+
+export type MailSyncUser = Prisma.UserGetPayload<typeof mailSyncUserArgs>;
 
 // Listmonk subscriber as returned by the API
 
