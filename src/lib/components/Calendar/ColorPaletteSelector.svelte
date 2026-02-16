@@ -1,16 +1,16 @@
 <script lang="ts">
-	import type { CalendarEntryColor } from '@prisma/client';
+	import type { CalendarEntryColor$options } from '$houdini';
 	import { allColors, getColorConfig } from './calendarColors';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
-		value: CalendarEntryColor;
-		onchange: (color: CalendarEntryColor) => void;
+		value: CalendarEntryColor$options;
+		onchange: (color: CalendarEntryColor$options) => void;
 	}
 
 	let { value, onchange }: Props = $props();
 
-	const colorLabels: Record<CalendarEntryColor, () => string> = {
+	const colorLabels: Record<CalendarEntryColor$options, () => string> = {
 		SESSION: () => m.calendarSession(),
 		WORKSHOP: () => m.calendarWorkshop(),
 		LOGISTICS: () => m.calendarLogistics(),

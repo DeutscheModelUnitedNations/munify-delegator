@@ -5,7 +5,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import CalendarDisplay from '$lib/components/Calendar/CalendarDisplay.svelte';
 	import ColorPaletteSelector from '$lib/components/Calendar/ColorPaletteSelector.svelte';
-	import type { CalendarEntryColor } from '@prisma/client';
+	import type { CalendarEntryColor$options } from '$houdini';
 	import { translateCalendarEntryColor } from '$lib/services/enumTranslations';
 	import { downloadJSON } from '$lib/services/downloadHelpers';
 	import {
@@ -599,7 +599,7 @@
 	let entryStartTime = $state('');
 	let entryEndTime = $state('');
 	let entryIcon = $state('');
-	let entryColor = $state<CalendarEntryColor>('SESSION');
+	let entryColor = $state<CalendarEntryColor$options>('SESSION');
 	let entryPlaceId = $state<string | null>(null);
 	let entryRoom = $state('');
 	let entryTrackId = $state<string | null>(null);

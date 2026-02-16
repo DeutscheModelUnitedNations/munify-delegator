@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { CalendarEntryColor } from '@prisma/client';
+	import type { CalendarEntryColor$options } from '$houdini';
 	import { getColorConfig } from './calendarColors';
 
 	interface Props {
 		name: string;
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
-		color: CalendarEntryColor;
+		color: CalendarEntryColor$options;
 		startTime: Date;
 		endTime: Date;
 		place?: { name: string } | null;

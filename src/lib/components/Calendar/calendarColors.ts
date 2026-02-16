@@ -1,4 +1,4 @@
-import type { CalendarEntryColor } from '@prisma/client';
+import { CalendarEntryColor, type CalendarEntryColor$options } from '$houdini';
 
 interface ColorConfig {
 	bg: string;
@@ -7,7 +7,7 @@ interface ColorConfig {
 	ring: string;
 }
 
-const colorMap: Record<CalendarEntryColor, ColorConfig> = {
+const colorMap: Record<CalendarEntryColor$options, ColorConfig> = {
 	SESSION: {
 		bg: 'bg-primary/15',
 		border: 'border-primary',
@@ -58,8 +58,8 @@ const colorMap: Record<CalendarEntryColor, ColorConfig> = {
 	}
 };
 
-export function getColorConfig(color: CalendarEntryColor): ColorConfig {
+export function getColorConfig(color: CalendarEntryColor$options): ColorConfig {
 	return colorMap[color];
 }
 
-export const allColors = Object.keys(colorMap) as CalendarEntryColor[];
+export const allColors = Object.keys(colorMap) as CalendarEntryColor$options[];
