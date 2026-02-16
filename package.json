@@ -165,7 +165,9 @@
 	},
 	"scripts": {
 		"add-translation": "bun run scripts/add_new_translation.ts",
-		"build": "vite build && bun ./scripts/tasksBuild.ts",
+		"build": "bun run build:app && bun run build:tasks",
+		"build:app": "vite build",
+		"build:tasks": "bun ./scripts/tasksBuild.ts",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
