@@ -24,8 +24,13 @@ export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscrib
 			}
 		});
 
-		if (res.error || !res.data.data || !res.data.data.results || !res.data.data.total) {
+		if (res.error || !res.data.data || !res.data.data.results) {
 			taskWarning(TASK_NAME, `Failed to fetch subscribers from Listmonk`);
+			return new Map();
+		}
+
+		const total = res.data.data.total ?? 0;
+		if (total === 0) {
 			return new Map();
 		}
 
@@ -36,7 +41,7 @@ export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscrib
 			subscriberMap.set(s.email.toLowerCase().trim(), s);
 		}
 
-		totalEntries = res.data.data.total;
+		totalEntries = total;
 		const totalPages = Math.ceil(totalEntries / PER_PAGE);
 		console.info(
 			`  Fetched page ${currentPage}/${totalPages} (${subscriberMap.size}/${totalEntries} subscribers)`

@@ -30,7 +30,7 @@ function formatHistoricComparison(historicStat: number | undefined, currentStat:
 
 function readHistoricStats(conferenceId: string) {
 	try {
-		const historicStatsRaw = fs.readFileSync(`./empheralData/${conferenceId}.json`, 'utf8');
+		const historicStatsRaw = fs.readFileSync(`./ephemeralData/${conferenceId}.json`, 'utf8');
 		return historicStatsRaw ? JSON.parse(historicStatsRaw) : undefined;
 	} catch (error) {
 		console.info('No historic stats found. Continuing without...');
@@ -38,7 +38,7 @@ function readHistoricStats(conferenceId: string) {
 	}
 }
 
-function writeHistoricStats(conferenceId: string, stats: Record<string, any>) {
+function writeHistoricStats(conferenceId: string, stats: Record<string, unknown>) {
 	try {
 		if (!fs.existsSync('./ephemeralData')) {
 			fs.mkdirSync('./ephemeralData');

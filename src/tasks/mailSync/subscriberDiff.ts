@@ -16,6 +16,11 @@ function attribsForApi(attribs: SubscriberAttribs): Record<string, unknown> {
 	return attribs as unknown as Record<string, unknown>;
 }
 
+function errorToString(res: { error?: unknown }): string {
+	if (res.error == null) return 'Unknown error';
+	return typeof res.error === 'string' ? res.error : JSON.stringify(res.error, null, 2);
+}
+
 /**
  * Checks if a Listmonk subscriber already matches the computed desired state.
  */
@@ -115,7 +120,7 @@ export async function executeCreates(
 		if (res.error) {
 			failed++;
 			console.error(
-				`  ! Failed to create subscriber for user ${user.id}: Listmonk API Error\n${JSON.stringify((res as Record<string, unknown>).error, null, 2)}`
+				`  ! Failed to create subscriber for user ${user.id}: Listmonk API Error\n${errorToString(res)}`
 			);
 		} else {
 			succeeded++;
@@ -161,7 +166,7 @@ export async function executeUpdates(
 		if (res.error) {
 			failed++;
 			console.error(
-				`  ! Failed to update subscriber ${subscriber.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as Record<string, unknown>).error, null, 2)}`
+				`  ! Failed to update subscriber ${subscriber.attribs.userId}: Listmonk API Error\n${errorToString(res)}`
 			);
 		} else {
 			succeeded++;
@@ -195,7 +200,7 @@ export async function executeDeletes(diff: SyncDiff): Promise<void> {
 		if (res.error) {
 			failed++;
 			console.error(
-				`  ! Failed to delete subscriber ${subscriber.attribs.userId}: Listmonk API Error\n${JSON.stringify((res as Record<string, unknown>).error, null, 2)}`
+				`  ! Failed to delete subscriber ${subscriber.attribs.userId}: Listmonk API Error\n${errorToString(res)}`
 			);
 		} else {
 			succeeded++;

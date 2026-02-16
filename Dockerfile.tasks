@@ -64,7 +64,13 @@ WORKDIR /run
 #   zod             — config validation
 #   dayjs           — date handling
 #   openapi-fetch   — Listmonk API client
-RUN bun add @prisma/client node-schedule @slack/webhook zod dayjs openapi-fetch
+RUN bun add \
+  @prisma/client@^6.19.0 \
+  node-schedule@^2.1.1 \
+  @slack/webhook@^7.0.7 \
+  zod@^4.1.13 \
+  dayjs@^1.11.19 \
+  openapi-fetch@^0.13.8
 
 # Copy generated Prisma query engine binary from builder
 COPY --from=builder /build/node_modules/.prisma ./node_modules/.prisma

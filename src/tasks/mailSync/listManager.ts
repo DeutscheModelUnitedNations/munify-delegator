@@ -10,6 +10,11 @@ import {
 
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
 
+function errorToString(res: { error?: unknown }): string | undefined {
+	if (res.error == null) return undefined;
+	return typeof res.error === 'string' ? res.error : JSON.stringify(res.error);
+}
+
 // Naming functions
 
 export function shortenId(id: string) {
@@ -29,7 +34,7 @@ export function createConferenceListName(
 }
 
 export function createTagName(conferenceTitle: string, conferenceId: string) {
-	return `${shortenId(conferenceId)}-${conferenceTitle.replace(' ', '_').toLowerCase()}`;
+	return `${shortenId(conferenceId)}-${conferenceTitle.replaceAll(' ', '_').toLowerCase()}`;
 }
 
 /**
@@ -52,7 +57,7 @@ export async function ensureListsExist(
 		taskError(
 			TASK_NAME,
 			`Failed to fetch lists from Listmonk. Aborting task.`,
-			(listsResponse as Record<string, unknown>).error as string
+			errorToString(listsResponse)
 		);
 		return undefined;
 	}
@@ -76,7 +81,7 @@ export async function ensureListsExist(
 				taskError(
 					TASK_NAME,
 					`Failed to create list ${listName} (global). Aborting task.`,
-					res.error ? ((res as Record<string, unknown>).error as string) : undefined
+					errorToString(res)
 				);
 				return undefined;
 			}
@@ -107,7 +112,7 @@ export async function ensureListsExist(
 					taskError(
 						TASK_NAME,
 						`Failed to create list ${listType} for conference ${conference.title}. Aborting task.`,
-						res.error ? ((res as Record<string, unknown>).error as string) : undefined
+						errorToString(res)
 					);
 					return undefined;
 				}
@@ -120,10 +125,13 @@ export async function ensureListsExist(
 		}
 	}
 
-	// Delete orphan lists
+	// Delete orphan lists (only those matching our naming convention: [global] or [shortId])
 	console.info('Cleaning up orphan lists');
+	const managedListPattern = /^\[(?:global|[a-f0-9]{6})\] /;
 	const validIds = new Set(listNameToId.values());
-	const listsToDelete = existingLists?.filter((l) => l.id && !validIds.has(l.id));
+	const listsToDelete = existingLists?.filter(
+		(l) => l.id && !validIds.has(l.id) && l.name && managedListPattern.test(l.name)
+	);
 	for (const list of listsToDelete || []) {
 		const res = await listmonkClient.DELETE(`/lists/{list_id}`, {
 			params: {
@@ -134,7 +142,7 @@ export async function ensureListsExist(
 		});
 		if (res.error) {
 			console.info(
-				`  ! Failed to delete list ${list.name}: Listmonk API Error\n${JSON.stringify((res as Record<string, unknown>).error, null, 2)}`
+				`  ! Failed to delete list ${list.name}: Listmonk API Error\n${errorToString(res)}`
 			);
 			continue;
 		}
