@@ -9,10 +9,10 @@ console.info(`
                            |___/                          
 `);
 console.info('===========================================================');
-console.info('Loading tasks...');
+console.info('Registering tasks...');
 
 // Register Tasks here by importing them
 import './conferenceStatus';
 import './mailSync/index';
 
-console.info('Finished loading tasks.');
+console.info('Finished registering tasks.');
