@@ -7,7 +7,7 @@
 	},
 	"devDependencies": {
 		"@bwip-js/browser": "^4.8.0",
-		"@casl/ability": "^6.7.3",
+		"@casl/ability": "^6.8.0",
 		"@casl/prisma": "^1.5.2",
 		"@deutschemodelunitednations/corporate-identity": "^1.1.10",
 		"@deutschemodelunitednations/munify-resolution-editor": "^0.1.1",
@@ -35,7 +35,7 @@
 		"@prisma/instrumentation": "^6.19.0",
 		"@sentry/cli": "^3.1.0",
 		"@sentry/sveltekit": "^10.34.0",
-		"@slack/webhook": "^7.0.6",
+		"@slack/webhook": "^7.0.7",
 		"@svelte-plugins/datepicker": "^1.0.11",
 		"@svelte-put/qr": "^2.1.1",
 		"@sveltejs/adapter-node": "^5.4.0",
