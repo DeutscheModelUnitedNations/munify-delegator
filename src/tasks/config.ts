@@ -22,6 +22,7 @@ const schema = z.object({
 	LISTMONK_API_URL: requiredForTask('MAIL_SYNC'),
 	LISTMONK_API_USER: requiredForTask('MAIL_SYNC'),
 	LISTMONK_API_KEY: requiredForTask('MAIL_SYNC'),
+	MAIL_SYNC_BATCH_SIZE: z.coerce.number().int().positive().default(100),
 	TASKS_TZ: z.string().default('Europe/Berlin'),
 	TASK_CRON_MAIL_SYNC: z.string().optional(),
 	TASK_CRON_CONFERENCE_STATUS: z.string().optional()

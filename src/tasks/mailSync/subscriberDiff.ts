@@ -6,7 +6,8 @@ import type {
 	ListmonkSubscriber,
 	ComputedSubscriberState,
 	SubscriberAttribs,
-	SyncDiff
+	ClassificationResult,
+	BatchExecutionResult
 } from './types';
 
 // TYPE-SAFETY-EXCEPTION: openapi-fetch generates `Record<string, unknown>` for attribs,
@@ -43,22 +44,22 @@ function subscriberMatchesState(
 }
 
 /**
- * Classifies a batch of users against the subscriber Map in a single pass.
- * - Users without a matching subscriber → toCreate
- * - Users with a non-matching subscriber → toUpdate (subscriber removed from Map)
+ * Classifies a batch of users against the subscriber Map, storing only lightweight identifiers.
+ * - Users without a matching subscriber → createEmails set
+ * - Users with a non-matching subscriber → updateSubscriberIds map (subscriber removed from Map)
  * - Users with a matching subscriber → no action (subscriber removed from Map)
  * - Users with zero computed lists → skipped (subscriber stays in Map for deletion)
  */
 export function classifyUserBatch(
 	users: MailSyncUser[],
 	subscriberMap: Map<string, ListmonkSubscriber>,
-	diff: SyncDiff
+	classification: ClassificationResult
 ): void {
 	for (const user of users) {
 		const state = computeSubscriberState(user);
 
 		if (state.listNames.length === 0) {
-			diff.skippedNoLists++;
+			classification.skippedNoLists++;
 			continue;
 		}
 
@@ -66,12 +67,12 @@ export function classifyUserBatch(
 		const subscriber = subscriberMap.get(emailKey);
 
 		if (!subscriber) {
-			diff.toCreate.push({ user, state });
+			classification.createEmails.add(emailKey);
 		} else if (!subscriberMatchesState(subscriber, state)) {
-			diff.toUpdate.push({ subscriber, state });
+			classification.updateSubscriberIds.set(emailKey, subscriber.id);
 			subscriberMap.delete(emailKey);
 		} else {
-			diff.upToDate++;
+			classification.upToDate++;
 			subscriberMap.delete(emailKey);
 		}
 	}
@@ -79,135 +80,121 @@ export function classifyUserBatch(
 
 /**
  * After all user batches have been processed, any remaining subscribers in the Map
- * are orphans that should be deleted.
+ * are orphans that should be deleted. Returns only their IDs.
  */
-export function collectDeletes(
-	subscriberMap: Map<string, ListmonkSubscriber>,
-	diff: SyncDiff
-): void {
+export function collectDeleteIds(subscriberMap: Map<string, ListmonkSubscriber>): number[] {
+	const ids: number[] = [];
 	for (const subscriber of subscriberMap.values()) {
-		diff.toDelete.push(subscriber);
+		ids.push(subscriber.id);
 	}
+	return ids;
 }
 
 /**
- * Executes create operations against the Listmonk API.
+ * Executes delete operations against the Listmonk API using subscriber IDs.
  */
-export async function executeCreates(
-	diff: SyncDiff,
-	listNameToId: Map<string, number>
-): Promise<void> {
-	if (diff.toCreate.length === 0) return;
+export async function executeDeletes(subscriberIds: number[]): Promise<void> {
+	if (subscriberIds.length === 0) return;
 
-	const total = diff.toCreate.length;
-	let succeeded = 0;
-	let failed = 0;
-
-	console.info(`\nExecuting Create operations: 0/${total}`);
-	for (const { user, state } of diff.toCreate) {
-		const listIds = state.listNames
-			.map((name) => listNameToId.get(name))
-			.filter((id): id is number => id !== undefined);
-
-		const res = await listmonkClient.POST('/subscribers', {
-			body: {
-				email: state.email,
-				name: state.formattedName,
-				attribs: attribsForApi(state.attribs),
-				lists: listIds
-			}
-		});
-		if (res.error) {
-			failed++;
-			console.error(
-				`  ! Failed to create subscriber for user ${user.id}: Listmonk API Error\n${errorToString(res)}`
-			);
-		} else {
-			succeeded++;
-			console.info(`  - Created subscriber for user ${user.id} [${succeeded + failed}/${total}]`);
-		}
-	}
-	console.info(`Create operations finished: ${succeeded} succeeded, ${failed} failed`);
-}
-
-/**
- * Executes update operations against the Listmonk API.
- */
-export async function executeUpdates(
-	diff: SyncDiff,
-	listNameToId: Map<string, number>
-): Promise<void> {
-	if (diff.toUpdate.length === 0) return;
-
-	const total = diff.toUpdate.length;
-	let succeeded = 0;
-	let failed = 0;
-
-	console.info(`\nExecuting Update operations: 0/${total}`);
-	for (const { subscriber, state } of diff.toUpdate) {
-		const listIds = state.listNames
-			.map((name) => listNameToId.get(name))
-			.filter((id): id is number => id !== undefined);
-
-		const res = await listmonkClient.PUT(`/subscribers/{id}`, {
-			params: {
-				path: {
-					id: subscriber.id
-				}
-			},
-			body: {
-				email: state.email,
-				name: state.formattedName,
-				attribs: attribsForApi(state.attribs),
-				lists: listIds,
-				preconfirm_subscriptions: true
-			}
-		});
-		if (res.error) {
-			failed++;
-			console.error(
-				`  ! Failed to update subscriber ${subscriber.attribs.userId}: Listmonk API Error\n${errorToString(res)}`
-			);
-		} else {
-			succeeded++;
-			console.info(
-				`  - Updated subscriber ${subscriber.attribs.userId} [${succeeded + failed}/${total}]`
-			);
-		}
-	}
-	console.info(`Update operations finished: ${succeeded} succeeded, ${failed} failed`);
-}
-
-/**
- * Executes delete operations against the Listmonk API.
- */
-export async function executeDeletes(diff: SyncDiff): Promise<void> {
-	if (diff.toDelete.length === 0) return;
-
-	const total = diff.toDelete.length;
+	const total = subscriberIds.length;
 	let succeeded = 0;
 	let failed = 0;
 
 	console.info(`\nExecuting Delete operations: 0/${total}`);
-	for (const subscriber of diff.toDelete) {
+	for (const id of subscriberIds) {
 		const res = await listmonkClient.DELETE(`/subscribers/{id}`, {
 			params: {
-				path: {
-					id: subscriber.id
-				}
+				path: { id }
 			}
 		});
 		if (res.error) {
 			failed++;
 			console.error(
-				`  ! Failed to delete subscriber ${subscriber.attribs.userId}: Listmonk API Error\n${errorToString(res)}`
+				`  ! Failed to delete subscriber ${id}: Listmonk API Error\n${errorToString(res)}`
 			);
 		} else {
 			succeeded++;
-			console.info(
-				`  - Deleted subscriber ${subscriber.attribs.userId} [${succeeded + failed}/${total}]`
-			);
+			console.info(`  - Deleted subscriber ${id} [${succeeded + failed}/${total}]`);
 		}
 	}
 	console.info(`Delete operations finished: ${succeeded} succeeded, ${failed} failed`);
+}
+
+/**
+ * Executes create and update operations for a single batch of users.
+ * Re-computes subscriber state (cheap CPU) to avoid retaining full objects across batches.
+ * Removes processed entries from classification sets/maps so they shrink over time.
+ */
+export async function executeBatch(
+	users: MailSyncUser[],
+	classification: ClassificationResult,
+	listNameToId: Map<string, number>
+): Promise<BatchExecutionResult> {
+	const result: BatchExecutionResult = {
+		created: 0,
+		createFailed: 0,
+		updated: 0,
+		updateFailed: 0
+	};
+
+	for (const user of users) {
+		const emailKey = user.email.toLowerCase().trim();
+		const subscriberId = classification.updateSubscriberIds.get(emailKey);
+		const needsCreate = classification.createEmails.has(emailKey);
+
+		if (!needsCreate && subscriberId === undefined) continue;
+
+		const state = computeSubscriberState(user);
+		if (state.listNames.length === 0) continue;
+
+		const listIds = state.listNames
+			.map((name) => listNameToId.get(name))
+			.filter((id): id is number => id !== undefined);
+
+		if (needsCreate) {
+			const res = await listmonkClient.POST('/subscribers', {
+				body: {
+					email: state.email,
+					name: state.formattedName,
+					attribs: attribsForApi(state.attribs),
+					lists: listIds
+				}
+			});
+			if (res.error) {
+				result.createFailed++;
+				console.error(
+					`  ! Failed to create subscriber for user ${user.id}: Listmonk API Error\n${errorToString(res)}`
+				);
+			} else {
+				result.created++;
+				console.info(`  - Created subscriber for user ${user.id}`);
+			}
+			classification.createEmails.delete(emailKey);
+		} else if (subscriberId !== undefined) {
+			const res = await listmonkClient.PUT(`/subscribers/{id}`, {
+				params: {
+					path: { id: subscriberId }
+				},
+				body: {
+					email: state.email,
+					name: state.formattedName,
+					attribs: attribsForApi(state.attribs),
+					lists: listIds,
+					preconfirm_subscriptions: true
+				}
+			});
+			if (res.error) {
+				result.updateFailed++;
+				console.error(
+					`  ! Failed to update subscriber ${user.id}: Listmonk API Error\n${errorToString(res)}`
+				);
+			} else {
+				result.updated++;
+				console.info(`  - Updated subscriber ${user.id}`);
+			}
+			classification.updateSubscriberIds.delete(emailKey);
+		}
+	}
+
+	return result;
 }

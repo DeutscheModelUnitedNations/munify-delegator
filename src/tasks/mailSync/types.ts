@@ -102,14 +102,21 @@ export interface ComputedSubscriberState {
 	attribs: SubscriberAttribs;
 }
 
-// Diff results from comparing users against subscribers
+// Lightweight classification result — stores only identifiers, not full objects
 
-export interface SyncDiff {
-	toCreate: { user: MailSyncUser; state: ComputedSubscriberState }[];
-	toUpdate: { subscriber: ListmonkSubscriber; state: ComputedSubscriberState }[];
-	toDelete: ListmonkSubscriber[];
+export interface ClassificationResult {
+	createEmails: Set<string>;
+	updateSubscriberIds: Map<string, number>;
+	deleteSubscriberIds: number[];
 	upToDate: number;
 	skippedNoLists: number;
+}
+
+export interface BatchExecutionResult {
+	created: number;
+	createFailed: number;
+	updated: number;
+	updateFailed: number;
 }
 
 // List assignment rule interface for the plugin system
