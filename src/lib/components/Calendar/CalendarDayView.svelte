@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CalendarEntryColor } from '@prisma/client';
+	import type { CalendarEntryColor$options } from '$houdini';
 	import CalendarEntryCard from './CalendarEntryCard.svelte';
 	import CalendarTimeMarker from './CalendarTimeMarker.svelte';
 
@@ -17,7 +17,7 @@
 		name: string;
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
-		color: CalendarEntryColor;
+		color: CalendarEntryColor$options;
 		place?: {
 			id: string;
 			name: string;
