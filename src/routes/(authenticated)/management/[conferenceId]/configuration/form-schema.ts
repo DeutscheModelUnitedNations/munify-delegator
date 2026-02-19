@@ -13,6 +13,8 @@ export const conferenceSettingsFormSchema = z.object({
 	linkToTeamWiki: z.string().nullish(),
 	linkToServicesPage: z.string().nullish(),
 	isOpenPaperSubmission: z.boolean().default(false),
+	showCalendar: z.boolean().default(false),
+	timezone: z.string().min(1).default('Europe/Berlin'),
 	longTitle: z
 		.string()
 		.min(5, {

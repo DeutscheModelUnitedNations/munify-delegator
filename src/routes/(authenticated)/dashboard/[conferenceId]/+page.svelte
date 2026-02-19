@@ -17,6 +17,7 @@
 	import { onMount } from 'svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import { configPublic } from '$config/public';
+	import CalendarSection from '$lib/components/Dashboard/CalendarSection.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -92,6 +93,9 @@
 				>
 					<AnnouncementContent info={conference.info} showExpanded={conference.showInfoExpanded} />
 				</DashboardSection>
+			{/if}
+			{#if conference.showCalendar || teamMember}
+				<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
 			{/if}
 		{/if}
 		<!-- TODO add "new" badge if content of this changes -->

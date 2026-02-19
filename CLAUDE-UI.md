@@ -15,6 +15,7 @@ This document provides guidance for building consistent user interfaces in MUNif
 
 Components are located in `src/lib/components/`. Key directories:
 
+- `Calendar/` - Conference calendar display (day views, time markers, entry cards)
 - `Form/` - Form inputs integrated with sveltekit-superforms
 - `Dashboard/` - Dashboard section layouts and widgets
 - `DataTable/` - Searchable, sortable data tables
@@ -179,6 +180,93 @@ interface Props {
 - Expiration status highlighting (expired invitations shown with reduced opacity)
 - Actions: copy invitation link, resend email, revoke invitation
 - Automatic cache invalidation after actions
+
+---
+
+## Calendar Components
+
+Components in `src/lib/components/Calendar/` for displaying conference calendar schedules.
+
+### CalendarDisplay
+
+`src/lib/components/Calendar/CalendarDisplay.svelte`
+
+Main calendar container that renders day tabs (small screens) or side-by-side columns (3xl+). Handles day selection, track filtering, and entry click → drawer.
+
+#### Props Interface
+
+```typescript
+interface Props {
+	days: Day[]; // Array of calendar days with tracks and entries
+	timezone?: string; // IANA timezone (default: 'UTC') — controls "now" marker and today detection
+}
+```
+
+#### Usage Example
+
+```svelte
+<script lang="ts">
+	import CalendarDisplay from '$lib/components/Calendar/CalendarDisplay.svelte';
+</script>
+
+<CalendarDisplay days={previewDays} timezone="Europe/Berlin" />
+```
+
+#### Features
+
+- Responsive layout: tabs on small screens, side-by-side grid on 3xl+
+- Automatic "today" tab selection using conference timezone
+- Per-day track filtering
+- Entry click opens `CalendarEntryDrawer` with details
+
+### CalendarDayView
+
+`src/lib/components/Calendar/CalendarDayView.svelte`
+
+Renders a single day's timeline with hour grid, entries positioned by time, and a live "now" marker.
+
+#### Props Interface
+
+```typescript
+interface Props {
+	dayName: string;
+	date: Date;
+	tracks: Track[];
+	entries: Entry[];
+	filterTrackId?: string | null;
+	timezone?: string; // Passed to CalendarTimeMarker
+	onEntryClick?: (entry: Entry) => void;
+}
+```
+
+### CalendarTimeMarker
+
+`src/lib/components/Calendar/CalendarTimeMarker.svelte`
+
+Displays a red "now" line on the calendar timeline. Uses `Intl.DateTimeFormat` with conference timezone to compute position.
+
+#### Props Interface
+
+```typescript
+interface Props {
+	startHour: number;
+	endHour: number;
+	hourHeight: number;
+	timezone?: string; // IANA timezone (default: 'UTC')
+}
+```
+
+### CalendarEntryCard
+
+`src/lib/components/Calendar/CalendarEntryCard.svelte`
+
+Renders a single calendar entry as a colored card positioned on the timeline. Shows icon, name, time range, room, and track.
+
+### CalendarEntryDrawer
+
+`src/lib/components/Calendar/CalendarEntryDrawer.svelte`
+
+Slide-out drawer showing full entry details including place information, map, and site plan.
 
 ---
 

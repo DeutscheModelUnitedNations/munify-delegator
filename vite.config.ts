@@ -8,7 +8,7 @@ import { sentrySvelteKit } from '@sentry/sveltekit';
 export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
-			autoUploadSourceMaps: false // Bugsink doesn't support source map upload
+			autoUploadSourceMaps: false // We upload manually via CI to Bugsink
 		}),
 		tailwindcss(),
 		houdini(),
@@ -19,6 +19,9 @@ export default defineConfig({
 			strategy: ['url', 'baseLocale']
 		})
 	],
+	build: {
+		sourcemap: true // Required for Bugsink error tracking
+	},
 	test: {
 		environment: 'jsdom',
 		coverage: {

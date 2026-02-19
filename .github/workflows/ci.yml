@@ -77,6 +77,8 @@ jobs:
   build:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: '--max-old-space-size=8192'
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-bun
@@ -152,7 +154,7 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
       - name: Upload sourcemaps to Bugsink
-        if: env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
+        if: github.ref_type == 'tag' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
         env:
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
         run: |
@@ -165,8 +167,8 @@ jobs:
           ls -la ./build-artifacts/build
           echo "::endgroup::"
 
-          echo "::group::Installing sentry-cli"
-          npm install -g @sentry/cli
+          echo "::group::Installing sentry-cli v2 (v3 has Bugsink compatibility issues)"
+          npm install -g @sentry/cli@2
           echo "::endgroup::"
 
           echo "::group::Injecting debug IDs into sourcemaps"
@@ -175,19 +177,99 @@ jobs:
 
           echo "::group::Uploading sourcemaps to Bugsink (project: $SENTRY_PROJECT)"
           sentry-cli --url "$SENTRY_URL" sourcemaps \
-            --org bugsink \
+            --org bugsinkhasnoorgs \
             --project "$SENTRY_PROJECT" \
             upload ./build-artifacts/build
           echo "Sourcemaps uploaded successfully"
           echo "::endgroup::"
 
       - name: Sourcemap upload skipped
-        if: env.SENTRY_AUTH_TOKEN == '' || env.SENTRY_URL == ''
+        if: github.ref_type == 'tag' && (env.SENTRY_AUTH_TOKEN == '' || env.SENTRY_URL == '')
         run: |
           echo "::warning::Sourcemap upload skipped - SENTRY_AUTH_TOKEN or SENTRY_URL not configured"
           echo "To enable sourcemap uploads, add the following secrets to your repository:"
           echo "  - SENTRY_AUTH_TOKEN: Your Bugsink authentication token"
           echo "  - SENTRY_URL: Your Bugsink instance URL (e.g., https://bugsink.example.com/)"
+
+  docker-build-tasks:
+    if: github.event_name == 'push'
+    needs: [format, lint, test, i18n, security, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      # Path filter: only build when task-relevant files changed
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            tasks:
+              - 'src/tasks/**'
+              - 'src/api/services/**'
+              - 'src/lib/services/formatNames.ts'
+              - 'prisma/schema.prisma'
+              - 'scripts/tasksBuild.ts'
+              - 'Dockerfile.tasks'
+              - 'package.json'
+              - 'bun.lock'
+
+      # Always build on tag push (release), conditionally on branch push
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        uses: docker/setup-buildx-action@v3
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-tasks
+            deutschemodelunitednations/delegator-tasks
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        uses: docker/build-push-action@v5
+        with:
+          file: Dockerfile.tasks
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=tasks
+          cache-to: type=gha,mode=max,scope=tasks
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        id: split-tags
+        run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: ${{ steps.split-tags.outputs.fragment }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          trivyignores: .trivyignore
+          scanners: 'vuln,secret,misconfig'
 
   # ============================================
   # LAYER 3: RELEASE (tag push only)
@@ -195,7 +277,7 @@ jobs:
 
   release:
     if: github.ref_type == 'tag'
-    needs: docker-build
+    needs: [docker-build, docker-build-tasks]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

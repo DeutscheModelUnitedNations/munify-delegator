@@ -566,6 +566,23 @@
 				</p>
 				<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 				<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">{m.conferenceTimezone()}</legend>
+					<input
+						type="text"
+						class="input w-full"
+						name="timezone"
+						list="timezone-list"
+						bind:value={$formData.timezone}
+						placeholder="Europe/Berlin"
+					/>
+					<datalist id="timezone-list">
+						{#each Intl.supportedValuesOf('timeZone') as tz}
+							<option value={tz}></option>
+						{/each}
+					</datalist>
+					<p class="text-base-content/50 mt-1 text-xs">{m.conferenceTimezoneHint()}</p>
+				</fieldset>
 			</FormFieldset>
 		</div>
 
@@ -604,6 +621,15 @@
 							bind:checked={$formData.isOpenPaperSubmission}
 						/>
 						<span class="label-text">{m.paperSubmissionOpen()}</span>
+					</label>
+					<label class="label cursor-pointer justify-start gap-3">
+						<input
+							type="checkbox"
+							class="toggle toggle-primary"
+							name="showCalendar"
+							bind:checked={$formData.showCalendar}
+						/>
+						<span class="label-text">{m.showCalendar()}</span>
 					</label>
 				</div>
 			</FormFieldset>
