@@ -32,9 +32,6 @@
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
 	let surveyQuestions = $derived(conferenceQueryData?.findManySurveyQuestions);
 	let surveyAnswers = $derived(conferenceQueryData?.findManySurveyAnswers);
-	let isDelegatee = $derived(
-		!!delegationMember?.id && !singleParticipant?.id && !supervisor?.id && !teamMember?.id
-	);
 	let showNewBadge = $state(false);
 
 	const getContentSignature = () =>
@@ -61,14 +58,6 @@
 
 <div class="flex w-full flex-col items-center">
 	<div class="flex w-full flex-col gap-10">
-		{#if conference?.id && isDelegatee}
-			<div class="flex justify-end">
-				<a href={`/dashboard/${conference.id}/messaging`} class="btn btn-outline">
-					<i class="fa-solid fa-envelope"></i>
-					{m.messagingMessaging()}
-				</a>
-			</div>
-		{/if}
 		{#if showNewBadge}
 			<div class="flex justify-end">
 				<span class="badge badge-primary badge-outline uppercase">new</span>
@@ -153,12 +142,6 @@
 						unlockPostals={conference?.unlockPostals}
 					/>
 
-					<div class="mt-4">
-						<a href={'/dashboard/' + conference?.id + '/messaging'} class="btn btn-outline">
-							<i class="fa-solid fa-envelope"></i>
-							{m.messagingMessaging()}
-						</a>
-					</div>
 					<DelegationPreparationStage
 						{delegationMember}
 						{conference}

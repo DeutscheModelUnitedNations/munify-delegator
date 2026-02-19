@@ -775,6 +775,7 @@ input CommitteeWhereUniqueInput {
 
 type Conference {
   accountHolder: String
+  allowMessaging: Boolean!
   bankName: String
   bic: String
 
@@ -856,6 +857,7 @@ type Conference {
 input ConferenceCreateInput {
   WaitingListEntry: WaitingListEntryCreateNestedManyWithoutConferenceInput
   accountHolder: String
+  allowMessaging: Boolean
   bankName: String
   bic: String
   calendarDays: CalendarDayCreateNestedManyWithoutConferenceInput
@@ -920,6 +922,7 @@ input ConferenceCreateInput {
 input ConferenceOrderByWithRelationInput {
   WaitingListEntry: WaitingListEntryOrderByRelationAggregateInput
   accountHolder: SortOrder
+  allowMessaging: SortOrder
   bankName: SortOrder
   bic: SortOrder
   calendarDays: CalendarDayOrderByRelationAggregateInput
@@ -1160,6 +1163,7 @@ input ConferenceParticipantStatusWhereUniqueInputNotRequired {
 
 enum ConferenceScalarFieldEnum {
   accountHolder
+  allowMessaging
   bankName
   bic
   certificateContent
@@ -1398,6 +1402,7 @@ input ConferenceSupervisorWhereUniqueInput {
 
 input ConferenceUpdateDataInput {
   accountHolder: String
+  allowMessaging: Boolean
   bankName: String
   bic: String
   certificateBasePDF: File
@@ -1443,6 +1448,7 @@ input ConferenceUpdateDataInput {
 input ConferenceUpdateInput {
   WaitingListEntry: WaitingListEntryUpdateManyWithoutConferenceNestedInput
   accountHolder: NullableStringFieldUpdateOperationsInput
+  allowMessaging: BoolFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
   calendarDays: CalendarDayUpdateManyWithoutConferenceNestedInput
@@ -1506,6 +1512,7 @@ input ConferenceUpdateInput {
 
 input ConferenceUpdateManyMutationInput {
   accountHolder: NullableStringFieldUpdateOperationsInput
+  allowMessaging: BoolFieldUpdateOperationsInput
   bankName: NullableStringFieldUpdateOperationsInput
   bic: NullableStringFieldUpdateOperationsInput
   certificateContent: NullableStringFieldUpdateOperationsInput
@@ -1557,6 +1564,7 @@ input ConferenceWhereInput {
   OR: [ConferenceWhereInput!]
   WaitingListEntry: WaitingListEntryListRelationFilter
   accountHolder: StringNullableFilter
+  allowMessaging: BoolFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
   calendarDays: CalendarDayListRelationFilter
@@ -1624,6 +1632,7 @@ input ConferenceWhereUniqueInput {
   OR: [ConferenceWhereInput!]
   WaitingListEntry: WaitingListEntryListRelationFilter
   accountHolder: StringNullableFilter
+  allowMessaging: BoolFilter
   bankName: StringNullableFilter
   bic: StringNullableFilter
   calendarDays: CalendarDayListRelationFilter

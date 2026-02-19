@@ -296,6 +296,7 @@
 		hasConferenceInfo: !!conference.info,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
+		allowMessaging: conference.allowMessaging,
 		user
 	});
 

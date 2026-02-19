@@ -58,6 +58,7 @@
 	"allStudentsAcceptedMessage": "Alle deine Schüler*innen wurden angenommen!",
 	"allowDelegationMailer": "Nachrichten von anderen Delegierten empfangen",
 	"allowDelegationMailerDescription": "Wenn du dies aktivierst, können andere Delegierte dir Nachrichten per E-Mail senden. Deine E-Mail-Adresse wird dabei <strong>nicht</strong> weitergegeben. Du kannst direkt über die E-Mail-Benachrichtigung antworten.",
+	"allowMessaging": "Nachrichten für Teilnehmende erlauben",
 	"alpha3Code": "ISO Alpha 3 Code",
 	"alphabetical": "Alphabetisch",
 	"alreadRegistered": "Bereits angemeldet",

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
-	import { enhance } from '$app/forms';
+	import { cache, graphql } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
 	import type { PageData } from './$types';
@@ -15,10 +15,37 @@
 	);
 
 	let submitting = $state(false);
-	let formEl: HTMLFormElement | undefined = $state();
+
+	const toggleMutation = graphql(`
+		mutation ToggleMessagingPreference(
+			$where: UserWhereUniqueInput!
+			$canReceiveDelegationMail: Boolean!
+		) {
+			updateUserMessagingPreference(
+				where: $where
+				canReceiveDelegationMail: $canReceiveDelegationMail
+			) {
+				id
+			}
+		}
+	`);
+
+	async function toggleMessaging() {
+		submitting = true;
+		try {
+			await toggleMutation.mutate({
+				where: { id: data.user.sub },
+				canReceiveDelegationMail: !canReceiveMail
+			});
+			cache.markStale();
+			await invalidateAll();
+		} finally {
+			submitting = false;
+		}
+	}
 </script>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6 w-full max-w-5xl">
 	<!-- Hero Section with Animated Background -->
 	<section class="relative overflow-hidden rounded-box bg-base-200 p-8">
 		<!-- Animated Background Blobs -->
@@ -79,38 +106,22 @@
 					<span class="text-base-content/80">{m.messagingAboutDeliveryLog()}</span>
 				</li>
 			</ul>
-			<form
-				class="w-full"
-				bind:this={formEl}
-				method="POST"
-				action="?/toggleMessaging"
-				use:enhance={() => {
-					submitting = true;
-					return async ({ update }) => {
-						await update();
-						await invalidateAll();
-						submitting = false;
-					};
-				}}
-			>
-				<input type="hidden" name="enabled" value={String(!canReceiveMail)} />
-				<div role="alert" class="alert {canReceiveMail ? 'alert-success' : 'alert-warning'}">
-					<i class="fa-solid {canReceiveMail ? 'fa-circle-check' : 'fa-circle-exclamation'} text-lg"
-					></i>
-					<span class="flex-1"
-						>{canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}</span
-					>
-					<input
-						type="checkbox"
-						class="toggle {canReceiveMail ? 'toggle-success' : ''}"
-						class:opacity-50={submitting}
-						checked={canReceiveMail}
-						disabled={submitting}
-						aria-label={canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}
-						onchange={() => formEl?.requestSubmit()}
-					/>
-				</div>
-			</form>
+			<div role="alert" class="alert {canReceiveMail ? 'alert-success' : 'alert-warning'}">
+				<i class="fa-solid {canReceiveMail ? 'fa-circle-check' : 'fa-circle-exclamation'} text-lg"
+				></i>
+				<span class="flex-1"
+					>{canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}</span
+				>
+				<input
+					type="checkbox"
+					class="toggle {canReceiveMail ? 'toggle-success' : ''}"
+					class:opacity-50={submitting}
+					checked={canReceiveMail}
+					disabled={submitting}
+					aria-label={canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}
+					onchange={toggleMessaging}
+				/>
+			</div>
 		</div>
 	</DashboardSection>
 
@@ -120,7 +131,7 @@
 		title={m.messagingGuidelines()}
 		description={m.messagingGuidelinesDescription()}
 	>
-		<ul class="flex flex-col gap-3">
+		<ul class="flex flex-col gap-3 mb-4">
 			<li class="flex items-start gap-3">
 				<i class="fa-duotone fa-fw fa-handshake text-primary mt-0.5"></i>
 				<span class="text-base-content/80">{m.messagingGuidelineRespectful()}</span>
@@ -138,21 +149,18 @@
 				<span class="text-base-content/80">{m.messagingGuidelineConcise()}</span>
 			</li>
 		</ul>
+
+		<!-- Data Notice -->
+		<div role="alert" class="alert alert-warning">
+			<i class="fa-solid fa-shield-halved text-lg"></i>
+			<span>{m.messagingDataNotice()}</span>
+
+			<a href={`${basePath}/history`} class="btn btn-warning">
+				<i class="fa-solid fa-clock-rotate-left"></i>
+				{m.messagingViewSentHistory()}
+			</a>
+		</div>
 	</DashboardSection>
-
-	<!-- Data Notice -->
-	<div role="alert" class="alert alert-warning">
-		<i class="fa-solid fa-shield-halved text-lg"></i>
-		<span>{m.messagingDataNotice()}</span>
-	</div>
-
-	<!-- Quick Link -->
-	<div class="text-center">
-		<a href={`${basePath}/history`} class="btn btn-ghost">
-			<i class="fa-duotone fa-clock-rotate-left"></i>
-			{m.messagingViewSentHistory()}
-		</a>
-	</div>
 </div>
 
 <style>

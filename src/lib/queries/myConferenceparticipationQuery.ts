@@ -28,6 +28,7 @@ export const myConferenceparticipationQuery = graphql(`
 			linkToPaperInbox
 			isOpenPaperSubmission
 			showCalendar
+			allowMessaging
 			timezone
 			state
 			startConference

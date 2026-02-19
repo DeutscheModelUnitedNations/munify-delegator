@@ -62,6 +62,7 @@ model Conference {
   linkToPaperInbox                       String?
   isOpenPaperSubmission                  Boolean         @default(false)
   showCalendar                           Boolean         @default(false)
+  allowMessaging                         Boolean         @default(false)
   timezone                               String          @default("Europe/Berlin")
   state                                  ConferenceState @default(PRE)
   startAssignment                        DateTime

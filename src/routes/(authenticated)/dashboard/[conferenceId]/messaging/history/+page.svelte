@@ -37,7 +37,7 @@
 	}
 </script>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6 w-full max-w-5xl">
 	<!-- Page Header -->
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<div>
@@ -63,7 +63,7 @@
 		<div class="card-body p-0">
 			{#if messages.length === 0}
 				<div class="flex flex-col items-center justify-center py-16 px-6 text-center">
-					<i class="fa-duotone fa-inbox text-4xl text-base-content/20 mb-4"></i>
+					<i class="fa-duotone fa-inbox text-4xl text-base-coduotonentent/20 mb-4"></i>
 					<h3 class="text-xl font-bold text-base-content/80 mb-2">
 						{m.messagingNoMessagesYet()}
 					</h3>
@@ -98,17 +98,17 @@
 									<td>
 										{#if msg.status.toLowerCase() === 'delivered' || msg.status.toLowerCase() === 'sent'}
 											<span class="badge badge-success gap-1">
-												<i class="fa-duotone fa-circle-check text-xs"></i>
+												<i class="fa-solid fa-circle-check text-xs"></i>
 												{msg.status}
 											</span>
 										{:else if msg.status.toLowerCase() === 'pending'}
 											<span class="badge badge-warning gap-1">
-												<i class="fa-duotone fa-clock text-xs"></i>
+												<i class="fa-solid fa-clock text-xs"></i>
 												{msg.status}
 											</span>
 										{:else if msg.status.toLowerCase() === 'failed'}
 											<span class="badge badge-error gap-1">
-												<i class="fa-duotone fa-circle-xmark text-xs"></i>
+												<i class="fa-solid fa-circle-xmark text-xs"></i>
 												{msg.status}
 											</span>
 										{:else}

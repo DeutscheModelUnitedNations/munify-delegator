@@ -527,11 +527,15 @@ export async function sendDelegationMessage({
 	// Get conference info
 	const conference = await db.conference.findUnique({
 		where: { id: conferenceId },
-		select: { title: true }
+		select: { title: true, allowMessaging: true }
 	});
 
 	if (!conference) {
 		throw new Error('Conference not found');
+	}
+
+	if (!conference.allowMessaging) {
+		throw new Error('Messaging is not enabled for this conference.');
 	}
 
 	// Verify sender is part of conference

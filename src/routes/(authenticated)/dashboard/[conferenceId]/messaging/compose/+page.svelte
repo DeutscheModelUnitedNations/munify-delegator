@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { enhance } from '$app/forms';
+	import { cache, graphql } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import type { PageData, ActionData, SubmitFunction } from './$types';
+	import type { PageData } from './$types';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import RecipientPickerDrawer from '$lib/components/Messaging/RecipientPickerDrawer.svelte';
 	import Flag from '$lib/components/Flag.svelte';
@@ -13,22 +13,15 @@
 		type Recipient
 	} from '$lib/components/Messaging/recipientUtils';
 
-	const { data, form }: { data: PageData; form: ActionData } = $props();
+	const { data }: { data: PageData } = $props();
 
 	let subject = $state('');
 	let body = $state('');
 	let prefilled = $state(false);
 	let selectedRecipientObj = $state<Recipient | null>(null);
 
-	const getActionError = (value: unknown) => {
-		if (!value || typeof value !== 'object') return '';
-		const maybeError = (value as { error?: unknown }).error;
-		return typeof maybeError === 'string' ? maybeError : '';
-	};
-
 	const recipientGroups = $derived(data.recipientGroups ?? []);
 	const loadError = $derived(data.recipientLoadError ?? '');
-	const actionError = $derived(getActionError(form));
 	const replyToMessage = $derived(data.replyToMessage ?? null);
 	const isReplyMode = $derived(replyToMessage !== null);
 
@@ -42,7 +35,89 @@
 	);
 
 	let togglingMessaging = $state(false);
-	let toggleFormEl: HTMLFormElement | undefined = $state();
+	let sending = $state(false);
+
+	// Toggle messaging preference mutation
+	const toggleMutation = graphql(`
+		mutation ComposeToggleMessagingPreference(
+			$where: UserWhereUniqueInput!
+			$canReceiveDelegationMail: Boolean!
+		) {
+			updateUserMessagingPreference(
+				where: $where
+				canReceiveDelegationMail: $canReceiveDelegationMail
+			) {
+				id
+			}
+		}
+	`);
+
+	async function toggleMessaging() {
+		togglingMessaging = true;
+		try {
+			await toggleMutation.mutate({
+				where: { id: data.user.sub },
+				canReceiveDelegationMail: !canReceiveMail
+			});
+			cache.markStale();
+			await invalidateAll();
+		} finally {
+			togglingMessaging = false;
+		}
+	}
+
+	// Send message mutation
+	const sendMutation = graphql(`
+		mutation SendDelegationMessageMutation(
+			$conferenceId: String!
+			$recipientId: String!
+			$subject: String!
+			$body: String!
+			$origin: String!
+			$replyToMessageId: String
+		) {
+			sendDelegationMessage(
+				conferenceId: $conferenceId
+				recipientId: $recipientId
+				subject: $subject
+				body: $body
+				origin: $origin
+				replyToMessageId: $replyToMessageId
+			)
+		}
+	`);
+
+	async function handleSend() {
+		if (!selectedRecipientObj || !subject.trim() || !body.trim() || !conferenceId) return;
+		sending = true;
+		try {
+			await sendMutation.mutate({
+				conferenceId,
+				recipientId: selectedRecipientObj.id,
+				subject: subject.trim(),
+				body,
+				origin: page.url.origin,
+				replyToMessageId: replyToMessage?.id ?? null
+			});
+			toast.success(isReplyMode ? m.messagingReplySent() : m.messageSent());
+			if (!isReplyMode) {
+				selectedRecipientObj = null;
+				subject = '';
+			}
+			body = '';
+		} catch (e) {
+			const msg = e instanceof Error ? e.message : '';
+			if (msg.includes('Recipient has not enabled messaging')) {
+				toast.error(m.messageRecipientNotEnabled());
+			} else if (msg.includes('enable messaging in your account')) {
+				toast.error(m.messagingSenderNotEnabled());
+			} else {
+				toast.error(msg || m.httpGenericError());
+			}
+		} finally {
+			sending = false;
+		}
+	}
 
 	// URL prefill
 	$effect(() => {
@@ -82,27 +157,6 @@
 		selectedRecipientObj ? getRecipientDisplayName(selectedRecipientObj) : ''
 	);
 
-	const enhanceForm: SubmitFunction = () => {
-		return async ({ result, update }) => {
-			if (result.type === 'success') {
-				toast.success(isReplyMode ? m.messagingReplySent() : m.messageSent());
-				if (!isReplyMode) {
-					selectedRecipientObj = null;
-					subject = '';
-				}
-				body = '';
-			} else if (result.type === 'failure') {
-				const errorMessage = getActionError(result.data);
-				if (errorMessage === 'Recipient has not enabled messaging.') {
-					toast.error(m.messageRecipientNotEnabled());
-				} else if (errorMessage === 'You must enable messaging in your account settings.') {
-					toast.error(m.messagingSenderNotEnabled());
-				}
-			}
-			await update();
-		};
-	};
-
 	const formattedSentAt = $derived(
 		replyToMessage
 			? new Date(replyToMessage.sentAt).toLocaleString(undefined, {
@@ -128,53 +182,32 @@
 		</p>
 	</div>
 
-	<!-- Alerts -->
-	{#if actionError}
-		<div role="alert" class="alert alert-error">
-			<i class="fa-duotone fa-circle-exclamation"></i>
-			<span>{actionError}</span>
+	{#if !canReceiveMail}
+		<div role="alert" class="alert {canReceiveMail ? 'alert-success' : 'alert-warning'}">
+			<i class="fa-solid {canReceiveMail ? 'fa-circle-check' : 'fa-circle-exclamation'} text-lg"
+			></i>
+			<span class="flex-1"
+				>{canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}</span
+			>
+			<input
+				type="checkbox"
+				class="toggle {canReceiveMail ? 'toggle-success' : ''}"
+				class:opacity-50={togglingMessaging}
+				checked={canReceiveMail}
+				disabled={togglingMessaging}
+				aria-label={canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}
+				onchange={toggleMessaging}
+			/>
 		</div>
 	{/if}
 
+	<!-- Main Form -->
 	<form
-		class="w-full"
-		bind:this={toggleFormEl}
-		method="POST"
-		action="?/toggleMessaging"
-		use:enhance={() => {
-			togglingMessaging = true;
-			return async ({ update }) => {
-				await update();
-				await invalidateAll();
-				togglingMessaging = false;
-			};
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleSend();
 		}}
 	>
-		<input type="hidden" name="enabled" value={String(!canReceiveMail)} />
-		{#if !canReceiveMail}
-			<div role="alert" class="alert {canReceiveMail ? 'alert-success' : 'alert-warning'}">
-				<i class="fa-solid {canReceiveMail ? 'fa-circle-check' : 'fa-circle-exclamation'} text-lg"
-				></i>
-				<span class="flex-1"
-					>{canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}</span
-				>
-				<input
-					type="checkbox"
-					class="toggle {canReceiveMail ? 'toggle-success' : ''}"
-					class:opacity-50={togglingMessaging}
-					checked={canReceiveMail}
-					disabled={togglingMessaging}
-					aria-label={canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}
-					onchange={() => toggleFormEl?.requestSubmit()}
-				/>
-			</div>
-		{/if}
-	</form>
-
-	<!-- Main Form -->
-	<form method="POST" action="?/send" use:enhance={enhanceForm}>
-		<input type="hidden" name="recipientId" value={selectedRecipientObj?.id ?? ''} />
-		<input type="hidden" name="replyToMessageId" value={replyToMessage?.id ?? ''} />
 		<div class="flex flex-col gap-6">
 			<!-- Recipient Section -->
 			<FormFieldset title={m.messageRecipient()}>
@@ -236,7 +269,6 @@
 						class="input input-bordered w-full"
 						type="text"
 						bind:value={subject}
-						name="subject"
 						maxlength="200"
 						placeholder={m.messageSubjectPlaceholder()}
 						required
@@ -254,7 +286,6 @@
 						id="message-body"
 						class="textarea textarea-bordered h-64 w-full resize-y"
 						bind:value={body}
-						name="body"
 						maxlength="2000"
 						placeholder={isReplyMode
 							? m.messagingWriteReplyPlaceholder()
@@ -296,8 +327,12 @@
 						<i class="fa-duotone fa-xmark"></i>
 						{m.messageCancelButton()}
 					</a>
-					<button type="submit" class="btn btn-primary" disabled={!selectedRecipientObj}>
-						<i class="fa-solid fa-paper-plane"></i>
+					<button type="submit" class="btn btn-primary" disabled={!selectedRecipientObj || sending}>
+						{#if sending}
+							<span class="loading loading-spinner loading-sm"></span>
+						{:else}
+							<i class="fa-solid fa-paper-plane"></i>
+						{/if}
 						{isReplyMode ? m.messagingSendReply() : m.messageSendButton()}
 					</button>
 				</div>

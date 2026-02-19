@@ -33,6 +33,7 @@
 		linkToPaperInbox: conference.linkToPaperInbox,
 		surveyQuestionCount: surveyQuestions?.length ?? 0,
 		surveyAnswerCount: surveyAnswers?.length ?? 0,
+		allowMessaging: conference.allowMessaging,
 		user
 	});
 

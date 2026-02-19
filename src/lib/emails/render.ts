@@ -1,6 +1,8 @@
 import { Renderer, toPlainText } from 'better-svelte-email';
 import type { Component } from 'svelte';
 
+type ExtractProps<C> = C extends Component<infer P, infer _E, infer _B> ? P : never;
+
 /**
  * Render a Svelte email component to HTML and plain text
  *
@@ -8,9 +10,9 @@ import type { Component } from 'svelte';
  * @param props - Props to pass to the component
  * @returns Object containing rendered HTML and plain text versions
  */
-export async function renderEmail<Props extends Record<string, unknown>>(
-	component: Component<Props>,
-	props: Props
+export async function renderEmail<C>(
+	component: C,
+	props: ExtractProps<C>
 ): Promise<{ html: string; text: string }> {
 	const { render } = new Renderer();
 	const html = await render(component, { props });
