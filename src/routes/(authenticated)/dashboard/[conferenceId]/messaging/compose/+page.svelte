@@ -73,7 +73,6 @@
 			$recipientId: String!
 			$subject: String!
 			$body: String!
-			$origin: String!
 			$replyToMessageId: String
 		) {
 			sendDelegationMessage(
@@ -81,7 +80,6 @@
 				recipientId: $recipientId
 				subject: $subject
 				body: $body
-				origin: $origin
 				replyToMessageId: $replyToMessageId
 			)
 		}
@@ -96,7 +94,6 @@
 				recipientId: selectedRecipientObj.id,
 				subject: subject.trim(),
 				body,
-				origin: page.url.origin,
 				replyToMessageId: replyToMessage?.id ?? null
 			});
 			toast.success(isReplyMode ? m.messagingReplySent() : m.messageSent());

@@ -3109,7 +3109,7 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
-  sendDelegationMessage(body: String!, conferenceId: String!, origin: String!, recipientId: String!, replyToMessageId: String, subject: String!): String!
+  sendDelegationMessage(body: String!, conferenceId: String!, recipientId: String!, replyToMessageId: String, subject: String!): String!
   setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!

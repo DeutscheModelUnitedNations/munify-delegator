@@ -6,8 +6,16 @@ export function getInitials(firstName: string, lastName: string) {
 
 export function getDelegateLabel(
 	user: { given_name: string; family_name: string },
-	delegationMember: any,
-	singleParticipant: any
+	delegationMember: {
+		delegation: {
+			assignedNation: { alpha3Code: string } | null;
+			assignedNonStateActor: { name: string } | null;
+		};
+		assignedCommittee: { abbreviation: string | null; name: string } | null;
+	} | null,
+	singleParticipant: {
+		assignedRole: { name: string } | null;
+	} | null
 ) {
 	let label = 'Participant';
 

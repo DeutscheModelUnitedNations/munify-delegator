@@ -69,6 +69,21 @@ export async function getMessageRecipients(
 	conferenceId: string,
 	userId: string
 ): Promise<RecipientGroup[]> {
+	// Verify caller is a participant in this conference
+	const callerDelegationMember = await db.delegationMember.findUnique({
+		where: { conferenceId_userId: { conferenceId, userId } }
+	});
+
+	if (!callerDelegationMember) {
+		const callerSingleParticipant = await db.singleParticipant.findUnique({
+			where: { conferenceId_userId: { conferenceId, userId } }
+		});
+
+		if (!callerSingleParticipant) {
+			throw new Error('You are not a participant in this conference');
+		}
+	}
+
 	const seenUserIds = new Set<string>();
 
 	// Query all DelegationMembers in the conference with messaging enabled, excluding current user
@@ -483,8 +498,29 @@ export async function sendDelegationMessage({
 		throw new Error('Missing required fields');
 	}
 
+	if (subject.length > 200) {
+		throw new Error('Subject must be at most 200 characters');
+	}
+
+	if (body.length > 2000) {
+		throw new Error('Body must be at most 2000 characters');
+	}
+
 	if (recipientId === senderId) {
 		throw new Error('Cannot send message to yourself');
+	}
+
+	// Rate limiting: max 10 messages per 10 minutes
+	const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+	const recentMessageCount = await db.messageAudit.count({
+		where: {
+			senderUserId: senderId,
+			createdAt: { gte: tenMinutesAgo }
+		}
+	});
+
+	if (recentMessageCount >= 10) {
+		throw new Error('Rate limit exceeded. Please wait before sending more messages.');
 	}
 
 	// Get sender info
@@ -640,12 +676,16 @@ export async function sendDelegationMessage({
 				body: true,
 				createdAt: true,
 				senderUserId: true,
+				recipientUserId: true,
 				senderUser: {
 					select: { given_name: true, family_name: true }
 				}
 			}
 		});
-		if (originalAudit) {
+		if (
+			originalAudit &&
+			(senderId === originalAudit.senderUserId || senderId === originalAudit.recipientUserId)
+		) {
 			const origSenderDM = await db.delegationMember.findUnique({
 				where: {
 					conferenceId_userId: { conferenceId, userId: originalAudit.senderUserId }

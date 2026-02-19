@@ -29,6 +29,7 @@ import { defineAbilitiesForReviewerSnippet } from './entities/reviewerSnippet';
 import { defineAbilitiesForCalendarDay } from './entities/calendarDay';
 import { defineAbilitiesForCalendarTrack } from './entities/calendarTrack';
 import { defineAbilitiesForCalendarEntry } from './entities/calendarEntry';
+import { defineAbilitiesForMessageAudit } from './entities/messageAudit';
 import { defineAbilitiesForPlace } from './entities/place';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -169,6 +170,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForCalendarDay(oidc, builder);
 	defineAbilitiesForCalendarTrack(oidc, builder);
 	defineAbilitiesForCalendarEntry(oidc, builder);
+	defineAbilitiesForMessageAudit(oidc, builder);
 	defineAbilitiesForPlace(oidc, builder);
 
 	return builder.build({

@@ -201,7 +201,6 @@ builder.mutationField('sendDelegationMessage', (t) =>
 			recipientId: t.arg.string({ required: true }),
 			subject: t.arg.string({ required: true }),
 			body: t.arg.string({ required: true }),
-			origin: t.arg.string({ required: true }),
 			replyToMessageId: t.arg.string({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
@@ -212,7 +211,7 @@ builder.mutationField('sendDelegationMessage', (t) =>
 					recipientId: args.recipientId,
 					subject: args.subject,
 					body: args.body,
-					origin: args.origin,
+					origin: ctx.url.origin,
 					senderId: user.sub,
 					replyToMessageId: args.replyToMessageId ?? undefined
 				});
