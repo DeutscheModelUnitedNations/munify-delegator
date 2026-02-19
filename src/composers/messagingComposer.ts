@@ -1,7 +1,7 @@
 import { db } from '$db/db';
 import { renderDelegationMessageEmail } from '$api/services/email/delegationMessageTemplates';
 import { emailService } from '$api/services/email/emailService';
-import countries from 'world-countries';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 // Helper function to generate delegate label
 export function getInitials(firstName: string, lastName: string) {
@@ -26,8 +26,7 @@ export function getDelegateLabel(
 	if (delegationMember) {
 		if (delegationMember.delegation.assignedNation) {
 			const alpha3Code = delegationMember.delegation.assignedNation.alpha3Code;
-			const nation = countries.find((c) => c.cca3 === alpha3Code);
-			const nationName = nation ? nation.name.common : alpha3Code;
+			const nationName = getFullTranslatedCountryNameFromISO3Code(alpha3Code);
 
 			label = nationName;
 			if (delegationMember.assignedCommittee) {
@@ -35,13 +34,13 @@ export function getDelegateLabel(
 			}
 		} else if (delegationMember.delegation.assignedNonStateActor) {
 			label = delegationMember.delegation.assignedNonStateActor.name;
-			const initials = getInitials(user.given_name, user.family_name);
-			label += ` (${initials})`;
+			if (delegationMember.assignedCommittee) {
+				label += ` (${delegationMember.assignedCommittee.abbreviation || delegationMember.assignedCommittee.name})`;
+			}
 		}
 	} else if (singleParticipant) {
 		if (singleParticipant.assignedRole) {
-			const initials = getInitials(user.given_name, user.family_name);
-			label = `${singleParticipant.assignedRole.name} (${initials})`;
+			label = singleParticipant.assignedRole.name;
 		}
 	}
 	return label;
@@ -574,6 +573,8 @@ export async function sendDelegationMessage({
 	}
 
 	const senderLabel = getDelegateLabel(sender, senderDelegationMember, senderSingleParticipant);
+	const senderInitials =
+		`${sender.given_name.charAt(0)}${sender.family_name.charAt(0)}`.toUpperCase();
 
 	// Verify recipient is part of conference
 	const recipientDelegationMember = await db.delegationMember.findUnique({
@@ -623,7 +624,7 @@ export async function sendDelegationMessage({
 
 	// Build quoted message if this is a reply
 	let quotedMessage:
-		| { senderLabel: string; subject: string; body: string; sentAt: string }
+		| { senderLabel: string; senderInitials: string; subject: string; body: string; sentAt: string }
 		| undefined;
 	if (replyToMessageId) {
 		const originalAudit = await db.messageAudit.findUnique({
@@ -658,11 +659,20 @@ export async function sendDelegationMessage({
 				});
 			}
 			const origLabel = getDelegateLabel(originalAudit.senderUser, origSenderDM, origSenderSP);
+			const origInitials =
+				`${originalAudit.senderUser.given_name.charAt(0)}${originalAudit.senderUser.family_name.charAt(0)}`.toUpperCase();
 			quotedMessage = {
 				senderLabel: origLabel,
+				senderInitials: origInitials,
 				subject: originalAudit.subject,
 				body: originalAudit.body,
-				sentAt: originalAudit.createdAt.toISOString()
+				sentAt: originalAudit.createdAt.toLocaleDateString('de-DE', {
+					day: '2-digit',
+					month: '2-digit',
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				})
 			};
 		}
 	}
@@ -670,6 +680,7 @@ export async function sendDelegationMessage({
 	// Render email
 	const { html, text } = await renderDelegationMessageEmail({
 		senderLabel,
+		senderInitials,
 		subject: subject,
 		messageBody: body,
 		conferenceTitle: conference.title,

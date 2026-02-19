@@ -37,12 +37,14 @@ export interface NewReviewEmailProps {
  */
 export interface DelegationMessageEmailProps {
 	senderLabel: string;
+	senderInitials: string;
 	subject: string;
 	messageBody: string;
 	conferenceTitle: string;
 	replyUrl: string;
 	quotedMessage?: {
 		senderLabel: string;
+		senderInitials: string;
 		subject: string;
 		body: string;
 		sentAt: string;

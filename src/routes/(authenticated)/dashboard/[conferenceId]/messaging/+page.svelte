@@ -57,10 +57,28 @@
 		description={m.messagingAboutDescription()}
 	>
 		<div class="flex flex-col gap-4">
-			<p class="text-base-content/80">
-				<i class="fa-duotone fa-fw fa-envelope mr-1"></i>
-				{m.messagingAboutRecipientNotice()}
-			</p>
+			<ul class="flex flex-col gap-3">
+				<li class="flex items-start gap-3">
+					<i class="fa-duotone fa-fw fa-envelope text-primary mt-0.5"></i>
+					<span class="text-base-content/80">{m.messagingAboutRecipientNotice()}</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<i class="fa-duotone fa-fw fa-eye-slash text-primary mt-0.5"></i>
+					<span class="text-base-content/80">{m.messagingAboutPrivacy()}</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<i class="fa-duotone fa-fw fa-reply-all text-primary mt-0.5"></i>
+					<span class="text-base-content/80">{m.messagingAboutThreading()}</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<i class="fa-duotone fa-fw fa-layer-group text-primary mt-0.5"></i>
+					<span class="text-base-content/80">{m.messagingAboutGrouped()}</span>
+				</li>
+				<li class="flex items-start gap-3">
+					<i class="fa-duotone fa-fw fa-clipboard-check text-primary mt-0.5"></i>
+					<span class="text-base-content/80">{m.messagingAboutDeliveryLog()}</span>
+				</li>
+			</ul>
 			<form
 				class="w-full"
 				bind:this={formEl}
