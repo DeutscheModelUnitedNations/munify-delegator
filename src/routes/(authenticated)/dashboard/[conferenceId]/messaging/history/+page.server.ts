@@ -7,6 +7,7 @@ const getMessageHistoryQuery = graphql(`
 		getMessageHistory(conferenceId: $conferenceId) {
 			recipientLabel
 			subject
+			body
 			sentAt
 			status
 		}

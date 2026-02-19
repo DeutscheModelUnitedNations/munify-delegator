@@ -72,6 +72,7 @@ const MessageHistoryItem = builder.simpleObject('MessageHistoryItem', {
 	fields: (t) => ({
 		recipientLabel: t.string(),
 		subject: t.string(),
+		body: t.string(),
 		sentAt: t.string(),
 		status: t.string()
 	})

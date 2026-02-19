@@ -825,6 +825,7 @@
 	"messagingOnlyEnabledUsers": "Only users who have enabled messaging will appear in this list",
 	"messagingOriginalMessage": "Original Message",
 	"messagingOverview": "Overview",
+	"messagingPreview": "Preview",
 	"messagingQuickActions": "Quick actions",
 	"messagingRecipientCount": "{count} recipients",
 	"messagingRecipientLabel": "Recipient",

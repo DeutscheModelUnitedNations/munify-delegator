@@ -380,6 +380,7 @@ export async function getMessageHistory(conferenceId: string, userId: string) {
 		orderBy: { createdAt: 'desc' },
 		select: {
 			subject: true,
+			body: true,
 			createdAt: true,
 			status: true,
 			recipientUserId: true,
@@ -451,6 +452,7 @@ export async function getMessageHistory(conferenceId: string, userId: string) {
 		return {
 			recipientLabel,
 			subject: audit.subject,
+			body: audit.body,
 			sentAt: audit.createdAt.toISOString(),
 			status
 		};

@@ -2,10 +2,12 @@
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
 	import type { PageData } from './$types';
+	import Modal from '$lib/components/Modal.svelte';
 
 	type HistoryItem = {
 		recipientLabel: string;
 		subject: string;
+		body: string;
 		sentAt: string;
 		status: string;
 	};
@@ -20,6 +22,19 @@
 	const basePath = $derived(`/dashboard/${conferenceId}/messaging`);
 	const messages = $derived(data.items ?? []);
 	const loadError = $derived(data.historyLoadError ?? '');
+
+	let selectedMessage = $state<HistoryItem | null>(null);
+	let previewOpen = $state(false);
+
+	function openPreview(msg: HistoryItem) {
+		selectedMessage = msg;
+		previewOpen = true;
+	}
+
+	function closePreview() {
+		selectedMessage = null;
+		previewOpen = false;
+	}
 </script>
 
 <div class="flex flex-col gap-6">
@@ -69,6 +84,7 @@
 								<th>{m.messageSubject()}</th>
 								<th>{m.messagingSent()}</th>
 								<th>{m.messagingStatus()}</th>
+								<th></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -97,10 +113,19 @@
 											</span>
 										{:else}
 											<span class="badge badge-ghost gap-1">
-												<i class="fa-duotone fa-circle text-xs"></i>
+												<i class="fa-solid fa-circle text-xs"></i>
 												{msg.status}
 											</span>
 										{/if}
+									</td>
+									<td>
+										<button
+											class="btn btn-ghost btn-sm"
+											title={m.messagingPreview()}
+											onclick={() => openPreview(msg)}
+										>
+											<i class="fa-duotone fa-eye"></i>
+										</button>
 									</td>
 								</tr>
 							{/each}
@@ -111,3 +136,61 @@
 		</div>
 	</div>
 </div>
+
+<!-- Preview Modal -->
+<Modal bind:open={previewOpen} title={m.messagingPreview()} onclose={closePreview}>
+	{#if selectedMessage}
+		<div class="flex flex-col gap-4">
+			<div>
+				<span class="text-sm font-bold text-base-content/60">{m.messageRecipient()}</span>
+				<p class="font-semibold">{selectedMessage.recipientLabel}</p>
+			</div>
+			<div>
+				<span class="text-sm font-bold text-base-content/60">{m.messageSubject()}</span>
+				<p>{selectedMessage.subject}</p>
+			</div>
+			<div class="flex items-center gap-4">
+				<div>
+					<span class="text-sm font-bold text-base-content/60">{m.messagingSent()}</span>
+					<p class="text-sm">{new Date(selectedMessage.sentAt).toLocaleString()}</p>
+				</div>
+				<div>
+					<span class="text-sm font-bold text-base-content/60">{m.messagingStatus()}</span>
+					<div class="mt-0.5">
+						{#if selectedMessage.status.toLowerCase() === 'delivered' || selectedMessage.status.toLowerCase() === 'sent'}
+							<span class="badge badge-success gap-1">
+								<i class="fa-duotone fa-circle-check text-xs"></i>
+								{selectedMessage.status}
+							</span>
+						{:else if selectedMessage.status.toLowerCase() === 'pending'}
+							<span class="badge badge-warning gap-1">
+								<i class="fa-duotone fa-clock text-xs"></i>
+								{selectedMessage.status}
+							</span>
+						{:else if selectedMessage.status.toLowerCase() === 'failed'}
+							<span class="badge badge-error gap-1">
+								<i class="fa-duotone fa-circle-xmark text-xs"></i>
+								{selectedMessage.status}
+							</span>
+						{:else}
+							<span class="badge badge-ghost gap-1">
+								<i class="fa-duotone fa-circle text-xs"></i>
+								{selectedMessage.status}
+							</span>
+						{/if}
+					</div>
+				</div>
+			</div>
+			<div class="divider my-0"></div>
+			<div>
+				<p class="whitespace-pre-line">{selectedMessage.body}</p>
+			</div>
+		</div>
+	{/if}
+
+	{#snippet action()}
+		<button class="btn" onclick={closePreview}>
+			{m.close()}
+		</button>
+	{/snippet}
+</Modal>

@@ -825,6 +825,7 @@
 	"messagingOnlyEnabledUsers": "Nur Nutzer*innen, die Messaging aktiviert haben, werden in dieser Liste angezeigt",
 	"messagingOriginalMessage": "Ursprüngliche Nachricht",
 	"messagingOverview": "Übersicht",
+	"messagingPreview": "Vorschau",
 	"messagingQuickActions": "Schnellaktionen",
 	"messagingRecipientCount": "{count} Empfangende",
 	"messagingRecipientLabel": "Empfänger*in",

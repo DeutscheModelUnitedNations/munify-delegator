@@ -3029,6 +3029,7 @@ input MessageAuditWhereUniqueInput {
 }
 
 type MessageHistoryItem {
+  body: String!
   recipientLabel: String!
   sentAt: String!
   status: String!
