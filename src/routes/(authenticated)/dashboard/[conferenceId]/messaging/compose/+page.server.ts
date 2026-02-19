@@ -6,8 +6,13 @@ import { fastUserQuery } from '$lib/queries/fastUserQuery';
 const getMessageRecipientsQuery = graphql(`
 	query GetMessageRecipientsQuery($conferenceId: String!) {
 		getMessageRecipients(conferenceId: $conferenceId) {
-			id
-			label
+			groupId
+			groupLabel
+			category
+			recipients {
+				id
+				label
+			}
 		}
 	}
 `);
@@ -43,24 +48,21 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	try {
-		console.log('[Messaging] Fetching recipients for conference:', conferenceId);
 		const result = await getMessageRecipientsQuery.fetch({
 			event,
 			variables: { conferenceId },
 			blocking: true
 		});
 
-		console.log('[Messaging] Query result:', result);
-		const recipients = result.data?.getMessageRecipients ?? [];
-		console.log('[Messaging] Recipients found:', recipients.length);
+		const recipientGroups = result.data?.getMessageRecipients ?? [];
 
 		return {
-			recipients
+			recipientGroups
 		};
 	} catch (loadError) {
 		console.error('Messaging recipients load error:', loadError);
 		return {
-			recipients: [],
+			recipientGroups: [],
 			recipientLoadError: 'Unable to load recipients'
 		};
 	}

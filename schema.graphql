@@ -4718,7 +4718,7 @@ type Query {
   getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!, filter: StatsFilter! = ALL): StatisticsResult!
   getMessageHistory(conferenceId: String!): [MessageHistoryItem!]!
-  getMessageRecipients(conferenceId: String!): [RecipientInfo!]!
+  getMessageRecipients(conferenceId: String!): [RecipientGroup!]!
   impersonatableUsers: [User!]!
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
@@ -4735,6 +4735,13 @@ type Query {
 enum QueryMode {
   default
   insensitive
+}
+
+type RecipientGroup {
+  category: String!
+  groupId: String!
+  groupLabel: String!
+  recipients: [RecipientInfo!]!
 }
 
 type RecipientInfo {

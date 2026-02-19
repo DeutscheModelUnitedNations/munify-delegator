@@ -7,8 +7,14 @@
 	import type { PageData } from './$types';
 
 	type Recipient = { id: string; label: string };
+	type RecipientGroup = {
+		groupId: string;
+		groupLabel: string;
+		category: string;
+		recipients: Recipient[];
+	};
 	type ComposePageData = PageData & {
-		recipients?: Recipient[];
+		recipientGroups?: RecipientGroup[];
 		recipientLoadError?: string;
 	};
 	type ComposeActionData = { error?: string } | null | undefined;
@@ -16,7 +22,8 @@
 	export let data: ComposePageData;
 	export let form: ComposeActionData;
 
-	let recipients: Recipient[] = [];
+	let recipientGroups: RecipientGroup[] = [];
+	let selectedGroupId = '';
 	let selectedRecipient = '';
 	let subject = '';
 	let body = '';
@@ -30,7 +37,7 @@
 		return typeof maybeError === 'string' ? maybeError : '';
 	};
 
-	$: recipients = data.recipients ?? [];
+	$: recipientGroups = data.recipientGroups ?? [];
 	$: loadError = data.recipientLoadError ?? '';
 	$: actionError = getActionError(form);
 
@@ -42,10 +49,27 @@
 	$: userCanReceiveMail = data.conferenceQueryData?.findUniqueUser?.canReceiveDelegationMail;
 	$: showReceiveMailWarning = userCanReceiveMail === false;
 
-	$: if (!prefilled) {
+	$: selectedGroup = recipientGroups.find((g) => g.groupId === selectedGroupId);
+	$: groupRecipients = selectedGroup?.recipients ?? [];
+
+	// Reset recipient when group changes
+	function handleGroupChange() {
+		selectedRecipient = '';
+	}
+
+	// URL prefill: find which group contains the recipient and pre-select both
+	$: if (!prefilled && recipientGroups.length > 0) {
 		const recipientIdParam = $page.url.searchParams.get('recipientId');
 		const subjectParam = $page.url.searchParams.get('subject');
-		if (recipientIdParam) selectedRecipient = recipientIdParam;
+		if (recipientIdParam) {
+			for (const group of recipientGroups) {
+				if (group.recipients.some((r) => r.id === recipientIdParam)) {
+					selectedGroupId = group.groupId;
+					selectedRecipient = recipientIdParam;
+					break;
+				}
+			}
+		}
 		if (subjectParam) subject = subjectParam;
 		prefilled = true;
 	}
@@ -54,6 +78,7 @@
 		return async ({ result, update }) => {
 			if (result.type === 'success') {
 				toast.success(m.messageSent());
+				selectedGroupId = '';
 				selectedRecipient = '';
 				subject = '';
 				body = '';
@@ -246,41 +271,70 @@
 
 			<!-- Form Content -->
 			<div class="p-8 space-y-8">
-				<!-- Recipient -->
+				<!-- Recipient Group -->
 				<div class="form-control">
-					<label class="label mb-2" for="recipient-select">
+					<label class="label mb-2" for="group-select">
 						<span class="label-text text-base font-bold flex items-center gap-2">
 							<div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
-								<i class="fa-solid fa-user text-violet-600"></i>
+								<i class="fa-solid fa-users text-violet-600"></i>
 							</div>
 							{m.messageRecipient()}
 						</span>
 					</label>
 					<select
-						id="recipient-select"
+						id="group-select"
 						class="select select-bordered select-lg w-full rounded-xl border-2 focus:border-violet-500 transition-all"
-						bind:value={selectedRecipient}
-						name="recipientId"
-						required
+						bind:value={selectedGroupId}
+						on:change={handleGroupChange}
 					>
-						<option value="">{m.messagingSelectRecipient()}</option>
+						<option value="">{m.messagingSelectGroup()}</option>
 						{#if loadError}
 							<option disabled value="">{loadError}</option>
-						{:else if recipients.length === 0}
-							<option disabled value="">{m.messagingNoEligibleRecipients()}</option>
+						{:else if recipientGroups.length === 0}
+							<option disabled value="">{m.messagingNoGroupsAvailable()}</option>
 						{:else}
-							{#each recipients as r}
-								<option value={r.id}>{r.label}</option>
+							{#each recipientGroups as group}
+								<option value={group.groupId}>{group.groupLabel}</option>
 							{/each}
 						{/if}
 					</select>
-					<div class="label">
-						<span class="label-text-alt flex items-center gap-1 text-base-content/60">
-							<i class="fa-solid fa-info-circle"></i>
-							{m.messagingOnlyEnabledUsers()}
-						</span>
-					</div>
 				</div>
+
+				<!-- Recipient Person -->
+				{#if selectedGroupId}
+					<div class="form-control">
+						<label class="label mb-2" for="recipient-select">
+							<span class="label-text text-base font-bold flex items-center gap-2">
+								<div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
+									<i class="fa-solid fa-user text-violet-600"></i>
+								</div>
+								{m.messagingSelectRecipient()}
+							</span>
+						</label>
+						<select
+							id="recipient-select"
+							class="select select-bordered select-lg w-full rounded-xl border-2 focus:border-violet-500 transition-all"
+							bind:value={selectedRecipient}
+							name="recipientId"
+							required
+						>
+							<option value="">{m.messagingSelectRecipient()}</option>
+							{#if groupRecipients.length === 0}
+								<option disabled value="">{m.messagingNoRecipientsInGroup()}</option>
+							{:else}
+								{#each groupRecipients as r}
+									<option value={r.id}>{r.label}</option>
+								{/each}
+							{/if}
+						</select>
+						<div class="label">
+							<span class="label-text-alt flex items-center gap-1 text-base-content/60">
+								<i class="fa-solid fa-info-circle"></i>
+								{m.messagingOnlyEnabledUsers()}
+							</span>
+						</div>
+					</div>
+				{/if}
 
 				<!-- Divider -->
 				<div class="relative">

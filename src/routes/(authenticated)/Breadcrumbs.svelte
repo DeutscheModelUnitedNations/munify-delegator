@@ -244,6 +244,14 @@
 		'registration-mode': {
 			icon: 'id-card',
 			translation: m.registrationMode()
+		},
+		compose: {
+			icon: 'plus',
+			translation: m.compose()
+		},
+		history: {
+			icon: 'clock-rotate-left',
+			translation: m.history()
 		}
 	};
 

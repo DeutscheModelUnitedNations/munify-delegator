@@ -49,6 +49,16 @@ const RecipientInfo = builder.simpleObject('RecipientInfo', {
 	})
 });
 
+// Grouped recipients by committee / NSA / custom role
+const RecipientGroup = builder.simpleObject('RecipientGroup', {
+	fields: (t) => ({
+		groupId: t.string(),
+		groupLabel: t.string(),
+		category: t.string(),
+		recipients: t.field({ type: [RecipientInfo] })
+	})
+});
+
 // Type for history items
 const MessageHistoryItem = builder.simpleObject('MessageHistoryItem', {
 	fields: (t) => ({
@@ -96,7 +106,7 @@ builder.queryFields((t) => {
 // Custom query to get message recipients for a conference
 builder.queryField('getMessageRecipients', (t) =>
 	t.field({
-		type: [RecipientInfo],
+		type: [RecipientGroup],
 		args: {
 			conferenceId: t.arg.string({ required: true })
 		},
@@ -104,9 +114,10 @@ builder.queryField('getMessageRecipients', (t) =>
 			const user = ctx.permissions.getLoggedInUserOrThrow();
 			try {
 				return await getMessageRecipients(args.conferenceId, user.sub);
-			} catch (e: any) {
+			} catch (e: unknown) {
 				console.error(e);
-				throw new GraphQLError(e.message || 'Error fetching recipients');
+				const message = e instanceof Error ? e.message : 'Error fetching recipients';
+				throw new GraphQLError(message);
 			}
 		}
 	})
@@ -123,9 +134,10 @@ builder.queryField('getMessageHistory', (t) =>
 			const user = ctx.permissions.getLoggedInUserOrThrow();
 			try {
 				return await getMessageHistory(args.conferenceId, user.sub);
-			} catch (e: any) {
+			} catch (e: unknown) {
 				console.error(e);
-				throw new GraphQLError(e.message || 'Error fetching history');
+				const message = e instanceof Error ? e.message : 'Error fetching history';
+				throw new GraphQLError(message);
 			}
 		}
 	})
@@ -153,9 +165,10 @@ builder.mutationField('sendDelegationMessage', (t) =>
 					replyUrl: args.replyUrl,
 					senderId: user.sub
 				});
-			} catch (e: any) {
+			} catch (e: unknown) {
 				console.error(e);
-				throw new GraphQLError(e.message || 'Error sending message');
+				const message = e instanceof Error ? e.message : 'Error sending message';
+				throw new GraphQLError(message);
 			}
 		}
 	})

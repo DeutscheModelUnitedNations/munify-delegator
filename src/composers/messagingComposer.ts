@@ -47,34 +47,25 @@ export function getDelegateLabel(
 	return label;
 }
 
-export async function getMessageRecipients(conferenceId: string, userId: string) {
-	console.log('[getMessageRecipients] User:', userId, 'Conference:', conferenceId);
+export type RecipientGroup = {
+	groupId: string;
+	groupLabel: string;
+	category: 'COMMITTEE' | 'NSA' | 'CUSTOM_ROLE';
+	recipients: Array<{ id: string; label: string }>;
+};
 
-	// Get current user's delegation member to find their delegationId
-	const currentDelegationMember = await db.delegationMember.findUnique({
-		where: {
-			conferenceId_userId: {
-				conferenceId: conferenceId,
-				userId: userId
-			}
-		},
-		select: {
-			delegationId: true
-		}
-	});
+export async function getMessageRecipients(
+	conferenceId: string,
+	userId: string
+): Promise<RecipientGroup[]> {
+	const seenUserIds = new Set<string>();
 
-	if (!currentDelegationMember?.delegationId) {
-		console.log('[getMessageRecipients] User is not part of a delegation');
-		return [];
-	}
-
-	console.log('[getMessageRecipients] User delegation ID:', currentDelegationMember.delegationId);
-
-	// Fetch delegation members in the SAME delegation (excluding current user)
+	// Query all DelegationMembers in the conference with messaging enabled, excluding current user
 	const delegationMembers = await db.delegationMember.findMany({
 		where: {
-			delegationId: currentDelegationMember.delegationId,
-			userId: { not: userId }
+			conferenceId,
+			userId: { not: userId },
+			user: { canReceiveDelegationMail: true }
 		},
 		include: {
 			user: {
@@ -94,26 +85,124 @@ export async function getMessageRecipients(conferenceId: string, userId: string)
 		}
 	});
 
-	console.log('[getMessageRecipients] Delegation members found:', delegationMembers.length);
+	// Query all SingleParticipants in the conference with messaging enabled, excluding current user
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: {
+			conferenceId,
+			userId: { not: userId },
+			user: { canReceiveDelegationMail: true }
+		},
+		include: {
+			user: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			},
+			assignedRole: true
+		}
+	});
 
-	// Build recipient list
-	const recipients: Array<{ id: string; label: string }> = [];
+	// Group DelegationMembers by committee
+	const committeeGroups = new Map<
+		string,
+		{ label: string; recipients: Array<{ id: string; label: string }> }
+	>();
+
+	// Group DelegationMembers by NSA (those with no assignedCommittee but with assignedNonStateActor)
+	const nsaGroups = new Map<
+		string,
+		{ label: string; recipients: Array<{ id: string; label: string }> }
+	>();
 
 	for (const member of delegationMembers) {
-		if (!member.user) continue;
+		if (!member.user || seenUserIds.has(member.user.id)) continue;
+		seenUserIds.add(member.user.id);
+
 		const userObj = member.user;
-		const name = `${userObj.given_name} ${userObj.family_name}`;
 		const roleLabel = getDelegateLabel(userObj, member, null);
-		const label = roleLabel ? `${name} - ${roleLabel}` : name;
-		recipients.push({ id: userObj.id, label });
+		const label = `${roleLabel} - ${userObj.given_name} ${userObj.family_name}`;
+
+		if (member.assignedCommittee) {
+			const key = member.assignedCommittee.id;
+			if (!committeeGroups.has(key)) {
+				committeeGroups.set(key, {
+					label: member.assignedCommittee.abbreviation || member.assignedCommittee.name,
+					recipients: []
+				});
+			}
+			committeeGroups.get(key)!.recipients.push({ id: userObj.id, label });
+		} else if (member.delegation.assignedNonStateActor) {
+			const nsa = member.delegation.assignedNonStateActor;
+			const key = nsa.id;
+			if (!nsaGroups.has(key)) {
+				nsaGroups.set(key, { label: nsa.name, recipients: [] });
+			}
+			nsaGroups.get(key)!.recipients.push({ id: userObj.id, label });
+		}
 	}
 
-	// Sort by label
-	recipients.sort((a, b) => a.label.localeCompare(b.label));
+	// Group SingleParticipants by assignedRole
+	const roleGroups = new Map<
+		string,
+		{ label: string; recipients: Array<{ id: string; label: string }> }
+	>();
 
-	console.log('[getMessageRecipients] Final recipients count:', recipients.length);
+	for (const participant of singleParticipants) {
+		if (!participant.user || seenUserIds.has(participant.user.id)) continue;
+		seenUserIds.add(participant.user.id);
 
-	return recipients;
+		if (!participant.assignedRole) continue;
+
+		const userObj = participant.user;
+		const roleLabel = getDelegateLabel(userObj, null, participant);
+		const label = `${roleLabel} - ${userObj.given_name} ${userObj.family_name}`;
+
+		const key = participant.assignedRole.id;
+		if (!roleGroups.has(key)) {
+			roleGroups.set(key, { label: participant.assignedRole.name, recipients: [] });
+		}
+		roleGroups.get(key)!.recipients.push({ id: userObj.id, label });
+	}
+
+	// Build result, sorting recipients within each group
+	const groups: RecipientGroup[] = [];
+
+	for (const [groupId, group] of committeeGroups) {
+		group.recipients.sort((a, b) => a.label.localeCompare(b.label));
+		groups.push({
+			groupId,
+			groupLabel: group.label,
+			category: 'COMMITTEE',
+			recipients: group.recipients
+		});
+	}
+
+	for (const [groupId, group] of nsaGroups) {
+		group.recipients.sort((a, b) => a.label.localeCompare(b.label));
+		groups.push({
+			groupId,
+			groupLabel: group.label,
+			category: 'NSA',
+			recipients: group.recipients
+		});
+	}
+
+	for (const [groupId, group] of roleGroups) {
+		group.recipients.sort((a, b) => a.label.localeCompare(b.label));
+		groups.push({
+			groupId,
+			groupLabel: group.label,
+			category: 'CUSTOM_ROLE',
+			recipients: group.recipients
+		});
+	}
+
+	// Sort groups by label
+	groups.sort((a, b) => a.groupLabel.localeCompare(b.groupLabel));
+
+	return groups;
 }
 
 export async function getMessageHistory(conferenceId: string, userId: string) {

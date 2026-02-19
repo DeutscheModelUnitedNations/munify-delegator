@@ -690,6 +690,7 @@ enum MessageStatus {
   SENT
   FAILED
   BLOCKED
+}
 
 /// An invitation to join the team for a conference
 model TeamMemberInvitation {

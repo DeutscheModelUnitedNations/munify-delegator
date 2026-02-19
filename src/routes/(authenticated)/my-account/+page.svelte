@@ -50,7 +50,7 @@
 			</div>
 		{/if}
 	</section>
-	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
+	<div class="mt-10 flex flex-col lg:flex-row items-start justify-center gap-10">
 		<div
 			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-md {data.redirectUrl &&
 				'highlight-card'}"
@@ -155,15 +155,15 @@
 
 					<div class="divider"></div>
 
-					<FormFieldset title="Messaging">
+					<FormFieldset title={m.messagingMessaging()}>
 						<FormCheckbox
 							{form}
 							name="canReceiveDelegationMail"
-							label="Receive messages from other delegates"
+							label={m.allowDelegationMailer()}
 						/>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						<div class="text-sm text-base-content/70">
-							By enabling this, other delegates can send you messages via email. Your email address
-							will <strong>not</strong> be shared with them. You can reply directly from the email notification.
+							{@html m.allowDelegationMailerDescription()}
 						</div>
 					</FormFieldset>
 				</Form>

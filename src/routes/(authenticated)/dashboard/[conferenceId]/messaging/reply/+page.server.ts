@@ -6,8 +6,13 @@ import { fastUserQuery } from '$lib/queries/fastUserQuery';
 const getMessageRecipientsQuery = graphql(`
 	query GetReplyMessageRecipientsQuery($conferenceId: String!) {
 		getMessageRecipients(conferenceId: $conferenceId) {
-			id
-			label
+			groupId
+			groupLabel
+			category
+			recipients {
+				id
+				label
+			}
 		}
 	}
 `);
@@ -56,8 +61,8 @@ export const load: PageServerLoad = async (event) => {
 			blocking: true
 		});
 
-		const recipients = result.data?.getMessageRecipients ?? [];
-		const recipient = recipients.find((r) => r.id === recipientId);
+		const groups = result.data?.getMessageRecipients ?? [];
+		const recipient = groups.flatMap((g) => g.recipients).find((r) => r.id === recipientId);
 
 		if (!recipient) {
 			throw error(404, 'Recipient not found or not eligible');
