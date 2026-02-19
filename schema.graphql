@@ -3099,7 +3099,7 @@ type Mutation {
   rotateSupervisorConnectionCode(id: ID!): ConferenceSupervisor!
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
-  sendDelegationMessage(body: String!, conferenceId: String!, recipientId: String!, replyUrl: String!, subject: String!): String!
+  sendDelegationMessage(body: String!, conferenceId: String!, origin: String!, recipientId: String!, replyToMessageId: String, subject: String!): String!
   setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
@@ -3131,6 +3131,7 @@ type Mutation {
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
   updateReviewerSnippet(content: Json!, id: String!, name: String!): ReviewerSnippet!
+  updateUserMessagingPreference(canReceiveDelegationMail: Boolean!, where: UserWhereUniqueInput!): User
   upsertSelf: UpsertSelfResult!
 }
 
@@ -4717,6 +4718,7 @@ type Query {
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!, filter: StatsFilter! = ALL): StatisticsResult!
+  getMessageForReply(conferenceId: String!, messageAuditId: String!): ReplyMessageInfo
   getMessageHistory(conferenceId: String!): [MessageHistoryItem!]!
   getMessageRecipients(conferenceId: String!): [RecipientGroup!]!
   impersonatableUsers: [User!]!
@@ -4739,14 +4741,21 @@ enum QueryMode {
 
 type RecipientGroup {
   category: String!
+  fontAwesomeIcon: String
   groupId: String!
   groupLabel: String!
   recipients: [RecipientInfo!]!
 }
 
 type RecipientInfo {
+  alpha2Code: String
+  alpha3Code: String
+  firstName: String
+  fontAwesomeIcon: String
   id: String!
   label: String!
+  lastName: String
+  roleName: String
 }
 
 type RegenerateInvitationResult {
@@ -4754,6 +4763,21 @@ type RegenerateInvitationResult {
   newExpiresAt: DateTime
   newToken: String
   success: Boolean!
+}
+
+type ReplyMessageInfo {
+  body: String!
+  id: String!
+  senderAlpha2Code: String
+  senderAlpha3Code: String
+  senderFirstName: String!
+  senderFontAwesomeIcon: String
+  senderLabel: String!
+  senderLastName: String!
+  senderRoleName: String
+  senderUserId: String!
+  sentAt: String!
+  subject: String!
 }
 
 enum ReviewHelpStatus {

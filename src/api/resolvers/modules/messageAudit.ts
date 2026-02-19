@@ -20,7 +20,8 @@ import { GraphQLError } from 'graphql';
 import {
 	sendDelegationMessage,
 	getMessageRecipients,
-	getMessageHistory
+	getMessageHistory,
+	getMessageForReply
 } from '../../../composers/messagingComposer';
 
 export const GQLMessageAudit = builder.prismaObject('MessageAudit', {
@@ -45,7 +46,13 @@ export const GQLMessageAudit = builder.prismaObject('MessageAudit', {
 const RecipientInfo = builder.simpleObject('RecipientInfo', {
 	fields: (t) => ({
 		id: t.string(),
-		label: t.string()
+		label: t.string(),
+		firstName: t.string({ nullable: true }),
+		lastName: t.string({ nullable: true }),
+		alpha2Code: t.string({ nullable: true }),
+		alpha3Code: t.string({ nullable: true }),
+		fontAwesomeIcon: t.string({ nullable: true }),
+		roleName: t.string({ nullable: true })
 	})
 });
 
@@ -55,6 +62,7 @@ const RecipientGroup = builder.simpleObject('RecipientGroup', {
 		groupId: t.string(),
 		groupLabel: t.string(),
 		category: t.string(),
+		fontAwesomeIcon: t.string({ nullable: true }),
 		recipients: t.field({ type: [RecipientInfo] })
 	})
 });
@@ -66,6 +74,24 @@ const MessageHistoryItem = builder.simpleObject('MessageHistoryItem', {
 		subject: t.string(),
 		sentAt: t.string(),
 		status: t.string()
+	})
+});
+
+// Type for reply message info
+const ReplyMessageInfo = builder.simpleObject('ReplyMessageInfo', {
+	fields: (t) => ({
+		id: t.string(),
+		subject: t.string(),
+		body: t.string(),
+		senderLabel: t.string(),
+		senderUserId: t.string(),
+		senderFirstName: t.string(),
+		senderLastName: t.string(),
+		senderAlpha2Code: t.string({ nullable: true }),
+		senderAlpha3Code: t.string({ nullable: true }),
+		senderFontAwesomeIcon: t.string({ nullable: true }),
+		senderRoleName: t.string({ nullable: true }),
+		sentAt: t.string()
 	})
 });
 
@@ -143,6 +169,28 @@ builder.queryField('getMessageHistory', (t) =>
 	})
 );
 
+// Query to get a message for reply context
+builder.queryField('getMessageForReply', (t) =>
+	t.field({
+		type: ReplyMessageInfo,
+		nullable: true,
+		args: {
+			messageAuditId: t.arg.string({ required: true }),
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+			try {
+				return await getMessageForReply(args.messageAuditId, args.conferenceId, user.sub);
+			} catch (e: unknown) {
+				console.error(e);
+				const message = e instanceof Error ? e.message : 'Error fetching reply message';
+				throw new GraphQLError(message);
+			}
+		}
+	})
+);
+
 // Mutation to send a delegation message
 builder.mutationField('sendDelegationMessage', (t) =>
 	t.field({
@@ -152,7 +200,8 @@ builder.mutationField('sendDelegationMessage', (t) =>
 			recipientId: t.arg.string({ required: true }),
 			subject: t.arg.string({ required: true }),
 			body: t.arg.string({ required: true }),
-			replyUrl: t.arg.string({ required: true })
+			origin: t.arg.string({ required: true }),
+			replyToMessageId: t.arg.string({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
 			const user = ctx.permissions.getLoggedInUserOrThrow();
@@ -162,8 +211,9 @@ builder.mutationField('sendDelegationMessage', (t) =>
 					recipientId: args.recipientId,
 					subject: args.subject,
 					body: args.body,
-					replyUrl: args.replyUrl,
-					senderId: user.sub
+					origin: args.origin,
+					senderId: user.sub,
+					replyToMessageId: args.replyToMessageId ?? undefined
 				});
 			} catch (e: unknown) {
 				console.error(e);

@@ -9,10 +9,50 @@ const getMessageRecipientsQuery = graphql(`
 			groupId
 			groupLabel
 			category
+			fontAwesomeIcon
 			recipients {
 				id
 				label
+				firstName
+				lastName
+				alpha2Code
+				alpha3Code
+				fontAwesomeIcon
+				roleName
 			}
+		}
+	}
+`);
+
+const messagingPreferenceMutation = graphql(`
+	mutation ComposeToggleMessagingPreference(
+		$where: UserWhereUniqueInput!
+		$canReceiveDelegationMail: Boolean!
+	) {
+		updateUserMessagingPreference(
+			where: $where
+			canReceiveDelegationMail: $canReceiveDelegationMail
+		) {
+			id
+		}
+	}
+`);
+
+const getMessageForReplyQuery = graphql(`
+	query GetMessageForReplyQuery($messageAuditId: String!, $conferenceId: String!) {
+		getMessageForReply(messageAuditId: $messageAuditId, conferenceId: $conferenceId) {
+			id
+			subject
+			body
+			senderLabel
+			senderUserId
+			senderFirstName
+			senderLastName
+			senderAlpha2Code
+			senderAlpha3Code
+			senderFontAwesomeIcon
+			senderRoleName
+			sentAt
 		}
 	}
 `);
@@ -23,14 +63,16 @@ const sendDelegationMessageMutation = graphql(`
 		$recipientId: String!
 		$subject: String!
 		$body: String!
-		$replyUrl: String!
+		$origin: String!
+		$replyToMessageId: String
 	) {
 		sendDelegationMessage(
 			conferenceId: $conferenceId
 			recipientId: $recipientId
 			subject: $subject
 			body: $body
-			replyUrl: $replyUrl
+			origin: $origin
+			replyToMessageId: $replyToMessageId
 		)
 	}
 `);
@@ -47,6 +89,8 @@ export const load: PageServerLoad = async (event) => {
 		throw error(400, 'Missing conference id');
 	}
 
+	const replyToId = event.url.searchParams.get('replyTo');
+
 	try {
 		const result = await getMessageRecipientsQuery.fetch({
 			event,
@@ -56,19 +100,59 @@ export const load: PageServerLoad = async (event) => {
 
 		const recipientGroups = result.data?.getMessageRecipients ?? [];
 
+		if (replyToId) {
+			const replyResult = await getMessageForReplyQuery.fetch({
+				event,
+				variables: { messageAuditId: replyToId, conferenceId },
+				blocking: true
+			});
+			return {
+				recipientGroups,
+				replyToMessage: replyResult.data?.getMessageForReply ?? null
+			};
+		}
+
 		return {
-			recipientGroups
+			recipientGroups,
+			replyToMessage: null as null
 		};
 	} catch (loadError) {
 		console.error('Messaging recipients load error:', loadError);
 		return {
 			recipientGroups: [],
+			replyToMessage: null,
 			recipientLoadError: 'Unable to load recipients'
 		};
 	}
 };
 
 export const actions = {
+	toggleMessaging: async (event) => {
+		const formData = await event.request.formData();
+		const enabledValue = formData.get('enabled');
+
+		if (typeof enabledValue !== 'string') {
+			return fail(400, { error: 'Invalid request' });
+		}
+
+		const enabled = enabledValue === 'true';
+
+		const { data } = await fastUserQuery.fetch({ event, blocking: true });
+		const userId = data?.offlineUserRefresh.user?.sub;
+		if (!userId) {
+			return fail(401, { error: 'Unauthorized' });
+		}
+
+		await messagingPreferenceMutation.mutate(
+			{
+				where: { id: userId },
+				canReceiveDelegationMail: enabled
+			},
+			{ event }
+		);
+
+		return { status: 'ok' };
+	},
 	send: async (event) => {
 		const conferenceId = event.params.conferenceId;
 		if (!conferenceId) {
@@ -106,8 +190,11 @@ export const actions = {
 			return fail(400, { error: 'Cannot send to yourself' });
 		}
 
-		const replySubject = `Re: ${subject}`;
-		const replyUrl = `${event.url.origin}/dashboard/${conferenceId}/messaging/reply?recipientId=${encodeURIComponent(authUser.sub)}&subject=${encodeURIComponent(replySubject)}`;
+		const replyToMessageIdValue = formData.get('replyToMessageId');
+		const replyToMessageId =
+			typeof replyToMessageIdValue === 'string' && replyToMessageIdValue.trim()
+				? replyToMessageIdValue.trim()
+				: null;
 
 		try {
 			await sendDelegationMessageMutation.mutate(
@@ -116,7 +203,8 @@ export const actions = {
 					recipientId,
 					subject,
 					body: messageBody,
-					replyUrl
+					origin: event.url.origin,
+					replyToMessageId
 				},
 				{ event }
 			);

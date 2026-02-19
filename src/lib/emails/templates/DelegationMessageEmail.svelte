@@ -7,10 +7,18 @@
 		messageBody: string;
 		conferenceTitle: string;
 		replyUrl: string;
+		quotedMessage?: {
+			senderLabel: string;
+			subject: string;
+			body: string;
+			sentAt: string;
+		};
 	}
 
-	let { senderLabel, subject, messageBody, conferenceTitle, replyUrl }: Props = $props();
+	let { senderLabel, subject, messageBody, conferenceTitle, replyUrl, quotedMessage }: Props =
+		$props();
 	const messageLines = messageBody.split(/\r?\n/);
+	const quotedLines = quotedMessage?.body.split(/\r?\n/) ?? [];
 </script>
 
 <Html lang="de">
@@ -54,6 +62,24 @@
 						Jetzt antworten
 					</Link>
 				</Section>
+
+				{#if quotedMessage}
+					<Hr style="border-color: #e5e7eb; margin: 20px 0;" />
+
+					<Text style="font-size: 13px; color: #9ca3af; margin-bottom: 4px;">
+						--- Urspruengliche Nachricht ---
+					</Text>
+					<Text style="font-size: 12px; color: #9ca3af; margin-bottom: 8px;">
+						Von: {quotedMessage.senderLabel} | Betreff: {quotedMessage.subject} | {quotedMessage.sentAt}
+					</Text>
+					<Section style="border-left: 2px solid #d1d5db; padding-left: 10px; margin: 0 0 12px 0;">
+						{#each quotedLines as line}
+							<Text style="font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0;">
+								{line || ' '}
+							</Text>
+						{/each}
+					</Section>
+				{/if}
 
 				<Hr style="border-color: #e5e7eb; margin: 20px 0;" />
 

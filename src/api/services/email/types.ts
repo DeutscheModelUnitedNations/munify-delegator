@@ -41,4 +41,10 @@ export interface DelegationMessageEmailProps {
 	messageBody: string;
 	conferenceTitle: string;
 	replyUrl: string;
+	quotedMessage?: {
+		senderLabel: string;
+		subject: string;
+		body: string;
+		sentAt: string;
+	};
 }

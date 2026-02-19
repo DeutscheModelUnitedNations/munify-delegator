@@ -1,10 +1,21 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import type { PageData } from './$types';
+
+	const { data }: { data: PageData } = $props();
 
 	const conferenceId = $derived(page.params.conferenceId);
 	const basePath = $derived(`/dashboard/${conferenceId}/messaging`);
+	const canReceiveMail = $derived(
+		data.conferenceQueryData?.findUniqueUser?.canReceiveDelegationMail ?? false
+	);
+
+	let submitting = $state(false);
+	let formEl: HTMLFormElement | undefined = $state();
 </script>
 
 <div class="flex flex-col gap-6">
@@ -50,10 +61,38 @@
 				<i class="fa-duotone fa-fw fa-envelope mr-1"></i>
 				{m.messagingAboutRecipientNotice()}
 			</p>
-			<div role="alert" class="alert alert-info">
-				<i class="fa-duotone fa-circle-exclamation text-lg"></i>
-				<span>{m.messagingActivationNotice()}</span>
-			</div>
+			<form
+				class="w-full"
+				bind:this={formEl}
+				method="POST"
+				action="?/toggleMessaging"
+				use:enhance={() => {
+					submitting = true;
+					return async ({ update }) => {
+						await update();
+						await invalidateAll();
+						submitting = false;
+					};
+				}}
+			>
+				<input type="hidden" name="enabled" value={String(!canReceiveMail)} />
+				<div role="alert" class="alert {canReceiveMail ? 'alert-success' : 'alert-warning'}">
+					<i class="fa-solid {canReceiveMail ? 'fa-circle-check' : 'fa-circle-exclamation'} text-lg"
+					></i>
+					<span class="flex-1"
+						>{canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}</span
+					>
+					<input
+						type="checkbox"
+						class="toggle {canReceiveMail ? 'toggle-success' : ''}"
+						class:opacity-50={submitting}
+						checked={canReceiveMail}
+						disabled={submitting}
+						aria-label={canReceiveMail ? m.messagingToggleEnabled() : m.messagingToggleDisabled()}
+						onchange={() => formEl?.requestSubmit()}
+					/>
+				</div>
+			</form>
 		</div>
 	</DashboardSection>
 
@@ -85,7 +124,7 @@
 
 	<!-- Data Notice -->
 	<div role="alert" class="alert alert-warning">
-		<i class="fa-duotone fa-shield-halved text-lg"></i>
+		<i class="fa-solid fa-shield-halved text-lg"></i>
 		<span>{m.messagingDataNotice()}</span>
 	</div>
 
