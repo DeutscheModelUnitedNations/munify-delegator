@@ -684,6 +684,11 @@ model MessageAudit {
   // Technical meta-data
   messageId String? // The ID from the email provider
   status    MessageStatus @default(SENT)
+
+  // Threading
+  replyToMessageId String?
+  replyToMessage   MessageAudit?  @relation("MessageThread", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies          MessageAudit[] @relation("MessageThread")
 }
 
 /// Status for message audit entries

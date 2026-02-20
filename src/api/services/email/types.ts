@@ -42,11 +42,11 @@ export interface DelegationMessageEmailProps {
 	messageBody: string;
 	conferenceTitle: string;
 	replyUrl: string;
-	quotedMessage?: {
+	threadMessages?: Array<{
 		senderLabel: string;
 		senderInitials: string;
 		subject: string;
 		body: string;
 		sentAt: string;
-	};
+	}>;
 }

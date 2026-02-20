@@ -8,13 +8,13 @@
 		messageBody: string;
 		conferenceTitle: string;
 		replyUrl: string;
-		quotedMessage?: {
+		threadMessages?: Array<{
 			senderLabel: string;
 			senderInitials: string;
 			subject: string;
 			body: string;
 			sentAt: string;
-		};
+		}>;
 	}
 
 	let {
@@ -24,10 +24,9 @@
 		messageBody,
 		conferenceTitle,
 		replyUrl,
-		quotedMessage
+		threadMessages = []
 	}: Props = $props();
 	const messageLines = messageBody.split(/\r?\n/);
-	const quotedLines = quotedMessage?.body.split(/\r?\n/) ?? [];
 </script>
 
 <Html lang="de">
@@ -92,35 +91,37 @@
 			</Section>
 
 			<!-- F. Quoted thread -->
-			{#if quotedMessage}
-				<Section
-					style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin: 0 0 24px 0;"
-				>
-					<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 8px;">
-						<tbody>
-							<tr>
-								<td
-									style="width: 28px; height: 28px; background-color: #d1d5db; border-radius: 14px; text-align: center; vertical-align: middle; color: #6b7280; font-size: 11px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
-								>
-									{quotedMessage.senderInitials}
-								</td>
-								<td style="padding-left: 8px; vertical-align: middle;">
-									<Text style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.2;">
-										{quotedMessage.senderLabel} &middot; {quotedMessage.sentAt}
-									</Text>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<Text style="font-size: 13px; font-weight: 600; color: #9ca3af; margin: 0 0 6px 0;">
-						{quotedMessage.subject}
-					</Text>
-					{#each quotedLines as line}
-						<Text style="font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0;">
-							{line || '\u00A0'}
+			{#if threadMessages.length > 0}
+				{#each threadMessages as threadMsg}
+					<Section
+						style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin: 0 0 12px 0;"
+					>
+						<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 8px;">
+							<tbody>
+								<tr>
+									<td
+										style="width: 28px; height: 28px; background-color: #d1d5db; border-radius: 14px; text-align: center; vertical-align: middle; color: #6b7280; font-size: 11px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
+									>
+										{threadMsg.senderInitials}
+									</td>
+									<td style="padding-left: 8px; vertical-align: middle;">
+										<Text style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.2;">
+											{threadMsg.senderLabel} &middot; {threadMsg.sentAt}
+										</Text>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<Text style="font-size: 13px; font-weight: 600; color: #9ca3af; margin: 0 0 6px 0;">
+							{threadMsg.subject}
 						</Text>
-					{/each}
-				</Section>
+						{#each threadMsg.body.split(/\r?\n/) as line}
+							<Text style="font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0;">
+								{line || '\u00A0'}
+							</Text>
+						{/each}
+					</Section>
+				{/each}
 			{/if}
 
 			<!-- G. Footer -->

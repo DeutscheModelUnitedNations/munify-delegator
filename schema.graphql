@@ -2732,6 +2732,15 @@ type ImportCalendarDayResult {
   id: String!
 }
 
+type InboxMessageItem {
+  body: String!
+  hasThread: Boolean!
+  id: String!
+  senderLabel: String!
+  sentAt: String!
+  subject: String!
+}
+
 input IntFieldUpdateOperationsInput {
   decrement: Int
   divide: Int
@@ -2901,6 +2910,8 @@ input MessageAuditCreateInput {
   id: String
   messageId: String
   recipientUserId: String!
+  replies: MessageAuditCreateNestedManyWithoutReplyToMessageInput
+  replyToMessageId: String
   senderUserId: String!
   status: MessageStatus
   subject: String!
@@ -2915,6 +2926,10 @@ input MessageAuditCreateNestedManyWithoutRecipientUserInput {
   connect: [MessageAuditWhereUniqueInput!]
 }
 
+input MessageAuditCreateNestedManyWithoutReplyToMessageInput {
+  connect: [MessageAuditWhereUniqueInput!]
+}
+
 input MessageAuditCreateNestedManyWithoutSenderUserInput {
   connect: [MessageAuditWhereUniqueInput!]
 }
@@ -2923,6 +2938,11 @@ input MessageAuditListRelationFilter {
   every: MessageAuditWhereInput
   none: MessageAuditWhereInput
   some: MessageAuditWhereInput
+}
+
+input MessageAuditNullableScalarRelationFilter {
+  is: MessageAuditWhereInput
+  isNot: MessageAuditWhereInput
 }
 
 input MessageAuditOrderByRelationAggregateInput {
@@ -2938,6 +2958,9 @@ input MessageAuditOrderByWithRelationInput {
   messageId: SortOrder
   recipientUser: UserOrderByWithRelationInput
   recipientUserId: SortOrder
+  replies: MessageAuditOrderByRelationAggregateInput
+  replyToMessage: MessageAuditOrderByWithRelationInput
+  replyToMessageId: SortOrder
   senderUser: UserOrderByWithRelationInput
   senderUserId: SortOrder
   status: SortOrder
@@ -2952,6 +2975,7 @@ enum MessageAuditScalarFieldEnum {
   id
   messageId
   recipientUserId
+  replyToMessageId
   senderUserId
   status
   subject
@@ -2965,6 +2989,8 @@ input MessageAuditUpdateInput {
   id: StringFieldUpdateOperationsInput
   messageId: NullableStringFieldUpdateOperationsInput
   recipientUserId: StringFieldUpdateOperationsInput
+  replies: MessageAuditUpdateManyWithoutReplyToMessageNestedInput
+  replyToMessageId: NullableStringFieldUpdateOperationsInput
   senderUserId: StringFieldUpdateOperationsInput
   status: EnumMessageStatusFieldUpdateOperationsInput
   subject: StringFieldUpdateOperationsInput
@@ -2993,6 +3019,12 @@ input MessageAuditUpdateManyWithoutRecipientUserNestedInput {
   set: [MessageAuditWhereUniqueInput!]
 }
 
+input MessageAuditUpdateManyWithoutReplyToMessageNestedInput {
+  connect: [MessageAuditWhereUniqueInput!]
+  disconnect: [MessageAuditWhereUniqueInput!]
+  set: [MessageAuditWhereUniqueInput!]
+}
+
 input MessageAuditUpdateManyWithoutSenderUserNestedInput {
   connect: [MessageAuditWhereUniqueInput!]
   disconnect: [MessageAuditWhereUniqueInput!]
@@ -3011,6 +3043,9 @@ input MessageAuditWhereInput {
   messageId: StringNullableFilter
   recipientUser: UserWhereInput
   recipientUserId: StringFilter
+  replies: MessageAuditListRelationFilter
+  replyToMessage: MessageAuditWhereInput
+  replyToMessageId: StringNullableFilter
   senderUser: UserWhereInput
   senderUserId: StringFilter
   status: EnumMessageStatusFilter
@@ -3030,6 +3065,9 @@ input MessageAuditWhereUniqueInput {
   messageId: StringNullableFilter
   recipientUser: UserWhereInput
   recipientUserId: StringFilter
+  replies: MessageAuditListRelationFilter
+  replyToMessage: MessageAuditWhereInput
+  replyToMessageId: StringNullableFilter
   senderUser: UserWhereInput
   senderUserId: StringFilter
   status: EnumMessageStatusFilter
@@ -4728,9 +4766,11 @@ type Query {
   getCertificateJWT(where: ConferenceParticipantStatusWhereUniqueInput!): CertificateJWT!
   getCertificateJWTPublicKeyObject: JWK!
   getConferenceStatistics(conferenceId: ID!, filter: StatsFilter! = ALL): StatisticsResult!
+  getInboxMessages(conferenceId: String!): [InboxMessageItem!]!
   getMessageForReply(conferenceId: String!, messageAuditId: String!): ReplyMessageInfo
   getMessageHistory(conferenceId: String!): [MessageHistoryItem!]!
   getMessageRecipients(conferenceId: String!): [RecipientGroup!]!
+  getMessageThread(conferenceId: String!, messageAuditId: String!): [ThreadMessage!]!
   impersonatableUsers: [User!]!
   impersonationStatus: ImpersonationStatus!
   logoutUrl: String!
@@ -6310,6 +6350,16 @@ enum TeamRole {
   PROJECT_MANAGEMENT
   REVIEWER
   TEAM_COORDINATOR
+}
+
+type ThreadMessage {
+  body: String!
+  id: String!
+  isCurrentUser: Boolean!
+  senderLabel: String!
+  senderUserId: String!
+  sentAt: String!
+  subject: String!
 }
 
 enum TransactionIsolationLevel {

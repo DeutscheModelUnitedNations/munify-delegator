@@ -21,7 +21,9 @@ import {
 	sendDelegationMessage,
 	getMessageRecipients,
 	getMessageHistory,
-	getMessageForReply
+	getMessageForReply,
+	getInboxMessages,
+	getMessageThread
 } from '../../../composers/messagingComposer';
 
 export const GQLMessageAudit = builder.prismaObject('MessageAudit', {
@@ -93,6 +95,31 @@ const ReplyMessageInfo = builder.simpleObject('ReplyMessageInfo', {
 		senderFontAwesomeIcon: t.string({ nullable: true }),
 		senderRoleName: t.string({ nullable: true }),
 		sentAt: t.string()
+	})
+});
+
+// Type for inbox items
+const InboxMessageItem = builder.simpleObject('InboxMessageItem', {
+	fields: (t) => ({
+		id: t.string(),
+		senderLabel: t.string(),
+		subject: t.string(),
+		body: t.string(),
+		sentAt: t.string(),
+		hasThread: t.boolean()
+	})
+});
+
+// Type for thread messages
+const ThreadMessage = builder.simpleObject('ThreadMessage', {
+	fields: (t) => ({
+		id: t.string(),
+		subject: t.string(),
+		body: t.string(),
+		sentAt: t.string(),
+		senderLabel: t.string(),
+		senderUserId: t.string(),
+		isCurrentUser: t.boolean()
 	})
 });
 
@@ -186,6 +213,47 @@ builder.queryField('getMessageForReply', (t) =>
 			} catch (e: unknown) {
 				console.error(e);
 				const message = e instanceof Error ? e.message : 'Error fetching reply message';
+				throw new GraphQLError(message);
+			}
+		}
+	})
+);
+
+// Query to get inbox messages (received)
+builder.queryField('getInboxMessages', (t) =>
+	t.field({
+		type: [InboxMessageItem],
+		args: {
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+			try {
+				return await getInboxMessages(args.conferenceId, user.sub);
+			} catch (e: unknown) {
+				console.error(e);
+				const message = e instanceof Error ? e.message : 'Error fetching inbox messages';
+				throw new GraphQLError(message);
+			}
+		}
+	})
+);
+
+// Query to get a message thread
+builder.queryField('getMessageThread', (t) =>
+	t.field({
+		type: [ThreadMessage],
+		args: {
+			messageAuditId: t.arg.string({ required: true }),
+			conferenceId: t.arg.string({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const user = ctx.permissions.getLoggedInUserOrThrow();
+			try {
+				return await getMessageThread(args.messageAuditId, args.conferenceId, user.sub);
+			} catch (e: unknown) {
+				console.error(e);
+				const message = e instanceof Error ? e.message : 'Error fetching message thread';
 				throw new GraphQLError(message);
 			}
 		}

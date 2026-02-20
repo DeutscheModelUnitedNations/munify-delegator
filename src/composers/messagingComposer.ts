@@ -476,6 +476,204 @@ export async function getMessageHistory(conferenceId: string, userId: string) {
 	return items;
 }
 
+export async function getInboxMessages(conferenceId: string, userId: string) {
+	const audits = await db.messageAudit.findMany({
+		where: {
+			recipientUserId: userId,
+			conferenceId: conferenceId
+		},
+		orderBy: { createdAt: 'desc' },
+		select: {
+			id: true,
+			subject: true,
+			body: true,
+			createdAt: true,
+			senderUserId: true,
+			replyToMessageId: true,
+			_count: { select: { replies: true } },
+			senderUser: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			}
+		}
+	});
+
+	if (audits.length === 0) {
+		return [];
+	}
+
+	const senderIds = Array.from(new Set(audits.map((a) => a.senderUserId)));
+
+	const delegationMembers = await db.delegationMember.findMany({
+		where: {
+			conferenceId,
+			userId: { in: senderIds }
+		},
+		include: {
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
+
+	const delegationByUserId = new Map(delegationMembers.map((m) => [m.userId, m]));
+
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: {
+			conferenceId,
+			userId: { in: senderIds }
+		},
+		include: {
+			assignedRole: true
+		}
+	});
+
+	const singleByUserId = new Map(singleParticipants.map((p) => [p.userId, p]));
+
+	return audits.map((audit) => {
+		const sender = audit.senderUser;
+		const delegationMember = delegationByUserId.get(audit.senderUserId) ?? null;
+		const singleParticipant = !delegationMember
+			? (singleByUserId.get(audit.senderUserId) ?? null)
+			: null;
+		const senderLabel = sender
+			? getDelegateLabel(sender, delegationMember, singleParticipant)
+			: 'Participant';
+		const hasThread = audit.replyToMessageId !== null || audit._count.replies > 0;
+
+		return {
+			id: audit.id,
+			senderLabel:
+				senderLabel !== 'Participant' && senderLabel
+					? senderLabel
+					: sender
+						? `${sender.given_name} ${sender.family_name}`
+						: 'Participant',
+			subject: audit.subject,
+			body: audit.body,
+			sentAt: audit.createdAt.toISOString(),
+			hasThread
+		};
+	});
+}
+
+export async function getMessageThread(
+	messageAuditId: string,
+	conferenceId: string,
+	userId: string
+) {
+	// Find the starting message
+	const startMsg = await db.messageAudit.findUnique({
+		where: { id: messageAuditId },
+		select: { id: true, replyToMessageId: true, conferenceId: true }
+	});
+
+	if (!startMsg || startMsg.conferenceId !== conferenceId) {
+		return [];
+	}
+
+	// Walk up to find root message
+	let rootId = startMsg.id;
+	let parentId = startMsg.replyToMessageId;
+	while (parentId) {
+		const parent = await db.messageAudit.findUnique({
+			where: { id: parentId },
+			select: { id: true, replyToMessageId: true }
+		});
+		if (!parent) break;
+		rootId = parent.id;
+		parentId = parent.replyToMessageId;
+	}
+
+	// Walk down from root collecting all messages in the chain
+	const allMessages: Array<{
+		id: string;
+		subject: string;
+		body: string;
+		createdAt: Date;
+		senderUserId: string;
+		recipientUserId: string;
+		senderUser: { given_name: string; family_name: string };
+	}> = [];
+
+	let currentIds = [rootId];
+	while (currentIds.length > 0) {
+		const messages = await db.messageAudit.findMany({
+			where: { id: { in: currentIds } },
+			select: {
+				id: true,
+				subject: true,
+				body: true,
+				createdAt: true,
+				senderUserId: true,
+				recipientUserId: true,
+				senderUser: {
+					select: { given_name: true, family_name: true }
+				},
+				replies: {
+					select: { id: true }
+				}
+			}
+		});
+		for (const msg of messages) {
+			allMessages.push(msg);
+		}
+		currentIds = messages.flatMap((m) => m.replies.map((r) => r.id));
+	}
+
+	// Verify requesting user is part of the thread
+	const isInThread = allMessages.some(
+		(m) => m.senderUserId === userId || m.recipientUserId === userId
+	);
+	if (!isInThread) {
+		return [];
+	}
+
+	// Sort chronologically
+	allMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+	// Batch resolve sender labels
+	const senderIds = Array.from(new Set(allMessages.map((m) => m.senderUserId)));
+
+	const delegationMembers = await db.delegationMember.findMany({
+		where: { conferenceId, userId: { in: senderIds } },
+		include: {
+			delegation: { include: { assignedNation: true, assignedNonStateActor: true } },
+			assignedCommittee: true
+		}
+	});
+	const delegationByUserId = new Map(delegationMembers.map((m) => [m.userId, m]));
+
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: { conferenceId, userId: { in: senderIds } },
+		include: { assignedRole: true }
+	});
+	const singleByUserId = new Map(singleParticipants.map((p) => [p.userId, p]));
+
+	return allMessages.map((msg) => {
+		const dm = delegationByUserId.get(msg.senderUserId) ?? null;
+		const sp = !dm ? (singleByUserId.get(msg.senderUserId) ?? null) : null;
+		const label = getDelegateLabel(msg.senderUser, dm, sp);
+
+		return {
+			id: msg.id,
+			subject: msg.subject,
+			body: msg.body,
+			sentAt: msg.createdAt.toISOString(),
+			senderLabel: label,
+			senderUserId: msg.senderUserId,
+			isCurrentUser: msg.senderUserId === userId
+		};
+	});
+}
+
 export async function sendDelegationMessage({
 	conferenceId,
 	recipientId,
@@ -657,69 +855,74 @@ export async function sendDelegationMessage({
 			senderUserId: sender.id,
 			recipientUserId: recipient.id,
 			conferenceId: conferenceId,
-			status: 'SENT'
+			status: 'SENT',
+			replyToMessageId: replyToMessageId ?? null
 		}
 	});
 
 	// Build reply URL from the new audit ID
 	const replyUrl = `${origin}/dashboard/${conferenceId}/messaging/compose?replyTo=${audit.id}`;
 
-	// Build quoted message if this is a reply
-	let quotedMessage:
-		| { senderLabel: string; senderInitials: string; subject: string; body: string; sentAt: string }
-		| undefined;
+	// Build full thread history for email
+	const threadMessages: Array<{
+		senderLabel: string;
+		senderInitials: string;
+		subject: string;
+		body: string;
+		sentAt: string;
+	}> = [];
 	if (replyToMessageId) {
-		const originalAudit = await db.messageAudit.findUnique({
-			where: { id: replyToMessageId },
-			select: {
-				subject: true,
-				body: true,
-				createdAt: true,
-				senderUserId: true,
-				recipientUserId: true,
-				senderUser: {
-					select: { given_name: true, family_name: true }
+		let currentId: string | null = replyToMessageId;
+		while (currentId) {
+			const msg = await db.messageAudit.findUnique({
+				where: { id: currentId },
+				select: {
+					subject: true,
+					body: true,
+					createdAt: true,
+					senderUserId: true,
+					replyToMessageId: true,
+					senderUser: {
+						select: { given_name: true, family_name: true }
+					}
 				}
-			}
-		});
-		if (
-			originalAudit &&
-			(senderId === originalAudit.senderUserId || senderId === originalAudit.recipientUserId)
-		) {
-			const origSenderDM = await db.delegationMember.findUnique({
+			});
+			if (!msg) break;
+			const msgSenderDM = await db.delegationMember.findUnique({
 				where: {
-					conferenceId_userId: { conferenceId, userId: originalAudit.senderUserId }
+					conferenceId_userId: { conferenceId, userId: msg.senderUserId }
 				},
 				include: {
 					delegation: { include: { assignedNation: true, assignedNonStateActor: true } },
 					assignedCommittee: true
 				}
 			});
-			let origSenderSP = null as { assignedRole: { name: string } | null } | null;
-			if (!origSenderDM) {
-				origSenderSP = await db.singleParticipant.findUnique({
+			let msgSenderSP = null as { assignedRole: { name: string } | null } | null;
+			if (!msgSenderDM) {
+				msgSenderSP = await db.singleParticipant.findUnique({
 					where: {
-						conferenceId_userId: { conferenceId, userId: originalAudit.senderUserId }
+						conferenceId_userId: { conferenceId, userId: msg.senderUserId }
 					},
 					include: { assignedRole: true }
 				});
 			}
-			const origLabel = getDelegateLabel(originalAudit.senderUser, origSenderDM, origSenderSP);
-			const origInitials =
-				`${originalAudit.senderUser.given_name.charAt(0)}${originalAudit.senderUser.family_name.charAt(0)}`.toUpperCase();
-			quotedMessage = {
-				senderLabel: origLabel,
-				senderInitials: origInitials,
-				subject: originalAudit.subject,
-				body: originalAudit.body,
-				sentAt: originalAudit.createdAt.toLocaleDateString('de-DE', {
+			const msgLabel = getDelegateLabel(msg.senderUser, msgSenderDM, msgSenderSP);
+			const msgInitials =
+				`${msg.senderUser.given_name.charAt(0)}${msg.senderUser.family_name.charAt(0)}`.toUpperCase();
+			threadMessages.push({
+				senderLabel: msgLabel,
+				senderInitials: msgInitials,
+				subject: msg.subject,
+				body: msg.body,
+				sentAt: msg.createdAt.toLocaleDateString('de-DE', {
 					day: '2-digit',
 					month: '2-digit',
 					year: 'numeric',
 					hour: '2-digit',
 					minute: '2-digit'
 				})
-			};
+			});
+			currentId = msg.replyToMessageId;
 		}
 	}
 
@@ -731,7 +934,7 @@ export async function sendDelegationMessage({
 		messageBody: body,
 		conferenceTitle: conference.title,
 		replyUrl,
-		quotedMessage
+		threadMessages
 	});
 
 	// Send email

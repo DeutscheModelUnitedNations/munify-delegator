@@ -125,6 +125,27 @@
 		</div>
 	</DashboardSection>
 
+	<!-- Inbox Section -->
+	<DashboardSection
+		icon="inbox"
+		title={m.messagingInboxTitle()}
+		description={m.messagingInboxDescription()}
+	>
+		<div class="flex flex-col gap-3">
+			<p class="text-base-content/80">{m.messagingInboxExplanation()}</p>
+			<div class="flex gap-3">
+				<a href={`${basePath}/inbox`} class="btn btn-primary">
+					<i class="fa-solid fa-inbox"></i>
+					{m.messagingViewInbox()}
+				</a>
+				<a href={`${basePath}/history`} class="btn btn-ghost">
+					<i class="fa-duotone fa-clock-rotate-left"></i>
+					{m.messagingViewSentHistory()}
+				</a>
+			</div>
+		</div>
+	</DashboardSection>
+
 	<!-- Guidelines Section -->
 	<DashboardSection
 		icon="scale-balanced"
@@ -154,11 +175,6 @@
 		<div role="alert" class="alert alert-warning">
 			<i class="fa-solid fa-shield-halved text-lg"></i>
 			<span>{m.messagingDataNotice()}</span>
-
-			<a href={`${basePath}/history`} class="btn btn-warning">
-				<i class="fa-solid fa-clock-rotate-left"></i>
-				{m.messagingViewSentHistory()}
-			</a>
 		</div>
 	</DashboardSection>
 </div>
