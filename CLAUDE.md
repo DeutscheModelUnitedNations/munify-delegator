@@ -426,5 +426,7 @@ When creating pull requests, always apply the appropriate `PR: *` label based on
 | `refactor`, `style`        | `PR: Refactor`       |
 | `docs`                     | `documentation`      |
 | `ci`, `build`, `chore`     | `PR: Infrastructure` |
+| `deps`, `dependencies`     | `dependencies`       |
+| `test`                     | `PR: Tests`          |
 
 Every PR must have at least one of these labels before merging. This powers the auto-generated release notes.
