@@ -39,7 +39,7 @@
 	let loading = $state(false);
 
 	$effect(() => {
-		if (currentAnswerOptionId) newAnswer = currentAnswerOptionId;
+		newAnswer = currentAnswerOptionId ?? undefined;
 	});
 
 	let questionLocked = $derived(new Date(question.deadline) < new Date());
@@ -67,7 +67,7 @@
 	`);
 
 	const updateChoice = async () => {
-		if (!newAnswer) return;
+		if (!newAnswer || questionLocked || loading) return;
 		loading = true;
 		await updateOneSurveyAnswerMutation.mutate({
 			userId,
@@ -84,11 +84,12 @@
 {#snippet action()}
 	<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
 	<button
-		class="btn btn-primary {(!newAnswer || questionLocked) && 'btn-disabled'}"
+		class="btn btn-primary"
 		onclick={updateChoice}
+		disabled={!newAnswer || questionLocked || loading}
 	>
 		{#if loading}<span class="loading loading-spinner loading-sm"></span>{/if}
-		<i class="fa-solid fa-save"></i>
+		<i class="fa-duotone fa-save"></i>
 		{m.save()}
 	</button>
 {/snippet}
@@ -136,7 +137,7 @@
 									? 'bg-warning'
 									: 'bg-error'} flex w-auto items-center rounded-md p-2 text-sm"
 						>
-							<i class="{capacity > 5 ? 'fa-duotone' : 'fas'} fa-users mr-2"></i>
+							<i class="fa-duotone fa-users mr-2"></i>
 							{#if !option.upperLimit}
 								<span>{option.countSurveyAnswers} ({m.noUpperLimit()})</span>
 							{:else if capacity > 5}
