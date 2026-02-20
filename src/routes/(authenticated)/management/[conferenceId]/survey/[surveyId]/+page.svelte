@@ -4,6 +4,11 @@
 	import formatNames from '$lib/services/formatNames';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
+	import {
+		datetimeLocalToDate,
+		dateToDatetimeLocal,
+		formatInTimezone
+	} from '$lib/services/conferenceTimezoneDate';
 	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
 	import BarChart from '$lib/components/Charts/ECharts/BarChart.svelte';
 	import GaugeChart from '$lib/components/Charts/ECharts/GaugeChart.svelte';
@@ -173,16 +178,11 @@
 	};
 
 	const formatDeadline = (date: Date) => {
-		return date.toLocaleString();
+		return formatInTimezone(date, data.conferenceTimezone);
 	};
 
 	const formatDatetimeLocal = (date: Date) => {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		const hours = String(date.getHours()).padStart(2, '0');
-		const minutes = String(date.getMinutes()).padStart(2, '0');
-		return `${year}-${month}-${day}T${hours}:${minutes}`;
+		return dateToDatetimeLocal(date, data.conferenceTimezone);
 	};
 
 	// Actions
@@ -254,7 +254,7 @@
 				id: survey.id,
 				title: { set: editTitle },
 				description: { set: editDescription },
-				deadline: { set: new Date(editDeadline) }
+				deadline: { set: datetimeLocalToDate(editDeadline, data.conferenceTimezone) }
 			});
 			cache.markStale();
 			await invalidateAll();

@@ -4,6 +4,7 @@
 	import type { PageData } from './$types';
 	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { datetimeLocalToDate, formatInTimezone } from '$lib/services/conferenceTimezoneDate';
 
 	let { data }: { data: PageData } = $props();
 
@@ -86,7 +87,7 @@
 	};
 
 	const formatDeadline = (date: Date) => {
-		return date.toLocaleString();
+		return formatInTimezone(date, data.conferenceTimezone);
 	};
 
 	// Actions
@@ -98,7 +99,7 @@
 				conferenceId: data.conferenceId,
 				title: createTitle,
 				description: createDescription,
-				deadline: new Date(createDeadline)
+				deadline: datetimeLocalToDate(createDeadline, data.conferenceTimezone)
 			});
 			cache.markStale();
 			await invalidateAll();
