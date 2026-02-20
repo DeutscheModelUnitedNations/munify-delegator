@@ -16,6 +16,7 @@
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import { configPublic } from '$config/public';
 	import CalendarSection from '$lib/components/Dashboard/CalendarSection.svelte';
+	import SurveySection from '$lib/components/Dashboard/SurveySection.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -28,8 +29,6 @@
 	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
 	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
 	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
-	let surveyQuestions = $derived(conferenceQueryData?.findManySurveyQuestions);
-	let surveyAnswers = $derived(conferenceQueryData?.findManySurveyAnswers);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -58,6 +57,13 @@
 				<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
 			{/if}
 		{/if}
+		{#if (singleParticipant?.assignedRole || delegationMember?.delegation?.assignedNation || delegationMember?.delegation?.assignedNonStateActor) && (conference?.state === 'PREPARATION' || conference?.state === 'ACTIVE')}
+			<SurveySection
+				conferenceId={conference!.id}
+				userId={data.user.sub}
+				conferenceTimezone={conference!.timezone}
+			/>
+		{/if}
 		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
@@ -79,9 +85,9 @@
 					<SingleParticipantPreparationStage
 						{conference}
 						{singleParticipant}
-						{surveyAnswers}
-						{surveyQuestions}
 						user={data.user}
+						{status}
+						ofAgeAtConference={data.ofAgeAtConference}
 					/>
 				{:else if conference!.state === 'POST'}
 					<Certificate
@@ -114,9 +120,9 @@
 					<DelegationPreparationStage
 						{delegationMember}
 						{conference}
-						{surveyAnswers}
-						{surveyQuestions}
 						user={data.user}
+						{status}
+						ofAgeAtConference={data.ofAgeAtConference}
 					/>
 				{:else if conference!.state === 'POST'}
 					<Certificate

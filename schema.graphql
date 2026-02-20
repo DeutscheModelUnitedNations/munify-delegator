@@ -5619,8 +5619,10 @@ type SurveyQuestion {
   deadline: DateTime!
   description: String!
   draft: Boolean!
+  hidden: Boolean!
   id: ID!
   options: [SurveyOption!]!
+  showSelectionOnDashboard: Boolean!
   surveyAnswers: [SurveyAnswer!]!
   title: String!
 }
@@ -5636,8 +5638,10 @@ input SurveyQuestionCreateInput {
   deadline: DateTime!
   description: String!
   draft: Boolean
+  hidden: Boolean
   id: String
   options: SurveyOptionCreateNestedManyWithoutQuestionInput
+  showSelectionOnDashboard: Boolean
   surveyAnswers: SurveyAnswerCreateNestedManyWithoutQuestionInput
   title: String!
   updatedAt: DateTime
@@ -5664,8 +5668,10 @@ input SurveyQuestionOrderByWithRelationInput {
   deadline: SortOrder
   description: SortOrder
   draft: SortOrder
+  hidden: SortOrder
   id: SortOrder
   options: SurveyOptionOrderByRelationAggregateInput
+  showSelectionOnDashboard: SortOrder
   surveyAnswers: SurveyAnswerOrderByRelationAggregateInput
   title: SortOrder
   updatedAt: SortOrder
@@ -5677,7 +5683,9 @@ enum SurveyQuestionScalarFieldEnum {
   deadline
   description
   draft
+  hidden
   id
+  showSelectionOnDashboard
   title
   updatedAt
 }
@@ -5693,8 +5701,10 @@ input SurveyQuestionUpdateInput {
   deadline: DateTimeFieldUpdateOperationsInput
   description: StringFieldUpdateOperationsInput
   draft: BoolFieldUpdateOperationsInput
+  hidden: BoolFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
   options: SurveyOptionUpdateManyWithoutQuestionNestedInput
+  showSelectionOnDashboard: BoolFieldUpdateOperationsInput
   surveyAnswers: SurveyAnswerUpdateManyWithoutQuestionNestedInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -5705,7 +5715,9 @@ input SurveyQuestionUpdateManyMutationInput {
   deadline: DateTimeFieldUpdateOperationsInput
   description: StringFieldUpdateOperationsInput
   draft: BoolFieldUpdateOperationsInput
+  hidden: BoolFieldUpdateOperationsInput
   id: StringFieldUpdateOperationsInput
+  showSelectionOnDashboard: BoolFieldUpdateOperationsInput
   title: StringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
@@ -5726,8 +5738,10 @@ input SurveyQuestionWhereInput {
   deadline: DateTimeFilter
   description: StringFilter
   draft: BoolFilter
+  hidden: BoolFilter
   id: StringFilter
   options: SurveyOptionListRelationFilter
+  showSelectionOnDashboard: BoolFilter
   surveyAnswers: SurveyAnswerListRelationFilter
   title: StringFilter
   updatedAt: DateTimeFilter
@@ -5744,8 +5758,10 @@ input SurveyQuestionWhereUniqueInput {
   deadline: DateTimeFilter
   description: StringFilter
   draft: BoolFilter
+  hidden: BoolFilter
   id: String
   options: SurveyOptionListRelationFilter
+  showSelectionOnDashboard: BoolFilter
   surveyAnswers: SurveyAnswerListRelationFilter
   title: StringFilter
   updatedAt: DateTimeFilter

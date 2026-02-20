@@ -21,11 +21,10 @@ export interface DashboardLinkContext {
 	linkToPreparationGuide?: string | null;
 	isOpenPaperSubmission?: boolean;
 	linkToPaperInbox?: string | null;
-	surveyQuestionCount?: number;
-	surveyAnswerCount?: number;
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
-	postalRegistrationComplete?: boolean;
+	paymentStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
+	postalRegistrationStatus?: 'DONE' | 'PENDING' | 'PROBLEM';
 	user?: { sub: string; email: string };
 }
 
@@ -42,6 +41,7 @@ export interface DashboardLink {
 	getBadge?: (
 		ctx: DashboardLinkContext
 	) => { value: string | number; type: 'info' | 'warning' | 'success' | 'error' } | undefined;
+	isImportant?: (ctx: DashboardLinkContext) => boolean;
 }
 
 export const dashboardLinks: DashboardLink[] = [
@@ -73,8 +73,10 @@ export const dashboardLinks: DashboardLink[] = [
 		getDescription: () => m.paymentLinkDescription(),
 		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/payment`,
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: () => true,
-		isDisabled: (ctx) => !ctx.unlockPayments
+		isVisible: (ctx) => ctx.paymentStatus !== 'DONE',
+		isDisabled: (ctx) => !ctx.unlockPayments,
+		getBadge: (ctx) => (!ctx.unlockPayments ? undefined : { value: '!', type: 'warning' }),
+		isImportant: () => true
 	},
 	{
 		id: 'postalRegistration',
@@ -83,25 +85,10 @@ export const dashboardLinks: DashboardLink[] = [
 		getDescription: () => m.postalRegistrationLinkDescription(),
 		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/postalRegistration`,
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
-		isVisible: (ctx) => !ctx.postalRegistrationComplete,
-		isDisabled: (ctx) => !ctx.unlockPostals
-	},
-	{
-		id: 'survey',
-		icon: 'square-poll-horizontal',
-		getTitle: () => m.survey(),
-		getDescription: () => m.surveyDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/survey`,
-		showFor: ['delegation', 'singleParticipant'],
-		isVisible: (ctx) => (ctx.surveyQuestionCount ?? 0) > 0,
-		isDisabled: () => false,
-		getBadge: (ctx) => {
-			const unanswered = (ctx.surveyQuestionCount ?? 0) - (ctx.surveyAnswerCount ?? 0);
-			if (unanswered > 0) {
-				return { value: unanswered, type: 'warning' };
-			}
-			return undefined;
-		}
+		isVisible: (ctx) => ctx.postalRegistrationStatus !== 'DONE',
+		isDisabled: (ctx) => !ctx.unlockPostals,
+		getBadge: (ctx) => (!ctx.unlockPostals ? undefined : { value: '!', type: 'warning' }),
+		isImportant: () => true
 	},
 	{
 		id: 'preparation',

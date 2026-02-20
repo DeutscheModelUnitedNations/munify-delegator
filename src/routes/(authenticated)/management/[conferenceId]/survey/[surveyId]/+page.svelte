@@ -4,6 +4,11 @@
 	import formatNames from '$lib/services/formatNames';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
+	import {
+		datetimeLocalToDate,
+		dateToDatetimeLocal,
+		formatInTimezone
+	} from '$lib/services/conferenceTimezoneDate';
 	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
 	import BarChart from '$lib/components/Charts/ECharts/BarChart.svelte';
 	import GaugeChart from '$lib/components/Charts/ECharts/GaugeChart.svelte';
@@ -26,10 +31,19 @@
 			$description: StringFieldUpdateOperationsInput
 			$deadline: DateTimeFieldUpdateOperationsInput
 			$draft: BoolFieldUpdateOperationsInput
+			$hidden: BoolFieldUpdateOperationsInput
+			$showSelectionOnDashboard: BoolFieldUpdateOperationsInput
 		) {
 			updateOneSurveyQuestion(
 				where: { id: $id }
-				data: { title: $title, description: $description, deadline: $deadline, draft: $draft }
+				data: {
+					title: $title
+					description: $description
+					deadline: $deadline
+					draft: $draft
+					hidden: $hidden
+					showSelectionOnDashboard: $showSelectionOnDashboard
+				}
 			) {
 				id
 			}
@@ -164,16 +178,11 @@
 	};
 
 	const formatDeadline = (date: Date) => {
-		return date.toLocaleString();
+		return formatInTimezone(date, data.conferenceTimezone);
 	};
 
 	const formatDatetimeLocal = (date: Date) => {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		const hours = String(date.getHours()).padStart(2, '0');
-		const minutes = String(date.getMinutes()).padStart(2, '0');
-		return `${year}-${month}-${day}T${hours}:${minutes}`;
+		return dateToDatetimeLocal(date, data.conferenceTimezone);
 	};
 
 	// Actions
@@ -189,6 +198,40 @@
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle draft status:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const toggleHidden = async () => {
+		if (!survey) return;
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id: survey.id,
+				hidden: { set: !survey.hidden }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle hidden status:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const toggleShowSelection = async () => {
+		if (!survey) return;
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id: survey.id,
+				showSelectionOnDashboard: { set: !survey.showSelectionOnDashboard }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle showSelectionOnDashboard:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -211,7 +254,7 @@
 				id: survey.id,
 				title: { set: editTitle },
 				description: { set: editDescription },
-				deadline: { set: new Date(editDeadline) }
+				deadline: { set: datetimeLocalToDate(editDeadline, data.conferenceTimezone) }
 			});
 			cache.markStale();
 			await invalidateAll();
@@ -306,17 +349,31 @@
 	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
 		<div class="flex flex-col gap-2">
 			<h2 class="text-2xl font-bold">{survey?.title}</h2>
-			{#if survey?.draft}
-				<span class="badge badge-warning">{m.surveyIsDraft()}</span>
-			{:else}
-				<span class="badge badge-success">{m.surveyIsLive()}</span>
-			{/if}
+			<div class="flex flex-wrap items-center gap-2">
+				{#if survey?.draft}
+					<span class="badge badge-warning">{m.surveyIsDraft()}</span>
+				{:else}
+					<span class="badge badge-success">{m.surveyIsLive()}</span>
+				{/if}
+				{#if survey?.hidden}
+					<span class="badge badge-neutral">
+						<i class="fa-duotone fa-box-archive mr-1"></i>
+						{m.archivedSurvey()}
+					</span>
+				{/if}
+			</div>
 		</div>
 		{#if survey}
-			<button class="btn {survey.draft ? 'btn-success' : 'btn-warning'}" onclick={toggleDraft}>
-				<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-				{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
-			</button>
+			<div class="flex flex-wrap gap-2">
+				<button class="btn {survey.draft ? 'btn-success' : 'btn-warning'}" onclick={toggleDraft}>
+					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
+					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+				</button>
+				<button class="btn btn-ghost" onclick={toggleHidden}>
+					<i class="fa-duotone fa-box-archive"></i>
+					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
+				</button>
+			</div>
 		{/if}
 	</div>
 
@@ -499,11 +556,29 @@
 					<div class="mt-4 flex flex-col gap-4">
 						<div class="flex flex-col gap-1">
 							<span class="text-sm font-medium opacity-60">{m.description()}</span>
-							<p class="text-base">{survey?.description}</p>
+							<p class="whitespace-pre-line text-base">{survey?.description}</p>
 						</div>
 						<div class="flex flex-col gap-1">
 							<span class="text-sm font-medium opacity-60">{m.deadline()}</span>
 							<p class="text-base">{survey ? formatDeadline(survey.deadline) : ''}</p>
+						</div>
+
+						<!-- Toggle switches -->
+						<div class="flex flex-col gap-3 pt-2">
+							<label class="flex cursor-pointer items-center gap-3">
+								<input
+									type="checkbox"
+									class="toggle toggle-success"
+									checked={survey?.showSelectionOnDashboard}
+									onchange={toggleShowSelection}
+								/>
+								<div class="flex flex-col">
+									<span class="font-medium">{m.showSelectionOnDashboard()}</span>
+									<span class="text-base-content/50 text-xs"
+										>{m.showSelectionOnDashboardDescription()}</span
+									>
+								</div>
+							</label>
 						</div>
 					</div>
 				{/if}
@@ -578,7 +653,7 @@
 										<div class="flex-1">
 											<h4 class="font-semibold">{option.title}</h4>
 											{#if option.description}
-												<p class="text-sm opacity-70">{option.description}</p>
+												<p class="whitespace-pre-line text-sm opacity-70">{option.description}</p>
 											{/if}
 											<div class="mt-2 flex gap-4 text-sm opacity-70">
 												<span>

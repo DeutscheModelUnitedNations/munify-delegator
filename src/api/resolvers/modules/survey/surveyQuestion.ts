@@ -10,7 +10,11 @@ import {
 	SurveyQuestionTitleFieldObject,
 	updateOneSurveyQuestionMutationObject
 } from '$db/generated/graphql/SurveyQuestion';
-import { SurveyQuestionDraftFieldObject } from '$db/generated/graphql/SurveyQuestion/object.base';
+import {
+	SurveyQuestionDraftFieldObject,
+	SurveyQuestionHiddenFieldObject,
+	SurveyQuestionShowSelectionOnDashboardFieldObject
+} from '$db/generated/graphql/SurveyQuestion/object.base';
 import { builder } from '../../builder';
 import { db } from '$db/db';
 
@@ -21,6 +25,8 @@ builder.prismaObject('SurveyQuestion', {
 		description: t.field(SurveyQuestionDescriptionFieldObject),
 		deadline: t.field(SurveyQuestionDeadlineFieldObject),
 		draft: t.field(SurveyQuestionDraftFieldObject),
+		hidden: t.field(SurveyQuestionHiddenFieldObject),
+		showSelectionOnDashboard: t.field(SurveyQuestionShowSelectionOnDashboardFieldObject),
 		conference: t.relation('conference', SurveyQuestionConferenceFieldObject),
 		options: t.relation('options', {
 			query: (_args, ctx) => ({

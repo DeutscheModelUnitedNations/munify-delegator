@@ -324,20 +324,6 @@ export const myConferenceparticipationQuery = graphql(`
 				}
 			}
 		}
-		findManySurveyQuestions(
-			where: { conferenceId: { equals: $conferenceId }, draft: { equals: false } }
-		) {
-			id
-			title
-			description
-			deadline
-		}
-		findManySurveyAnswers(where: { userId: { equals: $userId } }) {
-			id
-			question {
-				id
-			}
-		}
 		findUniqueTeamMember(
 			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
 		) {

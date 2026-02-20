@@ -3,12 +3,17 @@ import type { PageServerLoad } from './$types';
 
 const SurveyDetailsQuery = graphql(`
 	query SurveyResultsDetailsPage($conferenceId: String!, $surveyId: String!) {
+		findUniqueConference(where: { id: $conferenceId }) {
+			timezone
+		}
 		findUniqueSurveyQuestion(where: { id: $surveyId }) {
 			id
 			title
 			description
 			deadline
 			draft
+			hidden
+			showSelectionOnDashboard
 			options {
 				id
 				title
@@ -88,6 +93,7 @@ export const load: PageServerLoad = async (event) => {
 		survey: data?.findUniqueSurveyQuestion ?? null,
 		usersNotAnswered: Array.from(userMap.values()),
 		conferenceId: event.params.conferenceId,
-		surveyId: event.params.surveyId
+		surveyId: event.params.surveyId,
+		conferenceTimezone: data?.findUniqueConference?.timezone ?? 'UTC'
 	};
 };

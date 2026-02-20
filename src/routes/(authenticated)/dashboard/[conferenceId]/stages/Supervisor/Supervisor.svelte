@@ -296,6 +296,8 @@
 		hasConferenceInfo: !!conference.info,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
+		paymentStatus: status?.paymentStatus,
+		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAge),
 		user
 	});
 
@@ -385,6 +387,7 @@
 					disabled={link.isDisabled(linkContext)}
 					badge={badge?.value}
 					badgeType={badge?.type}
+					important={link.isImportant?.(linkContext) ?? false}
 				/>
 			{/each}
 		</DashboardLinksGrid>

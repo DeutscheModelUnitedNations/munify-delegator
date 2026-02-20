@@ -126,7 +126,7 @@
 				}
 			}
 			findManySurveyQuestions(
-				where: { conferenceId: { equals: $conferenceId }, draft: { equals: false } }
+				where: { conferenceId: { equals: $conferenceId }, hidden: { equals: false } }
 			) {
 				id
 				title

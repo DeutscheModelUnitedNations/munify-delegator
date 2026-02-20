@@ -11,7 +11,7 @@
 	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
 	import formatNames from '$lib/services/formatNames';
 	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import { ofAgeAtConference as computeOfAge } from '$lib/services/ageChecker';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
@@ -21,15 +21,15 @@
 			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
 		>;
 		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
-		surveyQuestions: NonNullable<MyConferenceparticipationQuery$result['findManySurveyQuestions']>;
-		surveyAnswers: NonNullable<MyConferenceparticipationQuery$result['findManySurveyAnswers']>;
 		user: {
 			sub: string;
 			email: string;
 		};
+		status: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		ofAgeAtConference: boolean;
 	}
 
-	let { delegationMember, conference, surveyAnswers, surveyQuestions, user }: Props = $props();
+	let { delegationMember, conference, user, status, ofAgeAtConference }: Props = $props();
 
 	const delegationStats = $derived([
 		{
@@ -51,12 +51,12 @@
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
 		linkToPaperInbox: conference.linkToPaperInbox,
-		surveyQuestionCount: surveyQuestions?.length ?? 0,
-		surveyAnswerCount: surveyAnswers?.length ?? 0,
 		hasNationAssigned: !!delegationMember.delegation.assignedNation,
 		membersLackCommittees: delegationMember.delegation.members.some(
 			(member) => !member.assignedCommittee
 		),
+		paymentStatus: status?.paymentStatus,
+		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAgeAtConference),
 		user
 	});
 
@@ -76,6 +76,7 @@
 				disabled={link.isDisabled(linkContext)}
 				badge={badge?.value}
 				badgeType={badge?.type}
+				important={link.isImportant?.(linkContext) ?? false}
 			/>
 		{/each}
 	</DashboardLinksGrid>
@@ -122,7 +123,7 @@
 				withPostalStatus
 				postalSatus={getSimplifiedPostalStatus(
 					participantStatus,
-					ofAgeAtConference(conference.startConference, member.user.birthday)
+					computeOfAge(conference.startConference, member.user.birthday)
 				)}
 				paymentStatus={participantStatus?.paymentStatus}
 			/>

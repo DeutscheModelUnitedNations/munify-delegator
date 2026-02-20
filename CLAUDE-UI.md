@@ -25,6 +25,7 @@ Components are located in `src/lib/components/`. Key directories:
 - `InfoGrid/` - Key-value pair display grids
 - `Charts/` - ECharts-based visualizations
 - `PaperHub/` - Paper management components including statistics
+- `Survey/` - Survey answer modal and compact survey cards for the dashboard
 
 ---
 
@@ -477,6 +478,9 @@ Main section wrapper with icon, title, and description:
 - `title`: Section heading
 - `description`: Optional subtitle
 - `variant`: `"default"` | `"info"` (info uses blue styling)
+- `collapsible`: Boolean to make the section collapsible
+- `defaultCollapsed`: Boolean for initial collapsed state
+- `collapsed`: Bindable boolean to track/control collapsed state externally
 - `headerAction`: Optional snippet for header actions
 
 ### DashboardContentCard
@@ -525,6 +529,68 @@ Checklist table with status icons:
 	]}
 />
 ```
+
+---
+
+## Survey Components
+
+Survey components handle displaying and answering surveys on the participant dashboard.
+
+### SurveySection
+
+Self-fetching dashboard component (like `CalendarSection`) that queries surveys and renders them. Renders nothing if no surveys exist.
+
+**File:** `src/lib/components/Dashboard/SurveySection.svelte`
+
+**Props:** `conferenceId: string`, `userId: string`, `conferenceTimezone: string`
+
+**Behavior:**
+
+- Fetches non-hidden, non-draft surveys via its own GraphQL query
+- Wraps content in a collapsible `DashboardSection`
+- Auto-collapses when all surveys are answered
+- Shows pinned selection cards below the section when collapsed (for surveys with `showSelectionOnDashboard`)
+
+### SurveyCard
+
+Compact card for a single survey within the dashboard section.
+
+**File:** `src/lib/components/Survey/SurveyCard.svelte`
+
+**Props:**
+
+- `question`: `{ id, title, description, deadline, showSelectionOnDashboard, options: [...] }`
+- `answer`: `{ option: { id, title } } | undefined`
+- `userId`: string
+- `conferenceTimezone`: string
+
+Shows deadline status, title, description, current answer badge, and an "Answer"/"Change answer" button that opens `SurveyAnswerModal`.
+
+### SurveyAnswerModal
+
+Modal for answering or changing a survey answer with radio option cards and capacity indicators.
+
+**File:** `src/lib/components/Survey/SurveyAnswerModal.svelte`
+
+**Props:**
+
+- `open`: boolean (bindable)
+- `question`: `{ id, title, description, deadline, options: [{ id, title, description, upperLimit, countSurveyAnswers }] }`
+- `currentAnswerOptionId`: `string | undefined`
+- `userId`: string
+- `conferenceTimezone`: string
+
+Locks submission after deadline. Contains its own `updateOneSurveyAnswer` mutation with cache invalidation.
+
+### DeadlineDisplay
+
+Reusable timezone-aware deadline display.
+
+**File:** `src/lib/components/DeadlineDisplay.svelte`
+
+**Props:** `deadline: Date | string`, `conferenceTimezone: string`
+
+Shows an open/closed badge with the deadline formatted in the conference timezone. If the user's local timezone differs, shows their local time below.
 
 ---
 
