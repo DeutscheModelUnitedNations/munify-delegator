@@ -8,6 +8,7 @@
 		disabled?: boolean;
 		badge?: string | number;
 		badgeType?: 'info' | 'warning' | 'success' | 'error';
+		important?: boolean;
 	}
 
 	let {
@@ -18,7 +19,8 @@
 		external = false,
 		disabled = false,
 		badge,
-		badgeType = 'info'
+		badgeType = 'info',
+		important = false
 	}: Props = $props();
 
 	const badgeClasses: Record<string, string> = {
@@ -45,7 +47,9 @@
 {:else}
 	<a
 		{href}
-		class="card bg-base-200 hover:bg-base-300 transition-colors"
+		class="card bg-base-200 hover:bg-base-300 transition-colors {important
+			? 'ring-2 ring-warning/40 bg-warning/5'
+			: ''}"
 		target={external ? '_blank' : undefined}
 		rel={external ? 'noopener noreferrer' : undefined}
 	>

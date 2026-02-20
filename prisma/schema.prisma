@@ -570,6 +570,9 @@ model SurveyQuestion {
   draft       Boolean        @default(true)
   deadline    DateTime
 
+  hidden                   Boolean @default(false)
+  showSelectionOnDashboard Boolean @default(false)
+
   surveyAnswers SurveyAnswer[]
 
   createdAt DateTime @default(now())

@@ -8,18 +8,19 @@
 	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
+	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
 
 	interface Props {
-		surveyQuestions: NonNullable<MyConferenceparticipationQuery$result['findManySurveyQuestions']>;
-		surveyAnswers: NonNullable<MyConferenceparticipationQuery$result['findManySurveyAnswers']>;
 		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
 		singleParticipant: NonNullable<
 			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
 		>;
 		user: PageData['user'];
+		status: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		ofAgeAtConference: boolean;
 	}
 
-	let { surveyQuestions, surveyAnswers, conference, singleParticipant, user }: Props = $props();
+	let { conference, singleParticipant, user, status, ofAgeAtConference }: Props = $props();
 
 	const linkContext = $derived<DashboardLinkContext>({
 		conferenceId: conference.id,
@@ -31,8 +32,8 @@
 		linkToPreparationGuide: conference.linkToPreparationGuide,
 		isOpenPaperSubmission: conference.isOpenPaperSubmission,
 		linkToPaperInbox: conference.linkToPaperInbox,
-		surveyQuestionCount: surveyQuestions?.length ?? 0,
-		surveyAnswerCount: surveyAnswers?.length ?? 0,
+		paymentStatus: status?.paymentStatus,
+		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAgeAtConference),
 		user
 	});
 
@@ -52,6 +53,7 @@
 				disabled={link.isDisabled(linkContext)}
 				badge={badge?.value}
 				badgeType={badge?.type}
+				important={link.isImportant?.(linkContext) ?? false}
 			/>
 		{/each}
 	</DashboardLinksGrid>

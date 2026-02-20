@@ -9,6 +9,8 @@ const SurveyDetailsQuery = graphql(`
 			description
 			deadline
 			draft
+			hidden
+			showSelectionOnDashboard
 			options {
 				id
 				title

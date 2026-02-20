@@ -26,10 +26,19 @@
 			$description: StringFieldUpdateOperationsInput
 			$deadline: DateTimeFieldUpdateOperationsInput
 			$draft: BoolFieldUpdateOperationsInput
+			$hidden: BoolFieldUpdateOperationsInput
+			$showSelectionOnDashboard: BoolFieldUpdateOperationsInput
 		) {
 			updateOneSurveyQuestion(
 				where: { id: $id }
-				data: { title: $title, description: $description, deadline: $deadline, draft: $draft }
+				data: {
+					title: $title
+					description: $description
+					deadline: $deadline
+					draft: $draft
+					hidden: $hidden
+					showSelectionOnDashboard: $showSelectionOnDashboard
+				}
 			) {
 				id
 			}
@@ -189,6 +198,40 @@
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle draft status:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const toggleHidden = async () => {
+		if (!survey) return;
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id: survey.id,
+				hidden: { set: !survey.hidden }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle hidden status:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const toggleShowSelection = async () => {
+		if (!survey) return;
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id: survey.id,
+				showSelectionOnDashboard: { set: !survey.showSelectionOnDashboard }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle showSelectionOnDashboard:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -499,11 +542,41 @@
 					<div class="mt-4 flex flex-col gap-4">
 						<div class="flex flex-col gap-1">
 							<span class="text-sm font-medium opacity-60">{m.description()}</span>
-							<p class="text-base">{survey?.description}</p>
+							<p class="whitespace-pre-line text-base">{survey?.description}</p>
 						</div>
 						<div class="flex flex-col gap-1">
 							<span class="text-sm font-medium opacity-60">{m.deadline()}</span>
 							<p class="text-base">{survey ? formatDeadline(survey.deadline) : ''}</p>
+						</div>
+
+						<!-- Toggle switches -->
+						<div class="flex flex-col gap-3 pt-2">
+							<label class="flex cursor-pointer items-center gap-3">
+								<input
+									type="checkbox"
+									class="toggle"
+									checked={survey?.hidden}
+									onchange={toggleHidden}
+								/>
+								<div class="flex flex-col">
+									<span class="font-medium">{m.hiddenSurvey()}</span>
+									<span class="text-base-content/50 text-xs">{m.hiddenSurveyDescription()}</span>
+								</div>
+							</label>
+							<label class="flex cursor-pointer items-center gap-3">
+								<input
+									type="checkbox"
+									class="toggle"
+									checked={survey?.showSelectionOnDashboard}
+									onchange={toggleShowSelection}
+								/>
+								<div class="flex flex-col">
+									<span class="font-medium">{m.showSelectionOnDashboard()}</span>
+									<span class="text-base-content/50 text-xs"
+										>{m.showSelectionOnDashboardDescription()}</span
+									>
+								</div>
+							</label>
 						</div>
 					</div>
 				{/if}
@@ -578,7 +651,7 @@
 										<div class="flex-1">
 											<h4 class="font-semibold">{option.title}</h4>
 											{#if option.description}
-												<p class="text-sm opacity-70">{option.description}</p>
+												<p class="whitespace-pre-line text-sm opacity-70">{option.description}</p>
 											{/if}
 											<div class="mt-2 flex gap-4 text-sm opacity-70">
 												<span>

@@ -8,6 +8,8 @@
 	let { data }: { data: PageData } = $props();
 
 	let surveys = $derived(data.surveys);
+	let visibleSurveys = $derived(surveys.filter((s) => !s.hidden));
+	let hiddenSurveys = $derived(surveys.filter((s) => s.hidden));
 
 	// Mutations
 	const CreateSurveyMutation = graphql(`
@@ -32,8 +34,20 @@
 	`);
 
 	const UpdateSurveyMutation = graphql(`
-		mutation UpdateSurveyQuestionFromList($id: String!, $draft: BoolFieldUpdateOperationsInput) {
-			updateOneSurveyQuestion(where: { id: $id }, data: { draft: $draft }) {
+		mutation UpdateSurveyQuestionFromList(
+			$id: String!
+			$draft: BoolFieldUpdateOperationsInput
+			$hidden: BoolFieldUpdateOperationsInput
+			$showSelectionOnDashboard: BoolFieldUpdateOperationsInput
+		) {
+			updateOneSurveyQuestion(
+				where: { id: $id }
+				data: {
+					draft: $draft
+					hidden: $hidden
+					showSelectionOnDashboard: $showSelectionOnDashboard
+				}
+			) {
 				id
 			}
 		}
@@ -52,6 +66,7 @@
 	let showDeleteModal = $state(false);
 	let surveyToDelete = $state<(typeof surveys)[0] | null>(null);
 	let isLoading = $state(false);
+	let hiddenSurveysExpanded = $state(false);
 
 	// Create form state
 	let createTitle = $state('');
@@ -114,6 +129,38 @@
 		}
 	};
 
+	const toggleHidden = async (id: string, currentHidden: boolean) => {
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id,
+				hidden: { set: !currentHidden }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle hidden status:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const toggleShowSelection = async (id: string, currentValue: boolean) => {
+		isLoading = true;
+		try {
+			await UpdateSurveyMutation.mutate({
+				id,
+				showSelectionOnDashboard: { set: !currentValue }
+			});
+			cache.markStale();
+			await invalidateAll();
+		} catch (error) {
+			console.error('Failed to toggle showSelectionOnDashboard:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
+
 	const deleteSurvey = async () => {
 		if (!surveyToDelete) return;
 		isLoading = true;
@@ -138,6 +185,126 @@
 	};
 </script>
 
+{#snippet surveyCard(survey: (typeof surveys)[0])}
+	<div class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4">
+		<div class="flex flex-col gap-2">
+			<h3 class="text-xl font-bold">{survey.title}</h3>
+			<div class="flex flex-wrap items-center gap-2">
+				{#if survey.draft}
+					<span class="badge badge-warning w-fit">{m.surveyIsDraft()}</span>
+				{:else}
+					<span class="badge badge-success w-fit">{m.surveyIsLive()}</span>
+				{/if}
+				{#if survey.hidden}
+					<span class="badge badge-error w-fit">{m.hiddenSurvey()}</span>
+				{/if}
+			</div>
+			<p class="whitespace-pre-line text-sm opacity-70">{survey.description}</p>
+			<div class="flex flex-wrap gap-2">
+				<button
+					class="btn btn-sm {survey.draft ? 'btn-success' : 'btn-warning'}"
+					onclick={() => toggleDraft(survey.id, survey.draft)}
+				>
+					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
+					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+				</button>
+				<a href="/management/{data.conferenceId}/survey/{survey.id}" class="btn btn-sm">
+					<i class="fas fa-edit"></i>
+					{m.edit()}
+				</a>
+				<button class="btn btn-error btn-sm" onclick={() => confirmDelete(survey)}>
+					<i class="fas fa-trash"></i>
+					{m.delete()}
+				</button>
+			</div>
+
+			<!-- Toggle switches -->
+			<div class="mt-2 flex flex-col gap-2">
+				<label class="flex cursor-pointer items-center gap-2">
+					<input
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked={survey.hidden}
+						onchange={() => toggleHidden(survey.id, survey.hidden)}
+					/>
+					<span class="text-sm">{m.hiddenSurvey()}</span>
+					<span class="text-base-content/50 text-xs">({m.hiddenSurveyDescription()})</span>
+				</label>
+				<label class="flex cursor-pointer items-center gap-2">
+					<input
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked={survey.showSelectionOnDashboard}
+						onchange={() => toggleShowSelection(survey.id, survey.showSelectionOnDashboard)}
+					/>
+					<span class="text-sm">{m.showSelectionOnDashboard()}</span>
+					<span class="text-base-content/50 text-xs"
+						>({m.showSelectionOnDashboardDescription()})</span
+					>
+				</label>
+			</div>
+		</div>
+
+		{#if survey.options.length > 0}
+			<div class="flex items-start gap-4">
+				<div class="w-28 shrink-0">
+					<PieChart
+						data={getChartData(survey)}
+						donut={true}
+						showLegend={false}
+						showLabels={false}
+						height="112px"
+					/>
+				</div>
+				<div class="flex flex-1 flex-col gap-2 overflow-hidden">
+					<!-- Summary stats table -->
+					<div class="bg-base-300 overflow-hidden rounded-t-lg">
+						<table class="table table-sm">
+							<tbody>
+								<tr class="border-base-200">
+									<td class="font-medium">{m.deadline()}</td>
+									<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
+								</tr>
+								<tr class="border-base-200 border-b-0">
+									<td class="font-medium">{m.totalAnswers()}</td>
+									<td class="text-right font-medium">{getTotalAnswers(survey)}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<!-- Per-option stats table -->
+					{#if survey.options.length > 0}
+						<div class="bg-base-300 overflow-hidden rounded-b-lg">
+							<table class="table table-sm">
+								<tbody>
+									{#each survey.options as option, i (option.id)}
+										<tr class="border-base-200" class:border-b-0={i === survey.options.length - 1}>
+											<td class="text-base-content/60 truncate text-xs">{option.title}</td>
+											<td class="text-base-content/60 text-right text-xs">
+												{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
+														class="text-base-content/40">/{option.upperLimit}</span
+													>{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{:else}
+			<div class="bg-base-300 rounded p-4 text-center text-sm opacity-70">
+				{m.noOptionsYet()}
+			</div>
+		{/if}
+
+		<a class="btn btn-primary" href="/management/{data.conferenceId}/survey/{survey.id}">
+			{m.details()}
+		</a>
+	</div>
+{/snippet}
+
 <div class="flex flex-col gap-6 p-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 		<h2 class="text-2xl font-bold">{m.survey()}</h2>
@@ -157,97 +324,24 @@
 			</button>
 		</div>
 	{:else}
-		{#each surveys as survey (survey.id)}
-			<div class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4">
-				<div class="flex flex-col gap-2">
-					<h3 class="text-xl font-bold">{survey.title}</h3>
-					{#if survey.draft}
-						<span class="badge badge-warning w-fit">{m.surveyIsDraft()}</span>
-					{:else}
-						<span class="badge badge-success w-fit">{m.surveyIsLive()}</span>
-					{/if}
-					<p class="text-sm opacity-70">{survey.description}</p>
-					<div class="flex flex-wrap gap-2">
-						<button
-							class="btn btn-sm {survey.draft ? 'btn-success' : 'btn-warning'}"
-							onclick={() => toggleDraft(survey.id, survey.draft)}
-						>
-							<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-							{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
-						</button>
-						<a href="/management/{data.conferenceId}/survey/{survey.id}" class="btn btn-sm">
-							<i class="fas fa-edit"></i>
-							{m.edit()}
-						</a>
-						<button class="btn btn-error btn-sm" onclick={() => confirmDelete(survey)}>
-							<i class="fas fa-trash"></i>
-							{m.delete()}
-						</button>
-					</div>
-				</div>
-
-				{#if survey.options.length > 0}
-					<div class="flex items-start gap-4">
-						<div class="w-28 shrink-0">
-							<PieChart
-								data={getChartData(survey)}
-								donut={true}
-								showLegend={false}
-								showLabels={false}
-								height="112px"
-							/>
-						</div>
-						<div class="flex flex-1 flex-col gap-2 overflow-hidden">
-							<!-- Summary stats table -->
-							<div class="bg-base-300 overflow-hidden rounded-t-lg">
-								<table class="table table-sm">
-									<tbody>
-										<tr class="border-base-200">
-											<td class="font-medium">{m.deadline()}</td>
-											<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
-										</tr>
-										<tr class="border-base-200 border-b-0">
-											<td class="font-medium">{m.totalAnswers()}</td>
-											<td class="text-right font-medium">{getTotalAnswers(survey)}</td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
-							<!-- Per-option stats table -->
-							{#if survey.options.length > 0}
-								<div class="bg-base-300 overflow-hidden rounded-b-lg">
-									<table class="table table-sm">
-										<tbody>
-											{#each survey.options as option, i (option.id)}
-												<tr
-													class="border-base-200"
-													class:border-b-0={i === survey.options.length - 1}
-												>
-													<td class="text-base-content/60 truncate text-xs">{option.title}</td>
-													<td class="text-base-content/60 text-right text-xs">
-														{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
-																class="text-base-content/40">/{option.upperLimit}</span
-															>{/if}
-													</td>
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								</div>
-							{/if}
-						</div>
-					</div>
-				{:else}
-					<div class="bg-base-300 rounded p-4 text-center text-sm opacity-70">
-						{m.noOptionsYet()}
-					</div>
-				{/if}
-
-				<a class="btn btn-primary" href="/management/{data.conferenceId}/survey/{survey.id}">
-					{m.details()}
-				</a>
-			</div>
+		{#each visibleSurveys as survey (survey.id)}
+			{@render surveyCard(survey)}
 		{/each}
+
+		{#if hiddenSurveys.length > 0}
+			<div class="collapse collapse-arrow bg-base-200">
+				<input type="checkbox" bind:checked={hiddenSurveysExpanded} />
+				<div class="collapse-title font-medium">
+					<i class="fa-duotone fa-eye-slash mr-2"></i>
+					{m.hiddenSurveys()} ({hiddenSurveys.length})
+				</div>
+				<div class="collapse-content flex flex-col gap-4">
+					{#each hiddenSurveys as survey (survey.id)}
+						{@render surveyCard(survey)}
+					{/each}
+				</div>
+			</div>
+		{/if}
 	{/if}
 </div>
 

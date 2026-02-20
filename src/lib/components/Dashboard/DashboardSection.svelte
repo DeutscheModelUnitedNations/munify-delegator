@@ -11,6 +11,7 @@
 		headerAction?: Snippet;
 		collapsible?: boolean;
 		defaultCollapsed?: boolean;
+		collapsed?: boolean;
 	}
 
 	let {
@@ -22,10 +23,9 @@
 		variant = 'default',
 		headerAction,
 		collapsible = false,
-		defaultCollapsed = false
+		defaultCollapsed = false,
+		collapsed = $bindable(defaultCollapsed)
 	}: Props = $props();
-
-	let collapsed = $state(defaultCollapsed);
 
 	const cardClasses = $derived(
 		variant === 'info'
