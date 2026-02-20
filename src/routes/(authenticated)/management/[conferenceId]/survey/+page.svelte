@@ -196,7 +196,10 @@
 					<span class="badge badge-success w-fit">{m.surveyIsLive()}</span>
 				{/if}
 				{#if survey.hidden}
-					<span class="badge badge-error w-fit">{m.hiddenSurvey()}</span>
+					<span class="badge badge-neutral w-fit">
+						<i class="fa-duotone fa-box-archive mr-1"></i>
+						{m.archivedSurvey()}
+					</span>
 				{/if}
 			</div>
 			<p class="whitespace-pre-line text-sm opacity-70">{survey.description}</p>
@@ -207,6 +210,10 @@
 				>
 					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
 					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+				</button>
+				<button class="btn btn-ghost btn-sm" onclick={() => toggleHidden(survey.id, survey.hidden)}>
+					<i class="fa-duotone fa-box-archive"></i>
+					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 				</button>
 				<a href="/management/{data.conferenceId}/survey/{survey.id}" class="btn btn-sm">
 					<i class="fas fa-edit"></i>
@@ -223,17 +230,7 @@
 				<label class="flex cursor-pointer items-center gap-2">
 					<input
 						type="checkbox"
-						class="toggle toggle-sm"
-						checked={survey.hidden}
-						onchange={() => toggleHidden(survey.id, survey.hidden)}
-					/>
-					<span class="text-sm">{m.hiddenSurvey()}</span>
-					<span class="text-base-content/50 text-xs">({m.hiddenSurveyDescription()})</span>
-				</label>
-				<label class="flex cursor-pointer items-center gap-2">
-					<input
-						type="checkbox"
-						class="toggle toggle-sm"
+						class="toggle toggle-success toggle-sm"
 						checked={survey.showSelectionOnDashboard}
 						onchange={() => toggleShowSelection(survey.id, survey.showSelectionOnDashboard)}
 					/>
@@ -332,8 +329,8 @@
 			<div class="collapse collapse-arrow bg-base-200">
 				<input type="checkbox" bind:checked={hiddenSurveysExpanded} />
 				<div class="collapse-title font-medium">
-					<i class="fa-duotone fa-eye-slash mr-2"></i>
-					{m.hiddenSurveys()} ({hiddenSurveys.length})
+					<i class="fa-duotone fa-box-archive mr-2"></i>
+					{m.archivedSurveys()} ({hiddenSurveys.length})
 				</div>
 				<div class="collapse-content flex flex-col gap-4">
 					{#each hiddenSurveys as survey (survey.id)}

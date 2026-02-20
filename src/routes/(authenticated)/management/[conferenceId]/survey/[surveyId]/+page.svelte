@@ -349,17 +349,31 @@
 	<div class="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
 		<div class="flex flex-col gap-2">
 			<h2 class="text-2xl font-bold">{survey?.title}</h2>
-			{#if survey?.draft}
-				<span class="badge badge-warning">{m.surveyIsDraft()}</span>
-			{:else}
-				<span class="badge badge-success">{m.surveyIsLive()}</span>
-			{/if}
+			<div class="flex flex-wrap items-center gap-2">
+				{#if survey?.draft}
+					<span class="badge badge-warning">{m.surveyIsDraft()}</span>
+				{:else}
+					<span class="badge badge-success">{m.surveyIsLive()}</span>
+				{/if}
+				{#if survey?.hidden}
+					<span class="badge badge-neutral">
+						<i class="fa-duotone fa-box-archive mr-1"></i>
+						{m.archivedSurvey()}
+					</span>
+				{/if}
+			</div>
 		</div>
 		{#if survey}
-			<button class="btn {survey.draft ? 'btn-success' : 'btn-warning'}" onclick={toggleDraft}>
-				<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-				{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
-			</button>
+			<div class="flex flex-wrap gap-2">
+				<button class="btn {survey.draft ? 'btn-success' : 'btn-warning'}" onclick={toggleDraft}>
+					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
+					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
+				</button>
+				<button class="btn btn-ghost" onclick={toggleHidden}>
+					<i class="fa-duotone fa-box-archive"></i>
+					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
+				</button>
+			</div>
 		{/if}
 	</div>
 
@@ -554,19 +568,7 @@
 							<label class="flex cursor-pointer items-center gap-3">
 								<input
 									type="checkbox"
-									class="toggle"
-									checked={survey?.hidden}
-									onchange={toggleHidden}
-								/>
-								<div class="flex flex-col">
-									<span class="font-medium">{m.hiddenSurvey()}</span>
-									<span class="text-base-content/50 text-xs">{m.hiddenSurveyDescription()}</span>
-								</div>
-							</label>
-							<label class="flex cursor-pointer items-center gap-3">
-								<input
-									type="checkbox"
-									class="toggle"
+									class="toggle toggle-success"
 									checked={survey?.showSelectionOnDashboard}
 									onchange={toggleShowSelection}
 								/>
