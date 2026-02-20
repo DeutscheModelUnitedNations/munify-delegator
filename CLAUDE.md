@@ -412,3 +412,19 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 ## Development Workflow
 
 - Never use the git commit command after a task is finished.
+
+### PR Labels
+
+When creating pull requests, always apply the appropriate `PR: *` label based on the conventional commit type in the PR title:
+
+| Commit prefix              | Label                |
+| -------------------------- | -------------------- |
+| `feat` (new functionality) | `PR: Feature`        |
+| `feat` (improve existing)  | `PR: Enhancement`    |
+| `fix`                      | `PR: Bug`            |
+| `perf`                     | `PR: Performance`    |
+| `refactor`, `style`        | `PR: Refactor`       |
+| `docs`                     | `documentation`      |
+| `ci`, `build`, `chore`     | `PR: Infrastructure` |
+
+Every PR must have at least one of these labels before merging. This powers the auto-generated release notes.
