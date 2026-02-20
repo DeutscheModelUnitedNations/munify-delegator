@@ -37,18 +37,18 @@
 </script>
 
 <div class="flex flex-col gap-0.5">
-	<div class="flex items-center gap-2">
+	<div class="flex flex-col md:flex-row gap-2">
 		{#if isClosed}
 			<span class="badge badge-error badge-sm">{m.surveyClosed()}</span>
 		{:else}
 			<span class="badge badge-success badge-sm"
 				>{m.surveyOpen({ deadline: conferenceTimeFormatted })}</span
 			>
+			{#if timezoneDiffers}
+				<span class="badge badge-success badge-outline badge-sm">
+					{userTimeFormatted} ({m.yourTime()})
+				</span>
+			{/if}
 		{/if}
 	</div>
-	{#if timezoneDiffers && !isClosed}
-		<span class="text-base-content/50 text-xs">
-			{userTimeFormatted} ({m.yourTime()})
-		</span>
-	{/if}
 </div>
