@@ -16,6 +16,14 @@ reviews:
           - The PR description contains a "Boy Scout changes" section listing these edits
           - No unrelated module-wide refactor is included
 
+      - name: 'PR Label Required'
+        instructions: |
+          Every PR must carry at least one release-category label. Accepted labels:
+          - PR: Feature, PR: Enhancement, PR: Bug, PR: Performance, PR: Refactor, PR: Infrastructure
+          - documentation, dependencies
+          If no matching label is present, leave a comment asking the author to add one before merging.
+          Do NOT approve the PR until a valid label is applied.
+
       - name: 'German Gender-Inclusive Language'
         instructions: |
           When changes are made to `messages/de.json`, verify that German translations use gender-inclusive language:
