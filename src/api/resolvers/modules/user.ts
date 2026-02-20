@@ -80,6 +80,7 @@ export const GQLUser = builder.prismaObject('User', {
 		emergencyContacts: t.field(UserEmergencyContactsFieldObject),
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
+		canReceiveDelegationMail: t.exposeBoolean('canReceiveDelegationMail', { nullable: false }),
 		globalNotes: t.field(UserGlobalNotesFieldObject),
 		papers: t.relation('papers', {
 			query: (_args, ctx) => ({
@@ -275,7 +276,8 @@ builder.mutationFields((t) => {
 							wantsToReceiveGeneralInformation: t.boolean({
 								required: false
 							}),
-							wantsJoinTeamInformation: t.boolean({ required: false })
+							wantsJoinTeamInformation: t.boolean({ required: false }),
+							canReceiveDelegationMail: t.boolean({ required: false })
 						})
 					})
 				})
@@ -329,6 +331,33 @@ builder.mutationFields((t) => {
 					data: {
 						wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
 						wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
+	const field = updateOneUserMutationObject(t);
+	return {
+		updateUserMessagingPreference: t.prismaField({
+			...field,
+			args: {
+				where: field.args.where,
+				canReceiveDelegationMail: t.arg.boolean()
+			},
+			resolve: async (query, root, args, ctx) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
+				};
+
+				return await db.user.update({
+					...query,
+					where: args.where,
+					data: {
+						canReceiveDelegationMail: args.canReceiveDelegationMail
 					}
 				});
 			}

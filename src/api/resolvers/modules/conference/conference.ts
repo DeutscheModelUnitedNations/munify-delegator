@@ -38,6 +38,7 @@ import {
 	ConferenceIsOpenPaperSubmissionFieldObject,
 	ConferenceShowInfoExpandedFieldObject,
 	ConferenceShowCalendarFieldObject,
+	ConferenceAllowMessagingFieldObject,
 	ConferenceTimezoneFieldObject,
 	deleteOneConferenceMutationObject,
 	findManyConferenceQueryObject,
@@ -65,6 +66,7 @@ builder.prismaObject('Conference', {
 		linkToPaperInbox: t.field(ConferenceLinkToPaperInboxFieldObject),
 		isOpenPaperSubmission: t.field(ConferenceIsOpenPaperSubmissionFieldObject),
 		showCalendar: t.field(ConferenceShowCalendarFieldObject),
+		allowMessaging: t.field(ConferenceAllowMessagingFieldObject),
 		timezone: t.field(ConferenceTimezoneFieldObject),
 		longTitle: t.field(ConferenceLongTitleFieldObject),
 		location: t.field(ConferenceLocationFieldObject),
@@ -481,6 +483,9 @@ builder.mutationFields((t) => {
 							showCalendar: t.boolean({
 								required: false
 							}),
+							allowMessaging: t.boolean({
+								required: false
+							}),
 							timezone: t.string({
 								required: false
 							}),
@@ -648,6 +653,8 @@ builder.mutationFields((t) => {
 								? undefined
 								: args.data.isOpenPaperSubmission,
 						showCalendar: args.data.showCalendar === null ? undefined : args.data.showCalendar,
+						allowMessaging:
+							args.data.allowMessaging === null ? undefined : args.data.allowMessaging,
 						timezone: args.data.timezone ?? undefined,
 						showInfoExpanded:
 							args.data.showInfoExpanded === null ? undefined : args.data.showInfoExpanded,

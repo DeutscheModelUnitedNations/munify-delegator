@@ -31,3 +31,22 @@ export interface NewReviewEmailProps {
 	conferenceTitle: string;
 	paperUrl: string;
 }
+
+/**
+ * Props for the DelegationMessageEmail template
+ */
+export interface DelegationMessageEmailProps {
+	senderLabel: string;
+	senderInitials: string;
+	subject: string;
+	messageBody: string;
+	conferenceTitle: string;
+	replyUrl: string;
+	threadMessages?: Array<{
+		senderLabel: string;
+		senderInitials: string;
+		subject: string;
+		body: string;
+		sentAt: string;
+	}>;
+}

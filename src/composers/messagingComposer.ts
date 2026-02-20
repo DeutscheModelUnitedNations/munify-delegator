@@ -1,0 +1,968 @@
+import { db } from '$db/db';
+import { renderDelegationMessageEmail } from '$api/services/email/delegationMessageTemplates';
+import { emailService } from '$api/services/email/emailService';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+
+// Helper function to generate delegate label
+export function getInitials(firstName: string, lastName: string) {
+	return `${firstName.charAt(0)}.${lastName.charAt(0)}.`;
+}
+
+export function getDelegateLabel(
+	user: { given_name: string; family_name: string },
+	delegationMember: {
+		delegation: {
+			assignedNation: { alpha3Code: string } | null;
+			assignedNonStateActor: { name: string } | null;
+		};
+		assignedCommittee: { abbreviation: string | null; name: string } | null;
+	} | null,
+	singleParticipant: {
+		assignedRole: { name: string } | null;
+	} | null
+): string {
+	let label = 'Participant';
+
+	if (delegationMember) {
+		if (delegationMember.delegation.assignedNation) {
+			const alpha3Code = delegationMember.delegation.assignedNation.alpha3Code;
+			const nationName = getFullTranslatedCountryNameFromISO3Code(alpha3Code);
+
+			label = nationName;
+			if (delegationMember.assignedCommittee) {
+				label += ` (${delegationMember.assignedCommittee.abbreviation || delegationMember.assignedCommittee.name})`;
+			}
+		} else if (delegationMember.delegation.assignedNonStateActor) {
+			label = delegationMember.delegation.assignedNonStateActor.name;
+			if (delegationMember.assignedCommittee) {
+				label += ` (${delegationMember.assignedCommittee.abbreviation || delegationMember.assignedCommittee.name})`;
+			}
+		}
+	} else if (singleParticipant) {
+		if (singleParticipant.assignedRole) {
+			label = singleParticipant.assignedRole.name;
+		}
+	}
+	return label;
+}
+
+export type RecipientInfo = {
+	id: string;
+	label: string;
+	firstName: string | null;
+	lastName: string | null;
+	alpha2Code: string | null;
+	alpha3Code: string | null;
+	fontAwesomeIcon: string | null;
+	roleName: string | null;
+};
+
+export type RecipientGroup = {
+	groupId: string;
+	groupLabel: string;
+	category: 'COMMITTEE' | 'NSA' | 'CUSTOM_ROLE';
+	fontAwesomeIcon: string | null;
+	recipients: RecipientInfo[];
+};
+
+export async function getMessageRecipients(
+	conferenceId: string,
+	userId: string
+): Promise<RecipientGroup[]> {
+	// Verify caller is a participant in this conference
+	const callerDelegationMember = await db.delegationMember.findUnique({
+		where: { conferenceId_userId: { conferenceId, userId } }
+	});
+
+	if (!callerDelegationMember) {
+		const callerSingleParticipant = await db.singleParticipant.findUnique({
+			where: { conferenceId_userId: { conferenceId, userId } }
+		});
+
+		if (!callerSingleParticipant) {
+			throw new Error('You are not a participant in this conference');
+		}
+	}
+
+	const seenUserIds = new Set<string>();
+
+	// Query all DelegationMembers in the conference with messaging enabled, excluding current user
+	const delegationMembers = await db.delegationMember.findMany({
+		where: {
+			conferenceId,
+			userId: { not: userId },
+			user: { canReceiveDelegationMail: true }
+		},
+		include: {
+			user: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			},
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
+
+	// Query all SingleParticipants in the conference with messaging enabled, excluding current user
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: {
+			conferenceId,
+			userId: { not: userId },
+			user: { canReceiveDelegationMail: true }
+		},
+		include: {
+			user: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			},
+			assignedRole: true
+		}
+	});
+
+	// Group DelegationMembers by committee
+	const committeeGroups = new Map<string, { label: string; recipients: RecipientInfo[] }>();
+
+	// Group DelegationMembers by NSA (those with no assignedCommittee but with assignedNonStateActor)
+	const nsaGroups = new Map<
+		string,
+		{ label: string; fontAwesomeIcon: string | null; recipients: RecipientInfo[] }
+	>();
+
+	for (const member of delegationMembers) {
+		if (!member.user || seenUserIds.has(member.user.id)) continue;
+		seenUserIds.add(member.user.id);
+
+		const userObj = member.user;
+		const roleLabel = getDelegateLabel(userObj, member, null);
+		const label = `${roleLabel} - ${userObj.given_name} ${userObj.family_name}`;
+
+		if (member.assignedCommittee) {
+			const key = member.assignedCommittee.id;
+			if (!committeeGroups.has(key)) {
+				const committeeLabel = member.assignedCommittee.abbreviation
+					? `${member.assignedCommittee.name} (${member.assignedCommittee.abbreviation})`
+					: member.assignedCommittee.name;
+				committeeGroups.set(key, {
+					label: committeeLabel,
+					recipients: []
+				});
+			}
+			const committeeName = member.assignedCommittee.abbreviation || member.assignedCommittee.name;
+			committeeGroups.get(key)!.recipients.push({
+				id: userObj.id,
+				label,
+				firstName: userObj.given_name,
+				lastName: userObj.family_name,
+				alpha2Code: member.delegation.assignedNation?.alpha2Code ?? null,
+				alpha3Code: member.delegation.assignedNation?.alpha3Code ?? null,
+				fontAwesomeIcon: null,
+				roleName: committeeName
+			});
+		} else if (member.delegation.assignedNonStateActor) {
+			const nsa = member.delegation.assignedNonStateActor;
+			const key = nsa.id;
+			if (!nsaGroups.has(key)) {
+				nsaGroups.set(key, {
+					label: nsa.name,
+					fontAwesomeIcon: nsa.fontAwesomeIcon,
+					recipients: []
+				});
+			}
+			nsaGroups.get(key)!.recipients.push({
+				id: userObj.id,
+				label,
+				firstName: userObj.given_name,
+				lastName: userObj.family_name,
+				alpha2Code: null,
+				alpha3Code: null,
+				fontAwesomeIcon: nsa.fontAwesomeIcon,
+				roleName: nsa.name
+			});
+		}
+	}
+
+	// Group SingleParticipants by assignedRole
+	const roleGroups = new Map<
+		string,
+		{ label: string; fontAwesomeIcon: string | null; recipients: RecipientInfo[] }
+	>();
+
+	for (const participant of singleParticipants) {
+		if (!participant.user || seenUserIds.has(participant.user.id)) continue;
+		seenUserIds.add(participant.user.id);
+
+		if (!participant.assignedRole) continue;
+
+		const userObj = participant.user;
+		const roleLabel = getDelegateLabel(userObj, null, participant);
+		const label = `${roleLabel} - ${userObj.given_name} ${userObj.family_name}`;
+
+		const key = participant.assignedRole.id;
+		if (!roleGroups.has(key)) {
+			roleGroups.set(key, {
+				label: participant.assignedRole.name,
+				fontAwesomeIcon: participant.assignedRole.fontAwesomeIcon,
+				recipients: []
+			});
+		}
+		roleGroups.get(key)!.recipients.push({
+			id: userObj.id,
+			label,
+			firstName: userObj.given_name,
+			lastName: userObj.family_name,
+			alpha2Code: null,
+			alpha3Code: null,
+			fontAwesomeIcon: participant.assignedRole.fontAwesomeIcon,
+			roleName: participant.assignedRole.name
+		});
+	}
+
+	// Build result, sorting recipients within each group
+	const groups: RecipientGroup[] = [];
+
+	for (const [groupId, group] of committeeGroups) {
+		group.recipients.sort((a, b) => a.label.localeCompare(b.label));
+		groups.push({
+			groupId,
+			groupLabel: group.label,
+			category: 'COMMITTEE',
+			fontAwesomeIcon: null,
+			recipients: group.recipients
+		});
+	}
+
+	for (const [groupId, group] of nsaGroups) {
+		group.recipients.sort((a, b) => a.label.localeCompare(b.label));
+		groups.push({
+			groupId,
+			groupLabel: group.label,
+			category: 'NSA',
+			fontAwesomeIcon: group.fontAwesomeIcon,
+			recipients: group.recipients
+		});
+	}
+
+	for (const [groupId, group] of roleGroups) {
+		group.recipients.sort((a, b) => a.label.localeCompare(b.label));
+		groups.push({
+			groupId,
+			groupLabel: group.label,
+			category: 'CUSTOM_ROLE',
+			fontAwesomeIcon: group.fontAwesomeIcon,
+			recipients: group.recipients
+		});
+	}
+
+	// Sort groups by label
+	groups.sort((a, b) => a.groupLabel.localeCompare(b.groupLabel));
+
+	return groups;
+}
+
+export type ReplyMessageData = {
+	id: string;
+	subject: string;
+	body: string;
+	senderLabel: string;
+	senderUserId: string;
+	senderFirstName: string;
+	senderLastName: string;
+	senderAlpha2Code: string | null;
+	senderAlpha3Code: string | null;
+	senderFontAwesomeIcon: string | null;
+	senderRoleName: string | null;
+	sentAt: string;
+};
+
+export async function getMessageForReply(
+	messageAuditId: string,
+	conferenceId: string,
+	userId: string
+): Promise<ReplyMessageData | null> {
+	const audit = await db.messageAudit.findUnique({
+		where: { id: messageAuditId },
+		select: {
+			id: true,
+			subject: true,
+			body: true,
+			createdAt: true,
+			senderUserId: true,
+			recipientUserId: true,
+			conferenceId: true,
+			senderUser: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			}
+		}
+	});
+
+	if (!audit || audit.conferenceId !== conferenceId || audit.recipientUserId !== userId) {
+		return null;
+	}
+
+	// Look up sender's delegation/role info for the label
+	const senderDelegationMember = await db.delegationMember.findUnique({
+		where: {
+			conferenceId_userId: {
+				conferenceId,
+				userId: audit.senderUserId
+			}
+		},
+		include: {
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
+
+	let senderSingleParticipant = null as {
+		assignedRole: { name: string; fontAwesomeIcon: string | null } | null;
+	} | null;
+	if (!senderDelegationMember) {
+		senderSingleParticipant = await db.singleParticipant.findUnique({
+			where: {
+				conferenceId_userId: {
+					conferenceId,
+					userId: audit.senderUserId
+				}
+			},
+			include: {
+				assignedRole: true
+			}
+		});
+	}
+
+	const senderLabel = getDelegateLabel(
+		audit.senderUser,
+		senderDelegationMember,
+		senderSingleParticipant
+	);
+
+	// Derive recipient-info fields for display
+	const senderAlpha2Code = senderDelegationMember?.delegation.assignedNation?.alpha2Code ?? null;
+	const senderAlpha3Code = senderDelegationMember?.delegation.assignedNation?.alpha3Code ?? null;
+	const senderFontAwesomeIcon =
+		senderDelegationMember?.delegation.assignedNonStateActor?.fontAwesomeIcon ??
+		senderSingleParticipant?.assignedRole?.fontAwesomeIcon ??
+		null;
+	const senderRoleName =
+		senderDelegationMember?.assignedCommittee?.abbreviation ??
+		senderDelegationMember?.assignedCommittee?.name ??
+		senderDelegationMember?.delegation.assignedNonStateActor?.name ??
+		senderSingleParticipant?.assignedRole?.name ??
+		null;
+
+	return {
+		id: audit.id,
+		subject: audit.subject,
+		body: audit.body,
+		senderLabel,
+		senderUserId: audit.senderUserId,
+		senderFirstName: audit.senderUser.given_name,
+		senderLastName: audit.senderUser.family_name,
+		senderAlpha2Code,
+		senderAlpha3Code,
+		senderFontAwesomeIcon,
+		senderRoleName,
+		sentAt: audit.createdAt.toISOString()
+	};
+}
+
+export async function getMessageHistory(conferenceId: string, userId: string) {
+	const audits = await db.messageAudit.findMany({
+		where: {
+			senderUserId: userId,
+			conferenceId: conferenceId
+		},
+		orderBy: { createdAt: 'desc' },
+		select: {
+			subject: true,
+			body: true,
+			createdAt: true,
+			status: true,
+			recipientUserId: true,
+			recipientUser: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			}
+		}
+	});
+
+	if (audits.length === 0) {
+		return [];
+	}
+
+	const recipientIds = Array.from(new Set(audits.map((audit) => audit.recipientUserId)));
+
+	const delegationMembers = await db.delegationMember.findMany({
+		where: {
+			conferenceId: conferenceId,
+			userId: { in: recipientIds }
+		},
+		include: {
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
+
+	const delegationByUserId = new Map(delegationMembers.map((member) => [member.userId, member]));
+
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: {
+			conferenceId: conferenceId,
+			userId: { in: recipientIds }
+		},
+		include: {
+			assignedRole: true
+		}
+	});
+
+	const singleByUserId = new Map(
+		singleParticipants.map((participant) => [participant.userId, participant])
+	);
+
+	const items = audits.map((audit) => {
+		const recipient = audit.recipientUser;
+		const delegationMember = delegationByUserId.get(audit.recipientUserId) ?? null;
+		const singleParticipant = !delegationMember
+			? (singleByUserId.get(audit.recipientUserId) ?? null)
+			: null;
+		const roleLabel = recipient
+			? getDelegateLabel(recipient, delegationMember, singleParticipant)
+			: 'Participant';
+		const recipientLabel =
+			roleLabel !== 'Participant' && roleLabel
+				? roleLabel
+				: recipient
+					? `${recipient.given_name} ${recipient.family_name}`
+					: 'Participant';
+		const status = audit.status.charAt(0) + audit.status.slice(1).toLowerCase();
+
+		return {
+			recipientLabel,
+			subject: audit.subject,
+			body: audit.body,
+			sentAt: audit.createdAt.toISOString(),
+			status
+		};
+	});
+
+	return items;
+}
+
+export async function getInboxMessages(conferenceId: string, userId: string) {
+	const audits = await db.messageAudit.findMany({
+		where: {
+			recipientUserId: userId,
+			conferenceId: conferenceId
+		},
+		orderBy: { createdAt: 'desc' },
+		select: {
+			id: true,
+			subject: true,
+			body: true,
+			createdAt: true,
+			senderUserId: true,
+			replyToMessageId: true,
+			_count: { select: { replies: true } },
+			senderUser: {
+				select: {
+					id: true,
+					given_name: true,
+					family_name: true
+				}
+			}
+		}
+	});
+
+	if (audits.length === 0) {
+		return [];
+	}
+
+	const senderIds = Array.from(new Set(audits.map((a) => a.senderUserId)));
+
+	const delegationMembers = await db.delegationMember.findMany({
+		where: {
+			conferenceId,
+			userId: { in: senderIds }
+		},
+		include: {
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
+
+	const delegationByUserId = new Map(delegationMembers.map((m) => [m.userId, m]));
+
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: {
+			conferenceId,
+			userId: { in: senderIds }
+		},
+		include: {
+			assignedRole: true
+		}
+	});
+
+	const singleByUserId = new Map(singleParticipants.map((p) => [p.userId, p]));
+
+	return audits.map((audit) => {
+		const sender = audit.senderUser;
+		const delegationMember = delegationByUserId.get(audit.senderUserId) ?? null;
+		const singleParticipant = !delegationMember
+			? (singleByUserId.get(audit.senderUserId) ?? null)
+			: null;
+		const senderLabel = sender
+			? getDelegateLabel(sender, delegationMember, singleParticipant)
+			: 'Participant';
+		const hasThread = audit.replyToMessageId !== null || audit._count.replies > 0;
+
+		return {
+			id: audit.id,
+			senderLabel:
+				senderLabel !== 'Participant' && senderLabel
+					? senderLabel
+					: sender
+						? `${sender.given_name} ${sender.family_name}`
+						: 'Participant',
+			subject: audit.subject,
+			body: audit.body,
+			sentAt: audit.createdAt.toISOString(),
+			hasThread
+		};
+	});
+}
+
+export async function getMessageThread(
+	messageAuditId: string,
+	conferenceId: string,
+	userId: string
+) {
+	// Find the starting message
+	const startMsg = await db.messageAudit.findUnique({
+		where: { id: messageAuditId },
+		select: { id: true, replyToMessageId: true, conferenceId: true }
+	});
+
+	if (!startMsg || startMsg.conferenceId !== conferenceId) {
+		return [];
+	}
+
+	// Walk up to find root message
+	let rootId = startMsg.id;
+	let parentId = startMsg.replyToMessageId;
+	while (parentId) {
+		const parent = await db.messageAudit.findUnique({
+			where: { id: parentId },
+			select: { id: true, replyToMessageId: true }
+		});
+		if (!parent) break;
+		rootId = parent.id;
+		parentId = parent.replyToMessageId;
+	}
+
+	// Walk down from root collecting all messages in the chain
+	const allMessages: Array<{
+		id: string;
+		subject: string;
+		body: string;
+		createdAt: Date;
+		senderUserId: string;
+		recipientUserId: string;
+		senderUser: { given_name: string; family_name: string };
+	}> = [];
+
+	let currentIds = [rootId];
+	while (currentIds.length > 0) {
+		const messages = await db.messageAudit.findMany({
+			where: { id: { in: currentIds } },
+			select: {
+				id: true,
+				subject: true,
+				body: true,
+				createdAt: true,
+				senderUserId: true,
+				recipientUserId: true,
+				senderUser: {
+					select: { given_name: true, family_name: true }
+				},
+				replies: {
+					select: { id: true }
+				}
+			}
+		});
+		for (const msg of messages) {
+			allMessages.push(msg);
+		}
+		currentIds = messages.flatMap((m) => m.replies.map((r) => r.id));
+	}
+
+	// Verify requesting user is part of the thread
+	const isInThread = allMessages.some(
+		(m) => m.senderUserId === userId || m.recipientUserId === userId
+	);
+	if (!isInThread) {
+		return [];
+	}
+
+	// Sort chronologically
+	allMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+	// Batch resolve sender labels
+	const senderIds = Array.from(new Set(allMessages.map((m) => m.senderUserId)));
+
+	const delegationMembers = await db.delegationMember.findMany({
+		where: { conferenceId, userId: { in: senderIds } },
+		include: {
+			delegation: { include: { assignedNation: true, assignedNonStateActor: true } },
+			assignedCommittee: true
+		}
+	});
+	const delegationByUserId = new Map(delegationMembers.map((m) => [m.userId, m]));
+
+	const singleParticipants = await db.singleParticipant.findMany({
+		where: { conferenceId, userId: { in: senderIds } },
+		include: { assignedRole: true }
+	});
+	const singleByUserId = new Map(singleParticipants.map((p) => [p.userId, p]));
+
+	return allMessages.map((msg) => {
+		const dm = delegationByUserId.get(msg.senderUserId) ?? null;
+		const sp = !dm ? (singleByUserId.get(msg.senderUserId) ?? null) : null;
+		const label = getDelegateLabel(msg.senderUser, dm, sp);
+
+		return {
+			id: msg.id,
+			subject: msg.subject,
+			body: msg.body,
+			sentAt: msg.createdAt.toISOString(),
+			senderLabel: label,
+			senderUserId: msg.senderUserId,
+			isCurrentUser: msg.senderUserId === userId
+		};
+	});
+}
+
+export async function sendDelegationMessage({
+	conferenceId,
+	recipientId,
+	subject,
+	body,
+	origin,
+	senderId,
+	replyToMessageId
+}: {
+	conferenceId: string;
+	recipientId: string;
+	subject: string;
+	body: string;
+	origin: string;
+	senderId: string;
+	replyToMessageId?: string;
+}) {
+	// Validate inputs
+	if (!recipientId.trim() || !subject.trim() || !body.trim()) {
+		throw new Error('Missing required fields');
+	}
+
+	if (subject.length > 200) {
+		throw new Error('Subject must be at most 200 characters');
+	}
+
+	if (body.length > 2000) {
+		throw new Error('Body must be at most 2000 characters');
+	}
+
+	if (recipientId === senderId) {
+		throw new Error('Cannot send message to yourself');
+	}
+
+	// Rate limiting: max 10 messages per 10 minutes
+	const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+	const recentMessageCount = await db.messageAudit.count({
+		where: {
+			senderUserId: senderId,
+			createdAt: { gte: tenMinutesAgo }
+		}
+	});
+
+	if (recentMessageCount >= 10) {
+		throw new Error('Rate limit exceeded. Please wait before sending more messages.');
+	}
+
+	// Get sender info
+	const sender = await db.user.findUnique({
+		where: { id: senderId },
+		select: {
+			canReceiveDelegationMail: true,
+			id: true,
+			given_name: true,
+			family_name: true
+		}
+	});
+
+	if (!sender) {
+		throw new Error('Sender not found');
+	}
+
+	if (!sender.canReceiveDelegationMail) {
+		throw new Error('You must enable messaging in your account settings.');
+	}
+
+	// Get recipient info
+	const recipient = await db.user.findUnique({
+		where: { id: recipientId },
+		select: {
+			canReceiveDelegationMail: true,
+			email: true,
+			id: true
+		}
+	});
+
+	if (!recipient) {
+		throw new Error('Recipient not found');
+	}
+
+	if (!recipient.canReceiveDelegationMail) {
+		throw new Error('Recipient has not enabled messaging.');
+	}
+
+	// Get conference info
+	const conference = await db.conference.findUnique({
+		where: { id: conferenceId },
+		select: { title: true, allowMessaging: true }
+	});
+
+	if (!conference) {
+		throw new Error('Conference not found');
+	}
+
+	if (!conference.allowMessaging) {
+		throw new Error('Messaging is not enabled for this conference.');
+	}
+
+	// Verify sender is part of conference
+	const senderDelegationMember = await db.delegationMember.findUnique({
+		where: {
+			conferenceId_userId: {
+				conferenceId: conferenceId,
+				userId: sender.id
+			}
+		},
+		include: {
+			delegation: {
+				include: {
+					assignedNation: true,
+					assignedNonStateActor: true
+				}
+			},
+			assignedCommittee: true
+		}
+	});
+
+	let senderSingleParticipant = null as {
+		assignedRole: { name: string } | null;
+	} | null;
+	if (!senderDelegationMember) {
+		senderSingleParticipant = await db.singleParticipant.findUnique({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conferenceId,
+					userId: sender.id
+				}
+			},
+			include: {
+				assignedRole: true
+			}
+		});
+	}
+
+	if (!senderDelegationMember && !senderSingleParticipant) {
+		throw new Error('Sender is not part of this conference');
+	}
+
+	const senderLabel = getDelegateLabel(sender, senderDelegationMember, senderSingleParticipant);
+	const senderInitials =
+		`${sender.given_name.charAt(0)}${sender.family_name.charAt(0)}`.toUpperCase();
+
+	// Verify recipient is part of conference
+	const recipientDelegationMember = await db.delegationMember.findUnique({
+		where: {
+			conferenceId_userId: {
+				conferenceId: conferenceId,
+				userId: recipient.id
+			}
+		}
+	});
+
+	let recipientSingleParticipant = null as {
+		assignedRole: { name: string } | null;
+	} | null;
+	if (!recipientDelegationMember) {
+		recipientSingleParticipant = await db.singleParticipant.findUnique({
+			where: {
+				conferenceId_userId: {
+					conferenceId: conferenceId,
+					userId: recipient.id
+				}
+			},
+			include: {
+				assignedRole: true
+			}
+		});
+	}
+
+	if (!recipientDelegationMember && !recipientSingleParticipant) {
+		throw new Error('Recipient is not part of this conference');
+	}
+
+	// Create audit record
+	const audit = await db.messageAudit.create({
+		data: {
+			subject: subject,
+			body: body,
+			senderUserId: sender.id,
+			recipientUserId: recipient.id,
+			conferenceId: conferenceId,
+			status: 'SENT',
+			replyToMessageId: replyToMessageId ?? null
+		}
+	});
+
+	// Build reply URL from the new audit ID
+	const replyUrl = `${origin}/dashboard/${conferenceId}/messaging/compose?replyTo=${audit.id}`;
+
+	// Build full thread history for email
+	const threadMessages: Array<{
+		senderLabel: string;
+		senderInitials: string;
+		subject: string;
+		body: string;
+		sentAt: string;
+	}> = [];
+	if (replyToMessageId) {
+		let currentId: string | null = replyToMessageId;
+		while (currentId) {
+			const msg = await db.messageAudit.findUnique({
+				where: { id: currentId },
+				select: {
+					subject: true,
+					body: true,
+					createdAt: true,
+					senderUserId: true,
+					replyToMessageId: true,
+					senderUser: {
+						select: { given_name: true, family_name: true }
+					}
+				}
+			});
+			if (!msg) break;
+			const msgSenderDM = await db.delegationMember.findUnique({
+				where: {
+					conferenceId_userId: { conferenceId, userId: msg.senderUserId }
+				},
+				include: {
+					delegation: { include: { assignedNation: true, assignedNonStateActor: true } },
+					assignedCommittee: true
+				}
+			});
+			let msgSenderSP = null as { assignedRole: { name: string } | null } | null;
+			if (!msgSenderDM) {
+				msgSenderSP = await db.singleParticipant.findUnique({
+					where: {
+						conferenceId_userId: { conferenceId, userId: msg.senderUserId }
+					},
+					include: { assignedRole: true }
+				});
+			}
+			const msgLabel = getDelegateLabel(msg.senderUser, msgSenderDM, msgSenderSP);
+			const msgInitials =
+				`${msg.senderUser.given_name.charAt(0)}${msg.senderUser.family_name.charAt(0)}`.toUpperCase();
+			threadMessages.push({
+				senderLabel: msgLabel,
+				senderInitials: msgInitials,
+				subject: msg.subject,
+				body: msg.body,
+				sentAt: msg.createdAt.toLocaleDateString('de-DE', {
+					day: '2-digit',
+					month: '2-digit',
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				})
+			});
+			currentId = msg.replyToMessageId;
+		}
+	}
+
+	// Render email
+	const { html, text } = await renderDelegationMessageEmail({
+		senderLabel,
+		senderInitials,
+		subject: subject,
+		messageBody: body,
+		conferenceTitle: conference.title,
+		replyUrl,
+		threadMessages
+	});
+
+	// Send email
+	const result = await emailService.sendEmail({
+		to: recipient.email,
+		subject: `[${conference.title}] Neue Nachricht: ${subject}`,
+		html,
+		text
+	});
+
+	if (!result.success) {
+		console.error('Email sending failed', result.error);
+
+		await db.messageAudit.update({
+			where: { id: audit.id },
+			data: { status: 'FAILED' }
+		});
+
+		throw new Error('Failed to send email');
+	}
+
+	// Update audit with message ID
+	if (result.messageId) {
+		await db.messageAudit.update({
+			where: { id: audit.id },
+			data: { messageId: result.messageId }
+		});
+	}
+
+	return 'ok';
+}

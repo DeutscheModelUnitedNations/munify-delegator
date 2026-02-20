@@ -46,6 +46,21 @@ bun run dev:server # starts the actual dev server (vite&sveltekit)
 bunx lefthook install
 ```
 
+## Running on Windows
+
+Some `package.json` scripts in this repository assume a Unix-like shell (bash) and may not work out of the box on Windows `cmd.exe` or PowerShell. If you develop on Windows, consider one of the options below:
+
+- **Use WSL or Git Bash:** Install Windows Subsystem for Linux (WSL) or Git for Windows and run the development commands from there. This is the easiest option when scripts use shell operators (like `&&`, `rm`, or `sed`).
+- **Modify `package.json` scripts for PowerShell / cmd:** Replace Unix-only commands with cross-platform equivalents or use Node-based packages.
+
+if you are running on windows then change copy the following script tags and replace the cooresponding script tags in package.json
+
+```bash
+"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
+"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
+"dev:server": "bunx tsx -e \"const {spawn}=require('child_process'); const sleep=(ms)=>new Promise(r=>setTimeout(r,ms)); const run=(cmd,args)=>new Promise(res=>{const p=spawn(cmd,args,{stdio:'inherit',shell:process.platform==='win32'}); p.on('exit',c=>res(c??0));}); (async()=>{for(;;){let c=await run('bunx',['svelte-kit','sync']); if(c!==0){console.log('🔄 sync failed, retrying...'); await sleep(1000); continue;} c=await run('bunx',['vite']); console.log('🔄 Server exited, restarting...'); await sleep(1000);}})();\"",
+```
+
 ## Deployment
 
 The easiest way to deploy delegator on your own hardware is to use our provided [docker images](https://hub.docker.com/r/deutschemodelunitednations/delegator). You can find an example docker compose file in the [example](./example/) directoy. Please note that delegator relies on an [OIDC](https://auth0.com/intro-to-iam/what-is-openid-connect-oidc) issuer to be connected and properly configured. We recommend [ZITADEL](https://zitadel.com/) but any issuer of your choice will work. There are some additional instructions on this topic to be found in the example compose file.

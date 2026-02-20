@@ -50,7 +50,7 @@
 			</div>
 		{/if}
 	</section>
-	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
+	<div class="mt-10 flex flex-col lg:flex-row items-start justify-center gap-10">
 		<div
 			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-md {data.redirectUrl &&
 				'highlight-card'}"
@@ -152,6 +152,20 @@
 							label={m.receiveJoinTeamInformation()}
 						/>
 					</FormFieldset>
+
+					<div class="divider"></div>
+
+					<FormFieldset title={m.messagingMessaging()}>
+						<FormCheckbox
+							{form}
+							name="canReceiveDelegationMail"
+							label={m.allowDelegationMailer()}
+						/>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						<div class="text-sm text-base-content/70">
+							{@html m.allowDelegationMailerDescription()}
+						</div>
+					</FormFieldset>
 				</Form>
 			</div>
 		</div>
@@ -193,6 +207,7 @@
 					{m.edit()}
 					<i class="fas fa-arrow-up-right-from-square"></i>
 				</a>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>

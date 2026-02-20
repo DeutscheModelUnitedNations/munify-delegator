@@ -26,6 +26,7 @@ export interface DashboardLinkContext {
 	hasNationAssigned?: boolean;
 	membersLackCommittees?: boolean;
 	postalRegistrationComplete?: boolean;
+	allowMessaging?: boolean;
 	user?: { sub: string; email: string };
 }
 
@@ -102,6 +103,16 @@ export const dashboardLinks: DashboardLink[] = [
 			}
 			return undefined;
 		}
+	},
+	{
+		id: 'messaging',
+		icon: 'envelope',
+		getTitle: () => m.messagingCenter(),
+		getDescription: () => m.messagingDescription(),
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/messaging`,
+		showFor: ['delegation', 'singleParticipant', 'supervisor'],
+		isVisible: (ctx) => !!ctx.allowMessaging,
+		isDisabled: () => false
 	},
 	{
 		id: 'preparation',

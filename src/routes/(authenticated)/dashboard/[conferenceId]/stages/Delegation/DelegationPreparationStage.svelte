@@ -57,6 +57,7 @@
 		membersLackCommittees: delegationMember.delegation.members.some(
 			(member) => !member.assignedCommittee
 		),
+		allowMessaging: conference.allowMessaging,
 		user
 	});
 

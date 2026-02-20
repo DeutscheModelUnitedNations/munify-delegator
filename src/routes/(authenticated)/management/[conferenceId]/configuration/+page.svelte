@@ -631,6 +631,15 @@
 						/>
 						<span class="label-text">{m.showCalendar()}</span>
 					</label>
+					<label class="label cursor-pointer justify-start gap-3">
+						<input
+							type="checkbox"
+							class="toggle toggle-primary"
+							name="allowMessaging"
+							bind:checked={$formData.allowMessaging}
+						/>
+						<span class="label-text">{m.allowMessaging()}</span>
+					</label>
 				</div>
 			</FormFieldset>
 
