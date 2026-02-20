@@ -174,9 +174,8 @@ export async function validateTokens({
 
 		return idTokenValue.payload;
 	} catch (error: any) {
-		console.warn(
-			'Failed to verify tokens locally, falling back to less performant info fetch:',
-			error.message
+		console.debug(
+			`[OIDC] Local token verification failed (${error.message}), trying remote introspection`
 		);
 
 		const remoteUserInfo = await tokenIntrospection(config, access_token);

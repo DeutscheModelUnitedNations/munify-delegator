@@ -65,7 +65,9 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 			id_token: tokenSet.id_token
 		});
 	} catch (error) {
-		console.warn(`Failed to retrieve user info from tokens`, error);
+		console.debug(
+			`[OIDC] Token validation failed (${error instanceof Error ? error.message : 'unknown'}), attempting refresh`
+		);
 	}
 
 	if (!user) {
@@ -99,11 +101,15 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 					id_token: refreshed.id_token
 				});
 			} catch (e) {
-				console.warn('Refreshed tokens failed validation', e);
+				console.warn(
+					`[OIDC] Refreshed tokens failed validation: ${e instanceof Error ? e.message : e}`
+				);
 				return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
 			}
 		} catch (error) {
-			console.warn(`Failed to refresh tokens`, error);
+			console.warn(
+				`[OIDC] Token refresh failed: ${error instanceof Error ? error.message : error}`
+			);
 			return { nextTokenRefreshDue: undefined, tokenSet: undefined, user: undefined };
 		}
 	}
