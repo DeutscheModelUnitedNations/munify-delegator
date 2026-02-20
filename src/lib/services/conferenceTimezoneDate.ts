@@ -7,17 +7,26 @@
  * This function instead interprets the value in the conference timezone.
  */
 export function datetimeLocalToDate(datetimeLocal: string, timezone: string): Date {
-	// Parse the components from the datetime-local string
 	const [datePart, timePart] = datetimeLocal.split('T');
 	const [year, month, day] = datePart.split('-').map(Number);
 	const [hours, minutes] = timePart.split(':').map(Number);
+	const desiredWallMs = Date.UTC(year, month - 1, day, hours, minutes);
 
-	// Create a date in UTC, then adjust by the timezone offset
-	// First, find what UTC time corresponds to this wall-clock time in the target timezone
-	// We do this by creating a tentative UTC date and computing the offset
-	const tentative = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+	// Compute the UTC time that produces the desired wall-clock time in the
+	// target timezone. A single-pass offset lookup can be wrong by up to ±1 h
+	// when the tentative time and the result straddle a DST transition, so we
+	// run a second pass to correct for that.
+	let result = new Date(desiredWallMs - getOffsetMs(new Date(desiredWallMs), timezone));
+	const secondOffset = getOffsetMs(result, timezone);
+	const firstOffset = getOffsetMs(new Date(desiredWallMs), timezone);
+	if (secondOffset !== firstOffset) {
+		result = new Date(desiredWallMs - secondOffset);
+	}
+	return result;
+}
 
-	// Get the offset of the target timezone at this tentative time
+/** Returns the UTC-offset (in ms) of `timezone` at the given instant. */
+function getOffsetMs(instant: Date, timezone: string): number {
 	const formatter = new Intl.DateTimeFormat('en-US', {
 		timeZone: timezone,
 		year: 'numeric',
@@ -29,21 +38,19 @@ export function datetimeLocalToDate(datetimeLocal: string, timezone: string): Da
 		hour12: false
 	});
 
-	const parts = formatter.formatToParts(tentative);
+	const parts = formatter.formatToParts(instant);
 	const get = (type: Intl.DateTimeFormatPartTypes) =>
 		Number(parts.find((p) => p.type === type)?.value ?? 0);
 
-	const tzYear = get('year');
-	const tzMonth = get('month');
-	const tzDay = get('day');
-	const tzHour = get('hour') === 24 ? 0 : get('hour');
-	const tzMinute = get('minute');
-
-	const tzWallMs = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMinute);
-	const offsetMs = tzWallMs - tentative.getTime();
-
-	// The actual UTC time = desired wall-clock time - offset
-	return new Date(Date.UTC(year, month - 1, day, hours, minutes) - offsetMs);
+	const wallMs = Date.UTC(
+		get('year'),
+		get('month') - 1,
+		get('day'),
+		get('hour') === 24 ? 0 : get('hour'),
+		get('minute'),
+		get('second')
+	);
+	return wallMs - instant.getTime();
 }
 
 /**
