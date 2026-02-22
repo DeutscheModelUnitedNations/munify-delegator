@@ -126,6 +126,7 @@
 			countryAlpha2Code?: string | null;
 			alternativeImage?: string | null;
 			pronouns?: string | null;
+			id?: string | null;
 			mediaConsentStatus?: MediaConsentStatus$options;
 		}[],
 		filename: string
@@ -137,6 +138,7 @@
 			'countryAlpha2Code',
 			'alternativeImage',
 			'pronouns',
+			'id',
 			'mediaConsentStatus'
 		];
 		const data = badgeData.map((x) => [
@@ -146,6 +148,7 @@
 			x.countryAlpha2Code ?? '',
 			x.alternativeImage ?? '',
 			x.pronouns ?? '',
+			x.id ?? '',
 			x.mediaConsentStatus ?? 'NOT_SET'
 		]);
 		downloadCSV(header, data, filename);
@@ -177,6 +180,7 @@
 					countryAlpha2Code: member.delegation.assignedNation!.alpha2Code,
 					alternativeImage: '',
 					pronouns: member.user.pronouns,
+					id: member.user.id,
 					mediaConsentStatus:
 						member.user.conferenceParticipantStatus.find((conference) => {
 							return conference.conference.id === conferenceId;
@@ -215,6 +219,7 @@
 					countryAlpha2Code: 'un',
 					alternativeImage: '',
 					pronouns: member.user.pronouns,
+					id: member.user.id,
 					mediaConsentStatus:
 						member.user.conferenceParticipantStatus.find((conference) => {
 							return conference.conference.id === conferenceId;
@@ -252,6 +257,7 @@
 					countryAlpha2Code: 'un',
 					alternativeImage: '',
 					pronouns: member.user.pronouns,
+					id: member.user.id,
 					mediaConsentStatus:
 						member.user.conferenceParticipantStatus.find((conference) => {
 							return conference.conference.id === conferenceId;
