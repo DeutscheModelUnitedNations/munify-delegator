@@ -77,11 +77,9 @@
 
 	$effect(() => {
 		if (nationPool || activeSorting || activeFilter) {
-			let res = nationPool
-				.sort(
-					sortingOptions.find((x) => x.key === activeSorting)?.sorting ?? sortingOptions[0].sorting
-				)
-				.filter((x) => getNumOfSeatsPerNation(x, committees) >= 1);
+			let res = nationPool.sort(
+				sortingOptions.find((x) => x.key === activeSorting)?.sorting ?? sortingOptions[0].sorting
+			);
 
 			for (const f of activeFilter) {
 				const filterFn = filterOptions.find((o) => o.key === f)?.filter;
