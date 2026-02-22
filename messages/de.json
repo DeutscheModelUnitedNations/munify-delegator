@@ -1204,6 +1204,7 @@
 	"searchForUser": "UserID oder E-Mail",
 	"seat": "Platz",
 	"seats": "Plätze",
+	"seatsLinkDescription": "Gremien, Nationen und verfügbare Plätze der Konferenz einsehen",
 	"seatsOccupied": "von {seats} Plätzen belegt",
 	"seedConference": "Konferenz anlegen",
 	"selectADate": "Datum auswählen",

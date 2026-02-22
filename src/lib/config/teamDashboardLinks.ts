@@ -80,6 +80,15 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		isVisible: (ctx) => !!ctx.linkToPreparationGuide
 	},
 	{
+		id: 'seats',
+		icon: 'chairs',
+		getTitle: () => m.conferenceSeats(),
+		getDescription: () => m.seatsLinkDescription(),
+		getHref: (ctx) => `/seats/${ctx.conferenceId}`,
+		external: true,
+		isVisible: () => true
+	},
+	{
 		id: 'appDocs',
 		icon: 'circle-question',
 		getTitle: () => m.appDocs(),

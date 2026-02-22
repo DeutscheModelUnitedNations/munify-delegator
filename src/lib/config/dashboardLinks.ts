@@ -134,6 +134,20 @@ export const dashboardLinks: DashboardLink[] = [
 		showFor: ['delegation', 'singleParticipant'],
 		isVisible: (ctx) => !!ctx.linkToPaperInbox && !!ctx.user,
 		isDisabled: () => false
+	},
+	{
+		id: 'seats',
+		icon: 'chairs',
+		getTitle: () => m.conferenceSeats(),
+		getDescription: () => m.seatsLinkDescription(),
+		getHref: (ctx) => `/seats/${ctx.conferenceId}`,
+		external: true,
+		showFor: ['delegation', 'singleParticipant', 'supervisor'],
+		isVisible: (ctx) =>
+			ctx.conferenceState === 'PREPARATION' ||
+			ctx.conferenceState === 'ACTIVE' ||
+			ctx.conferenceState === 'POST',
+		isDisabled: () => false
 	}
 ];
 
