@@ -81,7 +81,7 @@
 				.sort(
 					sortingOptions.find((x) => x.key === activeSorting)?.sorting ?? sortingOptions[0].sorting
 				)
-				.filter((x) => getNumOfSeatsPerNation(x, committees) > 1);
+				.filter((x) => getNumOfSeatsPerNation(x, committees) >= 1);
 
 			for (const f of activeFilter) {
 				const filterFn = filterOptions.find((o) => o.key === f)?.filter;

@@ -51,7 +51,7 @@
 				(nation) =>
 					getNumOfSeatsPerNation(nation, conference.committees) >=
 						(delegationMember.delegation?.members?.length ?? 0) &&
-					getNumOfSeatsPerNation(nation, conference.committees) > 1
+					getNumOfSeatsPerNation(nation, conference.committees) >= 1
 			)
 	);
 
