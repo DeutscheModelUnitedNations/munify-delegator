@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		accessCardId: string | null | undefined;
@@ -14,8 +15,13 @@
 		localValue = accessCardId ?? '';
 	});
 
-	const save = async () => {
-		await onSave(localValue.trim() || null);
+	const save = () => {
+		const promise = onSave(localValue.trim() || null);
+		toast.promise(promise, {
+			loading: m.genericToastLoading(),
+			success: m.genericToastSuccess(),
+			error: m.genericToastError()
+		});
 	};
 </script>
 

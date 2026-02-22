@@ -754,7 +754,8 @@
 			onSave={async (value) => await changeAdministrativeStatus({ accessCardId: value })}
 		/>
 		<AttendanceSection
-			conferenceParticipantStatusId={status?.id ?? ''}
+			{userId}
+			{conferenceId}
 			entries={status?.attendanceEntries ?? []}
 			onChanged={() => {
 				cache.markStale();

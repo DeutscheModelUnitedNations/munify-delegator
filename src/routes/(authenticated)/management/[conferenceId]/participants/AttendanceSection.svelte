@@ -16,21 +16,19 @@
 	}
 
 	interface Props {
-		conferenceParticipantStatusId: string;
+		userId: string;
+		conferenceId: string;
 		entries: AttendanceEntryData[];
 		onChanged: () => void;
 	}
 
-	let { conferenceParticipantStatusId, entries, onChanged }: Props = $props();
+	let { userId, conferenceId, entries, onChanged }: Props = $props();
 
 	let occasion = $state('');
 
 	const createAttendanceEntryMutation = graphql(`
-		mutation createAttendanceEntry($conferenceParticipantStatusId: String!, $occasion: String!) {
-			createOneAttendanceEntry(
-				conferenceParticipantStatusId: $conferenceParticipantStatusId
-				occasion: $occasion
-			) {
+		mutation createAttendanceEntry($userId: String!, $conferenceId: String!, $occasion: String!) {
+			createOneAttendanceEntry(userId: $userId, conferenceId: $conferenceId, occasion: $occasion) {
 				id
 			}
 		}
@@ -48,7 +46,8 @@
 		if (!occasion.trim()) return;
 
 		const promise = createAttendanceEntryMutation.mutate({
-			conferenceParticipantStatusId,
+			userId,
+			conferenceId,
 			occasion: occasion.trim()
 		});
 		toast.promise(promise, {

@@ -2990,7 +2990,7 @@ type Mutation {
   createOneAgendaItem(data: CommitteeAgendaItemCreateInput!): CommitteeAgendaItem!
   createOneAppliedDelegationMember(assignedCommitteeId: ID, assignedNationAlpha3Code: String, assignedNonStateActorId: ID, conferenceId: ID!, userId: ID!): DelegationMember!
   createOneAppliedSingleParticipant(conferenceId: ID!, roleId: ID!, userId: ID!): SingleParticipant!
-  createOneAttendanceEntry(conferenceParticipantStatusId: String!, occasion: String!): AttendanceEntry!
+  createOneAttendanceEntry(conferenceId: String!, occasion: String!, userId: String!): AttendanceEntry!
   createOneCalendarDay(data: CalendarDayCreateInput!): CalendarDay!
   createOneCalendarEntry(data: CalendarEntryCreateInput!): CalendarEntry!
   createOneCalendarTrack(data: CalendarTrackCreateInput!): CalendarTrack!

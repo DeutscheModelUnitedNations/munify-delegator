@@ -43,18 +43,27 @@ builder.mutationFields((t) => ({
 	createOneAttendanceEntry: t.prismaField({
 		type: 'AttendanceEntry',
 		args: {
-			conferenceParticipantStatusId: t.arg.string({ required: true }),
+			userId: t.arg.string({ required: true }),
+			conferenceId: t.arg.string({ required: true }),
 			occasion: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const user = ctx.permissions.getLoggedInUserOrThrow();
+			const loggedInUser = ctx.permissions.getLoggedInUserOrThrow();
 
-			// Verify the user has permission by checking the conference participant status
-			const status = await db.conferenceParticipantStatus.findUniqueOrThrow({
+			// Upsert the ConferenceParticipantStatus so that it exists before creating the entry
+			const status = await db.conferenceParticipantStatus.upsert({
 				where: {
-					id: args.conferenceParticipantStatusId,
+					userId_conferenceId: {
+						userId: args.userId,
+						conferenceId: args.conferenceId
+					},
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').ConferenceParticipantStatus]
-				}
+				},
+				create: {
+					userId: args.userId,
+					conferenceId: args.conferenceId
+				},
+				update: {}
 			});
 
 			return db.attendanceEntry.create({
@@ -62,7 +71,7 @@ builder.mutationFields((t) => ({
 				data: {
 					conferenceParticipantStatusId: status.id,
 					occasion: args.occasion,
-					recordedById: user.sub
+					recordedById: loggedInUser.sub
 				}
 			});
 		}
