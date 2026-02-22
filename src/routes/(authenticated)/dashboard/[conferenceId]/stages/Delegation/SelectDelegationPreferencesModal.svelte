@@ -320,7 +320,7 @@
 								/>
 							{/snippet}
 						</NsaPool>
-						{#if nationPool.length === 0}
+						{#if nonStateActorPool.length === 0}
 							<div class="alert alert-warning">
 								<i class="fas fa-triangle-exclamation"></i>
 								<p>{m.noNSAAvailable()}</p>
