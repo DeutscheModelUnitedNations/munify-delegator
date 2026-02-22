@@ -1204,7 +1204,7 @@
 	"searchForUser": "UserID or Email",
 	"seat": "Seat",
 	"seats": "Seats",
-	"seatsLinkDescription": "View the committees, nations, and available seats of the conference",
+	"seatsLinkDescription": "View committees, topics, represented states, and non-state actors",
 	"seatsOccupied": "of {seats} seats occupied",
 	"seedConference": "Create Conference",
 	"selectADate": "Select Date",
