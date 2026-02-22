@@ -169,6 +169,15 @@
 
 			const badgeData = resData.delegationMembers
 				.filter((member) => !!member.delegation.assignedNation)
+				.sort((a, b) => {
+					const countryCompare = getFullTranslatedCountryNameFromISO3Code(
+						a.delegation.assignedNation!.alpha3Code
+					).localeCompare(
+						getFullTranslatedCountryNameFromISO3Code(b.delegation.assignedNation!.alpha3Code)
+					);
+					if (countryCompare !== 0) return countryCompare;
+					return a.user.family_name.localeCompare(b.user.family_name);
+				})
 				.map((member) => ({
 					name: formatNames(member.user.given_name, member.user.family_name, {
 						familyNameUppercase: false
@@ -211,6 +220,13 @@
 
 			const badgeData = resData
 				.filter((member) => !!member.delegation.assignedNonStateActor)
+				.sort((a, b) => {
+					const countryCompare = a.delegation.assignedNonStateActor!.name.localeCompare(
+						b.delegation.assignedNonStateActor!.name
+					);
+					if (countryCompare !== 0) return countryCompare;
+					return a.user.family_name.localeCompare(b.user.family_name);
+				})
 				.map((member) => ({
 					name: formatNames(member.user.given_name, member.user.family_name, {
 						familyNameUppercase: false
@@ -249,6 +265,11 @@
 
 			const badgeData = resData
 				.filter((member) => !!member.assignedRole)
+				.sort((a, b) => {
+					const countryCompare = a.assignedRole!.name.localeCompare(b.assignedRole!.name);
+					if (countryCompare !== 0) return countryCompare;
+					return a.user.family_name.localeCompare(b.user.family_name);
+				})
 				.map((member) => ({
 					name: formatNames(member.user.given_name, member.user.family_name, {
 						familyNameUppercase: false
