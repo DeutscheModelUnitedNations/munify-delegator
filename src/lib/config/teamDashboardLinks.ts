@@ -81,7 +81,7 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 	},
 	{
 		id: 'seats',
-		icon: 'chairs',
+		icon: 'person-seat',
 		getTitle: () => m.conferenceSeats(),
 		getDescription: () => m.seatsLinkDescription(),
 		getHref: (ctx) => `/seats/${ctx.conferenceId}`,
