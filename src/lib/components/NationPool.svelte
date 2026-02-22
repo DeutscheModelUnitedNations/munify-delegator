@@ -77,7 +77,7 @@
 
 	$effect(() => {
 		if (nationPool || activeSorting || activeFilter) {
-			let res = nationPool.sort(
+			let res = [...nationPool].sort(
 				sortingOptions.find((x) => x.key === activeSorting)?.sorting ?? sortingOptions[0].sorting
 			);
 
