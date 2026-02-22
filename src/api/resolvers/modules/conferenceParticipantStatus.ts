@@ -14,7 +14,8 @@ import {
 	updateOneConferenceParticipantStatusMutationObject,
 	ConferenceParticipantStatusMediaConsentStatusFieldObject,
 	updateManyConferenceParticipantStatusMutationObject,
-	ConferenceParticipantStatusAssigendDocumentNumberFieldObject
+	ConferenceParticipantStatusAssigendDocumentNumberFieldObject,
+	ConferenceParticipantStatusAccessCardIdFieldObject
 } from '$db/generated/graphql/ConferenceParticipantStatus';
 import { db } from '$db/db';
 import { AdministrativeStatus, MediaConsentStatus } from '$db/generated/graphql/inputs';
@@ -29,8 +30,10 @@ builder.prismaObject('ConferenceParticipantStatus', {
 		mediaConsentStatus: t.field(ConferenceParticipantStatusMediaConsentStatusFieldObject),
 		didAttend: t.field(ConferenceParticipantStatusDidAttendFieldObject),
 		assignedDocumentNumber: t.field(ConferenceParticipantStatusAssigendDocumentNumberFieldObject),
+		accessCardId: t.field(ConferenceParticipantStatusAccessCardIdFieldObject),
 		user: t.relation('user', ConferenceParticipantStatusUserFieldObject),
-		conference: t.relation('conference', ConferenceParticipantStatusConferenceFieldObject)
+		conference: t.relation('conference', ConferenceParticipantStatusConferenceFieldObject),
+		attendanceEntries: t.relation('attendanceEntries')
 	})
 });
 
@@ -149,6 +152,10 @@ builder.mutationFields((t) => {
 							assignNextDocumentNumber: t.field({
 								type: 'Boolean',
 								required: false
+							}),
+							accessCardId: t.field({
+								type: 'String',
+								required: false
 							})
 						})
 					})
@@ -207,7 +214,8 @@ builder.mutationFields((t) => {
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
 						assigendDocumentNumber: args.data.assignNextDocumentNumber
 							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
-							: args.data.assignedDocumentNumber || undefined
+							: args.data.assignedDocumentNumber || undefined,
+						accessCardId: args.data.accessCardId === null ? undefined : args.data.accessCardId
 					},
 					update: {
 						termsAndConditions: args.data.termsAndConditions || undefined,
@@ -218,7 +226,8 @@ builder.mutationFields((t) => {
 						didAttend: args.data.didAttend === null ? undefined : args.data.didAttend,
 						assigendDocumentNumber: args.data.assignNextDocumentNumber
 							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
-							: args.data.assignedDocumentNumber || undefined
+							: args.data.assignedDocumentNumber || undefined,
+						accessCardId: args.data.accessCardId === null ? undefined : args.data.accessCardId
 					}
 				});
 			}

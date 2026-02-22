@@ -16,6 +16,7 @@ import './modules/conference/seed';
 import './modules/auth';
 import './modules/committee';
 import './modules/committeeAgendaItem';
+import './modules/attendanceEntry';
 import './modules/conferenceParticipantStatus';
 import './modules/conferenceSupervisor';
 import './modules/customConferenceRole';
