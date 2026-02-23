@@ -14,6 +14,7 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
+	import Kbd from '$lib/components/Kbd.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -576,12 +577,12 @@
 		<button class="btn btn-primary flex-1" onclick={saveAndNext} disabled={hotkeyDebounce}>
 			<i class="fa-solid fa-check"></i>
 			{m.saveAndNext()}
-			<span class="kbd kbd-sm">alt+a</span>
+			<Kbd hotkey="alt+a" />
 		</button>
 		<button class="btn btn-error" onclick={resetView}>
 			<i class="fa-solid fa-xmark"></i>
 			{m.close()}
-			<span class="kbd kbd-sm">Esc</span>
+			<Kbd hotkey="Esc" />
 		</button>
 	{/snippet}
 </TopDrawer>

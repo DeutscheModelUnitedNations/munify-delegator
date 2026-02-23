@@ -21,6 +21,7 @@
 	import { queryParameters } from 'sveltekit-search-params';
 	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
+	import Kbd from '$lib/components/Kbd.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -172,7 +173,16 @@
 <div class="flex w-full flex-col gap-8 md:p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.postalRegistration()}</h2>
-		<p>{@html m.scanPostalRegistrationCode()}</p>
+		<p>
+			{m.scanPostalRegistrationCode()}
+			<Kbd hotkey="alt+a" size="xs" />
+			{m.scanPostalRegistrationCodeHotkeyConfirmAll()}
+			<Kbd hotkey="alt+1" size="xs" />, <Kbd hotkey="alt+2" size="xs" />, <Kbd
+				hotkey="alt+3"
+				size="xs"
+			/>
+			{m.scanPostalRegistrationCodeHotkeyMedia()}
+		</p>
 
 		<BarcodeScanner
 			bind:this={scannerRef}
@@ -300,12 +310,12 @@
 		<button class="btn btn-primary flex-1" onclick={confirmAllStatuses} disabled={hotkeyDebounce}>
 			<i class="fa-solid fa-check"></i>
 			{m.confirmAll()}
-			<span class="kbd kbd-sm">alt+a</span>
+			<Kbd hotkey="alt+a" />
 		</button>
 		<button class="btn btn-error" onclick={resetView}>
 			<i class="fa-solid fa-xmark"></i>
 			{m.close()}
-			<span class="kbd kbd-sm">Esc</span>
+			<Kbd hotkey="Esc" />
 		</button>
 	{/snippet}
 </TopDrawer>

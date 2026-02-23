@@ -11,6 +11,7 @@
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
+	import Kbd from '$lib/components/Kbd.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -360,13 +361,13 @@
 			>
 				<i class="fa-solid fa-check"></i>
 				{m.markAsRecieved()}
-				<span class="kbd kbd-sm">alt+a</span>
+				<Kbd hotkey="alt+a" />
 			</button>
 		{:else}
 			<button class="btn btn-error flex-1" onclick={resetView}>
 				<i class="fa-solid fa-xmark"></i>
 				{m.close()}
-				<span class="kbd kbd-sm">Esc</span>
+				<Kbd hotkey="Esc" />
 			</button>
 		{/if}
 	{/snippet}

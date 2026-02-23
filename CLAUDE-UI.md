@@ -271,6 +271,40 @@ Slide-out drawer showing full entry details including place information, map, an
 
 ---
 
+## Kbd Component
+
+`src/lib/components/Kbd.svelte`
+
+Renders a keyboard shortcut hint with OS-aware modifier formatting. On macOS, replaces modifier names with symbols (`alt` → `⌥`, `shift` → `⇧`, `ctrl` → `⌃`, `enter` → `↵`). On Windows/Linux, keeps text as-is. SSR-safe (defaults to text modifiers).
+
+### Props
+
+| Prop     | Type           | Description                        |
+| -------- | -------------- | ---------------------------------- |
+| `hotkey` | `string`       | Hotkey string, e.g. `"alt+a"`      |
+| `size`   | `'xs' \| 'sm'` | DaisyUI kbd size (default: `'sm'`) |
+
+### Usage Examples
+
+```svelte
+<script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
+</script>
+
+<!-- In a button -->
+<button class="btn btn-primary">
+	Save <Kbd hotkey="alt+a" />
+</button>
+
+<!-- Small size for inline badges -->
+<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
+
+<!-- Compound shortcuts -->
+<Kbd hotkey="shift+enter" />
+```
+
+---
+
 ## Form Components (Critical)
 
 Forms use `sveltekit-superforms` for validation and state management. Always structure forms consistently.
