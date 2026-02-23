@@ -240,6 +240,10 @@
 		'registration-mode': {
 			icon: 'id-card',
 			translation: m.registrationMode()
+		},
+		accessFlow: {
+			icon: 'id-card-clip',
+			translation: m.accessFlow()
 		}
 	};
 

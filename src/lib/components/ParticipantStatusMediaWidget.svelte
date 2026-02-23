@@ -7,10 +7,13 @@
 		title: string;
 		status: MediaConsentStatus$options;
 		changeStatus: (status: MediaConsentStatus$options) => Promise<void>;
+		/** @deprecated Use `hotkeys` instead */
 		doneHotkey?: string;
+		/** Per-status hotkey mapping */
+		hotkeys?: Partial<Record<MediaConsentStatus$options, string>>;
 	}
 
-	let { title, status, changeStatus, doneHotkey }: Props = $props();
+	let { title, status, changeStatus, doneHotkey, hotkeys: hotkeyMap }: Props = $props();
 
 	const btnClick = async (status: MediaConsentStatus$options) => {
 		await changeStatus(status);
@@ -30,18 +33,20 @@
 		{
 			value: 'NOT_ALLOWED',
 			faIcon: 'fa-camera-slash',
-			color: 'btn-error'
+			color: 'btn-error',
+			hotkey: hotkeyMap?.NOT_ALLOWED
 		},
 		{
 			value: 'PARTIALLY_ALLOWED',
 			faIcon: 'fa-magnifying-glass',
-			color: 'btn-warning'
+			color: 'btn-warning',
+			hotkey: hotkeyMap?.PARTIALLY_ALLOWED
 		},
 		{
 			value: 'ALLOWED_ALL',
 			faIcon: 'fa-camera',
 			color: 'btn-success',
-			hotkey: doneHotkey
+			hotkey: hotkeyMap?.ALLOWED_ALL ?? doneHotkey
 		}
 	]}
 	changeStatus={btnClick}

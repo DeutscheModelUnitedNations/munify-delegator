@@ -2,7 +2,6 @@
 	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
-	import { BarcodeDetector } from 'barcode-detector';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -11,21 +10,14 @@
 	import { persisted } from 'svelte-persisted-store';
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { Drawer } from 'vaul-svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import TopDrawer from '$lib/components/TopDrawer.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	// Scanner state
-	let availableVideoDevices: MediaDeviceInfo[] = $state([]);
-	let selectedVideoDeviceIndex = $state(0);
-	let videoElem: HTMLVideoElement;
-	let canvasElem: HTMLCanvasElement;
-	let streaming = $state(false);
 	let params = queryParameters({ queryUserId: true });
-	let useCamera = persisted('useCameraForAccessFlow', false);
-	let manualInputElem = $state<HTMLInputElement>();
 	let hotkeyDebounce = $state(false);
 
 	// Session state
@@ -46,109 +38,8 @@
 	// Drawer state
 	let showUserDrawer = $state(false);
 
-	const barcodeDetector: BarcodeDetector = new BarcodeDetector({
-		formats: ['data_matrix', 'code_128']
-	});
-
-	// --- Camera / Scanner functions (from postalRegistration) ---
-
-	async function startVideo() {
-		$params.queryUserId = '';
-		if (!videoElem) {
-			console.error('videoElem is not available.');
-			return;
-		}
-		try {
-			if (streaming) {
-				stopVideo();
-			}
-			const devices = await navigator.mediaDevices.enumerateDevices();
-			availableVideoDevices = devices.filter((device) => device.kind === 'videoinput');
-			if (selectedVideoDeviceIndex >= availableVideoDevices.length) {
-				selectedVideoDeviceIndex = 0;
-			}
-			const constraints: MediaStreamConstraints = { video: {} };
-			if (availableVideoDevices.length > 0) {
-				(constraints.video as MediaTrackConstraints).deviceId = {
-					ideal: availableVideoDevices[selectedVideoDeviceIndex].deviceId
-				};
-			}
-			const stream = await navigator.mediaDevices.getUserMedia(constraints);
-			videoElem.srcObject = stream;
-			await videoElem.play();
-			streaming = true;
-		} catch (error) {
-			console.error('Error accessing camera:', error);
-			let errorMessage = 'Failed to access camera.';
-			if (error instanceof DOMException) {
-				if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-					errorMessage = 'Camera access denied. Please grant permission in your browser settings.';
-				} else if (error.name === 'NotFoundError') {
-					errorMessage = 'No camera found. Please ensure a camera is connected.';
-				} else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-					errorMessage = 'Camera is already in use or unavailable.';
-				} else if (error.name === 'OverconstrainedError') {
-					errorMessage =
-						'Camera constraints could not be satisfied. Trying a different camera might help.';
-				} else if (error.name === 'AbortError') {
-					errorMessage =
-						'Camera access was aborted. This might happen if the permission dialog was closed.';
-				}
-			} else if (error instanceof Error) {
-				errorMessage = `Error accessing camera: ${error.message}`;
-			}
-			toast.error(errorMessage);
-		}
-	}
-
-	function switchCamera() {
-		if (availableVideoDevices.length > 1) {
-			selectedVideoDeviceIndex = (selectedVideoDeviceIndex + 1) % availableVideoDevices.length;
-			startVideo();
-		}
-	}
-
-	async function stopVideo() {
-		if (videoElem.srcObject) {
-			const stream = videoElem.srcObject as MediaStream;
-			const tracks = stream.getTracks();
-			tracks.forEach((track) => track.stop());
-			videoElem.srcObject = null;
-		}
-		streaming = false;
-	}
-
-	function scanForCode() {
-		if (streaming) {
-			canvasElem.width = videoElem.videoWidth;
-			canvasElem.height = videoElem.videoHeight;
-			const ctx = canvasElem.getContext('2d');
-			if (ctx) {
-				ctx.drawImage(videoElem, 0, 0, videoElem.videoWidth, videoElem.videoHeight);
-				canvasElem.toBlob(async (blob) => {
-					if (blob) {
-						barcodeDetector
-							.detect(canvasElem)
-							.then((barcodes) => {
-								if (barcodes.length > 0) {
-									const barcode = barcodes[0];
-									const code = barcode.rawValue;
-									if (code) {
-										stopVideo();
-										$params.queryUserId = code;
-									} else {
-										throw new Error('Barcode value is empty');
-									}
-								}
-							})
-							.catch((error) => {
-								toast.error('Error detecting barcode: ' + error);
-							});
-					}
-				}, 'image/jpeg');
-			}
-		}
-	}
+	// Scanner ref
+	let scannerRef: BarcodeScanner;
 
 	// --- Data queries ---
 
@@ -241,11 +132,9 @@
 
 	// --- Effects ---
 
+	// Fetch user data when scanned code changes
 	$effect(() => {
-		let intervalId: ReturnType<typeof setInterval> | undefined;
-		if (streaming && !$params.queryUserId) {
-			intervalId = setInterval(scanForCode, 500);
-		} else if ($params.queryUserId) {
+		if ($params.queryUserId) {
 			userData.fetch({
 				variables: {
 					userId: $params.queryUserId,
@@ -253,15 +142,9 @@
 				}
 			});
 		}
-		return () => {
-			if (intervalId) {
-				clearInterval(intervalId);
-			}
-		};
 	});
 
-	// Open drawer when user data loads successfully
-	// Close drawer immediately when queryUserId changes (new scan), reopen when fresh data arrives
+	// Drawer open/close management with stale data prevention
 	let lastLoadedUserId = $state('');
 	$effect(() => {
 		const queryId = $params.queryUserId;
@@ -270,7 +153,6 @@
 			lastLoadedUserId = '';
 			return;
 		}
-		// New scan detected — close drawer until fresh data loads
 		if (queryId !== lastLoadedUserId) {
 			showUserDrawer = false;
 		}
@@ -307,20 +189,6 @@
 	$effect(() => {
 		if (showUserDrawer && accessCardInputElem) {
 			setTimeout(() => accessCardInputElem?.focus(), 200);
-		}
-	});
-
-	onDestroy(() => {
-		if (streaming) {
-			stopVideo();
-		}
-	});
-
-	$effect(() => {
-		if (!$useCamera) {
-			if (streaming) {
-				stopVideo();
-			}
 		}
 	});
 
@@ -383,17 +251,7 @@
 			editingFamilyName = false;
 			editingBirthday = false;
 
-			// Re-focus scanner input after drawer close animation
-			if ($useCamera) {
-				startVideo();
-			} else {
-				setTimeout(() => {
-					if (manualInputElem) {
-						manualInputElem.value = '';
-						manualInputElem.focus();
-					}
-				}, 300);
-			}
+			scannerRef.reset();
 		} finally {
 			hotkeyDebounce = false;
 		}
@@ -435,31 +293,17 @@
 		editingGivenName = false;
 		editingFamilyName = false;
 		editingBirthday = false;
-		// Re-focus scanner input after drawer close animation
-		if ($useCamera) {
-			startVideo();
-		} else {
-			setTimeout(() => {
-				if (manualInputElem) {
-					manualInputElem.value = '';
-					manualInputElem.focus();
-				}
-			}, 300);
-		}
+		scannerRef.reset();
 	};
 
 	// --- Hotkeys ---
 
 	onMount(() => {
-		if ($params.queryUserId && manualInputElem) {
-			manualInputElem.value = $params.queryUserId;
-		}
-
 		hotkeys('esc', () => {
 			resetView();
 		});
 
-		hotkeys('alt+enter', () => {
+		hotkeys('alt+a', () => {
 			if ($params.queryUserId && $userData?.data?.findUniqueUser && !hotkeyDebounce) {
 				saveAndNext();
 			}
@@ -468,7 +312,7 @@
 
 	onDestroy(() => {
 		hotkeys.unbind('esc');
-		hotkeys.unbind('alt+enter');
+		hotkeys.unbind('alt+a');
 	});
 </script>
 
@@ -482,89 +326,16 @@
 			<input class="input w-full" type="text" bind:value={$occasion} placeholder={m.occasion()} />
 		</FormFieldset>
 
-		<FormFieldset title={m.cameraSettings()}>
-			<label for="useCamera" class="mr-2">
-				<input
-					type="checkbox"
-					id="useCamera"
-					bind:checked={$useCamera}
-					class="toggle toggle-primary mr-2"
-				/>
-				{m.useCameraForScanning()}</label
-			>
-			{#if $useCamera}
-				<button class="btn btn-primary mt-4" disabled={streaming} onclick={startVideo}>
-					<i class="fa-solid fa-video"></i>
-					{m.startCamera()}
-				</button>
-				<button
-					class="btn btn-secondary mt-2"
-					disabled={availableVideoDevices.length <= 1}
-					onclick={switchCamera}
-				>
-					<i class="fa-solid fa-camera-rotate"></i>
-					{m.switchCamera()}
-				</button>
-			{/if}
-		</FormFieldset>
+		<BarcodeScanner
+			bind:this={scannerRef}
+			bind:scannedCode={$params.queryUserId}
+			barcodeFormats={['data_matrix', 'code_128']}
+			persistKey="useCameraForAccessFlow"
+			manualPlaceholder={m.enterPostalRegistrationCode()}
+			scanPromptText={m.scanPostalRegistrationCodePrompt()}
+			cameraZIndex="z-30"
+		/>
 	</div>
-
-	{#if !$useCamera}
-		<FormFieldset title={m.userIdInput()}>
-			<div class="join">
-				<input
-					type="text"
-					bind:this={manualInputElem}
-					placeholder={m.enterPostalRegistrationCode()}
-					class="input w-full input-lg join-item"
-					onkeydown={(e) => {
-						if (e.key === 'Enter') {
-							$params.queryUserId = manualInputElem?.value ?? '';
-							manualInputElem?.blur();
-						}
-					}}
-				/>
-				<button
-					class="btn btn-primary btn-lg join-item"
-					aria-label="Search user by ID"
-					onclick={() => {
-						$params.queryUserId = manualInputElem?.value ?? '';
-						manualInputElem?.blur();
-					}}
-				>
-					<i class="fa-solid fa-magnifying-glass"></i>
-				</button>
-			</div>
-		</FormFieldset>
-	{/if}
-
-	<!-- Camera preview -->
-	<div
-		class="media-container {!$useCamera || $params.queryUserId
-			? 'hidden'
-			: ''} bg-primary relative z-30 flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-lg shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
-	>
-		<i
-			class="fas fa-camera absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
-		></i>
-		<video bind:this={videoElem} autoplay playsinline>
-			<track kind="captions" src="" srclang="en" label="English" default />
-		</video>
-		<canvas bind:this={canvasElem} class="hidden"></canvas>
-	</div>
-
-	{#if $useCamera}
-		<div class="flex flex-col gap-2">
-			<div
-				class="bg-base-200 border-1 border-base-300 flex h-18 w-full max-w-md items-center gap-6 rounded-box p-6"
-			>
-				<i class="fa-duotone fa-barcode-read {!$params.queryUserId && 'fa-beat-fade'} text-2xl"></i>
-				<div class="truncate font-mono text-sm">
-					{$params.queryUserId ? $params.queryUserId : m.scanPostalRegistrationCodePrompt()}
-				</div>
-			</div>
-		</div>
-	{/if}
 
 	<!-- Loading / error state -->
 	{#if $params.queryUserId && $userData.fetching}
@@ -580,261 +351,237 @@
 </div>
 
 <!-- Top drawer overlay for user data -->
-<Drawer.Root bind:open={showUserDrawer} direction="top">
-	<Drawer.Portal>
-		<Drawer.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Drawer.Content
-			class="bg-base-100 fixed top-0 left-1/2 z-50 flex max-h-[85vh] w-full max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-b-2xl outline-none"
+<TopDrawer bind:open={showUserDrawer} title={m.identityCheck()} titleIcon="fa-id-badge">
+	{#snippet headerActions()}
+		<a
+			class="btn btn-soft btn-sm"
+			href={`/management/${data.conferenceId}/participants?selected=${$params.queryUserId}`}
+			aria-label="View participant details"
 		>
-			{#if $userData?.data?.findUniqueUser && $userData.data.findUniqueUser.id === $params.queryUserId}
-				{@const userDetails = $userData.data.findUniqueUser}
-				{@const statusDetails = $userData.data.findUniqueConferenceParticipantStatus}
+			<i class="fa-duotone fa-up-right-from-square"></i>
+		</a>
+		<button
+			type="button"
+			class="btn btn-ghost btn-sm btn-square"
+			onclick={() => resetView()}
+			aria-label="Close"
+		>
+			<i class="fa-solid fa-xmark text-lg"></i>
+		</button>
+	{/snippet}
 
-				<!-- Header: title + profile link + close -->
-				<div class="flex items-center justify-between px-5 pt-4 pb-3">
-					<Drawer.Title class="flex items-center gap-2 text-lg font-bold">
-						<i class="fa-duotone fa-id-badge text-xl"></i>
-						{m.identityCheck()}
-					</Drawer.Title>
-					<div class="flex gap-2">
-						<a
-							class="btn btn-soft btn-sm"
-							href={`/management/${data.conferenceId}/participants?selected=${$params.queryUserId}`}
-							aria-label="View participant details"
-						>
-							<i class="fa-duotone fa-up-right-from-square"></i>
-						</a>
-						<button
-							type="button"
-							class="btn btn-ghost btn-sm btn-square"
-							onclick={() => resetView()}
-							aria-label="Close"
-						>
-							<i class="fa-solid fa-xmark text-lg"></i>
-						</button>
-					</div>
-				</div>
+	{#if $userData?.data?.findUniqueUser && $userData.data.findUniqueUser.id === $params.queryUserId}
+		{@const userDetails = $userData.data.findUniqueUser}
 
-				<!-- Scrollable content -->
-				<div class="flex-1 overflow-y-auto px-5 pb-5" data-vaul-no-drag>
-					<!-- Identity section: Flag + Name + Birthday + Badges -->
-					<div class="flex items-start gap-4">
-						<!-- Flag -->
-						{#if delegationMember?.delegation?.assignedNation}
-							<Flag alpha2Code={delegationMember.delegation.assignedNation.alpha2Code} size="sm" />
-						{:else if delegationMember?.delegation?.assignedNonStateActor}
-							<Flag
-								nsa
-								icon={delegationMember.delegation.assignedNonStateActor.fontAwesomeIcon}
-								size="sm"
-							/>
-						{/if}
-
-						<div class="flex flex-1 flex-col gap-2">
-							<!-- Name display (large, editable) -->
-							<div class="flex flex-col gap-1 sm:flex-row sm:gap-3">
-								<!-- Given name -->
-								<div class="flex-1">
-									{#if editingGivenName}
-										<div class="join w-full">
-											<input
-												class="input join-item input-lg w-full"
-												bind:value={localGivenName}
-												type="text"
-												onkeydown={(e) => {
-													if (e.key === 'Enter') saveIdentityField('givenName', localGivenName);
-													if (e.key === 'Escape') editingGivenName = false;
-												}}
-											/>
-											<button
-												class="btn btn-square btn-lg join-item"
-												onclick={() => saveIdentityField('givenName', localGivenName)}
-												aria-label="Save"
-											>
-												<i class="fa-solid fa-save"></i>
-											</button>
-											<button
-												class="btn btn-square btn-lg btn-error join-item"
-												onclick={() => (editingGivenName = false)}
-												aria-label="Cancel"
-											>
-												<i class="fa-solid fa-xmark"></i>
-											</button>
-										</div>
-									{:else}
-										<button
-											class="btn btn-soft group h-auto w-full justify-start py-2 text-left"
-											onclick={() => (editingGivenName = true)}
-										>
-											<span class="text-3xl font-bold">{userDetails.given_name}</span>
-											<i
-												class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
-											></i>
-										</button>
-									{/if}
-								</div>
-
-								<!-- Family name -->
-								<div class="flex-1">
-									{#if editingFamilyName}
-										<div class="join w-full">
-											<input
-												class="input join-item input-lg w-full"
-												bind:value={localFamilyName}
-												type="text"
-												onkeydown={(e) => {
-													if (e.key === 'Enter') saveIdentityField('familyName', localFamilyName);
-													if (e.key === 'Escape') editingFamilyName = false;
-												}}
-											/>
-											<button
-												class="btn btn-square btn-lg join-item"
-												onclick={() => saveIdentityField('familyName', localFamilyName)}
-												aria-label="Save"
-											>
-												<i class="fa-solid fa-save"></i>
-											</button>
-											<button
-												class="btn btn-square btn-lg btn-error join-item"
-												onclick={() => (editingFamilyName = false)}
-												aria-label="Cancel"
-											>
-												<i class="fa-solid fa-xmark"></i>
-											</button>
-										</div>
-									{:else}
-										<button
-											class="btn btn-soft group h-auto w-full justify-start py-2 text-left"
-											onclick={() => (editingFamilyName = true)}
-										>
-											<span class="text-3xl font-bold">{userDetails.family_name}</span>
-											<i
-												class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
-											></i>
-										</button>
-									{/if}
-								</div>
-							</div>
-
-							<!-- Birthday display (large, editable) -->
-							<div>
-								{#if editingBirthday}
-									<div class="join">
-										<input
-											class="input join-item input-lg"
-											bind:value={localBirthday}
-											type="date"
-											onkeydown={(e) => {
-												if (e.key === 'Enter') saveIdentityField('birthday', localBirthday);
-												if (e.key === 'Escape') editingBirthday = false;
-											}}
-										/>
-										<button
-											class="btn btn-square btn-lg join-item"
-											onclick={() => saveIdentityField('birthday', localBirthday)}
-											aria-label="Save"
-										>
-											<i class="fa-solid fa-save"></i>
-										</button>
-										<button
-											class="btn btn-square btn-lg btn-error join-item"
-											onclick={() => (editingBirthday = false)}
-											aria-label="Cancel"
-										>
-											<i class="fa-solid fa-xmark"></i>
-										</button>
-									</div>
-								{:else}
-									<button
-										class="btn btn-soft group h-auto justify-start py-2 text-left"
-										onclick={() => (editingBirthday = true)}
-									>
-										<i class="fa-duotone fa-cake-candles text-xl"></i>
-										<span class="text-xl">
-											{userDetails.birthday
-												? new Date(userDetails.birthday).toLocaleDateString('de', {
-														dateStyle: 'long'
-													})
-												: '—'}
-										</span>
-										<i
-											class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
-										></i>
-									</button>
-								{/if}
-							</div>
-
-							<!-- Role / Committee / Nation badges -->
-							<div class="mt-1 flex flex-wrap gap-2">
-								{#if delegationMember?.assignedCommittee}
-									<span class="badge badge-soft badge-primary">
-										{delegationMember.assignedCommittee.abbreviation}
-									</span>
-								{/if}
-								{#if delegationMember?.delegation?.assignedNation}
-									<span class="badge badge-soft badge-secondary">
-										{getFullTranslatedCountryNameFromISO3Code(
-											delegationMember.delegation.assignedNation.alpha3Code
-										)}
-									</span>
-								{/if}
-								{#if delegationMember?.delegation?.assignedNonStateActor}
-									<span class="badge badge-soft badge-secondary">
-										{delegationMember.delegation.assignedNonStateActor.name}
-									</span>
-								{/if}
-								{#if singleParticipant?.assignedRole}
-									<span class="badge badge-soft badge-accent">
-										{singleParticipant.assignedRole.name}
-									</span>
-								{/if}
-								{#if isSupervisor}
-									<span class="badge badge-soft badge-warning">
-										{m.supervisor()}
-									</span>
-								{/if}
-							</div>
-						</div>
-					</div>
-
-					<!-- Access Card ID Section -->
-					<div class="mt-6 flex flex-col gap-2">
-						<h3 class="flex items-center gap-2 text-lg font-bold">
-							<i class="fa-duotone fa-id-card text-xl"></i>
-							{m.accessCardId()}
-						</h3>
-						<input
-							class="input input-lg w-full"
-							bind:this={accessCardInputElem}
-							bind:value={accessCardInput}
-							type="text"
-							placeholder={m.accessCardId()}
-							onkeydown={(e) => {
-								if (e.key === 'Enter') saveAndNext();
-							}}
-						/>
-					</div>
-				</div>
-
-				<!-- Sticky footer with action buttons -->
-				<div class="border-base-300 flex gap-2 border-t p-4">
-					<button class="btn btn-primary flex-1" onclick={saveAndNext} disabled={hotkeyDebounce}>
-						<i class="fa-solid fa-check"></i>
-						{m.saveAndNext()}
-						<span class="kbd kbd-sm">alt+enter</span>
-					</button>
-					<button class="btn btn-error" onclick={resetView}>
-						<i class="fa-solid fa-xmark"></i>
-						{m.close()}
-						<span class="kbd kbd-sm">Esc</span>
-					</button>
-				</div>
-
-				<!-- Drag handle (bottom for top drawer) -->
-				<div class="flex justify-center pb-3 pt-1">
-					<div class="bg-base-content/30 h-1.5 w-12 rounded-full"></div>
-				</div>
+		<!-- Identity section: Flag + Name + Birthday + Badges -->
+		<div class="flex items-start gap-4">
+			<!-- Flag -->
+			{#if delegationMember?.delegation?.assignedNation}
+				<Flag alpha2Code={delegationMember.delegation.assignedNation.alpha2Code} size="sm" />
+			{:else if delegationMember?.delegation?.assignedNonStateActor}
+				<Flag
+					nsa
+					icon={delegationMember.delegation.assignedNonStateActor.fontAwesomeIcon}
+					size="sm"
+				/>
 			{/if}
-		</Drawer.Content>
-	</Drawer.Portal>
-</Drawer.Root>
+
+			<div class="flex flex-1 flex-col gap-2">
+				<!-- Name display (large, editable) -->
+				<div class="flex flex-col gap-1 sm:flex-row sm:gap-3">
+					<!-- Given name -->
+					<div class="flex-1">
+						{#if editingGivenName}
+							<div class="join w-full">
+								<input
+									class="input join-item input-lg w-full"
+									bind:value={localGivenName}
+									type="text"
+									onkeydown={(e) => {
+										if (e.key === 'Enter') saveIdentityField('givenName', localGivenName);
+										if (e.key === 'Escape') editingGivenName = false;
+									}}
+								/>
+								<button
+									class="btn btn-square btn-lg join-item"
+									onclick={() => saveIdentityField('givenName', localGivenName)}
+									aria-label="Save"
+								>
+									<i class="fa-solid fa-save"></i>
+								</button>
+								<button
+									class="btn btn-square btn-lg btn-error join-item"
+									onclick={() => (editingGivenName = false)}
+									aria-label="Cancel"
+								>
+									<i class="fa-solid fa-xmark"></i>
+								</button>
+							</div>
+						{:else}
+							<button
+								class="btn btn-soft group h-auto w-full justify-start py-2 text-left"
+								onclick={() => (editingGivenName = true)}
+							>
+								<span class="text-3xl font-bold">{userDetails.given_name}</span>
+								<i
+									class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
+								></i>
+							</button>
+						{/if}
+					</div>
+
+					<!-- Family name -->
+					<div class="flex-1">
+						{#if editingFamilyName}
+							<div class="join w-full">
+								<input
+									class="input join-item input-lg w-full"
+									bind:value={localFamilyName}
+									type="text"
+									onkeydown={(e) => {
+										if (e.key === 'Enter') saveIdentityField('familyName', localFamilyName);
+										if (e.key === 'Escape') editingFamilyName = false;
+									}}
+								/>
+								<button
+									class="btn btn-square btn-lg join-item"
+									onclick={() => saveIdentityField('familyName', localFamilyName)}
+									aria-label="Save"
+								>
+									<i class="fa-solid fa-save"></i>
+								</button>
+								<button
+									class="btn btn-square btn-lg btn-error join-item"
+									onclick={() => (editingFamilyName = false)}
+									aria-label="Cancel"
+								>
+									<i class="fa-solid fa-xmark"></i>
+								</button>
+							</div>
+						{:else}
+							<button
+								class="btn btn-soft group h-auto w-full justify-start py-2 text-left"
+								onclick={() => (editingFamilyName = true)}
+							>
+								<span class="text-3xl font-bold">{userDetails.family_name}</span>
+								<i
+									class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
+								></i>
+							</button>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Birthday display (large, editable) -->
+				<div>
+					{#if editingBirthday}
+						<div class="join">
+							<input
+								class="input join-item input-lg"
+								bind:value={localBirthday}
+								type="date"
+								onkeydown={(e) => {
+									if (e.key === 'Enter') saveIdentityField('birthday', localBirthday);
+									if (e.key === 'Escape') editingBirthday = false;
+								}}
+							/>
+							<button
+								class="btn btn-square btn-lg join-item"
+								onclick={() => saveIdentityField('birthday', localBirthday)}
+								aria-label="Save"
+							>
+								<i class="fa-solid fa-save"></i>
+							</button>
+							<button
+								class="btn btn-square btn-lg btn-error join-item"
+								onclick={() => (editingBirthday = false)}
+								aria-label="Cancel"
+							>
+								<i class="fa-solid fa-xmark"></i>
+							</button>
+						</div>
+					{:else}
+						<button
+							class="btn btn-soft group h-auto justify-start py-2 text-left"
+							onclick={() => (editingBirthday = true)}
+						>
+							<i class="fa-duotone fa-cake-candles text-xl"></i>
+							<span class="text-xl">
+								{userDetails.birthday
+									? new Date(userDetails.birthday).toLocaleDateString('de', {
+											dateStyle: 'long'
+										})
+									: '—'}
+							</span>
+							<i
+								class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
+							></i>
+						</button>
+					{/if}
+				</div>
+
+				<!-- Role / Committee / Nation badges -->
+				<div class="mt-1 flex flex-wrap gap-2">
+					{#if delegationMember?.assignedCommittee}
+						<span class="badge badge-soft badge-primary">
+							{delegationMember.assignedCommittee.abbreviation}
+						</span>
+					{/if}
+					{#if delegationMember?.delegation?.assignedNation}
+						<span class="badge badge-soft badge-secondary">
+							{getFullTranslatedCountryNameFromISO3Code(
+								delegationMember.delegation.assignedNation.alpha3Code
+							)}
+						</span>
+					{/if}
+					{#if delegationMember?.delegation?.assignedNonStateActor}
+						<span class="badge badge-soft badge-secondary">
+							{delegationMember.delegation.assignedNonStateActor.name}
+						</span>
+					{/if}
+					{#if singleParticipant?.assignedRole}
+						<span class="badge badge-soft badge-accent">
+							{singleParticipant.assignedRole.name}
+						</span>
+					{/if}
+					{#if isSupervisor}
+						<span class="badge badge-soft badge-warning">
+							{m.supervisor()}
+						</span>
+					{/if}
+				</div>
+			</div>
+		</div>
+
+		<!-- Access Card ID Section -->
+		<div class="mt-6 flex flex-col gap-2">
+			<h3 class="flex items-center gap-2 text-lg font-bold">
+				<i class="fa-duotone fa-id-card text-xl"></i>
+				{m.accessCardId()}
+			</h3>
+			<input
+				class="input input-lg w-full"
+				bind:this={accessCardInputElem}
+				bind:value={accessCardInput}
+				type="text"
+				placeholder={m.accessCardId()}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') saveAndNext();
+				}}
+			/>
+		</div>
+	{/if}
+
+	{#snippet footer()}
+		<button class="btn btn-primary flex-1" onclick={saveAndNext} disabled={hotkeyDebounce}>
+			<i class="fa-solid fa-check"></i>
+			{m.saveAndNext()}
+			<span class="kbd kbd-sm">alt+a</span>
+		</button>
+		<button class="btn btn-error" onclick={resetView}>
+			<i class="fa-solid fa-xmark"></i>
+			{m.close()}
+			<span class="kbd kbd-sm">Esc</span>
+		</button>
+	{/snippet}
+</TopDrawer>
