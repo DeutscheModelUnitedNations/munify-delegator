@@ -235,7 +235,7 @@
 						}, delay);
 					} else {
 						pendingEntry.status = 'error';
-						pendingEntry.errorKind = 'user_not_found';
+						pendingEntry.errorKind = 'unknown';
 						pendingEntry.errorMessage = err instanceof Error ? err.message : String(err);
 						queue = [...queue];
 						toast.error(pendingEntry.errorMessage);
@@ -336,7 +336,7 @@
 					<span class="text-warning">{pendingScans} {m.scanPending()}</span>
 				{/if}
 				{#if errorScans > 0}
-					<span class="text-error">{errorScans} errors</span>
+					<span class="text-error">{errorScans} {m.errors()}</span>
 				{/if}
 			</div>
 

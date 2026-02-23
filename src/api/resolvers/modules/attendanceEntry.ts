@@ -51,6 +51,10 @@ builder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const loggedInUser = ctx.permissions.getLoggedInUserOrThrow();
 
+			if (!args.occasion.trim()) {
+				throw new GraphQLError('Occasion must not be empty.');
+			}
+
 			// Verify logged-in user is a team member (any role) for this conference
 			const teamMember = await db.teamMember.findFirst({
 				where: {

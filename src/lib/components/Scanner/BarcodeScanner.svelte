@@ -49,7 +49,7 @@
 	// --- Camera / Scanner functions ---
 
 	async function startVideo() {
-		scannedCode = '';
+		scannedCode = null;
 		if (!videoElem) {
 			console.error('videoElem is not available.');
 			return;
@@ -75,23 +75,21 @@
 			streaming = true;
 		} catch (error) {
 			console.error('Error accessing camera:', error);
-			let errorMessage = 'Failed to access camera.';
+			let errorMessage = m.cameraFailed();
 			if (error instanceof DOMException) {
 				if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-					errorMessage = 'Camera access denied. Please grant permission in your browser settings.';
+					errorMessage = m.cameraAccessDenied();
 				} else if (error.name === 'NotFoundError') {
-					errorMessage = 'No camera found. Please ensure a camera is connected.';
+					errorMessage = m.noCameraFound();
 				} else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-					errorMessage = 'Camera is already in use or unavailable.';
+					errorMessage = m.cameraInUse();
 				} else if (error.name === 'OverconstrainedError') {
-					errorMessage =
-						'Camera constraints could not be satisfied. Trying a different camera might help.';
+					errorMessage = m.cameraConstraintsError();
 				} else if (error.name === 'AbortError') {
-					errorMessage =
-						'Camera access was aborted. This might happen if the permission dialog was closed.';
+					errorMessage = m.cameraAborted();
 				}
 			} else if (error instanceof Error) {
-				errorMessage = `Error accessing camera: ${error.message}`;
+				errorMessage = m.cameraGenericError({ error: error.message });
 			}
 			toast.error(errorMessage);
 		}
@@ -138,7 +136,7 @@
 								}
 							})
 							.catch((error) => {
-								toast.error('Error detecting barcode: ' + error);
+								toast.error(m.barcodeDetectError({ error: String(error) }));
 							});
 					}
 				}, 'image/jpeg');
@@ -185,7 +183,7 @@
 	// --- Exposed API ---
 
 	export function reset() {
-		scannedCode = '';
+		scannedCode = null;
 		if ($useCamera) {
 			startVideo();
 		} else {

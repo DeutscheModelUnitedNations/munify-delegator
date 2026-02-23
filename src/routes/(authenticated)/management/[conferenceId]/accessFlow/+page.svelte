@@ -226,11 +226,14 @@
 				return;
 			}
 
+			let didPerformAction = false;
+
 			// Save access card ID
 			if (accessCardInput.trim()) {
 				await changeAdministrativeStatus(statusDetails?.id, userDetails.id, {
 					accessCardId: accessCardInput.trim()
 				});
+				didPerformAction = true;
 			}
 
 			// Create attendance entry if occasion is set
@@ -240,9 +243,12 @@
 					conferenceId: data.conferenceId,
 					occasion: $occasion.trim()
 				});
+				didPerformAction = true;
 			}
 
-			toast.success(m.accessFlowSaved());
+			if (didPerformAction) {
+				toast.success(m.accessFlowSaved());
+			}
 
 			// Close drawer and reset for next participant
 			showUserDrawer = false;
@@ -252,7 +258,7 @@
 			editingFamilyName = false;
 			editingBirthday = false;
 
-			scannerRef.reset();
+			scannerRef?.reset();
 		} finally {
 			hotkeyDebounce = false;
 		}
@@ -294,7 +300,7 @@
 		editingGivenName = false;
 		editingFamilyName = false;
 		editingBirthday = false;
-		scannerRef.reset();
+		scannerRef?.reset();
 	};
 
 	// --- Hotkeys ---

@@ -275,7 +275,7 @@
 		<div class="mb-4">
 			<h1 class="font-mono text-2xl font-bold">{paymentTransaction.id}</h1>
 			<p class="opacity-60">
-				{new Date().toLocaleString(undefined, {
+				{new Date(paymentTransaction.createdAt).toLocaleString(undefined, {
 					year: 'numeric',
 					month: 'long',
 					day: 'numeric',

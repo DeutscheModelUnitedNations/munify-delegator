@@ -227,7 +227,7 @@ builder.mutationFields((t) => {
 						assigendDocumentNumber: args.data.assignNextDocumentNumber
 							? (nextDocumentNumber._max.assigendDocumentNumber ?? 0) + 1
 							: args.data.assignedDocumentNumber || undefined,
-						accessCardId: args.data.accessCardId === null ? undefined : args.data.accessCardId
+						accessCardId: args.data.accessCardId
 					}
 				});
 			}

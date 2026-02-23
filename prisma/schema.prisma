@@ -279,6 +279,7 @@ model ConferenceParticipantStatus {
 
   @@unique([userId, conferenceId])
   @@unique([conferenceId, assigendDocumentNumber])
+  @@unique([conferenceId, accessCardId])
 }
 
 /// The transactions used to reference the payment status of various users in the conference
@@ -790,4 +791,7 @@ model AttendanceEntry {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([conferenceParticipantStatusId])
+  @@index([recordedById])
 }

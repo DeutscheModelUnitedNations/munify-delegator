@@ -132,7 +132,7 @@
 				termsAndConditions: 'DONE',
 				mediaConsent: 'DONE',
 				guardianConsent: !ofAgeAtConference(
-					$pageQuery.data.findUniqueConference.startConference,
+					$pageQuery.data?.findUniqueConference?.startConference,
 					userDetails?.birthday
 				)
 					? 'DONE'
@@ -147,7 +147,7 @@
 	const resetView = () => {
 		showUserDrawer = false;
 		$params.queryUserId = '';
-		scannerRef.reset();
+		scannerRef?.reset();
 	};
 
 	// --- Hotkeys ---
@@ -269,7 +269,7 @@
 						termsAndConditions: newStatus
 					})}
 			/>
-			{#if !ofAgeAtConference($pageQuery.data.findUniqueConference.startConference, userDetails.birthday)}
+			{#if !ofAgeAtConference($pageQuery.data?.findUniqueConference?.startConference, userDetails.birthday)}
 				<StatusWidget
 					title={m.guardianAgreement()}
 					faIcon="fa-user-shield"

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { getLocale } from '$lib/paraglide/runtime';
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import formatNames from '$lib/services/formatNames';
@@ -131,7 +132,7 @@
 								</div>
 							</td>
 							<td class="text-right text-xs whitespace-nowrap">
-								{new Date(entry.timestamp).toLocaleString('de', {
+								{new Date(entry.timestamp).toLocaleString(getLocale(), {
 									dateStyle: 'short',
 									timeStyle: 'short'
 								})}
