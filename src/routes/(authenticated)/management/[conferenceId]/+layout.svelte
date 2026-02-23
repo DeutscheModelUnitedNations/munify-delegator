@@ -96,6 +96,12 @@
 					expanded={navbarExpanded}
 				/>
 				<NavMenuButton
+					href="/management/{data.conferenceId}/accessFlow"
+					icon="fa-id-card-clip"
+					title={m.accessFlow()}
+					expanded={navbarExpanded}
+				/>
+				<NavMenuButton
 					href="/management/{data.conferenceId}/payments"
 					icon="fa-money-bill-transfer"
 					title={m.payment()}
