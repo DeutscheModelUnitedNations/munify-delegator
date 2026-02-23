@@ -244,6 +244,10 @@
 		accessFlow: {
 			icon: 'id-card-clip',
 			translation: m.accessFlow()
+		},
+		attendance: {
+			icon: 'barcode-read',
+			translation: m.attendanceScanner()
 		}
 	};
 

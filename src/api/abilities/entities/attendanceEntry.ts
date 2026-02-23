@@ -18,8 +18,23 @@ export const defineAbilitiesForAttendanceEntry = (
 			}
 		});
 
+		// all team members can read/list attendance entries for their conference
+		can(['read', 'list'], 'AttendanceEntry', {
+			conferenceParticipantStatus: {
+				conference: {
+					teamMembers: {
+						some: {
+							user: {
+								id: user.sub
+							}
+						}
+					}
+				}
+			}
+		});
+
 		// team members with PARTICIPANT_CARE or PROJECT_MANAGEMENT can manage attendance entries
-		can(['read', 'list', 'update', 'delete'], 'AttendanceEntry', {
+		can(['update', 'delete'], 'AttendanceEntry', {
 			conferenceParticipantStatus: {
 				conference: {
 					teamMembers: {

@@ -8,6 +8,7 @@ import {
 	findManyAttendanceEntryQueryObject,
 	deleteOneAttendanceEntryMutationObject
 } from '$db/generated/graphql/AttendanceEntry';
+import { GraphQLError } from 'graphql';
 import { builder } from '../builder';
 import { db } from '$db/db';
 
@@ -50,14 +51,25 @@ builder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const loggedInUser = ctx.permissions.getLoggedInUserOrThrow();
 
-			// Upsert the ConferenceParticipantStatus so that it exists before creating the entry
+			// Verify logged-in user is a team member (any role) for this conference
+			const teamMember = await db.teamMember.findFirst({
+				where: {
+					conferenceId: args.conferenceId,
+					userId: loggedInUser.sub
+				}
+			});
+
+			if (!teamMember && !loggedInUser.hasRole('admin')) {
+				throw new GraphQLError('Only team members can create attendance entries.');
+			}
+
+			// Upsert ConferenceParticipantStatus so that it exists before creating the entry
 			const status = await db.conferenceParticipantStatus.upsert({
 				where: {
 					userId_conferenceId: {
 						userId: args.userId,
 						conferenceId: args.conferenceId
-					},
-					AND: [ctx.permissions.allowDatabaseAccessTo('update').ConferenceParticipantStatus]
+					}
 				},
 				create: {
 					userId: args.userId,
