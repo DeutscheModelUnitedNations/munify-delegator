@@ -1232,6 +1232,7 @@
 	"searchForUser": "UserID oder E-Mail",
 	"seat": "Platz",
 	"seats": "Plätze",
+	"seatsLinkDescription": "Gremien, Themen, vertretene Staaten und nichtstaatliche Akteure ansehen",
 	"seatsOccupied": "von {seats} Plätzen belegt",
 	"seedConference": "Konferenz anlegen",
 	"selectADate": "Datum auswählen",

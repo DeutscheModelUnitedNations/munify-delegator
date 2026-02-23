@@ -1232,6 +1232,7 @@
 	"searchForUser": "UserID or Email",
 	"seat": "Seat",
 	"seats": "Seats",
+	"seatsLinkDescription": "View committees, topics, represented states, and non-state actors",
 	"seatsOccupied": "of {seats} seats occupied",
 	"seedConference": "Create Conference",
 	"selectADate": "Select Date",

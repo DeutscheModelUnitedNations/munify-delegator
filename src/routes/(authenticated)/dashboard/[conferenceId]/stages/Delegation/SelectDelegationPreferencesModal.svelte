@@ -50,8 +50,7 @@
 			.filter(
 				(nation) =>
 					getNumOfSeatsPerNation(nation, conference.committees) >=
-						(delegationMember.delegation?.members?.length ?? 0) &&
-					getNumOfSeatsPerNation(nation, conference.committees) > 1
+					(delegationMember.delegation?.members?.length ?? 0)
 			)
 	);
 
@@ -321,7 +320,7 @@
 								/>
 							{/snippet}
 						</NsaPool>
-						{#if nationPool.length === 0}
+						{#if nonStateActorPool.length === 0}
 							<div class="alert alert-warning">
 								<i class="fas fa-triangle-exclamation"></i>
 								<p>{m.noNSAAvailable()}</p>
