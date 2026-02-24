@@ -9,14 +9,12 @@
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
 	import SingleParticipantRegistrationStage from './stages/SingleParticipant/SingleParticipantRegistrationStage.svelte';
 	import SingleParticipantPreparationStage from './stages/SingleParticipant/SingleParticipantPreparationStage.svelte';
-	import Certificate from './stages/Common/Certificate.svelte';
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
-	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import { configPublic } from '$config/public';
-	import CalendarSection from '$lib/components/Dashboard/CalendarSection.svelte';
 	import SurveySection from '$lib/components/Dashboard/SurveySection.svelte';
+	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 
 	// the app needs some proper loading states!
 	//TODO https://houdinigraphql.com/guides/loading-states
@@ -54,7 +52,11 @@
 				</DashboardSection>
 			{/if}
 			{#if conference.showCalendar || teamMember}
-				<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
+				{#await import('$lib/components/Dashboard/CalendarSection.svelte') then { default: CalendarSection }}
+					<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
+				{:catch error}
+					<ChunkLoadError {error} />
+				{/await}
 			{/if}
 		{/if}
 		{#if (singleParticipant?.assignedRole || delegationMember?.delegation?.assignedNation || delegationMember?.delegation?.assignedNonStateActor) && (conference?.state === 'PREPARATION' || conference?.state === 'ACTIVE')}
@@ -90,12 +92,17 @@
 						ofAgeAtConference={data.ofAgeAtConference}
 					/>
 				{:else if conference!.state === 'POST'}
-					<Certificate
-						conferenceId={conference!.id}
-						userId={data.user.sub}
-						didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus?.didAttend}
-						customConferenceRole={singleParticipant.assignedRole}
-					/>
+					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
+						<Certificate
+							conferenceId={conference!.id}
+							userId={data.user.sub}
+							didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus
+								?.didAttend}
+							customConferenceRole={singleParticipant.assignedRole}
+						/>
+					{:catch error}
+						<ChunkLoadError {error} />
+					{/await}
 				{/if}
 			{:else}
 				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
@@ -125,14 +132,18 @@
 						ofAgeAtConference={data.ofAgeAtConference}
 					/>
 				{:else if conference!.state === 'POST'}
-					<Certificate
-						conferenceId={conference!.id}
-						userId={data.user.sub}
-						didAttend={!!status?.didAttend}
-						country={delegationMember.delegation.assignedNation}
-						nonStateActor={delegationMember.delegation.assignedNonStateActor}
-						assignedCommittee={delegationMember.assignedCommittee}
-					/>
+					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
+						<Certificate
+							conferenceId={conference!.id}
+							userId={data.user.sub}
+							didAttend={!!status?.didAttend}
+							country={delegationMember.delegation.assignedNation}
+							nonStateActor={delegationMember.delegation.assignedNonStateActor}
+							assignedCommittee={delegationMember.assignedCommittee}
+						/>
+					{:catch error}
+						<ChunkLoadError {error} />
+					{/await}
 				{/if}
 			{:else}
 				<ApplicationRejected conferenceIdForWaitingListLink={conference.id} />
@@ -156,22 +167,30 @@
 						supervisor.supervisedDelegationMembers.length +
 						supervisor.supervisedSingleParticipants.length}
 					{@const acceptedStudents = acceptedDelegations.length + acceptedSingleParticipants.length}
-					<Certificate
-						conferenceId={conference!.id}
-						userId={data.user.sub}
-						didAttend={!!status?.didAttend}
-						isSupervisor={true}
-						totalStudentsCount={totalStudents}
-						acceptedStudentsCount={acceptedStudents}
-					/>
+					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
+						<Certificate
+							conferenceId={conference!.id}
+							userId={data.user.sub}
+							didAttend={!!status?.didAttend}
+							isSupervisor={true}
+							totalStudentsCount={totalStudents}
+							acceptedStudentsCount={acceptedStudents}
+						/>
+					{:catch error}
+						<ChunkLoadError {error} />
+					{/await}
 				{:else}
-					<Supervisor
-						user={data.user}
-						{conference}
-						{supervisor}
-						{status}
-						ofAge={data.ofAgeAtConference}
-					/>
+					{#await import('./stages/Supervisor/Supervisor.svelte') then { default: Supervisor }}
+						<Supervisor
+							user={data.user}
+							{conference}
+							{supervisor}
+							{status}
+							ofAge={data.ofAgeAtConference}
+						/>
+					{:catch error}
+						<ChunkLoadError {error} />
+					{/await}
 				{/if}
 			{:else}
 				<ApplicationRejected />
