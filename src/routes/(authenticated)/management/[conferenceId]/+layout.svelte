@@ -69,25 +69,25 @@
 					href="/management/{data.conferenceId}/assignment"
 					icon="fa-shuffle"
 					title={m.adminAssignment()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/postalRegistration"
 					icon="fa-envelope"
 					title={m.postalRegistration()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/payments"
 					icon="fa-money-bill-transfer"
 					title={m.payment()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/accessFlow"
 					icon="fa-id-card-clip"
 					title={m.accessFlow()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 			</NavMenuDetails>
 			<NavMenuDetails title={m.navInfo()} icon="fa-comments" small={!navbarExpanded}>
@@ -122,25 +122,25 @@
 					href="/management/{data.conferenceId}/cleanup"
 					icon="fa-broom"
 					title={m.cleanup()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/helper"
 					icon="fa-gear-code"
 					title={m.helper()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/import"
 					icon="fa-file-import"
 					title={m.import()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/downloads"
 					icon="fa-download"
 					title={m.downloads()}
-					expanded={navbarExpanded}
+					bind:expanded={navbarExpanded}
 				/>
 			</NavMenuDetails>
 			<NavMenuButton

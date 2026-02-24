@@ -26,10 +26,15 @@ function devAutoRestart() {
 			const isRaceCondition = (message) =>
 				RACE_CONDITION_PATTERNS.some((pattern) => message?.includes(pattern));
 
-			process.on('unhandledRejection', (reason) => {
+			const onUnhandledRejection = (reason) => {
 				if (reason instanceof Error && isRaceCondition(reason.message)) {
 					triggerRestart('Race condition detected');
 				}
+			};
+
+			process.on('unhandledRejection', onUnhandledRejection);
+			server.httpServer?.on('close', () => {
+				process.off('unhandledRejection', onUnhandledRejection);
 			});
 
 			const originalSsrFixStacktrace = server.ssrFixStacktrace;
