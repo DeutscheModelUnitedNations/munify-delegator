@@ -329,19 +329,24 @@
 		<!-- Active session bar -->
 		<div class="bg-base-200 flex flex-wrap items-center gap-4 rounded-box p-4">
 			<div class="flex items-center gap-2">
-				<span class="badge badge-success badge-sm"></span>
+				<div class="inline-grid *:[grid-area:1/1]">
+					<span class="status status-success status-xl"></span>
+					<span class="status status-success status-xl animate-ping"></span>
+				</div>
 				<span class="font-bold">{m.sessionActive()}</span>
 				<span class="text-base-content/70">— {occasion}</span>
 			</div>
 
 			<div class="flex flex-wrap items-center gap-3 text-sm">
-				<span>{m.scanCount({ count: totalScansCounter.toString() })}</span>
-				<span class="text-success">{syncedScansCounter} {m.scanSynced()}</span>
+				<span class="badge badge-soft badge-primary"
+					>{m.scanCount({ count: totalScansCounter.toString() })}</span
+				>
+				<span class="badge badge-soft badge-success">{syncedScansCounter} {m.scanSynced()}</span>
 				{#if pendingScans > 0}
-					<span class="text-warning">{pendingScans} {m.scanPending()}</span>
+					<span class="badge badge-soft badge-warning">{pendingScans} {m.scanPending()}</span>
 				{/if}
 				{#if errorScans > 0}
-					<span class="text-error">{errorScans} {m.errors()}</span>
+					<span class="badge badge-soft badge-error">{errorScans} {m.errors()}</span>
 				{/if}
 			</div>
 
@@ -395,7 +400,7 @@
 							{/if}
 
 							<!-- User ID -->
-							<span class="flex-1 truncate">{entry.userId}</span>
+							<span class="flex-1 truncate text-base-content">{entry.userId}</span>
 
 							<!-- Timestamp -->
 							<span class="text-base-content/50 text-xs">
