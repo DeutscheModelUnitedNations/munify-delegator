@@ -7,8 +7,6 @@ export const conferenceSettingsFormSchema = z.object({
 	title: z.string().min(3, {
 		message: m.atLeastXChars({ amount: 3 })
 	}),
-	info: z.string().nullish(),
-	showInfoExpanded: z.boolean().default(false),
 	linkToPreparationGuide: z.string().nullish(),
 	linkToTeamWiki: z.string().nullish(),
 	linkToServicesPage: z.string().nullish(),

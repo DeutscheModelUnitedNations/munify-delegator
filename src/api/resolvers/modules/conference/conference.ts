@@ -49,7 +49,6 @@ import {
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
-import { conferenceSettingsFormSchema } from '../../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
 import { ConferenceState } from '$db/generated/graphql/inputs';
 import { findManyNationQueryObject } from '$db/generated/graphql/Nation';
 
@@ -587,8 +586,6 @@ builder.mutationFields((t) => {
 					...args.where,
 					AND: [ctx.permissions.allowDatabaseAccessTo('update').Conference]
 				};
-
-				conferenceSettingsFormSchema.parse(args.data);
 
 				const dataURL = args.data.image ? await toDataURL(args.data.image) : args.data.image;
 				args.data.image = undefined;

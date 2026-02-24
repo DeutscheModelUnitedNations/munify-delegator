@@ -92,6 +92,12 @@
 			</NavMenuDetails>
 			<NavMenuDetails title={m.navInfo()} icon="fa-comments" small={!navbarExpanded}>
 				<NavMenuButton
+					href="/management/{data.conferenceId}/announcement"
+					icon="fa-bullhorn"
+					title={m.announcementSectionTitle()}
+					bind:expanded={navbarExpanded}
+				/>
+				<NavMenuButton
 					href="/management/{data.conferenceId}/calendar"
 					icon="fa-calendar-days"
 					title={m.calendar()}

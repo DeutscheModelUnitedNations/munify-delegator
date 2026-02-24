@@ -245,6 +245,10 @@
 			icon: 'id-card-clip',
 			translation: m.accessFlow()
 		},
+		announcement: {
+			icon: 'bullhorn',
+			translation: m.announcementSectionTitle()
+		},
 		attendance: {
 			icon: 'barcode-read',
 			translation: m.attendanceScanner()
