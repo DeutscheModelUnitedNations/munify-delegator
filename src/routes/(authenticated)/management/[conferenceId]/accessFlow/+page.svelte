@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
+	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
 	import hotkeys from 'hotkeys-js';
@@ -211,6 +212,8 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		cache.markStale();
+		await invalidateAll();
+		userData.fetch();
 	};
 
 	const saveAndNext = async () => {
@@ -243,6 +246,7 @@
 					conferenceId: data.conferenceId,
 					occasion: $occasion.trim()
 				});
+				cache.markStale();
 				didPerformAction = true;
 			}
 
@@ -351,7 +355,7 @@
 		</div>
 	{:else if $params.queryUserId && !$userData?.data?.findUniqueUser && !$userData.fetching}
 		<div class="alert alert-warning">
-			<i class="fa-solid fa-triangle-exclamation text-lg"></i>
+			<i class="fa-duotone fa-triangle-exclamation text-lg"></i>
 			<div>{m.userNotFoundForAccessFlow()}</div>
 		</div>
 	{/if}
@@ -363,7 +367,7 @@
 		<a
 			class="btn btn-soft btn-sm"
 			href={`/management/${data.conferenceId}/participants?selected=${$params.queryUserId}`}
-			aria-label="View participant details"
+			aria-label={m.details()}
 		>
 			<i class="fa-duotone fa-up-right-from-square"></i>
 		</a>
@@ -371,9 +375,9 @@
 			type="button"
 			class="btn btn-ghost btn-sm btn-square"
 			onclick={() => resetView()}
-			aria-label="Close"
+			aria-label={m.close()}
 		>
-			<i class="fa-solid fa-xmark text-lg"></i>
+			<i class="fa-duotone fa-xmark text-lg"></i>
 		</button>
 	{/snippet}
 
@@ -412,14 +416,14 @@
 								<button
 									class="btn btn-square btn-lg join-item"
 									onclick={() => saveIdentityField('givenName', localGivenName)}
-									aria-label="Save"
+									aria-label={m.save()}
 								>
 									<i class="fa-solid fa-save"></i>
 								</button>
 								<button
 									class="btn btn-square btn-lg btn-error join-item"
 									onclick={() => (editingGivenName = false)}
-									aria-label="Cancel"
+									aria-label={m.cancel()}
 								>
 									<i class="fa-solid fa-xmark"></i>
 								</button>
@@ -453,14 +457,14 @@
 								<button
 									class="btn btn-square btn-lg join-item"
 									onclick={() => saveIdentityField('familyName', localFamilyName)}
-									aria-label="Save"
+									aria-label={m.save()}
 								>
 									<i class="fa-solid fa-save"></i>
 								</button>
 								<button
 									class="btn btn-square btn-lg btn-error join-item"
 									onclick={() => (editingFamilyName = false)}
-									aria-label="Cancel"
+									aria-label={m.cancel()}
 								>
 									<i class="fa-solid fa-xmark"></i>
 								</button>
@@ -495,14 +499,14 @@
 							<button
 								class="btn btn-square btn-lg join-item"
 								onclick={() => saveIdentityField('birthday', localBirthday)}
-								aria-label="Save"
+								aria-label={m.save()}
 							>
 								<i class="fa-solid fa-save"></i>
 							</button>
 							<button
 								class="btn btn-square btn-lg btn-error join-item"
 								onclick={() => (editingBirthday = false)}
-								aria-label="Cancel"
+								aria-label={m.cancel()}
 							>
 								<i class="fa-solid fa-xmark"></i>
 							</button>
@@ -561,11 +565,7 @@
 		</div>
 
 		<!-- Access Card ID Section -->
-		<div class="mt-6 flex flex-col gap-2">
-			<h3 class="flex items-center gap-2 text-lg font-bold">
-				<i class="fa-duotone fa-id-card text-xl"></i>
-				{m.accessCardId()}
-			</h3>
+		<FormFieldset title={m.accessCardId()}>
 			<input
 				class="input input-lg w-full"
 				bind:this={accessCardInputElem}
@@ -576,7 +576,7 @@
 					if (e.key === 'Enter') saveAndNext();
 				}}
 			/>
-		</div>
+		</FormFieldset>
 	{/if}
 
 	{#snippet footer()}

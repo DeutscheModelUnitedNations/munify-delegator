@@ -164,14 +164,12 @@
 		hotkeyDebounce = true;
 
 		try {
+			recieveDate = new Date().toISOString().split('T')[0];
 			await changeTransactionStatus('DONE');
 			showPaymentDrawer = false;
 			$params.searchValue = '';
 			setTimeout(() => {
-				if (searchInputElem) {
-					searchInputElem.value = '';
-					searchInputElem.focus();
-				}
+				searchInputElem?.focus();
 			}, 300);
 		} finally {
 			hotkeyDebounce = false;
@@ -182,10 +180,7 @@
 		showPaymentDrawer = false;
 		$params.searchValue = '';
 		setTimeout(() => {
-			if (searchInputElem) {
-				searchInputElem.value = '';
-				searchInputElem.focus();
-			}
+			searchInputElem?.focus();
 		}, 300);
 	};
 
@@ -264,9 +259,9 @@
 			type="button"
 			class="btn btn-ghost btn-sm btn-square"
 			onclick={() => resetView()}
-			aria-label="Close"
+			aria-label={m.close()}
 		>
-			<i class="fa-solid fa-xmark text-lg"></i>
+			<i class="fa-duotone fa-xmark text-lg"></i>
 		</button>
 	{/snippet}
 
@@ -289,7 +284,7 @@
 		<!-- Received status alert -->
 		{#if paymentTransaction.recievedAt}
 			<div class="alert alert-success mb-4">
-				<i class="fas fa-check text-2xl"></i>
+				<i class="fa-duotone fa-check text-2xl"></i>
 				{m.paymentRecieved({
 					date: new Date(paymentTransaction.recievedAt).toLocaleDateString(undefined, {
 						year: 'numeric',

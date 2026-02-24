@@ -30,9 +30,14 @@ builder.queryFields((t) => {
 		findManyAttendanceEntries: t.prismaField({
 			...field,
 			resolve: (query, root, args, ctx, info) => {
+				const existingAnd = Array.isArray(args.where?.AND)
+					? args.where.AND
+					: args.where?.AND
+						? [args.where.AND]
+						: [];
 				args.where = {
 					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('list').AttendanceEntry]
+					AND: [...existingAnd, ctx.permissions.allowDatabaseAccessTo('list').AttendanceEntry]
 				};
 				return field.resolve(query, root, args, ctx, info);
 			}
@@ -100,9 +105,14 @@ builder.mutationFields((t) => {
 		deleteOneAttendanceEntry: t.prismaField({
 			...field,
 			resolve: (query, root, args, ctx, info) => {
+				const existingAnd = Array.isArray(args.where?.AND)
+					? args.where.AND
+					: args.where?.AND
+						? [args.where.AND]
+						: [];
 				args.where = {
 					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('delete').AttendanceEntry]
+					AND: [...existingAnd, ctx.permissions.allowDatabaseAccessTo('delete').AttendanceEntry]
 				};
 				return field.resolve(query, root, args, ctx, info);
 			}

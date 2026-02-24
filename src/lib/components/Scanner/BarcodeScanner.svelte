@@ -237,16 +237,16 @@
 				class="input w-full input-lg join-item"
 				onkeydown={(e) => {
 					if (e.key === 'Enter') {
-						scannedCode = manualInputElem?.value ?? '';
+						scannedCode = manualInputElem?.value?.trim() || null;
 						manualInputElem?.blur();
 					}
 				}}
 			/>
 			<button
 				class="btn btn-primary btn-lg join-item"
-				aria-label="Search"
+				aria-label={m.search()}
 				onclick={() => {
-					scannedCode = manualInputElem?.value ?? '';
+					scannedCode = manualInputElem?.value?.trim() || null;
 					manualInputElem?.blur();
 				}}
 			>
@@ -263,7 +263,7 @@
 		: ''} bg-primary relative {cameraZIndex} flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-lg shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
 >
 	<i
-		class="fas fa-camera absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
+		class="fa-duotone fa-camera absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"
 	></i>
 	<video bind:this={videoElem} autoplay playsinline>
 		<track kind="captions" src="" srclang="en" label="English" default />

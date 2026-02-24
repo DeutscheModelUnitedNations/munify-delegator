@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
@@ -202,6 +202,7 @@
 						occasion: occasion.trim()
 					});
 
+					cache.markStale();
 					pendingEntry.status = 'success';
 					queue = [...queue];
 					syncedScansCounter += 1;
@@ -214,7 +215,11 @@
 					scheduleRemoval(pendingEntry.localId);
 				} catch (err) {
 					const isNetworkError =
-						err instanceof TypeError || (err instanceof Error && err.message.includes('fetch'));
+						err instanceof TypeError ||
+						(err instanceof Error &&
+							(err.message.includes('fetch') ||
+								err.message.includes('network') ||
+								err.name === 'AbortError'));
 
 					if (isNetworkError) {
 						pendingEntry.status = 'error';
@@ -290,8 +295,8 @@
 	<!-- Header -->
 	<div class="flex flex-col gap-2">
 		<div class="flex items-center gap-2">
-			<a class="btn btn-square btn-ghost" aria-label="back" href={`/dashboard/${conferenceId}`}>
-				<i class="fas fa-arrow-left"></i>
+			<a class="btn btn-square btn-ghost" aria-label={m.back()} href={`/dashboard/${conferenceId}`}>
+				<i class="fa-duotone fa-arrow-left"></i>
 			</a>
 			<h2 class="text-2xl font-bold">{m.attendanceScanner()}</h2>
 		</div>
@@ -378,7 +383,7 @@
 						>
 							<!-- Status icon -->
 							{#if entry.status === 'success'}
-								<i class="fa-solid fa-check"></i>
+								<i class="fa-duotone fa-check"></i>
 							{:else if entry.status === 'processing'}
 								<span class="loading loading-spinner loading-xs"></span>
 							{:else if entry.status === 'pending'}
@@ -386,7 +391,7 @@
 							{:else if entry.status === 'error' && entry.errorKind === 'network'}
 								<i class="fa-duotone fa-arrow-rotate-right"></i>
 							{:else}
-								<i class="fa-solid fa-xmark"></i>
+								<i class="fa-duotone fa-xmark"></i>
 							{/if}
 
 							<!-- User ID -->
@@ -407,9 +412,9 @@
 								<button
 									class="btn btn-ghost btn-xs btn-square"
 									onclick={() => dismissEntry(entry.localId)}
-									aria-label="Dismiss"
+									aria-label={m.dismiss()}
 								>
-									<i class="fa-solid fa-xmark"></i>
+									<i class="fa-duotone fa-xmark"></i>
 								</button>
 							{/if}
 						</div>

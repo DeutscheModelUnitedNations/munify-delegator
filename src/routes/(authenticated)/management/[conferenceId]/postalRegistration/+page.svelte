@@ -5,6 +5,7 @@
 		type MediaConsentStatus$options,
 		type UpdateConferenceParticipantStatusInput
 	} from '$houdini';
+	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
 	import type { AdministrativeStatus } from '@prisma/client';
@@ -112,6 +113,7 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		cache.markStale();
+		await invalidateAll();
 		userData.fetch();
 	};
 
@@ -202,7 +204,7 @@
 		</div>
 	{:else if $params.queryUserId && !$userData?.data?.findUniqueUser && !$userData.fetching}
 		<div class="alert alert-warning">
-			<i class="fa-solid fa-triangle-exclamation text-lg"></i>
+			<i class="fa-duotone fa-triangle-exclamation text-lg"></i>
 			<div>{m.userNotFoundForPostalRegistration()}</div>
 		</div>
 	{/if}
@@ -219,7 +221,7 @@
 		<a
 			class="btn btn-soft btn-sm"
 			href={`/management/${data.conferenceId}/participants?selected=${$params.queryUserId}`}
-			aria-label="View participant details"
+			aria-label={m.details()}
 		>
 			<i class="fa-duotone fa-up-right-from-square"></i>
 		</a>
@@ -227,9 +229,9 @@
 			type="button"
 			class="btn btn-ghost btn-sm btn-square"
 			onclick={() => resetView()}
-			aria-label="Close"
+			aria-label={m.close()}
 		>
-			<i class="fa-solid fa-xmark text-lg"></i>
+			<i class="fa-duotone fa-xmark text-lg"></i>
 		</button>
 	{/snippet}
 
@@ -281,7 +283,7 @@
 				/>
 			{:else}
 				<div class="flex flex-col items-center justify-center gap-2 rounded-box bg-base-100 p-4">
-					<i class="fa-solid fa-xmark-circle text-3xl"></i>
+					<i class="fa-duotone fa-xmark-circle text-3xl"></i>
 					<h3 class="font-bold">{m.guardianAgreementNotNeeded()}</h3>
 				</div>
 			{/if}

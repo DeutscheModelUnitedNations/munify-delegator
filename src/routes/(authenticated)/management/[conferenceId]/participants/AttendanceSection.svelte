@@ -56,9 +56,12 @@
 			success: m.genericToastSuccess(),
 			error: m.genericToastError()
 		});
-		await promise;
-		occasion = '';
-		onChanged();
+		try {
+			await promise;
+			occasion = '';
+		} finally {
+			onChanged();
+		}
 	};
 
 	const deleteEntry = async (id: string) => {
@@ -72,8 +75,11 @@
 			success: m.genericToastSuccess(),
 			error: m.genericToastError()
 		});
-		await promise;
-		onChanged();
+		try {
+			await promise;
+		} finally {
+			onChanged();
+		}
 	};
 
 	const sortedEntries = $derived(
