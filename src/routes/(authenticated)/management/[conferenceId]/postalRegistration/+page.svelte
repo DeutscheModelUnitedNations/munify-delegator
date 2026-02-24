@@ -215,7 +215,7 @@
 	bind:open={showUserDrawer}
 	title={m.postalRegistration()}
 	titleIcon="fa-envelopes-bulk"
-	maxWidth="max-w-3xl"
+	maxWidth="max-w-4xl"
 >
 	{#snippet headerActions()}
 		<a
@@ -242,7 +242,7 @@
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
 			<i class="fa-duotone fa-user text-2xl"></i>
-			<div class="flex-grow">
+			<div class="grow">
 				<h3 class="text-xl font-bold">
 					{formatNames(userDetails.given_name, userDetails.family_name)}
 				</h3>
@@ -253,7 +253,7 @@
 		</div>
 
 		<!-- Status widgets grid -->
-		<div class="grid grid-flow-col grid-cols-1 grid-rows-5 gap-4 xl:grid-cols-2 xl:grid-rows-3">
+		<div class="grid grid-flow-col grid-cols-1 grid-rows-5 gap-4 md:grid-cols-2 md:grid-rows-3">
 			<ParticipantAssignedDocumentWidget
 				assignedDocumentNumber={postalRegistrationDetails?.assignedDocumentNumber}
 				onSave={async (number?: number) =>
