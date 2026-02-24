@@ -29,7 +29,7 @@
 		manualPlaceholder = '',
 		scanPromptText = '',
 		cameraZIndex = 'z-30',
-		scannedCode = $bindable('') as string | null,
+		scannedCode = $bindable<string | null>(''),
 		extraControls
 	}: Props = $props();
 
@@ -63,13 +63,13 @@
 			if (selectedVideoDeviceIndex >= availableVideoDevices.length) {
 				selectedVideoDeviceIndex = 0;
 			}
-			const constraints: MediaStreamConstraints = { video: {} };
+			const videoConstraints: MediaTrackConstraints = {};
 			if (availableVideoDevices.length > 0) {
-				(constraints.video as MediaTrackConstraints).deviceId = {
+				videoConstraints.deviceId = {
 					ideal: availableVideoDevices[selectedVideoDeviceIndex].deviceId
 				};
 			}
-			const stream = await navigator.mediaDevices.getUserMedia(constraints);
+			const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
 			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;
