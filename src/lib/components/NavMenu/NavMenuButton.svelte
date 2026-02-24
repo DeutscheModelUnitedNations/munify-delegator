@@ -33,7 +33,7 @@
 	<a
 		{href}
 		onclick={closeIfMobile}
-		class="flex w-full items-center justify-center p-2 {showAsActive ? 'active' : ''}"
+		class="flex w-full items-center justify-center p-2 {showAsActive ? 'menu-active' : ''}"
 		aria-label="Toggle menu expand state"
 	>
 		<i class="{showAsActive ? 'fas ' : 'fa-duotone'} {icon} ml-2 w-5 text-center"></i>

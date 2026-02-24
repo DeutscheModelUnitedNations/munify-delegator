@@ -32,12 +32,6 @@
 				title={m.seats()}
 				bind:expanded={navbarExpanded}
 			/>
-			<NavMenuButton
-				href={`/management/${data.conferenceId}/waitingList`}
-				icon="fa-user-clock"
-				title={m.waitingList()}
-				bind:expanded={navbarExpanded}
-			/>
 			<NavMenuDetails title={m.tables()} icon="fa-database" small={!navbarExpanded}>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/participants"
@@ -63,26 +57,14 @@
 					title={m.adminSupervisors()}
 					bind:expanded={navbarExpanded}
 				/>
-			</NavMenuDetails>
-			<NavMenuButton
-				href="/management/{data.conferenceId}/calendar"
-				icon="fa-calendar-days"
-				title={m.calendar()}
-				bind:expanded={navbarExpanded}
-			/>
-			<NavMenuButton
-				href="/management/{data.conferenceId}/survey"
-				icon="fa-chart-pie"
-				title={m.survey()}
-				bind:expanded={navbarExpanded}
-			/>
-			<NavMenuDetails title={m.tools()} icon="fa-wrench" small={!navbarExpanded}>
 				<NavMenuButton
-					href="/management/{data.conferenceId}/plausibility"
-					icon="fa-shield-check"
-					title={m.adminPlausibility()}
+					href={`/management/${data.conferenceId}/waitingList`}
+					icon="fa-user-clock"
+					title={m.waitingList()}
 					bind:expanded={navbarExpanded}
 				/>
+			</NavMenuDetails>
+			<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin" small={!navbarExpanded}>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/assignment"
 					icon="fa-shuffle"
@@ -96,15 +78,44 @@
 					expanded={navbarExpanded}
 				/>
 				<NavMenuButton
+					href="/management/{data.conferenceId}/payments"
+					icon="fa-money-bill-transfer"
+					title={m.payment()}
+					expanded={navbarExpanded}
+				/>
+				<NavMenuButton
 					href="/management/{data.conferenceId}/accessFlow"
 					icon="fa-id-card-clip"
 					title={m.accessFlow()}
 					expanded={navbarExpanded}
 				/>
+			</NavMenuDetails>
+			<NavMenuDetails title={m.navInfo()} icon="fa-comments" small={!navbarExpanded}>
 				<NavMenuButton
-					href="/management/{data.conferenceId}/payments"
-					icon="fa-money-bill-transfer"
-					title={m.payment()}
+					href="/management/{data.conferenceId}/calendar"
+					icon="fa-calendar-days"
+					title={m.calendar()}
+					bind:expanded={navbarExpanded}
+				/>
+				<NavMenuButton
+					href="/management/{data.conferenceId}/survey"
+					icon="fa-chart-pie"
+					title={m.survey()}
+					bind:expanded={navbarExpanded}
+				/>
+			</NavMenuDetails>
+
+			<NavMenuDetails title={m.navMaintenance()} icon="fa-toolbox" small={!navbarExpanded}>
+				<NavMenuButton
+					href="/management/{data.conferenceId}/plausibility"
+					icon="fa-shield-check"
+					title={m.adminPlausibility()}
+					bind:expanded={navbarExpanded}
+				/>
+				<NavMenuButton
+					href="/management/{data.conferenceId}/cleanup"
+					icon="fa-broom"
+					title={m.cleanup()}
 					expanded={navbarExpanded}
 				/>
 				<NavMenuButton
@@ -114,24 +125,18 @@
 					expanded={navbarExpanded}
 				/>
 				<NavMenuButton
-					href="/management/{data.conferenceId}/cleanup"
-					icon="fa-broom"
-					title={m.cleanup()}
-					expanded={navbarExpanded}
-				/>
-				<NavMenuButton
 					href="/management/{data.conferenceId}/import"
 					icon="fa-file-import"
 					title={m.import()}
 					expanded={navbarExpanded}
 				/>
+				<NavMenuButton
+					href="/management/{data.conferenceId}/downloads"
+					icon="fa-download"
+					title={m.downloads()}
+					expanded={navbarExpanded}
+				/>
 			</NavMenuDetails>
-			<NavMenuButton
-				href="/management/{data.conferenceId}/downloads"
-				icon="fa-download"
-				title={m.downloads()}
-				bind:expanded={navbarExpanded}
-			/>
 			<NavMenuButton
 				href="/dashboard/{data.conferenceId}/team-management"
 				icon="fa-user-group"
