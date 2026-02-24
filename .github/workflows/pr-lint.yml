@@ -1,7 +1,7 @@
 name: PR Lint
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, labeled, unlabeled, synchronize, edited]
 
 jobs:
@@ -27,12 +27,12 @@ jobs:
               'PR: Tests',
             ];
 
-            const TITLE_REGEX = /^(feat|fix|style|refactor|perf|docs|test|chore|build|ci|deps)(\s*\(.+\))?\s*:\s*.+/;
-
             const ALLOWED_TYPES = [
               'feat', 'fix', 'style', 'refactor', 'perf',
               'docs', 'test', 'chore', 'build', 'ci', 'deps',
             ];
+
+            const TITLE_REGEX = new RegExp(`^(${ALLOWED_TYPES.join('|')})(\\s*\\(.+\\))?\\s*:\\s*.+$`);
 
             // --- Collect errors ---
 
@@ -68,7 +68,7 @@ jobs:
 
             // --- Find existing comment ---
 
-            const { data: comments } = await github.rest.issues.listComments({
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
