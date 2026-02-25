@@ -13,6 +13,7 @@ export const changeParticipantStatus = graphql(`
 			paymentStatus
 			didAttend
 			assignedDocumentNumber
+			accessCardId
 		}
 	}
 `);

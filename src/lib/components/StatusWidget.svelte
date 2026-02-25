@@ -1,6 +1,7 @@
 <script lang="ts" generics="Status">
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy } from 'svelte';
+	import Kbd from './Kbd.svelte';
 
 	interface Props {
 		title: string;
@@ -62,7 +63,7 @@
 				{:else}
 					<i class="fas fa-{faIcon.replace('fa-', '')} text-lg"></i>
 					{#if hotkey}
-						<span class="kbd kbd-xs hidden sm:inline-block">{hotkey}</span>
+						<span class="hidden sm:inline-block"><Kbd {hotkey} size="xs" /></span>
 					{/if}
 				{/if}
 			</button>

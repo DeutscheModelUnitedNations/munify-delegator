@@ -31,8 +31,6 @@ const conferenceQuery = graphql(`
 			isOpenPaperSubmission
 			showCalendar
 			timezone
-			info
-			showInfoExpanded
 			unlockPayments
 			unlockPostals
 			feeAmount

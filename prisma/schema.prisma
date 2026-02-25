@@ -219,6 +219,8 @@ model User {
   invitationsSent     TeamMemberInvitation[] @relation("InvitedByUser")
   invitationsAccepted TeamMemberInvitation[] @relation("AcceptedByUser")
 
+  recordedAttendanceEntries AttendanceEntry[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -263,17 +265,21 @@ model ConferenceParticipantStatus {
   mediaConsentStatus     MediaConsentStatus   @default(NOT_SET)
   didAttend              Boolean              @default(false)
   assigendDocumentNumber Int?
+  accessCardId           String?
 
   user         User       @relation(fields: [userId], references: [id])
   userId       String
   conference   Conference @relation(fields: [conferenceId], references: [id])
   conferenceId String
 
+  attendanceEntries AttendanceEntry[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([userId, conferenceId])
   @@unique([conferenceId, assigendDocumentNumber])
+  @@unique([conferenceId, accessCardId])
 }
 
 /// The transactions used to reference the payment status of various users in the conference
@@ -768,4 +774,24 @@ model CalendarEntry {
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
+}
+
+/// A timestamped attendance record for a conference participant
+model AttendanceEntry {
+  id        String   @id @default(nanoid())
+  timestamp DateTime @default(now())
+  occasion  String
+
+  conferenceParticipantStatus   ConferenceParticipantStatus @relation(fields: [conferenceParticipantStatusId], references: [id], onDelete: Cascade)
+  conferenceParticipantStatusId String
+
+  /// The team member who recorded this entry
+  recordedBy   User   @relation(fields: [recordedById], references: [id])
+  recordedById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([conferenceParticipantStatusId])
+  @@index([recordedById])
 }

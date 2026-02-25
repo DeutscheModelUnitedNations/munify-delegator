@@ -30,6 +30,7 @@ import { defineAbilitiesForCalendarDay } from './entities/calendarDay';
 import { defineAbilitiesForCalendarTrack } from './entities/calendarTrack';
 import { defineAbilitiesForCalendarEntry } from './entities/calendarEntry';
 import { defineAbilitiesForPlace } from './entities/place';
+import { defineAbilitiesForAttendanceEntry } from './entities/attendanceEntry';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
@@ -170,6 +171,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 	defineAbilitiesForCalendarTrack(oidc, builder);
 	defineAbilitiesForCalendarEntry(oidc, builder);
 	defineAbilitiesForPlace(oidc, builder);
+	defineAbilitiesForAttendanceEntry(oidc, builder);
 
 	return builder.build({
 		detectSubjectType: (object) => object.__typename

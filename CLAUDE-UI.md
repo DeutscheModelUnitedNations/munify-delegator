@@ -271,6 +271,40 @@ Slide-out drawer showing full entry details including place information, map, an
 
 ---
 
+## Kbd Component
+
+`src/lib/components/Kbd.svelte`
+
+Renders a keyboard shortcut hint with OS-aware modifier formatting. On macOS, replaces modifier names with symbols (`alt` → `⌥`, `shift` → `⇧`, `ctrl` → `⌃`, `enter` → `↵`). On Windows/Linux, keeps text as-is. SSR-safe (defaults to text modifiers).
+
+### Props
+
+| Prop     | Type           | Description                        |
+| -------- | -------------- | ---------------------------------- |
+| `hotkey` | `string`       | Hotkey string, e.g. `"alt+a"`      |
+| `size`   | `'xs' \| 'sm'` | DaisyUI kbd size (default: `'sm'`) |
+
+### Usage Examples
+
+```svelte
+<script lang="ts">
+	import Kbd from '$lib/components/Kbd.svelte';
+</script>
+
+<!-- In a button -->
+<button class="btn btn-primary">
+	Save <Kbd hotkey="alt+a" />
+</button>
+
+<!-- Small size for inline badges -->
+<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
+
+<!-- Compound shortcuts -->
+<Kbd hotkey="shift+enter" />
+```
+
+---
+
 ## Form Components (Critical)
 
 Forms use `sveltekit-superforms` for validation and state management. Always structure forms consistently.
@@ -445,6 +479,96 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 		<p>Delegation details go here...</p>
 	</div>
 </Drawer>
+```
+
+---
+
+## TopDrawer Component
+
+Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `vaul-svelte`, it provides a gesture-friendly drawer with drag-to-close support. Used in management tool pages (accessFlow, postalRegistration, payments) for showing scanned/searched item details.
+
+### Props
+
+| Prop            | Type                 | Description                                   |
+| --------------- | -------------------- | --------------------------------------------- |
+| `open`          | `boolean` (bindable) | Controls visibility                           |
+| `maxWidth`      | `string`             | Max width class (default: `'max-w-2xl'`)      |
+| `title`         | `string`             | Header title text                             |
+| `titleIcon`     | `string`             | FontAwesome icon class (e.g. `'fa-id-badge'`) |
+| `headerActions` | `Snippet`            | Buttons in header (profile link, close)       |
+| `children`      | `Snippet`            | Scrollable content area                       |
+| `footer`        | `Snippet`            | Sticky footer with action buttons             |
+
+### TopDrawer Example
+
+```svelte
+<script lang="ts">
+	import TopDrawer from '$lib/components/TopDrawer.svelte';
+
+	let drawerOpen = $state(false);
+</script>
+
+<TopDrawer bind:open={drawerOpen} title="Identity Check" titleIcon="fa-id-badge">
+	{#snippet headerActions()}
+		<button class="btn btn-ghost btn-sm btn-square" onclick={() => (drawerOpen = false)}>
+			<i class="fa-solid fa-xmark text-lg"></i>
+		</button>
+	{/snippet}
+
+	<p>Scrollable content goes here...</p>
+
+	{#snippet footer()}
+		<button class="btn btn-primary flex-1">Save & Next</button>
+		<button class="btn btn-error" onclick={() => (drawerOpen = false)}>Close</button>
+	{/snippet}
+</TopDrawer>
+```
+
+**Note:** `TopDrawer` is different from `Drawer` — TopDrawer uses vaul-svelte for gesture/swipe support and slides from the top; Drawer is a right-side slide-out panel.
+
+---
+
+## BarcodeScanner Component
+
+Use `BarcodeScanner` for pages that need barcode scanning via camera or manual text input. Encapsulates camera management, barcode detection, device switching, and manual input fallback.
+
+### Props
+
+| Prop                | Type                        | Description                                                |
+| ------------------- | --------------------------- | ---------------------------------------------------------- |
+| `scannedCode`       | `string \| null` (bindable) | The detected/entered code                                  |
+| `persistKey`        | `string`                    | localStorage key for camera preference                     |
+| `barcodeFormats`    | `BarcodeFormat[]`           | Formats to detect (default: `['data_matrix', 'code_128']`) |
+| `manualPlaceholder` | `string`                    | Placeholder for manual input field                         |
+| `scanPromptText`    | `string`                    | Prompt shown while camera is scanning                      |
+| `cameraZIndex`      | `string`                    | z-index class for camera preview (default: `'z-30'`)       |
+| `extraControls`     | `Snippet`                   | Optional controls between camera settings and input        |
+
+### Exposed Methods
+
+- `reset()` — Clears scanned code and restarts camera or refocuses manual input
+
+### BarcodeScanner Example
+
+```svelte
+<script lang="ts">
+	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import { queryParameters } from 'sveltekit-search-params';
+
+	let params = queryParameters({ queryUserId: true });
+	let scannerRef: BarcodeScanner;
+</script>
+
+<BarcodeScanner
+	bind:this={scannerRef}
+	bind:scannedCode={$params.queryUserId}
+	barcodeFormats={['data_matrix', 'code_128']}
+	persistKey="useCameraForMyPage"
+	manualPlaceholder="Enter code..."
+	scanPromptText="Present the barcode..."
+/>
+
+<!-- Call scannerRef.reset() after saving to prepare for next scan -->
 ```
 
 ---

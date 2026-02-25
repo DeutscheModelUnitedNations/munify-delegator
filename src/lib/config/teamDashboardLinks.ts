@@ -33,6 +33,15 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
 	},
 	{
+		id: 'attendanceScanner',
+		icon: 'barcode-read',
+		getTitle: () => m.attendanceScanner(),
+		getDescription: () => m.attendanceScannerDescription(),
+		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/attendance`,
+		external: false,
+		isVisible: () => true
+	},
+	{
 		id: 'teamCoordination',
 		icon: 'user-group',
 		getTitle: () => m.teamCoordination(),

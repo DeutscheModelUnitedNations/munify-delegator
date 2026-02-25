@@ -3,6 +3,7 @@
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import Kbd from './Kbd.svelte';
 
 	interface Props {
 		assignedDocumentNumber?: number;
@@ -91,7 +92,7 @@
 			>
 				<i class="fa-solid fa-arrow-right-to-line"></i>
 				{#if !disabledShortcut}
-					<span class="kbd kbd-xs hidden sm:inline-block">alt+n</span>
+					<span class="hidden sm:inline-block"><Kbd hotkey="alt+n" size="xs" /></span>
 				{/if}
 			</button>
 		</div>

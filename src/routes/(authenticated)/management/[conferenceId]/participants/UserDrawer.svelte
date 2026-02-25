@@ -31,6 +31,8 @@
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import AccessCardSection from './AccessCardSection.svelte';
+	import AttendanceSection from './AttendanceSection.svelte';
 
 	interface Props {
 		userId: string;
@@ -108,6 +110,17 @@
 				paymentStatus
 				didAttend
 				assignedDocumentNumber
+				accessCardId
+				attendanceEntries {
+					id
+					timestamp
+					occasion
+					recordedBy {
+						id
+						given_name
+						family_name
+					}
+				}
 			}
 			findManySurveyAnswers(
 				where: {
@@ -732,6 +745,23 @@
 					changeAdministrativeStatus({ didAttend: newStatus })}
 			/>
 		</div>
+	</div>
+
+	<div class="flex flex-col gap-2">
+		<h3 class="text-xl font-bold">{m.accessAndAttendance()}</h3>
+		<AccessCardSection
+			accessCardId={status?.accessCardId}
+			onSave={async (value) => await changeAdministrativeStatus({ accessCardId: value })}
+		/>
+		<AttendanceSection
+			{userId}
+			{conferenceId}
+			entries={status?.attendanceEntries ?? []}
+			onChanged={() => {
+				cache.markStale();
+				userQuery.fetch();
+			}}
+		/>
 	</div>
 
 	<div class="flex flex-col gap-2">

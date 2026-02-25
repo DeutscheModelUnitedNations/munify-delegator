@@ -7,6 +7,7 @@
 	import CheckboxForTable from './CheckboxForTable.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
+	import Kbd from '$lib/components/Kbd.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -220,7 +221,7 @@
 				{:else}
 					{m.cleanupNormalizeSchoolsNormalizeMany()}
 				{/if}
-				<span class="kbd">⇧+↵</span>
+				<Kbd hotkey="shift+enter" />
 			</button>
 		</div>
 	</div>

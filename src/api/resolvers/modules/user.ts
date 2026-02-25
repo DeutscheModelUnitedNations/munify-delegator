@@ -365,6 +365,39 @@ builder.mutationFields((t) => {
 });
 
 builder.mutationFields((t) => {
+	const field = updateOneUserMutationObject(t);
+	return {
+		updateOneUsersIdentityInfo: t.prismaField({
+			...field,
+			args: {
+				where: field.args.where,
+				givenName: t.arg.string({ required: false }),
+				familyName: t.arg.string({ required: false }),
+				birthday: t.arg({ type: 'DateTime', required: false })
+			},
+			resolve: async (query, root, args, ctx) => {
+				args.where = {
+					...args.where,
+					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
+				};
+
+				return await db.user.update({
+					where: args.where,
+					data: {
+						...(args.givenName !== null &&
+							args.givenName !== undefined && { given_name: args.givenName }),
+						...(args.familyName !== null &&
+							args.familyName !== undefined && { family_name: args.familyName }),
+						...(args.birthday !== null &&
+							args.birthday !== undefined && { birthday: args.birthday })
+					}
+				});
+			}
+		})
+	};
+});
+
+builder.mutationFields((t) => {
 	return {
 		upsertSelf: t.field({
 			type: builder.simpleObject('UpsertSelfResult', {

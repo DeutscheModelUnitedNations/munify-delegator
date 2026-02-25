@@ -11,7 +11,6 @@
 	import { toast } from 'svelte-sonner';
 	import FormSelect from '$lib/components/Form/FormSelect.svelte';
 	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import Markdown from '$lib/components/Markdown/Markdown.svelte';
 	import FormFile from '$lib/components/Form/FormFile.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -667,44 +666,6 @@
 				<i class="fas fa-circle-info"></i>
 				<span>{@html m.tabExplanationLinks()}</span>
 			</div>
-
-			<FormFieldset title={m.communication()}>
-				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-					<!-- Editor side -->
-					<div class="flex flex-col gap-2 min-w-0">
-						<label class="label">
-							<span class="label-text">{m.infos()}</span>
-						</label>
-						<textarea
-							class="textarea textarea-bordered h-64 w-full font-mono text-sm"
-							name="info"
-							bind:value={$formData.info}
-							placeholder="# Markdown supported..."
-						></textarea>
-					</div>
-					<!-- Preview side -->
-					<div class="flex flex-col gap-2 min-w-0">
-						<label class="label">
-							<span class="label-text">{m.preview()}</span>
-						</label>
-						<div
-							class="bg-base-200 rounded-lg p-4 h-64 w-full overflow-auto prose prose-sm max-w-none"
-						>
-							<Markdown source={$formData.info ?? ''} />
-						</div>
-					</div>
-				</div>
-				<label class="label cursor-pointer justify-start gap-3 mt-4">
-					<input
-						type="checkbox"
-						class="toggle toggle-primary"
-						name="showInfoExpanded"
-						bind:checked={$formData.showInfoExpanded}
-					/>
-					<span class="label-text">{m.showInfoExpandedLabel()}</span>
-				</label>
-				<p class="text-xs opacity-50 mt-1">{m.showInfoExpandedDescription()}</p>
-			</FormFieldset>
 
 			<FormFieldset title={m.links()}>
 				<FormTextInput
