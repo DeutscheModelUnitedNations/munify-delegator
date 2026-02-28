@@ -10,6 +10,7 @@
 	import { cache, query } from '$houdini';
 	import { getAgeAtConference, ofAgeAtConference } from '$lib/services/ageChecker';
 	import { queryParam } from 'sveltekit-search-params';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
@@ -216,6 +217,14 @@
 			title: m.city(),
 			value: (row) => (row.city ? capitalizeFirstLetter(row.city) : 'N/A'),
 			sortable: true
+		},
+		{
+			key: 'userCard',
+			title: '',
+			renderValue: (row) =>
+				`<button class="btn btn-ghost btn-xs btn-square usercard-btn" data-userid="${row.id}" aria-label="Open user card"><i class="fa-duotone fa-id-card"></i></button>`,
+			parseHTML: true,
+			class: 'text-center w-10 print:hidden'
 		}
 	];
 
@@ -242,15 +251,28 @@
 	// TODO export data
 </script>
 
-<DataTable
-	{columns}
-	rows={users}
-	enableSearch={true}
-	queryParamKey="filter"
-	rowSelected={(row) => {
-		$selectedUserRow = row.id;
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+	onclick={(e) => {
+		const btn = e.target instanceof Element ? e.target.closest('.usercard-btn') : null;
+		if (btn) {
+			e.stopPropagation();
+			const userId = btn.getAttribute('data-userid');
+			if (userId) openUserCard(userId, data.conferenceId);
+		}
 	}}
-/>
+>
+	<DataTable
+		{columns}
+		rows={users}
+		enableSearch={true}
+		queryParamKey="filter"
+		rowSelected={(row) => {
+			$selectedUserRow = row.id;
+		}}
+	/>
+</div>
 
 {#if $selectedUserRow}
 	<UserDrawer
