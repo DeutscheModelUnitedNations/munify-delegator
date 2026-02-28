@@ -107,7 +107,13 @@
 		</div>
 	{:else}
 		<div class="flex flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4">
-			<h2 class="text-3xl font-bold">{displayName}</h2>
+			<div class="flex flex-wrap items-center gap-4">
+				<h2 class="text-3xl font-bold">{displayName}</h2>
+				<i class="fa-duotone fa-{genderIcon} text-base-content/50"></i>
+				{#if pronouns}
+					<span class="text-base-content/60 text-sm">({pronouns})</span>
+				{/if}
+			</div>
 
 			<button
 				class="text-base-content/40 hover:text-base-content/60 cursor-pointer self-start font-mono text-xs transition-colors"
@@ -117,18 +123,6 @@
 				{userId}
 			</button>
 
-			<div class="flex flex-wrap items-center gap-4">
-				<i class="fa-duotone fa-{genderIcon} text-base-content/50"></i>
-				{#if pronouns}
-					<span class="text-base-content/60 text-sm">({pronouns})</span>
-				{/if}
-				{#if roleIcon && roleLabel}
-					<div class="tooltip tooltip-bottom" data-tip={roleLabel}>
-						<i class="fa-duotone fa-{roleIcon} text-primary"></i>
-					</div>
-				{/if}
-			</div>
-
 			<!-- Role summary -->
 			{#if delegationMember}
 				<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
@@ -137,7 +131,10 @@
 						{m.delegationMember()}
 					</span>
 					{#if delegationMember.isHeadDelegate}
-						<span class="badge badge-accent badge-sm">{m.headDelegate()}</span>
+						<span
+							class="badge badge-accent badge-sm tooltip tooltip-bottom"
+							data-tip={m.headDelegate()}
+						></span>
 					{/if}
 					{#if delegationMember.delegation.assignedNation}
 						<span class="badge badge-ghost badge-sm gap-1">
