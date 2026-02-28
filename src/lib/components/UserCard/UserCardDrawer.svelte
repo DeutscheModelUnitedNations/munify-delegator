@@ -14,9 +14,14 @@
 	const cardState = getUserCardState();
 	const userCardParam = queryParam('userCard');
 
+	// Guard to prevent URL→State effect from re-opening during close.
+	// Setting $userCardParam uses goto() internally (async), so the param store
+	// still holds the old value when closeUserCard() synchronously updates state.
+	let closing = $state(false);
+
 	// URL -> State sync: if page loads with ?userCard=xxx, open the drawer
 	$effect(() => {
-		if ($userCardParam && !cardState.isOpen) {
+		if ($userCardParam && !cardState.isOpen && !closing) {
 			openUserCard($userCardParam, conferenceId);
 		}
 	});
@@ -25,14 +30,21 @@
 	$effect(() => {
 		if (cardState.isOpen && cardState.userId) {
 			$userCardParam = cardState.userId;
-		} else if (!cardState.isOpen && $userCardParam) {
+		} else if (!cardState.isOpen) {
 			$userCardParam = null;
+		}
+	});
+
+	// Reset closing guard once the URL param has actually been cleared
+	$effect(() => {
+		if (closing && !$userCardParam) {
+			closing = false;
 		}
 	});
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open) {
-			$userCardParam = null;
+			closing = true;
 			closeUserCard();
 		}
 	};
