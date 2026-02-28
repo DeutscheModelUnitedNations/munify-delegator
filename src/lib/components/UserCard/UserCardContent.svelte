@@ -237,9 +237,6 @@
 				{userId}
 				{conferenceId}
 				{conference}
-				{user}
-				{isDelegationMember}
-				{isSingleParticipant}
 				{isConferenceSupervisor}
 				onUpdate={refetchData}
 			/>
@@ -258,7 +255,7 @@
 		{:else if activeTab === 'papers' && isDelegationMember}
 			<PapersTab {userId} {conferenceId} />
 		{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
-			<SupervisorsTab {userId} {conferenceId} />
+			<SupervisorsTab {userId} {conferenceId} onUpdate={refetchData} />
 		{:else if activeTab === 'students' && isConferenceSupervisor}
 			<StudentsTab {userId} {conferenceId} />
 		{:else if activeTab === 'history'}
