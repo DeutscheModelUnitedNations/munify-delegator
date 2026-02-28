@@ -237,6 +237,7 @@
 				{userId}
 				{conferenceId}
 				{conference}
+				birthday={user?.birthday}
 				{isConferenceSupervisor}
 				onUpdate={refetchData}
 			/>

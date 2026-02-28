@@ -23,6 +23,7 @@
 	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
+	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -282,10 +283,7 @@
 						})}
 				/>
 			{:else}
-				<div class="flex flex-col items-center justify-center gap-2 rounded-box bg-base-100 p-4">
-					<i class="fa-duotone fa-xmark-circle text-3xl"></i>
-					<h3 class="font-bold">{m.guardianAgreementNotNeeded()}</h3>
-				</div>
+				<GuardianConsentNotNeeded />
 			{/if}
 			<StatusWidget
 				title={m.mediaAgreement()}

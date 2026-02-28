@@ -16,6 +16,8 @@
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
+	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 
 	type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
 
@@ -51,12 +53,22 @@
 			  }
 			| null
 			| undefined;
+		birthday?: Date | null;
 		isConferenceSupervisor: boolean;
 		onUpdate?: () => void;
 	}
 
-	let { status, userId, conferenceId, conference, isConferenceSupervisor, onUpdate }: Props =
-		$props();
+	let {
+		status,
+		userId,
+		conferenceId,
+		conference,
+		birthday,
+		isConferenceSupervisor,
+		onUpdate
+	}: Props = $props();
+
+	const isAdult = $derived(ofAgeAtConference(conference?.startConference, birthday));
 
 	const changeAdministrativeStatus = async (input: UpdateConferenceParticipantStatusInput) => {
 		if (!status?.id) return;
@@ -139,13 +151,17 @@
 						await changeAdministrativeStatus({ termsAndConditions: newStatus })}
 				/>
 				{#if !isConferenceSupervisor}
-					<ParticipantStatusWidget
-						title={m.guardianAgreement()}
-						faIcon="shield-halved"
-						status={(status?.guardianConsent ?? 'PENDING') as AdministrativeStatus}
-						changeStatus={async (newStatus) =>
-							await changeAdministrativeStatus({ guardianConsent: newStatus })}
-					/>
+					{#if isAdult}
+						<GuardianConsentNotNeeded />
+					{:else}
+						<ParticipantStatusWidget
+							title={m.guardianAgreement()}
+							faIcon="shield-halved"
+							status={(status?.guardianConsent ?? 'PENDING') as AdministrativeStatus}
+							changeStatus={async (newStatus) =>
+								await changeAdministrativeStatus({ guardianConsent: newStatus })}
+						/>
+					{/if}
 				{/if}
 				<ParticipantStatusWidget
 					title={m.mediaAgreement()}
