@@ -31,7 +31,7 @@
 					id: string;
 					name: string;
 					abbreviation: string;
-					faIcon: string;
+					fontAwesomeIcon?: string | null;
 				} | null;
 			};
 		} | null;
@@ -237,10 +237,10 @@
 									))}
 						>
 							<Flag
-								size="xs"
+								size="sm"
 								alpha2Code={delegationMember?.delegation.assignedNation?.alpha2Code}
 								nsa={!!delegationMember?.delegation.assignedNonStateActor}
-								icon={delegationMember?.delegation.assignedNonStateActor?.faIcon}
+								icon={delegationMember?.delegation.assignedNonStateActor?.fontAwesomeIcon}
 							/>
 						</div>
 					{:else}
@@ -259,18 +259,14 @@
 				</div>
 			{:else if singleParticipant}
 				<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
-					<span class="badge badge-primary">
-						<i class="fa-duotone fa-user mr-1"></i>
-						{m.singleParticipant()}
-					</span>
 					{#if !singleParticipant.applied}
 						<span class="badge badge-warning">{m.notApplied()}</span>
 					{/if}
 					{#if singleParticipant.assignedRole}
-						<span class="badge badge-ghost gap-1">
+						<span class="badge badge-soft gap-1">
 							{#if singleParticipant.assignedRole.fontAwesomeIcon}
 								<i
-									class="fa-duotone fa-{singleParticipant.assignedRole.fontAwesomeIcon.replace(
+									class="fa-solid fa-{singleParticipant.assignedRole.fontAwesomeIcon.replace(
 										'fa-',
 										''
 									)}"
@@ -278,23 +274,28 @@
 							{/if}
 							{singleParticipant.assignedRole.name}
 						</span>
+					{:else}
+						<span class="badge badge-primary">
+							<i class="fa-solid fa-user mr-1"></i>
+							{m.singleParticipant()}
+						</span>
 					{/if}
 				</div>
 			{:else if conferenceSupervisor}
 				<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
 					<span class="badge badge-primary">
-						<i class="fa-duotone fa-chalkboard-user mr-1"></i>
+						<i class="fa-solid fa-chalkboard-user mr-1"></i>
 						{m.supervisor()}
 					</span>
 				</div>
 			{:else if teamMember}
 				<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
 					<span class="badge badge-primary">
-						<i class="fa-duotone fa-people-group mr-1"></i>
+						<i class="fa-solid fa-people-group mr-1"></i>
 						{m.teamMember()}
 					</span>
 					{#if teamMember.role}
-						<span class="badge badge-ghost">
+						<span class="badge badge-soft">
 							{translateTeamRole(teamMember.role)}
 						</span>
 					{/if}

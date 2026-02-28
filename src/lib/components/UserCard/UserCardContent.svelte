@@ -69,6 +69,7 @@
 						id
 						name
 						abbreviation
+						fontAwesomeIcon
 					}
 				}
 			}
