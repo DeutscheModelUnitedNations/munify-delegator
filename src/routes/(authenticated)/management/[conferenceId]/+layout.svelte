@@ -40,6 +40,12 @@
 					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
+					href="/management/{data.conferenceId}/participants-new"
+					icon="fa-table"
+					title={m.allConferenceParticipants()}
+					bind:expanded={navbarExpanded}
+				/>
+				<NavMenuButton
 					href="/management/{data.conferenceId}/delegations"
 					icon="fa-users-viewfinder"
 					title={m.adminDelegations()}

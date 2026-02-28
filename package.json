@@ -43,6 +43,7 @@
 		"@sveltejs/vite-plugin-svelte": "^5.1.1",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
+		"@tanstack/table-core": "^8.21.3",
 		"@thisux/sveltednd": "^0.0.20",
 		"@tiptap/core": "^3.15.3",
 		"@tiptap/extension-bold": "^3.15.3",
