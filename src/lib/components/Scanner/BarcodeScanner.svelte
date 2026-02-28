@@ -186,13 +186,9 @@
 		scannedCode = null;
 		if ($useCamera) {
 			startVideo();
-		} else {
-			setTimeout(() => {
-				if (manualInputElem) {
-					manualInputElem.value = '';
-					manualInputElem.focus();
-				}
-			}, 300);
+		} else if (manualInputElem) {
+			manualInputElem.value = '';
+			manualInputElem.focus();
 		}
 	}
 </script>
@@ -237,8 +233,8 @@
 				class="input w-full input-lg join-item"
 				onkeydown={(e) => {
 					if (e.key === 'Enter') {
+						e.preventDefault();
 						scannedCode = manualInputElem?.value?.trim() || null;
-						manualInputElem?.blur();
 					}
 				}}
 			/>

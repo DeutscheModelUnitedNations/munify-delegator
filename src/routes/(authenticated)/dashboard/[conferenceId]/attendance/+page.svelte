@@ -16,7 +16,7 @@
 		userId: string;
 		timestamp: string;
 		status: 'pending' | 'processing' | 'success' | 'error';
-		errorKind?: 'network' | 'user_not_found' | 'unknown';
+		errorKind?: 'network' | 'user_not_found' | 'duplicate' | 'unknown';
 		errorMessage?: string;
 		retryCount: number;
 	}
@@ -148,12 +148,6 @@
 			const userId = code.trim();
 			if (!userId) return;
 
-			// Duplicate check — warn but don't block
-			const existingInQueue = queue.find((e) => e.userId === userId && e.status !== 'error');
-			if (existingInQueue) {
-				toast.warning(m.duplicateScan());
-			}
-
 			const now = new Date().toISOString();
 
 			const entry: QueueEntry = {
@@ -194,6 +188,20 @@
 
 				pendingEntry.status = 'processing';
 				queue = [...queue];
+
+				// Duplicate check against full session history
+				const session = get(sessionStore);
+				const alreadySynced = session?.entries.some(
+					(e) => e.userId === pendingEntry.userId && e.synced
+				);
+				if (alreadySynced) {
+					pendingEntry.status = 'error';
+					pendingEntry.errorKind = 'duplicate';
+					pendingEntry.errorMessage = m.duplicateScan();
+					queue = [...queue];
+					toast.warning(m.duplicateScan());
+					continue;
+				}
 
 				try {
 					await createAttendanceEntryMutation.mutate({
@@ -395,6 +403,8 @@
 								<i class="fa-duotone fa-clock"></i>
 							{:else if entry.status === 'error' && entry.errorKind === 'network'}
 								<i class="fa-duotone fa-arrow-rotate-right"></i>
+							{:else if entry.status === 'error' && entry.errorKind === 'duplicate'}
+								<i class="fa-duotone fa-clone"></i>
 							{:else}
 								<i class="fa-duotone fa-xmark"></i>
 							{/if}
@@ -410,6 +420,8 @@
 							<!-- Error info / retry count -->
 							{#if entry.status === 'error' && entry.errorKind === 'network'}
 								<span class="text-xs">({entry.retryCount})</span>
+							{:else if entry.status === 'error' && entry.errorKind === 'duplicate'}
+								<span class="text-xs">{m.duplicateScan()}</span>
 							{/if}
 
 							<!-- Dismiss button for non-network errors -->
