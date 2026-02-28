@@ -18,7 +18,7 @@
 		</a>
 		<h1 class="text-xl font-bold">{m.adminUserCard()}</h1>
 	</div>
-	<div class="bg-base-100 min-h-0 flex-1 overflow-hidden rounded-lg shadow-lg">
+	<div class="bg-base-100 min-h-0 flex-1">
 		<UserCardContent userId={data.userId} conferenceId={data.conferenceId} mode="page" />
 	</div>
 </div>

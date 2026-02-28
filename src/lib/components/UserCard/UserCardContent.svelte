@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
+	import { closeUserCard } from './userCardState.svelte';
 	import UserCardHeader from './UserCardHeader.svelte';
 	import UserCardTabs from './UserCardTabs.svelte';
 	import type { UserCardTab } from './UserCardTabs.svelte';
@@ -201,6 +202,10 @@
 		{teamMember}
 		loading={$mainQuery.fetching}
 		{mode}
+		onDelete={() => {
+			closeUserCard();
+			refetchData();
+		}}
 	/>
 
 	<UserCardTabs

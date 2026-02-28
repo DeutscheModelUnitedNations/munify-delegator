@@ -11,9 +11,10 @@
 		placeholder?: string;
 		form: SuperForm<A, B>;
 		options: { value: string; label: string }[];
+		disabled?: boolean;
 	}
 
-	let { form, label, description, name, placeholder, options }: Props = $props();
+	let { form, label, description, name, placeholder, options, disabled = false }: Props = $props();
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let errors = $derived($formErrors[name]);
 	let constraints = $derived($formConstraints[name]);
@@ -29,6 +30,7 @@
 		id={name}
 		bind:value={$formData[name]}
 		aria-invalid={errors ? 'true' : undefined}
+		{disabled}
 		{...constraints}
 	>
 		<option disabled selected={!$formData[name]} value={null}>{placeholder}</option>

@@ -12,7 +12,6 @@
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
 	import AccessCardSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AccessCardSection.svelte';
 	import AttendanceSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AttendanceSection.svelte';
-	import ImpersonationButton from '../../../../routes/(authenticated)/management/[conferenceId]/participants/ImpersonationButton.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { toast } from 'svelte-sonner';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
@@ -90,27 +89,6 @@
 		cache.markStale();
 		await invalidateAll();
 		onUpdate?.();
-	};
-
-	const deleteParticipantMutation = graphql(`
-		mutation UserCardDeleteParticipant($conferenceId: ID!, $userId: ID!) {
-			unregisterParticipant(conferenceId: $conferenceId, userId: $userId) {
-				id
-			}
-		}
-	`);
-
-	const deleteParticipant = async () => {
-		const c = confirm(m.deleteParticipantConfirm());
-		if (!c) return;
-		try {
-			await deleteParticipantMutation.mutate({ conferenceId, userId });
-			cache.markStale();
-			await invalidateAll();
-			onUpdate?.();
-		} catch {
-			toast.error(m.httpGenericError());
-		}
 	};
 
 	const supervisorListQuery = graphql(`
@@ -298,50 +276,7 @@
 				<i class="fa-duotone fa-certificate"></i>
 				{m.certificate()}
 			</button>
-
-			<ImpersonationButton {userId} />
-
-			{#if user}
-				{@const badgeUrl = `/api/badge?conferenceId=${conferenceId}&userId=${userId}`}
-				<a
-					href={badgeUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="btn btn-sm"
-					onclick={async (e) => {
-						e.preventDefault();
-						try {
-							const response = await fetch(badgeUrl);
-							if (!response.ok) {
-								toast.error(m.genericToastError());
-								return;
-							}
-							const blob = await response.blob();
-							const url = URL.createObjectURL(blob);
-							const a = document.createElement('a');
-							a.href = url;
-							a.download = `badge-${formatNames(user?.given_name, user?.family_name)}.pdf`;
-							a.click();
-							URL.revokeObjectURL(url);
-						} catch {
-							toast.error(m.genericToastError());
-						}
-					}}
-				>
-					<i class="fa-duotone fa-id-badge"></i>
-					{m.generateBadge()}
-				</a>
-			{/if}
 		</div>
-	</div>
-
-	<div class="divider"></div>
-
-	<div class="flex flex-col gap-2">
-		<h3 class="text-lg font-bold">{m.dangerZone()}</h3>
-		<button class="btn btn-error btn-sm self-start" onclick={deleteParticipant}>
-			{m.deleteParticipant()}
-		</button>
 	</div>
 </div>
 

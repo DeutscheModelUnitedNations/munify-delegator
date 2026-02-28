@@ -32,6 +32,7 @@
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open) {
+			$userCardParam = null;
 			closeUserCard();
 		}
 	};
@@ -41,7 +42,7 @@
 	<Drawer.Portal>
 		<Drawer.Overlay class="fixed inset-0 z-40 bg-black/40" />
 		<Drawer.Content
-			class="bg-base-100 fixed inset-x-0 bottom-0 z-50 flex h-[90vh] flex-col rounded-t-2xl shadow-2xl"
+			class="bg-base-100 fixed inset-x-0 max-w-7xl mx-auto bottom-0 z-50 flex h-[90vh] flex-col rounded-t-2xl shadow-2xl"
 		>
 			<div class="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-base-300"></div>
 			<Drawer.Close
