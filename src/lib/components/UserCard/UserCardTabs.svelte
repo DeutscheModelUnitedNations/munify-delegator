@@ -68,8 +68,8 @@
 	]);
 </script>
 
-<div class="overflow-x-auto border-b border-base-300" data-vaul-no-drag>
-	<div role="tablist" class="tabs tabs-bordered tabs-sm flex-nowrap">
+<div class="overflow-x-auto px-5 md:px-10 lg:px-16" data-vaul-no-drag>
+	<div role="tablist" class="tabs tabs-border flex-nowrap">
 		{#each tabs.filter((t) => t.condition) as tab (tab.id)}
 			<button
 				role="tab"

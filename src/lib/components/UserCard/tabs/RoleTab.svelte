@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { translateTeamRole } from '$lib/services/enumTranslations';
 
 	interface Props {
 		delegationMember?: {
@@ -153,7 +154,7 @@
 			</div>
 			<div class="mt-2 text-sm">
 				<span class="text-base-content/60">{m.adminUserCardRole()}:</span>
-				{teamMember.role ?? 'N/A'}
+				{teamMember.role ? translateTeamRole(teamMember.role) : 'N/A'}
 			</div>
 		</div>
 	{/if}

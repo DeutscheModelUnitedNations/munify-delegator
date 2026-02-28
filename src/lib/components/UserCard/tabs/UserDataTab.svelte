@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { translateGender } from '$lib/services/enumTranslations';
 	import Grid from '$lib/components/InfoGrid/Grid.svelte';
 	import Entry from '$lib/components/InfoGrid/Entry.svelte';
 	import GlobalNotes from '../../../../routes/(authenticated)/management/[conferenceId]/participants/GlobalNotes.svelte';
@@ -100,7 +101,9 @@
 				{/if}
 			</Entry>
 			<Entry title={m.genderAndPronouns()} fontAwesomeIcon={genderIcon}>
-				{user.gender ?? 'N/A'}{user.pronouns ? ` (${user.pronouns})` : ''}
+				{user.gender ? translateGender(user.gender) : 'N/A'}{user.pronouns
+					? ` (${user.pronouns})`
+					: ''}
 			</Entry>
 			<Entry title={m.birthday()} fontAwesomeIcon="birthday-cake">
 				{user.birthday ? new Date(user.birthday).toLocaleDateString() : 'N/A'}
@@ -114,8 +117,7 @@
 			</Entry>
 		</Grid>
 
-		<div class="divider"></div>
-		<div class="flex flex-col gap-2">
+		<div class="flex flex-col gap-2 mt-8">
 			<h3 class="text-lg font-bold">{m.globalNotes()}</h3>
 			<p class="text-base-content/60 text-sm">{m.globalNotesDescription()}</p>
 			<div class="bg-base-200 min-h-12 rounded-lg p-3 whitespace-pre-wrap">

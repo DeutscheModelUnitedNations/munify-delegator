@@ -2,6 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { graphql } from '$houdini';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 
 	interface Props {
 		userId: string;
@@ -88,8 +89,10 @@
 			<div class="bg-base-200 rounded-lg p-4">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">
-						<span class="badge {statusBadge(paper.status)}">{paper.status}</span>
-						<span class="font-bold">{paper.type}</span>
+						<span class="badge {statusBadge(paper.status)}"
+							>{translatePaperStatus(paper.status)}</span
+						>
+						<span class="font-bold">{translatePaperType(paper.type)}</span>
 						{#if paper.agendaItem}
 							<span class="text-base-content/60 text-sm">
 								— {paper.agendaItem.committee?.abbreviation}: {paper.agendaItem.title}

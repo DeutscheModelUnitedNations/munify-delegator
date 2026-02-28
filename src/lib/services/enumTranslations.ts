@@ -48,6 +48,21 @@ export function translateCalendarEntryColor(color: CalendarEntryColor$options) {
 	}
 }
 
+export function translateGender(gender: string) {
+	switch (gender) {
+		case 'MALE':
+			return m.male();
+		case 'FEMALE':
+			return m.female();
+		case 'DIVERSE':
+			return m.diverse();
+		case 'NO_STATEMENT':
+			return m.noStatement();
+		default:
+			return gender;
+	}
+}
+
 export function translateTeamRole(role: string) {
 	switch (role) {
 		case 'PROJECT_MANAGEMENT':

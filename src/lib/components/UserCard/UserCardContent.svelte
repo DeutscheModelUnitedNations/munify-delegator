@@ -183,22 +183,6 @@
 	const isConferenceSupervisor = $derived(!!conferenceSupervisor);
 	const isTeamMember = $derived(!!teamMember);
 
-	const roleIcon = $derived.by(() => {
-		if (isDelegationMember) return 'users-viewfinder';
-		if (isSingleParticipant) return 'user';
-		if (isConferenceSupervisor) return 'chalkboard-user';
-		if (isTeamMember) return 'people-group';
-		return undefined;
-	});
-
-	const roleLabel = $derived.by(() => {
-		if (isDelegationMember) return m.delegationMember();
-		if (isSingleParticipant) return m.singleParticipant();
-		if (isConferenceSupervisor) return m.supervisor();
-		if (isTeamMember) return m.teamMember();
-		return undefined;
-	});
-
 	const refetchData = () => {
 		mainQuery.fetch({ variables: { userId, conferenceId } });
 	};
@@ -211,8 +195,11 @@
 		givenName={user?.given_name}
 		familyName={user?.family_name}
 		pronouns={user?.pronouns}
-		{roleIcon}
-		{roleLabel}
+		gender={user?.gender}
+		{delegationMember}
+		{singleParticipant}
+		{conferenceSupervisor}
+		{teamMember}
 		loading={$mainQuery.fetching}
 		{mode}
 		{onClose}
@@ -227,7 +214,7 @@
 		showStudents={isConferenceSupervisor}
 	/>
 
-	<div class="flex-1 overflow-y-auto p-5" data-vaul-no-drag>
+	<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
 		{#if $mainQuery.fetching}
 			<div class="flex flex-col gap-3">
 				<div class="skeleton h-24 w-full"></div>
