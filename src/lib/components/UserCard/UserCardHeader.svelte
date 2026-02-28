@@ -3,6 +3,8 @@
 	import { toast } from 'svelte-sonner';
 	import formatNames from '$lib/services/formatNames';
 	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import Flag from '../Flag.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 
 	interface Props {
 		userId: string;
@@ -13,7 +15,6 @@
 		gender?: string | null;
 		loading?: boolean;
 		mode: 'drawer' | 'page';
-		onClose?: () => void;
 		delegationMember?: {
 			id: string;
 			isHeadDelegate: boolean;
@@ -22,7 +23,12 @@
 				id: string;
 				school?: string | null;
 				assignedNation?: { alpha2Code: string; alpha3Code: string } | null;
-				assignedNonStateActor?: { id: string; name: string; abbreviation: string } | null;
+				assignedNonStateActor?: {
+					id: string;
+					name: string;
+					abbreviation: string;
+					faIcon: string;
+				} | null;
 			};
 		} | null;
 		singleParticipant?: {
@@ -48,7 +54,6 @@
 		gender,
 		loading = false,
 		mode,
-		onClose,
 		delegationMember,
 		singleParticipant,
 		conferenceSupervisor,
@@ -113,6 +118,18 @@
 				{#if pronouns}
 					<span class="text-base-content/60 text-sm">({pronouns})</span>
 				{/if}
+
+				{#if mode === 'drawer'}
+					<a
+						href={fullPageUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-ghost btn-sm btn-square"
+						title={m.userCardOpenFullPage()}
+					>
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				{/if}
 			</div>
 
 			<button
@@ -126,37 +143,36 @@
 			<!-- Role summary -->
 			{#if delegationMember}
 				<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
-					<span class="badge badge-primary badge-sm">
-						<i class="fa-duotone fa-users-viewfinder mr-1"></i>
-						{m.delegationMember()}
-					</span>
-					{#if delegationMember.isHeadDelegate}
-						<span
-							class="badge badge-accent badge-sm tooltip tooltip-bottom"
-							data-tip={m.headDelegate()}
-						></span>
-					{/if}
-					{#if delegationMember.delegation.assignedNation}
-						<span class="badge badge-ghost badge-sm gap-1">
-							<span
-								class="fi fi-{delegationMember.delegation.assignedNation.alpha2Code.toLowerCase()}"
-							></span>
-							{delegationMember.delegation.assignedNation.alpha3Code}
-						</span>
-					{:else if delegationMember.delegation.assignedNonStateActor}
-						<span class="badge badge-ghost badge-sm">
-							{delegationMember.delegation.assignedNonStateActor.abbreviation}
-						</span>
-					{/if}
+					<div
+						class="tooltip tooltip-bottom"
+						data-tip={delegationMember.delegation.assignedNonStateActor?.name ??
+							(delegationMember.delegation.assignedNation &&
+								getFullTranslatedCountryNameFromISO3Code(
+									delegationMember.delegation.assignedNation.alpha3Code
+								)) ??
+							m.noAssignment()}
+					>
+						<Flag
+							size="xs"
+							alpha2Code={delegationMember?.delegation.assignedNation?.alpha2Code}
+							nsa={!!delegationMember?.delegation.assignedNonStateActor}
+							icon={delegationMember?.delegation.assignedNonStateActor?.faIcon}
+						/>
+					</div>
 					{#if delegationMember.assignedCommittee}
-						<span class="badge badge-ghost badge-sm">
+						<span class="badge badge-soft">
 							{delegationMember.assignedCommittee.abbreviation}
 						</span>
+					{/if}
+					{#if delegationMember.isHeadDelegate}
+						<span class="badge badge-accent tooltip tooltip-bottom" data-tip={m.headDelegate()}
+							><i class="fa-solid fa-medal"></i></span
+						>
 					{/if}
 				</div>
 			{:else if singleParticipant}
 				<div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
-					<span class="badge badge-primary badge-sm">
+					<span class="badge badge-primary">
 						<i class="fa-duotone fa-user mr-1"></i>
 						{m.singleParticipant()}
 					</span>
@@ -164,7 +180,7 @@
 						<span class="badge badge-warning badge-sm">{m.notApplied()}</span>
 					{/if}
 					{#if singleParticipant.assignedRole}
-						<span class="badge badge-ghost badge-sm gap-1">
+						<span class="badge badge-ghost gap-1">
 							{#if singleParticipant.assignedRole.fontAwesomeIcon}
 								<i
 									class="fa-duotone fa-{singleParticipant.assignedRole.fontAwesomeIcon.replace(
@@ -198,21 +214,5 @@
 				</div>
 			{/if}
 		</div>
-		{#if mode === 'drawer'}
-			<a
-				href={fullPageUrl}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="btn btn-ghost btn-sm btn-square"
-				title={m.userCardOpenFullPage()}
-			>
-				<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-			</a>
-		{/if}
-	{/if}
-	{#if mode === 'drawer' && onClose}
-		<button class="btn btn-ghost btn-sm btn-square" onclick={onClose} aria-label="Close">
-			<i class="fa-solid fa-xmark"></i>
-		</button>
 	{/if}
 </div>

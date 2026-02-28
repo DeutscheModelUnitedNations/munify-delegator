@@ -44,13 +44,18 @@
 			class="bg-base-100 fixed inset-x-0 bottom-0 z-50 flex h-[90vh] flex-col rounded-t-2xl shadow-2xl"
 		>
 			<div class="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-base-300"></div>
+			<Drawer.Close
+				class="btn btn-soft btn-sm btn-square absolute top-4 right-4 z-10"
+				aria-label="Close"
+			>
+				<i class="fa-solid fa-xmark"></i>
+			</Drawer.Close>
 			<Drawer.Title class="sr-only">{m.adminUserCard()}</Drawer.Title>
 			{#if cardState.userId && cardState.conferenceId}
 				<UserCardContent
 					userId={cardState.userId}
 					conferenceId={cardState.conferenceId}
 					mode="drawer"
-					onClose={() => closeUserCard()}
 				/>
 			{/if}
 		</Drawer.Content>

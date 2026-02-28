@@ -18,10 +18,9 @@
 		userId: string;
 		conferenceId: string;
 		mode: 'drawer' | 'page';
-		onClose?: () => void;
 	}
 
-	let { userId, conferenceId, mode, onClose }: Props = $props();
+	let { userId, conferenceId, mode }: Props = $props();
 
 	let activeTab = $state<UserCardTab>('userData');
 
@@ -202,7 +201,6 @@
 		{teamMember}
 		loading={$mainQuery.fetching}
 		{mode}
-		{onClose}
 	/>
 
 	<UserCardTabs
