@@ -253,7 +253,7 @@
 		{:else if activeTab === 'role' && (isSingleParticipant || isTeamMember)}
 			<RoleTab {singleParticipant} {teamMember} />
 		{:else if activeTab === 'delegation' && delegationMember}
-			<DelegationTab delegationId={delegationMember.delegation.id} {conferenceId} />
+			<DelegationTab delegationId={delegationMember.delegation.id} {conferenceId} {userId} />
 		{:else if activeTab === 'papers' && isDelegationMember}
 			<PapersTab {userId} {conferenceId} />
 		{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
