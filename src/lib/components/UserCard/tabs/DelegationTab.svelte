@@ -15,9 +15,10 @@
 		delegationId: string;
 		conferenceId: string;
 		userId: string;
+		conferenceState?: string | null;
 	}
 
-	let { delegationId, conferenceId, userId }: Props = $props();
+	let { delegationId, conferenceId, userId, conferenceState }: Props = $props();
 
 	const delegationQuery = graphql(`
 		query UserCardDelegationQuery($delegationId: String!) {
@@ -270,23 +271,25 @@
 				<i class="fa-duotone fa-medal"></i>
 				{m.headDelegate()}
 			</button>
-			<button
-				class="btn btn-error btn-sm {!delegation.applied && 'btn-disabled'}"
-				onclick={async () => {
-					if (!confirm(m.confirmRevokeApplication())) return;
-					const promise = delegaitonResetMutation.mutate({
-						delegationId,
-						applied: false
-					});
-					toast.promise(promise, genericPromiseToastMessages);
-					await promise;
-					cache.markStale();
-					await invalidateAll();
-				}}
-			>
-				<i class="fa-solid fa-file-slash"></i>
-				{m.revokeApplication()}
-			</button>
+			{#if conferenceState === 'PARTICIPANT_REGISTRATION'}
+				<button
+					class="btn btn-error btn-sm {!delegation.applied && 'btn-disabled'}"
+					onclick={async () => {
+						if (!confirm(m.confirmRevokeApplication())) return;
+						const promise = delegaitonResetMutation.mutate({
+							delegationId,
+							applied: false
+						});
+						toast.promise(promise, genericPromiseToastMessages);
+						await promise;
+						cache.markStale();
+						await invalidateAll();
+					}}
+				>
+					<i class="fa-solid fa-file-slash"></i>
+					{m.revokeApplication()}
+				</button>
+			{/if}
 		</div>
 	</div>
 

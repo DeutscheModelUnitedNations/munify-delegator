@@ -158,6 +158,7 @@
 			}
 			findUniqueConference(where: { id: $conferenceId }) {
 				id
+				state
 				startConference
 				endConference
 				title
@@ -251,9 +252,14 @@
 				onUpdate={refetchData}
 			/>
 		{:else if activeTab === 'role' && (isSingleParticipant || isTeamMember)}
-			<RoleTab {singleParticipant} {teamMember} />
+			<RoleTab {singleParticipant} {teamMember} conferenceState={conference?.state} />
 		{:else if activeTab === 'delegation' && delegationMember}
-			<DelegationTab delegationId={delegationMember.delegation.id} {conferenceId} {userId} />
+			<DelegationTab
+				delegationId={delegationMember.delegation.id}
+				{conferenceId}
+				{userId}
+				conferenceState={conference?.state}
+			/>
 		{:else if activeTab === 'papers' && isDelegationMember}
 			<PapersTab {userId} {conferenceId} />
 		{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
