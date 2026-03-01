@@ -6,6 +6,7 @@
 	import formatNames from '$lib/services/formatNames';
 	import Modal from '$lib/components/Modal.svelte';
 	import { toast } from 'svelte-sonner';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	interface Props {
 		userId: string;
@@ -58,7 +59,7 @@
 		const dmSupervisors = $supervisorsQuery.data?.findManyDelegationMembers?.[0]?.supervisors ?? [];
 		const spSupervisors =
 			$supervisorsQuery.data?.findManySingleParticipants?.[0]?.supervisors ?? [];
-		const map = new Map<
+		const map = new SvelteMap<
 			string,
 			{
 				id: string;
