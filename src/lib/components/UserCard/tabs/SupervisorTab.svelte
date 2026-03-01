@@ -3,13 +3,24 @@
 	import { graphql } from '$houdini';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/services/formatNames';
+	import { toast } from 'svelte-sonner';
 
 	interface Props {
 		userId: string;
 		conferenceId: string;
+		conferenceSupervisor: {
+			id: string;
+			plansOwnAttendenceAtConference: boolean;
+			connectionCode: string;
+		};
 	}
 
-	let { userId, conferenceId }: Props = $props();
+	let { userId, conferenceId, conferenceSupervisor }: Props = $props();
+
+	const copyConnectionCode = async () => {
+		await navigator.clipboard.writeText(conferenceSupervisor.connectionCode);
+		toast.success(m.codeCopied());
+	};
 
 	const studentsQuery = graphql(`
 		query UserCardStudentsQuery($conferenceId: String!, $userId: String!) {
@@ -60,18 +71,46 @@
 	const singleParticipants = $derived(supervisor?.supervisedSingleParticipants ?? []);
 </script>
 
-{#if $studentsQuery.fetching}
-	<div class="flex flex-col gap-3">
-		<div class="skeleton h-24 w-full"></div>
-		<div class="skeleton h-24 w-full"></div>
+<div class="flex flex-col gap-6">
+	<!-- Supervisor info -->
+	<div class="bg-base-200 rounded-lg p-4">
+		<h3 class="mb-2 font-bold">{m.supervisor()}</h3>
+		<div class="flex flex-col gap-1 text-sm">
+			<div class="flex items-center gap-1">
+				<span class="text-base-content/60">{m.connectionCode()}:</span>
+				<button
+					class="group cursor-pointer font-mono transition-colors"
+					onclick={copyConnectionCode}
+					title={m.copy()}
+				>
+					<code class="bg-base-300 rounded px-1 group-hover:bg-base-content/20"
+						>{conferenceSupervisor.connectionCode}</code
+					>
+				</button>
+			</div>
+			<div>
+				<span class="text-base-content/60">{m.attendancePlan()}:</span>
+				{#if conferenceSupervisor.plansOwnAttendenceAtConference}
+					<i class="fas fa-check text-success"></i>
+				{:else}
+					<i class="fas fa-xmark text-error"></i>
+				{/if}
+			</div>
+		</div>
 	</div>
-{:else if delegationMembers.length === 0 && singleParticipants.length === 0}
-	<div class="alert alert-info">
-		<i class="fa-duotone fa-graduation-cap"></i>
-		<span>{m.userCardNoStudents()}</span>
-	</div>
-{:else}
-	<div class="flex flex-col gap-4">
+
+	<!-- Students list -->
+	{#if $studentsQuery.fetching}
+		<div class="flex flex-col gap-3">
+			<div class="skeleton h-24 w-full"></div>
+			<div class="skeleton h-24 w-full"></div>
+		</div>
+	{:else if delegationMembers.length === 0 && singleParticipants.length === 0}
+		<div class="alert alert-info">
+			<i class="fa-duotone fa-graduation-cap"></i>
+			<span>{m.userCardNoStudents()}</span>
+		</div>
+	{:else}
 		{#if delegationMembers.length > 0}
 			<div>
 				<h3 class="mb-2 text-lg font-bold">
@@ -162,5 +201,5 @@
 				</div>
 			</div>
 		{/if}
-	</div>
-{/if}
+	{/if}
+</div>

@@ -12,7 +12,7 @@
 	import DelegationTab from './tabs/DelegationTab.svelte';
 	import PapersTab from './tabs/PapersTab.svelte';
 	import SupervisorsTab from './tabs/SupervisorsTab.svelte';
-	import StudentsTab from './tabs/StudentsTab.svelte';
+	import SupervisorTab from './tabs/SupervisorTab.svelte';
 	import HistoryTab from './tabs/HistoryTab.svelte';
 
 	interface Props {
@@ -212,10 +212,11 @@
 	<UserCardTabs
 		{activeTab}
 		onTabChange={(tab) => (activeTab = tab)}
+		showRole={isSingleParticipant || isTeamMember}
 		showDelegation={isDelegationMember}
 		showPapers={isDelegationMember}
 		showSupervisors={isDelegationMember || isSingleParticipant}
-		showStudents={isConferenceSupervisor}
+		showSupervisor={isConferenceSupervisor}
 	/>
 
 	<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
@@ -249,16 +250,16 @@
 				{userId}
 				onUpdate={refetchData}
 			/>
-		{:else if activeTab === 'role'}
-			<RoleTab {delegationMember} {singleParticipant} {conferenceSupervisor} {teamMember} />
+		{:else if activeTab === 'role' && (isSingleParticipant || isTeamMember)}
+			<RoleTab {singleParticipant} {teamMember} />
 		{:else if activeTab === 'delegation' && delegationMember}
 			<DelegationTab delegationId={delegationMember.delegation.id} {conferenceId} />
 		{:else if activeTab === 'papers' && isDelegationMember}
 			<PapersTab {userId} {conferenceId} />
 		{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
 			<SupervisorsTab {userId} {conferenceId} onUpdate={refetchData} />
-		{:else if activeTab === 'students' && isConferenceSupervisor}
-			<StudentsTab {userId} {conferenceId} />
+		{:else if activeTab === 'supervisor' && conferenceSupervisor}
+			<SupervisorTab {userId} {conferenceId} {conferenceSupervisor} />
 		{:else if activeTab === 'history'}
 			<HistoryTab {userId} {conferenceId} />
 		{/if}

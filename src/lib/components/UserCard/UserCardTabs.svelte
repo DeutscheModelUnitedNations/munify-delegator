@@ -9,32 +9,34 @@
 		| 'delegation'
 		| 'papers'
 		| 'supervisors'
-		| 'students'
+		| 'supervisor'
 		| 'history';
 
 	interface Props {
 		activeTab: UserCardTab;
 		onTabChange: (tab: UserCardTab) => void;
+		showRole?: boolean;
 		showDelegation?: boolean;
 		showPapers?: boolean;
 		showSupervisors?: boolean;
-		showStudents?: boolean;
+		showSupervisor?: boolean;
 	}
 
 	let {
 		activeTab,
 		onTabChange,
+		showRole = false,
 		showDelegation = false,
 		showPapers = false,
 		showSupervisors = false,
-		showStudents = false
+		showSupervisor = false
 	}: Props = $props();
 
 	const tabs: { id: UserCardTab; icon: string; label: string; condition: boolean }[] = $derived([
 		{ id: 'userData', icon: 'fa-user', label: m.adminUserCardDetails(), condition: true },
 		{ id: 'status', icon: 'fa-clipboard-check', label: m.adminUserCardStatus(), condition: true },
 		{ id: 'surveys', icon: 'fa-chart-pie', label: m.survey(), condition: true },
-		{ id: 'role', icon: 'fa-id-badge', label: m.adminUserCardRole(), condition: true },
+		{ id: 'role', icon: 'fa-id-badge', label: m.adminUserCardRole(), condition: showRole },
 		{
 			id: 'delegation',
 			icon: 'fa-users-viewfinder',
@@ -54,10 +56,10 @@
 			condition: showSupervisors
 		},
 		{
-			id: 'students',
-			icon: 'fa-graduation-cap',
-			label: m.userCardTabStudents(),
-			condition: showStudents
+			id: 'supervisor',
+			icon: 'fa-chalkboard-user',
+			label: m.supervisor(),
+			condition: showSupervisor
 		},
 		{
 			id: 'history',
