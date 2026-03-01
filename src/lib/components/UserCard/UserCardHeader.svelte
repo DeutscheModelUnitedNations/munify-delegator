@@ -157,9 +157,28 @@
 
 <div class="flex items-center gap-3 px-5 pt-3 pb-2 md:px-10 lg:px-16">
 	{#if loading}
-		<div class="flex flex-1 flex-col gap-1">
-			<div class="skeleton h-7 w-48"></div>
-			<div class="skeleton h-4 w-32"></div>
+		<div class="flex flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4">
+			<!-- Name row + action buttons -->
+			<div class="flex flex-wrap items-center gap-4">
+				<div class="skeleton h-9 w-64"></div>
+				<div class="skeleton h-4 w-4 rounded-full"></div>
+				<div class="skeleton h-3 w-14 rounded-full"></div>
+				<div class="ml-auto flex items-center gap-1">
+					<div class="skeleton h-8 w-8 rounded-lg"></div>
+					<div class="skeleton h-8 w-8 rounded-lg"></div>
+					<div class="skeleton h-8 w-8 rounded-lg"></div>
+					{#if mode === 'drawer'}
+						<div class="skeleton h-8 w-8 rounded-lg"></div>
+					{/if}
+				</div>
+			</div>
+			<!-- User ID -->
+			<div class="skeleton mt-1 h-3 w-44 rounded-full"></div>
+			<!-- Role summary row -->
+			<div class="mt-2 flex items-center gap-2">
+				<div class="skeleton h-8 w-12 rounded"></div>
+				<div class="skeleton h-5 w-8 rounded-full"></div>
+			</div>
 		</div>
 	{:else}
 		<div class="flex flex-1 flex-col gap-0.5 border border-base-300 bg-base-200 rounded-box p-4">
