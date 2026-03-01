@@ -860,6 +860,7 @@
 	"noOpenSurveys": "Keine offenen Umfragen",
 	"noOptionsYet": "Es wurden noch keine Optionen hinzugefügt",
 	"noPapersSubmittedYet": "Es wurden noch keine Papiere eingereicht",
+	"noParticipantStatusYet": "Kein Teilnahmestatus-Eintrag gefunden. Das ist normal, wenn der/die Teilnehmer*in noch keine Aktionen durchgeführt hat. Der Status wird beim ersten Update automatisch erstellt.",
 	"noPaymentFound": "Keine Überweisung mit dieser Referenz gefunden",
 	"noPreferencesSet": "Es wurde noch keine Präferenz festgelegt.",
 	"noResults": "Keine Ergebnisse",

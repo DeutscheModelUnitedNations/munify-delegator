@@ -71,9 +71,8 @@
 	const isAdult = $derived(ofAgeAtConference(conference?.startConference, birthday));
 
 	const changeAdministrativeStatus = async (input: UpdateConferenceParticipantStatusInput) => {
-		if (!status?.id) return;
 		const promise = changeParticipantStatus.mutate({
-			where: { id: status.id, conferenceId, userId },
+			where: { id: status?.id, conferenceId, userId },
 			data: input
 		});
 		toast.promise(promise, {
@@ -123,69 +122,73 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	{#if status}
-		<div class="flex flex-col gap-3">
-			<h3 class="text-lg font-bold">{m.adminUserCardStatus()}</h3>
-			<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-				<ParticipantStatusWidget
-					title={m.payment()}
-					faIcon="money-bill"
-					status={(status?.paymentStatus ?? 'PENDING') as AdministrativeStatus}
-					changeStatus={async (newStatus) =>
-						await changeAdministrativeStatus({ paymentStatus: newStatus })}
-				/>
-				<ParticipantAssignedDocumentWidget
-					assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
-					onSave={async (number?: number) =>
-						await changeAdministrativeStatus({
-							assignedDocumentNumber: number,
-							assignNextDocumentNumber: !number
-						})}
-					disabledShortcut
-				/>
-				<ParticipantStatusWidget
-					title={m.userAgreement()}
-					faIcon="file-signature"
-					status={(status?.termsAndConditions ?? 'PENDING') as AdministrativeStatus}
-					changeStatus={async (newStatus) =>
-						await changeAdministrativeStatus({ termsAndConditions: newStatus })}
-				/>
-				{#if !isConferenceSupervisor}
-					{#if isAdult}
-						<GuardianConsentNotNeeded />
-					{:else}
-						<ParticipantStatusWidget
-							title={m.guardianAgreement()}
-							faIcon="shield-halved"
-							status={(status?.guardianConsent ?? 'PENDING') as AdministrativeStatus}
-							changeStatus={async (newStatus) =>
-								await changeAdministrativeStatus({ guardianConsent: newStatus })}
-						/>
-					{/if}
+	<div class="flex flex-col gap-3">
+		<h3 class="text-lg font-bold">{m.adminUserCardStatus()}</h3>
+		<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+			<ParticipantStatusWidget
+				title={m.payment()}
+				faIcon="money-bill"
+				status={(status?.paymentStatus ?? 'PENDING') as AdministrativeStatus}
+				changeStatus={async (newStatus) =>
+					await changeAdministrativeStatus({ paymentStatus: newStatus })}
+			/>
+			<ParticipantAssignedDocumentWidget
+				assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
+				onSave={async (number?: number) =>
+					await changeAdministrativeStatus({
+						assignedDocumentNumber: number,
+						assignNextDocumentNumber: !number
+					})}
+				disabledShortcut
+			/>
+			<ParticipantStatusWidget
+				title={m.userAgreement()}
+				faIcon="file-signature"
+				status={(status?.termsAndConditions ?? 'PENDING') as AdministrativeStatus}
+				changeStatus={async (newStatus) =>
+					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
+			/>
+			{#if !isConferenceSupervisor}
+				{#if isAdult}
+					<GuardianConsentNotNeeded />
+				{:else}
+					<ParticipantStatusWidget
+						title={m.guardianAgreement()}
+						faIcon="shield-halved"
+						status={(status?.guardianConsent ?? 'PENDING') as AdministrativeStatus}
+						changeStatus={async (newStatus) =>
+							await changeAdministrativeStatus({ guardianConsent: newStatus })}
+					/>
 				{/if}
-				<ParticipantStatusWidget
-					title={m.mediaAgreement()}
-					faIcon="camera"
-					status={(status?.mediaConsent ?? 'PENDING') as AdministrativeStatus}
-					changeStatus={async (newStatus) =>
-						await changeAdministrativeStatus({ mediaConsent: newStatus })}
-				/>
-				<ParticipantStatusMediaWidget
-					title={m.mediaConsentStatus()}
-					status={status?.mediaConsentStatus ?? 'NOT_SET'}
-					changeStatus={async (newStatus: MediaConsentStatus$options) =>
-						await changeAdministrativeStatus({ mediaConsentStatus: newStatus })}
-				/>
-				<BooleanStatusWidget
-					title={m.attendance()}
-					faIcon="calendar-check"
-					status={status?.didAttend ?? false}
-					changeStatus={async (newStatus) =>
-						await changeAdministrativeStatus({ didAttend: newStatus })}
-				/>
-			</div>
+			{/if}
+			<ParticipantStatusWidget
+				title={m.mediaAgreement()}
+				faIcon="camera"
+				status={(status?.mediaConsent ?? 'PENDING') as AdministrativeStatus}
+				changeStatus={async (newStatus) =>
+					await changeAdministrativeStatus({ mediaConsent: newStatus })}
+			/>
+			<ParticipantStatusMediaWidget
+				title={m.mediaConsentStatus()}
+				status={status?.mediaConsentStatus ?? 'NOT_SET'}
+				changeStatus={async (newStatus: MediaConsentStatus$options) =>
+					await changeAdministrativeStatus({ mediaConsentStatus: newStatus })}
+			/>
+			<BooleanStatusWidget
+				title={m.attendance()}
+				faIcon="calendar-check"
+				status={status?.didAttend ?? false}
+				changeStatus={async (newStatus) =>
+					await changeAdministrativeStatus({ didAttend: newStatus })}
+			/>
 		</div>
-	{/if}
+		{#if !status}
+			<div class="alert alert-info">
+				<i class="fa-solid fa-circle-info"></i>
+				<span>{m.noParticipantStatusYet()}</span>
+			</div>
+		{/if}
+	</div>
 
 	<div class="divider"></div>
 

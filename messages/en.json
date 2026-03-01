@@ -860,6 +860,7 @@
 	"noOpenSurveys": "No open surveys",
 	"noOptionsYet": "No options have been added yet",
 	"noPapersSubmittedYet": "No papers have been submitted yet",
+	"noParticipantStatusYet": "No participant status entry found. This is normal if the participant hasn't completed any actions yet. Status will be created automatically on the first update.",
 	"noPaymentFound": "No transaction with this reference found",
 	"noPreferencesSet": "No preferences has been set yet",
 	"noResults": "No results",
