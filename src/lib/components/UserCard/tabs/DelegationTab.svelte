@@ -245,6 +245,7 @@
 					await promise;
 					cache.markStale();
 					await invalidateAll();
+					await delegationQuery.fetch({ variables: { delegationId } });
 				}}
 			>
 				<i class="fa-duotone fa-arrow-rotate-left"></i>
