@@ -467,6 +467,7 @@
 	"copy": "Copy to Clipboard",
 	"copyFailed": "Copy failed",
 	"copyLink": "Copy Link",
+	"copyUserId": "Copy User-ID",
 	"country": "Country",
 	"create": "Create",
 	"createConference": "Create Conference",

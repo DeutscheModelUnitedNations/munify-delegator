@@ -217,11 +217,15 @@
 			</div>
 
 			<button
-				class="text-base-content/40 hover:text-base-content/60 cursor-pointer self-start font-mono text-xs transition-colors"
+				class="group text-base-content/40 hover:text-base-content/60 cursor-pointer self-start font-mono text-xs transition-colors"
 				onclick={copyUserId}
 				title={m.copy()}
 			>
-				{userId}
+				<span class="group-hover:hidden">{userId}</span>
+				<span class="hidden items-center gap-1 group-hover:flex">
+					<i class="fa-duotone fa-copy"></i>
+					{m.copyUserId()}
+				</span>
 			</button>
 
 			<!-- Role summary -->
