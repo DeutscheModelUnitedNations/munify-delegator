@@ -93,6 +93,7 @@
 
 	// Group delegation members by their delegation
 	const groupedDelegations = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- temporary grouping, not reactive state
 		const map = new Map<
 			string,
 			{
