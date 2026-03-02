@@ -31,24 +31,42 @@
 		}
 	`);
 
+	let isMutating = $state(false);
+
 	async function toggleHidden() {
+		if (isMutating) return;
+		isMutating = true;
 		const promise = updateWaitingListEntryMutation.mutate({
 			id: entryId,
 			hidden: !hidden
 		});
 		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		cache.markStale();
-		await invalidateAll();
+		try {
+			await promise;
+		} catch {
+			// handled by toast
+		} finally {
+			cache.markStale();
+			await invalidateAll();
+			isMutating = false;
+		}
 	}
 
 	async function deleteEntry() {
+		if (isMutating) return;
 		if (!confirm(m.areYouSure())) return;
+		isMutating = true;
 		const promise = deleteWaitingListEntryMutation.mutate({ id: entryId });
 		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		cache.markStale();
-		await invalidateAll();
+		try {
+			await promise;
+		} catch {
+			// handled by toast
+		} finally {
+			cache.markStale();
+			await invalidateAll();
+			isMutating = false;
+		}
 	}
 </script>
 

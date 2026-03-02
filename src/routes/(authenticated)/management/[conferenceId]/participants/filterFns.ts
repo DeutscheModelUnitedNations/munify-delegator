@@ -42,6 +42,7 @@ export const booleanFilterFn: FilterFn<ParticipantRow> = (
 ) => {
 	if (filterValue === null || filterValue === undefined) return true;
 	const value = row.getValue(columnId);
+	if (value == null) return false;
 	return Boolean(value) === filterValue;
 };
 
