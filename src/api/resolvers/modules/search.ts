@@ -79,21 +79,33 @@ builder.queryFields((t) => ({
 }));
 
 async function searchUsers(conferenceId: string, searchTerm: string, limit: number) {
-	const containsFilter = { contains: searchTerm, mode: 'insensitive' as const };
+	const words = searchTerm.split(/\s+/).filter((w) => w.length > 0);
+
+	// Build search filter: each word must match at least one name/email/phone field
+	const nameFields = ['given_name', 'family_name', 'email', 'phone'] as const;
+	const searchFilter =
+		words.length > 1
+			? {
+					AND: words.map((word) => ({
+						OR: nameFields.map((field) => ({
+							[field]: { contains: word, mode: 'insensitive' as const }
+						}))
+					}))
+				}
+			: {
+					OR: [
+						...nameFields.map((field) => ({
+							[field]: { contains: words[0], mode: 'insensitive' as const }
+						})),
+						{ id: searchTerm }
+					]
+				};
 
 	// Find users who are participants in this conference
 	const users = await db.user.findMany({
 		where: {
 			AND: [
-				{
-					OR: [
-						{ given_name: containsFilter },
-						{ family_name: containsFilter },
-						{ email: containsFilter },
-						{ phone: containsFilter },
-						{ id: searchTerm }
-					]
-				},
+				searchFilter,
 				{
 					OR: [
 						{ delegationMemberships: { some: { conferenceId } } },
@@ -131,7 +143,35 @@ async function searchUsers(conferenceId: string, searchTerm: string, limit: numb
 }
 
 async function searchDelegations(conferenceId: string, searchTerm: string, limit: number) {
+	const words = searchTerm.split(/\s+/).filter((w) => w.length > 0);
 	const containsFilter = { contains: searchTerm, mode: 'insensitive' as const };
+
+	// For multi-word queries, require each word to match a member's name fields
+	const memberNameFilter =
+		words.length > 1
+			? {
+					AND: words.map((word) => ({
+						members: {
+							some: {
+								user: {
+									OR: [
+										{ given_name: { contains: word, mode: 'insensitive' as const } },
+										{ family_name: { contains: word, mode: 'insensitive' as const } }
+									]
+								}
+							}
+						}
+					}))
+				}
+			: {
+					members: {
+						some: {
+							user: {
+								OR: [{ given_name: containsFilter }, { family_name: containsFilter }]
+							}
+						}
+					}
+				};
 
 	const delegations = await db.delegation.findMany({
 		where: {
@@ -140,15 +180,7 @@ async function searchDelegations(conferenceId: string, searchTerm: string, limit
 				{ school: containsFilter },
 				{ entryCode: containsFilter },
 				{ id: searchTerm },
-				{
-					members: {
-						some: {
-							user: {
-								OR: [{ given_name: containsFilter }, { family_name: containsFilter }]
-							}
-						}
-					}
-				}
+				memberNameFilter
 			]
 		},
 		include: {
