@@ -216,7 +216,7 @@
 						</code>
 					</button>
 				</div>
-				{#if delegation.assignedNation}
+				{#if delegation.assignedNation && currentMember}
 					<div class="flex items-center gap-1">
 						<span class="text-base-content/60">{m.committee()}:</span>
 						{#if currentMember.assignedCommittee}

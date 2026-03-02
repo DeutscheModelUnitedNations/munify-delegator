@@ -96,6 +96,8 @@
 				a.href = `data:application/pdf;base64,${result.data.postalRegistrationPDF}`;
 				a.download = `postal-registration-${userId}.pdf`;
 				a.click();
+			} else {
+				toast.error(m.httpGenericError());
 			}
 		} catch {
 			toast.error(m.httpGenericError());
@@ -202,9 +204,9 @@
 			{userId}
 			{conferenceId}
 			entries={status?.attendanceEntries ?? []}
-			onChanged={() => {
+			onChanged={async () => {
 				cache.markStale();
-				invalidateAll();
+				await invalidateAll();
 				onUpdate?.();
 			}}
 		/>

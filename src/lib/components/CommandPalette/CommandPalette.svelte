@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { onDestroy, onMount, tick, untrack } from 'svelte';
+	import { onDestroy, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
 	import {
 		getCommandPaletteState,
@@ -186,16 +186,19 @@
 
 		searchLoading = true;
 		debounceTimer = setTimeout(async () => {
-			const result = await searchQuery.fetch({
-				variables: { conferenceId, searchTerm: term.trim() }
-			});
-			if (result.data?.searchConference) {
-				userResults = result.data.searchConference.users;
-				delegationResults = result.data.searchConference.delegations;
-				foreignUserResults = result.data.searchConference.foreignUsers;
+			try {
+				const result = await searchQuery.fetch({
+					variables: { conferenceId, searchTerm: term.trim() }
+				});
+				if (result.data?.searchConference) {
+					userResults = result.data.searchConference.users;
+					delegationResults = result.data.searchConference.delegations;
+					foreignUserResults = result.data.searchConference.foreignUsers;
+				}
+			} finally {
+				searchLoading = false;
+				activeIndex = 0;
 			}
-			searchLoading = false;
-			activeIndex = 0;
 		}, 300);
 	}
 
@@ -214,6 +217,7 @@
 				delegationResults = [];
 				foreignUserResults = [];
 				activeIndex = 0;
+				searchLoading = false;
 			});
 		}
 	});
@@ -246,10 +250,12 @@
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
+			if (flatList.length === 0) return;
 			activeIndex = Math.min(activeIndex + 1, flatList.length - 1);
 			scrollActiveIntoView();
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
+			if (flatList.length === 0) return;
 			activeIndex = Math.max(activeIndex - 1, 0);
 			scrollActiveIntoView();
 		} else if (e.key === 'Enter') {
@@ -314,15 +320,12 @@
 		}
 	}
 
-	onMount(() => {
-		document.addEventListener('keydown', handleGlobalKeydown, { capture: true });
-	});
-
 	onDestroy(() => {
-		document.removeEventListener('keydown', handleGlobalKeydown, { capture: true });
 		if (debounceTimer) clearTimeout(debounceTimer);
 	});
 </script>
+
+<svelte:document onkeydowncapture={handleGlobalKeydown} />
 
 {#if paletteState.isOpen}
 	<!-- Backdrop -->
