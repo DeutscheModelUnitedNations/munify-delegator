@@ -265,7 +265,7 @@
 		{:else if activeTab === 'supervisors' && (isDelegationMember || isSingleParticipant)}
 			<SupervisorsTab {userId} {conferenceId} onUpdate={refetchData} />
 		{:else if activeTab === 'supervisor' && conferenceSupervisor}
-			<SupervisorTab {userId} {conferenceId} {conferenceSupervisor} />
+			<SupervisorTab {userId} {conferenceId} {conferenceSupervisor} onUpdate={refetchData} />
 		{:else if activeTab === 'history'}
 			<HistoryTab {userId} {conferenceId} />
 		{/if}
