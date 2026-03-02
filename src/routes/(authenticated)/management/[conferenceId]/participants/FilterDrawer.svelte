@@ -2,6 +2,7 @@
 	import { Drawer } from 'vaul-svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Table } from '$lib/components/TanStackTable';
+	import { SvelteMap } from 'svelte/reactivity';
 	import type { ColumnMeta, ParticipantRow, ColumnCategory, TextFilterMode } from './types';
 	import {
 		translateAdministrativeStatus,
@@ -67,7 +68,7 @@
 	);
 
 	const groupedColumns = $derived.by(() => {
-		const grouped = new Map<ColumnCategory, typeof visibleColumns>();
+		const grouped = new SvelteMap<ColumnCategory, typeof visibleColumns>();
 		for (const col of visibleColumns) {
 			const meta = col.columnDef.meta as ColumnMeta;
 			const group = grouped.get(meta.category) ?? [];

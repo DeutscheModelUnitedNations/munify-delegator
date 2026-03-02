@@ -2,6 +2,7 @@
 	import { Drawer } from 'vaul-svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Table, VisibilityState } from '$lib/components/TanStackTable';
+	import { SvelteMap } from 'svelte/reactivity';
 	import type { ColumnMeta, ParticipantRow, ColumnCategory } from './types';
 
 	interface Props {
@@ -11,7 +12,12 @@
 		onVisibilityChange: (state: VisibilityState) => void;
 	}
 
-	let { open = $bindable(), table, conferenceId, onVisibilityChange }: Props = $props();
+	let {
+		open = $bindable(),
+		table,
+		conferenceId: _conferenceId,
+		onVisibilityChange
+	}: Props = $props();
 
 	const categories: { key: ColumnCategory; label: string }[] = [
 		{ key: 'personal', label: m.givenName() },
@@ -23,7 +29,7 @@
 	const allColumns = $derived(table.getAllColumns().filter((col) => col.columnDef.meta));
 
 	const groupedColumns = $derived.by(() => {
-		const grouped = new Map<ColumnCategory, typeof allColumns>();
+		const grouped = new SvelteMap<ColumnCategory, typeof allColumns>();
 		for (const col of allColumns) {
 			const meta = col.columnDef.meta as ColumnMeta;
 			const group = grouped.get(meta.category) ?? [];
