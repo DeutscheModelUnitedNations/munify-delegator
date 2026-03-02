@@ -22,7 +22,7 @@
 	{/if}
 {/snippet}
 
-<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4 sm:hidden">
+<fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-full border p-4">
 	<legend class="fieldset-legend">
 		{#if fontAwesomeIcon}
 			<i class="fa-duotone fa-{fontAwesomeIcon.replace('fa-', '')}"></i>
@@ -34,17 +34,3 @@
 		{@render Content()}
 	</div>
 </fieldset>
-
-<div class="ml-8 hidden items-center gap-2 text-sm sm:flex">
-	{#if fontAwesomeIcon}
-		<i class="fa-duotone fa-{fontAwesomeIcon.replace('fa-', '')} mr-2 w-6 text-center"></i>
-	{/if}
-	{title}
-</div>
-
-<div class="mr-8 hidden flex-col justify-center gap-2 text-sm sm:flex">
-	{@render Content()}
-</div>
-
-<!-- Divider -->
-<Divider />

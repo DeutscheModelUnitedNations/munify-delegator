@@ -4,6 +4,7 @@
 	import { graphql } from '$houdini';
 	import formatNames from '$lib/services/formatNames';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -174,13 +175,15 @@
 										{/if}
 									</td>
 									<td>
-										<a
-											class="btn btn-sm"
-											href={`/management/${conferenceId}/participants?selected=${member.user?.id}`}
+										<button
+											class="btn btn-ghost btn-sm btn-square"
+											onclick={() => {
+												if (member.user?.id) openUserCard(member.user.id, conferenceId);
+											}}
 											aria-label="Details"
 										>
-											<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-										</a>
+											<i class="fa-duotone fa-id-card"></i>
+										</button>
 									</td>
 								</tr>
 							{/each}
@@ -251,12 +254,15 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<a
+		<button
 			class="btn"
-			href={`/management/${conferenceId}/participants?selected=${$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user.id}`}
+			onclick={() => {
+				const userId = $supervisorQuery?.data?.findUniqueConferenceSupervisor?.user.id;
+				if (userId) openUserCard(userId, conferenceId);
+			}}
 		>
 			{m.adminUserCard()}
-			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-		</a>
+			<i class="fa-duotone fa-id-card"></i>
+		</button>
 	</div>
 </Drawer>

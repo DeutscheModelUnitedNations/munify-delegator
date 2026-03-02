@@ -10,6 +10,7 @@
 	import type { PageData } from './$houdini';
 	import { z } from 'zod';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -110,13 +111,19 @@
 		}
 	};
 
+	const handleOpenUserCard = (userId: string) => {
+		openUserCard(userId, data.conferenceId);
+	};
+
 	// Expose functions globally for onclick handlers in rendered HTML
 	onMount(() => {
 		window.handleTeamMemberDelete = handleDelete;
 		window.handleTeamMemberImpersonate = handleImpersonate;
+		window.handleTeamMemberOpenUserCard = handleOpenUserCard;
 		return () => {
 			delete window.handleTeamMemberDelete;
 			delete window.handleTeamMemberImpersonate;
+			delete window.handleTeamMemberOpenUserCard;
 		};
 	});
 
@@ -177,6 +184,9 @@
 			parseHTML: true,
 			renderValue: (row: (typeof teamMembers)[number]) => `
 				<div class="flex gap-2 justify-end">
+					<button class="btn btn-ghost btn-sm btn-square" onclick="window.handleTeamMemberOpenUserCard('${row.user.id}')" title="${m.adminUserCard()}">
+						<i class="fa-duotone fa-id-card"></i>
+					</button>
 					${
 						isAdmin
 							? `<button class="btn btn-sm" onclick="window.handleTeamMemberImpersonate('${row.user.id}')" title="${m.impersonation()}">

@@ -8,6 +8,7 @@
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import IndividualDrawer from './SupervisorDrawer.svelte';
 	import { queryParam } from 'sveltekit-search-params';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceSupervisorsQuery);
@@ -64,21 +65,42 @@
 			sortable: true,
 			class: 'text-center',
 			headerClass: 'text-center'
+		},
+		{
+			key: 'userCard',
+			title: '',
+			renderValue: (row) =>
+				`<button class="btn btn-ghost btn-xs btn-square usercard-btn" data-userid="${row.user.id}" aria-label="Open user card"><i class="fa-duotone fa-id-card"></i></button>`,
+			parseHTML: true,
+			class: 'text-center w-10 print:hidden'
 		}
 	];
 
 	// TODO export data
 </script>
 
-<DataTable
-	{columns}
-	rows={supervisors}
-	enableSearch={true}
-	queryParamKey="filter"
-	rowSelected={(row) => {
-		$selectedSupervisorId = row.id;
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+	onclick={(e) => {
+		const btn = e.target instanceof Element ? e.target.closest('.usercard-btn') : null;
+		if (btn) {
+			e.stopPropagation();
+			const userId = btn.getAttribute('data-userid');
+			if (userId) openUserCard(userId, data.conferenceId);
+		}
 	}}
-/>
+>
+	<DataTable
+		{columns}
+		rows={supervisors}
+		enableSearch={true}
+		queryParamKey="filter"
+		rowSelected={(row) => {
+			$selectedSupervisorId = row.id;
+		}}
+	/>
+</div>
 
 {#if $selectedSupervisorId}
 	<IndividualDrawer

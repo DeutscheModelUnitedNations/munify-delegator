@@ -5,6 +5,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
+	import UserCardDrawer from '$lib/components/UserCard/UserCardDrawer.svelte';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 	let navbarExpanded = $state(true);
@@ -35,3 +36,5 @@
 		{@render children()}
 	</div>
 </div>
+
+<UserCardDrawer conferenceId={data.conferenceId} />
