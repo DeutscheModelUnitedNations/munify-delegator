@@ -65,5 +65,6 @@ export interface ParticipantRow {
 
 	accepted: boolean;
 	ageAtConference: number | null;
+	hasBirthdayDuringConference: boolean;
 	participationCount: number;
 }

@@ -11,6 +11,8 @@ import FlagCell from './FlagCell.svelte';
 import BooleanIcon from './BooleanIcon.svelte';
 import FoodPreferenceCell from './FoodPreferenceCell.svelte';
 import GuardianConsentCell from './GuardianConsentCell.svelte';
+import MonoCell from './MonoCell.svelte';
+import ConferenceBirthdayCell from './ConferenceBirthdayCell.svelte';
 
 function meta(
 	category: ColumnMeta['category'],
@@ -27,6 +29,7 @@ export function createColumnDefs(): ColumnDef<ParticipantRow>[] {
 		{
 			accessorKey: 'userId',
 			header: m.userId(),
+			cell: ({ row }) => renderComponent(MonoCell, { value: row.original.userId }),
 			filterFn: textFilterFn,
 			meta: meta('personal', m.userId(), false)
 		},
@@ -79,6 +82,16 @@ export function createColumnDefs(): ColumnDef<ParticipantRow>[] {
 			header: m.conferenceAge(),
 			meta: meta('computed', m.conferenceAge(), false, 'range'),
 			filterFn: rangeFilterFn
+		},
+		{
+			accessorKey: 'hasBirthdayDuringConference',
+			header: m.conferenceBirthday(),
+			cell: ({ row }) =>
+				renderComponent(ConferenceBirthdayCell, {
+					hasBirthday: row.original.hasBirthdayDuringConference
+				}),
+			filterFn: booleanFilterFn,
+			meta: meta('computed', m.conferenceBirthday(), false, 'boolean')
 		},
 		{
 			accessorKey: 'gender',
@@ -262,7 +275,7 @@ export function createColumnDefs(): ColumnDef<ParticipantRow>[] {
 			header: m.accepted(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.accepted }),
 			filterFn: booleanFilterFn,
-			meta: meta('computed', m.accepted(), false, 'boolean')
+			meta: meta('computed', m.accepted(), true, 'boolean')
 		},
 		{
 			accessorKey: 'participationCount',

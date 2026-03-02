@@ -18,11 +18,20 @@
 		<span class="text-xs">{m.notRequired()}</span>
 	</span>
 {:else if status === 'DONE'}
-	<i class="fa-solid fa-circle-check text-success"></i>
+	<span class="flex items-center gap-1.5 text-success">
+		<i class="fa-solid fa-circle-check"></i>
+		<span class="text-xs">{m.statusDone()}</span>
+	</span>
 {:else if status === 'PENDING'}
-	<i class="fa-solid fa-hourglass-half text-warning"></i>
+	<span class="flex items-center gap-1.5 text-warning">
+		<i class="fa-solid fa-hourglass-half"></i>
+		<span class="text-xs">{m.statusPending()}</span>
+	</span>
 {:else if status === 'PROBLEM'}
-	<i class="fa-solid fa-triangle-exclamation fa-beat text-error"></i>
+	<span class="flex items-center gap-1.5 text-error">
+		<i class="fa-solid fa-triangle-exclamation fa-beat"></i>
+		<span class="text-xs">{m.statusProblem()}</span>
+	</span>
 {:else}
 	<span class="text-base-content/30">—</span>
 {/if}

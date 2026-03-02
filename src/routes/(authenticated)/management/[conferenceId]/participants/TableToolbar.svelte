@@ -9,6 +9,7 @@
 		columnFilters: ColumnFiltersState;
 		onOpenFilterDrawer: () => void;
 		onOpenColumnConfig: () => void;
+		onExport: () => void;
 	}
 
 	let {
@@ -17,7 +18,8 @@
 		onGlobalFilterChange,
 		columnFilters,
 		onOpenFilterDrawer,
-		onOpenColumnConfig
+		onOpenColumnConfig,
+		onExport
 	}: Props = $props();
 
 	const activeFilterCount = $derived(columnFilters.length);
@@ -45,10 +47,10 @@
 	{#if activeFilterCount > 0}
 		<div class="flex flex-wrap items-center gap-1">
 			{#each columnFilters as filter (filter.id)}
-				<span class="badge badge-sm badge-outline gap-1">
+				<span class="badge gap-1">
 					{table.getColumn(filter.id)?.columnDef.header ?? filter.id}
 					<button
-						class="btn btn-ghost btn-xs btn-circle"
+						class="btn btn-xs btn-ghost"
 						onclick={() => table.getColumn(filter.id)?.setFilterValue(undefined)}
 					>
 						<i class="fa-duotone fa-xmark text-xs"></i>
@@ -75,5 +77,10 @@
 	<button class="btn btn-ghost btn-sm" onclick={onOpenColumnConfig}>
 		<i class="fa-duotone fa-columns"></i>
 		{m.columns()}
+	</button>
+
+	<button class="btn btn-ghost btn-sm" onclick={onExport}>
+		<i class="fa-duotone fa-file-export"></i>
+		{m.exportCsv()}
 	</button>
 </div>

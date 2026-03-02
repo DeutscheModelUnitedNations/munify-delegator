@@ -23,6 +23,8 @@
 	import type { ParticipantRow, ColumnMeta } from './types';
 	import { transformParticipants } from './dataTransform';
 	import { createColumnDefs } from './columns';
+	import { getPlainTextValue, getColumnHeader } from './exportHelpers';
+	import { downloadCSV } from '$lib/services/downloadHelpers';
 	import TableToolbar from './TableToolbar.svelte';
 	import FilterDrawer from './FilterDrawer.svelte';
 	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
@@ -33,11 +35,12 @@
 
 	const conference = $derived($queryData.data?.findUniqueConference);
 	const startConference = $derived(conference?.startConference);
+	const endConference = $derived(conference?.endConference);
 
 	const participants: ParticipantRow[] = $derived.by(() => {
 		const qd = $queryData.data;
 		if (!qd) return [];
-		return transformParticipants(qd, startConference);
+		return transformParticipants(qd, startConference, endConference);
 	});
 
 	const columns = createColumnDefs();
@@ -177,6 +180,26 @@
 	function handleRowClick(row: ParticipantRow) {
 		openUserCard(row.userId, conferenceId);
 	}
+
+	function handleExport() {
+		const visibleColumns = table.getVisibleLeafColumns();
+		const rows = table.getFilteredRowModel().rows;
+		const columnDefs = columns;
+
+		const header = visibleColumns.map((col) => {
+			const def = columnDefs.find(
+				(d) => (d.id ?? ('accessorKey' in d ? d.accessorKey : undefined)) === col.id
+			);
+			return def ? getColumnHeader(def) : col.id;
+		});
+
+		const data = rows.map((row) =>
+			visibleColumns.map((col) => getPlainTextValue(row.original, col.id))
+		);
+
+		const timestamp = new Date().toISOString().slice(0, 10);
+		downloadCSV(header, data, `participants-${timestamp}.csv`);
+	}
 </script>
 
 <div class="flex h-full flex-col">
@@ -187,6 +210,7 @@
 		{columnFilters}
 		onOpenFilterDrawer={() => (filterDrawerOpen = true)}
 		onOpenColumnConfig={() => (columnConfigDrawerOpen = true)}
+		onExport={handleExport}
 	/>
 
 	<DataTable.Root class="table-zebra table-sm">

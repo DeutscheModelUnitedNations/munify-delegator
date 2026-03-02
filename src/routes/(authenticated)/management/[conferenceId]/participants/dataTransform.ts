@@ -31,9 +31,28 @@ function computePostalRegistrationStatus(
 	return 'PENDING';
 }
 
+function hasBirthdayDuring(
+	birthday: Date | null,
+	startConference: Date | string | undefined,
+	endConference: Date | string | undefined
+): boolean {
+	if (!birthday || !startConference || !endConference) return false;
+	const start = typeof startConference === 'string' ? new Date(startConference) : startConference;
+	const end = typeof endConference === 'string' ? new Date(endConference) : endConference;
+
+	// Check the conference year(s) for a birthday match
+	const years = new Set([start.getFullYear(), end.getFullYear()]);
+	for (const year of years) {
+		const bdayInYear = new Date(year, birthday.getMonth(), birthday.getDate());
+		if (bdayInYear >= start && bdayInYear <= end) return true;
+	}
+	return false;
+}
+
 export function transformParticipants(
 	queryData: QueryData,
-	startConference: Date | string | undefined
+	startConference: Date | string | undefined,
+	endConference: Date | string | undefined
 ): ParticipantRow[] {
 	const statusMap = new Map<string, QueryData['findManyConferenceParticipantStatuss'][number]>();
 	for (const s of queryData.findManyConferenceParticipantStatuss) {
@@ -87,6 +106,7 @@ export function transformParticipants(
 				birthday && startConference
 					? (getAgeAtConference(birthday, startConference) ?? null)
 					: null,
+			hasBirthdayDuringConference: hasBirthdayDuring(birthday, startConference, endConference),
 			participationCount: entry.user.conferenceParticipationsCount ?? 0
 		});
 	}
@@ -138,6 +158,7 @@ export function transformParticipants(
 				birthday && startConference
 					? (getAgeAtConference(birthday, startConference) ?? null)
 					: null,
+			hasBirthdayDuringConference: hasBirthdayDuring(birthday, startConference, endConference),
 			participationCount: entry.user.conferenceParticipationsCount ?? 0
 		});
 	}
@@ -185,6 +206,7 @@ export function transformParticipants(
 				birthday && startConference
 					? (getAgeAtConference(birthday, startConference) ?? null)
 					: null,
+			hasBirthdayDuringConference: hasBirthdayDuring(birthday, startConference, endConference),
 			participationCount: entry.user.conferenceParticipationsCount ?? 0
 		});
 	}
@@ -232,6 +254,7 @@ export function transformParticipants(
 				birthday && startConference
 					? (getAgeAtConference(birthday, startConference) ?? null)
 					: null,
+			hasBirthdayDuringConference: hasBirthdayDuring(birthday, startConference, endConference),
 			participationCount: entry.user.conferenceParticipationsCount ?? 0
 		});
 	}

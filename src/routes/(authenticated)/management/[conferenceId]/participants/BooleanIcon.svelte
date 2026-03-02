@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
+
 	interface Props {
 		value: boolean | null;
 	}
@@ -7,9 +9,15 @@
 </script>
 
 {#if value === true}
-	<i class="fa-solid fa-circle-check text-success"></i>
+	<span class="flex items-center gap-1.5 text-success">
+		<i class="fa-solid fa-circle-check"></i>
+		<span class="text-xs">{m.yes()}</span>
+	</span>
 {:else if value === false}
-	<i class="fa-solid fa-circle-xmark text-error"></i>
+	<span class="flex items-center gap-1.5 text-error">
+		<i class="fa-solid fa-circle-xmark"></i>
+		<span class="text-xs">{m.no()}</span>
+	</span>
 {:else}
 	<span class="text-base-content/30">—</span>
 {/if}
