@@ -12,6 +12,7 @@
 	import codenmz from '$lib/services/codenamize';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import { toast } from 'svelte-sonner';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -303,13 +304,15 @@
 								{/if}
 							</td>
 							<td>
-								<a
-									class="btn btn-sm"
-									href="/management/{conferenceId}/participants?selected={member.user?.id}"
+								<button
+									class="btn btn-ghost btn-sm btn-square"
+									onclick={() => {
+										if (member.user?.id) openUserCard(member.user.id, conferenceId);
+									}}
 									aria-label="Details"
 								>
-									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-								</a>
+									<i class="fa-duotone fa-id-card"></i>
+								</button>
 							</td>
 						</tr>
 					{/each}

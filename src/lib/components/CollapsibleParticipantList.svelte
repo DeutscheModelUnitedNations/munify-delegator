@@ -1,5 +1,6 @@
 <script lang="ts">
 	import formatNames from '$lib/services/formatNames';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	interface Props {
 		title: string;
@@ -40,12 +41,12 @@
 			<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4 gap-2 pt-2">
 				{#each participants as user}
 					<p>
-						<a
-							href="/management/{conferenceId}/participants?selected={user.id}"
-							class="hover:underline"
+						<button
+							class="hover:underline cursor-pointer"
+							onclick={() => openUserCard(user.id, conferenceId)}
 						>
 							{formatNames(user.given_name, user.family_name)}
-						</a>
+						</button>
 					</p>
 				{/each}
 			</div>
