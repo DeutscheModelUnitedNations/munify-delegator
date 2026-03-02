@@ -1,249 +1,253 @@
 <script lang="ts">
-	import { type TableColumns } from 'svelte-table';
+	import {
+		createSvelteTable,
+		FlexRender,
+		getCoreRowModel,
+		getSortedRowModel,
+		getFilteredRowModel,
+		getPaginationRowModel,
+		getFacetedRowModel,
+		getFacetedUniqueValues,
+		getFacetedMinMaxValues,
+		type SortingState,
+		type PaginationState,
+		type ColumnFiltersState,
+		type VisibilityState
+	} from '$lib/components/TanStackTable';
+	import { DataTable } from '$lib/components/TanStackTable/ui';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
-	import { capitalizeFirstLetter } from '$lib/services/capitalizeFirstLetter';
-	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import type { ParticipationType, UserRowData } from './types';
-	import { getAgeAtConference, ofAgeAtConference } from '$lib/services/ageChecker';
+	import { queryParam } from 'sveltekit-search-params';
 	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { page } from '$app/stores';
+	import type { PageData } from './$houdini';
+	import type { ParticipantRow, ColumnMeta } from './types';
+	import { transformParticipants } from './dataTransform';
+	import { createColumnDefs } from './columns';
+	import TableToolbar from './TableToolbar.svelte';
+	import FilterDrawer from './FilterDrawer.svelte';
+	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
 
 	const { data }: { data: PageData } = $props();
-	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
+	const queryData = $derived(data.AllConferenceParticipantsQuery);
+	const conferenceId = $derived($page.params.conferenceId ?? '');
+
 	const conference = $derived($queryData.data?.findUniqueConference);
-	const participationStatuses = $derived($queryData.data?.findManyConferenceParticipantStatuss);
+	const startConference = $derived(conference?.startConference);
 
-	const users = $derived.by(() => {
-		const getParticipationStatus = (userId: string) => {
-			if (!participationStatuses) return undefined;
-			const status = participationStatuses.find((s) => s.user.id === userId);
-			return status;
-		};
-
-		const ret: UserRowData[] = [];
-		for (const userRaw of $queryData.data?.findManyConferenceSupervisors ?? []) {
-			const user = userRaw.user;
-			ret.push({
-				...user,
-				participationType: 'SUPERVISOR',
-				status: getParticipationStatus(user.id),
-				email: user.email,
-				participationCount: user.conferenceParticipationsCount ?? 0
-			});
-		}
-		for (const userRaw of $queryData.data?.findManyDelegationMembers ?? []) {
-			const user = userRaw.user;
-			ret.push({
-				...user,
-				participationType: 'DELEGATION_MEMBER',
-				status: getParticipationStatus(user.id),
-				email: user.email,
-				participationCount: user.conferenceParticipationsCount ?? 0
-			});
-		}
-		for (const userRaw of $queryData.data?.findManySingleParticipants ?? []) {
-			const user = userRaw.user;
-			ret.push({
-				...user,
-				participationType: 'SINGLE_PARTICIPANT',
-				status: getParticipationStatus(user.id),
-				email: user.email,
-				participationCount: user.conferenceParticipationsCount ?? 0
-			});
-		}
-		return ret;
+	const participants: ParticipantRow[] = $derived.by(() => {
+		const qd = $queryData.data;
+		if (!qd) return [];
+		return transformParticipants(qd, startConference);
 	});
 
-	const localizedParticipationType = (type: ParticipationType) => {
-		switch (type) {
-			case 'SUPERVISOR':
-				return m.supervisor();
-			case 'SINGLE_PARTICIPANT':
-				return m.singleParticipant();
-			case 'DELEGATION_MEMBER':
-				return m.delegationMember();
+	const columns = createColumnDefs();
+
+	// --- State ---
+	let sorting = $state<SortingState>([{ id: 'family_name', desc: false }]);
+	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 20 });
+	let columnFilters = $state<ColumnFiltersState>([]);
+	let columnVisibility = $state<VisibilityState>({});
+	let globalFilter = $state('');
+
+	let filterDrawerOpen = $state(false);
+	let columnConfigDrawerOpen = $state(false);
+
+	// --- URL Sync ---
+	const searchParam = queryParam('search');
+	const filtersParam = queryParam('filters');
+
+	// Initialize from URL on load
+	$effect(() => {
+		if ($searchParam) {
+			globalFilter = $searchParam;
 		}
-	};
+	});
 
-	const { getTableSize } = getTableSettings();
-
-	const columns: TableColumns<UserRowData> = [
-		{
-			key: 'family_name',
-			title: m.familyName(),
-			value: (row) => capitalizeFirstLetter(row.family_name),
-			sortable: true
-		},
-		{
-			key: 'given_name',
-			title: m.givenName(),
-			value: (row) => capitalizeFirstLetter(row.given_name),
-			sortable: true
-		},
-		{
-			key: 'email',
-			title: m.email(),
-			value: (row) => row.email,
-			sortable: true
-		},
-		{
-			key: 'participationType',
-			title: m.participationType(),
-			value: (row) => localizedParticipationType(row.participationType),
-			renderValue: (row) => {
-				switch (row.participationType) {
-					case 'SUPERVISOR':
-						return `<i class="fa-duotone fa-chalkboard-user text-${getTableSize()}"></i>`;
-					case 'SINGLE_PARTICIPANT':
-						return `<i class="fa-duotone fa-user text-${getTableSize()}"></i>`;
-					case 'DELEGATION_MEMBER':
-						return `<i class="fa-duotone fa-users-viewfinder text-${getTableSize()}"></i>`;
-					default:
-						return 'Error';
+	$effect(() => {
+		if ($filtersParam) {
+			try {
+				const parsed = JSON.parse($filtersParam);
+				if (Array.isArray(parsed)) {
+					columnFilters = parsed;
 				}
-			},
-			parseHTML: true,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'birthday',
-			title: m.conferenceAge(),
-			value: (row) =>
-				row.birthday && conference?.endConference
-					? (getAgeAtConference(row.birthday, conference.startConference) ?? 'N/A')
-					: 'N/A',
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'participationCount',
-			title: m.participationCount(),
-			value: (row) => row.participationCount.toString(),
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'paymentStatus',
-			title: m.payment(),
-			value: (row) => row.status?.paymentStatus ?? 'PENDING',
-			renderValue: (row) => {
-				switch (row.status?.paymentStatus) {
-					case 'DONE':
-						return `<i class="fas fa-check text-success"></i>`;
-					case 'PENDING':
-						return `<i class="fas fa-hourglass-half text-warning"></i>`;
-					case 'PROBLEM':
-						return `<i class="fas fa-triangle-exclamation fa-beat text-red-500"></i>`;
-					default:
-						return `<i class="fas fa-hourglass-half text-warning"></i>`;
-				}
-			},
-			parseHTML: true,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'postalRegistrationStatus',
-			title: m.postalRegistration(),
-			value: (row) => {
-				if (
-					row.status?.termsAndConditions === 'PROBLEM' ||
-					row.status?.mediaConsent === 'PROBLEM' ||
-					row.status?.guardianConsent === 'PROBLEM' ||
-					row.status?.paymentStatus === 'PROBLEM'
-				) {
-					return 'PROBLEM';
-				}
-				if (
-					row.status?.termsAndConditions === 'DONE' &&
-					row.status?.mediaConsent === 'DONE' &&
-					row.status?.paymentStatus === 'DONE'
-				) {
-					return 'DONE';
-				}
-				return 'PENDING';
-			},
-			renderValue: (row) => {
-				if (
-					row.status?.termsAndConditions === 'PROBLEM' ||
-					row.status?.mediaConsent === 'PROBLEM' ||
-					row.status?.guardianConsent === 'PROBLEM'
-				) {
-					return `<i class="fas fa-triangle-exclamation fa-beat text-red-500"></i>`;
-				}
-				if (
-					row.status?.termsAndConditions === 'DONE' &&
-					row.status?.mediaConsent === 'DONE' &&
-					(row.status?.guardianConsent === 'DONE' ||
-						ofAgeAtConference(conference?.startConference, row.birthday))
-				) {
-					return `<i class="fas fa-check text-success"></i>`;
-				}
-				return `<i class="fas fa-hourglass-half text-warning"></i>`;
-			},
-			parseHTML: true,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'didAttend',
-			title: m.attendance(),
-			value: (row) => (row.status?.didAttend ? 1 : 0),
-			renderValue: (row) => {
-				if (row.status?.didAttend) {
-					return `<i class="fas fa-check text-success"></i>`;
-				}
-				return `<i class="fas fa-xmark text-error"></i>`;
-			},
-			parseHTML: true,
-			sortable: true,
-			class: 'text-center',
-			headerClass: 'text-center'
-		},
-		{
-			key: 'city',
-			title: m.city(),
-			value: (row) => (row.city ? capitalizeFirstLetter(row.city) : 'N/A'),
-			sortable: true
+			} catch {
+				// ignore invalid JSON
+			}
 		}
-	];
+	});
 
-	// const { getTableSize, getZebra } = getTableSettings();
+	// --- localStorage for column visibility ---
+	const storageKey = $derived(`participants-columns-${conferenceId}`);
 
-	// let filterValue = $state<string>(data.idQuery ?? '');
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const stored = localStorage.getItem(storageKey);
+		if (stored) {
+			try {
+				columnVisibility = JSON.parse(stored);
+			} catch {
+				// ignore
+			}
+		} else {
+			// Initialize from column defaults
+			const defaults: VisibilityState = {};
+			for (const col of columns) {
+				const id = ('accessorKey' in col ? col.accessorKey : undefined) ?? col.id;
+				const meta = col.meta as ColumnMeta | undefined;
+				if (id && meta) {
+					defaults[String(id)] = meta.defaultVisible;
+				}
+			}
+			columnVisibility = defaults;
+		}
+	});
 
-	// const exportedData = $derived(() => {
-	// 	return [
-	// 		...participants.map((p) => ({
-	// 			family_name: p.family_name,
-	// 			given_name: p.given_name,
-	// 			participationType: localizedParticipationType(getParticipationType(p)),
-	// 			conference_age:
-	// 				(p.birthday && calculateConferenceAge(new Date(p.birthday))?.toString()) ?? 'N/A',
-	// 			city: p.city ?? 'N/A'
-	// 		}))
-	// 	];
-	// });
+	function handleVisibilityChange(state: VisibilityState) {
+		columnVisibility = state;
+		if (typeof window !== 'undefined') {
+			localStorage.setItem(storageKey, JSON.stringify(state));
+		}
+	}
 
-	// <!-- <ManagementHeader title={m.adminUsers()} exportedData={exportedData()} tableOptions /> -->
-	// <PrintHeader title={m.adminUsers()} globalSearchValue={filterValue ?? undefined} />
-	// <TableSearch searchValue={filterValue} changeSearchValue={(v) => (filterValue = v)} />
-	// TODO export data
+	function handleGlobalFilterChange(value: string) {
+		globalFilter = value;
+		$searchParam = value || null;
+		pagination = { ...pagination, pageIndex: 0 };
+	}
+
+	// Sync column filters to URL
+	$effect(() => {
+		if (columnFilters.length > 0) {
+			$filtersParam = JSON.stringify(columnFilters);
+		} else {
+			$filtersParam = null;
+		}
+	});
+
+	// --- Table Instance ---
+	const table = createSvelteTable({
+		get data() {
+			return participants;
+		},
+		columns,
+		state: {
+			get sorting() {
+				return sorting;
+			},
+			get pagination() {
+				return pagination;
+			},
+			get columnFilters() {
+				return columnFilters;
+			},
+			get columnVisibility() {
+				return columnVisibility;
+			},
+			get globalFilter() {
+				return globalFilter;
+			}
+		},
+		onSortingChange: (updater) => {
+			sorting = typeof updater === 'function' ? updater(sorting) : updater;
+		},
+		onPaginationChange: (updater) => {
+			pagination = typeof updater === 'function' ? updater(pagination) : updater;
+		},
+		onColumnFiltersChange: (updater) => {
+			columnFilters = typeof updater === 'function' ? updater(columnFilters) : updater;
+			pagination = { ...pagination, pageIndex: 0 };
+		},
+		onColumnVisibilityChange: (updater) => {
+			const newState = typeof updater === 'function' ? updater(columnVisibility) : updater;
+			handleVisibilityChange(newState);
+		},
+		onGlobalFilterChange: (updater) => {
+			globalFilter = typeof updater === 'function' ? updater(globalFilter) : updater;
+		},
+		globalFilterFn: 'includesString',
+		getCoreRowModel: getCoreRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		getFacetedRowModel: getFacetedRowModel(),
+		getFacetedUniqueValues: getFacetedUniqueValues(),
+		getFacetedMinMaxValues: getFacetedMinMaxValues()
+	});
+
+	function handleRowClick(row: ParticipantRow) {
+		openUserCard(row.userId, conferenceId);
+	}
 </script>
 
-<DataTable
-	{columns}
-	rows={users}
-	enableSearch={true}
-	queryParamKey="filter"
-	rowSelected={(row) => {
-		openUserCard(row.id, data.conferenceId);
-	}}
+<div class="flex h-full flex-col">
+	<TableToolbar
+		{table}
+		{globalFilter}
+		onGlobalFilterChange={handleGlobalFilterChange}
+		{columnFilters}
+		onOpenFilterDrawer={() => (filterDrawerOpen = true)}
+		onOpenColumnConfig={() => (columnConfigDrawerOpen = true)}
+	/>
+
+	<DataTable.Root class="table-zebra table-sm">
+		<DataTable.Header>
+			{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
+				<tr>
+					{#each headerGroup.headers as header (header.id)}
+						<DataTable.Head>
+							{#if !header.isPlaceholder}
+								<button
+									class="flex items-center gap-2"
+									class:cursor-pointer={header.column.getCanSort()}
+									onclick={() => header.column.toggleSorting()}
+								>
+									<FlexRender
+										content={header.column.columnDef.header}
+										context={header.getContext()}
+									/>
+									{#if header.column.getIsSorted() === 'asc'}
+										<i class="fa-duotone fa-arrow-down-a-z text-xs"></i>
+									{:else if header.column.getIsSorted() === 'desc'}
+										<i class="fa-duotone fa-arrow-down-z-a text-xs"></i>
+									{:else if header.column.getCanSort()}
+										<i class="fa-duotone fa-arrows-up-down text-xs opacity-30"></i>
+									{/if}
+								</button>
+							{/if}
+						</DataTable.Head>
+					{/each}
+				</tr>
+			{/each}
+		</DataTable.Header>
+		<DataTable.Body>
+			{#each table.getRowModel().rows as row (row.id)}
+				<DataTable.Row onclick={() => handleRowClick(row.original)}>
+					{#each row.getVisibleCells() as cell (cell.id)}
+						<DataTable.Cell>
+							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
+						</DataTable.Cell>
+					{/each}
+				</DataTable.Row>
+			{:else}
+				<tr>
+					<td
+						colspan={table.getVisibleLeafColumns().length}
+						class="py-8 text-center text-base-content/50"
+					>
+						{m.noResults()}
+					</td>
+				</tr>
+			{/each}
+		</DataTable.Body>
+	</DataTable.Root>
+
+	<DataTable.Pagination {table} />
+</div>
+
+<FilterDrawer bind:open={filterDrawerOpen} {table} />
+<ColumnConfigDrawer
+	bind:open={columnConfigDrawerOpen}
+	{table}
+	{conferenceId}
+	onVisibilityChange={handleVisibilityChange}
 />

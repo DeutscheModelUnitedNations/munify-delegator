@@ -63,6 +63,47 @@ export function translateGender(gender: string) {
 	}
 }
 
+export function translateAdministrativeStatus(status: string) {
+	switch (status) {
+		case 'DONE':
+			return m.statusDone();
+		case 'PENDING':
+			return m.statusPending();
+		case 'PROBLEM':
+			return m.statusProblem();
+		default:
+			return status;
+	}
+}
+
+export function translateParticipationRole(role: string) {
+	switch (role) {
+		case 'DELEGATION_MEMBER':
+			return m.delegationMember();
+		case 'SINGLE_PARTICIPANT':
+			return m.singleParticipant();
+		case 'SUPERVISOR':
+			return m.supervisor();
+		case 'TEAM_MEMBER':
+			return m.teamMember();
+		default:
+			return role;
+	}
+}
+
+export function translateFoodPreference(preference: string) {
+	switch (preference) {
+		case 'OMNIVORE':
+			return m.omnivore();
+		case 'VEGETARIAN':
+			return m.vegetarian();
+		case 'VEGAN':
+			return m.vegan();
+		default:
+			return preference;
+	}
+}
+
 export function translateTeamRole(role: string) {
 	switch (role) {
 		case 'PROJECT_MANAGEMENT':

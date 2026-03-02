@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import { dev } from '$app/environment';
@@ -12,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.participants()}</title>
+	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.adminUsers()}</title>
 </svelte:head>
 
 {@render children()}
