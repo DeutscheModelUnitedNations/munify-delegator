@@ -147,7 +147,7 @@
 				>
 					<i class="fa-duotone fa-magnifying-glass"></i>
 					<span class="text-sm">{m.search()}</span>
-					<Kbd hotkey="ctrl+k" size="xs" />
+					<Kbd hotkey="mod+k" size="xs" />
 				</button>
 			{/if}
 

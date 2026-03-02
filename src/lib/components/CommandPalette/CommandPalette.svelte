@@ -4,7 +4,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
-	import hotkeys from 'hotkeys-js';
 	import {
 		getCommandPaletteState,
 		closeCommandPalette,
@@ -306,20 +305,21 @@
 		);
 	}
 
-	// Hotkeys registration
-	const previousFilter = hotkeys.filter;
-	onMount(() => {
-		// Allow hotkeys to fire even inside input/textarea/select
-		hotkeys.filter = () => true;
-		hotkeys('ctrl+k, command+k', (e) => {
+	// Global Ctrl+K / Cmd+K shortcut via native listener for reliability
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
 			e.preventDefault();
+			e.stopPropagation();
 			toggleCommandPalette();
-		});
+		}
+	}
+
+	onMount(() => {
+		document.addEventListener('keydown', handleGlobalKeydown, { capture: true });
 	});
 
 	onDestroy(() => {
-		hotkeys.unbind('ctrl+k, command+k');
-		hotkeys.filter = previousFilter;
+		document.removeEventListener('keydown', handleGlobalKeydown, { capture: true });
 		if (debounceTimer) clearTimeout(debounceTimer);
 	});
 </script>
