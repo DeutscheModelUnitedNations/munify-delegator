@@ -20,6 +20,8 @@
 		showPapers?: boolean;
 		showSupervisors?: boolean;
 		showSupervisor?: boolean;
+		showStatus?: boolean;
+		showSurveys?: boolean;
 	}
 
 	let {
@@ -29,13 +31,20 @@
 		showDelegation = false,
 		showPapers = false,
 		showSupervisors = false,
-		showSupervisor = false
+		showSupervisor = false,
+		showStatus = false,
+		showSurveys = false
 	}: Props = $props();
 
 	const tabs: { id: UserCardTab; icon: string; label: string; condition: boolean }[] = $derived([
 		{ id: 'userData', icon: 'fa-user', label: m.adminUserCardDetails(), condition: true },
-		{ id: 'status', icon: 'fa-clipboard-check', label: m.adminUserCardStatus(), condition: true },
-		{ id: 'surveys', icon: 'fa-chart-pie', label: m.survey(), condition: true },
+		{
+			id: 'status',
+			icon: 'fa-clipboard-check',
+			label: m.adminUserCardStatus(),
+			condition: showStatus
+		},
+		{ id: 'surveys', icon: 'fa-chart-pie', label: m.survey(), condition: showSurveys },
 		{ id: 'role', icon: 'fa-id-badge', label: m.adminUserCardRole(), condition: showRole },
 		{
 			id: 'delegation',

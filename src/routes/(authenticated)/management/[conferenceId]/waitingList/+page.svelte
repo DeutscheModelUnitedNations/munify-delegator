@@ -8,6 +8,7 @@
 	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -175,6 +176,10 @@
 			</table>
 
 			<div class="flex flex-row flex-wrap gap-4">
+				<button class="btn" onclick={() => openUserCard(row.user.id, data.conferenceId)}>
+					<i class="fa-duotone fa-id-card"></i>
+					{m.adminUserCard()}
+				</button>
 				<a
 					class="btn btn-primary"
 					href="/management/{data.conferenceId}/seats?assignUserId={row.user.id}"

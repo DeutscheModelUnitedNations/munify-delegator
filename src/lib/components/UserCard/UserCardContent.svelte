@@ -98,6 +98,24 @@
 				id
 				plansOwnAttendenceAtConference
 				connectionCode
+				supervisedDelegationMembers {
+					id
+					delegation {
+						id
+						assignedNation {
+							alpha2Code
+						}
+						assignedNonStateActor {
+							id
+						}
+					}
+				}
+				supervisedSingleParticipants {
+					id
+					assignedRole {
+						id
+					}
+				}
 			}
 			findManyTeamMembers(
 				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
@@ -185,6 +203,26 @@
 	const isConferenceSupervisor = $derived(!!conferenceSupervisor);
 	const isTeamMember = $derived(!!teamMember);
 
+	const hasConferenceAccess = $derived.by(() => {
+		if (isTeamMember) return true;
+		if (
+			isDelegationMember &&
+			(delegationMember?.delegation.assignedNation ||
+				delegationMember?.delegation.assignedNonStateActor)
+		)
+			return true;
+		if (isSingleParticipant && singleParticipant?.assignedRole) return true;
+		if (isConferenceSupervisor) {
+			const sup = conferenceSupervisor;
+			const anyDelegationAssigned = sup?.supervisedDelegationMembers?.some(
+				(dm) => dm.delegation.assignedNation || dm.delegation.assignedNonStateActor
+			);
+			const anySingleAssigned = sup?.supervisedSingleParticipants?.some((sp) => sp.assignedRole);
+			if (anyDelegationAssigned || anySingleAssigned) return true;
+		}
+		return false;
+	});
+
 	const refetchData = () => {
 		mainQuery.fetch({ variables: { userId, conferenceId } });
 	};
@@ -213,6 +251,8 @@
 	<UserCardTabs
 		{activeTab}
 		onTabChange={(tab) => (activeTab = tab)}
+		showStatus={hasConferenceAccess}
+		showSurveys={hasConferenceAccess}
 		showRole={isSingleParticipant || isTeamMember}
 		showDelegation={isDelegationMember}
 		showPapers={isDelegationMember}
