@@ -252,7 +252,7 @@
 		{activeTab}
 		onTabChange={(tab) => (activeTab = tab)}
 		showStatus={hasConferenceAccess}
-		showSurveys={hasConferenceAccess}
+		showSurveys={hasConferenceAccess && !isTeamMember}
 		showRole={isSingleParticipant || isTeamMember}
 		showDelegation={isDelegationMember}
 		showPapers={isDelegationMember}

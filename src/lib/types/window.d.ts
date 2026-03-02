@@ -4,6 +4,7 @@ declare global {
 	interface Window {
 		handleTeamMemberDelete?: (id: string) => void;
 		handleTeamMemberImpersonate?: (userId: string) => void;
+		handleTeamMemberOpenUserCard?: (userId: string) => void;
 	}
 }
 
