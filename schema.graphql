@@ -1116,11 +1116,6 @@ type ConferenceParticipantStatus {
   user: User!
 }
 
-input ConferenceParticipantStatusConferenceIdAccessCardIdCompoundUniqueInput {
-  accessCardId: String!
-  conferenceId: String!
-}
-
 input ConferenceParticipantStatusConferenceIdAssigendDocumentNumberCompoundUniqueInput {
   assigendDocumentNumber: Int!
   conferenceId: String!
@@ -1280,7 +1275,6 @@ input ConferenceParticipantStatusWhereUniqueInput {
   attendanceEntries: AttendanceEntryListRelationFilter
   conference: ConferenceWhereInput
   conferenceId: StringFilter
-  conferenceId_accessCardId: ConferenceParticipantStatusConferenceIdAccessCardIdCompoundUniqueInput
   conferenceId_assigendDocumentNumber: ConferenceParticipantStatusConferenceIdAssigendDocumentNumberCompoundUniqueInput
   createdAt: DateTimeFilter
   didAttend: BoolFilter

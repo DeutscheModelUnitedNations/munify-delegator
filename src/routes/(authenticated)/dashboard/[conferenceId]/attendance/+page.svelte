@@ -200,6 +200,8 @@
 					pendingEntry.errorMessage = m.duplicateScan();
 					queue = [...queue];
 					toast.warning(m.duplicateScan());
+
+					// Mark session entry as synced so it won't be restored as pending on reload
 					updateLogEntrySynced(pendingEntry.userId, pendingEntry.timestamp);
 					continue;
 				}

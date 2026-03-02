@@ -34,38 +34,18 @@
 				title={m.seats()}
 				bind:expanded={navbarExpanded}
 			/>
-			<NavMenuDetails title={m.tables()} icon="fa-database" small={!navbarExpanded}>
-				<NavMenuButton
-					href="/management/{data.conferenceId}/participants"
-					icon="fa-users"
-					title={m.adminUsers()}
-					bind:expanded={navbarExpanded}
-				/>
-				<NavMenuButton
-					href="/management/{data.conferenceId}/delegations"
-					icon="fa-users-viewfinder"
-					title={m.adminDelegations()}
-					bind:expanded={navbarExpanded}
-				/>
-				<NavMenuButton
-					href="/management/{data.conferenceId}/individuals"
-					icon="fa-user"
-					title={m.adminSingleParticipants()}
-					bind:expanded={navbarExpanded}
-				/>
-				<NavMenuButton
-					href="/management/{data.conferenceId}/supervisors"
-					icon="fa-chalkboard-user"
-					title={m.adminSupervisors()}
-					bind:expanded={navbarExpanded}
-				/>
-				<NavMenuButton
-					href={`/management/${data.conferenceId}/waitingList`}
-					icon="fa-user-clock"
-					title={m.waitingList()}
-					bind:expanded={navbarExpanded}
-				/>
-			</NavMenuDetails>
+			<NavMenuButton
+				href="/management/{data.conferenceId}/participants"
+				icon="fa-users"
+				title={m.adminUsers()}
+				bind:expanded={navbarExpanded}
+			/>
+			<NavMenuButton
+				href={`/management/${data.conferenceId}/waitingList`}
+				icon="fa-user-clock"
+				title={m.waitingList()}
+				bind:expanded={navbarExpanded}
+			/>
 			<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin" small={!navbarExpanded}>
 				<NavMenuButton
 					href="/management/{data.conferenceId}/assignment"

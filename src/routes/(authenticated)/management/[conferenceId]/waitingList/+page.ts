@@ -11,6 +11,7 @@ export const _houdini_load = graphql(`
 				given_name
 				family_name
 				email
+				phone
 				city
 				birthday
 				conferenceParticipationsCount
