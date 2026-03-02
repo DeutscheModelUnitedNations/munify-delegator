@@ -47,13 +47,12 @@
 		papersQuery.fetch({ variables: { conferenceId, userId } });
 	});
 
-	const papers = $derived($papersQuery.data?.findManyPapers ?? []);
+	const papers = $derived(
+		($papersQuery.data?.findManyPapers ?? []).filter((p) => p.status !== 'DRAFT')
+	);
 
-	let expandedPaperId = $state<string | null>(null);
-
-	const toggleExpand = (id: string) => {
-		expandedPaperId = expandedPaperId === id ? null : id;
-	};
+	const totalReviews = (paper: (typeof papers)[number]) =>
+		paper.versions.reduce((sum, v) => sum + v.reviews.length, 0);
 
 	const statusBadge = (status: string) => {
 		switch (status) {
@@ -63,8 +62,6 @@
 				return 'badge-error';
 			case 'SUBMITTED':
 				return 'badge-info';
-			case 'DRAFT':
-				return 'badge-warning';
 			case 'REVISED':
 				return 'badge-accent';
 			default:
@@ -87,61 +84,51 @@
 	<div class="flex flex-col gap-3">
 		{#each papers as paper (paper.id)}
 			<div class="bg-base-200 rounded-lg p-4">
-				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="badge {statusBadge(paper.status)}"
-							>{translatePaperStatus(paper.status)}</span
-						>
-						<span class="font-bold">{translatePaperType(paper.type)}</span>
+				<div class="flex items-start justify-between gap-2">
+					<div class="flex flex-col gap-1">
+						<div class="flex items-center gap-2">
+							<span class="badge badge-sm {statusBadge(paper.status)}">
+								{translatePaperStatus(paper.status)}
+							</span>
+							<span class="font-bold">{translatePaperType(paper.type)}</span>
+						</div>
 						{#if paper.agendaItem}
 							<span class="text-base-content/60 text-sm">
-								— {paper.agendaItem.committee?.abbreviation}: {paper.agendaItem.title}
+								{paper.agendaItem.committee?.abbreviation}: {paper.agendaItem.title}
 							</span>
 						{/if}
 					</div>
-					<div class="flex items-center gap-2">
-						{#if paper.versions.length > 0}
-							<span class="text-base-content/60 text-xs">
-								{m.userCardPaperVersions()}: {paper.versions.length}
-							</span>
-						{/if}
-					</div>
-				</div>
-				<div class="mt-1 flex items-center justify-between">
-					<span class="text-base-content/60 text-xs">
-						{new Date(paper.createdAt).toLocaleDateString(getLocale())}
-					</span>
-					<button
+					<a
+						href="/dashboard/{conferenceId}/paperhub/{paper.id}"
+						target="_blank"
+						rel="noopener noreferrer"
 						class="btn btn-ghost btn-xs btn-square"
-						aria-label="Toggle details"
-						onclick={() => toggleExpand(paper.id)}
+						title={m.goToPaperHub()}
 					>
-						<i class="fa-solid fa-chevron-{expandedPaperId === paper.id ? 'up' : 'down'}"></i>
-					</button>
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
 				</div>
 
-				{#if expandedPaperId === paper.id && paper.versions.length > 0}
-					<div class="mt-3 overflow-x-auto">
-						<table class="table table-xs">
-							<thead>
-								<tr>
-									<th>#</th>
-									<th>{m.date()}</th>
-									<th>{m.userCardPaperReviews()}</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each paper.versions as version, i (version.id)}
-									<tr>
-										<td>{i + 1}</td>
-										<td>{new Date(version.createdAt).toLocaleDateString(getLocale())}</td>
-										<td>{version.reviews.length}</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				{/if}
+				<div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-base-content/60">
+					{#if paper.firstSubmittedAt}
+						<span class="flex items-center gap-1">
+							<i class="fa-duotone fa-paper-plane"></i>
+							{new Date(paper.firstSubmittedAt).toLocaleDateString(getLocale())}
+						</span>
+					{/if}
+					<span class="flex items-center gap-1">
+						<i class="fa-duotone fa-layer-group"></i>
+						{paper.versions.length}
+						{m.userCardPaperVersions()}
+					</span>
+					{#if totalReviews(paper) > 0}
+						<span class="flex items-center gap-1">
+							<i class="fa-duotone fa-comments"></i>
+							{totalReviews(paper)}
+							{m.userCardPaperReviews()}
+						</span>
+					{/if}
+				</div>
 			</div>
 		{/each}
 	</div>

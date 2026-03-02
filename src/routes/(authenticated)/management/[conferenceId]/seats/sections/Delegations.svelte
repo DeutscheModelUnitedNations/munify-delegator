@@ -99,7 +99,6 @@
 				</th>
 			{/each}
 			<th><i class="fa-duotone fa-sigma"></i></th>
-			<th><i class="fa-duotone fa-users-viewfinder"></i></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -194,17 +193,6 @@
 					{delegation?.members.length ?? 0}
 					{#if sumSeats !== (delegation?.members.length ?? 0)}
 						<span class="text-xs">/ {sumSeats} </span>
-					{/if}
-				</td>
-				<td>
-					{#if delegation}
-						<a
-							class="btn btn-ghost btn-sm"
-							href={`/management/${conferenceId}/delegations?selected=${delegation?.id}`}
-							aria-label="View delegation"
-						>
-							<i class="fa-duotone fa-up-right-from-square"></i>
-						</a>
 					{/if}
 				</td>
 			</tr>

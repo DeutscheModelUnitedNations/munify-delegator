@@ -1593,7 +1593,7 @@
 	"userCardRemoveSupervisor": "Remove supervisor",
 	"userCardRemoveSupervisorConfirm": "Are you sure you want to remove this supervisor connection?",
 	"userCardRoleDisplayOnly": "Role display only. Changes can be made via the seats page.",
-	"userCardTabHistory": "History",
+	"userCardTabHistory": "Conferences",
 	"userCardTabPapers": "Papers",
 	"userCardTabStudents": "Students",
 	"userId": "User ID",

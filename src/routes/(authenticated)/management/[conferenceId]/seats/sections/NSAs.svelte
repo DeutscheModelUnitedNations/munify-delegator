@@ -55,9 +55,6 @@
 			<td>
 				<i class="fa-duotone fa-sigma"></i>
 			</td>
-			<td>
-				<i class="fa-duotone fa-users-viewfinder"></i>
-			</td>
 		</tr>
 	</thead>
 	<tbody>
@@ -103,17 +100,6 @@
 					{delegation?.members.length ?? 0}
 					{#if nsa.seatAmount !== (delegation?.members.length ?? 0)}
 						<span class="text-xs">/ {nsa.seatAmount} </span>
-					{/if}
-				</td>
-				<td>
-					{#if delegation}
-						<a
-							class="btn btn-ghost btn-sm"
-							href={`/management/${conferenceId}/delegations?selected=${delegation?.id}`}
-							aria-label="View delegation"
-						>
-							<i class="fa-duotone fa-up-right-from-square"></i>
-						</a>
 					{/if}
 				</td>
 			</tr>
