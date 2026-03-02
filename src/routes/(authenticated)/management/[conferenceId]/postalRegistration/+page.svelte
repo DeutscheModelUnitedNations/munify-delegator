@@ -24,6 +24,7 @@
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -219,13 +220,15 @@
 	maxWidth="max-w-4xl"
 >
 	{#snippet headerActions()}
-		<a
+		<button
 			class="btn btn-soft btn-sm"
-			href={`/management/${data.conferenceId}/participants?selected=${$params.queryUserId}`}
+			onclick={() => {
+				if ($params.queryUserId) openUserCard($params.queryUserId, data.conferenceId);
+			}}
 			aria-label={m.details()}
 		>
-			<i class="fa-duotone fa-up-right-from-square"></i>
-		</a>
+			<i class="fa-duotone fa-id-card"></i>
+		</button>
 		<button
 			type="button"
 			class="btn btn-ghost btn-sm btn-square"

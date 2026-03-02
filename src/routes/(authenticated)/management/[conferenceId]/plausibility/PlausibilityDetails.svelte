@@ -1,14 +1,15 @@
 <script lang="ts">
 	import formatNames from '$lib/services/formatNames';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 	import type { User } from '@prisma/client';
 
 	interface Props {
 		headline: string;
 		items: Pick<User, 'family_name' | 'given_name' | 'id'>[];
-		link: string;
+		conferenceId: string;
 	}
 
-	let { headline, items, link }: Props = $props();
+	let { headline, items, conferenceId }: Props = $props();
 </script>
 
 {#if items.length > 0}
@@ -21,9 +22,13 @@
 						<tr>
 							<td>{formatNames(user.given_name, user.family_name)}</td>
 							<td>
-								<a href={`${link}${user.id}`} class="btn btn-sm" aria-label="Details">
-									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-								</a>
+								<button
+									class="btn btn-sm"
+									onclick={() => openUserCard(user.id, conferenceId)}
+									aria-label="Details"
+								>
+									<i class="fa-duotone fa-id-card"></i>
+								</button>
 							</td>
 						</tr>
 					{/each}
