@@ -86,6 +86,12 @@
 					assignedNonStateActorName
 					headDelegateUserId
 				}
+				foreignUsers {
+					id
+					email
+					given_name
+					family_name
+				}
 			}
 		}
 	`);
@@ -108,6 +114,14 @@
 			assignedNationAlpha3Code: string | null;
 			assignedNonStateActorName: string | null;
 			headDelegateUserId: string | null;
+		}[]
+	>([]);
+	let foreignUserResults = $state<
+		{
+			id: string;
+			email: string;
+			given_name: string;
+			family_name: string;
 		}[]
 	>([]);
 
@@ -136,15 +150,25 @@
 					headDelegateUserId: string | null;
 				};
 		  }
-		| { type: 'config'; data: ConfigEntry };
+		| { type: 'config'; data: ConfigEntry }
+		| {
+				type: 'foreignUser';
+				data: {
+					id: string;
+					email: string;
+					given_name: string;
+					family_name: string;
+				};
+		  };
 
-	// Order: users, delegations, pages, config
+	// Order: users, delegations, pages, config, foreignUsers
 	let flatList = $derived.by((): ResultItem[] => {
 		const items: ResultItem[] = [];
 		for (const u of userResults) items.push({ type: 'user', data: u });
 		for (const d of delegationResults) items.push({ type: 'delegation', data: d });
 		for (const p of pageResults) items.push({ type: 'page', data: p });
 		for (const c of configResults) items.push({ type: 'config', data: c });
+		for (const f of foreignUserResults) items.push({ type: 'foreignUser', data: f });
 		return items;
 	});
 
@@ -155,6 +179,7 @@
 		if (term.trim().length < 2) {
 			userResults = [];
 			delegationResults = [];
+			foreignUserResults = [];
 			searchLoading = false;
 			activeIndex = 0;
 			return;
@@ -168,6 +193,7 @@
 			if (result.data?.searchConference) {
 				userResults = result.data.searchConference.users;
 				delegationResults = result.data.searchConference.delegations;
+				foreignUserResults = result.data.searchConference.foreignUsers;
 			}
 			searchLoading = false;
 			activeIndex = 0;
@@ -187,6 +213,7 @@
 				searchInput = '';
 				userResults = [];
 				delegationResults = [];
+				foreignUserResults = [];
 				activeIndex = 0;
 			});
 		}
@@ -210,6 +237,9 @@
 				break;
 			case 'config':
 				goto(`/management/${conferenceId}/configuration?tab=${item.data.tab}`);
+				break;
+			case 'foreignUser':
+				openUserCard(item.data.id, conferenceId);
 				break;
 		}
 	}
@@ -257,15 +287,23 @@
 	}
 
 	// Track the global index for each item to determine active state
-	// Order: users, delegations, pages, config
+	// Order: users, delegations, pages, config, foreignUsers
 	function getGlobalIndex(
-		type: 'user' | 'delegation' | 'page' | 'config',
+		type: 'user' | 'delegation' | 'page' | 'config' | 'foreignUser',
 		localIndex: number
 	): number {
 		if (type === 'user') return localIndex;
 		if (type === 'delegation') return userResults.length + localIndex;
 		if (type === 'page') return userResults.length + delegationResults.length + localIndex;
-		return userResults.length + delegationResults.length + pageResults.length + localIndex;
+		if (type === 'config')
+			return userResults.length + delegationResults.length + pageResults.length + localIndex;
+		return (
+			userResults.length +
+			delegationResults.length +
+			pageResults.length +
+			configResults.length +
+			localIndex
+		);
 	}
 
 	// Hotkeys registration
@@ -390,6 +428,23 @@
 									secondary={config.section()}
 									active={idx === activeIndex}
 									onclick={() => selectItem({ type: 'config', data: config })}
+								/>
+							</div>
+						{/each}
+					</CommandPaletteResultGroup>
+				{/if}
+
+				{#if foreignUserResults.length > 0}
+					<CommandPaletteResultGroup title={m.commandPaletteForeignUsers()} icon="fa-user-xmark">
+						{#each foreignUserResults as foreignUser, i (foreignUser.id)}
+							{@const idx = getGlobalIndex('foreignUser', i)}
+							<div data-command-palette-active={idx === activeIndex}>
+								<CommandPaletteItem
+									icon="fa-user-xmark"
+									primary="{foreignUser.given_name} {foreignUser.family_name}"
+									secondary={foreignUser.email}
+									active={idx === activeIndex}
+									onclick={() => selectItem({ type: 'foreignUser', data: foreignUser })}
 								/>
 							</div>
 						{/each}

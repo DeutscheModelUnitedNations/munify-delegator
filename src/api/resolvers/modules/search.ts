@@ -24,10 +24,20 @@ const SearchDelegationResult = builder.simpleObject('SearchDelegationResult', {
 	})
 });
 
+const SearchForeignUserResult = builder.simpleObject('SearchForeignUserResult', {
+	fields: (t) => ({
+		id: t.string(),
+		email: t.string(),
+		given_name: t.string(),
+		family_name: t.string()
+	})
+});
+
 const SearchConferenceResult = builder.simpleObject('SearchConferenceResult', {
 	fields: (t) => ({
 		users: t.field({ type: [SearchUserResult] }),
-		delegations: t.field({ type: [SearchDelegationResult] })
+		delegations: t.field({ type: [SearchDelegationResult] }),
+		foreignUsers: t.field({ type: [SearchForeignUserResult] })
 	})
 });
 
@@ -63,7 +73,7 @@ builder.queryFields((t) => ({
 
 			const searchTerm = args.searchTerm.trim();
 			if (searchTerm.length < 2) {
-				return { users: [], delegations: [] };
+				return { users: [], delegations: [], foreignUsers: [] };
 			}
 
 			const limit = 10;
@@ -73,7 +83,15 @@ builder.queryFields((t) => ({
 				searchDelegations(args.conferenceId, searchTerm, limit)
 			]);
 
-			return { users, delegations };
+			// Search for users not in this conference
+			const foreignUsers = await searchForeignUsers(
+				args.conferenceId,
+				searchTerm,
+				users.map((u) => u.id),
+				limit
+			);
+
+			return { users, delegations, foreignUsers };
 		}
 	})
 }));
@@ -209,4 +227,56 @@ async function searchDelegations(conferenceId: string, searchTerm: string, limit
 			headDelegateUserId: headDelegate?.userId ?? null
 		};
 	});
+}
+
+async function searchForeignUsers(
+	conferenceId: string,
+	searchTerm: string,
+	excludeUserIds: string[],
+	limit: number
+) {
+	const words = searchTerm.split(/\s+/).filter((w) => w.length > 0);
+	const nameFields = ['given_name', 'family_name', 'email', 'phone'] as const;
+
+	const searchFilter =
+		words.length > 1
+			? {
+					AND: words.map((word) => ({
+						OR: nameFields.map((field) => ({
+							[field]: { contains: word, mode: 'insensitive' as const }
+						}))
+					}))
+				}
+			: {
+					OR: [
+						...nameFields.map((field) => ({
+							[field]: { contains: words[0], mode: 'insensitive' as const }
+						})),
+						{ id: searchTerm }
+					]
+				};
+
+	const foreignUsers = await db.user.findMany({
+		where: {
+			...searchFilter,
+			id: { notIn: excludeUserIds },
+			// Not in this conference in any role
+			NOT: {
+				OR: [
+					{ delegationMemberships: { some: { conferenceId } } },
+					{ singleParticipant: { some: { conferenceId } } },
+					{ conferenceSupervisor: { some: { conferenceId } } },
+					{ teamMember: { some: { conferenceId } } }
+				]
+			}
+		},
+		take: limit
+	});
+
+	return foreignUsers.map((u) => ({
+		id: u.id,
+		email: u.email,
+		given_name: u.given_name,
+		family_name: u.family_name
+	}));
 }
