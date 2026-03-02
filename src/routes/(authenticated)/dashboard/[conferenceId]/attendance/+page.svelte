@@ -200,6 +200,7 @@
 					pendingEntry.errorMessage = m.duplicateScan();
 					queue = [...queue];
 					toast.warning(m.duplicateScan());
+					updateLogEntrySynced(pendingEntry.userId, pendingEntry.timestamp);
 					continue;
 				}
 
