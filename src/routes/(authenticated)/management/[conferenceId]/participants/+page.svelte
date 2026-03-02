@@ -1,5 +1,4 @@
 <script lang="ts">
-	import UserDrawer from './UserDrawer.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
@@ -7,16 +6,13 @@
 	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/DataTable/DataTable.svelte';
 	import type { ParticipationType, UserRowData } from './types';
-	import { cache, query } from '$houdini';
 	import { getAgeAtConference, ofAgeAtConference } from '$lib/services/ageChecker';
-	import { queryParam } from 'sveltekit-search-params';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceParticipantsByParticipationTypeQuery);
 	const conference = $derived($queryData.data?.findUniqueConference);
 	const participationStatuses = $derived($queryData.data?.findManyConferenceParticipantStatuss);
-
-	let selectedUserRow = queryParam('selected');
 
 	const users = $derived.by(() => {
 		const getParticipationStatus = (userId: string) => {
@@ -248,19 +244,6 @@
 	enableSearch={true}
 	queryParamKey="filter"
 	rowSelected={(row) => {
-		$selectedUserRow = row.id;
+		openUserCard(row.id, data.conferenceId);
 	}}
 />
-
-{#if $selectedUserRow}
-	<UserDrawer
-		userId={$selectedUserRow}
-		conferenceId={data.conferenceId}
-		open={$selectedUserRow !== null}
-		onClose={() => {
-			$selectedUserRow = null;
-			cache.markStale();
-			data.ConferenceParticipantsByParticipationTypeQuery.fetch();
-		}}
-	/>
-{/if}

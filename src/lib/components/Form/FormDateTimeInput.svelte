@@ -25,6 +25,7 @@
 		enablePastDates?: boolean;
 		defaultYear?: number;
 		isMultipane?: boolean;
+		disabled?: boolean;
 	}
 
 	let {
@@ -37,7 +38,8 @@
 		enableFutureDates = true,
 		enablePastDates = true,
 		defaultYear = new Date().getFullYear(),
-		isMultipane = false
+		isMultipane = false,
+		disabled = false
 	}: Props = $props();
 
 	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
@@ -124,6 +126,7 @@
 			aria-invalid={errors ? 'true' : undefined}
 			class="input validator w-full"
 			lang={getLocale()}
+			{disabled}
 			{...constraints}
 			bind:this={nativeDateInput}
 		/>

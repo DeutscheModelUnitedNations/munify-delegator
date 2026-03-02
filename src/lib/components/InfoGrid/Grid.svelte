@@ -9,7 +9,6 @@
 	let { children }: Props = $props();
 </script>
 
-<div class="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr] sm:gap-y-0">
-	<Divider />
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-y-0">
 	{@render children()}
 </div>

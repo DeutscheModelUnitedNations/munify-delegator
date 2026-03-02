@@ -12,6 +12,7 @@
 	import { queryParameters } from 'sveltekit-search-params';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -326,13 +327,13 @@
 							{formatNames(user.given_name, user.family_name)}
 						</div>
 						<div class="truncate text-sm opacity-60">{user.id}</div>
-						<a
+						<button
 							class="btn btn-soft btn-sm ml-auto"
-							href="/management/{data.conferenceId}/participants?selected={user.id}"
+							onclick={() => openUserCard(user.id, data.conferenceId)}
 							aria-label="Details for {formatNames(user.given_name, user.family_name)}"
 						>
-							<i class="fa-duotone fa-up-right-from-square"></i>
-						</a>
+							<i class="fa-duotone fa-id-card"></i>
+						</button>
 					</div>
 				{/each}
 			</div>

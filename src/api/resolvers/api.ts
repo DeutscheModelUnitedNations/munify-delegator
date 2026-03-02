@@ -33,6 +33,7 @@ import './modules/paper/reviewerLeaderboard';
 import './modules/reviewerSnippet';
 import './modules/flagCollection';
 import './modules/roleApplication';
+import './modules/search';
 import './modules/singleParticipant';
 import './modules/teamMember';
 import './modules/teamMemberInvitation';

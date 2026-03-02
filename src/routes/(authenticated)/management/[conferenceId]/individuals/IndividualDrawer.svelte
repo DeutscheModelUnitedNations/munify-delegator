@@ -9,6 +9,7 @@
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 	import { invalidateAll } from '$app/navigation';
+	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -203,13 +204,16 @@
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<a
+		<button
 			class="btn"
-			href={`/management/${conferenceId}/participants?selected=${$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id}`}
+			onclick={() => {
+				const userId = $singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id;
+				if (userId) openUserCard(userId, conferenceId);
+			}}
 		>
 			{m.adminUserCard()}
-			<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-		</a>
+			<i class="fa-duotone fa-id-card"></i>
+		</button>
 	</div>
 
 	<div class="flex flex-col gap-2">

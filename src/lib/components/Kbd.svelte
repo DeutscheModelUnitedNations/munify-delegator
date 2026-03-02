@@ -14,6 +14,7 @@
 		alt: '\u2325',
 		shift: '\u21E7',
 		ctrl: '\u2303',
+		mod: '\u2318',
 		enter: '\u21B5'
 	};
 
@@ -22,6 +23,7 @@
 			.split('+')
 			.map((part) => {
 				const key = part.trim().toLowerCase();
+				if (key === 'mod') return isMac ? '\u2318' : 'Ctrl';
 				return isMac && macModifiers[key] ? macModifiers[key] : part.trim();
 			})
 			.join(isMac ? '' : '+')

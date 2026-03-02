@@ -4,8 +4,11 @@
 	import { configPublic } from '$config/public';
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
+	import { openCommandPalette } from '$lib/components/CommandPalette/commandPaletteState.svelte';
+	import Kbd from '$lib/components/Kbd.svelte';
 	import { headerState } from '$lib/services/authenticatedHeaderStatus.svelte';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
 	import Breadcrumbs from './Breadcrumbs.svelte';
 
@@ -135,6 +138,17 @@
 						})}
 					</div>
 				{/if}
+			{/if}
+
+			{#if $page.url.pathname.includes('/management/')}
+				<button
+					class="btn btn-ghost btn-sm hidden gap-2 text-base-content/60 sm:flex"
+					onclick={openCommandPalette}
+				>
+					<i class="fa-duotone fa-magnifying-glass"></i>
+					<span class="text-sm">{m.search()}</span>
+					<Kbd hotkey="mod+k" size="xs" />
+				</button>
 			{/if}
 
 			<div class="dropdown dropdown-end z-10">
