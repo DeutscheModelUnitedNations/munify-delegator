@@ -4661,6 +4661,7 @@ type Query {
   previewDelegation(conferenceId: String!, entryCode: String!): DelegationPreview!
   previewUserByIdOrEmail(emailOrId: String!): UserPreview!
   reviewerLeaderboard(conferenceId: String!): [ReviewerStat!]!
+  searchConference(conferenceId: String!, searchTerm: String!): SearchConferenceResult!
 }
 
 enum QueryMode {
@@ -4955,6 +4956,29 @@ type RsaOtherPrimesInfo {
   d: String
   r: String
   t: String
+}
+
+type SearchConferenceResult {
+  delegations: [SearchDelegationResult!]!
+  users: [SearchUserResult!]!
+}
+
+type SearchDelegationResult {
+  assignedNationAlpha3Code: String
+  assignedNonStateActorName: String
+  entryCode: String!
+  headDelegateUserId: String
+  id: String!
+  memberCount: Int!
+  school: String
+}
+
+type SearchUserResult {
+  email: String!
+  family_name: String!
+  given_name: String!
+  id: String!
+  participationType: String!
 }
 
 type SeedNewConferenceResult {

@@ -3,6 +3,7 @@
 	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
 	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
+	import CommandPalette from '$lib/components/CommandPalette/CommandPalette.svelte';
 	import UserCardDrawer from '$lib/components/UserCard/UserCardDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
@@ -159,3 +160,4 @@
 </div>
 
 <UserCardDrawer conferenceId={data.conferenceId} />
+<CommandPalette conferenceId={data.conferenceId} />
