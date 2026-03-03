@@ -24,6 +24,10 @@
 					id
 					name
 					abbreviation
+					agendaItems {
+						id
+						title
+					}
 				}
 
 				singleParticipants {
@@ -79,12 +83,6 @@
 						email
 					}
 				}
-
-				individualApplicationOptions {
-					id
-					name
-					fontAwesomeIcon
-				}
 			}
 
 			findManyNations {
@@ -125,7 +123,53 @@
 						return undefined;
 				}
 			};
+			// Build representation ID map first (needed by committeeMembers)
 			const representationAlpha3CodeToIdMap = new SvelteMap<string, string>();
+			const representations = [
+				...data.findManyNations.map((nation) => {
+					const id = nanoid(30);
+					representationAlpha3CodeToIdMap.set(nation.alpha3Code, id);
+					return {
+						id,
+						representationType: 'DELEGATION',
+						alpha3Code: nation.alpha3Code,
+						alpha2Code: nation.alpha2Code,
+						regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code))
+					};
+				}),
+				...conferenceData.nonStateActors.map((nonStateActor) => ({
+					id: nonStateActor.id,
+					representationType: 'NSA',
+					name: nonStateActor.name,
+					faIcon: nonStateActor.fontAwesomeIcon
+				}))
+			];
+
+			// Build committeeMembers: one per unique (nation, committee) pair
+			// Multiple delegates from the same nation in the same committee share one committeeMember
+			const committeeMemberIdMap = new Map<string, string>();
+			const committeeMembers: {
+				id: string;
+				representationId: string | undefined;
+				committeeId: string | undefined;
+			}[] = [];
+
+			for (const dm of conferenceData.delegationMembers) {
+				const alpha3Code = dm.delegation?.assignedNation?.alpha3Code;
+				const committeeId = dm.assignedCommittee?.id;
+				if (!alpha3Code || !committeeId) continue;
+
+				const key = `${alpha3Code}_${committeeId}`;
+				if (!committeeMemberIdMap.has(key)) {
+					const id = nanoid(30);
+					committeeMemberIdMap.set(key, id);
+					committeeMembers.push({
+						id,
+						representationId: representationAlpha3CodeToIdMap.get(alpha3Code),
+						committeeId
+					});
+				}
+			}
 
 			// schema of this data is the input argument data to src/api/handlers/import.ts in munify-chase
 			const transformedData = {
@@ -137,41 +181,14 @@
 					name: committee.name,
 					abbreviation: committee.abbreviation
 				})),
-				representations: [
-					...data.findManyNations.map((nation) => {
-						const id = nanoid(30);
-						representationAlpha3CodeToIdMap.set(nation.alpha3Code, id);
-						return {
-							id,
-							representationType: 'DELEGATION',
-							alpha3Code: nation.alpha3Code,
-							alpha2Code: nation.alpha2Code,
-							regionalGroup: transformRegionalGroup(getNationRegionalGroup(nation.alpha3Code))
-						};
-					}),
-					...conferenceData.nonStateActors.map((nonStateActor) => ({
-						id: nonStateActor.id,
-						representationType: 'NSA',
-						name: nonStateActor.name,
-						faIcon: nonStateActor.fontAwesomeIcon
-					}))
-				],
+				representations,
 				conferenceMembers: conferenceData.delegationMembers
 					.filter((delegationMember) => delegationMember.delegation?.assignedNonStateActor?.id)
 					.map((delegationMember) => ({
 						id: delegationMember.id,
 						representationId: delegationMember.delegation?.assignedNonStateActor?.id
 					})),
-				committeeMembers: conferenceData.delegationMembers
-					.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
-					.filter((delegationMember) => delegationMember.assignedCommittee?.id)
-					.map((delegationMember) => ({
-						id: delegationMember.id,
-						representationId: representationAlpha3CodeToIdMap.get(
-							delegationMember.delegation?.assignedNation!.alpha3Code
-						),
-						committeeId: delegationMember.assignedCommittee?.id
-					})),
+				committeeMembers,
 				conferenceUsers: [
 					...conferenceData.teamMembers.map((teamMember) => ({
 						id: teamMember.id,
@@ -193,14 +210,30 @@
 						})),
 					...conferenceData.delegationMembers
 						.filter((delegationMember) => delegationMember.delegation?.assignedNation?.alpha3Code)
+						.filter((delegationMember) => delegationMember.assignedCommittee?.id)
 						.map((delegationMember) => ({
 							id: `${delegationMember.id}_user`,
 							conferenceUserType: 'DELEGATE',
 							userEmail: delegationMember.user.email,
-							committeeMemberId: delegationMember.id
+							committeeMemberId: committeeMemberIdMap.get(
+								`${delegationMember.delegation?.assignedNation!.alpha3Code}_${delegationMember.assignedCommittee!.id}`
+							)
+						})),
+					...conferenceData.singleParticipants
+						.filter((sp) => sp.assignedRole?.id)
+						.map((sp) => ({
+							id: sp.id,
+							conferenceUserType: 'SPECTATOR',
+							userEmail: sp.user.email
 						}))
 				],
-				agendaItems: []
+				agendaItems: conferenceData.committees.flatMap((committee) =>
+					committee.agendaItems.map((item) => ({
+						id: item.id,
+						committeeId: committee.id,
+						title: item.title
+					}))
+				)
 			};
 
 			downloadJSON(transformedData, `chase_import_${conferenceData.title}.json`);
