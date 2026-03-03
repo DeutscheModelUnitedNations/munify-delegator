@@ -147,7 +147,7 @@
 
 			// Build committeeMembers: one per unique (nation, committee) pair
 			// Multiple delegates from the same nation in the same committee share one committeeMember
-			const committeeMemberIdMap = new Map<string, string>();
+			const committeeMemberIdMap = new SvelteMap<string, string>();
 			const committeeMembers: {
 				id: string;
 				representationId: string | undefined;
