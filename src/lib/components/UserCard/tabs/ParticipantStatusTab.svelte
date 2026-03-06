@@ -147,7 +147,7 @@
 
 				const participantData: ParticipantData = {
 					id: user.id,
-					name: formatNames(user.given_name, user.family_name, {
+					name: formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
 						givenNameFirst: true,
 						familyNameUppercase: true,
 						givenNameUppercase: true
@@ -164,7 +164,7 @@
 					baseContent.data?.findUniqueConference?.guardianConsentContent ?? undefined,
 					baseContent.data?.findUniqueConference?.mediaConsentContent ?? undefined,
 					baseContent.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
-					`${formatNames(user.given_name, user.family_name, {
+					`${formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
 						givenNameFirst: false,
 						delimiter: '_'
 					})}_postal_registration.pdf`
@@ -193,7 +193,7 @@
 				await downloadCompleteCertificate(
 					jwtData,
 					certificateData.data?.findUniqueConference?.certificateContent ?? undefined,
-					`${formatNames(user.given_name, user.family_name, {
+					`${formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
 						givenNameFirst: false,
 						delimiter: '_'
 					})}_certificate.pdf`
