@@ -742,6 +742,7 @@
 	"http404": "Die angeforderte Seite wurde nicht gefunden.",
 	"http500": "Es ist ein interner Serverfehler aufgetreten.",
 	"httpGenericError": "Es ist ein unbekannter Fehler aufgetreten.",
+	"httpMissingRequiredData": "Erforderliche Daten fehlen. Bitte stellen Sie sicher, dass alle Teilnehmendendaten (Adresse, Geburtstag) vollständig sind.",
 	"iban": "IBAN",
 	"ibanMustBe22Characters": "IBAN muss 22 Zeichen ohne Leerzeichen haben",
 	"identityCheck": "Identitätsprüfung",

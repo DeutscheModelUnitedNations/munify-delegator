@@ -137,6 +137,11 @@
 			}
 
 			if (user) {
+				if (!user.birthday) {
+					toast.error(m.httpMissingRequiredData());
+					return;
+				}
+
 				const recipientData: RecipientData = {
 					name: `${conference.postalName}`,
 					address: `${conference.postalStreet} ${conference.postalApartment ?? ''}`,
@@ -152,12 +157,18 @@
 						familyNameUppercase: true,
 						givenNameUppercase: true
 					}),
-					address: `${user.street} ${user.apartment ?? ''}, ${user.zip} ${user.city}, ${user.country}`,
-					birthday: user.birthday?.toLocaleDateString() ?? ''
+					address: [
+						[user.street, user.apartment].filter(Boolean).join(' '),
+						[user.zip, user.city].filter(Boolean).join(' '),
+						user.country
+					]
+						.filter(Boolean)
+						.join(', '),
+					birthday: user.birthday.toLocaleDateString()
 				};
 
 				await downloadCompletePostalRegistrationPDF(
-					ofAgeAtConference(conference.startConference, user.birthday ?? new Date()),
+					ofAgeAtConference(conference.startConference, user.birthday),
 					participantData,
 					recipientData,
 					baseContent.data?.findUniqueConference?.contractContent ?? undefined,
