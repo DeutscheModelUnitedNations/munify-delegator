@@ -9,6 +9,7 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import ImpersonationButton from '../../../routes/(authenticated)/management/[conferenceId]/participants/ImpersonationButton.svelte';
 	import Modal from '../Modal.svelte';
+	import { configPublic } from '$config/public';
 
 	interface Props {
 		userId: string;
@@ -47,6 +48,7 @@
 			id: string;
 			role?: string | null;
 		} | null;
+		mediaConsentStatus?: string | null;
 		onDelete?: () => void;
 	}
 
@@ -63,6 +65,7 @@
 		singleParticipant,
 		conferenceSupervisor,
 		teamMember,
+		mediaConsentStatus,
 		onDelete
 	}: Props = $props();
 
@@ -100,22 +103,67 @@
 	};
 
 	// --- Badge generation ---
-	const downloadBadge = async () => {
-		const badgeUrl = `/api/badge?conferenceId=${conferenceId}&userId=${userId}`;
+	const openBadgeGenerator = async () => {
+		const body: {
+			name?: string;
+			countryName?: string;
+			countryAlpha2Code?: string;
+			committee?: string;
+			pronouns?: string;
+			id?: string;
+			mediaConsentStatus?: string;
+		} = {};
+		if (givenName && familyName) {
+			body.name = `${givenName} ${familyName}`;
+		}
+		if (delegationMember?.delegation.assignedNation?.alpha3Code) {
+			body.countryName = getFullTranslatedCountryNameFromISO3Code(
+				delegationMember.delegation.assignedNation.alpha3Code
+			);
+		}
+		if (delegationMember?.delegation.assignedNation?.alpha2Code) {
+			body.countryAlpha2Code = delegationMember.delegation.assignedNation.alpha2Code;
+		}
+		if (delegationMember?.assignedCommittee?.abbreviation) {
+			body.committee = delegationMember.assignedCommittee.abbreviation;
+		}
+		if (pronouns) {
+			body.pronouns = pronouns;
+		}
+		if (userId) {
+			body.id = userId;
+		}
+		if (mediaConsentStatus) {
+			body.mediaConsentStatus = mediaConsentStatus;
+		}
 		try {
-			const response = await fetch(badgeUrl);
-			if (!response.ok) {
+			const res = await fetch(`${configPublic.PUBLIC_BADGE_GENERATOR_URL}/api/session/create`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+			if (!res.ok) {
+				const errorText = await res.text();
+				console.error(`Badge generator API error (${res.status}): ${errorText}`);
 				toast.error(m.genericToastError());
 				return;
 			}
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `badge-${formatNames(givenName ?? undefined, familyName ?? undefined)}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch {
+			const data: unknown = await res.json();
+			if (
+				typeof data !== 'object' ||
+				data === null ||
+				!('url' in data) ||
+				typeof (data as { url: unknown }).url !== 'string' ||
+				(data as { url: string }).url.trim() === ''
+			) {
+				console.error('Badge generator returned invalid response:', data);
+				toast.error(m.genericToastError());
+				return;
+			}
+			const { url } = data as { url: string };
+			window.open(url.replace('http://', 'https://'), '_blank');
+		} catch (e) {
+			console.error('Failed to open badge generator', e);
 			toast.error(m.genericToastError());
 		}
 	};
@@ -191,15 +239,17 @@
 
 				<!-- Action buttons -->
 				<div class="ml-auto flex items-center gap-1">
-					<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
-						<button
-							class="btn btn-ghost btn-sm btn-square"
-							aria-label={m.generateBadge()}
-							onclick={downloadBadge}
-						>
-							<i class="fa-duotone fa-id-badge"></i>
-						</button>
-					</div>
+					{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
+						<div class="tooltip tooltip-bottom" data-tip={m.generateBadge()}>
+							<button
+								class="btn btn-ghost btn-sm btn-square"
+								aria-label={m.generateBadge()}
+								onclick={openBadgeGenerator}
+							>
+								<i class="fa-duotone fa-id-badge"></i>
+							</button>
+						</div>
+					{/if}
 
 					<div class="tooltip tooltip-bottom" data-tip={m.impersonation()}>
 						<ImpersonationButton {userId} iconOnly />
