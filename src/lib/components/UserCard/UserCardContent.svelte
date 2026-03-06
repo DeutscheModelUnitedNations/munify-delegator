@@ -180,6 +180,12 @@
 				startConference
 				endConference
 				title
+				postalName
+				postalStreet
+				postalApartment
+				postalZip
+				postalCity
+				postalCountry
 			}
 		}
 	`);
@@ -278,6 +284,7 @@
 				status={participantStatus}
 				{userId}
 				{conferenceId}
+				{user}
 				{conference}
 				birthday={user?.birthday}
 				{isConferenceSupervisor}

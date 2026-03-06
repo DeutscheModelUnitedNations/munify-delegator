@@ -18,6 +18,13 @@
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
 	import { ofAgeAtConference } from '$lib/services/ageChecker';
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
+	import {
+		downloadCompletePostalRegistrationPDF,
+		downloadCompleteCertificate,
+		type ParticipantData,
+		type RecipientData
+	} from '$lib/services/pdfGenerator';
+	import formatNames from '$lib/services/formatNames';
 
 	type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
 
@@ -44,12 +51,32 @@
 			| undefined;
 		userId: string;
 		conferenceId: string;
+		user:
+			| {
+					id: string;
+					given_name?: string | null;
+					family_name?: string | null;
+					street?: string | null;
+					apartment?: string | null;
+					zip?: string | null;
+					city?: string | null;
+					country?: string | null;
+					birthday?: Date | null;
+			  }
+			| null
+			| undefined;
 		conference:
 			| {
 					id: string;
 					startConference?: string | null;
 					endConference?: string | null;
 					title?: string | null;
+					postalName?: string | null;
+					postalStreet?: string | null;
+					postalApartment?: string | null;
+					postalZip?: number | null;
+					postalCity?: string | null;
+					postalCountry?: string | null;
 			  }
 			| null
 			| undefined;
@@ -62,6 +89,7 @@
 		status,
 		userId,
 		conferenceId,
+		user,
 		conference,
 		birthday,
 		isConferenceSupervisor,
@@ -88,36 +116,91 @@
 
 	const downloadPostalDocs = async () => {
 		try {
-			const result = await getBaseDocumentsForPostal.fetch({
-				variables: { visitorId: userId, conferenceId }
+			const baseContent = await getBaseDocumentsForPostal.fetch({
+				variables: { conferenceId }
 			});
-			if (result.data?.postalRegistrationPDF) {
-				const a = document.createElement('a');
-				a.href = `data:application/pdf;base64,${result.data.postalRegistrationPDF}`;
-				a.download = `postal-registration-${userId}.pdf`;
-				a.click();
-			} else {
+
+			if (baseContent.errors) {
 				toast.error(m.httpGenericError());
+				return;
 			}
-		} catch {
+
+			if (
+				!conference?.postalName ||
+				!conference?.postalStreet ||
+				!conference?.postalZip ||
+				!conference?.postalCity ||
+				!conference?.postalCountry
+			) {
+				toast.error(m.httpGenericError());
+				return;
+			}
+
+			if (user) {
+				const recipientData: RecipientData = {
+					name: `${conference.postalName}`,
+					address: `${conference.postalStreet} ${conference.postalApartment ?? ''}`,
+					zip: conference.postalZip?.toString() ?? '',
+					city: conference.postalCity ?? '',
+					country: conference.postalCountry ?? ''
+				};
+
+				const participantData: ParticipantData = {
+					id: user.id,
+					name: formatNames(user.given_name, user.family_name, {
+						givenNameFirst: true,
+						familyNameUppercase: true,
+						givenNameUppercase: true
+					}),
+					address: `${user.street} ${user.apartment ?? ''}, ${user.zip} ${user.city}, ${user.country}`,
+					birthday: user.birthday?.toLocaleDateString() ?? ''
+				};
+
+				await downloadCompletePostalRegistrationPDF(
+					ofAgeAtConference(conference.startConference, user.birthday ?? new Date()),
+					participantData,
+					recipientData,
+					baseContent.data?.findUniqueConference?.contractContent ?? undefined,
+					baseContent.data?.findUniqueConference?.guardianConsentContent ?? undefined,
+					baseContent.data?.findUniqueConference?.mediaConsentContent ?? undefined,
+					baseContent.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
+					`${formatNames(user.given_name, user.family_name, {
+						givenNameFirst: false,
+						delimiter: '_'
+					})}_postal_registration.pdf`
+				);
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
 			toast.error(m.httpGenericError());
 		}
 	};
 
 	const downloadCertificate = async () => {
 		try {
-			const result = await certificateQuery.fetch({
-				variables: { visitorId: userId, conferenceId }
+			const certificateData = await certificateQuery.fetch({
+				variables: { conferenceId, userId }
 			});
-			if (result.data?.certificate) {
-				const a = document.createElement('a');
-				a.href = `data:application/pdf;base64,${result.data.certificate}`;
-				a.download = `certificate-${userId}.pdf`;
-				a.click();
-			} else {
+
+			const jwtData = certificateData.data?.getCertificateJWT;
+
+			if (!jwtData?.fullName || !jwtData?.jwt) {
 				toast.error(m.certificateDownloadError());
+				return;
 			}
-		} catch {
+
+			if (user) {
+				await downloadCompleteCertificate(
+					jwtData,
+					certificateData.data?.findUniqueConference?.certificateContent ?? undefined,
+					`${formatNames(user.given_name, user.family_name, {
+						givenNameFirst: false,
+						delimiter: '_'
+					})}_certificate.pdf`
+				);
+			}
+		} catch (error) {
+			console.error('Error generating PDF:', error);
 			toast.error(m.certificateDownloadError());
 		}
 	};
