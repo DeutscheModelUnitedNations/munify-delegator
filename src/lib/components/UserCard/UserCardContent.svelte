@@ -246,6 +246,7 @@
 		{singleParticipant}
 		{conferenceSupervisor}
 		{teamMember}
+		mediaConsentStatus={participantStatus?.mediaConsentStatus}
 		loading={$mainQuery.fetching}
 		{mode}
 		onDelete={() => {
