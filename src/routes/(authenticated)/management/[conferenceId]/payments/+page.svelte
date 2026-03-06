@@ -126,7 +126,7 @@
 		const searchVal = $params.searchValue;
 		if (
 			searchVal &&
-			$paymentReferenceByIdQuery.data?.findUniquePaymentTransaction &&
+			$paymentReferenceByIdQuery.data?.findUniquePaymentTransaction?.id === searchVal &&
 			!$paymentReferenceByIdQuery.fetching
 		) {
 			lastLoadedReference = searchVal;
@@ -178,6 +178,7 @@
 	};
 
 	const resetView = () => {
+		recieveDate = new Date().toISOString().split('T')[0];
 		showPaymentDrawer = false;
 		$params.searchValue = '';
 		setTimeout(() => {
