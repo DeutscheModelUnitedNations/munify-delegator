@@ -91,7 +91,7 @@
 	});
 	$effect(() => {
 		const queryId = $params.queryUserId;
-		if (queryId && $userData?.data?.findUniqueUser && !$userData.fetching) {
+		if (queryId && $userData?.data?.findUniqueUser?.id === queryId && !$userData.fetching) {
 			lastLoadedUserId = queryId;
 			showUserDrawer = true;
 		}
