@@ -252,6 +252,10 @@
 		attendance: {
 			icon: 'barcode-read',
 			translation: m.attendanceScanner()
+		},
+		'team-tender': {
+			icon: 'bullhorn',
+			translation: m.teamTenderTitle()
 		}
 	};
 
