@@ -61,6 +61,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: .trivyignore
+          version: 'v0.69.3'
           scanners: ${{ github.event_name == 'pull_request' && 'vuln,license' || 'vuln,secret,misconfig,license' }}
 
   typecheck:
@@ -151,6 +152,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: .trivyignore
+          version: 'v0.69.3'
           scanners: 'vuln,secret,misconfig'
 
       - name: Upload sourcemaps to Bugsink
@@ -269,6 +271,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           trivyignores: .trivyignore
+          version: 'v0.69.3'
           scanners: 'vuln,secret,misconfig'
 
   # ============================================
