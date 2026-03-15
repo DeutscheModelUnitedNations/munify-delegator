@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
+	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageProps } from './$types';
@@ -33,6 +34,8 @@
 		});
 		try {
 			await promise;
+			cache.markStale();
+			await invalidateAll();
 			signedUp = value;
 		} finally {
 			loading = false;
@@ -40,7 +43,9 @@
 	};
 </script>
 
-<div class="flex min-h-[80vh] w-full flex-col items-center justify-center p-5 text-center sm:p-10">
+<div
+	class="bg-base-200 rounded-box flex min-h-[80vh] w-full flex-col items-center justify-center p-5 text-center sm:p-10"
+>
 	<div class="card bg-base-100 max-w-lg">
 		<div class="card-body items-center">
 			<i class="fa-duotone fa-bullhorn text-primary mb-4 text-5xl"></i>
