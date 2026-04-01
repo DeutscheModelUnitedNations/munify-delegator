@@ -68,6 +68,7 @@
 	});
 
 	const statesWithDefaultAcceptedFilter = ['PREPARATION', 'ACTIVE', 'POST'];
+	let defaultFilterApplied = $state(false);
 
 	$effect(() => {
 		if ($filtersParam) {
@@ -75,16 +76,18 @@
 				const parsed = JSON.parse($filtersParam);
 				if (Array.isArray(parsed)) {
 					columnFilters = parsed;
+					defaultFilterApplied = true;
 				}
 			} catch {
 				// ignore invalid JSON
 			}
 		} else if (
+			!defaultFilterApplied &&
 			conferenceState &&
-			statesWithDefaultAcceptedFilter.includes(conferenceState) &&
-			columnFilters.length === 0
+			statesWithDefaultAcceptedFilter.includes(conferenceState)
 		) {
 			columnFilters = [{ id: 'accepted', value: true }];
+			defaultFilterApplied = true;
 		}
 	});
 
