@@ -15,9 +15,10 @@
 	interface Props {
 		open: boolean;
 		table: Table<ParticipantRow>;
+		onResetFilters?: () => void;
 	}
 
-	let { open = $bindable(), table }: Props = $props();
+	let { open = $bindable(), table, onResetFilters }: Props = $props();
 
 	const enumTranslators: Record<string, (value: string) => string> = {
 		role: translateParticipationRole,
@@ -79,6 +80,7 @@
 	});
 
 	function clearAllFilters() {
+		onResetFilters?.();
 		table.resetColumnFilters();
 	}
 
