@@ -34,6 +34,7 @@
 	const conferenceId = $derived($page.params.conferenceId ?? '');
 
 	const conference = $derived($queryData.data?.findUniqueConference);
+	const conferenceState = $derived(conference?.state);
 	const startConference = $derived(conference?.startConference);
 	const endConference = $derived(conference?.endConference);
 
@@ -66,16 +67,38 @@
 		}
 	});
 
+	const statesWithDefaultAcceptedFilter = ['PREPARATION', 'ACTIVE', 'POST'];
+	// Tracks whether the default "accepted" filter has been applied once.
+	// Resetting this flag (via resetDefaultFilter) allows the default to re-apply,
+	// so the "reset filters" button restores the default rather than clearing everything.
+	let defaultFilterApplied = $state(false);
+
+	function resetDefaultFilter() {
+		defaultFilterApplied = false;
+	}
+
 	$effect(() => {
 		if ($filtersParam) {
 			try {
 				const parsed = JSON.parse($filtersParam);
 				if (Array.isArray(parsed)) {
 					columnFilters = parsed;
+					defaultFilterApplied = true;
 				}
 			} catch {
 				// ignore invalid JSON
 			}
+		} else if (
+			!defaultFilterApplied &&
+			conferenceState &&
+			statesWithDefaultAcceptedFilter.includes(conferenceState)
+		) {
+			// Apply the default "accepted" filter once on initial load for later conference states.
+			// After this, users can manually remove the filter without it snapping back.
+			// The "reset filters" button flips defaultFilterApplied back to false, which
+			// causes this branch to re-run and restore the default.
+			columnFilters = [{ id: 'accepted', value: true }];
+			defaultFilterApplied = true;
 		}
 	});
 
@@ -268,7 +291,7 @@
 	<DataTable.Pagination {table} />
 </div>
 
-<FilterDrawer bind:open={filterDrawerOpen} {table} />
+<FilterDrawer bind:open={filterDrawerOpen} {table} onResetFilters={resetDefaultFilter} />
 <ColumnConfigDrawer
 	bind:open={columnConfigDrawerOpen}
 	{table}
