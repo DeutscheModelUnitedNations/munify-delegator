@@ -2,11 +2,16 @@
 
 # This script is used to restart the database container in the development environment.
 POSTGRES_BACKUP_FILE=$1
+VOLUME_NAME=${2:-munify-delegator_delegator-dev}
 
 # Check if the backup file is provided
 if [ -z "$POSTGRES_BACKUP_FILE" ]; then
-  echo "Usage: $0 <path-to-postgres-backup-file>"
+  echo "Usage: $0 <path-to-postgres-backup-file> [volume-name]"
   exit 1
+fi
+
+if [ -z "$2" ]; then
+  echo "  volume-name defaults to 'munify-delegator_delegator-dev'"
 fi
 
 # Stop the postgres container
@@ -15,8 +20,8 @@ docker compose -f dev.docker-compose.yml stop postgres
 docker compose -f dev.docker-compose.yml rm -f postgres
 
 # Remove the database volume
-echo "Removing the database volume..."
-docker volume rm delegator_delegator-dev
+echo "Removing the database volume '$VOLUME_NAME'..."
+docker volume rm "$VOLUME_NAME"
 
 # Start the postgres container
 echo "Starting the postgres container..."
