@@ -3,6 +3,7 @@ import { graphql } from '$houdini';
 export const _houdini_load = graphql(`
 	query AllConferenceParticipantsQuery($conferenceId: String!) {
 		findUniqueConference(where: { id: $conferenceId }) {
+			state
 			startConference
 			endConference
 		}

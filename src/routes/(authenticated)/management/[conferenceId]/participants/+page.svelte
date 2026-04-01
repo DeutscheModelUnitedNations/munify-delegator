@@ -34,6 +34,7 @@
 	const conferenceId = $derived($page.params.conferenceId ?? '');
 
 	const conference = $derived($queryData.data?.findUniqueConference);
+	const conferenceState = $derived(conference?.state);
 	const startConference = $derived(conference?.startConference);
 	const endConference = $derived(conference?.endConference);
 
@@ -66,6 +67,8 @@
 		}
 	});
 
+	const statesWithDefaultAcceptedFilter = ['PREPARATION', 'ACTIVE', 'POST'];
+
 	$effect(() => {
 		if ($filtersParam) {
 			try {
@@ -76,6 +79,12 @@
 			} catch {
 				// ignore invalid JSON
 			}
+		} else if (
+			conferenceState &&
+			statesWithDefaultAcceptedFilter.includes(conferenceState) &&
+			columnFilters.length === 0
+		) {
+			columnFilters = [{ id: 'accepted', value: true }];
 		}
 	});
 
