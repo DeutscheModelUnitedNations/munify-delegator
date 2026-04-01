@@ -26,3 +26,14 @@ CVE-2026-27904
 CVE-2026-26960
 CVE-2026-29786
 CVE-2026-31802
+
+# Transitive deps - not directly used, negligible risk
+CVE-2026-32887  # effect: AsyncLocalStorage context issue (via sveltekit-superforms, @prisma/config)
+CVE-2026-33036  # fast-xml-parser: XML entity expansion DoS (via AWS SDK)
+CVE-2026-33228  # flatted: prototype pollution (via ESLint cache)
+CVE-2026-32763  # kysely: SQL injection (via Inlang i18n tooling, dev only)
+CVE-2026-33468  # kysely: MySQL SQL injection (via Inlang i18n tooling, dev only)
+CVE-2026-33671  # picomatch: ReDoS via extglob (via build tools)
+
+# Go stdlib in esbuild/lefthook binaries - not actionable
+CVE-2026-25679  # net/url IPv6 parsing (esbuild, lefthook)
