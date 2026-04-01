@@ -312,13 +312,7 @@
 				<DataTable.Row onclick={() => handleRowClick(row.original)}>
 					{#each row.getVisibleCells() as cell (cell.id)}
 						<DataTable.Cell>
-							{#if cell.column.id === 'requests'}
-								<div class="line-clamp-2 max-w-xs">
-									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-								</div>
-							{:else}
-								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-							{/if}
+							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 						</DataTable.Cell>
 					{/each}
 				</DataTable.Row>
