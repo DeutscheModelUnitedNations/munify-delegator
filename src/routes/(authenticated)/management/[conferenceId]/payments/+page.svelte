@@ -73,7 +73,7 @@
 		query lastConfirmedQuery($conferenceId: String!) {
 			findManyPaymentTransactions(
 				where: { conferenceId: { equals: $conferenceId }, recievedAt: { not: null } }
-				orderBy: { createdAt: desc }
+				orderBy: { updatedAt: desc }
 				take: 1
 			) {
 				id
