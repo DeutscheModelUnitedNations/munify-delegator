@@ -797,6 +797,7 @@
 	"journalist": "Journalist*in",
 	"jumpToNextPaper": "Direkt weiter bewerten und zum nächsten Papier springen",
 	"lastName": "Nachname",
+	"latestPayment": "Die letzte Transaktion, welche bestätigt wurde war ID: {id} am {date}",
 	"leaveDelegation": "Delegation verlassen",
 	"leaveDelegationConfirmation": "Möchtest du diese Delegation wirklich verlassen? Du kannst sie ohne den Zutrittscode nicht mehr betreten, wenn du sie verlässt.",
 	"legalName": "Bürgerlicher Name",

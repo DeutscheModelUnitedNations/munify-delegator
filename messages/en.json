@@ -797,6 +797,7 @@
 	"journalist": "Journalist",
 	"jumpToNextPaper": "Continue reviewing and jump to next paper",
 	"lastName": "Surname",
+	"latestPayment": "The latest transaction, which was confirmed, was ID: {id} on {date}",
 	"leaveDelegation": "Leave Delegation",
 	"leaveDelegationConfirmation": "Are you sure you want to leave this delegation? You will no longer be able to rejoin without the delegation code.",
 	"legalName": "Legal Name",
