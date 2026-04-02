@@ -1,6 +1,7 @@
 import { builder } from '../builder';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
+import { tr } from 'zod/locales';
 
 const SearchUserResult = builder.simpleObject('SearchUserResult', {
 	fields: (t) => ({
@@ -33,11 +34,21 @@ const SearchForeignUserResult = builder.simpleObject('SearchForeignUserResult', 
 	})
 });
 
+const SearchTransactionResult = builder.simpleObject('SearchTransactionResult', {
+	fields: (t) => ({
+		id: t.string(),
+		amount: t.float(),
+		currency: t.string(),
+		recievedAt: t.string({ nullable: true })
+	})
+});
+
 const SearchConferenceResult = builder.simpleObject('SearchConferenceResult', {
 	fields: (t) => ({
 		users: t.field({ type: [SearchUserResult] }),
 		delegations: t.field({ type: [SearchDelegationResult] }),
-		foreignUsers: t.field({ type: [SearchForeignUserResult] })
+		foreignUsers: t.field({ type: [SearchForeignUserResult] }),
+		transactions: t.field({ type: [SearchTransactionResult] })
 	})
 });
 
@@ -73,14 +84,15 @@ builder.queryFields((t) => ({
 
 			const searchTerm = args.searchTerm.trim();
 			if (searchTerm.length < 2) {
-				return { users: [], delegations: [], foreignUsers: [] };
+				return { users: [], delegations: [], foreignUsers: [], transactions: [] };
 			}
 
 			const limit = 10;
 
-			const [users, delegations] = await Promise.all([
+			const [users, delegations, transactions] = await Promise.all([
 				searchUsers(args.conferenceId, searchTerm, limit),
-				searchDelegations(args.conferenceId, searchTerm, limit)
+				searchDelegations(args.conferenceId, searchTerm, limit),
+				searchTransactions(args.conferenceId, searchTerm, limit)
 			]);
 
 			// Search for users not in this conference
@@ -91,10 +103,32 @@ builder.queryFields((t) => ({
 				limit
 			);
 
-			return { users, delegations, foreignUsers };
+			return { users, delegations, foreignUsers, transactions };
 		}
 	})
 }));
+
+async function searchTransactions(conferenceId: string, searchTerm: string, limit: number) {
+	const transactions = await db.paymentTransaction.findMany({
+		where: {
+			conferenceId,
+			id: { contains: searchTerm, mode: 'insensitive' }
+		},
+		include: {
+			conference: {
+				select: { currency: true }
+			}
+		},
+		take: limit
+	});
+
+	return transactions.map((t) => ({
+		id: t.id,
+		amount: Number(t.amount),
+		currency: t.conference.currency,
+		recievedAt: t.recievedAt ? t.recievedAt.toISOString() : null
+	}));
+}
 
 async function searchUsers(conferenceId: string, searchTerm: string, limit: number) {
 	const words = searchTerm.split(/\s+/).filter((w) => w.length > 0);

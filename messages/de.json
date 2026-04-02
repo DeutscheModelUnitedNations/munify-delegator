@@ -376,6 +376,8 @@
 	"commandPaletteMinChars": "Tippe mindestens 2 Zeichen, um zu suchen",
 	"commandPaletteNoResults": "Keine Ergebnisse gefunden",
 	"commandPalettePages": "Seiten",
+	"commandPalettePaymentNotReceived": "Zahlung in Höhe von {amount} {currency} ausstehend",
+	"commandPalettePaymentReceived": "Zahlung in Höhe von {amount} {currency} am {date} erhalten",
 	"commandPalettePlaceholder": "Seite, Teilnehmende oder Delegation suchen...",
 	"commandPaletteUsers": "Teilnehmende",
 	"committee": "Gremium",

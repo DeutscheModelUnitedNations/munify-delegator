@@ -376,6 +376,8 @@
 	"commandPaletteMinChars": "Type at least 2 characters to search",
 	"commandPaletteNoResults": "No results found",
 	"commandPalettePages": "Pages",
+	"commandPalettePaymentNotReceived": "Payment of {amount} {currency} pending",
+	"commandPalettePaymentReceived": "Payment of {amount} {currency} received on {date}",
 	"commandPalettePlaceholder": "Search pages, participants, or delegations...",
 	"commandPaletteUsers": "Participants",
 	"committee": "Committee",

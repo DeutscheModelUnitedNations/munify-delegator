@@ -91,6 +91,12 @@
 					given_name
 					family_name
 				}
+				transactions {
+					id
+					amount
+					currency
+					recievedAt
+				}
 			}
 		}
 	`);
@@ -121,6 +127,14 @@
 			email: string;
 			given_name: string;
 			family_name: string;
+		}[]
+	>([]);
+	let transactionResults = $state<
+		{
+			id: string;
+			amount: number;
+			currency: string;
+			recievedAt: string | null;
 		}[]
 	>([]);
 
@@ -158,6 +172,15 @@
 					given_name: string;
 					family_name: string;
 				};
+		  }
+		| {
+				type: 'transaction';
+				data: {
+					id: string;
+					amount: number;
+					currency: string;
+					recievedAt: string | null;
+				};
 		  };
 
 	// Order: users, delegations, pages, config, foreignUsers
@@ -168,6 +191,7 @@
 		for (const p of pageResults) items.push({ type: 'page', data: p });
 		for (const c of configResults) items.push({ type: 'config', data: c });
 		for (const f of foreignUserResults) items.push({ type: 'foreignUser', data: f });
+		for (const t of transactionResults) items.push({ type: 'transaction', data: t });
 		return items;
 	});
 
@@ -178,6 +202,7 @@
 		if (term.trim().length < 2) {
 			userResults = [];
 			delegationResults = [];
+			transactionResults = [];
 			foreignUserResults = [];
 			searchLoading = false;
 			activeIndex = 0;
@@ -194,6 +219,7 @@
 					userResults = result.data.searchConference.users;
 					delegationResults = result.data.searchConference.delegations;
 					foreignUserResults = result.data.searchConference.foreignUsers;
+					transactionResults = result.data.searchConference.transactions;
 				}
 			} finally {
 				searchLoading = false;
@@ -214,6 +240,7 @@
 			untrack(() => {
 				searchInput = '';
 				userResults = [];
+				transactionResults = [];
 				delegationResults = [];
 				foreignUserResults = [];
 				activeIndex = 0;
@@ -243,6 +270,9 @@
 				break;
 			case 'foreignUser':
 				openUserCard(item.data.id, conferenceId);
+				break;
+			case 'transaction':
+				goto(`/management/${conferenceId}/payments?searchValue=${item.data.id}`);
 				break;
 		}
 	}
@@ -292,19 +322,28 @@
 	}
 
 	// Track the global index for each item to determine active state
-	// Order: users, delegations, pages, config, foreignUsers
+	// Order: users, delegations, transactions, pages, config, foreignUsers
 	function getGlobalIndex(
-		type: 'user' | 'delegation' | 'page' | 'config' | 'foreignUser',
+		type: 'user' | 'delegation' | 'transaction' | 'page' | 'config' | 'foreignUser',
 		localIndex: number
 	): number {
 		if (type === 'user') return localIndex;
 		if (type === 'delegation') return userResults.length + localIndex;
-		if (type === 'page') return userResults.length + delegationResults.length + localIndex;
+		if (type === 'transaction') return userResults.length + delegationResults.length + localIndex;
+		if (type === 'page')
+			return userResults.length + delegationResults.length + transactionResults.length + localIndex;
 		if (type === 'config')
-			return userResults.length + delegationResults.length + pageResults.length + localIndex;
+			return (
+				userResults.length +
+				delegationResults.length +
+				transactionResults.length +
+				pageResults.length +
+				localIndex
+			);
 		return (
 			userResults.length +
 			delegationResults.length +
+			transactionResults.length +
 			pageResults.length +
 			configResults.length +
 			localIndex
@@ -398,6 +437,40 @@
 									secondary="{delegation.entryCode} · {delegation.memberCount} {m.members()}"
 									active={idx === activeIndex}
 									onclick={() => selectItem({ type: 'delegation', data: delegation })}
+								/>
+							</div>
+						{/each}
+					</CommandPaletteResultGroup>
+				{/if}
+
+				{#if transactionResults.length > 0}
+					<CommandPaletteResultGroup
+						title={m.payment()}
+						icon="fa-money-bill-transfer"
+						loading={searchLoading}
+					>
+						{#each transactionResults as transaction, i (transaction.id)}
+							{@const idx = getGlobalIndex('transaction', i)}
+							<div data-command-palette-active={idx === activeIndex}>
+								<CommandPaletteItem
+									icon={transaction.recievedAt ? 'fa-circle-check' : 'fa-circle-xmark'}
+									primary={transaction.id}
+									secondary={transaction.recievedAt
+										? m.commandPalettePaymentReceived({
+												amount: transaction.amount,
+												currency: transaction.currency,
+												date: new Date(transaction.recievedAt).toLocaleDateString(undefined, {
+													year: 'numeric',
+													month: 'long',
+													day: 'numeric'
+												})
+											})
+										: m.commandPalettePaymentNotReceived({
+												amount: transaction.amount,
+												currency: transaction.currency
+											})}
+									active={idx === activeIndex}
+									onclick={() => selectItem({ type: 'transaction', data: transaction })}
 								/>
 							</div>
 						{/each}
