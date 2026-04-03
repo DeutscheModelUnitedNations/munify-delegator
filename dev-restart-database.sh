@@ -21,7 +21,14 @@ docker compose -f dev.docker-compose.yml rm -f postgres
 
 # Remove the database volume
 echo "Removing the database volume '$VOLUME_NAME'..."
-docker volume rm "$VOLUME_NAME"
+if ! docker volume inspect "$VOLUME_NAME" >/dev/null 2>&1; then
+  echo "Error: Docker volume '$VOLUME_NAME' does not exist."
+  exit 1
+fi
+docker volume rm "$VOLUME_NAME" || {
+  echo "Error: Failed to remove volume '$VOLUME_NAME'."
+  exit 1
+}
 
 # Start the postgres container
 echo "Starting the postgres container..."
