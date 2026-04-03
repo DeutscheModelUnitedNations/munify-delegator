@@ -188,10 +188,10 @@
 		const items: ResultItem[] = [];
 		for (const u of userResults) items.push({ type: 'user', data: u });
 		for (const d of delegationResults) items.push({ type: 'delegation', data: d });
+		for (const t of transactionResults) items.push({ type: 'transaction', data: t });
 		for (const p of pageResults) items.push({ type: 'page', data: p });
 		for (const c of configResults) items.push({ type: 'config', data: c });
 		for (const f of foreignUserResults) items.push({ type: 'foreignUser', data: f });
-		for (const t of transactionResults) items.push({ type: 'transaction', data: t });
 		return items;
 	});
 

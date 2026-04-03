@@ -1,7 +1,6 @@
 import { builder } from '../builder';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
-import { tr } from 'zod/locales';
 
 const SearchUserResult = builder.simpleObject('SearchUserResult', {
 	fields: (t) => ({

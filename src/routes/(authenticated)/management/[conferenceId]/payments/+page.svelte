@@ -13,7 +13,6 @@
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
-	import { addToPanel } from 'svelte-inspect-value';
 
 	let { data }: { data: PageData } = $props();
 
@@ -183,7 +182,7 @@
 		try {
 			recieveDate = new Date().toISOString().split('T')[0];
 			await changeTransactionStatus('DONE');
-			lastConfirmedQuery.fetch({ variables: { conferenceId: data.conferenceId } });
+			await lastConfirmedQuery.fetch({ variables: { conferenceId: data.conferenceId } });
 			showPaymentDrawer = false;
 			$params.searchValue = '';
 			setTimeout(() => {
@@ -238,19 +237,21 @@
 		<!-- Show last confirmed transaction if available -->
 		{#if $lastConfirmedQuery.data?.findManyPaymentTransactions?.length}
 			{@const last = $lastConfirmedQuery.data.findManyPaymentTransactions[0]}
-			<div class="alert alert-success">
-				<i class="fa-duotone fa-money-bill-transfer text-lg"></i>
-				<div>
-					{m.latestPayment({
-						id: last.id,
-						date: new Date(last.recievedAt).toLocaleDateString(undefined, {
-							year: 'numeric',
-							month: 'long',
-							day: 'numeric'
-						})
-					})}
+			{#if last.recievedAt}
+				<div class="alert alert-success">
+					<i class="fa-solid fa-money-bill-transfer text-lg"></i>
+					<div>
+						{m.latestPayment({
+							id: last.id,
+							date: new Date(last.recievedAt).toLocaleDateString(undefined, {
+								year: 'numeric',
+								month: 'long',
+								day: 'numeric'
+							})
+						})}
+					</div>
 				</div>
-			</div>
+			{/if}
 		{/if}
 		<FormFieldset title={m.referenceSearch()}>
 			<div class="join w-full">

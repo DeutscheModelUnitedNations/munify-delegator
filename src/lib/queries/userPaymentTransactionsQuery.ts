@@ -7,6 +7,7 @@ export const userPaymentTransactionsQuery = graphql(`
 				conferenceId: { equals: $conferenceId }
 				paymentFor: { some: { userId: { equals: $userId } } }
 			}
+			orderBy: [{ createdAt: desc }]
 		) {
 			id
 			amount
