@@ -16,13 +16,20 @@
 	let loading = $state(false);
 
 	$effect(() => {
-		if (!userId || !conferenceId) return;
+		if (!userId || !conferenceId) {
+			paymentRefs = [];
+			loading = false;
+			return;
+		}
+
+		let cancelled = false;
 
 		loading = true;
 
-		userPaymentTransactionsQuery
+		void userPaymentTransactionsQuery
 			.fetch({ variables: { userId, conferenceId } })
 			.then((result) => {
+				if (cancelled) return;
 				paymentRefs = (result.data?.findManyPaymentTransactions ?? []).map((tx) => ({
 					id: tx.id,
 					amount: tx.amount,
@@ -30,7 +37,16 @@
 					currency: tx.conference.currency
 				}));
 			})
-			.finally(() => (loading = false));
+			.catch(() => {
+				if (cancelled) paymentRefs = [];
+			})
+			.finally(() => {
+				if (!cancelled) loading = false;
+			});
+
+		return () => {
+			cancelled = true;
+		};
 	});
 </script>
 

@@ -236,7 +236,7 @@
 		<h2 class="text-2xl font-bold">{m.payment()}</h2>
 		<p>{@html m.paymentAdminDescription()}</p>
 		<!-- Show last confirmed transaction if available -->
-		{#if $lastConfirmedQuery.data?.findManyPaymentTransactions}
+		{#if $lastConfirmedQuery.data?.findManyPaymentTransactions?.length}
 			{@const last = $lastConfirmedQuery.data.findManyPaymentTransactions[0]}
 			<div class="alert alert-success">
 				<i class="fa-duotone fa-money-bill-transfer text-lg"></i>
