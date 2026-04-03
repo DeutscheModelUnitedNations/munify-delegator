@@ -125,7 +125,7 @@ async function searchTransactions(conferenceId: string, searchTerm: string, limi
 	return transactions.map((t) => ({
 		id: t.id,
 		amount: Number(t.amount),
-		currency: t.conference.currency,
+		currency: t.conference.currency ?? 'EUR',
 		recievedAt: t.recievedAt ? t.recievedAt.toISOString() : null
 	}));
 }
