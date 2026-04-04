@@ -113,6 +113,7 @@ async function searchTransactions(conferenceId: string, searchTerm: string, limi
 			conferenceId,
 			id: { contains: searchTerm, mode: 'insensitive' }
 		},
+		orderBy: { createdAt: 'desc' },
 		include: {
 			conference: {
 				select: { currency: true }
