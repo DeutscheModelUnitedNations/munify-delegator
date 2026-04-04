@@ -13,19 +13,18 @@ import {
 	randomPKCECodeVerifier,
 	randomState,
 	refreshTokenGrant,
-	tokenIntrospection,
 	type TokenEndpointResponse
 } from 'openid-client';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 export type OIDCUser = {
 	sub: string;
 	email: string;
-	preferred_username: string;
-	family_name: string;
-	given_name: string;
+	preferred_username?: string;
+	family_name?: string;
+	given_name?: string;
 
 	// non checked fields
 	locale?: string;
@@ -40,7 +39,34 @@ type OIDCFlowState = {
 };
 
 export function isValidOIDCUser(user: any): user is OIDCUser {
-	return user.sub && user.email && user.preferred_username && user.family_name && user.given_name;
+	return !!user.sub && !!user.email;
+}
+
+/**
+ * Normalize OIDC claims from different providers into a consistent OIDCUser shape.
+ * Logto uses `username` instead of `preferred_username` and `name` instead of `family_name`/`given_name`.
+ */
+function normalizeOIDCClaims(claims: Record<string, any>): Record<string, any> {
+	const normalized = { ...claims };
+
+	// Logto: username → preferred_username
+	if (!normalized.preferred_username && normalized.username) {
+		normalized.preferred_username = normalized.username;
+	}
+
+	// Logto: name → family_name + given_name (split on last space)
+	if ((!normalized.family_name || !normalized.given_name) && normalized.name) {
+		const parts = normalized.name.trim().split(/\s+/);
+		if (parts.length >= 2) {
+			normalized.given_name = parts.slice(0, -1).join(' ');
+			normalized.family_name = parts[parts.length - 1];
+		} else {
+			normalized.given_name = normalized.name;
+			normalized.family_name = normalized.name;
+		}
+	}
+
+	return normalized;
 }
 
 export const codeVerifierCookieName = 'code_verifier';
@@ -101,7 +127,8 @@ export async function startSignin(visitedUrl: URL) {
 		scope: configPrivate.OIDC_SCOPES,
 		code_challenge,
 		code_challenge_method: 'S256',
-		state: serialized_state
+		state: serialized_state,
+		...(configPrivate.OIDC_RESOURCE ? { resource: configPrivate.OIDC_RESOURCE } : {})
 	};
 
 	const redirect_uri = buildAuthorizationUrl(config, parameters);
@@ -124,68 +151,85 @@ export async function resolveSignin(
 	}
 	const verifier = cryptr.decrypt(encrypted_verifier);
 	const state = JSON.parse(cryptr.decrypt(encrypted_state)) as OIDCFlowState;
-	const tokens = await authorizationCodeGrant(config, visitedUrl, {
-		pkceCodeVerifier: verifier,
-		expectedState: JSON.stringify(state)
-	});
+	const tokens = await authorizationCodeGrant(
+		config,
+		visitedUrl,
+		{
+			pkceCodeVerifier: verifier,
+			expectedState: JSON.stringify(state)
+		},
+		configPrivate.OIDC_RESOURCE ? { resource: configPrivate.OIDC_RESOURCE } : undefined
+	);
 	(state as any).random = undefined;
 	const strippedState: Omit<OIDCFlowState, 'random'> = { ...state };
 
 	return { tokens, state: strippedState };
 }
 
+/**
+ * Try to decode custom claims from the access token (JWT).
+ * Logto injects Custom JWT claims (e.g. roles) into the access token, not the id_token.
+ * Returns the decoded payload or an empty object if the token is opaque.
+ */
+function decodeAccessTokenClaims(access_token: string): Record<string, unknown> {
+	try {
+		return decodeJwt(access_token);
+	} catch {
+		return {};
+	}
+}
+
 export async function validateTokens({
 	access_token,
 	id_token
 }: Pick<TokenEndpointResponse, 'access_token' | 'id_token'>): Promise<OIDCUser> {
-	try {
-		if (!jwks) throw new Error('No jwks available');
-		if (!id_token) throw new Error('No id_token available');
+	let sub: string | undefined;
+	const accessTokenClaims = decodeAccessTokenClaims(access_token);
 
-		const [accessTokenValue, idTokenValue] = await Promise.all([
-			jwtVerify(access_token, jwks, {
+	// Try local JWT verification of the id_token first
+	if (jwks && id_token) {
+		try {
+			const idTokenValue = await jwtVerify(id_token, jwks, {
 				issuer: config.serverMetadata().issuer,
 				audience: configPublic.PUBLIC_OIDC_CLIENT_ID
-			}),
-			jwtVerify(id_token, jwks, {
-				issuer: config.serverMetadata().issuer,
-				audience: configPublic.PUBLIC_OIDC_CLIENT_ID
-			})
-		]);
+			});
 
-		if (!accessTokenValue.payload.sub) {
-			throw new Error('No subject in access token');
+			// Merge access token claims (e.g. roles) into the id_token payload
+			const normalizedPayload = normalizeOIDCClaims({
+				...idTokenValue.payload,
+				...accessTokenClaims,
+				// Preserve id_token's sub/aud/iss over access token's
+				sub: idTokenValue.payload.sub,
+				aud: idTokenValue.payload.aud,
+				iss: idTokenValue.payload.iss
+			});
+			sub = normalizedPayload.sub;
+
+			if (isValidOIDCUser(normalizedPayload)) {
+				return normalizedPayload;
+			}
+
+			console.debug(
+				'[OIDC] id_token verified but missing profile fields, falling back to userinfo'
+			);
+		} catch (error: unknown) {
+			console.debug(
+				`[OIDC] Local id_token verification failed (${error instanceof Error ? error.message : 'unknown'}), trying userinfo endpoint`
+			);
 		}
-
-		if (!idTokenValue.payload.sub) {
-			throw new Error('No subject in id token');
-		}
-
-		if (accessTokenValue.payload.sub !== idTokenValue.payload.sub) {
-			throw new Error('Subject in access token and id token do not match');
-		}
-
-		// some basic fields which we want to be present
-		// if the id token is configured in a way that it does not contain these fields
-		// we instead want to use the userinfo endpoint
-		if (!isValidOIDCUser(idTokenValue.payload)) {
-			throw new Error('Not all fields in id token are present');
-		}
-
-		return idTokenValue.payload;
-	} catch (error: any) {
-		console.debug(
-			`[OIDC] Local token verification failed (${error.message}), trying remote introspection`
-		);
-
-		const remoteUserInfo = await tokenIntrospection(config, access_token);
-
-		if (!isValidOIDCUser(remoteUserInfo)) {
-			throw new Error('Not all fields in remoteUserInfo token are present');
-		}
-
-		return remoteUserInfo;
 	}
+
+	// Fallback: fetch user info from the provider's userinfo endpoint
+	const remoteUserInfo = normalizeOIDCClaims({
+		...(await fetchUserInfo(config, access_token, sub ?? access_token)),
+		...accessTokenClaims
+	});
+
+	if (!isValidOIDCUser(remoteUserInfo)) {
+		throw new Error('Not all required fields returned from userinfo endpoint');
+	}
+
+	return remoteUserInfo as OIDCUser;
 }
 
 export function refresh(refresh_token: string) {
@@ -199,20 +243,6 @@ export function getLogoutUrl(visitedUrl: URL) {
 	return buildEndSessionUrl(config, {
 		post_logout_redirect_uri: visitedUrl.origin + '/auth/logout-callback'
 	});
-}
-
-/**
- * Retrieve user information for an access token from the issuer.
- *
- * @param access_token - The access token presented to the issuer's userinfo endpoint
- * @param expectedSubject - The expected `sub` (subject) to validate against the issuer's response
- * @returns The user info object returned by the issuer
- */
-export function fetchUserInfoFromIssuer(
-	access_token: string,
-	expectedSubject: string
-): Promise<OIDCUser> {
-	return fetchUserInfo(config, access_token, expectedSubject) as Promise<OIDCUser>;
 }
 
 /**
@@ -256,7 +286,7 @@ export async function performTokenExchange(
 	const tokenExchangeParams: Record<string, string> = {
 		grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
 		subject_token: subjectUserId,
-		subject_token_type: 'urn:zitadel:params:oauth:token-type:user_id',
+		subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
 		actor_token: actorToken,
 		actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
 		requested_token_type: 'urn:ietf:params:oauth:token-type:jwt'
@@ -308,16 +338,7 @@ export async function performTokenExchange(
 				errorDetail?.error_description?.includes('token-exchange')
 			) {
 				throw new Error(
-					`OIDC Client not configured for Token Exchange. Please add the grant type 'urn:ietf:params:oauth:grant-type:token-exchange' to your Zitadel OIDC application configuration.`
-				);
-			}
-
-			if (
-				errorDetail?.error === 'invalid_request' &&
-				errorDetail?.error_description?.includes('No matching permissions found')
-			) {
-				throw new Error(
-					`Impersonation not allowed. The user lacks permission to impersonate the target user. Please check:\n1. User has 'ORG_END_USER_IMPERSONATOR' role\n2. User has 'ORG_USER_SELF_MANAGEMENT' role or project-specific impersonation permissions\n3. Target user is in the same organization/project scope`
+					`OIDC Client not configured for Token Exchange. Please add the grant type 'urn:ietf:params:oauth:grant-type:token-exchange' to your OIDC application configuration.`
 				);
 			}
 

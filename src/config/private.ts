@@ -14,6 +14,7 @@ const schema = z.object({
 	// 	'OIDC_SCOPES must include "offline_access"'
 	// ),
 	OIDC_ROLE_CLAIM: z.string().nullish(),
+	OIDC_RESOURCE: z.string().url().nullish(),
 	SECRET: z.string(),
 	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
 	OTEL_SERVICE_NAME: z.string().default('MUNIFY-DELEGATOR'),

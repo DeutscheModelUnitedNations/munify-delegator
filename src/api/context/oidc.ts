@@ -118,7 +118,18 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 
 	if (user && configPrivate.OIDC_ROLE_CLAIM) {
 		const rolesRaw = user[configPrivate.OIDC_ROLE_CLAIM]!;
-		if (rolesRaw) {
+		if (Array.isArray(rolesRaw)) {
+			for (const role of rolesRaw) {
+				if (typeof role === 'string') {
+					// Simple string array (e.g. ["admin"])
+					OIDCRoleNames.push(role as any);
+				} else if (role && typeof role === 'object' && 'name' in role) {
+					// Logto returns role objects (e.g. [{name: "admin", ...}])
+					OIDCRoleNames.push(role.name as any);
+				}
+			}
+		} else if (rolesRaw && typeof rolesRaw === 'object') {
+			// Zitadel returned roles as an object with role names as keys
 			const roleNames = Object.keys(rolesRaw);
 			OIDCRoleNames.push(...(roleNames as any));
 		}
@@ -149,7 +160,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				// Security: verify the impersonation token was actually issued for the currently authenticated actor (original user)
 				const actorSub =
 					actorInfo && typeof actorInfo === 'object'
-						? actorInfo.sub || actorInfo.subject || (actorInfo as any)['urn:zitadel:act:sub']
+						? actorInfo.sub || actorInfo.subject
 						: undefined;
 
 				if (!actorSub) {
@@ -200,7 +211,15 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				const impersonatedOIDCRoleNames: (typeof oidcRoles)[number][] = [];
 				if (impersonatedUser && configPrivate.OIDC_ROLE_CLAIM) {
 					const impersonatedRolesRaw = impersonatedUser[configPrivate.OIDC_ROLE_CLAIM]!;
-					if (impersonatedRolesRaw) {
+					if (Array.isArray(impersonatedRolesRaw)) {
+						for (const role of impersonatedRolesRaw) {
+							if (typeof role === 'string') {
+								impersonatedOIDCRoleNames.push(role as any);
+							} else if (role && typeof role === 'object' && 'name' in role) {
+								impersonatedOIDCRoleNames.push(role.name as any);
+							}
+						}
+					} else if (impersonatedRolesRaw && typeof impersonatedRolesRaw === 'object') {
 						const impersonatedRoleNames = Object.keys(impersonatedRolesRaw);
 						impersonatedOIDCRoleNames.push(...(impersonatedRoleNames as any));
 					}

@@ -28,7 +28,6 @@ import {
 	UserGlobalNotesFieldObject,
 	UserEmergencyContactsFieldObject
 } from '$db/generated/graphql/User';
-import { fetchUserInfoFromIssuer } from '$api/services/OIDC';
 import { db } from '$db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
@@ -408,21 +407,12 @@ builder.mutationFields((t) => {
 			}),
 			resolve: async (root, args, ctx) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
-				if (ctx.oidc.tokenSet?.access_token === undefined) {
-					throw new GraphQLError('No access token provided');
-				}
-				const issuerUserData = await fetchUserInfoFromIssuer(
-					ctx.oidc.tokenSet?.access_token,
-					user.sub
-				);
 
-				if (
-					!issuerUserData.email ||
-					!issuerUserData.family_name ||
-					!issuerUserData.given_name ||
-					!issuerUserData.preferred_username
-				) {
-					throw new GraphQLError('OIDC result is missing required fields!');
+				// Use the already-validated user data from the OIDC context
+				// (fetching from userinfo endpoint fails when access tokens are JWTs scoped to an API resource)
+				const issuerUserData = ctx.oidc.user;
+				if (!issuerUserData?.email) {
+					throw new GraphQLError('OIDC result is missing required field: email');
 				}
 
 				try {
@@ -431,15 +421,19 @@ builder.mutationFields((t) => {
 						create: {
 							id: issuerUserData.sub,
 							email: issuerUserData.email,
-							family_name: issuerUserData.family_name,
-							given_name: issuerUserData.given_name,
-							preferred_username: issuerUserData.preferred_username,
+							family_name: issuerUserData.family_name ?? '',
+							given_name: issuerUserData.given_name ?? '',
+							preferred_username: issuerUserData.preferred_username ?? issuerUserData.email,
 							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
 							phone: issuerUserData.phone ?? user.phone
 						},
 						update: {
 							email: issuerUserData.email,
-							preferred_username: issuerUserData.preferred_username,
+							...(issuerUserData.family_name && { family_name: issuerUserData.family_name }),
+							...(issuerUserData.given_name && { given_name: issuerUserData.given_name }),
+							...(issuerUserData.preferred_username && {
+								preferred_username: issuerUserData.preferred_username
+							}),
 							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
 							phone: issuerUserData.phone ?? user.phone
 						}

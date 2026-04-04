@@ -3823,11 +3823,11 @@ enum OIDCRolesEnum {
 
 type OfflineUser {
   email: String!
-  family_name: String!
-  given_name: String!
+  family_name: String
+  given_name: String
   locale: String
   phone: String
-  preferred_username: String!
+  preferred_username: String
   sub: String!
 }
 

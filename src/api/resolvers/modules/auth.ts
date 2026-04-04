@@ -37,9 +37,9 @@ builder.queryFields((t) => {
 							fields: (t) => ({
 								sub: t.string(),
 								email: t.string(),
-								preferred_username: t.string(),
-								family_name: t.string(),
-								given_name: t.string(),
+								preferred_username: t.string({ nullable: true }),
+								family_name: t.string({ nullable: true }),
+								given_name: t.string({ nullable: true }),
 								locale: t.string({ nullable: true }),
 								phone: t.string({ nullable: true })
 							})

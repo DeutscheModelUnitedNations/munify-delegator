@@ -29,7 +29,7 @@ services:
   #  "given_name": "Delegator Jr.",
   #  "preferred_username": "delegatoruser_123",
   #  "locale": "de",
-  #  "urn:zitadel:iam:org:project:275671427955294244:roles": {"admin": {}}
+  #  "roles": ["admin"]
   # }
   mockoidc:
     image: ghcr.io/navikt/mock-oauth2-server:2.1.10
@@ -143,7 +143,7 @@ services:
       - '1025:1025' # SMTP server
       - '8025:8025' # Web UI
     environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH: 'mailpit:mailpit'
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
   # Bugsink - Self-hosted error tracking (Sentry-compatible)
