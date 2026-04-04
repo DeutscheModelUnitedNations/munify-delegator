@@ -10,6 +10,7 @@
 	import BooleanStatusWidget from '$lib/components/BooleanStatusWidget.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
+	import ParticipantPaymentWidget from '$lib/components/ParticipantPaymentWidget.svelte';
 	import AccessCardSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AccessCardSection.svelte';
 	import AttendanceSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AttendanceSection.svelte';
 	import { toast } from 'svelte-sonner';
@@ -304,6 +305,13 @@
 				onUpdate?.();
 			}}
 		/>
+	</div>
+
+	<div class="divider"></div>
+
+	<div class="flex flex-col gap-3">
+		<h3 class="text-lg font-bold">{m.payment()}</h3>
+		<ParticipantPaymentWidget {userId} {conferenceId} />
 	</div>
 
 	<div class="divider"></div>

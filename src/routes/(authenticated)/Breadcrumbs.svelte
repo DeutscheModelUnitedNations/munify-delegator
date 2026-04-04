@@ -2,7 +2,7 @@
 	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { locales } from '$lib/paraglide/runtime';
-	import { m } from '$lib/paraglide/messages';
+	import { m, userId } from '$lib/paraglide/messages';
 	import { graphql } from '$houdini';
 	import type { LayoutServerLoadEvent } from './$types';
 	import { browser } from '$app/environment';
@@ -256,6 +256,14 @@
 		'team-tender': {
 			icon: 'bullhorn',
 			translation: m.teamTenderTitle()
+		},
+		user: {
+			icon: 'users',
+			translation: m.participants()
+		},
+		userId: {
+			icon: 'user',
+			translation: m.adminUserCard()
 		}
 	};
 
