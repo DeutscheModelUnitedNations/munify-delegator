@@ -131,7 +131,7 @@ bun run machine-translate
 
 #### Authentication & Authorization
 
-- **OIDC Integration**: Uses OpenID Connect (designed for ZITADEL but supports any OIDC provider)
+- **OIDC Integration**: Uses OpenID Connect (recommended: Logto, but supports any OIDC provider)
 - **Context Building**: `src/api/context/context.ts` constructs request context with OIDC data
 - **Permission System**: CASL ability-based authorization
   - Definitions in `src/api/abilities/entities/`
@@ -221,5 +221,5 @@ Example: `feat(delegation): add nation preference selection`
 Use provided Docker images: `deutschemodelunitednations/delegator`
 
 - Example compose file in `example/` directory
-- Requires external OIDC provider (ZITADEL recommended)
+- Requires external OIDC provider (Logto recommended)
 - Environment variables must be configured (see `.env.example`)
