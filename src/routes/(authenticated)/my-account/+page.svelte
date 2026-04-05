@@ -27,6 +27,30 @@
 	});
 
 	//TODO pronoun prefill
+
+	// Show toast for successful account center updates
+	$effect(() => {
+		const successMap: Record<string, () => string> = {
+			email: () => m.accountUpdateSuccessEmail(),
+			password: () => m.accountUpdateSuccessPassword(),
+			username: () => m.accountUpdateSuccessUsername(),
+			passkey: () => m.accountUpdateSuccessPasskey(),
+			mfa: () => m.accountUpdateSuccessMfa(),
+			'backup-codes': () => m.accountUpdateSuccessBackupCodes()
+		};
+		if (data.accountUpdateSuccess && successMap[data.accountUpdateSuccess]) {
+			toast.success(successMap[data.accountUpdateSuccess]());
+		}
+	});
+
+	function accountUrl(path: string) {
+		return `${data.accountCenterUrl}/${path}?redirect=${encodeURIComponent(data.accountRedirectUrl)}`;
+	}
+
+	const mfaFactors = $derived(data.user.mfaVerificationFactors ?? []);
+	const hasPasskey = $derived(mfaFactors.includes('WebAuthn'));
+	const hasTotp = $derived(mfaFactors.includes('Totp'));
+	const hasBackupCodes = $derived(mfaFactors.includes('BackupCode'));
 </script>
 
 {#if data.redirectUrl}
@@ -50,9 +74,9 @@
 			</div>
 		{/if}
 	</section>
-	<div class="mt-10 flex flex-wrap items-start justify-center gap-10">
+	<div class="mt-10 grid w-full max-w-4xl grid-cols-1 items-start gap-10 lg:grid-cols-2">
 		<div
-			class="card bg-base-100 border-base-200 z-20 max-w-80 border shadow-xl sm:max-w-md {data.redirectUrl &&
+			class="card bg-base-100 border-base-200 z-20 border shadow-xl {data.redirectUrl &&
 				'highlight-card'}"
 		>
 			<div class="card-body bg-base-100 rounded-box">
@@ -156,44 +180,123 @@
 			</div>
 		</div>
 
-		<div class="card bg-base-100 border-base-200 w-full max-w-80 border shadow-xl sm:max-w-md">
+		<div class="card bg-base-100 border-base-200 border shadow-xl">
 			<div class="card-body">
 				<div class="card-title block text-center">{m.loginInformation()}</div>
-				<table class="table">
-					<tbody>
-						<tr>
-							<td class="text-center"><i class="fa-duotone fa-envelope"></i></td>
-							<td>{m.email()}</td>
-							<td>{data.user.email}</td>
-						</tr>
-						<tr>
-							<td class="text-center"><i class="fa-duotone fa-key"></i></td>
-							<td>{m.password()}</td>
-							<td>
-								<i class="fa-solid fa-asterisk text-xs"></i>
-								<i class="fa-solid fa-asterisk text-xs"></i>
-								<i class="fa-solid fa-asterisk text-xs"></i>
-								<i class="fa-solid fa-asterisk text-xs"></i>
-								<i class="fa-solid fa-asterisk text-xs"></i>
-							</td>
-						</tr>
-						<tr>
-							<td class="text-center"><i class="fa-duotone fa-binary"></i></td>
-							<td>{m.userId()}</td>
-							<td>{data.user.sub}</td>
-						</tr>
-						<tr>
-							<td class="text-center"><i class="fa-duotone fa-user-lock"></i></td>
-							<td>{m.rights()}</td>
-							<td>{data.user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</td>
-						</tr>
-					</tbody>
-				</table>
-				<a class="btn btn-primary btn-block mt-4" href="https://guard.munify.cloud" target="_blank">
-					{m.edit()}
-					<i class="fas fa-arrow-up-right-from-square"></i>
-				</a>
-				<p class="mt-6 max-w-[40ch] text-center text-sm">{@html m.deleteAccountGPDR()}</p>
+				<div class="divide-base-200 divide-y">
+					<div class="flex items-center gap-3 py-3">
+						<i class="fa-duotone fa-user text-base-content/60 w-5 text-center"></i>
+						<div class="flex-1 min-w-0">
+							<div class="text-xs text-base-content/60">{m.loginName()}</div>
+							<div class="truncate">{data.user.preferred_username ?? '–'}</div>
+						</div>
+						<a class="btn btn-ghost btn-sm" href={accountUrl('username')}>
+							<i class="fa-duotone fa-pen-to-square"></i>
+						</a>
+					</div>
+					<div class="flex items-center gap-3 py-3">
+						<i class="fa-duotone fa-envelope text-base-content/60 w-5 text-center"></i>
+						<div class="flex-1 min-w-0">
+							<div class="text-xs text-base-content/60">{m.email()}</div>
+							<div class="truncate">{data.user.email}</div>
+						</div>
+						<a class="btn btn-ghost btn-sm" href={accountUrl('email')}>
+							<i class="fa-duotone fa-pen-to-square"></i>
+						</a>
+					</div>
+					<div class="flex items-center gap-3 py-3">
+						<i class="fa-duotone fa-key text-base-content/60 w-5 text-center"></i>
+						<div class="flex-1 min-w-0">
+							<div class="text-xs text-base-content/60">{m.password()}</div>
+							{#if data.user.hasPassword}
+								<div>•••••</div>
+							{/if}
+						</div>
+						<a class="btn btn-ghost btn-sm" href={accountUrl('password')}>
+							<i class="fa-duotone fa-pen-to-square"></i>
+						</a>
+					</div>
+					<div class="flex items-center gap-3 py-3">
+						<i class="fa-duotone fa-fingerprint text-base-content/60 w-5 text-center"></i>
+						<div class="flex-1 min-w-0">
+							<div class="text-xs text-base-content/60">{m.passkeys()}</div>
+							{#if hasPasskey}
+								<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
+							{/if}
+						</div>
+						<a
+							class="btn btn-ghost btn-sm"
+							href={accountUrl(hasPasskey ? 'passkey/manage' : 'passkey/add')}
+						>
+							<i class="fa-duotone fa-pen-to-square"></i>
+						</a>
+					</div>
+					<div class="flex items-center gap-3 py-3">
+						<i class="fa-duotone fa-shield-keyhole text-base-content/60 w-5 text-center"></i>
+						<div class="flex-1 min-w-0">
+							<div class="text-xs text-base-content/60">{m.authenticatorApp()}</div>
+							{#if hasTotp}
+								<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
+							{/if}
+						</div>
+						<a
+							class="btn btn-ghost btn-sm"
+							href={accountUrl(hasTotp ? 'authenticator-app/replace' : 'authenticator-app')}
+						>
+							<i class="fa-duotone fa-pen-to-square"></i>
+						</a>
+					</div>
+					{#if hasPasskey || hasTotp}
+						<div class="flex items-center gap-3 py-3">
+							<i class="fa-duotone fa-file-shield text-base-content/60 w-5 text-center"></i>
+							<div class="flex-1 min-w-0">
+								<div class="text-xs text-base-content/60">{m.backupCodes()}</div>
+								{#if hasBackupCodes}
+									<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
+								{/if}
+							</div>
+							<a
+								class="btn btn-ghost btn-sm"
+								href={accountUrl(hasBackupCodes ? 'backup-codes/manage' : 'backup-codes/generate')}
+							>
+								<i class="fa-duotone fa-pen-to-square"></i>
+							</a>
+						</div>
+					{/if}
+					{#if data.user.ssoIdentities?.length || data.user.socialIdentities?.length}
+						<div class="flex items-center gap-3 py-3">
+							<i class="fa-duotone fa-link text-base-content/60 w-5 text-center"></i>
+							<div class="flex-1 min-w-0">
+								<div class="text-xs text-base-content/60">{m.ssoIdentities()}</div>
+								<div class="flex flex-wrap gap-1 mt-1">
+									{#each data.user.socialIdentities ?? [] as provider}
+										<span class="badge badge-sm capitalize">{provider}</span>
+									{/each}
+									{#each data.user.ssoIdentities ?? [] as sso}
+										<span class="badge badge-sm">{sso.issuer}</span>
+									{/each}
+								</div>
+							</div>
+						</div>
+					{/if}
+					<div class="flex items-center gap-3 py-3">
+						<i class="fa-duotone fa-binary text-base-content/60 w-5 text-center"></i>
+						<div class="flex-1 min-w-0">
+							<div class="text-xs text-base-content/60">{m.userId()}</div>
+							<div class="truncate font-mono text-sm">{data.user.sub}</div>
+						</div>
+					</div>
+					{#if data.user.myOIDCRoles.length}
+						<div class="flex items-center gap-3 py-3">
+							<i class="fa-duotone fa-user-lock text-base-content/60 w-5 text-center"></i>
+							<div class="flex-1 min-w-0">
+								<div class="text-xs text-base-content/60">{m.rights()}</div>
+								<div>{data.user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</div>
+							</div>
+						</div>
+					{/if}
+				</div>
+				<p class="mt-4 text-center text-sm">{@html m.deleteAccountGPDR()}</p>
 			</div>
 		</div>
 	</div>

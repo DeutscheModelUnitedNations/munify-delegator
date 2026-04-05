@@ -41,7 +41,21 @@ builder.queryFields((t) => {
 								family_name: t.string({ nullable: true }),
 								given_name: t.string({ nullable: true }),
 								locale: t.string({ nullable: true }),
-								phone: t.string({ nullable: true })
+								phone: t.string({ nullable: true }),
+								hasPassword: t.boolean({ nullable: true }),
+								mfaVerificationFactors: t.stringList({ nullable: true }),
+								ssoIdentities: t.field({
+									type: [
+										builder.simpleObject('OfflineUserSsoIdentity', {
+											fields: (t) => ({
+												issuer: t.string(),
+												identityId: t.string()
+											})
+										})
+									],
+									nullable: true
+								}),
+								socialIdentities: t.stringList({ nullable: true })
 							})
 						}),
 						nullable: true
@@ -53,7 +67,26 @@ builder.queryFields((t) => {
 				})
 			}),
 			resolve: (root, args, ctx) => {
-				return { user: ctx.oidc.user, nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue };
+				const user = ctx.oidc.user;
+				// TYPE-SAFETY-EXCEPTION: `password` and `mfa` are custom JWT claims
+				// injected by Logto's Custom JWT feature. They exist on the OIDCUser
+				// index signature but TypeScript loses it after the spread in oidc context.
+				const claims = user as Record<string, unknown> | undefined;
+				return {
+					user: user
+						? {
+								...user,
+								hasPassword: (claims?.['password'] as boolean) ?? null,
+								mfaVerificationFactors: (claims?.['mfa'] as string[]) ?? null,
+								ssoIdentities:
+									(claims?.['sso_identities'] as
+										| { issuer: string; identityId: string }[]
+										| undefined) ?? null,
+								socialIdentities: (claims?.['social_identities'] as string[] | undefined) ?? null
+							}
+						: null,
+					nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue
+				};
 			}
 		})
 	};

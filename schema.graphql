@@ -3825,15 +3825,24 @@ type OfflineUser {
   email: String!
   family_name: String
   given_name: String
+  hasPassword: Boolean
   locale: String
+  mfaVerificationFactors: [String!]
   phone: String
   preferred_username: String
+  socialIdentities: [String!]
+  ssoIdentities: [OfflineUserSsoIdentity!]
   sub: String!
 }
 
 type OfflineUserRefresh {
   nextTokenRefreshDue: DateTime
   user: OfflineUser
+}
+
+type OfflineUserSsoIdentity {
+  identityId: String!
+  issuer: String!
 }
 
 type Paper {

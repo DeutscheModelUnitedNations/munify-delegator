@@ -7,6 +7,7 @@ import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
+import { configPublic } from '$config/public';
 
 const userQuery = graphql(`
 	query FullUserMyAccountQuery($id: String!) {
@@ -57,10 +58,20 @@ export const load: PageServerLoad = async (event) => {
 		redirectUrl = undefined;
 	}
 
+	// Logto Account Center deep-link support
+	const accountCenterUrl =
+		configPublic.PUBLIC_OIDC_ACCOUNT_URL ??
+		configPublic.PUBLIC_OIDC_AUTHORITY.replace(/\/oidc\/?$/, '') + '/account';
+	const accountRedirectUrl = `${eventUrl.origin}/my-account`;
+	const accountUpdateSuccess = eventUrl.searchParams.get('show_success') || undefined;
+
 	return {
 		form,
 		redirectUrl,
-		user
+		user,
+		accountCenterUrl,
+		accountRedirectUrl,
+		accountUpdateSuccess
 	};
 };
 
