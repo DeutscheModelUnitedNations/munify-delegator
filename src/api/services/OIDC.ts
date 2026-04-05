@@ -246,67 +246,131 @@ export function getLogoutUrl(visitedUrl: URL) {
 }
 
 /**
- * Perform an OAuth 2.0 Token Exchange to obtain a JWT for acting as a specified subject.
+ * Obtain an M2M (machine-to-machine) access token for the Logto Management API.
+ * Uses client_credentials grant with the M2M app credentials.
+ */
+async function getM2MAccessToken(): Promise<string> {
+	const m2mClientId = configPrivate.OIDC_M2M_CLIENT_ID;
+	const m2mClientSecret = configPrivate.OIDC_M2M_CLIENT_SECRET;
+
+	if (!m2mClientId || !m2mClientSecret) {
+		throw new Error(
+			'Impersonation requires M2M credentials. Set OIDC_M2M_CLIENT_ID and OIDC_M2M_CLIENT_SECRET.'
+		);
+	}
+
+	// Use configured resource or derive from OIDC authority
+	// For Logto Cloud: https://<tenant>.logto.app/api
+	// For self-hosted: must be set explicitly via OIDC_M2M_RESOURCE
+	const issuer = config.serverMetadata().issuer;
+	const managementApiResource =
+		configPrivate.OIDC_M2M_RESOURCE ?? `${issuer.replace(/\/oidc\/?$/, '')}/api`;
+
+	const response = await fetch(config.serverMetadata().token_endpoint!, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded',
+			Authorization: `Basic ${Buffer.from(`${m2mClientId}:${m2mClientSecret}`).toString('base64')}`
+		},
+		body: new URLSearchParams({
+			grant_type: 'client_credentials',
+			resource: managementApiResource,
+			scope: 'all'
+		}),
+		signal: AbortSignal.timeout(10_000)
+	});
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(`Failed to obtain M2M access token: ${response.status} ${errorText}`);
+	}
+
+	const data = await response.json();
+	return data.access_token;
+}
+
+/**
+ * Create a subject token for impersonation via the Logto Management API.
  *
- * @param actorToken - The actor's access token used to authorize the exchange.
- * @param subjectUserId - The user identifier of the subject to impersonate (subject token).
+ * @param subjectUserId - The Logto user ID of the user to impersonate.
+ * @returns The subject token string to be used in the token exchange.
+ */
+async function createSubjectToken(subjectUserId: string): Promise<string> {
+	const m2mToken = await getM2MAccessToken();
+
+	// Derive Management API base URL from the OIDC issuer
+	const issuer = config.serverMetadata().issuer;
+	const managementApiBase = issuer.replace(/\/oidc\/?$/, '');
+
+	const response = await fetch(`${managementApiBase}/api/subject-tokens`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${m2mToken}`,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ userId: subjectUserId }),
+		signal: AbortSignal.timeout(10_000)
+	});
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(`Failed to create subject token: ${response.status} ${errorText}`);
+	}
+
+	const data = await response.json();
+	return data.subjectToken;
+}
+
+/**
+ * Perform user impersonation via Logto's two-step token exchange flow:
+ * 1. Create a subject token via the Logto Management API
+ * 2. Exchange that subject token for an access token at the OIDC token endpoint
+ *
+ * @param actorToken - The actor's access token (for the `act` claim in the resulting JWT).
+ * @param subjectUserId - The user ID of the user to impersonate.
  * @param scope - Optional scope to request for the exchanged token.
- * @param audience - Optional audience to request for the exchanged token.
- * @returns The token endpoint response from the issuer as a `TokenEndpointResponse`.
- * @throws When the OIDC configuration is not initialized, when the token endpoint returns an error (includes provider error details when available), or when the exchange request fails or times out.
+ * @returns The token endpoint response with the impersonation access token.
  */
 export async function performTokenExchange(
 	actorToken: string,
 	subjectUserId: string,
-	scope?: string,
-	audience?: string
+	scope?: string
 ): Promise<TokenEndpointResponse> {
 	if (!config) {
 		throw new Error('OIDC configuration not initialized');
 	}
 
 	let actor = 'unknown';
-	if (jwks) {
-		try {
-			const { payload } = await jwtVerify(actorToken, jwks);
-			if (payload.sub) {
-				actor = payload.sub;
-			}
-		} catch (err) {
-			console.warn(
-				`Could not determine actor from token for audit purposes: ${
-					err instanceof Error ? err.message : 'Unknown error'
-				}`
-			);
+	try {
+		const decoded = decodeJwt(actorToken);
+		if (decoded.sub) {
+			actor = decoded.sub;
 		}
-	} else {
-		console.warn('No jwks available for decoding actor token for audit purposes.');
-	}
-
-	const tokenExchangeParams: Record<string, string> = {
-		grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-		subject_token: subjectUserId,
-		subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-		actor_token: actorToken,
-		actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-		requested_token_type: 'urn:ietf:params:oauth:token-type:jwt'
-	};
-
-	if (scope) {
-		tokenExchangeParams.scope = scope;
-	}
-
-	if (audience) {
-		tokenExchangeParams.audience = audience;
+	} catch {
+		console.warn('Could not determine actor from token for audit purposes.');
 	}
 
 	try {
-		// Add a timeout so the token exchange does not hang indefinitely
-		const signal = AbortSignal.timeout(10_000); // 10s timeout
+		// Step 1: Create a subject token via the Management API
+		const subjectToken = await createSubjectToken(subjectUserId);
+
+		// Step 2: Exchange the subject token for an access token
+		// Logto requires: grant_type, subject_token, subject_token_type, resource
+		// actor_token is optional (adds `act` claim to the resulting JWT)
+		const tokenExchangeParams: Record<string, string> = {
+			grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+			subject_token: subjectToken,
+			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token'
+		};
+
+		// Resource is required for Logto token exchange
+		if (configPrivate.OIDC_RESOURCE) {
+			tokenExchangeParams.resource = configPrivate.OIDC_RESOURCE;
+		}
+
 		const response = await fetch(config.serverMetadata().token_endpoint!, {
 			method: 'POST',
 			headers: {
-				Accept: 'application/json',
 				'Content-Type': 'application/x-www-form-urlencoded',
 				...(configPrivate.OIDC_CLIENT_SECRET
 					? {
@@ -320,7 +384,7 @@ export async function performTokenExchange(
 					? {}
 					: { client_id: configPublic.PUBLIC_OIDC_CLIENT_ID })
 			}),
-			signal
+			signal: AbortSignal.timeout(10_000)
 		});
 
 		if (!response.ok) {
@@ -332,7 +396,6 @@ export async function performTokenExchange(
 				errorDetail = errorText;
 			}
 
-			// Specific error handling for different error types
 			if (
 				errorDetail?.error === 'unauthorized_client' &&
 				errorDetail?.error_description?.includes('token-exchange')
@@ -344,12 +407,7 @@ export async function performTokenExchange(
 
 			console.error('Token exchange error details:', {
 				status: response.status,
-				error: errorDetail,
-				tokenExchangeParams: {
-					...tokenExchangeParams,
-					actor_token: '[REDACTED]',
-					subject_token: '[REDACTED]'
-				}
+				error: errorDetail
 			});
 
 			throw new Error(

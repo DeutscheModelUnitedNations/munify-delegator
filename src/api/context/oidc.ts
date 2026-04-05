@@ -3,6 +3,8 @@ import { oidcRoles, refresh, validateTokens, type OIDCUser } from '$api/services
 import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
+import { decodeJwt } from 'jose';
+import { db } from '$db/db';
 
 const TokenCookieSchema = z
 	.object({
@@ -149,51 +151,53 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 			const impersonationTokenSet = TokenCookieSchema.safeParse(JSON.parse(impersonationCookie));
 
 			if (impersonationTokenSet.success && impersonationTokenSet.data.access_token) {
-				const impersonatedUser = await validateTokens({
-					access_token: impersonationTokenSet.data.access_token,
-					id_token: impersonationTokenSet.data.id_token
-				});
-
-				// Extract actor information from the JWT token
-				const actorInfo = (impersonatedUser as any).act;
-
-				// Security: verify the impersonation token was actually issued for the currently authenticated actor (original user)
-				const actorSub =
-					actorInfo && typeof actorInfo === 'object'
-						? actorInfo.sub || actorInfo.subject
-						: undefined;
-
-				if (!actorSub) {
-					console.warn(
-						'Security: Impersonation token missing actor (act.sub) claim. Aborting impersonation.'
-					);
-					// Defensive: clear cookie so we do not repeatedly parse invalid token
-					cookies.delete(impersonationTokenCookieName, { path: '/' });
-					return {
-						nextTokenRefreshDue: tokenSet.expires_in
-							? new Date(Date.now() + tokenSet.expires_in * 1000)
-							: undefined,
-						tokenSet,
-						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
-						impersonation: impersonationContext
-					};
+				// Decode the impersonation JWT directly — it's a resource-scoped token
+				// that cannot be used with the userinfo endpoint.
+				// The token only contains `sub` and custom JWT claims (roles, mfa, etc.)
+				// but no profile claims, so we look up the user from the database.
+				const decoded = decodeJwt(impersonationTokenSet.data.access_token);
+				if (!decoded.sub) {
+					throw new Error('Impersonation token missing sub claim');
 				}
 
-				if (actorSub !== user.sub) {
-					console.warn('Security: Actor mismatch in impersonation token. Aborting impersonation.', {
-						actorSub,
-						currentUserSub: user.sub
-					});
-					// Clear cookie to prevent repeated attempts with a mismatched token
-					cookies.delete(impersonationTokenCookieName, { path: '/' });
-					return {
-						nextTokenRefreshDue: tokenSet.expires_in
-							? new Date(Date.now() + tokenSet.expires_in * 1000)
-							: undefined,
-						tokenSet,
-						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
-						impersonation: impersonationContext
-					};
+				const dbUser = await db.user.findUnique({ where: { id: decoded.sub } });
+				if (!dbUser) {
+					throw new Error(`Impersonated user ${decoded.sub} not found in database`);
+				}
+
+				const impersonatedUser: OIDCUser = {
+					sub: decoded.sub,
+					email: dbUser.email ?? '',
+					preferred_username: dbUser.preferred_username ?? undefined,
+					family_name: dbUser.family_name ?? undefined,
+					given_name: dbUser.given_name ?? undefined,
+					locale: dbUser.locale ?? undefined,
+					phone: dbUser.phone ?? undefined,
+					// Spread custom JWT claims (roles, mfa, password, etc.)
+					...decoded
+				};
+
+				// Extract actor information from the JWT token (if present)
+				const actorInfo = decoded.act as Record<string, unknown> | undefined;
+
+				// If actor claim is present, verify it matches the current user
+				if (actorInfo && typeof actorInfo === 'object') {
+					const actorSub = actorInfo.sub || actorInfo.subject;
+					if (actorSub && actorSub !== user.sub) {
+						console.warn(
+							'Security: Actor mismatch in impersonation token. Aborting impersonation.',
+							{ actorSub, currentUserSub: user.sub }
+						);
+						cookies.delete(impersonationTokenCookieName, { path: '/' });
+						return {
+							nextTokenRefreshDue: tokenSet.expires_in
+								? new Date(Date.now() + tokenSet.expires_in * 1000)
+								: undefined,
+							tokenSet,
+							user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+							impersonation: impersonationContext
+						};
+					}
 				}
 
 				impersonationContext = {

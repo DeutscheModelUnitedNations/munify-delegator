@@ -15,6 +15,11 @@ const schema = z.object({
 	// ),
 	OIDC_ROLE_CLAIM: z.string().nullish(),
 	OIDC_RESOURCE: z.string().url().nullish(),
+	// Machine-to-machine credentials for Logto Management API (required for impersonation)
+	OIDC_M2M_CLIENT_ID: z.string().optional(),
+	OIDC_M2M_CLIENT_SECRET: z.string().optional(),
+	// Logto Management API resource indicator (e.g. https://default.logto.app/api)
+	OIDC_M2M_RESOURCE: z.string().url().optional(),
 	SECRET: z.string(),
 	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
 	OTEL_SERVICE_NAME: z.string().default('MUNIFY-DELEGATOR'),
