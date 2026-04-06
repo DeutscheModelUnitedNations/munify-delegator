@@ -262,7 +262,8 @@ builder.mutationFields((t) => ({
 				// Perform token exchange (no scope needed — Logto uses the resource indicator)
 				const impersonationTokens = await performTokenExchange(
 					ctx.oidc.tokenSet.access_token,
-					args.targetUserId
+					args.targetUserId,
+					args.scope ?? undefined
 				);
 
 				// Store impersonation tokens in cookie

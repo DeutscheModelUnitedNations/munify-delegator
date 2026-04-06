@@ -190,7 +190,11 @@
 							<div class="text-xs text-base-content/60">{m.loginName()}</div>
 							<div class="truncate">{data.user.preferred_username ?? '–'}</div>
 						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('username')}>
+						<a
+							class="btn btn-ghost btn-sm"
+							href={accountUrl('username')}
+							aria-label="Change username"
+						>
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
 					</div>
@@ -200,7 +204,7 @@
 							<div class="text-xs text-base-content/60">{m.email()}</div>
 							<div class="truncate">{data.user.email}</div>
 						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('email')}>
+						<a class="btn btn-ghost btn-sm" href={accountUrl('email')} aria-label="Change email">
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
 					</div>
@@ -212,7 +216,11 @@
 								<div>•••••</div>
 							{/if}
 						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('password')}>
+						<a
+							class="btn btn-ghost btn-sm"
+							href={accountUrl('password')}
+							aria-label="Change password"
+						>
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
 					</div>
@@ -227,6 +235,7 @@
 						<a
 							class="btn btn-ghost btn-sm"
 							href={accountUrl(hasPasskey ? 'passkey/manage' : 'passkey/add')}
+							aria-label={hasPasskey ? 'Manage passkeys' : 'Add passkey'}
 						>
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
@@ -242,6 +251,7 @@
 						<a
 							class="btn btn-ghost btn-sm"
 							href={accountUrl(hasTotp ? 'authenticator-app/replace' : 'authenticator-app')}
+							aria-label={hasTotp ? 'Replace authenticator app' : 'Set up authenticator app'}
 						>
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
@@ -258,6 +268,7 @@
 							<a
 								class="btn btn-ghost btn-sm"
 								href={accountUrl(hasBackupCodes ? 'backup-codes/manage' : 'backup-codes/generate')}
+								aria-label={hasBackupCodes ? 'Manage backup codes' : 'Generate backup codes'}
 							>
 								<i class="fa-duotone fa-pen-to-square"></i>
 							</a>

@@ -68,21 +68,51 @@ builder.queryFields((t) => {
 			}),
 			resolve: (root, args, ctx) => {
 				const user = ctx.oidc.user;
-				// TYPE-SAFETY-EXCEPTION: `password` and `mfa` are custom JWT claims
-				// injected by Logto's Custom JWT feature. They exist on the OIDCUser
-				// index signature but TypeScript loses it after the spread in oidc context.
-				const claims = user as Record<string, unknown> | undefined;
+
+				// Type guards for custom JWT claims
+				const isBooleanClaim = (value: unknown): value is boolean => {
+					return typeof value === 'boolean';
+				};
+
+				const isStringArrayClaim = (value: unknown): value is string[] => {
+					return Array.isArray(value) && value.every((item) => typeof item === 'string');
+				};
+
+				const isSsoIdentitiesArrayClaim = (
+					value: unknown
+				): value is { issuer: string; identityId: string }[] => {
+					return (
+						Array.isArray(value) &&
+						value.every(
+							(item) =>
+								item &&
+								typeof item === 'object' &&
+								'issuer' in item &&
+								'identityId' in item &&
+								typeof item.issuer === 'string' &&
+								typeof item.identityId === 'string'
+						)
+					);
+				};
+
+				// Extract custom JWT claims with runtime validation
+				const passwordClaim = user?.['password'];
+				const mfaClaim = user?.['mfa'];
+				const ssoIdentitiesClaim = user?.['sso_identities'];
+				const socialIdentitiesClaim = user?.['social_identities'];
+
 				return {
 					user: user
 						? {
 								...user,
-								hasPassword: (claims?.['password'] as boolean) ?? null,
-								mfaVerificationFactors: (claims?.['mfa'] as string[]) ?? null,
-								ssoIdentities:
-									(claims?.['sso_identities'] as
-										| { issuer: string; identityId: string }[]
-										| undefined) ?? null,
-								socialIdentities: (claims?.['social_identities'] as string[] | undefined) ?? null
+								hasPassword: isBooleanClaim(passwordClaim) ? passwordClaim : null,
+								mfaVerificationFactors: isStringArrayClaim(mfaClaim) ? mfaClaim : null,
+								ssoIdentities: isSsoIdentitiesArrayClaim(ssoIdentitiesClaim)
+									? ssoIdentitiesClaim
+									: null,
+								socialIdentities: isStringArrayClaim(socialIdentitiesClaim)
+									? socialIdentitiesClaim
+									: null
 							}
 						: null,
 					nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue

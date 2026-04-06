@@ -8,7 +8,10 @@ const schema = z.object({
 	PUBLIC_OIDC_AUTHORITY: z.string(),
 	PUBLIC_OIDC_CLIENT_ID: z.string(),
 	PUBLIC_DEFAULT_LOCALE: z.string().default('de'),
-	PUBLIC_OIDC_ACCOUNT_URL: z.string().url().optional(),
+	PUBLIC_OIDC_ACCOUNT_URL: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.string().url().optional()
+	),
 	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
 	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false),
 
@@ -18,14 +21,17 @@ const schema = z.object({
 	PUBLIC_MAINTENANCE_WINDOW_START: z.iso.datetime({ offset: true }).optional(),
 	PUBLIC_MAINTENANCE_WINDOW_END: z.iso.datetime({ offset: true }).optional(),
 	// Sentry/Bugsink error tracking
-	PUBLIC_SENTRY_DSN: z.string().url().optional(),
+	PUBLIC_SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
 	PUBLIC_SENTRY_SEND_DEFAULT_PII: z.stringbool().optional(),
 
 	// Badge generator URL (optional)
-	PUBLIC_BADGE_GENERATOR_URL: z.string().url().optional(),
+	PUBLIC_BADGE_GENERATOR_URL: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.string().url().optional()
+	),
 
 	// Documentation URL (optional) - global link to DELEGATOR app documentation
-	PUBLIC_DOCS_URL: z.string().url().optional(),
+	PUBLIC_DOCS_URL: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
 
 	// Support email for error pages and help requests
 	PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@dmun.de'),
