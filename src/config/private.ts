@@ -19,7 +19,7 @@ const schema = z.object({
 	OIDC_M2M_CLIENT_ID: z.string().optional(),
 	OIDC_M2M_CLIENT_SECRET: z.string().optional(),
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)
-	OIDC_M2M_RESOURCE: z.string().url().optional(),
+	OIDC_M2M_RESOURCE: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
 	SECRET: z.string(),
 	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
 	OTEL_SERVICE_NAME: z.string().default('MUNIFY-DELEGATOR'),
@@ -39,7 +39,7 @@ const schema = z.object({
 	SMTP_FROM_ADDRESS: z.string().email().default('noreply@munify.cloud'),
 	SMTP_FROM_NAME: z.string().default('MUNIFY Delegator'),
 	// Sentry/Bugsink error tracking
-	SENTRY_DSN: z.string().url().optional(),
+	SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
 	SENTRY_SEND_DEFAULT_PII: z.stringbool().optional()
 });
 

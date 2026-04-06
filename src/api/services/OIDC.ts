@@ -106,6 +106,22 @@ const { config, cryptr, jwks } = await (async () => {
 	return { config, cryptr, jwks };
 })();
 
+/**
+ * Get the JWKS for token verification.
+ * @returns The JWKS remote set or undefined if not available.
+ */
+export function getJwks() {
+	return jwks;
+}
+
+/**
+ * Get the OIDC configuration.
+ * @returns The OIDC configuration object.
+ */
+export function getConfig() {
+	return config;
+}
+
 export async function startSignin(visitedUrl: URL) {
 	//TODO https://github.com/gornostay25/svelte-adapter-bun/issues/62
 	if (configPrivate.NODE_ENV === 'production') {
@@ -360,12 +376,19 @@ export async function performTokenExchange(
 		const tokenExchangeParams: Record<string, string> = {
 			grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
 			subject_token: subjectToken,
-			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token'
+			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+			actor_token: actorToken,
+			actor_token_type: 'urn:ietf:params:oauth:token-type:access_token'
 		};
 
 		// Resource is required for Logto token exchange
 		if (configPrivate.OIDC_RESOURCE) {
 			tokenExchangeParams.resource = configPrivate.OIDC_RESOURCE;
+		}
+
+		// Optional scope parameter
+		if (scope) {
+			tokenExchangeParams.scope = scope;
 		}
 
 		const response = await fetch(config.serverMetadata().token_endpoint!, {
