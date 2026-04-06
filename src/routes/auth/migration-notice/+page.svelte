@@ -36,7 +36,7 @@
 					<i class="fa-duotone fa-circle-info text-info mr-2"></i>
 					{m.migrationNoticeFaqIdentityProviderTitle()}
 				</h3>
-				<p class="text-base-content">{m.migrationNoticeFaqIdentityProviderBody()}</p>
+				<p class="text-base-content">{@html m.migrationNoticeFaqIdentityProviderBody()}</p>
 			</div>
 
 			<div class="bg-base-200 rounded-box p-4">
@@ -45,6 +45,14 @@
 					{m.migrationNoticeFaqEmailPasswordTitle()}
 				</h3>
 				<p class="text-base-content">{m.migrationNoticeFaqEmailPasswordBody()}</p>
+			</div>
+
+			<div class="bg-base-200 rounded-box p-4">
+				<h3 class="mb-2 font-semibold">
+					<i class="fa-duotone fa-user-plus text-primary mr-2"></i>
+					{m.migrationNoticeFaqNewUserTitle()}
+				</h3>
+				<p class="text-base-content">{m.migrationNoticeFaqNewUserBody()}</p>
 			</div>
 
 			<div class="bg-warning rounded-box p-4">
