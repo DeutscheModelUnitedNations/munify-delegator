@@ -183,14 +183,24 @@ export async function resolveSignin(
 }
 
 /**
- * Try to decode custom claims from the access token (JWT).
+ * Verify and decode custom claims from the access token (JWT).
  * Logto injects Custom JWT claims (e.g. roles) into the access token, not the id_token.
- * Returns the decoded payload or an empty object if the token is opaque.
+ * Verifies the JWT signature against the issuer JWKS when available.
+ * Returns the verified payload or an empty object if the token is opaque or verification fails.
  */
-function decodeAccessTokenClaims(access_token: string): Record<string, unknown> {
+async function verifyAccessTokenClaims(access_token: string): Promise<Record<string, unknown>> {
+	if (!jwks) {
+		return {};
+	}
 	try {
-		return decodeJwt(access_token);
+		// Access tokens use the resource indicator as audience, not the client ID
+		const result = await jwtVerify(access_token, jwks, {
+			issuer: config.serverMetadata().issuer,
+			...(configPrivate.OIDC_RESOURCE ? { audience: configPrivate.OIDC_RESOURCE } : {})
+		});
+		return result.payload;
 	} catch {
+		// Token may be opaque or have a non-standard format — skip silently
 		return {};
 	}
 }
@@ -200,7 +210,7 @@ export async function validateTokens({
 	id_token
 }: Pick<TokenEndpointResponse, 'access_token' | 'id_token'>): Promise<OIDCUser> {
 	let sub: string | undefined;
-	const accessTokenClaims = decodeAccessTokenClaims(access_token);
+	const accessTokenClaims = await verifyAccessTokenClaims(access_token);
 
 	// Try local JWT verification of the id_token first
 	if (jwks && id_token) {
