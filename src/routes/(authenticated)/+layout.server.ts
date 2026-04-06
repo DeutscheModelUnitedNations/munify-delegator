@@ -2,6 +2,10 @@ import type { LayoutServerLoad } from './$types';
 import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
 import { redirect } from '@sveltejs/kit';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
+import { configPublic } from '$config/public';
+// --- TEMPORARY: Migration notice imports (remove after migration period) ---
+import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/constants/migrationNotice';
+// --- END TEMPORARY ---
 
 //TODO: a more clean approach would be to do this inside the api and not
 // in the layout server
@@ -23,6 +27,16 @@ export const load: LayoutServerLoad = async (event) => {
 			}
 		};
 	}
+
+	// --- TEMPORARY: Migration notice redirect (remove after migration period) ---
+	if (configPublic.PUBLIC_OIDC_MIGRATION_NOTICE) {
+		const ackCookie = event.cookies.get(MIGRATION_NOTICE_COOKIE);
+		if (ackCookie !== MIGRATION_NOTICE_VERSION) {
+			const next = encodeURIComponent(event.url.pathname + event.url.search);
+			throw redirect(302, `/auth/migration-notice?next=${next}`);
+		}
+	}
+	// --- END TEMPORARY ---
 
 	const { encrypted_state, encrypted_verifier, redirect_uri } = await startSignin(event.url);
 

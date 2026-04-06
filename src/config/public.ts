@@ -15,6 +15,9 @@ const schema = z.object({
 	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
 	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false),
 
+	// --- TEMPORARY: Migration notice (remove after migration period) ---
+	PUBLIC_OIDC_MIGRATION_NOTICE: z.coerce.boolean().default(false),
+
 	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: z.coerce.number().default(1200),
 	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: z.coerce.number().default(100),
 
