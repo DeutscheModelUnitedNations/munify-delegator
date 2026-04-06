@@ -324,11 +324,12 @@ async function getM2MAccessToken(): Promise<string> {
 async function createSubjectToken(subjectUserId: string): Promise<string> {
 	const m2mToken = await getM2MAccessToken();
 
-	// Derive Management API base URL from the OIDC issuer
+	// Use configured resource or derive from OIDC authority (mirrors getM2MAccessToken)
 	const issuer = config.serverMetadata().issuer;
-	const managementApiBase = issuer.replace(/\/oidc\/?$/, '');
+	const managementApiBase =
+		configPrivate.OIDC_M2M_RESOURCE ?? `${issuer.replace(/\/oidc\/?$/, '')}/api`;
 
-	const response = await fetch(`${managementApiBase}/api/subject-tokens`, {
+	const response = await fetch(`${managementApiBase}/subject-tokens`, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${m2mToken}`,
