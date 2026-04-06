@@ -190,7 +190,11 @@
 							<div class="text-xs text-base-content/60">{m.loginName()}</div>
 							<div class="truncate">{data.user.preferred_username ?? '–'}</div>
 						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('username')} aria-label="Change username">
+						<a
+							class="btn btn-ghost btn-sm"
+							href={accountUrl('username')}
+							aria-label="Change username"
+						>
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
 					</div>
@@ -212,7 +216,11 @@
 								<div>•••••</div>
 							{/if}
 						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('password')} aria-label="Change password">
+						<a
+							class="btn btn-ghost btn-sm"
+							href={accountUrl('password')}
+							aria-label="Change password"
+						>
 							<i class="fa-duotone fa-pen-to-square"></i>
 						</a>
 					</div>

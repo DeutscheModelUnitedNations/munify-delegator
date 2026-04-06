@@ -8,7 +8,10 @@ const schema = z.object({
 	PUBLIC_OIDC_AUTHORITY: z.string(),
 	PUBLIC_OIDC_CLIENT_ID: z.string(),
 	PUBLIC_DEFAULT_LOCALE: z.string().default('de'),
-	PUBLIC_OIDC_ACCOUNT_URL: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
+	PUBLIC_OIDC_ACCOUNT_URL: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.string().url().optional()
+	),
 	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
 	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false),
 
@@ -22,7 +25,10 @@ const schema = z.object({
 	PUBLIC_SENTRY_SEND_DEFAULT_PII: z.stringbool().optional(),
 
 	// Badge generator URL (optional)
-	PUBLIC_BADGE_GENERATOR_URL: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
+	PUBLIC_BADGE_GENERATOR_URL: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.string().url().optional()
+	),
 
 	// Documentation URL (optional) - global link to DELEGATOR app documentation
 	PUBLIC_DOCS_URL: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
