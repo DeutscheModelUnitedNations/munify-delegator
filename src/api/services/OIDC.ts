@@ -376,9 +376,7 @@ export async function performTokenExchange(
 		const tokenExchangeParams: Record<string, string> = {
 			grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
 			subject_token: subjectToken,
-			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-			actor_token: actorToken,
-			actor_token_type: 'urn:ietf:params:oauth:token-type:access_token'
+			subject_token_type: 'urn:ietf:params:oauth:token-type:access_token'
 		};
 
 		// Resource is required for Logto token exchange

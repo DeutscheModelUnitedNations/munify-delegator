@@ -1,7 +1,13 @@
 import { z } from 'zod';
-import { oidcRoles, refresh, validateTokens, getJwks, type OIDCUser } from '$api/services/OIDC';
+import {
+	oidcRoles,
+	refresh,
+	validateTokens,
+	getJwks,
+	getConfig,
+	type OIDCUser
+} from '$api/services/OIDC';
 import { configPrivate } from '$config/private';
-import { configPublic } from '$config/public';
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
 import { jwtVerify } from 'jose';
@@ -183,14 +189,10 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 
 				let verifiedPayload;
 				try {
-					const verification = await jwtVerify(
-						impersonationTokenSet.data.access_token,
-						jwks,
-						{
-							issuer: configPublic.PUBLIC_OIDC_AUTHORITY.replace('/.well-known/openid-configuration', ''),
-							audience: configPrivate.OIDC_RESOURCE ?? undefined
-						}
-					);
+					const verification = await jwtVerify(impersonationTokenSet.data.access_token, jwks, {
+						issuer: getConfig().serverMetadata().issuer,
+						audience: configPrivate.OIDC_RESOURCE ?? undefined
+					});
 					verifiedPayload = verification.payload;
 				} catch (verificationError) {
 					console.warn('Impersonation token verification failed:', verificationError);
