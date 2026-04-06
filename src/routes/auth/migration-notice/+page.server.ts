@@ -13,15 +13,18 @@ export const actions: Actions = {
 		const formData = await event.request.formData();
 		const next = formData.get('next')?.toString() || '/';
 		const safePath = isSafeRedirectPath(next) ? next : '/';
+		const dismiss = formData.get('dismiss') === 'true';
 
-		// Set acknowledgment cookie (30 days)
-		event.cookies.set(MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION, {
-			sameSite: 'lax',
-			maxAge: 60 * 60 * 24 * 30,
-			path: '/',
-			secure: true,
-			httpOnly: true
-		});
+		// Only set acknowledgment cookie if user opted to not see it again
+		if (dismiss) {
+			event.cookies.set(MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION, {
+				sameSite: 'lax',
+				maxAge: 60 * 60 * 24 * 30,
+				path: '/',
+				secure: true,
+				httpOnly: true
+			});
+		}
 
 		// Build the target URL and start OIDC flow
 		const targetUrl = new URL(safePath, event.url.origin);

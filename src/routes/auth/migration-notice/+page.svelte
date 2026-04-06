@@ -71,6 +71,14 @@
 
 			<div class="bg-base-200 rounded-box p-4">
 				<h3 class="mb-2 font-semibold">
+					<i class="fa-duotone fa-fingerprint text-warning mr-2"></i>
+					{m.migrationNoticeFaqMfaTitle()}
+				</h3>
+				<p class="text-base-content">{m.migrationNoticeFaqMfaBody()}</p>
+			</div>
+
+			<div class="bg-base-200 rounded-box p-4">
+				<h3 class="mb-2 font-semibold">
 					<i class="fa-duotone fa-life-ring text-error mr-2"></i>
 					{m.migrationNoticeFaqHelpTitle()}
 				</h3>
@@ -81,8 +89,12 @@
 		</div>
 
 		<!-- Continue button -->
-		<form method="POST" class="w-full max-w-xs">
+		<form method="POST" class="flex w-full max-w-xs flex-col items-center gap-3">
 			<input type="hidden" name="next" value={next} />
+			<label class="label cursor-pointer gap-2">
+				<input type="checkbox" name="dismiss" value="true" class="checkbox checkbox-sm" />
+				<span class="label-text">{m.migrationNoticeDontShowAgain()}</span>
+			</label>
 			<button type="submit" class="btn btn-primary btn-block">
 				<i class="fa-duotone fa-arrow-right"></i>
 				{m.migrationNoticeContinue()}
