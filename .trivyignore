@@ -37,3 +37,8 @@ CVE-2026-33671  # picomatch: ReDoS via extglob (via build tools)
 
 # Go stdlib in esbuild/lefthook binaries - not actionable
 CVE-2026-25679  # net/url IPv6 parsing (esbuild, lefthook)
+
+# Unreachable vulnerable code paths
+CVE-2026-35209  # defu: prototype pollution (vulnerable code path unreachable in this project)
+CVE-2026-4800   # lodash/lodash-es: prototype pollution (vulnerable code path unreachable in this project)
+
