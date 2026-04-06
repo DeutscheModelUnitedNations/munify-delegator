@@ -12,6 +12,13 @@ export const fastUserQuery = graphql(`
 				locale
 				phone
 				preferred_username
+				hasPassword
+				mfaVerificationFactors
+				ssoIdentities {
+					issuer
+					identityId
+				}
+				socialIdentities
 			}
 		}
 		myOIDCRoles

@@ -12,7 +12,7 @@ MUNify DELEGATOR is a SvelteKit-based application for managing Model United Nati
 - **Backend**: Node.js with SvelteKit server routes
 - **Database**: PostgreSQL via Prisma ORM
 - **GraphQL**: Pothos schema builder with graphql-yoga server, Houdini client
-- **Auth**: OpenID Connect (OIDC) - tested with ZITADEL
+- **Auth**: OpenID Connect (OIDC) - recommended provider: Logto
 - **i18n**: Paraglide-JS for internationalization (default locale: German)
 - **Runtime**: Bun (package manager and development runtime)
 - **Observability**: OpenTelemetry tracing support
@@ -281,7 +281,7 @@ Required variables (see `.env.example`):
 - `PUBLIC_OIDC_AUTHORITY` - OIDC provider URL
 - `PUBLIC_OIDC_CLIENT_ID` - OAuth client ID
 - `OIDC_SCOPES` - OAuth scopes (must include `openid`)
-- `OIDC_ROLE_CLAIM` - JWT claim for roles (ZITADEL format)
+- `OIDC_ROLE_CLAIM` - JWT claim for roles
 - `CERTIFICATE_SECRET` - Secret for signing participation certificates
 - OpenTelemetry vars (optional): `OTEL_ENDPOINT_URL`, `OTEL_SERVICE_NAME`
 

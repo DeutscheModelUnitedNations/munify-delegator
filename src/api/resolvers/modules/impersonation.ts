@@ -14,9 +14,9 @@ builder.queryFields((t) => ({
 						fields: (t) => ({
 							sub: t.string(),
 							email: t.string(),
-							preferred_username: t.string(),
-							family_name: t.string(),
-							given_name: t.string()
+							preferred_username: t.string({ nullable: true }),
+							family_name: t.string({ nullable: true }),
+							given_name: t.string({ nullable: true })
 						})
 					}),
 					nullable: true
@@ -26,9 +26,9 @@ builder.queryFields((t) => ({
 						fields: (t) => ({
 							sub: t.string(),
 							email: t.string(),
-							preferred_username: t.string(),
-							family_name: t.string(),
-							given_name: t.string()
+							preferred_username: t.string({ nullable: true }),
+							family_name: t.string({ nullable: true }),
+							given_name: t.string({ nullable: true })
 						})
 					}),
 					nullable: true
@@ -259,14 +259,11 @@ builder.mutationFields((t) => ({
 			}
 
 			try {
-				// Use the same scopes as the original user's token for consistency
-				const originalScopes = ctx.oidc.tokenSet.scope || 'openid profile email';
-
-				// Perform token exchange
+				// Perform token exchange (no scope needed — Logto uses the resource indicator)
 				const impersonationTokens = await performTokenExchange(
 					ctx.oidc.tokenSet.access_token,
 					args.targetUserId,
-					args.scope || originalScopes
+					args.scope ?? undefined
 				);
 
 				// Store impersonation tokens in cookie
@@ -281,12 +278,6 @@ builder.mutationFields((t) => ({
 				};
 
 				const event = ctx.event;
-				console.info('🍪 Setting impersonation cookie:', {
-					hasEvent: !!event,
-					hasCookies: !!event?.cookies,
-					cookieValue: JSON.stringify(impersonationCookieValue)
-				});
-
 				if (event?.cookies) {
 					event.cookies.set(
 						impersonationTokenCookieName,
@@ -299,7 +290,6 @@ builder.mutationFields((t) => ({
 							maxAge: impersonationTokens.expires_in ? impersonationTokens.expires_in : 3600 // 1 hour default
 						}
 					);
-					console.info('🍪 Cookie set successfully');
 				} else {
 					throw new GraphQLError('Unable to set impersonation cookie: event.cookies unavailable');
 				}

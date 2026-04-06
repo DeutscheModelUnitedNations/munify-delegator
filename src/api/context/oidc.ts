@@ -1,8 +1,17 @@
 import { z } from 'zod';
-import { oidcRoles, refresh, validateTokens, type OIDCUser } from '$api/services/OIDC';
+import {
+	oidcRoles,
+	refresh,
+	validateTokens,
+	getJwks,
+	getConfig,
+	type OIDCUser
+} from '$api/services/OIDC';
 import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
+import { jwtVerify } from 'jose';
+import { db } from '$db/db';
 
 const TokenCookieSchema = z
 	.object({
@@ -28,6 +37,43 @@ export type ImpersonationContext = {
 
 export const tokensCookieName = 'token_set';
 export const impersonationTokenCookieName = 'impersonation_token_set';
+
+/**
+ * Parse and validate OIDC roles from raw claim data.
+ * Handles multiple provider formats: plain string arrays, objects with `.name` property, or key-value objects.
+ *
+ * @param rolesRaw - The raw roles claim value from the OIDC token
+ * @param allowedRoles - Set or array of allowed role values
+ * @returns Array of validated role names
+ */
+function parseOidcRoles(
+	rolesRaw: unknown,
+	allowedRoles: readonly string[]
+): (typeof oidcRoles)[number][] {
+	const result: string[] = [];
+
+	if (Array.isArray(rolesRaw)) {
+		for (const role of rolesRaw) {
+			if (typeof role === 'string') {
+				// Simple string array (e.g. ["admin"])
+				result.push(role);
+			} else if (role && typeof role === 'object' && 'name' in role) {
+				// Logto returns role objects (e.g. [{name: "admin", ...}])
+				const roleName = role.name;
+				if (typeof roleName === 'string') {
+					result.push(roleName);
+				}
+			}
+		}
+	} else if (rolesRaw && typeof rolesRaw === 'object') {
+		// Zitadel returned roles as an object with role names as keys
+		const roleNames = Object.keys(rolesRaw);
+		result.push(...roleNames);
+	}
+
+	// Filter to only allowed roles
+	return result.filter((role) => allowedRoles.includes(role)) as (typeof oidcRoles)[number][];
+}
 
 /**
  * Builds an OIDC context from request cookies: validates or refreshes tokens, extracts roles, and handles optional impersonation.
@@ -114,14 +160,11 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 		}
 	}
 
-	const OIDCRoleNames: (typeof oidcRoles)[number][] = [];
+	let OIDCRoleNames: (typeof oidcRoles)[number][] = [];
 
 	if (user && configPrivate.OIDC_ROLE_CLAIM) {
-		const rolesRaw = user[configPrivate.OIDC_ROLE_CLAIM]!;
-		if (rolesRaw) {
-			const roleNames = Object.keys(rolesRaw);
-			OIDCRoleNames.push(...(roleNames as any));
-		}
+		const rolesRaw = user[configPrivate.OIDC_ROLE_CLAIM];
+		OIDCRoleNames = parseOidcRoles(rolesRaw, oidcRoles);
 	}
 
 	const hasRole = (role: (typeof OIDCRoleNames)[number]) => {
@@ -138,25 +181,21 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 			const impersonationTokenSet = TokenCookieSchema.safeParse(JSON.parse(impersonationCookie));
 
 			if (impersonationTokenSet.success && impersonationTokenSet.data.access_token) {
-				const impersonatedUser = await validateTokens({
-					access_token: impersonationTokenSet.data.access_token,
-					id_token: impersonationTokenSet.data.id_token
-				});
+				// Verify the impersonation JWT cryptographically against the OIDC issuer JWKS
+				const jwks = getJwks();
+				if (!jwks) {
+					throw new Error('JWKS not available for impersonation token verification');
+				}
 
-				// Extract actor information from the JWT token
-				const actorInfo = (impersonatedUser as any).act;
-
-				// Security: verify the impersonation token was actually issued for the currently authenticated actor (original user)
-				const actorSub =
-					actorInfo && typeof actorInfo === 'object'
-						? actorInfo.sub || actorInfo.subject || (actorInfo as any)['urn:zitadel:act:sub']
-						: undefined;
-
-				if (!actorSub) {
-					console.warn(
-						'Security: Impersonation token missing actor (act.sub) claim. Aborting impersonation.'
-					);
-					// Defensive: clear cookie so we do not repeatedly parse invalid token
+				let verifiedPayload;
+				try {
+					const verification = await jwtVerify(impersonationTokenSet.data.access_token, jwks, {
+						issuer: getConfig().serverMetadata().issuer,
+						audience: configPrivate.OIDC_RESOURCE ?? undefined
+					});
+					verifiedPayload = verification.payload;
+				} catch (verificationError) {
+					console.warn('Impersonation token verification failed:', verificationError);
 					cookies.delete(impersonationTokenCookieName, { path: '/' });
 					return {
 						nextTokenRefreshDue: tokenSet.expires_in
@@ -168,21 +207,48 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 					};
 				}
 
-				if (actorSub !== user.sub) {
-					console.warn('Security: Actor mismatch in impersonation token. Aborting impersonation.', {
-						actorSub,
-						currentUserSub: user.sub
-					});
-					// Clear cookie to prevent repeated attempts with a mismatched token
-					cookies.delete(impersonationTokenCookieName, { path: '/' });
-					return {
-						nextTokenRefreshDue: tokenSet.expires_in
-							? new Date(Date.now() + tokenSet.expires_in * 1000)
-							: undefined,
-						tokenSet,
-						user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
-						impersonation: impersonationContext
-					};
+				if (!verifiedPayload.sub) {
+					throw new Error('Impersonation token missing sub claim');
+				}
+
+				const dbUser = await db.user.findUnique({ where: { id: verifiedPayload.sub } });
+				if (!dbUser) {
+					throw new Error(`Impersonated user ${verifiedPayload.sub} not found in database`);
+				}
+
+				const impersonatedUser: OIDCUser = {
+					sub: verifiedPayload.sub,
+					email: dbUser.email ?? '',
+					preferred_username: dbUser.preferred_username ?? undefined,
+					family_name: dbUser.family_name ?? undefined,
+					given_name: dbUser.given_name ?? undefined,
+					locale: dbUser.locale ?? undefined,
+					phone: dbUser.phone ?? undefined,
+					// Spread custom JWT claims (roles, mfa, password, etc.)
+					...verifiedPayload
+				};
+
+				// Extract actor information from the JWT token (if present)
+				const actorInfo = verifiedPayload.act as Record<string, unknown> | undefined;
+
+				// If actor claim is present, verify it matches the current user
+				if (actorInfo && typeof actorInfo === 'object') {
+					const actorSub = actorInfo.sub || actorInfo.subject;
+					if (actorSub && actorSub !== user.sub) {
+						console.warn(
+							'Security: Actor mismatch in impersonation token. Aborting impersonation.',
+							{ actorSub, currentUserSub: user.sub }
+						);
+						cookies.delete(impersonationTokenCookieName, { path: '/' });
+						return {
+							nextTokenRefreshDue: tokenSet.expires_in
+								? new Date(Date.now() + tokenSet.expires_in * 1000)
+								: undefined,
+							tokenSet,
+							user: user ? { ...user, hasRole, OIDCRoleNames } : undefined,
+							impersonation: impersonationContext
+						};
+					}
 				}
 
 				impersonationContext = {
@@ -197,13 +263,10 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				user = impersonatedUser;
 
 				// Update role information for impersonated user
-				const impersonatedOIDCRoleNames: (typeof oidcRoles)[number][] = [];
+				let impersonatedOIDCRoleNames: (typeof oidcRoles)[number][] = [];
 				if (impersonatedUser && configPrivate.OIDC_ROLE_CLAIM) {
-					const impersonatedRolesRaw = impersonatedUser[configPrivate.OIDC_ROLE_CLAIM]!;
-					if (impersonatedRolesRaw) {
-						const impersonatedRoleNames = Object.keys(impersonatedRolesRaw);
-						impersonatedOIDCRoleNames.push(...(impersonatedRoleNames as any));
-					}
+					const impersonatedRolesRaw = impersonatedUser[configPrivate.OIDC_ROLE_CLAIM];
+					impersonatedOIDCRoleNames = parseOidcRoles(impersonatedRolesRaw, oidcRoles);
 				}
 
 				// Override role functions for impersonated user

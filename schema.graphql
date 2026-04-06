@@ -2814,9 +2814,9 @@ enum Gender {
 
 type ImpersonatedUser {
   email: String!
-  family_name: String!
-  given_name: String!
-  preferred_username: String!
+  family_name: String
+  given_name: String
+  preferred_username: String
   sub: String!
 }
 
@@ -2828,9 +2828,9 @@ type ImpersonationStatus {
 
 type ImpersonationUser {
   email: String!
-  family_name: String!
-  given_name: String!
-  preferred_username: String!
+  family_name: String
+  given_name: String
+  preferred_username: String
   sub: String!
 }
 
@@ -3823,17 +3823,26 @@ enum OIDCRolesEnum {
 
 type OfflineUser {
   email: String!
-  family_name: String!
-  given_name: String!
+  family_name: String
+  given_name: String
+  hasPassword: Boolean
   locale: String
+  mfaVerificationFactors: [String!]
   phone: String
-  preferred_username: String!
+  preferred_username: String
+  socialIdentities: [String!]
+  ssoIdentities: [OfflineUserSsoIdentity!]
   sub: String!
 }
 
 type OfflineUserRefresh {
   nextTokenRefreshDue: DateTime
   user: OfflineUser
+}
+
+type OfflineUserSsoIdentity {
+  identityId: String!
+  issuer: String!
 }
 
 type Paper {

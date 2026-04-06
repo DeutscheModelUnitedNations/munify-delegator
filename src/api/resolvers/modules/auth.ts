@@ -37,11 +37,25 @@ builder.queryFields((t) => {
 							fields: (t) => ({
 								sub: t.string(),
 								email: t.string(),
-								preferred_username: t.string(),
-								family_name: t.string(),
-								given_name: t.string(),
+								preferred_username: t.string({ nullable: true }),
+								family_name: t.string({ nullable: true }),
+								given_name: t.string({ nullable: true }),
 								locale: t.string({ nullable: true }),
-								phone: t.string({ nullable: true })
+								phone: t.string({ nullable: true }),
+								hasPassword: t.boolean({ nullable: true }),
+								mfaVerificationFactors: t.stringList({ nullable: true }),
+								ssoIdentities: t.field({
+									type: [
+										builder.simpleObject('OfflineUserSsoIdentity', {
+											fields: (t) => ({
+												issuer: t.string(),
+												identityId: t.string()
+											})
+										})
+									],
+									nullable: true
+								}),
+								socialIdentities: t.stringList({ nullable: true })
 							})
 						}),
 						nullable: true
@@ -53,7 +67,56 @@ builder.queryFields((t) => {
 				})
 			}),
 			resolve: (root, args, ctx) => {
-				return { user: ctx.oidc.user, nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue };
+				const user = ctx.oidc.user;
+
+				// Type guards for custom JWT claims
+				const isBooleanClaim = (value: unknown): value is boolean => {
+					return typeof value === 'boolean';
+				};
+
+				const isStringArrayClaim = (value: unknown): value is string[] => {
+					return Array.isArray(value) && value.every((item) => typeof item === 'string');
+				};
+
+				const isSsoIdentitiesArrayClaim = (
+					value: unknown
+				): value is { issuer: string; identityId: string }[] => {
+					return (
+						Array.isArray(value) &&
+						value.every(
+							(item) =>
+								item &&
+								typeof item === 'object' &&
+								'issuer' in item &&
+								'identityId' in item &&
+								typeof item.issuer === 'string' &&
+								typeof item.identityId === 'string'
+						)
+					);
+				};
+
+				// Extract custom JWT claims with runtime validation
+				const passwordClaim = user?.['password'];
+				const mfaClaim = user?.['mfa'];
+				const ssoIdentitiesClaim = user?.['sso_identities'];
+				const socialIdentitiesClaim = user?.['social_identities'];
+
+				return {
+					user: user
+						? {
+								...user,
+								hasPassword: isBooleanClaim(passwordClaim) ? passwordClaim : null,
+								mfaVerificationFactors: isStringArrayClaim(mfaClaim) ? mfaClaim : null,
+								ssoIdentities: isSsoIdentitiesArrayClaim(ssoIdentitiesClaim)
+									? ssoIdentitiesClaim
+									: null,
+								socialIdentities: isStringArrayClaim(socialIdentitiesClaim)
+									? socialIdentitiesClaim
+									: null
+							}
+						: null,
+					nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue
+				};
 			}
 		})
 	};

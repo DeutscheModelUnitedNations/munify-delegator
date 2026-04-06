@@ -48,7 +48,7 @@ bunx lefthook install
 
 ## Deployment
 
-The easiest way to deploy delegator on your own hardware is to use our provided [docker images](https://hub.docker.com/r/deutschemodelunitednations/delegator). You can find an example docker compose file in the [example](./example/) directoy. Please note that delegator relies on an [OIDC](https://auth0.com/intro-to-iam/what-is-openid-connect-oidc) issuer to be connected and properly configured. We recommend [ZITADEL](https://zitadel.com/) but any issuer of your choice will work. There are some additional instructions on this topic to be found in the example compose file.
+The easiest way to deploy delegator on your own hardware is to use our provided [docker images](https://hub.docker.com/r/deutschemodelunitednations/delegator). You can find an example Docker Compose file in the [example](./example/) directory. Please note that delegator relies on an [OIDC](https://auth0.com/intro-to-iam/what-is-openid-connect-oidc) issuer to be connected and properly configured. We recommend [Logto](https://logto.io/) but any issuer of your choice will work. There are some additional instructions on this topic to be found in the example compose file.
 
 ## FAQ
 
