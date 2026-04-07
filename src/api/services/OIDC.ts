@@ -285,9 +285,9 @@ async function getM2MAccessToken(): Promise<string> {
 		);
 	}
 
-	// Use configured resource or derive from OIDC authority
-	// For Logto Cloud: https://<tenant>.logto.app/api
-	// For self-hosted: must be set explicitly via OIDC_M2M_RESOURCE
+	// Resource indicator (audience claim) — may differ from the actual API URL.
+	// For self-hosted Logto the default resource identifier is https://default.logto.app/api
+	// but the actual API lives at the instance's own origin.
 	const issuer = config.serverMetadata().issuer;
 	const managementApiResource =
 		configPrivate.OIDC_M2M_RESOURCE ?? `${issuer.replace(/\/oidc\/?$/, '')}/api`;
@@ -324,12 +324,12 @@ async function getM2MAccessToken(): Promise<string> {
 async function createSubjectToken(subjectUserId: string): Promise<string> {
 	const m2mToken = await getM2MAccessToken();
 
-	// Use configured resource or derive from OIDC authority (mirrors getM2MAccessToken)
+	// The actual API URL is always derived from the issuer (the real instance origin),
+	// NOT from OIDC_M2M_RESOURCE which is only a resource indicator / audience claim.
 	const issuer = config.serverMetadata().issuer;
-	const managementApiBase =
-		configPrivate.OIDC_M2M_RESOURCE ?? `${issuer.replace(/\/oidc\/?$/, '')}/api`;
+	const managementApiUrl = `${issuer.replace(/\/oidc\/?$/, '')}/api`;
 
-	const response = await fetch(`${managementApiBase}/subject-tokens`, {
+	const response = await fetch(`${managementApiUrl}/subject-tokens`, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${m2mToken}`,
