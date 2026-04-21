@@ -37,6 +37,9 @@ CVE-2026-33671  # picomatch: ReDoS via extglob (via build tools)
 
 # Go stdlib in esbuild/lefthook binaries - not actionable
 CVE-2026-25679  # net/url IPv6 parsing (esbuild, lefthook)
+CVE-2026-32280  # crypto/x509 DoS in cert chain building (esbuild, lefthook)
+CVE-2026-32281  # crypto/x509 DoS via inefficient chain validation (esbuild, lefthook)
+CVE-2026-32283  # crypto/tls DoS via repeated key update messages (esbuild, lefthook)
 
 # Unreachable vulnerable code paths
 CVE-2026-35209  # defu: prototype pollution (vulnerable code path unreachable in this project)
