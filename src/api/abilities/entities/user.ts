@@ -182,6 +182,26 @@ export const defineAbilitiesForUserEntity = (oidc: OIDC, { can }: AbilityBuilder
 			}
 		});
 
+		// team members should see users on the waiting list in the conferences they manage
+		can(['list', 'read'], 'User', {
+			waitingListEntry: {
+				some: {
+					conference: {
+						teamMembers: {
+							some: {
+								role: {
+									in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
+								},
+								user: {
+									id: user.sub
+								}
+							}
+						}
+					}
+				}
+			}
+		});
+
 		// supervisors should be able to see each other if the supervise the same delegate or single participant
 		can(['list', 'read'], 'User', {
 			OR: [
