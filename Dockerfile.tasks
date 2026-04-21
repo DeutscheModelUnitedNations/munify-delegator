@@ -55,6 +55,13 @@ RUN bun run build:tasks
 FROM base AS runner
 WORKDIR /run
 
+# Apply OS security updates. The final stage inherits from oven/bun:1.3-slim
+# directly (not from `dual`), so it doesn't pick up apt security patches the
+# way the main app image does.
+RUN apt-get update \
+  && apt-get -y upgrade \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install only the npm packages that tsup externalizes and tasks import at runtime.
 # Keep versions in sync with the main package.json devDependencies.
 # Packages:
