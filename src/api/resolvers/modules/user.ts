@@ -406,7 +406,7 @@ builder.mutationFields((t) => {
 				})
 			}),
 			resolve: async (root, args, ctx) => {
-				const user = ctx.permissions.getLoggedInUserOrThrow();
+				ctx.permissions.getLoggedInUserOrThrow();
 
 				// Use the already-validated user data from the OIDC context
 				// (fetching from userinfo endpoint fails when access tokens are JWTs scoped to an API resource)
@@ -421,16 +421,14 @@ builder.mutationFields((t) => {
 						create: {
 							id: issuerUserData.sub,
 							email: issuerUserData.email,
-							family_name: issuerUserData.family_name ?? '',
-							given_name: issuerUserData.given_name ?? '',
-							preferred_username: issuerUserData.preferred_username ?? issuerUserData.email,
-							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-							phone: issuerUserData.phone ?? user.phone
+							family_name: '',
+							given_name: '',
+							preferred_username: issuerUserData.email,
+							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE
 						},
 						update: {
 							email: issuerUserData.email,
-							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
-							phone: issuerUserData.phone ?? user.phone
+							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE
 						}
 					});
 
