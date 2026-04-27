@@ -429,15 +429,6 @@ builder.mutationFields((t) => {
 						},
 						update: {
 							email: issuerUserData.email,
-							...(issuerUserData.family_name != null
-								? { family_name: issuerUserData.family_name }
-								: {}),
-							...(issuerUserData.given_name != null
-								? { given_name: issuerUserData.given_name }
-								: {}),
-							...(issuerUserData.preferred_username != null
-								? { preferred_username: issuerUserData.preferred_username }
-								: {}),
 							locale: issuerUserData.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE,
 							phone: issuerUserData.phone ?? user.phone
 						}
