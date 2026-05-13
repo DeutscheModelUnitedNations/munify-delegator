@@ -33,6 +33,7 @@ CVE-2026-33036  # fast-xml-parser: XML entity expansion DoS (via AWS SDK)
 CVE-2026-33228  # flatted: prototype pollution (via ESLint cache)
 CVE-2026-32763  # kysely: SQL injection (via Inlang i18n tooling, dev only)
 CVE-2026-33468  # kysely: MySQL SQL injection (via Inlang i18n tooling, dev only)
+CVE-2026-44635  # kysely: JSON-path traversal injection (via Inlang i18n tooling, dev only)
 CVE-2026-33671  # picomatch: ReDoS via extglob (via build tools)
 
 # Go stdlib in esbuild/lefthook binaries - not actionable
@@ -40,6 +41,11 @@ CVE-2026-25679  # net/url IPv6 parsing (esbuild, lefthook)
 CVE-2026-32280  # crypto/x509 DoS in cert chain building (esbuild, lefthook)
 CVE-2026-32281  # crypto/x509 DoS via inefficient chain validation (esbuild, lefthook)
 CVE-2026-32283  # crypto/tls DoS via repeated key update messages (esbuild, lefthook)
+CVE-2026-33811  # net: LookupCNAME long CNAME via cgo DNS resolver (esbuild, lefthook)
+CVE-2026-33814  # net/http2: SETTINGS frame infinite loop (esbuild, lefthook)
+CVE-2026-39820  # net/mail: ParseAddress DoS (esbuild, lefthook)
+CVE-2026-39836  # net: Dial/LookupPort NUL byte panic on Windows (esbuild, lefthook)
+CVE-2026-42499  # net/mail: consumePhrase DoS (esbuild, lefthook)
 
 # Unreachable vulnerable code paths
 CVE-2026-35209  # defu: prototype pollution (vulnerable code path unreachable in this project)
