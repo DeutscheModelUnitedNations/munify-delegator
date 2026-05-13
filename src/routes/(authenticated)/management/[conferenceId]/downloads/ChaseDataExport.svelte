@@ -35,6 +35,8 @@
 					user {
 						id
 						email
+						given_name
+						family_name
 					}
 					assignedRole {
 						id
@@ -46,6 +48,8 @@
 					user {
 						id
 						email
+						given_name
+						family_name
 					}
 				}
 
@@ -63,6 +67,8 @@
 					user {
 						id
 						email
+						given_name
+						family_name
 					}
 					delegation {
 						id
@@ -81,6 +87,8 @@
 					user {
 						id
 						email
+						given_name
+						family_name
 					}
 				}
 			}
@@ -106,6 +114,11 @@
 				alert(m.httpGenericError());
 				return;
 			}
+
+			const composeUserName = (user: { given_name: string; family_name: string }) => {
+				const name = `${user.given_name} ${user.family_name}`.trim();
+				return name.length > 0 ? name : undefined;
+			};
 
 			const transformRegionalGroup = (regionalGroup: string | undefined) => {
 				switch (regionalGroup) {
@@ -193,12 +206,14 @@
 					...conferenceData.teamMembers.map((teamMember) => ({
 						id: teamMember.id,
 						conferenceUserType: teamMember.role === 'PROJECT_MANAGEMENT' ? 'ADMIN' : 'TEAM',
-						userEmail: teamMember.user.email
+						userEmail: teamMember.user.email,
+						name: composeUserName(teamMember.user)
 					})),
 					...conferenceData.conferenceSupervisors.map((supervisor) => ({
 						id: supervisor.id,
 						conferenceUserType: 'SPECTATOR',
-						userEmail: supervisor.user.email
+						userEmail: supervisor.user.email,
+						name: composeUserName(supervisor.user)
 					})),
 					...conferenceData.delegationMembers
 						.filter((delegationMember) => delegationMember.delegation?.assignedNonStateActor?.id)
@@ -206,6 +221,7 @@
 							id: `${delegationMember.id}_user`,
 							conferenceUserType: 'NON_STATE_ACTOR',
 							userEmail: delegationMember.user.email,
+							name: composeUserName(delegationMember.user),
 							conferenceMemberId: delegationMember.id
 						})),
 					...conferenceData.delegationMembers
@@ -215,6 +231,7 @@
 							id: `${delegationMember.id}_user`,
 							conferenceUserType: 'DELEGATE',
 							userEmail: delegationMember.user.email,
+							name: composeUserName(delegationMember.user),
 							committeeMemberId: committeeMemberIdMap.get(
 								`${delegationMember.delegation?.assignedNation!.alpha3Code}_${delegationMember.assignedCommittee!.id}`
 							)
@@ -224,7 +241,8 @@
 						.map((sp) => ({
 							id: sp.id,
 							conferenceUserType: 'SPECTATOR',
-							userEmail: sp.user.email
+							userEmail: sp.user.email,
+							name: composeUserName(sp.user)
 						}))
 				],
 				agendaItems: conferenceData.committees.flatMap((committee) =>
