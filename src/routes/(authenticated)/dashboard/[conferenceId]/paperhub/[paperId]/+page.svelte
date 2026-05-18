@@ -2,13 +2,11 @@
 	import type { PageData } from './$houdini';
 	import {
 		validateResolution,
+		createEmptyResolution,
 		type ResolutionHeaderData
 	} from '$lib/components/Paper/Editor/Resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
-	import {
-		editorContentStore,
-		resolutionContentStore
-	} from '$lib/components/Paper/Editor/editorStore';
+	import { editorContentStore, resolutionStore } from '$lib/components/Paper/Editor/editorStore';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -117,7 +115,9 @@
 			if (!paperData.versions || paperData.versions.length === 0) {
 				// Reset both stores, set appropriate one based on paper type
 				if (paperData.type === 'WORKING_PAPER') {
-					$resolutionContentStore = undefined;
+					resolutionStore.replaceResolution(
+						createEmptyResolution(paperData.agendaItem?.committee?.name ?? '')
+					);
 				} else {
 					$editorContentStore = '';
 				}
@@ -133,11 +133,13 @@
 				// Validate working paper content before setting
 				const validationResult = validateResolution(latestVer.content);
 				if (validationResult.valid) {
-					$resolutionContentStore = validationResult.data;
+					resolutionStore.replaceResolution(validationResult.data);
 				} else {
 					resolutionValidationError = validationResult.error;
 					invalidRawContent = latestVer.content;
-					$resolutionContentStore = undefined;
+					resolutionStore.replaceResolution(
+						createEmptyResolution(paperData.agendaItem?.committee?.name ?? '')
+					);
 				}
 			} else {
 				$editorContentStore = latestVer.content;
@@ -254,11 +256,11 @@
 
 	// Get the current content from the correct store based on paper type
 	let currentContent = $derived(
-		paperData?.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore
+		paperData?.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore
 	);
 
 	$effect(() => {
-		if (paperData && currentContent) {
+		if (paperData && currentContent && !resolutionValidationError) {
 			compareEditorContentHash(JSON.stringify(currentContent), latestVersion?.contentHash).then(
 				(areEqual) => {
 					unsavedChanges = !areEqual;
@@ -277,7 +279,7 @@
 
 		// Use the correct store based on paper type
 		const content =
-			paperData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
+			paperData.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore;
 
 		const promise = updatePaperMutation.mutate({
 			paperId: paperData.id,
