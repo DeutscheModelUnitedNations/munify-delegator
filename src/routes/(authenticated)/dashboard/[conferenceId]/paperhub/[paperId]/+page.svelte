@@ -2,13 +2,11 @@
 	import type { PageData } from './$houdini';
 	import {
 		validateResolution,
+		createEmptyResolution,
 		type ResolutionHeaderData
 	} from '$lib/components/Paper/Editor/Resolution';
 	import PaperEditor from '$lib/components/Paper/Editor';
-	import {
-		editorContentStore,
-		resolutionContentStore
-	} from '$lib/components/Paper/Editor/editorStore';
+	import { editorContentStore, resolutionStore } from '$lib/components/Paper/Editor/editorStore';
 	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
 	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
@@ -29,6 +27,13 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperReviewSection from './PaperReviewSection.svelte';
+	import {
+		downloadResolutionPdf,
+		downloadResolutionTypst,
+		downloadPaperPdf,
+		downloadPaperTypst
+	} from '$lib/services/resolutionExport';
+	import type { PaperTypstMeta } from '$lib/services/paperTypst';
 
 	const updatePaperMutation = graphql(`
 		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
@@ -117,7 +122,9 @@
 			if (!paperData.versions || paperData.versions.length === 0) {
 				// Reset both stores, set appropriate one based on paper type
 				if (paperData.type === 'WORKING_PAPER') {
-					$resolutionContentStore = undefined;
+					resolutionStore.replaceResolution(
+						createEmptyResolution(paperData.agendaItem?.committee?.name ?? '')
+					);
 				} else {
 					$editorContentStore = '';
 				}
@@ -133,11 +140,13 @@
 				// Validate working paper content before setting
 				const validationResult = validateResolution(latestVer.content);
 				if (validationResult.valid) {
-					$resolutionContentStore = validationResult.data;
+					resolutionStore.replaceResolution(validationResult.data);
 				} else {
 					resolutionValidationError = validationResult.error;
 					invalidRawContent = latestVer.content;
-					$resolutionContentStore = undefined;
+					resolutionStore.replaceResolution(
+						createEmptyResolution(paperData.agendaItem?.committee?.name ?? '')
+					);
 				}
 			} else {
 				$editorContentStore = latestVer.content;
@@ -192,6 +201,85 @@
 			conferenceEmblem: paperData.conference?.emblemDataURL ?? undefined
 		};
 	});
+
+	// Content used for Typst/PDF export: the live editor state (so unsaved
+	// edits are included), falling back to the latest saved version when the
+	// editor has no content yet.
+	let exportContent = $derived(
+		(paperData?.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore) ||
+			latestVersion?.content
+	);
+
+	// Position/introduction papers: text-only Typst document metadata.
+	let paperTypstMeta = $derived.by((): PaperTypstMeta | undefined => {
+		if (!paperData || paperData.type === 'WORKING_PAPER') return undefined;
+		const conferenceName = paperData.conference?.title ?? 'Model UN';
+		const committeeName = paperData.agendaItem?.committee?.name;
+		const committeeAbbr = paperData.agendaItem?.committee?.abbreviation;
+		return {
+			conferenceName,
+			paperType: translatePaperType(paperData.type),
+			entityName: nation
+				? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
+				: (nsa?.name ?? undefined),
+			committeeLine: committeeName
+				? `${committeeName}${committeeAbbr ? ` (${committeeAbbr})` : ''}`
+				: undefined,
+			committeeLabel: m.committee(),
+			topic: paperData.agendaItem?.title ?? undefined,
+			topicLabel: m.resolutionTopic().replace(':', ''),
+			disclaimer: m.paperPrintDisclaimer({ conferenceName })
+		};
+	});
+
+	// Filename base: the resolution document number for working papers,
+	// otherwise a type/year/id stub. `safeBaseName` sanitises it.
+	let exportDocNumber = $derived(
+		paperData?.type === 'WORKING_PAPER'
+			? resolutionHeaderData?.documentNumber
+			: paperData
+				? `${paperData.type}/${new Date().getFullYear()}/${paperData.id.slice(-6)}`
+				: undefined
+	);
+
+	let isExportingPdf = $state(false);
+
+	function exportTypst() {
+		if (!exportContent || !paperData) return;
+		if (paperData.type === 'WORKING_PAPER') {
+			downloadResolutionTypst(
+				exportContent,
+				resolutionHeaderData ?? {},
+				resolutionHeaderData?.documentNumber
+			);
+		} else if (paperTypstMeta) {
+			downloadPaperTypst(exportContent, paperTypstMeta, exportDocNumber);
+		}
+	}
+
+	async function exportPdf() {
+		if (!exportContent || !paperData || isExportingPdf) return;
+		isExportingPdf = true;
+		try {
+			const pending =
+				paperData.type === 'WORKING_PAPER'
+					? downloadResolutionPdf(
+							exportContent,
+							resolutionHeaderData ?? {},
+							resolutionHeaderData?.documentNumber
+						)
+					: paperTypstMeta
+						? downloadPaperPdf(exportContent, paperTypstMeta, exportDocNumber)
+						: Promise.resolve();
+			await toast.promise(pending, {
+				loading: m.paperExportPdfLoading(),
+				success: m.paperExportPdfSuccess(),
+				error: m.paperExportPdfError()
+			});
+		} finally {
+			isExportingPdf = false;
+		}
+	}
 
 	let unsavedChanges = $state(false);
 
@@ -254,11 +342,16 @@
 
 	// Get the current content from the correct store based on paper type
 	let currentContent = $derived(
-		paperData?.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore
+		paperData?.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore
 	);
 
 	$effect(() => {
-		if (paperData && currentContent) {
+		if (
+			paperData &&
+			currentContent !== undefined &&
+			currentContent !== null &&
+			!resolutionValidationError
+		) {
 			compareEditorContentHash(JSON.stringify(currentContent), latestVersion?.contentHash).then(
 				(areEqual) => {
 					unsavedChanges = !areEqual;
@@ -277,7 +370,7 @@
 
 		// Use the correct store based on paper type
 		const content =
-			paperData.type === 'WORKING_PAPER' ? $resolutionContentStore : $editorContentStore;
+			paperData.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore;
 
 		const promise = updatePaperMutation.mutate({
 			paperId: paperData.id,
@@ -407,15 +500,24 @@
 							</div>
 						{/if}
 					</div>
-					<a
-						href={`/dashboard/${$page.params.conferenceId}/paperhub/${paperData.id}/print`}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="btn btn-sm btn-ghost"
-					>
-						<i class="fa-solid fa-file-pdf"></i>
-						{m.paperExportPdf()}
-					</a>
+					<div class="flex items-center gap-2">
+						<button
+							class="btn btn-sm btn-primary"
+							disabled={!exportContent || isExportingPdf}
+							onclick={exportPdf}
+						>
+							{#if isExportingPdf}
+								<span class="loading loading-spinner loading-xs"></span>
+							{:else}
+								<i class="fa-solid fa-file-pdf"></i>
+							{/if}
+							{m.paperExportPdf()}
+						</button>
+						<button class="btn btn-sm btn-ghost" disabled={!exportContent} onclick={exportTypst}>
+							<i class="fa-duotone fa-file-code"></i>
+							{m.paperExportTypst()}
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

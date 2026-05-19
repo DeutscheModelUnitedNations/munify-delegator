@@ -3,14 +3,14 @@
 		"diff-match-patch": "^1.0.5",
 		"humanparser": "^2.7.0",
 		"nodemailer": "^7.0.11",
-		"commander": "^14.0.2"
+		"typst": "^0.10.0-8"
 	},
 	"devDependencies": {
 		"@bwip-js/browser": "^4.8.0",
 		"@casl/ability": "^6.8.0",
 		"@casl/prisma": "^1.5.2",
 		"@deutschemodelunitednations/corporate-identity": "^1.1.10",
-		"@deutschemodelunitednations/munify-resolution-editor": "^0.1.1",
+		"@deutschemodelunitednations/munify-resolution-editor": "^0.6.0",
 		"@dipser/epc-qr-code.js": "^1.0.3",
 		"@eslint/compat": "^1.4.1",
 		"@faker-js/faker": "^9.9.0",
@@ -78,6 +78,7 @@
 		"c8": "^10.1.3",
 		"caniuse-lite": "^1.0.30001759",
 		"codenamize-ts": "1.0.2",
+		"commander": "^14.0.2",
 		"concurrently": "^9.2.1",
 		"convert-iso-codes": "^1.0.10",
 		"cryptr": "^6.4.0",

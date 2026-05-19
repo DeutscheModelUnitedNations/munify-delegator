@@ -9,13 +9,14 @@
 	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
-	import { resolutionContentStore } from '$lib/components/Paper/Editor/editorStore';
+	import { resolutionStore } from '$lib/components/Paper/Editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
 		type ResolutionHeaderData,
 		type Resolution,
-		isClauseEmpty
+		isClauseEmpty,
+		createEmptyResolution
 	} from '$lib/components/Paper/Editor/Resolution';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -81,7 +82,7 @@
 			// Check if draft is expired (older than 7 days)
 			if (Date.now() - storedDraft.savedAt > SEVEN_DAYS_MS) {
 				draftStore.set(null);
-				$resolutionContentStore = undefined;
+				resolutionStore.replaceResolution(createEmptyResolution(''));
 			} else {
 				// Valid draft found - set state for modal
 				savedDraft = storedDraft;
@@ -89,11 +90,11 @@
 			}
 		} else {
 			// No draft - clear store before editor mounts
-			$resolutionContentStore = undefined;
+			resolutionStore.replaceResolution(createEmptyResolution(''));
 		}
 	} else {
 		// SSR or no draftStore - clear store
-		$resolutionContentStore = undefined;
+		resolutionStore.replaceResolution(createEmptyResolution(''));
 	}
 
 	// Recovery functions
@@ -104,7 +105,7 @@
 				$formData.agendaItemId = savedDraft.agendaItemId;
 			}
 			// Set content to the resolution store
-			$resolutionContentStore = savedDraft.content;
+			resolutionStore.replaceResolution(savedDraft.content);
 			// Increment key to force editor remount with new content
 			editorKey++;
 		}
@@ -115,15 +116,14 @@
 		if (draftStore) {
 			draftStore.set(null);
 		}
-		$resolutionContentStore = undefined;
+		resolutionStore.replaceResolution(createEmptyResolution(''));
 		// Increment key to force editor remount with cleared content
 		editorKey++;
 		showRecoveryModal = false;
 	}
 
-	// Auto-save: Use interval-based polling for resolution editor.
-	// The ResolutionEditor stores a $state proxy in $resolutionContentStore,
-	// and proxy mutations don't trigger store subscriptions.
+	// Auto-save: poll the resolution store snapshot on an interval and persist
+	// a JSON copy to localStorage when it changes.
 	let saveInterval: ReturnType<typeof setInterval>;
 	let lastSavedContent: string | null = null;
 
@@ -134,12 +134,8 @@
 		// Read form data for current agenda item
 		const currentFormData = get(form.form);
 
-		// Use get() to explicitly read current store value
-		const rawContent = get(resolutionContentStore);
-
-		if (rawContent === undefined) {
-			return;
-		}
+		// Read the current snapshot from the resolution store
+		const rawContent = resolutionStore.snapshot;
 
 		// Skip saving if resolution has no meaningful content
 		if (isResolutionEmpty(rawContent)) {
@@ -277,11 +273,11 @@
 			return;
 		}
 
-		// Use resolution content store
-		const content = $resolutionContentStore;
+		// Read the current snapshot from the resolution store
+		const content = resolutionStore.snapshot;
 
-		// Guard against undefined content
-		if (content === undefined) {
+		// Guard against empty content
+		if (isResolutionEmpty(content)) {
 			toast.error(m.paperContentRequired());
 			return;
 		}
@@ -307,7 +303,7 @@
 
 		if (response?.data?.createOnePaper?.id) {
 			// Clear store so next paper creation starts fresh
-			$resolutionContentStore = undefined;
+			resolutionStore.replaceResolution(createEmptyResolution(''));
 			// Clear localStorage draft on successful submission
 			if (draftStore) {
 				draftStore.set(null);

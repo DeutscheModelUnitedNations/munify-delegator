@@ -2,11 +2,12 @@
 	/**
 	 * Resolution Editor Wrapper
 	 *
-	 * Bridges the external resolution-editor library with DELEGATOR's store-based architecture.
+	 * Bridges the external resolution-editor library with DELEGATOR.
 	 * This component:
 	 * - Uses the library's ResolutionEditor component
-	 * - Syncs changes to resolutionContentStore
-	 * - Fetches phrase patterns from /resolution-phrases/
+	 * - Consumes the shared `resolutionStore` (native store, snapshot is the
+	 *   single source of truth)
+	 * - Provides German phrase patterns
 	 * - Integrates Paraglide i18n via the adapter
 	 */
 	import { ResolutionEditor } from '@deutschemodelunitednations/munify-resolution-editor';
@@ -18,7 +19,7 @@
 		Resolution,
 		ResolutionHeaderData
 	} from '@deutschemodelunitednations/munify-resolution-editor/schema';
-	import { resolutionContentStore } from '../editorStore';
+	import { resolutionStore } from '../editorStore';
 	import { getResolutionLabels } from '$lib/resolution-editor-i18n';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
@@ -46,18 +47,17 @@
 		previewFooter
 	}: Props = $props();
 
-	// Get current resolution from store, or create empty one
-	let resolution = $derived(
-		$resolutionContentStore ?? { committeeName, preamble: [], operative: [] }
-	);
+	// Seed the committee name when the store holds no name yet (e.g. a freshly
+	// created working paper). A loaded resolution carries its own committee
+	// name, so we never clobber it.
+	$effect(() => {
+		if (!resolutionStore.snapshot.committeeName && committeeName) {
+			resolutionStore.setCommitteeName(committeeName);
+		}
+	});
 
 	// Get i18n labels
 	const labels = getResolutionLabels();
-
-	// Handle resolution changes - sync to store
-	function handleResolutionChange(updated: Resolution) {
-		$resolutionContentStore = updated;
-	}
 
 	// Handle copy success with toast notification
 	function handleCopySuccess(phrase: string) {
@@ -71,14 +71,12 @@
 </script>
 
 <ResolutionEditor
-	{committeeName}
-	{resolution}
+	store={resolutionStore}
 	{editable}
 	{headerData}
 	{labels}
 	preamblePhrases={germanPreamblePhrases}
 	operativePhrases={germanOperativePhrases}
-	onResolutionChange={handleResolutionChange}
 	onCopySuccess={handleCopySuccess}
 	onCopyError={handleCopyError}
 	{clauseToolbar}

@@ -4,15 +4,24 @@
  * Maps Paraglide messages to the library's ResolutionEditorLabels interface.
  */
 
-import type { ResolutionEditorLabels } from '@deutschemodelunitednations/munify-resolution-editor/i18n';
+import {
+	germanLabels,
+	type ResolutionEditorLabels
+} from '@deutschemodelunitednations/munify-resolution-editor/i18n';
 import * as m from '$lib/paraglide/messages';
 
 /**
  * Creates a ResolutionEditorLabels object from Paraglide messages.
  * Call this function to get the current language's labels.
+ *
+ * The library's `germanLabels` are spread first so keys without a dedicated
+ * Paraglide message (e.g. RES-markup import/export, amendment overlays) keep
+ * their German default instead of falling back to the library's English.
  */
 export function getResolutionLabels(): ResolutionEditorLabels {
 	return {
+		...germanLabels,
+
 		// Editor chrome
 		resolutionEditor: m.resolutionEditor(),
 		resolution: m.resolution(),
