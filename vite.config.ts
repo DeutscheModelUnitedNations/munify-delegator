@@ -73,6 +73,13 @@ export default defineConfig({
 	build: {
 		sourcemap: true // Required for Bugsink error tracking
 	},
+	optimizeDeps: {
+		// This package ships Svelte 5 runes in `.svelte.js` files (e.g.
+		// store/native.svelte.js). Vite's esbuild pre-bundler can't compile
+		// runes, which breaks named-export detection (`createNativeStore`).
+		// Excluding it lets vite-plugin-svelte compile the source instead.
+		exclude: ['@deutschemodelunitednations/munify-resolution-editor']
+	},
 	test: {
 		environment: 'jsdom',
 		coverage: {

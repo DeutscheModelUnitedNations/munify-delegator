@@ -9,6 +9,7 @@
         "diff-match-patch": "^1.0.5",
         "humanparser": "^2.7.0",
         "nodemailer": "^7.0.11",
+        "typst": "^0.10.0-8",
       },
       "devDependencies": {
         "@bwip-js/browser": "^4.8.0",
