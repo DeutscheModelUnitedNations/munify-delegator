@@ -22,7 +22,11 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		return resolve(event, {
 			transformPageChunk: ({ html }) => {
 				return html.replace('%lang%', locale);
-			}
+			},
+			// Houdini's fetch plugin reads the content-type header from responses
+			// fetched during SSR load; SvelteKit only serializes headers that pass
+			// this filter, so it must be explicitly allowed through.
+			filterSerializedResponseHeaders: (name) => name === 'content-type'
 		});
 	});
 
