@@ -1,7 +1,7 @@
 import DiffMatchPatch from 'diff-match-patch';
 import type { DiffResult, DiffSegment } from './types';
-import type { Resolution, SubClause, ClauseBlock } from '$lib/components/Paper/Editor/Resolution';
-import { getSubClauseLabel, migrateResolution } from '$lib/components/Paper/Editor/Resolution';
+import type { Resolution } from '$lib/components/Paper/Editor/Resolution';
+import { migrateResolution, serialize } from '$lib/components/Paper/Editor/Resolution';
 
 /**
  * Extract plain text from a TipTap JSON node recursively
@@ -33,74 +33,26 @@ function isResolutionContent(content: any): content is Resolution {
 }
 
 /**
- * Get all text content from blocks (concatenated)
- */
-function getBlocksTextContent(blocks: ClauseBlock[]): string {
-	return blocks
-		.filter(
-			(block): block is { type: 'text'; id: string; content: string } => block.type === 'text'
-		)
-		.map((block) => block.content.trim())
-		.filter((content) => content.length > 0)
-		.join(' ');
-}
-
-/**
- * Serialize sub-clauses recursively with inline labels (block-based structure)
- */
-function serializeSubClauses(subClauses: SubClause[], depth: number, lines: string[]): void {
-	subClauses.forEach((sub, index) => {
-		const label = getSubClauseLabel(index, depth);
-
-		// Get text content from blocks
-		const textContent = getBlocksTextContent(sub.blocks);
-		if (textContent) {
-			lines.push(`${label} ${textContent}`);
-		}
-
-		// Process nested subclauses blocks
-		for (const block of sub.blocks) {
-			if (block.type === 'subclauses' && block.items.length > 0) {
-				serializeSubClauses(block.items, depth + 1, lines);
-			}
-		}
-	});
-}
-
-/**
- * Serialize a Resolution to plain text for diff comparison
- * Uses inline prefixes: "1. text" for operative, "(a) text" for subclauses
+ * Serialize a Resolution to canonical RES-Markup text for diff comparison.
+ *
+ * Uses the resolution-editor package's `serialize()` (the RES-Markup exchange
+ * language) so the diff reflects the resolution's real structure with stable,
+ * marker-driven output. The leading `%RES 1.0` version line and the
+ * `Key: Value` front-matter block are dropped — the diff starts at the first
+ * `== … ==` section so version/metadata churn doesn't pollute the diff.
  */
 function serializeResolutionToText(rawResolution: Resolution): string {
-	// Migrate legacy format if needed
+	// Migrate legacy format if needed, then serialize to canonical RES-Markup.
 	const resolution = migrateResolution(rawResolution) as Resolution;
+	const markup = serialize(resolution);
 
-	const lines: string[] = [];
+	// Drop everything before the first section marker (`%RES 1.0` + front-matter).
+	const lines = markup.split('\n');
+	const firstSection = lines.findIndex((line) => /^== .* ==$/.test(line));
+	const body = firstSection === -1 ? markup : lines.slice(firstSection).join('\n');
 
-	// Preamble clauses (no numbering, just the text)
-	resolution.preamble.forEach((clause) => {
-		if (clause.content.trim()) {
-			lines.push(clause.content.trim());
-		}
-	});
-
-	// Operative clauses (block-based)
-	resolution.operative.forEach((clause, opIndex) => {
-		// Get text content from blocks
-		const textContent = getBlocksTextContent(clause.blocks);
-		if (textContent) {
-			lines.push(`${opIndex + 1}. ${textContent}`);
-		}
-
-		// Process subclauses blocks
-		for (const block of clause.blocks) {
-			if (block.type === 'subclauses' && block.items.length > 0) {
-				serializeSubClauses(block.items, 1, lines);
-			}
-		}
-	});
-
-	return lines.join('\n').trim();
+	// Only strip a trailing newline — RES-Markup relies on internal blank lines.
+	return body.replace(/\n+$/, '');
 }
 
 /**

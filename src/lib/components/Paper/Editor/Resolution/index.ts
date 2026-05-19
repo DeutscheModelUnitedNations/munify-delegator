@@ -17,6 +17,8 @@ export {
 	// Validation and migration
 	validateResolution,
 	migrateResolution,
+	// RES-Markup exchange language
+	serialize,
 	// Factory functions
 	createEmptyResolution,
 	createEmptyOperativeClause,
