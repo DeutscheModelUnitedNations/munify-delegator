@@ -202,8 +202,13 @@
 		};
 	});
 
-	// Latest version content used for Typst/PDF export.
-	let exportContent = $derived(latestVersion?.content);
+	// Content used for Typst/PDF export: the live editor state (so unsaved
+	// edits are included), falling back to the latest saved version when the
+	// editor has no content yet.
+	let exportContent = $derived(
+		(paperData?.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore) ||
+			latestVersion?.content
+	);
 
 	// Position/introduction papers: text-only Typst document metadata.
 	let paperTypstMeta = $derived.by((): PaperTypstMeta | undefined => {
@@ -341,7 +346,12 @@
 	);
 
 	$effect(() => {
-		if (paperData && currentContent && !resolutionValidationError) {
+		if (
+			paperData &&
+			currentContent !== undefined &&
+			currentContent !== null &&
+			!resolutionValidationError
+		) {
 			compareEditorContentHash(JSON.stringify(currentContent), latestVersion?.contentHash).then(
 				(areEqual) => {
 					unsavedChanges = !areEqual;
