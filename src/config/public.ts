@@ -15,6 +15,10 @@ const schema = z.object({
 	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
 	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false),
 
+	// Base URL for the FontAwesome CSS files (without trailing slash).
+	// The app loads `<base>/fontawesome.min.css`, `<base>/solid.min.css`, etc. from here.
+	PUBLIC_FONTAWESOME_CSS_BASE_URL: z.string(),
+
 	// --- TEMPORARY: Migration notice (remove after migration period) ---
 	PUBLIC_OIDC_MIGRATION_NOTICE: z.coerce.boolean().default(false),
 
