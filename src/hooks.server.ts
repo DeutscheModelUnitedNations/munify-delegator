@@ -4,6 +4,7 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 import { building } from '$app/environment';
 import { configPrivate } from '$config/private';
+import { configPublic } from '$config/public';
 
 // Initialize Sentry (only if DSN provided and not building)
 if (!building && configPrivate.SENTRY_DSN) {
@@ -21,7 +22,9 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		event.request = localizedRequest;
 		return resolve(event, {
 			transformPageChunk: ({ html }) => {
-				return html.replace('%lang%', locale);
+				return html
+					.replace('%lang%', locale)
+					.replaceAll('%fontawesome.baseUrl%', configPublic.PUBLIC_FONTAWESOME_CSS_BASE_URL);
 			},
 			// Houdini's fetch plugin reads the content-type header from responses
 			// fetched during SSR load; SvelteKit only serializes headers that pass
