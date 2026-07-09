@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { fail, message, superValidate } from 'sveltekit-superforms';
+import { fail, message, superValidate, withFiles } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { cache, graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
@@ -157,9 +157,12 @@ export const actions = {
 	updateSettings: async (event) => {
 		const form = await superValidate(event.request, zod4(conferenceSettingsFormSchema));
 		if (!form.valid) {
-			return fail(400, { form });
+			// The schema contains File fields (base PDFs, images). File objects cannot be
+			// serialized by SvelteKit/devalue, so the form must be wrapped with `withFiles`
+			// when returned - otherwise a failed validation crashes with
+			// "Cannot stringify arbitrary non-POJOs".
+			return fail(400, withFiles({ form }));
 		}
-		console.log(form.data);
 		await conferenceUpdate.mutate(
 			{
 				data: form.data,
@@ -170,7 +173,7 @@ export const actions = {
 			{ event }
 		);
 
-		return message(form, m.saved());
+		return message(withFiles(form), m.saved());
 	},
 	addAgendaItem: async (event) => {
 		const form = await superValidate(event.request, zod4(AddAgendaItemFormSchema));
