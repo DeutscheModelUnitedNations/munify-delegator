@@ -2,7 +2,8 @@ FROM oven/bun:1.3-slim AS base
 
 FROM base AS dual
 WORKDIR /temp
-RUN apt-get -y update; apt-get -y install curl
+# Apply OS security updates (e.g. libcap2 CVE-2026-4878) on top of the base image.
+RUN apt-get -y update; apt-get -y upgrade; apt-get -y install curl
 # we need to use node and bun for generating prisma files, see https://github.com/prisma/prisma/issues/21241
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash
 RUN apt-get install -y nodejs
