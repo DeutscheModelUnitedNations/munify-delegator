@@ -46,6 +46,9 @@ CVE-2026-33814  # net/http2: SETTINGS frame infinite loop (esbuild, lefthook)
 CVE-2026-39820  # net/mail: ParseAddress DoS (esbuild, lefthook)
 CVE-2026-39836  # net: Dial/LookupPort NUL byte panic on Windows (esbuild, lefthook)
 CVE-2026-42499  # net/mail: consumePhrase DoS (esbuild, lefthook)
+CVE-2026-27145  # crypto/x509 DoS via excessive DNS name processing (esbuild, lefthook)
+CVE-2026-39822  # os.Root symlink following directory traversal (esbuild, lefthook)
+CVE-2026-42504  # mime: DoS via maliciously-crafted MIME header (esbuild, lefthook)
 
 # Unreachable vulnerable code paths
 CVE-2026-35209  # defu: prototype pollution (vulnerable code path unreachable in this project)
