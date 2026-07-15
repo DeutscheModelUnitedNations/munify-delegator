@@ -50,6 +50,14 @@ CVE-2026-27145  # crypto/x509 DoS via excessive DNS name processing (esbuild, le
 CVE-2026-39822  # os.Root symlink following directory traversal (esbuild, lefthook)
 CVE-2026-42504  # mime: DoS via maliciously-crafted MIME header (esbuild, lefthook)
 
+# Already remediated - suppresses stale-scan artifacts
+# undici is pinned to 7.28.0 via package.json "overrides" (a listed fixed
+# version); bun.lock resolves undici only to 7.28.0 with no 6.x present, and a
+# fresh install carries no bundled copy. A 6.26.0 hit only appears when scanning
+# a pre-override image/cache, not the current source. Remove this line once
+# scans run consistently against a freshly built (post-override) image.
+CVE-2026-12151  # undici: WebSocket unbounded-memory DoS - fixed, on 7.28.0
+
 # Unreachable vulnerable code paths
 CVE-2026-35209  # defu: prototype pollution (vulnerable code path unreachable in this project)
 CVE-2026-4800   # lodash/lodash-es: prototype pollution (vulnerable code path unreachable in this project)
