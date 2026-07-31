@@ -94,6 +94,43 @@ const ConfigurationCommitteesQuery = graphql(`
 	}
 `);
 
+const ConfigurationResolutionsQuery = graphql(`
+	query ConfigurationResolutionsQuery($conferenceId: String!) {
+		findManyResolutions(
+			where: { conferenceId: { equals: $conferenceId } }
+			orderBy: [{ createdAt: asc }]
+		) {
+			id
+			title
+			fileName
+			createdAt
+			committee {
+				id
+				name
+				abbreviation
+			}
+		}
+	}
+`);
+
+const CreateResolutionMutation = graphql(`
+	mutation CreateResolutionFromFormMutation(
+		$conferenceId: String!
+		$title: String
+		$committeeId: String
+		$file: File!
+	) {
+		createResolution(
+			conferenceId: $conferenceId
+			title: $title
+			committeeId: $committeeId
+			file: $file
+		) {
+			id
+		}
+	}
+`);
+
 const AddAgendaItemMutation = graphql(`
 	mutation AddAgendaItemMutationConfig(
 		$committeeId: String!
@@ -109,13 +146,18 @@ const AddAgendaItemMutation = graphql(`
 `);
 
 export const load: PageServerLoad = async (event) => {
-	const [conferenceResult, committeesResult] = await Promise.all([
+	const [conferenceResult, committeesResult, resolutionsResult] = await Promise.all([
 		conferenceQuery.fetch({
 			event,
 			variables: { id: event.params.conferenceId },
 			blocking: true
 		}),
 		ConfigurationCommitteesQuery.fetch({
+			event,
+			variables: { conferenceId: event.params.conferenceId },
+			blocking: true
+		}),
+		ConfigurationResolutionsQuery.fetch({
 			event,
 			variables: { conferenceId: event.params.conferenceId },
 			blocking: true
@@ -139,6 +181,7 @@ export const load: PageServerLoad = async (event) => {
 		form,
 		addAgendaItemForm,
 		committeesData: committeesResult.data?.findManyCommittees ?? [],
+		resolutionsData: resolutionsResult.data?.findManyResolutions ?? [],
 		imageDataURL: conference.imageDataURL,
 		emblemDataURL: conference.emblemDataURL,
 		logoDataURL: conference.logoDataURL,
@@ -191,5 +234,48 @@ export const actions = {
 		cache.markStale();
 
 		return message(form, m.saved());
+	},
+	uploadResolutions: async (event) => {
+		const conferenceId = event.params.conferenceId;
+		if (!conferenceId) {
+			throw error(404, m.notFound());
+		}
+
+		const formData = await event.request.formData();
+		const files = formData
+			.getAll('files')
+			.filter((f): f is File => f instanceof File && f.size > 0);
+		const committeeId = formData.get('committeeId');
+
+		if (files.length === 0) {
+			return fail(400, { uploadError: m.resolutionUploadNoFiles() });
+		}
+
+		// PDF-only, max 10 MB each - mirrors the base document upload limits.
+		for (const file of files) {
+			const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+			if (!isPdf) {
+				return fail(400, { uploadError: m.resolutionUploadOnlyPdf() });
+			}
+			if (file.size > 10_000_000) {
+				return fail(400, { uploadError: m.resolutionUploadTooLarge() });
+			}
+		}
+
+		for (const file of files) {
+			await CreateResolutionMutation.mutate(
+				{
+					conferenceId,
+					committeeId: typeof committeeId === 'string' && committeeId ? committeeId : undefined,
+					title: undefined,
+					file
+				},
+				{ event }
+			);
+		}
+
+		cache.markStale();
+
+		return { uploaded: files.length };
 	}
 } satisfies Actions;
