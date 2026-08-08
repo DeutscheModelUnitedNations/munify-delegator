@@ -290,3 +290,35 @@ export const ConferenceSeedingSchema = z.object({
 		})
 	)
 });
+
+/**
+ * Generates the JSON Schema for {@link ConferenceSeedingSchema}.
+ *
+ * The conference date fields use `z.coerce.date()`, which zod cannot represent
+ * in JSON Schema on its own (it throws by default). Since the seed JSON carries
+ * these values as ISO date-time strings, we suppress the throw with
+ * `unrepresentable: 'any'` and emit them as `{ type: 'string', format: 'date-time' }`.
+ */
+export function conferenceSeedingJsonSchema() {
+	return z.toJSONSchema(ConferenceSeedingSchema, {
+		unrepresentable: 'any',
+		override: ({ zodSchema, jsonSchema }) => {
+			if (zodSchema._zod.def.type === 'date') {
+				jsonSchema.type = 'string';
+				jsonSchema.format = 'date-time';
+			}
+		}
+	});
+}
+
+/**
+ * Serves the conference seeding schema as a JSON Schema HTTP response.
+ * Shared by the routes that expose the schema (e.g. for editor `$schema` references).
+ */
+export function conferenceSeedingJsonSchemaResponse(): Response {
+	return new Response(JSON.stringify(conferenceSeedingJsonSchema(), null, 2), {
+		headers: {
+			'content-type': 'application/json; charset=utf-8'
+		}
+	});
+}
