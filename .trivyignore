@@ -51,14 +51,48 @@ CVE-2026-39822  # os.Root symlink following directory traversal (esbuild, leftho
 CVE-2026-42504  # mime: DoS via maliciously-crafted MIME header (esbuild, lefthook)
 
 # Already remediated - suppresses stale-scan artifacts
-# undici is pinned to 7.28.0 via package.json "overrides" (a listed fixed
-# version); bun.lock resolves undici only to 7.28.0 with no 6.x present, and a
+# undici is pinned to 7.29.0 via package.json "overrides" (above the fixed
+# version); bun.lock resolves undici only to 7.29.0 with no 6.x present, and a
 # fresh install carries no bundled copy. A 6.26.0 hit only appears when scanning
 # a pre-override image/cache, not the current source. Remove this line once
 # scans run consistently against a freshly built (post-override) image.
 CVE-2026-12151  # undici: WebSocket unbounded-memory DoS - fixed, on 7.28.0
 
 # Unreachable vulnerable code paths
+CVE-2026-73231  # @faker-js/faker: ACE via attacker-controlled fake() templates - devDependency; nothing calls helpers.fake(), the dev seed scripts and the dev-gated FakeUser component only use faker.location.*/faker.date.*. Fix requires a 9.x -> 10.x major bump.
+CVE-2026-59892  # @opentelemetry/propagator-jaeger: DoS via malformed uber-trace-id header - the Jaeger propagator is never registered (tracer.ts calls provider.register() with the default tracecontext,baggage and OTEL_PROPAGATORS is unset), so the decoder never runs. Fix requires migrating the OTel stack from 1.x to 2.x.
+CVE-2026-40345  # deepmerge-ts: stack exhaustion when merging recursive object graphs - pinned exactly ("7.1.5") by @prisma/config, and only ever merges our own prisma config. Clears when Prisma bumps it.
 CVE-2026-35209  # defu: prototype pollution (vulnerable code path unreachable in this project)
 CVE-2026-4800   # lodash/lodash-es: prototype pollution (vulnerable code path unreachable in this project)
 
+# Go stdlib and x/ libraries compiled into the esbuild and lefthook dev-tooling
+# binaries - not actionable. These are build-time tools, never executed by the
+# running app; there is no npm-side fix and the findings clear once upstream
+# ships binaries rebuilt against a patched Go toolchain.
+CVE-2026-33818  # encoding/asn1: DoS via excessive recursion in Unmarshal (esbuild, lefthook)
+CVE-2026-39821  # x/net/idna: privilege escalation via Punycode label processing (esbuild, lefthook)
+CVE-2026-56852  # x/text: DoS via invalid UTF-8 input (lefthook)
+CVE-2026-56853  # net/http: unencrypted HTTP/2 connection DoS (esbuild, lefthook)
+CVE-2026-56858  # html/template: XSS via pathological input (esbuild, lefthook)
+CVE-2026-56859  # encoding/xml: DoS via decoding recursion depth (esbuild, lefthook)
+CVE-2026-56860  # net/url: DoS via quadratic complexity in path handling (esbuild, lefthook)
+CVE-2026-56862  # crypto/tls: DoS via indefinite KeyUpdate messages (esbuild, lefthook)
+CVE-2026-56864  # x/mod: malicious GOSUMDB can serve arbitrary module content (lefthook)
+CVE-2026-56865  # x/mod/sumdb/tlog: supply chain compromise via tile verification bypass (lefthook)
+
+# Bundled inside the npm CLI that ships with the nodesource Node.js package
+# (/usr/lib/node_modules/npm), not in our dependency tree - our own
+# brace-expansion is pinned to 5.0.9 via "overrides", and tar and ip-address
+# are absent entirely. They cannot be patched from package.json, and upgrading
+# npm does not help: npm 12.0.2 bundles the same versions. npm itself is never
+# invoked (bun is the package manager; node is installed only for `prisma
+# generate`), so the vulnerable code never runs. Deleting the npm CLI from the
+# image clears all four - verified that `prisma generate` still succeeds
+# without it - but that is deferred for now as it changes the image contents.
+# Caveat: these IDs match by CVE, not by path, so the two brace-expansion
+# entries also cover our own copy. That copy is pinned to 5.0.9 (above both
+# fixes) today, but a future downgrade below 5.0.9 would be masked here.
+CVE-2026-14257  # brace-expansion@5.0.7: DoS via memory exhaustion in expand() (npm CLI)
+CVE-2026-69152  # brace-expansion@5.0.7: DoS via unbounded intermediate arrays (npm CLI)
+CVE-2026-69192  # ip-address@10.2.0: SSRF via inconsistent IP address parsing (npm CLI)
+CVE-2026-73566  # tar@7.5.19: DoS via crafted long-path tar archive (npm CLI)
