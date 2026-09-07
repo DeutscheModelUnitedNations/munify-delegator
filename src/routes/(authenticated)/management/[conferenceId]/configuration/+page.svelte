@@ -26,6 +26,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { AddAgendaItemFormSchema } from './committees/form-schema';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import ConfigChangePreview from './ConfigChangePreview.svelte';
+	import { collectConfigChanges } from './changePreview';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -45,6 +47,37 @@
 	let formElement: HTMLFormElement | undefined = $state();
 
 	let confirmSaveModalOpen = $state(false);
+
+	// The values as they are currently stored on the server. `data.form` is
+	// re-validated from the database on every (re)load, so this stays in sync after
+	// a save.
+	let savedSettings = $derived(data.form.data);
+
+	let pendingChanges = $derived(
+		collectConfigChanges({
+			saved: savedSettings,
+			current: $formData,
+			tainted: $tainted,
+			existingFiles: {
+				image: !!data.imageDataURL,
+				emblem: !!data.emblemDataURL,
+				logo: !!data.logoDataURL,
+				contractBasePDF: data.contractContentSet,
+				guardianConsentBasePDF: data.guardianConsentContentSet,
+				mediaConsentBasePDF: data.mediaConsentContentSet,
+				termsAndConditionsBasePDF: data.termsAndConditionsContentSet,
+				certificateBasePDF: data.certificateContentSet
+			}
+		})
+	);
+
+	let changeCountPerTab = $derived.by(() => {
+		const counts: Partial<Record<TabType, number>> = {};
+		for (const change of pendingChanges) {
+			counts[change.group] = (counts[change.group] ?? 0) + 1;
+		}
+		return counts;
+	});
 
 	// Committees tab - agenda item form
 	let agendaForm = superForm(data.addAgendaItemForm, {
@@ -96,6 +129,15 @@
 	function setTab(tab: TabType) {
 		$tabParam = tab;
 	}
+
+	const tabs: { value: TabType; label: string; icon: string }[] = $derived([
+		{ value: 'general', label: m.general(), icon: 'fa-gear' },
+		{ value: 'committees', label: m.committeesAndAgendaItems(), icon: 'fa-podium' },
+		{ value: 'status', label: m.statusAndFeatures(), icon: 'fa-toggle-on' },
+		{ value: 'links', label: m.linksAndContent(), icon: 'fa-link' },
+		{ value: 'payments', label: m.bankingInformation(), icon: 'fa-credit-card' },
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' }
+	]);
 
 	type ConferenceState = 'PRE' | 'PARTICIPANT_REGISTRATION' | 'PREPARATION' | 'ACTIVE' | 'POST';
 
@@ -362,54 +404,23 @@
 
 	<!-- Tab Navigation -->
 	<div role="tablist" class="tabs tabs-border mb-6 flex-wrap">
-		<button
-			role="tab"
-			class="tab {currentTab === 'general' ? 'tab-active' : ''}"
-			onclick={() => setTab('general')}
-		>
-			<i class="fas fa-gear mr-2"></i>
-			{m.general()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'committees' ? 'tab-active' : ''}"
-			onclick={() => setTab('committees')}
-		>
-			<i class="fas fa-podium mr-2"></i>
-			{m.committeesAndAgendaItems()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'status' ? 'tab-active' : ''}"
-			onclick={() => setTab('status')}
-		>
-			<i class="fas fa-toggle-on mr-2"></i>
-			{m.statusAndFeatures()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'links' ? 'tab-active' : ''}"
-			onclick={() => setTab('links')}
-		>
-			<i class="fas fa-link mr-2"></i>
-			{m.linksAndContent()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'payments' ? 'tab-active' : ''}"
-			onclick={() => setTab('payments')}
-		>
-			<i class="fas fa-credit-card mr-2"></i>
-			{m.bankingInformation()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'documents' ? 'tab-active' : ''}"
-			onclick={() => setTab('documents')}
-		>
-			<i class="fas fa-file-pdf mr-2"></i>
-			{m.documentsAndTemplates()}
-		</button>
+		{#each tabs as tab (tab.value)}
+			{@const changeCount = changeCountPerTab[tab.value] ?? 0}
+			<button
+				role="tab"
+				class="tab {currentTab === tab.value ? 'tab-active' : ''}"
+				onclick={() => setTab(tab.value)}
+			>
+				<i class="fas {tab.icon} mr-2"></i>
+				{tab.label}
+				{#if changeCount > 0}
+					<span
+						class="bg-warning ml-2 inline-block size-2 rounded-full"
+						aria-label={m.configChangeTabIndicator({ count: changeCount })}
+					></span>
+				{/if}
+			</button>
+		{/each}
 	</div>
 
 	<!-- Committees Tab (outside main form) -->
@@ -809,10 +820,12 @@
 					type="button"
 					onclick={handleSaveClick}
 					class="btn btn-primary w-full"
-					disabled={!$tainted || Object.keys($tainted).length === 0}
+					disabled={pendingChanges.length === 0}
 				>
 					<i class="fas fa-save mr-2"></i>
-					{m.saveSettings()}
+					{pendingChanges.length > 0
+						? m.saveSettingsWithChangeCount({ count: pendingChanges.length })
+						: m.saveSettings()}
 				</button>
 			</div>
 		</div>
@@ -820,12 +833,16 @@
 </div>
 
 <Modal bind:open={confirmSaveModalOpen} title={m.confirmSave()}>
-	<p class="py-4">{m.confirmSaveDescription()}</p>
+	<ConfigChangePreview changes={pendingChanges} />
 	{#snippet action()}
 		<button class="btn" onclick={() => (confirmSaveModalOpen = false)}>
 			{m.cancel()}
 		</button>
-		<button class="btn btn-primary" onclick={handleConfirmSave}>
+		<button
+			class="btn btn-primary"
+			disabled={pendingChanges.length === 0}
+			onclick={handleConfirmSave}
+		>
 			<i class="fas fa-save mr-2"></i>
 			{m.save()}
 		</button>
