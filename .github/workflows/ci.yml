@@ -95,6 +95,36 @@ jobs:
       - run: bunx houdini generate
       - run: bun run build
 
+  # Codebase intelligence report (fallow): dead code, circular dependencies,
+  # duplication and complexity hotspots. Non-blocking for now - findings are
+  # surfaced as PR annotations and a sticky comment, but the job never fails
+  # the pipeline and is deliberately not part of the docker-build `needs` list.
+  # To make it a gate later, drop `continue-on-error`, set `fail-on-issues` to
+  # true (or switch to `command: audit` so only newly introduced findings
+  # count) and add `fallow` to the docker-build `needs`.
+  fallow:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history: fallow scopes PR runs to the diff against the base SHA.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-bun
+      # Gives fallow a resolvable tsconfig chain ($lib, $app, ... path aliases).
+      - run: bunx svelte-kit sync
+      - uses: fallow-rs/fallow@v3
+        with:
+          # The CLI version comes from the `fallow` devDependency in package.json.
+          fail-on-issues: false
+          comment: ${{ github.event_name == 'pull_request' }}
+          # Skip the Fallow Cloud token broker; comments post as github-actions[bot].
+          branded-token: false
+
   # ============================================
   # LAYER 2: DOCKER BUILD
   # ============================================
