@@ -110,6 +110,7 @@ model Conference {
   papers                       Paper[]
   calendarDays                 CalendarDay[]
   places                       Place[]
+  resolutions                  Resolution[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -130,6 +131,31 @@ model Committee {
   delegationMembers DelegationMember[]
 
   CommitteeAgendaItem CommitteeAgendaItem[]
+  resolutions         Resolution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// An adopted resolution document that can be downloaded on the after-conference screen.
+/// The file itself is stored inline as a base64 data URL (same convention as the
+/// conference's certificate / legal document templates).
+model Resolution {
+  id       String @id @default(nanoid())
+  /// Human readable title shown to participants (defaults to the uploaded filename)
+  title    String
+  /// Original filename of the uploaded document (used for the download attachment name)
+  fileName String
+  /// Base64 data URL of the resolution file (PDF)
+  content  String
+
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId String
+
+  /// Optional committee this resolution belongs to. Kept when the committee is
+  /// deleted so the resolution stays downloadable, just without a committee tag.
+  committee   Committee? @relation(fields: [committeeId], references: [id], onDelete: SetNull)
+  committeeId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

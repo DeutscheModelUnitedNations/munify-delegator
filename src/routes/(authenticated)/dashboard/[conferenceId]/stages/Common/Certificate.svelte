@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
+	import { conferenceResolutionsQuery } from '$lib/queries/conferenceResolutionsQuery';
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
 	import { toast } from 'svelte-sonner';
 	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
@@ -63,6 +64,46 @@
 		if (conferenceId && userId) {
 			certificateQuery.fetch({ variables: { conferenceId, userId } });
 		}
+	});
+
+	$effect(() => {
+		if (conferenceId) {
+			conferenceResolutionsQuery.fetch({ variables: { conferenceId } });
+		}
+	});
+
+	const resolutions = $derived($conferenceResolutionsQuery.data?.findManyResolutions ?? []);
+
+	// Group resolutions by committee for display; those without a committee tag are
+	// collected under a "general" group shown last.
+	type ResolutionGroup = {
+		key: string;
+		committeeName: string | null;
+		items: (typeof resolutions)[number][];
+	};
+	const groupedResolutions = $derived.by(() => {
+		const groups: ResolutionGroup[] = [];
+		const indexByKey: Record<string, number> = {};
+		for (const resolution of resolutions) {
+			const key = resolution.committee?.id ?? '__none__';
+			if (!(key in indexByKey)) {
+				indexByKey[key] = groups.length;
+				groups.push({
+					key,
+					committeeName: resolution.committee
+						? `${resolution.committee.name} (${resolution.committee.abbreviation})`
+						: null,
+					items: []
+				});
+			}
+			groups[indexByKey[key]].items.push(resolution);
+		}
+		// Committees first (in insertion order), the untagged group last.
+		return groups.sort((a, b) => {
+			if (a.committeeName === null) return 1;
+			if (b.committeeName === null) return -1;
+			return 0;
+		});
 	});
 
 	const downloadPDF = async () => {
@@ -167,3 +208,42 @@
 		<div class="skeleton bg-base-200 h-16 w-full max-w-sm"></div>
 	{/if}
 </DashboardSection>
+
+{#if $conferenceResolutionsQuery.fetching || resolutions.length > 0}
+	<DashboardSection
+		icon="file-contract"
+		title={m.adoptedResolutions()}
+		description={m.adoptedResolutionsDownloadDescription()}
+	>
+		{#if $conferenceResolutionsQuery.fetching}
+			<div class="skeleton bg-base-200 h-16 w-full max-w-sm"></div>
+		{:else}
+			<div class="flex flex-col gap-4">
+				{#each groupedResolutions as group (group.key)}
+					<div class="flex flex-col gap-2">
+						{#if group.committeeName}
+							<h3 class="text-sm font-semibold opacity-70">{group.committeeName}</h3>
+						{/if}
+						<ul class="flex flex-col gap-2">
+							{#each group.items as resolution (resolution.id)}
+								<li>
+									<a
+										class="btn btn-outline btn-sm justify-start gap-2"
+										href={`/api/resolution/${resolution.id}`}
+										target="_blank"
+										rel="noopener"
+										download
+									>
+										<i class="fa-duotone fa-file-pdf text-primary"></i>
+										<span class="truncate">{resolution.title}</span>
+										<i class="fas fa-download ml-auto"></i>
+									</a>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</DashboardSection>
+{/if}

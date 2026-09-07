@@ -26,6 +26,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { AddAgendaItemFormSchema } from './committees/form-schema';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import ResolutionManager from './ResolutionManager.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -798,6 +799,8 @@
 					<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
 				</button>
 			</FormFieldset>
+
+			<ResolutionManager resolutions={data.resolutionsData} committees={data.committeesData} />
 		</div>
 
 		<!-- Sticky Save Button -->
