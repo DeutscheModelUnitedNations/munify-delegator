@@ -176,32 +176,45 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
       - name: Upload sourcemaps to Bugsink
+        # Best effort: a Bugsink outage or sentry-cli failure must never fail the
+        # release pipeline. Problems are reported as warnings instead.
+        continue-on-error: true
         if: github.ref_type == 'tag' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
         env:
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
         run: |
+          skip() {
+            echo "::endgroup::"
+            echo "::warning::Sourcemap upload to Bugsink skipped - $1"
+            exit 0
+          }
+
           echo "::group::Extracting build artifacts from Docker image"
-          CONTAINER_ID=$(docker create ${{ steps.split-tags.outputs.fragment }})
+          CONTAINER_ID=$(docker create ${{ steps.split-tags.outputs.fragment }}) \
+            || skip "could not create a container from the built image"
           mkdir -p ./build-artifacts
-          docker cp "$CONTAINER_ID:/run/build" ./build-artifacts/
-          docker rm "$CONTAINER_ID"
+          docker cp "$CONTAINER_ID:/run/build" ./build-artifacts/ && COPIED=1 || COPIED=0
+          docker rm "$CONTAINER_ID" || true
+          [ "$COPIED" = "1" ] || skip "could not copy /run/build out of the image"
           echo "Extracted build artifacts to ./build-artifacts/build"
           ls -la ./build-artifacts/build
           echo "::endgroup::"
 
           echo "::group::Installing sentry-cli v2 (v3 has Bugsink compatibility issues)"
-          npm install -g @sentry/cli@2
+          npm install -g @sentry/cli@2 || skip "sentry-cli could not be installed"
           echo "::endgroup::"
 
           echo "::group::Injecting debug IDs into sourcemaps"
-          sentry-cli sourcemaps inject ./build-artifacts/build
+          sentry-cli sourcemaps inject ./build-artifacts/build \
+            || skip "sentry-cli could not inject debug IDs"
           echo "::endgroup::"
 
           echo "::group::Uploading sourcemaps to Bugsink (project: $SENTRY_PROJECT)"
           sentry-cli --url "$SENTRY_URL" sourcemaps \
             --org bugsinkhasnoorgs \
             --project "$SENTRY_PROJECT" \
-            upload ./build-artifacts/build
+            upload ./build-artifacts/build \
+            || skip "sentry-cli could not upload the sourcemaps to $SENTRY_URL"
           echo "Sourcemaps uploaded successfully"
           echo "::endgroup::"
 
