@@ -76,7 +76,11 @@
 
 	// Group resolutions by committee for display; those without a committee tag are
 	// collected under a "general" group shown last.
-	type ResolutionGroup = { committeeName: string | null; items: (typeof resolutions)[number][] };
+	type ResolutionGroup = {
+		key: string;
+		committeeName: string | null;
+		items: (typeof resolutions)[number][];
+	};
 	const groupedResolutions = $derived.by(() => {
 		const groups: ResolutionGroup[] = [];
 		const indexByKey: Record<string, number> = {};
@@ -85,6 +89,7 @@
 			if (!(key in indexByKey)) {
 				indexByKey[key] = groups.length;
 				groups.push({
+					key,
 					committeeName: resolution.committee
 						? `${resolution.committee.name} (${resolution.committee.abbreviation})`
 						: null,
@@ -214,7 +219,7 @@
 			<div class="skeleton bg-base-200 h-16 w-full max-w-sm"></div>
 		{:else}
 			<div class="flex flex-col gap-4">
-				{#each groupedResolutions as group (group.committeeName ?? '__none__')}
+				{#each groupedResolutions as group (group.key)}
 					<div class="flex flex-col gap-2">
 						{#if group.committeeName}
 							<h3 class="text-sm font-semibold opacity-70">{group.committeeName}</h3>

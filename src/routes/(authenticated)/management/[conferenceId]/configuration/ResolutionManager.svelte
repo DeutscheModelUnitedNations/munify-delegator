@@ -63,8 +63,10 @@
 		}
 	`);
 
-	async function handleFilesSelected(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
+	async function handleFilesSelected(
+		event: Event & { currentTarget: EventTarget & HTMLInputElement }
+	) {
+		const input = event.currentTarget;
 		if (!input.files || input.files.length === 0) return;
 
 		uploading = true;
@@ -102,8 +104,11 @@
 		}
 	}
 
-	async function saveTitle(resolution: Resolution, event: FocusEvent) {
-		const target = event.currentTarget as HTMLInputElement;
+	async function saveTitle(
+		resolution: Resolution,
+		event: FocusEvent & { currentTarget: EventTarget & HTMLInputElement }
+	) {
+		const target = event.currentTarget;
 		const newTitle = target.value.trim();
 		if (!newTitle || newTitle === resolution.title) {
 			target.value = resolution.title;
@@ -116,8 +121,11 @@
 		await invalidateAll();
 	}
 
-	async function changeCommittee(resolution: Resolution, event: Event) {
-		const value = (event.currentTarget as HTMLSelectElement).value;
+	async function changeCommittee(
+		resolution: Resolution,
+		event: Event & { currentTarget: EventTarget & HTMLSelectElement }
+	) {
+		const value = event.currentTarget.value;
 		const promise = value
 			? UpdateResolutionMutation.mutate({ id: resolution.id, committeeId: value })
 			: UpdateResolutionMutation.mutate({ id: resolution.id, clearCommittee: true });
@@ -261,10 +269,10 @@
 <Modal bind:open={deleteModalOpen} title={m.resolutionDeleteTitle()}>
 	<p class="py-4">{m.resolutionDeleteConfirm({ title: deleteTarget.title })}</p>
 	{#snippet action()}
-		<button class="btn" onclick={() => (deleteModalOpen = false)}>
+		<button type="button" class="btn" onclick={() => (deleteModalOpen = false)}>
 			{m.cancel()}
 		</button>
-		<button class="btn btn-error" onclick={confirmDelete}>
+		<button type="button" class="btn btn-error" onclick={confirmDelete}>
 			<i class="fas fa-trash mr-2"></i>
 			{m.delete()}
 		</button>

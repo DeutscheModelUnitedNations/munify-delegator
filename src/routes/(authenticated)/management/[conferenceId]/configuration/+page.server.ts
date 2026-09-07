@@ -253,7 +253,7 @@ export const actions = {
 
 		// PDF-only, max 10 MB each - mirrors the base document upload limits.
 		for (const file of files) {
-			const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+			const isPdf = file.type === 'application/pdf' && file.name.toLowerCase().endsWith('.pdf');
 			if (!isPdf) {
 				return fail(400, { uploadError: m.resolutionUploadOnlyPdf() });
 			}

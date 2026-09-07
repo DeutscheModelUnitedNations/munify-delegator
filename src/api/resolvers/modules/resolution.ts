@@ -98,6 +98,15 @@ builder.mutationFields((t) => ({
 				}
 			}
 
+			// PDF-only, max 10 MB - the management page enforces the same limits, but the
+			// mutation can be called directly, so the real boundary is here.
+			if (args.file.type !== 'application/pdf') {
+				throw new GraphQLError('Only PDF files can be uploaded as resolutions.');
+			}
+			if (args.file.size > 10_000_000) {
+				throw new GraphQLError('Resolution files must not exceed 10 MB.');
+			}
+
 			const content = await toDataURL(args.file);
 			const fileName = args.file.name || 'resolution.pdf';
 
