@@ -1,4 +1,5 @@
 import { m } from '$lib/paraglide/messages';
+import { getLocale } from '$lib/paraglide/runtime';
 import type { z } from 'zod';
 import type { conferenceSettingsFormSchema } from './form-schema';
 
@@ -76,6 +77,34 @@ function conferenceStateLabel(value: unknown): string {
 	}
 }
 
+/**
+ * Date-only fields are stored as UTC midnight (see `$lib/services/dateTimeInput`),
+ * so they must be read back in UTC - rendering them in the browser timezone would
+ * move them to the previous day for anyone west of UTC and append a meaningless
+ * 00:00. Mirrors how FormDateTimeInput displays the same value.
+ */
+function formatDateOnly(value: unknown): string {
+	if (!(value instanceof Date) || Number.isNaN(value.getTime())) return formatValue(value);
+	return value.toLocaleDateString(getLocale(), {
+		timeZone: 'UTC',
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric'
+	});
+}
+
+/** Fields edited with `enableTime` hold a real instant and are shown as wall clock. */
+function formatDateTime(value: unknown): string {
+	if (!(value instanceof Date) || Number.isNaN(value.getTime())) return formatValue(value);
+	return value.toLocaleString(getLocale(), {
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: 'numeric'
+	});
+}
+
 function featureToggleNote(): string {
 	return m.configChangeWarningFeature();
 }
@@ -99,13 +128,17 @@ const fieldDescriptions: Record<SettingsFieldKey, FieldDescription> = {
 	image: { group: 'general', label: () => m.conferenceImage() },
 	emblem: { group: 'general', label: () => m.conferenceEmblem() },
 	logo: { group: 'general', label: () => m.conferenceLogo() },
-	startAssignment: { group: 'general', label: () => m.conferenceStartAssignment() },
+	startAssignment: {
+		group: 'general',
+		label: () => m.conferenceStartAssignment(),
+		format: formatDateTime
+	},
 	registrationDeadlineGracePeriodMinutes: {
 		group: 'general',
 		label: () => m.registrationDeadlineGracePeriod()
 	},
-	startConference: { group: 'general', label: () => m.conferenceStart() },
-	endConference: { group: 'general', label: () => m.conferenceEnd() },
+	startConference: { group: 'general', label: () => m.conferenceStart(), format: formatDateOnly },
+	endConference: { group: 'general', label: () => m.conferenceEnd(), format: formatDateOnly },
 	timezone: { group: 'general', label: () => m.conferenceTimezone() },
 	state: {
 		group: 'status',

@@ -68,6 +68,32 @@ describe('collectConfigChanges', () => {
 		expect(collect({ ...saved, title: 'MUN-SH 2027' }, { title: undefined })).toEqual([]);
 	});
 
+	test('renders a date-only field from its UTC calendar date, without a time', () => {
+		// Date-only fields are stored as UTC midnight; reading them in the browser
+		// timezone would move them to the previous day west of UTC.
+		const changes = collectConfigChanges({
+			saved: { startConference: new Date('2026-03-12T00:00:00.000Z') },
+			current: { startConference: new Date('2026-03-19T00:00:00.000Z') },
+			tainted: { startConference: true },
+			existingFiles: {}
+		});
+		expect(changes).toHaveLength(1);
+		expect(changes[0].before).toContain('12');
+		expect(changes[0].after).toContain('19');
+		expect(changes[0].before).not.toMatch(/\d{2}:\d{2}/);
+	});
+
+	test('renders a datetime field with its wall clock time', () => {
+		const changes = collectConfigChanges({
+			saved: { startAssignment: new Date('2026-03-12T09:00:00.000Z') },
+			current: { startAssignment: new Date('2026-03-12T11:30:00.000Z') },
+			tainted: { startAssignment: true },
+			existingFiles: {}
+		});
+		expect(changes).toHaveLength(1);
+		expect(changes[0].after).toMatch(/\d{1,2}:\d{2}/);
+	});
+
 	test('formats booleans as on/off and marks feature toggles as high impact', () => {
 		const changes = collect({ ...saved, unlockPayments: true }, { unlockPayments: true });
 		expect(changes).toHaveLength(1);
