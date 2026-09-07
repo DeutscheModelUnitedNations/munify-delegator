@@ -27,5 +27,11 @@ RUN bun run build:app && bun run check
 
 USER bun
 ENV NODE_ENV=production
+# adapter-node caps request bodies at 512K by default and rejects anything larger with
+# HTTP 413 before the request reaches the app. Conference document/image uploads (base
+# PDFs are validated up to 10MB each in the Zod schema, and several can be sent in one
+# save) exceed that. Raise the limit so uploads actually reach the server. Overridable at
+# runtime via the BODY_SIZE_LIMIT env var (see .env.example).
+ENV BODY_SIZE_LIMIT=64M
 EXPOSE 3000/tcp
 CMD ["sh", "-c", "bunx prisma migrate deploy && bun ./build/index.js"]
