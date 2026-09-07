@@ -129,6 +129,9 @@ jobs:
           # The CLI version comes from the `fallow` devDependency in package.json,
           # pinned exactly there so CI and local runs analyse with the same binary.
           fail-on-issues: false
+          # 0-100 health score with a letter grade, and the health delta header
+          # on the PR comment. Reporting only - it does not gate anything.
+          score: true
           comment: ${{ github.event_name == 'pull_request' }}
           # Skip the Fallow Cloud token broker; comments post as github-actions[bot].
           branded-token: false
