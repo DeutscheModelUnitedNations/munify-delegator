@@ -5,6 +5,13 @@
 	// never sees. Without this every route importing generated types would be
 	// reported as an unresolved import.
 	"ignoreUnresolvedImports": ["$houdini", "$houdini/*", "**/$houdini"],
+	// Both are used without ever being imported, so fallow cannot see them.
+	// Verified before suppressing; do not "clean these up".
+	//   typst         - src/routes/api/pdf/+server.ts executes the binary at
+	//                   node_modules/.bin/typst to render PDFs at runtime.
+	//   houdini-svelte - declared as a plugin in houdini.config.js; nothing else
+	//                   depends on it, so removing it breaks `houdini generate`.
+	"ignoreDependencies": ["typst", "houdini-svelte"],
 	"rules": {
 		// This project deliberately keeps runtime packages in devDependencies
 		// (see CLAUDE.md); SvelteKit bundles them at build time. The rule fires
