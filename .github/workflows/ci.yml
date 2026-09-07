@@ -95,6 +95,47 @@ jobs:
       - run: bunx houdini generate
       - run: bun run build
 
+  # Codebase intelligence report (fallow): dead code, circular dependencies,
+  # duplication and complexity hotspots. Non-blocking for now - findings are
+  # surfaced as PR annotations and a sticky comment, but the job never fails
+  # the pipeline and is deliberately not part of the docker-build `needs` list.
+  # To make it a gate later, drop `continue-on-error`, set `fail-on-issues` to
+  # true (or switch to `command: audit` so only newly introduced findings
+  # count) and add `fallow` to the docker-build `needs`.
+  fallow:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history: fallow scopes PR runs to the diff against the base SHA.
+          fetch-depth: 0
+          # This job runs repo-controlled steps (svelte-kit sync, the fallow
+          # action) with pull-requests/checks write permissions, so don't leave
+          # GITHUB_TOKEN in .git/config for them to read. The fallow action takes
+          # its token through the `github-token` input instead.
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun
+      # Gives fallow a resolvable tsconfig chain ($lib, $app, ... path aliases).
+      - run: bunx svelte-kit sync
+      # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
+      # with write permissions on every PR.
+      - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
+        with:
+          # The CLI version comes from the `fallow` devDependency in package.json,
+          # pinned exactly there so CI and local runs analyse with the same binary.
+          fail-on-issues: false
+          # 0-100 health score with a letter grade, and the health delta header
+          # on the PR comment. Reporting only - it does not gate anything.
+          score: true
+          comment: ${{ github.event_name == 'pull_request' }}
+          # Skip the Fallow Cloud token broker; comments post as github-actions[bot].
+          branded-token: false
+
   # ============================================
   # LAYER 2: DOCKER BUILD
   # ============================================

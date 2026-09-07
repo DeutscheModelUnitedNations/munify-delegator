@@ -96,3 +96,15 @@ CVE-2026-14257  # brace-expansion@5.0.7: DoS via memory exhaustion in expand() (
 CVE-2026-69152  # brace-expansion@5.0.7: DoS via unbounded intermediate arrays (npm CLI)
 CVE-2026-69192  # ip-address@10.2.0: SSRF via inconsistent IP address parsing (npm CLI)
 CVE-2026-73566  # tar@7.5.19: DoS via crafted long-path tar archive (npm CLI)
+
+# Go stdlib compiled into the native TypeScript 7 compiler that ships with
+# fallow's optional type-aware sidecar. `fallow` declares `fallow-type-aware`
+# as an optionalDependency, which pins typescript@7 - the Go rewrite - so
+# @typescript/typescript-<platform>/lib/tsc lands in the bun install cache and
+# Trivy's gobinary analyzer scans it. Not actionable and not reachable: it is
+# dev tooling that the running app never executes, this project does not enable
+# fallow's type-aware analysis (no `typeAware` key in .fallowrc.jsonc, and the
+# action's `type-aware: auto` only provisions the sidecar when the config opts
+# in), and there is no npm-side fix. Clears once upstream ships a TypeScript 7
+# build against a patched Go toolchain.
+CVE-2026-46600  # golang.org/x/net/dns/dnsmessage: DoS via invalid DNS record parsing (typescript@7 native tsc, via fallow-type-aware)
