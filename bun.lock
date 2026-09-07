@@ -96,7 +96,7 @@
         "eslint": "^9.39.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-svelte": "^3.13.0",
-        "fallow": "^3.22.0",
+        "fallow": "3.22.0",
         "flag-icons": "^7.5.0",
         "fuse.js": "^7.1.0",
         "globals": "^15.15.0",

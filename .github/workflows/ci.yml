@@ -114,12 +114,20 @@ jobs:
         with:
           # Full history: fallow scopes PR runs to the diff against the base SHA.
           fetch-depth: 0
+          # This job runs repo-controlled steps (svelte-kit sync, the fallow
+          # action) with pull-requests/checks write permissions, so don't leave
+          # GITHUB_TOKEN in .git/config for them to read. The fallow action takes
+          # its token through the `github-token` input instead.
+          persist-credentials: false
       - uses: ./.github/actions/setup-bun
       # Gives fallow a resolvable tsconfig chain ($lib, $app, ... path aliases).
       - run: bunx svelte-kit sync
-      - uses: fallow-rs/fallow@v3
+      # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
+      # with write permissions on every PR.
+      - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
         with:
-          # The CLI version comes from the `fallow` devDependency in package.json.
+          # The CLI version comes from the `fallow` devDependency in package.json,
+          # pinned exactly there so CI and local runs analyse with the same binary.
           fail-on-issues: false
           comment: ${{ github.event_name == 'pull_request' }}
           # Skip the Fallow Cloud token broker; comments post as github-actions[bot].
