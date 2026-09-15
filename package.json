@@ -1,7 +1,7 @@
 {
 	"dependencies": {
 		"diff-match-patch": "^1.0.5",
-		"nodemailer": "^9.0.3",
+		"nodemailer": "^9.1.0",
 		"typst": "^0.10.0-8"
 	},
 	"devDependencies": {
