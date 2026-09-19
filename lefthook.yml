@@ -1,9 +1,24 @@
 pre-commit:
-  parallel: true
+  # Piped, with explicit priorities: fallow analyses the working tree, so it has
+  # to run after prettier has finished rewriting (and re-staging) the same
+  # files. Without `priority` lefthook would order the commands alphabetically.
+  piped: true
   commands:
     format:
+      priority: 1
       run: bunx prettier --ignore-unknown --write "{staged_files}"
       stage_fixed: true
+    fallow:
+      priority: 2
+      # Codebase intelligence (dead code, complexity, duplication, cycles) for
+      # what this commit introduces: `--base HEAD` diffs the working tree, which
+      # is what is about to be committed. Advisory - `--brief` renders the same
+      # analysis but always exits 0, mirroring the deliberately non-blocking
+      # fallow job in CI. To gate commits instead, drop `--brief`.
+      run: bunx fallow audit --base HEAD --quiet --brief --gate-marker pre-commit
+      skip:
+        - merge
+        - rebase
 pre-push:
   parallel: true
   commands:
@@ -13,3 +28,10 @@ pre-push:
       run: bunx eslint "{push_files}" --cache --cache-strategy content
     format:
       run: bunx prettier --check --ignore-unknown "{push_files}"
+    fallow:
+      # Same analysis as the fallow CI job, scoped to the whole branch: with no
+      # `--base`, fallow audits against the merge-base with the upstream (or
+      # `origin/HEAD` / `origin/main`), so you see locally what CI will report
+      # on the PR. Advisory for the same reason as above; to gate pushes, drop
+      # `--brief` (and consider dropping `continue-on-error` in ci.yml too).
+      run: bunx fallow audit --quiet --brief --gate-marker pre-push
