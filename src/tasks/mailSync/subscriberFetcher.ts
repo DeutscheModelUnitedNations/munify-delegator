@@ -8,8 +8,11 @@ const PER_PAGE = 40;
 /**
  * Fetches all subscribers from Listmonk into a Map keyed by lowercase email.
  * Uses direct Map insertion instead of array spread to avoid O(n²) memory allocation.
+ *
+ * Returns `undefined` if a page cannot be fetched. An incomplete map must not be planned against:
+ * every subscriber missing from it would look like a user without a subscriber.
  */
-export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscriber>> {
+export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscriber> | undefined> {
 	const subscriberMap = new Map<string, ListmonkSubscriber>();
 	let currentPage = 1;
 	let totalEntries = 0;
@@ -26,7 +29,7 @@ export async function fetchSubscriberMap(): Promise<Map<string, ListmonkSubscrib
 
 		if (res.error || !res.data.data || !res.data.data.results) {
 			taskWarning(TASK_NAME, `Failed to fetch subscribers from Listmonk`);
-			return new Map();
+			return undefined;
 		}
 
 		const total = res.data.data.total ?? 0;

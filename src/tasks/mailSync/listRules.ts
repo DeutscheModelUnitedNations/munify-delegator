@@ -4,7 +4,7 @@ import type {
 	SubscriberAttribs,
 	ComputedSubscriberState
 } from './types';
-import { createGlobalListName, createConferenceListName } from './listManager';
+import { createGlobalListName, createConferenceListName } from './listNames';
 import formatNames from '$lib/services/formatNames';
 
 // Rule: Global newsletter subscription

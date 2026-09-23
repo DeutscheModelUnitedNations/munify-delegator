@@ -193,7 +193,8 @@ export interface paths {
 		delete: operations['deleteSubscriberById'];
 		options?: never;
 		head?: never;
-		patch?: never;
+		/** @description partially modify subscriber data */
+		patch: operations['patchSubscriberById'];
 		trace?: never;
 	};
 	'/subscribers/lists': {
@@ -1592,7 +1593,8 @@ export interface components {
 			uuid?: string;
 			email?: string;
 			name?: string;
-			/** @example {
+			/**
+			 * @example {
 			 *       "city": {
 			 *         "type": "string"
 			 *       },
@@ -1602,7 +1604,8 @@ export interface components {
 			 *       "type": {
 			 *         "type": "string"
 			 *       }
-			 *     } */
+			 *     }
+			 */
 			attribs?: {
 				[key: string]: unknown;
 			};
@@ -1630,7 +1633,8 @@ export interface components {
 			uuid?: string;
 			email?: string;
 			name?: string;
-			/** @example {
+			/**
+			 * @example {
 			 *       "city": {
 			 *         "type": "string"
 			 *       },
@@ -1640,7 +1644,8 @@ export interface components {
 			 *       "type": {
 			 *         "type": "string"
 			 *       }
-			 *     } */
+			 *     }
+			 */
 			attribs?: {
 				[key: string]: unknown;
 			};
@@ -1663,7 +1668,8 @@ export interface components {
 			lists?: number[];
 			list_uuids?: string[];
 			preconfirm_subscriptions?: boolean;
-			/** @example {
+			/**
+			 * @example {
 			 *       "city": {
 			 *         "type": "string"
 			 *       },
@@ -1681,7 +1687,8 @@ export interface components {
 			 *           }
 			 *         }
 			 *       }
-			 *     } */
+			 *     }
+			 */
 			attribs?: {
 				[key: string]: unknown;
 			};
@@ -1693,7 +1700,8 @@ export interface components {
 			lists?: number[];
 			list_uuids?: string[];
 			preconfirm_subscriptions?: boolean;
-			/** @example {
+			/**
+			 * @example {
 			 *       "city": {
 			 *         "type": "string"
 			 *       },
@@ -1711,7 +1719,8 @@ export interface components {
 			 *           }
 			 *         }
 			 *       }
-			 *     } */
+			 *     }
+			 */
 			attribs?: {
 				[key: string]: unknown;
 			};
@@ -1726,7 +1735,7 @@ export interface components {
 			 */
 			action?: 'add' | 'remove' | 'unsubscribe';
 			/** @description The ids of the lists to be modified. */
-			target_list_ids?: number;
+			target_list_ids?: number[];
 			/**
 			 * @description confirmed, unconfirmed, or unsubscribed status.
 			 * @enum {string}
@@ -2321,6 +2330,36 @@ export interface operations {
 				content: {
 					'application/json': {
 						data?: boolean;
+					};
+				};
+			};
+		};
+	};
+	patchSubscriberById: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description The id of subscriber to update */
+				id: number;
+			};
+			cookie?: never;
+		};
+		/** @description the subscriber fields to change */
+		requestBody?: {
+			content: {
+				'application/json': components['schemas']['UpdateSubscriber'];
+			};
+		};
+		responses: {
+			/** @description returns updated subscriber. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': {
+						data?: components['schemas']['Subscriber'];
 					};
 				};
 			};
