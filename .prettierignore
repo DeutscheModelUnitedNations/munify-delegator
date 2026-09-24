@@ -6,3 +6,4 @@ fontawesome
 i18n
 schema.graphql
 .claude
+drizzle/**/snapshot.json

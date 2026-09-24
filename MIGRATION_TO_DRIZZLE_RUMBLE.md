@@ -310,40 +310,70 @@ pointing at the old path. Both were caught by `typecheck`/`check` and fixed. Alw
 after a move, and grep for the old directory name afterwards — a doc comment referencing
 `$lib/services/dateTimeInput` was only found that way.
 
-### Phase C — Database: Prisma → Drizzle (parallel, app untouched)
+### Phase C — Database: Prisma → Drizzle (parallel, app untouched) — **DONE (2026-09-25)**
 
-Goal: working `drizzle.config.ts`, `src/api/db/{schema.ts,relations.ts,db.ts}` verified against
-the real schema, while the app still runs entirely on Prisma.
+`src/api/db/{schema.ts,relations.ts,db.ts}` + `drizzle.config.ts` + a baseline migration in
+`drizzle/`, all verified against the real schema. Nothing in the app imports any of it yet —
+the app still runs entirely on Prisma.
 
-1. Install the drizzle trio pinned to chase's build.
-2. `drizzle.config.ts` at the root, copied from chase (`schema: './src/api/db/schema.ts'`,
-   `out: './drizzle'`, `dialect: 'postgresql'`, `casing: 'snake_case'`, `strict: true`).
-3. `drizzle-kit introspect` against a **restored copy of production-like data** with all 77
-   Prisma migrations applied — never an empty dev DB; that's how relation/index edge cases surface.
-4. Hand-clean the introspected output into chase's idiom:
-   - `snakeCase.table(...)`, shared `defaultTimestamps` / `defaultIdAndTimestamps` helpers with
-     `id: text().$defaultFn(() => nanoid()).primaryKey()`.
-   - Re-derive all 10 enums as `pgEnum` (`ConferenceState`, `PaperType`, `PaperStatus`, `Gender`,
-     `FoodPreference`, `AdministrativeStatus`, `MediaConsentStatus`, `ReviewHelpStatus`,
-     `TeamRole`, `CalendarEntryColor`); snake_case the Postgres type names as chase does.
-   - Split relations out of the tables into `relations.ts` via `defineRelations` — Rumble's
-     ability filters and `db.query.*` `with:` both depend on this file being complete, so a
-     missing relation here shows up much later as an unexplainable authorization gap. Port every
-     one of the 56 relations.
-5. `src/api/db/db.ts` exactly like chase (`drizzle.mock(conf)` when `building`, else
-   `drizzle(configPrivate.DATABASE_URL, conf)`; export `db`, `schema`, `relations`).
-6. `drizzle-kit generate` a baseline, then confirm **zero drift** against the live schema
-   (`drizzle-kit push` dry run / `drizzle-kit check`). A non-empty diff means the hand-cleanup
-   changed semantics — fix the schema, never the database.
-7. Do not touch `prisma/` yet.
+**A production restore turned out not to be needed.** Applying all 77 Prisma migrations to an
+empty Postgres produces a schema identical to production; production-like _data_ matters for
+validating ability filters in Phase D, not for reading schema shape. A disposable container on
+port 5440 was used and destroyed afterwards.
 
-**Exit**: zero-drift check passes; app still runs unmodified on Prisma; all 30 tables present:
-`Conference, Committee, CommitteeAgendaItem, User, ReviewerSnippet, ConferenceParticipantStatus,
-PaymentTransaction, UserReferenceInPaymentTransaction, Paper, PaperVersion, PaperReview, Nation,
-NonStateActor, CustomConferenceRole, SingleParticipant, Delegation, RoleApplication,
-DelegationMember, ConferenceSupervisor, SurveyQuestion, SurveyOption, SurveyAnswer,
-WaitingListEntry, TeamMember, TeamMemberInvitation, CalendarDay, CalendarTrack, Place,
-CalendarEntry, AttendanceEntry`.
+**Zero drift confirmed.** `drizzle-kit push` against the migrated database emits exactly one
+statement — `DROP TABLE "_prisma_migrations"`, the Prisma bookkeeping table deliberately left
+out of `schema.ts`. All 30 app tables, 314 columns, 10 enums, 72 indexes and 61 foreign keys
+match with no diff.
+
+What introspection handled better than this plan assumed:
+
+- **drizzle-kit rc.5 emits `defineRelations` natively**, including `.through()` for Prisma's
+  four implicit m2m join tables (`_CommitteeToNation`,
+  `_ConferenceSupervisorToDelegationMember`, `_ConferenceSupervisorToSingleParticipant`,
+  `_CustomConferenceRoleToSingleParticipant`). The plan budgeted for porting 56 relations by
+  hand; that was unnecessary, and hand-porting would have been _more_ error-prone.
+- **TS identifiers come out camelCase already**, with physical names as explicit string
+  arguments (`pgTable('Conference', …)`, `text('A')`). So the code reads like chase even though
+  the physical names do not match it.
+
+**Physical naming: deliberately NOT aligned with chase.** Chase uses `casing: 'snake_case'` and
+`snakeCase.table(...)` over snake_case tables and columns. This database is Prisma's default —
+**PascalCase tables, camelCase columns** — and matching chase would mean renaming 34 tables and
+314 columns in production. That is a destructive migration with downtime and no functional
+benefit, so `drizzle.config.ts` here omits `casing` and `schema.ts` uses `pgTable` with explicit
+names. The alignment that matters (file layout, relational API, handler shape) is unaffected.
+
+Shared column helpers, mirroring chase's, cover the schema cleanly:
+
+| Helper                   | Tables | Notes                                                                 |
+| ------------------------ | ------ | --------------------------------------------------------------------- |
+| `defaultIdAndTimestamps` | 26     | nanoid id + createdAt + updatedAt                                     |
+| `defaultIdAndCreatedAt`  | 2      | `PaperVersion`, `PaperReview` — append-only, no `updatedAt`           |
+| `defaultTimestamps` only | 2      | `PaymentTransaction` (caller-supplied id), `Nation` (`alpha3Code` PK) |
+
+**Two Prisma behaviours that live in the client, not the database**, and would have been lost
+silently — inserts failing on a missing id, and `updatedAt` frozen at its insert value:
+
+- `@default(nanoid())` → `.$defaultFn(() => nanoid())` (28 tables)
+- `@updatedAt` → `.$onUpdate(() => new Date())` (28 tables)
+
+Neither emits DDL, so the drift check stays clean either way — which is exactly why they are
+easy to miss. `nanoid` is the package default (21 chars, default alphabet) to stay consistent
+with ids already in the database, deliberately **not** chase's 30-char no-look-alike alphabet,
+which would fragment the id space.
+
+Added scripts: `db:generate`, `db:migrate`, `db:push`, `db:studio` (chase's names). Prisma's
+`studio` script stays until Phase F. `drizzle/**/snapshot.json` added to `.prettierignore`
+(chase ignores `drizzle/meta/**`, the pre-1.0 layout).
+
+**Verified**: `typecheck` clean, `check` 0 errors / 127 warnings, `test` 153/153,
+`lint` 0 errors, `format:check` clean.
+
+**Open item for deployment (Phase F):** the baseline migration contains full `CREATE TABLE`
+statements, so it must be marked as already-applied on existing databases rather than run —
+`drizzle-kit migrate` against production would fail on tables that already exist. Decide
+whether to insert the journal row manually or to run `migrate` only on fresh databases.
 
 ### Phase D — API: Pothos/CASL → Rumble handlers
 

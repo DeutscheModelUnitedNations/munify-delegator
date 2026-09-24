@@ -1,7 +1,9 @@
 {
 	"dependencies": {
 		"diff-match-patch": "^1.0.5",
+		"drizzle-orm": "1.0.0-rc.5-ab785fc",
 		"nodemailer": "^9.1.0",
+		"pg": "^8.23.0",
 		"typst": "^0.10.0-8"
 	},
 	"devDependencies": {
@@ -68,6 +70,7 @@
 		"@types/node-forge": "^1.3.14",
 		"@types/node-schedule": "^2.1.8",
 		"@types/nodemailer": "^6.4.17",
+		"@types/pg": "^8.23.1",
 		"@vitest/coverage-v8": "^4.1.0",
 		"barcode-detector": "^3.0.8",
 		"better-svelte-email": "^1.3.1",
@@ -81,6 +84,8 @@
 		"daisyui": "^5.7.20",
 		"date-fns": "^4.1.0",
 		"dayjs": "^1.11.19",
+		"drizzle-kit": "1.0.0-rc.5-ab785fc",
+		"drizzle-seed": "1.0.0-rc.5-ab785fc",
 		"echarts": "^6.0.0",
 		"eslint": "^10.9.0",
 		"eslint-config-prettier": "^10.1.8",
@@ -173,6 +178,11 @@
 		"build:tasks": "bun ./scripts/tasksBuild.ts",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"coverage": "vitest run --coverage",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
 		"dev:server": "svelte-kit sync && vite",
@@ -181,17 +191,16 @@
 		"fallow:health": "fallow health --score",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
+		"i18n:check": "i18n-check --source \"de\" --locales ./messages --format \"i18next\"",
+		"i18n:translate": "inlang machine translate --project project.inlang",
+		"i18n:validate": "inlang validate --project project.inlang",
 		"install-git-hooks": "bunx lefthook install",
 		"lint": "eslint . --cache --cache-strategy content",
-		"i18n:check": "i18n-check --source \"de\" --locales ./messages --format \"i18next\"",
-		"i18n:validate": "inlang validate --project project.inlang",
-		"i18n:translate": "inlang machine translate --project project.inlang",
 		"preview": "vite preview",
 		"studio": "prisma studio",
-		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"coverage": "vitest run --coverage"
+		"typecheck": "tsc --noEmit"
 	},
 	"type": "module",
 	"version": "0.0.1"
