@@ -349,6 +349,47 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
   # ============================================
+  # LAYER 3: DEPLOY (push to main / tag only)
+  # ============================================
+  # Triggers a Dokploy redeploy once the new images have been built, pushed and
+  # passed the Trivy scans above. Dokploy's per-app deploy webhook just needs a
+  # POST to its URL — the application to redeploy is encoded in the URL itself,
+  # so no body or auth header is needed. The app and the background tasks are
+  # separate Dokploy applications, so each has its own webhook; an unconfigured
+  # one is skipped with a warning instead of failing the run.
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: [docker-build, docker-build-tasks]
+    runs-on: ubuntu-latest
+    env:
+      DOKPLOY_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}
+      DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL }}
+    steps:
+      - name: Trigger Dokploy deployment (app)
+        if: env.DOKPLOY_DEPLOY_WEBHOOK_URL != ''
+        run: curl --fail --silent --show-error -X POST "$DOKPLOY_DEPLOY_WEBHOOK_URL"
+
+      - name: App deploy skipped
+        if: env.DOKPLOY_DEPLOY_WEBHOOK_URL == ''
+        run: |
+          echo "::warning::Dokploy app deploy skipped - DOKPLOY_DEPLOY_WEBHOOK_URL not configured"
+          echo "To enable auto-deploy, add the DOKPLOY_DEPLOY_WEBHOOK_URL secret (from the"
+          echo "application's Webhook URL in Dokploy's deployment logs) to this repository."
+
+      - name: Trigger Dokploy deployment (tasks)
+        if: env.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL != ''
+        run: curl --fail --silent --show-error -X POST "$DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL"
+
+      - name: Tasks deploy skipped
+        if: env.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL == ''
+        run: |
+          echo "::warning::Dokploy tasks deploy skipped - DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL not configured"
+          echo "To enable auto-deploy of the background tasks, add the"
+          echo "DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL secret (from the tasks application's"
+          echo "Webhook URL in Dokploy's deployment logs) to this repository."
+
+  # ============================================
   # LAYER 3: RELEASE (tag push only)
   # ============================================
 
