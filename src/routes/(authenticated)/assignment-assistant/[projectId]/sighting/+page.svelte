@@ -7,7 +7,7 @@
 	import Application from './Application.svelte';
 	import { graphql } from '$houdini';
 	import SchoolFilter from './SchoolFilter.svelte';
-	import codenmz from '$lib/services/codenamize';
+	import codenmz from '$lib/helpers/codenamize';
 	import { getConference, loadProjects, getApplications } from '../appData.svelte';
 
 	let { data }: PageProps = $props();

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { graphql, type MediaConsentStatus$options } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { downloadCSV } from '$lib/services/downloadHelpers';
+	import formatNames from '$lib/helpers/formatNames';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {

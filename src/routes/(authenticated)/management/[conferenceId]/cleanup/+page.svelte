@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import Modal from './Modal.svelte';
 	import NormalizeSchools from './NormalizeSchools.svelte';
 	import Section from './Section.svelte';

@@ -4,7 +4,7 @@ import type { PageServerLoad } from './$houdini';
 import { newResolutionSchema } from './form-schema';
 import { graphql } from '$houdini';
 
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import { error } from '@sveltejs/kit';
 
 const query = graphql(`

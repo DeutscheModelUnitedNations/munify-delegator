@@ -1,33 +1,33 @@
 <script lang="ts">
-	import codenamize from '$lib/services/codenamize';
+	import codenamize from '$lib/helpers/codenamize';
 	import type { PageData } from '../../$houdini';
 	import { alpha3Code, m } from '$lib/paraglide/messages';
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
-	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
-	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
+	import { getLinksForUserType, type DashboardLinkContext } from '$lib/data/dashboardLinks';
 	import Flag from '$lib/components/Flag.svelte';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
-	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
-	import formatNames, { formatInitials } from '$lib/services/formatNames';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
-	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
+	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
+	import formatNames, { formatInitials } from '$lib/helpers/formatNames';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
 	import {
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
 		type RecipientData
-	} from '$lib/services/pdfGenerator';
+	} from '$lib/utils/pdfGenerator';
 	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
 	import DelegationStatsCharts from './DelegationStatsCharts.svelte';
-	import InfoGrid from '$lib/components/InfoGrid';
+	import InfoGrid from '$lib/components/infoGrid';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	// TODO these components need some refactoring

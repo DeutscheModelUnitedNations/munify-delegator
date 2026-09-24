@@ -9,9 +9,9 @@
 	} from '$houdini';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import GlobalNotes from './GlobalNotes.svelte';
@@ -21,7 +21,7 @@
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
 		type RecipientData
-	} from '$lib/services/pdfGenerator';
+	} from '$lib/utils/pdfGenerator';
 	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
 	import { toast } from 'svelte-sonner';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
@@ -30,7 +30,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import AccessCardSection from './AccessCardSection.svelte';
 	import AttendanceSection from './AttendanceSection.svelte';
 

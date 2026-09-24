@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Drawer } from 'vaul-svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { Table } from '$lib/components/TanStackTable';
+	import type { Table } from '$lib/components/tanStackTable';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { ColumnMeta, ParticipantRow, ColumnCategory, TextFilterMode } from './types';
 	import {
@@ -10,7 +10,7 @@
 		translateFoodPreference,
 		translateGender,
 		translateTeamRole
-	} from '$lib/services/enumTranslations';
+	} from '$lib/utils/enumTranslations';
 
 	interface Props {
 		open: boolean;
@@ -249,8 +249,7 @@
 												</div>
 											{:else if colMeta.filterType === 'range'}
 												{@const currentRange = (col.getFilterValue() as
-													| [number | null, number | null]
-													| undefined) ?? [null, null]}
+													[number | null, number | null] | undefined) ?? [null, null]}
 												{@const facetedMinMax = col.getFacetedMinMaxValues()}
 												<div class="flex items-center gap-2">
 													<input

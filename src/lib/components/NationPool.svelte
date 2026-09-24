@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 	import NationsWithCommitteesTable from './NationsWithCommitteesTable.svelte';
 	import PoolSorting from './PoolSorting.svelte';
-	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
+	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import { m } from '$lib/paraglide/messages';
 
 	type Committee = NonNullable<

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { GaugeChart, StackedBarChart, BarChart } from '$lib/components/Charts/ECharts';
+	import { GaugeChart, StackedBarChart, BarChart } from '$lib/components/charts/echarts';
 	import type { PostalPaymentProgress } from '../stats.svelte';
 
 	interface Props {

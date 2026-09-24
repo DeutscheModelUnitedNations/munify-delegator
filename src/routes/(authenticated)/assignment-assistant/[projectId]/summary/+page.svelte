@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import codenamize from '$lib/services/codenamize';
-	import formatNames from '$lib/services/formatNames';
+	import codenamize from '$lib/helpers/codenamize';
+	import formatNames from '$lib/helpers/formatNames';
 	import { onMount } from 'svelte';
 	import {
 		getApplications,
@@ -46,8 +46,7 @@
 		const nations = getNations();
 		const NSAs = getNSAs();
 		const res: ({ applications: Delegation[] } & (
-			| { nation: Nation; nsa: never }
-			| { nation: never; nsa: NonStateActor }
+			{ nation: Nation; nsa: never } | { nation: never; nsa: NonStateActor }
 		))[] = [];
 		nations.forEach((x) => {
 			const assignments = applications.filter(

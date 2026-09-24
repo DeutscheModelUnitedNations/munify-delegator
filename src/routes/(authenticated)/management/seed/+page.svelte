@@ -4,7 +4,7 @@
 	import { z } from 'zod';
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
 	let rawFile = $state<File | null>(null);
 	let validationErrors = $state<string | null>(null);

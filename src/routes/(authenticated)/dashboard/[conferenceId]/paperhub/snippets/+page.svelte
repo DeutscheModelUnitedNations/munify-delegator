@@ -32,13 +32,13 @@
 	import Underline from '@tiptap/extension-underline';
 	import type { JSONContent } from '@tiptap/core';
 	import type { Readable } from 'svelte/store';
-	import Menu from '$lib/components/Paper/Editor/Menu';
-	import { validatePlaceholders } from '$lib/services/snippetPlaceholders';
-	import { PlaceholderHighlight } from '$lib/components/Paper/Editor/extensions/PlaceholderHighlight';
+	import Menu from '$lib/components/paper/editor/menu';
+	import { validatePlaceholders } from '$lib/helpers/snippetPlaceholders';
+	import { PlaceholderHighlight } from '$lib/components/paper/editor/extensions/PlaceholderHighlight';
 	import {
 		isValidTipTapContent,
 		getEmptyTipTapDocument
-	} from '$lib/components/Paper/Editor/contentValidation';
+	} from '$lib/components/paper/editor/contentValidation';
 
 	let { data }: { data: PageData } = $props();
 

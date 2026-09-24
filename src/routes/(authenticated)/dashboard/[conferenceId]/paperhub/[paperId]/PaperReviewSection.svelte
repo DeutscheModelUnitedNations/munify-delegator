@@ -5,20 +5,20 @@
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
-	import PaperEditor from '$lib/components/Paper/Editor';
-	import { translatePaperStatus } from '$lib/services/enumTranslations';
-	import { getPaperStatusIcon } from '$lib/services/enumIcons';
-	import { VersionCompareModal, computeDiffStats } from '$lib/components/Paper/Editor/DiffViewer';
+	import PaperEditor from '$lib/components/paper/editor';
+	import { translatePaperStatus } from '$lib/utils/enumTranslations';
+	import { getPaperStatusIcon } from '$lib/utils/enumIcons';
+	import { VersionCompareModal, computeDiffStats } from '$lib/components/paper/editor/diffViewer';
 	import type {
 		ComparisonState,
 		VersionForComparison,
 		DiffStats
-	} from '$lib/components/Paper/Editor/DiffViewer';
+	} from '$lib/components/paper/editor/diffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
-	import { PieceFoundModal } from '$lib/components/FlagCollection';
+	import { getStatusBadgeClass } from '$lib/utils/paperStatusHelpers';
+	import { PieceFoundModal } from '$lib/components/flagCollection';
 	import Modal from '$lib/components/Modal.svelte';
-	import { getEmptyTipTapDocument } from '$lib/components/Paper/Editor/contentValidation';
+	import { getEmptyTipTapDocument } from '$lib/components/paper/editor/contentValidation';
 	import { browser } from '$app/environment';
 	import { persisted } from 'svelte-persisted-store';
 	import { onMount } from 'svelte';

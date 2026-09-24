@@ -1,7 +1,7 @@
 import { builder } from '../../builder';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
-import codenmz from '$lib/services/codenamize';
+import codenmz from '$lib/helpers/codenamize';
 
 // Define the ReviewerStat type for the leaderboard
 const ReviewerStatType = builder.simpleObject('ReviewerStat', {

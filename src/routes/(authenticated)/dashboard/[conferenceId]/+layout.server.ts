@@ -1,5 +1,5 @@
 import { myConferenceparticipationQuery } from '$lib/queries/myConferenceparticipationQuery';
-import { ofAgeAtConference } from '$lib/services/ageChecker';
+import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {

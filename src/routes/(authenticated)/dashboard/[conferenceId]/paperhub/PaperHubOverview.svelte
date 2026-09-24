@@ -6,10 +6,10 @@
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperTable from './PaperTable.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { FlagCollectionSection } from '$lib/components/FlagCollection';
-	import ReviewerLeaderboard from '$lib/components/PaperHub/ReviewerLeaderboard.svelte';
+	import { FlagCollectionSection } from '$lib/components/flagCollection';
+	import ReviewerLeaderboard from '$lib/components/paperHub/ReviewerLeaderboard.svelte';
 	import { persisted } from 'svelte-persisted-store';
-	import DetailedPaperStats from '$lib/components/PaperHub/DetailedPaperStats.svelte';
+	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
 
 	interface Props {
 		conferenceId: string;

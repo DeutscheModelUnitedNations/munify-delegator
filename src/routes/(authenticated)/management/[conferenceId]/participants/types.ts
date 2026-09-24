@@ -1,8 +1,5 @@
 export type ParticipationRole =
-	| 'SUPERVISOR'
-	| 'SINGLE_PARTICIPANT'
-	| 'DELEGATION_MEMBER'
-	| 'TEAM_MEMBER';
+	'SUPERVISOR' | 'SINGLE_PARTICIPANT' | 'DELEGATION_MEMBER' | 'TEAM_MEMBER';
 
 export type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
 

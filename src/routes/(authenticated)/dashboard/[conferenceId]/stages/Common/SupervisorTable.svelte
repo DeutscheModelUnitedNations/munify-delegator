@@ -1,9 +1,9 @@
 <script lang="ts">
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 
 	interface Props {

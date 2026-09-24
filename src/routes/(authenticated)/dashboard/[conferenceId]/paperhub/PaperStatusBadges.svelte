@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { translatePaperStatus } from '$lib/services/enumTranslations';
+	import { translatePaperStatus } from '$lib/utils/enumTranslations';
 
 	interface Props {
 		counts: {

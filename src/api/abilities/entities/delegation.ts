@@ -1,6 +1,6 @@
 import type { AbilityBuilder } from '@casl/ability';
 import type { AppAbility } from '../abilities';
-import type { OIDC } from '$api/context/oidc';
+import type { OIDC } from '$api/services/oidcContext';
 
 export const defineAbilitiesForDelegation = (oidc: OIDC, { can }: AbilityBuilder<AppAbility>) => {
 	if (oidc && oidc.user) {

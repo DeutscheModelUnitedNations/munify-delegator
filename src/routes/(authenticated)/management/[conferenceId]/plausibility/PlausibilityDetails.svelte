@@ -1,6 +1,6 @@
 <script lang="ts">
-	import formatNames from '$lib/services/formatNames';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import formatNames from '$lib/helpers/formatNames';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import type { User } from '@prisma/client';
 
 	interface Props {

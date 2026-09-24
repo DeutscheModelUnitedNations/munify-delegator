@@ -7,7 +7,7 @@
 		getEncodingLabel,
 		type CsvDelimiter,
 		type CsvEncoding
-	} from '$lib/stores/csvSettings';
+	} from '$lib/state/csvSettings';
 
 	const delimiters: CsvDelimiter[] = [';', ',', '\t', '|'];
 	const encodings: CsvEncoding[] = ['utf-8', 'utf-8-bom', 'iso-8859-1'];

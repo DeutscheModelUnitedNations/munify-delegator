@@ -1,20 +1,20 @@
 <script lang="ts">
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { userFormSchema } from './form-schema.js';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import { translatedNationCodeAddressFormOptions } from '$lib/services/nationTranslationHelper.svelte.js';
-	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
-	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import { translatedNationCodeAddressFormOptions } from '$lib/utils/nationTranslationHelper.svelte';
+	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
+	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
 	import type { PageData } from './$houdini';
 	import FakeUser from './FakeUser.svelte';
 	import { toast } from 'svelte-sonner';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { dev } from '$app/environment';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {

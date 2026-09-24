@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import ConferenceHeader from '$lib/components/Dashboard/ConferenceHeader.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import AnnouncementContent from '$lib/components/Dashboard/AnnouncementContent.svelte';
+	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import AnnouncementContent from '$lib/components/dashboard/AnnouncementContent.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import ConferenceStatusWidget from './ConferenceStatusWidget.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
@@ -13,7 +13,7 @@
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
 	import { configPublic } from '$config/public';
-	import SurveySection from '$lib/components/Dashboard/SurveySection.svelte';
+	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 
 	// the app needs some proper loading states!
@@ -52,7 +52,7 @@
 				</DashboardSection>
 			{/if}
 			{#if conference.showCalendar || teamMember}
-				{#await import('$lib/components/Dashboard/CalendarSection.svelte') then { default: CalendarSection }}
+				{#await import('$lib/components/dashboard/CalendarSection.svelte') then { default: CalendarSection }}
 					<CalendarSection conferenceId={conference.id} timezone={conference.timezone} />
 				{:catch error}
 					<ChunkLoadError {error} />

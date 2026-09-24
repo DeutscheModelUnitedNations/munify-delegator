@@ -1,4 +1,4 @@
-import type { FilterFn } from '$lib/components/TanStackTable';
+import type { FilterFn } from '$lib/components/tanStackTable';
 import type { ParticipantRow, TextFilterMode } from './types';
 
 export const textFilterFn: FilterFn<ParticipantRow> = (row, columnId, filterValue) => {

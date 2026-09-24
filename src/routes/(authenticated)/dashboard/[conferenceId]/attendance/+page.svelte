@@ -6,8 +6,8 @@
 	import { persisted } from 'svelte-persisted-store';
 	import { get } from 'svelte/store';
 	import { untrack } from 'svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
 
 	// --- Types ---
 

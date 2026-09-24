@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { LineChart } from '$lib/components/Charts/ECharts';
+	import { LineChart } from '$lib/components/charts/echarts';
 	import type { RegistrationTimelineEntry } from '../stats.svelte';
 
 	interface Props {

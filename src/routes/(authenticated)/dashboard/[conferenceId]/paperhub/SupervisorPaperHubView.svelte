@@ -2,8 +2,8 @@
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import PaperEnum from '$lib/components/Paper/PaperEnum';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import PaperEnum from '$lib/components/paper/paperEnum';
 	import { goto } from '$app/navigation';
 	import type { PaperStatus$options, PaperType$options } from '$houdini';
 

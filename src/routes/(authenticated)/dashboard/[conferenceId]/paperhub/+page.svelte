@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
-	import PaperEnum from '$lib/components/Paper/PaperEnum';
+	import PaperEnum from '$lib/components/paper/paperEnum';
 	import { type PaperType$options } from '$houdini';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';

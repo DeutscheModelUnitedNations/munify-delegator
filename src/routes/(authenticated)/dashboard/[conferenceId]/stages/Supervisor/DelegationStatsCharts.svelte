@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
+	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 
 	type DelegationMember = NonNullable<
 		MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']

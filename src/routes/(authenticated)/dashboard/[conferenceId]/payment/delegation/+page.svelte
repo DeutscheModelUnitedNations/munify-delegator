@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Selection from '$lib/components/Selection';
+	import Selection from '$lib/components/selection';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import { type PageData } from './$houdini';

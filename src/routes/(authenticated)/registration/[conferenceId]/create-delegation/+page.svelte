@@ -2,14 +2,14 @@
 	import Steps from '$lib/components/Steps.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
-	import Form from '$lib/components/Form/Form.svelte';
+	import Form from '$lib/components/form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import type { Snippet } from 'svelte';
 	import { qr } from '@svelte-put/qr/svg';
 

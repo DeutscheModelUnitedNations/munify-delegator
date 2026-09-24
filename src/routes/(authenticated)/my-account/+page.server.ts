@@ -5,7 +5,7 @@ import { userFormSchema } from './form-schema';
 import { graphql, redirect } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
-import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
+import { nullFieldsToUndefined } from '$lib/helpers/nullFieldsToUndefined';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
 import { configPublic } from '$config/public';
 

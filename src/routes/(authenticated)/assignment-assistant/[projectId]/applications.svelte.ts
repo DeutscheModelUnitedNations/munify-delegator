@@ -1,4 +1,4 @@
-import codenamize from '$lib/services/codenamize';
+import codenamize from '$lib/helpers/codenamize';
 import { RoleCategory } from './roles.svelte';
 import type { DelegationRole, SingleRole } from './roles.svelte';
 

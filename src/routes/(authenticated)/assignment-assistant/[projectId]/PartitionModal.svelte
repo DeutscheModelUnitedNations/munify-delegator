@@ -9,7 +9,7 @@
 	}
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import LoadingData from './components/LoadingData.svelte';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 
 	let { open, close, id }: Props = $props();
 

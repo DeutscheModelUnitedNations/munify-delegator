@@ -2,8 +2,8 @@
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import MyConferenceCard from '$lib/components/Dashboard/MyConferenceCard.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import MyConferenceCard from '$lib/components/dashboard/MyConferenceCard.svelte';
 
 	let { data }: { data: PageData } = $props();
 

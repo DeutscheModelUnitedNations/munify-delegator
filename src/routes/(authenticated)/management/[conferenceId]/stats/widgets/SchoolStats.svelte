@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { BarChart } from '$lib/components/Charts/ECharts';
+	import { BarChart } from '$lib/components/charts/echarts';
 	import type { SchoolStats } from '../stats.svelte';
 
 	interface Props {

@@ -1,4 +1,4 @@
-import type { OIDC } from '$api/context/oidc';
+import type { OIDC } from '$api/services/oidcContext';
 import { db } from '$db/db';
 
 /**

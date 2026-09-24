@@ -15,7 +15,7 @@ import { defineAbilitiesForSingleParticipant } from './entities/singleParticipan
 import { defineAbilitiesForTeamMember } from './entities/teamMember';
 import { defineAbilitiesForTeamMemberInvitation } from './entities/teamMemberInvitation';
 import { defineAbilitiesForUserEntity } from './entities/user';
-import type { OIDC } from '$api/context/oidc';
+import type { OIDC } from '$api/services/oidcContext';
 import { defineAbilitiesForPaymentTransaction } from './entities/paymentTransaction';
 import { defineAbilitiesForSurveyQuestion } from './entities/surveyQuestion';
 import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
@@ -44,8 +44,7 @@ type WithTypename<T extends object, TName extends string> = T & {
 	__typename: TName;
 };
 type TaggedSubjects<T extends Record<string, Record<string, unknown>>> =
-	| keyof T
-	| { [K in keyof T]: WithTypename<T[K], K & string> }[keyof T];
+	keyof T | { [K in keyof T]: WithTypename<T[K], K & string> }[keyof T];
 
 type OmitDollarPrefixed<T> = T extends `$${string}` ? never : T;
 type OmitSymbol<T> = T extends symbol ? never : T;

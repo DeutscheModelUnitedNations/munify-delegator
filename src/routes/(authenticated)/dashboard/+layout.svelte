@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
+	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
-	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
+	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import type { PageData } from './$houdini';
 	import Spinner from '$lib/components/Spinner.svelte';

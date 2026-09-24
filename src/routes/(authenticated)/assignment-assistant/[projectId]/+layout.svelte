@@ -2,8 +2,8 @@
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 	import { getProject } from './appData.svelte';
-	import Tabs from '$lib/components/Tabs/Tabs.svelte';
-	import Tab from '$lib/components/Tabs/Tab.svelte';
+	import Tabs from '$lib/components/tabs/Tabs.svelte';
+	import Tab from '$lib/components/tabs/Tab.svelte';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 

@@ -7,8 +7,8 @@
 	import { queryParameters } from 'sveltekit-search-params';
 	import { graphql, type LookupUserToAssignQuery$result } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import formatNames from '$lib/helpers/formatNames';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
 	let { data }: { data: PageData } = $props();

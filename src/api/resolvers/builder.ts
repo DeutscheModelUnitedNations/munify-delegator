@@ -10,7 +10,7 @@ import TracingPlugin, { isRootField } from '@pothos/plugin-tracing';
 import { createOpenTelemetryWrapper } from '@pothos/tracing-opentelemetry';
 import type { Scalars } from 'prisma-generator-pothos-codegen';
 import { type Prisma } from '@prisma/client';
-import { type Context } from '$api/context/context';
+import { type Context } from '$api/context';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 import { tracer } from './tracer';
 

@@ -1,14 +1,10 @@
-import { ofAgeAtConference } from '$lib/services/ageChecker';
+import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 import type { PrismaClient, Prisma } from '@prisma/client';
 import { getAgeStatistics } from './ageStats';
 
 // Filter type for statistics queries
 export type StatsFilterType =
-	| 'ALL'
-	| 'APPLIED'
-	| 'NOT_APPLIED'
-	| 'APPLIED_WITH_ROLE'
-	| 'APPLIED_WITHOUT_ROLE';
+	'ALL' | 'APPLIED' | 'NOT_APPLIED' | 'APPLIED_WITH_ROLE' | 'APPLIED_WITHOUT_ROLE';
 
 // Build where clause for SingleParticipant
 function getSingleParticipantWhere(

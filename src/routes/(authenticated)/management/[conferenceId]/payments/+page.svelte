@@ -3,16 +3,16 @@
 	import { m } from '$lib/paraglide/messages';
 	import { type PageData } from './$houdini';
 	import type { AdministrativeStatus } from '@prisma/client';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 

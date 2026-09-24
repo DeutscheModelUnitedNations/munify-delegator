@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { graphql, cache } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import {
 		datetimeLocalToDate,
 		dateToDatetimeLocal,
 		formatInTimezone
-	} from '$lib/services/conferenceTimezoneDate';
-	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
-	import BarChart from '$lib/components/Charts/ECharts/BarChart.svelte';
-	import GaugeChart from '$lib/components/Charts/ECharts/GaugeChart.svelte';
-	import LineChart from '$lib/components/Charts/ECharts/LineChart.svelte';
+	} from '$lib/helpers/conferenceTimezoneDate';
+	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
+	import BarChart from '$lib/components/charts/echarts/BarChart.svelte';
+	import GaugeChart from '$lib/components/charts/echarts/GaugeChart.svelte';
+	import LineChart from '$lib/components/charts/echarts/LineChart.svelte';
 	import CollapsibleParticipantList from '$lib/components/CollapsibleParticipantList.svelte';
 	import DownloadCategoryCard from '../../downloads/DownloadCategoryCard.svelte';
 	import SurveyExportButtons from './SurveyExportButtons.svelte';

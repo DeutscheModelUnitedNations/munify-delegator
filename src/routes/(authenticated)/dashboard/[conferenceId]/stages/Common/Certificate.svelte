@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { certificateQuery } from '$lib/queries/certificateQuery';
-	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
+	import { downloadCompleteCertificate } from '$lib/utils/pdfGenerator';
 	import { toast } from 'svelte-sonner';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 
 	interface Props {

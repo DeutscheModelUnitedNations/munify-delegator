@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getHistory, getSelectedHistory } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
-	import { StackedBarChart } from '$lib/components/Charts/ECharts';
+	import { StackedBarChart } from '$lib/components/charts/echarts';
 	import type { StatsType } from '../stats.svelte';
 
 	interface Props {

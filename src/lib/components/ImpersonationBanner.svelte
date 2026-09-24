@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
 	const checkImpersonationStatusQuery = graphql(`

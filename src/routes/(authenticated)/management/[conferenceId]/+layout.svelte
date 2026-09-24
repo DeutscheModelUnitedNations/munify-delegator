@@ -1,10 +1,10 @@
 <script lang="ts">
-	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
-	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
+	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
-	import CommandPalette from '$lib/components/CommandPalette/CommandPalette.svelte';
-	import UserCardDrawer from '$lib/components/UserCard/UserCardDrawer.svelte';
+	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
+	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';

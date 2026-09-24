@@ -13,18 +13,18 @@
 		type PaginationState,
 		type ColumnFiltersState,
 		type VisibilityState
-	} from '$lib/components/TanStackTable';
-	import { DataTable } from '$lib/components/TanStackTable/ui';
+	} from '$lib/components/tanStackTable';
+	import { DataTable } from '$lib/components/tanStackTable/ui';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { page } from '$app/stores';
 	import type { PageData } from './$houdini';
 	import type { ParticipantRow, ColumnMeta } from './types';
 	import { transformParticipants } from './dataTransform';
 	import { createColumnDefs } from './columns';
 	import { getPlainTextValue, getColumnHeader } from './exportHelpers';
-	import { downloadCSV } from '$lib/services/downloadHelpers';
+	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import TableToolbar from './TableToolbar.svelte';
 	import FilterDrawer from './FilterDrawer.svelte';
 	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';

@@ -3,7 +3,7 @@
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 
 	interface AttendanceEntryData {
 		id: string;

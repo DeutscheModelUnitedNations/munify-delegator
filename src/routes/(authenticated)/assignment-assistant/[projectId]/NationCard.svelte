@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import type { Snippet } from 'svelte';
 	import type { IndividualApplicationOption, Nation, NonStateActor } from './appData.svelte';
 

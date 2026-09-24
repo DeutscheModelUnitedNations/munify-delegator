@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PieChart } from '$lib/components/Charts/ECharts';
+	import { PieChart } from '$lib/components/charts/echarts';
 	import { m } from '$lib/paraglide/messages';
 	import { unifiedFilter } from '../stats.svelte';
 	import type { PageData } from '../$types';

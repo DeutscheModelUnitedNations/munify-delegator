@@ -3,7 +3,7 @@ import { generateSeededRsa } from '$api/services/deterministicRSAKeypair';
 import { configPrivate } from '$config/private';
 import { db } from '$db/db';
 import { findUniqueConferenceParticipantStatusQueryObject } from '$db/generated/graphql/ConferenceParticipantStatus';
-import formatNames from '$lib/services/formatNames';
+import formatNames from '$lib/helpers/formatNames';
 import { importPKCS8, SignJWT, exportJWK } from 'jose';
 import { certificateAlg } from './certificateConfig';
 

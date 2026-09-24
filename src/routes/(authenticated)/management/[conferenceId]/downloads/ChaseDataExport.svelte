@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { downloadJSON } from '$lib/services/downloadHelpers';
-	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
+	import { downloadJSON } from '$lib/utils/downloadHelpers';
+	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import { nanoid } from 'nanoid';
 	import { SvelteMap } from 'svelte/reactivity';
 	import DownloadButton from './DownloadButton.svelte';

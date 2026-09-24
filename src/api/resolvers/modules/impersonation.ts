@@ -1,6 +1,9 @@
 import { builder } from '../builder';
 import { performTokenExchange } from '$api/services/OIDC';
-import { impersonationTokenCookieName, type TokenCookieSchemaType } from '$api/context/oidc';
+import {
+	impersonationTokenCookieName,
+	type TokenCookieSchemaType
+} from '$api/services/oidcContext';
 import { GraphQLError } from 'graphql';
 import { db } from '$db/db';
 

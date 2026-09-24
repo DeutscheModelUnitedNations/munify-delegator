@@ -1,5 +1,5 @@
 <script lang="ts">
-	import UserCardContent from '$lib/components/UserCard/UserCardContent.svelte';
+	import UserCardContent from '$lib/components/userCard/UserCardContent.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { PieChart, StackedBarChart } from '$lib/components/Charts/ECharts';
+	import { PieChart, StackedBarChart } from '$lib/components/charts/echarts';
 	import type { SupervisorStats } from '../stats.svelte';
 
 	interface Props {

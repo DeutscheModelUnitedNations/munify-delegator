@@ -2,8 +2,8 @@
 	import { cache, graphql } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {

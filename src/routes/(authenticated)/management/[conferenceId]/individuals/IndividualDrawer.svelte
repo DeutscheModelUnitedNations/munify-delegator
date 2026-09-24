@@ -5,11 +5,11 @@
 	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
 	import { singleParticipantResetMutation } from './individualsResetMutation';
 	import Flag from '$lib/components/Flag.svelte';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { invalidateAll } from '$app/navigation';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	interface Props {
 		conferenceId: string;

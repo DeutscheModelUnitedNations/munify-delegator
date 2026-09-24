@@ -9,12 +9,12 @@
 		deleteEvaluation,
 		addNote
 	} from '../appData.svelte';
-	import codenamize from '$lib/services/codenamize';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import codenamize from '$lib/helpers/codenamize';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { graphql } from '$houdini';
 	import LoadingData from '../components/LoadingData.svelte';
 	import Members from './Members.svelte';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 
 	interface Props {
 		application: ReturnType<typeof getApplications>[number];

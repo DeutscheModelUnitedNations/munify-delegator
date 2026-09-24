@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
 	import type { Nation, RoleApplication } from '@prisma/client';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 	import type {
 		MyConferenceparticipationQuery,
 		MyConferenceparticipationQuery$result

@@ -233,11 +233,7 @@ export interface StatusObject {
 // Combines registration status and role filters into a single dropdown
 
 export type StatsFilter =
-	| 'all'
-	| 'applied'
-	| 'notApplied'
-	| 'appliedWithRole'
-	| 'appliedWithoutRole';
+	'all' | 'applied' | 'notApplied' | 'appliedWithRole' | 'appliedWithoutRole';
 
 // Default filter value (used on server and as initial client value)
 const DEFAULT_FILTER: StatsFilter = 'all';
@@ -344,11 +340,7 @@ export function unifiedFilter() {
 
 // GraphQL enum type for StatsFilter
 export type GraphQLStatsFilter =
-	| 'ALL'
-	| 'APPLIED'
-	| 'NOT_APPLIED'
-	| 'APPLIED_WITH_ROLE'
-	| 'APPLIED_WITHOUT_ROLE';
+	'ALL' | 'APPLIED' | 'NOT_APPLIED' | 'APPLIED_WITH_ROLE' | 'APPLIED_WITHOUT_ROLE';
 
 // Map frontend filter values to GraphQL enum values
 export function mapFilterToGraphQL(filter: StatsFilter): GraphQLStatsFilter {

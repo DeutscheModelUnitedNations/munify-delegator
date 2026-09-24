@@ -1,15 +1,15 @@
 <script lang="ts">
-	import PaperEditor from '$lib/components/Paper/Editor';
+	import PaperEditor from '$lib/components/paper/editor';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import type { PageData } from './$houdini';
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { cache, graphql } from '$houdini';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
-	import { resolutionStore } from '$lib/components/Paper/Editor/editorStore';
+	import { resolutionStore } from '$lib/components/paper/editor/editorStore';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
@@ -17,8 +17,8 @@
 		type Resolution,
 		isClauseEmpty,
 		createEmptyResolution
-	} from '$lib/components/Paper/Editor/Resolution';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	} from '$lib/components/paper/editor/resolution';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { browser } from '$app/environment';
 	import { persisted } from 'svelte-persisted-store';

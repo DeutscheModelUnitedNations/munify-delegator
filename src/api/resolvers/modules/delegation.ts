@@ -21,7 +21,7 @@ import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { tidyRoleApplications } from '$api/services/removeTooSmallRoleApplications';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
-import formatNames from '$lib/services/formatNames';
+import formatNames from '$lib/helpers/formatNames';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import dayjs from 'dayjs';
 

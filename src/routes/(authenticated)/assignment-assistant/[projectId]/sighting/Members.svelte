@@ -2,8 +2,8 @@
 	import { graphql } from '$houdini';
 	import { onMount } from 'svelte';
 	import LoadingData from '../components/LoadingData.svelte';
-	import formatNames from '$lib/services/formatNames';
-	import { getAgeAtConference } from '$lib/services/ageChecker';
+	import formatNames from '$lib/helpers/formatNames';
+	import { getAgeAtConference } from '$lib/helpers/ageChecker';
 
 	interface Props {
 		userIds: string[];

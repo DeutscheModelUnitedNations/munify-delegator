@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { setHeaderStatus } from '$lib/services/authenticatedHeaderStatus.svelte';
-	import { isMobileOrTablet } from '$lib/services/detectMobile';
-	import NavMenu from './NavMenu/NavMenu.svelte';
-	import NavMenuButton from './NavMenu/NavMenuButton.svelte';
+	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
+	import { isMobileOrTablet } from '$lib/utils/detectMobile';
+	import NavMenu from './navMenu/NavMenu.svelte';
+	import NavMenuButton from './navMenu/NavMenuButton.svelte';
 	import { onMount, type Snippet } from 'svelte';
 
 	interface Props {

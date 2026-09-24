@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Drawer } from 'vaul-svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { Table, VisibilityState } from '$lib/components/TanStackTable';
+	import type { Table, VisibilityState } from '$lib/components/tanStackTable';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { ColumnMeta, ParticipantRow, ColumnCategory } from './types';
 

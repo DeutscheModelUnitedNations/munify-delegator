@@ -1,9 +1,9 @@
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import type { PageData } from './$types';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { cache, graphql } from '$houdini';

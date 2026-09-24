@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Form from '$lib/components/Form/Form.svelte';
+	import Form from '$lib/components/form/Form.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import type { PageData } from './$types';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { waitingListFormSchema } from './form-schema';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { cache } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 

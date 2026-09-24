@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
+	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
@@ -11,11 +11,11 @@
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 
 	interface Props {
 		singleParticipant: NonNullable<

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
-	import { downloadCSV } from '$lib/services/downloadHelpers';
-	import formatNames from '$lib/services/formatNames';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import { downloadCSV } from '$lib/utils/downloadHelpers';
+	import formatNames from '$lib/helpers/formatNames';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import DownloadButton from './DownloadButton.svelte';
 

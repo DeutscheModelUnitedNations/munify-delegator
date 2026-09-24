@@ -12,7 +12,7 @@ const config = {
 			$api: 'src/api',
 			$assets: 'src/assets',
 			$db: 'prisma',
-			$config: 'src/config',
+			$config: 'src/lib/config',
 			$houdini: './.houdini'
 		}
 	}

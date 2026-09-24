@@ -6,9 +6,9 @@
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
 		type RecipientData
-	} from '$lib/services/pdfGenerator';
-	import { ofAgeAtConference } from '$lib/services/ageChecker';
-	import formatNames, { formatInitials } from '$lib/services/formatNames';
+	} from '$lib/utils/pdfGenerator';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import formatNames, { formatInitials } from '$lib/helpers/formatNames';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';

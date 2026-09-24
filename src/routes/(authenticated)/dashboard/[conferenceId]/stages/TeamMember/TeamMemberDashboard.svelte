@@ -1,14 +1,11 @@
 <script lang="ts">
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
+	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import type { TeamRole } from '@prisma/client';
-	import {
-		getTeamLinksForRole,
-		type TeamDashboardLinkContext
-	} from '$lib/config/teamDashboardLinks';
+	import { getTeamLinksForRole, type TeamDashboardLinkContext } from '$lib/data/teamDashboardLinks';
 
 	interface Props {
 		conferenceId: string;

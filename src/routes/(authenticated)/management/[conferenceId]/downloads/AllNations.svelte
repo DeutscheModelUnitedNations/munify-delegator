@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { downloadCSV } from '$lib/services/downloadHelpers';
-	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { downloadCSV } from '$lib/utils/downloadHelpers';
+	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {

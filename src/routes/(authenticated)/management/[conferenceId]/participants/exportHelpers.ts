@@ -1,14 +1,14 @@
-import type { ColumnDef } from '$lib/components/TanStackTable';
+import type { ColumnDef } from '$lib/components/tanStackTable';
 import { m } from '$lib/paraglide/messages';
-import { capitalizeFirstLetter } from '$lib/services/capitalizeFirstLetter';
+import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
 import {
 	translateGender,
 	translateTeamRole,
 	translateAdministrativeStatus,
 	translateParticipationRole,
 	translateFoodPreference
-} from '$lib/services/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+} from '$lib/utils/enumTranslations';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import type { ParticipantRow } from './types';
 
 function booleanText(value: boolean | null): string {

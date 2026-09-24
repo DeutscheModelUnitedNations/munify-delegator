@@ -3,8 +3,8 @@
 	import { cache, graphql } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import Markdown from '$lib/components/Markdown/Markdown.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import Markdown from '$lib/components/markdown/Markdown.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -59,8 +59,7 @@
 				<textarea
 					class="textarea textarea-bordered h-96 w-full font-mono text-sm"
 					bind:value={info}
-					placeholder={m.markdownSupportedPlaceholder()}
-				></textarea>
+					placeholder={m.markdownSupportedPlaceholder()}></textarea>
 			</div>
 			<!-- Preview side -->
 			<div class="flex flex-col gap-2 min-w-0">

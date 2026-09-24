@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { PageData } from '../../$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
-	import DashboardLinkCard from '$lib/components/Dashboard/DashboardLinkCard.svelte';
-	import { getLinksForUserType, type DashboardLinkContext } from '$lib/config/dashboardLinks';
+	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
+	import { getLinksForUserType, type DashboardLinkContext } from '$lib/data/dashboardLinks';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
-	import getSimplifiedPostalStatus from '$lib/services/getSimplifiedPostalStatus';
+	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
 
 	interface Props {
 		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;

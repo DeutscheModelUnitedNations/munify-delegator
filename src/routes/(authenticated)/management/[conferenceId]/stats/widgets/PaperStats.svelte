@@ -3,7 +3,7 @@
 	import { getHistory, getSelectedHistory } from '../stats.svelte';
 	import type { PaperStats } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
-	import { PieChart, StackedBarChart } from '$lib/components/Charts/ECharts';
+	import { PieChart, StackedBarChart } from '$lib/components/charts/echarts';
 
 	interface Props {
 		paperStats: PaperStats;

@@ -7,7 +7,7 @@ import {
 	PaperVersionStatusFieldObject,
 	PaperVersionVersionFieldObject
 } from '$db/generated/graphql/PaperVersion';
-import { hashEditorContent } from '$lib/components/Paper/Editor/contentHash';
+import { hashEditorContent } from '$lib/components/paper/editor/contentHash';
 import { builder } from '../../builder';
 
 builder.prismaObject('PaperVersion', {

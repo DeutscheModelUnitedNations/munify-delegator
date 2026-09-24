@@ -7,16 +7,16 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { persisted } from 'svelte-persisted-store';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 

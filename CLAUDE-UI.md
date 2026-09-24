@@ -13,25 +13,30 @@ This document provides guidance for building consistent user interfaces in MUNif
 
 ## Component Library Overview
 
-Components are located in `src/lib/components/`. Key directories:
+Components are located in `src/lib/components/`.
 
-- `Calendar/` - Conference calendar display (day views, time markers, entry cards)
-- `Form/` - Form inputs integrated with sveltekit-superforms
-- `Dashboard/` - Dashboard section layouts and widgets
-- `DataTable/` - Searchable, sortable data tables
-- `NavMenu/` - Sidebar navigation components
-- `Tabs/` - Tab navigation
-- `DelegationStats/` - Statistics display widgets
-- `InfoGrid/` - Key-value pair display grids
-- `Charts/` - ECharts-based visualizations
-- `PaperHub/` - Paper management components including statistics
-- `Survey/` - Survey answer modal and compact survey cards for the dashboard
+**Naming convention**: directories are `camelCase`, component files are `PascalCase`
+(e.g. `dataTable/DataTable.svelte`). This matches munify-chase.
+
+Key directories:
+
+- `calendar/` - Conference calendar display (day views, time markers, entry cards)
+- `form/` - Form inputs integrated with sveltekit-superforms
+- `dashboard/` - Dashboard section layouts and widgets
+- `dataTable/` - Searchable, sortable data tables
+- `navMenu/` - Sidebar navigation components
+- `tabs/` - Tab navigation
+- `delegationStats/` - Statistics display widgets
+- `infoGrid/` - Key-value pair display grids
+- `charts/` - ECharts-based visualizations
+- `paperHub/` - Paper management components including statistics
+- `survey/` - Survey answer modal and compact survey cards for the dashboard
 
 ---
 
 ## DetailedPaperStats Component
 
-`src/lib/components/PaperHub/DetailedPaperStats.svelte`
+`src/lib/components/paperHub/DetailedPaperStats.svelte`
 
 Displays comprehensive paper statistics with multiple charts and gauges for the Paper Hub dashboard.
 
@@ -60,7 +65,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import DetailedPaperStats from '$lib/components/PaperHub/DetailedPaperStats.svelte';
+	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
 
 	// allPapers: flat array of all papers across committees
 	// committeesWithPapers: array of committees with their papers grouped
@@ -74,7 +79,7 @@ interface Props {
 
 ### Chart Subcomponents
 
-This component uses the following chart components from `$lib/components/Charts/ECharts/`:
+This component uses the following chart components from `$lib/components/charts/echarts/`:
 
 | Component             | Purpose                                    |
 | --------------------- | ------------------------------------------ |
@@ -96,11 +101,11 @@ This component uses the following chart components from `$lib/components/Charts/
 
 ## Team Management Components
 
-Components in `src/lib/components/TeamManagement/` for managing team invitations.
+Components in `src/lib/components/teamManagement/` for managing team invitations.
 
 ### InviteTeamMembersModal
 
-`src/lib/components/TeamManagement/InviteTeamMembersModal.svelte`
+`src/lib/components/teamManagement/InviteTeamMembersModal.svelte`
 
 Modal for inviting team members via email. Supports batch email input, status checking, and role assignment.
 
@@ -117,7 +122,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
+	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 
 	let inviteModalOpen = $state(false);
 </script>
@@ -141,7 +146,7 @@ interface Props {
 
 ### PendingInvitationsTable
 
-`src/lib/components/TeamManagement/PendingInvitationsTable.svelte`
+`src/lib/components/teamManagement/PendingInvitationsTable.svelte`
 
 Table displaying pending team member invitations with actions.
 
@@ -169,7 +174,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import PendingInvitationsTable from '$lib/components/TeamManagement/PendingInvitationsTable.svelte';
+	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
 </script>
 
 <PendingInvitationsTable invitations={data.pendingInvitations} />
@@ -186,11 +191,11 @@ interface Props {
 
 ## Calendar Components
 
-Components in `src/lib/components/Calendar/` for displaying conference calendar schedules.
+Components in `src/lib/components/calendar/` for displaying conference calendar schedules.
 
 ### CalendarDisplay
 
-`src/lib/components/Calendar/CalendarDisplay.svelte`
+`src/lib/components/calendar/CalendarDisplay.svelte`
 
 Main calendar container that renders day tabs (small screens) or side-by-side columns (3xl+). Handles day selection, track filtering, and entry click → drawer.
 
@@ -207,7 +212,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import CalendarDisplay from '$lib/components/Calendar/CalendarDisplay.svelte';
+	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
 </script>
 
 <CalendarDisplay days={previewDays} timezone="Europe/Berlin" />
@@ -222,7 +227,7 @@ interface Props {
 
 ### CalendarDayView
 
-`src/lib/components/Calendar/CalendarDayView.svelte`
+`src/lib/components/calendar/CalendarDayView.svelte`
 
 Renders a single day's timeline with hour grid, entries positioned by time, and a live "now" marker.
 
@@ -242,7 +247,7 @@ interface Props {
 
 ### CalendarTimeMarker
 
-`src/lib/components/Calendar/CalendarTimeMarker.svelte`
+`src/lib/components/calendar/CalendarTimeMarker.svelte`
 
 Displays a red "now" line on the calendar timeline. Uses `Intl.DateTimeFormat` with conference timezone to compute position.
 
@@ -259,13 +264,13 @@ interface Props {
 
 ### CalendarEntryCard
 
-`src/lib/components/Calendar/CalendarEntryCard.svelte`
+`src/lib/components/calendar/CalendarEntryCard.svelte`
 
 Renders a single calendar entry as a colored card positioned on the timeline. Shows icon, name, time range, room, and track.
 
 ### CalendarEntryDrawer
 
-`src/lib/components/Calendar/CalendarEntryDrawer.svelte`
+`src/lib/components/calendar/CalendarEntryDrawer.svelte`
 
 Slide-out drawer showing full entry details including place information, map, and site plan.
 
@@ -315,9 +320,9 @@ Forms use `sveltekit-superforms` for validation and state management. Always str
 
 ```svelte
 <script lang="ts">
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
 </script>
 
 <FormFieldset title="Personal Information">
@@ -349,11 +354,11 @@ Forms use `sveltekit-superforms` for validation and state management. Always str
 
 ```svelte
 <script lang="ts">
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
 	import { superForm } from 'sveltekit-superforms';
 
 	let { data } = $props();
@@ -403,7 +408,7 @@ Use `Modal` for dialogs. It handles backdrop clicks and accessibility.
 ```svelte
 <script lang="ts">
 	import Modal from '$lib/components/Modal.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 
 	let modalOpen = $state(false);
 </script>
@@ -552,7 +557,7 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 
 ```svelte
 <script lang="ts">
-	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 
 	let params = queryParameters({ queryUserId: true });
@@ -583,7 +588,7 @@ Main section wrapper with icon, title, and description:
 
 ```svelte
 <script lang="ts">
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 </script>
 
 <DashboardSection
@@ -613,7 +618,7 @@ Simple card container for content:
 
 ```svelte
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 </script>
 
 <DashboardContentCard title="Statistics" description="Overview of current data">
@@ -642,7 +647,7 @@ Checklist table with status icons:
 
 ```svelte
 <script lang="ts">
-	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
+	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
 </script>
 
 <TodoTable
@@ -664,7 +669,7 @@ Survey components handle displaying and answering surveys on the participant das
 
 Self-fetching dashboard component (like `CalendarSection`) that queries surveys and renders them. Renders nothing if no surveys exist.
 
-**File:** `src/lib/components/Dashboard/SurveySection.svelte`
+**File:** `src/lib/components/dashboard/SurveySection.svelte`
 
 **Props:** `conferenceId: string`, `userId: string`, `conferenceTimezone: string`
 
@@ -679,7 +684,7 @@ Self-fetching dashboard component (like `CalendarSection`) that queries surveys 
 
 Compact card for a single survey within the dashboard section.
 
-**File:** `src/lib/components/Survey/SurveyCard.svelte`
+**File:** `src/lib/components/survey/SurveyCard.svelte`
 
 **Props:**
 
@@ -694,7 +699,7 @@ Shows deadline status, title, description, current answer badge, and an "Answer"
 
 Modal for answering or changing a survey answer with radio option cards and capacity indicators.
 
-**File:** `src/lib/components/Survey/SurveyAnswerModal.svelte`
+**File:** `src/lib/components/survey/SurveyAnswerModal.svelte`
 
 **Props:**
 
@@ -726,7 +731,7 @@ Searchable, sortable table with optional row expansion:
 
 ```svelte
 <script lang="ts">
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 
 	const columns = [
 		{ key: 'name', title: 'Name', value: (row) => row.name, sortable: true },
@@ -761,7 +766,7 @@ Statistics widgets using DaisyUI stats component:
 
 ```svelte
 <script lang="ts">
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
+	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 </script>
 
 <GenericWidget
@@ -779,8 +784,8 @@ Key-value pair display:
 
 ```svelte
 <script lang="ts">
-	import Grid from '$lib/components/InfoGrid/Grid.svelte';
-	import Entry from '$lib/components/InfoGrid/Entry.svelte';
+	import Grid from '$lib/components/infoGrid/Grid.svelte';
+	import Entry from '$lib/components/infoGrid/Entry.svelte';
 </script>
 
 <Grid>
@@ -802,9 +807,9 @@ Sidebar navigation:
 
 ```svelte
 <script lang="ts">
-	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
-	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
+	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
 
 	let expanded = $state(true);
 </script>
@@ -824,8 +829,8 @@ Tab navigation:
 
 ```svelte
 <script lang="ts">
-	import Tabs from '$lib/components/Tabs/Tabs.svelte';
-	import Tab from '$lib/components/Tabs/Tab.svelte';
+	import Tabs from '$lib/components/tabs/Tabs.svelte';
+	import Tab from '$lib/components/tabs/Tab.svelte';
 
 	let activeTab = $state('overview');
 </script>

@@ -4,7 +4,7 @@ import { redirect } from '@sveltejs/kit';
 import { fastUserQuery } from '$lib/queries/fastUserQuery';
 import { configPublic } from '$config/public';
 // --- TEMPORARY: Migration notice imports (remove after migration period) ---
-import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/constants/migrationNotice';
+import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/migrationNotice';
 // --- END TEMPORARY ---
 
 //TODO: a more clean approach would be to do this inside the api and not

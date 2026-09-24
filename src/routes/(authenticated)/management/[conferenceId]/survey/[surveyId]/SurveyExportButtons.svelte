@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { downloadCSV } from '$lib/services/downloadHelpers';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { downloadCSV } from '$lib/utils/downloadHelpers';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import DownloadButton from '../../downloads/DownloadButton.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 

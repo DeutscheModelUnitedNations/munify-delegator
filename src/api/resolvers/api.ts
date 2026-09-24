@@ -2,7 +2,7 @@ import { graphqlYogaTracerPlugin } from './tracer';
 import { createYoga } from 'graphql-yoga';
 import { builder } from './builder';
 import type { RequestEvent } from '@sveltejs/kit';
-import { context } from '$api/context/context';
+import { context } from '$api/context';
 import { maskError } from './errors';
 
 builder.queryType({});

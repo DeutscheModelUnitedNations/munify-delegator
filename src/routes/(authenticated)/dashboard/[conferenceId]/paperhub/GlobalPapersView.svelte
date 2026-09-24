@@ -4,7 +4,7 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import PaperTable from './PaperTable.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 
 	interface Props {
 		conferenceId: string;

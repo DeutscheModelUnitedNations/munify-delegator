@@ -3,10 +3,10 @@
 	import { cache, graphql, type DelegationDrawerQuery$result } from '$houdini';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import type { GetCommitteeDataForCommitteeAssignmentVariables } from './$houdini';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
 	interface Props {
 		open: boolean;

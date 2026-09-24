@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import DataTable from '$lib/components/dataTable/DataTable.svelte';
+	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
+	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { cache, graphql } from '$houdini';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$houdini';
 	import { z } from 'zod';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 

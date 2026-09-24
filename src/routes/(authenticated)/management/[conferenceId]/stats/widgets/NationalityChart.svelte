@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { PieChart, BarChart } from '$lib/components/Charts/ECharts';
+	import { PieChart, BarChart } from '$lib/components/charts/echarts';
 	import type { NationalityStats } from '../stats.svelte';
 
 	interface Props {

@@ -7,7 +7,7 @@
 <script lang="ts">
 	import type { PageData } from './$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import Markdown from '$lib/components/Markdown/Markdown.svelte';
+	import Markdown from '$lib/components/markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let conferenceData = $derived(data.ConferenceInfoQuery);

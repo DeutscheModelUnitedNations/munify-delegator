@@ -4,16 +4,16 @@
 	import { configPublic } from '$config/public';
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
-	import { openCommandPalette } from '$lib/components/CommandPalette/commandPaletteState.svelte';
+	import { openCommandPalette } from '$lib/components/commandPalette/commandPaletteState.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
-	import { headerState } from '$lib/services/authenticatedHeaderStatus.svelte';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { headerState } from '$lib/state/authenticatedHeaderStatus.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
 	import Breadcrumbs from './Breadcrumbs.svelte';
 
 	//TODO
-	// import ExportButtons from '$lib/components/DataTable/ExportButtons.svelte';
+	// import ExportButtons from '$lib/components/dataTable/ExportButtons.svelte';
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
 	export const logoutUrlQuery = graphql(`

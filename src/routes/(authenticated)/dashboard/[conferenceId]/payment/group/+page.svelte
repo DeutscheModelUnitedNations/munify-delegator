@@ -2,8 +2,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import { type PageData } from './$houdini';
-	import Selection from '$lib/components/Selection';
-	import formatNames, { sortByNames } from '$lib/services/formatNames';
+	import Selection from '$lib/components/selection';
+	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 
 	type MinimalUserData = {

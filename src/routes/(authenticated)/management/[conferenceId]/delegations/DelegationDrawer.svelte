@@ -4,15 +4,15 @@
 	import { cache, graphql } from '$houdini';
 	import type { DelegationDrawerQueryVariables } from './$houdini';
 	import { delegaitonResetMutation } from './delegationResetMutation';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 	import { type PageData } from './$houdini';
 	import { invalidateAll } from '$app/navigation';
-	import codenmz from '$lib/services/codenamize';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import codenmz from '$lib/helpers/codenamize';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	interface Props {
 		conferenceId: string;

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import StatusCard from '$lib/components/StatusCubes/StatusCard.svelte';
+	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import StatusCard from '$lib/components/statusCubes/StatusCard.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {

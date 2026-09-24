@@ -4,13 +4,13 @@
 @import 'tailwindcss';
 @import '@deutschemodelunitednations/munify-resolution-editor/tailwind.css';
 
-@plugin "@tailwindcss/typography";
-@plugin "daisyui";
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui';
 
 @import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-light';
 @import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-dark';
 
-@import './lib/components/Paper/Editor/extensions/style.css';
+@import './lib/components/paper/editor/extensions/style.css';
 
 @utility max-ch-sm {
 	max-width: 50ch;

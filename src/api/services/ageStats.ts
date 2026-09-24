@@ -1,13 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
-import { getAgeAtConference } from '$lib/services/ageChecker';
+import { getAgeAtConference } from '$lib/helpers/ageChecker';
 
 // Filter type (imported from stats.ts in actual usage)
 export type StatsFilterType =
-	| 'ALL'
-	| 'APPLIED'
-	| 'NOT_APPLIED'
-	| 'APPLIED_WITH_ROLE'
-	| 'APPLIED_WITHOUT_ROLE';
+	'ALL' | 'APPLIED' | 'NOT_APPLIED' | 'APPLIED_WITH_ROLE' | 'APPLIED_WITHOUT_ROLE';
 
 // Output types
 export interface AgeOverall {

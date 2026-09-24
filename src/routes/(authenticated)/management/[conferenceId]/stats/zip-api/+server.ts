@@ -35,7 +35,9 @@ async function loadZipMap() {
 		return map;
 	} catch (error) {
 		console.error('Error loading ZIP map:', error);
-		throw new Error('Unable to load geographic data. Please try again later.');
+		throw new Error('Unable to load geographic data. Please try again later.', {
+			cause: error
+		});
 	}
 }
 

@@ -48,7 +48,10 @@ export default ts.config(
 			'svelte/no-dom-manipulating': 'warn',
 			'@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
 			'svelte/no-navigation-without-resolve': 'warn',
-			'svelte/prefer-writable-derived': 'warn'
+			'svelte/prefer-writable-derived': 'warn',
+			// New in eslint 10's recommended set. It false-positives on Svelte's
+			// `$bindable(<default>)` prop defaults, so keep it advisory.
+			'no-useless-assignment': 'warn'
 		}
 	}
 );

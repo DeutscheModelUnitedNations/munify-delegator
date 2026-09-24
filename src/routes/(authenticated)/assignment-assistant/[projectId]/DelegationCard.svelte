@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { graphql } from '$houdini';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { getAgeAtConference } from '$lib/services/ageChecker';
-	import codenamize from '$lib/services/codenamize';
-	import formatNames from '$lib/services/formatNames';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getAgeAtConference } from '$lib/helpers/ageChecker';
+	import codenamize from '$lib/helpers/codenamize';
+	import formatNames from '$lib/helpers/formatNames';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { getConference, type Delegation } from './appData.svelte';
 	import LoadingData from './components/LoadingData.svelte';
 	import { getWeights } from './weights.svelte';

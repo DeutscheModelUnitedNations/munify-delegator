@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/sveltekit';
-import type { TokenCookieSchemaType } from '$api/context/oidc';
+import type { TokenCookieSchemaType } from '$api/services/oidcContext';
 import {
 	codeVerifierCookieName,
 	oidcStateCookieName,

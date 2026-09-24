@@ -1,6 +1,6 @@
 <script lang="ts" generics="TData">
 	import { m } from '$lib/paraglide/messages';
-	import type { Table, ColumnFiltersState } from '$lib/components/TanStackTable';
+	import type { Table, ColumnFiltersState } from '$lib/components/tanStackTable';
 
 	interface Props {
 		table: Table<TData>;

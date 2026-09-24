@@ -4,15 +4,15 @@
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
-	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
+	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
 	interface Props {
 		open: boolean;

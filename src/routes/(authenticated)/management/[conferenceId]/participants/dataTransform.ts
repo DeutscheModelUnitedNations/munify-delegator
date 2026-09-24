@@ -1,6 +1,6 @@
 import type { AllConferenceParticipantsQuery$result } from '$houdini';
 import type { AdministrativeStatus, ParticipantRow } from './types';
-import { getAgeAtConference, ofAgeAtConference } from '$lib/services/ageChecker';
+import { getAgeAtConference, ofAgeAtConference } from '$lib/helpers/ageChecker';
 
 type QueryData = NonNullable<AllConferenceParticipantsQuery$result>;
 

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import DataMatrixDisplay from '$lib/components/RegistrationMode/DataMatrixDisplay.svelte';
+	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
 

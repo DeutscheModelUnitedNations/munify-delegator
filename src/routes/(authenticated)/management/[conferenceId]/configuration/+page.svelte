@@ -1,31 +1,31 @@
 <script lang="ts">
-	import FormDateTimeInput from '$lib/components/Form/FormDateTimeInput.svelte';
-	import FormFileInput from '$lib/components/Form/FormFile.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
+	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
+	import FormFileInput from '$lib/components/form/FormFile.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
-	import Form from '$lib/components/Form/Form.svelte';
+	import Form from '$lib/components/form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
 	import { toast } from 'svelte-sonner';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import FormFile from '$lib/components/Form/FormFile.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import FormFile from '$lib/components/form/FormFile.svelte';
 	import {
 		downloadCompleteCertificate,
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
 		type RecipientData
-	} from '$lib/services/pdfGenerator';
-	import formatNames from '$lib/services/formatNames';
+	} from '$lib/utils/pdfGenerator';
+	import formatNames from '$lib/helpers/formatNames';
 	import { cache, graphql } from '$houdini';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { queryParam } from 'sveltekit-search-params';
 	import Modal from '$lib/components/Modal.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { AddAgendaItemFormSchema } from './committees/form-schema';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';
 	import { collectConfigChanges } from './changePreview';
 
@@ -919,8 +919,7 @@
 					</div>
 					<textarea
 						class="textarea textarea-bordered w-full"
-						bind:value={editingAgendaItem.teaserText}
-					></textarea>
+						bind:value={editingAgendaItem.teaserText}></textarea>
 				</label>
 			</div>
 		</FormFieldset>

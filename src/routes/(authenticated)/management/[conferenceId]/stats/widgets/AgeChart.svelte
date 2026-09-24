@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MultiSeriesBarChart } from '$lib/components/Charts/ECharts';
+	import { MultiSeriesBarChart } from '$lib/components/charts/echarts';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from '../$types';
 

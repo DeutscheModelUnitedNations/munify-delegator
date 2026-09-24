@@ -2,9 +2,9 @@
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/services/enumIcons';
-	import { translatePaperType, translatePaperStatus } from '$lib/services/enumTranslations';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/utils/enumIcons';
+	import { translatePaperType, translatePaperStatus } from '$lib/utils/enumTranslations';
 	import type { PaperStatus$options, PaperType$options } from '$houdini';
 
 	interface Paper {

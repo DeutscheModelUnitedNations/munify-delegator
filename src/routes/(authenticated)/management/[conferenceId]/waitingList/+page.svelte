@@ -12,11 +12,11 @@
 		type ColumnDef,
 		type SortingState,
 		type PaginationState
-	} from '$lib/components/TanStackTable';
-	import { DataTable } from '$lib/components/TanStackTable/ui';
-	import { capitalizeFirstLetter } from '$lib/services/capitalizeFirstLetter';
-	import { getAgeAtConference } from '$lib/services/ageChecker';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	} from '$lib/components/tanStackTable';
+	import { DataTable } from '$lib/components/tanStackTable/ui';
+	import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
+	import { getAgeAtConference } from '$lib/helpers/ageChecker';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';

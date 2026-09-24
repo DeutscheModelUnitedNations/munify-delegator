@@ -2,17 +2,17 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
 	import { cache, graphql } from '$houdini';
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { toast } from 'svelte-sonner';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { AddAgendaItemFormSchema } from './form-schema';
 	import { invalidateAll } from '$app/navigation';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -297,8 +297,7 @@
 					</div>
 					<textarea
 						class="textarea textarea-bordered w-full"
-						bind:value={editingAgendaItem.teaserText}
-					></textarea>
+						bind:value={editingAgendaItem.teaserText}></textarea>
 				</label>
 			</div>
 		</FormFieldset>

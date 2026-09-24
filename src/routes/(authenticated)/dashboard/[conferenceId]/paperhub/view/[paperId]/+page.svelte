@@ -4,14 +4,14 @@
 		validateResolution,
 		createEmptyResolution,
 		type ResolutionHeaderData
-	} from '$lib/components/Paper/Editor/Resolution';
-	import PaperEditor from '$lib/components/Paper/Editor';
-	import { editorContentStore, resolutionStore } from '$lib/components/Paper/Editor/editorStore';
-	import { translatePaperType } from '$lib/services/enumTranslations';
+	} from '$lib/components/paper/editor/resolution';
+	import PaperEditor from '$lib/components/paper/editor';
+	import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
+	import { translatePaperType } from '$lib/utils/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { getPaperTypeIcon } from '$lib/services/enumIcons';
+	import { getPaperTypeIcon } from '$lib/utils/enumIcons';
 	import { page } from '$app/stores';
 
 	let { data }: { data: PageData } = $props();

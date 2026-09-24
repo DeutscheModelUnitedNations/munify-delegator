@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { ConferencesPreview$result } from '$houdini';
 	import RegistrationStatusLight from '$lib/components/RegistrationStatusLight.svelte';
-	import { getRegistrationStatus } from '$lib/services/registrationStatus';
-	import { getWaitingListStatus } from '$lib/services/waitingListStatus';
+	import { getRegistrationStatus } from '$lib/utils/registrationStatus';
+	import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
 
 	interface Props {
 		conference: NonNullable<ConferencesPreview$result['findManyConferences']>[number];

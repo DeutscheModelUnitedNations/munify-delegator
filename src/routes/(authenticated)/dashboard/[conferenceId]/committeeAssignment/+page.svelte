@@ -3,7 +3,7 @@
 	import { graphql } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 
 	let { data }: { data: PageData } = $props();
 	let assignmentData = $derived(data.DelegationAssignmentDataQuery);

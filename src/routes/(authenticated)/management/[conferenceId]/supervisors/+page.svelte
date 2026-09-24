@@ -1,14 +1,14 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
+	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
-	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
+	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import IndividualDrawer from './SupervisorDrawer.svelte';
 	import { queryParam } from 'sveltekit-search-params';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceSupervisorsQuery);

@@ -2,7 +2,7 @@
 import type { Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
-import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/constants/migrationNotice';
+import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/migrationNotice';
 
 function isSafeRedirectPath(path: string): boolean {
 	return path.startsWith('/') && !path.startsWith('//') && !path.includes('://');

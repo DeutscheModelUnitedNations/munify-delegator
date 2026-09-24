@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
-	import PendingInvitationsTable from '$lib/components/TeamManagement/PendingInvitationsTable.svelte';
+	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
+	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
 	import type { PageData } from './$houdini';
 
 	let { data }: { data: PageData } = $props();

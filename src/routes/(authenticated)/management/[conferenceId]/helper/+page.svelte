@@ -3,7 +3,7 @@
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import ParticipantStatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import Section from './Section.svelte';
 

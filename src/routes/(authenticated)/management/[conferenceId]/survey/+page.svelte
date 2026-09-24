@@ -2,9 +2,9 @@
 	import { graphql, cache } from '$houdini';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
-	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
+	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
 	import { invalidateAll } from '$app/navigation';
-	import { datetimeLocalToDate, formatInTimezone } from '$lib/services/conferenceTimezoneDate';
+	import { datetimeLocalToDate, formatInTimezone } from '$lib/helpers/conferenceTimezoneDate';
 
 	let { data }: { data: PageData } = $props();
 

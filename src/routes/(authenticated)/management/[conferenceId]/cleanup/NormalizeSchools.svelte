@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { type TableColumns } from 'svelte-table';
 	import { toast } from 'svelte-sonner';
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import CheckboxForTable from './CheckboxForTable.svelte';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';

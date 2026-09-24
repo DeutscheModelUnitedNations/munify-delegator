@@ -4,7 +4,7 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { cache, graphql } from '$houdini';
 import { error, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
-import { nullFieldsToUndefined } from '$lib/services/nullFieldsToUndefined';
+import { nullFieldsToUndefined } from '$lib/helpers/nullFieldsToUndefined';
 import { conferenceSettingsFormSchema } from './form-schema';
 import { AddAgendaItemFormSchema } from './committees/form-schema';
 import dayjs from 'dayjs';

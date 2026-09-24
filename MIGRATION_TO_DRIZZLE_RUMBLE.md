@@ -1,0 +1,537 @@
+# Migration Guide: Delegator → Drizzle + Rumble, aligned with Chase
+
+Working document for migrating this repo's data/API/query stack **and its project structure** to
+match [`munify-chase`](../munify-chase), which already runs the target stack. Chase is the
+reference implementation throughout: when in doubt, look at how chase solved the same problem
+before inventing a new pattern here.
+
+> Revision 2 — 2026-09-24. Supersedes the first draft (which lived in a scratchpad and only
+> covered the ORM/API/client swap). See "What changed in this revision" below.
+
+---
+
+## What changed in this revision
+
+1. **Scope widened from "swap three libraries" to "align the two projects."** Directory layout,
+   dependency versions, npm scripts, aliases and tooling are now explicit deliverables, not
+   side effects.
+2. **Resequenced.** Toolchain alignment (Phase A) and structural alignment (Phase B) now come
+   _first_. Both are behavior-preserving, land on `main` as small PRs, and shrink the diff the
+   big-bang branch has to carry. The original plan front-loaded the riskiest phase.
+3. **Baseline re-surveyed** against the repo as of 2026-09-24; several counts in the first draft
+   were stale (77 migrations, not ~85; 29 ability modules, not 28).
+4. **Open question resolved: this repo has no GraphQL subscriptions.** `grep subscriptionFields
+src/api/resolvers` returns nothing. That removes Redis event targets, `createWs`,
+   `graphql-ws`/`graphql-sse`, `subscriptionExchange` and `offlineExchange` from the plan
+   entirely — a large simplification versus chase.
+5. **Rumble bundles more than the first draft assumed.** `@m1212e/rumble@0.23.21` depends on
+   `@pothos/core`, `@pothos/plugin-drizzle`, `@pothos/plugin-tracing`,
+   `@pothos/tracing-opentelemetry`, `@pothos/plugin-validation`, `graphql-yoga`,
+   `@urql/core`, `@urql/exchange-graphcache` and `@escape.tech/graphql-armor`. So the whole
+   `@pothos/*` block and `graphql-yoga` leave `package.json` — they don't stay as the first
+   draft said. Query-depth limiting moves from `@pothos/plugin-complexity` to Rumble's
+   `armorConfig`.
+6. **Added an explicit "do not align" list** so alignment work doesn't sprawl into churn with no
+   payoff (component-folder casing, routes, Sentry/OTel, tasks, fallow).
+
+---
+
+## Reference: what chase looks like (surveyed 2026-09-24, v3.0.52)
+
+```
+src/
+  api/
+    context.ts                 # RequestEvent → ctx; mustBeLoggedIn/hasRole/isSessionLive
+    rumble.ts                  # single rumble({db, schema, context}) call, re-exports builders
+    websocket.ts
+    db/
+      db.ts                    # drizzle(...) or drizzle.mock() when `building`
+      schema.ts                # tables + pgEnums, snakeCase.table, shared id/timestamp helpers
+      relations.ts             # defineRelations(schema, r => ...)
+      reset.ts  seedConference.ts  seedUtils.ts  seed-data/{dev.yaml,schema.json,schema.d.ts}
+    handlers/                  # ONE flat file per table: abilities + object + query + mutations
+      register.ts              # imports every handler + runs clientCreator in dev/build
+    services/                  # authHelper.ts, OIDC.ts, auth.ts, ...
+  lib/
+    api/
+      client.ts                # hand-written urql Client
+      rumbleClient/            # GENERATED typed client (client.ts + schema.ts)
+      optimisticUpdateHandlers.ts
+    config/{public,private,getConfig}.ts
+    components/  data/  helpers/  state/  utils/  paraglide/
+  routes/
+drizzle/                       # migration SQL, drizzle-kit generated
+drizzle.config.ts
+```
+
+Chase aliases: `$api → src/api`, `$assets → src/assets`, `$config → src/lib/config`.
+Tests are colocated (`src/lib/utils/majorities.test.ts`), not in a `src/tests` tree.
+
+---
+
+## Baseline: delegator today (re-surveyed 2026-09-24)
+
+| Layer                         | Current                                              | Count                              |
+| ----------------------------- | ---------------------------------------------------- | ---------------------------------- |
+| DB models                     | `prisma/schema.prisma`                               | 30 models, 10 enums                |
+| Migrations                    | `prisma/migrations/`                                 | 77                                 |
+| Prisma clients                | `prisma/db.ts` (web), `src/tasks/tasksDb.ts` (tasks) | 2                                  |
+| Pothos resolver modules       | `src/api/resolvers/modules/**`                       | 41 files                           |
+| CASL ability modules          | `src/api/abilities/entities/**`                      | 29 files                           |
+| Houdini centralized queries   | `src/lib/queries/*.ts`                               | 8 files                            |
+| Inline `graphql()` usage      | `src`                                                | 146 files (86 `.svelte`, 60 `.ts`) |
+| Files touching houdini at all | `src`                                                | 215 files                          |
+| GraphQL subscriptions         | —                                                    | **0**                              |
+| Svelte components             | `src/lib/components/**`                              | 167                                |
+| Routes                        | `src/routes/**`                                      | 71 pages                           |
+| Frontend service helpers      | `src/lib/services/*`                                 | 35 files                           |
+
+---
+
+## Target structure mapping
+
+Routes stay exactly where they are. Everything else moves toward chase's shape.
+
+| Today                                                         | Target                                                                                                              | Phase |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----- |
+| `src/config/{public,private}.ts`                              | `src/lib/config/{public,private}.ts` (+ `getConfig.ts`), `$config` alias repointed                                  | B     |
+| `src/api/context/context.ts`                                  | `src/api/context.ts`                                                                                                | B     |
+| `src/api/context/oidc.ts`, `permissions.ts`                   | `src/api/services/oidc.ts` / folded into `context.ts`                                                               | B     |
+| `src/lib/stores/*`                                            | `src/lib/state/*.svelte.ts` (runes, not stores)                                                                     | B     |
+| `src/lib/services/*` (35 files)                               | split into `src/lib/helpers/` (pure, framework-free) and `src/lib/utils/` (UI/runtime, `.svelte.ts` where reactive) | B     |
+| `src/lib/constants/*`                                         | `src/lib/data/*`                                                                                                    | B     |
+| `src/lib/types/window.d.ts`                                   | `src/app.d.ts` / `src/lib/helpers/utilityTypes.ts`                                                                  | B     |
+| `src/tests/**`                                                | colocated `*.test.ts` next to the unit under test                                                                   | B     |
+| `src/client.ts` (Houdini client)                              | `src/lib/api/client.ts` (urql client)                                                                               | E     |
+| `prisma/schema.prisma`                                        | `src/api/db/schema.ts` + `src/api/db/relations.ts`                                                                  | C     |
+| `prisma/db.ts`, `src/tasks/tasksDb.ts`                        | `src/api/db/db.ts` (single client)                                                                                  | C/F   |
+| `prisma/migrations/`                                          | `drizzle/`                                                                                                          | C     |
+| `prisma/seed/**`, `prisma/defaultData/**`, `src/lib/seeding/` | `src/api/db/{seedConference.ts,seedUtils.ts,reset.ts,seed-data/}`                                                   | F     |
+| `src/api/resolvers/modules/**` (41)                           | `src/api/handlers/*.ts` (flat, one per table)                                                                       | D     |
+| `src/api/abilities/**` (29)                                   | merged into handlers + `src/api/services/authHelper.ts`                                                             | D     |
+| `src/api/resolvers/{api,builder,errors,tracer}.ts`            | `src/api/rumble.ts` + route `+server.ts`                                                                            | D     |
+| `src/lib/queries/*.ts` (8)                                    | deleted — the call site _is_ the query with Rumble                                                                  | E     |
+| `.houdini/`, `houdini.config.js`                              | `src/lib/api/rumbleClient/` (generated)                                                                             | E     |
+| aliases `$db`, `$houdini`                                     | removed                                                                                                             | C/E   |
+
+---
+
+## Dependency alignment
+
+### Upgrade to chase's versions (Phase A, behavior-preserving-ish, do in small PRs)
+
+| Package                                 | Delegator          | Chase                 |
+| --------------------------------------- | ------------------ | --------------------- |
+| `svelte`                                | 5.45.5             | 5.56.10               |
+| `vite`                                  | 7.3.5              | 8.2.2                 |
+| `typescript`                            | 5.9.3              | 6.0.3                 |
+| `@sveltejs/kit`                         | 2.57.1             | 2.70.3                |
+| `@sveltejs/vite-plugin-svelte`          | 5.1.1              | 7.3.0                 |
+| `@sveltejs/adapter-node`                | 5.4.0              | 5.5.7                 |
+| `eslint` / `@eslint/compat` / `globals` | 9.39 / 1.4 / 15.15 | 10.9 / 2.1 / 17.11    |
+| `typescript-eslint`                     | 8.48.1             | 8.67.0                |
+| `prettier` + svelte/tailwind plugins    | 3.7.4 / 3.4 / 0.6  | 3.9.6 / 4.1.1 / 0.8.1 |
+| `@inlang/paraglide-js`                  | 2.3.2 (pinned)     | 2.24.1                |
+| `@inlang/cli` / `@lingual/i18n-check`   | 3.0.12 / 0.8.14    | 3.3.3 / 0.9.5         |
+| `tailwindcss` + `@tailwindcss/vite`     | 4.1.17             | 4.3.3                 |
+| `daisyui`                               | 5.5.5              | 5.7.20                |
+| `lefthook`                              | 1.13.6             | 2.1.10                |
+| `concurrently`                          | 9.2.1              | 10.0.5                |
+| `nanoid`                                | 5.1.16             | 6.0.1                 |
+| `hotkeys-js`                            | 3.13.15            | 4.0.5                 |
+
+Vite 8 + TS 6 + eslint 10 are the three with real breakage risk; give each its own PR.
+
+### Add
+
+```
+drizzle-orm, drizzle-kit, drizzle-seed   pin exactly to chase: 1.0.0-rc.5-ab785fc
+                                          (rumble peer-depends on drizzle-orm ^1; the
+                                           snakeCase.table + defineRelations APIs are 1.0-only)
+@m1212e/rumble        ^0.23.21
+@urql/core            ^6.0.3            (runtime dep)
+@urql/exchange-graphcache  ^9.0.1
+pg + @types/pg        ^8.23
+@pothos/plugin-validation ^4.3.1        (only if zod-backed arg validation is wanted)
+```
+
+Not needed here (chase-only, driven by features this repo doesn't have):
+`graphql-ws`, `graphql-sse`, `@graphql-yoga/redis-event-target`, `ioredis`,
+`@m1212e/urql-crosstab-sync`, `polka`, `ws`.
+
+### Remove (end of Phase E/G)
+
+`prisma`, `@prisma/client`, `prisma-generator-pothos-codegen`,
+`@pothos/core`, `@pothos/plugin-prisma`, `@pothos/plugin-prisma-utils`,
+`@pothos/plugin-complexity`, `@pothos/plugin-simple-objects`, `@pothos/plugin-tracing`,
+`@pothos/tracing-opentelemetry`, `graphql-yoga`, `@casl/ability`, `@casl/prisma`,
+`houdini`, `houdini-svelte`.
+
+`graphql` stays (rumble peer-depends on ^16). Everything under `@pothos/*` and
+`graphql-yoga` arrives transitively through rumble — do not re-add them.
+
+### Scripts to align with chase
+
+```jsonc
+"db:migrate": "drizzle-kit migrate",
+"db:push":    "drizzle-kit push",
+"db:studio":  "drizzle-kit studio",          // replaces "studio": "prisma studio"
+"db:reset":   "bun ./src/api/db/reset.ts",
+"db:seed:dev":"bun ./src/api/db/seedConference.ts dev.yaml",
+"db:nuke":    "docker compose -f ./dev.docker-compose.yml down -v && docker compose -f ./dev.docker-compose.yml up -d --wait && bun run db:migrate"
+```
+
+Chase's `dev:server` wraps vite in a restart loop (`while true; do svelte-kit sync && vite dev; done`).
+This repo currently solves the same problem with the `devAutoRestart()` Vite plugin in
+`vite.config.ts` — that plugin exists only to work around **Pothos ObjectRef and Houdini store
+race conditions**, both of which disappear with this migration. Delete the plugin in Phase E and
+adopt chase's loop only if crashes still happen.
+
+---
+
+## Phases
+
+Phases A and B are independent of the stack swap, merge to `main` continuously, and are worth
+doing even if the migration stalls. Phases C–G run on a long-lived branch
+(`migration/drizzle-rumble`).
+
+### Phase A — Toolchain & dependency alignment — **DONE (2026-09-24)**
+
+**Blocker found: Vite 8 cannot land yet.** `@sveltejs/vite-plugin-svelte@7` peer-requires
+`vite ^8`, but `houdini@2.0.0-next.11` and `houdini-svelte@3.0.0-next.13` both peer-pin
+`vite ^7`. So `vite` 7→8 and `@sveltejs/vite-plugin-svelte` 5→7 move to the **end of Phase E**,
+once houdini is deleted. Everything else in this phase landed. `@tailwindcss/vite@4.3.3` already
+accepts both 7 and 8, so it is not part of that deferral.
+
+Applied:
+
+- [x] svelte 5.45.5 → 5.56.10, `@sveltejs/kit` 2.57.1 → 2.70.3, `adapter-node` 5.4 → 5.5.7,
+      `svelte-check` 4.3.4 → 4.7.6 (+ `overrides.svelte` bumped in lockstep)
+- [x] typescript 5.9.3 → 6.0.3, typescript-eslint 8.48 → 8.70 — `tsc --noEmit` clean
+- [x] eslint 9 → 10.11, `@eslint/compat` 1 → 2, `globals` 15 → 17, `eslint-plugin-svelte`
+      3.13 → 3.23, added `@eslint/js` as an explicit dep (chase has it; it was only transitive here)
+- [x] tailwindcss + `@tailwindcss/vite` 4.1.17 → 4.3.3, typography 0.5.20, daisyui 5.5 → 5.7.46
+- [x] paraglide 2.3.2 (was pinned exact) → ^2.24.1, `@inlang/cli` → ^3.3.3,
+      `@lingual/i18n-check` → ^0.9.5
+- [x] prettier 3.7 → 3.9.9 + plugin-svelte 3 → 4.1.1, plugin-tailwindcss 0.8.1, sort-json 4.2.0
+      (reformatted 16 files: prettier 3.9 collapses short union types onto one line and
+      normalizes CSS at-rule quoting — cosmetic only)
+- [x] lefthook 1.13 → 2.1.14, concurrently 9 → 10, nanoid 5 → 6, hotkeys-js 3 → 4,
+      zod → ^4.4.3, graphql → ^16.14.2
+- [x] `project.inlang/.gitignore` replaced with chase's version — the newer inlang SDK emits
+      `.lix/`, `.meta.json` and `README.md`, which the old two-line ignore file didn't cover
+
+**ESLint 10 fallout** (two rules new to `js.configs.recommended`):
+
+- `preserve-caught-error` — 2 genuine hits, fixed by attaching `{ cause: error }`
+  (`src/api/services/OIDC.ts`, `stats/zip-api/+server.ts`).
+- `no-useless-assignment` — 8 hits, one a false positive on Svelte's `$bindable(false)` prop
+  default, so the rule is set to `'warn'` in `eslint.config.js` alongside this repo's other
+  advisory rules.
+
+**Verified**: `check` 0 errors / 127 warnings (was 1 error / 128), `typecheck` clean,
+`test` 153/153, `lint` 0 errors, `format:check` clean, `i18n:check` + `i18n:validate` clean.
+
+Not bumped, deliberately: `vite` / `@sveltejs/vite-plugin-svelte` (blocked, see above);
+`svelte-inspect-value` 0.8 → 0.11 (dev-only, 0.x API churn, no reason to risk it now);
+tiptap (this repo is _ahead_ of chase at 3.31 vs 2.27/3.30).
+
+#### Original plan, for reference
+
+- [ ] Bump the version table above, one PR per risky bump (vite 8, ts 6, eslint 10 separately).
+- [ ] Align `svelte.config.js` with chase where it costs nothing: keep `$api`/`$assets`, plan to
+      drop `$db`/`$houdini`. Defer `experimental.remoteFunctions` and `compilerOptions.experimental.async`
+      until Phase E decides whether the SSR remote-functions exchange is wanted.
+- [ ] Align `lefthook.yml` naming (keep this repo's extra fallow steps — see "do not align").
+- [ ] Move runtime-only deps into `devDependencies` per this repo's CLAUDE.md convention, except
+      the genuinely runtime ones (`drizzle-orm`, `pg`, `@urql/core`).
+
+**Exit**: `bun run check`, `bun test`, `bun run build` green on the upgraded toolchain, no
+functional change.
+
+### Phase B — Structural alignment (no stack change) — **DONE (2026-09-25)**
+
+Behavior-preserving moves + import rewrites. Every specifier was rewritten by resolving it
+against the filesystem (handling `$lib/`, `$api/`, relative and extensionless forms) rather
+than by text search-and-replace.
+
+- [x] **Component folder casing.** Chase's convention is **directories `camelCase`, component
+      files `PascalCase`** (`dataTable/DataTable.svelte`). 37 directories renamed top-down so
+      each parent carried its new name before its children moved; 238 specifiers rewritten
+      across 98 files. Also fixed an `@import` in `src/app.css` and updated `CLAUDE-UI.md`,
+      which now documents the convention. Already-lowercase dirs (`extensions`, `settings`,
+      `ui`, `tabs`) untouched; `Charts/ECharts` → `charts/echarts` to match the `echarts`
+      package. Git recorded 157 renames.
+- [x] `src/config/{public,private}.ts` → `src/lib/config/`, `$config` alias repointed in
+      `svelte.config.js`. No import rewrites needed — all 23 consumers use the alias.
+- [x] `src/lib/config/{dashboardLinks,teamDashboardLinks}.ts` → `src/lib/data/`. These are
+      static navigation data, not env config; moving them keeps `$config` meaning exactly what
+      it means in chase (env only).
+- [x] `src/lib/constants/migrationNotice.ts` → `src/lib/data/`; `src/lib/constants` removed.
+- [x] `src/lib/stores/csvSettings.ts` → `src/lib/state/`; `src/lib/stores` removed.
+- [x] `src/api/context/` collapsed: `context.ts` → `src/api/context.ts` with `permissions.ts`
+      folded in (70 lines, one consumer, nothing imported it externally);
+      `oidc.ts` → `src/api/services/oidcContext.ts` (33 importers rewritten). Named
+      `oidcContext` to sit unambiguously beside the existing `services/OIDC.ts` provider client.
+- [x] `src/lib/services` (35 files) split into `src/lib/helpers` (24, pure) and
+      `src/lib/utils` (10, UI/runtime) — 228 specifiers across 138 files. Classified by the
+      stated rule (imports `$app/*`, `svelte`, paraglide or `$houdini` ⇒ `utils`), with two
+      deliberate overrides: `resolutionExport.ts` → `utils` because chase has that exact file
+      in `utils/`, and `storeExtractorType.ts` → `helpers` because it is type-only.
+      `authenticatedHeaderStatus.svelte.ts` turned out to be pure runes state, so it went to
+      `src/lib/state/` rather than either.
+- [x] `src/lib/types/window.d.ts` → `src/app.d.ts`. It is an ambient global declaration and
+      this repo had no `app.d.ts` at all, which is where SvelteKit expects one.
+- [x] `src/tests/**` (5 files) colocated as `*.test.ts` beside their units
+      (`lib/helpers/*.test.ts`, `tasks/mailSync/mailSyncPlan.test.ts`,
+      `routes/.../configuration/changePreview.test.ts`); `src/tests` removed. No vitest config
+      change needed — the default `**/*.test.ts` glob already covers them.
+- [x] Left `src/lib/{schemata,emails,queries,seeding}` in place: `queries` and `seeding` are
+      owned by Phases E and F, and `schemata`/`emails` have no chase counterpart.
+
+**Deviations from the original plan, and why:**
+
+1. **`csvSettings` was moved but not converted to runes.** The plan said `src/lib/state/*.svelte.ts`.
+   Converting a `svelte-persisted-store` into runes changes every consumer's `$csvSettings`
+   access — that is a behavior rewrite, not a move, and Phase B is meant to be
+   behavior-preserving. It sits at `src/lib/state/csvSettings.ts` (no `.svelte.ts`) until
+   someone converts it deliberately.
+2. **`src/api/services/permissions.ts` does not exist** — the file was folded into `context.ts`
+   as planned rather than moved, since Phase D deletes it outright anyway.
+
+**Verified after every step**: `check` 0 errors / 127 warnings, `typecheck` clean,
+`test` 153/153, `lint` 0 errors / 764 warnings, `format:check` clean — all identical to the
+Phase A baseline.
+
+**Two bugs the rewrite tooling hit, worth knowing if it is reused in Phases C–F:** specifiers
+written as `…/foo.svelte` that resolve to a `foo.svelte.ts` file got an extra `.ts` appended
+(51 occurrences), and one written as `…/foo.svelte.js` resolved to nothing and was left
+pointing at the old path. Both were caught by `typecheck`/`check` and fixed. Always run both
+after a move, and grep for the old directory name afterwards — a doc comment referencing
+`$lib/services/dateTimeInput` was only found that way.
+
+### Phase C — Database: Prisma → Drizzle (parallel, app untouched)
+
+Goal: working `drizzle.config.ts`, `src/api/db/{schema.ts,relations.ts,db.ts}` verified against
+the real schema, while the app still runs entirely on Prisma.
+
+1. Install the drizzle trio pinned to chase's build.
+2. `drizzle.config.ts` at the root, copied from chase (`schema: './src/api/db/schema.ts'`,
+   `out: './drizzle'`, `dialect: 'postgresql'`, `casing: 'snake_case'`, `strict: true`).
+3. `drizzle-kit introspect` against a **restored copy of production-like data** with all 77
+   Prisma migrations applied — never an empty dev DB; that's how relation/index edge cases surface.
+4. Hand-clean the introspected output into chase's idiom:
+   - `snakeCase.table(...)`, shared `defaultTimestamps` / `defaultIdAndTimestamps` helpers with
+     `id: text().$defaultFn(() => nanoid()).primaryKey()`.
+   - Re-derive all 10 enums as `pgEnum` (`ConferenceState`, `PaperType`, `PaperStatus`, `Gender`,
+     `FoodPreference`, `AdministrativeStatus`, `MediaConsentStatus`, `ReviewHelpStatus`,
+     `TeamRole`, `CalendarEntryColor`); snake_case the Postgres type names as chase does.
+   - Split relations out of the tables into `relations.ts` via `defineRelations` — Rumble's
+     ability filters and `db.query.*` `with:` both depend on this file being complete, so a
+     missing relation here shows up much later as an unexplainable authorization gap. Port every
+     one of the 56 relations.
+5. `src/api/db/db.ts` exactly like chase (`drizzle.mock(conf)` when `building`, else
+   `drizzle(configPrivate.DATABASE_URL, conf)`; export `db`, `schema`, `relations`).
+6. `drizzle-kit generate` a baseline, then confirm **zero drift** against the live schema
+   (`drizzle-kit push` dry run / `drizzle-kit check`). A non-empty diff means the hand-cleanup
+   changed semantics — fix the schema, never the database.
+7. Do not touch `prisma/` yet.
+
+**Exit**: zero-drift check passes; app still runs unmodified on Prisma; all 30 tables present:
+`Conference, Committee, CommitteeAgendaItem, User, ReviewerSnippet, ConferenceParticipantStatus,
+PaymentTransaction, UserReferenceInPaymentTransaction, Paper, PaperVersion, PaperReview, Nation,
+NonStateActor, CustomConferenceRole, SingleParticipant, Delegation, RoleApplication,
+DelegationMember, ConferenceSupervisor, SurveyQuestion, SurveyOption, SurveyAnswer,
+WaitingListEntry, TeamMember, TeamMemberInvitation, CalendarDay, CalendarTrack, Place,
+CalendarEntry, AttendanceEntry`.
+
+### Phase D — API: Pothos/CASL → Rumble handlers
+
+The one unavoidable big bang: the frontend is broken against the new schema until Phase E lands.
+Keep it on the branch; do not merge D without E.
+
+1. `src/api/rumble.ts` — chase's file minus the subscription plumbing:
+   ```ts
+   export const {
+   	abilityBuilder,
+   	schemaBuilder,
+   	whereArg,
+   	object,
+   	query,
+   	createYoga,
+   	enum_,
+   	clientCreator
+   } = rumble({
+   	db,
+   	schema,
+   	context,
+   	defaultLimit: 1000,
+   	pothosConfig: { plugins: [ValidationPlugin] }
+   });
+   ```
+   No `pubsub`, no `createWs`, no `subscriptions: [...]` — this repo has zero subscriptions.
+2. Reshape `context.ts` (already moved in Phase B) to return
+   `{ ...req.locals, mustBeLoggedIn(), hasRole(), isSessionLive() }`. **Keep this repo's
+   `openid-client` OIDC implementation** — only the context's output shape has to match what
+   Rumble abilities expect. Do not swap in `@m1212e/sveltekit-oidc`: this repo's flow carries
+   impersonation, email-conflict and invitation paths chase doesn't have.
+3. Write `src/api/services/authHelper.ts` first (before any handler): the delegator equivalents of
+   chase's `isGlobalAdmin` / `isTeamInConference` / `isParticipantInConference` /
+   `isAdminInConference`. Every handler's abilities compose from these, so getting them right once
+   is most of the authorization work. The existing CASL conditions are already
+   `{ field: { nested: value } }` shapes, close to Drizzle's relational `where`.
+4. One `src/api/handlers/<entity>.ts` per table, replacing **both** the old resolver module and
+   the old ability module:
+
+   | Table                       | Old resolver(s)                                           | Old ability                               | New handler                               |
+   | --------------------------- | --------------------------------------------------------- | ----------------------------------------- | ----------------------------------------- |
+   | Conference                  | `modules/conference/conference.ts`                        | `entities/conference.ts`                  | `handlers/conference.ts`                  |
+   | Committee                   | `modules/committee.ts`                                    | `entities/committee.ts`                   | `handlers/committee.ts`                   |
+   | CommitteeAgendaItem         | `modules/committeeAgendaItem.ts`                          | `entities/committeeAgendaItem.ts`         | `handlers/committeeAgendaItem.ts`         |
+   | User                        | `modules/user.ts`, `modules/auth.ts`                      | `entities/user.ts`                        | `handlers/user.ts`                        |
+   | ReviewerSnippet             | `modules/reviewerSnippet.ts`                              | `entities/reviewerSnippet.ts`             | `handlers/reviewerSnippet.ts`             |
+   | ConferenceParticipantStatus | `modules/conferenceParticipantStatus.ts`                  | `entities/conferenceParticipantStatus.ts` | `handlers/conferenceParticipantStatus.ts` |
+   | PaymentTransaction          | `modules/paymentTransaction.ts`                           | `entities/paymentTransaction.ts`          | `handlers/paymentTransaction.ts`          |
+   | Paper                       | `modules/paper/paper.ts`                                  | `entities/paper/paper.ts`                 | `handlers/paper.ts`                       |
+   | PaperVersion                | `modules/paper/paperVersion.ts`                           | `entities/paper/paperVersion.ts`          | `handlers/paperVersion.ts`                |
+   | PaperReview                 | `modules/paper/paperReview.ts`                            | `entities/paper/paperReview.ts`           | `handlers/paperReview.ts`                 |
+   | Nation                      | `modules/nation.ts`                                       | `entities/nation.ts`                      | `handlers/nation.ts`                      |
+   | NonStateActor               | `modules/nonStateActor.ts`                                | `entities/nonStateActor.ts`               | `handlers/nonStateActor.ts`               |
+   | CustomConferenceRole        | `modules/customConferenceRole.ts`                         | `entities/customConferenceRole.ts`        | `handlers/customConferenceRole.ts`        |
+   | SingleParticipant           | `modules/singleParticipant.ts`                            | `entities/singleParticipant.ts`           | `handlers/singleParticipant.ts`           |
+   | Delegation                  | `modules/delegation.ts`                                   | `entities/delegation.ts`                  | `handlers/delegation.ts`                  |
+   | RoleApplication             | `modules/roleApplication.ts`                              | `entities/roleApplication.ts`             | `handlers/roleApplication.ts`             |
+   | DelegationMember            | `modules/delegationMember.ts`                             | `entities/delegationMember.ts`            | `handlers/delegationMember.ts`            |
+   | ConferenceSupervisor        | `modules/conferenceSupervisor.ts`                         | `entities/conferenceSupervisor.ts`        | `handlers/conferenceSupervisor.ts`        |
+   | SurveyQuestion              | `modules/survey/surveyQuestion.ts`                        | `entities/surveyQuestion.ts`              | `handlers/surveyQuestion.ts`              |
+   | SurveyOption                | `modules/survey/surveyOption.ts`                          | `entities/surveyOption.ts`                | `handlers/surveyOption.ts`                |
+   | SurveyAnswer                | `modules/survey/surveyAnswer.ts`                          | `entities/surveyAnswer.ts`                | `handlers/surveyAnswer.ts`                |
+   | WaitingListEntry            | `modules/waitingListEntry.ts`                             | `entities/waitingListEntry.ts`            | `handlers/waitingListEntry.ts`            |
+   | TeamMember                  | `modules/teamMember.ts`                                   | `entities/teamMember.ts`                  | `handlers/teamMember.ts`                  |
+   | TeamMemberInvitation        | `modules/teamMemberInvitation.ts`                         | `entities/teamMemberInvitation.ts`        | `handlers/teamMemberInvitation.ts`        |
+   | CalendarDay                 | `modules/calendar/calendarDay.ts`, `calendarDayImport.ts` | `entities/calendarDay.ts`                 | `handlers/calendarDay.ts`                 |
+   | CalendarTrack               | `modules/calendar/calendarTrack.ts`                       | `entities/calendarTrack.ts`               | `handlers/calendarTrack.ts`               |
+   | Place                       | `modules/calendar/place.ts`                               | `entities/place.ts`                       | `handlers/place.ts`                       |
+   | CalendarEntry               | `modules/calendar/calendarEntry.ts`                       | `entities/calendarEntry.ts`               | `handlers/calendarEntry.ts`               |
+   | AttendanceEntry             | `modules/attendanceEntry.ts`                              | `entities/attendanceEntry.ts`             | `handlers/attendanceEntry.ts`             |
+
+   Cross-cutting modules with **no table** — port as free-standing
+   `schemaBuilder.queryFields`/`mutationFields` (chase's `user.ts` `currentUserClaims` style),
+   not as `object`/`query` CRUD:
+   `modules/assignments.ts`, `modules/impersonation.ts`, `modules/flagCollection.ts`,
+   `modules/search.ts`, `modules/conference/{certificateConfig,certificateSignature,plausibility,seed,statistics}.ts`,
+   `modules/paper/reviewerLeaderboard.ts`.
+
+5. Handler shape, per chase's `committee.ts`:
+   ```ts
+   abilityBuilder.<table>.allow('read'|'update'|'delete'|'create').when((ctx) => ({ where: ... }));
+   const ref = object({ table: '<name>', adjust: (t) => ({ /* computed fields */ }) });
+   query({ table: '<name>' });
+   schemaBuilder.mutationFields((t) => ({ /* t.drizzleField for non-default mutations */ }));
+   ```
+   Abilities are applied as
+   `ctx.abilities.<table>.filter('update').merge({ where: { id } }).sql.where` on writes and
+   `.query.single` on reads.
+6. `src/api/handlers/register.ts` importing every handler, plus the `clientCreator` call gated on
+   `dev || building` (outputs `src/lib/api/rumbleClient`, `useExternalUrqlClient: '../client'`).
+7. Replace `src/api/resolvers/api.ts` with rumble's `createYoga` in
+   `src/routes/api/graphql/+server.ts`. Depth limiting moves to `armorConfig.maxDepth` —
+   measure this repo's deepest legitimate query before picking the number (chase needed 10).
+8. Delete `src/api/resolvers/`, `src/api/abilities/`, `prisma/pothos.config.cjs`,
+   `prisma/generated/`, `prisma/pothos/`.
+
+**Exit**: `bun run check` passes; `/api/graphql` served by rumble; every table has a handler with
+abilities enforced; spot-checked with one admin and one non-admin user per major entity.
+
+### Phase E — Frontend: Houdini → Rumble client
+
+1. Verify `clientCreator` output in `src/lib/api/rumbleClient/{client.ts,schema.ts}` on `bun run dev`.
+2. Write `src/lib/api/client.ts` — **the minimal version**: `nativeDateExchange` +
+   `cacheExchange` (`@urql/exchange-graphcache`) + `fetchExchange`. Chase's 547-line client
+   carries an offline demo mode, crosstab sync and an SSR remote-functions exchange, none of which
+   this repo needs. Port those later only against a concrete requirement.
+3. Migrate the 8 files in `src/lib/queries/` first — smallest, most isolated, validates the setup.
+   Each Houdini store becomes a `client.query.<field>({...})` / `client.mutate.<field>({...})`
+   call at the call site; the query-definition file disappears.
+4. Migrate the 146 inline-`graphql()` files in feature batches mirroring
+   `src/routes/(authenticated)/**` (dashboard, management, registration, assignment-assistant,
+   papers, calendar), `bun run check` after each batch.
+5. Replace every `cache.markStale(); await invalidateAll();` pair. With graphcache normalizing
+   entities, most mutations self-update; add explicit refetch only where an aggregate/computed
+   field genuinely can't be inferred.
+6. Delete `houdini.config.js`, `.houdini/`, `src/client.ts`, the houdini Vite plugin, and the
+   `devAutoRestart()` plugin (its two race conditions were Pothos- and Houdini-specific).
+
+**Exit**: `bun run build` green with houdini gone from `package.json` and `vite.config.ts`; manual
+click-through of registration, management dashboards, assignment assistant, paper
+submission/review and calendar against a staging DB.
+
+### Phase F — Tasks, seeds, dev data
+
+- [ ] Point `src/tasks/**` at `$api/db/db` and delete `src/tasks/tasksDb.ts` — one client only.
+      Re-check `scripts/tasksBuild.ts` bundling now that Prisma's engine binary is gone (this
+      should get simpler and smaller).
+- [ ] Port `prisma/seed/**`, `prisma/defaultData/**` and `src/lib/seeding/` to
+      `src/api/db/{seedConference.ts,seedUtils.ts,reset.ts,seed-data/}`, using `drizzle-seed`
+      where chase does.
+- [ ] Delete `prisma/` entirely (schema, migrations, db.ts) — git history is sufficient archive.
+- [ ] Drop the `$db` alias.
+
+### Phase G — Cleanup & docs
+
+- [ ] Remove every dep in the "Remove" list; `bun run typecheck && bun run check && bun test && bun run lint`.
+- [ ] `grep -r "@prisma/client\|houdini\|@casl/\|@pothos/"` → no hits.
+- [ ] `bun run fallow` — expect the dead-code/duplication numbers to move a lot; re-baseline.
+- [ ] Rewrite `CLAUDE.md` Tech Stack + Architecture + "Adding a New GraphQL Resolver" +
+      "Database Schema Changes" for the Rumble handler pattern and `drizzle-kit generate/migrate`.
+      This file is what future sessions read first; stale content here actively misleads.
+- [ ] `bun run i18n:check`.
+- [ ] Delete this document once merged.
+
+---
+
+## Do NOT align (deliberate divergences)
+
+Keeping these is the "reasonably" in "as close as reasonably possible":
+
+- **Routes.** Out of scope by definition; the two apps are different products.
+- **`RESOLUTION_EDITOR_V0_2_MIGRATION.md`'s component paths.** Left at the old casing on
+  purpose: it documents a migration that already happened, and rewriting its paths would
+  misrepresent the tree as it stood at the time.
+- **Sentry/Bugsink + OpenTelemetry.** Delegator-only observability. Rumble bundles
+  `@pothos/plugin-tracing` + `@pothos/tracing-opentelemetry`, so the resolver-level tracing
+  survives the migration — verify how rumble exposes it before deleting `src/api/resolvers/tracer.ts`.
+- **`src/tasks/**`+`Dockerfile.tasks`+`scripts/tasksBuild.ts`.\*\* Chase has no background tasks.
+- **fallow** (`fallow`, `fallow:audit`, `fallow:health`, the lefthook/CI steps). Delegator-only
+  tooling worth keeping.
+- **Docker compose extras** (listmonk, mailpit, bugsink) — real delegator dependencies.
+- **`src/lib/{schemata,emails}`**, superforms, sveltekit-search-params, PDF/certificate stack —
+  no chase counterpart.
+- **This repo's OIDC implementation** — see Phase D step 2.
+
+---
+
+## Risks & remaining open questions
+
+1. **Drizzle 1.0 is still a prerelease** (`1.0.0-rc.5-ab785fc`). Rumble's typed-client and
+   ability filters are built on 1.0-only APIs (`snakeCase.table`, `defineRelations`), so pinning
+   to exactly chase's build is not optional. Check for a stable 1.0 before starting; if one
+   exists, upgrade chase and delegator together, not separately.
+2. **Schema freeze vs. rebase.** 77 migrations exist; new ones landing on `main` mid-migration
+   have to be replayed by hand into `schema.ts`. Decide with the team: freeze, or accept periodic
+   manual replay. Phases A and B merging continuously makes a freeze cheaper, since they don't
+   touch the schema.
+3. **Authorization parity is the real risk, not the ORM.** 29 CASL modules become ability-builder
+   rules; a missing relation in `relations.ts` or a dropped `OR` branch silently _widens_ access
+   rather than erroring. Plan explicit per-entity read/write checks with an admin, a team member,
+   a supervisor, and a plain participant before merging Phase D.
+4. **Phase D→E window.** The API and frontend cannot be migrated atomically. Merge D and E to
+   `main` as a single squashed unit, or ship from the branch to staging only.
+5. Whether to eventually adopt chase's `experimental.remoteFunctions` SSR exchange — defer.
+6. **`bun run build` currently fails locally**, before and after Phase A, with
+   `ReferenceError: Cannot access 'api' before initialization`. Cause: `src/api/resolvers/builder.ts:73`
+   does `import('./api')` while `src/routes/api/graphql/+server.ts` statically imports `api.ts`,
+   which imports `builder.ts` — a genuine import cycle that Node 26 evaluates into a TDZ error
+   (CI runs an older Node and doesn't trip it). Not a migration blocker and not worth fixing:
+   Phase D deletes both files, and chase's equivalent dev-only re-import lives in `rumble.ts`
+   where nothing statically imports it back.

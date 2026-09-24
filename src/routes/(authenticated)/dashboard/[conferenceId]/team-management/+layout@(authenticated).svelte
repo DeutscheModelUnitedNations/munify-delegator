@@ -1,11 +1,11 @@
 <script lang="ts">
-	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
+	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
-	import UserCardDrawer from '$lib/components/UserCard/UserCardDrawer.svelte';
+	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 	let navbarExpanded = $state(true);

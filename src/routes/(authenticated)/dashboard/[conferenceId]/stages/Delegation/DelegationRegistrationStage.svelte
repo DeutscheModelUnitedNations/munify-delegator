@@ -1,30 +1,30 @@
 <script lang="ts">
 	import type { PageData } from '../../$houdini';
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
-	import DelegationStatusTableWrapper from '$lib/components/DelegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/DelegationStatusTable/Entry.svelte';
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
+	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
+	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import RoleApplicationTable from './RoleApplicationTable.svelte';
-	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
+	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
 	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import { cache } from '$houdini';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { applicationFormSchema } from '$lib/schemata/applicationForm';
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { toast } from 'svelte-sonner';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import EntryCode from '../Common/EntryCode.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { page } from '$app/state';
 
 	//TODO we should split this up/refactor this

@@ -465,7 +465,8 @@ export async function performTokenExchange(
 		});
 		console.error('Token exchange error:', error);
 		throw new Error(
-			`Token exchange failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+			`Token exchange failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			{ cause: error }
 		);
 	}
 }

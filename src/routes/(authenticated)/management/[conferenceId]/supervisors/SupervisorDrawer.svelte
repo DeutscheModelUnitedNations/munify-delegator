@@ -2,9 +2,9 @@
 	import { m, singleParticipants } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { graphql } from '$houdini';
-	import formatNames from '$lib/services/formatNames';
+	import formatNames from '$lib/helpers/formatNames';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	interface Props {
 		conferenceId: string;

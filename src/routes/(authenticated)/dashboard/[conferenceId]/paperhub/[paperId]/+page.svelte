@@ -4,24 +4,24 @@
 		validateResolution,
 		createEmptyResolution,
 		type ResolutionHeaderData
-	} from '$lib/components/Paper/Editor/Resolution';
-	import PaperEditor from '$lib/components/Paper/Editor';
-	import { editorContentStore, resolutionStore } from '$lib/components/Paper/Editor/editorStore';
-	import { compareEditorContentHash } from '$lib/components/Paper/Editor/contentHash';
-	import { translatePaperStatus, translatePaperType } from '$lib/services/enumTranslations';
+	} from '$lib/components/paper/editor/resolution';
+	import PaperEditor from '$lib/components/paper/editor';
+	import { editorContentStore, resolutionStore } from '$lib/components/paper/editor/editorStore';
+	import { compareEditorContentHash } from '$lib/components/paper/editor/contentHash';
+	import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/services/enumIcons';
+	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/utils/enumIcons';
 	import type { PaperStatus$options } from '$houdini';
-	import { VersionCompareModal, computeDiffStats } from '$lib/components/Paper/Editor/DiffViewer';
+	import { VersionCompareModal, computeDiffStats } from '$lib/components/paper/editor/diffViewer';
 	import type {
 		ComparisonState,
 		VersionForComparison,
 		DiffStats
-	} from '$lib/components/Paper/Editor/DiffViewer';
+	} from '$lib/components/paper/editor/diffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { getStatusBadgeClass } from '$lib/services/paperStatusHelpers';
+	import { getStatusBadgeClass } from '$lib/utils/paperStatusHelpers';
 	import { cache, graphql } from '$houdini';
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -32,8 +32,8 @@
 		downloadResolutionTypst,
 		downloadPaperPdf,
 		downloadPaperTypst
-	} from '$lib/services/resolutionExport';
-	import type { PaperTypstMeta } from '$lib/services/paperTypst';
+	} from '$lib/utils/resolutionExport';
+	import type { PaperTypstMeta } from '$lib/helpers/paperTypst';
 
 	const updatePaperMutation = graphql(`
 		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {

@@ -24,7 +24,7 @@ import {
 	sendTeamInvitationEmail,
 	sendTeamWelcomeEmail
 } from '$api/services/email/sendTeamInvitationEmail';
-import { translateTeamRole } from '$lib/services/enumTranslations';
+import { translateTeamRole } from '$lib/utils/enumTranslations';
 
 // Define the TeamMemberInvitation object (don't expose the token hash!)
 builder.prismaObject('TeamMemberInvitation', {

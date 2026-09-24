@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
 	import svgempty from '$assets/undraw/empty_street.svg';
-	import ConferenceCard from '$lib/components/ConferenceCard/ConferenceCard.svelte';
+	import ConferenceCard from '$lib/components/conferenceCard/ConferenceCard.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let conferenceQuery = $derived(data.ConferenceOpenForRegistrationQuery);

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { PieChart } from '$lib/components/Charts/ECharts';
+	import { PieChart } from '$lib/components/charts/echarts';
 	import type { RoleBased } from '../stats.svelte';
 
 	interface Props {

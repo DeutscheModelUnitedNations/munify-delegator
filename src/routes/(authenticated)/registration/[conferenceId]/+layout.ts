@@ -1,5 +1,5 @@
 import { graphql } from '$houdini';
-import { getRegistrationStatus } from '$lib/services/registrationStatus';
+import { getRegistrationStatus } from '$lib/utils/registrationStatus';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 

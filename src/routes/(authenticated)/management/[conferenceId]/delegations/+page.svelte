@@ -1,15 +1,15 @@
 <script lang="ts">
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
-	// import PrintHeader from '$lib/components/DataTable/PrintHeader.svelte';
+	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$houdini';
-	import { getTableSettings } from '$lib/components/DataTable/dataTableSettings.svelte';
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
+	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { queryParam } from 'sveltekit-search-params';
-	import codenmz from '$lib/services/codenamize';
+	import codenmz from '$lib/helpers/codenamize';
 
 	const { data }: { data: PageData } = $props();
 	const queryData = $derived(data.ConferenceDelegationsQuery);

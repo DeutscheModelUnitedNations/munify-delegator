@@ -1,8 +1,8 @@
-import { type ColumnDef, renderComponent } from '$lib/components/TanStackTable';
+import { type ColumnDef, renderComponent } from '$lib/components/tanStackTable';
 import { m } from '$lib/paraglide/messages';
-import { capitalizeFirstLetter } from '$lib/services/capitalizeFirstLetter';
-import { translateGender, translateTeamRole } from '$lib/services/enumTranslations';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
+import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
+import { translateGender, translateTeamRole } from '$lib/utils/enumTranslations';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import type { ColumnMeta, ParticipantRow } from './types';
 import { textFilterFn, enumFilterFn, booleanFilterFn, rangeFilterFn } from './filterFns';
 import RoleBadge from './RoleBadge.svelte';

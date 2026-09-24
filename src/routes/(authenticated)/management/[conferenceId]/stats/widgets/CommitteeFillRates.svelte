@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { GaugeChart } from '$lib/components/Charts/ECharts';
+	import { GaugeChart } from '$lib/components/charts/echarts';
 	import type { CommitteeFillRate } from '../stats.svelte';
 
 	interface Props {
