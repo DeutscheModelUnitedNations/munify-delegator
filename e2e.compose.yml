@@ -1,0 +1,16 @@
+# Port-remapped overlay so the e2e stack can run alongside other local projects
+# that already hold 5432 / 8080. Only the two services the suite needs.
+services:
+  postgres:
+    container_name: postgres-e2e-delegator
+    ports: !override
+      - 15432:5432
+    volumes: !override
+      - delegator-e2e:/var/lib/postgresql/data
+  mockoidc:
+    container_name: mockoidc-e2e-delegator
+    ports: !override
+      - 18080:8080
+
+volumes:
+  delegator-e2e:

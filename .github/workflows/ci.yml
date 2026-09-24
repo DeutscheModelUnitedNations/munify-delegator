@@ -44,6 +44,48 @@ jobs:
       - run: bunx svelte-kit sync
       - run: bun run test
 
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      PUBLIC_OIDC_AUTHORITY: http://localhost:8080/default/.well-known/openid-configuration
+      PUBLIC_OIDC_CLIENT_ID: default
+      OIDC_SCOPES: 'openid profile offline_access email'
+      OIDC_ROLE_CLAIM: roles
+      SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
+      CERTIFICATE_SECRET: e2e-ci-certificate-secret
+      # Must be `development`: src/api/services/OIDC.ts only passes `allowInsecureRequests` to
+      # oauth4webapi under that value, and the mock OIDC provider is plain HTTP. Any other value
+      # fails discovery with "only requests to HTTPS are allowed" and every login times out.
+      NODE_ENV: development
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-bun
+      # Reuse the project's own compose definition rather than GitHub `services:` containers.
+      # The mock OIDC provider serves a custom login page mounted from the repo
+      # (`mock-oidc-landingpage.html`), and that is the page `e2e/support/auth.ts` drives. A
+      # `services:` container starts before checkout and cannot mount the workspace, so it would
+      # serve the stock sign-in page, whose submit button does not match - every login fails.
+      - run: docker compose -f dev.docker-compose.yml up -d postgres mockoidc
+      - name: Wait for postgres and the mock OIDC provider
+        run: |
+          timeout 120 bash -c 'until docker exec postgres-dev-delegator pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done'
+          timeout 120 bash -c 'until curl -sf -o /dev/null "$PUBLIC_OIDC_AUTHORITY"; do sleep 2; done'
+      - run: bunx prisma generate
+      - run: bunx svelte-kit sync
+      - run: bunx prisma migrate deploy
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   i18n:
     runs-on: ubuntu-latest
     steps:
@@ -96,15 +138,13 @@ jobs:
       - run: bun run build
 
   # Codebase intelligence report (fallow): dead code, circular dependencies,
-  # duplication and complexity hotspots. Non-blocking for now - findings are
-  # surfaced as PR annotations and a sticky comment, but the job never fails
-  # the pipeline and is deliberately not part of the docker-build `needs` list.
-  # To make it a gate later, drop `continue-on-error`, set `fail-on-issues` to
-  # true (or switch to `command: audit` so only newly introduced findings
-  # count) and add `fallow` to the docker-build `needs`.
+  # duplication and complexity hotspots. This IS a gate (it is in the
+  # docker-build `needs` list), but it runs in `audit` mode so only findings
+  # newly introduced against the branch base count. A full report currently
+  # flags 427 targets repo-wide; failing on those would block every build, so
+  # the gate is scoped to regressions rather than the existing backlog.
   fallow:
     runs-on: ubuntu-latest
-    continue-on-error: true
     permissions:
       contents: read
       pull-requests: write
@@ -128,9 +168,12 @@ jobs:
         with:
           # The CLI version comes from the `fallow` devDependency in package.json,
           # pinned exactly there so CI and local runs analyse with the same binary.
-          fail-on-issues: false
+          # Only newly introduced findings fail the build; pre-existing ones are
+          # reported but inherited, so the existing backlog does not block merges.
+          command: audit
+          fail-on-issues: true
           # 0-100 health score with a letter grade, and the health delta header
-          # on the PR comment. Reporting only - it does not gate anything.
+          # on the PR comment.
           score: true
           comment: ${{ github.event_name == 'pull_request' }}
           # Skip the Fallow Cloud token broker; comments post as github-actions[bot].
@@ -148,7 +191,7 @@ jobs:
   # force a fresh dependency install when the GHA cache is serving a stale layer.
 
   docker-build:
-    needs: [format, lint, test, i18n, security, typecheck]
+    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -269,7 +312,7 @@ jobs:
 
   docker-build-tasks:
     if: github.event_name == 'push'
-    needs: [format, lint, test, i18n, security, typecheck]
+    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
