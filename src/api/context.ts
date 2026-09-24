@@ -2,6 +2,8 @@ import { defineAbilitiesForUser, type Action } from '$api/abilities/abilities';
 import { accessibleBy } from '@casl/prisma';
 import { oidc, type OIDC } from './services/oidcContext';
 import type { RequestEvent } from '@sveltejs/kit';
+import { GraphQLError } from 'graphql';
+import { oidcRoles } from './services/OIDC';
 
 export class PermissionCheckError extends Error {
 	constructor(message: string) {
@@ -83,7 +85,24 @@ export function permissions(oidc: OIDC) {
 export async function context(req: RequestEvent) {
 	const oidcValue = await oidc(req.cookies);
 	const perms = permissions(oidcValue);
-	return { permissions: perms, oidc: oidcValue, url: req.url, event: req };
+	return {
+		permissions: perms,
+		oidc: oidcValue,
+		url: req.url,
+		event: req,
+		/**
+		 * Rumble-facing helpers, shaped like chase's context. `permissions` above is the
+		 * CASL layer the legacy Pothos resolvers still use; it goes away once the last
+		 * resolver module is replaced by a handler.
+		 */
+		mustBeLoggedIn: () => {
+			if (!oidcValue.user) {
+				throw new GraphQLError('Must be logged in');
+			}
+			return oidcValue.user;
+		},
+		hasRole: (role: (typeof oidcRoles)[number]) => oidcValue.user?.hasRole(role) ?? false
+	};
 }
 
 export type Context = Awaited<ReturnType<typeof context>>;
