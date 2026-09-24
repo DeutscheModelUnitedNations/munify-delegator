@@ -313,7 +313,6 @@ import path via the parameter! -->
 <Breadcrumbs
 	importObject={import.meta.glob('./**/+page*.svelte')}
 	availableLanguageTags={locales as any as string[]}
-	delimeterSnippet="disabled"
 	homePath="/"
 >
 	{#snippet pathSnippet(pathSegment: PathSegmentType)}

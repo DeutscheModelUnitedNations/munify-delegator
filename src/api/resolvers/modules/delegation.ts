@@ -268,16 +268,11 @@ builder.mutationFields((t) => {
 					if (!newHeadDelegate) throw new Error('No new head delegate member found');
 
 					await db.$transaction(async (tx) => {
-						await tx.delegationMember.update({
-							where: {
-								id: currentHeadDelegate.id,
-								AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
-							},
-							data: {
-								isHeadDelegate: false
-							}
-						});
-
+						// Promote before demoting. The caller's `update` ability on DelegationMember is
+						// granted via `delegation.members.some({ isHeadDelegate: true, userId: user.sub })`,
+						// and both updates re-evaluate that filter inside the transaction. Demoting the
+						// acting head delegate first revokes their own permission, so the second update
+						// would match no record and Prisma throws "No record was found for an update."
 						await tx.delegationMember.update({
 							where: {
 								id: newHeadDelegate.id,
@@ -285,6 +280,16 @@ builder.mutationFields((t) => {
 							},
 							data: {
 								isHeadDelegate: true
+							}
+						});
+
+						await tx.delegationMember.update({
+							where: {
+								id: currentHeadDelegate.id,
+								AND: [ctx.permissions.allowDatabaseAccessTo('update').DelegationMember]
+							},
+							data: {
+								isHeadDelegate: false
 							}
 						});
 					});
