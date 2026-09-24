@@ -1,6 +1,6 @@
 import {
+	snakeCase,
 	pgEnum,
-	pgTable,
 	text,
 	timestamp,
 	jsonb,
@@ -9,23 +9,23 @@ import {
 	boolean,
 	index,
 	uniqueIndex,
-	foreignKey,
 	primaryKey
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { nanoid } from '../../lib/helpers/nanoid';
 
 /**
  * Shared column groups, mirroring munify-chase's schema helpers.
  *
- * Prisma implemented two of these behaviours in the client rather than in the database:
- * `@default(nanoid())` and `@updatedAt`. Drizzle has to reproduce them at the application
- * level too (`$defaultFn` / `$onUpdate`), otherwise inserts would fail on a missing id and
- * `updatedAt` would never advance past its insert value. Neither emits DDL, so they do not
- * affect the schema diff.
+ * Prisma implemented two of these behaviours in its client rather than in the database:
+ * `@default(nanoid())` and `@updatedAt`. Drizzle must reproduce them at the application layer
+ * (`$defaultFn` / `$onUpdate`), otherwise inserts fail on a missing id and `updatedAt` freezes
+ * at its insert value. Neither emits DDL, so a schema diff cannot catch their absence.
  *
- * `nanoid` is the package default (21 chars, default alphabet) to stay consistent with the
- * ids already in the database - deliberately not chase's 30-char no-look-alike alphabet.
+ * Ids use chase's generator (30 chars, no-look-alike alphabet) via `$lib/helpers/nanoid`.
+ * Rows created before this change keep their 21-char Prisma-era ids; both are opaque text, so
+ * the two formats coexist. Imported by relative path, not the `$lib` alias, because drizzle-kit
+ * loads this file outside Vite - chase does the same.
  */
 const defaultTimestamps = {
 	createdAt: timestamp({ precision: 3 })
@@ -52,47 +52,47 @@ const defaultIdAndCreatedAt = {
 	createdAt: defaultTimestamps.createdAt
 };
 
-export const foodPreference = pgEnum('FoodPreference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
-export const administrativeStatus = pgEnum('AdministrativeStatus', ['DONE', 'PROBLEM', 'PENDING']);
-export const teamRole = pgEnum('TeamRole', [
+export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
+export const administrativeStatus = pgEnum('administrative_status', ['DONE', 'PROBLEM', 'PENDING']);
+export const teamRole = pgEnum('team_role', [
 	'PROJECT_MANAGEMENT',
 	'PARTICIPANT_CARE',
 	'MEMBER',
 	'REVIEWER',
 	'TEAM_COORDINATOR'
 ]);
-export const conferenceState = pgEnum('ConferenceState', [
+export const conferenceState = pgEnum('conference_state', [
 	'PRE',
 	'PARTICIPANT_REGISTRATION',
 	'PREPARATION',
 	'ACTIVE',
 	'POST'
 ]);
-export const gender = pgEnum('Gender', ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT']);
-export const mediaConsentStatus = pgEnum('MediaConsentStatus', [
+export const gender = pgEnum('gender', ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT']);
+export const mediaConsentStatus = pgEnum('media_consent_status', [
 	'NOT_SET',
 	'ALLOWED_ALL',
 	'PARTIALLY_ALLOWED',
 	'NOT_ALLOWED'
 ]);
-export const paperStatus = pgEnum('PaperStatus', [
+export const paperStatus = pgEnum('paper_status', [
 	'SUBMITTED',
 	'CHANGES_REQUESTED',
 	'ACCEPTED',
 	'DRAFT',
 	'REVISED'
 ]);
-export const paperType = pgEnum('PaperType', [
+export const paperType = pgEnum('paper_type', [
 	'POSITION_PAPER',
 	'WORKING_PAPER',
 	'INTRODUCTION_PAPER'
 ]);
-export const reviewHelpStatus = pgEnum('ReviewHelpStatus', [
+export const reviewHelpStatus = pgEnum('review_help_status', [
 	'UNSPECIFIED',
 	'HELP_NEEDED',
 	'NO_HELP_WANTED'
 ]);
-export const calendarEntryColor = pgEnum('CalendarEntryColor', [
+export const calendarEntryColor = pgEnum('calendar_entry_color', [
 	'SESSION',
 	'WORKSHOP',
 	'LOGISTICS',
@@ -103,90 +103,90 @@ export const calendarEntryColor = pgEnum('CalendarEntryColor', [
 	'INFO'
 ]);
 
-export const committeeToNation = pgTable(
-	'_CommitteeToNation',
+export const committeeToNation = snakeCase.table(
+	'committee_to_nation',
 	{
-		a: text('A')
+		a: text()
 			.notNull()
 			.references(() => committee.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text('B')
+		b: text()
 			.notNull()
 			.references(() => nation.alpha3Code, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		primaryKey({ columns: [table.a, table.b], name: '_CommitteeToNation_AB_pkey' }),
-		index('_CommitteeToNation_B_index').using('btree', table.b.asc().nullsLast())
+		primaryKey({ columns: [table.a, table.b], name: 'committee_to_nation_ab_pkey' }),
+		index('committee_to_nation_b_index').using('btree', table.b.asc().nullsLast())
 	]
 );
 
-export const conferenceSupervisorToDelegationMember = pgTable(
-	'_ConferenceSupervisorToDelegationMember',
+export const conferenceSupervisorToDelegationMember = snakeCase.table(
+	'conference_supervisor_to_delegation_member',
 	{
-		a: text('A')
+		a: text()
 			.notNull()
 			.references(() => conferenceSupervisor.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text('B')
+		b: text()
 			.notNull()
 			.references(() => delegationMember.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
 		primaryKey({
 			columns: [table.a, table.b],
-			name: '_ConferenceSupervisorToDelegationMember_AB_pkey'
+			name: 'conference_supervisor_to_delegation_member_ab_pkey'
 		}),
-		index('_ConferenceSupervisorToDelegationMember_B_index').using(
+		index('conference_supervisor_to_delegation_member_b_index').using(
 			'btree',
 			table.b.asc().nullsLast()
 		)
 	]
 );
 
-export const conferenceSupervisorToSingleParticipant = pgTable(
-	'_ConferenceSupervisorToSingleParticipant',
+export const conferenceSupervisorToSingleParticipant = snakeCase.table(
+	'conference_supervisor_to_single_participant',
 	{
-		a: text('A')
+		a: text()
 			.notNull()
 			.references(() => conferenceSupervisor.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text('B')
+		b: text()
 			.notNull()
 			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
 		primaryKey({
 			columns: [table.a, table.b],
-			name: '_ConferenceSupervisorToSingleParticipant_AB_pkey'
+			name: 'conference_supervisor_to_single_participant_ab_pkey'
 		}),
-		index('_ConferenceSupervisorToSingleParticipant_B_index').using(
+		index('conference_supervisor_to_single_participant_b_index').using(
 			'btree',
 			table.b.asc().nullsLast()
 		)
 	]
 );
 
-export const customConferenceRoleToSingleParticipant = pgTable(
-	'_CustomConferenceRoleToSingleParticipant',
+export const customConferenceRoleToSingleParticipant = snakeCase.table(
+	'custom_conference_role_to_single_participant',
 	{
-		a: text('A')
+		a: text()
 			.notNull()
 			.references(() => customConferenceRole.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text('B')
+		b: text()
 			.notNull()
 			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
 		primaryKey({
 			columns: [table.a, table.b],
-			name: '_CustomConferenceRoleToSingleParticipant_AB_pkey'
+			name: 'custom_conference_role_to_single_participant_ab_pkey'
 		}),
-		index('_CustomConferenceRoleToSingleParticipant_B_index').using(
+		index('custom_conference_role_to_single_participant_b_index').using(
 			'btree',
 			table.b.asc().nullsLast()
 		)
 	]
 );
 
-export const attendanceEntry = pgTable('AttendanceEntry', {
-	id: text().primaryKey(),
+export const attendanceEntry = snakeCase.table('attendance_entry', {
+	...defaultIdAndTimestamps,
 	timestamp: timestamp({ precision: 3 })
 		.default(sql`CURRENT_TIMESTAMP`)
 		.notNull(),
@@ -196,34 +196,22 @@ export const attendanceEntry = pgTable('AttendanceEntry', {
 		.references(() => conferenceParticipantStatus.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 	recordedById: text()
 		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull()
+		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' })
 });
 
-export const calendarDay = pgTable(
-	'CalendarDay',
+export const calendarDay = snakeCase.table(
+	'calendar_day',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		date: timestamp({ precision: 3 }).notNull(),
 		name: text().notNull(),
 		sortOrder: integer().notNull(),
 		conferenceId: text()
 			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('CalendarDay_conferenceId_sortOrder_key').using(
+		uniqueIndex('calendar_day_conference_id_sort_order_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.sortOrder.asc().nullsLast()
@@ -231,8 +219,8 @@ export const calendarDay = pgTable(
 	]
 );
 
-export const calendarEntry = pgTable('CalendarEntry', {
-	id: text().primaryKey(),
+export const calendarEntry = snakeCase.table('calendar_entry', {
+	...defaultIdAndTimestamps,
 	startTime: timestamp({ precision: 3 }).notNull(),
 	endTime: timestamp({ precision: 3 }).notNull(),
 	name: text().notNull(),
@@ -247,34 +235,22 @@ export const calendarEntry = pgTable('CalendarEntry', {
 		onDelete: 'set null',
 		onUpdate: 'cascade'
 	}),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
 	placeId: text().references(() => place.id, { onDelete: 'set null', onUpdate: 'cascade' })
 });
 
-export const calendarTrack = pgTable(
-	'CalendarTrack',
+export const calendarTrack = snakeCase.table(
+	'calendar_track',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		name: text().notNull(),
 		description: text(),
 		sortOrder: integer().notNull(),
 		calendarDayId: text()
 			.notNull()
-			.references(() => calendarDay.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+			.references(() => calendarDay.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('CalendarTrack_calendarDayId_sortOrder_key').using(
+		uniqueIndex('calendar_track_calendar_day_id_sort_order_key').using(
 			'btree',
 			table.calendarDayId.asc().nullsLast(),
 			table.sortOrder.asc().nullsLast()
@@ -282,41 +258,29 @@ export const calendarTrack = pgTable(
 	]
 );
 
-export const committee = pgTable('Committee', {
-	id: text().primaryKey(),
+export const committee = snakeCase.table('committee', {
+	...defaultIdAndTimestamps,
 	name: text().notNull(),
 	abbreviation: text().notNull(),
 	conferenceId: text()
 		.notNull()
 		.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 	numOfSeatsPerDelegation: integer().default(1).notNull(),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
 	resolutionHeadline: text()
 });
 
-export const committeeAgendaItem = pgTable('CommitteeAgendaItem', {
-	id: text().primaryKey(),
+export const committeeAgendaItem = snakeCase.table('committee_agenda_item', {
+	...defaultIdAndTimestamps,
 	title: text().notNull(),
 	teaserText: text(),
 	committeeId: text()
 		.notNull()
 		.references(() => committee.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
 	reviewHelpStatus: reviewHelpStatus().default('UNSPECIFIED').notNull()
 });
 
-export const conference = pgTable('Conference', {
-	id: text().primaryKey(),
+export const conference = snakeCase.table('conference', {
+	...defaultIdAndTimestamps,
 	title: text().notNull(),
 	longTitle: text(),
 	location: text(),
@@ -346,12 +310,6 @@ export const conference = pgTable('Conference', {
 	termsAndConditionsContent: text(),
 	unlockPayments: boolean().default(false).notNull(),
 	unlockPostals: boolean().default(false).notNull(),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
 	linkToPaperInbox: text(),
 	contractContent: text(),
 	certificateContent: text(),
@@ -366,10 +324,10 @@ export const conference = pgTable('Conference', {
 	timezone: text().default('Europe/Berlin').notNull()
 });
 
-export const conferenceParticipantStatus = pgTable(
-	'ConferenceParticipantStatus',
+export const conferenceParticipantStatus = snakeCase.table(
+	'conference_participant_status',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		userId: text()
 			.notNull()
 			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -381,23 +339,20 @@ export const conferenceParticipantStatus = pgTable(
 		guardianConsent: administrativeStatus().default('PENDING').notNull(),
 		mediaConsent: administrativeStatus().default('PENDING').notNull(),
 		termsAndConditions: administrativeStatus().default('PENDING').notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		mediaConsentStatus: mediaConsentStatus().default('NOT_SET').notNull(),
 		assigendDocumentNumber: integer(),
 		accessCardId: text()
 	},
 	(table) => [
-		uniqueIndex('ConferenceParticipantStatus_conferenceId_assigendDocumentNu_key').using(
+		// Shortened by hand: the name derived from the column list was 67 chars and
+		// Postgres truncates identifiers at 63, which would leave the database and
+		// this file permanently disagreeing on the index name.
+		uniqueIndex('conference_participant_status_conference_id_doc_number_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.assigendDocumentNumber.asc().nullsLast()
 		),
-		uniqueIndex('ConferenceParticipantStatus_userId_conferenceId_key').using(
+		uniqueIndex('conference_participant_status_user_id_conference_id_key').using(
 			'btree',
 			table.userId.asc().nullsLast(),
 			table.conferenceId.asc().nullsLast()
@@ -405,10 +360,10 @@ export const conferenceParticipantStatus = pgTable(
 	]
 );
 
-export const conferenceSupervisor = pgTable(
-	'ConferenceSupervisor',
+export const conferenceSupervisor = snakeCase.table(
+	'conference_supervisor',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -416,21 +371,15 @@ export const conferenceSupervisor = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 		plansOwnAttendenceAtConference: boolean().notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		connectionCode: text().notNull()
 	},
 	(table) => [
-		uniqueIndex('ConferenceSupervisor_conferenceId_connectionCode_key').using(
+		uniqueIndex('conference_supervisor_conference_id_connection_code_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.connectionCode.asc().nullsLast()
 		),
-		uniqueIndex('ConferenceSupervisor_conferenceId_userId_key').using(
+		uniqueIndex('conference_supervisor_conference_id_user_id_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
@@ -438,26 +387,20 @@ export const conferenceSupervisor = pgTable(
 	]
 );
 
-export const customConferenceRole = pgTable(
-	'CustomConferenceRole',
+export const customConferenceRole = snakeCase.table(
+	'custom_conference_role',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
 		name: text().notNull(),
 		description: text().notNull(),
 		fontAwesomeIcon: text(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		seatAmount: integer().default(1).notNull()
 	},
 	(table) => [
-		uniqueIndex('CustomConferenceRole_conferenceId_name_key').using(
+		uniqueIndex('custom_conference_role_conference_id_name_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.name.asc().nullsLast()
@@ -465,10 +408,10 @@ export const customConferenceRole = pgTable(
 	]
 );
 
-export const delegation = pgTable(
-	'Delegation',
+export const delegation = snakeCase.table(
+	'delegation',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -484,26 +427,20 @@ export const delegation = pgTable(
 		assignedNonStateActorId: text().references(() => nonStateActor.id, {
 			onDelete: 'set null',
 			onUpdate: 'cascade'
-		}),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		})
 	},
 	(table) => [
-		uniqueIndex('Delegation_conferenceId_assignedNationAlpha3Code_key').using(
+		uniqueIndex('delegation_conference_id_assigned_nation_alpha3_code_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.assignedNationAlpha3Code.asc().nullsLast()
 		),
-		uniqueIndex('Delegation_conferenceId_assignedNonStateActorId_key').using(
+		uniqueIndex('delegation_conference_id_assigned_non_state_actor_id_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.assignedNonStateActorId.asc().nullsLast()
 		),
-		uniqueIndex('Delegation_conferenceId_entryCode_key').using(
+		uniqueIndex('delegation_conference_id_entry_code_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.entryCode.asc().nullsLast()
@@ -511,10 +448,10 @@ export const delegation = pgTable(
 	]
 );
 
-export const delegationMember = pgTable(
-	'DelegationMember',
+export const delegationMember = snakeCase.table(
+	'delegation_member',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -528,21 +465,15 @@ export const delegationMember = pgTable(
 		assignedCommitteeId: text().references(() => committee.id, {
 			onDelete: 'set null',
 			onUpdate: 'cascade'
-		}),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		})
 	},
 	(table) => [
-		uniqueIndex('DelegationMember_conferenceId_userId_key').using(
+		uniqueIndex('delegation_member_conference_id_user_id_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
 		),
-		uniqueIndex('DelegationMember_delegationId_userId_key').using(
+		uniqueIndex('delegation_member_delegation_id_user_id_key').using(
 			'btree',
 			table.delegationId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
@@ -550,27 +481,22 @@ export const delegationMember = pgTable(
 	]
 );
 
-export const nation = pgTable(
-	'Nation',
+export const nation = snakeCase.table(
+	'nation',
 	{
 		alpha3Code: text().primaryKey(),
 		alpha2Code: text().notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		...defaultTimestamps
 	},
 	(table) => [
-		uniqueIndex('Nation_alpha2Code_key').using('btree', table.alpha2Code.asc().nullsLast())
+		uniqueIndex('nation_alpha2_code_key').using('btree', table.alpha2Code.asc().nullsLast())
 	]
 );
 
-export const nonStateActor = pgTable(
-	'NonStateActor',
+export const nonStateActor = snakeCase.table(
+	'non_state_actor',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -578,21 +504,15 @@ export const nonStateActor = pgTable(
 		description: text().notNull(),
 		fontAwesomeIcon: text(),
 		abbreviation: text().notNull(),
-		seatAmount: integer().default(2).notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		seatAmount: integer().default(2).notNull()
 	},
 	(table) => [
-		uniqueIndex('NonStateActor_conferenceId_abbreviation_key').using(
+		uniqueIndex('non_state_actor_conference_id_abbreviation_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.abbreviation.asc().nullsLast()
 		),
-		uniqueIndex('NonStateActor_conferenceId_name_key').using(
+		uniqueIndex('non_state_actor_conference_id_name_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.name.asc().nullsLast()
@@ -600,20 +520,14 @@ export const nonStateActor = pgTable(
 	]
 );
 
-export const paper = pgTable('Paper', {
-	id: text().primaryKey(),
+export const paper = snakeCase.table('paper', {
+	...defaultIdAndTimestamps,
 	authorId: text()
 		.notNull()
 		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 	delegationId: text()
 		.notNull()
 		.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
 	status: paperStatus().default('SUBMITTED').notNull(),
 	agendaItemId: text().references(() => committeeAgendaItem.id, {
 		onDelete: 'set null',
@@ -626,15 +540,12 @@ export const paper = pgTable('Paper', {
 	firstSubmittedAt: timestamp({ precision: 3 })
 });
 
-export const paperReview = pgTable('PaperReview', {
-	id: text().primaryKey(),
+export const paperReview = snakeCase.table('paper_review', {
+	...defaultIdAndCreatedAt,
 	comments: jsonb().notNull(),
 	reviewerId: text()
 		.notNull()
 		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
 	paperVersionId: text()
 		.notNull()
 		.references(() => paperVersion.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -642,22 +553,19 @@ export const paperReview = pgTable('PaperReview', {
 	statusBefore: paperStatus()
 });
 
-export const paperVersion = pgTable(
-	'PaperVersion',
+export const paperVersion = snakeCase.table(
+	'paper_version',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndCreatedAt,
 		version: integer().notNull(),
 		content: jsonb().default({}).notNull(),
 		paperId: text()
 			.notNull()
 			.references(() => paper.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		status: paperStatus().default('DRAFT').notNull()
 	},
 	(table) => [
-		uniqueIndex('PaperVersion_paperId_version_key').using(
+		uniqueIndex('paper_version_paper_id_version_key').using(
 			'btree',
 			table.paperId.asc().nullsLast(),
 			table.version.asc().nullsLast()
@@ -665,28 +573,23 @@ export const paperVersion = pgTable(
 	]
 );
 
-export const paymentTransaction = pgTable('PaymentTransaction', {
+export const paymentTransaction = snakeCase.table('payment_transaction', {
 	id: text().primaryKey(),
 	amount: doublePrecision().notNull(),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
+	...defaultTimestamps,
 	recievedAt: timestamp({ precision: 3 }),
 	conferenceId: text()
 		.notNull()
 		.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 	userId: text()
 		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull()
+		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' })
 });
 
-export const place = pgTable(
-	'Place',
+export const place = snakeCase.table(
+	'place',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		name: text().notNull(),
 		address: text(),
 		latitude: doublePrecision(),
@@ -697,16 +600,10 @@ export const place = pgTable(
 		sitePlanDataURL: text(),
 		conferenceId: text()
 			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('Place_conferenceId_name_key').using(
+		uniqueIndex('place_conference_id_name_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.name.asc().nullsLast()
@@ -714,24 +611,18 @@ export const place = pgTable(
 	]
 );
 
-export const reviewerSnippet = pgTable(
-	'ReviewerSnippet',
+export const reviewerSnippet = snakeCase.table(
+	'reviewer_snippet',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		name: text().notNull(),
 		content: jsonb().notNull(),
 		userId: text()
 			.notNull()
-			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('ReviewerSnippet_userId_name_key').using(
+		uniqueIndex('reviewer_snippet_user_id_name_key').using(
 			'btree',
 			table.userId.asc().nullsLast(),
 			table.name.asc().nullsLast()
@@ -739,10 +630,10 @@ export const reviewerSnippet = pgTable(
 	]
 );
 
-export const roleApplication = pgTable(
-	'RoleApplication',
+export const roleApplication = snakeCase.table(
+	'role_application',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		nationId: text().references(() => nation.alpha3Code, {
 			onDelete: 'set null',
 			onUpdate: 'cascade'
@@ -754,26 +645,20 @@ export const roleApplication = pgTable(
 		rank: integer().notNull(),
 		delegationId: text()
 			.notNull()
-			.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+			.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('RoleApplication_delegationId_nationId_key').using(
+		uniqueIndex('role_application_delegation_id_nation_id_key').using(
 			'btree',
 			table.delegationId.asc().nullsLast(),
 			table.nationId.asc().nullsLast()
 		),
-		uniqueIndex('RoleApplication_delegationId_nonStateActorId_key').using(
+		uniqueIndex('role_application_delegation_id_non_state_actor_id_key').using(
 			'btree',
 			table.delegationId.asc().nullsLast(),
 			table.nonStateActorId.asc().nullsLast()
 		),
-		uniqueIndex('RoleApplication_delegationId_rank_key').using(
+		uniqueIndex('role_application_delegation_id_rank_key').using(
 			'btree',
 			table.delegationId.asc().nullsLast(),
 			table.rank.asc().nullsLast()
@@ -781,10 +666,10 @@ export const roleApplication = pgTable(
 	]
 );
 
-export const singleParticipant = pgTable(
-	'SingleParticipant',
+export const singleParticipant = snakeCase.table(
+	'single_participant',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -799,16 +684,10 @@ export const singleParticipant = pgTable(
 			onDelete: 'set null',
 			onUpdate: 'cascade'
 		}),
-		assignmentDetails: text(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		assignmentDetails: text()
 	},
 	(table) => [
-		uniqueIndex('SingleParticipant_conferenceId_userId_key').using(
+		uniqueIndex('single_participant_conference_id_user_id_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
@@ -816,10 +695,10 @@ export const singleParticipant = pgTable(
 	]
 );
 
-export const surveyAnswer = pgTable(
-	'SurveyAnswer',
+export const surveyAnswer = snakeCase.table(
+	'survey_answer',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		questionId: text()
 			.notNull()
 			.references(() => surveyQuestion.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -828,16 +707,10 @@ export const surveyAnswer = pgTable(
 			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 		optionId: text()
 			.notNull()
-			.references(() => surveyOption.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+			.references(() => surveyOption.id, { onDelete: 'restrict', onUpdate: 'cascade' })
 	},
 	(table) => [
-		uniqueIndex('SurveyAnswer_questionId_userId_key').using(
+		uniqueIndex('survey_answer_question_id_user_id_key').using(
 			'btree',
 			table.questionId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
@@ -845,25 +718,19 @@ export const surveyAnswer = pgTable(
 	]
 );
 
-export const surveyOption = pgTable(
-	'SurveyOption',
+export const surveyOption = snakeCase.table(
+	'survey_option',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		questionId: text()
 			.notNull()
 			.references(() => surveyQuestion.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 		title: text().notNull(),
 		description: text().notNull(),
-		upperLimit: integer().notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		upperLimit: integer().notNull()
 	},
 	(table) => [
-		uniqueIndex('SurveyOption_questionId_title_key').using(
+		uniqueIndex('survey_option_question_id_title_key').using(
 			'btree',
 			table.questionId.asc().nullsLast(),
 			table.title.asc().nullsLast()
@@ -871,28 +738,22 @@ export const surveyOption = pgTable(
 	]
 );
 
-export const surveyQuestion = pgTable(
-	'SurveyQuestion',
+export const surveyQuestion = snakeCase.table(
+	'survey_question',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 		title: text().notNull(),
 		description: text().notNull(),
 		deadline: timestamp({ precision: 3 }).notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		draft: boolean().default(true).notNull(),
 		hidden: boolean().default(false).notNull(),
 		showSelectionOnDashboard: boolean().default(false).notNull()
 	},
 	(table) => [
-		uniqueIndex('SurveyQuestion_conferenceId_title_key').using(
+		uniqueIndex('survey_question_conference_id_title_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.title.asc().nullsLast()
@@ -900,26 +761,20 @@ export const surveyQuestion = pgTable(
 	]
 );
 
-export const teamMember = pgTable(
-	'TeamMember',
+export const teamMember = snakeCase.table(
+	'team_member',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
 		userId: text()
 			.notNull()
 			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		role: teamRole().default('MEMBER').notNull(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		role: teamRole().default('MEMBER').notNull()
 	},
 	(table) => [
-		uniqueIndex('TeamMember_conferenceId_userId_key').using(
+		uniqueIndex('team_member_conference_id_user_id_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()
@@ -927,10 +782,10 @@ export const teamMember = pgTable(
 	]
 );
 
-export const teamMemberInvitation = pgTable(
-	'TeamMemberInvitation',
+export const teamMemberInvitation = snakeCase.table(
+	'team_member_invitation',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		email: text().notNull(),
 		role: teamRole().notNull(),
 		token: text().notNull(),
@@ -943,36 +798,30 @@ export const teamMemberInvitation = pgTable(
 		invitedById: text()
 			.notNull()
 			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		acceptedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull()
+		acceptedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' })
 	},
 	(table) => [
-		index('TeamMemberInvitation_conferenceId_email_idx').using(
+		index('team_member_invitation_conference_id_email_idx').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.email.asc().nullsLast()
 		),
-		uniqueIndex('TeamMemberInvitation_conferenceId_email_pending_key')
+		uniqueIndex('team_member_invitation_conference_id_email_pending_key')
 			.using('btree', table.conferenceId.asc().nullsLast(), table.email.asc().nullsLast())
 			.where(sql`(("usedAt" IS NULL) AND ("revokedAt" IS NULL))`),
-		index('TeamMemberInvitation_conferenceId_idx').using(
+		index('team_member_invitation_conference_id_idx').using(
 			'btree',
 			table.conferenceId.asc().nullsLast()
 		),
-		index('TeamMemberInvitation_token_idx').using('btree', table.token.asc().nullsLast()),
-		uniqueIndex('TeamMemberInvitation_token_key').using('btree', table.token.asc().nullsLast())
+		index('team_member_invitation_token_idx').using('btree', table.token.asc().nullsLast()),
+		uniqueIndex('team_member_invitation_token_key').using('btree', table.token.asc().nullsLast())
 	]
 );
 
-export const user = pgTable(
-	'User',
+export const user = snakeCase.table(
+	'user',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
 		email: text().notNull(),
 		familyName: text('family_name').notNull(),
 		givenName: text('given_name').notNull(),
@@ -990,38 +839,29 @@ export const user = pgTable(
 		wantsToReceiveGeneralInformation: boolean().default(false).notNull(),
 		wantsJoinTeamInformation: boolean().default(false).notNull(),
 		gender: gender(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		emergencyContacts: text(),
 		globalNotes: text()
 	},
-	(table) => [uniqueIndex('User_email_key').using('btree', table.email.asc().nullsLast())]
+	(table) => [uniqueIndex('user_email_key').using('btree', table.email.asc().nullsLast())]
 );
 
-export const userReferenceInPaymentTransaction = pgTable('UserReferenceInPaymentTransaction', {
-	id: text().primaryKey(),
-	paymentTransactionId: text()
-		.notNull()
-		.references(() => paymentTransaction.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-	userId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-	createdAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: timestamp({ precision: 3 })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull()
-});
-
-export const waitingListEntry = pgTable(
-	'WaitingListEntry',
+export const userReferenceInPaymentTransaction = snakeCase.table(
+	'user_reference_in_payment_transaction',
 	{
-		id: text().primaryKey(),
+		...defaultIdAndTimestamps,
+		paymentTransactionId: text()
+			.notNull()
+			.references(() => paymentTransaction.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' })
+	}
+);
+
+export const waitingListEntry = snakeCase.table(
+	'waiting_list_entry',
+	{
+		...defaultIdAndTimestamps,
 		conferenceId: text()
 			.notNull()
 			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -1032,17 +872,11 @@ export const waitingListEntry = pgTable(
 		experience: text().notNull(),
 		motivation: text().notNull(),
 		requests: text(),
-		createdAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
-		updatedAt: timestamp({ precision: 3 })
-			.default(sql`CURRENT_TIMESTAMP`)
-			.notNull(),
 		assigned: boolean().default(false).notNull(),
 		hidden: boolean().default(false).notNull()
 	},
 	(table) => [
-		uniqueIndex('WaitingListEntry_conferenceId_userId_key').using(
+		uniqueIndex('waiting_list_entry_conference_id_user_id_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.userId.asc().nullsLast()

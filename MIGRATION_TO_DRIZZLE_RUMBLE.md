@@ -337,14 +337,52 @@ What introspection handled better than this plan assumed:
   arguments (`pgTable('Conference', …)`, `text('A')`). So the code reads like chase even though
   the physical names do not match it.
 
-**Physical naming: deliberately NOT aligned with chase.** Chase uses `casing: 'snake_case'` and
-`snakeCase.table(...)` over snake_case tables and columns. This database is Prisma's default —
-**PascalCase tables, camelCase columns** — and matching chase would mean renaming 34 tables and
-314 columns in production. That is a destructive migration with downtime and no functional
-benefit, so `drizzle.config.ts` here omits `casing` and `schema.ts` uses `pgTable` with explicit
-names. The alignment that matters (file layout, relational API, handler shape) is unaffected.
+**Physical naming: aligned with chase after all** (decided 2026-09-25, overriding the initial
+recommendation to leave it). `schema.ts` now uses `snakeCase.table(...)` with snake_case table
+names and no explicit column names, `drizzle.config.ts` sets `casing: 'snake_case'`, and enum
+types are snake_case — identical in shape to chase.
 
-Shared column helpers, mirroring chase's, cover the schema cleanly:
+The rename is carried by `drizzle/20260924225440_snake_case_alignment`: **279 statements, every
+one an `ALTER ... RENAME`, zero `DROP`/`CREATE`.** No table is recreated and no row is touched.
+
+Getting drizzle-kit to emit renames rather than drop/create needs explicit hints — left to its
+own devices in a non-interactive run it silently plans to recreate everything, which on a real
+database means total data loss. Always inspect the plan with `--explain` before writing a
+migration. The hint shape is:
+
+```json
+{
+	"from": ["public", "<old>"],
+	"kind": "table|column|enum|index|primary_key",
+	"to": ["public", "<new>"],
+	"type": "rename"
+}
+```
+
+309 hints were generated mechanically rather than by hand: old names came from the baseline
+snapshot's `ddl` array, new names from `getTableConfig()` on the compiled schema (drizzle's own
+resolution, so the mapping is authoritative rather than a guess at its casing rules), joined on
+a canonical form — lowercase with underscores stripped, under which `DelegationMember` and
+`delegation_member` collide by construction. Zero unmatched.
+
+**One name had to be shortened by hand.** The derived
+`conference_participant_status_conference_id_assigend_document_nu_key` is 67 characters;
+Postgres truncates identifiers at 63, so the database and `schema.ts` would have disagreed
+forever. It is `conference_participant_status_conference_id_doc_number_key` (58) instead. Worth
+checking for whenever a table with a long name gains a multi-column index.
+
+**Both deployment paths verified against real databases:**
+
+| Path                                                 | Result                                                   |
+| ---------------------------------------------------- | -------------------------------------------------------- |
+| existing DB: 77 Prisma migrations → rename migration | drift check emits only `DROP TABLE "_prisma_migrations"` |
+| fresh DB: `drizzle-kit migrate` (baseline → rename)  | `No changes detected`                                    |
+
+Constraint names not managed by drizzle (the 30 `"<Table>_pkey"` constraints on tables that
+declare `.primaryKey()` inline rather than by name) keep their old PascalCase names in the
+database. Drizzle does not track them, so they cause no drift; they are cosmetic only.
+
+Shared column helpers, mirroring chase's, now cover all 30 tables:
 
 | Helper                   | Tables | Notes                                                                 |
 | ------------------------ | ------ | --------------------------------------------------------------------- |
@@ -359,9 +397,17 @@ silently — inserts failing on a missing id, and `updatedAt` frozen at its inse
 - `@updatedAt` → `.$onUpdate(() => new Date())` (28 tables)
 
 Neither emits DDL, so the drift check stays clean either way — which is exactly why they are
-easy to miss. `nanoid` is the package default (21 chars, default alphabet) to stay consistent
-with ids already in the database, deliberately **not** chase's 30-char no-look-alike alphabet,
-which would fragment the id space.
+easy to miss. They _were_ missed on the first pass: the transformation that inserted the helpers
+silently matched nothing for every table written in the three-argument
+`pgTable(name, columns, indexes)` form, and the run reported success because it counted
+classified tables rather than actual replacements. Roughly 28 tables shipped without their id
+default and `updatedAt` trigger, and every check — drift, typecheck, tests — stayed green.
+Verify this kind of edit by grepping the result, never by trusting the script's own tally. Ids use **chase's generator**, copied verbatim to `src/lib/helpers/nanoid.ts`
+(30 chars, no-look-alike alphabet, plus `isValidNanoid`/`nanoidValidation` which Phase D needs
+for `t.arg.id().validate(...)`). Rows created before this change keep their 21-char Prisma-era
+ids; both are opaque text, so the two formats coexist permanently. `schema.ts` imports it by
+relative path rather than the `$lib` alias because drizzle-kit loads the file outside Vite —
+chase does the same.
 
 Added scripts: `db:generate`, `db:migrate`, `db:push`, `db:studio` (chase's names). Prisma's
 `studio` script stays until Phase F. `drizzle/**/snapshot.json` added to `.prettierignore`
