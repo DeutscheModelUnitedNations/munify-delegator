@@ -1,11 +1,9 @@
 <script lang="ts">
 	import formatNames from '$lib/helpers/formatNames';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-	import type { User } from '@prisma/client';
-
 	interface Props {
 		headline: string;
-		items: Pick<User, 'family_name' | 'given_name' | 'id'>[];
+		items: { id: string; givenName: string | null; familyName: string | null }[];
 		conferenceId: string;
 	}
 
@@ -20,7 +18,7 @@
 				<tbody>
 					{#each items as user}
 						<tr>
-							<td>{formatNames(user.given_name, user.family_name)}</td>
+							<td>{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}</td>
 							<td>
 								<button
 									class="btn btn-sm"

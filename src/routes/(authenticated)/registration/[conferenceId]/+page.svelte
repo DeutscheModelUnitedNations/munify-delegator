@@ -9,39 +9,23 @@
 	import UndrawLetter from '$assets/undraw/letter.svg';
 	import UndrawEducator from '$assets/undraw/educator.svg';
 
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let conferenceQuery = $derived(data.ConferenceRegistrationQuery);
-
 	let showAssistant = $state(false);
 
-	let alreadyRegistered = $derived.by(() => {
-		if (!$conferenceQuery?.data?.findManySingleParticipants) return false;
-		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
-		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
-		if ($conferenceQuery.data.findManySingleParticipants.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyConferenceSupervisors.length > 0) {
-			return true;
-		}
-	});
+	// Any existing registration in this conference, in any role, closes the flow.
+	let alreadyRegistered = $derived(
+		data.singleParticipants.length > 0 ||
+			data.delegationMembers.length > 0 ||
+			data.supervisors.length > 0
+	);
 
-	let individualBlocked = $derived.by(() => {
-		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
-		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
-		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyConferenceSupervisors.length > 0) {
-			return true;
-		}
-	});
+	// Delegates and supervisors cannot also register as individuals.
+	let individualBlocked = $derived(
+		data.delegationMembers.length > 0 || data.supervisors.length > 0
+	);
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">

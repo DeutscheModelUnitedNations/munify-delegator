@@ -1,43 +1,36 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import type { PageServerLoad } from './$types';
 
-const SurveyResultsQuery = graphql(`
-	query SurveyResultsMainPage($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			timezone
-		}
-		findManySurveyQuestions(
-			where: { conferenceId: { equals: $conferenceId } }
-			orderBy: { createdAt: desc }
-		) {
-			id
-			title
-			description
-			deadline
-			draft
-			hidden
-			showSelectionOnDashboard
-			options {
-				id
-				title
-				description
-				countSurveyAnswers
-				upperLimit
-			}
-		}
-	}
-`);
-
 export const load: PageServerLoad = async (event) => {
-	const { data } = await SurveyResultsQuery.fetch({
-		event,
-		variables: { conferenceId: event.params.conferenceId },
-		blocking: true
-	});
+	const conferenceId = event.params.conferenceId;
+
+	const [conference, surveys] = await Promise.all([
+		client.query.conference({ __args: { id: conferenceId }, timezone: true }),
+		client.query.surveyQuestions({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { createdAt: 'desc' }
+			},
+			id: true,
+			title: true,
+			description: true,
+			deadline: true,
+			draft: true,
+			hidden: true,
+			showSelectionOnDashboard: true,
+			options: {
+				id: true,
+				title: true,
+				description: true,
+				countSurveyAnswers: true,
+				upperLimit: true
+			}
+		})
+	]);
 
 	return {
-		surveys: data?.findManySurveyQuestions ?? [],
-		conferenceId: event.params.conferenceId,
-		conferenceTimezone: data?.findUniqueConference?.timezone ?? 'UTC'
+		surveys,
+		conferenceId,
+		conferenceTimezone: conference?.timezone ?? 'UTC'
 	};
 };

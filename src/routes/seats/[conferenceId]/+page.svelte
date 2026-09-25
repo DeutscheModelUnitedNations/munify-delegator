@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
 	import { getUniqueNations } from '$lib/helpers/getUniqueNations';
@@ -8,8 +8,7 @@
 	import { dev } from '$app/environment';
 
 	let { data }: { data: PageData } = $props();
-	const conferenceQuery = $derived(data.SeatsOfConferenceQuery);
-	const conference = $derived($conferenceQuery.data.findUniqueConference);
+	const conference = $derived(data.conference);
 	const { nonStateActors: nonStateActorPool, committees } = $derived(conference);
 
 	const nationPool = $derived(getUniqueNations(committees));

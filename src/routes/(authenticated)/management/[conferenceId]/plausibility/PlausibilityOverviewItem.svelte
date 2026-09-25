@@ -1,9 +1,7 @@
 <script lang="ts">
-	import type { User } from '@prisma/client';
-
 	interface Props {
 		headline: string;
-		items: Partial<User>[];
+		items: { id: string }[];
 	}
 
 	let { headline, items }: Props = $props();

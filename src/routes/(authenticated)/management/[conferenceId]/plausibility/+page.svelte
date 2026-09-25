@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { error } from '@sveltejs/kit';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';
 	import PlausibilityOverviewItem from './PlausibilityOverviewItem.svelte';
 
@@ -10,8 +10,7 @@
 	}
 
 	let { data }: Props = $props();
-	let plausibilityQuery = $derived(data.PlausibilityQuery);
-	let plausibility = $derived($plausibilityQuery.data?.conferencePlausibility);
+	let plausibility = $derived(data.plausibility);
 
 	if (!plausibility) {
 		error(404, 'Could not find plausibility data');

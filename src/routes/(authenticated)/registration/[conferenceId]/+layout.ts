@@ -1,34 +1,21 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import { getRegistrationStatus } from '$lib/utils/registrationStatus';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 
-const ConferenceStatusQuery = graphql(`
-	query ConferenceStatusQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			state
-			startAssignment
-		}
-	}
-`);
-
+/** Guards the registration flow: it only exists while registration is actually open. */
 export const load: LayoutLoad = async (event) => {
-	const conferenceStatusQueryResult = await ConferenceStatusQuery.fetch({
-		event,
-		variables: { conferenceId: event.params.conferenceId },
-		blocking: true
+	const conference = await client.query.conference({
+		__args: { id: event.params.conferenceId },
+		state: true,
+		startAssignment: true
 	});
 
-	if (!conferenceStatusQueryResult.data?.findUniqueConference) {
+	if (!conference) {
 		redirect(307, '/registration');
 	}
 
-	switch (
-		getRegistrationStatus(
-			conferenceStatusQueryResult.data.findUniqueConference.state,
-			new Date(conferenceStatusQueryResult.data.findUniqueConference.startAssignment)
-		)
-	) {
+	switch (getRegistrationStatus(conference.state, new Date(conference.startAssignment))) {
 		case 'CLOSED':
 		case 'NOT_YET_OPEN':
 		case 'UNKNOWN':

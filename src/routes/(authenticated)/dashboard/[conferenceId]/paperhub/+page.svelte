@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import PaperEnum from '$lib/components/paper/paperEnum';
 	import { type PaperType$options } from '$houdini';
 	import PaperHubOverview from './PaperHubOverview.svelte';
@@ -10,8 +10,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let paperQuery = $derived(data.GetMyPapersQuery);
-	let paperQueryData = $derived($paperQuery?.data?.findManyPapers);
+	let paperQueryData = $derived(data.myPapers);
 
 	// Check if user is team member with review access (data comes from layout load)
 	let isTeamMember = $derived((data.teamMembers?.length ?? 0) > 0);

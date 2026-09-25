@@ -1,38 +1,17 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query PlausibilityQuery($conferenceId: String!) {
-		conferencePlausibility(conferenceId: $conferenceId) {
-			dataMissing {
-				id
-				given_name
-				family_name
-			}
-			shouldBeSupervisor {
-				id
-				family_name
-				given_name
-			}
-			shouldNotBeSupervisor {
-				id
-				family_name
-				given_name
-			}
-			tooOldUsers {
-				id
-				family_name
-				given_name
-			}
-			tooYoungUsers {
-				id
-				family_name
-				given_name
-			}
-		}
-	}
-`);
+const userSummary = { id: true, givenName: true, familyName: true } as const;
 
-export const _PlausibilityQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	return {
+		plausibility: await client.query.conferencePlausibility({
+			__args: { conferenceId: event.params.conferenceId },
+			dataMissing: userSummary,
+			shouldBeSupervisor: userSummary,
+			shouldNotBeSupervisor: userSummary,
+			tooOldUsers: userSummary,
+			tooYoungUsers: userSummary
+		})
+	};
 };

@@ -1,36 +1,28 @@
-import { graphql } from '$houdini';
-import type { GetMyPapersQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query GetMyPapersQuery($userId: String!, $conferenceId: String!) {
-		findManyPapers(
-			where: { authorId: { equals: $userId }, conferenceId: { equals: $conferenceId } }
-		) {
-			id
-			status
-			type
-			createdAt
-			updatedAt
-			firstSubmittedAt
-
-			agendaItem {
-				id
-				title
-				committee {
-					id
-					abbreviation
-				}
-			}
-		}
-	}
-`);
-
-export const _GetMyPapersQueryVariables: GetMyPapersQueryVariables = async (event) => {
+export const load: PageLoad = async (event) => {
 	const { user } = await event.parent();
-	const conferenceId = event.params.conferenceId;
 
 	return {
-		userId: user.sub,
-		conferenceId
+		myPapers: await client.query.papers({
+			__args: {
+				where: {
+					authorId: { eq: user.sub },
+					conferenceId: { eq: event.params.conferenceId }
+				}
+			},
+			id: true,
+			status: true,
+			type: true,
+			createdAt: true,
+			updatedAt: true,
+			firstSubmittedAt: true,
+			agendaItem: {
+				id: true,
+				title: true,
+				committee: { id: true, abbreviation: true }
+			}
+		})
 	};
 };

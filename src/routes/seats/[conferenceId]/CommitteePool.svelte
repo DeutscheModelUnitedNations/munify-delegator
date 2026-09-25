@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { SeatsOfConferenceQuery$result } from '$houdini';
+	import type { PageData } from './$types';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
-		committees: NonNullable<SeatsOfConferenceQuery$result['findUniqueConference']>['committees'];
+		committees: PageData['conference']['committees'];
 	}
 
 	let { committees }: Props = $props();
