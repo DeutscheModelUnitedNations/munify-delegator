@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import formatNames from '$lib/helpers/formatNames';
 
@@ -11,8 +11,8 @@
 		occasion: string;
 		recordedBy: {
 			id: string;
-			given_name: string;
-			family_name: string;
+			givenName: string | null;
+			familyName: string | null;
 		};
 	}
 
@@ -27,29 +27,12 @@
 
 	let occasion = $state('');
 
-	const createAttendanceEntryMutation = graphql(`
-		mutation createAttendanceEntry($userId: String!, $conferenceId: String!, $occasion: String!) {
-			createOneAttendanceEntry(userId: $userId, conferenceId: $conferenceId, occasion: $occasion) {
-				id
-			}
-		}
-	`);
-
-	const deleteAttendanceEntryMutation = graphql(`
-		mutation deleteAttendanceEntry($id: String!) {
-			deleteOneAttendanceEntry(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
 	const createEntry = async () => {
 		if (!occasion.trim()) return;
 
-		const promise = createAttendanceEntryMutation.mutate({
-			userId,
-			conferenceId,
-			occasion: occasion.trim()
+		const promise = client.mutate.createAttendanceEntry({
+			__args: { userId, conferenceId, occasion: occasion.trim() },
+			id: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
@@ -67,9 +50,7 @@
 	const deleteEntry = async (id: string) => {
 		if (!confirm(m.deleteAttendanceEntryConfirm())) return;
 
-		const promise = deleteAttendanceEntryMutation.mutate({
-			id
-		});
+		const promise = Promise.resolve(client.mutate.deleteAttendanceEntry({ __args: { id } }));
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
 			success: m.genericToastSuccess(),
@@ -132,9 +113,11 @@
 							<td>
 								<div>{entry.occasion}</div>
 								<div class="text-base-content/50 text-xs">
-									{formatNames(entry.recordedBy.given_name, entry.recordedBy.family_name, {
-										givenNameFirst: true
-									})}
+									{formatNames(
+										entry.recordedBy.givenName ?? undefined,
+										entry.recordedBy.familyName ?? undefined,
+										{ givenNameFirst: true }
+									)}
 								</div>
 							</td>
 							<td class="text-right text-xs whitespace-nowrap">

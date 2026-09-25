@@ -1,20 +1,13 @@
-import { graphql } from '$houdini';
-import type { PostalRegistrationPageQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query PostalRegistrationPageQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			id
-			startConference
-			nextDocumentNumber
-		}
-	}
-`);
-
-export const _PostalRegistrationPageQueryVariables: PostalRegistrationPageQueryVariables = async (
-	event
-) => {
+export const load: PageLoad = async (event) => {
 	return {
-		conferenceId: event.params.conferenceId
+		conference: await client.query.conference({
+			__args: { id: event.params.conferenceId },
+			id: true,
+			startConference: true,
+			nextDocumentNumber: true
+		})
 	};
 };

@@ -1,19 +1,13 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import {
-		cache,
-		graphql,
-		type MediaConsentStatus$options,
-		type UpdateConferenceParticipantStatusInput
-	} from '$houdini';
+	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
-	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import GlobalNotes from './GlobalNotes.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import {
@@ -22,9 +16,7 @@
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/utils/pdfGenerator';
-	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
 	import { toast } from 'svelte-sonner';
-	import { certificateQuery } from '$lib/queries/certificateQuery';
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
 	import { invalidateAll } from '$app/navigation';
@@ -46,204 +38,182 @@
 	let assignedDocumentNumber = $state<number>();
 
 	$effect(() => {
-		if ($userQuery.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber) {
-			assignedDocumentNumber =
-				$userQuery.data?.findUniqueConferenceParticipantStatus?.assignedDocumentNumber;
+		if (userQuery?.status?.assignedDocumentNumber) {
+			assignedDocumentNumber = userQuery.status.assignedDocumentNumber;
 		}
 	});
 
 	let assignSupervisorModalOpen = $state(false);
 
-	const userQuery = graphql(`
-		query UserDrawerQuery($userId: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $userId }) {
-				id
-				given_name
-				family_name
-				birthday
-				pronouns
-				phone
-				email
-				street
-				apartment
-				zip
-				city
-				country
-				foodPreference
-				emergencyContacts
-				gender
-				globalNotes
-				conferenceParticipationsCount
-			}
-			findManyDelegationMembers(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
+	/** Everything the participant drawer shows, in one place. */
+	async function fetchUserData(userId: string, conferenceId: string) {
+		const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: userId } };
+
+		const [
+			user,
+			delegationMembers,
+			supervisors,
+			singleParticipants,
+			statuses,
+			surveyAnswers,
+			surveys,
+			conference
+		] = await Promise.all([
+			client.query.user({
+				__args: { id: userId },
+				id: true,
+				givenName: true,
+				familyName: true,
+				birthday: true,
+				pronouns: true,
+				phone: true,
+				email: true,
+				street: true,
+				apartment: true,
+				zip: true,
+				city: true,
+				country: true,
+				foodPreference: true,
+				emergencyContacts: true,
+				gender: true,
+				globalNotes: true,
+				conferenceParticipationsCount: true
+			}),
+			client.query.delegationMembers({
+				__args: { where: forUser },
+				delegation: {
+					id: true,
+					assignedNation: { alpha2Code: true, alpha3Code: true }
+				},
+				assignedCommittee: { abbreviation: true }
+			}),
+			client.query.conferenceSupervisors({ __args: { where: forUser }, id: true }),
+			client.query.singleParticipants({ __args: { where: forUser }, id: true }),
+			client.query.conferenceParticipantStatuses({
+				__args: { where: forUser },
+				id: true,
+				termsAndConditions: true,
+				guardianConsent: true,
+				mediaConsent: true,
+				mediaConsentStatus: true,
+				paymentStatus: true,
+				didAttend: true,
+				assignedDocumentNumber: true,
+				accessCardId: true,
+				attendanceEntries: {
+					id: true,
+					timestamp: true,
+					occasion: true,
+					recordedBy: { id: true, givenName: true, familyName: true }
+				}
+			}),
+			client.query.surveyAnswers({
+				__args: {
+					where: {
+						userId: { eq: userId },
+						question: { conferenceId: { eq: conferenceId } }
 					}
-				}
-				assignedCommittee {
-					abbreviation
-				}
-			}
-			findManyConferenceSupervisors(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-			}
-			findManySingleParticipants(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-			}
-			findUniqueConferenceParticipantStatus(
-				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
-			) {
-				id
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-				mediaConsentStatus
-				paymentStatus
-				didAttend
-				assignedDocumentNumber
-				accessCardId
-				attendanceEntries {
-					id
-					timestamp
-					occasion
-					recordedBy {
-						id
-						given_name
-						family_name
-					}
-				}
-			}
-			findManySurveyAnswers(
-				where: {
-					userId: { equals: $userId }
-					question: { conferenceId: { equals: $conferenceId } }
-				}
-			) {
-				id
-				question {
-					id
-					title
-				}
-				option {
-					id
-					title
-				}
-			}
-			findManySurveyQuestions(
-				where: { conferenceId: { equals: $conferenceId }, hidden: { equals: false } }
-			) {
-				id
-				title
-				options {
-					id
-					title
-					countSurveyAnswers
-					upperLimit
-				}
-			}
-			findUniqueConference(where: { id: $conferenceId }) {
-				startConference
-				postalName
-				postalStreet
-				postalApartment
-				postalZip
-				postalCity
-				postalCountry
-				nextDocumentNumber
-			}
+				},
+				id: true,
+				question: { id: true, title: true },
+				option: { id: true, title: true }
+			}),
+			client.query.surveyQuestions({
+				__args: {
+					where: { conferenceId: { eq: conferenceId }, hidden: { eq: false } }
+				},
+				id: true,
+				title: true,
+				options: { id: true, title: true, countSurveyAnswers: true, upperLimit: true }
+			}),
+			client.query.conference({
+				__args: { id: conferenceId },
+				startConference: true,
+				postalName: true,
+				postalStreet: true,
+				postalApartment: true,
+				postalZip: true,
+				postalCity: true,
+				postalCountry: true,
+				nextDocumentNumber: true
+			})
+		]);
+
+		return {
+			user,
+			delegationMembers,
+			supervisors,
+			singleParticipants,
+			status: statuses.at(0) ?? null,
+			surveyAnswers,
+			surveys,
+			conference
+		};
+	}
+
+	let userQuery = $state<Awaited<ReturnType<typeof fetchUserData>>>();
+	let userQueryLoading = $state(false);
+
+	async function loadUserData() {
+		userQueryLoading = true;
+		try {
+			userQuery = await fetchUserData(userId, conferenceId);
+		} finally {
+			userQueryLoading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		userQuery.fetch({
-			variables: {
-				userId,
-				conferenceId
-			}
-		});
+		// Referenced so the effect re-runs when the drawer is pointed at someone else.
+		void userId;
+		void conferenceId;
+		void loadUserData();
 	});
 
-	const supervisorListQuery = graphql(`
-		query ListSupervisors($conferenceId: String!) {
-			findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
-				id
-				connectionCode
-				user {
-					id
-					given_name
-					family_name
-				}
-			}
-		}
-	`);
+	/** Every supervisor of the conference, for the "assign a supervisor" picker. */
+	function fetchSupervisorList() {
+		return client.query.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			connectionCode: true,
+			user: { id: true, givenName: true, familyName: true }
+		});
+	}
 
-	let status = $derived($userQuery?.data?.findUniqueConferenceParticipantStatus);
-	let surveys = $derived($userQuery?.data?.findManySurveyQuestions);
-	let surveyAnswers = $derived($userQuery?.data?.findManySurveyAnswers);
-	let user = $derived($userQuery?.data?.findUniqueUser);
-	let ofAge = $derived(
-		ofAgeAtConference($userQuery?.data?.findUniqueConference?.startConference, user?.birthday)
-	);
+	let supervisorList = $state<Awaited<ReturnType<typeof fetchSupervisorList>>>();
+	let supervisorListLoading = $state(false);
+
+	let status = $derived(userQuery?.status);
+	let surveys = $derived(userQuery?.surveys);
+	let surveyAnswers = $derived(userQuery?.surveyAnswers);
+	let user = $derived(userQuery?.user);
+	let ofAge = $derived(ofAgeAtConference(userQuery?.conference?.startConference, user?.birthday));
 
 	let loadingDownloadPostalDocuments = $state(false);
 	let loadingDownloadCertificate = $state(false);
 
-	const changeAdministrativeStatus = async (data: UpdateConferenceParticipantStatusInput) => {
-		await changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId: conferenceId, userId: userId },
-			data
+	/** The mutation's own argument type minus the identifying fields this drawer fills in. */
+	type StatusChange = Omit<
+		Parameters<Mutation['updateConferenceParticipantStatus']>[0],
+		'conferenceId' | 'id' | 'userId'
+	>;
+
+	const changeAdministrativeStatus = async (change: StatusChange) => {
+		await client.mutate.updateConferenceParticipantStatus({
+			__args: { ...change, id: status?.id, conferenceId, userId },
+			id: true
 		});
-		cache.markStale();
-		userQuery.fetch();
+		await loadUserData();
 	};
 
-	const changeMediaConsentStatus = async (data: MediaConsentStatus$options) => {
-		await changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId: conferenceId, userId: user?.id },
-			data: { mediaConsentStatus: data }
-		});
-		cache.markStale();
-		userQuery.fetch();
+	const changeMediaConsentStatus = async (mediaConsentStatus: MediaconsentstatusEnum) => {
+		await changeAdministrativeStatus({ mediaConsentStatus });
 	};
-
-	const deleteParticipantQuery = graphql(`
-		mutation deleteParticipantMutation($userId: ID!, $conferenceId: ID!) {
-			unregisterParticipant(userId: $userId, conferenceId: $conferenceId) {
-				id
-			}
-		}
-	`);
-
-	const assignSupervisorMutation = graphql(`
-		mutation assignSupervisorAsManagementMutation(
-			$conferenceId: ID!
-			$userId: ID!
-			$connectionCode: String!
-		) {
-			connectToConferenceSupervisor(
-				conferenceId: $conferenceId
-				userId: $userId
-				connectionCode: $connectionCode
-			) {
-				id
-			}
-		}
-	`);
 
 	const assigneSupervisor = async (connectionCode: string) => {
-		const promise = assignSupervisorMutation.mutate({
-			conferenceId,
-			userId,
-			connectionCode
+		const promise = client.mutate.connectToConferenceSupervisor({
+			__args: { conferenceId, userId, connectionCode },
+			id: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
@@ -252,16 +222,15 @@
 		});
 		await promise;
 		assignSupervisorModalOpen = false;
-		cache.markStale();
 		await invalidateAll();
 	};
 
 	const deleteParticipant = async () => {
 		const c = confirm(m.deleteParticipantConfirm());
 		if (!c) return;
-		await deleteParticipantQuery.mutate({
-			userId: user?.id ?? '',
-			conferenceId
+		await client.mutate.unregisterParticipant({
+			__args: { userId: user?.id ?? '', conferenceId },
+			id: true
 		});
 		if (onClose) {
 			onClose();
@@ -271,17 +240,16 @@
 	const downloadPostalDocuments = async () => {
 		loadingDownloadPostalDocuments = true;
 		try {
-			const conference = $userQuery?.data?.findUniqueConference;
+			const conference = userQuery?.conference;
 
-			const baseContent = await getBaseDocumentsForPostal.fetch({
-				variables: {
-					conferenceId
-				}
+			const baseContent = await client.query.conference({
+				__args: { id: conferenceId },
+				id: true,
+				contractContent: true,
+				guardianConsentContent: true,
+				mediaConsentContent: true,
+				termsAndConditionsContent: true
 			});
-
-			if (baseContent.errors) {
-				toast.error(m.httpGenericError());
-			}
 
 			if (
 				!conference?.postalName ||
@@ -305,12 +273,12 @@
 
 				const participantData: ParticipantData = {
 					id: user.id,
-					name: formatNames(user.given_name, user.family_name, {
+					name: formatNames(user.givenName, user.familyName, {
 						givenNameFirst: true,
 						familyNameUppercase: true,
 						givenNameUppercase: true
 					}),
-					address: `${$userQuery.data?.findUniqueUser?.street} ${$userQuery.data?.findUniqueUser?.apartment ? $userQuery.data?.findUniqueUser?.apartment : ''}, ${$userQuery.data?.findUniqueUser?.zip} ${$userQuery.data?.findUniqueUser?.city}, ${$userQuery.data?.findUniqueUser?.country}`,
+					address: `${user.street} ${user.apartment ? user.apartment : ''}, ${user.zip} ${user.city}, ${user.country}`,
 					birthday: user.birthday?.toLocaleDateString() ?? ''
 				};
 
@@ -318,11 +286,11 @@
 					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
 					participantData,
 					recipientData,
-					baseContent.data?.findUniqueConference?.contractContent ?? undefined,
-					baseContent.data?.findUniqueConference?.guardianConsentContent ?? undefined,
-					baseContent.data?.findUniqueConference?.mediaConsentContent ?? undefined,
-					baseContent.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
-					`${formatNames(user.given_name, user.family_name, {
+					baseContent.contractContent ?? undefined,
+					baseContent.guardianConsentContent ?? undefined,
+					baseContent.mediaConsentContent ?? undefined,
+					baseContent.termsAndConditionsContent ?? undefined,
+					`${formatNames(user.givenName, user.familyName, {
 						givenNameFirst: false,
 						delimiter: '_'
 					})}_postal_registration.pdf`
@@ -340,15 +308,14 @@
 	const downloadCertificate = async () => {
 		loadingDownloadCertificate = true;
 
-		const certificateData = await certificateQuery.fetch({
-			variables: {
-				conferenceId,
-				userId: user?.id ?? ''
-			}
-		});
-
-		console.log(certificateData);
-		const jwtData = certificateData.data?.getCertificateJWT;
+		const [certificateConference, jwtData] = await Promise.all([
+			client.query.conference({ __args: { id: conferenceId }, certificateContent: true }),
+			client.query.getCertificateJWT({
+				__args: { conferenceId, userId: user?.id ?? '' },
+				jwt: true,
+				fullName: true
+			})
+		]);
 
 		if (!jwtData?.fullName || !jwtData?.jwt) {
 			toast.error(m.certificateDownloadError());
@@ -359,8 +326,8 @@
 			if (user) {
 				await downloadCompleteCertificate(
 					jwtData,
-					certificateData.data?.findUniqueConference?.certificateContent ?? undefined,
-					`${formatNames(user.given_name, user.family_name, {
+					certificateConference.certificateContent ?? undefined,
+					`${formatNames(user.givenName, user.familyName, {
 						givenNameFirst: false,
 						delimiter: '_'
 					})}_certificate.pdf`
@@ -376,22 +343,24 @@
 	};
 
 	$effect(() => {
-		if (assignSupervisorModalOpen) {
-			supervisorListQuery.fetch({ variables: { conferenceId } });
-		}
+		if (!assignSupervisorModalOpen) return;
+		supervisorListLoading = true;
+		void fetchSupervisorList()
+			.then((supervisors) => {
+				supervisorList = supervisors;
+			})
+			.finally(() => {
+				supervisorListLoading = false;
+			});
 	});
 </script>
 
 {#snippet titleSnippet()}
 	<span>
-		{formatNames(
-			$userQuery.data?.findUniqueUser?.given_name,
-			$userQuery.data?.findUniqueUser?.family_name,
-			{ givenNameFirst: false }
-		)}
+		{formatNames(user?.givenName, user?.familyName, { givenNameFirst: false })}
 	</span>
-	{#if $userQuery.data?.findUniqueUser?.pronouns}
-		<span class="text-sm font-normal">({$userQuery.data?.findUniqueUser?.pronouns})</span>
+	{#if user?.pronouns}
+		<span class="text-sm font-normal">({user?.pronouns})</span>
 	{/if}
 {/snippet}
 
@@ -401,7 +370,7 @@
 	id={userId}
 	category={m.adminUserCard()}
 	{titleSnippet}
-	loading={$userQuery.fetching}
+	loading={userQueryLoading}
 >
 	<div class="flex flex-col">
 		<h3 class="text-xl font-bold">{m.adminUserCardDetails()}</h3>
@@ -415,12 +384,11 @@
 			<tbody>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-phone text-lg"></i></td>
-					{#if $userQuery.data?.findUniqueUser?.phone}
+					{#if user?.phone}
 						<td class="font-mono">
 							<a
 								class="bg-base-300 cursor-pointer rounded-md px-2 py-1 hover:underline"
-								href={`tel:${$userQuery.data?.findUniqueUser?.phone}`}
-								>{$userQuery.data?.findUniqueUser?.phone}</a
+								href={`tel:${user?.phone}`}>{user?.phone}</a
 							>
 						</td>
 					{:else}
@@ -432,30 +400,27 @@
 					<td class="font-mono">
 						<a
 							class="bg-base-300 cursor-pointer rounded-md px-2 py-1 hover:underline"
-							href={`mailto:${$userQuery.data?.findUniqueUser?.email}`}
+							href={`mailto:${user?.email}`}
 						>
-							{$userQuery.data?.findUniqueUser?.email}
+							{user?.email}
 						</a>
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-house text-lg"></i></td>
-					{#if $userQuery.data?.findUniqueUser?.street}
+					{#if user?.street}
 						<td>
-							{$userQuery.data?.findUniqueUser?.street}
+							{user?.street}
 							<br />
-							{#if $userQuery.data?.findUniqueUser?.apartment}
-								{$userQuery.data?.findUniqueUser?.apartment}
+							{#if user?.apartment}
+								{user?.apartment}
 								<br />
 							{/if}
-							{$userQuery.data?.findUniqueUser?.zip}
-							{$userQuery.data?.findUniqueUser?.city}
+							{user?.zip}
+							{user?.city}
 							<br />
 							<span class="uppercase"
-								>{$userQuery.data?.findUniqueUser?.country &&
-								$userQuery.data?.findUniqueUser?.country !== ''
-									? $userQuery.data?.findUniqueUser?.country
-									: 'N/A'}</span
+								>{user?.country && user?.country !== '' ? user?.country : 'N/A'}</span
 							>
 						</td>
 					{:else}
@@ -464,18 +429,18 @@
 				</tr>
 				<tr>
 					<td class="text-center text-lg">
-						{#if $userQuery.data?.findUniqueUser?.gender === 'FEMALE'}
+						{#if user?.gender === 'FEMALE'}
 							<i class="fa-duotone fa-venus"></i>
-						{:else if $userQuery.data?.findUniqueUser?.gender === 'MALE'}
+						{:else if user?.gender === 'MALE'}
 							<i class="fa-duotone fa-mars"></i>
-						{:else if $userQuery.data?.findUniqueUser?.gender === 'DIVERSE'}
+						{:else if user?.gender === 'DIVERSE'}
 							<i class="fa-duotone fa-question"></i>
 						{:else}
 							<i class="fa-duotone fa-dash"></i>
 						{/if}
 					</td>
 					<td>
-						{$userQuery.data?.findUniqueUser?.pronouns}
+						{user?.pronouns}
 					</td>
 				</tr>
 				<tr>
@@ -493,13 +458,13 @@
 					{/if}
 				</tr>
 				<tr>
-					{#if $userQuery.data?.findUniqueUser?.foodPreference === 'OMNIVORE'}
+					{#if user?.foodPreference === 'OMNIVORE'}
 						<td><i class="fa-duotone fa-meat text-lg"></i></td>
 						<td>{m.omnivore()}</td>
-					{:else if $userQuery.data?.findUniqueUser?.foodPreference === 'VEGETARIAN'}
+					{:else if user?.foodPreference === 'VEGETARIAN'}
 						<td><i class="fa-duotone fa-cheese-swiss text-lg"></i></td>
 						<td>{m.vegetarian()}</td>
-					{:else if $userQuery.data?.findUniqueUser?.foodPreference === 'VEGAN'}
+					{:else if user?.foodPreference === 'VEGAN'}
 						<td><i class="fa-duotone fa-leaf text-lg"></i></td>
 						<td>{m.vegan()}</td>
 					{:else}
@@ -509,9 +474,8 @@
 				</tr>
 				<tr>
 					<td><i class="fa-duotone fa-light-emergency-on text-lg"></i></td>
-					{#if $userQuery.data?.findUniqueUser?.emergencyContacts}
-						<td class="whitespace-pre-wrap">{$userQuery.data?.findUniqueUser?.emergencyContacts}</td
-						>
+					{#if user?.emergencyContacts}
+						<td class="whitespace-pre-wrap">{user?.emergencyContacts}</td>
 					{:else}
 						<td>N/A</td>
 					{/if}
@@ -525,10 +489,10 @@
 			<h3 class="text-xl font-bold">{m.globalNotes()}</h3>
 			<p class="text-sm">{m.globalNotesDescription()}</p>
 
-			{#if $userQuery.data?.findUniqueUser?.globalNotes}
+			{#if user?.globalNotes}
 				<div class="card bg-base-200">
 					<div class="card-body whitespace-pre-wrap">
-						{$userQuery.data.findUniqueUser?.globalNotes}
+						{user?.globalNotes}
 					</div>
 				</div>
 			{/if}
@@ -538,9 +502,9 @@
 			</button>
 
 			<GlobalNotes
-				globalNotes={$userQuery.data?.findUniqueUser?.globalNotes ?? ''}
+				globalNotes={user?.globalNotes ?? ''}
 				bind:open={openGlobalNotes}
-				id={$userQuery.data?.findUniqueUser?.id}
+				id={user?.id}
 			/>
 		</div>
 	{/if}
@@ -549,29 +513,28 @@
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
 		<div class="card flex flex-col">
 			<div class="flex flex-col gap-2">
-				{#if $userQuery.data?.findManySingleParticipants && $userQuery.data?.findManySingleParticipants.length > 0 && $userQuery.data?.findManySingleParticipants[0]}
+				{#if userQuery?.singleParticipants && userQuery?.singleParticipants.length > 0 && userQuery?.singleParticipants[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/individuals?selected={$userQuery.data
-							?.findManySingleParticipants[0].id}"
+						href="/management/{conferenceId}/individuals?selected={userQuery.singleParticipants[0]
+							.id}"
 					>
 						{m.individualApplication()}
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
-				{:else if $userQuery.data?.findManyDelegationMembers && $userQuery.data?.findManyDelegationMembers.length > 0 && $userQuery.data?.findManyDelegationMembers[0]}
+				{:else if userQuery?.delegationMembers && userQuery?.delegationMembers.length > 0 && userQuery?.delegationMembers[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/delegations?selected={$userQuery.data
-							?.findManyDelegationMembers[0].delegation.id}"
+						href="/management/{conferenceId}/delegations?selected={userQuery.delegationMembers[0]
+							.delegation.id}"
 					>
 						{m.delegation()}
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
 					</a>
-				{:else if $userQuery.data?.findManyConferenceSupervisors && $userQuery.data?.findManyConferenceSupervisors.length > 0 && $userQuery.data?.findManyConferenceSupervisors[0]}
+				{:else if userQuery?.supervisors && userQuery?.supervisors.length > 0 && userQuery?.supervisors[0]}
 					<a
 						class="btn"
-						href="/management/{conferenceId}/supervisors?selected={$userQuery.data
-							?.findManyConferenceSupervisors[0].id}"
+						href="/management/{conferenceId}/supervisors?selected={userQuery.supervisors[0].id}"
 					>
 						{m.supervisor()}
 						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
@@ -594,9 +557,7 @@
 					{m.postalRegistration()}
 				</button>
 				<button
-					class="btn {(loadingDownloadCertificate ||
-						!$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend) &&
-						'btn-disabled'}"
+					class="btn {(loadingDownloadCertificate || !status?.didAttend) && 'btn-disabled'}"
 					onclick={() => downloadCertificate()}
 				>
 					<i class="fa-duotone fa-{loadingDownloadCertificate ? 'spinner fa-spin' : 'download'}"
@@ -605,7 +566,7 @@
 				</button>
 
 				{#if configPublic.PUBLIC_BADGE_GENERATOR_URL}
-					{@const delegationMember = $userQuery.data?.findManyDelegationMembers?.[0]}
+					{@const delegationMember = userQuery?.delegationMembers?.[0]}
 					{@const assignedNation = delegationMember?.delegation?.assignedNation}
 					<button
 						class="btn"
@@ -619,8 +580,8 @@
 								id?: string;
 								mediaConsentStatus?: string;
 							} = {};
-							if (user?.given_name && user?.family_name) {
-								body.name = `${user.given_name} ${user.family_name}`;
+							if (user?.givenName && user?.familyName) {
+								body.name = `${user.givenName} ${user.familyName}`;
 							}
 							if (assignedNation?.alpha3Code) {
 								body.countryName = getFullTranslatedCountryNameFromISO3Code(
@@ -691,13 +652,12 @@
 			<ParticipantStatusWidget
 				title={m.payment()}
 				faIcon="fa-money-bill-transfer"
-				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.paymentStatus ?? 'PENDING'}
+				status={status?.paymentStatus ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ paymentStatus: newStatus })}
 			/>
 			<ParticipantAssignedDocumentWidget
-				assignedDocumentNumber={$userQuery.data?.findUniqueConferenceParticipantStatus
-					?.assignedDocumentNumber}
+				assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
 				onSave={async (number?: number) =>
 					await changeAdministrativeStatus({
 						assignedDocumentNumber: number,
@@ -708,8 +668,7 @@
 			<ParticipantStatusWidget
 				title={m.userAgreement()}
 				faIcon="fa-file-signature"
-				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.termsAndConditions ??
-					'PENDING'}
+				status={status?.termsAndConditions ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
 			/>
@@ -717,8 +676,7 @@
 				<ParticipantStatusWidget
 					title={m.guardianAgreement()}
 					faIcon="fa-family"
-					status={$userQuery.data?.findUniqueConferenceParticipantStatus?.guardianConsent ??
-						'PENDING'}
+					status={status?.guardianConsent ?? 'PENDING'}
 					changeStatus={async (newStatus: AdministrativeStatus) =>
 						await changeAdministrativeStatus({ guardianConsent: newStatus })}
 				/>
@@ -726,21 +684,20 @@
 			<ParticipantStatusWidget
 				title={m.mediaAgreement()}
 				faIcon="fa-photo-film-music"
-				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsent ?? 'PENDING'}
+				status={status?.mediaConsent ?? 'PENDING'}
 				changeStatus={async (newStatus: AdministrativeStatus) =>
 					await changeAdministrativeStatus({ mediaConsent: newStatus })}
 			/>
 			<ParticipantStatusMediaWidget
 				title={m.mediaConsentStatus()}
-				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.mediaConsentStatus ??
-					'NOT_SET'}
-				changeStatus={async (newStatus: MediaConsentStatus$options) =>
+				status={status?.mediaConsentStatus ?? 'NOT_SET'}
+				changeStatus={async (newStatus: MediaconsentstatusEnum) =>
 					await changeMediaConsentStatus(newStatus)}
 			/>
 			<StatusWidgetBoolean
 				title={m.attendance()}
 				faIcon="fa-calendar-check"
-				status={$userQuery.data?.findUniqueConferenceParticipantStatus?.didAttend ?? false}
+				status={status?.didAttend ?? false}
 				changeStatus={async (newStatus: boolean) =>
 					changeAdministrativeStatus({ didAttend: newStatus })}
 			/>
@@ -757,9 +714,8 @@
 			{userId}
 			{conferenceId}
 			entries={status?.attendanceEntries ?? []}
-			onChanged={() => {
-				cache.markStale();
-				userQuery.fetch();
+			onChanged={async () => {
+				await loadUserData();
 			}}
 		/>
 	</div>
@@ -800,14 +756,14 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#if $supervisorListQuery.fetching}
+					{#if supervisorListLoading}
 						{#each Array(3) as _, i}
 							<tr>
 								<td colspan="2"><div class="skeleton h-8 w-32"></div></td>
 							</tr>
 						{/each}
-					{:else if $supervisorListQuery.data?.findManyConferenceSupervisors && $supervisorListQuery.data?.findManyConferenceSupervisors.length !== 0}
-						{#each $supervisorListQuery.data?.findManyConferenceSupervisors.sort( (a, b) => `${a.user.family_name}${a.user.given_name}`.localeCompare(`${b.user.family_name}${b.user.given_name}`) ) as supervisor (supervisor.id)}
+					{:else if supervisorList && supervisorList.length !== 0}
+						{#each supervisorList.sort( (a, b) => `${a.user.familyName}${a.user.givenName}`.localeCompare(`${b.user.familyName}${b.user.givenName}`) ) as supervisor (supervisor.id)}
 							<tr>
 								<td>
 									<button
@@ -819,8 +775,8 @@
 									</button>
 								</td>
 								<td>
-									<span class="capitalize">{supervisor.user.given_name}</span>
-									<span class="uppercase">{supervisor.user.family_name}</span>
+									<span class="capitalize">{supervisor.user.givenName}</span>
+									<span class="uppercase">{supervisor.user.familyName}</span>
 								</td>
 							</tr>
 						{/each}

@@ -1,20 +1,14 @@
 <script lang="ts">
-	import {
-		cache,
-		graphql,
-		type MediaConsentStatus$options,
-		type UpdateConferenceParticipantStatusInput
-	} from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
-	import { type PageData } from './$houdini';
+	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
+	import type { PageData } from './$types';
 	import type { AdministrativeStatus } from '@prisma/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import StatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
@@ -31,7 +25,7 @@
 	let params = queryParameters({ queryUserId: true });
 	let hotkeyDebounce = $state(false);
 
-	let pageQuery = $derived(data.PostalRegistrationPageQuery);
+	let conference = $derived(data.conference);
 
 	// Drawer state
 	let showUserDrawer = $state(false);
@@ -42,39 +36,50 @@
 
 	// --- Data queries ---
 
-	const userData = graphql(`
-		query GetUserDataForPostalRegistration($userId: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $userId }) {
-				id
-				given_name
-				family_name
-				birthday
-			}
-			findUniqueConferenceParticipantStatus(
-				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
-			) {
-				id
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-				mediaConsentStatus
-				assignedDocumentNumber
-			}
+	/** The scanned person plus the postal paperwork we are here to tick off. */
+	async function fetchUserData(userId: string) {
+		const [user, statuses] = await Promise.all([
+			client.query.user({
+				__args: { id: userId },
+				id: true,
+				givenName: true,
+				familyName: true,
+				birthday: true
+			}),
+			client.query.conferenceParticipantStatuses({
+				__args: {
+					where: { conferenceId: { eq: data.conferenceId }, userId: { eq: userId } }
+				},
+				id: true,
+				termsAndConditions: true,
+				guardianConsent: true,
+				mediaConsent: true,
+				mediaConsentStatus: true,
+				assignedDocumentNumber: true
+			})
+		]);
+
+		return { user, status: statuses.at(0) ?? null };
+	}
+
+	let userData = $state<Awaited<ReturnType<typeof fetchUserData>>>();
+	let userDataLoading = $state(false);
+
+	async function loadUserData(userId: string) {
+		userDataLoading = true;
+		try {
+			userData = await fetchUserData(userId);
+		} finally {
+			userDataLoading = false;
 		}
-	`);
+	}
 
 	// --- Effects ---
 
 	// Fetch user data when scanned code changes
 	$effect(() => {
-		if ($params.queryUserId) {
-			userData.fetch({
-				variables: {
-					userId: $params.queryUserId,
-					conferenceId: data.conferenceId
-				}
-			});
-		}
+		const queryId = $params.queryUserId;
+		if (queryId) void loadUserData(queryId);
 	});
 
 	// Drawer open/close management with stale data prevention
@@ -91,7 +96,7 @@
 	});
 	$effect(() => {
 		const queryId = $params.queryUserId;
-		if (queryId && $userData?.data?.findUniqueUser?.id === queryId && !$userData.fetching) {
+		if (queryId && userData?.user?.id === queryId && !userDataLoading) {
 			lastLoadedUserId = queryId;
 			showUserDrawer = true;
 		}
@@ -99,24 +104,34 @@
 
 	// --- Actions ---
 
+	/** The mutation's own argument type minus the identifying fields this page fills in. */
+	type StatusChange = Omit<
+		Parameters<Mutation['updateConferenceParticipantStatus']>[0],
+		'conferenceId' | 'id' | 'userId'
+	>;
+
 	const changeAdministrativeStatus = async (
 		statusId: string | undefined,
 		userId: string | undefined,
-		mutationData: UpdateConferenceParticipantStatusInput
+		change: StatusChange
 	) => {
 		if (!userId) {
 			toast.error(m.userNotFound());
 			return;
 		}
-		const promise = changeParticipantStatus.mutate({
-			where: { id: statusId, conferenceId: data.conferenceId, userId },
-			data: mutationData
+		const promise = client.mutate.updateConferenceParticipantStatus({
+			__args: { ...change, id: statusId, conferenceId: data.conferenceId, userId },
+			id: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			mediaConsentStatus: true,
+			assignedDocumentNumber: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
-		userData.fetch();
+		await loadUserData(userId);
 	};
 
 	const confirmAllStatuses = async () => {
@@ -124,8 +139,8 @@
 		hotkeyDebounce = true;
 
 		try {
-			const userDetails = $userData?.data?.findUniqueUser;
-			const postalRegistrationDetails = $userData?.data?.findUniqueConferenceParticipantStatus;
+			const userDetails = userData?.user;
+			const postalRegistrationDetails = userData?.status;
 
 			if (!userDetails || !postalRegistrationDetails) {
 				toast.error(m.userNotFound());
@@ -135,10 +150,7 @@
 			await changeAdministrativeStatus(postalRegistrationDetails.id, userDetails.id, {
 				termsAndConditions: 'DONE',
 				mediaConsent: 'DONE',
-				guardianConsent: !ofAgeAtConference(
-					$pageQuery.data?.findUniqueConference?.startConference,
-					userDetails?.birthday
-				)
+				guardianConsent: !ofAgeAtConference(conference?.startConference, userDetails?.birthday)
 					? 'DONE'
 					: undefined,
 				mediaConsentStatus: 'ALLOWED_ALL'
@@ -162,7 +174,7 @@
 		});
 
 		hotkeys('alt+a', () => {
-			if ($params.queryUserId && $userData?.data?.findUniqueUser && !hotkeyDebounce) {
+			if ($params.queryUserId && userData?.user && !hotkeyDebounce) {
 				confirmAllStatuses();
 			}
 		});
@@ -200,11 +212,11 @@
 	</div>
 
 	<!-- Loading / error state -->
-	{#if $params.queryUserId && $userData.fetching}
+	{#if $params.queryUserId && userDataLoading}
 		<div class="flex items-center justify-center py-4">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
-	{:else if $params.queryUserId && !$userData?.data?.findUniqueUser && !$userData.fetching}
+	{:else if $params.queryUserId && !userData?.user && !userDataLoading}
 		<div class="alert alert-warning">
 			<i class="fa-duotone fa-triangle-exclamation text-lg"></i>
 			<div>{m.userNotFoundForPostalRegistration()}</div>
@@ -239,16 +251,16 @@
 		</button>
 	{/snippet}
 
-	{#if $userData?.data?.findUniqueUser && $userData.data.findUniqueUser.id === $params.queryUserId}
-		{@const userDetails = $userData.data.findUniqueUser}
-		{@const postalRegistrationDetails = $userData.data.findUniqueConferenceParticipantStatus}
+	{#if userData?.user && userData.user.id === $params.queryUserId}
+		{@const userDetails = userData.user}
+		{@const postalRegistrationDetails = userData.status}
 
 		<!-- User info -->
 		<div class="mb-4 flex items-center gap-4">
 			<i class="fa-duotone fa-user text-2xl"></i>
 			<div class="grow">
 				<h3 class="text-xl font-bold">
-					{formatNames(userDetails.given_name, userDetails.family_name)}
+					{formatNames(userDetails.givenName ?? undefined, userDetails.familyName ?? undefined)}
 				</h3>
 				<p class="text-sm opacity-60">
 					{userDetails.birthday ? userDetails.birthday.toLocaleDateString() : ''}
@@ -259,7 +271,7 @@
 		<!-- Status widgets grid -->
 		<div class="grid grid-flow-col grid-cols-1 grid-rows-5 gap-4 md:grid-cols-2 md:grid-rows-3">
 			<ParticipantAssignedDocumentWidget
-				assignedDocumentNumber={postalRegistrationDetails?.assignedDocumentNumber}
+				assignedDocumentNumber={postalRegistrationDetails?.assignedDocumentNumber ?? undefined}
 				onSave={async (number?: number) =>
 					await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
 						assignedDocumentNumber: number,
@@ -275,7 +287,7 @@
 						termsAndConditions: newStatus
 					})}
 			/>
-			{#if !ofAgeAtConference($pageQuery.data?.findUniqueConference?.startConference, userDetails.birthday)}
+			{#if !ofAgeAtConference(conference?.startConference, userDetails.birthday)}
 				<StatusWidget
 					title={m.guardianAgreement()}
 					faIcon="fa-user-shield"
@@ -300,7 +312,7 @@
 			<ParticipantStatusMediaWidget
 				title={m.mediaConsentStatus()}
 				status={postalRegistrationDetails?.mediaConsentStatus ?? 'NOT_SET'}
-				changeStatus={async (newStatus: MediaConsentStatus$options) =>
+				changeStatus={async (newStatus: MediaconsentstatusEnum) =>
 					await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
 						mediaConsentStatus: newStatus
 					})}

@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { cache, graphql, type UpdateConferenceParticipantStatusInput } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
-	import { type PageData } from './$houdini';
+	import { client, type Mutation } from '$lib/api/rumbleClient/client';
+	import type { PageData } from './$types';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { persisted } from 'svelte-persisted-store';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
@@ -46,105 +45,73 @@
 
 	// --- Data queries ---
 
-	const userData = graphql(`
-		query GetUserDataForAccessFlow($userId: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $userId }) {
-				id
-				given_name
-				family_name
-				birthday
-			}
-			findManyDelegationMembers(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
-					}
-					assignedNonStateActor {
-						name
-						fontAwesomeIcon
-					}
-				}
-				assignedCommittee {
-					abbreviation
-				}
-			}
-			findManyConferenceSupervisors(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-			}
-			findManySingleParticipants(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				assignedRole {
-					name
-				}
-			}
-			findUniqueConferenceParticipantStatus(
-				where: { userId_conferenceId: { conferenceId: $conferenceId, userId: $userId } }
-			) {
-				id
-				accessCardId
-			}
-		}
-	`);
+	/** Everything the scan drawer shows about the person behind a scanned code. */
+	async function fetchUserData(userId: string) {
+		const forUser = { conferenceId: { eq: data.conferenceId }, userId: { eq: userId } };
 
-	const createAttendanceEntryMutation = graphql(`
-		mutation createAttendanceEntryForAccessFlow(
-			$userId: String!
-			$conferenceId: String!
-			$occasion: String!
-		) {
-			createOneAttendanceEntry(userId: $userId, conferenceId: $conferenceId, occasion: $occasion) {
-				id
-			}
-		}
-	`);
+		const [user, delegationMembers, supervisors, singleParticipants, statuses] = await Promise.all([
+			client.query.user({
+				__args: { id: userId },
+				id: true,
+				givenName: true,
+				familyName: true,
+				birthday: true
+			}),
+			client.query.delegationMembers({
+				__args: { where: forUser },
+				delegation: {
+					id: true,
+					assignedNation: { alpha2Code: true, alpha3Code: true },
+					assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+				},
+				assignedCommittee: { abbreviation: true }
+			}),
+			client.query.conferenceSupervisors({ __args: { where: forUser }, id: true }),
+			client.query.singleParticipants({
+				__args: { where: forUser },
+				id: true,
+				assignedRole: { name: true }
+			}),
+			client.query.conferenceParticipantStatuses({
+				__args: { where: forUser },
+				id: true,
+				accessCardId: true
+			})
+		]);
 
-	const updateIdentityMutation = graphql(`
-		mutation updateUsersIdentityInfoForAccessFlow(
-			$where: UserWhereUniqueInput!
-			$givenName: String
-			$familyName: String
-			$birthday: DateTime
-		) {
-			updateOneUsersIdentityInfo(
-				where: $where
-				givenName: $givenName
-				familyName: $familyName
-				birthday: $birthday
-			) {
-				id
-				given_name
-				family_name
-				birthday
-			}
+		return {
+			user,
+			delegationMember: delegationMembers.at(0) ?? null,
+			isSupervisor: supervisors.length > 0,
+			singleParticipant: singleParticipants.at(0) ?? null,
+			status: statuses.at(0) ?? null
+		};
+	}
+
+	let userData = $state<Awaited<ReturnType<typeof fetchUserData>>>();
+	let userDataLoading = $state(false);
+
+	async function loadUserData(userId: string) {
+		userDataLoading = true;
+		try {
+			userData = await fetchUserData(userId);
+		} finally {
+			userDataLoading = false;
 		}
-	`);
+	}
 
 	// --- Derived values for role display ---
 
-	let delegationMember = $derived($userData?.data?.findManyDelegationMembers?.[0] ?? null);
-	let singleParticipant = $derived($userData?.data?.findManySingleParticipants?.[0] ?? null);
-	let isSupervisor = $derived(($userData?.data?.findManyConferenceSupervisors?.length ?? 0) > 0);
+	let delegationMember = $derived(userData?.delegationMember ?? null);
+	let singleParticipant = $derived(userData?.singleParticipant ?? null);
+	let isSupervisor = $derived(userData?.isSupervisor ?? false);
 
 	// --- Effects ---
 
 	// Fetch user data when scanned code changes
 	$effect(() => {
-		if ($params.queryUserId) {
-			userData.fetch({
-				variables: {
-					userId: $params.queryUserId,
-					conferenceId: data.conferenceId
-				}
-			});
-		}
+		const queryId = $params.queryUserId;
+		if (queryId) void loadUserData(queryId);
 	});
 
 	// Drawer open/close management with stale data prevention
@@ -162,7 +129,7 @@
 	});
 	$effect(() => {
 		const queryId = $params.queryUserId;
-		if (queryId && $userData?.data?.findUniqueUser && !$userData.fetching) {
+		if (queryId && userData?.user && !userDataLoading) {
 			lastLoadedUserId = queryId;
 			showUserDrawer = true;
 		}
@@ -170,7 +137,7 @@
 
 	// Pre-fill access card input when user data loads
 	$effect(() => {
-		const status = $userData?.data?.findUniqueConferenceParticipantStatus;
+		const status = userData?.status;
 		if (status?.accessCardId) {
 			accessCardInput = status.accessCardId;
 		} else {
@@ -180,10 +147,10 @@
 
 	// Initialize identity editing local values when user data loads
 	$effect(() => {
-		const user = $userData?.data?.findUniqueUser;
+		const user = userData?.user;
 		if (user) {
-			localGivenName = user.given_name ?? '';
-			localFamilyName = user.family_name ?? '';
+			localGivenName = user.givenName ?? '';
+			localFamilyName = user.familyName ?? '';
 			localBirthday = user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '';
 		}
 	});
@@ -197,24 +164,30 @@
 
 	// --- Actions ---
 
+	/** The mutation's own argument type minus the identifying fields this page fills in. */
+	type StatusChange = Omit<
+		Parameters<Mutation['updateConferenceParticipantStatus']>[0],
+		'conferenceId' | 'id' | 'userId'
+	>;
+
 	const changeAdministrativeStatus = async (
 		statusId: string | undefined,
 		userId: string | undefined,
-		mutationData: UpdateConferenceParticipantStatusInput
+		change: StatusChange
 	) => {
 		if (!userId) {
 			toast.error(m.userNotFound());
 			return;
 		}
-		const promise = changeParticipantStatus.mutate({
-			where: { id: statusId, conferenceId: data.conferenceId, userId },
-			data: mutationData
+		const promise = client.mutate.updateConferenceParticipantStatus({
+			__args: { ...change, id: statusId, conferenceId: data.conferenceId, userId },
+			id: true,
+			accessCardId: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
-		userData.fetch();
+		await loadUserData(userId);
 	};
 
 	const saveAndNext = async () => {
@@ -222,8 +195,8 @@
 		hotkeyDebounce = true;
 
 		try {
-			const userDetails = $userData?.data?.findUniqueUser;
-			const statusDetails = $userData?.data?.findUniqueConferenceParticipantStatus;
+			const userDetails = userData?.user;
+			const statusDetails = userData?.status;
 
 			if (!userDetails) {
 				toast.error(m.userNotFound());
@@ -242,12 +215,14 @@
 
 			// Create attendance entry if occasion is set
 			if ($occasion.trim()) {
-				await createAttendanceEntryMutation.mutate({
-					userId: userDetails.id,
-					conferenceId: data.conferenceId,
-					occasion: $occasion.trim()
+				await client.mutate.createAttendanceEntry({
+					__args: {
+						userId: userDetails.id,
+						conferenceId: data.conferenceId,
+						occasion: $occasion.trim()
+					},
+					id: true
 				});
-				cache.markStale();
 				didPerformAction = true;
 			}
 
@@ -273,25 +248,25 @@
 		field: 'givenName' | 'familyName' | 'birthday',
 		value: string
 	) => {
-		const userDetails = $userData?.data?.findUniqueUser;
+		const userDetails = userData?.user;
 		if (!userDetails) return;
 
-		const promise = updateIdentityMutation.mutate({
-			where: { id: userDetails.id },
-			givenName: field === 'givenName' ? value : undefined,
-			familyName: field === 'familyName' ? value : undefined,
-			birthday: field === 'birthday' ? new Date(value) : undefined
+		const promise = client.mutate.updateUsersIdentityInfo({
+			__args: {
+				id: userDetails.id,
+				givenName: field === 'givenName' ? value : undefined,
+				familyName: field === 'familyName' ? value : undefined,
+				birthday: field === 'birthday' ? new Date(value) : undefined
+			},
+			id: true,
+			givenName: true,
+			familyName: true,
+			birthday: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 
-		cache.markStale();
-		userData.fetch({
-			variables: {
-				userId: userDetails.id,
-				conferenceId: data.conferenceId
-			}
-		});
+		await loadUserData(userDetails.id);
 
 		if (field === 'givenName') editingGivenName = false;
 		else if (field === 'familyName') editingFamilyName = false;
@@ -316,7 +291,7 @@
 		});
 
 		hotkeys('alt+a', () => {
-			if ($params.queryUserId && $userData?.data?.findUniqueUser && !hotkeyDebounce) {
+			if ($params.queryUserId && userData?.user && !hotkeyDebounce) {
 				saveAndNext();
 			}
 		});
@@ -350,11 +325,11 @@
 	</div>
 
 	<!-- Loading / error state -->
-	{#if $params.queryUserId && $userData.fetching}
+	{#if $params.queryUserId && userDataLoading}
 		<div class="flex items-center justify-center py-4">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
-	{:else if $params.queryUserId && !$userData?.data?.findUniqueUser && !$userData.fetching}
+	{:else if $params.queryUserId && !userData?.user && !userDataLoading}
 		<div class="alert alert-warning">
 			<i class="fa-duotone fa-triangle-exclamation text-lg"></i>
 			<div>{m.userNotFoundForAccessFlow()}</div>
@@ -384,8 +359,8 @@
 		</button>
 	{/snippet}
 
-	{#if $userData?.data?.findUniqueUser && $userData.data.findUniqueUser.id === $params.queryUserId}
-		{@const userDetails = $userData.data.findUniqueUser}
+	{#if userData?.user && userData.user.id === $params.queryUserId}
+		{@const userDetails = userData.user}
 
 		<!-- Identity section: Flag + Name + Birthday + Badges -->
 		<div class="flex items-start gap-4">
@@ -436,7 +411,7 @@
 								class="btn btn-soft group h-auto w-full justify-start py-2 text-left"
 								onclick={() => (editingGivenName = true)}
 							>
-								<span class="text-3xl font-bold">{userDetails.given_name}</span>
+								<span class="text-3xl font-bold">{userDetails.givenName}</span>
 								<i
 									class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
 								></i>
@@ -477,7 +452,7 @@
 								class="btn btn-soft group h-auto w-full justify-start py-2 text-left"
 								onclick={() => (editingFamilyName = true)}
 							>
-								<span class="text-3xl font-bold">{userDetails.family_name}</span>
+								<span class="text-3xl font-bold">{userDetails.familyName}</span>
 								<i
 									class="fa-duotone fa-pen-to-square ml-2 text-sm opacity-0 transition-opacity group-hover:opacity-50"
 								></i>

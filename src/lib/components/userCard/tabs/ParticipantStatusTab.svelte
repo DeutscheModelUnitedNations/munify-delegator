@@ -38,7 +38,7 @@
 						id: string;
 						timestamp: Date;
 						occasion: string;
-						recordedBy: { id: string; given_name: string; family_name: string };
+						recordedBy: { id: string; givenName: string | null; familyName: string | null };
 					}[];
 			  }
 			| null
