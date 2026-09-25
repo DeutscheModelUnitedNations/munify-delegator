@@ -1,19 +1,12 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query DownloadsBaseDataQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			id
-			committees {
-				id
-				name
-				abbreviation
-			}
-		}
-	}
-`);
-
-export const _DownloadsBaseDataQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	return {
+		conference: await client.query.conference({
+			__args: { id: event.params.conferenceId },
+			id: true,
+			committees: { id: true, name: true, abbreviation: true }
+		})
+	};
 };

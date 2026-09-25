@@ -1,13 +1,14 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query MySnippetsQuery {
-		myReviewerSnippets {
-			id
-			name
-			content
-			createdAt
-			updatedAt
-		}
-	}
-`);
+export const load: PageLoad = async () => {
+	return {
+		snippets: await client.query.myReviewerSnippets({
+			id: true,
+			name: true,
+			content: true,
+			createdAt: true,
+			updatedAt: true
+		})
+	};
+};

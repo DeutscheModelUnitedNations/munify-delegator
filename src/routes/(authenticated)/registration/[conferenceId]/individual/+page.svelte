@@ -1,11 +1,10 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import PlainCard from '$lib/components/PlainCard.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let query = $derived(data.RoleSelectionQuery);
-	let roles = $derived($query.data?.findManyCustomConferenceRoles ?? []);
+	let roles = $derived(data.roles);
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">

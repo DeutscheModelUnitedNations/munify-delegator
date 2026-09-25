@@ -1714,8 +1714,10 @@ export type Mutation = {
     unApplyForRolesIdList?: ID[] | null | undefined
   }) => Singleparticipant,
   updateSurveyAnswer: (p: {
-    id: ID,
-    optionId: ID
+    id?: ID | null | undefined,
+    optionId: ID,
+    questionId?: ID | null | undefined,
+    userId?: ID | null | undefined
   }) => Surveyanswer,
   updateSurveyOption: (p: {
     description?: String | null | undefined,

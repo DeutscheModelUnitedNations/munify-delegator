@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { cache, graphql, type UserDrawerQuery$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
-		survey: UserDrawerQuery$result['findManySurveyQuestions'][0];
-		surveyAnswer?: UserDrawerQuery$result['findManySurveyAnswers'][0];
+		survey: {
+			id: string;
+			title: string;
+			options: { id: string; title: string; countSurveyAnswers: number; upperLimit: number }[];
+		};
+		surveyAnswer?: { id: string; option: { id: string; title: string } };
 		conferenceId: string;
 		userId: string;
 	}
@@ -14,28 +18,13 @@
 
 	let optionsOpen = $state(false);
 
-	const changeSurveyAnswer = graphql(`
-		mutation ChangeSurveyAnswer(
-			$where: UpdateOneSurveyAnswerWhereUniqueInput!
-			$data: UpdateOneSurveyAnswerInput!
-		) {
-			updateOneSurveyAnswer(where: $where, data: $data) {
-				id
-				option {
-					id
-					title
-				}
-			}
-		}
-	`);
-
 	const changeAnswer = async (optionId: string) => {
 		loading = true;
-		await changeSurveyAnswer.mutate({
-			where: { questionId: survey.id, userId },
-			data: { optionId }
+		await client.mutate.updateSurveyAnswer({
+			__args: { questionId: survey.id, userId, optionId },
+			id: true,
+			option: { id: true, title: true }
 		});
-		cache.markStale();
 		await invalidateAll();
 		loading = false;
 	};

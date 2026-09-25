@@ -3,7 +3,7 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { cache, graphql } from '$houdini';
 	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
-	import { singleParticipantResetMutation } from './individualsResetMutation';
+	import { client } from '$lib/api/rumbleClient/client';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
@@ -223,9 +223,13 @@
 				'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				const promise = singleParticipantResetMutation.mutate({
-					singleParticipantId: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
-					applied: false
+				const promise = client.mutate.updateSingleParticipant({
+					__args: {
+						id: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
+						applied: false
+					},
+					id: true,
+					applied: true
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;

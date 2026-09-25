@@ -3,7 +3,7 @@
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { cache, graphql } from '$houdini';
 	import type { DelegationDrawerQueryVariables } from './$houdini';
-	import { delegaitonResetMutation } from './delegationResetMutation';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
@@ -374,7 +374,11 @@
 			class="btn"
 			onclick={async () => {
 				if (!confirm(m.confirmRotateCode())) return;
-				await delegaitonResetMutation.mutate({ delegationId, resetEntryCode: true });
+				await client.mutate.updateDelegation({
+					__args: { id: delegationId, resetEntryCode: true },
+					id: true,
+					entryCode: true
+				});
 			}}
 		>
 			<i class="fa-duotone fa-arrow-rotate-left"></i>
@@ -407,13 +411,13 @@
 			class="btn {!delegation?.applied && 'btn-disabled'} btn-error"
 			onclick={async () => {
 				if (!confirm(m.confirmRevokeApplication())) return;
-				const promise = delegaitonResetMutation.mutate({
-					delegationId,
-					applied: false
+				const promise = client.mutate.updateDelegation({
+					__args: { id: delegationId, applied: false },
+					id: true,
+					applied: true
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
-				cache.markStale();
 				await invalidateAll();
 			}}
 		>

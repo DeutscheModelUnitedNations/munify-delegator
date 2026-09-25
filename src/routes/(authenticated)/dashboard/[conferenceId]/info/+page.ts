@@ -5,19 +5,16 @@
  * compatibility with any bookmarked URLs but may be removed in the future.
  */
 
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query ConferenceInfoQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			id
-			title
-			info
-		}
-	}
-`);
-
-export const _ConferenceInfoQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	return {
+		conference: await client.query.conference({
+			__args: { id: event.params.conferenceId },
+			id: true,
+			title: true,
+			info: true
+		})
+	};
 };

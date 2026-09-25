@@ -1,16 +1,13 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query ImportGetCommittees($conferenceId: String!) {
-		findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			abbreviation
-			name
-		}
-	}
-`);
-
-export const _ImportGetCommitteesVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	return {
+		committees: await client.query.committees({
+			__args: { where: { conferenceId: { eq: event.params.conferenceId } } },
+			id: true,
+			abbreviation: true,
+			name: true
+		})
+	};
 };

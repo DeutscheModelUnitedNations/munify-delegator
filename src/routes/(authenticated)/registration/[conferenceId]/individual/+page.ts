@@ -1,17 +1,14 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query RoleSelectionQuery($conferenceId: String!) {
-		findManyCustomConferenceRoles(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			name
-			description
-			fontAwesomeIcon
-		}
-	}
-`);
-
-export const _RoleSelectionQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	return {
+		roles: await client.query.customConferenceRoles({
+			__args: { where: { conferenceId: { eq: event.params.conferenceId } } },
+			id: true,
+			name: true,
+			description: true,
+			fontAwesomeIcon: true
+		})
+	};
 };

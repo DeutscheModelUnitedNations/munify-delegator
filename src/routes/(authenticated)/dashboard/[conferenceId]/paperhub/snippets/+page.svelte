@@ -21,10 +21,10 @@
 
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import Modal from '$lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
 	import StarterKit from '@tiptap/starter-kit';
@@ -42,8 +42,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let snippetQuery = $derived(data.MySnippetsQuery);
-	let snippets = $derived($snippetQuery?.data?.myReviewerSnippets ?? []);
+	let snippets = $derived(data.snippets);
 
 	// State for editing
 	let isEditing = $state(false);
@@ -55,35 +54,6 @@
 	// State for delete confirmation
 	let deleteConfirmOpen = $state(false);
 	let deletingSnippet = $state<{ id: string; name: string } | null>(null);
-
-	// Create mutation stores
-	const createMutation = graphql(`
-		mutation CreateSnippetMutation($name: String!, $content: Json!) {
-			createReviewerSnippet(name: $name, content: $content) {
-				id
-				name
-				content
-			}
-		}
-	`);
-
-	const updateMutation = graphql(`
-		mutation UpdateSnippetMutation($id: String!, $name: String!, $content: Json!) {
-			updateReviewerSnippet(id: $id, name: $name, content: $content) {
-				id
-				name
-				content
-			}
-		}
-	`);
-
-	const deleteMutation = graphql(`
-		mutation DeleteSnippetMutation($id: String!) {
-			deleteReviewerSnippet(id: $id) {
-				id
-			}
-		}
-	`);
 
 	function initEditor(content: JSONContent) {
 		editor = createEditor({
@@ -190,22 +160,24 @@
 		try {
 			if (editingId) {
 				// Update existing
-				await updateMutation.mutate({
-					id: editingId,
-					name: editName.trim(),
-					content: editContent
+				await client.mutate.updateReviewerSnippet({
+					__args: { id: editingId, name: editName.trim(), content: editContent },
+					id: true,
+					name: true,
+					content: true
 				});
 				toast.success(m.snippetSaved());
 			} else {
 				// Create new
-				await createMutation.mutate({
-					name: editName.trim(),
-					content: editContent
+				await client.mutate.createReviewerSnippet({
+					__args: { name: editName.trim(), content: editContent },
+					id: true,
+					name: true,
+					content: true
 				});
 				toast.success(m.snippetSaved());
 			}
 			closeModal();
-			cache.markStale();
 			await invalidateAll();
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : m.genericError();
@@ -222,11 +194,10 @@
 		if (!deletingSnippet) return;
 
 		try {
-			await deleteMutation.mutate({ id: deletingSnippet.id });
+			await client.mutate.deleteReviewerSnippet({ __args: { id: deletingSnippet.id } });
 			toast.success(m.snippetDeleted());
 			deleteConfirmOpen = false;
 			deletingSnippet = null;
-			cache.markStale();
 			await invalidateAll();
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : m.genericError();

@@ -1,19 +1,12 @@
-import { graphql } from '$houdini';
-import type { AttendanceScannerPageQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query AttendanceScannerPageQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			id
-			title
-		}
-	}
-`);
-
-export const _AttendanceScannerPageQueryVariables: AttendanceScannerPageQueryVariables = async (
-	event
-) => {
+export const load: PageLoad = async (event) => {
 	return {
-		conferenceId: event.params.conferenceId
+		conference: await client.query.conference({
+			__args: { id: event.params.conferenceId },
+			id: true,
+			title: true
+		})
 	};
 };

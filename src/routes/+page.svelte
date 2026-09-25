@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { type PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import SHLogo from '$assets/logo/mun-sh_logo.png';
 	import BWLogo from '$assets/logo/munbw_logo.png';
 	import UdteamUp from '$assets/undraw/team-up.svg';
@@ -31,8 +31,7 @@
 	};
 
 	let { data }: { data: PageData } = $props();
-	let conferencesPreview = $derived(data.ConferencesPreview);
-	let conferenceList = $derived($conferencesPreview.data?.findManyConferences ?? []);
+	let conferenceList = $derived(data.conferences);
 
 	let conferencesToDisplay = $derived(conferenceList);
 </script>

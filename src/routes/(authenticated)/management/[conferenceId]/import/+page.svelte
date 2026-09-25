@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
 	import type { TableColumns } from 'svelte-table';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/Modal.svelte';
@@ -37,7 +37,7 @@
 	}
 
 	let { data }: { data: PageData } = $props();
-	let committeesQuery = $derived(data.ImportGetCommittees);
+	let committees = $derived(data.committees);
 	let loading = $state(false);
 	let fileInput = $state<string>();
 	let threshold = $state(20);
@@ -101,9 +101,7 @@
 		{
 			key: 'committee',
 			title: m.committee(),
-			value: (row) =>
-				$committeesQuery.data?.findManyCommittees.find((c) => c.id === row.committeeId)?.name ??
-				'N/A'
+			value: (row) => committees.find((c) => c.id === row.committeeId)?.name ?? 'N/A'
 		},
 		{
 			key: 'attendancePercentage',

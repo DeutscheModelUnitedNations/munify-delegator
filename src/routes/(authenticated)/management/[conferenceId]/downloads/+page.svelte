@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';
@@ -10,8 +10,7 @@
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let queryData = $derived(data.DownloadsBaseDataQuery);
-	let conferenceData = $derived($queryData.data?.findUniqueConference);
+	let conferenceData = $derived(data.conference);
 </script>
 
 <div class="flex flex-col gap-8 p-10">

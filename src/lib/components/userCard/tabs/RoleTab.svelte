@@ -2,8 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
-	import { singleParticipantResetMutation } from '../../../../routes/(authenticated)/management/[conferenceId]/individuals/individualsResetMutation';
-	import { cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -67,13 +66,13 @@
 					class="btn btn-error btn-sm {!singleParticipant.applied && 'btn-disabled'}"
 					onclick={async () => {
 						if (!confirm(m.confirmRevokeApplication())) return;
-						const promise = singleParticipantResetMutation.mutate({
-							singleParticipantId: singleParticipant!.id,
-							applied: false
+						const promise = client.mutate.updateSingleParticipant({
+							__args: { id: singleParticipant!.id, applied: false },
+							id: true,
+							applied: true
 						});
 						toast.promise(promise, genericPromiseToastMessages);
 						await promise;
-						cache.markStale();
 						await invalidateAll();
 					}}
 				>

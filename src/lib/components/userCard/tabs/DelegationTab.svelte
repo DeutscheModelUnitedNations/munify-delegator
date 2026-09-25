@@ -6,7 +6,7 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from '../../../../routes/(authenticated)/management/[conferenceId]/delegations/CommitteeAssignmentModal.svelte';
-	import { delegaitonResetMutation } from '../../../../routes/(authenticated)/management/[conferenceId]/delegations/delegationResetMutation';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
@@ -238,9 +238,10 @@
 				class="btn btn-sm"
 				onclick={async () => {
 					if (!confirm(m.confirmRotateCode())) return;
-					const promise = delegaitonResetMutation.mutate({
-						delegationId,
-						resetEntryCode: true
+					const promise = client.mutate.updateDelegation({
+						__args: { id: delegationId, resetEntryCode: true },
+						id: true,
+						entryCode: true
 					});
 					toast.promise(promise, genericPromiseToastMessages);
 					await promise;
@@ -276,9 +277,10 @@
 					class="btn btn-error btn-sm {!delegation.applied && 'btn-disabled'}"
 					onclick={async () => {
 						if (!confirm(m.confirmRevokeApplication())) return;
-						const promise = delegaitonResetMutation.mutate({
-							delegationId,
-							applied: false
+						const promise = client.mutate.updateDelegation({
+							__args: { id: delegationId, applied: false },
+							id: true,
+							applied: true
 						});
 						toast.promise(promise, genericPromiseToastMessages);
 						await promise;

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { ConferencesPreview$result } from '$houdini';
+	import type { PageData } from './$types';
 	import RegistrationStatusLight from '$lib/components/RegistrationStatusLight.svelte';
 	import { getRegistrationStatus } from '$lib/utils/registrationStatus';
 	import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
 
 	interface Props {
-		conference: NonNullable<ConferencesPreview$result['findManyConferences']>[number];
+		conference: PageData['conferences'][number];
 	}
 
 	let { conference }: Props = $props();
