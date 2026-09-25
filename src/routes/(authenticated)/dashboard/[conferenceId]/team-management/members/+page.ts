@@ -1,32 +1,26 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query TeamManagementMembersQuery($conferenceId: String!) {
-		findManyTeamMembers(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			role
-			user {
-				id
-				given_name
-				family_name
-				email
-				birthday
-				phone
-				street
-				zip
-				city
-				country
-				gender
-				foodPreference
-			}
-		}
-	}
-`);
-
-export const _TeamManagementMembersQueryVariables = (event: {
-	params: { conferenceId: string };
-}) => {
+export const load: PageLoad = async (event) => {
 	return {
-		conferenceId: event.params.conferenceId
+		teamMembers: await client.query.teamMembers({
+			__args: { where: { conferenceId: { eq: event.params.conferenceId } } },
+			id: true,
+			role: true,
+			user: {
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true,
+				birthday: true,
+				phone: true,
+				street: true,
+				zip: true,
+				city: true,
+				country: true,
+				gender: true,
+				foodPreference: true
+			}
+		})
 	};
 };

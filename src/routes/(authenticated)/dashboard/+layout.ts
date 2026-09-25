@@ -1,34 +1,28 @@
-import { graphql } from '$houdini';
-import type { GetMyActiveConferencesQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { LayoutLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query GetMyActiveConferencesQuery($userId: String!) {
-		findManyConferences(
-			where: {
-				OR: [
-					{ conferenceSupervisors: { some: { userId: { equals: $userId } } } }
-					{ delegationMembers: { some: { userId: { equals: $userId } } } }
-					{ singleParticipants: { some: { userId: { equals: $userId } } } }
-					{ teamMembers: { some: { userId: { equals: $userId } } } }
-				]
-			}
-		) {
-			id
-			title
-			startConference
-			endConference
-			startAssignment
-			state
-		}
-	}
-`);
-
-export const _GetMyActiveConferencesQueryVariables: GetMyActiveConferencesQueryVariables = async (
-	event
-) => {
+/** Every conference the caller takes part in, in any role. */
+export const load: LayoutLoad = async (event) => {
 	const { user } = await event.parent();
 
 	return {
-		userId: user.sub
+		myConferences: await client.query.conferences({
+			__args: {
+				where: {
+					OR: [
+						{ conferenceSupervisors: { userId: { eq: user.sub } } },
+						{ delegationMembers: { userId: { eq: user.sub } } },
+						{ singleParticipants: { userId: { eq: user.sub } } },
+						{ teamMembers: { userId: { eq: user.sub } } }
+					]
+				}
+			},
+			id: true,
+			title: true,
+			startConference: true,
+			endConference: true,
+			startAssignment: true,
+			state: true
+		})
 	};
 };

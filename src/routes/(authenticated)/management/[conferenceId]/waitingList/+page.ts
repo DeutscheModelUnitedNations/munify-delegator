@@ -1,33 +1,31 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query WaitingListManagementQuery($conferenceId: String!) {
-		findManyWaitingListEntry(
-			where: { conferenceId: { equals: $conferenceId }, assigned: { equals: false } }
-		) {
-			id
-			user {
-				id
-				given_name
-				family_name
-				email
-				phone
-				city
-				birthday
-				conferenceParticipationsCount
-			}
-			school
-			experience
-			motivation
-			requests
-			hidden
-			assigned
-			createdAt
-		}
-	}
-`);
-
-export const _WaitingListManagementQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+/** Only entries still waiting - assigned ones have become real registrations. */
+export const load: PageLoad = async (event) => {
+	return {
+		waitingListEntries: await client.query.waitingListEntries({
+			__args: {
+				where: { conferenceId: { eq: event.params.conferenceId }, assigned: { eq: false } }
+			},
+			id: true,
+			user: {
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true,
+				phone: true,
+				city: true,
+				birthday: true,
+				conferenceParticipationsCount: true
+			},
+			school: true,
+			experience: true,
+			motivation: true,
+			requests: true,
+			hidden: true,
+			assigned: true,
+			createdAt: true
+		})
+	};
 };

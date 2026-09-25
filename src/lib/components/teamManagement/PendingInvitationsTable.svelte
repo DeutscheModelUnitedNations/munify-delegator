@@ -10,12 +10,12 @@
 		id: string;
 		email: string;
 		role: string;
-		expiresAt: string;
+		expiresAt: Date;
 		userExists: boolean;
 		invitedBy: {
-			given_name: string;
-			family_name: string;
-		};
+			givenName: string | null;
+			familyName: string | null;
+		} | null;
 	}
 
 	interface Props {
@@ -107,16 +107,16 @@
 		}
 	}
 
-	function formatDate(dateStr: string): string {
-		return new Date(dateStr).toLocaleDateString(undefined, {
+	function formatDate(date: Date | string): string {
+		return new Date(date).toLocaleDateString(undefined, {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric'
 		});
 	}
 
-	function isExpired(dateStr: string): boolean {
-		return new Date(dateStr) < new Date();
+	function isExpired(date: Date | string): boolean {
+		return new Date(date) < new Date();
 	}
 </script>
 
@@ -160,8 +160,8 @@
 								</span>
 							</td>
 							<td>
-								{invitation.invitedBy.given_name}
-								{invitation.invitedBy.family_name}
+								{invitation.invitedBy?.givenName}
+								{invitation.invitedBy?.familyName}
 							</td>
 							<td>
 								<div class="flex gap-2 justify-end">

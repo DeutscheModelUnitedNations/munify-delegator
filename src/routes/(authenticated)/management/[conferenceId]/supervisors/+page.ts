@@ -1,27 +1,15 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query ConferenceSupervisorsQuery($conferenceId: String!) {
-		findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			plansOwnAttendenceAtConference
-			user {
-				family_name
-				given_name
-			}
-			supervisedDelegationMembers {
-				delegation {
-					id
-				}
-			}
-			supervisedSingleParticipants {
-				id
-			}
-		}
-	}
-`);
-
-export const _ConferenceSupervisorsQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	return {
+		supervisors: await client.query.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: event.params.conferenceId } } },
+			id: true,
+			plansOwnAttendenceAtConference: true,
+			user: { id: true, familyName: true, givenName: true },
+			supervisedDelegationMembers: { delegation: { id: true } },
+			supervisedSingleParticipants: { id: true }
+		})
+	};
 };

@@ -3,7 +3,7 @@
 	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import IndividualDrawer from './IndividualDrawer.svelte';
@@ -11,8 +11,7 @@
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	const { data }: { data: PageData } = $props();
-	const queryData = $derived(data.ConferenceSingleParticipantsQuery);
-	const singleParticipants = $derived($queryData?.data?.findManySingleParticipants ?? []);
+	const singleParticipants = $derived(data.singleParticipants);
 	const { getTableSize } = getTableSettings();
 
 	let selectedParticipantRow = queryParam('selected');
@@ -21,9 +20,9 @@
 		{
 			key: 'name',
 			title: m.name(),
-			value: (row) => `${row.user.family_name} ${row.user.given_name} `,
+			value: (row) => `${row.user.familyName} ${row.user.givenName} `,
 			renderValue: (row) =>
-				`<span class="uppercase">${row.user.family_name}</span> ${row.user.given_name} `,
+				`<span class="uppercase">${row.user.familyName}</span> ${row.user.givenName} `,
 			sortable: true,
 			parseHTML: true
 		},

@@ -1,31 +1,23 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query TeamManagementInvitationsQuery($conferenceId: String!) {
-		findManyTeamMemberInvitations(
-			where: {
-				conferenceId: { equals: $conferenceId }
-				usedAt: { equals: null }
-				revokedAt: { equals: null }
-			}
-		) {
-			id
-			email
-			role
-			expiresAt
-			userExists
-			invitedBy {
-				given_name
-				family_name
-			}
-		}
-	}
-`);
-
-export const _TeamManagementInvitationsQueryVariables = (event: {
-	params: { conferenceId: string };
-}) => {
+/** Invitations that are still open: neither accepted nor withdrawn. */
+export const load: PageLoad = async (event) => {
 	return {
-		conferenceId: event.params.conferenceId
+		invitations: await client.query.teamMemberInvitations({
+			__args: {
+				where: {
+					conferenceId: { eq: event.params.conferenceId },
+					usedAt: { isNull: true },
+					revokedAt: { isNull: true }
+				}
+			},
+			id: true,
+			email: true,
+			role: true,
+			expiresAt: true,
+			userExists: true,
+			invitedBy: { givenName: true, familyName: true }
+		})
 	};
 };

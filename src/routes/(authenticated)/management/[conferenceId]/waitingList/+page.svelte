@@ -1,6 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
-	import type { WaitingListManagementQuery$result } from '$houdini';
+	import type { PageData } from './$types';
 	import {
 		createSvelteTable,
 		FlexRender,
@@ -21,9 +20,7 @@
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
 
-	type WaitingListEntry = NonNullable<
-		WaitingListManagementQuery$result['findManyWaitingListEntry']
-	>[number];
+	type WaitingListEntry = NonNullable<PageData['waitingListEntries']>[number];
 
 	interface WaitingListRow {
 		id: string;
@@ -45,7 +42,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const waitingListQuery = $derived(data.WaitingListManagementQuery);
+	const waitingListEntries = $derived(data.waitingListEntries);
 	const conference = $derived(data.conferences.find((c) => c.id === data.conferenceId));
 
 	let filterHidden = $state(true);
@@ -54,15 +51,15 @@
 	let globalFilter = $state('');
 
 	const rows: WaitingListRow[] = $derived.by(() => {
-		const entries = $waitingListQuery.data?.findManyWaitingListEntry ?? [];
+		const entries = waitingListEntries;
 		const filtered = filterHidden ? entries.filter((e: WaitingListEntry) => !e.hidden) : entries;
 
 		return filtered.map((entry: WaitingListEntry) => ({
 			id: entry.id,
 			userId: entry.user.id,
 			createdAt: new Date(entry.createdAt),
-			family_name: entry.user.family_name,
-			given_name: entry.user.given_name,
+			family_name: entry.user.familyName,
+			given_name: entry.user.givenName,
 			email: entry.user.email,
 			phone: entry.user.phone ?? null,
 			conferenceAge:
@@ -81,10 +78,8 @@
 
 	const totalCount = $derived(
 		filterHidden
-			? ($waitingListQuery.data?.findManyWaitingListEntry?.filter(
-					(e: WaitingListEntry) => !e.hidden
-				).length ?? 0)
-			: ($waitingListQuery.data?.findManyWaitingListEntry?.length ?? 0)
+			? (waitingListEntries.filter((e: WaitingListEntry) => !e.hidden).length ?? 0)
+			: waitingListEntries.length
 	);
 
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {

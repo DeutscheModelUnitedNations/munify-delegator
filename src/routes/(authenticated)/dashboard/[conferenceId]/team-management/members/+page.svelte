@@ -3,19 +3,18 @@
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { z } from 'zod';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	const teamQuery = data.TeamManagementMembersQuery;
-	let teamMembers = $derived($teamQuery.data?.findManyTeamMembers ?? []);
+	let teamMembers = $derived(data.teamMembers);
 	let isAdmin = data.isAdmin;
 
 	let inviteMembersModalOpen = $state(false);
@@ -57,7 +56,7 @@
 	});
 
 	function isProfileComplete(user: {
-		birthday: string | null;
+		birthday: Date | null;
 		phone: string | null;
 		street: string | null;
 		zip: string | null;
@@ -69,24 +68,10 @@
 		return profileCompletenessSchema.safeParse(user).success;
 	}
 
-	const deleteTeamMemberMutation = graphql(`
-		mutation DeleteTeamMemberFromManagement($id: String!) {
-			deleteOneTeamMember(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
-	const startImpersonationMutation = graphql(`
-		mutation StartImpersonationFromTeamManagement($targetUserId: String!) {
-			startImpersonation(targetUserId: $targetUserId)
-		}
-	`);
-
 	const handleDelete = async (id: string) => {
 		if (!confirm(m.confirmDeleteTeamMember())) return;
 
-		const promise = deleteTeamMemberMutation.mutate({ id });
+		const promise = Promise.resolve(client.mutate.deleteTeamMember({ __args: { id } }));
 		toast.promise(promise, {
 			loading: m.deletingTeamMember(),
 			success: m.teamMemberDeleted(),
@@ -94,13 +79,14 @@
 		});
 		await promise;
 
-		cache.markStale();
 		await invalidateAll();
 	};
 
 	const handleImpersonate = async (userId: string) => {
 		try {
-			const promise = startImpersonationMutation.mutate({ targetUserId: userId });
+			const promise = Promise.resolve(
+				client.mutate.startImpersonation({ __args: { targetUserId: userId } })
+			);
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
 			await goto('/dashboard');
@@ -139,13 +125,13 @@
 		{
 			key: 'family_name',
 			title: m.familyName(),
-			value: (row: (typeof teamMembers)[number]) => row.user.family_name,
+			value: (row: (typeof teamMembers)[number]) => row.user.familyName,
 			sortable: true
 		},
 		{
 			key: 'given_name',
 			title: m.givenName(),
-			value: (row: (typeof teamMembers)[number]) => row.user.given_name,
+			value: (row: (typeof teamMembers)[number]) => row.user.givenName,
 			sortable: true
 		},
 		{

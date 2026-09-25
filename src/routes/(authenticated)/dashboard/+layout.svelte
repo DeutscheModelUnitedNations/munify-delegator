@@ -5,7 +5,7 @@
 	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
 	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
-	import type { PageData } from './$houdini';
+	import type { LayoutData as PageData } from './$types';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { page } from '$app/stores';
 	import { dev } from '$app/environment';
@@ -16,8 +16,7 @@
 	}
 
 	let { children, data }: Props = $props();
-	let myConferenceQuery = $derived(data.GetMyActiveConferencesQuery);
-	let conferences = $derived($myConferenceQuery.data?.findManyConferences);
+	let conferences = $derived(data.myConferences);
 
 	let upcomingConferences = $derived(conferences?.filter((c) => c.startConference > new Date()));
 	let activeConferences = $derived(

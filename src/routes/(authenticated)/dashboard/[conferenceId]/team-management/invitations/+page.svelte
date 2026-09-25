@@ -2,12 +2,11 @@
 	import { m } from '$lib/paraglide/messages';
 	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	const invitationsQuery = data.TeamManagementInvitationsQuery;
-	let pendingInvitations = $derived($invitationsQuery.data?.findManyTeamMemberInvitations ?? []);
+	let pendingInvitations = $derived(data.invitations);
 
 	let inviteMembersModalOpen = $state(false);
 </script>
