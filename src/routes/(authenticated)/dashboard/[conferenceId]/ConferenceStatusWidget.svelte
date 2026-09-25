@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import StatusCard from '$lib/components/statusCubes/StatusCard.svelte';
@@ -8,7 +8,7 @@
 	interface Props {
 		conferenceId: string;
 		userId: string;
-		status?: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		status?: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
 		unlockPayment?: boolean;
 		unlockPostals?: boolean;

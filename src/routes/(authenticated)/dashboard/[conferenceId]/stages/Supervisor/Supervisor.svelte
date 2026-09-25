@@ -4,7 +4,8 @@
 	import { alpha3Code, m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { cache, graphql } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
 	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
@@ -34,13 +35,9 @@
 
 	interface Props {
 		user: PageData['user'];
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
-		supervisor: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']
-		>;
-		status: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus']
-		>;
+		conference: NonNullable<MyConferenceParticipation['conference']>;
+		supervisor: NonNullable<MyConferenceParticipation['supervisor']>;
+		status: MyConferenceParticipation['participantStatus'];
 		ofAge: boolean;
 	}
 
@@ -489,7 +486,10 @@
 							{@const memberPaperCount =
 								delegation.papers?.filter((p) => p.author?.id === member.user.id).length ?? 0}
 							<DelegationStatusTableEntry
-								name={formatNames(member.user.given_name, member.user.family_name)}
+								name={formatNames(
+									member.user.givenName ?? undefined,
+									member.user.familyName ?? undefined
+								)}
 								pronouns={member.user.pronouns ?? ''}
 								headDelegate={member.isHeadDelegate}
 								email={member.user.email}
@@ -538,7 +538,10 @@
 	{#if singleParticipants.length > 0}
 		{#each singleParticipants as singleParticipant (singleParticipant.id)}
 			<SupervisorContentCard
-				title={formatNames(singleParticipant.user.given_name, singleParticipant.user.family_name)}
+				title={formatNames(
+					singleParticipant.user.givenName ?? undefined,
+					singleParticipant.user.familyName ?? undefined
+				)}
 				{isStateParticipantRegistration}
 				applied={singleParticipant.applied}
 			>
@@ -607,8 +610,8 @@
 						)}
 						<DelegationStatusTableEntry
 							name={formatNames(
-								singleParticipant.user.given_name,
-								singleParticipant.user.family_name
+								singleParticipant.user.givenName ?? undefined,
+								singleParticipant.user.familyName ?? undefined
 							)}
 							pronouns={singleParticipant.user.pronouns ?? ''}
 							email={singleParticipant.user.email}

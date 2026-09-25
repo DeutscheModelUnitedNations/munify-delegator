@@ -4,28 +4,25 @@
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
-	import { type PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 
 	let { data }: { data: PageData } = $props();
-	let conferencePaymentDataQuery = $derived(data.PaymentLayoutQuery);
-	let conferencePaymentData = $derived($conferencePaymentDataQuery.data?.findUniqueConference);
-	let conferenceQueryData = $derived(data.conferenceQueryData);
-	let delegationMembers = $derived(
-		conferenceQueryData?.findUniqueDelegationMember?.delegation.members
-	);
+	let conferencePaymentData = $derived(data.conferencePaymentData);
+	let participation = $derived(data.participation);
+	let delegationMembers = $derived(participation?.delegationMember?.delegation.members);
 
 	let isReferenceCreated = $state(false);
 	let isInitialized = $state(false);
 
 	type MinimalUserData = {
 		id: string;
-		given_name: string;
-		family_name: string;
+		givenName: string;
+		familyName: string;
 	};
 	let selectedParticipants = $state<MinimalUserData[]>([]);
 
-	const addParticipant = (user: { id: string; given_name: string; family_name: string }) => {
+	const addParticipant = (user: { id: string; givenName: string; familyName: string }) => {
 		if (isReferenceCreated) {
 			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
 			return;
@@ -118,7 +115,10 @@
 			<Selection.Fieldset title={m.delegationMembers()}>
 				{#each delegationMembers.sort((a, b) => sortByNames(a.user, b.user)) as member}
 					<Selection.Item
-						label={formatNames(member.user.given_name, member.user.family_name)}
+						label={formatNames(
+							member.user.givenName ?? undefined,
+							member.user.familyName ?? undefined
+						)}
 						selected={selectedParticipants.map((x) => x.id).includes(member.user.id)}
 						changeSelection={(selected) => addOrRemoveParticipant(member.user, selected)}
 						disabled={isReferenceCreated}

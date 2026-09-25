@@ -153,6 +153,7 @@
         "vaul-svelte": "^0.3.2",
         "vite": "^7.3.5",
         "vitest": "^4.1.0",
+        "wonka": "^6.3.2",
         "world-countries": "^5.1.0",
         "zod": "^4.4.3",
       },

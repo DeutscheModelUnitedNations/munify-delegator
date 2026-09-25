@@ -1,25 +1,15 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query PaymentGroupQuery($conferenceId: String!) {
-		findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			user {
-				id
-				given_name
-				family_name
-			}
-			supervisedDelegationMembers {
-				id
-			}
-			supervisedSingleParticipants {
-				id
-			}
-		}
-	}
-`);
-
-export const _PaymentGroupQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+/** Every supervisor of the conference, so a group payment can name the ones it covers. */
+export const load: PageLoad = async (event) => {
+	return {
+		conferenceSupervisors: await client.query.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: event.params.conferenceId } } },
+			id: true,
+			user: { id: true, givenName: true, familyName: true },
+			supervisedDelegationMembers: { id: true },
+			supervisedSingleParticipants: { id: true }
+		})
+	};
 };

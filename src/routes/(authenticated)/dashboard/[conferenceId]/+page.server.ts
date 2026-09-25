@@ -9,16 +9,16 @@ export const load: PageServerLoad = async (event) => {
 	const applicationForm = await superValidate(
 		{
 			school:
-				parent.conferenceQueryData?.findUniqueDelegationMember?.delegation.school ||
-				parent.conferenceQueryData?.findUniqueSingleParticipant?.school ||
+				parent.participation?.delegationMember?.delegation.school ||
+				parent.participation?.singleParticipant?.school ||
 				'',
 			experience:
-				parent.conferenceQueryData?.findUniqueDelegationMember?.delegation.experience ||
-				parent.conferenceQueryData?.findUniqueSingleParticipant?.experience ||
+				parent.participation?.delegationMember?.delegation.experience ||
+				parent.participation?.singleParticipant?.experience ||
 				'',
 			motivation:
-				parent.conferenceQueryData?.findUniqueDelegationMember?.delegation.motivation ||
-				parent.conferenceQueryData?.findUniqueSingleParticipant?.motivation ||
+				parent.participation?.delegationMember?.delegation.motivation ||
+				parent.participation?.singleParticipant?.motivation ||
 				''
 		},
 		zod4(applicationFormSchema)

@@ -1,16 +1,13 @@
-import { myConferenceparticipationQuery } from '$lib/queries/myConferenceparticipationQuery';
+import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
 
-	const { data } = await myConferenceparticipationQuery.fetch({
-		event,
-		variables: { userId: user.sub, conferenceId: event.params.conferenceId },
-		blocking: true
-	});
-
 	return {
-		conferenceQueryData: data
+		participation: await fetchMyConferenceParticipation({
+			userId: user.sub,
+			conferenceId: event.params.conferenceId
+		})
 	};
 };

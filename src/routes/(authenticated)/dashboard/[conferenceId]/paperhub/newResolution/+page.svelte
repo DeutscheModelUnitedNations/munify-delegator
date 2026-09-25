@@ -196,7 +196,7 @@
 	);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
-	let conference = $derived(data.conferenceQueryData?.findUniqueConference);
+	let conference = $derived(data.participation?.conference);
 
 	const createPaperMutation = graphql(`
 		mutation CreateResolutionPaperMutation(

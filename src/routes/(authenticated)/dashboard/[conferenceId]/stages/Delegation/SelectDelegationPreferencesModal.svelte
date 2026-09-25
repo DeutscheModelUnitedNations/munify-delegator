@@ -8,7 +8,8 @@
 	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
-	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { cache, graphql } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
 	import { toast } from 'svelte-sonner';
@@ -17,10 +18,8 @@
 	interface Props {
 		open: boolean;
 		onClose: () => void;
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
-		delegationMember: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>;
+		conference: NonNullable<MyConferenceParticipation['conference']>;
+		delegationMember: NonNullable<MyConferenceParticipation['delegationMember']>;
 	}
 
 	let { open, onClose, conference, delegationMember }: Props = $props();

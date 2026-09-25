@@ -12,7 +12,7 @@
 
 	let code = queryParam('code');
 
-	let conferenceId = $derived(data.conferenceQueryData?.findUniqueConference?.id);
+	let conferenceId = $derived(data.participation?.conference?.id);
 
 	const previewSupervisorQuery = graphql(`
 		query previewSupervisor($conferenceId: ID!, $connectionCode: String!) {

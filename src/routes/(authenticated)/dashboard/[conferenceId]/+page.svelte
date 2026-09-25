@@ -20,13 +20,13 @@
 	//TODO https://houdinigraphql.com/guides/loading-states
 
 	let { data }: { data: PageData } = $props();
-	let conferenceQueryData = $derived(data.conferenceQueryData);
-	let conference = $derived(conferenceQueryData?.findUniqueConference);
-	let delegationMember = $derived(conferenceQueryData?.findUniqueDelegationMember);
-	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
-	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
-	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
-	let status = $derived(conferenceQueryData?.findUniqueConferenceParticipantStatus);
+	let participation = $derived(data.participation);
+	let conference = $derived(participation?.conference);
+	let delegationMember = $derived(participation?.delegationMember);
+	let singleParticipant = $derived(participation?.singleParticipant);
+	let supervisor = $derived(participation?.supervisor);
+	let teamMember = $derived(participation?.teamMember);
+	let status = $derived(participation?.participantStatus);
 </script>
 
 <div class="flex w-full flex-col items-center">
@@ -96,8 +96,7 @@
 						<Certificate
 							conferenceId={conference!.id}
 							userId={data.user.sub}
-							didAttend={!!data.conferenceQueryData?.findUniqueConferenceParticipantStatus
-								?.didAttend}
+							didAttend={!!data.participation?.participantStatus?.didAttend}
 							customConferenceRole={singleParticipant.assignedRole}
 						/>
 					{:catch error}

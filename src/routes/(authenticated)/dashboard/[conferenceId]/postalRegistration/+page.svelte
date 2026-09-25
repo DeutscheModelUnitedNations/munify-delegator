@@ -15,8 +15,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const conferenceData = $derived(data.conferenceQueryData);
-	const conference = $derived(conferenceData?.findUniqueConference);
+	const conferenceData = $derived(data.participation);
+	const conference = $derived(conferenceData?.conference);
 	const userData = $derived(data.user);
 	const userId = $derived(userData.sub);
 

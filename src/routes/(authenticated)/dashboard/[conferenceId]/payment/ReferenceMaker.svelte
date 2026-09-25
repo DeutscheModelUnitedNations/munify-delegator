@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { graphql, type PaymentLayoutQuery$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import type { ConferencePaymentData } from './+layout';
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
@@ -9,11 +10,11 @@
 	interface Props {
 		users: {
 			id: string;
-			given_name: string | null;
-			family_name: string | null;
+			givenName: string | null;
+			familyName: string | null;
 		}[];
 		ownUserId: string;
-		conferencePaymentData?: PaymentLayoutQuery$result['findUniqueConference'];
+		conferencePaymentData?: ConferencePaymentData;
 		isReferenceCreated?: boolean;
 	}
 
@@ -29,22 +30,6 @@
 
 	let paymentFor = $derived(users.map((x) => x.id));
 
-	const createPaymentTransaction = graphql(`
-		mutation CreateOnePaymentTransactionMutation(
-			$conferenceId: ID!
-			$userId: ID!
-			$paymentFor: [ID!]!
-		) {
-			createOnePaymentTransaction(
-				conferenceId: $conferenceId
-				userId: $userId
-				paymentFor: $paymentFor
-			) {
-				id
-			}
-		}
-	`);
-
 	async function generateReference() {
 		referenceLoading = true;
 
@@ -53,13 +38,16 @@
 			return;
 		}
 
-		const paymentTransaction = await createPaymentTransaction.mutate({
-			conferenceId: conferencePaymentData?.id,
-			userId: ownUserId,
-			paymentFor: paymentFor
+		const paymentTransaction = await client.mutate.createPaymentTransaction({
+			__args: {
+				conferenceId: conferencePaymentData.id,
+				userId: ownUserId,
+				paymentFor
+			},
+			id: true
 		});
 
-		reference = paymentTransaction.data?.createOnePaymentTransaction.id;
+		reference = paymentTransaction.id;
 		referenceLoading = false;
 		isReferenceCreated = true;
 		toast.success(m.referenceGeneratedSuccessfully());
@@ -76,7 +64,7 @@
 		<div class="mb-4 flex flex-wrap gap-1">
 			{#each users as user (user.id)}
 				<span class="badge badge-neutral"
-					>{formatNames(user.given_name ?? undefined, user.family_name ?? undefined)}</span
+					>{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}</span
 				>
 			{/each}
 			{#if users.length == 0}

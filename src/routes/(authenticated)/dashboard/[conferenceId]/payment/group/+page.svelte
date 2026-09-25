@@ -1,29 +1,25 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
-	import { type PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import Selection from '$lib/components/selection';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 
 	type MinimalUserData = {
 		id: string;
-		given_name: string;
-		family_name: string;
+		givenName: string | null;
+		familyName: string | null;
 	};
 
 	let { data }: { data: PageData } = $props();
-	let conferencePaymentDataQuery = $derived(data.PaymentLayoutQuery);
-	let conferencePaymentData = $derived($conferencePaymentDataQuery.data?.findUniqueConference);
-	let conferenceQueryData = $derived(data.conferenceQueryData);
-	let conferencePaymentGroupData = $derived(data.PaymentGroupQuery);
-	let supervisorData = $derived(conferenceQueryData.findUniqueConferenceSupervisor);
+	let conferencePaymentData = $derived(data.conferencePaymentData);
+	let participation = $derived(data.participation);
+	let supervisorData = $derived(participation.supervisor);
 	let userData = $derived(supervisorData?.user);
 	let delegationMembers = $derived(supervisorData?.supervisedDelegationMembers);
 	let singleParticipants = $derived(supervisorData?.supervisedSingleParticipants);
-	let allOtherSupervisors = $derived(
-		$conferencePaymentGroupData.data?.findManyConferenceSupervisors
-	);
+	let allOtherSupervisors = $derived(data.conferenceSupervisors);
 	let otherSupervisors = $derived.by(() => {
 		if (!delegationMembers || !singleParticipants || !allOtherSupervisors || !userData) {
 			return [];
@@ -51,7 +47,7 @@
 	let isReferenceCreated = $state(false);
 	let isInitialized = $state(false);
 
-	const addParticipant = (user: { id: string; given_name: string; family_name: string }) => {
+	const addParticipant = (user: MinimalUserData) => {
 		if (isReferenceCreated) {
 			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
 			return;
@@ -93,7 +89,7 @@
 		selectedParticipants = [
 			...(delegationMembers ?? []).map((member) => member.user),
 			...(singleParticipants ?? []).map((participant) => participant.user),
-			userData
+			...(userData ? [userData] : [])
 		];
 	};
 
@@ -148,7 +144,7 @@
 				<Selection.Fieldset title={m.delegationMembers()}>
 					{#each delegationMembers.sort((a, b) => sortByNames(a.user, b.user)) as member}
 						<Selection.Item
-							label={formatNames(member.user.given_name, member.user.family_name)}
+							label={formatNames(member.user.givenName, member.user.familyName)}
 							selected={selectedParticipants.map((x) => x.id).includes(member.user.id)}
 							changeSelection={(selected) => addOrRemoveParticipant(member.user, selected)}
 							disabled={isReferenceCreated}
@@ -161,7 +157,7 @@
 				<Selection.Fieldset title={m.singleParticipants()}>
 					{#each singleParticipants.sort((a, b) => sortByNames(a.user, b.user)) as participant}
 						<Selection.Item
-							label={formatNames(participant.user.given_name, participant.user.family_name)}
+							label={formatNames(participant.user.givenName, participant.user.familyName)}
 							selected={selectedParticipants.map((x) => x.id).includes(participant.user.id)}
 							changeSelection={(selected) => addOrRemoveParticipant(participant.user, selected)}
 							disabled={isReferenceCreated}
@@ -174,8 +170,8 @@
 				<Selection.Fieldset title={m.supervisors()}>
 					<Selection.Item
 						label={m.myself({
-							given_name: userData.given_name,
-							family_name: userData.family_name
+							given_name: userData.givenName ?? '',
+							family_name: userData.familyName ?? ''
 						})}
 						selected={selectedParticipants.map((x) => x.id).includes(userData.id)}
 						changeSelection={(selected) => addOrRemoveParticipant(userData, selected)}
@@ -183,7 +179,10 @@
 					/>
 					{#each otherSupervisors.sort((a, b) => sortByNames(a, b)) as supervisorUser}
 						<Selection.Item
-							label={formatNames(supervisorUser.given_name, supervisorUser.family_name)}
+							label={formatNames(
+								supervisorUser.givenName ?? undefined,
+								supervisorUser.familyName ?? undefined
+							)}
 							selected={selectedParticipants.map((x) => x.id).includes(supervisorUser.id)}
 							changeSelection={(selected) => addOrRemoveParticipant(supervisorUser, selected)}
 							disabled={isReferenceCreated}

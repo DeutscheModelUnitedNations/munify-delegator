@@ -10,7 +10,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
-	import { graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { graphql } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import { cache } from '$houdini';
 	import formatNames from '$lib/helpers/formatNames';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
@@ -31,10 +32,8 @@
 	// use some component queries instead of that monster load maybe?
 
 	interface Props {
-		delegationMember: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>;
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		delegationMember: NonNullable<MyConferenceParticipation['delegationMember']>;
+		conference: NonNullable<MyConferenceParticipation['conference']>;
 		applicationForm: PageData['applicationForm'];
 	}
 
@@ -302,7 +301,10 @@
 		<DelegationStatusTableWrapper title={m.activeMembers()}>
 			{#each delegationMember.delegation.members as member}
 				<DelegationStatusTableEntry
-					name={formatNames(member.user.given_name, member.user.family_name)}
+					name={formatNames(
+						member.user.givenName ?? undefined,
+						member.user.familyName ?? undefined
+					)}
 					pronouns={member.user.pronouns ?? ''}
 					headDelegate={member.isHeadDelegate}
 				>

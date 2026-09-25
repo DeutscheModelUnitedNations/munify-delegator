@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 
 	type DelegationMember = NonNullable<
-		MyConferenceparticipationQuery$result['findUniqueConferenceSupervisor']
+		MyConferenceParticipation['supervisor']
 	>['supervisedDelegationMembers'][number];
 
 	type Paper = NonNullable<DelegationMember['delegation']['papers']>[number];

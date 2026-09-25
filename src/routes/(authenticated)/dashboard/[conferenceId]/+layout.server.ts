@@ -1,21 +1,20 @@
-import { myConferenceparticipationQuery } from '$lib/queries/myConferenceparticipationQuery';
+import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
 	const { user } = await event.parent();
 
-	const { data } = await myConferenceparticipationQuery.fetch({
-		event,
-		variables: { userId: user.sub, conferenceId: event.params.conferenceId },
-		blocking: true
+	const participation = await fetchMyConferenceParticipation({
+		userId: user.sub,
+		conferenceId: event.params.conferenceId
 	});
 
 	return {
-		conferenceQueryData: data,
+		participation,
 		ofAgeAtConference: ofAgeAtConference(
-			data?.findUniqueConference?.startConference,
-			data?.findUniqueUser?.birthday
+			participation.conference?.startConference,
+			participation.user?.birthday
 		)
 	};
 };

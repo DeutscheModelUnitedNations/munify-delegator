@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 	import type { Snippet } from 'svelte';
@@ -9,16 +9,12 @@
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import { m } from '$lib/paraglide/messages';
 
-	type Committee = NonNullable<
-		MyConferenceparticipationQuery$result['findUniqueConference']
-	>['committees'][number];
+	type Committee = NonNullable<MyConferenceParticipation['conference']>['committees'][number];
 	type NationPool = Committee['nations'];
 	type Nation = NationPool[number];
 
 	interface Props {
-		committees: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConference']
-		>['committees'];
+		committees: NonNullable<MyConferenceParticipation['conference']>['committees'];
 		nationPool: NationPool;
 		actionCell?: Snippet<[Nation]>;
 		delegationSize?: number;

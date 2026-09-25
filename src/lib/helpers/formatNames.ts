@@ -166,12 +166,16 @@ export function formatInitials(
 }
 
 type NameObject = {
-	given_name: string;
-	family_name: string;
+	givenName: string | null | undefined;
+	familyName: string | null | undefined;
 };
 
 export function sortByNames(a: NameObject, b: NameObject): number {
-	const aName = formatNames(a.given_name, a.family_name, { givenNameFirst: false });
-	const bName = formatNames(b.given_name, b.family_name, { givenNameFirst: false });
+	const aName = formatNames(a.givenName ?? undefined, a.familyName ?? undefined, {
+		givenNameFirst: false
+	});
+	const bName = formatNames(b.givenName ?? undefined, b.familyName ?? undefined, {
+		givenNameFirst: false
+	});
 	return aName.localeCompare(bName);
 }

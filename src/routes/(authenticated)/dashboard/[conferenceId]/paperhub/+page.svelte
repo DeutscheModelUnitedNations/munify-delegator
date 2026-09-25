@@ -20,19 +20,18 @@
 	let isSupervisor = $derived(!!data.supervisor && (data.supervisedDelegationIds?.length ?? 0) > 0);
 
 	// Check if user is a paper author (only delegation members can submit papers)
-	let isPaperAuthor = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
+	let isPaperAuthor = $derived(!!data.participation?.delegationMember);
 
 	// Check if user is a single participant (they can only view papers, not submit)
 	let isSingleParticipant = $derived(
-		!!data.conferenceQueryData?.findUniqueSingleParticipant &&
-			!data.conferenceQueryData?.findUniqueDelegationMember
+		!!data.participation?.singleParticipant && !data.participation?.delegationMember
 	);
 
 	// Check if user is a participant (delegation member, single participant, or supervisor)
 	let isParticipant = $derived(
-		!!data.conferenceQueryData?.findUniqueDelegationMember ||
-			!!data.conferenceQueryData?.findUniqueSingleParticipant ||
-			!!data.conferenceQueryData?.findUniqueConferenceSupervisor
+		!!data.participation?.delegationMember ||
+			!!data.participation?.singleParticipant ||
+			!!data.participation?.supervisor
 	);
 
 	// View toggle state persisted in URL search params
@@ -72,9 +71,7 @@
 				isPaperAuthor) // Paper authors can switch between my papers and global
 	);
 
-	let isNSA = $derived(
-		!!data.conferenceQueryData?.findUniqueDelegationMember?.delegation?.assignedNonStateActor
-	);
+	let isNSA = $derived(!!data.participation?.delegationMember?.delegation?.assignedNonStateActor);
 </script>
 
 {#snippet PaperTypeBlock(paperType: PaperType$options, description: string, href: string)}

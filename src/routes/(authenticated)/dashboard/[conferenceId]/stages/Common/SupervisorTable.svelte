@@ -4,12 +4,10 @@
 	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 
 	interface Props {
-		supervisors: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>['supervisors'];
+		supervisors: NonNullable<MyConferenceParticipation['delegationMember']>['supervisors'];
 		conferenceId: string;
 	}
 
@@ -25,7 +23,7 @@
 		<DelegationStatusTableWrapper withEmail>
 			{#each supervisors as supervisor}
 				<DelegationStatusTableEntry
-					name={formatNames(supervisor.user.given_name, supervisor.user.family_name)}
+					name={formatNames(supervisor.user.givenName, supervisor.user.familyName)}
 					pronouns={supervisor.user.pronouns}
 					email={supervisor.user.email}
 				/>

@@ -6,17 +6,15 @@
 	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
 	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
 	import { getLinksForUserType, type DashboardLinkContext } from '$lib/data/dashboardLinks';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
 
 	interface Props {
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
-		singleParticipant: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
-		>;
+		conference: NonNullable<MyConferenceParticipation['conference']>;
+		singleParticipant: NonNullable<MyConferenceParticipation['singleParticipant']>;
 		user: PageData['user'];
-		status: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		status: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
 	}
 

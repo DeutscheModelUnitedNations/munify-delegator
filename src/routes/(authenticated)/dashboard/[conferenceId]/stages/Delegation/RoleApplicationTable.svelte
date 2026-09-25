@@ -3,18 +3,13 @@
 	import type { Nation, RoleApplication } from '@prisma/client';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
-	import type {
-		MyConferenceparticipationQuery,
-		MyConferenceparticipationQuery$result
-	} from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 
 	interface Props {
 		roleApplications: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+			MyConferenceParticipation['delegationMember']
 		>['delegation']['appliedForRoles'];
-		committees: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConference']
-		>['committees'];
+		committees: NonNullable<MyConferenceParticipation['conference']>['committees'];
 	}
 
 	let { roleApplications, committees }: Props = $props();

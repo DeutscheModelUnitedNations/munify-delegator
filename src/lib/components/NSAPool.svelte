@@ -1,11 +1,9 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 
-	type NonStateActorPool = NonNullable<
-		MyConferenceparticipationQuery$result['findUniqueConference']
-	>['nonStateActors'];
+	type NonStateActorPool = NonNullable<MyConferenceParticipation['conference']>['nonStateActors'];
 
 	interface Props {
 		nonStateActorPool: NonStateActorPool;

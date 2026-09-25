@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
-	import { type PageData } from './$houdini';
+	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let conferencePaymentDataQuery = $derived(data.PaymentLayoutQuery);
-	let conferencePaymentData = $derived($conferencePaymentDataQuery.data?.findUniqueConference);
+	let conferencePaymentData = $derived(data.conferencePaymentData);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -14,7 +13,7 @@
 
 	<ReferenceMaker
 		users={[
-			{ id: data.user.sub, family_name: data.user.family_name, given_name: data.user.given_name }
+			{ id: data.user.sub, familyName: data.user.family_name, givenName: data.user.given_name }
 		]}
 		ownUserId={data.user.sub}
 		{conferencePaymentData}

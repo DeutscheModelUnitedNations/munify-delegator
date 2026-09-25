@@ -12,20 +12,18 @@
 	import formatNames from '$lib/helpers/formatNames';
 	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
 	import { ofAgeAtConference as computeOfAge } from '$lib/helpers/ageChecker';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
 
 	interface Props {
-		delegationMember: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>;
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		delegationMember: NonNullable<MyConferenceParticipation['delegationMember']>;
+		conference: NonNullable<MyConferenceParticipation['conference']>;
 		user: {
 			sub: string;
 			email: string;
 		};
-		status: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		status: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
 	}
 
@@ -114,7 +112,7 @@
 				(x) => x.conference.id === conference.id
 			)}
 			<DelegationStatusTableEntry
-				name={formatNames(member.user.given_name, member.user.family_name)}
+				name={formatNames(member.user.givenName, member.user.familyName)}
 				pronouns={member.user.pronouns ?? ''}
 				headDelegate={member.isHeadDelegate}
 				email={member.user.email}

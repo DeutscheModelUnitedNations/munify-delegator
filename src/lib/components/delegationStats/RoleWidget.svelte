@@ -3,20 +3,18 @@
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 
 	interface Props {
 		country?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+			MyConferenceParticipation['delegationMember']
 		>['delegation']['assignedNation'];
-		committees?:
-			| NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>['committees']
-			| null;
+		committees?: NonNullable<MyConferenceParticipation['conference']>['committees'] | null;
 		nonStateActor?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
+			MyConferenceParticipation['delegationMember']
 		>['delegation']['assignedNonStateActor'];
 		customConferenceRole?: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
+			MyConferenceParticipation['singleParticipant']
 		>['assignedRole'];
 	}
 

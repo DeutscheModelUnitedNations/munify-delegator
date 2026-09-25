@@ -8,11 +8,11 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let isDelegation = $derived(!!data.conferenceQueryData?.findUniqueDelegationMember);
-	let isSupervisor = $derived(!!data.conferenceQueryData?.findUniqueConferenceSupervisor);
+	let isDelegation = $derived(!!data.participation?.delegationMember);
+	let isSupervisor = $derived(!!data.participation?.supervisor);
 	let supervisorIsNotPresent = $derived(
-		data.conferenceQueryData?.findUniqueConferenceSupervisor
-			? !data.conferenceQueryData.findUniqueConferenceSupervisor.plansOwnAttendenceAtConference
+		data.participation?.supervisor
+			? !data.participation.supervisor.plansOwnAttendenceAtConference
 			: false
 	);
 </script>

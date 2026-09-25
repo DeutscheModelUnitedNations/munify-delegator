@@ -5,7 +5,8 @@
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
+	import { cache, graphql } from '$houdini';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
@@ -18,10 +19,8 @@
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 
 	interface Props {
-		singleParticipant: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueSingleParticipant']
-		>;
-		conference: NonNullable<MyConferenceparticipationQuery$result['findUniqueConference']>;
+		singleParticipant: NonNullable<MyConferenceParticipation['singleParticipant']>;
+		conference: NonNullable<MyConferenceParticipation['conference']>;
 		applicationForm: any;
 	}
 
