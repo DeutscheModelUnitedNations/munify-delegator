@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
@@ -12,18 +12,14 @@
 
 	let { userId, iconOnly = false }: Props = $props();
 
-	const StartImpersonationMutation = graphql(`
-		mutation StartImpersonation($targetUserId: String!) {
-			startImpersonation(targetUserId: $targetUserId)
-		}
-	`);
-
 	let isLoading = $state(false);
 	const startImpersonation = async () => {
 		if (isLoading) return;
 		isLoading = true;
 		try {
-			const promise = StartImpersonationMutation.mutate({ targetUserId: userId });
+			const promise = Promise.resolve(
+				client.mutate.startImpersonation({ __args: { targetUserId: userId } })
+			);
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
 			await goto('/dashboard');

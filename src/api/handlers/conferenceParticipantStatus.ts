@@ -58,6 +58,16 @@ abilityBuilder.conferenceParticipantStatus.allow(['read', 'update', 'delete']).w
 });
 
 export const ConferenceParticipantStatusRef = object({ table: 'conferenceParticipantStatus' });
+
+const BulkStatusUpdateResult = schemaBuilder.simpleObject(
+	'UpdateAllConferenceParticipantStatusResponse',
+	{
+		fields: (t) => ({
+			/** How many participants the bulk update touched. */
+			changed: t.int()
+		})
+	}
+);
 query({ table: 'conferenceParticipantStatus' });
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
@@ -166,7 +176,7 @@ schemaBuilder.mutationFields((t) => ({
 
 	/** Bulk attendance toggle across a whole conference. Admin only, as before. */
 	updateAllConferenceParticipantStatus: t.field({
-		type: ['String'],
+		type: BulkStatusUpdateResult,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
 			didAttend: t.arg.boolean()
@@ -212,7 +222,7 @@ schemaBuilder.mutationFields((t) => ({
 				}
 			});
 
-			return changed;
+			return { changed: changed.length };
 		}
 	}),
 

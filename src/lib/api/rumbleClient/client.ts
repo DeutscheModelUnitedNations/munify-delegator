@@ -1559,7 +1559,7 @@ export type Mutation = {
   updateAllConferenceParticipantStatus: (p: {
     conferenceId: ID,
     didAttend?: Boolean | null | undefined
-  }) => String[],
+  }) => UpdateAllConferenceParticipantStatusResponse,
   updateCalendarDay: (p: {
     date?: DateTime | null | undefined,
     id: ID,
@@ -3596,6 +3596,10 @@ export type UnlockedPieceData = {
   isComplete: Boolean,
   pieceName: String,
   totalCount: Int    
+};
+		
+export type UpdateAllConferenceParticipantStatusResponse = {
+  changed: Int    
 };
 		
 export type UpsertSelfResult = {

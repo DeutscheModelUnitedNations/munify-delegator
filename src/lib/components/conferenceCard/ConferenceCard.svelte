@@ -3,16 +3,14 @@
 	import { getLocale } from '$lib/paraglide/runtime.js';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 	import { m } from '$lib/paraglide/messages';
-	import type { ConferenceOpenForRegistrationQuery$result } from '$houdini';
+	import type { PageData } from '../../../routes/(authenticated)/registration/$types';
 	import { getRegistrationStatus, type RegistrationStatus } from '$lib/utils/registrationStatus';
 	import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
 	import StatusLight from '../StatusLight.svelte';
 	import RegistrationStatusLight from '../RegistrationStatusLight.svelte';
 
 	interface ConferenceCardProps {
-		conference: NonNullable<
-			ConferenceOpenForRegistrationQuery$result['findManyConferences']
-		>[number];
+		conference: PageData['conferences'][number];
 		baseSlug: string;
 		btnText?: string;
 		alreadyRegistered?: boolean;

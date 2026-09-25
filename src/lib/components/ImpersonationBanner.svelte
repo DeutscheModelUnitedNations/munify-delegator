@@ -1,44 +1,34 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
-	const checkImpersonationStatusQuery = graphql(`
-		query checkImpersonationStatus {
-			impersonationStatus {
-				isImpersonating
-				originalUser {
-					sub
-					email
-				}
-				impersonatedUser {
-					sub
-					email
-				}
-			}
-		}
-	`);
+	type ImpersonationStatus = Awaited<ReturnType<typeof fetchStatus>>;
 
-	const stopImpersonationMutation = graphql(`
-		mutation StopImpersonation {
-			stopImpersonation
-		}
-	`);
+	function fetchStatus() {
+		return client.query.impersonationStatus({
+			isImpersonating: true,
+			originalUser: { sub: true, email: true },
+			impersonatedUser: { sub: true, email: true }
+		});
+	}
 
-	let status = $derived($checkImpersonationStatusQuery?.data?.impersonationStatus);
+	let status = $state<ImpersonationStatus>();
 	let isImpersonating = $derived(status?.isImpersonating || false);
 	let isLoading = $state(false);
 
 	$effect(() => {
-		checkImpersonationStatusQuery.fetch();
+		void fetchStatus().then((result) => {
+			status = result;
+		});
 	});
 
 	async function stopImpersonation() {
 		if (isLoading) return;
 		isLoading = true;
-		const promise = stopImpersonationMutation.mutate(null);
+		const promise = Promise.resolve(client.mutate.stopImpersonation());
 		toast.promise(promise, genericPromiseToastMessages);
 		try {
 			await promise;
@@ -59,8 +49,8 @@
 			<div class="font-bold">{m.impersonationActive()}</div>
 			<div class="text-sm opacity-75">
 				{m.youAreActingAs({
-					impersonatedUser: status.impersonatedUser?.email || 'unknown',
-					originalUser: status.originalUser?.email || 'unknown'
+					impersonatedUser: status?.impersonatedUser?.email || 'unknown',
+					originalUser: status?.originalUser?.email || 'unknown'
 				})}
 			</div>
 		</div>

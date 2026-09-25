@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import ParticipantStatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -9,30 +9,20 @@
 
 	let { data } = $props();
 
-	const updateAllConferenceParticipantStatusQuery = graphql(`
-		mutation UpdateAllConferenceParticipantStatus($conferenceId: String!, $didAttend: Boolean!) {
-			updateAllConferenceParticipantStatus(
-				conferenceId: $conferenceId
-				data: { didAttend: $didAttend }
-			) {
-				changed
-			}
-		}
-	`);
-
 	const switchAttendanceState = async (value: boolean) => {
 		loading = true;
 		if (!confirm(m.switchAttendanceStateConfirmation())) {
 			return;
 		}
-		await updateAllConferenceParticipantStatusQuery.mutate({
-			conferenceId: data.conferenceId,
-			didAttend: value
-		});
-		if (!$updateAllConferenceParticipantStatusQuery.errors) {
+		try {
+			await client.mutate.updateAllConferenceParticipantStatus({
+				__args: { conferenceId: data.conferenceId, didAttend: value },
+				changed: true
+			});
 			toast.success(m.changesSuccessful());
+		} finally {
+			loading = false;
 		}
-		loading = false;
 	};
 
 	let loading = $state(false);

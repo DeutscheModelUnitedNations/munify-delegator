@@ -1,68 +1,38 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import type { LayoutLoad } from './$types';
 
-const TeamMemberStatusQuery = graphql(`
-	query TeamMemberStatusQuery($userId: String!, $conferenceId: String!) {
-		findManyTeamMembers(
-			where: {
-				userId: { equals: $userId }
-				conferenceId: { equals: $conferenceId }
-				role: { in: [REVIEWER, PROJECT_MANAGEMENT, PARTICIPANT_CARE] }
-			}
-		) {
-			id
-			role
-		}
-	}
-`);
-
-const SupervisorStatusQuery = graphql(`
-	query SupervisorStatusQuery($userId: String!, $conferenceId: String!) {
-		findUniqueConferenceSupervisor(
-			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
-		) {
-			id
-			supervisedDelegationMembers {
-				delegation {
-					id
-				}
-			}
-		}
-	}
-`);
-
+/** The paper hub looks different for reviewers and for supervisors, so it asks for both. */
 export const load: LayoutLoad = async (event) => {
 	const { user } = await event.parent();
 	const conferenceId = event.params.conferenceId;
+	const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } };
 
-	const [teamMemberResult, supervisorResult] = await Promise.all([
-		TeamMemberStatusQuery.fetch({
-			event,
-			variables: {
-				userId: user.sub,
-				conferenceId
+	const [teamMembers, supervisors] = await Promise.all([
+		client.query.teamMembers({
+			__args: {
+				where: {
+					...forUser,
+					role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+				}
 			},
-			blocking: true
+			id: true,
+			role: true
 		}),
-		SupervisorStatusQuery.fetch({
-			event,
-			variables: {
-				userId: user.sub,
-				conferenceId
-			},
-			blocking: true
+		client.query.conferenceSupervisors({
+			__args: { where: forUser },
+			id: true,
+			supervisedDelegationMembers: { delegation: { id: true } }
 		})
 	]);
 
-	const supervisor = supervisorResult.data?.findUniqueConferenceSupervisor;
-	const supervisedDelegationIds = [
-		...new Set(supervisor?.supervisedDelegationMembers?.map((m) => m.delegation.id) ?? [])
-	];
+	const supervisor = supervisors.at(0) ?? null;
 
 	return {
 		conferenceId,
-		teamMembers: teamMemberResult.data?.findManyTeamMembers ?? [],
-		supervisor: supervisor ?? null,
-		supervisedDelegationIds
+		teamMembers,
+		supervisor,
+		supervisedDelegationIds: [
+			...new Set(supervisor?.supervisedDelegationMembers.map((m) => m.delegation.id) ?? [])
+		]
 	};
 };

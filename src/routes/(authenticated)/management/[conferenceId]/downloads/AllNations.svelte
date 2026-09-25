@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
@@ -14,28 +14,14 @@
 
 	let loading = $state(false);
 
-	const getAllConferenceNations = graphql(`
-		query GetAllConferenceNations($conferenceId: String!) {
-			getAllConferenceNations(conferenceId: $conferenceId) {
-				alpha2Code
-				alpha3Code
-			}
-		}
-	`);
-
 	const getAllNationsData = async () => {
 		loading = true;
 		try {
-			const res = await getAllConferenceNations.fetch({
-				variables: { conferenceId }
+			const resData = await client.query.getAllConferenceNations({
+				__args: { conferenceId },
+				alpha2Code: true,
+				alpha3Code: true
 			});
-			const resData = res.data?.getAllConferenceNations;
-
-			if (res.errors || !resData) {
-				console.error(res.errors);
-				alert(m.httpGenericError());
-				return;
-			}
 
 			const header = ['alpha2', 'alpha3', 'countryName', 'region'];
 			const data = resData.map((nation) => [

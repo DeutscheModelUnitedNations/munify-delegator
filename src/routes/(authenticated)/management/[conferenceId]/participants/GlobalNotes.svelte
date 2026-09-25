@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -15,22 +15,12 @@
 
 	let value = $state(globalNotes);
 
-	const saveGlobalNotesMutation = graphql(`
-		mutation saveGlobalNotesMutation($where: UserWhereUniqueInput!, $globalNotes: String!) {
-			updateOneUsersGlobalNotes(where: $where, globalNotes: $globalNotes) {
-				id
-				globalNotes
-			}
-		}
-	`);
-
 	const saveGlobalNotes = async () => {
 		if (!id) return;
-		const promise = saveGlobalNotesMutation.mutate({
-			where: {
-				id
-			},
-			globalNotes: value
+		const promise = client.mutate.updateUsersGlobalNotes({
+			__args: { id, globalNotes: value },
+			id: true,
+			globalNotes: true
 		});
 		toast.promise(promise, {
 			success: m.saved(),
@@ -38,7 +28,6 @@
 			loading: m.saving()
 		});
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 
 		open = false;
