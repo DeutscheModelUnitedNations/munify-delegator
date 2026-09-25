@@ -22,7 +22,22 @@ abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when((ctx) => {
 	return question ? { where: { question } } : undefined;
 });
 
-export const SurveyOptionRef = object({ table: 'surveyOption' });
+export const SurveyOptionRef = object({
+	table: 'surveyOption',
+	adjust: (t) => ({
+		/** How many participants picked this option - the survey result, in effect. */
+		countSurveyAnswers: t.field({
+			type: 'Int',
+			resolve: async (option) =>
+				(
+					await db.query.surveyAnswer.findMany({
+						where: { optionId: option.id },
+						columns: { id: true }
+					})
+				).length
+		})
+	})
+});
 query({ table: 'surveyOption' });
 
 schemaBuilder.mutationFields((t) => ({

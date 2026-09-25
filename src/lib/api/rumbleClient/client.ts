@@ -289,13 +289,13 @@ export type CheckEmailInput = {
 };
 		
 export type Committee = {
-  CommitteeAgendaItem: (p?: {
+  abbreviation: String,
+  agendaItems: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
     orderBy?: CommitteeagendaitemOrderInputArgument | null | undefined,
     where?: CommitteeagendaitemWhereInputArgument | null | undefined
   }) => Committeeagendaitem[],
-  abbreviation: String,
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
     where?: ConferenceWhereInputArgument | null | undefined
@@ -344,10 +344,10 @@ export type CommitteePaperGroup = {
 		
 export type CommitteeWhereInputArgument = {
   AND?: CommitteeWhereInputArgument[] | undefined,
-  CommitteeAgendaItem?: CommitteeagendaitemWhereInputArgument | null | undefined,
   NOT?: CommitteeWhereInputArgument | null | undefined,
   OR?: CommitteeWhereInputArgument[] | undefined,
   abbreviation?: StringWhereInputArgument | null | undefined,
+  agendaItems?: CommitteeagendaitemWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
@@ -422,6 +422,7 @@ export type Conference = {
     where?: CalendardayWhereInputArgument | null | undefined
   }) => Calendarday[],
   certificateContent: String | null,
+  certificateContentSet: Boolean,
   committees: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -441,6 +442,7 @@ export type Conference = {
     where?: ConferenceparticipantstatusWhereInputArgument | null | undefined
   }) => Conferenceparticipantstatus[],
   contractContent: String | null,
+  contractContentSet: Boolean,
   createdAt: DateTime,
   currency: String | null,
   delegationMembers: (p?: {
@@ -459,6 +461,7 @@ export type Conference = {
   endConference: DateTime,
   feeAmount: Float | null,
   guardianConsentContent: String | null,
+  guardianConsentContentSet: Boolean,
   iban: String | null,
   id: ID,
   imageDataURL: String | null,
@@ -479,6 +482,8 @@ export type Conference = {
   logoDataURL: String | null,
   longTitle: String | null,
   mediaConsentContent: String | null,
+  mediaConsentContentSet: Boolean,
+  nextDocumentNumber: Int,
   nonStateActors: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -510,6 +515,7 @@ export type Conference = {
   postalStreet: String | null,
   postalZip: String | null,
   registrationDeadlineGracePeriodMinutes: Int,
+  schools: () => ConferenceSchools[],
   showCalendar: Boolean,
   showInfoExpanded: Boolean,
   singleParticipants: (p?: {
@@ -540,11 +546,15 @@ export type Conference = {
     where?: TeammemberWhereInputArgument | null | undefined
   }) => Teammember[],
   termsAndConditionsContent: String | null,
+  termsAndConditionsContentSet: Boolean,
   timezone: String,
   title: String,
+  totalParticipants: Int,
+  totalSeats: Int,
   unlockPayments: Boolean,
   unlockPostals: Boolean,
   updatedAt: DateTime,
+  waitingListLength: Int,
   website: String | null    
 };
 		
@@ -593,6 +603,14 @@ export type ConferenceOrderInputArgument = {
   unlockPostals?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined,
   website?: SortingParameter | null | undefined    
+};
+		
+export type ConferenceSchools = {
+  delegationCount: Int,
+  delegationMembers: Int,
+  school: String,
+  singleParticipants: Int,
+  sumParticipants: Int    
 };
 		
 export type ConferenceWhereInputArgument = {
@@ -663,7 +681,7 @@ export type ConferenceWhereInputArgument = {
 		
 export type Conferenceparticipantstatus = {
   accessCardId: ID | null,
-  assigendDocumentNumber: Int | null,
+  assignedDocumentNumber: Int | null,
   attendanceEntries: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -693,7 +711,7 @@ export type Conferenceparticipantstatus = {
 		
 export type ConferenceparticipantstatusOrderInputArgument = {
   accessCardId?: SortingParameter | null | undefined,
-  assigendDocumentNumber?: SortingParameter | null | undefined,
+  assignedDocumentNumber?: SortingParameter | null | undefined,
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
   didAttend?: SortingParameter | null | undefined,
@@ -712,7 +730,7 @@ export type ConferenceparticipantstatusWhereInputArgument = {
   NOT?: ConferenceparticipantstatusWhereInputArgument | null | undefined,
   OR?: ConferenceparticipantstatusWhereInputArgument[] | undefined,
   accessCardId?: IDWhereInputArgument | null | undefined,
-  assigendDocumentNumber?: IntWhereInputArgument | null | undefined,
+  assignedDocumentNumber?: IntWhereInputArgument | null | undefined,
   attendanceEntries?: AttendanceentryWhereInputArgument | null | undefined,
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
@@ -1524,6 +1542,7 @@ export type Mutation = {
     scope?: String | null | undefined,
     targetUserId: ID
   }) => Boolean,
+  stopImpersonation: Boolean,
   swapRoleApplicationRanks: (p: {
     firstRoleApplicationId: ID,
     secondRoleApplicationId: ID
@@ -1758,7 +1777,8 @@ export type Mutation = {
     motivation?: String | null | undefined,
     requests?: String | null | undefined,
     school?: String | null | undefined
-  }) => Waitinglistentry    
+  }) => Waitinglistentry,
+  upsertSelf: () => UpsertSelfResult    
 };
 		
 export type MyReviewStats = {
@@ -2014,6 +2034,7 @@ export type PapertypeEnum = "INTRODUCTION_PAPER" | "POSITION_PAPER" | "WORKING_P
 		
 export type Paperversion = {
   content: JSON,
+  contentHash: String,
   createdAt: DateTime,
   id: ID,
   paper: (p?: {
@@ -3350,6 +3371,7 @@ export type SurveyanswerWhereInputArgument = {
 };
 		
 export type Surveyoption = {
+  countSurveyAnswers: Int,
   createdAt: DateTime,
   description: String,
   id: ID,
@@ -3519,7 +3541,8 @@ export type Teammemberinvitation = {
   role: TeamroleEnum,
   token: String,
   updatedAt: DateTime,
-  usedAt: DateTime | null    
+  usedAt: DateTime | null,
+  userExists: Boolean    
 };
 		
 export type TeammemberinvitationOrderInputArgument = {
@@ -3573,6 +3596,11 @@ export type UnlockedPieceData = {
   totalCount: Int    
 };
 		
+export type UpsertSelfResult = {
+  userId: String,
+  userNeedsAdditionalInfo: Boolean    
+};
+		
 export type User = {
   apartment: String | null,
   birthday: DateTime | null,
@@ -3583,6 +3611,7 @@ export type User = {
     orderBy?: ConferenceparticipantstatusOrderInputArgument | null | undefined,
     where?: ConferenceparticipantstatusWhereInputArgument | null | undefined
   }) => Conferenceparticipantstatus[],
+  conferenceParticipationsCount: Int,
   conferenceSupervisor: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,

@@ -16,6 +16,8 @@ import {
 	type TokenCookieSchemaType
 } from '$api/services/oidcContext';
 import { GraphQLError } from 'graphql';
+import * as Sentry from '@sentry/sveltekit';
+import { configPublic } from '$config/public';
 
 // Ported from abilities/entities/user.ts, plus the impersonation rules that lived in
 // abilities/abilities.ts.
@@ -117,7 +119,41 @@ abilityBuilder.user.allow('impersonate').when((ctx) => {
 	};
 });
 
-export const UserRef = object({ table: 'user' });
+export const UserRef = object({
+	table: 'user',
+	adjust: (t) => ({
+		/**
+		 * How many conferences this person actually took part in - registrations that never got a
+		 * seat do not count, which is what makes this a useful "is this a returning participant"
+		 * signal in the admin UI.
+		 */
+		conferenceParticipationsCount: t.field({
+			type: 'Int',
+			resolve: async (user) => {
+				const [memberships, participations] = await Promise.all([
+					db.query.delegationMember.findMany({
+						where: {
+							userId: user.id,
+							delegation: {
+								OR: [
+									{ assignedNationAlpha3Code: { isNotNull: true } },
+									{ assignedNonStateActorId: { isNotNull: true } }
+								]
+							}
+						},
+						columns: { id: true }
+					}),
+					db.query.singleParticipant.findMany({
+						where: { userId: user.id, assignedRoleId: { isNotNull: true } },
+						columns: { id: true }
+					})
+				]);
+
+				return memberships.length + participations.length;
+			}
+		})
+	})
+});
 query({ table: 'user' });
 
 schemaBuilder.mutationFields((t) => ({
@@ -442,6 +478,149 @@ schemaBuilder.mutationFields((t) => ({
 				`User ${actor.preferred_username} (${actor.sub}) started impersonating user ${target.preferredUsername} (${target.id})`
 			);
 			return true;
+		}
+	}),
+
+	/** Drops the impersonation cookie, which puts the caller back in their own session. */
+	stopImpersonation: t.field({
+		type: 'Boolean',
+		resolve: async (_root, _args, ctx) => {
+			if (!ctx.oidc.impersonation?.isImpersonating) {
+				throw new GraphQLError('Not currently impersonating');
+			}
+
+			ctx.event?.cookies.delete(impersonationTokenCookieName, { path: '/' });
+
+			const { originalUser, impersonatedUser } = ctx.oidc.impersonation;
+			if (originalUser && impersonatedUser) {
+				console.log(
+					`User ${originalUser.preferred_username} (${originalUser.sub}) stopped impersonating user ${impersonatedUser.preferred_username} (${impersonatedUser.sub})`
+				);
+			}
+
+			return true;
+		}
+	})
+}));
+
+const UpsertSelfResult = schemaBuilder.simpleObject('UpsertSelfResult', {
+	fields: (t) => ({
+		userNeedsAdditionalInfo: t.boolean(),
+		userId: t.string()
+	})
+});
+
+/** Postgres reports a unique index violation as 23505. */
+function isUniqueViolationOn(error: unknown, column: string) {
+	if (typeof error !== 'object' || error === null) return false;
+	const candidate: { code?: unknown; constraint?: unknown; detail?: unknown } = error;
+	if (candidate.code !== '23505') return false;
+	return (
+		String(candidate.constraint ?? '').includes(column) ||
+		String(candidate.detail ?? '').includes(column)
+	);
+}
+
+/** Enough of an address to recognise it in a log without writing the whole thing down. */
+function maskEmail(email: string): string {
+	const [localPart, domain] = email.split('@');
+	if (!localPart || !domain) {
+		return '***@***';
+	}
+	if (localPart.length <= 2) {
+		return `${localPart[0]}***@${domain}`;
+	}
+	return `${localPart.slice(0, 2)}***@${domain}`;
+}
+
+schemaBuilder.mutationFields((t) => ({
+	/**
+	 * Creates or refreshes the caller's own row from their OIDC claims. Called right after login,
+	 * which is the only moment the app learns about a new account.
+	 *
+	 * The claims come from the context rather than the userinfo endpoint: when access tokens are
+	 * JWTs scoped to an API resource, fetching userinfo fails.
+	 */
+	upsertSelf: t.field({
+		type: UpsertSelfResult,
+		resolve: async (_root, _args, ctx) => {
+			const caller = ctx.mustBeLoggedIn();
+			if (!caller.email) {
+				throw new GraphQLError('OIDC result is missing required field: email');
+			}
+			const email = caller.email;
+			const locale = caller.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE;
+
+			try {
+				const [user] = await db
+					.insert(schema.user)
+					.values({
+						id: caller.sub,
+						email,
+						familyName: '',
+						givenName: '',
+						preferredUsername: email,
+						locale
+					})
+					.onConflictDoUpdate({ target: schema.user.id, set: { email, locale } })
+					.returning();
+
+				return {
+					userNeedsAdditionalInfo: !userFormSchema.safeParse({
+						...user,
+						given_name: user.givenName,
+						family_name: user.familyName
+					}).success,
+					userId: user.id
+				};
+			} catch (error) {
+				if (!isUniqueViolationOn(error, 'email')) throw error;
+
+				// Someone else already holds this address. Two ways to get here: a brand new
+				// account whose address is taken, or an existing account changing to a taken one.
+				// The frontend shows a different page for each, so say which it is.
+				const existing = await db.query.user.findFirst({
+					where: { id: caller.sub },
+					columns: { email: true }
+				});
+
+				const isNewUser = existing === undefined;
+				const maskedConflictingEmail = maskEmail(email);
+				const maskedExistingEmail = existing?.email ? maskEmail(existing.email) : undefined;
+				const refId = caller.sub.slice(-8);
+
+				console.error(`[EMAIL_CONFLICT] ${isNewUser ? 'New user' : 'Email change'} conflict:`, {
+					userSubject: caller.sub,
+					conflictingEmail: maskedConflictingEmail,
+					existingUserEmail: maskedExistingEmail ?? 'N/A',
+					refId,
+					timestamp: new Date().toISOString()
+				});
+
+				Sentry.captureException(error, {
+					level: 'warning',
+					tags: {
+						error_type: 'email_conflict',
+						scenario: isNewUser ? 'new_user' : 'email_change'
+					},
+					extra: {
+						userSubject: caller.sub,
+						conflictingEmail: maskedConflictingEmail,
+						existingUserEmail: maskedExistingEmail ?? 'N/A',
+						refId
+					}
+				});
+
+				throw new GraphQLError('Email address is already in use by another account', {
+					extensions: {
+						code: 'EMAIL_CONFLICT',
+						isNewUser,
+						maskedConflictingEmail,
+						maskedExistingEmail,
+						refId
+					}
+				});
+			}
 		}
 	})
 }));

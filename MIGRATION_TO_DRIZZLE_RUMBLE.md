@@ -640,6 +640,35 @@ without them.
 - [x] `reviewerLeaderboard`
 - [x] `searchConference`
 
+#### Object-field parity (found while starting Phase E)
+
+The Phase D worklists tracked root queries and mutations only, so computed fields on object types
+were missed. They were found by diffing the tracked `schema.graphql` against the live rumble SDL
+field by field, and are now ported:
+
+- `Conference`: `contractContentSet`, `guardianConsentContentSet`, `mediaConsentContentSet`,
+  `termsAndConditionsContentSet`, `certificateContentSet`, `totalParticipants`, `totalSeats`,
+  `waitingListLength`, `nextDocumentNumber`, `schools`
+- `User.conferenceParticipationsCount`, `SurveyOption.countSurveyAnswers`,
+  `TeamMemberInvitation.userExists`, `PaperVersion.contentHash`
+- Two root mutations were missing outright: `upsertSelf` and `stopImpersonation`.
+- `Committee.agendaItems` and `ConferenceParticipantStatus.assignedDocumentNumber` existed under
+  the raw database spelling (`CommitteeAgendaItem`, `assigendDocumentNumber` - the column name is
+  misspelled in the database). The relation is renamed and the column now carries an explicit
+  database name, so the typo stops at the schema file.
+
+What the diff still reports is deliberate: several mutations return the entity or a plain list
+where the Pothos versions wrapped it (`ImportCalendarDayResult`, `SeedNewConferenceResult`,
+`SetAssignmentDataResult`, `RoleApplicationRankSwapResult`,
+`UpdateAllConferenceParticipantStatusResponse`, `BatchPayload`), `createPaperReview` returns
+`reviewId` instead of a nested `review { id }`, and `JWK` omits three optional members no caller
+reads.
+
+One behavioral fix rather than a port: `PaperVersion.contentHash` now hashes
+`JSON.stringify(content)`. The editor compares it against `md5(JSON.stringify(itsContent))`, but
+the Pothos resolver asserted the jsonb column to `string` and hashed the object, which could
+never match.
+
 **Still to do in this phase**: delete `src/api/resolvers/` and `src/api/abilities/` together with
 the Prisma-backed services they are the only remaining callers of (`services/stats.ts`,
 `services/ageStats.ts`, `services/requireUserToBeConferenceAdmin.ts`), which the Drizzle ports
@@ -753,11 +782,20 @@ abilities enforced; spot-checked with one admin and one non-admin user per major
 
 ### Phase E — Frontend: Houdini → Rumble client
 
+**Decision taken: SSR goes through remote functions, like chase.** 48 of the load functions run
+on the server (15 `+*.server.ts`, 33 universal loads on their first request), and the urql client
+points at the relative path `/api/graphql2`, which Node cannot fetch. `src/api/graphql.remote.ts`
+therefore executes the schema in-process for server-side operations, reusing the endpoint's own
+envelop instance so context, auth and abilities are identical; `remoteFunctionsExchange` in
+`src/lib/api/client.ts` routes to it whenever `browser` is false. This needs
+`kit.experimental.remoteFunctions` in `svelte.config.js`. `compilerOptions.experimental.async` is
+enabled alongside it, because components fetch with `client.liveQuery` awaited at the top level of
+`<script>` - also chase's idiom. Verified by SSR-rendering a probe route and reading the value out
+of the returned HTML.
+
 1. Verify `clientCreator` output in `src/lib/api/rumbleClient/{client.ts,schema.ts}` on `bun run dev`.
-2. Write `src/lib/api/client.ts` — **the minimal version**: `nativeDateExchange` +
-   `cacheExchange` (`@urql/exchange-graphcache`) + `fetchExchange`. Chase's 547-line client
-   carries an offline demo mode, crosstab sync and an SSR remote-functions exchange, none of which
-   this repo needs. Port those later only against a concrete requirement.
+2. Write `src/lib/api/client.ts` — minimal next to chase's 547 lines: no offline demo mode, no
+   crosstab sync, no subscriptions, since this app needs none of them.
 3. Migrate the 8 files in `src/lib/queries/` first — smallest, most isolated, validates the setup.
    Each Houdini store becomes a `client.query.<field>({...})` / `client.mutate.<field>({...})`
    call at the call site; the query-definition file disappears.

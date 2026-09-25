@@ -2,53 +2,43 @@ import type { PageServerLoad } from './$types';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { userFormSchema } from './form-schema';
-import { graphql, redirect } from '$houdini';
-import { error, type Actions } from '@sveltejs/kit';
+import { error, redirect, type Actions } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/helpers/nullFieldsToUndefined';
-import { fastUserQuery } from '$lib/queries/fastUserQuery';
+import { client } from '$lib/api/rumbleClient/client';
 import { configPublic } from '$config/public';
-
-const userQuery = graphql(`
-	query FullUserMyAccountQuery($id: String!) {
-		findUniqueUser(where: { id: $id }) {
-			given_name
-			family_name
-			birthday
-			phone
-			street
-			apartment
-			zip
-			city
-			country
-			gender
-			pronouns
-			foodPreference
-			emergencyContacts
-			wantsToReceiveGeneralInformation
-			wantsJoinTeamInformation
-		}
-	}
-`);
-
-const userMutation = graphql(`
-	mutation UpdateUser($data: UserUpdateDataInput!, $where: UserWhereUniqueInput!) {
-		updateOneUser(where: $where, data: $data) {
-			id
-		}
-	}
-`);
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
-	const { data } = await userQuery.fetch({ event, variables: { id: user.sub }, blocking: true });
-	const fullUser = data?.findUniqueUser;
+	const fullUser = await client.query.user({
+		__args: { id: user.sub },
+		givenName: true,
+		familyName: true,
+		birthday: true,
+		phone: true,
+		street: true,
+		apartment: true,
+		zip: true,
+		city: true,
+		country: true,
+		gender: true,
+		pronouns: true,
+		foodPreference: true,
+		emergencyContacts: true,
+		wantsToReceiveGeneralInformation: true,
+		wantsJoinTeamInformation: true
+	});
 
 	if (!fullUser) {
 		throw error(404, m.userNotFound());
 	}
 
-	const form = await superValidate(nullFieldsToUndefined(fullUser), zod4(userFormSchema));
+	const { givenName, familyName, ...rest } = fullUser;
+	// The form keeps the OIDC claim names for these two; everything else matches the column names.
+	const form = await superValidate(
+		nullFieldsToUndefined({ ...rest, given_name: givenName, family_name: familyName }),
+		zod4(userFormSchema)
+	);
 
 	const eventUrl = event.url;
 
@@ -84,23 +74,17 @@ export const actions = {
 		}
 
 		// since we are in a form action we need to re-fetch who we are
-		const { data } = await fastUserQuery.fetch({ event, blocking: true });
-		const userId = data?.offlineUserRefresh.user?.sub;
+		const { user } = await client.query.offlineUserRefresh({ user: { sub: true } });
+		const userId = user?.sub;
 		if (!userId) {
 			return message(form, m.userNotFound());
 		}
 
-		await userMutation.mutate(
-			{
-				data: {
-					...form.data
-				},
-				where: {
-					id: userId
-				}
-			},
-			{ event }
-		);
+		const { given_name, family_name, ...formData } = form.data;
+		await client.mutate.updateUser({
+			__args: { ...formData, id: userId, givenName: given_name, familyName: family_name },
+			id: true
+		});
 
 		const redirectUrl = event.url.searchParams.get('redirect');
 		if (redirectUrl) {

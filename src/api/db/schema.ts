@@ -358,7 +358,8 @@ export const conferenceParticipantStatus = snakeCase.table(
 		mediaConsent: administrativeStatus().default('PENDING').notNull(),
 		termsAndConditions: administrativeStatus().default('PENDING').notNull(),
 		mediaConsentStatus: mediaConsentStatus().default('NOT_SET').notNull(),
-		assigendDocumentNumber: integer(),
+		// The database column keeps the original typo; the code and the API do not.
+		assignedDocumentNumber: integer('assigend_document_number'),
 		accessCardId: text()
 	},
 	(table) => [
@@ -368,7 +369,7 @@ export const conferenceParticipantStatus = snakeCase.table(
 		uniqueIndex('conference_participant_status_conference_id_doc_number_key').using(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
-			table.assigendDocumentNumber.asc().nullsLast()
+			table.assignedDocumentNumber.asc().nullsLast()
 		),
 		uniqueIndex('conference_participant_status_user_id_conference_id_key').using(
 			'btree',

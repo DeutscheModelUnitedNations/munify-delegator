@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { userPaymentTransactionsQuery } from '$lib/queries/userPaymentTransactionsQuery';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { goto } from '$app/navigation';
 
 	interface Props {
@@ -11,7 +11,7 @@
 	let { userId, conferenceId }: Props = $props();
 
 	let paymentRefs = $state<
-		Array<{ id: string; amount: number; recievedAt: string | null; currency: string }>
+		Array<{ id: string; amount: number; recievedAt: Date | null; currency: string }>
 	>([]);
 	let loading = $state(false);
 
@@ -26,15 +26,25 @@
 
 		loading = true;
 
-		void userPaymentTransactionsQuery
-			.fetch({ variables: { userId, conferenceId } })
-			.then((result) => {
+		void client.query
+			.paymentTransactions({
+				__args: {
+					where: { conferenceId: { eq: conferenceId }, paymentFor: { userId: { eq: userId } } },
+					orderBy: { createdAt: 'desc' }
+				},
+				id: true,
+				amount: true,
+				recievedAt: true,
+				conference: { currency: true }
+			})
+			.then((transactions) => {
 				if (cancelled) return;
-				paymentRefs = (result.data?.findManyPaymentTransactions ?? []).map((tx) => ({
-					id: tx.id,
-					amount: tx.amount,
-					recievedAt: tx.recievedAt,
-					currency: tx.conference.currency
+				paymentRefs = transactions.map((transaction) => ({
+					id: transaction.id,
+					amount: transaction.amount,
+					recievedAt: transaction.recievedAt,
+					// The column is nullable; the widget always needs something to render.
+					currency: transaction.conference.currency ?? 'EUR'
 				}));
 			})
 			.catch(() => {

@@ -243,10 +243,10 @@ schemaBuilder.mutationFields((t) => ({
 					const nation = delegation.assignedNation;
 					const committees = await tx.query.committee.findMany({
 						where: { conferenceId: paper.conferenceId, nations: { alpha3Code: nation.alpha3Code } },
-						with: { CommitteeAgendaItem: { columns: { id: true } } }
+						with: { agendaItems: { columns: { id: true } } }
 					});
 					const totalPieces = committees.reduce(
-						(sum, committee) => sum + committee.CommitteeAgendaItem.length,
+						(sum, committee) => sum + committee.agendaItems.length,
 						0
 					);
 					const found = await tx.query.paper.findMany({

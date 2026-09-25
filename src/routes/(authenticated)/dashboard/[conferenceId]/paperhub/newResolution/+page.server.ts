@@ -76,5 +76,5 @@ export const load: PageServerLoad = async (event) => {
 		zod4(newResolutionSchema)
 	);
 
-	return { form, getResolutionDelegationMemberQuery, conferenceId, userId: user.id };
+	return { form, getResolutionDelegationMemberQuery, conferenceId, userId: user.sub };
 };

@@ -53,7 +53,7 @@ export const userFormSchema = z.object({
 		z.literal('NO_STATEMENT')
 	]),
 	pronouns: z.string().nullish(),
-	foodPreference: z.string().refine((s) => ['OMNIVORE', 'VEGETARIAN', 'VEGAN'].includes(s)),
+	foodPreference: z.union([z.literal('OMNIVORE'), z.literal('VEGETARIAN'), z.literal('VEGAN')]),
 	emergencyContacts: z
 		.string()
 		.min(5)

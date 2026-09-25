@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql, cache } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
-	import {
-		type UpdateConferenceParticipantStatusInput,
-		type MediaConsentStatus$options
-	} from '$houdini';
+	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import BooleanStatusWidget from '$lib/components/BooleanStatusWidget.svelte';
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
@@ -14,9 +10,6 @@
 	import AccessCardSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AccessCardSection.svelte';
 	import AttendanceSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AttendanceSection.svelte';
 	import { toast } from 'svelte-sonner';
-	import { changeParticipantStatus } from '$lib/queries/changeParticipantStatusMutation';
-	import { certificateQuery } from '$lib/queries/certificateQuery';
-	import { getBaseDocumentsForPostal } from '$lib/queries/getBaseDocuments';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 	import {
@@ -37,7 +30,7 @@
 					termsAndConditions?: string | null;
 					guardianConsent?: string | null;
 					mediaConsent?: string | null;
-					mediaConsentStatus?: MediaConsentStatus$options | null;
+					mediaConsentStatus?: MediaconsentstatusEnum | null;
 					didAttend?: boolean | null;
 					assignedDocumentNumber?: number | null;
 					accessCardId?: string | null;
@@ -99,10 +92,23 @@
 
 	const isAdult = $derived(ofAgeAtConference(conference?.startConference, birthday));
 
-	const changeAdministrativeStatus = async (input: UpdateConferenceParticipantStatusInput) => {
-		const promise = changeParticipantStatus.mutate({
-			where: { id: status?.id, conferenceId, userId },
-			data: input
+	/** The mutation's own argument type minus the identifying fields this component fills in. */
+	type StatusChange = Omit<
+		Parameters<Mutation['updateConferenceParticipantStatus']>[0],
+		'conferenceId'
+	>;
+
+	const changeAdministrativeStatus = async (input: StatusChange) => {
+		const promise = client.mutate.updateConferenceParticipantStatus({
+			__args: { ...input, id: status?.id, conferenceId, userId },
+			id: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			paymentStatus: true,
+			didAttend: true,
+			assignedDocumentNumber: true,
+			accessCardId: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
@@ -110,21 +116,20 @@
 			error: m.genericToastError()
 		});
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		onUpdate?.();
 	};
 
 	const downloadPostalDocs = async () => {
 		try {
-			const baseContent = await getBaseDocumentsForPostal.fetch({
-				variables: { conferenceId }
+			const baseContent = await client.query.conference({
+				__args: { id: conferenceId },
+				id: true,
+				contractContent: true,
+				guardianConsentContent: true,
+				mediaConsentContent: true,
+				termsAndConditionsContent: true
 			});
-
-			if (baseContent.errors) {
-				toast.error(m.httpGenericError());
-				return;
-			}
 
 			if (
 				!conference?.postalName ||
@@ -172,10 +177,10 @@
 					ofAgeAtConference(conference.startConference, user.birthday),
 					participantData,
 					recipientData,
-					baseContent.data?.findUniqueConference?.contractContent ?? undefined,
-					baseContent.data?.findUniqueConference?.guardianConsentContent ?? undefined,
-					baseContent.data?.findUniqueConference?.mediaConsentContent ?? undefined,
-					baseContent.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
+					baseContent.contractContent ?? undefined,
+					baseContent.guardianConsentContent ?? undefined,
+					baseContent.mediaConsentContent ?? undefined,
+					baseContent.termsAndConditionsContent ?? undefined,
 					`${formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
 						givenNameFirst: false,
 						delimiter: '_'
@@ -190,11 +195,18 @@
 
 	const downloadCertificate = async () => {
 		try {
-			const certificateData = await certificateQuery.fetch({
-				variables: { conferenceId, userId }
-			});
-
-			const jwtData = certificateData.data?.getCertificateJWT;
+			const [conferenceData, jwtData] = await Promise.all([
+				client.query.conference({
+					__args: { id: conferenceId },
+					certificateContent: true,
+					title: true
+				}),
+				client.query.getCertificateJWT({
+					__args: { conferenceId, userId },
+					jwt: true,
+					fullName: true
+				})
+			]);
 
 			if (!jwtData?.fullName || !jwtData?.jwt) {
 				toast.error(m.certificateDownloadError());
@@ -204,7 +216,7 @@
 			if (user) {
 				await downloadCompleteCertificate(
 					jwtData,
-					certificateData.data?.findUniqueConference?.certificateContent ?? undefined,
+					conferenceData.certificateContent ?? undefined,
 					`${formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
 						givenNameFirst: false,
 						delimiter: '_'
@@ -268,7 +280,7 @@
 			<ParticipantStatusMediaWidget
 				title={m.mediaConsentStatus()}
 				status={status?.mediaConsentStatus ?? 'NOT_SET'}
-				changeStatus={async (newStatus: MediaConsentStatus$options) =>
+				changeStatus={async (newStatus: MediaconsentstatusEnum) =>
 					await changeAdministrativeStatus({ mediaConsentStatus: newStatus })}
 			/>
 			<BooleanStatusWidget
@@ -300,7 +312,6 @@
 			{conferenceId}
 			entries={status?.attendanceEntries ?? []}
 			onChanged={async () => {
-				cache.markStale();
 				await invalidateAll();
 				onUpdate?.();
 			}}

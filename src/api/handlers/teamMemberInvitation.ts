@@ -31,7 +31,20 @@ abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ct
 	return where ? { where } : undefined;
 });
 
-export const TeamMemberInvitationRef = object({ table: 'teamMemberInvitation' });
+export const TeamMemberInvitationRef = object({
+	table: 'teamMemberInvitation',
+	adjust: (t) => ({
+		/** Whether the invited address already has an account, which changes the invitation copy. */
+		userExists: t.field({
+			type: 'Boolean',
+			resolve: async (invitation) =>
+				(await db.query.user.findFirst({
+					where: { email: invitation.email },
+					columns: { id: true }
+				})) !== undefined
+		})
+	})
+});
 query({ table: 'teamMemberInvitation' });
 
 const teamRoleEnum = enum_({ tsName: 'teamRole' });

@@ -120,7 +120,7 @@ schemaBuilder.queryFields((t) => ({
 			const [committees, nsas, delegations, papers] = await Promise.all([
 				db.query.committee.findMany({
 					where: { conferenceId: args.conferenceId },
-					with: { nations: true, CommitteeAgendaItem: true }
+					with: { nations: true, agendaItems: true }
 				}),
 				db.query.nonStateActor.findMany({ where: { conferenceId: args.conferenceId } }),
 				db.query.delegation.findMany({
@@ -175,7 +175,7 @@ schemaBuilder.queryFields((t) => ({
 			for (const committee of committees) {
 				for (const nation of committee.nations) {
 					const existing = nationAgendaItems.get(nation.alpha3Code) ?? [];
-					for (const agendaItem of committee.CommitteeAgendaItem) {
+					for (const agendaItem of committee.agendaItems) {
 						existing.push({
 							agendaItemId: agendaItem.id,
 							agendaItemTitle: agendaItem.title,

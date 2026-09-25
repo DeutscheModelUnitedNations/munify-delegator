@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
 import { redirect } from '@sveltejs/kit';
-import { fastUserQuery } from '$lib/queries/fastUserQuery';
+import { client } from '$lib/api/rumbleClient/client';
 import { configPublic } from '$config/public';
 // --- TEMPORARY: Migration notice imports (remove after migration period) ---
 import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/migrationNotice';
@@ -15,15 +15,33 @@ import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/mig
 // instead we should use server hooks to protect routes based on the url?
 
 export const load: LayoutServerLoad = async (event) => {
-	const { data } = await fastUserQuery.fetch({ event, blocking: true });
-
-	if (data?.offlineUserRefresh.user) {
-		return {
-			nextTokenRefreshDue: data.offlineUserRefresh,
+	const [offlineUserRefresh, myOIDCRoles] = await Promise.all([
+		client.query.offlineUserRefresh({
+			nextTokenRefreshDue: true,
 			user: {
-				...data.offlineUserRefresh.user,
-				myOIDCRoles: data.myOIDCRoles,
-				isAdmin: data.myOIDCRoles.includes('admin')
+				sub: true,
+				email: true,
+				family_name: true,
+				given_name: true,
+				locale: true,
+				phone: true,
+				preferred_username: true,
+				hasPassword: true,
+				mfaVerificationFactors: true,
+				ssoIdentities: { issuer: true, identityId: true },
+				socialIdentities: true
+			}
+		}),
+		client.query.myOIDCRoles()
+	]);
+
+	if (offlineUserRefresh.user) {
+		return {
+			nextTokenRefreshDue: offlineUserRefresh,
+			user: {
+				...offlineUserRefresh.user,
+				myOIDCRoles: [...myOIDCRoles],
+				isAdmin: myOIDCRoles.includes('admin')
 			}
 		};
 	}

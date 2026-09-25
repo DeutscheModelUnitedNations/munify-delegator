@@ -105,7 +105,7 @@ schemaBuilder.mutationFields((t) => ({
 			let documentNumber = args.assignedDocumentNumber ?? undefined;
 			if (args.assignNextDocumentNumber) {
 				const [highest] = await db
-					.select({ value: max(schema.conferenceParticipantStatus.assigendDocumentNumber) })
+					.select({ value: max(schema.conferenceParticipantStatus.assignedDocumentNumber) })
 					.from(schema.conferenceParticipantStatus)
 					.where(eq(schema.conferenceParticipantStatus.conferenceId, args.conferenceId));
 				documentNumber = (highest?.value ?? 0) + 1;
@@ -118,7 +118,7 @@ schemaBuilder.mutationFields((t) => ({
 				mediaConsentStatus: args.mediaConsentStatus ?? undefined,
 				paymentStatus: args.paymentStatus ?? undefined,
 				didAttend: args.didAttend ?? undefined,
-				assigendDocumentNumber: documentNumber,
+				assignedDocumentNumber: documentNumber,
 				accessCardId: args.accessCardId ?? undefined
 			};
 

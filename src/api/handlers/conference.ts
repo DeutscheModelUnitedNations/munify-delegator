@@ -7,11 +7,29 @@ import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 import { m } from '$lib/paraglide/messages';
 import { isSystemAdmin } from '$api/services/authHelper';
 import { enum_ } from '$api/rumble';
-import { and, inArray } from 'drizzle-orm';
+import { and, eq, inArray, max } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 import type { InferSelectModel } from 'drizzle-orm';
 import { UserRef } from './user';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
+
+type SchoolRow = {
+	school: string;
+	delegationCount: number;
+	delegationMembers: number;
+	singleParticipants: number;
+	sumParticipants: number;
+};
+
+const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
+	fields: (t) => ({
+		school: t.string(),
+		delegationCount: t.int(),
+		delegationMembers: t.int(),
+		singleParticipants: t.int(),
+		sumParticipants: t.int()
+	})
+});
 
 // Everyone can see which conferences exist and their details.
 abilityBuilder.conference.allow('read');
@@ -21,7 +39,176 @@ abilityBuilder.conference.allow(['update', 'delete']).when((ctx) => ({
 	where: isTeamMemberOf(ctx, ['PROJECT_MANAGEMENT'])
 }));
 
-export const ConferenceRef = object({ table: 'conference' });
+export const ConferenceRef = object({
+	table: 'conference',
+	adjust: (t) => ({
+		// The four document templates and the certificate template are long HTML blobs. The
+		// configuration UI only needs to know whether each one has been filled in, so these
+		// flags let it avoid transferring the content itself.
+		contractContentSet: t.field({
+			type: 'Boolean',
+			resolve: (conference) => !!conference.contractContent
+		}),
+		guardianConsentContentSet: t.field({
+			type: 'Boolean',
+			resolve: (conference) => !!conference.guardianConsentContent
+		}),
+		mediaConsentContentSet: t.field({
+			type: 'Boolean',
+			resolve: (conference) => !!conference.mediaConsentContent
+		}),
+		termsAndConditionsContentSet: t.field({
+			type: 'Boolean',
+			resolve: (conference) => !!conference.termsAndConditionsContent
+		}),
+		certificateContentSet: t.field({
+			type: 'Boolean',
+			resolve: (conference) => !!conference.certificateContent
+		}),
+
+		/** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */
+		totalParticipants: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				const [members, participants] = await Promise.all([
+					db.query.delegationMember.findMany({
+						where: {
+							delegation: {
+								conferenceId: conference.id,
+								OR: [
+									{ assignedNationAlpha3Code: { isNotNull: true } },
+									{ assignedNonStateActorId: { isNotNull: true } }
+								]
+							}
+						},
+						columns: { id: true }
+					}),
+					db.query.singleParticipant.findMany({
+						where: { conferenceId: conference.id, assignedRoleId: { isNotNull: true } },
+						columns: { id: true }
+					})
+				]);
+
+				return members.length + participants.length;
+			}
+		}),
+
+		/** Seats on offer: one per nation seat in every committee, plus one per non-state actor. */
+		totalSeats: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				const [committees, nonStateActors] = await Promise.all([
+					db.query.committee.findMany({
+						where: { conferenceId: conference.id },
+						columns: { id: true },
+						with: { nations: { columns: { alpha3Code: true } } }
+					}),
+					db.query.nonStateActor.findMany({
+						where: { conferenceId: conference.id },
+						columns: { id: true }
+					})
+				]);
+
+				return (
+					committees.reduce((sum, committee) => sum + committee.nations.length, 0) +
+					nonStateActors.length
+				);
+			}
+		}),
+
+		waitingListLength: t.field({
+			type: 'Int',
+			resolve: async (conference) =>
+				(
+					await db.query.waitingListEntry.findMany({
+						where: { conferenceId: conference.id },
+						columns: { id: true }
+					})
+				).length
+		}),
+
+		/** The document number to hand to the next participant who needs one. */
+		nextDocumentNumber: t.field({
+			type: 'Int',
+			resolve: async (conference) => {
+				const [highest] = await db
+					.select({ max: max(schema.conferenceParticipantStatus.assignedDocumentNumber) })
+					.from(schema.conferenceParticipantStatus)
+					.where(eq(schema.conferenceParticipantStatus.conferenceId, conference.id));
+
+				return (highest?.max ?? 0) + 1;
+			}
+		}),
+
+		/**
+		 * Applied registrations grouped by the school they named, which is how the organizers see
+		 * which schools are sending how many people.
+		 */
+		schools: t.field({
+			type: [ConferenceSchools],
+			resolve: async (conference, _args, ctx) => {
+				const [delegations, participants] = await Promise.all([
+					db.query.delegation.findMany(
+						ctx.abilities.delegation.filter('read').merge({
+							where: {
+								conferenceId: conference.id,
+								applied: true,
+								school: { isNotNull: true }
+							}
+						}).query.many
+					),
+					db.query.singleParticipant.findMany(
+						ctx.abilities.singleParticipant.filter('read').merge({
+							where: {
+								conferenceId: conference.id,
+								applied: true,
+								school: { isNotNull: true }
+							}
+						}).query.many
+					)
+				]);
+
+				const memberCounts = await db.query.delegationMember.findMany({
+					where: { delegation: { conferenceId: conference.id, applied: true } },
+					columns: { delegationId: true }
+				});
+
+				const bySchool = new Map<string, SchoolRow>();
+				const entryFor = (school: string) => {
+					const existing = bySchool.get(school) ?? {
+						school,
+						delegationCount: 0,
+						delegationMembers: 0,
+						singleParticipants: 0,
+						sumParticipants: 0
+					};
+					bySchool.set(school, existing);
+					return existing;
+				};
+
+				for (const delegation of delegations) {
+					if (!delegation.school) continue;
+					const members = memberCounts.filter(
+						(member) => member.delegationId === delegation.id
+					).length;
+					const entry = entryFor(delegation.school);
+					entry.delegationCount++;
+					entry.delegationMembers += members;
+					entry.sumParticipants += members;
+				}
+
+				for (const participant of participants) {
+					if (!participant.school) continue;
+					const entry = entryFor(participant.school);
+					entry.singleParticipants++;
+					entry.sumParticipants++;
+				}
+
+				return [...bySchool.values()];
+			}
+		})
+	})
+});
 
 query({ table: 'conference' });
 
@@ -365,6 +552,15 @@ const PlausibilityResult = schemaBuilder
 		})
 	});
 
+/**
+ * The registration form still names these two fields the way the OIDC claims do, so a database
+ * row has to be renamed into that shape before the form's schema can judge it complete.
+ */
+function toFormShape(user: PlausibilityUser) {
+	const { givenName, familyName, ...rest } = user;
+	return { ...rest, given_name: givenName, family_name: familyName };
+}
+
 /** January 1st of the year the given age is reached, used as the age cut-off. */
 function yearsAgo(years: number) {
 	return new Date(new Date().getFullYear() - years, 0, 1);
@@ -432,7 +628,9 @@ schemaBuilder.queryFields((t) => ({
 				tooOldUsers,
 				shouldBeSupervisor,
 				shouldNotBeSupervisor,
-				dataMissing: candidates.filter((user) => !userFormSchema.safeParse(user).success)
+				dataMissing: candidates.filter(
+					(user) => !userFormSchema.safeParse(toFormShape(user)).success
+				)
 			};
 		}
 	})
