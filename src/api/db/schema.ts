@@ -8,8 +8,7 @@ import {
 	doublePrecision,
 	boolean,
 	index,
-	uniqueIndex,
-	primaryKey
+	uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { nanoid } from '../../lib/helpers/nanoid';
@@ -106,6 +105,9 @@ export const calendarEntryColor = pgEnum('calendar_entry_color', [
 export const committeeToNation = snakeCase.table(
 	'committee_to_nation',
 	{
+		id: text()
+			.$defaultFn(() => nanoid())
+			.primaryKey(),
 		a: text()
 			.notNull()
 			.references(() => committee.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -114,7 +116,11 @@ export const committeeToNation = snakeCase.table(
 			.references(() => nation.alpha3Code, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		primaryKey({ columns: [table.a, table.b], name: 'committee_to_nation_ab_pkey' }),
+		uniqueIndex('committee_to_nation_ab_key').using(
+			'btree',
+			table.a.asc().nullsLast(),
+			table.b.asc().nullsLast()
+		),
 		index('committee_to_nation_b_index').using('btree', table.b.asc().nullsLast())
 	]
 );
@@ -122,6 +128,9 @@ export const committeeToNation = snakeCase.table(
 export const conferenceSupervisorToDelegationMember = snakeCase.table(
 	'conference_supervisor_to_delegation_member',
 	{
+		id: text()
+			.$defaultFn(() => nanoid())
+			.primaryKey(),
 		a: text()
 			.notNull()
 			.references(() => conferenceSupervisor.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -130,10 +139,11 @@ export const conferenceSupervisorToDelegationMember = snakeCase.table(
 			.references(() => delegationMember.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		primaryKey({
-			columns: [table.a, table.b],
-			name: 'conference_supervisor_to_delegation_member_ab_pkey'
-		}),
+		uniqueIndex('conference_supervisor_to_delegation_member_ab_key').using(
+			'btree',
+			table.a.asc().nullsLast(),
+			table.b.asc().nullsLast()
+		),
 		index('conference_supervisor_to_delegation_member_b_index').using(
 			'btree',
 			table.b.asc().nullsLast()
@@ -144,6 +154,9 @@ export const conferenceSupervisorToDelegationMember = snakeCase.table(
 export const conferenceSupervisorToSingleParticipant = snakeCase.table(
 	'conference_supervisor_to_single_participant',
 	{
+		id: text()
+			.$defaultFn(() => nanoid())
+			.primaryKey(),
 		a: text()
 			.notNull()
 			.references(() => conferenceSupervisor.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -152,10 +165,11 @@ export const conferenceSupervisorToSingleParticipant = snakeCase.table(
 			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		primaryKey({
-			columns: [table.a, table.b],
-			name: 'conference_supervisor_to_single_participant_ab_pkey'
-		}),
+		uniqueIndex('conference_supervisor_to_single_participant_ab_key').using(
+			'btree',
+			table.a.asc().nullsLast(),
+			table.b.asc().nullsLast()
+		),
 		index('conference_supervisor_to_single_participant_b_index').using(
 			'btree',
 			table.b.asc().nullsLast()
@@ -166,6 +180,9 @@ export const conferenceSupervisorToSingleParticipant = snakeCase.table(
 export const customConferenceRoleToSingleParticipant = snakeCase.table(
 	'custom_conference_role_to_single_participant',
 	{
+		id: text()
+			.$defaultFn(() => nanoid())
+			.primaryKey(),
 		a: text()
 			.notNull()
 			.references(() => customConferenceRole.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -174,10 +191,11 @@ export const customConferenceRoleToSingleParticipant = snakeCase.table(
 			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' })
 	},
 	(table) => [
-		primaryKey({
-			columns: [table.a, table.b],
-			name: 'custom_conference_role_to_single_participant_ab_pkey'
-		}),
+		uniqueIndex('custom_conference_role_to_single_participant_ab_key').using(
+			'btree',
+			table.a.asc().nullsLast(),
+			table.b.asc().nullsLast()
+		),
 		index('custom_conference_role_to_single_participant_b_index').using(
 			'btree',
 			table.b.asc().nullsLast()

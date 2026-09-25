@@ -2,9 +2,14 @@
 
 /** @type {import('houdini').ConfigFile} */
 const config = {
-	watchSchema: {
-		url: 'http://localhost:5173/api/graphql'
-	},
+	// Schema polling disabled: it fetches from a fixed localhost port and overwrites the tracked
+	// schema.graphql with whatever happens to be serving there - during this migration it replaced
+	// the file with an unrelated project's schema on every `vite`/`vitest` run. The schema is
+	// regenerated deliberately via `bunx houdini generate` instead, and houdini goes away in
+	// Phase F regardless.
+	// watchSchema: {
+	// 	url: 'http://localhost:5173/api/graphql'
+	// },
 	plugins: {
 		'houdini-svelte': {
 			forceRunesMode: true

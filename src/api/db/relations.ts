@@ -14,17 +14,20 @@ export const relations = defineRelations(schema, (r) => ({
 	attendanceEntry: {
 		conferenceParticipantStatus: r.one.conferenceParticipantStatus({
 			from: r.attendanceEntry.conferenceParticipantStatusId,
-			to: r.conferenceParticipantStatus.id
+			to: r.conferenceParticipantStatus.id,
+			optional: false
 		}),
 		recordedBy: r.one.user({
 			from: r.attendanceEntry.recordedById,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	calendarDay: {
 		conference: r.one.conference({
 			from: r.calendarDay.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		entries: r.many.calendarEntry({
 			from: r.calendarDay.id,
@@ -38,7 +41,8 @@ export const relations = defineRelations(schema, (r) => ({
 	calendarEntry: {
 		calendarDay: r.one.calendarDay({
 			from: r.calendarEntry.calendarDayId,
-			to: r.calendarDay.id
+			to: r.calendarDay.id,
+			optional: false
 		}),
 		calendarTrack: r.one.calendarTrack({
 			from: r.calendarEntry.calendarTrackId,
@@ -52,7 +56,8 @@ export const relations = defineRelations(schema, (r) => ({
 	calendarTrack: {
 		calendarDay: r.one.calendarDay({
 			from: r.calendarTrack.calendarDayId,
-			to: r.calendarDay.id
+			to: r.calendarDay.id,
+			optional: false
 		}),
 		entries: r.many.calendarEntry({
 			from: r.calendarTrack.id,
@@ -66,7 +71,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.committee.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		delegationMembers: r.many.delegationMember({
 			from: r.committee.id,
@@ -80,7 +86,8 @@ export const relations = defineRelations(schema, (r) => ({
 	committeeAgendaItem: {
 		committee: r.one.committee({
 			from: r.committeeAgendaItem.committeeId,
-			to: r.committee.id
+			to: r.committee.id,
+			optional: false
 		}),
 		papers: r.many.paper({
 			from: r.committeeAgendaItem.id,
@@ -160,17 +167,20 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.conferenceParticipantStatus.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		user: r.one.user({
 			from: r.conferenceParticipantStatus.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	conferenceSupervisor: {
 		conference: r.one.conference({
 			from: r.conferenceSupervisor.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		supervisedDelegationMembers: r.many.delegationMember({
 			from: r.conferenceSupervisor.id.through(r.conferenceSupervisorToDelegationMember.a),
@@ -182,13 +192,15 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		user: r.one.user({
 			from: r.conferenceSupervisor.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	customConferenceRole: {
 		conference: r.one.conference({
 			from: r.customConferenceRole.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		singleParticipant: r.many.singleParticipant({
 			from: r.customConferenceRole.id.through(r.customConferenceRoleToSingleParticipant.a),
@@ -214,7 +226,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.delegation.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		members: r.many.delegationMember({
 			from: r.delegation.id,
@@ -232,11 +245,13 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.delegationMember.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		delegation: r.one.delegation({
 			from: r.delegationMember.delegationId,
-			to: r.delegation.id
+			to: r.delegation.id,
+			optional: false
 		}),
 		supervisors: r.many.conferenceSupervisor({
 			from: r.delegationMember.id.through(r.conferenceSupervisorToDelegationMember.b),
@@ -244,7 +259,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		user: r.one.user({
 			from: r.delegationMember.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	nation: {
@@ -268,7 +284,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.nonStateActor.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		roleApplications: r.many.roleApplication({
 			from: r.nonStateActor.id,
@@ -282,15 +299,18 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		author: r.one.user({
 			from: r.paper.authorId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		}),
 		conference: r.one.conference({
 			from: r.paper.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		delegation: r.one.delegation({
 			from: r.paper.delegationId,
-			to: r.delegation.id
+			to: r.delegation.id,
+			optional: false
 		}),
 		versions: r.many.paperVersion({
 			from: r.paper.id,
@@ -300,17 +320,20 @@ export const relations = defineRelations(schema, (r) => ({
 	paperReview: {
 		paperVersion: r.one.paperVersion({
 			from: r.paperReview.paperVersionId,
-			to: r.paperVersion.id
+			to: r.paperVersion.id,
+			optional: false
 		}),
 		reviewer: r.one.user({
 			from: r.paperReview.reviewerId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	paperVersion: {
 		paper: r.one.paper({
 			from: r.paperVersion.paperId,
-			to: r.paper.id
+			to: r.paper.id,
+			optional: false
 		}),
 		reviews: r.many.paperReview({
 			from: r.paperVersion.id,
@@ -320,7 +343,8 @@ export const relations = defineRelations(schema, (r) => ({
 	paymentTransaction: {
 		conference: r.one.conference({
 			from: r.paymentTransaction.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		paymentFor: r.many.userReferenceInPaymentTransaction({
 			from: r.paymentTransaction.id,
@@ -328,7 +352,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		user: r.one.user({
 			from: r.paymentTransaction.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	place: {
@@ -338,27 +363,32 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.place.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		})
 	},
 	reviewerSnippet: {
 		user: r.one.user({
 			from: r.reviewerSnippet.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	roleApplication: {
 		delegation: r.one.delegation({
 			from: r.roleApplication.delegationId,
-			to: r.delegation.id
+			to: r.delegation.id,
+			optional: false
 		}),
 		nation: r.one.nation({
 			from: r.roleApplication.nationId,
-			to: r.nation.alpha3Code
+			to: r.nation.alpha3Code,
+			optional: false
 		}),
 		nonStateActor: r.one.nonStateActor({
 			from: r.roleApplication.nonStateActorId,
-			to: r.nonStateActor.id
+			to: r.nonStateActor.id,
+			optional: false
 		})
 	},
 	singleParticipant: {
@@ -372,7 +402,8 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.singleParticipant.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		supervisors: r.many.conferenceSupervisor({
 			from: r.singleParticipant.id.through(r.conferenceSupervisorToSingleParticipant.b),
@@ -380,27 +411,32 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		user: r.one.user({
 			from: r.singleParticipant.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	surveyAnswer: {
 		option: r.one.surveyOption({
 			from: r.surveyAnswer.optionId,
-			to: r.surveyOption.id
+			to: r.surveyOption.id,
+			optional: false
 		}),
 		question: r.one.surveyQuestion({
 			from: r.surveyAnswer.questionId,
-			to: r.surveyQuestion.id
+			to: r.surveyQuestion.id,
+			optional: false
 		}),
 		user: r.one.user({
 			from: r.surveyAnswer.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	surveyOption: {
 		question: r.one.surveyQuestion({
 			from: r.surveyOption.questionId,
-			to: r.surveyQuestion.id
+			to: r.surveyQuestion.id,
+			optional: false
 		}),
 		surveyAnswers: r.many.surveyAnswer({
 			from: r.surveyOption.id,
@@ -410,7 +446,8 @@ export const relations = defineRelations(schema, (r) => ({
 	surveyQuestion: {
 		conference: r.one.conference({
 			from: r.surveyQuestion.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		options: r.many.surveyOption({
 			from: r.surveyQuestion.id,
@@ -424,11 +461,13 @@ export const relations = defineRelations(schema, (r) => ({
 	teamMember: {
 		conference: r.one.conference({
 			from: r.teamMember.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		user: r.one.user({
 			from: r.teamMember.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	teamMemberInvitation: {
@@ -438,11 +477,13 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		conference: r.one.conference({
 			from: r.teamMemberInvitation.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		invitedBy: r.one.user({
 			from: r.teamMemberInvitation.invitedById,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	user: {
@@ -510,21 +551,25 @@ export const relations = defineRelations(schema, (r) => ({
 	userReferenceInPaymentTransaction: {
 		paymentTransaction: r.one.paymentTransaction({
 			from: r.userReferenceInPaymentTransaction.paymentTransactionId,
-			to: r.paymentTransaction.id
+			to: r.paymentTransaction.id,
+			optional: false
 		}),
 		user: r.one.user({
 			from: r.userReferenceInPaymentTransaction.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	},
 	waitingListEntry: {
 		conference: r.one.conference({
 			from: r.waitingListEntry.conferenceId,
-			to: r.conference.id
+			to: r.conference.id,
+			optional: false
 		}),
 		user: r.one.user({
 			from: r.waitingListEntry.userId,
-			to: r.user.id
+			to: r.user.id,
+			optional: false
 		})
 	}
 }));

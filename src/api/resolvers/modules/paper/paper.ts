@@ -18,7 +18,7 @@ import {
 } from '$db/generated/graphql/Paper';
 import { db } from '$db/db';
 import { PaperStatus, PaperType, Json } from '$db/generated/graphql/inputs';
-import { PaperStatus as PrismaPaperStatus } from '@prisma/client';
+import { PaperStatus as PrismaPaperStatus, Prisma } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import { GQLCommittee } from '../committee';
@@ -119,7 +119,10 @@ builder.mutationFields((t) => {
 
 					await tx.paperVersion.create({
 						data: {
-							content: args.data.content,
+							// `content` is `Json` (non-nullable) in the schema and `required: true` in the
+							// GraphQL arg, so null cannot legitimately arrive here - the `| null` comes from
+							// the Json scalar's loose type. Prisma wants `JsonNull` rather than `null`.
+							content: args.data.content ?? Prisma.JsonNull,
 							paperId: paper.id,
 							status: args.data.status ?? undefined,
 							version: 1
@@ -211,7 +214,10 @@ builder.mutationFields((t) => {
 
 					await tx.paperVersion.create({
 						data: {
-							content: args.data.content,
+							// `content` is `Json` (non-nullable) in the schema and `required: true` in the
+							// GraphQL arg, so null cannot legitimately arrive here - the `| null` comes from
+							// the Json scalar's loose type. Prisma wants `JsonNull` rather than `null`.
+							content: args.data.content ?? Prisma.JsonNull,
 							paperId: paper.id,
 							status: effectiveStatus ?? undefined,
 							version: paperDBEntry.versions.length + 1

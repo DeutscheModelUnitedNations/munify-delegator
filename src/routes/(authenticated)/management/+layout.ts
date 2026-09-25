@@ -1,78 +1,60 @@
-import {
-	graphql,
-	type AllConferencesQuery$result,
-	type ConferencesWhereImMoreThanMember$result
-} from '$houdini';
-import { allConferenceQuery } from '$lib/queries/allConferences';
+import { client } from '$lib/api/rumbleClient/client';
 import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 import { m } from '$lib/paraglide/messages';
 
-const conferencesWhereImMoreThanMember = graphql(`
-	query ConferencesWhereImMoreThanMember($myUserId: String!) {
-		findManyConferences(
-			where: {
-				teamMembers: {
-					some: {
-						role: { in: [PROJECT_MANAGEMENT, PARTICIPANT_CARE] }
-						userId: { equals: $myUserId }
-					}
-				}
-			}
-			orderBy: { startConference: desc }
-		) {
-			id
-			title
-			startConference
-			endConference
-			teamMembers {
-				id
-				role
-				user {
-					id
-				}
-			}
-		}
-	}
-`);
+/** Fields every conference card in the management area needs. */
+const conferenceSelection = {
+	id: true,
+	title: true,
+	startConference: true,
+	endConference: true
+} as const;
 
 export const load: LayoutLoad = async (event) => {
 	const { user } = await event.parent();
 
-	// we want the conferences to appear either if we are a privileged user on that conference or
-	// if we are a system admin
+	// Admins see every conference; everyone else only those where they hold a privileged role.
 	if (user.myOIDCRoles.includes('admin')) {
-		// in case we are an admin => display all conferences
-		const { data } = await allConferenceQuery.fetch({ event, blocking: true });
-		const queriedConfernces = data?.findManyConferences;
+		const conferences = await client.query.conferences({
+			__args: { orderBy: { startConference: 'desc' } },
+			...conferenceSelection
+		});
+
 		return {
-			conferences: queriedConfernces?.map(
-				(c: NonNullable<AllConferencesQuery$result['findManyConferences']>[number]) => ({
-					...c,
-					myMembership: 'SYSTEM_ADMIN'
-				})
-			)
+			conferences: conferences.map((conference) => ({
+				...conference,
+				myMembership: 'SYSTEM_ADMIN'
+			}))
 		};
 	}
 
-	// in case we are a privileged user => display all conferences where thats the case
-	const { data } = await conferencesWhereImMoreThanMember.fetch({
-		event,
-		variables: { myUserId: user.sub },
-		blocking: true
+	const conferences = await client.query.conferences({
+		__args: {
+			where: {
+				teamMembers: {
+					role: { in: ['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] },
+					userId: { eq: user.sub }
+				}
+			},
+			orderBy: { startConference: 'desc' }
+		},
+		...conferenceSelection,
+		teamMembers: {
+			id: true,
+			role: true,
+			user: { id: true }
+		}
 	});
-	const queriedConfernces = data?.findManyConferences;
 
-	if (queriedConfernces.length === 0) {
+	if (conferences.length === 0) {
 		error(403, m.noAccess());
 	}
 
 	return {
-		conferences: queriedConfernces?.map(
-			(c: NonNullable<ConferencesWhereImMoreThanMember$result['findManyConferences']>[number]) => ({
-				...c,
-				myMembership: c.teamMembers.find((m) => m.user.id === user.sub)?.role
-			})
-		)
+		conferences: conferences.map((conference) => ({
+			...conference,
+			myMembership: conference.teamMembers.find((member) => member.user?.id === user.sub)?.role
+		}))
 	};
 };

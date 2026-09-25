@@ -421,7 +421,239 @@ statements, so it must be marked as already-applied on existing databases rather
 `drizzle-kit migrate` against production would fail on tables that already exist. Decide
 whether to insert the journal row manually or to run `migrate` only on fresh databases.
 
-### Phase D — API: Pothos/CASL → Rumble handlers
+### Phase D — API: Pothos/CASL → Rumble handlers — **authorization layer DONE (2026-09-25)**
+
+**The big-bang framing was wrong.** The plan assumed Pothos/Prisma and Rumble/Drizzle cannot
+coexist. The conflict is purely type-level: each Pothos plugin marks its own key required on
+every builder. Give the legacy builder an inert `drizzle` key and rumble's `pothosConfig` an
+inert `prisma` key, and **both stacks typecheck and serve simultaneously**. Phase D/E can be
+incremental, with the app working throughout, instead of broken for days.
+
+Two environment fixes were needed to get there:
+
+- `@m1212e/rumble` statically imports `lib-address`, whose ESM entry calls `require()` - invalid
+  ESM, which took down every route importing rumble, in delegator _and_ chase. Fixed upstream in
+  rumble 0.23.23 (`createRequire`, selecting the package's valid `require` condition). An issue
+  draft for `LancelotP/lib-address` sits at `../lib-address-issue.md`.
+- Two copies of `@pothos/core` (delegator's legacy 4.10 and rumble's nested 4.13) made
+  `@pothos/plugin-drizzle` register on the wrong SchemaBuilder class - `drizzleObject is not a
+function`. Fixed with a version bump plus an override forcing a single copy. Chase never hits
+  this because it has no top-level `@pothos/core`.
+
+**All 30 tables have handlers**, each a 1:1 port of its CASL module, verified live: public reads
+return data, protected reads return empty arrays (not errors), and m2m traversal through join
+tables works.
+
+Four semantics established rather than assumed:
+
+| Question              | Answer                     | How it was established                                                     |
+| --------------------- | -------------------------- | -------------------------------------------------------------------------- |
+| Do stacked rules OR?  | Yes                        | Chase stacks 3-4 `allow('read')` calls per table                           |
+| Anonymous requests    | Grant nothing, never throw | CASL registered rules inside `if (oidc?.user)`; helpers return `undefined` |
+| System admin wildcard | Needed per table           | Rumble has no global wildcard for CASL's `can('manage','all')`             |
+| Filter shapes valid?  | 15 shapes probed           | Compiled to SQL: `EXISTS`, `IS NULL`, `ne`, 3-level nesting, m2m           |
+
+That last row matters: the `where` object is loosely typed, so a wrong relation name fails only
+at runtime - exactly how the original `relations.ts` bug stayed hidden.
+
+**Join tables got surrogate ids** (`drizzle/20260925081546_join_table_surrogate_ids`).
+Rumble requires a single-column primary key (`abilityBuilder.ts:396`; its `getTableConfig`
+carries `//TODO support composite primary keys`), and Prisma's four implicit m2m tables have
+composite `(A,B)` keys. Chase has no implicit m2m at all - its join tables are explicit entities
+with their own `id` - so that is the shape adopted here. The old composite key survives as a
+unique index, so the pair is still unique; it simply is not the row identity any more.
+
+**The generated migration needed a hand-written backfill.** Drizzle emits
+`ADD COLUMN "id" text` followed by `ADD PRIMARY KEY ("id")`, and the nanoid default is applied
+by the application rather than the database - so on a table with existing rows every id would be
+NULL and the primary key would fail. An `UPDATE ... SET id = gen_random_uuid()::text` sits
+between the two. Verified by applying the first two migrations, inserting a join row, then
+applying this one: the row came out with an id and the primary key moved to it. Existing join
+rows therefore carry uuid-shaped ids while new ones get nanoids; both are opaque text.
+
+**One deliberate fidelity change.** Exactly one CASL rule granted `list` without `read`
+(participants listing non-draft papers). Rumble has no list action and neither does chase, so it
+maps to `read` - the single place in the port where access widens. Flagged in `paper.ts`.
+
+#### Deliberate API differences from the legacy schema
+
+- **Deletes return `Boolean`.** Every generated `deleteOne*` returned the deleted row; chase's
+  deletes return a boolean, and that is what the ported mutations do. They also throw when the
+  ability filter matched nothing, rather than reporting success for a delete that did nothing.
+- **Naming follows chase** (`createPlace`, not `createOnePlace`). Rumble generates query names
+  itself (`places`, not `findManyPlaces`), so the contract changes regardless and Phase E has to
+  rewrite the frontend either way; mixed naming would be worse than a clean break.
+- **`swapRoleApplicationRanks` returns a list.** The legacy version returned a bespoke object
+  with fields `firstRoleApplication` and `secpndRoleApplication` (sic). It now returns the two
+  applications as a list, which drops the typo and the one-off type.
+- **`updateAllConferenceParticipantStatus` returns a plain list** of changed ids, rather than
+  wrapping it in a one-field `{ changed }` object.
+- **`createPaperReview` returns `reviewId`** rather than a nested `{ review { id } }` object,
+  and its result type is a flat simple object.
+- **Conference uploads take data URLs, not multipart files.** Rumble's schema builder has a
+  fixed scalar map with no `File`, and these columns (`imageDataURL`, `contractContent`, …)
+  store data URLs regardless - so the encoding moves to the client and the multipart upload path
+  disappears. `src/api/services/fileToDataURL.ts` becomes frontend work in Phase E.
+- **`updateManyDelegationMemberCommittee` takes an explicit id list** and returns the number of
+  rows changed, rather than accepting an arbitrary Prisma `where` from the client.
+- **`assignCommitteesToDelegationMembers` returns only the target conference's members.** The
+  legacy version returned every delegation member the caller could list, across all conferences -
+  almost certainly unintended. It now takes a `conferenceId` and scopes the result to it.
+- **`sendAssignmentData` returns `Boolean`** and takes an explicit `conferenceId`, rather than a
+  one-field `{ success }` object and a Prisma `where`. The single-participant delete that the
+  legacy version issued against `singleParticipant.id` using _delegation_ ids is not carried
+  over - it could never match, so reproducing it would only preserve a no-op.
+- **Commented-out resolvers are not ported.** `createOneCommittee`, `createOneNonStateActor` and
+  `createOneCustomConferenceRole` are disabled upstream and absent from `schema.graphql`.
+
+#### Mutation worklist (authoritative: taken from `schema.graphql`, the live API contract)
+
+90 of 90 done. Several `createOne*` resolvers are commented out in the legacy
+code (Committee, NonStateActor, CustomConferenceRole), so they are deliberately absent here -
+porting them would invent API surface that does not exist today.
+
+- [x] `assignCommitteesToDelegationMembers`
+- [x] `connectToConferenceSupervisor`
+- [x] `createOneAgendaItem`
+- [x] `createOneAppliedDelegationMember`
+- [x] `createOneAppliedSingleParticipant`
+- [x] `createOneAttendanceEntry`
+- [x] `createOneCalendarDay`
+- [x] `createOneCalendarEntry`
+- [x] `createOneCalendarTrack`
+- [x] `createOneConferenceSupervisor`
+- [x] `createOneDelegation`
+- [x] `createOneDelegationMember`
+- [x] `createOnePaper`
+- [x] `createOnePaymentTransaction`
+- [x] `createOnePlace`
+- [x] `createOneRoleApplication`
+- [x] `createOneSingleParticipant`
+- [x] `createOneSurveyOption`
+- [x] `createOneSurveyQuestion`
+- [x] `createOneTeamMember`
+- [x] `createOneWaitingListEntry`
+- [x] `createPaperReview`
+- [x] `createReviewerSnippet`
+- [x] `createTeamMemberInvitations`
+- [x] `deleteDeadDelegationMembers`
+- [x] `deleteDeadSingleParticipants`
+- [x] `deleteDeadSupervisors`
+- [x] `deleteEmptyDelegations`
+- [x] `deleteOneAgendaItem`
+- [x] `deleteOneAttendanceEntry`
+- [x] `deleteOneCalendarDay`
+- [x] `deleteOneCalendarEntry`
+- [x] `deleteOneCalendarTrack`
+- [x] `deleteOneCommittee`
+- [x] `deleteOneConference`
+- [x] `deleteOneConferenceParticipantStatus`
+- [x] `deleteOneConferenceSupervisor`
+- [x] `deleteOneCustomConferenceRole`
+- [x] `deleteOneDelegation`
+- [x] `deleteOneDelegationMember`
+- [x] `deleteOneNation`
+- [x] `deleteOneNonStateActor`
+- [x] `deleteOnePaper`
+- [x] `deleteOnePlace`
+- [x] `deleteOneRoleApplication`
+- [x] `deleteOneSingleParticipant`
+- [x] `deleteOneSurveyOption`
+- [x] `deleteOneSurveyQuestion`
+- [x] `deleteOneTeamMember`
+- [x] `deleteOneUser`
+- [x] `deleteOneWaitingListEntry`
+- [x] `deleteReviewerSnippet`
+- [x] `importCalendarDay`
+- [x] `normalizeSchoolsInConference`
+- [x] `regenerateTeamMemberInvitation`
+- [x] `revokeTeamMemberInvitation`
+- [x] `rotateSupervisorConnectionCode`
+- [x] `seedNewConference`
+- [x] `sendAssignmentData`
+- [x] `setAgendaItemReviewHelpStatus`
+- [x] `startImpersonation`
+- [x] `swapRoleApplicationRanks`
+- [x] `unregisterParticipant`
+- [x] `updateAllConferenceParticipantStatus`
+- [x] `updateManyDelegationMemberCommittee`
+- [x] `updateOneAgendaItem`
+- [x] `updateOneCalendarDay`
+- [x] `updateOneCalendarEntry`
+- [x] `updateOneCalendarTrack`
+- [x] `updateOneCommittee`
+- [x] `updateOneConference`
+- [x] `updateOneConferenceParticipantStatus`
+- [x] `updateOneConferenceSupervisor`
+- [x] `updateOneCustomConferenceRole`
+- [x] `updateOneDelegation`
+- [x] `updateOneDelegationMemberCommittee`
+- [x] `updateOnePaper`
+- [x] `updateOnePaymentTransaction`
+- [x] `updateOnePlace`
+- [x] `updateOneSingleParticipant`
+- [x] `updateOneSurveyAnswer`
+- [x] `updateOneSurveyOption`
+- [x] `updateOneSurveyQuestion`
+- [x] `updateOneTeamMember`
+- [x] `updateOneUser`
+- [x] `updateOneUsersGlobalNotes`
+- [x] `updateOneUsersIdentityInfo`
+- [x] `updateOneUsersNewsletterPreferences`
+- [x] `updateOneWaitingListEntry`
+- [x] `updateReviewerSnippet`
+
+**Phase D mutation surface is complete (90/90), verified live**: the built schema exposes 90
+mutations and 60 queries, public reads return data, protected reads return empty arrays, and
+admin-only mutations refuse anonymous callers.
+
+#### Custom query worklist (the non-CRUD half of the Query type)
+
+All 26 done. The table CRUD queries are generated by `query({ table })`;
+these are the hand-written ones the frontend also depends on, so Phase E cannot finish
+without them.
+
+- [x] `checkTeamInvitationEmails`
+- [x] `conferencePlausibility`
+- [x] `findGlobalIntroductionPapers`
+- [x] `findGlobalPapersGroupedByCommittee`
+- [x] `findIntroductionPapers`
+- [x] `findNextPaperToReview`
+- [x] `findPapersGroupedByCommittee`
+- [x] `findPublicPaperContent`
+- [x] `findSupervisedPapers`
+- [x] `flagCollection`
+- [x] `getAllConferenceNations`
+- [x] `getCertificateJWT`
+- [x] `getCertificateJWTPublicKeyObject`
+- [x] `getConferenceStatistics`
+- [x] `impersonatableUsers`
+- [x] `impersonationStatus`
+- [x] `logoutUrl`
+- [x] `myOIDCRoles`
+- [x] `myReviewStats`
+- [x] `myReviewerSnippets`
+- [x] `offlineUserRefresh`
+- [x] `previewConferenceSupervisor`
+- [x] `previewDelegation`
+- [x] `previewUserByIdOrEmail`
+- [x] `reviewerLeaderboard`
+- [x] `searchConference`
+
+**Still to do in this phase**: delete `src/api/resolvers/` and `src/api/abilities/` together with
+the Prisma-backed services they are the only remaining callers of (`services/stats.ts`,
+`services/ageStats.ts`, `services/requireUserToBeConferenceAdmin.ts`), which the Drizzle ports
+`services/statistics.ts`, `services/ageStatistics.ts`, `services/statisticsFilters.ts` and
+`assertMayManageConference` replace.
+
+Two deliberate differences from the legacy statistics output, both in groups Prisma's `groupBy`
+produced with a zero count: the nationality distribution no longer emits an `Unknown` entry for
+users without a country, and the school statistics count delegations without a school under
+`Unknown` instead of reporting `delegationCount: 0` for them.
+
+#### Original plan, for reference
+
+### Phase D (original) — API: Pothos/CASL → Rumble handlers
 
 The one unavoidable big bang: the frontend is broken against the new schema until Phase E lands.
 Keep it on the branch; do not merge D without E.

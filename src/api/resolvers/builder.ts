@@ -1,5 +1,7 @@
 import { dev } from '$app/environment';
 import { db } from '$db/db';
+import { db as drizzleDb, relations as drizzleRelations } from '$api/db/db';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 import SchemaBuilder from '@pothos/core';
 import PrismaPlugin from '@pothos/plugin-prisma';
 import PrismaUtils from '@pothos/plugin-prisma-utils';
@@ -26,7 +28,10 @@ const createSpan = createOpenTelemetryWrapper(tracer, {
 
 export const builder = new SchemaBuilder<{
 	Context: Context;
-	Scalars: Scalars<Prisma.Decimal, Prisma.InputJsonValue | null, Prisma.InputJsonValue> & {
+	// Json output is `Prisma.JsonValue` (which includes null), not `InputJsonValue`: that is
+	// what the client actually returns for a Json column, and what the generated Pothos
+	// field resolvers hand back.
+	Scalars: Scalars<Prisma.Decimal, Prisma.InputJsonValue | null, Prisma.JsonValue> & {
 		File: {
 			Input: File;
 			Output: never;
@@ -44,6 +49,11 @@ export const builder = new SchemaBuilder<{
 	defaultFieldNullability: false,
 	defaultInputFieldRequiredness: true,
 	plugins: [PrismaPlugin, PrismaUtils, ComplexityPlugin, TracingPlugin, SimpleObjectsPlugin],
+	// Type-only: @pothos/plugin-drizzle (pulled in by rumble) augments the global
+	// SchemaBuilderOptions and marks `drizzle` required, so every builder in the project must
+	// supply it even when it does not load the plugin. Not in `plugins`, so it is inert here.
+	// Remove once the last legacy resolver is gone.
+	drizzle: { client: drizzleDb, relations: drizzleRelations, getTableConfig },
 	prisma: {
 		client: db,
 		dmmf: getDatamodel(),
