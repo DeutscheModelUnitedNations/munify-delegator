@@ -1,16 +1,17 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import formatNames from '$lib/helpers/formatNames';
 
 	let { data }: { data: PageData } = $props();
-	let assignmentData = $derived(data.DelegationAssignmentDataQuery);
-	let members = $derived($assignmentData.data?.findUniqueDelegationMember?.delegation.members);
-	let delegation = $derived($assignmentData.data?.findUniqueDelegationMember?.delegation);
+	let delegationMember = $derived(data.delegationMember);
+	let members = $derived(delegationMember?.delegation.members);
+	let delegation = $derived(delegationMember?.delegation);
 	let committees = $derived(
-		$assignmentData.data?.findManyCommittees.filter((c) =>
+		data.committees.filter((c) =>
 			c.nations.some((n) => n.alpha3Code === delegation?.assignedNation?.alpha3Code)
 		)
 	);
@@ -35,19 +36,6 @@
 		}
 	});
 
-	const assignCommitteeMutation = graphql(`
-		mutation assignCommitteesToDelegationMembers(
-			$data: [updateManyDelegationMemberInputTypeArrayValue!]!
-		) {
-			assignCommitteesToDelegationMembers(assignments: $data) {
-				id
-				assignedCommittee {
-					id
-				}
-			}
-		}
-	`);
-
 	const sendCommitteeAssignment = async () => {
 		// Only validate unassigned members - already assigned ones are locked
 		const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned);
@@ -63,13 +51,18 @@
 		}
 
 		// Only send unassigned members to the mutation
-		const req = await assignCommitteeMutation.mutate({
-			data: unassignedMembers.map((x) => ({
-				delegationMemberId: x.delegationMemberId,
-				committeeId: x.committeeId as string
-			}))
+		const assigned = await client.mutate.assignCommitteesToDelegationMembers({
+			__args: {
+				conferenceId: page.params.conferenceId ?? '',
+				assignments: unassignedMembers.map((member) => ({
+					delegationMemberId: member.delegationMemberId,
+					committeeId: member.committeeId ?? ''
+				}))
+			},
+			id: true,
+			assignedCommittee: { id: true }
 		});
-		if (!req.data?.assignCommitteesToDelegationMembers) {
+		if (assigned.length === 0) {
 			alert(m.failedToAssignCommittees());
 			throw new Error('Failed to assign committees');
 		}
@@ -117,7 +110,7 @@
 				{#each membersWithCommittees ?? [] as memberWithCommittee}
 					{@const member = members?.find((me) => me.id === memberWithCommittee.delegationMemberId)}
 					<tr>
-						<td>{formatNames(member?.user.given_name, member?.user.family_name)}</td>
+						<td>{formatNames(member?.user.givenName, member?.user.familyName)}</td>
 						<td>
 							{#if memberWithCommittee.alreadyAssigned}
 								{@const assignedCommittee = committees?.find(
@@ -151,7 +144,7 @@
 				{/each}
 			</tbody>
 		</table>
-		{#if $assignmentData.data?.findUniqueDelegationMember?.isHeadDelegate}
+		{#if delegationMember?.isHeadDelegate}
 			{@const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned)}
 			{#if unassignedMembers.length > 0}
 				<button

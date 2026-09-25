@@ -1,54 +1,37 @@
-import { graphql } from '$houdini';
-import type { DelegationAssignmentDataQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query DelegationAssignmentDataQuery($userId: String!, $conferenceId: String!) {
-		findUniqueDelegationMember(
-			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
-		) {
-			id
-			isHeadDelegate
-			assignedCommittee {
-				id
-			}
-			delegation {
-				id
-				assignedNation {
-					alpha3Code
-					alpha2Code
-				}
-				members {
-					id
-					user {
-						id
-						family_name
-						given_name
-					}
-					assignedCommittee {
-						id
-					}
+export const load: PageLoad = async (event) => {
+	const { user } = await event.parent();
+	const conferenceId = event.params.conferenceId;
+
+	const [delegationMembers, committees] = await Promise.all([
+		client.query.delegationMembers({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } }
+			},
+			id: true,
+			isHeadDelegate: true,
+			assignedCommittee: { id: true },
+			delegation: {
+				id: true,
+				assignedNation: { alpha3Code: true, alpha2Code: true },
+				members: {
+					id: true,
+					user: { id: true, familyName: true, givenName: true },
+					assignedCommittee: { id: true }
 				}
 			}
-		}
+		}),
+		client.query.committees({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			abbreviation: true,
+			name: true,
+			nations: { alpha3Code: true, alpha2Code: true },
+			numOfSeatsPerDelegation: true
+		})
+	]);
 
-		findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			abbreviation
-			name
-			nations {
-				alpha3Code
-				alpha2Code
-			}
-			numOfSeatsPerDelegation
-		}
-	}
-`);
-
-export const _DelegationAssignmentDataQueryVariables: DelegationAssignmentDataQueryVariables =
-	async (event) => {
-		const { user } = await event.parent();
-
-		return {
-			userId: user.sub
-		};
-	};
+	return { delegationMember: delegationMembers.at(0) ?? null, committees };
+};

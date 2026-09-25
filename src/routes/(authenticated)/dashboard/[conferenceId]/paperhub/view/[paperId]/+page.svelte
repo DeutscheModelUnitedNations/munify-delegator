@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import {
 		validateResolution,
 		createEmptyResolution,
@@ -16,8 +16,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let paperQuery = $derived(data.getPublicPaperContentQuery);
-	let paperData = $derived($paperQuery?.data?.findPublicPaperContent);
+	let paperData = $derived(data.paper);
 
 	let initialized = $state(false);
 	let currentPaperId = $state<string | null>(null);
@@ -137,7 +136,7 @@
 			<div class="card-body p-4">
 				<!-- Top Row: Country/NSA -->
 				<div class="flex items-center gap-3">
-					<Flag size="md" alpha2Code={nation?.alpha2Code} {nsa} icon={nsa?.fontAwesomeIcon} />
+					<Flag size="md" alpha2Code={nation?.alpha2Code} nsa={!!nsa} icon={nsa?.fontAwesomeIcon} />
 					<span class="text-lg font-semibold">
 						{nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : nsa?.name}
 					</span>

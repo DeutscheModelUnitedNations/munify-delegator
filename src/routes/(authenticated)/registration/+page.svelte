@@ -1,40 +1,23 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import svgempty from '$assets/undraw/empty_street.svg';
 	import ConferenceCard from '$lib/components/conferenceCard/ConferenceCard.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let conferenceQuery = $derived(data.ConferenceOpenForRegistrationQuery);
-	let conferences = $derived($conferenceQuery?.data?.findManyConferences ?? []);
-	// Only treat the query as loading while there is nothing to render yet, so a
-	// background refetch does not replace the already visible conference list.
-	let loading = $derived(!$conferenceQuery?.data && !$conferenceQuery?.errors);
+	let conferences = $derived(data.conferences);
+
+	/** Every conference the caller already has a registration in, in any of the three roles. */
+	const registeredConferenceIds = $derived(
+		new Set(
+			[...data.singleParticipants, ...data.delegationMembers, ...data.conferenceSupervisors].map(
+				(registration) => registration.conference.id
+			)
+		)
+	);
 
 	function alreadyRegistered(conferenceId: string) {
-		if (
-			$conferenceQuery.data?.findManySingleParticipants.find(
-				(x) => x.conference.id === conferenceId
-			)
-		) {
-			return true;
-		}
-
-		if (
-			$conferenceQuery.data?.findManyDelegationMembers.find((x) => x.conference.id === conferenceId)
-		) {
-			return true;
-		}
-
-		if (
-			$conferenceQuery.data?.findManyConferenceSupervisors.find(
-				(x) => x.conference.id === conferenceId
-			)
-		) {
-			return true;
-		}
-
-		return false;
+		return registeredConferenceIds.has(conferenceId);
 	}
 </script>
 
@@ -44,7 +27,7 @@
 	</hero>
 
 	<main>
-		{#if loading}
+		{#if conferences.length === 0}
 			<section class="flex w-full flex-col items-center gap-4" aria-busy="true">
 				<span class="loading loading-spinner loading-lg"></span>
 				<p class="text-center">{m.loadingConferences()}</p>

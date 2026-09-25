@@ -3,7 +3,7 @@
 	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
@@ -12,9 +12,9 @@
 	import codenmz from '$lib/helpers/codenamize';
 
 	const { data }: { data: PageData } = $props();
-	const queryData = $derived(data.ConferenceDelegationsQuery);
+	// The nation's translated name is only known client-side, so it is joined on here.
 	const delegations = $derived(
-		$queryData?.data?.findManyDelegations.map((d) => ({
+		data.delegations.map((d) => ({
 			...d,
 			assignedNation: d.assignedNation
 				? {

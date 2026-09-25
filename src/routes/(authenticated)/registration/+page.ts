@@ -1,49 +1,37 @@
-import { graphql } from '$houdini';
-import type { ConferenceOpenForRegistrationQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query ConferenceOpenForRegistrationQuery($userId: String!, $currentDate: DateTime!) {
-		findManyConferences(
-			orderBy: [{ startConference: asc }]
-			where: { startConference: { gt: $currentDate } }
-		) {
-			id
-			location
-			longTitle
-			startAssignment
-			startConference
-			state
-			title
-			website
-			endConference
-			imageDataURL
-			language
-			totalSeats
-			totalParticipants
-			waitingListLength
-		}
-		findManyDelegationMembers(where: { userId: { equals: $userId } }) {
-			conference {
-				id
-			}
-		}
-		findManySingleParticipants(where: { userId: { equals: $userId } }) {
-			conference {
-				id
-			}
-		}
-		findManyConferenceSupervisors(where: { userId: { equals: $userId } }) {
-			conference {
-				id
-			}
-		}
-	}
-`);
+/** Conferences still to come, plus the ones the caller is already signed up for. */
+export const load: PageLoad = async (event) => {
+	const { user } = await event.parent();
+	const forUser = { where: { userId: { eq: user.sub } } };
 
-export const _ConferenceOpenForRegistrationQueryVariables: ConferenceOpenForRegistrationQueryVariables =
-	async (event) => {
-		return {
-			userId: (await event.parent()).user.sub,
-			currentDate: new Date()
-		};
-	};
+	const [conferences, delegationMembers, singleParticipants, conferenceSupervisors] =
+		await Promise.all([
+			client.query.conferences({
+				__args: {
+					orderBy: { startConference: 'asc' },
+					where: { startConference: { gt: new Date() } }
+				},
+				id: true,
+				location: true,
+				longTitle: true,
+				startAssignment: true,
+				startConference: true,
+				state: true,
+				title: true,
+				website: true,
+				endConference: true,
+				imageDataURL: true,
+				language: true,
+				totalSeats: true,
+				totalParticipants: true,
+				waitingListLength: true
+			}),
+			client.query.delegationMembers({ __args: forUser, conference: { id: true } }),
+			client.query.singleParticipants({ __args: forUser, conference: { id: true } }),
+			client.query.conferenceSupervisors({ __args: forUser, conference: { id: true } })
+		]);
+
+	return { conferences, delegationMembers, singleParticipants, conferenceSupervisors };
+};
