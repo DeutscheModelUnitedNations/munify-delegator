@@ -2,13 +2,11 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-// import prisInstru from '@prisma/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import { configPrivate } from '$config/private';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { trace } from '@opentelemetry/api';
 import type { Plugin } from 'graphql-yoga';
-
 import {
 	SimpleSpanProcessor,
 	BatchSpanProcessor,
@@ -37,48 +35,59 @@ class PrettyConsoleSpanExporter implements SpanExporter {
 	}
 }
 
-const headers: Record<string, string> = {};
+// Create fallback console exporter
+const consoleExporter = new PrettyConsoleSpanExporter();
+const fallbackProcessor = new SimpleSpanProcessor(consoleExporter);
 
-if (configPrivate.OTEL_AUTHORIZATION_HEADER) {
-	headers.authorization = configPrivate.OTEL_AUTHORIZATION_HEADER;
-}
+let activeProcessor: SpanProcessor | undefined;
 
-const exporter = configPrivate.OTEL_ENDPOINT_URL
-	? new OTLPTraceExporter({
+try {
+	if (configPrivate.OTEL_ENDPOINT_URL) {
+		const otlpExporter = new OTLPTraceExporter({
 			url: configPrivate.OTEL_ENDPOINT_URL,
-			headers
-		})
-	: undefined;
+			headers: configPrivate.OTEL_AUTHORIZATION_HEADER
+				? { authorization: configPrivate.OTEL_AUTHORIZATION_HEADER }
+				: {},
+			timeoutMillis: 5000, // 5 second timeout
+			concurrencyLimit: 10 // Limit concurrent exports
+		});
 
-const processors: SpanProcessor[] = [];
-if (exporter) {
-	if (configPrivate.NODE_ENV !== 'production') {
-		processors.push(new SimpleSpanProcessor(exporter));
+		// Configure processor based on environment
+		activeProcessor =
+			configPrivate.NODE_ENV === 'production'
+				? new BatchSpanProcessor(otlpExporter, {
+						maxQueueSize: 2000,
+						scheduledDelayMillis: 5000,
+						exportTimeoutMillis: 5000
+				  })
+				: new SimpleSpanProcessor(otlpExporter);
 	} else {
-		processors.push(new BatchSpanProcessor(exporter));
+		console.info('No OTEL exporter configured, using console logging fallback');
+		activeProcessor = fallbackProcessor;
 	}
-} else {
-	console.info('No OTEL exporter configured, using console.');
-	const consoleExporter = new PrettyConsoleSpanExporter();
-	processors.push(new SimpleSpanProcessor(consoleExporter));
+} catch (error) {
+	console.warn('Failed to initialize OTLP exporter, using console logging fallback:', error);
+	activeProcessor = fallbackProcessor;
 }
+
 const provider = new NodeTracerProvider({
-	spanProcessors: processors,
 	resource: new Resource({
 		[ATTR_SERVICE_NAME]: configPrivate.OTEL_SERVICE_NAME,
-		[ATTR_SERVICE_VERSION]:
-			configPrivate.OTEL_SERVICE_VERSION ?? configPublic.PUBLIC_VERSION ?? 'unknown'
+		[ATTR_SERVICE_VERSION]: configPrivate.OTEL_SERVICE_VERSION ?? configPublic.PUBLIC_VERSION ?? 'unknown'
 	})
 });
 
+// Always add fallback processor first
+provider.addSpanProcessor(fallbackProcessor);
+
+// Add OTLP processor if available and different from fallback
+if (activeProcessor && activeProcessor !== fallbackProcessor) {
+	provider.addSpanProcessor(activeProcessor);
+}
+
 registerInstrumentations({
 	tracerProvider: provider,
-	instrumentations: [
-		new HttpInstrumentation()
-		// new prisInstru.PrismaInstrumentation({
-		// 	middleware: true
-		// })
-	]
+	instrumentations: [new HttpInstrumentation()]
 });
 
 provider.register();
