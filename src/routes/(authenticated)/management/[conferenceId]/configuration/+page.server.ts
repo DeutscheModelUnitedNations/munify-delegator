@@ -9,6 +9,16 @@ import { conferenceSettingsFormSchema } from './form-schema';
 import { AddAgendaItemFormSchema } from './committees/form-schema';
 import dayjs from 'dayjs';
 
+/**
+ * An upload becomes a data URL; no upload leaves the column alone. Returning `undefined` rather
+ * than `null` matters: null would clear whatever template is already stored.
+ */
+async function toDataURL(file: File | undefined): Promise<string | undefined> {
+	if (!file) return undefined;
+	const bytes = Buffer.from(await file.arrayBuffer()).toString('base64');
+	return `data:${file.type};base64,${bytes}`;
+}
+
 function fetchConference(id: string) {
 	return client.query.conference({
 		__args: { id },
@@ -116,8 +126,34 @@ export const actions = {
 			// "Cannot stringify arbitrary non-POJOs".
 			return fail(400, withFiles({ form }));
 		}
+		// The form carries uploads as `File`; the columns store data URLs. The Pothos resolver
+		// converted them server-side via a `File` scalar, which rumble's builder does not have,
+		// so the conversion happens here instead.
+		const {
+			image,
+			emblem,
+			logo,
+			contractBasePDF,
+			guardianConsentBasePDF,
+			mediaConsentBasePDF,
+			termsAndConditionsBasePDF,
+			certificateBasePDF,
+			...settings
+		} = form.data;
+
 		await client.mutate.updateConference({
-			__args: { ...form.data, id: event.params.conferenceId },
+			__args: {
+				...settings,
+				id: event.params.conferenceId,
+				imageDataURL: await toDataURL(image),
+				emblemDataURL: await toDataURL(emblem),
+				logoDataURL: await toDataURL(logo),
+				contractContent: await toDataURL(contractBasePDF),
+				guardianConsentContent: await toDataURL(guardianConsentBasePDF),
+				mediaConsentContent: await toDataURL(mediaConsentBasePDF),
+				termsAndConditionsContent: await toDataURL(termsAndConditionsBasePDF),
+				certificateContent: await toDataURL(certificateBasePDF)
+			},
 			id: true,
 			certificateContentSet: true,
 			termsAndConditionsContentSet: true,

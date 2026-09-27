@@ -185,9 +185,9 @@ schemaBuilder.mutationFields((t) => ({
 				await db
 					.update(schema.delegation)
 					.set({
-						school: args.school ?? undefined,
-						experience: args.experience ?? undefined,
-						motivation: args.motivation ?? undefined
+						school: args.school,
+						experience: args.experience,
+						motivation: args.motivation
 					})
 					.where(updatable.sql.where);
 			}

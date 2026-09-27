@@ -113,9 +113,9 @@ schemaBuilder.mutationFields((t) => ({
 				await db
 					.update(schema.singleParticipant)
 					.set({
-						school: args.school ?? undefined,
-						motivation: args.motivation ?? undefined,
-						experience: args.experience ?? undefined
+						school: args.school,
+						motivation: args.motivation,
+						experience: args.experience
 					})
 					.where(eq(schema.singleParticipant.id, existing.id));
 				rowId = existing.id;
@@ -205,10 +205,11 @@ schemaBuilder.mutationFields((t) => ({
 
 			await db
 				.update(schema.singleParticipant)
+				// School, motivation and experience are nullable, so an explicit null clears them.
 				.set({
-					school: args.school ?? undefined,
-					experience: args.experience ?? undefined,
-					motivation: args.motivation ?? undefined,
+					school: args.school,
+					experience: args.experience,
+					motivation: args.motivation,
 					applied: args.applied ?? undefined
 				})
 				.where(updatable.sql.where);
