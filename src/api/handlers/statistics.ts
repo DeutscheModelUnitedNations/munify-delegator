@@ -183,12 +183,16 @@ const ageDistributionEntry = schemaBuilder.simpleObject('StatisticsResultAgeDist
 	})
 });
 
+/** Which kind of registration an age category groups. */
+const AgeCategoryType = schemaBuilder.enumType('StatisticsResultAgeCategoryType', {
+	values: ['delegationMember', 'singleParticipant'] as const
+});
+
 const ageCategoryStats = schemaBuilder.simpleObject('StatisticsResultAgeCategoryStats', {
 	fields: (t) => ({
 		categoryId: t.string(),
 		categoryName: t.string(),
-		/** Either `delegationMember` or `singleParticipant`. */
-		categoryType: t.string(),
+		categoryType: t.field({ type: AgeCategoryType }),
 		count: t.int(),
 		average: t.float({ nullable: true })
 	})

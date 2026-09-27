@@ -147,7 +147,6 @@ export interface delegations {
 	total: number;
 	notApplied: number;
 	applied: number;
-	withSupervisor: number;
 }
 
 export interface DelegationMembers {

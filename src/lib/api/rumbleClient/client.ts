@@ -1569,6 +1569,7 @@ export type Mutation = {
     sortOrder?: Int | null | undefined
   }) => Calendarday,
   updateCalendarEntry: (p: {
+    calendarDayId?: ID | null | undefined,
     calendarTrackId?: ID | null | undefined,
     color?: CalendarentrycolorEnum | null | undefined,
     description?: String | null | undefined,
@@ -2815,9 +2816,11 @@ export type StatisticsResultAgeCategoryStats = {
   average: Float | null,
   categoryId: String,
   categoryName: String,
-  categoryType: String,
+  categoryType: StatisticsResultAgeCategoryType,
   count: Int    
 };
+		
+export type StatisticsResultAgeCategoryType = "delegationMember" | "singleParticipant";
 		
 export type StatisticsResultAgeCommitteeStats = {
   abbreviation: String,

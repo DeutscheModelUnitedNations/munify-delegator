@@ -2,13 +2,13 @@
 	import { Map, TileLayer, Popup, Marker } from 'sveaflet';
 	import { divIcon, point } from 'leaflet';
 	import { MarkerCluster } from 'sveaflet-markercluster';
-	import type { ConferenceStatsQuery$result } from '$houdini';
+	import type { ConferenceStatistics } from '../statsQuery';
 	import type { ZipCoordinate } from '../zip-api/+server';
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
 
 	interface Props {
-		addresses: ConferenceStatsQuery$result['getConferenceStatistics']['addresses'];
+		addresses: ConferenceStatistics['addresses'];
 	}
 
 	type Coordinate = {

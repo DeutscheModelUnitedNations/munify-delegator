@@ -6,24 +6,16 @@ import {
 	resolveSignin,
 	tokensCookieName
 } from '$api/services/OIDC';
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { db } from '$db/db';
+import { db, schema } from '$api/db/db';
+import { eq } from 'drizzle-orm';
 import {
 	hashToken,
 	isTokenExpired,
 	pendingInvitationCookieName
 } from '$api/services/invitationToken';
-
-const upsertMutation = graphql(`
-	mutation UpserSelf {
-		upsertSelf {
-			userNeedsAdditionalInfo
-			userId
-		}
-	}
-`);
 
 interface EmailConflictExtensions {
 	code: 'EMAIL_CONFLICT';
@@ -34,9 +26,12 @@ interface EmailConflictExtensions {
 }
 
 // Validate and extract email conflict extensions with proper runtime checks
-function isEmailConflictError(
-	errors: readonly { extensions?: Record<string, unknown> }[] | null | undefined
-): EmailConflictExtensions | null {
+function isEmailConflictError(error: unknown): EmailConflictExtensions | null {
+	const errors =
+		typeof error === 'object' && error !== null && 'graphQLErrors' in error
+			? (error as { graphQLErrors?: readonly { extensions?: Record<string, unknown> }[] })
+					.graphQLErrors
+			: undefined;
 	if (!errors) return null;
 	for (const err of errors) {
 		const ext = err.extensions;
@@ -161,11 +156,17 @@ export const load: PageServerLoad = async (event) => {
 	event.cookies.delete(codeVerifierCookieName, { path: '/' });
 	event.cookies.delete(oidcStateCookieName, { path: '/' });
 
-	const { data, errors } = await upsertMutation.mutate(null, { event });
+	let self: { userNeedsAdditionalInfo: boolean; userId: string };
+	try {
+		self = await client.mutate.upsertSelf({
+			userNeedsAdditionalInfo: true,
+			userId: true
+		});
+	} catch (error) {
+		// Two accounts claiming the same address: the frontend explains which case it is.
+		const emailConflict = isEmailConflictError(error);
+		if (!emailConflict) throw error;
 
-	// Check for email conflict error
-	const emailConflict = isEmailConflictError(errors);
-	if (emailConflict) {
 		const params = new URLSearchParams({
 			scenario: emailConflict.isNewUser ? 'new' : 'change',
 			email: emailConflict.maskedConflictingEmail,
@@ -179,9 +180,9 @@ export const load: PageServerLoad = async (event) => {
 
 	// Process pending invitation if exists
 	const pendingInvitationToken = event.cookies.get(pendingInvitationCookieName);
-	if (pendingInvitationToken && data?.upsertSelf?.userId) {
+	if (pendingInvitationToken) {
 		try {
-			await processPendingInvitation(pendingInvitationToken, data.upsertSelf.userId);
+			await processPendingInvitation(pendingInvitationToken, self.userId);
 		} catch (e) {
 			console.error('Failed to process pending invitation:', e);
 			// Don't block login flow if invitation processing fails
@@ -190,7 +191,7 @@ export const load: PageServerLoad = async (event) => {
 		event.cookies.delete(pendingInvitationCookieName, { path: '/' });
 	}
 
-	if (data?.upsertSelf?.userNeedsAdditionalInfo) {
+	if (self.userNeedsAdditionalInfo) {
 		redirect(302, `/my-account?redirect=${encodeURIComponent(state.visitedUrl)}`);
 	} else {
 		redirect(302, state.visitedUrl);
@@ -201,7 +202,7 @@ async function processPendingInvitation(token: string, userId: string): Promise<
 	const hashedToken = hashToken(token);
 
 	// Find and validate the invitation
-	const invitation = await db.teamMemberInvitation.findUnique({
+	const invitation = await db.query.teamMemberInvitation.findFirst({
 		where: { token: hashedToken }
 	});
 
@@ -213,43 +214,25 @@ async function processPendingInvitation(token: string, userId: string): Promise<
 		throw new Error('Invitation is no longer valid');
 	}
 
-	// Check if user is already a team member
-	const existingMember = await db.teamMember.findUnique({
-		where: {
-			conferenceId_userId: {
-				conferenceId: invitation.conferenceId,
-				userId
-			}
-		}
+	const existingMember = await db.query.teamMember.findFirst({
+		where: { conferenceId: invitation.conferenceId, userId }
 	});
 
+	const usedNow = { usedAt: new Date(), acceptedById: userId };
+	const invitationRow = eq(schema.teamMemberInvitation.id, invitation.id);
+
 	if (existingMember) {
-		// User is already a member, just mark invitation as used
-		await db.teamMemberInvitation.update({
-			where: { id: invitation.id },
-			data: {
-				usedAt: new Date(),
-				acceptedById: userId
-			}
-		});
+		// Already a member, so the invitation just gets closed out.
+		await db.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
 		return;
 	}
 
-	// Add user to team and mark invitation as used in a transaction
-	await db.$transaction([
-		db.teamMember.create({
-			data: {
-				conferenceId: invitation.conferenceId,
-				userId,
-				role: invitation.role
-			}
-		}),
-		db.teamMemberInvitation.update({
-			where: { id: invitation.id },
-			data: {
-				usedAt: new Date(),
-				acceptedById: userId
-			}
-		})
-	]);
+	await db.transaction(async (tx) => {
+		await tx.insert(schema.teamMember).values({
+			conferenceId: invitation.conferenceId,
+			userId,
+			role: invitation.role
+		});
+		await tx.update(schema.teamMemberInvitation).set(usedNow).where(invitationRow);
+	});
 }

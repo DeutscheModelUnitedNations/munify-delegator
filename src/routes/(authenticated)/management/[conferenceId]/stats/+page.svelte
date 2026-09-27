@@ -30,7 +30,7 @@
 	import SupervisorStats from './widgets/SupervisorStats.svelte';
 	import PostalPaymentProgress from './widgets/PostalPaymentProgress.svelte';
 	import PaperStats from './widgets/PaperStats.svelte';
-	import { statsQuery } from './statsQuery';
+	import { fetchConferenceStatistics } from './statsQuery';
 
 	let { data }: { data: PageData } = $props();
 
@@ -59,17 +59,9 @@
 		}
 
 		isLoading = true;
-		statsQuery
-			.fetch({
-				variables: {
-					conferenceID: data.conferenceId,
-					filter: graphqlFilter
-				}
-			})
+		fetchConferenceStatistics(data.conferenceId, graphqlFilter)
 			.then((result) => {
-				if (result.data?.getConferenceStatistics) {
-					statsData = result.data.getConferenceStatistics;
-				}
+				statsData = result;
 			})
 			.catch((error) => {
 				console.error('Failed to fetch statistics:', error);

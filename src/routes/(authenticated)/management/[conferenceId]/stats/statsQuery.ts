@@ -1,227 +1,230 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { StatsFilter } from '$lib/api/rumbleClient/client';
 
-export const statsQuery = graphql(`
-	query ConferenceStatsQuery($conferenceID: ID!, $filter: StatsFilter!) {
-		getConferenceStatistics(conferenceId: $conferenceID, filter: $filter) {
-			addresses {
-				country
-				zip
-				_count {
-					zip
-					country
-					_all
-				}
+/** The whole statistics dashboard in one request. */
+export function fetchConferenceStatistics(conferenceId: string, filter: StatsFilter) {
+	return client.query.getConferenceStatistics({
+		__args: { conferenceId, filter },
+		addresses: {
+			country: true,
+			zip: true,
+			_count: {
+				zip: true,
+				country: true,
+				_all: true
 			}
-			age {
-				overall {
-					average
-					total
-					missingBirthdays
+		},
+		age: {
+			overall: {
+				average: true,
+				total: true,
+				missingBirthdays: true
+			},
+			distribution: {
+				age: true,
+				count: true,
+				byCategory: {
+					categoryId: true,
+					count: true
 				}
-				distribution {
-					age
-					count
-					byCategory {
-						categoryId
-						count
-					}
-				}
-				byCategory {
-					categoryId
-					categoryName
-					categoryType
-					count
-					average
-				}
-				byCommittee {
-					committeeId
-					committeeName
-					abbreviation
-					count
-					average
-				}
+			},
+			byCategory: {
+				categoryId: true,
+				categoryName: true,
+				categoryType: true,
+				count: true,
+				average: true
+			},
+			byCommittee: {
+				committeeId: true,
+				committeeName: true,
+				abbreviation: true,
+				count: true,
+				average: true
 			}
-			diet {
-				delegationMembers {
-					omnivore
-					vegan
-					vegetarian
-				}
-				singleParticipants {
-					omnivore
-					vegan
-					vegetarian
-				}
-				supervisors {
-					omnivore
-					vegetarian
-					vegan
-				}
-				teamMembers {
-					omnivore
-					vegan
-					vegetarian
-				}
+		},
+		diet: {
+			delegationMembers: {
+				omnivore: true,
+				vegan: true,
+				vegetarian: true
+			},
+			singleParticipants: {
+				omnivore: true,
+				vegan: true,
+				vegetarian: true
+			},
+			supervisors: {
+				omnivore: true,
+				vegetarian: true,
+				vegan: true
+			},
+			teamMembers: {
+				omnivore: true,
+				vegan: true,
+				vegetarian: true
 			}
-			gender {
-				delegationMembers {
-					diverse
-					female
-					male
-					noStatement
-				}
-				singleParticipants {
-					diverse
-					female
-					male
-					noStatement
-				}
-				supervisors {
-					male
-					female
-					diverse
-					noStatement
-				}
-				teamMembers {
-					diverse
-					female
-					male
-					noStatement
-				}
+		},
+		gender: {
+			delegationMembers: {
+				diverse: true,
+				female: true,
+				male: true,
+				noStatement: true
+			},
+			singleParticipants: {
+				diverse: true,
+				female: true,
+				male: true,
+				noStatement: true
+			},
+			supervisors: {
+				male: true,
+				female: true,
+				diverse: true,
+				noStatement: true
+			},
+			teamMembers: {
+				diverse: true,
+				female: true,
+				male: true,
+				noStatement: true
 			}
-			countdowns {
-				daysUntilConference
-				daysUntilEndRegistration
-			}
-			registered {
-				applied
-				delegationMembers {
-					applied
-					notApplied
-					total
-				}
-				delegations {
-					applied
-					notApplied
-					total
-				}
-				notApplied
-				singleParticipants {
-					applied
-					byRole {
-						applied
-						fontAwesomeIcon
-						notApplied
-						role
-						total
-					}
-					notApplied
-					total
-				}
-				supervisors
-				total
-			}
-			status {
-				postalStatus {
-					done
-					problem
-				}
-				paymentStatus {
-					done
-					problem
-				}
-				didAttend
-			}
-			roleBased {
-				delegationMembersWithRole
-				delegationMembersWithoutRole
-				delegationMembersWithCommittee
-				delegationMembersWithoutCommittee
-				singleParticipantsWithRole
-				singleParticipantsWithoutRole
-				delegationsWithAssignment
-				delegationsWithoutAssignment
-			}
-			committeeFillRates {
-				committeeId
-				name
-				abbreviation
-				totalSeats
-				assignedSeats
-				fillPercentage
-			}
-			registrationTimeline {
-				date
-				cumulativeDelegations
-				cumulativeDelegationMembers
-				cumulativeSingleParticipants
-				cumulativeSupervisors
-			}
-			nationalityDistribution {
-				country
-				countryCode
-				count
-			}
-			schoolStats {
-				school
-				delegationCount
-				memberCount
-			}
-			waitingList {
-				total
-				visible
-				hidden
-				assigned
-				unassigned
-			}
-			supervisorStats {
-				total
-				accepted
-				rejected
-				plansAttendance
-				doesNotPlanAttendance
-				acceptedAndPresent
-				acceptedAndNotPresent
-				rejectedAndPresent
-				rejectedAndNotPresent
-			}
-			postalPaymentProgress {
-				maxParticipants
-				postalDone
-				postalPending
-				postalProblem
-				postalPercentage
-				paymentDone
-				paymentPending
-				paymentProblem
-				paymentPercentage
-				bothComplete
-				postalOnlyComplete
-				paymentOnlyComplete
-				neitherComplete
-			}
-			paperStats {
-				total
-				byType {
-					positionPaper
-					workingPaper
-					introductionPaper
-				}
-				byStatus {
-					draft
-					submitted
-					changesRequested
-					accepted
-				}
-				withReviews
-				withoutReviews
-				byCommittee {
-					committeeId
-					name
-					abbreviation
-					count
-				}
+		},
+		countdowns: {
+			daysUntilConference: true,
+			daysUntilEndRegistration: true
+		},
+		registered: {
+			applied: true,
+			delegationMembers: {
+				applied: true,
+				notApplied: true,
+				total: true
+			},
+			delegations: {
+				applied: true,
+				notApplied: true,
+				total: true
+			},
+			notApplied: true,
+			singleParticipants: {
+				applied: true,
+				byRole: {
+					applied: true,
+					fontAwesomeIcon: true,
+					notApplied: true,
+					role: true,
+					total: true
+				},
+				notApplied: true,
+				total: true
+			},
+			supervisors: true,
+			total: true
+		},
+		status: {
+			postalStatus: {
+				done: true,
+				problem: true
+			},
+			paymentStatus: {
+				done: true,
+				problem: true
+			},
+			didAttend: true
+		},
+		roleBased: {
+			delegationMembersWithRole: true,
+			delegationMembersWithoutRole: true,
+			delegationMembersWithCommittee: true,
+			delegationMembersWithoutCommittee: true,
+			singleParticipantsWithRole: true,
+			singleParticipantsWithoutRole: true,
+			delegationsWithAssignment: true,
+			delegationsWithoutAssignment: true
+		},
+		committeeFillRates: {
+			committeeId: true,
+			name: true,
+			abbreviation: true,
+			totalSeats: true,
+			assignedSeats: true,
+			fillPercentage: true
+		},
+		registrationTimeline: {
+			date: true,
+			cumulativeDelegations: true,
+			cumulativeDelegationMembers: true,
+			cumulativeSingleParticipants: true,
+			cumulativeSupervisors: true
+		},
+		nationalityDistribution: {
+			country: true,
+			countryCode: true,
+			count: true
+		},
+		schoolStats: {
+			school: true,
+			delegationCount: true,
+			memberCount: true
+		},
+		waitingList: {
+			total: true,
+			visible: true,
+			hidden: true,
+			assigned: true,
+			unassigned: true
+		},
+		supervisorStats: {
+			total: true,
+			accepted: true,
+			rejected: true,
+			plansAttendance: true,
+			doesNotPlanAttendance: true,
+			acceptedAndPresent: true,
+			acceptedAndNotPresent: true,
+			rejectedAndPresent: true,
+			rejectedAndNotPresent: true
+		},
+		postalPaymentProgress: {
+			maxParticipants: true,
+			postalDone: true,
+			postalPending: true,
+			postalProblem: true,
+			postalPercentage: true,
+			paymentDone: true,
+			paymentPending: true,
+			paymentProblem: true,
+			paymentPercentage: true,
+			bothComplete: true,
+			postalOnlyComplete: true,
+			paymentOnlyComplete: true,
+			neitherComplete: true
+		},
+		paperStats: {
+			total: true,
+			byType: {
+				positionPaper: true,
+				workingPaper: true,
+				introductionPaper: true
+			},
+			byStatus: {
+				draft: true,
+				submitted: true,
+				changesRequested: true,
+				accepted: true
+			},
+			withReviews: true,
+			withoutReviews: true,
+			byCommittee: {
+				committeeId: true,
+				name: true,
+				abbreviation: true,
+				count: true
 			}
 		}
-	}
-`);
+	});
+}
+
+export type ConferenceStatistics = Awaited<ReturnType<typeof fetchConferenceStatistics>>;
