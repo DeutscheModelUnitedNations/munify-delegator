@@ -97,10 +97,14 @@ export function makeSeedConference(
 		startAssignment,
 		startConference,
 		endConference,
-		feeAmount: faker.number.int({ max: 200 }),
+		// The form requires a positive fee, so never seed a zero.
+		feeAmount: faker.number.int({ min: 1, max: 200 }),
 		accountHolder: faker.person.fullName(),
-		iban: faker.finance.iban(),
-		bic: faker.finance.bic(),
+		// `conferenceSettingsFormSchema` accepts only the 22-character IBAN layout and an
+		// 11-character BIC, so an arbitrary country's IBAN or a bare 8-character BIC would make the
+		// conference settings form refuse to save on a freshly seeded database.
+		iban: faker.finance.iban({ countryCode: 'DE', formatted: false }),
+		bic: faker.finance.bic({ includeBranchCode: true }),
 		bankName: faker.company.name(),
 		postalName: faker.person.fullName(),
 		postalStreet: faker.location.streetAddress(),
