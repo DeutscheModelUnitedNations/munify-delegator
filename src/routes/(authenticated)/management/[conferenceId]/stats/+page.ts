@@ -1,13 +1,6 @@
-import type { PageLoad } from './$types';
-import { fetchConferenceStatistics } from './statsQuery';
-
+/**
+ * The statistics dashboard is client-only: it fetches a large aggregate and renders charts, none
+ * of which is useful in the first HTML response. The page itself fetches in its component; this
+ * file carries the page option and nothing else.
+ */
 export const ssr = false;
-
-export const load: PageLoad = async (event) => {
-	const conferenceId = event.params.conferenceId;
-
-	return {
-		stats: await fetchConferenceStatistics(conferenceId, 'ALL'),
-		conferenceId
-	};
-};

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from '../$types';
-	let props: { data: PageData } = $props();
+	import type { StatsWidgetData } from '../statsQuery';
+	let props: { data: StatsWidgetData } = $props();
 	let stats = $derived(props.data.stats);
 </script>
 

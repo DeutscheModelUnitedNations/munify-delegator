@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from '../$types';
+	import type { StatsWidgetData } from '../statsQuery';
 	import NumberMatrix from './NumberMatrix.svelte';
-	let props: { data: PageData } = $props();
+	let props: { data: StatsWidgetData } = $props();
 	let diet = $derived(props.data.stats.diet);
 
 	let matrixData = $derived.by(() => {

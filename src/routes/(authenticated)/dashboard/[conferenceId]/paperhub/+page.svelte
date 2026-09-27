@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import PaperEnum from '$lib/components/paper/paperEnum';
-	import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
+	import { client, type PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
 	import GlobalPapersView from './GlobalPapersView.svelte';
@@ -10,7 +11,27 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let paperQueryData = $derived(data.myPapers);
+	const paperQueryData = $derived(
+		await client.liveQuery.papers({
+			__args: {
+				where: {
+					authorId: { eq: data.user.sub },
+					conferenceId: { eq: page.params.conferenceId! }
+				}
+			},
+			id: true,
+			status: true,
+			type: true,
+			createdAt: true,
+			updatedAt: true,
+			firstSubmittedAt: true,
+			agendaItem: {
+				id: true,
+				title: true,
+				committee: { id: true, abbreviation: true }
+			}
+		})
+	);
 
 	// Check if user is team member with review access (data comes from layout load)
 	let isTeamMember = $derived((data.teamMembers?.length ?? 0) > 0);

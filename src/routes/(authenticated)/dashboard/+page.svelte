@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { goto } from '$app/navigation';
+	import { fetchMyConferences } from './myConferences';
 	import { m } from '$lib/paraglide/messages';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
@@ -7,15 +9,24 @@
 
 	let { data }: { data: PageData } = $props();
 
+	const { conferences } = $derived(await fetchMyConferences(data.user.sub));
+
+	// Someone taking part in exactly one conference has nothing to pick, so they go straight to it.
+	$effect(() => {
+		if (conferences.length === 1) {
+			goto(`/dashboard/${conferences[0].id}`, { replaceState: true });
+		}
+	});
+
 	// Sort conferences: upcoming first (by start date asc), then past conferences (by start date desc)
 	const sortedConferences = $derived.by(() => {
 		const now = new Date();
-		const upcoming = data.conferences
+		const upcoming = conferences
 			.filter((c) => new Date(c.startConference) >= now)
 			.sort(
 				(a, b) => new Date(a.startConference).getTime() - new Date(b.startConference).getTime()
 			);
-		const past = data.conferences
+		const past = conferences
 			.filter((c) => new Date(c.startConference) < now)
 			.sort(
 				(a, b) => new Date(b.startConference).getTime() - new Date(a.startConference).getTime()
@@ -24,7 +35,7 @@
 	});
 </script>
 
-{#if data.conferences.length === 0}
+{#if conferences.length === 0}
 	<NoConferenceIndicator />
 {:else}
 	<div class="flex w-full flex-col items-center">

@@ -2,9 +2,9 @@
 	import { PieChart } from '$lib/components/charts/echarts';
 	import { m } from '$lib/paraglide/messages';
 	import { unifiedFilter } from '../stats.svelte';
-	import type { PageData } from '../$types';
+	import type { StatsWidgetData } from '../statsQuery';
 
-	let props: { data: PageData } = $props();
+	let props: { data: StatsWidgetData } = $props();
 	let stats = $derived(props.data.stats);
 
 	let { getFilteredValue } = unifiedFilter();

@@ -1,25 +1,28 @@
-import { redirect } from '@sveltejs/kit';
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageServerLoad } from './$types';
 
 /**
  * The conference picker. Someone taking part in exactly one conference is sent straight to it,
  * so this list only ever renders for people involved in several.
  */
-export const load: PageServerLoad = async (event) => {
-	const { user } = await event.parent();
-	const forUser = { where: { userId: { eq: user.sub } } };
+
+/**
+ * Every conference the caller takes part in, with their registrations folded in.
+ *
+ * The picker only ever renders for people involved in several; one is redirected straight to it.
+ */
+export async function fetchMyConferences(userId: string) {
+	const forUser = { where: { userId: { eq: userId } } };
 
 	const [conferences, delegationMembers, singleParticipants, supervisors, teamMembers] =
 		await Promise.all([
-			client.query.conferences({
+			client.liveQuery.conferences({
 				__args: {
 					where: {
 						OR: [
-							{ conferenceSupervisors: { userId: { eq: user.sub } } },
-							{ delegationMembers: { userId: { eq: user.sub } } },
-							{ singleParticipants: { userId: { eq: user.sub } } },
-							{ teamMembers: { userId: { eq: user.sub } } }
+							{ conferenceSupervisors: { userId: { eq: userId } } },
+							{ delegationMembers: { userId: { eq: userId } } },
+							{ singleParticipants: { userId: { eq: userId } } },
+							{ teamMembers: { userId: { eq: userId } } }
 						]
 					},
 					orderBy: { startConference: 'desc' }
@@ -36,7 +39,7 @@ export const load: PageServerLoad = async (event) => {
 				startConference: true,
 				endConference: true
 			}),
-			client.query.delegationMembers({
+			client.liveQuery.delegationMembers({
 				__args: forUser,
 				id: true,
 				isHeadDelegate: true,
@@ -49,14 +52,14 @@ export const load: PageServerLoad = async (event) => {
 					assignedNonStateActor: { id: true, name: true, fontAwesomeIcon: true }
 				}
 			}),
-			client.query.singleParticipants({
+			client.liveQuery.singleParticipants({
 				__args: forUser,
 				id: true,
 				conference: { id: true },
 				applied: true,
 				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
 			}),
-			client.query.conferenceSupervisors({
+			client.liveQuery.conferenceSupervisors({
 				__args: forUser,
 				id: true,
 				conference: { id: true },
@@ -69,12 +72,13 @@ export const load: PageServerLoad = async (event) => {
 				},
 				supervisedSingleParticipants: { id: true, assignedRole: { id: true } }
 			}),
-			client.query.teamMembers({ __args: forUser, id: true, conference: { id: true }, role: true })
+			client.liveQuery.teamMembers({
+				__args: forUser,
+				id: true,
+				conference: { id: true },
+				role: true
+			})
 		]);
-
-	if (conferences.length === 1) {
-		redirect(303, `/dashboard/${conferences[0].id}`);
-	}
 
 	return {
 		conferences: conferences.map((conference) => ({
@@ -85,4 +89,4 @@ export const load: PageServerLoad = async (event) => {
 			teamMembers: teamMembers.filter((row) => row.conference.id === conference.id)
 		}))
 	};
-};
+}

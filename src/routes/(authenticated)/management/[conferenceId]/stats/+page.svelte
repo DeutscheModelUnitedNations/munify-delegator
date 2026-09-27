@@ -34,47 +34,15 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Filter state and reactive data
-	let { getFilter } = unifiedFilter();
-	let isLoading = $state(false);
-	let statsData = $state(data.stats);
-	let lastFilter = $state<string>('ALL');
-
-	// Refetch stats when filter changes
-	$effect(() => {
-		const currentFilter = getFilter();
-		const graphqlFilter = mapFilterToGraphQL(currentFilter);
-
-		// Skip if filter hasn't changed
-		if (graphqlFilter === lastFilter) {
-			return;
-		}
-
-		lastFilter = graphqlFilter;
-
-		// Use cached initial data for ALL filter
-		if (graphqlFilter === 'ALL') {
-			statsData = data.stats;
-			return;
-		}
-
-		isLoading = true;
-		fetchConferenceStatistics(data.conferenceId, graphqlFilter)
-			.then((result) => {
-				statsData = result;
-			})
-			.catch((error) => {
-				console.error('Failed to fetch statistics:', error);
-				// Fall back to initial data on error
-				statsData = data.stats;
-			})
-			.finally(() => {
-				isLoading = false;
-			});
-	});
+	// The filter is part of the query, so one derived await covers both the first render and
+	// every later filter change; `$effect.pending()` reports the refetch in between.
+	const { getFilter } = unifiedFilter();
+	const graphqlFilter = $derived(mapFilterToGraphQL(getFilter()));
+	const statsData = $derived(await fetchConferenceStatistics(data.conferenceId, graphqlFilter));
+	const isLoading = $derived($effect.pending() > 0);
 
 	// Create reactive data object for widgets
-	let reactiveData = $derived({
+	const reactiveData = $derived({
 		...data,
 		stats: statsData
 	});
@@ -90,10 +58,10 @@
 					`${x.timestamp}_${x.conferenceId}` ===
 					`${format(Date.now(), 'yyyy-MM-dd')}_${data.conferenceId}`
 			) &&
-			data.stats
+			statsData
 		) {
 			history.unshift({
-				stats: data.stats,
+				stats: statsData,
 				timestamp: format(Date.now(), 'yyyy-MM-dd'),
 				conferenceId: data.conferenceId
 			});

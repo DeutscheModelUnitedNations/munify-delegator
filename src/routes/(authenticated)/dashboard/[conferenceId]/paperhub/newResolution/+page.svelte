@@ -1,5 +1,7 @@
 <script lang="ts">
 	import PaperEditor from '$lib/components/paper/editor';
+	import { page } from '$app/state';
+	import { fetchNewResolutionContext } from './newResolutionContext';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import type { PageData } from './$types';
@@ -71,7 +73,7 @@
 
 	// Create persisted store for this conference's resolution draft (only on browser)
 	const draftStore = browser
-		? persisted<ResolutionDraft | null>(`resolutionDraft_${data.conferenceId}`, null)
+		? persisted<ResolutionDraft | null>(`resolutionDraft_${page.params.conferenceId}`, null)
 		: null;
 
 	// Check for existing draft SYNCHRONOUSLY before render
@@ -191,12 +193,15 @@
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	let delegationMember = $derived(data.delegationMember);
+	const context = $derived(
+		await fetchNewResolutionContext(page.params.conferenceId!, data.user.sub)
+	);
+	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
 	let conference = $derived(data.participation?.conference);
 
-	let form = superForm(data.form, {
+	let form = superForm(context.form, {
 		onSubmit: (input) => {
 			// We don't want to send a POST request to the server, instead we are handling the GraphQL mutation locally
 			input.cancel();
@@ -263,7 +268,7 @@
 
 		const promise = client.mutate.createPaper({
 			__args: {
-				conferenceId: data.conferenceId,
+				conferenceId: page.params.conferenceId!,
 				authorId: data.user.sub,
 				delegationId,
 				type: 'WORKING_PAPER',
@@ -290,7 +295,7 @@
 			if (draftStore) {
 				draftStore.set(null);
 			}
-			goto(`/dashboard/${data.conferenceId}/paperhub`);
+			goto(`/dashboard/${page.params.conferenceId}/paperhub`);
 		}
 	};
 </script>

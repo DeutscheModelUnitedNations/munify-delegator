@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
+	import { page } from '$app/state';
+	import { fetchSurveyDetail } from './surveyDetail';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import type { PageData } from './$types';
@@ -20,8 +22,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let survey = $derived(data.survey);
-	let notAnsweredParticipants = $derived(data.usersNotAnswered);
+	const detail = $derived(await fetchSurveyDetail(data.conferenceId, page.params.surveyId!));
+	const survey = $derived(detail.survey);
+	const notAnsweredParticipants = $derived(detail.usersNotAnswered);
 
 	// Tab state
 	type SurveyTab = 'settings' | 'results';
@@ -107,11 +110,11 @@
 	};
 
 	const formatDeadline = (date: Date) => {
-		return formatInTimezone(date, data.conferenceTimezone);
+		return formatInTimezone(date, detail.conferenceTimezone);
 	};
 
 	const formatDatetimeLocal = (date: Date) => {
-		return dateToDatetimeLocal(date, data.conferenceTimezone);
+		return dateToDatetimeLocal(date, detail.conferenceTimezone);
 	};
 
 	// Actions
@@ -181,7 +184,7 @@
 					id: survey.id,
 					title: editTitle,
 					description: editDescription,
-					deadline: datetimeLocalToDate(editDeadline, data.conferenceTimezone)
+					deadline: datetimeLocalToDate(editDeadline, detail.conferenceTimezone)
 				},
 				id: true
 			});
@@ -423,7 +426,7 @@
 				<SurveyExportButtons
 					surveyTitle={survey.title}
 					options={survey.options}
-					surveyId={data.surveyId}
+					surveyId={page.params.surveyId!}
 					conferenceId={data.conferenceId}
 				/>
 			</DownloadCategoryCard>

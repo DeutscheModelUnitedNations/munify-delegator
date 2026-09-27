@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { PieChart } from '$lib/components/charts/echarts';
-	import type { PageData } from '../$types';
+	import type { StatsWidgetData } from '../statsQuery';
 
-	let props: { data: PageData } = $props();
+	let props: { data: StatsWidgetData } = $props();
 	let stats = $derived(props.data.stats);
 
 	const chartData = $derived.by(() => {

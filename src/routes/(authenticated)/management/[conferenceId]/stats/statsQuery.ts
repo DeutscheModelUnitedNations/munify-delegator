@@ -228,3 +228,6 @@ export function fetchConferenceStatistics(conferenceId: string, filter: StatsFil
 }
 
 export type ConferenceStatistics = Awaited<ReturnType<typeof fetchConferenceStatistics>>;
+
+/** What the widgets receive: the page's data with the currently filtered statistics folded in. */
+export type StatsWidgetData = { stats: ConferenceStatistics };

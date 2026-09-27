@@ -1,5 +1,7 @@
 <script lang="ts">
 	import PaperEditor from '$lib/components/paper/editor';
+	import { page } from '$app/state';
+	import { fetchNewPaperContext } from './newPaperContext';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
 	import type { PageData } from './$types';
@@ -51,7 +53,7 @@
 
 	// Create persisted store for this conference's paper draft (only on browser)
 	const draftStore = browser
-		? persisted<PaperDraft | null>(`paperDraft_${data.conferenceId}`, null)
+		? persisted<PaperDraft | null>(`paperDraft_${page.params.conferenceId}`, null)
 		: null;
 
 	// Check for existing draft SYNCHRONOUSLY before render
@@ -172,12 +174,19 @@
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	let delegationMember = $derived(data.delegationMember);
+	const context = $derived(
+		await fetchNewPaperContext(
+			page.params.conferenceId!,
+			data.user.sub,
+			page.url.searchParams.get('type')
+		)
+	);
+	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
-	let conferenceAgendaItems = $derived(data.conferenceAgendaItems);
+	const conferenceAgendaItems = $derived(context.conferenceAgendaItems);
 
-	let form = superForm(data.form, {
+	let form = superForm(context.form, {
 		onSubmit: (input) => {
 			// We don't want to send a POST request to the server, instead we are handling the GraphQL mutation locally
 			input.cancel();
@@ -246,7 +255,7 @@
 
 		const promise = client.mutate.createPaper({
 			__args: {
-				conferenceId: data.conferenceId,
+				conferenceId: page.params.conferenceId!,
 				authorId: data.user.sub,
 				delegationId,
 				type: $formData.type,
@@ -273,7 +282,7 @@
 			if (draftStore) {
 				draftStore.set(null);
 			}
-			goto(`/dashboard/${data.conferenceId}/paperhub`);
+			goto(`/dashboard/${page.params.conferenceId}/paperhub`);
 		}
 	};
 </script>

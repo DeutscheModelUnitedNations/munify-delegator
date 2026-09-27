@@ -1,20 +1,26 @@
-import { superValidate } from 'sveltekit-superforms';
+import { defaults } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
-import type { PageServerLoad } from './$types';
-import { newPaperSchema } from './form-schema';
-import { client } from '$lib/api/rumbleClient/client';
-
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import { error } from '@sveltejs/kit';
+import { client } from '$lib/api/rumbleClient/client';
+import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { newPaperSchema } from './form-schema';
 
-export const load: PageServerLoad = async (event) => {
-	const { user } = await event.parent();
-	const conferenceId = event.params.conferenceId;
+const VALID_TYPES = ['POSITION_PAPER', 'INTRODUCTION_PAPER'] as const;
 
+/**
+ * The delegation writing the paper, the agenda items it can be filed against, and the form seeded
+ * with both. `defaults` rather than `superValidate`: the paper is created by a GraphQL mutation in
+ * SPA mode, so there is no action to validate against.
+ */
+export async function fetchNewPaperContext(
+	conferenceId: string,
+	userId: string,
+	typeParam: string | null
+) {
 	const [delegationMembers, conferenceAgendaItems] = await Promise.all([
-		client.query.delegationMembers({
+		client.liveQuery.delegationMembers({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } }
+				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
 			},
 			id: true,
 			user: { id: true },
@@ -36,7 +42,7 @@ export const load: PageServerLoad = async (event) => {
 				}
 			}
 		}),
-		client.query.committeeAgendaItems({
+		client.liveQuery.committeeAgendaItems({
 			__args: { where: { committee: { conferenceId: { eq: conferenceId } } } },
 			id: true,
 			title: true,
@@ -52,25 +58,18 @@ export const load: PageServerLoad = async (event) => {
 		error(400, 'Delegation member does not exist');
 	}
 
-	const typeParam = event.url.searchParams.get('type');
-	const validTypes = ['POSITION_PAPER', 'INTRODUCTION_PAPER'] as const;
-	const type =
-		typeParam && validTypes.includes(typeParam as (typeof validTypes)[number])
-			? (typeParam as (typeof validTypes)[number])
-			: 'POSITION_PAPER';
+	const type = VALID_TYPES.find((valid) => valid === typeParam) ?? 'POSITION_PAPER';
 
-	const form = await superValidate(
+	const form = defaults(
 		{
-			delegation: delegation?.assignedNation
-				? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation?.alpha3Code)
-				: delegation.assignedNonStateActor
-					? delegation.assignedNonStateActor.name
-					: '',
+			delegation: delegation.assignedNation
+				? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+				: (delegation.assignedNonStateActor?.name ?? ''),
 			committee: committee?.name,
 			type
 		},
 		zod4(newPaperSchema)
 	);
 
-	return { form, delegationMember, conferenceAgendaItems, conferenceId, userId: user.sub };
-};
+	return { form, delegationMember, conferenceAgendaItems };
+}

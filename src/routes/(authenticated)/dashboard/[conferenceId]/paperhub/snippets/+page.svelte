@@ -42,7 +42,15 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let snippets = $derived(data.snippets);
+	const snippets = $derived(
+		await client.liveQuery.myReviewerSnippets({
+			id: true,
+			name: true,
+			content: true,
+			createdAt: true,
+			updatedAt: true
+		})
+	);
 
 	// State for editing
 	let isEditing = $state(false);

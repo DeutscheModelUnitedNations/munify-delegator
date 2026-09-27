@@ -1,16 +1,15 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageServerLoad } from './$types';
 
 const answeringUser = { id: true, givenName: true, familyName: true } as const;
 
-export const load: PageServerLoad = async (event) => {
-	const { conferenceId, surveyId } = event.params;
+/** One survey with its options and answers, plus everyone who still owes an answer. */
+export async function fetchSurveyDetail(conferenceId: string, surveyId: string) {
 	/** Anyone who holds a seat but has not answered this question yet. */
 	const notAnswered = { NOT: { surveyAnswers: { questionId: { eq: surveyId } } } };
 
 	const [conference, survey, delegationMembers, singleParticipants] = await Promise.all([
-		client.query.conference({ __args: { id: conferenceId }, timezone: true }),
-		client.query.surveyQuestion({
+		client.liveQuery.conference({ __args: { id: conferenceId }, timezone: true }),
+		client.liveQuery.surveyQuestion({
 			__args: { id: surveyId },
 			id: true,
 			title: true,
@@ -33,7 +32,7 @@ export const load: PageServerLoad = async (event) => {
 				user: answeringUser
 			}
 		}),
-		client.query.delegationMembers({
+		client.liveQuery.delegationMembers({
 			__args: {
 				where: {
 					conferenceId: { eq: conferenceId },
@@ -48,7 +47,7 @@ export const load: PageServerLoad = async (event) => {
 			},
 			user: answeringUser
 		}),
-		client.query.singleParticipants({
+		client.liveQuery.singleParticipants({
 			__args: {
 				where: {
 					conferenceId: { eq: conferenceId },
@@ -68,8 +67,6 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		survey,
 		usersNotAnswered: [...byId.values()],
-		conferenceId,
-		surveyId,
 		conferenceTimezone: conference?.timezone ?? 'UTC'
 	};
-};
+}
