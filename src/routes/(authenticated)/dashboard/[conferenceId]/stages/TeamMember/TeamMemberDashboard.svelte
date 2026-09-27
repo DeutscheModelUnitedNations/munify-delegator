@@ -4,13 +4,13 @@
 	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import type { TeamRole } from '@prisma/client';
+	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
 	import { getTeamLinksForRole, type TeamDashboardLinkContext } from '$lib/data/teamDashboardLinks';
 
 	interface Props {
 		conferenceId: string;
 		conferenceTitle: string;
-		role: TeamRole;
+		role: TeamroleEnum;
 		linkToTeamWiki?: string | null;
 		linkToServicesPage?: string | null;
 		linkToPreparationGuide?: string | null;

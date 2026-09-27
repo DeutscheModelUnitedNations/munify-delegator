@@ -1,5 +1,5 @@
 import worldCountries from 'world-countries';
-import type { Insert } from './types';
+import type { Insert } from '../rows';
 
 /**
  * The `Nation` table only ever holds UN member states; `$lib/seeding/seedSchema.ts` derives the

@@ -1,9 +1,9 @@
-import type { Committee, Nation } from '@prisma/client';
+import type { Row } from '$api/db/rows';
 
 export default function getNumOfSeatsPerNation(
-	nation: Pick<Nation, 'alpha3Code'>,
-	committees: (Pick<Committee, 'numOfSeatsPerDelegation'> & {
-		nations: Pick<Nation, 'alpha3Code'>[];
+	nation: Pick<Row<'nation'>, 'alpha3Code'>,
+	committees: (Pick<Row<'committee'>, 'numOfSeatsPerDelegation'> & {
+		nations: Pick<Row<'nation'>, 'alpha3Code'>[];
 	})[]
 ) {
 	let numOfSeats = 0;

@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
 	import type { PageData } from './$types';
-	import type { AdministrativeStatus } from '@prisma/client';
+	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
@@ -110,7 +110,7 @@
 		'conferenceId' | 'id' | 'userId'
 	>;
 
-	const changeAdministrativeStatus = async (
+	const changeAdministrativestatusEnum = async (
 		statusId: string | undefined,
 		userId: string | undefined,
 		change: StatusChange
@@ -147,7 +147,7 @@
 				return;
 			}
 
-			await changeAdministrativeStatus(postalRegistrationDetails.id, userDetails.id, {
+			await changeAdministrativestatusEnum(postalRegistrationDetails.id, userDetails.id, {
 				termsAndConditions: 'DONE',
 				mediaConsent: 'DONE',
 				guardianConsent: !ofAgeAtConference(conference?.startConference, userDetails?.birthday)
@@ -273,7 +273,7 @@
 			<ParticipantAssignedDocumentWidget
 				assignedDocumentNumber={postalRegistrationDetails?.assignedDocumentNumber ?? undefined}
 				onSave={async (number?: number) =>
-					await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
+					await changeAdministrativestatusEnum(postalRegistrationDetails?.id, userDetails.id, {
 						assignedDocumentNumber: number,
 						assignNextDocumentNumber: !number
 					})}
@@ -282,8 +282,8 @@
 				title={m.userAgreement()}
 				faIcon="fa-file-signature"
 				status={postalRegistrationDetails?.termsAndConditions ?? 'PENDING'}
-				changeStatus={async (newStatus: AdministrativeStatus) =>
-					await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
+				changeStatus={async (newStatus: AdministrativestatusEnum) =>
+					await changeAdministrativestatusEnum(postalRegistrationDetails?.id, userDetails.id, {
 						termsAndConditions: newStatus
 					})}
 			/>
@@ -292,8 +292,8 @@
 					title={m.guardianAgreement()}
 					faIcon="fa-user-shield"
 					status={postalRegistrationDetails?.guardianConsent ?? 'PENDING'}
-					changeStatus={async (newStatus: AdministrativeStatus) =>
-						await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
+					changeStatus={async (newStatus: AdministrativestatusEnum) =>
+						await changeAdministrativestatusEnum(postalRegistrationDetails?.id, userDetails.id, {
 							guardianConsent: newStatus
 						})}
 				/>
@@ -304,8 +304,8 @@
 				title={m.mediaAgreement()}
 				faIcon="fa-camera"
 				status={postalRegistrationDetails?.mediaConsent ?? 'PENDING'}
-				changeStatus={async (newStatus: AdministrativeStatus) =>
-					await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
+				changeStatus={async (newStatus: AdministrativestatusEnum) =>
+					await changeAdministrativestatusEnum(postalRegistrationDetails?.id, userDetails.id, {
 						mediaConsent: newStatus
 					})}
 			/>
@@ -313,7 +313,7 @@
 				title={m.mediaConsentStatus()}
 				status={postalRegistrationDetails?.mediaConsentStatus ?? 'NOT_SET'}
 				changeStatus={async (newStatus: MediaconsentstatusEnum) =>
-					await changeAdministrativeStatus(postalRegistrationDetails?.id, userDetails.id, {
+					await changeAdministrativestatusEnum(postalRegistrationDetails?.id, userDetails.id, {
 						mediaConsentStatus: newStatus
 					})}
 				hotkeys={{ NOT_ALLOWED: 'alt+1', PARTIALLY_ALLOWED: 'alt+2', ALLOWED_ALL: 'alt+3' }}

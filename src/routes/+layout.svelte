@@ -62,8 +62,6 @@
 <CookieBanner />
 <MaintenanceBanner />
 <div class="flex min-h-screen">
-	<!-- {@render children()} -->
-	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
 	{@render children()}
 </div>
 <Footer />

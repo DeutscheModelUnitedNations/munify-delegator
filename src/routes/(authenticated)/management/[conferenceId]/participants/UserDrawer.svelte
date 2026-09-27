@@ -5,7 +5,7 @@
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
-	import type { AdministrativeStatus } from '@prisma/client';
+	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import SurveyCard from './SurveyCard.svelte';
 	import GlobalNotes from './GlobalNotes.svelte';
@@ -198,7 +198,7 @@
 		'conferenceId' | 'id' | 'userId'
 	>;
 
-	const changeAdministrativeStatus = async (change: StatusChange) => {
+	const changeAdministrativestatusEnum = async (change: StatusChange) => {
 		await client.mutate.updateConferenceParticipantStatus({
 			__args: { ...change, id: status?.id, conferenceId, userId },
 			id: true
@@ -207,7 +207,7 @@
 	};
 
 	const changeMediaConsentStatus = async (mediaConsentStatus: MediaconsentstatusEnum) => {
-		await changeAdministrativeStatus({ mediaConsentStatus });
+		await changeAdministrativestatusEnum({ mediaConsentStatus });
 	};
 
 	const assigneSupervisor = async (connectionCode: string) => {
@@ -653,13 +653,13 @@
 				title={m.payment()}
 				faIcon="fa-money-bill-transfer"
 				status={status?.paymentStatus ?? 'PENDING'}
-				changeStatus={async (newStatus: AdministrativeStatus) =>
-					await changeAdministrativeStatus({ paymentStatus: newStatus })}
+				changeStatus={async (newStatus: AdministrativestatusEnum) =>
+					await changeAdministrativestatusEnum({ paymentStatus: newStatus })}
 			/>
 			<ParticipantAssignedDocumentWidget
 				assignedDocumentNumber={status?.assignedDocumentNumber ?? undefined}
 				onSave={async (number?: number) =>
-					await changeAdministrativeStatus({
+					await changeAdministrativestatusEnum({
 						assignedDocumentNumber: number,
 						assignNextDocumentNumber: !number
 					})}
@@ -669,24 +669,24 @@
 				title={m.userAgreement()}
 				faIcon="fa-file-signature"
 				status={status?.termsAndConditions ?? 'PENDING'}
-				changeStatus={async (newStatus: AdministrativeStatus) =>
-					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
+				changeStatus={async (newStatus: AdministrativestatusEnum) =>
+					await changeAdministrativestatusEnum({ termsAndConditions: newStatus })}
 			/>
 			{#if !ofAge}
 				<ParticipantStatusWidget
 					title={m.guardianAgreement()}
 					faIcon="fa-family"
 					status={status?.guardianConsent ?? 'PENDING'}
-					changeStatus={async (newStatus: AdministrativeStatus) =>
-						await changeAdministrativeStatus({ guardianConsent: newStatus })}
+					changeStatus={async (newStatus: AdministrativestatusEnum) =>
+						await changeAdministrativestatusEnum({ guardianConsent: newStatus })}
 				/>
 			{/if}
 			<ParticipantStatusWidget
 				title={m.mediaAgreement()}
 				faIcon="fa-photo-film-music"
 				status={status?.mediaConsent ?? 'PENDING'}
-				changeStatus={async (newStatus: AdministrativeStatus) =>
-					await changeAdministrativeStatus({ mediaConsent: newStatus })}
+				changeStatus={async (newStatus: AdministrativestatusEnum) =>
+					await changeAdministrativestatusEnum({ mediaConsent: newStatus })}
 			/>
 			<ParticipantStatusMediaWidget
 				title={m.mediaConsentStatus()}
@@ -699,7 +699,7 @@
 				faIcon="fa-calendar-check"
 				status={status?.didAttend ?? false}
 				changeStatus={async (newStatus: boolean) =>
-					changeAdministrativeStatus({ didAttend: newStatus })}
+					changeAdministrativestatusEnum({ didAttend: newStatus })}
 			/>
 		</div>
 	</div>
@@ -708,7 +708,7 @@
 		<h3 class="text-xl font-bold">{m.accessAndAttendance()}</h3>
 		<AccessCardSection
 			accessCardId={status?.accessCardId}
-			onSave={async (value) => await changeAdministrativeStatus({ accessCardId: value })}
+			onSave={async (value) => await changeAdministrativestatusEnum({ accessCardId: value })}
 		/>
 		<AttendanceSection
 			{userId}

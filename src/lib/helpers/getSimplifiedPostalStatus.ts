@@ -1,4 +1,5 @@
-import type { AdministrativeStatus, ConferenceParticipantStatus } from '@prisma/client';
+import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+import type { Row } from '$api/db/rows';
 
 /**
  * Determines a simplified administrative status based on various consent statuses
@@ -12,7 +13,7 @@ import type { AdministrativeStatus, ConferenceParticipantStatus } from '@prisma/
 export default function getSimplifiedPostalStatus(
 	participantStatus:
 		| (Pick<
-				ConferenceParticipantStatus,
+				Row<'conferenceParticipantStatus'>,
 				'termsAndConditions' | 'guardianConsent' | 'mediaConsent'
 		  > & {
 				[key: string]: any;
@@ -21,7 +22,7 @@ export default function getSimplifiedPostalStatus(
 		| null,
 	ofAge: boolean = false
 ) {
-	const statuus: AdministrativeStatus[] = [];
+	const statuus: AdministrativestatusEnum[] = [];
 
 	statuus.push(participantStatus?.termsAndConditions ?? 'PENDING');
 	if (!ofAge) statuus.push(participantStatus?.guardianConsent ?? 'PENDING');

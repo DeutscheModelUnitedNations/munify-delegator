@@ -75,8 +75,8 @@
 	let resolutionValidationError = $state<string | null>(null);
 	let invalidRawContent = $state<unknown>(null);
 
-	// Watch route param directly - this is guaranteed to change on navigation
-	// The Houdini store chain may not trigger reactivity correctly in Svelte 5
+	// Watch the route param directly - it is guaranteed to change on navigation, while the loaded
+	// paper arrives a tick later.
 	$effect(() => {
 		const routePaperId = $page.params.paperId;
 		if (routePaperId && routePaperId !== currentPaperId) {

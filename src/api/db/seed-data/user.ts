@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from './types';
+import type { Insert } from '../rows';
 
 const FOOD_PREFERENCES = ['OMNIVORE', 'VEGETARIAN', 'VEGAN'] as const;
 const GENDERS = ['MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT'] as const;

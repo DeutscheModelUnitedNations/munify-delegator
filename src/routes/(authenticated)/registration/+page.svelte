@@ -28,11 +28,6 @@
 
 	<main>
 		{#if conferences.length === 0}
-			<section class="flex w-full flex-col items-center gap-4" aria-busy="true">
-				<span class="loading loading-spinner loading-lg"></span>
-				<p class="text-center">{m.loadingConferences()}</p>
-			</section>
-		{:else if conferences.length === 0}
 			<section class="flex w-full flex-col items-center gap-4">
 				<img src={svgempty} alt="Empty" class="mb-10 w-1/2" />
 				<h1 class="text-center text-3xl">{m.noConferenceOpenForRegistration()}</h1>

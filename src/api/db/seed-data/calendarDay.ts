@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from './types';
+import type { Insert } from '../rows';
 
 export function makeSeedCalendarDay(
 	options: Pick<Insert<'calendarDay'>, 'conferenceId' | 'date' | 'name' | 'sortOrder'>

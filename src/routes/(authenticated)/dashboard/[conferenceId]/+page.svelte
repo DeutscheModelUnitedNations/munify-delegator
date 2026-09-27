@@ -16,9 +16,6 @@
 	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 
-	// the app needs some proper loading states!
-	//TODO https://houdinigraphql.com/guides/loading-states
-
 	let { data }: { data: PageData } = $props();
 	let participation = $derived(data.participation);
 	let conference = $derived(participation?.conference);

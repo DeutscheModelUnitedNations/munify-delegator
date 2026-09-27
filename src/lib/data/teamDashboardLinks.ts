@@ -1,9 +1,9 @@
 import { m } from '$lib/paraglide/messages';
-import type { TeamRole } from '@prisma/client';
+import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;
-	role: TeamRole;
+	role: TeamroleEnum;
 	linkToTeamWiki?: string | null;
 	linkToServicesPage?: string | null;
 	linkToPreparationGuide?: string | null;
@@ -18,7 +18,7 @@ export interface TeamDashboardLink {
 	getHref: (ctx: TeamDashboardLinkContext) => string;
 	external?: boolean;
 	isVisible: (ctx: TeamDashboardLinkContext) => boolean;
-	allowedRoles?: TeamRole[];
+	allowedRoles?: TeamroleEnum[];
 }
 
 export const teamDashboardLinks: TeamDashboardLink[] = [

@@ -20,7 +20,7 @@ import {
 	makeSeedCalendarEntry,
 	makeSeedPlace
 } from './seed-data/calendarDay';
-import type { Insert } from './seed-data/types';
+import type { Insert } from './rows';
 
 // Run outside SvelteKit (`bun run db:seed:dev`), so the connection string comes straight off the
 // process rather than through `$config/private`.

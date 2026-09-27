@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { AdministrativeStatus } from '@prisma/client';
+	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -9,8 +9,8 @@
 		email?: string;
 		headDelegate?: boolean;
 		committee?: string;
-		postalSatus?: AdministrativeStatus;
-		paymentStatus?: AdministrativeStatus;
+		postalSatus?: AdministrativestatusEnum;
+		paymentStatus?: AdministrativestatusEnum;
 		downloadPostalDocuments?: () => Promise<void>;
 		withPostalStatus?: boolean;
 		withPaymentStatus?: boolean;

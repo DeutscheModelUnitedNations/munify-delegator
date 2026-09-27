@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Insert } from './types';
+import type { Insert } from '../rows';
 
 export function makeSeedDelegationMember(
 	options: Pick<Insert<'delegationMember'>, 'conferenceId' | 'delegationId' | 'userId'> &
