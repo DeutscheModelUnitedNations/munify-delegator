@@ -780,7 +780,7 @@ Keep it on the branch; do not merge D without E.
 **Exit**: `bun run check` passes; `/api/graphql` served by rumble; every table has a handler with
 abilities enforced; spot-checked with one admin and one non-admin user per major entity.
 
-### Phase E — Frontend: Houdini → Rumble client
+### Phase E — Frontend: Houdini → Rumble client — **DONE (2026-09-27)**
 
 **Decision taken: SSR goes through remote functions, like chase.** 48 of the load functions run
 on the server (15 `+*.server.ts`, 33 universal loads on their first request), and the urql client
@@ -808,31 +808,53 @@ of the returned HTML.
 6. Delete `houdini.config.js`, `.houdini/`, `src/client.ts`, the houdini Vite plugin, and the
    `devAutoRestart()` plugin (its two race conditions were Pothos- and Houdini-specific).
 
-**Exit**: `bun run build` green with houdini gone from `package.json` and `vite.config.ts`; manual
-click-through of registration, management dashboards, assignment assistant, paper
-submission/review and calendar against a staging DB.
+All 154 files that held a `graphql()` document are migrated, and no `$houdini` import is left in
+`src/`. Beyond the six steps: the enum types the frontend borrowed from `$houdini`
+(`PaperStatus$options` and friends) now come from the generated client as `PaperstatusEnum`; the
+legacy stack itself is gone (`src/api/resolvers`, `src/api/abilities`, the CASL half of
+`src/api/context.ts`); the rumble endpoint took over `/api/graphql` from the temporary
+`/api/graphql2`; and `vite` 7 → 8 with `@sveltejs/vite-plugin-svelte` 5 → 7 landed, which was the
+bump Phase A had to defer.
 
-### Phase F — Tasks, seeds, dev data
+**Exit**: `bun run build` green with houdini gone from `package.json` and `vite.config.ts` — done.
+Still outstanding: the manual click-through of registration, management dashboards, assignment
+assistant, paper submission/review and calendar against a staging DB. Nothing in this branch has
+been exercised against a database holding real data.
 
-- [ ] Point `src/tasks/**` at `$api/db/db` and delete `src/tasks/tasksDb.ts` — one client only.
-      Re-check `scripts/tasksBuild.ts` bundling now that Prisma's engine binary is gone (this
-      should get simpler and smaller).
-- [ ] Port `prisma/seed/**`, `prisma/defaultData/**` and `src/lib/seeding/` to
-      `src/api/db/{seedConference.ts,seedUtils.ts,reset.ts,seed-data/}`, using `drizzle-seed`
-      where chase does.
-- [ ] Delete `prisma/` entirely (schema, migrations, db.ts) — git history is sufficient archive.
-- [ ] Drop the `$db` alias.
+### Phase F — Tasks, seeds, dev data — **DONE (2026-09-27)**
 
-### Phase G — Cleanup & docs
+- [x] `src/tasks/**` reads `$api/db/db`; `tasksDb.ts` is gone. The bundle dropped from carrying
+      Prisma's engine to 75 KB, but the shared `$api/**` code pulled SvelteKit's virtual modules
+      into it, so `scripts/tasksBuild.ts` aliases `$app/environment` and `$env/dynamic/private` to
+      plain-Node stand-ins under `src/tasks/shims/`. The pre-push hook now runs vitest like CI,
+      because bun's own runner cannot resolve those at all.
+- [x] `prisma/seed/dev` became `src/api/db/seedDev.ts` plus the factories under
+      `src/api/db/seed-data/`, typed against the drizzle insert types. It wipes with
+      `drizzle-seed`'s `reset()` and inserts, like chase, instead of upserting row by row.
+      `reset.ts` is chase's. `src/lib/seeding/` stayed where it was: it is the in-app seeding
+      schema, not a script.
+- [x] `prisma/` is gone. Dropped with it, on the user's call: the real-conference import scripts
+      (superseded by the `seedNewConference` mutation and `/management/seed`) and the two one-off
+      Logto scripts.
+- [x] `$db` is gone, and so are its last four importers.
 
-- [ ] Remove every dep in the "Remove" list; `bun run typecheck && bun run check && bun test && bun run lint`.
-- [ ] `grep -r "@prisma/client\|houdini\|@casl/\|@pothos/"` → no hits.
-- [ ] `bun run fallow` — expect the dead-code/duplication numbers to move a lot; re-baseline.
-- [ ] Rewrite `CLAUDE.md` Tech Stack + Architecture + "Adding a New GraphQL Resolver" +
-      "Database Schema Changes" for the Rumble handler pattern and `drizzle-kit generate/migrate`.
-      This file is what future sessions read first; stale content here actively misleads.
-- [ ] `bun run i18n:check`.
-- [ ] Delete this document once merged.
+### Phase G — Cleanup & docs — **DONE (2026-09-27)**
+
+- [x] Every dep in the "Remove" list is gone, except that `@pothos/plugin-simple-objects` and
+      `@pothos/plugin-validation` stay: `src/api/rumble.ts` imports them itself, so they are direct
+      dependencies rather than something rumble happens to pull in. `check` 0 errors,
+      `test` 153/153, `lint` 0 errors, `build` green.
+- [x] `grep -r "@prisma/client\|houdini\|@casl/\|@pothos/"` → only the two plugin imports above.
+      One exception: the stale `package-lock.json` still names houdini. Nothing reads it (the repo
+      uses `bun.lock`), it predates this migration, and deleting a tracked lockfile is the user's
+      call, so it was left alone.
+- [x] `bun run fallow` re-baselined: dead files 6.5% (45 of 697), dead exports 16.3%, MI 90.5.
+      Most of that backlog predates the migration; the one artifact it surfaced,
+      `schema.graphql`, was deleted along with the `.graphqlrc.yaml` that pointed at it.
+- [x] `CLAUDE.md` rewritten, and `WARP.md` with it — it described the old stack just as thoroughly.
+- [x] `bun run i18n:check` clean. One key, `loadingConferences`, was orphaned by removing a dead
+      loading branch and went with it.
+- [ ] Delete this document once merged. Left for the merge, as written.
 
 ---
 
