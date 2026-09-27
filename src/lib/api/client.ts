@@ -3,7 +3,7 @@ import { type AnyVariables, Client, CombinedError, type Exchange, fetchExchange 
 import { cacheExchange } from '@urql/exchange-graphcache';
 import { filter, fromPromise, merge, mergeMap, pipe } from 'wonka';
 import { browser } from '$app/environment';
-import { graphqlMutation, graphqlQuery } from '$api/graphql.remote';
+import { performGraphQLOperation } from '$api/graphqlSSR';
 import { schema } from './rumbleClient/schema';
 
 /** `AnyVariables` includes `void` for operations that take none; the remote call wants a record. */
@@ -12,25 +12,22 @@ function toVariables(variables: AnyVariables): Record<string, unknown> | undefin
 }
 
 /**
- * Runs an operation through a SvelteKit remote function instead of over HTTP.
+ * Runs an operation against the schema in this process instead of over HTTP.
  *
  * Only reachable on the server, where the client's relative endpoint URL cannot be fetched.
- * Subscriptions are not handled here - this app has none - and anything this exchange does not
- * answer falls through to `fetchExchange`.
+ * Subscriptions are not handled here and anything this exchange does not answer falls through to
+ * `fetchExchange`.
  */
-const remoteFunctionsExchange: Exchange = ({ forward }) => {
+const inProcessExchange: Exchange = ({ forward }) => {
 	return (operations) => {
 		const handled = pipe(
 			operations,
 			filter((operation) => !browser && operation.kind !== 'teardown'),
 			mergeMap((operation) => {
-				const run =
-					operation.kind === 'mutation'
-						? graphqlMutation({
-								query: operation.query,
-								variables: toVariables(operation.variables)
-							})
-						: graphqlQuery({ query: operation.query, variables: toVariables(operation.variables) });
+				const run = performGraphQLOperation({
+					query: operation.query,
+					variables: toVariables(operation.variables)
+				});
 
 				return fromPromise(
 					run.then((result) => ({
@@ -65,12 +62,7 @@ const remoteFunctionsExchange: Exchange = ({ forward }) => {
  */
 export const urqlClient = new Client({
 	url: '/api/graphql',
-	exchanges: [
-		nativeDateExchange,
-		cacheExchange({ schema }),
-		remoteFunctionsExchange,
-		fetchExchange
-	],
+	exchanges: [nativeDateExchange, cacheExchange({ schema }), inProcessExchange, fetchExchange],
 	fetchOptions: {
 		credentials: 'include'
 	}

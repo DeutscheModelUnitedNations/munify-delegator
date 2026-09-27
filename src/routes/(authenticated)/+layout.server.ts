@@ -17,7 +17,6 @@ import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/mig
 export const load: LayoutServerLoad = async (event) => {
 	const [offlineUserRefresh, myOIDCRoles] = await Promise.all([
 		client.query.offlineUserRefresh({
-			nextTokenRefreshDue: true,
 			user: {
 				sub: true,
 				email: true,
@@ -35,11 +34,26 @@ export const load: LayoutServerLoad = async (event) => {
 		client.query.myOIDCRoles()
 	]);
 
-	if (offlineUserRefresh.user) {
+	const claims = offlineUserRefresh.user;
+	if (claims) {
+		// Copied field by field rather than spread: what the generated client returns is a
+		// subscribeable proxy, and `load` data has to survive being serialized into the page.
 		return {
-			nextTokenRefreshDue: offlineUserRefresh,
 			user: {
-				...offlineUserRefresh.user,
+				sub: claims.sub,
+				email: claims.email,
+				family_name: claims.family_name,
+				given_name: claims.given_name,
+				locale: claims.locale,
+				phone: claims.phone,
+				preferred_username: claims.preferred_username,
+				hasPassword: claims.hasPassword,
+				mfaVerificationFactors: [...claims.mfaVerificationFactors],
+				ssoIdentities: claims.ssoIdentities.map((identity) => ({
+					issuer: identity.issuer,
+					identityId: identity.identityId
+				})),
+				socialIdentities: [...claims.socialIdentities],
 				myOIDCRoles: [...myOIDCRoles],
 				isAdmin: myOIDCRoles.includes('admin')
 			}
