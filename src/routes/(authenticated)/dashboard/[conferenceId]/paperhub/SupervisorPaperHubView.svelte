@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -13,51 +13,49 @@
 
 	let { conferenceId }: Props = $props();
 
-	const supervisedPapersQuery = graphql(`
-		query FindSupervisedPapersQuery($conferenceId: String!) {
-			findSupervisedPapers(conferenceId: $conferenceId) {
-				id
-				type
-				status
-				createdAt
-				updatedAt
-				firstSubmittedAt
-				agendaItem {
-					id
-					title
-					committee {
-						id
-						abbreviation
-					}
+	function fetchSupervisedPapers() {
+		return client.query.findSupervisedPapers({
+			__args: { conferenceId },
+			id: true,
+			type: true,
+			status: true,
+			createdAt: true,
+			updatedAt: true,
+			firstSubmittedAt: true,
+			agendaItem: {
+				id: true,
+				title: true,
+				committee: { id: true, abbreviation: true }
+			},
+			delegation: {
+				id: true,
+				assignedNation: { alpha2Code: true, alpha3Code: true },
+				assignedNonStateActor: {
+					id: true,
+					name: true,
+					abbreviation: true,
+					fontAwesomeIcon: true
 				}
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
-					}
-					assignedNonStateActor {
-						id
-						name
-						abbreviation
-						fontAwesomeIcon
-					}
-				}
-				author {
-					id
-					given_name
-					family_name
-				}
-			}
-		}
-	`);
+			},
+			author: { id: true, givenName: true, familyName: true }
+		});
+	}
+
+	let supervisedPapers = $state<Awaited<ReturnType<typeof fetchSupervisedPapers>>>();
+	let loading = $state(false);
 
 	$effect(() => {
-		supervisedPapersQuery.fetch({ variables: { conferenceId } });
+		loading = true;
+		void fetchSupervisedPapers()
+			.then((result) => {
+				supervisedPapers = result;
+			})
+			.finally(() => {
+				loading = false;
+			});
 	});
 
-	let papersData = $derived($supervisedPapersQuery?.data?.findSupervisedPapers ?? []);
-	let loading = $derived($supervisedPapersQuery.fetching);
+	let papersData = $derived(supervisedPapers ?? []);
 
 	// Group papers by delegation
 	let papersByDelegation = $derived.by(() => {
@@ -70,7 +68,7 @@
 				alpha2Code?: string;
 				nsa?: boolean;
 				icon?: string | null;
-				papers: typeof papersData;
+				papers: (typeof papersData)[number][];
 			}
 		>();
 
@@ -107,7 +105,7 @@
 		goto(`./paperhub/${paperId}`);
 	};
 
-	const formatDate = (date: string | null | undefined) => {
+	const formatDate = (date: Date | string | null | undefined) => {
 		if (!date) return '-';
 		return new Date(date).toLocaleDateString();
 	};
@@ -199,8 +197,8 @@
 											{/if}
 										</td>
 										<td class="align-middle whitespace-nowrap">
-											{paper.author.given_name}
-											{paper.author.family_name}
+											{paper.author.givenName}
+											{paper.author.familyName}
 										</td>
 										<td class="align-middle text-sm text-base-content/60 whitespace-nowrap">
 											{formatDate(paper.firstSubmittedAt)}

@@ -30,7 +30,7 @@ export type AddressInput = {
 export type AdministrativestatusEnum = "DONE" | "PENDING" | "PROBLEM";
 		
 export type AgendaItemPaperGroup = {
-  agendaItem: () => Committeeagendaitem | null,
+  agendaItem: () => Committeeagendaitem,
   papers: () => Paper[]    
 };
 		

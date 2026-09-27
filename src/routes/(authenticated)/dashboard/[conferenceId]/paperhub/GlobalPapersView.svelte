@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import PaperTable from './PaperTable.svelte';
@@ -15,79 +15,65 @@
 	// Search state
 	let searchQuery = $state('');
 
-	const globalPapersGroupedQuery = graphql(`
-		query GlobalPapersGroupedQuery($conferenceId: String!) {
-			findGlobalPapersGroupedByCommittee(conferenceId: $conferenceId) {
-				committee {
-					id
-					name
-					abbreviation
-				}
-				agendaItems {
-					agendaItem {
-						id
-						title
-					}
-					papers {
-						id
-						type
-						status
-						createdAt
-						updatedAt
-						firstSubmittedAt
-						delegation {
-							id
-							assignedNation {
-								alpha2Code
-								alpha3Code
-							}
-							assignedNonStateActor {
-								id
-								name
-								abbreviation
-								fontAwesomeIcon
-							}
-						}
-					}
-				}
+	const paperSelection = {
+		id: true,
+		type: true,
+		status: true,
+		createdAt: true,
+		updatedAt: true,
+		firstSubmittedAt: true,
+		delegation: {
+			id: true,
+			assignedNation: { alpha2Code: true, alpha3Code: true },
+			assignedNonStateActor: {
+				id: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true
 			}
 		}
-	`);
+	} as const;
 
-	const globalIntroductionPapersQuery = graphql(`
-		query GlobalIntroductionPapersQuery($conferenceId: String!) {
-			findGlobalIntroductionPapers(conferenceId: $conferenceId) {
-				id
-				type
-				status
-				createdAt
-				updatedAt
-				firstSubmittedAt
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
-					}
-					assignedNonStateActor {
-						id
-						name
-						abbreviation
-						fontAwesomeIcon
-					}
-				}
+	function fetchGrouped() {
+		return client.query.findGlobalPapersGroupedByCommittee({
+			__args: { conferenceId },
+			committee: { id: true, name: true, abbreviation: true },
+			agendaItems: {
+				agendaItem: { id: true, title: true },
+				papers: paperSelection
 			}
-		}
-	`);
+		});
+	}
+
+	function fetchIntroductionPapers() {
+		return client.query.findGlobalIntroductionPapers({
+			__args: { conferenceId },
+			...paperSelection
+		});
+	}
+
+	let grouped = $state<Awaited<ReturnType<typeof fetchGrouped>>>();
+	let loadedIntroductionPapers = $state<Awaited<ReturnType<typeof fetchIntroductionPapers>>>();
+	let papersLoading = $state(false);
+	let papersError = $state<string>();
 
 	$effect(() => {
-		globalPapersGroupedQuery.fetch({ variables: { conferenceId } });
-		globalIntroductionPapersQuery.fetch({ variables: { conferenceId } });
+		papersLoading = true;
+		papersError = undefined;
+		void Promise.all([fetchGrouped(), fetchIntroductionPapers()])
+			.then(([groupedResult, introductionResult]) => {
+				grouped = groupedResult;
+				loadedIntroductionPapers = introductionResult;
+			})
+			.catch((error: unknown) => {
+				papersError = error instanceof Error ? error.message : String(error);
+			})
+			.finally(() => {
+				papersLoading = false;
+			});
 	});
 
-	let introductionPapers = $derived(
-		$globalIntroductionPapersQuery?.data?.findGlobalIntroductionPapers ?? []
-	);
+	let introductionPapers = $derived(loadedIntroductionPapers ?? []);
 	let showIntroductionPapers = $derived(introductionPapers.length > 0);
 
 	// Store expanded state in URL params
@@ -135,9 +121,7 @@
 	};
 
 	// Get all committee groups
-	let committeeGroups = $derived(
-		$globalPapersGroupedQuery.data?.findGlobalPapersGroupedByCommittee ?? []
-	);
+	let committeeGroups = $derived(grouped ?? []);
 
 	// Sorting state per agenda item
 	let sortConfig = new SvelteMap<string, { key: string; direction: 'asc' | 'desc' }>();
@@ -201,10 +185,8 @@
 	// Get total papers count for summary
 	let totalPapersCount = $derived.by(() => {
 		const committeePapers =
-			$globalPapersGroupedQuery.data?.findGlobalPapersGroupedByCommittee?.flatMap((c) =>
-				c.agendaItems.flatMap((ai) => ai.papers)
-			) ?? [];
-		const introPapers = $globalIntroductionPapersQuery.data?.findGlobalIntroductionPapers ?? [];
+			(grouped ?? []).flatMap((c) => c.agendaItems.flatMap((ai) => ai.papers)) ?? [];
+		const introPapers = introductionPapers;
 		return committeePapers.length + introPapers.length;
 	});
 </script>
@@ -231,14 +213,14 @@
 		</div>
 	</div>
 
-	{#if $globalPapersGroupedQuery.fetching}
+	{#if papersLoading}
 		<div class="flex justify-center p-8">
 			<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
 		</div>
-	{:else if $globalPapersGroupedQuery.errors?.length}
+	{:else if papersError}
 		<div class="alert alert-error">
 			<i class="fa-solid fa-exclamation-triangle"></i>
-			<span>{$globalPapersGroupedQuery.errors[0].message}</span>
+			<span>{papersError}</span>
 		</div>
 	{:else if committeeGroups.length > 0 || showIntroductionPapers}
 		{#each committeeGroups as committeeGroup}

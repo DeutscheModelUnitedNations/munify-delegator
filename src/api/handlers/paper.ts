@@ -383,9 +383,10 @@ const AgendaItemPaperGroup = schemaBuilder
 	.objectRef<AgendaItemGroup>('AgendaItemPaperGroup')
 	.implement({
 		fields: (t) => ({
+			// Groups are keyed by agenda item, so there is always one - papers without an agenda
+			// item are introduction papers and have their own query.
 			agendaItem: t.field({
 				type: CommitteeAgendaItemRef,
-				nullable: true,
 				resolve: (parent) => parent.agendaItem
 			}),
 			papers: t.field({ type: [PaperRef], resolve: (parent) => parent.papers })

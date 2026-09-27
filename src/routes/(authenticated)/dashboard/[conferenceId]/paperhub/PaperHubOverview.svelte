@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
-	import type { PaperStatus$options } from '$houdini';
+	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import PaperStatusBadges from './PaperStatusBadges.svelte';
 	import PaperTable from './PaperTable.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -20,109 +20,82 @@
 	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
 	let focusMode = persisted('paperHubFocusMode', false);
 
-	const papersGroupedQuery = graphql(`
-		query PapersGroupedQuery($conferenceId: String!) {
-			findPapersGroupedByCommittee(conferenceId: $conferenceId) {
-				committee {
-					id
-					name
-					abbreviation
-				}
-				agendaItems {
-					agendaItem {
-						id
-						title
-						reviewHelpStatus
-					}
-					papers {
-						id
-						type
-						status
-						createdAt
-						updatedAt
-						firstSubmittedAt
-						delegation {
-							id
-							assignedNation {
-								alpha2Code
-								alpha3Code
-							}
-							assignedNonStateActor {
-								id
-								name
-								abbreviation
-								fontAwesomeIcon
-							}
-						}
-						versions {
-							reviews {
-								id
-							}
-						}
-					}
-				}
+	const paperSelection = {
+		id: true,
+		type: true,
+		status: true,
+		createdAt: true,
+		updatedAt: true,
+		firstSubmittedAt: true,
+		delegation: {
+			id: true,
+			assignedNation: { alpha2Code: true, alpha3Code: true },
+			assignedNonStateActor: {
+				id: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true
 			}
-		}
-	`);
+		},
+		versions: { reviews: { id: true } }
+	} as const;
 
-	const introductionPapersQuery = graphql(`
-		query IntroductionPapersQuery($conferenceId: String!) {
-			findIntroductionPapers(conferenceId: $conferenceId) {
-				id
-				type
-				status
-				createdAt
-				updatedAt
-				firstSubmittedAt
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
-					}
-					assignedNonStateActor {
-						id
-						name
-						abbreviation
-						fontAwesomeIcon
-					}
-				}
-				versions {
-					reviews {
-						id
-					}
-				}
-			}
-		}
-	`);
+	function fetchIntroductionPapers() {
+		return client.query.findIntroductionPapers({
+			__args: { conferenceId },
+			...paperSelection
+		});
+	}
 
-	const myReviewStatsQuery = graphql(`
-		query MyReviewStatsQuery($conferenceId: String!) {
-			myReviewStats(conferenceId: $conferenceId) {
-				firstReviews
-				followUpReviews
-				totalReviews
+	function fetchGroupedPapers() {
+		return client.query.findPapersGroupedByCommittee({
+			__args: { conferenceId },
+			committee: { id: true, name: true, abbreviation: true },
+			agendaItems: {
+				agendaItem: { id: true, title: true, reviewHelpStatus: true },
+				papers: paperSelection
 			}
-		}
-	`);
+		});
+	}
 
-	const setReviewHelpStatusMutation = graphql(`
-		mutation SetReviewHelpStatus($agendaItemId: String!, $status: ReviewHelpStatus!) {
-			setAgendaItemReviewHelpStatus(agendaItemId: $agendaItemId, status: $status) {
-				id
-				reviewHelpStatus
-			}
+	let groupedPapers = $state<Awaited<ReturnType<typeof fetchGroupedPapers>>>();
+	let loadedIntroductionPapers = $state<Awaited<ReturnType<typeof fetchIntroductionPapers>>>();
+	let introductionPapers = $derived(loadedIntroductionPapers ?? []);
+	let myReviewStats = $state<{
+		firstReviews: number;
+		followUpReviews: number;
+		totalReviews: number;
+	} | null>();
+	let papersLoading = $state(false);
+	let papersError = $state<string>();
+
+	async function loadPapers() {
+		papersLoading = true;
+		papersError = undefined;
+		try {
+			const [grouped, introduction, stats] = await Promise.all([
+				fetchGroupedPapers(),
+				fetchIntroductionPapers(),
+				client.query.myReviewStats({
+					__args: { conferenceId },
+					firstReviews: true,
+					followUpReviews: true,
+					totalReviews: true
+				})
+			]);
+			groupedPapers = grouped;
+			loadedIntroductionPapers = introduction;
+			myReviewStats = stats;
+		} catch (error) {
+			papersError = error instanceof Error ? error.message : String(error);
+		} finally {
+			papersLoading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		papersGroupedQuery.fetch({ variables: { conferenceId } });
-		introductionPapersQuery.fetch({ variables: { conferenceId } });
-		myReviewStatsQuery.fetch({ variables: { conferenceId } });
+		void loadPapers();
 	});
-
-	// User is a reviewer if myReviewStats returns data (not null/undefined)
-	let isReviewer = $derived($myReviewStatsQuery.data?.myReviewStats != null);
 
 	// Cycle through review help status values
 	const cycleReviewHelpStatus = async (
@@ -136,13 +109,17 @@
 					? 'NO_HELP_WANTED'
 					: 'UNSPECIFIED';
 
-		await setReviewHelpStatusMutation.mutate({
-			agendaItemId,
-			status: nextStatus
+		await client.mutate.setAgendaItemReviewHelpStatus({
+			__args: { agendaItemId, status: nextStatus },
+			id: true,
+			reviewHelpStatus: true
 		});
+		await loadPapers();
 	};
 
-	let introductionPapers = $derived($introductionPapersQuery?.data?.findIntroductionPapers ?? []);
+	// Only reviewers get review stats back; for anyone else the query answers null.
+	let isReviewer = $derived(myReviewStats != null);
+
 	let showIntroductionPapers = $derived(introductionPapers.length > 0);
 
 	// Store expanded state in URL params using sveltekit-search-params
@@ -168,7 +145,7 @@
 	};
 
 	// Status counting helper
-	const countByStatus = (papers: Array<{ status: PaperStatus$options }>) => {
+	const countByStatus = (papers: Array<{ status: PaperstatusEnum }>) => {
 		const counts = {
 			total: papers.length,
 			SUBMITTED: 0,
@@ -187,10 +164,8 @@
 	// Overall status counts for the distribution chart
 	let overallStatusCounts = $derived.by(() => {
 		const committeePapers =
-			$papersGroupedQuery.data?.findPapersGroupedByCommittee?.flatMap((c) =>
-				c.agendaItems.flatMap((ai) => ai.papers)
-			) ?? [];
-		const introPapers = $introductionPapersQuery.data?.findIntroductionPapers ?? [];
+			(groupedPapers ?? []).flatMap((c) => c.agendaItems.flatMap((ai) => ai.papers)) ?? [];
+		const introPapers = introductionPapers;
 		const allPapers = [...committeePapers, ...introPapers];
 
 		return {
@@ -205,16 +180,14 @@
 	// All papers combined (for statistics)
 	let allPapers = $derived.by(() => {
 		const committeePapers =
-			$papersGroupedQuery.data?.findPapersGroupedByCommittee?.flatMap((c) =>
-				c.agendaItems.flatMap((ai) => ai.papers)
-			) ?? [];
-		const introPapers = $introductionPapersQuery.data?.findIntroductionPapers ?? [];
+			(groupedPapers ?? []).flatMap((c) => c.agendaItems.flatMap((ai) => ai.papers)) ?? [];
+		const introPapers = introductionPapers;
 		return [...committeePapers, ...introPapers];
 	});
 
 	// Committees with their papers (for detailed stats chart)
 	let committeesWithPapers = $derived.by(() => {
-		const grouped = $papersGroupedQuery.data?.findPapersGroupedByCommittee ?? [];
+		const grouped = groupedPapers ?? [];
 		const committees = grouped.map((c) => ({
 			name: c.committee.name,
 			abbreviation: c.committee.abbreviation,
@@ -318,7 +291,7 @@
 	// Calculate review progress percentage (papers that have received at least one review)
 	const getReviewProgress = (
 		papers: Array<{
-			status: PaperStatus$options;
+			status: PaperstatusEnum;
 			versions?: Array<{ reviews?: Array<{ id: string }> }>;
 		}>
 	) => {
@@ -346,7 +319,7 @@
 
 <div class="flex flex-col gap-3 w-full">
 	<!-- Focus Mode Toggle and Status Overview -->
-	{#if !$papersGroupedQuery.fetching && $papersGroupedQuery.data?.findPapersGroupedByCommittee?.length}
+	{#if !papersLoading && groupedPapers?.length}
 		<div class="card bg-base-200 border border-base-300 p-4">
 			<div class="flex flex-col gap-4">
 				<!-- Focus Mode Toggle -->
@@ -449,8 +422,8 @@
 				{/if}
 
 				<!-- Personal Review Stats -->
-				{#if $myReviewStatsQuery.data?.myReviewStats}
-					{@const myStats = $myReviewStatsQuery.data.myReviewStats}
+				{#if myReviewStats}
+					{@const myStats = myReviewStats}
 					<div class="border-t border-base-300 pt-4">
 						<h4 class="text-sm font-semibold mb-2">{m.yourReviewStats()}</h4>
 						<div class="flex items-center gap-6">
@@ -495,17 +468,17 @@
 		{/if}
 	{/if}
 
-	{#if $papersGroupedQuery.fetching}
+	{#if papersLoading}
 		<div class="flex justify-center p-8">
 			<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
 		</div>
-	{:else if $papersGroupedQuery.errors?.length}
+	{:else if papersError}
 		<div class="alert alert-error">
 			<i class="fa-solid fa-exclamation-triangle"></i>
-			<span>{$papersGroupedQuery.errors[0].message}</span>
+			<span>{papersError}</span>
 		</div>
-	{:else if $papersGroupedQuery.data?.findPapersGroupedByCommittee?.length}
-		{#each $papersGroupedQuery.data.findPapersGroupedByCommittee as committeeGroup}
+	{:else if groupedPapers?.length}
+		{#each groupedPapers as committeeGroup}
 			{@const committeeCounts = countByStatus(
 				committeeGroup.agendaItems.flatMap((ai) => ai.papers)
 			)}
@@ -740,7 +713,7 @@
 	</div>
 
 	<!-- Detailed Paper Statistics Section -->
-	{#if !$papersGroupedQuery.fetching && allPapers.length > 0}
+	{#if !papersLoading && allPapers.length > 0}
 		<div class="mt-6">
 			<DetailedPaperStats {allPapers} {committeesWithPapers} />
 		</div>
