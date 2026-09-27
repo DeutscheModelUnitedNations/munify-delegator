@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { ConferenceSeats } from './conferenceSeats';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
-		committees: PageData['conference']['committees'];
+		committees: ConferenceSeats['committees'];
 	}
 
 	let { committees }: Props = $props();

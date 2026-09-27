@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import SHLogo from '$assets/logo/mun-sh_logo.png';
 	import BWLogo from '$assets/logo/munbw_logo.png';
 	import UdteamUp from '$assets/undraw/team-up.svg';
@@ -30,10 +30,16 @@
 		logo: BWLogo
 	};
 
-	let { data }: { data: PageData } = $props();
-	let conferenceList = $derived(data.conferences);
-
-	let conferencesToDisplay = $derived(conferenceList);
+	const conferencesToDisplay = await client.liveQuery.conferences({
+		state: true,
+		startAssignment: true,
+		location: true,
+		title: true,
+		id: true,
+		totalSeats: true,
+		totalParticipants: true,
+		waitingListLength: true
+	});
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">

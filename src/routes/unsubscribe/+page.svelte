@@ -2,18 +2,13 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import Footer from '../Footer.svelte';
-	import type { PageProps } from './$types';
+	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 
-	let { data }: PageProps = $props();
-
-	let email = $state('');
+	// Unsubscribe links carry the address, so the field starts filled in.
+	let email = $state(page.url.searchParams.get('email') ?? '');
 	let loading = $state(false);
 	let unsubscribed = $state(false);
-
-	$effect(() => {
-		if (data.prefillEmail) email = data.prefillEmail;
-	});
 
 	const unsubscribe = async () => {
 		if (!email) {

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { page } from '$app/state';
+	import { fetchConferenceSeats } from './conferenceSeats';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
 	import { getUniqueNations } from '$lib/helpers/getUniqueNations';
@@ -7,8 +8,8 @@
 	import CommitteePool from './CommitteePool.svelte';
 	import { dev } from '$app/environment';
 
-	let { data }: { data: PageData } = $props();
-	const conference = $derived(data.conference);
+	const conference = await fetchConferenceSeats(page.params.conferenceId!);
+
 	const { nonStateActors: nonStateActorPool, committees } = $derived(conference);
 
 	const nationPool = $derived(getUniqueNations(committees));
