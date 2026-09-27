@@ -13,7 +13,7 @@ export const NationRef = object({ table: 'nation' });
 query({ table: 'nation' });
 
 /**
- * Mutation surface taken from schema.graphql: the legacy `createOneNation`
+ * Mutation surface taken from the legacy API's schema: the legacy `createOneNation`
  * resolver is commented out upstream, so no create mutation is ported here.
  */
 schemaBuilder.mutationFields((t) => ({

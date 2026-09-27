@@ -17,7 +17,7 @@ export const NonStateActorRef = object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });
 
 /**
- * Mutation surface taken from schema.graphql: the legacy `createOneNonStateActor`
+ * Mutation surface taken from the legacy API's schema: the legacy `createOneNonStateActor`
  * resolver is commented out upstream, so no create mutation is ported here.
  */
 schemaBuilder.mutationFields((t) => ({

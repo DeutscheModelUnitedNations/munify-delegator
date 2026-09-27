@@ -18,7 +18,7 @@ query({ table: 'committee' });
 
 /**
  * Only update and delete: `createOneCommittee` is commented out in the legacy resolver and does
- * not appear in schema.graphql, so it is deliberately not ported.
+ * not appear in the legacy API's schema, so it is deliberately not ported.
  */
 schemaBuilder.mutationFields((t) => ({
 	updateCommittee: t.drizzleField({

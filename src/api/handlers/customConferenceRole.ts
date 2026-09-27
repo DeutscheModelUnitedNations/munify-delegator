@@ -17,7 +17,7 @@ export const CustomConferenceRoleRef = object({ table: 'customConferenceRole' })
 query({ table: 'customConferenceRole' });
 
 /**
- * Mutation surface taken from schema.graphql: the legacy `createOneCustomConferenceRole`
+ * Mutation surface taken from the legacy API's schema: the legacy `createOneCustomConferenceRole`
  * resolver is commented out upstream, so no create mutation is ported here.
  */
 schemaBuilder.mutationFields((t) => ({

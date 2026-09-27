@@ -4,14 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MUNify DELEGATOR is a SvelteKit-based application for managing Model United Nations conference registration, delegation assignment, and organizational matters. Built with Svelte 5, TypeScript, Prisma ORM, and GraphQL (via Pothos & Yoga), it's designed for DMUN e.V. but can be adapted for other MUN conferences.
+MUNify DELEGATOR is a SvelteKit-based application for managing Model United Nations conference registration, delegation assignment, and organizational matters. Built with Svelte 5, TypeScript, Drizzle ORM, and GraphQL (via [rumble](https://github.com/m1212e/rumble)), it's designed for DMUN e.V. but can be adapted for other MUN conferences.
+
+It shares its stack, and much of its structure, with the sibling project MUNify CHASE. When a question is not answered here, how chase does it is the intended answer.
 
 ## Tech Stack Core
 
 - **Frontend**: SvelteKit with Svelte 5 (runes mode), TailwindCSS 4, DaisyUI
 - **Backend**: Node.js with SvelteKit server routes
-- **Database**: PostgreSQL via Prisma ORM
-- **GraphQL**: Pothos schema builder with graphql-yoga server, Houdini client
+- **Database**: PostgreSQL via Drizzle ORM (relational API), migrations through drizzle-kit
+- **GraphQL**: rumble (Pothos + graphql-yoga + drizzle, with its own ability layer) on the server; a generated typed client over urql on the frontend
 - **Auth**: OpenID Connect (OIDC) - recommended provider: Logto
 - **i18n**: Paraglide-JS for internationalization (default locale: German)
 - **Runtime**: Bun (package manager and development runtime)
@@ -39,20 +41,26 @@ bunx lefthook install
 ### Database Operations
 
 ```bash
-# Generate Prisma client
-bunx prisma generate
+# Write a migration for the current schema.ts
+bun run db:generate
 
-# Create and apply migrations
-bunx prisma migrate dev
+# Apply pending migrations
+bun run db:migrate
 
-# Reset database (WARNING: deletes all data)
-bunx prisma migrate reset
+# Push the schema without writing a migration (throwaway databases only)
+bun run db:push
 
-# Seed database with development data
-bun prisma/seed/dev/seed.ts
+# Drop every table and enum (WARNING: deletes all data)
+bun run db:reset
 
-# Open Prisma Studio (database GUI)
-bun run studio
+# Wipe and refill the dev database with faker data
+bun run db:seed:dev
+
+# Recreate the container from scratch and migrate it
+bun run db:nuke
+
+# Database GUI
+bun run db:studio
 ```
 
 ### Code Quality
@@ -123,16 +131,23 @@ bun run preview
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
 
 - **`src/api/`** - Backend GraphQL API layer
-  - `resolvers/` - GraphQL resolvers organized by module
-    - `modules/` - Domain-specific resolvers (conference, delegation, committee, etc.)
-    - `api.ts` - Main GraphQL Yoga server configuration
-    - `builder.ts` - Pothos schema builder setup with plugins
-  - `abilities/` - CASL-based authorization rules per entity
+  - `handlers/` - One module per domain entity, each holding that entity's abilities, object
+    reference, queries and mutations. `register.ts` imports them all and is the single place a
+    new handler has to be listed.
+  - `rumble.ts` - The rumble instance: schema builder, ability builder, yoga factory, and the
+    dev-time generator for the typed frontend client.
+  - `context.ts` - Request context (OIDC data plus `mustBeLoggedIn` / `hasRole`)
+  - `db/` - `schema.ts` (tables), `relations.ts` (the relational API's graph), `db.ts` (client),
+    `reset.ts`, `seedDev.ts` and the faker factories under `seed-data/`
+  - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
+    is how server-side loads reach the API without an HTTP round trip
   - `services/` - Backend business logic services
 
 - **`src/lib/`** - Shared frontend code
+  - `api/client.ts` - The urql client and its exchanges
+  - `api/rumbleClient/` - **Generated**, do not edit. Written by `clientCreator` whenever the dev
+    server starts; the typed surface every query and mutation in the app goes through.
   - `components/` - Reusable Svelte components
-  - `queries/` - Houdini GraphQL queries/mutations
   - `services/` - Frontend utility functions
   - `schemata/` - Zod validation schemas
   - `paraglide/` - Generated i18n code
@@ -145,47 +160,75 @@ bun run preview
   - `conferenceStatus.ts` - Auto-update conference states
   - `mailSync.ts` - Email synchronization with external systems
 
-- **`prisma/`** - Database layer
-  - `schema.prisma` - Prisma schema definition
-  - `migrations/` - Database migration history
-  - `seed/` - Database seeding scripts
-  - `pothos/` - Generated Pothos types from Prisma
+- **`drizzle/`** - Generated migration history. Never edited by hand; `db:generate` writes it.
 
 ### Key Architectural Patterns
 
-#### 1. GraphQL API Layer (Pothos + Yoga)
+#### 1. GraphQL API Layer (rumble)
 
-- **Schema-first approach** using Pothos code-first schema builder
-- All resolvers in `src/api/resolvers/modules/` are auto-imported in `api.ts`
-- Plugin stack: Prisma integration, complexity limiting, OpenTelemetry tracing, utilities
-- **Authorization**: CASL ability checks per entity type in `src/api/abilities/entities/`
-- Context includes: Prisma client, OIDC user info, request metadata
+- **Code-first**, one file per entity under `src/api/handlers/`. A handler declares, in this order:
+  its abilities, its object reference, its queries, its mutations.
 
-#### 2. Frontend Data Fetching (Houdini)
+  ```ts
+  abilityBuilder.committee.allow('read');
+  abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 
-- **Houdini** manages GraphQL client-side operations
-- Type-safe generated queries in `.houdini/` directory
-- Queries/mutations in `src/lib/queries/` trigger codegen
-- Config in `houdini.config.js` - runes mode enabled
-- **Cache Invalidation**: After mutations that modify data, you must invalidate Houdini's cache to update the UI:
-
-  ```typescript
-  import { cache } from '$houdini';
-  import { invalidateAll } from '$app/navigation';
-
-  // After a mutation:
-  cache.markStale();
-  await invalidateAll();
+  export const CommitteeRef = object({ table: 'committee' });
+  query({ table: 'committee' }); // generates `committee(id)` and `committees(where, limit, …)`
   ```
+
+- **Authorization** lives in those `abilityBuilder` calls. An ability is a drizzle filter, so it
+  composes into a query rather than being checked after the fact:
+
+  ```ts
+  ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where;
+  ```
+
+  Reach for an explicit check in `services/authHelper.ts` only when the answer is needed before a
+  row exists.
+
+- The endpoint is `src/routes/api/graphql/+server.ts`. Adding fields needs a **dev server restart**:
+  the schema builder is populated at module init.
+
+#### 2. Frontend Data Fetching (generated rumble client)
+
+- Every operation goes through the generated client, which takes a selection object rather than a
+  GraphQL document:
+
+  ```ts
+  import { client } from '$lib/api/rumbleClient/client';
+
+  const conference = await client.query.conference({
+  	__args: { id: conferenceId },
+  	id: true,
+  	title: true,
+  	committees: { id: true, abbreviation: true }
+  });
+
+  await client.mutate.updateCommittee({ __args: { id, name }, id: true, name: true });
+  ```
+
+  Mutations returning a scalar have no selection to describe; wrap them for `toast.promise` with
+  `Promise.resolve(client.mutate.deleteX({ __args: { id } }))`.
+
+- **Regeneration** happens on dev server start, so a handler change is only visible to the
+  frontend after a restart. `src/lib/api/rumbleClient/` is generated and committed; never edit it.
+- **SSR** goes through `src/api/graphql.remote.ts`. `remoteFunctionsExchange` in
+  `src/lib/api/client.ts` routes there whenever `browser` is false, which is why server loads work
+  without the app being able to fetch its own relative URL. Needs
+  `kit.experimental.remoteFunctions` in `svelte.config.js`.
+- **After a mutation** call `invalidateAll()` to re-run the loads whose data changed. Components
+  that fetch on their own reload by calling their fetch function again — there is no normalized
+  cache to mark stale.
 
 #### 3. Authentication & Authorization
 
 - **OIDC flow** via `openid-client` library
 - Login callbacks in `src/routes/auth/`
-- User context injected into GraphQL context via `src/api/context/`
-- **CASL abilities** define fine-grained permissions per entity:
-  - Actions: `list`, `read`, `update`, `delete`, `impersonate`
-  - Each entity type has dedicated ability definitions
+- User context injected into the GraphQL context via `src/api/context.ts`
+- **rumble abilities** define fine-grained permissions per entity:
+  - Actions: `read`, `update`, `delete`, `impersonate` (declared in `src/api/rumble.ts`)
+  - Each entity's abilities live at the top of its handler
 - Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc.
 
 #### 4. Internationalization
@@ -198,7 +241,11 @@ bun run preview
 
 #### 5. Database Patterns
 
-- **Prisma ORM** with PostgreSQL
+- **Drizzle ORM** with PostgreSQL, using the relational API (`db.query.x.findMany({ where, with })`)
+  and `defineRelations` in `src/api/db/relations.ts`. Columns are camelCase in TypeScript and
+  snake_case in the database; `snakeCase.table` does the mapping.
+- Row and insert shapes come from `$api/db/rows` (`Row<'conference'>`, `Insert<'conference'>`)
+  rather than from a generated client
 - Models: `Conference`, `Delegation`, `Committee`, `DelegationMember`, `SingleParticipant`, etc.
 - Conference state machine: `PRE` → `PARTICIPANT_REGISTRATION` → `PREPARATION` → `ACTIVE` → `POST`
 - Payment tracking via `PaymentTransaction` model
@@ -216,9 +263,7 @@ bun run preview
 ```
 $api → src/api
 $assets → src/assets
-$db → prisma
-$config → src/config
-$houdini → .houdini
+$config → src/lib/config
 ```
 
 ### Important Integrations
@@ -292,28 +337,29 @@ Required variables (see `.env.example`):
 
 ## Common Workflows
 
-### Adding a New GraphQL Resolver
+### Adding a New GraphQL Handler
 
-1. Create resolver module in `src/api/resolvers/modules/`
-2. Import in `src/api/resolvers/api.ts`
-3. Define CASL abilities in `src/api/abilities/entities/` if new entity
-4. Restart dev server to regenerate schema
+1. Create the module in `src/api/handlers/`
+2. Import it in `src/api/handlers/register.ts`
+3. Declare its abilities with `abilityBuilder` at the top of the file
+4. Restart the dev server: it rebuilds the schema and regenerates
+   `src/lib/api/rumbleClient/`
 
 ### Adding a Frontend Feature
 
 1. Create/modify components in `src/lib/components/`
-2. Add GraphQL queries in `src/lib/queries/`
-3. Houdini auto-generates types on save
-4. Use generated stores in Svelte components
-5. Add translations to `messages/` directory
+2. Fetch through `client.query` / `client.mutate` — in a load function when the page needs the data
+   to render, in the component when it is only needed once something is opened
+3. Add translations to `messages/` directory
 
 ### Database Schema Changes
 
-1. Edit `prisma/schema.prisma`
-2. Run `bunx prisma migrate dev --name <descriptive-name>`
-3. Prisma auto-generates client and Pothos types
-4. Update seed scripts if needed
-5. Test migrations against seed data
+1. Edit `src/api/db/schema.ts`, and `src/api/db/relations.ts` if the change adds or removes a
+   relation
+2. Run `bun run db:generate` to write the migration, then `bun run db:migrate` to apply it
+3. Restart the dev server so the schema and the generated client pick the change up
+4. Update `src/api/db/seed-data/` if a new column is required
+5. Test with `bun run db:nuke && bun run db:seed:dev`
 
 ### Adding Background Task
 
@@ -332,8 +378,8 @@ Both fallow steps are advisory: they use `--brief`, which renders the findings b
 ## Performance Notes
 
 - Svelte 5 runes mode enabled - use `$state`, `$derived`, `$effect` instead of legacy stores
-- Houdini query deduplication and caching
-- GraphQL query complexity limiting via Pothos plugin
+- `compilerOptions.experimental.async` is on, so components may `await` at the top level of
+  `<script>`
 - OpenTelemetry tracing for performance monitoring
 - Image optimization: Use WebP format, lazy load images
 - Install dependencies always into the devDependencies section as is best practice for sveltekit projects if not explicitly required at runtime.
@@ -341,10 +387,10 @@ Both fallow steps are advisory: they use `--brief`, which renders the findings b
 ## Security Considerations
 
 - OIDC authentication required for all routes in `(authenticated)/`
-- CASL authorization checks on all GraphQL mutations
+- rumble ability filters on all GraphQL queries and mutations
 - Certificate signatures use HMAC-SHA256
 - Environment secrets must never be committed
-- Prisma parameterized queries prevent SQL injection
+- Drizzle parameterized queries prevent SQL injection
 - GraphQL complexity limits prevent DoS attacks
 
 ## Type Safety (CRITICAL)
@@ -357,21 +403,23 @@ This codebase supports **100% end-to-end type safety** from database to frontend
 
 2. **NEVER use type casting (`as Type`)** - Type assertions bypass the compiler's checks. If you feel the need to cast, it indicates a type definition problem that should be fixed at the source.
 
-3. **Trust the generated types** - Prisma, Pothos, and Houdini generate accurate types. If types don't match your expectations, investigate why rather than casting.
+3. **Trust the generated types** - drizzle and the generated rumble client are accurate. If types don't match your expectations, investigate why rather than casting.
 
 4. **Fix type errors at the source** - When encountering type mismatches:
-   - Check if the GraphQL query/mutation needs updating
-   - Verify the Prisma schema is correct
-   - Ensure Houdini codegen has run (`bun run dev` triggers this)
+   - Check if the selection or the handler's args need updating
+   - Verify `src/api/db/schema.ts` is correct
+   - Ensure the client has been regenerated (restart `bun run dev`)
    - Never silence errors with `as any` or `@ts-ignore`
 
 5. **Use type narrowing** - Prefer type guards, discriminated unions, and proper null checks over assertions.
 
 ### Why This Matters
 
-- **Prisma** generates types from `schema.prisma`
-- **Pothos** generates GraphQL schema types from Prisma
-- **Houdini** generates frontend types from GraphQL operations
+- **Drizzle** infers row and insert types from `src/api/db/schema.ts`
+- **rumble** builds the GraphQL schema from those tables, and its abilities are drizzle filters, so
+  authorization is type-checked too
+- **`clientCreator`** generates the frontend client from the live schema, so a selection that asks
+  for a field the API does not have fails to compile
 - This chain provides compile-time guarantees that data flows correctly through the entire stack
 
 ### Exceptions (Rare)
@@ -394,13 +442,12 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 | **daisyui-github**      | `gitmcp.io/saadeghi/daisyui`                       | DaisyUI component library documentation                    |
 | **tailwind-github**     | `gitmcp.io/tailwindlabs/tailwindcss`               | TailwindCSS documentation                                  |
 | **github**              | `@anthropic-ai/github-mcp-server`                  | GitHub PRs, issues, code search, workflow management       |
-| **prisma**              | `prisma mcp`                                       | Database migrations, schema introspection, Prisma Studio   |
 | **vitest**              | `@djankies/vitest-mcp`                             | Test running with structured output, coverage analysis     |
 | **context7**            | `@upstash/context7-mcp`                            | Up-to-date documentation for any library                   |
 | **memory**              | `@modelcontextprotocol/server-memory`              | Persistent knowledge graph across sessions                 |
 | **sequential-thinking** | `@modelcontextprotocol/server-sequential-thinking` | Complex problem-solving through structured thinking        |
-| **houdini-github**      | `gitmcp.io/HoudiniGraphql/houdini`                 | Houdini GraphQL client documentation                       |
-| **pothos-github**       | `gitmcp.io/hayes/pothos`                           | Pothos GraphQL schema builder documentation                |
+| **drizzle-github**      | `gitmcp.io/drizzle-team/drizzle-orm`               | Drizzle ORM documentation                                  |
+| **rumble-github**       | `gitmcp.io/m1212e/rumble`                          | rumble source, the API layer this app is built on          |
 
 ### Setup Requirements
 
@@ -412,7 +459,8 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
 
 - Use `use context7` in prompts to fetch current documentation for any library
 - The Svelte MCP server validates Svelte 5 code and suggests fixes
-- Prisma MCP can run migrations and open Prisma Studio directly
+- rumble has no published docs, so read its source through the MCP server when its behavior is
+  unclear
 - Vitest MCP provides structured test output optimized for AI analysis
 - Memory MCP remembers context across conversation sessions
 
