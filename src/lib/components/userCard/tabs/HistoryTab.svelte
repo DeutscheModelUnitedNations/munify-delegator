@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -13,80 +13,75 @@
 
 	let { userId, conferenceId }: Props = $props();
 
-	const historyQuery = graphql(`
-		query UserCardHistoryQuery($userId: String!) {
-			findManyDelegationMembers(where: { userId: { equals: $userId } }) {
-				id
-				isHeadDelegate
-				conference {
-					id
-					title
-					startConference
-					endConference
-				}
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
+	const conferenceSummary = {
+		id: true,
+		title: true,
+		startConference: true,
+		endConference: true
+	} as const;
+
+	/** Every conference this person has ever been part of, in any role. */
+	async function fetchHistory() {
+		const forUser = { where: { userId: { eq: userId } } };
+
+		const [delegationMembers, singleParticipants, supervisors, teamMembers] = await Promise.all([
+			client.query.delegationMembers({
+				__args: forUser,
+				id: true,
+				isHeadDelegate: true,
+				conference: conferenceSummary,
+				delegation: {
+					id: true,
+					assignedNation: { alpha2Code: true, alpha3Code: true },
+					assignedNonStateActor: {
+						name: true,
+						abbreviation: true,
+						fontAwesomeIcon: true
 					}
-					assignedNonStateActor {
-						name
-						abbreviation
-						fontAwesomeIcon
-					}
-				}
-				assignedCommittee {
-					id
-					abbreviation
-					name
-				}
-			}
-			findManySingleParticipants(where: { userId: { equals: $userId } }) {
-				id
-				conference {
-					id
-					title
-					startConference
-					endConference
-				}
-				assignedRole {
-					id
-					name
-					fontAwesomeIcon
-				}
-			}
-			findManyConferenceSupervisors(where: { userId: { equals: $userId } }) {
-				id
-				conference {
-					id
-					title
-					startConference
-					endConference
-				}
-			}
-			findManyTeamMembers(where: { userId: { equals: $userId } }) {
-				id
-				role
-				conference {
-					id
-					title
-					startConference
-					endConference
-				}
-			}
-		}
-	`);
+				},
+				assignedCommittee: { id: true, abbreviation: true, name: true }
+			}),
+			client.query.singleParticipants({
+				__args: forUser,
+				id: true,
+				conference: conferenceSummary,
+				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
+			}),
+			client.query.conferenceSupervisors({
+				__args: forUser,
+				id: true,
+				conference: conferenceSummary
+			}),
+			client.query.teamMembers({
+				__args: forUser,
+				id: true,
+				role: true,
+				conference: conferenceSummary
+			})
+		]);
+
+		return { delegationMembers, singleParticipants, supervisors, teamMembers };
+	}
+
+	let history = $state<Awaited<ReturnType<typeof fetchHistory>>>();
+	let historyLoading = $state(false);
 
 	$effect(() => {
-		historyQuery.fetch({ variables: { userId } });
+		historyLoading = true;
+		void fetchHistory()
+			.then((result) => {
+				history = result;
+			})
+			.finally(() => {
+				historyLoading = false;
+			});
 	});
 
 	interface HistoryEntry {
 		conferenceId: string;
 		conferenceTitle: string;
-		startDate: string;
-		endDate: string;
+		startDate: Date | null;
+		endDate: Date | null;
 		roleType: 'delegation' | 'singleParticipant' | 'supervisor' | 'team';
 		roleLabel: string;
 		icon: string;
@@ -99,13 +94,13 @@
 	const historyEntries = $derived.by(() => {
 		const entries: HistoryEntry[] = [];
 
-		for (const dm of $historyQuery.data?.findManyDelegationMembers ?? []) {
+		for (const dm of history?.delegationMembers ?? []) {
 			if (dm.conference.id === conferenceId) continue;
 			entries.push({
 				conferenceId: dm.conference.id,
 				conferenceTitle: dm.conference.title,
-				startDate: dm.conference.startConference ?? '',
-				endDate: dm.conference.endConference ?? '',
+				startDate: dm.conference.startConference ?? null,
+				endDate: dm.conference.endConference ?? null,
 				roleType: 'delegation',
 				roleLabel: m.delegationMember(),
 				icon: 'fa-users',
@@ -126,13 +121,13 @@
 			});
 		}
 
-		for (const sp of $historyQuery.data?.findManySingleParticipants ?? []) {
+		for (const sp of history?.singleParticipants ?? []) {
 			if (sp.conference.id === conferenceId) continue;
 			entries.push({
 				conferenceId: sp.conference.id,
 				conferenceTitle: sp.conference.title,
-				startDate: sp.conference.startConference ?? '',
-				endDate: sp.conference.endConference ?? '',
+				startDate: sp.conference.startConference ?? null,
+				endDate: sp.conference.endConference ?? null,
 				roleType: 'singleParticipant',
 				roleLabel: m.singleParticipant(),
 				icon: 'fa-user',
@@ -143,26 +138,26 @@
 			});
 		}
 
-		for (const sup of $historyQuery.data?.findManyConferenceSupervisors ?? []) {
+		for (const sup of history?.supervisors ?? []) {
 			if (sup.conference.id === conferenceId) continue;
 			entries.push({
 				conferenceId: sup.conference.id,
 				conferenceTitle: sup.conference.title,
-				startDate: sup.conference.startConference ?? '',
-				endDate: sup.conference.endConference ?? '',
+				startDate: sup.conference.startConference ?? null,
+				endDate: sup.conference.endConference ?? null,
 				roleType: 'supervisor',
 				roleLabel: m.supervisor(),
 				icon: 'fa-chalkboard-user'
 			});
 		}
 
-		for (const tm of $historyQuery.data?.findManyTeamMembers ?? []) {
+		for (const tm of history?.teamMembers ?? []) {
 			if (tm.conference.id === conferenceId) continue;
 			entries.push({
 				conferenceId: tm.conference.id,
 				conferenceTitle: tm.conference.title,
-				startDate: tm.conference.startConference ?? '',
-				endDate: tm.conference.endConference ?? '',
+				startDate: tm.conference.startConference ?? null,
+				endDate: tm.conference.endConference ?? null,
 				roleType: 'team',
 				roleLabel: m.teamMember(),
 				icon: 'fa-shield-halved',
@@ -170,18 +165,14 @@
 			});
 		}
 
-		return entries.sort(
-			(a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-		);
+		return entries.sort((a, b) => (b.startDate?.getTime() ?? 0) - (a.startDate?.getTime() ?? 0));
 	});
 
-	const formatDateRange = (start: string, end: string) => {
-		const locale = getLocale();
-		const s = new Date(start);
-		const e = new Date(end);
+	const formatDateRange = (start: Date | null, end: Date | null) => {
 		if (!start) return '';
-		if (!end) return s.toLocaleDateString(locale, { year: 'numeric', month: 'short' });
-		return `${s.toLocaleDateString(locale, { month: 'short', year: 'numeric' })}`;
+		const locale = getLocale();
+		if (!end) return start.toLocaleDateString(locale, { year: 'numeric', month: 'short' });
+		return start.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 	};
 
 	const roleColors: Record<HistoryEntry['roleType'], string> = {
@@ -192,7 +183,7 @@
 	};
 </script>
 
-{#if $historyQuery.fetching}
+{#if historyLoading}
 	<div class="flex flex-col gap-3">
 		<div class="skeleton h-24 w-full"></div>
 		<div class="skeleton h-24 w-full"></div>

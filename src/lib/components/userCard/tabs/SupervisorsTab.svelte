@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/helpers/formatNames';
@@ -16,100 +16,84 @@
 
 	let { userId, conferenceId, onUpdate }: Props = $props();
 
-	const supervisorsQuery = graphql(`
-		query UserCardSupervisorsQuery($conferenceId: String!, $userId: String!) {
-			findManyDelegationMembers(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				supervisors {
-					id
-					plansOwnAttendenceAtConference
-					connectionCode
-					user {
-						id
-						given_name
-						family_name
-					}
-				}
-			}
-			findManySingleParticipants(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				supervisors {
-					id
-					plansOwnAttendenceAtConference
-					connectionCode
-					user {
-						id
-						given_name
-						family_name
-					}
-				}
-			}
+	const supervisorSelection = {
+		id: true,
+		plansOwnAttendenceAtConference: true,
+		connectionCode: true,
+		user: { id: true, givenName: true, familyName: true }
+	} as const;
+
+	/** Supervisors reach a participant through either kind of registration, so both are asked. */
+	async function fetchSupervisors() {
+		const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: userId } };
+
+		const [delegationMembers, singleParticipants] = await Promise.all([
+			client.query.delegationMembers({
+				__args: { where: forUser },
+				id: true,
+				supervisors: supervisorSelection
+			}),
+			client.query.singleParticipants({
+				__args: { where: forUser },
+				id: true,
+				supervisors: supervisorSelection
+			})
+		]);
+
+		return [
+			...(delegationMembers.at(0)?.supervisors ?? []),
+			...(singleParticipants.at(0)?.supervisors ?? [])
+		];
+	}
+
+	type SupervisorRow = Awaited<ReturnType<typeof fetchSupervisors>>[number];
+
+	let loadedSupervisors = $state<SupervisorRow[]>([]);
+	let supervisorsLoading = $state(false);
+
+	async function loadSupervisors() {
+		supervisorsLoading = true;
+		try {
+			loadedSupervisors = await fetchSupervisors();
+		} finally {
+			supervisorsLoading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		supervisorsQuery.fetch({ variables: { conferenceId, userId } });
+		void loadSupervisors();
 	});
 
 	let supervisors = $derived.by(() => {
-		const dmSupervisors = $supervisorsQuery.data?.findManyDelegationMembers?.[0]?.supervisors ?? [];
-		const spSupervisors =
-			$supervisorsQuery.data?.findManySingleParticipants?.[0]?.supervisors ?? [];
-		const map = new SvelteMap<
-			string,
-			{
-				id: string;
-				plansOwnAttendenceAtConference: boolean;
-				connectionCode: string;
-				user: { id: string; given_name: string; family_name: string };
-			}
-		>();
-		for (const s of [...dmSupervisors, ...spSupervisors]) {
-			map.set(s.id, s);
+		// The same person can supervise both registrations, so dedupe before sorting.
+		const byId = new SvelteMap<string, SupervisorRow>();
+		for (const supervisor of loadedSupervisors) {
+			byId.set(supervisor.id, supervisor);
 		}
-		return [...map.values()].sort((a, b) =>
-			`${a.user.family_name}`.localeCompare(`${b.user.family_name}`)
+		return [...byId.values()].sort((a, b) =>
+			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
 		);
 	});
 
 	// Assign supervisor
 	let assignSupervisorModalOpen = $state(false);
 
-	const supervisorListQuery = graphql(`
-		query UserCardSupervisorList($conferenceId: String!) {
-			findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
-				id
-				connectionCode
-				user {
-					id
-					given_name
-					family_name
-				}
-			}
-		}
-	`);
+	function fetchSupervisorList() {
+		return client.query.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			connectionCode: true,
+			user: { id: true, givenName: true, familyName: true }
+		});
+	}
 
-	const assignSupervisorMutation = graphql(`
-		mutation UserCardAssignSupervisor($conferenceId: ID!, $userId: ID, $connectionCode: String!) {
-			connectToConferenceSupervisor(
-				conferenceId: $conferenceId
-				userId: $userId
-				connectionCode: $connectionCode
-			) {
-				id
-			}
-		}
-	`);
+	let supervisorList = $state<Awaited<ReturnType<typeof fetchSupervisorList>>>();
+	let supervisorListLoading = $state(false);
 
 	const assignSupervisor = async (connectionCode: string) => {
-		const promise = assignSupervisorMutation.mutate({
-			conferenceId,
-			userId,
-			connectionCode
+		const promise = client.mutate.connectToConferenceSupervisor({
+			__args: { conferenceId, userId, connectionCode },
+			id: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
@@ -118,16 +102,21 @@
 		});
 		await promise;
 		assignSupervisorModalOpen = false;
-		cache.markStale();
 		await invalidateAll();
-		supervisorsQuery.fetch({ variables: { conferenceId, userId } });
+		await loadSupervisors();
 		onUpdate?.();
 	};
 
 	$effect(() => {
-		if (assignSupervisorModalOpen) {
-			supervisorListQuery.fetch({ variables: { conferenceId } });
-		}
+		if (!assignSupervisorModalOpen) return;
+		supervisorListLoading = true;
+		void fetchSupervisorList()
+			.then((result) => {
+				supervisorList = result;
+			})
+			.finally(() => {
+				supervisorListLoading = false;
+			});
 	});
 </script>
 
@@ -139,7 +128,7 @@
 		</button>
 	</div>
 
-	{#if $supervisorsQuery.fetching}
+	{#if supervisorsLoading}
 		<div class="flex flex-col gap-3">
 			<div class="skeleton h-16 w-full"></div>
 			<div class="skeleton h-16 w-full"></div>
@@ -164,8 +153,8 @@
 					{#each supervisors as sup (sup.id)}
 						<tr>
 							<td>
-								<span class="capitalize">{sup.user.given_name}</span>
-								<span class="uppercase">{sup.user.family_name}</span>
+								<span class="capitalize">{sup.user.givenName}</span>
+								<span class="uppercase">{sup.user.familyName}</span>
 							</td>
 							<td>
 								<code class="bg-base-300 rounded px-1 text-xs">{sup.connectionCode}</code>
@@ -181,9 +170,11 @@
 								<button
 									class="btn btn-ghost btn-xs btn-square"
 									onclick={() => openUserCard(sup.user.id, conferenceId)}
-									title={formatNames(sup.user.given_name, sup.user.family_name, {
-										givenNameFirst: true
-									})}
+									title={formatNames(
+										sup.user.givenName ?? undefined,
+										sup.user.familyName ?? undefined,
+										{ givenNameFirst: true }
+									)}
 								>
 									<i class="fa-duotone fa-id-card"></i>
 								</button>
@@ -206,14 +197,14 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#if $supervisorListQuery.fetching}
+				{#if supervisorListLoading}
 					<tr>
 						<td colspan="2">
 							<div class="skeleton h-8 w-full"></div>
 						</td>
 					</tr>
-				{:else if $supervisorListQuery.data?.findManyConferenceSupervisors && $supervisorListQuery.data.findManyConferenceSupervisors.length !== 0}
-					{#each $supervisorListQuery.data.findManyConferenceSupervisors.sort( (a, b) => `${a.user.family_name}${a.user.given_name}`.localeCompare(`${b.user.family_name}${b.user.given_name}`) ) as supervisor (supervisor.id)}
+				{:else if supervisorList && supervisorList.length !== 0}
+					{#each [...supervisorList].sort( (a, b) => `${a.user.familyName}${a.user.givenName}`.localeCompare(`${b.user.familyName}${b.user.givenName}`) ) as supervisor (supervisor.id)}
 						<tr>
 							<td>
 								<button
@@ -225,8 +216,8 @@
 								</button>
 							</td>
 							<td>
-								<span class="capitalize">{supervisor.user.given_name}</span>
-								<span class="uppercase">{supervisor.user.family_name}</span>
+								<span class="capitalize">{supervisor.user.givenName}</span>
+								<span class="uppercase">{supervisor.user.familyName}</span>
 							</td>
 						</tr>
 					{/each}

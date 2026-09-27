@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
@@ -19,8 +19,8 @@
 		user:
 			| {
 					id: string;
-					given_name: string;
-					family_name: string;
+					givenName: string | null;
+					familyName: string | null;
 					pronouns?: string | null;
 					phone?: string | null;
 					email?: string | null;
@@ -40,9 +40,7 @@
 		userId: string;
 		conferenceId: string;
 		conference:
-			| { id: string; startConference?: string | null; endConference?: string | null }
-			| null
-			| undefined;
+			{ id: string; startConference?: Date | null; endConference?: Date | null } | null | undefined;
 		onUpdate?: () => void;
 	}
 
@@ -76,8 +74,8 @@
 
 	function buildFormData() {
 		return {
-			given_name: user?.given_name ?? '',
-			family_name: user?.family_name ?? '',
+			given_name: user?.givenName ?? '',
+			family_name: user?.familyName ?? '',
 			birthday:
 				user?.birthday instanceof Date
 					? user.birthday
@@ -97,14 +95,6 @@
 		};
 	}
 
-	const updateUserMutation = graphql(`
-		mutation UpdateUserFromAdminCard($data: UserUpdateDataInput!, $where: UserWhereUniqueInput!) {
-			updateOneUser(where: $where, data: $data) {
-				id
-			}
-		}
-	`);
-
 	const initialData = defaults(buildFormData(), zod4Client(adminFormSchema));
 
 	const form = superForm(initialData, {
@@ -115,9 +105,15 @@
 		async onUpdate({ form: updatedForm }) {
 			if (!updatedForm.valid) return;
 
-			const promise = updateUserMutation.mutate({
-				data: updatedForm.data,
-				where: { id: userId }
+			const { given_name, family_name, ...formData } = updatedForm.data;
+			const promise = client.mutate.updateUser({
+				__args: {
+					...formData,
+					id: userId,
+					givenName: given_name,
+					familyName: family_name
+				},
+				id: true
 			});
 
 			toast.promise(promise, {
@@ -129,7 +125,6 @@
 			try {
 				await promise;
 				editing = false;
-				cache.markStale();
 				await invalidateAll();
 				onUpdate?.();
 			} catch {

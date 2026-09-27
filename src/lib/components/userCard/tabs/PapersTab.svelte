@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { translatePaperStatus, translatePaperType } from '$lib/utils/enumTranslations';
 
@@ -11,45 +11,41 @@
 
 	let { userId, conferenceId }: Props = $props();
 
-	const papersQuery = graphql(`
-		query UserCardPapersQuery($conferenceId: String!, $userId: String!) {
-			findManyPapers(
-				where: { conferenceId: { equals: $conferenceId }, authorId: { equals: $userId } }
-			) {
-				id
-				type
-				status
-				firstSubmittedAt
-				createdAt
-				agendaItem {
-					id
-					title
-					committee {
-						id
-						abbreviation
-					}
-				}
-				versions {
-					id
-					createdAt
-					reviews {
-						id
-						statusBefore
-						statusAfter
-						createdAt
-					}
-				}
+	function fetchPapers() {
+		return client.query.papers({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, authorId: { eq: userId } }
+			},
+			id: true,
+			type: true,
+			status: true,
+			firstSubmittedAt: true,
+			createdAt: true,
+			agendaItem: { id: true, title: true, committee: { id: true, abbreviation: true } },
+			versions: {
+				id: true,
+				createdAt: true,
+				reviews: { id: true, statusBefore: true, statusAfter: true, createdAt: true }
 			}
-		}
-	`);
+		});
+	}
+
+	let loadedPapers = $state<Awaited<ReturnType<typeof fetchPapers>>>();
+	let papersLoading = $state(false);
 
 	$effect(() => {
-		papersQuery.fetch({ variables: { conferenceId, userId } });
+		papersLoading = true;
+		void fetchPapers()
+			.then((result) => {
+				loadedPapers = result;
+			})
+			.finally(() => {
+				papersLoading = false;
+			});
 	});
 
-	const papers = $derived(
-		($papersQuery.data?.findManyPapers ?? []).filter((p) => p.status !== 'DRAFT')
-	);
+	// Drafts are the author's own business; the admin card only shows submitted work.
+	const papers = $derived((loadedPapers ?? []).filter((paper) => paper.status !== 'DRAFT'));
 
 	const totalReviews = (paper: (typeof papers)[number]) =>
 		paper.versions.reduce((sum, v) => sum + v.reviews.length, 0);
@@ -70,7 +66,7 @@
 	};
 </script>
 
-{#if $papersQuery.fetching}
+{#if papersLoading}
 	<div class="flex flex-col gap-3">
 		<div class="skeleton h-20 w-full"></div>
 		<div class="skeleton h-20 w-full"></div>

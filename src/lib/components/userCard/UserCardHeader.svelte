@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
@@ -177,20 +177,14 @@
 		deleteConfirmInput.trim().toLowerCase() === confirmDisplayName.trim().toLowerCase()
 	);
 
-	const deleteParticipantMutation = graphql(`
-		mutation UserCardHeaderDeleteParticipant($conferenceId: ID!, $userId: ID!) {
-			unregisterParticipant(conferenceId: $conferenceId, userId: $userId) {
-				id
-			}
-		}
-	`);
-
 	const executeDelete = async () => {
 		if (!deleteConfirmNameMatch) return;
 		deleteLoading = true;
 		try {
-			await deleteParticipantMutation.mutate({ conferenceId, userId });
-			cache.markStale();
+			await client.mutate.unregisterParticipant({
+				__args: { conferenceId, userId },
+				id: true
+			});
 			await invalidateAll();
 			deleteModalOpen = false;
 			toast.success(m.genericToastSuccess());

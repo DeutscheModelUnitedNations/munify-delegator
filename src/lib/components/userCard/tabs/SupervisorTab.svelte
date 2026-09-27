@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
@@ -28,66 +28,54 @@
 		toast.success(m.codeCopied());
 	};
 
-	const studentsQuery = graphql(`
-		query UserCardStudentsQuery($conferenceId: String!, $userId: String!) {
-			findManyConferenceSupervisors(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				supervisedDelegationMembers {
-					id
-					isHeadDelegate
-					user {
-						id
-						given_name
-						family_name
-					}
-					delegation {
-						id
-						school
-						entryCode
-						applied
-						members {
-							id
-						}
-						assignedNation {
-							alpha2Code
-							alpha3Code
-						}
-						assignedNonStateActor {
-							name
-							abbreviation
-							fontAwesomeIcon
-						}
-					}
-					assignedCommittee {
-						id
-						abbreviation
-					}
-				}
-				supervisedSingleParticipants {
-					id
-					applied
-					user {
-						id
-						given_name
-						family_name
-					}
-					school
-					assignedRole {
-						id
-						name
-					}
-				}
+	const studentSelection = { id: true, givenName: true, familyName: true } as const;
+
+	function fetchSupervisedStudents() {
+		return client.query.conferenceSupervisors({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
+			},
+			id: true,
+			supervisedDelegationMembers: {
+				id: true,
+				isHeadDelegate: true,
+				user: studentSelection,
+				delegation: {
+					id: true,
+					school: true,
+					entryCode: true,
+					applied: true,
+					members: { id: true },
+					assignedNation: { alpha2Code: true, alpha3Code: true },
+					assignedNonStateActor: { name: true, abbreviation: true, fontAwesomeIcon: true }
+				},
+				assignedCommittee: { id: true, abbreviation: true }
+			},
+			supervisedSingleParticipants: {
+				id: true,
+				applied: true,
+				user: studentSelection,
+				school: true,
+				assignedRole: { id: true, name: true }
 			}
-		}
-	`);
+		});
+	}
+
+	let loadedSupervisors = $state<Awaited<ReturnType<typeof fetchSupervisedStudents>>>();
+	let studentsLoading = $state(false);
 
 	$effect(() => {
-		studentsQuery.fetch({ variables: { conferenceId, userId } });
+		studentsLoading = true;
+		void fetchSupervisedStudents()
+			.then((result) => {
+				loadedSupervisors = result;
+			})
+			.finally(() => {
+				studentsLoading = false;
+			});
 	});
 
-	const supervisor = $derived($studentsQuery.data?.findManyConferenceSupervisors?.[0]);
+	const supervisor = $derived(loadedSupervisors?.[0]);
 	const delegationMembers = $derived(supervisor?.supervisedDelegationMembers ?? []);
 	const singleParticipants = $derived(supervisor?.supervisedSingleParticipants ?? []);
 
@@ -114,56 +102,34 @@
 		}
 		// Sort members within each group by family name
 		for (const group of map.values()) {
-			group.members.sort((a, b) => `${a.user.family_name}`.localeCompare(`${b.user.family_name}`));
+			group.members.sort((a, b) =>
+				(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
+			);
 		}
 		return [...map.values()];
 	});
 
-	// Mutations
-	const changeSupervisorAttendanceMutation = graphql(`
-		mutation UserCardChangeSupervisorAttendanceMutation(
-			$id: String!
-			$plansOwnAttendence: Boolean!
-		) {
-			updateOneConferenceSupervisor(
-				where: { id: $id }
-				data: { plansOwnAttendenceAtConference: $plansOwnAttendence }
-			) {
-				id
-				plansOwnAttendenceAtConference
-			}
-		}
-	`);
-
-	const rotateSupervisorConnectionCodeMutation = graphql(`
-		mutation UserCardRotateSupervisorConnectionCode($id: ID!) {
-			rotateSupervisorConnectionCode(id: $id) {
-				id
-				connectionCode
-			}
-		}
-	`);
-
-	const changeAttendance = async (plansOwnAttendence: boolean) => {
-		const promise = changeSupervisorAttendanceMutation.mutate({
-			id: conferenceSupervisor.id,
-			plansOwnAttendence
+	const changeAttendance = async (plansOwnAttendenceAtConference: boolean) => {
+		const promise = client.mutate.updateConferenceSupervisor({
+			__args: { id: conferenceSupervisor.id, plansOwnAttendenceAtConference },
+			id: true,
+			plansOwnAttendenceAtConference: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		onUpdate?.();
 	};
 
 	const rotateCode = async () => {
 		if (!confirm(m.confirmRotateCode())) return;
-		const promise = rotateSupervisorConnectionCodeMutation.mutate({
-			id: conferenceSupervisor.id
+		const promise = client.mutate.rotateSupervisorConnectionCode({
+			__args: { id: conferenceSupervisor.id },
+			id: true,
+			connectionCode: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		onUpdate?.();
 	};
@@ -220,7 +186,7 @@
 	</div>
 
 	<!-- Students list -->
-	{#if $studentsQuery.fetching}
+	{#if studentsLoading}
 		<div class="flex flex-col gap-3">
 			<div class="skeleton h-24 w-full"></div>
 			<div class="skeleton h-24 w-full"></div>
@@ -304,8 +270,8 @@
 											<i class="fa-duotone fa-arrow-turn-down-right text-base-content/40"></i>
 										</td>
 										<td colspan="2">
-											<span class="capitalize">{member.user.given_name}</span>
-											<span class="uppercase">{member.user.family_name}</span>
+											<span class="capitalize">{member.user.givenName}</span>
+											<span class="uppercase">{member.user.familyName}</span>
 											{#if member.isHeadDelegate}
 												<span class="badge badge-accent badge-xs ml-1"
 													><i class="fa-solid fa-medal"></i>
@@ -320,9 +286,13 @@
 											<button
 												class="btn btn-ghost btn-xs btn-square"
 												onclick={() => openUserCard(member.user.id, conferenceId)}
-												title={formatNames(member.user.given_name, member.user.family_name, {
-													givenNameFirst: true
-												})}
+												title={formatNames(
+													member.user.givenName ?? undefined,
+													member.user.familyName ?? undefined,
+													{
+														givenNameFirst: true
+													}
+												)}
 											>
 												<i class="fa-duotone fa-id-card"></i>
 											</button>
@@ -354,7 +324,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each singleParticipants.toSorted( (a, b) => `${a.user.family_name}`.localeCompare(`${b.user.family_name}`) ) as participant (participant.id)}
+							{#each singleParticipants.toSorted( (a, b) => (a.user.familyName ?? '').localeCompare(b.user.familyName ?? '') ) as participant (participant.id)}
 								<tr>
 									<td>
 										{#if participant.applied}
@@ -364,8 +334,8 @@
 										{/if}
 									</td>
 									<td>
-										<span class="capitalize">{participant.user.given_name}</span>
-										<span class="uppercase">{participant.user.family_name}</span>
+										<span class="capitalize">{participant.user.givenName}</span>
+										<span class="uppercase">{participant.user.familyName}</span>
 									</td>
 									<td>{participant.school ?? 'N/A'}</td>
 									<td>{participant.assignedRole?.name ?? 'N/A'}</td>
@@ -374,8 +344,8 @@
 											class="btn btn-ghost btn-xs btn-square"
 											onclick={() => openUserCard(participant.user.id, conferenceId)}
 											title={formatNames(
-												participant.user.given_name,
-												participant.user.family_name,
+												participant.user.givenName ?? undefined,
+												participant.user.familyName ?? undefined,
 												{ givenNameFirst: true }
 											)}
 										>

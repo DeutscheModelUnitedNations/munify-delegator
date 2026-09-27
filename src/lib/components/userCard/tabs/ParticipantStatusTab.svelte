@@ -48,8 +48,8 @@
 		user:
 			| {
 					id: string;
-					given_name?: string | null;
-					family_name?: string | null;
+					givenName?: string | null;
+					familyName?: string | null;
 					street?: string | null;
 					apartment?: string | null;
 					zip?: string | null;
@@ -62,13 +62,13 @@
 		conference:
 			| {
 					id: string;
-					startConference?: string | null;
-					endConference?: string | null;
+					startConference?: Date | null;
+					endConference?: Date | null;
 					title?: string | null;
 					postalName?: string | null;
 					postalStreet?: string | null;
 					postalApartment?: string | null;
-					postalZip?: number | null;
+					postalZip?: string | null;
 					postalCity?: string | null;
 					postalCountry?: string | null;
 			  }
@@ -158,7 +158,7 @@
 
 				const participantData: ParticipantData = {
 					id: user.id,
-					name: formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
+					name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 						givenNameFirst: true,
 						familyNameUppercase: true,
 						givenNameUppercase: true
@@ -181,7 +181,7 @@
 					baseContent.guardianConsentContent ?? undefined,
 					baseContent.mediaConsentContent ?? undefined,
 					baseContent.termsAndConditionsContent ?? undefined,
-					`${formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
+					`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 						givenNameFirst: false,
 						delimiter: '_'
 					})}_postal_registration.pdf`
@@ -217,7 +217,7 @@
 				await downloadCompleteCertificate(
 					jwtData,
 					conferenceData.certificateContent ?? undefined,
-					`${formatNames(user.given_name ?? undefined, user.family_name ?? undefined, {
+					`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 						givenNameFirst: false,
 						delimiter: '_'
 					})}_certificate.pdf`

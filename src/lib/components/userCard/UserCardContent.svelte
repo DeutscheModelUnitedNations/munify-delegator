@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { closeUserCard } from './userCardState.svelte';
 	import UserCardHeader from './UserCardHeader.svelte';
@@ -25,184 +25,183 @@
 
 	let activeTab = $state<UserCardTab>('userData');
 
-	const mainQuery = graphql(`
-		query UserCardMainQuery($userId: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $userId }) {
-				id
-				given_name
-				family_name
-				pronouns
-				phone
-				email
-				street
-				apartment
-				zip
-				city
-				country
-				gender
-				birthday
-				foodPreference
-				emergencyContacts
-				globalNotes
-				conferenceParticipationsCount
-			}
-			findManyDelegationMembers(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				isHeadDelegate
-				assignedCommittee {
-					id
-					abbreviation
-					name
-				}
-				delegation {
-					id
-					school
-					entryCode
-					applied
-					assignedNation {
-						alpha2Code
-						alpha3Code
-					}
-					assignedNonStateActor {
-						id
-						name
-						abbreviation
-						fontAwesomeIcon
-					}
-				}
-			}
-			findManySingleParticipants(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				applied
-				school
-				motivation
-				experience
-				appliedForRoles {
-					id
-					name
-					fontAwesomeIcon
-				}
-				assignedRole {
-					id
-					name
-					fontAwesomeIcon
-				}
-			}
-			findManyConferenceSupervisors(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				plansOwnAttendenceAtConference
-				connectionCode
-				supervisedDelegationMembers {
-					id
-					delegation {
-						id
-						assignedNation {
-							alpha2Code
-						}
-						assignedNonStateActor {
-							id
-						}
+	/** Everything the user card shows, across all of its tabs. */
+	async function fetchUserCardData(userId: string, conferenceId: string) {
+		const forUser = { conferenceId: { eq: conferenceId }, userId: { eq: userId } };
+
+		const [
+			user,
+			delegationMembers,
+			singleParticipants,
+			conferenceSupervisors,
+			teamMembers,
+			participantStatuses,
+			surveyAnswers,
+			surveyQuestions,
+			conference
+		] = await Promise.all([
+			client.query.user({
+				__args: { id: userId },
+				id: true,
+				givenName: true,
+				familyName: true,
+				pronouns: true,
+				phone: true,
+				email: true,
+				street: true,
+				apartment: true,
+				zip: true,
+				city: true,
+				country: true,
+				gender: true,
+				birthday: true,
+				foodPreference: true,
+				emergencyContacts: true,
+				globalNotes: true,
+				conferenceParticipationsCount: true
+			}),
+			client.query.delegationMembers({
+				__args: { where: forUser },
+				id: true,
+				isHeadDelegate: true,
+				assignedCommittee: { id: true, abbreviation: true, name: true },
+				delegation: {
+					id: true,
+					school: true,
+					entryCode: true,
+					applied: true,
+					assignedNation: { alpha2Code: true, alpha3Code: true },
+					assignedNonStateActor: {
+						id: true,
+						name: true,
+						abbreviation: true,
+						fontAwesomeIcon: true
 					}
 				}
-				supervisedSingleParticipants {
-					id
-					assignedRole {
-						id
+			}),
+			client.query.singleParticipants({
+				__args: { where: forUser },
+				id: true,
+				applied: true,
+				school: true,
+				motivation: true,
+				experience: true,
+				appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
+				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
+			}),
+			client.query.conferenceSupervisors({
+				__args: { where: forUser },
+				id: true,
+				plansOwnAttendenceAtConference: true,
+				connectionCode: true,
+				supervisedDelegationMembers: {
+					id: true,
+					delegation: {
+						id: true,
+						assignedNation: { alpha2Code: true },
+						assignedNonStateActor: { id: true }
 					}
+				},
+				supervisedSingleParticipants: { id: true, assignedRole: { id: true } }
+			}),
+			client.query.teamMembers({ __args: { where: forUser }, id: true, role: true }),
+			client.query.conferenceParticipantStatuses({
+				__args: { where: forUser },
+				id: true,
+				paymentStatus: true,
+				termsAndConditions: true,
+				guardianConsent: true,
+				mediaConsent: true,
+				mediaConsentStatus: true,
+				didAttend: true,
+				assignedDocumentNumber: true,
+				accessCardId: true,
+				attendanceEntries: {
+					id: true,
+					timestamp: true,
+					occasion: true,
+					recordedBy: { id: true, givenName: true, familyName: true }
 				}
-			}
-			findManyTeamMembers(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				role
-			}
-			findManyConferenceParticipantStatuss(
-				where: { conferenceId: { equals: $conferenceId }, userId: { equals: $userId } }
-			) {
-				id
-				paymentStatus
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-				mediaConsentStatus
-				didAttend
-				assignedDocumentNumber
-				accessCardId
-				attendanceEntries {
-					id
-					timestamp
-					occasion
-					recordedBy {
-						id
-						given_name
-						family_name
+			}),
+			client.query.surveyAnswers({
+				__args: {
+					where: {
+						userId: { eq: userId },
+						question: { conferenceId: { eq: conferenceId } }
 					}
-				}
-			}
-			findManySurveyAnswers(
-				where: {
-					userId: { equals: $userId }
-					question: { conferenceId: { equals: $conferenceId } }
-				}
-			) {
-				id
-				question {
-					id
-					title
-				}
-				option {
-					id
-					title
-				}
-			}
-			findManySurveyQuestions(
-				where: { conferenceId: { equals: $conferenceId }, hidden: { equals: false } }
-			) {
-				id
-				title
-				options {
-					id
-					title
-					countSurveyAnswers
-					upperLimit
-				}
-			}
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				state
-				startConference
-				endConference
-				title
-				postalName
-				postalStreet
-				postalApartment
-				postalZip
-				postalCity
-				postalCountry
-			}
+				},
+				id: true,
+				question: { id: true, title: true },
+				option: { id: true, title: true }
+			}),
+			client.query.surveyQuestions({
+				__args: { where: { conferenceId: { eq: conferenceId }, hidden: { eq: false } } },
+				id: true,
+				title: true,
+				options: { id: true, title: true, countSurveyAnswers: true, upperLimit: true }
+			}),
+			client.query.conference({
+				__args: { id: conferenceId },
+				id: true,
+				state: true,
+				startConference: true,
+				endConference: true,
+				title: true,
+				postalName: true,
+				postalStreet: true,
+				postalApartment: true,
+				postalZip: true,
+				postalCity: true,
+				postalCountry: true
+			})
+		]);
+
+		return {
+			user,
+			delegationMembers,
+			singleParticipants,
+			conferenceSupervisors,
+			teamMembers,
+			participantStatuses,
+			surveyAnswers,
+			surveyQuestions,
+			conference
+		};
+	}
+
+	let cardData = $state<Awaited<ReturnType<typeof fetchUserCardData>>>();
+	let cardLoading = $state(false);
+	let cardFailed = $state(false);
+
+	async function refetchData() {
+		cardLoading = true;
+		cardFailed = false;
+		try {
+			cardData = await fetchUserCardData(userId, conferenceId);
+		} catch (error) {
+			console.error('Failed to load user card data:', error);
+			cardFailed = true;
+		} finally {
+			cardLoading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		mainQuery.fetch({ variables: { userId, conferenceId } });
+		// Referenced so the card reloads when it is pointed at someone else.
+		void userId;
+		void conferenceId;
+		void refetchData();
 	});
 
-	const user = $derived($mainQuery.data?.findUniqueUser);
-	const delegationMember = $derived($mainQuery.data?.findManyDelegationMembers?.[0]);
-	const singleParticipant = $derived($mainQuery.data?.findManySingleParticipants?.[0]);
-	const conferenceSupervisor = $derived($mainQuery.data?.findManyConferenceSupervisors?.[0]);
-	const teamMember = $derived($mainQuery.data?.findManyTeamMembers?.[0]);
-	const participantStatus = $derived($mainQuery.data?.findManyConferenceParticipantStatuss?.[0]);
-	const surveyAnswers = $derived($mainQuery.data?.findManySurveyAnswers ?? []);
-	const surveyQuestions = $derived($mainQuery.data?.findManySurveyQuestions ?? []);
-	const conference = $derived($mainQuery.data?.findUniqueConference);
+	const user = $derived(cardData?.user);
+	const delegationMember = $derived(cardData?.delegationMembers?.[0]);
+	const singleParticipant = $derived(cardData?.singleParticipants?.[0]);
+	const conferenceSupervisor = $derived(cardData?.conferenceSupervisors?.[0]);
+	const teamMember = $derived(cardData?.teamMembers?.[0]);
+	const participantStatus = $derived(cardData?.participantStatuses?.[0]);
+	const surveyAnswers = $derived(cardData?.surveyAnswers ?? []);
+	const surveyQuestions = $derived(cardData?.surveyQuestions ?? []);
+	const conference = $derived(cardData?.conference);
 
 	const isDelegationMember = $derived(!!delegationMember);
 	const isSingleParticipant = $derived(!!singleParticipant);
@@ -228,18 +227,14 @@
 		}
 		return false;
 	});
-
-	const refetchData = () => {
-		mainQuery.fetch({ variables: { userId, conferenceId } });
-	};
 </script>
 
 <div class="flex h-full flex-col">
 	<UserCardHeader
 		{userId}
 		{conferenceId}
-		givenName={user?.given_name}
-		familyName={user?.family_name}
+		givenName={user?.givenName}
+		familyName={user?.familyName}
 		pronouns={user?.pronouns}
 		gender={user?.gender}
 		{delegationMember}
@@ -247,7 +242,7 @@
 		{conferenceSupervisor}
 		{teamMember}
 		mediaConsentStatus={participantStatus?.mediaConsentStatus}
-		loading={$mainQuery.fetching}
+		loading={cardLoading}
 		{mode}
 		onDelete={() => {
 			closeUserCard();
@@ -268,12 +263,12 @@
 	/>
 
 	<div class="flex-1 overflow-y-auto p-5 md:px-10 md:py-6 lg:px-16" data-vaul-no-drag>
-		{#if $mainQuery.fetching}
+		{#if cardLoading}
 			<div class="flex flex-col gap-3">
 				<div class="skeleton h-24 w-full"></div>
 				<div class="skeleton h-24 w-full"></div>
 			</div>
-		{:else if $mainQuery.errors}
+		{:else if cardFailed}
 			<div class="alert alert-error">
 				<i class="fa-duotone fa-triangle-exclamation"></i>
 				<span>{m.httpGenericError()}</span>
