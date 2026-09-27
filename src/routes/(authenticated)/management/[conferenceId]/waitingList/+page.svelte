@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		createSvelteTable,
 		FlexRender,
@@ -20,7 +21,7 @@
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
 
-	type WaitingListEntry = NonNullable<PageData['waitingListEntries']>[number];
+	type WaitingListEntry = (typeof waitingListEntries)[number];
 
 	interface WaitingListRow {
 		id: string;
@@ -42,7 +43,32 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const waitingListEntries = $derived(data.waitingListEntries);
+	/** Only entries still waiting - assigned ones have become real registrations. */
+	const waitingListEntries = $derived(
+		await client.liveQuery.waitingListEntries({
+			__args: {
+				where: { conferenceId: { eq: data.conferenceId }, assigned: { eq: false } }
+			},
+			id: true,
+			user: {
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true,
+				phone: true,
+				city: true,
+				birthday: true,
+				conferenceParticipationsCount: true
+			},
+			school: true,
+			experience: true,
+			motivation: true,
+			requests: true,
+			hidden: true,
+			assigned: true,
+			createdAt: true
+		})
+	);
 	const conference = $derived(data.conferences.find((c) => c.id === data.conferenceId));
 
 	let filterHidden = $state(true);

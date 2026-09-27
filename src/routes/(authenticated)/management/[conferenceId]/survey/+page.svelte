@@ -8,7 +8,33 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let surveys = $derived(data.surveys);
+	const surveys = $derived(
+		await client.liveQuery.surveyQuestions({
+			__args: {
+				where: { conferenceId: { eq: data.conferenceId } },
+				orderBy: { createdAt: 'desc' }
+			},
+			id: true,
+			title: true,
+			description: true,
+			deadline: true,
+			draft: true,
+			hidden: true,
+			showSelectionOnDashboard: true,
+			options: {
+				id: true,
+				title: true,
+				description: true,
+				countSurveyAnswers: true,
+				upperLimit: true
+			}
+		})
+	);
+
+	const conferenceTimezone = $derived(
+		(await client.liveQuery.conference({ __args: { id: data.conferenceId }, timezone: true }))
+			?.timezone ?? 'UTC'
+	);
 	let visibleSurveys = $derived(surveys.filter((s) => !s.hidden));
 	let hiddenSurveys = $derived(surveys.filter((s) => s.hidden));
 
@@ -37,7 +63,7 @@
 	};
 
 	const formatDeadline = (date: Date) => {
-		return formatInTimezone(date, data.conferenceTimezone);
+		return formatInTimezone(date, conferenceTimezone);
 	};
 
 	// Actions
@@ -50,7 +76,7 @@
 					conferenceId: data.conferenceId,
 					title: createTitle,
 					description: createDescription,
-					deadline: datetimeLocalToDate(createDeadline, data.conferenceTimezone),
+					deadline: datetimeLocalToDate(createDeadline, conferenceTimezone),
 					draft: true
 				},
 				id: true

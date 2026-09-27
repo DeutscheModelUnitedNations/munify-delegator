@@ -9,8 +9,15 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let info = $state(data.info);
-	let showInfoExpanded = $state(data.showInfoExpanded);
+	// Seeded once and then owned by the form: a refetch must not overwrite what is being typed.
+	const announcement = await client.query.conference({
+		__args: { id: data.conferenceId },
+		info: true,
+		showInfoExpanded: true
+	});
+
+	let info = $state(announcement?.info ?? '');
+	let showInfoExpanded = $state(announcement?.showInfoExpanded ?? false);
 	let saving = $state(false);
 
 	async function save() {

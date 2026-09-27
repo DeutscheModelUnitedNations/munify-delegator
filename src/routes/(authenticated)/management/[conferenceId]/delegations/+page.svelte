@@ -4,6 +4,7 @@
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
@@ -12,9 +13,40 @@
 	import codenmz from '$lib/helpers/codenamize';
 
 	const { data }: { data: PageData } = $props();
+
+	const fetchedDelegations = $derived(
+		await client.liveQuery.delegations({
+			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			id: true,
+			entryCode: true,
+			applied: true,
+			school: true,
+			motivation: true,
+			experience: true,
+			assignedNation: { alpha2Code: true, alpha3Code: true },
+			assignedNonStateActor: {
+				id: true,
+				abbreviation: true,
+				name: true,
+				description: true,
+				fontAwesomeIcon: true
+			},
+			members: {
+				id: true,
+				isHeadDelegate: true,
+				user: { id: true, givenName: true, familyName: true },
+				supervisors: {
+					id: true,
+					plansOwnAttendenceAtConference: true,
+					user: { id: true, givenName: true, familyName: true }
+				}
+			},
+			appliedForRoles: { id: true }
+		})
+	);
 	// The nation's translated name is only known client-side, so it is joined on here.
 	const delegations = $derived(
-		data.delegations.map((d) => ({
+		fetchedDelegations.map((d) => ({
 			...d,
 			assignedNation: d.assignedNation
 				? {
