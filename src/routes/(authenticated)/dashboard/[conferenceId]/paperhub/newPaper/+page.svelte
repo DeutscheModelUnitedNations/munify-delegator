@@ -2,7 +2,7 @@
 	import PaperEditor from '$lib/components/paper/editor';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { cache, graphql, type PaperType$options } from '$houdini';
@@ -171,14 +171,10 @@
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	let delegationMember = $derived(
-		data.getPaperDelegationMemberQuery?.data.findUniqueDelegationMember
-	);
+	let delegationMember = $derived(data.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
-	let conferenceAgendaItems = $derived(
-		data.getPaperDelegationMemberQuery?.data.findManyAgendaItems
-	);
+	let conferenceAgendaItems = $derived(data.conferenceAgendaItems);
 
 	const createPaperMutation = graphql(`
 		mutation CreatePaperMutation(
@@ -242,10 +238,12 @@
 				}
 			];
 		}
-		return committee?.agendaItems.map((item) => ({
-			value: item.id,
-			label: item.title
-		}));
+		return (
+			committee?.agendaItems.map((item) => ({
+				value: item.id,
+				label: item.title
+			})) ?? []
+		);
 	});
 
 	const saveFile = async (options: { submit?: boolean } = {}) => {

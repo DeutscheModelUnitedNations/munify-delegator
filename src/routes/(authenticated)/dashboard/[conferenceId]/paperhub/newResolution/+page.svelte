@@ -2,7 +2,7 @@
 	import PaperEditor from '$lib/components/paper/editor';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { cache, graphql } from '$houdini';
@@ -191,9 +191,7 @@
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	let delegationMember = $derived(
-		data.getResolutionDelegationMemberQuery?.data.findUniqueDelegationMember
-	);
+	let delegationMember = $derived(data.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
 	let conference = $derived(data.participation?.conference);

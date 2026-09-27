@@ -1,64 +1,43 @@
 import { superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
-import type { PageServerLoad } from './$houdini';
+import type { PageServerLoad } from './$types';
 import { newResolutionSchema } from './form-schema';
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import { error } from '@sveltejs/kit';
-
-const query = graphql(`
-	query getResolutionParticipantDelegationMemberQuery($conferenceId: String!, $userId: String!) {
-		findUniqueDelegationMember(
-			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
-		) {
-			id
-			user {
-				id
-			}
-			assignedCommittee {
-				id
-				name
-				abbreviation
-				resolutionHeadline
-				agendaItems {
-					id
-					title
-				}
-			}
-			delegation {
-				id
-				assignedNation {
-					alpha2Code
-					alpha3Code
-				}
-				assignedNonStateActor {
-					id
-					abbreviation
-					name
-					fontAwesomeIcon
-				}
-			}
-		}
-	}
-`);
 
 export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
 	const conferenceId = event.params.conferenceId;
 
-	const getResolutionDelegationMemberQuery = await query.fetch({
-		event,
-		variables: {
-			conferenceId,
-			userId: user.sub
+	const [delegationMember] = await client.query.delegationMembers({
+		__args: {
+			where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } }
+		},
+		id: true,
+		user: { id: true },
+		assignedCommittee: {
+			id: true,
+			name: true,
+			abbreviation: true,
+			resolutionHeadline: true,
+			agendaItems: { id: true, title: true }
+		},
+		delegation: {
+			id: true,
+			assignedNation: { alpha2Code: true, alpha3Code: true },
+			assignedNonStateActor: {
+				id: true,
+				abbreviation: true,
+				name: true,
+				fontAwesomeIcon: true
+			}
 		}
 	});
 
-	const committee =
-		getResolutionDelegationMemberQuery?.data?.findUniqueDelegationMember?.assignedCommittee;
-	const delegation =
-		getResolutionDelegationMemberQuery?.data?.findUniqueDelegationMember?.delegation;
+	const committee = delegationMember?.assignedCommittee;
+	const delegation = delegationMember?.delegation;
 
 	if (!delegation) {
 		error(400, 'Delegation member does not exist');
@@ -76,5 +55,5 @@ export const load: PageServerLoad = async (event) => {
 		zod4(newResolutionSchema)
 	);
 
-	return { form, getResolutionDelegationMemberQuery, conferenceId, userId: user.sub };
+	return { form, delegationMember: delegationMember ?? null, conferenceId, userId: user.sub };
 };

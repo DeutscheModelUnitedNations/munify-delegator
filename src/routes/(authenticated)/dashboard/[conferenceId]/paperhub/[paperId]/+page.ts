@@ -1,76 +1,49 @@
-import { graphql } from '$houdini';
-import type { getPaperDetailsForEditingQueryVariables } from './$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query getPaperDetailsForEditingQuery($paperId: String!) @cache(policy: NetworkOnly) {
-		findUniquePaper(where: { id: $paperId }) {
-			id
-			type
-			status
-			author {
-				id
-			}
-			conference {
-				id
-				title
-				longTitle
-				emblemDataURL
-			}
-			delegation {
-				id
-				assignedNation {
-					alpha2Code
-					alpha3Code
-				}
-				assignedNonStateActor {
-					id
-					name
-					abbreviation
-					fontAwesomeIcon
-				}
-			}
-			agendaItem {
-				id
-				title
-				committee {
-					id
-					abbreviation
-					name
-					resolutionHeadline
-				}
-			}
-			versions {
-				id
-				version
-				content
-				contentHash
-				createdAt
-				status
-				reviews {
-					id
-					comments
-					createdAt
-					statusBefore
-					statusAfter
-					reviewer {
-						id
-						family_name
-						given_name
-						email
-					}
-				}
-			}
-			firstSubmittedAt
-			createdAt
-			updatedAt
-		}
-	}
-`);
-
-export const _getPaperDetailsForEditingQueryVariables: getPaperDetailsForEditingQueryVariables = (
-	event
-) => {
+export const load: PageLoad = async (event) => {
 	return {
-		paperId: event.params.paperId
+		paper: await client.query.paper({
+			__args: { id: event.params.paperId },
+			id: true,
+			type: true,
+			status: true,
+			author: { id: true },
+			conference: { id: true, title: true, longTitle: true, emblemDataURL: true },
+			delegation: {
+				id: true,
+				assignedNation: { alpha2Code: true, alpha3Code: true },
+				assignedNonStateActor: {
+					id: true,
+					name: true,
+					abbreviation: true,
+					fontAwesomeIcon: true
+				}
+			},
+			agendaItem: {
+				id: true,
+				title: true,
+				committee: { id: true, abbreviation: true, name: true, resolutionHeadline: true }
+			},
+			versions: {
+				id: true,
+				version: true,
+				content: true,
+				contentHash: true,
+				createdAt: true,
+				status: true,
+				reviews: {
+					id: true,
+					comments: true,
+					createdAt: true,
+					statusBefore: true,
+					statusAfter: true,
+					reviewer: { id: true, familyName: true, givenName: true, email: true }
+				}
+			},
+			firstSubmittedAt: true,
+			createdAt: true,
+			updatedAt: true
+		})
 	};
 };

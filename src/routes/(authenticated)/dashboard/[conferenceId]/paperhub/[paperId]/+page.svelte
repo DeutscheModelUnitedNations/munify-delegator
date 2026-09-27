@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import {
 		validateResolution,
 		createEmptyResolution,
@@ -13,7 +13,7 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getPaperStatusIcon, getPaperTypeIcon } from '$lib/utils/enumIcons';
-	import type { PaperStatus$options } from '$houdini';
+	import { client, type PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import { VersionCompareModal, computeDiffStats } from '$lib/components/paper/editor/diffViewer';
 	import type {
 		ComparisonState,
@@ -35,46 +35,21 @@
 	} from '$lib/utils/resolutionExport';
 	import type { PaperTypstMeta } from '$lib/helpers/paperTypst';
 
-	const updatePaperMutation = graphql(`
-		mutation UpdatePaperMutation($paperId: String!, $content: Json!, $status: PaperStatus) {
-			updateOnePaper(where: { paperId: $paperId }, data: { content: $content, status: $status }) {
-				id
-			}
-		}
-	`);
-
-	const deletePaperMutation = graphql(`
-		mutation DeletePaperMutation($paperId: String!) {
-			deleteOnePaper(where: { id: $paperId }) {
-				id
-			}
-		}
-	`);
-
 	let { data }: { data: PageData } = $props();
 
-	let paperQuery = $derived(data.getPaperDetailsForEditingQuery);
-	let paperData = $derived($paperQuery?.data?.findUniquePaper);
+	let paperData = $derived(data.paper);
 
-	// Query for user's reviewer snippets
-	const mySnippetsStore = graphql(`
-		query MyReviewerSnippetsForPaperQuery {
-			myReviewerSnippets {
-				id
-				name
-				content
-			}
-		}
-	`);
+	// The reviewer's own snippet library, for inserting boilerplate into review comments.
+	let mySnippets = $state<{ id: string; name: string; content: unknown }[]>([]);
 
-	// Fetch snippets on mount
 	$effect(() => {
-		mySnippetsStore.fetch();
+		void client.query.myReviewerSnippets({ id: true, name: true, content: true }).then((result) => {
+			mySnippets = result;
+		});
 	});
 
-	// Get snippets for reviewers
 	let snippets = $derived(
-		($mySnippetsStore?.data?.myReviewerSnippets ?? []).map((s) => ({
+		mySnippets.map((s) => ({
 			id: s.id,
 			name: s.name,
 			content: s.content as any
@@ -372,10 +347,9 @@
 		const content =
 			paperData.type === 'WORKING_PAPER' ? resolutionStore.snapshot : $editorContentStore;
 
-		const promise = updatePaperMutation.mutate({
-			paperId: paperData.id,
-			content,
-			status: newStatus
+		const promise = client.mutate.updatePaper({
+			__args: { paperId: paperData.id, content, status: newStatus },
+			id: true
 		});
 		toast.promise(promise, {
 			loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
@@ -384,7 +358,6 @@
 		});
 		await promise;
 
-		cache.markStale();
 		await invalidateAll();
 	};
 
@@ -418,9 +391,7 @@
 			return;
 		}
 
-		const promise = deletePaperMutation.mutate({
-			paperId: paperData.id
-		});
+		const promise = Promise.resolve(client.mutate.deletePaper({ __args: { id: paperData.id } }));
 		toast.promise(promise, {
 			loading: m.paperDeleting(),
 			success: m.paperDeletedSuccessfully(),
@@ -458,7 +429,12 @@
 				<!-- Top Row: Country/NSA + Status -->
 				<div class="flex items-center justify-between gap-4 flex-wrap">
 					<div class="flex items-center gap-3">
-						<Flag size="md" alpha2Code={nation?.alpha2Code} {nsa} icon={nsa?.fontAwesomeIcon} />
+						<Flag
+							size="md"
+							alpha2Code={nation?.alpha2Code}
+							nsa={!!nsa}
+							icon={nsa?.fontAwesomeIcon}
+						/>
 						<span class="text-lg font-semibold">
 							{nation ? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code) : nsa?.name}
 						</span>
@@ -711,8 +687,8 @@
 											<div class="flex items-center gap-2">
 												<i class="fa-solid fa-user-pen text-base-content/50"></i>
 												<span class="font-semibold">
-													{event.review.reviewer.given_name}
-													{event.review.reviewer.family_name}
+													{event.review.reviewer.givenName}
+													{event.review.reviewer.familyName}
 												</span>
 											</div>
 											{#if event.review.statusBefore && event.review.statusAfter}

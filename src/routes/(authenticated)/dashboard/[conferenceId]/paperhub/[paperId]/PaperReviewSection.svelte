@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { cache, graphql, type PaperStatus$options } from '$houdini';
+	import { client, type PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import { writable, get } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -49,13 +49,13 @@
 	interface Review {
 		id: string;
 		comments: any;
-		createdAt: string;
-		statusBefore?: PaperStatus$options | null;
-		statusAfter?: PaperStatus$options | null;
+		createdAt: Date;
+		statusBefore?: PaperstatusEnum | null;
+		statusAfter?: PaperstatusEnum | null;
 		reviewer: {
 			id: string;
-			given_name: string;
-			family_name: string;
+			givenName: string | null;
+			familyName: string | null;
 		};
 	}
 
@@ -63,8 +63,8 @@
 		id: string;
 		version: number;
 		content?: any;
-		createdAt: string;
-		status?: PaperStatus$options | null;
+		createdAt: Date;
+		status?: PaperstatusEnum | null;
 		reviews: Review[];
 	}
 
@@ -76,7 +76,7 @@
 
 	interface Props {
 		paperId: string;
-		currentStatus: PaperStatus$options;
+		currentStatus: PaperstatusEnum;
 		existingReviews: Review[];
 		versions?: Version[];
 		authorName?: string;
@@ -106,7 +106,7 @@
 	// Types for draft persistence
 	interface ReviewDraft {
 		comments: any;
-		selectedStatus: PaperStatus$options;
+		selectedStatus: PaperstatusEnum;
 		savedAt: number;
 	}
 
@@ -236,7 +236,7 @@
 
 	// Review form state
 	let reviewComments = writable<any>(getEmptyTipTapDocument());
-	let selectedStatus = $state<PaperStatus$options>(currentStatus);
+	let selectedStatus = $state<PaperstatusEnum>(currentStatus);
 	let isSubmitting = $state(false);
 	let showConfirmModal = $state(false);
 	// Key to force editor remount when restoring draft
@@ -324,26 +324,6 @@
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	const createReviewMutation = graphql(`
-		mutation CreatePaperReview($paperId: String!, $comments: Json!, $newStatus: PaperStatus!) {
-			createPaperReview(paperId: $paperId, comments: $comments, newStatus: $newStatus) {
-				pieceUnlocked
-				unlockedPieceData {
-					flagId
-					flagName
-					flagType
-					flagAlpha2Code
-					flagAlpha3Code
-					fontAwesomeIcon
-					pieceName
-					foundCount
-					totalCount
-					isComplete
-				}
-			}
-		}
-	`);
-
 	// Piece found modal state
 	let showPieceFoundModal = $state(false);
 	let pieceFoundData = $state<{
@@ -373,7 +353,7 @@
 	// Set initial selected status to first available transition
 	$effect(() => {
 		if (availableTransitions.length > 0 && selectedStatus === currentStatus) {
-			selectedStatus = availableTransitions[0].value as PaperStatus$options;
+			selectedStatus = availableTransitions[0].value as PaperstatusEnum;
 		}
 	});
 
@@ -386,14 +366,6 @@
 		showConfirmModal = true;
 	};
 
-	const nextPaperQuery = graphql(`
-		query NextPaper($agendaItemId: String!) @cache(policy: NetworkOnly) {
-			findNextPaperToReview(agendaItemId: $agendaItemId) {
-				id
-			}
-		}
-	`);
-
 	const jumpToNextPaper = () => {
 		reviewed = false;
 		goto(`../paperhub/${nextPaperId}`);
@@ -405,10 +377,21 @@
 		showConfirmModal = false;
 		isSubmitting = true;
 		try {
-			const promise = createReviewMutation.mutate({
-				paperId,
-				comments: $reviewComments,
-				newStatus: selectedStatus
+			const promise = client.mutate.createPaperReview({
+				__args: { paperId, comments: $reviewComments, newStatus: selectedStatus },
+				pieceUnlocked: true,
+				unlockedPieceData: {
+					flagId: true,
+					flagName: true,
+					flagType: true,
+					flagAlpha2Code: true,
+					flagAlpha3Code: true,
+					fontAwesomeIcon: true,
+					pieceName: true,
+					foundCount: true,
+					totalCount: true,
+					isComplete: true
+				}
 			});
 			toast.promise(promise, {
 				loading: m.submittingReview(),
@@ -419,18 +402,18 @@
 			const result = await promise;
 
 			// Check if a piece was unlocked and show the modal
-			const data = result?.data?.createPaperReview;
-			if (data?.pieceUnlocked && data.unlockedPieceData) {
+			const unlocked = result.pieceUnlocked ? result.unlockedPieceData : null;
+			if (unlocked) {
 				pieceFoundData = {
-					flagName: data.unlockedPieceData.flagName,
-					flagAlpha2Code: data.unlockedPieceData.flagAlpha2Code ?? null,
-					flagAlpha3Code: data.unlockedPieceData.flagAlpha3Code ?? null,
-					flagType: data.unlockedPieceData.flagType,
-					fontAwesomeIcon: data.unlockedPieceData.fontAwesomeIcon ?? null,
-					pieceName: data.unlockedPieceData.pieceName,
-					isComplete: data.unlockedPieceData.isComplete,
-					foundCount: data.unlockedPieceData.foundCount,
-					totalCount: data.unlockedPieceData.totalCount
+					flagName: unlocked.flagName,
+					flagAlpha2Code: unlocked.flagAlpha2Code ?? null,
+					flagAlpha3Code: unlocked.flagAlpha3Code ?? null,
+					flagType: unlocked.flagType,
+					fontAwesomeIcon: unlocked.fontAwesomeIcon ?? null,
+					pieceName: unlocked.pieceName,
+					isComplete: unlocked.isComplete,
+					foundCount: unlocked.foundCount,
+					totalCount: unlocked.totalCount
 				};
 				showPieceFoundModal = true;
 			}
@@ -438,8 +421,11 @@
 			reviewed = true;
 			if (agendaItemId) {
 				try {
-					const res = await nextPaperQuery.fetch({ variables: { agendaItemId } });
-					nextPaperId = res.data.findNextPaperToReview?.id ?? null;
+					const next = await client.query.findNextPaperToReview({
+						__args: { agendaItemId },
+						id: true
+					});
+					nextPaperId = next?.id ?? null;
 				} catch {
 					nextPaperId = null;
 				}
@@ -454,7 +440,6 @@
 			}
 
 			// Reload data
-			cache.markStale();
 			await invalidateAll();
 		} finally {
 			isSubmitting = false;
@@ -527,7 +512,7 @@
 							name="status_tabs"
 							class="hidden"
 							checked={isSelected}
-							onchange={() => (selectedStatus = transition.value as PaperStatus$options)}
+							onchange={() => (selectedStatus = transition.value as PaperstatusEnum)}
 						/>
 						<div
 							class="btn w-full {isSelected
@@ -536,7 +521,7 @@
 									: 'btn-success'
 								: 'btn-ghost'}"
 						>
-							<i class="fa-solid {getPaperStatusIcon(transition.value as PaperStatus$options)}"></i>
+							<i class="fa-solid {getPaperStatusIcon(transition.value as PaperstatusEnum)}"></i>
 							{transition.label}
 						</div>
 					</label>
@@ -646,8 +631,8 @@
 								<div class="flex items-center gap-2">
 									<i class="fa-solid fa-user-pen text-base-content/50"></i>
 									<span class="font-semibold">
-										{event.review.reviewer.given_name}
-										{event.review.reviewer.family_name}
+										{event.review.reviewer.givenName}
+										{event.review.reviewer.familyName}
 									</span>
 								</div>
 								{#if event.review.statusBefore && event.review.statusAfter}

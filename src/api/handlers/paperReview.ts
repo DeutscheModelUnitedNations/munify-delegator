@@ -40,11 +40,16 @@ query({ table: 'paperReview' });
 
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
 
+/** Which kind of flag a newly found piece belongs to. */
+const FlagTypeForUnlock = schemaBuilder.enumType('FlagTypeForUnlock', {
+	values: ['NATION', 'NSA'] as const
+});
+
 const UnlockedPieceData = schemaBuilder.simpleObject('UnlockedPieceData', {
 	fields: (t) => ({
 		flagId: t.string(),
 		flagName: t.string(),
-		flagType: t.string(),
+		flagType: t.field({ type: FlagTypeForUnlock }),
 		flagAlpha2Code: t.string({ nullable: true }),
 		flagAlpha3Code: t.string({ nullable: true }),
 		fontAwesomeIcon: t.string({ nullable: true }),

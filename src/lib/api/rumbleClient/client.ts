@@ -1136,6 +1136,8 @@ export type FlagProgress = {
 		
 export type FlagType = "NATION" | "NSA";
 		
+export type FlagTypeForUnlock = "NATION" | "NSA";
+		
 export type Float = number;
 		
 export type FloatWhereInputArgument = {
@@ -3590,7 +3592,7 @@ export type UnlockedPieceData = {
   flagAlpha3Code: String | null,
   flagId: String,
   flagName: String,
-  flagType: String,
+  flagType: FlagTypeForUnlock,
   fontAwesomeIcon: String | null,
   foundCount: Int,
   isComplete: Boolean,
