@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -15,30 +15,14 @@
 
 	let { entryId, userId, conferenceId, hidden }: Props = $props();
 
-	const updateWaitingListEntryMutation = graphql(`
-		mutation UpdateWaitingListEntryFromActions($id: String!, $hidden: Boolean!) {
-			updateOneWaitingListEntry(where: { id: $id }, data: { hidden: { set: $hidden } }) {
-				id
-			}
-		}
-	`);
-
-	const deleteWaitingListEntryMutation = graphql(`
-		mutation DeleteWaitingListEntryFromActions($id: String!) {
-			deleteOneWaitingListEntry(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
 	let isMutating = $state(false);
 
 	async function toggleHidden() {
 		if (isMutating) return;
 		isMutating = true;
-		const promise = updateWaitingListEntryMutation.mutate({
-			id: entryId,
-			hidden: !hidden
+		const promise = client.mutate.updateWaitingListEntry({
+			__args: { id: entryId, hidden: !hidden },
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		try {
@@ -46,7 +30,6 @@
 		} catch {
 			// handled by toast
 		} finally {
-			cache.markStale();
 			await invalidateAll();
 			isMutating = false;
 		}
@@ -56,14 +39,15 @@
 		if (isMutating) return;
 		if (!confirm(m.areYouSure())) return;
 		isMutating = true;
-		const promise = deleteWaitingListEntryMutation.mutate({ id: entryId });
+		const promise = Promise.resolve(
+			client.mutate.deleteWaitingListEntry({ __args: { id: entryId } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		try {
 			await promise;
 		} catch {
 			// handled by toast
 		} finally {
-			cache.markStale();
 			await invalidateAll();
 			isMutating = false;
 		}

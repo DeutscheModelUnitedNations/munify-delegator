@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
@@ -24,37 +24,20 @@
 
 	let { invitations }: Props = $props();
 
-	const revokeInvitationMutation = graphql(`
-		mutation RevokeTeamMemberInvitationShared($invitationId: String!) {
-			revokeTeamMemberInvitation(invitationId: $invitationId) {
-				success
-				message
-			}
-		}
-	`);
-
-	const regenerateInvitationMutation = graphql(`
-		mutation RegenerateTeamMemberInvitationShared($invitationId: String!, $sendEmail: Boolean!) {
-			regenerateTeamMemberInvitation(invitationId: $invitationId, sendEmail: $sendEmail) {
-				success
-				newToken
-				newExpiresAt
-				message
-			}
-		}
-	`);
-
 	async function handleRevoke(invitationId: string) {
 		if (!confirm(m.confirmRevokeInvitation())) return;
 
 		try {
-			const result = await revokeInvitationMutation.mutate({ invitationId });
-			if (result.data?.revokeTeamMemberInvitation.success) {
+			const result = await client.mutate.revokeTeamMemberInvitation({
+				__args: { invitationId },
+				success: true,
+				message: true
+			});
+			if (result.success) {
 				toast.success(m.invitationRevoked());
-				cache.markStale();
 				await invalidateAll();
 			} else {
-				toast.error(result.data?.revokeTeamMemberInvitation.message ?? m.httpGenericError());
+				toast.error(result.message ?? m.httpGenericError());
 			}
 		} catch (error) {
 			toast.error(m.httpGenericError());
@@ -64,22 +47,23 @@
 
 	async function handleRegenerateAndCopy(invitationId: string) {
 		try {
-			const result = await regenerateInvitationMutation.mutate({
-				invitationId,
-				sendEmail: false
+			const result = await client.mutate.regenerateTeamMemberInvitation({
+				__args: { invitationId, sendEmail: false },
+				success: true,
+				newToken: true,
+				newExpiresAt: true,
+				message: true
 			});
 
-			if (result.data?.regenerateTeamMemberInvitation.success) {
-				const token = result.data.regenerateTeamMemberInvitation.newToken;
-				if (token) {
-					const inviteUrl = `${$page.url.origin}/auth/accept-invitation?token=${token}`;
+			if (result.success) {
+				if (result.newToken) {
+					const inviteUrl = `${$page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
 					await navigator.clipboard.writeText(inviteUrl);
 					toast.success(m.linkCopied());
 				}
-				cache.markStale();
 				await invalidateAll();
 			} else {
-				toast.error(result.data?.regenerateTeamMemberInvitation.message ?? m.httpGenericError());
+				toast.error(result.message ?? m.httpGenericError());
 			}
 		} catch (error) {
 			toast.error(m.httpGenericError());
@@ -89,17 +73,17 @@
 
 	async function handleResendEmail(invitationId: string) {
 		try {
-			const result = await regenerateInvitationMutation.mutate({
-				invitationId,
-				sendEmail: true
+			const result = await client.mutate.regenerateTeamMemberInvitation({
+				__args: { invitationId, sendEmail: true },
+				success: true,
+				message: true
 			});
 
-			if (result.data?.regenerateTeamMemberInvitation.success) {
+			if (result.success) {
 				toast.success(m.invitationResent());
-				cache.markStale();
 				await invalidateAll();
 			} else {
-				toast.error(result.data?.regenerateTeamMemberInvitation.message ?? m.httpGenericError());
+				toast.error(result.message ?? m.httpGenericError());
 			}
 		} catch (error) {
 			toast.error(m.httpGenericError());

@@ -2,7 +2,7 @@
 	import { dev } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { configPublic } from '$config/public';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { openCommandPalette } from '$lib/components/commandPalette/commandPaletteState.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
@@ -16,35 +16,17 @@
 	// import ExportButtons from '$lib/components/dataTable/ExportButtons.svelte';
 	// import SettingsButton from './DataTable/SettingsButton.svelte';
 
-	export const logoutUrlQuery = graphql(`
-		query LogoutUrlQuery {
-			logoutUrl
-		}
-	`);
+	function fetchImpersonationStatus() {
+		return client.query.impersonationStatus({
+			isImpersonating: true,
+			originalUser: { sub: true, email: true },
+			impersonatedUser: { sub: true, email: true }
+		});
+	}
 
-	const checkImpersonationStatusQuery = graphql(`
-		query checkImpersonationStatusHeader {
-			impersonationStatus {
-				isImpersonating
-				originalUser {
-					sub
-					email
-				}
-				impersonatedUser {
-					sub
-					email
-				}
-			}
-		}
-	`);
+	let logoutUrl = $state<string>();
+	let impersonationStatus = $state<Awaited<ReturnType<typeof fetchImpersonationStatus>>>();
 
-	const stopImpersonationMutation = graphql(`
-		mutation StopImpersonationHeader {
-			stopImpersonation
-		}
-	`);
-
-	let impersonationStatus = $derived($checkImpersonationStatusQuery?.data?.impersonationStatus);
 	let isImpersonating = $derived(impersonationStatus?.isImpersonating || false);
 	let isStoppingImpersonation = $state(false);
 	let isImpersonationButtonHovered = $state(false);
@@ -61,7 +43,7 @@
 	async function stopImpersonation() {
 		if (isStoppingImpersonation) return;
 		isStoppingImpersonation = true;
-		const promise = stopImpersonationMutation.mutate(null);
+		const promise = Promise.resolve(client.mutate.stopImpersonation());
 		toast.promise(promise, genericPromiseToastMessages);
 		try {
 			await promise;
@@ -75,8 +57,12 @@
 	}
 
 	$effect(() => {
-		logoutUrlQuery.fetch();
-		checkImpersonationStatusQuery.fetch();
+		void client.query.logoutUrl().then((url) => {
+			logoutUrl = String(url);
+		});
+		void fetchImpersonationStatus().then((status) => {
+			impersonationStatus = status;
+		});
 	});
 </script>
 
@@ -172,10 +158,7 @@
 						</a>
 					</li>
 					<li>
-						<a
-							class={$logoutUrlQuery.data?.logoutUrl ? '' : 'disabled'}
-							href={$logoutUrlQuery.data?.logoutUrl}
-						>
+						<a class={logoutUrl ? '' : 'disabled'} href={logoutUrl}>
 							<i class="fa-duotone fa-sign-out w-4"></i>
 							{m.logout()}
 						</a>
