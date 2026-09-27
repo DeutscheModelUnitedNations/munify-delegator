@@ -246,20 +246,60 @@ bun run preview
   function and its result type (`conferenceCalendar.ts`, `assignmentProject.ts`), and let child
   components import that type for their props.
 
-- **`load` functions are for four things only**: redirect and 403 guards, OIDC/cookie work, page
-  options like `ssr = false`, and pages that use SvelteKit **form actions** (there the load hands
-  the action its superforms object, which is the framework's contract). Everything else fetches in
-  the component, and a guard returns nothing — route parameters come from `page.params`, not from
-  load data. A `load` must never return what the generated client gave it: those are subscribeable
-  proxies, and `load` data has to be serialized into the page.
+- **`load` functions are for three things only**: redirect and 403 guards, page options like
+  `ssr = false`, and cookie work that has to happen before anything renders — of which only
+  `auth/accept-invitation` is left. There are **no form-action loads any more**; every form submits
+  through a mutation (see Forms below). Everything else fetches in the component, and a guard
+  returns nothing — route parameters come from `page.params`, not from load data. A `load` must
+  never return what the generated client gave it: those are subscribeable proxies, and `load` data
+  has to be serialized into the page.
 - **Global state lives in `$lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
   Cache such a singleton **only in the browser**: module state on the server is shared by every
   request the process serves, so caching there hands one visitor's identity to the next. For the
   same reason the urql client answers server-side operations `network-only` — see the comment on
   `requestPolicy` in `src/lib/api/client.ts`.
-- **Forms without an action** are SPA forms that submit through a mutation. Build their initial
-  value with superforms' `defaults()` in the component rather than `superValidate` on the server.
+
+#### Forms
+
+- **Every form is a superforms SPA form that submits through a mutation.** There are no form
+  actions and no `superValidate` on the server. The shape is always the same:
+
+  ```ts
+  const form = superForm(defaults(initialValues, zod4Client(schema)), {
+  	SPA: true,
+  	resetForm: false,
+  	validationMethod: 'oninput',
+  	validators: zod4Client(schema),
+  	onError: (e) => toast.error(e.result.error.message),
+  	async onUpdate({ form: validated }) {
+  		if (!validated.valid) return;
+  		const promise = client.mutate.updateX({ __args: { ...validated.data, id }, id: true });
+  		toast.promise(promise, genericPromiseToastMessages);
+  		await promise;
+  	}
+  });
+  ```
+
+  `onUpdate` is the place for the mutation — it runs after validation, unlike `onSubmit`. Seed
+  `initialValues` from a **plain `await`**, not `$derived(await …)`: re-reading the row while
+  someone is typing would discard their edits. Build the object field by field rather than
+  spreading a query result: the generated client returns a subscribeable proxy, and spreading it
+  drags `subscribe` along and widens every field to `unknown`. Where the initial values need
+  massaging, put that in a helper (`$lib/api/userFormValues.ts`) so two forms on the same table
+  cannot drift.
+
+- **Fields are [Formsnap](https://formsnap.dev) components underneath.** The `Form*` wrappers in
+  `$lib/components/form/` own the styling and pass `name`/`label`/`description` through to
+  Formsnap's `Field`/`Control`/`Label`/`Description`/`FieldErrors`, which generate the ids and wire
+  `for`, `aria-describedby`, `aria-invalid` and the `aria-live` error region. Spread the `props`
+  the `Control` snippet hands you onto the input and never set `id`/`name` by hand. A field
+  component is generic over `N extends FormPath<A> & keyof A`, so a misspelled field name is a
+  compile error; for a typed `bind:` (a boolean or a `Date`) reach for `formFieldProxy`, which is
+  what keeps those bindings type-safe without a cast.
+- **Uploads** go through `fileProxy` and are converted in the component with
+  `$lib/helpers/fileToDataURL`; the columns store data URLs, and an untouched field must yield
+  `undefined` so the stored value survives.
 - **Regeneration** happens on dev server start, so a handler change is only visible to the
   frontend after a restart. `src/lib/api/rumbleClient/` is generated and committed; never edit it.
 - **SSR** goes through `src/api/graphql.remote.ts`, which executes the schema in-process.
@@ -271,18 +311,26 @@ bun run preview
   mutation publishes to the tables it writes, so open queries are told to refresh themselves. Fetch
   with `liveQuery`, not `query`, anywhere a component displays the result — `query` is for one-shot
   reads inside an event handler and for `load` functions, which are not reactive either way.
-- **`invalidateAll()` is for load data only.** It still re-runs the surviving loads, which is why
-  the dashboard keeps it (the signed-in person's participation comes from a layout load) and so do
-  the pages with form actions. It does nothing for a component's own fetch, so do not reach for it
-  there; a component that cannot be live refreshes by calling its own fetch function again, and a
+- **`invalidateAll()` is for load data only**, and almost nothing returns load data any more. It
+  does nothing for a component's own fetch, so do not reach for it there; a component that cannot be live refreshes by calling its own fetch function again, and a
   child component tells its parent through a callback (`onUpdate`, `onSaved`) rather than
   invalidating the world.
 
 #### 3. Authentication & Authorization
 
-- **OIDC flow** via `openid-client` library
-- Login callbacks in `src/routes/auth/`
-- User context injected into the GraphQL context via `src/api/context.ts`
+- **OIDC flow** via [`@m1212e/sveltekit-oidc`](https://github.com/m1212e/sveltekit-oidc), the same
+  library chase uses. `src/api/services/OIDC.ts` builds the instance; its `handle` hook (wired up in
+  `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
+  `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
+  session on `event.locals.oidc`. There is no auth code in route loads.
+- **Login-time user upsert** lives in `src/api/services/upsertSelf.ts`, passed to the library as
+  `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
+  invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.
+- **Impersonation is stalled** for this migration: the old implementation swapped session cookies
+  the library now owns. `$lib/data/impersonation` holds the flag the UI is gated on, and the two
+  mutations reject with an explanatory error.
+- User context injected into the GraphQL context via `src/api/context.ts`, which reads
+  `event.locals.oidc`
 - **rumble abilities** define fine-grained permissions per entity:
   - Actions: `read`, `update`, `delete`, `impersonate` (declared in `src/api/rumble.ts`)
   - Each entity's abilities live at the top of its handler

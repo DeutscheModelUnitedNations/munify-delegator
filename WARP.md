@@ -91,7 +91,8 @@ bun run machine-translate
     - `registration/[conferenceId]/` - Registration flows (delegation, individual, supervisor)
     - `assignment-assistant/` - Committee assignment tooling
   - `api/graphql/` - GraphQL API endpoint
-  - `auth/` - OIDC authentication flows
+  - `auth/` - the auth pages the OIDC library does not serve itself (invitation hand-off, error,
+    email conflict, migration notice)
 
 - **`src/api/`** - GraphQL API implementation
   - `handlers/` - One module per entity, holding its abilities, queries and mutations
@@ -127,8 +128,8 @@ bun run machine-translate
 - **Generated client**: `client.query.x({ __args, …selection })` and `client.mutate.x(…)`, written
   into `src/lib/api/rumbleClient/` on dev server start
 - **Fetching happens in components**, not in `load`: `const x = $derived(await client.liveQuery.…)`
-  at the top of `<script>`. `load` survives only for redirect/403 guards, OIDC work, page options
-  and pages with form actions, and a guard returns no data
+  at the top of `<script>`. `load` survives only for redirect/403 guards, page options, and the one
+  invitation route that has to set a cookie before rendering; a guard returns no data
 - **Global state**: `$lib/state/currentUser.svelte` for the signed-in person, cached in the browser
   only — module state on the server is shared across requests
 - **SSR**: component fetches during SSR go through the remote function in
@@ -138,11 +139,20 @@ bun run machine-translate
   component's own fetch
 - **Subscriptions**: served over SSE on `/api/graphql`, with Redis (`REDIS_URL`) as the event
   target so several instances share events
+- **Forms**: superforms in SPA mode (`defaults()` + `SPA: true`, mutation in `onUpdate`) with
+  [Formsnap](https://formsnap.dev) field primitives behind the `Form*` components in
+  `$lib/components/form/`. No form actions, no `superValidate`
 
 #### Authentication & Authorization
 
-- **OIDC Integration**: Uses OpenID Connect (recommended: Logto, but supports any OIDC provider)
-- **Context Building**: `src/api/context.ts` constructs request context with OIDC data
+- **OIDC Integration**: `@m1212e/sveltekit-oidc` (recommended provider: Logto, but any OIDC provider
+  works). `src/api/services/OIDC.ts` builds it and `src/hooks.server.ts` installs its `handle`,
+  which guards the authenticated routes, serves both callback routes without `+page` files and puts
+  the session on `event.locals.oidc`. The login-time user upsert is
+  `src/api/services/upsertSelf.ts`
+- **Impersonation**: stalled during the migration — the library owns the session cookies the old
+  implementation swapped. `$lib/data/impersonation` gates the UI
+- **Context Building**: `src/api/context.ts` constructs request context from `event.locals.oidc`
 - **Permission System**: rumble abilities, which are drizzle filters composed into each query
   - Definitions at the top of each handler in `src/api/handlers/`
   - Admins get full access, team members get scoped access based on roles
