@@ -1,8 +1,10 @@
 {
 	"dependencies": {
+		"@graphql-yoga/redis-event-target": "^3.0.3",
 		"@urql/core": "^6.0.3",
 		"diff-match-patch": "^1.0.5",
 		"drizzle-orm": "1.0.0-rc.5-ab785fc",
+		"ioredis": "^6.0.0",
 		"nodemailer": "^9.1.0",
 		"pg": "^8.23.0",
 		"typst": "^0.10.0-8"

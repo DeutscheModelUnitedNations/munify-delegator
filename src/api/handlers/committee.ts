@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -15,6 +15,7 @@ abilityBuilder.committee.allow(['update', 'delete']).when((ctx) => {
 
 export const CommitteeRef = object({ table: 'committee' });
 query({ table: 'committee' });
+const pubsub = rumblePubsub({ table: 'committee' });
 
 /**
  * Only update and delete: `createOneCommittee` is commented out in the legacy resolver and does
@@ -43,6 +44,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.committee
 				.findFirst(
 					query(
@@ -64,6 +67,9 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Committee not found, or not yours to delete');
 			}
+
+			pubsub.removed();
+
 			return true;
 		}
 	})

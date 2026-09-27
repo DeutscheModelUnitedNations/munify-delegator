@@ -38,6 +38,9 @@ const schema = z.object({
 	SMTP_PASSWORD: z.string().optional(),
 	SMTP_FROM_ADDRESS: z.string().email().default('noreply@munify.cloud'),
 	SMTP_FROM_NAME: z.string().default('MUNIFY Delegator'),
+	// Distributed pubsub for GraphQL subscriptions. Without it rumble falls back to an in-memory
+	// event target, which is fine for a single process but drops events between instances.
+	REDIS_URL: z.string().optional(),
 	// Sentry/Bugsink error tracking
 	SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
 	SENTRY_SEND_DEFAULT_PII: z.stringbool().optional()

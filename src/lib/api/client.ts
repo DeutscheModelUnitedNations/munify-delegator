@@ -56,13 +56,16 @@ const ssrExchange: Exchange = ({ forward }) => {
 /**
  * The urql client the generated rumble client wraps.
  *
- * Deliberately minimal compared with chase's: this app has no GraphQL subscriptions, no
- * offline/local-demo mode and no crosstab sync, so it needs neither `subscriptionExchange` nor
- * `offlineExchange` nor crosstab sync. Add them only against a concrete requirement.
+ * Still smaller than chase's: no offline/local-demo mode and no crosstab sync. Subscriptions ride
+ * on the same HTTP endpoint as everything else, over server-sent events, rather than on chase's
+ * WebSocket transport - that one needs a custom `server.js`, a dev-server upgrade hook and
+ * synthetic request events, none of which this app has. `fetchSubscriptions` is what the generated
+ * client configures for itself, and it is what makes `liveQuery` actually live.
  */
 export const urqlClient = new Client({
 	url: '/api/graphql',
 	exchanges: [nativeDateExchange, cacheExchange({ schema }), ssrExchange, fetchExchange],
+	fetchSubscriptions: true,
 	fetchOptions: {
 		credentials: 'include'
 	},

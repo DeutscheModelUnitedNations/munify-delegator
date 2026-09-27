@@ -162,6 +162,19 @@ services:
     volumes:
       - bugsink-data:/app/data
 
+  # Redis - distributed pubsub for GraphQL subscriptions
+  redis:
+    image: redis:8-alpine
+    container_name: redis-dev-delegator
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      retries: 5
+      timeout: 5s
+
 volumes:
   delegator-dev:
   listmonk-data:
