@@ -7,7 +7,7 @@
 		description?: string;
 		count: number;
 		limit?: number;
-		participants: { id: string; given_name: string; family_name: string }[];
+		participants: { id: string; givenName: string | null; familyName: string | null }[];
 		conferenceId: string;
 		defaultExpanded?: boolean;
 	}
@@ -45,7 +45,7 @@
 							class="hover:underline cursor-pointer"
 							onclick={() => openUserCard(user.id, conferenceId)}
 						>
-							{formatNames(user.given_name, user.family_name)}
+							{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
 						</button>
 					</p>
 				{/each}

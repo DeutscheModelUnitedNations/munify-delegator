@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -29,8 +29,8 @@
 	// Types for the export data
 	interface ExportUser {
 		id: string;
-		given_name: string;
-		family_name: string;
+		givenName: string | null;
+		familyName: string | null;
 		email: string | null;
 		pronouns: string | null;
 		birthday: Date | null;
@@ -63,76 +63,14 @@
 		userRoleMap: SvelteMap<string, { roleType: string; roleName: string; committee: string }>;
 	}
 
-	// Query for fetching full export data on-demand
-	const SurveyExportDataQuery = graphql(`
-		query SurveyExportData($conferenceId: String!, $surveyId: String!) {
-			findUniqueSurveyQuestion(where: { id: $surveyId }) {
-				surveyAnswers {
-					id
-					option {
-						id
-					}
-					user {
-						id
-						given_name
-						family_name
-						email
-						pronouns
-						birthday
-					}
-				}
-			}
-			findManyDelegationMembers(
-				where: {
-					conferenceId: { equals: $conferenceId }
-					delegation: {
-						OR: [
-							{ assignedNationAlpha3Code: { not: { equals: null } } }
-							{ assignedNonStateActorId: { not: { equals: null } } }
-						]
-					}
-				}
-			) {
-				user {
-					id
-					given_name
-					family_name
-					email
-					pronouns
-					birthday
-				}
-				delegation {
-					assignedNation {
-						alpha3Code
-					}
-					assignedNonStateActor {
-						name
-					}
-				}
-				assignedCommittee {
-					name
-				}
-			}
-			findManySingleParticipants(
-				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedRoleId: { not: { equals: null } }
-				}
-			) {
-				user {
-					id
-					given_name
-					family_name
-					email
-					pronouns
-					birthday
-				}
-				assignedRole {
-					name
-				}
-			}
-		}
-	`);
+	const exportUser = {
+		id: true,
+		givenName: true,
+		familyName: true,
+		email: true,
+		pronouns: true,
+		birthday: true
+	} as const;
 
 	const setLoading = (key: string, value: boolean) => {
 		loadingStates = { ...loadingStates, [key]: value };
@@ -142,13 +80,43 @@
 	const fetchExportData = async (): Promise<ExportData> => {
 		if (exportDataCache) return exportDataCache;
 
-		const { data } = await SurveyExportDataQuery.fetch({
-			variables: { conferenceId, surveyId }
-		});
+		const [survey, delegationMembers, singleParticipants] = await Promise.all([
+			client.query.surveyQuestion({
+				__args: { id: surveyId },
+				surveyAnswers: { id: true, option: { id: true }, user: exportUser }
+			}),
+			client.query.delegationMembers({
+				__args: {
+					where: {
+						conferenceId: { eq: conferenceId },
+						delegation: {
+							OR: [
+								{ assignedNationAlpha3Code: { isNotNull: true } },
+								{ assignedNonStateActorId: { isNotNull: true } }
+							]
+						}
+					}
+				},
+				user: exportUser,
+				delegation: {
+					assignedNation: { alpha3Code: true },
+					assignedNonStateActor: { name: true }
+				},
+				assignedCommittee: { name: true }
+			}),
+			client.query.singleParticipants({
+				__args: {
+					where: {
+						conferenceId: { eq: conferenceId },
+						assignedRoleId: { isNotNull: true }
+					}
+				},
+				user: exportUser,
+				assignedRole: { name: true }
+			})
+		]);
 
-		const surveyAnswers = data?.findUniqueSurveyQuestion?.surveyAnswers ?? [];
-		const delegationMembers = data?.findManyDelegationMembers ?? [];
-		const singleParticipants = data?.findManySingleParticipants ?? [];
+		const surveyAnswers = survey?.surveyAnswers ?? [];
 
 		// Build a map of userId -> role info
 		const userRoleMap = new SvelteMap<
@@ -210,8 +178,8 @@
 	): string[] => {
 		return [
 			user.id,
-			user.family_name ?? '',
-			user.given_name ?? '',
+			user.familyName ?? '',
+			user.givenName ?? '',
 			user.email ?? '',
 			user.pronouns ?? '',
 			formatBirthday(user.birthday),

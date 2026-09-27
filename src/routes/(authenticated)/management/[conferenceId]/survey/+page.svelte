@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
@@ -11,56 +11,6 @@
 	let surveys = $derived(data.surveys);
 	let visibleSurveys = $derived(surveys.filter((s) => !s.hidden));
 	let hiddenSurveys = $derived(surveys.filter((s) => s.hidden));
-
-	// Mutations
-	const CreateSurveyMutation = graphql(`
-		mutation CreateSurveyQuestionFromList(
-			$conferenceId: String!
-			$title: String!
-			$description: String!
-			$deadline: DateTime!
-		) {
-			createOneSurveyQuestion(
-				data: {
-					conferenceId: $conferenceId
-					title: $title
-					description: $description
-					deadline: $deadline
-					draft: true
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateSurveyMutation = graphql(`
-		mutation UpdateSurveyQuestionFromList(
-			$id: String!
-			$draft: BoolFieldUpdateOperationsInput
-			$hidden: BoolFieldUpdateOperationsInput
-			$showSelectionOnDashboard: BoolFieldUpdateOperationsInput
-		) {
-			updateOneSurveyQuestion(
-				where: { id: $id }
-				data: {
-					draft: $draft
-					hidden: $hidden
-					showSelectionOnDashboard: $showSelectionOnDashboard
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const DeleteSurveyMutation = graphql(`
-		mutation DeleteSurveyQuestionFromList($id: String!) {
-			deleteOneSurveyQuestion(where: { id: $id }) {
-				id
-			}
-		}
-	`);
 
 	// Modal state
 	let showCreateModal = $state(false);
@@ -95,13 +45,16 @@
 		if (!createTitle || !createDescription || !createDeadline) return;
 		isLoading = true;
 		try {
-			await CreateSurveyMutation.mutate({
-				conferenceId: data.conferenceId,
-				title: createTitle,
-				description: createDescription,
-				deadline: datetimeLocalToDate(createDeadline, data.conferenceTimezone)
+			await client.mutate.createSurveyQuestion({
+				__args: {
+					conferenceId: data.conferenceId,
+					title: createTitle,
+					description: createDescription,
+					deadline: datetimeLocalToDate(createDeadline, data.conferenceTimezone),
+					draft: true
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showCreateModal = false;
 			createTitle = '';
@@ -117,11 +70,10 @@
 	const toggleDraft = async (id: string, currentDraft: boolean) => {
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id,
-				draft: { set: !currentDraft }
+			await client.mutate.updateSurveyQuestion({
+				__args: { id, draft: !currentDraft },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle draft status:', error);
@@ -133,11 +85,10 @@
 	const toggleHidden = async (id: string, currentHidden: boolean) => {
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id,
-				hidden: { set: !currentHidden }
+			await client.mutate.updateSurveyQuestion({
+				__args: { id, hidden: !currentHidden },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle hidden status:', error);
@@ -149,11 +100,10 @@
 	const toggleShowSelection = async (id: string, currentValue: boolean) => {
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id,
-				showSelectionOnDashboard: { set: !currentValue }
+			await client.mutate.updateSurveyQuestion({
+				__args: { id, showSelectionOnDashboard: !currentValue },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle showSelectionOnDashboard:', error);
@@ -166,10 +116,7 @@
 		if (!surveyToDelete) return;
 		isLoading = true;
 		try {
-			await DeleteSurveyMutation.mutate({
-				id: surveyToDelete.id
-			});
-			cache.markStale();
+			await client.mutate.deleteSurveyQuestion({ __args: { id: surveyToDelete.id } });
 			await invalidateAll();
 			showDeleteModal = false;
 			surveyToDelete = null;

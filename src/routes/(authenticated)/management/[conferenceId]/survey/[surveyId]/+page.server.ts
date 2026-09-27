@@ -1,99 +1,75 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import type { PageServerLoad } from './$types';
 
-const SurveyDetailsQuery = graphql(`
-	query SurveyResultsDetailsPage($conferenceId: String!, $surveyId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			timezone
-		}
-		findUniqueSurveyQuestion(where: { id: $surveyId }) {
-			id
-			title
-			description
-			deadline
-			draft
-			hidden
-			showSelectionOnDashboard
-			options {
-				id
-				title
-				description
-				countSurveyAnswers
-				upperLimit
-			}
-			surveyAnswers {
-				id
-				createdAt
-				option {
-					id
-				}
-				user {
-					id
-					given_name
-					family_name
-				}
-			}
-		}
-		findManyDelegationMembers(
-			where: {
-				conferenceId: { equals: $conferenceId }
-				delegation: {
-					OR: [
-						{ assignedNationAlpha3Code: { not: { equals: null } } }
-						{ assignedNonStateActorId: { not: { equals: null } } }
-					]
-				}
-				user: { surveyAnswers: { none: { questionId: { equals: $surveyId } } } }
-			}
-		) {
-			user {
-				id
-				given_name
-				family_name
-			}
-		}
-		findManySingleParticipants(
-			where: {
-				conferenceId: { equals: $conferenceId }
-				assignedRoleId: { not: { equals: null } }
-				user: { surveyAnswers: { none: { questionId: { equals: $surveyId } } } }
-			}
-		) {
-			user {
-				id
-				given_name
-				family_name
-			}
-		}
-	}
-`);
+const answeringUser = { id: true, givenName: true, familyName: true } as const;
 
 export const load: PageServerLoad = async (event) => {
-	const { data } = await SurveyDetailsQuery.fetch({
-		event,
-		variables: {
-			conferenceId: event.params.conferenceId,
-			surveyId: event.params.surveyId
-		},
-		blocking: true
-	});
+	const { conferenceId, surveyId } = event.params;
+	/** Anyone who holds a seat but has not answered this question yet. */
+	const notAnswered = { NOT: { surveyAnswers: { questionId: { eq: surveyId } } } };
 
-	// Combine delegation members and single participants into a single array
-	// Use a Map to deduplicate users who might appear in both lists
-	const userMap = new Map<string, { id: string; given_name: string; family_name: string }>();
+	const [conference, survey, delegationMembers, singleParticipants] = await Promise.all([
+		client.query.conference({ __args: { id: conferenceId }, timezone: true }),
+		client.query.surveyQuestion({
+			__args: { id: surveyId },
+			id: true,
+			title: true,
+			description: true,
+			deadline: true,
+			draft: true,
+			hidden: true,
+			showSelectionOnDashboard: true,
+			options: {
+				id: true,
+				title: true,
+				description: true,
+				countSurveyAnswers: true,
+				upperLimit: true
+			},
+			surveyAnswers: {
+				id: true,
+				createdAt: true,
+				option: { id: true },
+				user: answeringUser
+			}
+		}),
+		client.query.delegationMembers({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					delegation: {
+						OR: [
+							{ assignedNationAlpha3Code: { isNotNull: true } },
+							{ assignedNonStateActorId: { isNotNull: true } }
+						]
+					},
+					user: notAnswered
+				}
+			},
+			user: answeringUser
+		}),
+		client.query.singleParticipants({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					assignedRoleId: { isNotNull: true },
+					user: notAnswered
+				}
+			},
+			user: answeringUser
+		})
+	]);
 
-	for (const dm of data?.findManyDelegationMembers ?? []) {
-		userMap.set(dm.user.id, dm.user);
-	}
-	for (const sp of data?.findManySingleParticipants ?? []) {
-		userMap.set(sp.user.id, sp.user);
-	}
+	// Somebody can hold both kinds of registration, so the two lists are deduplicated by user.
+	const byId = new Map(
+		[...delegationMembers, ...singleParticipants].map((row) => [row.user.id, row.user])
+	);
 
 	return {
-		survey: data?.findUniqueSurveyQuestion ?? null,
-		usersNotAnswered: Array.from(userMap.values()),
-		conferenceId: event.params.conferenceId,
-		surveyId: event.params.surveyId,
-		conferenceTimezone: data?.findUniqueConference?.timezone ?? 'UTC'
+		survey,
+		usersNotAnswered: [...byId.values()],
+		conferenceId,
+		surveyId,
+		conferenceTimezone: conference?.timezone ?? 'UTC'
 	};
 };

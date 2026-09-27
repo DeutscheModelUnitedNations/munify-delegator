@@ -170,8 +170,8 @@
 				.filter((answer) => answer.option.id === optionId)
 				.map((answer) => answer.user)
 				.sort((a, b) =>
-					formatNames(a.given_name, a.family_name).localeCompare(
-						formatNames(b.given_name, b.family_name)
+					formatNames(a.givenName ?? undefined, a.familyName ?? undefined).localeCompare(
+						formatNames(b.givenName ?? undefined, b.familyName ?? undefined)
 					)
 				) ?? []
 		);
