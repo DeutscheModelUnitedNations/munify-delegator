@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import formatNames from '$lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import type { AdministrativeStatus } from '@prisma/client';
+	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {
@@ -20,117 +20,82 @@
 		loadingStates = { ...loadingStates, [key]: value };
 	};
 
-	const conferenceParticipantStatusData = graphql(`
-		query ConferenceParticipantStatusData($conferenceId: String!) {
-			findManyConferenceParticipantStatuss(where: { conferenceId: { equals: $conferenceId } }) {
-				id
-				user {
-					id
-				}
-				conference {
-					startConference
-				}
-				paymentStatus
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-			}
-		}
-	`);
+	const listedUser = {
+		id: true,
+		givenName: true,
+		familyName: true,
+		birthday: true
+	} as const;
 
-	const conferenceRegistrationListDelegationData = graphql(`
-		query ConferenceRegistrationListDelegationData($conferenceId: String!) {
-			findManyDelegations(
+	function fetchParticipantStatuses() {
+		return client.query.conferenceParticipantStatuses({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			user: { id: true },
+			conference: { startConference: true },
+			paymentStatus: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true
+		});
+	}
+
+	function fetchNationDelegations() {
+		return client.query.delegations({
+			__args: {
 				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedNationAlpha3Code: { not: { equals: null } }
+					conferenceId: { eq: conferenceId },
+					assignedNationAlpha3Code: { isNotNull: true }
 				}
-			) {
-				id
-				assignedNation {
-					alpha3Code
-				}
-				members {
-					id
-					user {
-						id
-						given_name
-						family_name
-						birthday
-					}
-					assignedCommittee {
-						abbreviation
-					}
-				}
+			},
+			id: true,
+			assignedNation: { alpha3Code: true },
+			members: {
+				id: true,
+				user: listedUser,
+				assignedCommittee: { abbreviation: true }
 			}
-		}
-	`);
+		});
+	}
 
-	const conferenceRegistrationListNSAData = graphql(`
-		query ConferenceRegistrationListNSAData($conferenceId: String!) {
-			findManyDelegations(
+	function fetchNsaDelegations() {
+		return client.query.delegations({
+			__args: {
 				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedNonStateActorId: { not: { equals: null } }
+					conferenceId: { eq: conferenceId },
+					assignedNonStateActorId: { isNotNull: true }
 				}
-			) {
-				id
-				assignedNonStateActor {
-					id
-					name
-				}
-				members {
-					id
-					user {
-						id
-						given_name
-						family_name
-						birthday
-					}
-				}
-			}
-		}
-	`);
+			},
+			id: true,
+			assignedNonStateActor: { id: true, name: true },
+			members: { id: true, user: listedUser }
+		});
+	}
 
-	const conferenceRegistrationListSingleParticipantData = graphql(`
-		query ConferenceRegistrationListSingleParticipantData($conferenceId: String!) {
-			findManySingleParticipants(
+	function fetchSingleParticipants() {
+		return client.query.singleParticipants({
+			__args: {
 				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedRoleId: { not: { equals: null } }
+					conferenceId: { eq: conferenceId },
+					assignedRoleId: { isNotNull: true }
 				}
-			) {
-				id
-				user {
-					id
-					given_name
-					family_name
-					birthday
-				}
-				assignedRole {
-					id
-					name
-				}
-			}
-		}
-	`);
+			},
+			id: true,
+			user: listedUser,
+			assignedRole: { id: true, name: true }
+		});
+	}
 
-	const conferenceRegistrationListSupervisorsData = graphql(`
-		query ConferenceRegistrationListSupervisorsData($conferenceId: String!) {
-			findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
-				id
-				user {
-					id
-					given_name
-					family_name
-					birthday
-				}
-				plansOwnAttendenceAtConference
-			}
-		}
-	`);
+	function fetchSupervisors() {
+		return client.query.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			user: listedUser,
+			plansOwnAttendenceAtConference: true
+		});
+	}
 
-	const formatRegistrationStatus = (status: AdministrativeStatus | undefined) => {
+	const formatRegistrationStatus = (status: AdministrativestatusEnum | undefined) => {
 		switch (status) {
 			case 'DONE':
 				return '';
@@ -147,15 +112,12 @@
 		const key = 'delegations';
 		setLoading(key, true);
 		try {
-			const participantStatus = await conferenceParticipantStatusData.fetch({
-				variables: { conferenceId }
-			});
-			const delegations = await conferenceRegistrationListDelegationData.fetch({
-				variables: { conferenceId }
-			});
+			const [participantStatusData, delegations] = await Promise.all([
+				fetchParticipantStatuses(),
+				fetchNationDelegations()
+			]);
 
-			const participantStatusData = participantStatus.data?.findManyConferenceParticipantStatuss;
-			const delegationData = delegations.data?.findManyDelegations;
+			const delegationData = delegations;
 
 			const header = [
 				m.country(),
@@ -183,10 +145,12 @@
 					);
 					return delegation.members
 						.sort((a, b) =>
-							formatNames(a.user.given_name, a.user.family_name, {
+							formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
 								givenNameFirst: false
 							}).localeCompare(
-								formatNames(b.user.given_name, b.user.family_name, { givenNameFirst: false })
+								formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
+									givenNameFirst: false
+								})
 							)
 						)
 						.map((member) => {
@@ -200,8 +164,8 @@
 							return [
 								nation,
 								member.assignedCommittee?.abbreviation ?? '',
-								member.user.family_name ?? '',
-								member.user.given_name ?? '',
+								member.user.familyName ?? '',
+								member.user.givenName ?? '',
 								formatRegistrationStatus(status?.paymentStatus),
 								formatRegistrationStatus(status?.termsAndConditions),
 								ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
@@ -227,15 +191,12 @@
 		const key = 'nsa';
 		setLoading(key, true);
 		try {
-			const participantStatus = await conferenceParticipantStatusData.fetch({
-				variables: { conferenceId }
-			});
-			const nsas = await conferenceRegistrationListNSAData.fetch({
-				variables: { conferenceId }
-			});
+			const [participantStatusData, nsas] = await Promise.all([
+				fetchParticipantStatuses(),
+				fetchNsaDelegations()
+			]);
 
-			const participantStatusData = participantStatus.data?.findManyConferenceParticipantStatuss;
-			const nsaData = nsas.data?.findManyDelegations;
+			const nsaData = nsas;
 
 			const header = [
 				m.nonStateActor(),
@@ -255,10 +216,12 @@
 				?.flatMap((nsa) => {
 					return nsa.members
 						.sort((a, b) =>
-							formatNames(a.user.given_name, a.user.family_name, {
+							formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
 								givenNameFirst: false
 							}).localeCompare(
-								formatNames(b.user.given_name, b.user.family_name, { givenNameFirst: false })
+								formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
+									givenNameFirst: false
+								})
 							)
 						)
 						.map((member) => {
@@ -271,8 +234,8 @@
 							);
 							return [
 								nsa.assignedNonStateActor?.name ?? '',
-								member.user.family_name ?? '',
-								member.user.given_name ?? '',
+								member.user.familyName ?? '',
+								member.user.givenName ?? '',
 								formatRegistrationStatus(status?.paymentStatus),
 								formatRegistrationStatus(status?.termsAndConditions),
 								ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
@@ -298,15 +261,12 @@
 		const key = 'single';
 		setLoading(key, true);
 		try {
-			const participantStatus = await conferenceParticipantStatusData.fetch({
-				variables: { conferenceId }
-			});
-			const singleParticipants = await conferenceRegistrationListSingleParticipantData.fetch({
-				variables: { conferenceId }
-			});
+			const [participantStatusData, singleParticipants] = await Promise.all([
+				fetchParticipantStatuses(),
+				fetchSingleParticipants()
+			]);
 
-			const participantStatusData = participantStatus.data?.findManyConferenceParticipantStatuss;
-			const singleParticipantData = singleParticipants.data?.findManySingleParticipants;
+			const singleParticipantData = singleParticipants;
 
 			const header = [
 				m.role(),
@@ -323,12 +283,14 @@
 				?.sort((a, b) =>
 					(
 						(a.assignedRole?.name ?? '') +
-						formatNames(a.user.given_name, a.user.family_name, {
+						formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
 							givenNameFirst: false
 						})
 					).localeCompare(
 						(b.assignedRole?.name ?? '') +
-							formatNames(b.user.given_name, b.user.family_name, { givenNameFirst: false })
+							formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
+								givenNameFirst: false
+							})
 					)
 				)
 				?.map((singleParticipant) => {
@@ -341,8 +303,8 @@
 					);
 					return [
 						singleParticipant.assignedRole?.name ?? '',
-						singleParticipant.user.family_name ?? '',
-						singleParticipant.user.given_name ?? '',
+						singleParticipant.user.familyName ?? '',
+						singleParticipant.user.givenName ?? '',
 						formatRegistrationStatus(status?.paymentStatus),
 						formatRegistrationStatus(status?.termsAndConditions),
 						ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
@@ -367,15 +329,12 @@
 		const key = 'supervisors';
 		setLoading(key, true);
 		try {
-			const participantStatus = await conferenceParticipantStatusData.fetch({
-				variables: { conferenceId }
-			});
-			const supervisors = await conferenceRegistrationListSupervisorsData.fetch({
-				variables: { conferenceId }
-			});
+			const [participantStatusData, supervisors] = await Promise.all([
+				fetchParticipantStatuses(),
+				fetchSupervisors()
+			]);
 
-			const participantStatusData = participantStatus.data?.findManyConferenceParticipantStatuss;
-			const supervisorData = supervisors.data?.findManyConferenceSupervisors;
+			const supervisorData = supervisors;
 
 			const header = [
 				m.familyName(),
@@ -388,10 +347,12 @@
 
 			const data = supervisorData
 				?.sort((a, b) =>
-					formatNames(a.user.given_name, a.user.family_name, {
+					formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
 						givenNameFirst: false
 					}).localeCompare(
-						formatNames(b.user.given_name, b.user.family_name, { givenNameFirst: false })
+						formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
+							givenNameFirst: false
+						})
 					)
 				)
 				?.map((supervisor) => {
@@ -399,8 +360,8 @@
 						(status) => status.user.id === supervisor.user.id
 					);
 					return [
-						supervisor.user.family_name ?? '',
-						supervisor.user.given_name ?? '',
+						supervisor.user.familyName ?? '',
+						supervisor.user.givenName ?? '',
 						formatRegistrationStatus(status?.paymentStatus),
 						formatRegistrationStatus(status?.termsAndConditions),
 						formatRegistrationStatus(status?.mediaConsent),

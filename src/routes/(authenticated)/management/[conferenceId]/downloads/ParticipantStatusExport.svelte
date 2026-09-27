@@ -1,9 +1,12 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import type { AdministrativeStatus, MediaConsentStatus } from '@prisma/client';
+	import type {
+		AdministrativestatusEnum,
+		MediaconsentstatusEnum
+	} from '$lib/api/rumbleClient/client';
 	import DownloadButton from './DownloadButton.svelte';
 
 	interface Props {
@@ -14,141 +17,95 @@
 
 	let loading = $state(false);
 
-	const participantStatusExportDelegationsQuery = graphql(`
-		query ParticipantStatusExportDelegations($conferenceId: String!) {
-			findManyDelegations(
-				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedNationAlpha3Code: { not: { equals: null } }
-				}
-			) {
-				id
-				assignedNation {
-					alpha3Code
-				}
-				members {
-					id
-					user {
-						id
-						email
-						given_name
-						family_name
-					}
-					assignedCommittee {
-						name
-					}
-					supervisors {
-						user {
-							given_name
-							family_name
-						}
-					}
-				}
-			}
-		}
-	`);
+	const exportUser = {
+		id: true,
+		email: true,
+		givenName: true,
+		familyName: true
+	} as const;
+	const supervisorNames = { user: { givenName: true, familyName: true } } as const;
 
-	const participantStatusExportNSAsQuery = graphql(`
-		query ParticipantStatusExportNSAs($conferenceId: String!) {
-			findManyDelegations(
+	function fetchNationDelegations() {
+		return client.query.delegations({
+			__args: {
 				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedNonStateActorId: { not: { equals: null } }
+					conferenceId: { eq: conferenceId },
+					assignedNationAlpha3Code: { isNotNull: true }
 				}
-			) {
-				id
-				assignedNonStateActor {
-					name
-				}
-				members {
-					id
-					user {
-						id
-						email
-						given_name
-						family_name
-					}
-					supervisors {
-						user {
-							given_name
-							family_name
-						}
-					}
-				}
+			},
+			id: true,
+			assignedNation: { alpha3Code: true },
+			members: {
+				id: true,
+				user: exportUser,
+				assignedCommittee: { name: true },
+				supervisors: supervisorNames
 			}
-		}
-	`);
+		});
+	}
 
-	const participantStatusExportSingleParticipantsQuery = graphql(`
-		query ParticipantStatusExportSingleParticipants($conferenceId: String!) {
-			findManySingleParticipants(
+	function fetchNsaDelegations() {
+		return client.query.delegations({
+			__args: {
 				where: {
-					conferenceId: { equals: $conferenceId }
-					assignedRoleId: { not: { equals: null } }
+					conferenceId: { eq: conferenceId },
+					assignedNonStateActorId: { isNotNull: true }
 				}
-			) {
-				id
-				user {
-					id
-					email
-					given_name
-					family_name
-				}
-				assignedRole {
-					name
-				}
-				supervisors {
-					user {
-						given_name
-						family_name
-					}
-				}
-			}
-		}
-	`);
+			},
+			id: true,
+			assignedNonStateActor: { name: true },
+			members: { id: true, user: exportUser, supervisors: supervisorNames }
+		});
+	}
 
-	const participantStatusExportSupervisorsQuery = graphql(`
-		query ParticipantStatusExportSupervisors($conferenceId: String!) {
-			findManyConferenceSupervisors(
+	function fetchSingleParticipants() {
+		return client.query.singleParticipants({
+			__args: {
 				where: {
-					conferenceId: { equals: $conferenceId }
-					plansOwnAttendenceAtConference: { equals: true }
+					conferenceId: { eq: conferenceId },
+					assignedRoleId: { isNotNull: true }
 				}
-			) {
-				id
-				user {
-					id
-					email
-					given_name
-					family_name
-				}
-			}
-		}
-	`);
+			},
+			id: true,
+			user: exportUser,
+			assignedRole: { name: true },
+			supervisors: supervisorNames
+		});
+	}
 
-	const participantStatusExportStatusesQuery = graphql(`
-		query ParticipantStatusExportStatuses($conferenceId: String!) {
-			findManyConferenceParticipantStatuss(where: { conferenceId: { equals: $conferenceId } }) {
-				id
-				user {
-					id
+	function fetchAttendingSupervisors() {
+		return client.query.conferenceSupervisors({
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					plansOwnAttendenceAtConference: { eq: true }
 				}
-				termsAndConditions
-				guardianConsent
-				mediaConsent
-				mediaConsentStatus
-				paymentStatus
-				didAttend
-			}
-		}
-	`);
+			},
+			id: true,
+			user: exportUser
+		});
+	}
+
+	function fetchStatuses() {
+		return client.query.conferenceParticipantStatuses({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			user: { id: true },
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			mediaConsentStatus: true,
+			paymentStatus: true,
+			didAttend: true
+		});
+	}
 
 	interface StatusData {
-		termsAndConditions: AdministrativeStatus;
-		guardianConsent: AdministrativeStatus;
-		mediaConsent: AdministrativeStatus;
-		mediaConsentStatus: MediaConsentStatus;
-		paymentStatus: AdministrativeStatus;
+		termsAndConditions: AdministrativestatusEnum;
+		guardianConsent: AdministrativestatusEnum;
+		mediaConsent: AdministrativestatusEnum;
+		mediaConsentStatus: MediaconsentstatusEnum;
+		paymentStatus: AdministrativestatusEnum;
 		didAttend: boolean;
 	}
 
@@ -162,10 +119,10 @@
 	};
 
 	const formatSupervisorNames = (
-		supervisors: Array<{ user: { given_name: string | null; family_name: string | null } }>
+		supervisors: Array<{ user: { givenName: string | null; familyName: string | null } }>
 	): string => {
 		return supervisors
-			.map((s) => `${s.user.given_name ?? ''} ${s.user.family_name ?? ''}`.trim())
+			.map((s) => `${s.user.givenName ?? ''} ${s.user.familyName ?? ''}`.trim())
 			.filter((name) => name.length > 0)
 			.join(', ');
 	};
@@ -174,7 +131,7 @@
 	// 1. PROBLEM if any are PROBLEM
 	// 2. PENDING if any are PENDING (and none are PROBLEM)
 	// 3. DONE otherwise
-	const summarizePostalStatus = (status: StatusData): AdministrativeStatus => {
+	const summarizePostalStatus = (status: StatusData): AdministrativestatusEnum => {
 		const postalFields = [status.termsAndConditions, status.guardianConsent, status.mediaConsent];
 		if (postalFields.some((s) => s === 'PROBLEM')) return 'PROBLEM';
 		if (postalFields.some((s) => s === 'PENDING')) return 'PENDING';
@@ -197,32 +154,17 @@
 	const getParticipantStatusExport = async () => {
 		loading = true;
 		try {
-			const [delegationsRes, nsasRes, singleParticipantsRes, supervisorsRes, statusesRes] =
+			const [nationDelegations, nsaDelegations, singleParticipants, supervisors, statuses] =
 				await Promise.all([
-					participantStatusExportDelegationsQuery.fetch({ variables: { conferenceId } }),
-					participantStatusExportNSAsQuery.fetch({ variables: { conferenceId } }),
-					participantStatusExportSingleParticipantsQuery.fetch({ variables: { conferenceId } }),
-					participantStatusExportSupervisorsQuery.fetch({ variables: { conferenceId } }),
-					participantStatusExportStatusesQuery.fetch({ variables: { conferenceId } })
+					fetchNationDelegations(),
+					fetchNsaDelegations(),
+					fetchSingleParticipants(),
+					fetchAttendingSupervisors(),
+					fetchStatuses()
 				]);
 
-			// Check for errors in any of the GraphQL responses
-			const errors = [
-				delegationsRes.errors,
-				nsasRes.errors,
-				singleParticipantsRes.errors,
-				supervisorsRes.errors,
-				statusesRes.errors
-			].filter(Boolean);
-
-			if (errors.length > 0) {
-				console.error('GraphQL errors:', errors);
-				alert(m.httpGenericError());
-				return;
-			}
-
 			const statusMap = new Map<string, StatusData>(
-				statusesRes.data?.findManyConferenceParticipantStatuss.map((s) => [
+				statuses.map((s) => [
 					s.user.id,
 					{
 						termsAndConditions: s.termsAndConditions,
@@ -232,7 +174,7 @@
 						paymentStatus: s.paymentStatus,
 						didAttend: s.didAttend
 					}
-				]) ?? []
+				])
 			);
 
 			const getStatus = (userId: string): StatusData => {
@@ -242,7 +184,7 @@
 			const rows: string[][] = [];
 
 			// Process delegations (nation assigned)
-			for (const delegation of delegationsRes.data?.findManyDelegations ?? []) {
+			for (const delegation of nationDelegations) {
 				const nationName = getFullTranslatedCountryNameFromISO3Code(
 					delegation.assignedNation?.alpha3Code ?? ''
 				);
@@ -251,8 +193,8 @@
 					rows.push([
 						member.user.id,
 						member.user.email ?? '',
-						member.user.given_name ?? '',
-						member.user.family_name ?? '',
+						member.user.givenName ?? '',
+						member.user.familyName ?? '',
 						'Delegation',
 						nationName,
 						member.assignedCommittee?.name ?? '',
@@ -270,15 +212,15 @@
 			}
 
 			// Process NSAs
-			for (const delegation of nsasRes.data?.findManyDelegations ?? []) {
+			for (const delegation of nsaDelegations) {
 				const nsaName = delegation.assignedNonStateActor?.name ?? '';
 				for (const member of delegation.members) {
 					const status = getStatus(member.user.id);
 					rows.push([
 						member.user.id,
 						member.user.email ?? '',
-						member.user.given_name ?? '',
-						member.user.family_name ?? '',
+						member.user.givenName ?? '',
+						member.user.familyName ?? '',
 						'NSA',
 						nsaName,
 						'',
@@ -296,13 +238,13 @@
 			}
 
 			// Process single participants
-			for (const participant of singleParticipantsRes.data?.findManySingleParticipants ?? []) {
+			for (const participant of singleParticipants) {
 				const status = getStatus(participant.user.id);
 				rows.push([
 					participant.user.id,
 					participant.user.email ?? '',
-					participant.user.given_name ?? '',
-					participant.user.family_name ?? '',
+					participant.user.givenName ?? '',
+					participant.user.familyName ?? '',
 					'SingleParticipant',
 					participant.assignedRole?.name ?? '',
 					'',
@@ -319,13 +261,13 @@
 			}
 
 			// Process supervisors
-			for (const supervisor of supervisorsRes.data?.findManyConferenceSupervisors ?? []) {
+			for (const supervisor of supervisors) {
 				const status = getStatus(supervisor.user.id);
 				rows.push([
 					supervisor.user.id,
 					supervisor.user.email ?? '',
-					supervisor.user.given_name ?? '',
-					supervisor.user.family_name ?? '',
+					supervisor.user.givenName ?? '',
+					supervisor.user.familyName ?? '',
 					'Supervisor',
 					'Supervisor',
 					'',
