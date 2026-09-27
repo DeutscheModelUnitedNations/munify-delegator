@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from '../../$types';
+	import type { ApplicationForm } from '../../applicationForm';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
@@ -33,7 +34,7 @@
 	interface Props {
 		delegationMember: NonNullable<MyConferenceParticipation['delegationMember']>;
 		conference: NonNullable<MyConferenceParticipation['conference']>;
-		applicationForm: PageData['applicationForm'];
+		applicationForm: ApplicationForm;
 	}
 
 	let { delegationMember, conference, applicationForm }: Props = $props();

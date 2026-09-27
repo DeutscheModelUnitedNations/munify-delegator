@@ -7,6 +7,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import type { PageData } from '../../$types';
+	import type { ApplicationForm } from '../../applicationForm';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import { superForm } from 'sveltekit-superforms';
@@ -22,7 +23,7 @@
 	interface Props {
 		singleParticipant: NonNullable<MyConferenceParticipation['singleParticipant']>;
 		conference: NonNullable<MyConferenceParticipation['conference']>;
-		applicationForm: PageData['applicationForm'];
+		applicationForm: ApplicationForm;
 	}
 
 	let { singleParticipant, conference, applicationForm }: Props = $props();

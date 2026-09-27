@@ -6,11 +6,20 @@
 -->
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { page } from '$app/state';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
 
 	let { data }: { data: PageData } = $props();
-	let conference = $derived(data.conference);
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: page.params.conferenceId! },
+			id: true,
+			title: true,
+			info: true
+		})
+	);
 </script>
 
 <div class="flex w-full flex-col gap-4">

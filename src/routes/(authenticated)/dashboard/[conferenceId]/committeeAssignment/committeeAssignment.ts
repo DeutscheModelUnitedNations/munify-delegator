@@ -1,14 +1,11 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageLoad } from './$types';
 
-export const load: PageLoad = async (event) => {
-	const { user } = await event.parent();
-	const conferenceId = event.params.conferenceId;
-
+/** The caller's delegation membership plus the committees they could be assigned to. */
+export async function fetchCommitteeAssignment(conferenceId: string, userId: string) {
 	const [delegationMembers, committees] = await Promise.all([
-		client.query.delegationMembers({
+		client.liveQuery.delegationMembers({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } }
+				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
 			},
 			id: true,
 			isHeadDelegate: true,
@@ -23,7 +20,7 @@ export const load: PageLoad = async (event) => {
 				}
 			}
 		}),
-		client.query.committees({
+		client.liveQuery.committees({
 			__args: { where: { conferenceId: { eq: conferenceId } } },
 			id: true,
 			abbreviation: true,
@@ -34,4 +31,6 @@ export const load: PageLoad = async (event) => {
 	]);
 
 	return { delegationMember: delegationMembers.at(0) ?? null, committees };
-};
+}
+
+export type CommitteeAssignment = Awaited<ReturnType<typeof fetchCommitteeAssignment>>;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { makeApplicationForm } from './applicationForm';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
@@ -18,6 +19,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let participation = $derived(data.participation);
+	const applicationForm = $derived(makeApplicationForm(participation ?? undefined));
 	let conference = $derived(participation?.conference);
 	let delegationMember = $derived(participation?.delegationMember);
 	let singleParticipant = $derived(participation?.singleParticipant);
@@ -66,11 +68,7 @@
 		<!-- TODO add "new" badge if content of this changes -->
 		{#if singleParticipant?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<SingleParticipantRegistrationStage
-					{singleParticipant}
-					{conference}
-					applicationForm={data.applicationForm}
-				/>
+				<SingleParticipantRegistrationStage {singleParticipant} {conference} {applicationForm} />
 			{:else if singleParticipant?.assignedRole}
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
@@ -105,11 +103,7 @@
 			{/if}
 		{:else if delegationMember?.id}
 			{#if conference!.state === 'PARTICIPANT_REGISTRATION'}
-				<DelegationRegistrationStage
-					{delegationMember}
-					{conference}
-					applicationForm={data.applicationForm}
-				/>
+				<DelegationRegistrationStage {delegationMember} {conference} {applicationForm} />
 			{:else if !!delegationMember?.delegation?.assignedNation || !!delegationMember?.delegation?.assignedNonStateActor}
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget

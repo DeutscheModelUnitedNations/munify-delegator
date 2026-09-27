@@ -4,14 +4,19 @@
 	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
+	import { fetchCommitteeAssignment } from './committeeAssignment';
 	import formatNames from '$lib/helpers/formatNames';
 
 	let { data }: { data: PageData } = $props();
-	let delegationMember = $derived(data.delegationMember);
+
+	const assignment = $derived(
+		await fetchCommitteeAssignment(page.params.conferenceId!, data.user.sub)
+	);
+	const delegationMember = $derived(assignment.delegationMember);
 	let members = $derived(delegationMember?.delegation.members);
 	let delegation = $derived(delegationMember?.delegation);
 	let committees = $derived(
-		data.committees.filter((c) =>
+		assignment.committees.filter((c) =>
 			c.nations.some((n) => n.alpha3Code === delegation?.assignedNation?.alpha3Code)
 		)
 	);
