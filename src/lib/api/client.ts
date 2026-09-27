@@ -64,13 +64,19 @@ const ssrExchange: Exchange = ({ forward }) => {
  */
 export const urqlClient = new Client({
 	url: '/api/graphql',
+	// The normalizing cache has to be in place on both sides: the generated client represents
+	// nested fields as functions, and this is what turns a response into plain data.
 	exchanges: [nativeDateExchange, cacheExchange({ schema }), ssrExchange, fetchExchange],
 	fetchSubscriptions: true,
 	fetchOptions: {
 		credentials: 'include'
 	},
-	// What the generated client configures for itself, and what component-level fetching needs:
-	// cached data renders immediately while the network answer refreshes it. The default,
-	// `cache-first`, would hand back a stale entity forever once it had been read once.
-	requestPolicy: 'cache-and-network'
+	// In the browser: cached data renders immediately while the network answer refreshes it. The
+	// default, `cache-first`, would hand back a stale entity forever once it had been read once.
+	//
+	// On the server: never answer from the cache. This client is a module-level singleton, so the
+	// cache is shared by every request the process handles, and reading from it hands one visitor's
+	// data to the next. `myOIDCRoles` was the sharp edge - same document, no variables - so whoever
+	// warmed the cache decided what everybody else was allowed to see.
+	requestPolicy: browser ? 'cache-and-network' : 'network-only'
 });
