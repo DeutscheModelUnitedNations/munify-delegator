@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { type PageData } from './$houdini';
-	import { cache, graphql } from '$houdini';
+	import type { PageProps } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		downloadCompletePostalRegistrationPDF,
 		type ParticipantData,
@@ -9,42 +9,46 @@
 	} from '$lib/utils/pdfGenerator';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import formatNames, { formatInitials } from '$lib/helpers/formatNames';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 
-	let { data }: { data: PageData } = $props();
+	let { data }: PageProps = $props();
 
 	const conferenceData = $derived(data.participation);
 	const conference = $derived(conferenceData?.conference);
 	const userData = $derived(data.user);
 	const userId = $derived(userData.sub);
 
-	const userQuery = graphql(`
-		query GetUserDetails($id: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $id }) {
-				id
-				given_name
-				family_name
-				street
-				apartment
-				zip
-				city
-				country
-				birthday
-			}
+	function fetchDetails(id: string, conferenceId: string) {
+		return Promise.all([
+			client.query.user({
+				__args: { id },
+				id: true,
+				givenName: true,
+				familyName: true,
+				street: true,
+				apartment: true,
+				zip: true,
+				city: true,
+				country: true,
+				birthday: true
+			}),
+			client.query.conference({
+				__args: { id: conferenceId },
+				id: true,
+				contractContent: true,
+				guardianConsentContent: true,
+				mediaConsentContent: true,
+				termsAndConditionsContent: true
+			})
+		]);
+	}
 
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				contractContent
-				guardianConsentContent
-				mediaConsentContent
-				termsAndConditionsContent
-			}
-		}
-	`);
+	type Details = Awaited<ReturnType<typeof fetchDetails>>;
 
-	let userQueryData = $derived($userQuery.data?.findUniqueUser);
+	let details = $state<Details>();
+	let userQueryData = $derived(details?.[0]);
 	let userDataNotComplete = $derived(
 		!(
 			userQueryData?.street &&
@@ -58,19 +62,20 @@
 	let loading = $state(false);
 
 	$effect(() => {
-		userQuery.fetch({
-			variables: { id: userId, conferenceId: conference!.id }
+		const conferenceId = conference?.id;
+		if (!conferenceId) return;
+		void fetchDetails(userId, conferenceId).then((result) => {
+			details = result;
 		});
 	});
 
 	async function handleGeneratePDF() {
 		loading = true;
 		try {
-			cache.markStale();
 			await invalidateAll();
 
-			const user = $userQuery?.data?.findUniqueUser;
-			const conferenceData = $userQuery?.data?.findUniqueConference;
+			const user = details?.[0];
+			const conferenceConsents = details?.[1];
 
 			if (user) {
 				if (!user.street || !user.zip || !user.city || !user.country || !user.birthday) {
@@ -89,7 +94,7 @@
 
 				const participantData: ParticipantData = {
 					id: user.id,
-					name: formatNames(user.given_name, user.family_name, {
+					name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 						givenNameFirst: true,
 						familyNameUppercase: true,
 						givenNameUppercase: true
@@ -102,11 +107,11 @@
 					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
 					participantData,
 					recipientData,
-					conferenceData?.contractContent ?? undefined,
-					conferenceData?.guardianConsentContent ?? undefined,
-					conferenceData?.mediaConsentContent ?? undefined,
-					conferenceData?.termsAndConditionsContent ?? undefined,
-					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
+					conferenceConsents?.contractContent ?? undefined,
+					conferenceConsents?.guardianConsentContent ?? undefined,
+					conferenceConsents?.mediaConsentContent ?? undefined,
+					conferenceConsents?.termsAndConditionsContent ?? undefined,
+					`${formatInitials(user.givenName ?? undefined, user.familyName ?? undefined)}_postal_registration.pdf`
 				);
 
 				toast.success(m.postalRegistrationPDFGenerated());
@@ -134,7 +139,7 @@
 				: 'Date unknown'
 		})}
 
-		{#if $userQuery.data}
+		{#if details}
 			{#if userDataNotComplete}
 				<div class="alert alert-warning mt-4">
 					<i class="fas fa-exclamation-triangle text-3xl"></i>
@@ -156,8 +161,8 @@
 						<div class="grid grid-cols-[auto_1fr] gap-4 items-center bg-base-100 p-4 rounded-box">
 							<i class="fa-duotone fa-user"></i>
 							<div>
-								{userQueryData?.given_name}
-								{userQueryData?.family_name}
+								{userQueryData?.givenName}
+								{userQueryData?.familyName}
 							</div>
 							<i class="fa-duotone fa-home"></i>
 							<div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
@@ -60,20 +60,6 @@
 
 	let scannedCode = $state<string | null>('');
 	let scannerRef = $state<BarcodeScanner>();
-
-	// --- Mutation ---
-
-	const createAttendanceEntryMutation = graphql(`
-		mutation createAttendanceEntryForScanner(
-			$userId: String!
-			$conferenceId: String!
-			$occasion: String!
-		) {
-			createOneAttendanceEntry(userId: $userId, conferenceId: $conferenceId, occasion: $occasion) {
-				id
-			}
-		}
-	`);
 
 	// --- Stats counters (independent of queue lifecycle) ---
 
@@ -207,13 +193,15 @@
 				}
 
 				try {
-					await createAttendanceEntryMutation.mutate({
-						userId: pendingEntry.userId,
-						conferenceId,
-						occasion: occasion.trim()
+					await client.mutate.createAttendanceEntry({
+						__args: {
+							userId: pendingEntry.userId,
+							conferenceId,
+							occasion: occasion.trim()
+						},
+						id: true
 					});
 
-					cache.markStale();
 					pendingEntry.status = 'success';
 					queue = [...queue];
 					syncedScansCounter += 1;

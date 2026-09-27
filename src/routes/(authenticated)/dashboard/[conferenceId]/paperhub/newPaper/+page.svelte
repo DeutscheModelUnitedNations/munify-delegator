@@ -5,7 +5,8 @@
 	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
-	import { cache, graphql, type PaperType$options } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
@@ -176,32 +177,6 @@
 	let committee = $derived(delegationMember?.assignedCommittee);
 	let conferenceAgendaItems = $derived(data.conferenceAgendaItems);
 
-	const createPaperMutation = graphql(`
-		mutation CreatePaperMutation(
-			$conferenceId: String!
-			$userId: String!
-			$delegationId: String!
-			$type: PaperType!
-			$content: Json!
-			$agendaItemId: String
-			$status: PaperStatus
-		) {
-			createOnePaper(
-				data: {
-					conferenceId: $conferenceId
-					authorId: $userId
-					delegationId: $delegationId
-					type: $type
-					content: $content
-					status: $status
-					agendaItemId: $agendaItemId
-				}
-			) {
-				id
-			}
-		}
-	`);
-
 	let form = superForm(data.form, {
 		onSubmit: (input) => {
 			// We don't want to send a POST request to the server, instead we are handling the GraphQL mutation locally
@@ -210,7 +185,7 @@
 	});
 	let { form: formData } = $derived(form);
 
-	const typeOptions: { value: PaperType$options; label: string }[] = $derived.by(() => {
+	const typeOptions: { value: PapertypeEnum; label: string }[] = $derived.by(() => {
 		if (delegation?.assignedNonStateActor) {
 			return [
 				{ value: 'INTRODUCTION_PAPER', label: m.paperTypeIntroductionPaper() },
@@ -263,14 +238,23 @@
 			return;
 		}
 
-		const promise = createPaperMutation.mutate({
-			conferenceId: data.conferenceId,
-			userId: data.user.sub,
-			delegationId: delegation?.id,
-			type: $formData.type,
-			content,
-			agendaItemId: $formData.type === 'INTRODUCTION_PAPER' ? undefined : $formData.agendaItemId,
-			status: submit ? 'SUBMITTED' : 'DRAFT'
+		const delegationId = delegation?.id;
+		if (!delegationId) {
+			toast.error(m.paperSaveDraftError());
+			return;
+		}
+
+		const promise = client.mutate.createPaper({
+			__args: {
+				conferenceId: data.conferenceId,
+				authorId: data.user.sub,
+				delegationId,
+				type: $formData.type,
+				content,
+				agendaItemId: $formData.type === 'INTRODUCTION_PAPER' ? undefined : $formData.agendaItemId,
+				status: submit ? 'SUBMITTED' : 'DRAFT'
+			},
+			id: true
 		});
 		toast.promise(promise, {
 			loading: submit ? m.paperSubmitting() : m.paperSavingDraft(),
@@ -278,12 +262,11 @@
 			error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
 		});
 
-		const response = await promise;
+		const created = await promise;
 
-		cache.markStale();
 		await invalidateAll();
 
-		if (response?.data?.createOnePaper?.id) {
+		if (created.id) {
 			// Clear store so next paper creation starts fresh
 			$editorContentStore = undefined;
 			// Clear localStorage draft on successful submission
