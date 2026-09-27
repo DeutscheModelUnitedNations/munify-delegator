@@ -261,10 +261,15 @@ bun run preview
   stay a remote function: `client.ts` is shared with the browser, and only a remote import is
   stubbed out there. Needs `kit.experimental.remoteFunctions` in `svelte.config.js`.
 - **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
-  mutation publishes to the tables it writes, so open queries are told to refresh themselves. Reach
-  for an explicit refetch only where a page holds data outside a `liveQuery`. `invalidateAll()`
-  still re-runs the remaining `load` functions (the layouts), but it does not reach a component's
-  own fetch.
+  mutation publishes to the tables it writes, so open queries are told to refresh themselves. Fetch
+  with `liveQuery`, not `query`, anywhere a component displays the result — `query` is for one-shot
+  reads inside an event handler and for `load` functions, which are not reactive either way.
+- **`invalidateAll()` is for load data only.** It still re-runs the surviving loads, which is why
+  the dashboard keeps it (the signed-in person's participation comes from a layout load) and so do
+  the pages with form actions. It does nothing for a component's own fetch, so do not reach for it
+  there; a component that cannot be live refreshes by calling its own fetch function again, and a
+  child component tells its parent through a callback (`onUpdate`, `onSaved`) rather than
+  invalidating the world.
 
 #### 3. Authentication & Authorization
 
