@@ -6,7 +6,6 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
 	import type { PageData } from './$types';
-	import { invalidateAll } from '$app/navigation';
 	import codenmz from '$lib/helpers/codenamize';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
@@ -95,7 +94,6 @@
 				members: { id: true, isHeadDelegate: true }
 			});
 			await loadDelegation(delegationId);
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
 		} finally {
@@ -118,7 +116,6 @@
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
 			await loadDelegation(delegationId);
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to change school name:', error);
 		}
@@ -370,7 +367,6 @@
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
 				await loadDelegation(delegationId);
-				await invalidateAll();
 			}}
 		>
 			<i class="fas fa-file-slash"></i>

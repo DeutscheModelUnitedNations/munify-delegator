@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
@@ -30,7 +29,6 @@
 		} catch {
 			// handled by toast
 		} finally {
-			await invalidateAll();
 			isMutating = false;
 		}
 	}
@@ -48,7 +46,6 @@
 		} catch {
 			// handled by toast
 		} finally {
-			await invalidateAll();
 			isMutating = false;
 		}
 	}

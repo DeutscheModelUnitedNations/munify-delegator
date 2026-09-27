@@ -2,7 +2,6 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { invalidateAll } from '$app/navigation';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { page } from '$app/stores';
 
@@ -35,7 +34,6 @@
 			});
 			if (result.success) {
 				toast.success(m.invitationRevoked());
-				await invalidateAll();
 			} else {
 				toast.error(result.message ?? m.httpGenericError());
 			}
@@ -61,7 +59,6 @@
 					await navigator.clipboard.writeText(inviteUrl);
 					toast.success(m.linkCopied());
 				}
-				await invalidateAll();
 			} else {
 				toast.error(result.message ?? m.httpGenericError());
 			}
@@ -81,7 +78,6 @@
 
 			if (result.success) {
 				toast.success(m.invitationResent());
-				await invalidateAll();
 			} else {
 				toast.error(result.message ?? m.httpGenericError());
 			}

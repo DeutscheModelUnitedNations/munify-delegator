@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageProps } from './$types';
@@ -28,7 +27,6 @@
 		});
 		try {
 			await promise;
-			await invalidateAll();
 			signedUp = value;
 		} finally {
 			loading = false;

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import formatNames from '$lib/helpers/formatNames';
@@ -19,6 +18,8 @@
 		pronouns?: string | null;
 		gender?: string | null;
 		loading?: boolean;
+		/** Called after unregistering, so the card reloads what it shows. */
+		onUpdate?: () => void;
 		mode: 'drawer' | 'page';
 		delegationMember?: {
 			id: string;
@@ -60,6 +61,7 @@
 		pronouns,
 		gender,
 		loading = false,
+		onUpdate,
 		mode,
 		delegationMember,
 		singleParticipant,
@@ -185,7 +187,7 @@
 				__args: { conferenceId, userId },
 				id: true
 			});
-			await invalidateAll();
+			onUpdate?.();
 			deleteModalOpen = false;
 			toast.success(m.genericToastSuccess());
 			onDelete?.();

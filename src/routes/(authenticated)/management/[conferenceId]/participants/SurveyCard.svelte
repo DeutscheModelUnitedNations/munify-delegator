@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 
@@ -12,9 +11,11 @@
 		surveyAnswer?: { id: string; option: { id: string; title: string } };
 		conferenceId: string;
 		userId: string;
+		/** Called once the answer is stored, so the caller can reload what it shows. */
+		onAnswered?: () => void;
 	}
 
-	let { survey, surveyAnswer, conferenceId, userId }: Props = $props();
+	let { survey, surveyAnswer, conferenceId, userId, onAnswered }: Props = $props();
 
 	let optionsOpen = $state(false);
 
@@ -25,8 +26,8 @@
 			id: true,
 			option: { id: true, title: true }
 		});
-		await invalidateAll();
 		loading = false;
+		onAnswered?.();
 	};
 
 	let loading = $state(false);

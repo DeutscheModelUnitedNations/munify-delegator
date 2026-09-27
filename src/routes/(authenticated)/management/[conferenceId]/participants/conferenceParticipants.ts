@@ -28,13 +28,13 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 		teamMembers,
 		participantStatuses
 	] = await Promise.all([
-		client.query.conference({
+		client.liveQuery.conference({
 			__args: { id: conferenceId },
 			state: true,
 			startConference: true,
 			endConference: true
 		}),
-		client.query.delegationMembers({
+		client.liveQuery.delegationMembers({
 			__args: inConference,
 			isHeadDelegate: true,
 			assignedCommittee: { name: true, abbreviation: true },
@@ -50,7 +50,7 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 			},
 			user: participantUser
 		}),
-		client.query.conferenceSupervisors({
+		client.liveQuery.conferenceSupervisors({
 			__args: inConference,
 			plansOwnAttendenceAtConference: true,
 			supervisedDelegationMembers: {
@@ -62,15 +62,15 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 			supervisedSingleParticipants: { assignedRole: { id: true } },
 			user: participantUser
 		}),
-		client.query.singleParticipants({
+		client.liveQuery.singleParticipants({
 			__args: inConference,
 			applied: true,
 			school: true,
 			assignedRole: { name: true, fontAwesomeIcon: true },
 			user: participantUser
 		}),
-		client.query.teamMembers({ __args: inConference, role: true, user: participantUser }),
-		client.query.conferenceParticipantStatuses({
+		client.liveQuery.teamMembers({ __args: inConference, role: true, user: participantUser }),
+		client.liveQuery.conferenceParticipantStatuses({
 			__args: inConference,
 			user: { id: true },
 			paymentStatus: true,

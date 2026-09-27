@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -74,8 +73,6 @@
 				);
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
-
-				await invalidateAll();
 			} finally {
 				loading = false;
 			}
@@ -130,8 +127,6 @@
 											});
 											toast.promise(promise, genericPromiseToastMessages);
 											await promise;
-
-											await invalidateAll();
 										} finally {
 											loading = false;
 										}

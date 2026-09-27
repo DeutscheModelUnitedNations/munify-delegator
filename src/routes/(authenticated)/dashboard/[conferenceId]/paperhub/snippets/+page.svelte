@@ -22,7 +22,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import type { PageData } from './$types';
 	import Modal from '$lib/components/Modal.svelte';
@@ -186,7 +185,6 @@
 				toast.success(m.snippetSaved());
 			}
 			closeModal();
-			await invalidateAll();
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : m.genericError();
 			toast.error(message);
@@ -206,7 +204,6 @@
 			toast.success(m.snippetDeleted());
 			deleteConfirmOpen = false;
 			deletingSnippet = null;
-			await invalidateAll();
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : m.genericError();
 			toast.error(message);

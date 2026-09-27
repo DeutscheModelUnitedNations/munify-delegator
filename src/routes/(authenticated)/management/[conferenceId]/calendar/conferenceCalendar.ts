@@ -15,7 +15,7 @@ const placeSelection = {
 /** The whole programme of a conference: its days with tracks and entries, plus its places. */
 export async function fetchConferenceCalendar(conferenceId: string) {
 	const [calendarDays, places, conference] = await Promise.all([
-		client.query.calendarDays({
+		client.liveQuery.calendarDays({
 			__args: {
 				where: { conferenceId: { eq: conferenceId } },
 				orderBy: { sortOrder: 'asc' }
@@ -39,14 +39,14 @@ export async function fetchConferenceCalendar(conferenceId: string) {
 				calendarTrackId: true
 			}
 		}),
-		client.query.places({
+		client.liveQuery.places({
 			__args: {
 				where: { conferenceId: { eq: conferenceId } },
 				orderBy: { name: 'asc' }
 			},
 			...placeSelection
 		}),
-		client.query.conference({ __args: { id: conferenceId }, timezone: true })
+		client.liveQuery.conference({ __args: { id: conferenceId }, timezone: true })
 	]);
 	return {
 		calendarDays,

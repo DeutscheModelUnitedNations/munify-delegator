@@ -3,7 +3,6 @@
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import Flag from '$lib/components/Flag.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
@@ -22,9 +21,10 @@
 			role?: string | null;
 		} | null;
 		conferenceState?: string | null;
+		onUpdate?: () => void;
 	}
 
-	let { singleParticipant, teamMember, conferenceState }: Props = $props();
+	let { singleParticipant, teamMember, conferenceState, onUpdate }: Props = $props();
 </script>
 
 <div class="flex flex-col gap-6">
@@ -73,7 +73,7 @@
 						});
 						toast.promise(promise, genericPromiseToastMessages);
 						await promise;
-						await invalidateAll();
+						onUpdate?.();
 					}}
 				>
 					<i class="fa-solid fa-file-slash"></i>

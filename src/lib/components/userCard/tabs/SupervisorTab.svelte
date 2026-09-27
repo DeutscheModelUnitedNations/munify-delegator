@@ -4,7 +4,6 @@
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
-	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import codenmz from '$lib/helpers/codenamize';
 	import Flag from '$lib/components/Flag.svelte';
@@ -117,7 +116,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		onUpdate?.();
 	};
 
@@ -130,7 +128,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		onUpdate?.();
 	};
 </script>

@@ -3,7 +3,6 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { invalidateAll } from '$app/navigation';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { configPublic } from '$config/public';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
@@ -142,7 +141,6 @@
 				});
 			}
 
-			await invalidateAll();
 			handleClose();
 		} catch (error) {
 			toast.error(m.httpGenericError());

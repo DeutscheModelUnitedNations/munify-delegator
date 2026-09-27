@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
@@ -9,9 +8,11 @@
 		globalNotes: string;
 		open: boolean;
 		id?: string;
+		/** Called once the note is stored, so the caller can reload what it shows. */
+		onSaved?: () => void;
 	}
 
-	let { globalNotes, open = $bindable(false), id }: Props = $props();
+	let { globalNotes, open = $bindable(false), id, onSaved }: Props = $props();
 
 	let value = $state(globalNotes);
 
@@ -28,9 +29,9 @@
 			loading: m.saving()
 		});
 		await promise;
-		await invalidateAll();
 
 		open = false;
+		onSaved?.();
 	};
 </script>
 

@@ -5,7 +5,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import type { PageData } from './$types';
-	import { invalidateAll } from '$app/navigation';
 	import {
 		datetimeLocalToDate,
 		dateToDatetimeLocal,
@@ -126,7 +125,6 @@
 				__args: { id: survey.id, draft: !survey.draft },
 				id: true
 			});
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle draft status:', error);
 		} finally {
@@ -142,7 +140,6 @@
 				__args: { id: survey.id, hidden: !survey.hidden },
 				id: true
 			});
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle hidden status:', error);
 		} finally {
@@ -158,7 +155,6 @@
 				__args: { id: survey.id, showSelectionOnDashboard: !survey.showSelectionOnDashboard },
 				id: true
 			});
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle showSelectionOnDashboard:', error);
 		} finally {
@@ -188,7 +184,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			editingSurvey = false;
 		} catch (error) {
 			console.error('Failed to update survey:', error);
@@ -217,7 +212,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showCreateOptionModal = false;
 		} catch (error) {
 			console.error('Failed to create option:', error);
@@ -246,7 +240,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			editingOption = null;
 		} catch (error) {
 			console.error('Failed to update option:', error);
@@ -265,7 +258,6 @@
 		isLoading = true;
 		try {
 			await client.mutate.deleteSurveyOption({ __args: { id: optionToDelete.id } });
-			await invalidateAll();
 			showDeleteOptionModal = false;
 			optionToDelete = null;
 		} catch (error) {

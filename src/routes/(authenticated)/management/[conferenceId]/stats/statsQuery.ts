@@ -3,7 +3,7 @@ import type { StatsFilter } from '$lib/api/rumbleClient/client';
 
 /** The whole statistics dashboard in one request. */
 export function fetchConferenceStatistics(conferenceId: string, filter: StatsFilter) {
-	return client.query.getConferenceStatistics({
+	return client.liveQuery.getConferenceStatistics({
 		__args: { conferenceId, filter },
 		addresses: {
 			country: true,

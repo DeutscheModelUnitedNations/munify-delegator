@@ -15,7 +15,7 @@
 	/** The published questions plus this person's answers to them. */
 	async function fetchSurveys() {
 		const [questions, answers] = await Promise.all([
-			client.query.surveyQuestions({
+			client.liveQuery.surveyQuestions({
 				__args: {
 					where: {
 						conferenceId: { eq: conferenceId },
@@ -37,7 +37,7 @@
 					countSurveyAnswers: true
 				}
 			}),
-			client.query.surveyAnswers({
+			client.liveQuery.surveyAnswers({
 				__args: {
 					where: {
 						question: { conferenceId: { eq: conferenceId }, hidden: { eq: false } },

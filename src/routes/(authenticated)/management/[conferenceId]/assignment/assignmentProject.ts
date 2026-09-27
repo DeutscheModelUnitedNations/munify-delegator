@@ -5,7 +5,7 @@ export async function fetchAssignmentProject(conferenceId: string) {
 	const applied = { where: { conferenceId: { eq: conferenceId }, applied: { eq: true } } };
 
 	const [delegations, singleParticipants, conference] = await Promise.all([
-		client.query.delegations({
+		client.liveQuery.delegations({
 			__args: applied,
 			id: true,
 			school: true,
@@ -28,7 +28,7 @@ export async function fetchAssignmentProject(conferenceId: string) {
 				supervisors: { id: true, user: { id: true } }
 			}
 		}),
-		client.query.singleParticipants({
+		client.liveQuery.singleParticipants({
 			__args: applied,
 			id: true,
 			school: true,
@@ -36,7 +36,7 @@ export async function fetchAssignmentProject(conferenceId: string) {
 			user: { id: true },
 			appliedForRoles: { id: true, fontAwesomeIcon: true, name: true }
 		}),
-		client.query.conference({
+		client.liveQuery.conference({
 			__args: { id: conferenceId },
 			id: true,
 			title: true,

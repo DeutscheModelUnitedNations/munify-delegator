@@ -6,7 +6,6 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from '../../../../routes/(authenticated)/management/[conferenceId]/delegations/CommitteeAssignmentModal.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
@@ -105,7 +104,7 @@
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			await invalidateAll();
+			await loadDelegation();
 		} catch (error) {
 			console.error('Failed to change school name:', error);
 		}
@@ -120,7 +119,7 @@
 				id: true,
 				members: { id: true, isHeadDelegate: true }
 			});
-			await invalidateAll();
+			await loadDelegation();
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
 		} finally {
@@ -219,7 +218,6 @@
 					});
 					toast.promise(promise, genericPromiseToastMessages);
 					await promise;
-					await invalidateAll();
 					await loadDelegation();
 				}}
 			>
@@ -257,7 +255,7 @@
 						});
 						toast.promise(promise, genericPromiseToastMessages);
 						await promise;
-						await invalidateAll();
+						await loadDelegation();
 					}}
 				>
 					<i class="fa-solid fa-file-slash"></i>

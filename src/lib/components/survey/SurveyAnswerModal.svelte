@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import DeadlineDisplay from '$lib/components/DeadlineDisplay.svelte';
@@ -54,7 +53,6 @@
 				question: { id: true },
 				option: { id: true, countSurveyAnswers: true }
 			});
-			await invalidateAll();
 			open = false;
 		} finally {
 			loading = false;

@@ -248,6 +248,7 @@
 			closeUserCard();
 			refetchData();
 		}}
+		onUpdate={refetchData}
 	/>
 
 	<UserCardTabs
@@ -295,7 +296,12 @@
 				onUpdate={refetchData}
 			/>
 		{:else if activeTab === 'role' && (isSingleParticipant || isTeamMember)}
-			<RoleTab {singleParticipant} {teamMember} conferenceState={conference?.state} />
+			<RoleTab
+				{singleParticipant}
+				{teamMember}
+				conferenceState={conference?.state}
+				onUpdate={refetchData}
+			/>
 		{:else if activeTab === 'delegation' && delegationMember}
 			<DelegationTab
 				delegationId={delegationMember.delegation.id}

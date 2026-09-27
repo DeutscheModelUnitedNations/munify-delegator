@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
 	import type { PageData } from './$types';
@@ -137,7 +136,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		await loadUserData(userId);
 	};
 

@@ -3,7 +3,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
-	import { invalidateAll } from '$app/navigation';
 	import { datetimeLocalToDate, formatInTimezone } from '$lib/helpers/conferenceTimezoneDate';
 
 	let { data }: { data: PageData } = $props();
@@ -81,7 +80,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showCreateModal = false;
 			createTitle = '';
 			createDescription = '';
@@ -100,7 +98,6 @@
 				__args: { id, draft: !currentDraft },
 				id: true
 			});
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle draft status:', error);
 		} finally {
@@ -115,7 +112,6 @@
 				__args: { id, hidden: !currentHidden },
 				id: true
 			});
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle hidden status:', error);
 		} finally {
@@ -130,7 +126,6 @@
 				__args: { id, showSelectionOnDashboard: !currentValue },
 				id: true
 			});
-			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle showSelectionOnDashboard:', error);
 		} finally {
@@ -143,7 +138,6 @@
 		isLoading = true;
 		try {
 			await client.mutate.deleteSurveyQuestion({ __args: { id: surveyToDelete.id } });
-			await invalidateAll();
 			showDeleteModal = false;
 			surveyToDelete = null;
 		} catch (error) {

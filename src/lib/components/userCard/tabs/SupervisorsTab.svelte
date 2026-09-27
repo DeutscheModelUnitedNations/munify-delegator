@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import Modal from '$lib/components/Modal.svelte';
@@ -102,7 +101,6 @@
 		});
 		await promise;
 		assignSupervisorModalOpen = false;
-		await invalidateAll();
 		await loadSupervisors();
 		onUpdate?.();
 	};

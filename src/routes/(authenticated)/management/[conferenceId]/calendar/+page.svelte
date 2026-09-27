@@ -3,7 +3,6 @@
 	import { fetchConferenceCalendar } from './conferenceCalendar';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
-	import { invalidateAll } from '$app/navigation';
 	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
 	import ColorPaletteSelector from '$lib/components/calendar/ColorPaletteSelector.svelte';
 	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
@@ -283,7 +282,6 @@
 					id: true
 				});
 			}
-			await invalidateAll();
 			showCreateDayModal = false;
 		} catch (error) {
 			console.error('Failed to create day:', error);
@@ -305,7 +303,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showEditDayModal = false;
 			dayToEdit = null;
 		} catch (error) {
@@ -320,7 +317,6 @@
 		isLoading = true;
 		try {
 			await client.mutate.deleteCalendarDay({ __args: { id: dayToDelete.id } });
-			await invalidateAll();
 			showDeleteDayModal = false;
 			dayToDelete = null;
 		} catch (error) {
@@ -369,7 +365,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showCreateTrackModal = false;
 		} catch (error) {
 			console.error('Failed to create track:', error);
@@ -391,7 +386,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showEditTrackModal = false;
 			trackToEdit = null;
 		} catch (error) {
@@ -406,7 +400,6 @@
 		isLoading = true;
 		try {
 			await client.mutate.deleteCalendarTrack({ __args: { id: trackToDelete.id } });
-			await invalidateAll();
 			showDeleteTrackModal = false;
 			trackToDelete = null;
 		} catch (error) {
@@ -526,7 +519,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showChangeDayModal = false;
 			entryToMove = null;
 		} catch (error) {
@@ -582,7 +574,6 @@
 			if (failures.length > 0) {
 				console.error(`Failed to copy ${failures.length} entries:`, failures);
 			}
-			await invalidateAll();
 			showCopyDayModal = false;
 		} catch (error) {
 			console.error('Failed to copy entries:', error);
@@ -626,7 +617,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showCreateEntryModal = false;
 		} catch (error) {
 			console.error('Failed to create entry:', error);
@@ -655,7 +645,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showEditEntryModal = false;
 			entryToEdit = null;
 		} catch (error) {
@@ -670,7 +659,6 @@
 		isLoading = true;
 		try {
 			await client.mutate.deleteCalendarEntry({ __args: { id: entryToDelete.id } });
-			await invalidateAll();
 			showDeleteEntryModal = false;
 			entryToDelete = null;
 		} catch (error) {
@@ -836,7 +824,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showCreatePlaceModal = false;
 		} catch (error) {
 			console.error('Failed to create place:', error);
@@ -863,7 +850,6 @@
 				},
 				id: true
 			});
-			await invalidateAll();
 			showEditPlaceModal = false;
 			placeToEdit = null;
 		} catch (error) {
@@ -878,7 +864,6 @@
 		isLoading = true;
 		try {
 			await client.mutate.deletePlace({ __args: { id: placeToDelete.id } });
-			await invalidateAll();
 			showDeletePlaceModal = false;
 			placeToDelete = null;
 		} catch (error) {

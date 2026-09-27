@@ -4,7 +4,7 @@
 	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
@@ -98,8 +98,6 @@
 			error: m.deleteTeamMemberError()
 		});
 		await promise;
-
-		await invalidateAll();
 	};
 
 	const handleImpersonate = async (userId: string) => {

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { invalidateAll } from '$app/navigation';
 	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import BooleanStatusWidget from '$lib/components/BooleanStatusWidget.svelte';
@@ -116,7 +115,6 @@
 			error: m.genericToastError()
 		});
 		await promise;
-		await invalidateAll();
 		onUpdate?.();
 	};
 
@@ -312,7 +310,6 @@
 			{conferenceId}
 			entries={status?.attendanceEntries ?? []}
 			onChanged={async () => {
-				await invalidateAll();
 				onUpdate?.();
 			}}
 		/>

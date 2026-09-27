@@ -39,6 +39,7 @@
 				surveyAnswer={surveyAnswers?.find((a) => a.question.id === survey.id)}
 				{conferenceId}
 				{userId}
+				onAnswered={onUpdate}
 			/>
 		{/each}
 	</div>

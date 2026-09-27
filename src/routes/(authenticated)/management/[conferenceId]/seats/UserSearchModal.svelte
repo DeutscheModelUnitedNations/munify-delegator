@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -73,7 +72,6 @@
 			await addParticipant();
 			open = false;
 			user = undefined;
-			await invalidateAll();
 			if ($params.assignUserId) {
 				$params.assignUserId = null;
 			}

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
@@ -27,7 +26,6 @@
 				__args: { id: data.conferenceId, info, showInfoExpanded },
 				id: true
 			});
-			await invalidateAll();
 			toast.success(m.saved());
 		} finally {
 			saving = false;

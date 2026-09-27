@@ -19,7 +19,6 @@
 	import { toast } from 'svelte-sonner';
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
-	import { invalidateAll } from '$app/navigation';
 	import ImpersonationButton from './ImpersonationButton.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -222,7 +221,6 @@
 		});
 		await promise;
 		assignSupervisorModalOpen = false;
-		await invalidateAll();
 	};
 
 	const deleteParticipant = async () => {
@@ -505,6 +503,7 @@
 				globalNotes={user?.globalNotes ?? ''}
 				bind:open={openGlobalNotes}
 				id={user?.id}
+				onSaved={loadUserData}
 			/>
 		</div>
 	{/if}

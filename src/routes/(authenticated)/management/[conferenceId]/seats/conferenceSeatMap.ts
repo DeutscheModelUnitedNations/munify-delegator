@@ -8,20 +8,20 @@ export async function fetchConferenceSeatMap(conferenceId: string) {
 
 	const [committees, nations, roles, delegations, nonStateActors, singleParticipants, supervisors] =
 		await Promise.all([
-			client.query.committees({
+			client.liveQuery.committees({
 				__args: inConference,
 				id: true,
 				name: true,
 				abbreviation: true,
 				numOfSeatsPerDelegation: true
 			}),
-			client.query.nations({
+			client.liveQuery.nations({
 				__args: { where: { committees: { conferenceId: { eq: conferenceId } } } },
 				alpha2Code: true,
 				alpha3Code: true,
 				committees: { id: true, numOfSeatsPerDelegation: true }
 			}),
-			client.query.customConferenceRoles({
+			client.liveQuery.customConferenceRoles({
 				__args: inConference,
 				id: true,
 				name: true,
@@ -29,7 +29,7 @@ export async function fetchConferenceSeatMap(conferenceId: string) {
 				fontAwesomeIcon: true,
 				seatAmount: true
 			}),
-			client.query.delegations({
+			client.liveQuery.delegations({
 				__args: inConference,
 				id: true,
 				assignedNation: { alpha2Code: true, alpha3Code: true },
@@ -41,7 +41,7 @@ export async function fetchConferenceSeatMap(conferenceId: string) {
 					user: seatHolder
 				}
 			}),
-			client.query.nonStateActors({
+			client.liveQuery.nonStateActors({
 				__args: inConference,
 				id: true,
 				name: true,
@@ -49,7 +49,7 @@ export async function fetchConferenceSeatMap(conferenceId: string) {
 				fontAwesomeIcon: true,
 				seatAmount: true
 			}),
-			client.query.singleParticipants({
+			client.liveQuery.singleParticipants({
 				__args: inConference,
 				id: true,
 				user: seatHolder,
@@ -61,7 +61,7 @@ export async function fetchConferenceSeatMap(conferenceId: string) {
 					seatAmount: true
 				}
 			}),
-			client.query.conferenceSupervisors({ __args: inConference, id: true, user: seatHolder })
+			client.liveQuery.conferenceSupervisors({ __args: inConference, id: true, user: seatHolder })
 		]);
 
 	return {

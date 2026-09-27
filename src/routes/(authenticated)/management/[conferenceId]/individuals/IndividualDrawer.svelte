@@ -6,7 +6,6 @@
 	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { invalidateAll } from '$app/navigation';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	interface Props {
@@ -63,7 +62,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		await loadSingleParticipant(singleParticipant.id);
-		await invalidateAll();
 	};
 </script>
 

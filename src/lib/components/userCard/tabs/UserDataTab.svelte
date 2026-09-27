@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
@@ -125,7 +124,6 @@
 			try {
 				await promise;
 				editing = false;
-				await invalidateAll();
 				onUpdate?.();
 			} catch {
 				// Error already shown by toast.promise
@@ -405,5 +403,10 @@
 {/if}
 
 {#if user}
-	<GlobalNotes globalNotes={user.globalNotes ?? ''} bind:open={globalNotesOpen} id={user.id} />
+	<GlobalNotes
+		globalNotes={user.globalNotes ?? ''}
+		bind:open={globalNotesOpen}
+		id={user.id}
+		onSaved={onUpdate}
+	/>
 {/if}
