@@ -7,6 +7,7 @@
 	import Flag from '../Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import ImpersonationButton from '../../../routes/(authenticated)/management/[conferenceId]/participants/ImpersonationButton.svelte';
+	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import Modal from '../Modal.svelte';
 	import { configPublic } from '$config/public';
 
@@ -247,9 +248,11 @@
 						</div>
 					{/if}
 
-					<div class="tooltip tooltip-bottom" data-tip={m.impersonation()}>
-						<ImpersonationButton {userId} iconOnly />
-					</div>
+					{#if IMPERSONATION_ENABLED}
+						<div class="tooltip tooltip-bottom" data-tip={m.impersonation()}>
+							<ImpersonationButton {userId} iconOnly />
+						</div>
+					{/if}
 
 					{#if isParticipant}
 						<div class="tooltip tooltip-bottom" data-tip={m.deleteParticipant()}>

@@ -4,10 +4,19 @@ import {
 	isTokenExpired,
 	pendingInvitationCookieName
 } from '$api/services/invitationToken';
-import { startSignin, codeVerifierCookieName, oidcStateCookieName } from '$api/services/OIDC';
+import { claimPendingInvitation } from '$api/services/upsertSelf';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 
+/**
+ * Turns an emailed invitation link into a conference membership.
+ *
+ * This has to be a server load: it reads a secret out of the query string, checks it against the
+ * database and hands the browser a cookie, none of which a component can do. The login itself is
+ * left to the OIDC handle — redirecting to the (protected) conference dashboard is what starts it,
+ * and `userLoggedInSuccessfully` redeems the cookie once the person is back. Someone who is
+ * already signed in never passes through that callback, so they are redeemed here instead.
+ */
 export const load: PageServerLoad = async (event) => {
 	const token = event.url.searchParams.get('token');
 
@@ -48,23 +57,10 @@ export const load: PageServerLoad = async (event) => {
 		httpOnly: true
 	});
 
-	// Start OIDC login flow with the conference dashboard as target URL
-	const targetUrl = new URL(`/dashboard/${invitation.conferenceId}`, event.url.origin);
-	const { encrypted_verifier, redirect_uri, encrypted_state } = await startSignin(targetUrl);
+	const alreadySignedIn = event.locals.oidc?.user;
+	if (alreadySignedIn) {
+		await claimPendingInvitation(alreadySignedIn.sub);
+	}
 
-	event.cookies.set(codeVerifierCookieName, encrypted_verifier, {
-		sameSite: 'lax',
-		path: '/',
-		secure: true,
-		httpOnly: true
-	});
-
-	event.cookies.set(oidcStateCookieName, encrypted_state, {
-		sameSite: 'lax',
-		path: '/',
-		secure: true,
-		httpOnly: true
-	});
-
-	redirect(302, redirect_uri.toString());
+	redirect(302, `/dashboard/${invitation.conferenceId}`);
 };

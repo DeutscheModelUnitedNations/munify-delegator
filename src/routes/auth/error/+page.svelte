@@ -2,27 +2,44 @@
 	import accessDenied from '$assets/undraw/access_denied.svg';
 	import svg500 from '$assets/undraw/500.svg';
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
+	import { configPublic } from '$config/public';
 
-	interface Props {
-		data: {
-			errorType: string;
-			errorDescription: string | null;
-			supportEmail: string;
-		};
+	// Known OIDC error codes, plus the internal ones the app raises itself. Anything else is
+	// reported as unknown rather than echoed back into the page.
+	const ERROR_TYPES = [
+		'access_denied',
+		'login_required',
+		'consent_required',
+		'invalid_request',
+		'server_error',
+		'temporarily_unavailable',
+		'token_exchange_failed',
+		'state_mismatch',
+		'network_error'
+	] as const;
+
+	type ErrorType = (typeof ERROR_TYPES)[number] | 'unknown';
+
+	function isKnownErrorType(value: string | null): value is (typeof ERROR_TYPES)[number] {
+		return value !== null && ERROR_TYPES.some((type) => type === value);
 	}
 
-	let { data }: Props = $props();
+	const rawErrorType = $derived(page.url.searchParams.get('type'));
+	const errorType: ErrorType = $derived(isKnownErrorType(rawErrorType) ? rawErrorType : 'unknown');
+	const errorDescription = $derived(page.url.searchParams.get('description'));
+	const supportEmail = configPublic.PUBLIC_SUPPORT_EMAIL;
 
 	// Determine which illustration to show based on error type
 	const illustration = $derived(
-		['access_denied', 'consent_required', 'login_required'].includes(data.errorType)
+		['access_denied', 'consent_required', 'login_required'].includes(errorType)
 			? accessDenied
 			: svg500
 	);
 
 	// Get the appropriate title based on error type
 	function getTitle(): string {
-		switch (data.errorType) {
+		switch (errorType) {
 			case 'access_denied':
 				return m.authErrorAccessDeniedTitle();
 			case 'login_required':
@@ -42,7 +59,7 @@
 
 	// Get the appropriate description based on error type
 	function getDescription(): string {
-		switch (data.errorType) {
+		switch (errorType) {
 			case 'access_denied':
 				return m.authErrorAccessDeniedDescription();
 			case 'login_required':
@@ -62,11 +79,13 @@
 		}
 	}
 
-	const mailtoSubject = encodeURIComponent(`Auth Error - ${data.errorType}`);
-	const mailtoBody = encodeURIComponent(
-		`Error Type: ${data.errorType}\nDescription: ${data.errorDescription ?? 'N/A'}\n\nPlease describe what you were trying to do:\n`
-	);
-	const mailtoLink = `mailto:${data.supportEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
+	const mailtoLink = $derived.by(() => {
+		const subject = encodeURIComponent(`Auth Error - ${errorType}`);
+		const body = encodeURIComponent(
+			`Error Type: ${errorType}\nDescription: ${errorDescription ?? 'N/A'}\n\nPlease describe what you were trying to do:\n`
+		);
+		return `mailto:${supportEmail}?subject=${subject}&body=${body}`;
+	});
 </script>
 
 <main class="mx-auto flex max-w-[600px] flex-col items-center justify-center gap-8 p-4 py-12">
@@ -78,11 +97,11 @@
 		{getDescription()}
 	</p>
 
-	{#if data.errorDescription}
+	{#if errorDescription}
 		<div class="rounded-box w-full bg-base-200 p-4">
 			<p class="text-sm text-base-content/70">
 				<span class="font-medium">{m.authErrorDetails()}:</span>
-				{data.errorDescription}
+				{errorDescription}
 			</p>
 		</div>
 	{/if}
@@ -100,6 +119,6 @@
 
 	<p class="text-center text-sm text-base-content/50">
 		{m.authErrorSupportEmail()}:
-		<a href="mailto:{data.supportEmail}" class="link">{data.supportEmail}</a>
+		<a href="mailto:{supportEmail}" class="link">{supportEmail}</a>
 	</p>
 </main>

@@ -4,10 +4,10 @@
 	import { locales } from '$lib/paraglide/runtime';
 	import { m, userId } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import type { LayoutServerLoadEvent } from './$types';
+	import type { LayoutProps } from './$types';
 	import { browser } from '$app/environment';
 
-	type Parameters = keyof LayoutServerLoadEvent['params'];
+	type Parameters = keyof LayoutProps['params'];
 
 	interface LocalizedBreadcrumb {
 		translation: string;

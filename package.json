@@ -1,6 +1,7 @@
 {
 	"dependencies": {
 		"@graphql-yoga/redis-event-target": "^3.0.3",
+		"@m1212e/sveltekit-oidc": "^0.0.46",
 		"@urql/core": "^6.0.3",
 		"diff-match-patch": "^1.0.5",
 		"drizzle-orm": "1.0.0-rc.5-ab785fc",
@@ -75,7 +76,6 @@
 		"codenamize-ts": "1.0.2",
 		"concurrently": "^10.0.5",
 		"convert-iso-codes": "^1.0.10",
-		"cryptr": "^6.4.0",
 		"csv-parse": "^5.4.9",
 		"csv-stringify": "^6.6.0",
 		"daisyui": "^5.7.20",
@@ -108,7 +108,6 @@
 		"numeral": "^2.0.6",
 		"openapi-fetch": "^0.13.8",
 		"openapi-typescript": "^7.10.1",
-		"openid-client": "^6.8.1",
 		"pdf-lib": "^1.17.1",
 		"postcss": "^8.5.28",
 		"prettier": "^3.9.6",

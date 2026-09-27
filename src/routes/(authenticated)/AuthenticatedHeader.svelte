@@ -4,6 +4,7 @@
 	import { configPublic } from '$config/public';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
+	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import { openCommandPalette } from '$lib/components/commandPalette/commandPaletteState.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { headerState } from '$lib/state/authenticatedHeaderStatus.svelte';
@@ -60,9 +61,12 @@
 		void client.query.logoutUrl().then((url) => {
 			logoutUrl = String(url);
 		});
-		void fetchImpersonationStatus().then((status) => {
-			impersonationStatus = status;
-		});
+		// Stalled: the API always reports "not impersonating", so asking is a wasted round trip.
+		if (IMPERSONATION_ENABLED) {
+			void fetchImpersonationStatus().then((status) => {
+				impersonationStatus = status;
+			});
+		}
 	});
 </script>
 

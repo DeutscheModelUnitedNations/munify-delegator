@@ -1,5 +1,5 @@
 import { schemaBuilder } from '$api/rumble';
-import { getLogoutUrl, oidcRoles } from '$api/services/OIDC';
+import { OIDC, oidcRoles } from '$api/services/OIDC';
 
 const OIDCRolesEnum = schemaBuilder.enumType('OIDCRolesEnum', { values: oidcRoles });
 
@@ -56,7 +56,7 @@ schemaBuilder.queryFields((t) => ({
 	}),
 
 	logoutUrl: t.string({
-		resolve: (_root, _args, ctx) => getLogoutUrl(ctx.url).toString()
+		resolve: async (_root, _args, ctx) => (await OIDC.getLogoutUrl(ctx.url)).toString()
 	}),
 
 	/**
@@ -69,18 +69,20 @@ schemaBuilder.queryFields((t) => ({
 		resolve: (_root, _args, ctx) => {
 			const user = ctx.oidc.user;
 			if (!user) {
-				return { user: null, nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue ?? null };
+				return { user: null, nextTokenRefreshDue: null };
 			}
 
-			const passwordClaim = user['password'];
-			const mfaClaim = user['mfa'];
-			const ssoIdentitiesClaim = user['sso_identities'];
-			const socialIdentitiesClaim = user['social_identities'];
+			// Provider extras the library's parsed user does not model, read off the raw token.
+			const raw = (ctx.oidc.claims ?? {}) as Record<string, unknown>;
+			const passwordClaim = raw['password'];
+			const mfaClaim = raw['mfa'];
+			const ssoIdentitiesClaim = raw['sso_identities'];
+			const socialIdentitiesClaim = raw['social_identities'];
 
 			return {
 				user: {
 					sub: user.sub,
-					email: user.email,
+					email: user.email ?? '',
 					preferred_username: user.preferred_username ?? null,
 					family_name: user.family_name ?? null,
 					given_name: user.given_name ?? null,
@@ -91,7 +93,8 @@ schemaBuilder.queryFields((t) => ({
 					ssoIdentities: isSsoIdentitiesArrayClaim(ssoIdentitiesClaim) ? ssoIdentitiesClaim : null,
 					socialIdentities: isStringArrayClaim(socialIdentitiesClaim) ? socialIdentitiesClaim : null
 				},
-				nextTokenRefreshDue: ctx.oidc.nextTokenRefreshDue ?? null
+				// The library refreshes on its own schedule and does not surface a deadline.
+				nextTokenRefreshDue: null
 			};
 		}
 	})

@@ -26,7 +26,8 @@ export interface NewReviewEmailProps {
 	paperTitle: string;
 	paperType: string;
 	reviewerName: string;
-	reviewerEmail: string;
+	/** Absent when the reviewer's identity provider does not expose an address. */
+	reviewerEmail?: string;
 	newStatus: string;
 	conferenceTitle: string;
 	paperUrl: string;

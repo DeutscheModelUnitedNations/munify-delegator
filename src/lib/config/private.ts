@@ -14,12 +14,17 @@ const schema = z.object({
 	// 	'OIDC_SCOPES must include "offline_access"'
 	// ),
 	OIDC_ROLE_CLAIM: z.string().nullish(),
+	// Audience for resource-scoped access tokens. Unread since the OIDC flow moved to
+	// @m1212e/sveltekit-oidc, which does not send a resource indicator.
 	OIDC_RESOURCE: z.string().url().nullish(),
-	// Machine-to-machine credentials for Logto Management API (required for impersonation)
+	// Machine-to-machine credentials for the Logto Management API. Unread while impersonation is
+	// stalled (see $lib/data/impersonation), kept so deployments do not have to drop them.
 	OIDC_M2M_CLIENT_ID: z.string().optional(),
 	OIDC_M2M_CLIENT_SECRET: z.string().optional(),
 	// Logto Management API resource indicator (e.g. https://default.logto.app/api)
 	OIDC_M2M_RESOURCE: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
+	// Unread since the OIDC flow moved to @m1212e/sveltekit-oidc, which manages its own cookies.
+	// Kept required so a deployment does not silently lose it before something needs it again.
 	SECRET: z.string(),
 	NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
 	OTEL_SERVICE_NAME: z.string().default('MUNIFY-DELEGATOR'),

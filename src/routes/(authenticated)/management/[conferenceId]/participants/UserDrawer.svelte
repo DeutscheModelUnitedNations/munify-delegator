@@ -20,6 +20,7 @@
 	import { configPublic } from '$config/public';
 	import Modal from '$lib/components/Modal.svelte';
 	import ImpersonationButton from './ImpersonationButton.svelte';
+	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import AccessCardSection from './AccessCardSection.svelte';
@@ -540,7 +541,9 @@
 					</a>
 				{/if}
 
-				<ImpersonationButton {userId} />
+				{#if IMPERSONATION_ENABLED}
+					<ImpersonationButton {userId} />
+				{/if}
 
 				<button class="btn" onclick={() => (assignSupervisorModalOpen = true)}>
 					<i class="fa-duotone fa-chalkboard-user"></i>

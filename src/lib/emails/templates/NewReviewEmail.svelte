@@ -6,7 +6,7 @@
 		paperTitle: string;
 		paperType: string;
 		reviewerName: string;
-		reviewerEmail: string;
+		reviewerEmail?: string;
 		newStatus: string;
 		conferenceTitle: string;
 		paperUrl: string;
@@ -48,8 +48,8 @@
 					<strong>"{paperTitle}"</strong>
 					für die Konferenz
 					<strong>{conferenceTitle}</strong>
-					hat neues Feedback von {reviewerName}
-					(<Link href={`mailto:${reviewerEmail}`}>{reviewerEmail}</Link>) erhalten.
+					hat neues Feedback von {reviewerName}{#if reviewerEmail}
+						(<Link href={`mailto:${reviewerEmail}`}>{reviewerEmail}</Link>){/if} erhalten.
 				</Text>
 
 				<Text style="font-size: 16px; color: #374151; line-height: 1.6;">

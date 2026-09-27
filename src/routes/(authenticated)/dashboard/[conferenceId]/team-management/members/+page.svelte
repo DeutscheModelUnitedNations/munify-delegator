@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { page } from '$app/state';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
@@ -191,7 +192,7 @@
 						<i class="fa-duotone fa-id-card"></i>
 					</button>
 					${
-						isAdmin
+						isAdmin && IMPERSONATION_ENABLED
 							? `<button class="btn btn-sm" onclick="window.handleTeamMemberImpersonate('${row.user.id}')" title="${m.impersonation()}">
 							<i class="fa-duotone fa-user-secret"></i>
 						</button>`

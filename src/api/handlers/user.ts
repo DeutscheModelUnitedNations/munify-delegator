@@ -10,11 +10,6 @@ import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
 import { eq } from 'drizzle-orm';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
-import { performTokenExchange } from '$api/services/OIDC';
-import {
-	impersonationTokenCookieName,
-	type TokenCookieSchemaType
-} from '$api/services/oidcContext';
 import { GraphQLError } from 'graphql';
 import * as Sentry from '@sentry/sveltekit';
 import { configPublic } from '$config/public';
@@ -419,15 +414,21 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
+const IMPERSONATION_STALLED =
+	'Impersonation is temporarily unavailable while the login flow is being migrated.';
+
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Issues an impersonation token for another user and stores it in a cookie, so participant
-	 * care can see the app exactly as that person does.
+	/*
+	 * Impersonation is stalled while the login flow moves to `@m1212e/sveltekit-oidc`.
 	 *
-	 * Who may impersonate whom is expressed by the `impersonate` ability on `user`: system admins
-	 * without restriction, project management and participant care only for participants of their
-	 * own conferences. Filtering the target through that ability answers both questions at once -
-	 * the legacy resolver asked them separately.
+	 * The old implementation swapped the session by writing a second token set into its own cookie
+	 * and re-reading it when building the request context. The library owns the session cookies now
+	 * and has no notion of acting as somebody else, so this wants designing again rather than
+	 * porting - as a token exchange the library performs, or as an app-level "acting as" that never
+	 * touches the session at all.
+	 *
+	 * The fields stay in the schema so the frontend keeps compiling, and say plainly that they are
+	 * unavailable.
 	 */
 	startImpersonation: t.field({
 		type: 'Boolean',
@@ -435,94 +436,15 @@ schemaBuilder.mutationFields((t) => ({
 			targetUserId: t.arg.id({ required: true }),
 			scope: t.arg.string()
 		},
-		resolve: async (_root, args, ctx) => {
-			const actor = ctx.mustBeLoggedIn();
-
-			const accessToken = ctx.oidc.tokenSet?.access_token;
-			if (!accessToken) {
-				throw new GraphQLError('No access token available');
-			}
-			if (ctx.oidc.impersonation?.isImpersonating) {
-				throw new GraphQLError(
-					'Already impersonating a user. Please stop current impersonation first.'
-				);
-			}
-
-			const target = await db.query.user.findFirst({ where: { id: args.targetUserId } });
-			if (!target) {
-				throw new GraphQLError('Target user not found');
-			}
-
-			const permitted = await db.query.user.findFirst(
-				ctx.abilities.user.filter('impersonate').merge({ where: { id: args.targetUserId } }).query
-					.single
-			);
-			if (!permitted) {
-				throw new GraphQLError('No permission to impersonate this specific user');
-			}
-
-			let tokens;
-			try {
-				tokens = await performTokenExchange(
-					accessToken,
-					args.targetUserId,
-					args.scope ?? undefined
-				);
-			} catch (error) {
-				console.error('Impersonation failed:', error);
-				throw new GraphQLError(
-					`Failed to start impersonation: ${error instanceof Error ? error.message : 'Unknown error'}`,
-					{ originalError: error instanceof Error ? error : undefined }
-				);
-			}
-
-			const cookieValue: TokenCookieSchemaType = {
-				access_token: tokens.access_token,
-				expires_in: tokens.expires_in,
-				id_token: tokens.id_token,
-				refresh_token: tokens.refresh_token,
-				scope: tokens.scope,
-				session_state: tokens.session_state,
-				token_type: tokens.token_type
-			};
-
-			if (!ctx.event?.cookies) {
-				throw new GraphQLError('Unable to set impersonation cookie: event.cookies unavailable');
-			}
-			ctx.event.cookies.set(impersonationTokenCookieName, JSON.stringify(cookieValue), {
-				path: '/',
-				httpOnly: true,
-				// Left permissive so impersonation works over plain http in development.
-				secure: false,
-				sameSite: 'lax',
-				maxAge: tokens.expires_in ?? 3600
-			});
-
-			console.log(
-				`User ${actor.preferred_username} (${actor.sub}) started impersonating user ${target.preferredUsername} (${target.id})`
-			);
-			return true;
+		resolve: () => {
+			throw new GraphQLError(IMPERSONATION_STALLED);
 		}
 	}),
 
-	/** Drops the impersonation cookie, which puts the caller back in their own session. */
 	stopImpersonation: t.field({
 		type: 'Boolean',
-		resolve: async (_root, _args, ctx) => {
-			if (!ctx.oidc.impersonation?.isImpersonating) {
-				throw new GraphQLError('Not currently impersonating');
-			}
-
-			ctx.event?.cookies.delete(impersonationTokenCookieName, { path: '/' });
-
-			const { originalUser, impersonatedUser } = ctx.oidc.impersonation;
-			if (originalUser && impersonatedUser) {
-				console.log(
-					`User ${originalUser.preferred_username} (${originalUser.sub}) stopped impersonating user ${impersonatedUser.preferred_username} (${impersonatedUser.sub})`
-				);
-			}
-
-			return true;
+		resolve: () => {
+			throw new GraphQLError(IMPERSONATION_STALLED);
 		}
 	})
 }));
@@ -673,35 +595,10 @@ const ImpersonationStatus = schemaBuilder.simpleObject('ImpersonationStatus', {
 schemaBuilder.queryFields((t) => ({
 	impersonationStatus: t.field({
 		type: ImpersonationStatus,
-		resolve: (_root, _args, ctx) => {
-			const impersonation = ctx.oidc.impersonation;
-			if (!impersonation) {
-				return { isImpersonating: false, originalUser: null, impersonatedUser: null };
-			}
-
-			const asImpersonationUser = (user: typeof impersonation.originalUser) =>
-				user
-					? {
-							sub: user.sub,
-							email: user.email,
-							preferred_username: user.preferred_username ?? null,
-							family_name: user.family_name ?? null,
-							given_name: user.given_name ?? null
-						}
-					: null;
-
-			return {
-				isImpersonating: impersonation.isImpersonating,
-				originalUser: asImpersonationUser(impersonation.originalUser),
-				impersonatedUser: asImpersonationUser(impersonation.impersonatedUser)
-			};
-		}
+		// Always "not impersonating" while the feature is stalled; see the mutations above.
+		resolve: () => ({ isImpersonating: false, originalUser: null, impersonatedUser: null })
 	}),
 
-	/**
-	 * The users the caller may impersonate. Scoping is delegated to the `impersonate` ability, so
-	 * this is the same rule `startImpersonation` enforces - listing and acting cannot drift apart.
-	 */
 	impersonatableUsers: t.drizzleField({
 		type: [UserRef],
 		resolve: async (query, _root, _args, ctx) => {

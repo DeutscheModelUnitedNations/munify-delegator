@@ -24,6 +24,13 @@ export default defineConfig({
 		// through vite-plugin-svelte's compiler instead.
 		exclude: ['@deutschemodelunitednations/munify-resolution-editor']
 	},
+	ssr: {
+		// The OIDC library needs typebox >= 1.1, but the hoisted copy is the 1.0 one that
+		// sveltekit-superforms pins (and superforms breaks on 1.3). Bundling both into the server
+		// build resolves the import from inside the library, where its own 1.3 copy lives, while
+		// superforms keeps the hoisted one it expects.
+		noExternal: ['@m1212e/sveltekit-oidc', 'typebox']
+	},
 	build: {
 		sourcemap: true // Required for Bugsink error tracking
 	},
