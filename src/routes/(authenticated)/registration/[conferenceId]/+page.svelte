@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import { fetchExistingRegistrations } from './existingRegistrations';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -13,18 +14,21 @@
 	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	/** Which of the three registration paths the caller has already taken, if any. */
+	const existing = $derived(await fetchExistingRegistrations(data.conferenceId, data.user.sub));
 	let showAssistant = $state(false);
 
 	// Any existing registration in this conference, in any role, closes the flow.
 	let alreadyRegistered = $derived(
-		data.singleParticipants.length > 0 ||
-			data.delegationMembers.length > 0 ||
-			data.supervisors.length > 0
+		existing.singleParticipants.length > 0 ||
+			existing.delegationMembers.length > 0 ||
+			existing.supervisors.length > 0
 	);
 
 	// Delegates and supervisors cannot also register as individuals.
 	let individualBlocked = $derived(
-		data.delegationMembers.length > 0 || data.supervisors.length > 0
+		existing.delegationMembers.length > 0 || existing.supervisors.length > 0
 	);
 </script>
 

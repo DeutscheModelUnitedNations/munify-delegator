@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	import { page } from '$app/state';
 	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -9,7 +11,12 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let participation = $derived(data.participation);
+	const participation = $derived(
+		await fetchMyConferenceParticipation({
+			userId: data.user.sub,
+			conferenceId: page.params.conferenceId!
+		})
+	);
 	let conference = $derived(participation?.conference);
 	let delegationMember = $derived(participation?.delegationMember);
 	let singleParticipant = $derived(participation?.singleParticipant);

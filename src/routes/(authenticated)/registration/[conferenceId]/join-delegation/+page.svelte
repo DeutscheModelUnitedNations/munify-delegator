@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
@@ -8,7 +9,8 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let code = $state<string>(data.code ?? '');
+	// Invitation links carry the entry code, so the field starts filled in.
+	let code = $state<string>(page.url.searchParams.get('code') ?? '');
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">

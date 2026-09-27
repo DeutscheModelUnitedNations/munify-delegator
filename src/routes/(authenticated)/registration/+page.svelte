@@ -3,14 +3,17 @@
 	import type { PageData } from './$types';
 	import svgempty from '$assets/undraw/empty_street.svg';
 	import ConferenceCard from '$lib/components/conferenceCard/ConferenceCard.svelte';
+	import { fetchOpenConferences } from './openConferences';
 
 	let { data }: { data: PageData } = $props();
-	let conferences = $derived(data.conferences);
+
+	const open = $derived(await fetchOpenConferences(data.user.sub));
+	const conferences = $derived(open.conferences);
 
 	/** Every conference the caller already has a registration in, in any of the three roles. */
 	const registeredConferenceIds = $derived(
 		new Set(
-			[...data.singleParticipants, ...data.delegationMembers, ...data.conferenceSupervisors].map(
+			[...open.singleParticipants, ...open.delegationMembers, ...open.conferenceSupervisors].map(
 				(registration) => registration.conference.id
 			)
 		)

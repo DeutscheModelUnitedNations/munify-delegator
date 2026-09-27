@@ -14,7 +14,27 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let teamMembers = $derived(data.teamMembers);
+	const teamMembers = $derived(
+		await client.liveQuery.teamMembers({
+			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			id: true,
+			role: true,
+			user: {
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true,
+				birthday: true,
+				phone: true,
+				street: true,
+				zip: true,
+				city: true,
+				country: true,
+				gender: true,
+				foodPreference: true
+			}
+		})
+	);
 	let isAdmin = data.isAdmin;
 
 	let inviteMembersModalOpen = $state(false);

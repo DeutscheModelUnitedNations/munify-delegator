@@ -7,7 +7,12 @@
 
 	let { data }: PageProps = $props();
 
-	let signedUp = $state(data.wantsJoinTeamInformation);
+	const dbUser = await client.query.user({
+		__args: { id: data.user.sub },
+		wantsJoinTeamInformation: true
+	});
+
+	let signedUp = $state(dbUser?.wantsJoinTeamInformation ?? false);
 	let loading = $state(false);
 
 	const toggleSignUp = async (value: boolean) => {

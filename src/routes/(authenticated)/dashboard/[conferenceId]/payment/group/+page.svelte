@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
+	import { client } from '$lib/api/rumbleClient/client';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import type { PageData } from './$types';
 	import Selection from '$lib/components/selection';
@@ -19,7 +21,16 @@
 	let userData = $derived(supervisorData?.user);
 	let delegationMembers = $derived(supervisorData?.supervisedDelegationMembers);
 	let singleParticipants = $derived(supervisorData?.supervisedSingleParticipants);
-	let allOtherSupervisors = $derived(data.conferenceSupervisors);
+	/** Every supervisor of the conference, so a group payment can name the ones it covers. */
+	const allOtherSupervisors = $derived(
+		await client.liveQuery.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
+			id: true,
+			user: { id: true, givenName: true, familyName: true },
+			supervisedDelegationMembers: { id: true },
+			supervisedSingleParticipants: { id: true }
+		})
+	);
 	let otherSupervisors = $derived.by(() => {
 		if (!delegationMembers || !singleParticipants || !allOtherSupervisors || !userData) {
 			return [];

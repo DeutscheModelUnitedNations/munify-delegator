@@ -1,14 +1,12 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageLoad } from './$types';
 
 /** Conferences still to come, plus the ones the caller is already signed up for. */
-export const load: PageLoad = async (event) => {
-	const { user } = await event.parent();
-	const forUser = { where: { userId: { eq: user.sub } } };
+export async function fetchOpenConferences(userId: string) {
+	const forUser = { where: { userId: { eq: userId } } };
 
 	const [conferences, delegationMembers, singleParticipants, conferenceSupervisors] =
 		await Promise.all([
-			client.query.conferences({
+			client.liveQuery.conferences({
 				__args: {
 					orderBy: { startConference: 'asc' },
 					where: { startConference: { gt: new Date() } }
@@ -28,10 +26,10 @@ export const load: PageLoad = async (event) => {
 				totalParticipants: true,
 				waitingListLength: true
 			}),
-			client.query.delegationMembers({ __args: forUser, conference: { id: true } }),
-			client.query.singleParticipants({ __args: forUser, conference: { id: true } }),
-			client.query.conferenceSupervisors({ __args: forUser, conference: { id: true } })
+			client.liveQuery.delegationMembers({ __args: forUser, conference: { id: true } }),
+			client.liveQuery.singleParticipants({ __args: forUser, conference: { id: true } }),
+			client.liveQuery.conferenceSupervisors({ __args: forUser, conference: { id: true } })
 		]);
 
 	return { conferences, delegationMembers, singleParticipants, conferenceSupervisors };
-};
+}
