@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Modal from '$lib/components/Modal.svelte';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
 	import { invalidateAll } from '$app/navigation';
@@ -51,39 +51,6 @@
 
 	const organizationDomain = configPublic.PUBLIC_TEAM_ORGANIZATION_DOMAIN;
 
-	const checkEmailsQuery = graphql(`
-		query CheckTeamInvitationEmailsShared($conferenceId: String!, $emails: [CheckEmailInput!]!) {
-			checkTeamInvitationEmails(conferenceId: $conferenceId, emails: $emails) {
-				email
-				status
-				userId
-				pendingInvitationId
-			}
-		}
-	`);
-
-	const createInvitationsMutation = graphql(`
-		mutation CreateTeamMemberInvitationsShared(
-			$conferenceId: String!
-			$invitations: [CreateInvitationInput!]!
-		) {
-			createTeamMemberInvitations(conferenceId: $conferenceId, invitations: $invitations) {
-				created {
-					id
-					email
-					role
-					token
-					expiresAt
-					addedDirectly
-				}
-				errors {
-					email
-					error
-				}
-			}
-		}
-	`);
-
 	function parseEmails(input: string): string[] {
 		const normalized = input
 			.split(/[,;\n]+/)
@@ -107,25 +74,24 @@
 
 		isChecking = true;
 		try {
-			const result = await checkEmailsQuery.fetch({
-				variables: {
-					conferenceId,
-					emails: emails.map((email) => ({ email }))
-				}
+			const checked = await client.query.checkTeamInvitationEmails({
+				__args: { conferenceId, emails: emails.map((email) => ({ email })) },
+				email: true,
+				status: true,
+				userId: true,
+				pendingInvitationId: true
 			});
 
-			if (result.data?.checkTeamInvitationEmails) {
-				emailStatuses = result.data.checkTeamInvitationEmails.map((s) => ({
-					email: s.email,
-					status: isEmailStatusValue(s.status) ? s.status : 'new_user',
-					userId: s.userId,
-					pendingInvitationId: s.pendingInvitationId,
-					selected: s.status !== 'already_member',
-					role: 'MEMBER' as TeamRoleValue,
-					isExternal: isExternalEmail(s.email)
-				}));
-				step = 'review';
-			}
+			emailStatuses = checked.map((s) => ({
+				email: s.email,
+				status: isEmailStatusValue(s.status) ? s.status : 'new_user',
+				userId: s.userId,
+				pendingInvitationId: s.pendingInvitationId,
+				selected: s.status !== 'already_member',
+				role: 'MEMBER',
+				isExternal: isExternalEmail(s.email)
+			}));
+			step = 'review';
 		} catch (error) {
 			toast.error(m.httpGenericError());
 			console.error('Failed to check emails:', error);
@@ -146,42 +112,38 @@
 
 		isSending = true;
 		try {
-			const result = await createInvitationsMutation.mutate({
-				conferenceId,
-				invitations: selectedEmails.map((e) => ({
-					email: e.email,
-					role: e.role
-				}))
+			const { created, errors } = await client.mutate.createTeamMemberInvitations({
+				__args: {
+					conferenceId,
+					invitations: selectedEmails.map((e) => ({ email: e.email, role: e.role }))
+				},
+				created: { addedDirectly: true },
+				errors: { email: true, error: true }
 			});
 
-			if (result.data?.createTeamMemberInvitations) {
-				const { created, errors } = result.data.createTeamMemberInvitations;
+			if (created.length > 0) {
+				const directlyAdded = created.filter((c) => c.addedDirectly).length;
+				const invitationsSent = created.filter((c) => !c.addedDirectly).length;
 
-				if (created.length > 0) {
-					const directlyAdded = created.filter((c) => c.addedDirectly).length;
-					const invitationsSent = created.filter((c) => !c.addedDirectly).length;
-
-					let message = '';
-					if (directlyAdded > 0) {
-						message += m.usersAddedDirectly({ count: directlyAdded });
-					}
-					if (invitationsSent > 0) {
-						if (message) message += ' ';
-						message += m.invitationsSentCount({ count: invitationsSent });
-					}
-					toast.success(message);
+				let message = '';
+				if (directlyAdded > 0) {
+					message += m.usersAddedDirectly({ count: directlyAdded });
 				}
-
-				if (errors.length > 0) {
-					errors.forEach((err) => {
-						toast.error(`${err.email}: ${err.error}`);
-					});
+				if (invitationsSent > 0) {
+					if (message) message += ' ';
+					message += m.invitationsSentCount({ count: invitationsSent });
 				}
-
-				cache.markStale();
-				await invalidateAll();
-				handleClose();
+				toast.success(message);
 			}
+
+			if (errors.length > 0) {
+				errors.forEach((err) => {
+					toast.error(`${err.email}: ${err.error}`);
+				});
+			}
+
+			await invalidateAll();
+			handleClose();
 		} catch (error) {
 			toast.error(m.httpGenericError());
 			console.error('Failed to send invitations:', error);

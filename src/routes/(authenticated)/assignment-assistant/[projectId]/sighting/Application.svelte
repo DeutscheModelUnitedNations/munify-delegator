@@ -11,7 +11,7 @@
 	} from '../appData.svelte';
 	import codenamize from '$lib/helpers/codenamize';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import LoadingData from '../components/LoadingData.svelte';
 	import Members from './Members.svelte';
 	import formatNames from '$lib/helpers/formatNames';
@@ -23,62 +23,51 @@
 
 	let { application, startConference }: Props = $props();
 
-	let applicationDetails = $derived.by<
-		| {
-				school?: string;
-				experience?: string;
-				motivation?: string;
-		  }
-		| undefined
-	>(() => {
-		const delegation = $getApplicationDetailsQuery.data?.findUniqueDelegation;
-		const singleParticipant = $getApplicationDetailsQuery.data?.findUniqueSingleParticipant;
+	const detailFields = { school: true, experience: true, motivation: true } as const;
 
-		return delegation ?? singleParticipant ?? undefined;
-	});
+	/** The id belongs either to a delegation or to a single participant, never to both. */
+	async function fetchDetails(applicationId: string, supervisorIds: string[]) {
+		const [delegations, singleParticipants, supervisors] = await Promise.all([
+			client.query.delegations({
+				__args: { where: { id: { eq: applicationId } } },
+				...detailFields
+			}),
+			client.query.singleParticipants({
+				__args: { where: { id: { eq: applicationId } } },
+				...detailFields
+			}),
+			client.query.conferenceSupervisors({
+				__args: { where: { id: { in: supervisorIds } } },
+				user: { id: true, givenName: true, familyName: true }
+			})
+		]);
+		return { details: delegations[0] ?? singleParticipants[0], supervisors };
+	}
 
-	let supervisorDetails = $derived.by(() => {
-		return $getApplicationDetailsQuery.data?.findManyConferenceSupervisors ?? [];
-	});
+	type Details = Awaited<ReturnType<typeof fetchDetails>>;
 
-	const getApplicationDetailsQuery = graphql(`
-		query GetApplicationDetails($applicationId: String!, $supervisorIds: [String!]) {
-			findUniqueDelegation(where: { id: $applicationId }) {
-				id
-				school
-				experience
-				motivation
-			}
-
-			findUniqueSingleParticipant(where: { id: $applicationId }) {
-				id
-				school
-				experience
-				motivation
-			}
-
-			findManyConferenceSupervisors(where: { id: { in: $supervisorIds } }) {
-				user {
-					id
-					given_name
-					family_name
-				}
-			}
-		}
-	`);
+	let applicationDetails = $state<Details['details']>();
+	let supervisorDetails = $state<Details['supervisors']>();
+	let detailsLoading = $state(false);
 
 	$effect(() => {
 		if (!application.id) return;
-		getApplicationDetailsQuery.fetch({
-			variables: {
-				applicationId: application.id,
-				supervisorIds: (
-					application.supervisors?.map((sp) => sp.id) ??
-					application.members?.flatMap((m) => m.supervisors?.map((sp) => sp.id)) ??
-					[]
-				).filter((v) => !!v)
-			}
-		});
+		const supervisorIds: string[] = [];
+		for (const id of application.supervisors?.map((sp) => sp.id) ??
+			application.members?.flatMap((m) => m.supervisors?.map((sp) => sp.id)) ??
+			[]) {
+			if (id) supervisorIds.push(id);
+		}
+
+		detailsLoading = true;
+		void fetchDetails(application.id, supervisorIds)
+			.then((result) => {
+				applicationDetails = result.details;
+				supervisorDetails = result.supervisors;
+			})
+			.finally(() => {
+				detailsLoading = false;
+			});
 	});
 </script>
 
@@ -190,15 +179,11 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-chalkboard-user text-lg"></i></td>
 					<td>
-						<LoadingData
-							fetching={$getApplicationDetailsQuery.fetching}
-							error={!applicationDetails?.school}
-						>
+						<LoadingData fetching={detailsLoading} error={!applicationDetails?.school}>
 							{supervisorDetails
-								.map((x) => {
-									if (x.user) return formatNames(x.user.given_name, x.user.family_name);
-									return 'N/A';
-								})
+								.map((x) =>
+									formatNames(x.user.givenName ?? undefined, x.user.familyName ?? undefined)
+								)
 								.join(', ')}
 						</LoadingData>
 					</td>
@@ -207,10 +192,7 @@
 			<tr>
 				<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
 				<td>
-					<LoadingData
-						fetching={$getApplicationDetailsQuery.fetching}
-						error={!applicationDetails?.school}
-					>
+					<LoadingData fetching={detailsLoading} error={!applicationDetails?.school}>
 						{applicationDetails?.school}
 					</LoadingData>
 				</td>
@@ -218,10 +200,7 @@
 			<tr>
 				<td class="text-center"><i class="fa-duotone fa-fire-flame-curved text-lg"></i></td>
 				<td>
-					<LoadingData
-						fetching={$getApplicationDetailsQuery.fetching}
-						error={!applicationDetails?.motivation}
-					>
+					<LoadingData fetching={detailsLoading} error={!applicationDetails?.motivation}>
 						{applicationDetails?.motivation}
 						<span class="badge badge-xs">{applicationDetails?.motivation?.length}</span>
 					</LoadingData>
@@ -230,10 +209,7 @@
 			<tr>
 				<td class="text-center"><i class="fa-duotone fa-compass text-lg"></i></td>
 				<td>
-					<LoadingData
-						fetching={$getApplicationDetailsQuery.fetching}
-						error={!applicationDetails?.experience}
-					>
+					<LoadingData fetching={detailsLoading} error={!applicationDetails?.experience}>
 						{applicationDetails?.experience}
 						<span class="badge badge-xs">{applicationDetails?.experience?.length}</span>
 					</LoadingData>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
@@ -66,122 +66,45 @@
 	});
 
 	// Server search (users + delegations)
-	const searchQuery = graphql(`
-		query SearchConference($conferenceId: String!, $searchTerm: String!) {
-			searchConference(conferenceId: $conferenceId, searchTerm: $searchTerm) {
-				users {
-					id
-					email
-					given_name
-					family_name
-					participationType
-				}
-				delegations {
-					id
-					school
-					entryCode
-					memberCount
-					assignedNationAlpha3Code
-					assignedNonStateActorName
-					headDelegateUserId
-				}
-				foreignUsers {
-					id
-					email
-					given_name
-					family_name
-				}
-				transactions {
-					id
-					amount
-					currency
-					recievedAt
-				}
-			}
-		}
-	`);
+	function fetchSearch(searchTerm: string) {
+		return client.query.searchConference({
+			__args: { conferenceId, searchTerm },
+			users: {
+				id: true,
+				email: true,
+				givenName: true,
+				familyName: true,
+				participationType: true
+			},
+			delegations: {
+				id: true,
+				school: true,
+				entryCode: true,
+				memberCount: true,
+				assignedNationAlpha3Code: true,
+				assignedNonStateActorName: true,
+				headDelegateUserId: true
+			},
+			foreignUsers: { id: true, email: true, givenName: true, familyName: true },
+			transactions: { id: true, amount: true, currency: true, recievedAt: true }
+		});
+	}
 
-	let userResults = $state<
-		{
-			id: string;
-			email: string;
-			given_name: string;
-			family_name: string;
-			participationType: string;
-		}[]
-	>([]);
-	let delegationResults = $state<
-		{
-			id: string;
-			school: string | null;
-			entryCode: string;
-			memberCount: number;
-			assignedNationAlpha3Code: string | null;
-			assignedNonStateActorName: string | null;
-			headDelegateUserId: string | null;
-		}[]
-	>([]);
-	let foreignUserResults = $state<
-		{
-			id: string;
-			email: string;
-			given_name: string;
-			family_name: string;
-		}[]
-	>([]);
-	let transactionResults = $state<
-		{
-			id: string;
-			amount: number;
-			currency: string;
-			recievedAt: string | null;
-		}[]
-	>([]);
+	type SearchResults = Awaited<ReturnType<typeof fetchSearch>>;
+
+	let userResults = $state<SearchResults['users']>([]);
+	let delegationResults = $state<SearchResults['delegations']>([]);
+	let foreignUserResults = $state<SearchResults['foreignUsers']>([]);
+	let transactionResults = $state<SearchResults['transactions']>([]);
 
 	// Combined flat list for keyboard navigation
 	type ResultItem =
 		| { type: 'page'; data: PageEntry }
-		| {
-				type: 'user';
-				data: {
-					id: string;
-					given_name: string;
-					family_name: string;
-					email: string;
-					participationType: string;
-				};
-		  }
-		| {
-				type: 'delegation';
-				data: {
-					id: string;
-					school: string | null;
-					entryCode: string;
-					memberCount: number;
-					assignedNationAlpha3Code: string | null;
-					assignedNonStateActorName: string | null;
-					headDelegateUserId: string | null;
-				};
-		  }
+		| { type: 'user'; data: SearchResults['users'][number] }
+		| { type: 'delegation'; data: SearchResults['delegations'][number] }
 		| { type: 'config'; data: ConfigEntry }
-		| {
-				type: 'foreignUser';
-				data: {
-					id: string;
-					email: string;
-					given_name: string;
-					family_name: string;
-				};
-		  }
-		| {
-				type: 'transaction';
-				data: {
-					id: string;
-					amount: number;
-					currency: string;
-					recievedAt: string | null;
-				};
-		  };
+		| { type: 'foreignUser'; data: SearchResults['foreignUsers'][number] }
+		| { type: 'transaction'; data: SearchResults['transactions'][number] };
 
 	// Order: users, delegations, pages, config, foreignUsers
 	let flatList = $derived.by((): ResultItem[] => {
@@ -212,15 +135,11 @@
 		searchLoading = true;
 		debounceTimer = setTimeout(async () => {
 			try {
-				const result = await searchQuery.fetch({
-					variables: { conferenceId, searchTerm: term.trim() }
-				});
-				if (result.data?.searchConference) {
-					userResults = result.data.searchConference.users;
-					delegationResults = result.data.searchConference.delegations;
-					foreignUserResults = result.data.searchConference.foreignUsers;
-					transactionResults = result.data.searchConference.transactions;
-				}
+				const result = await fetchSearch(term.trim());
+				userResults = result.users;
+				delegationResults = result.delegations;
+				foreignUserResults = result.foreignUsers;
+				transactionResults = result.transactions;
 			} finally {
 				searchLoading = false;
 				activeIndex = 0;
@@ -408,7 +327,7 @@
 							<div data-command-palette-active={idx === activeIndex}>
 								<CommandPaletteItem
 									icon="fa-user"
-									primary="{user.given_name} {user.family_name}"
+									primary="{user.givenName} {user.familyName}"
 									secondary="{user.email} · {getParticipationTypeLabel(user.participationType)}"
 									active={idx === activeIndex}
 									onclick={() => selectItem({ type: 'user', data: user })}
@@ -517,7 +436,7 @@
 							<div data-command-palette-active={idx === activeIndex}>
 								<CommandPaletteItem
 									icon="fa-user-xmark"
-									primary="{foreignUser.given_name} {foreignUser.family_name}"
+									primary="{foreignUser.givenName} {foreignUser.familyName}"
 									secondary={foreignUser.email}
 									active={idx === activeIndex}
 									onclick={() => selectItem({ type: 'foreignUser', data: foreignUser })}
