@@ -1,135 +1,96 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query AllConferenceParticipantsQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			state
-			startConference
-			endConference
-		}
-		findManyDelegationMembers(where: { conferenceId: { equals: $conferenceId } }) {
-			isHeadDelegate
-			assignedCommittee {
-				name
-				abbreviation
-			}
-			delegation {
-				school
-				entryCode
-				assignedNation {
-					alpha2Code
-					alpha3Code
-				}
-				assignedNonStateActor {
-					name
-					abbreviation
-					fontAwesomeIcon
-				}
-			}
-			user {
-				id
-				given_name
-				family_name
-				email
-				phone
-				birthday
-				gender
-				pronouns
-				foodPreference
-				city
-				country
-				conferenceParticipationsCount
-			}
-		}
-		findManyConferenceSupervisors(where: { conferenceId: { equals: $conferenceId } }) {
-			plansOwnAttendenceAtConference
-			supervisedDelegationMembers {
-				delegation {
-					assignedNation {
-						alpha3Code
-					}
-					assignedNonStateActor {
-						id
-					}
-				}
-			}
-			supervisedSingleParticipants {
-				assignedRole {
-					id
-				}
-			}
-			user {
-				id
-				given_name
-				family_name
-				email
-				phone
-				birthday
-				gender
-				pronouns
-				foodPreference
-				city
-				country
-				conferenceParticipationsCount
-			}
-		}
-		findManySingleParticipants(where: { conferenceId: { equals: $conferenceId } }) {
-			applied
-			school
-			assignedRole {
-				name
-				fontAwesomeIcon
-			}
-			user {
-				id
-				given_name
-				family_name
-				email
-				phone
-				birthday
-				gender
-				pronouns
-				foodPreference
-				city
-				country
-				conferenceParticipationsCount
-			}
-		}
-		findManyTeamMembers(where: { conferenceId: { equals: $conferenceId } }) {
-			role
-			user {
-				id
-				given_name
-				family_name
-				email
-				phone
-				birthday
-				gender
-				pronouns
-				foodPreference
-				city
-				country
-				conferenceParticipationsCount
-			}
-		}
-		findManyConferenceParticipantStatuss(where: { conferenceId: { equals: $conferenceId } }) {
-			user {
-				id
-			}
-			paymentStatus
-			termsAndConditions
-			guardianConsent
-			mediaConsent
-			mediaConsentStatus
-			didAttend
-			assignedDocumentNumber
-			accessCardId
-		}
-	}
-`);
+/** The columns every participant table row needs, whatever the registration type. */
+const participantUser = {
+	id: true,
+	givenName: true,
+	familyName: true,
+	email: true,
+	phone: true,
+	birthday: true,
+	gender: true,
+	pronouns: true,
+	foodPreference: true,
+	city: true,
+	country: true,
+	conferenceParticipationsCount: true
+} as const;
 
-export const _AllConferenceParticipantsQueryVariables = (event: {
-	params: { conferenceId: string };
-}) => {
-	return { conferenceId: event.params.conferenceId };
+export const load: PageLoad = async (event) => {
+	const conferenceId = event.params.conferenceId;
+	const inConference = { where: { conferenceId: { eq: conferenceId } } };
+
+	const [
+		conference,
+		delegationMembers,
+		conferenceSupervisors,
+		singleParticipants,
+		teamMembers,
+		participantStatuses
+	] = await Promise.all([
+		client.query.conference({
+			__args: { id: conferenceId },
+			state: true,
+			startConference: true,
+			endConference: true
+		}),
+		client.query.delegationMembers({
+			__args: inConference,
+			isHeadDelegate: true,
+			assignedCommittee: { name: true, abbreviation: true },
+			delegation: {
+				school: true,
+				entryCode: true,
+				assignedNation: { alpha2Code: true, alpha3Code: true },
+				assignedNonStateActor: {
+					name: true,
+					abbreviation: true,
+					fontAwesomeIcon: true
+				}
+			},
+			user: participantUser
+		}),
+		client.query.conferenceSupervisors({
+			__args: inConference,
+			plansOwnAttendenceAtConference: true,
+			supervisedDelegationMembers: {
+				delegation: {
+					assignedNation: { alpha3Code: true },
+					assignedNonStateActor: { id: true }
+				}
+			},
+			supervisedSingleParticipants: { assignedRole: { id: true } },
+			user: participantUser
+		}),
+		client.query.singleParticipants({
+			__args: inConference,
+			applied: true,
+			school: true,
+			assignedRole: { name: true, fontAwesomeIcon: true },
+			user: participantUser
+		}),
+		client.query.teamMembers({ __args: inConference, role: true, user: participantUser }),
+		client.query.conferenceParticipantStatuses({
+			__args: inConference,
+			user: { id: true },
+			paymentStatus: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			mediaConsentStatus: true,
+			didAttend: true,
+			assignedDocumentNumber: true,
+			accessCardId: true
+		})
+	]);
+
+	return {
+		conference,
+		delegationMembers,
+		conferenceSupervisors,
+		singleParticipants,
+		teamMembers,
+		participantStatuses
+	};
 };

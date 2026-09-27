@@ -30,18 +30,15 @@
 	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
 
 	const { data }: { data: PageData } = $props();
-	const queryData = $derived(data.AllConferenceParticipantsQuery);
 	const conferenceId = $derived($page.params.conferenceId ?? '');
 
-	const conference = $derived($queryData.data?.findUniqueConference);
+	const conference = $derived(data.conference);
 	const conferenceState = $derived(conference?.state);
 	const startConference = $derived(conference?.startConference);
 	const endConference = $derived(conference?.endConference);
 
 	const participants: ParticipantRow[] = $derived.by(() => {
-		const qd = $queryData.data;
-		if (!qd) return [];
-		return transformParticipants(qd, startConference, endConference);
+		return transformParticipants(data, startConference, endConference);
 	});
 
 	const columns = createColumnDefs();

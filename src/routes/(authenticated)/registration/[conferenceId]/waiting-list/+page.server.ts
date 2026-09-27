@@ -1,4 +1,4 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import { nullFieldsToUndefined } from '$lib/helpers/nullFieldsToUndefined';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import type { Actions, PageServerLoad } from './$types';
@@ -6,53 +6,26 @@ import { zod4 } from 'sveltekit-superforms/adapters';
 import { waitingListFormSchema } from './form-schema';
 import { m } from '$lib/paraglide/messages';
 
-const waitingListEntryQuery = graphql(`
-	query WaitingListEntryParticipantQuery($conferenceId: String!, $userId: String!) {
-		findUniqueWaitingListEntry(
-			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
-		) {
-			id
-			school
-			motivation
-			experience
-			requests
-			createdAt
-		}
-	}
-`);
-
-const addWaitingListEntryMutation = graphql(`
-	mutation AddWaitingListEntryMutation(
-		$conferenceId: ID!
-		$motivation: String!
-		$school: String!
-		$experience: String!
-		$requests: String
-	) {
-		createOneWaitingListEntry(
-			conferenceId: $conferenceId
-			motivation: $motivation
-			school: $school
-			experience: $experience
-			requests: $requests
-		) {
-			id
-		}
-	}
-`);
-
 export const load: PageServerLoad = async (event) => {
 	const { user } = await event.parent();
 
-	const { data } = await waitingListEntryQuery.fetch({
-		event,
-		variables: { conferenceId: event.params.conferenceId, userId: user.sub },
-		blocking: true
+	const [waitingListEntry] = await client.query.waitingListEntries({
+		__args: {
+			where: {
+				conferenceId: { eq: event.params.conferenceId },
+				userId: { eq: user.sub }
+			}
+		},
+		id: true,
+		school: true,
+		motivation: true,
+		experience: true,
+		requests: true,
+		createdAt: true
 	});
-	const waitingListEntry = data?.findUniqueWaitingListEntry;
 
 	const form = await superValidate(
-		nullFieldsToUndefined(waitingListEntry) as any,
+		waitingListEntry ? nullFieldsToUndefined(waitingListEntry) : undefined,
 		zod4(waitingListFormSchema)
 	);
 
@@ -68,13 +41,10 @@ export const actions = {
 		if (!form.valid) {
 			return fail(400, { form });
 		}
-		await addWaitingListEntryMutation.mutate(
-			{
-				...form.data,
-				conferenceId: event.params.conferenceId
-			},
-			{ event }
-		);
+		await client.mutate.createWaitingListEntry({
+			__args: { ...form.data, conferenceId: event.params.conferenceId },
+			id: true
+		});
 
 		return message(form, m.saved());
 	}

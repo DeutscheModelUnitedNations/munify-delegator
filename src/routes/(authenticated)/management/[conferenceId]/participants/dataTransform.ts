@@ -1,8 +1,14 @@
-import type { AllConferenceParticipantsQuery$result } from '$houdini';
 import type { AdministrativeStatus, ParticipantRow } from './types';
 import { getAgeAtConference, ofAgeAtConference } from '$lib/helpers/ageChecker';
+import type { PageData } from './$types';
 
-type QueryData = NonNullable<AllConferenceParticipantsQuery$result>;
+type QueryData = {
+	delegationMembers: PageData['delegationMembers'];
+	conferenceSupervisors: PageData['conferenceSupervisors'];
+	singleParticipants: PageData['singleParticipants'];
+	teamMembers: PageData['teamMembers'];
+	participantStatuses: PageData['participantStatuses'];
+};
 
 function computePostalRegistrationStatus(
 	status: {
@@ -54,22 +60,22 @@ export function transformParticipants(
 	startConference: Date | string | undefined,
 	endConference: Date | string | undefined
 ): ParticipantRow[] {
-	const statusMap = new Map<string, QueryData['findManyConferenceParticipantStatuss'][number]>();
-	for (const s of queryData.findManyConferenceParticipantStatuss) {
+	const statusMap = new Map<string, QueryData['participantStatuses'][number]>();
+	for (const s of queryData.participantStatuses) {
 		statusMap.set(s.user.id, s);
 	}
 
 	const rows: ParticipantRow[] = [];
 
-	for (const entry of queryData.findManyDelegationMembers) {
+	for (const entry of queryData.delegationMembers) {
 		const status = statusMap.get(entry.user.id);
 		const birthday = entry.user.birthday ? new Date(entry.user.birthday) : null;
 		const hasNation = !!entry.delegation?.assignedNation;
 		const hasNsa = !!entry.delegation?.assignedNonStateActor;
 		rows.push({
 			userId: entry.user.id,
-			given_name: entry.user.given_name,
-			family_name: entry.user.family_name,
+			given_name: entry.user.givenName,
+			family_name: entry.user.familyName,
 			email: entry.user.email,
 			phone: entry.user.phone ?? null,
 			birthday,
@@ -111,7 +117,7 @@ export function transformParticipants(
 		});
 	}
 
-	for (const entry of queryData.findManyConferenceSupervisors) {
+	for (const entry of queryData.conferenceSupervisors) {
 		const status = statusMap.get(entry.user.id);
 		const birthday = entry.user.birthday ? new Date(entry.user.birthday) : null;
 		const someParticipantAccepted =
@@ -120,8 +126,8 @@ export function transformParticipants(
 			) || entry.supervisedSingleParticipants.some((sp) => !!sp.assignedRole);
 		rows.push({
 			userId: entry.user.id,
-			given_name: entry.user.given_name,
-			family_name: entry.user.family_name,
+			given_name: entry.user.givenName,
+			family_name: entry.user.familyName,
 			email: entry.user.email,
 			phone: entry.user.phone ?? null,
 			birthday,
@@ -163,13 +169,13 @@ export function transformParticipants(
 		});
 	}
 
-	for (const entry of queryData.findManySingleParticipants) {
+	for (const entry of queryData.singleParticipants) {
 		const status = statusMap.get(entry.user.id);
 		const birthday = entry.user.birthday ? new Date(entry.user.birthday) : null;
 		rows.push({
 			userId: entry.user.id,
-			given_name: entry.user.given_name,
-			family_name: entry.user.family_name,
+			given_name: entry.user.givenName,
+			family_name: entry.user.familyName,
 			email: entry.user.email,
 			phone: entry.user.phone ?? null,
 			birthday,
@@ -211,13 +217,13 @@ export function transformParticipants(
 		});
 	}
 
-	for (const entry of queryData.findManyTeamMembers) {
+	for (const entry of queryData.teamMembers) {
 		const status = statusMap.get(entry.user.id);
 		const birthday = entry.user.birthday ? new Date(entry.user.birthday) : null;
 		rows.push({
 			userId: entry.user.id,
-			given_name: entry.user.given_name,
-			family_name: entry.user.family_name,
+			given_name: entry.user.givenName,
+			family_name: entry.user.familyName,
 			email: entry.user.email,
 			phone: entry.user.phone ?? null,
 			birthday,
