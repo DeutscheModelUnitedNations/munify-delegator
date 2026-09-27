@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import NSAs from './sections/NSAs.svelte';
 	import SingleParticipants from './sections/SingleParticipants.svelte';
 	import Supervisors from './sections/Supervisors.svelte';
 	import Delegations from './sections/Delegations.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
-	import { graphql, type LookupUserToAssignQuery$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -17,35 +17,36 @@
 	const params = queryParameters({
 		assignUserId: true
 	});
-	let assignUser = $state<NonNullable<LookupUserToAssignQuery$result['findUniqueUser']>>();
+	function lookupUser(id: string) {
+		return client.query.user({ __args: { id }, id: true, familyName: true, givenName: true });
+	}
 
-	let seatsQuery = $derived(data.SeatsQuery);
-	let committees = $derived($seatsQuery.data?.findManyCommittees ?? []);
-	let nations = $derived($seatsQuery.data?.findManyNations ?? []);
-	let roles = $derived($seatsQuery.data?.findManyCustomConferenceRoles ?? []);
-	let delegations = $derived($seatsQuery.data?.findManyDelegations ?? []);
-	let nonStateActors = $derived($seatsQuery.data?.findManyNonStateActors ?? []);
-	let singleParticipants = $derived($seatsQuery.data?.findManySingleParticipants ?? []);
-	let supervisors = $derived($seatsQuery.data?.findManyConferenceSupervisors ?? []);
+	let assignUser = $state<Awaited<ReturnType<typeof lookupUser>>>();
+	let assignUserLoading = $state(false);
 
-	const LookupUserToAssignQuery = graphql(`
-		query LookupUserToAssignQuery($id: String!) {
-			findUniqueUser(where: { id: $id }) {
-				id
-				family_name
-				given_name
-			}
-		}
-	`);
+	let committees = $derived(data.committees);
+	let nations = $derived(data.nations);
+	let roles = $derived(data.roles);
+	let delegations = $derived(data.delegations);
+	let nonStateActors = $derived(data.nonStateActors);
+	let singleParticipants = $derived(data.singleParticipants);
+	let supervisors = $derived(data.supervisors);
 
 	$effect(() => {
-		if ($params.assignUserId) {
-			const promise = LookupUserToAssignQuery.fetch({ variables: { id: $params.assignUserId } });
-			toast.promise(promise, genericPromiseToastMessages);
-			promise.then((res) => (assignUser = res?.data?.findUniqueUser));
-		} else {
+		if (!$params.assignUserId) {
 			assignUser = undefined;
+			return;
 		}
+		assignUserLoading = true;
+		const promise = lookupUser($params.assignUserId);
+		toast.promise(promise, genericPromiseToastMessages);
+		void promise
+			.then((result) => {
+				assignUser = result;
+			})
+			.finally(() => {
+				assignUserLoading = false;
+			});
 	});
 </script>
 
@@ -53,14 +54,14 @@
 	{#if $params.assignUserId}
 		<div class="w-full">
 			<div class="alert alert-warning w-full">
-				{#if $LookupUserToAssignQuery.fetching}
+				{#if assignUserLoading}
 					<i class="fa-solid fa-spinner fa-spin"></i>
 				{:else if assignUser}
 					<i class="fa-solid fa-user-plus fa-beat-fade"></i>
 					<div>
 						{m.assigningUser()}
 						<span class="font-bold">
-							{formatNames(assignUser.given_name, assignUser.family_name)}
+							{formatNames(assignUser.givenName ?? undefined, assignUser.familyName ?? undefined)}
 						</span>
 						({assignUser.id})
 					</div>

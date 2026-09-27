@@ -1,40 +1,32 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
+	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
+	import type { PageData } from '../$types';
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 	import DownloadNSADataBtn from '../downloads/DownloadNSADataBtn.svelte';
 
 	interface Props {
-		nonStateActors: SeatsQuery$result['findManyNonStateActors'];
-		delegations: SeatsQuery$result['findManyDelegations'];
+		nonStateActors: PageData['nonStateActors'];
+		delegations: PageData['delegations'];
 		conferenceId: string;
 	}
 
 	let { nonStateActors, delegations, conferenceId }: Props = $props();
 
-	const addNSAParticipantMutation = graphql(`
-		mutation addNSAParticipant($userId: ID!, $conferenceId: ID!, $assignedNonStateActorId: ID!) {
-			createOneAppliedDelegationMember(
-				userId: $userId
-				conferenceId: $conferenceId
-				assignedNonStateActorId: $assignedNonStateActorId
-			) {
-				id
-			}
-		}
-	`);
-
-	let user = $state<Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined>(undefined);
+	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
 	const addParticipant = async (nonStateActorId: string) => {
 		if (!user?.id) return;
-		await addNSAParticipantMutation.mutate({
-			userId: user.id,
-			conferenceId: conferenceId,
-			assignedNonStateActorId: nonStateActorId
+		await client.mutate.createAppliedDelegationMember({
+			__args: {
+				userId: user.id,
+				conferenceId,
+				assignedNonStateActorId: nonStateActorId
+			},
+			id: true
 		});
 	};
 </script>
@@ -82,8 +74,8 @@
 						{#if delegation}
 							{#each delegation.members as member}
 								<InitialsButton
-									given_name={member.user.given_name}
-									family_name={member.user.family_name}
+									given_name={member.user.givenName}
+									family_name={member.user.familyName}
 									userId={member.user.id}
 									{conferenceId}
 								/>

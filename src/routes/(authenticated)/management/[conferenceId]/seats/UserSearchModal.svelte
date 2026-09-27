@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { cache, graphql, type getUserInfo$result } from '$houdini';
+	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
@@ -9,7 +9,7 @@
 
 	interface Props {
 		open: boolean;
-		user: Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined;
+		user: Partial<UserPreview> | undefined;
 		targetRole: string;
 		addParticipant: () => Promise<void>;
 		children?: Snippet;
@@ -23,17 +23,6 @@
 		children
 	}: Props = $props();
 
-	const getUserInfo = graphql(`
-		query getUserInfo($emailOrId: String!) {
-			previewUserByIdOrEmail(emailOrId: $emailOrId) {
-				id
-				given_name
-				family_name
-				email
-			}
-		}
-	`);
-
 	const params = queryParameters({
 		assignUserId: true
 	});
@@ -44,14 +33,16 @@
 	$effect(() => {
 		if (search && search.length > 2) {
 			loading = true;
-			getUserInfo
-				.fetch({
-					variables: {
-						emailOrId: search
-					}
+			client.query
+				.previewUserByIdOrEmail({
+					__args: { emailOrId: search },
+					id: true,
+					given_name: true,
+					family_name: true,
+					email: true
 				})
 				.then((result) => {
-					user = result.data?.previewUserByIdOrEmail;
+					user = result;
 				})
 				.finally(() => {
 					loading = false;
@@ -82,7 +73,6 @@
 			await addParticipant();
 			open = false;
 			user = undefined;
-			cache.markStale();
 			await invalidateAll();
 			if ($params.assignUserId) {
 				$params.assignUserId = null;
@@ -111,7 +101,7 @@
 					</div>
 				{:else if user}
 					<div class="badge badge-success">
-						{formatNames(user.given_name, user.family_name)} ({user.email})
+						{formatNames(user.given_name ?? undefined, user.family_name ?? undefined)} ({user.email})
 					</div>
 				{:else}
 					<div class="badge badge-error">{m.userNotFound()}</div>

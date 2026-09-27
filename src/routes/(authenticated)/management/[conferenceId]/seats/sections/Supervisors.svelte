@@ -1,43 +1,27 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
+	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
+	import type { PageData } from '../$types';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		supervisors: SeatsQuery$result['findManyConferenceSupervisors'];
+		supervisors: PageData['supervisors'];
 		conferenceId: string;
 	}
 
 	let { supervisors, conferenceId }: Props = $props();
 
-	const addConferenceSupervisorMutation = graphql(`
-		mutation addConferenceSupervisor(
-			$userId: ID!
-			$conferenceId: ID!
-			$plansOwnAttendenceAtConference: Boolean!
-		) {
-			createOneConferenceSupervisor(
-				userId: $userId
-				conferenceId: $conferenceId
-				plansOwnAttendenceAtConference: $plansOwnAttendenceAtConference
-			) {
-				id
-			}
-		}
-	`);
-
-	let user = $state<Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined>(undefined);
+	let user = $state<Partial<UserPreview> | undefined>(undefined);
 	let plansOwnAttendenceAtConference = $state(false);
 
 	const addParticipant = async () => {
 		if (!user?.id) return;
-		await addConferenceSupervisorMutation.mutate({
-			userId: user.id,
-			conferenceId: conferenceId,
-			plansOwnAttendenceAtConference
+		await client.mutate.createConferenceSupervisor({
+			__args: { userId: user.id, conferenceId, plansOwnAttendenceAtConference },
+			id: true
 		});
 	};
 </script>
@@ -64,8 +48,8 @@
 					<div class="flex flex-wrap gap-1">
 						{#each supervisors as supervisor (supervisor.id)}
 							<InitialsButton
-								given_name={supervisor.user.given_name}
-								family_name={supervisor.user.family_name}
+								given_name={supervisor.user.givenName}
+								family_name={supervisor.user.familyName}
 								userId={supervisor.user.id}
 								{conferenceId}
 							/>

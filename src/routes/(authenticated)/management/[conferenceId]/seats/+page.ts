@@ -1,92 +1,80 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query SeatsQuery($conferenceId: String!) {
-		findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			name
-			abbreviation
-			numOfSeatsPerDelegation
-		}
-		findManyNations(where: { committees: { some: { conferenceId: { equals: $conferenceId } } } }) {
-			alpha2Code
-			alpha3Code
-			committees {
-				id
-				numOfSeatsPerDelegation
-			}
-		}
-		findManyCustomConferenceRoles(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			name
-			description
-			fontAwesomeIcon
-			seatAmount
-		}
-		findManyDelegations(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			assignedNation {
-				alpha2Code
-				alpha3Code
-			}
-			members {
-				id
-				assignedCommittee {
-					id
-				}
-				user {
-					id
-					given_name
-					family_name
-				}
-				isHeadDelegate
-			}
-			assignedNation {
-				alpha2Code
-				alpha3Code
-			}
-			assignedNonStateActor {
-				id
-				name
-			}
-		}
-		findManyNonStateActors(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			name
-			abbreviation
-			fontAwesomeIcon
-			seatAmount
-		}
-		findManySingleParticipants(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			user {
-				id
-				given_name
-				family_name
-			}
-			assignedRole {
-				id
-				name
-				description
-				fontAwesomeIcon
-				seatAmount
-			}
-		}
-		findManyConferenceSupervisors(
-			where: { conferenceId: { equals: $conferenceId } }
-			orderBy: [{ user: { family_name: asc } }]
-		) {
-			id
-			user {
-				id
-				given_name
-				family_name
-			}
-		}
-	}
-`);
+const seatHolder = { id: true, givenName: true, familyName: true } as const;
 
-export const _SeatsQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+export const load: PageLoad = async (event) => {
+	const conferenceId = event.params.conferenceId;
+	const inConference = { where: { conferenceId: { eq: conferenceId } } };
+
+	const [committees, nations, roles, delegations, nonStateActors, singleParticipants, supervisors] =
+		await Promise.all([
+			client.query.committees({
+				__args: inConference,
+				id: true,
+				name: true,
+				abbreviation: true,
+				numOfSeatsPerDelegation: true
+			}),
+			client.query.nations({
+				__args: { where: { committees: { conferenceId: { eq: conferenceId } } } },
+				alpha2Code: true,
+				alpha3Code: true,
+				committees: { id: true, numOfSeatsPerDelegation: true }
+			}),
+			client.query.customConferenceRoles({
+				__args: inConference,
+				id: true,
+				name: true,
+				description: true,
+				fontAwesomeIcon: true,
+				seatAmount: true
+			}),
+			client.query.delegations({
+				__args: inConference,
+				id: true,
+				assignedNation: { alpha2Code: true, alpha3Code: true },
+				assignedNonStateActor: { id: true, name: true },
+				members: {
+					id: true,
+					isHeadDelegate: true,
+					assignedCommittee: { id: true },
+					user: seatHolder
+				}
+			}),
+			client.query.nonStateActors({
+				__args: inConference,
+				id: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true,
+				seatAmount: true
+			}),
+			client.query.singleParticipants({
+				__args: inConference,
+				id: true,
+				user: seatHolder,
+				assignedRole: {
+					id: true,
+					name: true,
+					description: true,
+					fontAwesomeIcon: true,
+					seatAmount: true
+				}
+			}),
+			client.query.conferenceSupervisors({ __args: inConference, id: true, user: seatHolder })
+		]);
+
+	return {
+		committees,
+		nations,
+		roles,
+		delegations,
+		nonStateActors,
+		singleParticipants,
+		// The order argument cannot reach through to the user's name, so this sorts here.
+		supervisors: [...supervisors].sort((a, b) =>
+			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
+		)
+	};
 };

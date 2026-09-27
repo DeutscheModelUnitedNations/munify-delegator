@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import UserSearchModal from './UserSearchModal.svelte';
-	import { type getUserInfo$result } from '$houdini';
+	import type { UserPreview } from '$lib/api/rumbleClient/client';
 	import type { Snippet } from 'svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 
 	interface Props {
 		warning?: boolean;
-		user: Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined;
+		user: Partial<UserPreview> | undefined;
 		targetRole: string;
 		addParticipant: () => Promise<void>;
 		formElements?: Snippet[];

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
-	import { graphql, type getUserInfo$result, type SeatsQuery$result } from '$houdini';
+	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
+	import type { PageData } from '../$types';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -9,42 +10,27 @@
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		delegations: SeatsQuery$result['findManyDelegations'];
-		committees: SeatsQuery$result['findManyCommittees'];
-		nations: SeatsQuery$result['findManyNations'];
+		delegations: PageData['delegations'];
+		committees: PageData['committees'];
+		nations: PageData['nations'];
 		conferenceId: string;
 		assignUserId?: string;
 	}
 
 	let { delegations, committees, nations, conferenceId, assignUserId }: Props = $props();
 
-	const addNationParticipantMutation = graphql(`
-		mutation addNationParticipant(
-			$userId: ID!
-			$conferenceId: ID!
-			$assignedNationAlpha3Code: String!
-			$assignedCommitteeId: ID
-		) {
-			createOneAppliedDelegationMember(
-				userId: $userId
-				conferenceId: $conferenceId
-				assignedNationAlpha3Code: $assignedNationAlpha3Code
-				assignedCommitteeId: $assignedCommitteeId
-			) {
-				id
-			}
-		}
-	`);
-
-	let user = $state<Partial<getUserInfo$result['previewUserByIdOrEmail']> | undefined>(undefined);
+	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
 	const addParticipant = async (alpha3Code: string, committeeId: string) => {
 		if (!user?.id) return;
-		await addNationParticipantMutation.mutate({
-			userId: user.id,
-			conferenceId: conferenceId,
-			assignedNationAlpha3Code: alpha3Code,
-			assignedCommitteeId: committeeId
+		await client.mutate.createAppliedDelegationMember({
+			__args: {
+				userId: user.id,
+				conferenceId,
+				assignedNationAlpha3Code: alpha3Code,
+				assignedCommitteeId: committeeId
+			},
+			id: true
 		});
 	};
 </script>
@@ -147,8 +133,8 @@
 									<div class="flex justify-center gap-1">
 										{#each assignedDelegationMember as member}
 											<InitialsButton
-												given_name={member.user.given_name}
-												family_name={member.user.family_name}
+												given_name={member.user.givenName}
+												family_name={member.user.familyName}
 												userId={member.user.id}
 												{conferenceId}
 											/>
