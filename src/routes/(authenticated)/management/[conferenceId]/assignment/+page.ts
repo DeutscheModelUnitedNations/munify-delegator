@@ -1,94 +1,65 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import type { PageLoad } from './$types';
 
-export const _houdini_load = graphql(`
-	query BaseAssignmentDataQuery($conferenceId: String!) {
-		findManyDelegations(
-			where: { conferenceId: { equals: $conferenceId }, applied: { equals: true } }
-		) {
-			id
-			school
-			appliedForRoles {
-				id
-				rank
-				nation {
-					alpha3Code
-					alpha2Code
-				}
-				nonStateActor {
-					id
-					name
-					abbreviation
-					fontAwesomeIcon
-					seatAmount
-				}
-			}
-			members {
-				id
-				isHeadDelegate
-				user {
-					id
-				}
-				supervisors {
-					id
-					user {
-						id
-					}
-				}
-			}
-		}
+/** Everything the assignment assistant needs to open a project for a conference. */
+export const load: PageLoad = async (event) => {
+	const conferenceId = event.params.conferenceId;
+	const applied = { where: { conferenceId: { eq: conferenceId }, applied: { eq: true } } };
 
-		findManySingleParticipants(
-			where: { conferenceId: { equals: $conferenceId }, applied: { equals: true } }
-		) {
-			id
-			school
-			supervisors {
-				id
-				user {
-					id
+	const [delegations, singleParticipants, conference] = await Promise.all([
+		client.query.delegations({
+			__args: applied,
+			id: true,
+			school: true,
+			appliedForRoles: {
+				id: true,
+				rank: true,
+				nation: { alpha3Code: true, alpha2Code: true },
+				nonStateActor: {
+					id: true,
+					name: true,
+					abbreviation: true,
+					fontAwesomeIcon: true,
+					seatAmount: true
 				}
+			},
+			members: {
+				id: true,
+				isHeadDelegate: true,
+				user: { id: true },
+				supervisors: { id: true, user: { id: true } }
 			}
-			user {
-				id
-			}
-			appliedForRoles {
-				id
-				fontAwesomeIcon
-				name
-			}
-		}
+		}),
+		client.query.singleParticipants({
+			__args: applied,
+			id: true,
+			school: true,
+			supervisors: { id: true, user: { id: true } },
+			user: { id: true },
+			appliedForRoles: { id: true, fontAwesomeIcon: true, name: true }
+		}),
+		client.query.conference({
+			__args: { id: conferenceId },
+			id: true,
+			title: true,
+			startConference: true,
+			nonStateActors: {
+				id: true,
+				name: true,
+				fontAwesomeIcon: true,
+				abbreviation: true,
+				seatAmount: true
+			},
+			committees: {
+				id: true,
+				name: true,
+				abbreviation: true,
+				numOfSeatsPerDelegation: true,
+				nations: { alpha2Code: true, alpha3Code: true }
+			},
+			individualApplicationOptions: { id: true, name: true, fontAwesomeIcon: true }
+		})
+	]);
 
-		findUniqueConference(where: { id: $conferenceId }) {
-			id
-			title
-			startConference
-			nonStateActors {
-				id
-				name
-				fontAwesomeIcon
-				abbreviation
-				seatAmount
-			}
-			committees {
-				id
-				name
-				abbreviation
-				numOfSeatsPerDelegation
-				nations {
-					alpha2Code
-					alpha3Code
-				}
-			}
-			individualApplicationOptions {
-				id
-				name
-				fontAwesomeIcon
-			}
-		}
-	}
-`);
-
-export const _BaseAssignmentDataQueryVariables = async (event) => {
-	const { conferenceId } = event.params;
-	return { conferenceId };
+	return { delegations, singleParticipants, conference };
 };

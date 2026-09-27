@@ -6,7 +6,7 @@
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,53 +14,45 @@
 
 	let conferenceId = $derived(data.participation?.conference?.id);
 
-	const previewSupervisorQuery = graphql(`
-		query previewSupervisor($conferenceId: ID!, $connectionCode: String!) {
-			previewConferenceSupervisor(conferenceId: $conferenceId, connectionCode: $connectionCode) {
-				family_name
-				given_name
-			}
-		}
-	`);
+	function fetchPreview(connectionCode: string) {
+		return client.query.previewConferenceSupervisor({
+			__args: { conferenceId: conferenceId!, connectionCode },
+			family_name: true,
+			given_name: true
+		});
+	}
 
-	const connectSupervisorMutation = graphql(`
-		mutation connectSupervisor($conferenceId: ID!, $connectionCode: String!) {
-			connectToConferenceSupervisor(conferenceId: $conferenceId, connectionCode: $connectionCode) {
-				id
-			}
-		}
-	`);
+	let preview = $state<Awaited<ReturnType<typeof fetchPreview>>>();
+	let previewLoading = $state(false);
 
 	const connect = async () => {
-		if (!conferenceId || !$code || !$previewSupervisorQuery.data?.previewConferenceSupervisor)
-			return;
+		if (!conferenceId || !$code || !preview) return;
 
-		const promise = connectSupervisorMutation.mutate({
-			conferenceId,
-			connectionCode: $code
+		const promise = client.mutate.connectToConferenceSupervisor({
+			__args: { conferenceId, connectionCode: $code },
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
 
-		const res = await promise;
-
-		if (res?.errors) {
-			console.error(res.errors);
-			return;
-		}
-
-		cache.markStale();
 		await invalidateAll();
 		goto(`/dashboard/${conferenceId}`);
 	};
+
 	$effect(() => {
-		if ($code) {
-			if (!conferenceId) {
-				return;
-			}
-			previewSupervisorQuery.fetch({
-				variables: { conferenceId, connectionCode: $code }
+		if (!$code || !conferenceId) return;
+		previewLoading = true;
+		preview = undefined;
+		void fetchPreview($code)
+			.then((result) => {
+				preview = result;
+			})
+			.catch(() => {
+				preview = undefined;
+			})
+			.finally(() => {
+				previewLoading = false;
 			});
-		}
 	});
 </script>
 
@@ -75,16 +67,16 @@
 			bind:value={$code}
 		/>
 
-		{#if $code && $previewSupervisorQuery.fetching}
+		{#if $code && previewLoading}
 			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
-		{:else if $code && $previewSupervisorQuery.data?.previewConferenceSupervisor}
+		{:else if $code && preview}
 			<div class="alert alert-info mt-4">
 				<div>
 					<h3 class="text-lg font-bold capitalize">
-						{$previewSupervisorQuery.data.previewConferenceSupervisor.given_name}
-						{$previewSupervisorQuery.data.previewConferenceSupervisor.family_name}
+						{preview.given_name}
+						{preview.family_name}
 					</h3>
 					<p class="mt-4 text-sm">{m.connectSupervisorWarning()}</p>
 					<button class="btn btn-primary mt-4" onclick={connect}>{m.connectSupervisorBtn()}</button>

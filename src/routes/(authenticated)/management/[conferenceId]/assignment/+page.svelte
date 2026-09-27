@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { prettifyError } from 'zod';
@@ -7,13 +7,12 @@
 		ProjectDataSchema,
 		type ProjectData
 	} from '../../../../(authenticated)/assignment-assistant/[projectId]/appData.svelte';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let query = $derived(data.BaseAssignmentDataQuery);
-	let delegations = $derived($query.data?.findManyDelegations);
-	let conference = $derived($query.data?.findUniqueConference);
-	let singleParticipants = $derived($query.data?.findManySingleParticipants);
+	let delegations = $derived(data.delegations);
+	let conference = $derived(data.conference);
+	let singleParticipants = $derived(data.singleParticipants);
 
 	let fileInput = $state<string>();
 
@@ -53,21 +52,12 @@
 		sendAssignmentData(data.conferenceId, jsonData);
 	};
 
-	const sendAssigmentDataMutation = graphql(`
-		mutation SendAssignmentDataMutation($where: ConferenceWhereUniqueInput!, $data: JSONObject!) {
-			sendAssignmentData(data: $data, where: $where) {
-				success
-			}
-		}
-	`);
-
-	const sendAssignmentData = async (id: string, data: ProjectData) => {
-		const req = await sendAssigmentDataMutation.mutate({
-			where: { id },
-			data
+	const sendAssignmentData = async (conferenceId: string, projectData: ProjectData) => {
+		const applied = await client.mutate.sendAssignmentData({
+			__args: { conferenceId, data: projectData }
 		});
 
-		if (!req.data?.sendAssignmentData.success) {
+		if (!applied) {
 			alert('Failed to send assignment data');
 			throw new Error('Failed to send assignment data');
 		}
@@ -77,10 +67,53 @@
 
 	const downloadCurrentRegistrationData = () => {
 		if (!conference || !delegations || !singleParticipants) return;
+		// The project file's schema distinguishes delegations from single participants by which
+		// keys are absent, so the discriminating keys are spelled out here.
 		const data: ProjectData = {
 			conference,
-			delegations,
-			singleParticipants
+			delegations: delegations.map((delegation) => ({
+				id: delegation.id,
+				school: delegation.school ?? undefined,
+				appliedForRoles: delegation.appliedForRoles.map((role) => ({
+					id: role.id,
+					rank: role.rank,
+					nation: role.nation ?? undefined,
+					nonStateActor: role.nonStateActor ?? undefined,
+					fontAwesomeIcon: undefined,
+					name: undefined
+				})),
+				members: delegation.members.map((member) => ({
+					id: member.id,
+					isHeadDelegate: member.isHeadDelegate,
+					user: member.user,
+					supervisors: member.supervisors.map((supervisor) => ({
+						id: supervisor.id,
+						user: supervisor.user
+					}))
+				})),
+				supervisors: undefined,
+				user: undefined
+			})),
+			singleParticipants: singleParticipants.map((participant) => ({
+				id: participant.id,
+				school: participant.school ?? undefined,
+				user: participant.user,
+				appliedForRoles: participant.appliedForRoles.map((role) => ({
+					id: role.id,
+					name: role.name,
+					fontAwesomeIcon: role.fontAwesomeIcon,
+					rank: undefined,
+					nation: undefined,
+					nonStateActor: undefined
+				})),
+				supervisors: participant.supervisors.map((supervisor) => ({
+					id: supervisor.id,
+					user: supervisor.user
+				})),
+				members: undefined,
+				splittedFrom: undefined,
+				splittedInto: undefined
+			}))
 		};
 		const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -92,7 +125,7 @@
 	};
 </script>
 
-{#if $query.fetching}
+{#if !conference}
 	<Spinner />
 {:else}
 	<div class="flex flex-col gap-8 p-10">

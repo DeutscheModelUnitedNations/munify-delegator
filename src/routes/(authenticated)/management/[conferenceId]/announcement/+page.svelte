@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
@@ -13,25 +13,13 @@
 	let showInfoExpanded = $state(data.showInfoExpanded);
 	let saving = $state(false);
 
-	const UpdateAnnouncementMutation = graphql(`
-		mutation UpdateAnnouncementMutation(
-			$where: ConferenceWhereUniqueInput!
-			$data: ConferenceUpdateDataInput!
-		) {
-			updateOneConference(data: $data, where: $where) {
-				id
-			}
-		}
-	`);
-
 	async function save() {
 		saving = true;
 		try {
-			await UpdateAnnouncementMutation.mutate({
-				where: { id: data.conferenceId },
-				data: { info, showInfoExpanded }
+			await client.mutate.updateConference({
+				__args: { id: data.conferenceId, info, showInfoExpanded },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			toast.success(m.saved());
 		} finally {
