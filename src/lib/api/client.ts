@@ -3,7 +3,7 @@ import { type AnyVariables, Client, CombinedError, type Exchange, fetchExchange 
 import { cacheExchange } from '@urql/exchange-graphcache';
 import { filter, fromPromise, merge, mergeMap, pipe } from 'wonka';
 import { browser } from '$app/environment';
-import { performGraphQLOperation } from '$api/graphqlSSR';
+import { graphqlOperation } from '$api/graphql.remote';
 import { schema } from './rumbleClient/schema';
 
 /** `AnyVariables` includes `void` for operations that take none; the remote call wants a record. */
@@ -12,19 +12,19 @@ function toVariables(variables: AnyVariables): Record<string, unknown> | undefin
 }
 
 /**
- * Runs an operation against the schema in this process instead of over HTTP.
+ * Runs an operation through the SSR remote function instead of over HTTP.
  *
  * Only reachable on the server, where the client's relative endpoint URL cannot be fetched.
  * Subscriptions are not handled here and anything this exchange does not answer falls through to
  * `fetchExchange`.
  */
-const inProcessExchange: Exchange = ({ forward }) => {
+const ssrExchange: Exchange = ({ forward }) => {
 	return (operations) => {
 		const handled = pipe(
 			operations,
 			filter((operation) => !browser && operation.kind !== 'teardown'),
 			mergeMap((operation) => {
-				const run = performGraphQLOperation({
+				const run = graphqlOperation({
 					query: operation.query,
 					variables: toVariables(operation.variables)
 				});
@@ -62,7 +62,7 @@ const inProcessExchange: Exchange = ({ forward }) => {
  */
 export const urqlClient = new Client({
 	url: '/api/graphql',
-	exchanges: [nativeDateExchange, cacheExchange({ schema }), inProcessExchange, fetchExchange],
+	exchanges: [nativeDateExchange, cacheExchange({ schema }), ssrExchange, fetchExchange],
 	fetchOptions: {
 		credentials: 'include'
 	}
