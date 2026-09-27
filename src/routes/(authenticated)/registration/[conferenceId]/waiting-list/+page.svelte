@@ -1,31 +1,66 @@
 <script lang="ts">
 	import Form from '$lib/components/form/Form.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { superForm } from 'sveltekit-superforms';
-	import type { PageData } from './$types';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
 	import { waitingListFormSchema } from './form-schema';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { page } from '$app/state';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
-	let { data }: { data: PageData } = $props();
+	const conferenceId = page.params.conferenceId!;
+	const user = await getCurrentUser();
 
-	let form = superForm(data.form, {
-		resetForm: false,
-		validationMethod: 'oninput',
-		validators: zod4Client(waitingListFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		},
-		async onUpdate(_e) {
-			await invalidateAll();
-		}
+	// Seeded once, on purpose: this is the initial value of a form, and re-reading it while someone
+	// is typing would throw their answers away.
+	const [existingEntry] = await client.query.waitingListEntries({
+		__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+		id: true,
+		school: true,
+		motivation: true,
+		experience: true,
+		requests: true
 	});
 
-	let disabled = $derived(data.alreadyOnWaitingList);
+	let alreadyOnWaitingList = $state(!!existingEntry);
+
+	const form = superForm(
+		defaults(
+			{
+				school: existingEntry?.school ?? '',
+				motivation: existingEntry?.motivation ?? '',
+				experience: existingEntry?.experience ?? '',
+				requests: existingEntry?.requests ?? ''
+			},
+			zod4Client(waitingListFormSchema)
+		),
+		{
+			SPA: true,
+			resetForm: false,
+			validationMethod: 'oninput',
+			validators: zod4Client(waitingListFormSchema),
+			onError(e) {
+				toast.error(e.result.error.message);
+			},
+			async onUpdate({ form: validated }) {
+				if (!validated.valid) return;
+				const promise = client.mutate.createWaitingListEntry({
+					__args: { ...validated.data, conferenceId },
+					id: true
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
+				alreadyOnWaitingList = true;
+			}
+		}
+	);
+
+	let disabled = $derived(alreadyOnWaitingList);
 </script>
 
 <div class="flex w-full flex-col items-center p-4">
@@ -36,7 +71,7 @@
 		</p>
 	</hero>
 
-	{#if data.alreadyOnWaitingList}
+	{#if alreadyOnWaitingList}
 		<div class="alert alert-success alert-vertical sm:alert-horizontal mt-10">
 			<i class="fas fa-circle-check"></i>
 			{@html m.alreadyOnWaitingList()}

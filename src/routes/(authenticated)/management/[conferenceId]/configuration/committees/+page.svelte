@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
 	import { client } from '$lib/api/rumbleClient/client';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
@@ -8,28 +7,52 @@
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { toast } from 'svelte-sonner';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import { superForm } from 'sveltekit-superforms';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { AddAgendaItemFormSchema } from './form-schema';
-	import { invalidateAll } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { page } from '$app/state';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 
-	let { data }: { data: PageData } = $props();
+	const conferenceId = $derived(page.params.conferenceId!);
 
-	let committees = $derived(data.committees);
+	const committees = $derived(
+		await client.liveQuery.committees({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			abbreviation: true,
+			name: true,
+			resolutionHeadline: true,
+			agendaItems: {
+				id: true,
+				title: true,
+				teaserText: true,
+				papers: { id: true }
+			}
+		})
+	);
 
-	let form = superForm(data.addAgendaItemForm, {
-		resetForm: true,
-		validationMethod: 'oninput',
-		validators: zod4Client(AddAgendaItemFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		},
-		onResult(_e) {
-			invalidateAll();
+	const form = superForm(
+		defaults({ committeeId: '', title: '', teaserText: '' }, zod4Client(AddAgendaItemFormSchema)),
+		{
+			SPA: true,
+			resetForm: true,
+			validationMethod: 'oninput',
+			validators: zod4Client(AddAgendaItemFormSchema),
+			onError(e) {
+				toast.error(e.result.error.message);
+			},
+			async onUpdate({ form: validated }) {
+				if (!validated.valid) return;
+				const promise = client.mutate.createAgendaItem({
+					__args: { ...validated.data, teaserText: validated.data.teaserText || undefined },
+					id: true
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
+			}
 		}
-	});
+	);
 
 	// Committee editing state
 	let editCommitteeModalOpen = $state(false);
@@ -70,7 +93,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editCommitteeModalOpen = false;
-		invalidateAll();
 	}
 
 	async function saveAgendaItem() {
@@ -85,7 +107,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editAgendaItemModalOpen = false;
-		invalidateAll();
 	}
 
 	async function confirmDelete() {
@@ -95,7 +116,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		deleteModalOpen = false;
-		invalidateAll();
 	}
 
 	function openEditCommittee(committee: {

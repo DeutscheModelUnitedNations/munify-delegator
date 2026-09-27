@@ -3,9 +3,8 @@
 	import { page } from '$app/state';
 	import FormFileInput from '$lib/components/form/FormFile.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import { superForm } from 'sveltekit-superforms';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
-	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
@@ -24,34 +23,204 @@
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { queryParam } from 'sveltekit-search-params';
 	import Modal from '$lib/components/Modal.svelte';
-	import { invalidateAll } from '$app/navigation';
 	import { AddAgendaItemFormSchema } from './committees/form-schema';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';
 	import { collectConfigChanges } from './changePreview';
+	import type { z } from 'zod';
+	import { fileToDataURL } from '$lib/helpers/fileToDataURL';
+	import dayjs from 'dayjs';
 
-	let { data }: { data: PageData } = $props();
-	let form = superForm(data.form, {
+	const conferenceId = page.params.conferenceId!;
+
+	// Seeded once: these are the form's initial values, and re-reading them while the settings are
+	// being edited would discard the edits.
+	const storedConference = await client.query.conference({
+		__args: { id: conferenceId },
+		title: true,
+		location: true,
+		longTitle: true,
+		startAssignment: true,
+		registrationDeadlineGracePeriodMinutes: true,
+		startConference: true,
+		state: true,
+		website: true,
+		endConference: true,
+		imageDataURL: true,
+		emblemDataURL: true,
+		logoDataURL: true,
+		language: true,
+		linkToPreparationGuide: true,
+		linkToTeamWiki: true,
+		linkToServicesPage: true,
+		isOpenPaperSubmission: true,
+		showCalendar: true,
+		timezone: true,
+		unlockPayments: true,
+		unlockPostals: true,
+		feeAmount: true,
+		bic: true,
+		currency: true,
+		bankName: true,
+		iban: true,
+		accountHolder: true,
+		postalName: true,
+		postalStreet: true,
+		postalApartment: true,
+		postalZip: true,
+		postalCity: true,
+		postalCountry: true,
+		contractContentSet: true,
+		guardianConsentContentSet: true,
+		mediaConsentContentSet: true,
+		termsAndConditionsContentSet: true,
+		certificateContentSet: true
+	});
+
+	/**
+	 * The stored row as plain values. Field by field on purpose: the generated client hands back a
+	 * subscribeable proxy, and spreading that into the form would drag `subscribe` along and widen
+	 * every field to `unknown`.
+	 */
+	type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;
+
+	const initialSettings: ConferenceSettings = {
+		title: storedConference.title,
+		longTitle: storedConference.longTitle ?? undefined,
+		location: storedConference.location ?? undefined,
+		language: storedConference.language ?? undefined,
+		website: storedConference.website ?? undefined,
+		startAssignment: storedConference.startAssignment,
+		registrationDeadlineGracePeriodMinutes: storedConference.registrationDeadlineGracePeriodMinutes,
+		startConference: storedConference.startConference,
+		endConference: storedConference.endConference,
+		state: storedConference.state,
+		timezone: storedConference.timezone,
+		showCalendar: storedConference.showCalendar,
+		isOpenPaperSubmission: storedConference.isOpenPaperSubmission,
+		linkToPreparationGuide: storedConference.linkToPreparationGuide ?? undefined,
+		linkToTeamWiki: storedConference.linkToTeamWiki ?? undefined,
+		linkToServicesPage: storedConference.linkToServicesPage ?? undefined,
+		unlockPayments: storedConference.unlockPayments,
+		unlockPostals: storedConference.unlockPostals,
+		feeAmount: storedConference.feeAmount ?? undefined,
+		accountHolder: storedConference.accountHolder ?? undefined,
+		iban: storedConference.iban ?? undefined,
+		bic: storedConference.bic ?? undefined,
+		bankName: storedConference.bankName ?? undefined,
+		currency: storedConference.currency ?? undefined,
+		postalName: storedConference.postalName ?? undefined,
+		postalStreet: storedConference.postalStreet ?? undefined,
+		postalApartment: storedConference.postalApartment ?? undefined,
+		postalZip: storedConference.postalZip ?? undefined,
+		postalCity: storedConference.postalCity ?? undefined,
+		postalCountry: storedConference.postalCountry ?? undefined
+	};
+
+	/**
+	 * What the server currently holds. The change preview diffs the form against this, so it is
+	 * updated on a successful save rather than re-read: the page never reloads any more.
+	 */
+	let savedSettings = $state({ ...initialSettings });
+
+	/** Previews and "already uploaded" markers for the fields that hold a file rather than a value. */
+	let storedFiles = $state({
+		imageDataURL: storedConference.imageDataURL,
+		emblemDataURL: storedConference.emblemDataURL,
+		logoDataURL: storedConference.logoDataURL,
+		contractContentSet: storedConference.contractContentSet,
+		guardianConsentContentSet: storedConference.guardianConsentContentSet,
+		mediaConsentContentSet: storedConference.mediaConsentContentSet,
+		termsAndConditionsContentSet: storedConference.termsAndConditionsContentSet,
+		certificateContentSet: storedConference.certificateContentSet
+	});
+
+	const committeesData = $derived(
+		await client.liveQuery.committees({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			abbreviation: true,
+			name: true,
+			resolutionHeadline: true,
+			agendaItems: { id: true, title: true, teaserText: true, papers: { id: true } }
+		})
+	);
+
+	const form = superForm(defaults(initialSettings, zod4Client(conferenceSettingsFormSchema)), {
+		SPA: true,
 		resetForm: false,
 		validationMethod: 'oninput',
 		validators: zod4Client(conferenceSettingsFormSchema),
 		onError(e) {
 			toast.error(e.result.error.message);
 		},
-		onResult(_e) {
-			invalidateAll();
+		async onUpdate({ form: validated }) {
+			if (!validated.valid) return;
+
+			// The form carries uploads as `File` while the columns store data URLs, so the conversion
+			// happens here; a field left untouched yields `undefined` and keeps what is stored.
+			const {
+				image,
+				emblem,
+				logo,
+				contractBasePDF,
+				guardianConsentBasePDF,
+				mediaConsentBasePDF,
+				termsAndConditionsBasePDF,
+				certificateBasePDF,
+				...settings
+			} = validated.data;
+
+			const promise = client.mutate.updateConference({
+				__args: {
+					...settings,
+					id: conferenceId,
+					imageDataURL: await fileToDataURL(image),
+					emblemDataURL: await fileToDataURL(emblem),
+					logoDataURL: await fileToDataURL(logo),
+					contractContent: await fileToDataURL(contractBasePDF),
+					guardianConsentContent: await fileToDataURL(guardianConsentBasePDF),
+					mediaConsentContent: await fileToDataURL(mediaConsentBasePDF),
+					termsAndConditionsContent: await fileToDataURL(termsAndConditionsBasePDF),
+					certificateContent: await fileToDataURL(certificateBasePDF)
+				},
+				id: true,
+				imageDataURL: true,
+				emblemDataURL: true,
+				logoDataURL: true,
+				certificateContentSet: true,
+				termsAndConditionsContentSet: true,
+				mediaConsentContentSet: true,
+				guardianConsentContentSet: true,
+				contractContentSet: true
+			});
+			toast.promise(promise, genericPromiseToastMessages);
+			const saved = await promise;
+
+			savedSettings = { ...settings };
+			storedFiles = {
+				imageDataURL: saved.imageDataURL,
+				emblemDataURL: saved.emblemDataURL,
+				logoDataURL: saved.logoDataURL,
+				contractContentSet: saved.contractContentSet,
+				guardianConsentContentSet: saved.guardianConsentContentSet,
+				mediaConsentContentSet: saved.mediaConsentContentSet,
+				termsAndConditionsContentSet: saved.termsAndConditionsContentSet,
+				certificateContentSet: saved.certificateContentSet
+			};
 		}
 	});
 	let formData = $derived(form.form);
 	let tainted = $derived(form.tainted);
 	let formElement: HTMLFormElement | undefined = $state();
 
-	let confirmSaveModalOpen = $state(false);
+	const technicalRegistrationDeadline = $derived(
+		dayjs($formData.startAssignment)
+			.add($formData.registrationDeadlineGracePeriodMinutes, 'minute')
+			.toDate()
+	);
 
-	// The values as they are currently stored on the server. `data.form` is
-	// re-validated from the database on every (re)load, so this stays in sync after
-	// a save.
-	let savedSettings = $derived(data.form.data);
+	let confirmSaveModalOpen = $state(false);
 
 	let pendingChanges = $derived(
 		collectConfigChanges({
@@ -59,14 +228,14 @@
 			current: $formData,
 			tainted: $tainted,
 			existingFiles: {
-				image: !!data.imageDataURL,
-				emblem: !!data.emblemDataURL,
-				logo: !!data.logoDataURL,
-				contractBasePDF: data.contractContentSet,
-				guardianConsentBasePDF: data.guardianConsentContentSet,
-				mediaConsentBasePDF: data.mediaConsentContentSet,
-				termsAndConditionsBasePDF: data.termsAndConditionsContentSet,
-				certificateBasePDF: data.certificateContentSet
+				image: !!storedFiles.imageDataURL,
+				emblem: !!storedFiles.emblemDataURL,
+				logo: !!storedFiles.logoDataURL,
+				contractBasePDF: storedFiles.contractContentSet,
+				guardianConsentBasePDF: storedFiles.guardianConsentContentSet,
+				mediaConsentBasePDF: storedFiles.mediaConsentContentSet,
+				termsAndConditionsBasePDF: storedFiles.termsAndConditionsContentSet,
+				certificateBasePDF: storedFiles.certificateContentSet
 			}
 		})
 	);
@@ -80,17 +249,27 @@
 	});
 
 	// Committees tab - agenda item form
-	let agendaForm = superForm(data.addAgendaItemForm, {
-		resetForm: true,
-		validationMethod: 'oninput',
-		validators: zod4Client(AddAgendaItemFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		},
-		onResult(_e) {
-			invalidateAll();
+	const agendaForm = superForm(
+		defaults({ committeeId: '', title: '', teaserText: '' }, zod4Client(AddAgendaItemFormSchema)),
+		{
+			SPA: true,
+			resetForm: true,
+			validationMethod: 'oninput',
+			validators: zod4Client(AddAgendaItemFormSchema),
+			onError(e) {
+				toast.error(e.result.error.message);
+			},
+			async onUpdate({ form: validated }) {
+				if (!validated.valid) return;
+				const promise = client.mutate.createAgendaItem({
+					__args: { ...validated.data, teaserText: validated.data.teaserText || undefined },
+					id: true
+				});
+				toast.promise(promise, genericPromiseToastMessages);
+				await promise;
+			}
 		}
-	});
+	);
 
 	// Committee editing state
 	let editCommitteeModalOpen = $state(false);
@@ -185,7 +364,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editCommitteeModalOpen = false;
-		invalidateAll();
 	}
 
 	async function saveAgendaItem() {
@@ -200,7 +378,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editAgendaItemModalOpen = false;
-		invalidateAll();
 	}
 
 	async function confirmDelete() {
@@ -210,7 +387,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		deleteModalOpen = false;
-		invalidateAll();
 	}
 
 	function openEditCommittee(committee: {
@@ -371,7 +547,7 @@
 			<span>{@html m.tabExplanationCommittees()}</span>
 		</div>
 
-		{#each data.committeesData as committee}
+		{#each committeesData as committee}
 			{@const agendaItems = committee.agendaItems}
 			<div class="card bg-base-200 shadow-md mb-4">
 				<div class="card-body">
@@ -417,12 +593,12 @@
 		{/each}
 
 		<FormFieldset title={m.createNewAgendaItem()}>
-			<Form form={agendaForm} action="?/addAgendaItem">
+			<Form form={agendaForm}>
 				<FormSelect
 					form={agendaForm}
 					name="committeeId"
 					label={m.committee()}
-					options={data.committeesData.map((x) => ({ label: x.abbreviation, value: x.id }))}
+					options={committeesData.map((x) => ({ label: x.abbreviation, value: x.id }))}
 				/>
 				<FormTextInput form={agendaForm} name="title" label={m.title()} />
 				<FormTextArea form={agendaForm} name="teaserText" label={m.teaserText()} />
@@ -430,7 +606,7 @@
 		</FormFieldset>
 	</div>
 
-	<Form {form} bind:formElement showSubmitButton={false} action="?/updateSettings">
+	<Form {form} bind:formElement showSubmitButton={false}>
 		<!-- General Tab -->
 		<div class:hidden={currentTab !== 'general'}>
 			<div class="alert alert-info mb-6">
@@ -469,9 +645,9 @@
 					placeholder="mun-sh.de"
 					label={m.conferenceWebsite()}
 				/>
-				{#if $formData.image || data.imageDataURL}
+				{#if $formData.image || storedFiles.imageDataURL}
 					<img
-						src={$formData.image ? URL.createObjectURL($formData.image) : data.imageDataURL}
+						src={$formData.image ? URL.createObjectURL($formData.image) : storedFiles.imageDataURL}
 						class="h-64 w-64"
 						alt="Preview of the file you selected"
 					/>
@@ -479,9 +655,11 @@
 				<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
 				<div class="mt-4">
 					<p class="text-sm opacity-70 mb-2">{m.conferenceEmblem()}</p>
-					{#if $formData.emblem || data.emblemDataURL}
+					{#if $formData.emblem || storedFiles.emblemDataURL}
 						<img
-							src={$formData.emblem ? URL.createObjectURL($formData.emblem) : data.emblemDataURL}
+							src={$formData.emblem
+								? URL.createObjectURL($formData.emblem)
+								: storedFiles.emblemDataURL}
 							class="h-24 w-24 mb-2"
 							alt="Emblem preview"
 						/>
@@ -491,9 +669,9 @@
 				</div>
 				<div class="mt-4">
 					<p class="text-sm opacity-70 mb-2">{m.conferenceLogo()}</p>
-					{#if $formData.logo || data.logoDataURL}
+					{#if $formData.logo || storedFiles.logoDataURL}
 						<img
-							src={$formData.logo ? URL.createObjectURL($formData.logo) : data.logoDataURL}
+							src={$formData.logo ? URL.createObjectURL($formData.logo) : storedFiles.logoDataURL}
 							class="h-24 w-24 mb-2"
 							alt="Logo preview"
 						/>
@@ -513,7 +691,7 @@
 					label={m.registrationDeadlineGracePeriod()}
 				/>
 				<p class="test-sm mb-2 opacity-50">
-					{m.technicalRegistrationDeadline()}: {data.technicalRegistrationDeadline.toLocaleString()}
+					{m.technicalRegistrationDeadline()}: {technicalRegistrationDeadline.toLocaleString()}
 				</p>
 				<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
 				<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
@@ -690,35 +868,35 @@
 					name="contractBasePDF"
 					label={m.postalTemplateContract()}
 					accept="*.pdf"
-					inputClass={data.contractContentSet ? 'file-input-success' : undefined}
+					inputClass={storedFiles.contractContentSet ? 'file-input-success' : undefined}
 				/>
 				<FormFile
 					{form}
 					name="guardianConsentBasePDF"
 					label={m.postalTemplateGuardianConsent()}
 					accept="*.pdf"
-					inputClass={data.guardianConsentContentSet ? 'file-input-success' : undefined}
+					inputClass={storedFiles.guardianConsentContentSet ? 'file-input-success' : undefined}
 				/>
 				<FormFile
 					{form}
 					name="mediaConsentBasePDF"
 					label={m.postalTemplateMediaConsent()}
 					accept="*.pdf"
-					inputClass={data.mediaConsentContentSet ? 'file-input-success' : undefined}
+					inputClass={storedFiles.mediaConsentContentSet ? 'file-input-success' : undefined}
 				/>
 				<FormFile
 					{form}
 					name="termsAndConditionsBasePDF"
 					label={m.postalTemplateTermsAndConditions()}
 					accept="*.pdf"
-					inputClass={data.termsAndConditionsContentSet ? 'file-input-success' : undefined}
+					inputClass={storedFiles.termsAndConditionsContentSet ? 'file-input-success' : undefined}
 				/>
 				<button
 					class="btn dark:btn-outline {loading ||
-					!data.contractContentSet ||
-					!data.guardianConsentContentSet ||
-					!data.mediaConsentContentSet ||
-					!data.termsAndConditionsContentSet
+					!storedFiles.contractContentSet ||
+					!storedFiles.guardianConsentContentSet ||
+					!storedFiles.mediaConsentContentSet ||
+					!storedFiles.termsAndConditionsContentSet
 						? 'btn-disabled'
 						: ''}"
 					onclick={async (e) => {
@@ -736,10 +914,10 @@
 					name="certificateBasePDF"
 					label={m.certificateTemplate()}
 					accept="*.pdf"
-					inputClass={data.certificateContentSet ? 'file-input-success' : undefined}
+					inputClass={storedFiles.certificateContentSet ? 'file-input-success' : undefined}
 				/>
 				<button
-					class="btn dark:btn-outline {loading || !data.certificateContentSet
+					class="btn dark:btn-outline {loading || !storedFiles.certificateContentSet
 						? 'btn-disabled'
 						: ''}"
 					onclick={async (e) => {

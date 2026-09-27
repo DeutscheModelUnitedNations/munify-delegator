@@ -89,6 +89,7 @@
 		"eslint-plugin-svelte": "^3.23.0",
 		"fallow": "3.22.0",
 		"flag-icons": "^7.5.0",
+		"formsnap": "^2.0.1",
 		"fuse.js": "^7.1.0",
 		"globals": "^17.11.0",
 		"graphql": "^16.14.2",

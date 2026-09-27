@@ -1,12 +1,12 @@
-<script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { type SuperForm } from 'sveltekit-superforms';
-	import FormFieldErrors from './FormFieldErrors.svelte';
-	import FormLabel from './FormLabel.svelte';
+<script lang="ts" generics="A extends Record<string, unknown>, B, N extends FormPath<A> & keyof A">
+	import { type SuperForm, type FormPath } from 'sveltekit-superforms';
+	import { Control, Field, Label } from 'formsnap';
 	import FormDescription from './FormDescription.svelte';
+	import FormFieldErrors from './FormFieldErrors.svelte';
 	import FormConstraints from './FormConstraints.svelte';
 
 	interface Props {
-		name: string;
+		name: N;
 		label?: string;
 		description?: string;
 		placeholder?: string;
@@ -24,27 +24,31 @@
 		type = 'text',
 		disabled = false
 	}: Props = $props();
-	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
-	let errors = $derived($formErrors[name]);
-	let constraints = $derived($formConstraints[name]);
+	let { form: formData } = form;
 </script>
 
-<label for={name} class="flex w-full flex-col text-left">
-	<FormLabel {label} />
-	<FormDescription {description} />
-	<input
-		{placeholder}
-		{type}
-		class="input disabled:bg-base-300 validator w-full"
-		{name}
-		id={name}
-		bind:value={$formData[name]}
-		aria-invalid={errors ? 'true' : undefined}
-		{disabled}
-		{...constraints}
-	/>
-	<FormConstraints {form} {name} />
-	<FormFieldErrors {errors} />
-</label>
-
-<!-- {initialValue !== stateValue && 'input-success border-4'} -->
+<Field {form} {name}>
+	{#snippet children({ constraints })}
+		<div class="flex w-full flex-col text-left">
+			<Control>
+				{#snippet children({ props })}
+					{#if label}
+						<Label class="label mb-2 whitespace-break-spaces">{label}</Label>
+					{/if}
+					<FormDescription {description} />
+					<input
+						{...props}
+						{placeholder}
+						{type}
+						class="input disabled:bg-base-300 validator w-full"
+						bind:value={$formData[name]}
+						{disabled}
+						{...constraints}
+					/>
+				{/snippet}
+			</Control>
+			<FormConstraints {form} {name} />
+			<FormFieldErrors />
+		</div>
+	{/snippet}
+</Field>

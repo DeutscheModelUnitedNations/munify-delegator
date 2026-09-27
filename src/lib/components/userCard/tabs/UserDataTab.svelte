@@ -11,6 +11,7 @@
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { translatedNationCodeAddressFormOptions } from '$lib/utils/nationTranslationHelper.svelte';
+	import { buildUserFormValues } from '$lib/api/userFormValues';
 	import { toast } from 'svelte-sonner';
 	import GlobalNotes from '../../../../routes/(authenticated)/management/[conferenceId]/participants/GlobalNotes.svelte';
 
@@ -54,47 +55,7 @@
 		wantsJoinTeamInformation: true
 	});
 
-	type Gender = 'MALE' | 'FEMALE' | 'DIVERSE' | 'NO_STATEMENT';
-	type FoodPreference = 'OMNIVORE' | 'VEGETARIAN' | 'VEGAN';
-
-	function toGender(value: string | null | undefined): Gender {
-		if (value === 'MALE' || value === 'FEMALE' || value === 'DIVERSE' || value === 'NO_STATEMENT') {
-			return value;
-		}
-		return 'NO_STATEMENT';
-	}
-
-	function toFoodPreference(value: string | null | undefined): FoodPreference {
-		if (value === 'OMNIVORE' || value === 'VEGETARIAN' || value === 'VEGAN') {
-			return value;
-		}
-		return 'OMNIVORE';
-	}
-
-	function buildFormData() {
-		return {
-			given_name: user?.givenName ?? '',
-			family_name: user?.familyName ?? '',
-			birthday:
-				user?.birthday instanceof Date
-					? user.birthday
-					: user?.birthday
-						? new Date(user.birthday)
-						: new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000),
-			phone: user?.phone ?? '',
-			street: user?.street ?? '',
-			apartment: user?.apartment ?? null,
-			zip: user?.zip ?? '',
-			city: user?.city ?? '',
-			country: user?.country ?? '',
-			gender: toGender(user?.gender),
-			pronouns: user?.pronouns ?? null,
-			foodPreference: toFoodPreference(user?.foodPreference),
-			emergencyContacts: user?.emergencyContacts ?? ''
-		};
-	}
-
-	const initialData = defaults(buildFormData(), zod4Client(adminFormSchema));
+	const initialData = defaults(buildUserFormValues(user), zod4Client(adminFormSchema));
 
 	const form = superForm(initialData, {
 		SPA: true,
@@ -135,7 +96,7 @@
 
 	function toggleEdit() {
 		if (editing) {
-			$formData = buildFormData();
+			$formData = buildUserFormValues(user);
 			editing = false;
 		} else {
 			editing = true;

@@ -1,14 +1,23 @@
-<script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { type SuperForm, type FormPathLeaves, formFieldProxy } from 'sveltekit-superforms';
+<script
+	lang="ts"
+	generics="A extends Record<string, unknown>, B, N extends FormPathLeaves<A, Date | undefined> & FormPath<A>"
+>
+	import {
+		type FormPath,
+		type FormPathLeaves,
+		type SuperForm,
+		formFieldProxy
+	} from 'sveltekit-superforms';
+	import { Control, Field, Label } from 'formsnap';
 	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
 	import { isMobileOrTablet } from '$lib/utils/detectMobile';
 	import { onMount } from 'svelte';
-	import FormLabel from './FormLabel.svelte';
 	import FormDescription from './FormDescription.svelte';
+	import FormFieldErrors from './FormFieldErrors.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
-	import { dateToFormValue, dateToInputValue, inputValueToDate } from '$lib/helpers/dateTimeInput';
+	import { dateToInputValue, inputValueToDate } from '$lib/helpers/dateTimeInput';
 
 	// Dates and Date pickers in JS are a mess. I tried around a lot of things with this
 	// but all of non native inputs break acceissibility. According to this suggestion
@@ -16,7 +25,7 @@
 	// https://stackoverflow.com/a/31162426/11988368
 
 	interface Props {
-		name: string;
+		name: N;
 		label?: string;
 		description?: string;
 		form: SuperForm<A, B>;
@@ -48,14 +57,7 @@
 	let isNonNativeDatepickerOpen = $state(false);
 
 	type DateField = Date | undefined;
-	const {
-		value: field,
-		errors,
-		constraints
-	} = formFieldProxy<A, FormPathLeaves<A, DateField>, DateField>(
-		form,
-		name as FormPathLeaves<A, DateField>
-	);
+	const { value: field, constraints } = formFieldProxy<A, N, DateField>(form, name);
 	let nativeDateInput = $state<HTMLInputElement>();
 
 	/** The value currently held by the form store, as a valid Date or undefined. */
@@ -66,13 +68,6 @@
 	});
 
 	let inputValue = $derived(dateToInputValue(currentDate, enableTime));
-
-	// The native input only ever yields a wall-clock string without any timezone info
-	// ("2026-02-20T09:00"). Posting that string would make the server parse it in the
-	// *server's* timezone, silently shifting the instant on every save. We therefore
-	// submit an absolute ISO instant through a hidden field instead, which is
-	// unambiguous no matter which timezone the server runs in.
-	let submittedValue = $derived(dateToFormValue(currentDate));
 
 	function setDate(date: DateField) {
 		field.set(date);
@@ -144,22 +139,29 @@
 	isRange={false}
 	includeFont={false}
 >
-	<label for={name} class="flex w-full flex-col">
-		<FormLabel {label} />
-		<FormDescription {description} />
-		<input
-			type={format}
-			id={name}
-			value={inputValue}
-			oninput={(e) => handleInput(e.currentTarget.value)}
-			placeholder={m.selectADate()}
-			aria-invalid={$errors ? 'true' : undefined}
-			class="input validator w-full"
-			lang={getLocale()}
-			{disabled}
-			{...$constraints ?? {}}
-			bind:this={nativeDateInput}
-		/>
-		<input type="hidden" {name} value={submittedValue} {disabled} />
-	</label>
+	<Field {form} {name}>
+		<div class="flex w-full flex-col">
+			<Control>
+				{#snippet children({ props })}
+					{#if label}
+						<Label class="label mb-2 whitespace-break-spaces">{label}</Label>
+					{/if}
+					<FormDescription {description} />
+					<input
+						{...props}
+						type={format}
+						value={inputValue}
+						oninput={(e) => handleInput(e.currentTarget.value)}
+						placeholder={m.selectADate()}
+						class="input validator w-full"
+						lang={getLocale()}
+						{disabled}
+						{...$constraints ?? {}}
+						bind:this={nativeDateInput}
+					/>
+				{/snippet}
+			</Control>
+			<FormFieldErrors />
+		</div>
+	</Field>
 </DatePicker>

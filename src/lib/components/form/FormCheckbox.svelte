@@ -1,31 +1,47 @@
-<script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { type SuperForm } from 'sveltekit-superforms';
+<script
+	lang="ts"
+	generics="A extends Record<string, unknown>, B, N extends FormPathLeaves<A, boolean> & FormPath<A>"
+>
+	import {
+		type FormPath,
+		type FormPathLeaves,
+		type SuperForm,
+		formFieldProxy
+	} from 'sveltekit-superforms';
+	import { Control, Field, Label } from 'formsnap';
 	import FormFieldErrors from './FormFieldErrors.svelte';
 
 	interface Props {
-		name: string;
+		name: N;
 		label: string;
 		form: SuperForm<A, B>;
 		disabled?: boolean;
 	}
 
 	let { form, label, name, disabled }: Props = $props();
-	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
-	let errors = $derived(($formErrors as any)[name]);
-	let constraints = $derived(($formConstraints as any)[name]);
+
+	// A typed proxy rather than indexing the form store: it is what makes `bind:checked` type-check
+	// against a boolean field instead of the store's `unknown`.
+	const { value: checked } = formFieldProxy<A, N, boolean>(form, name);
 </script>
 
-<label for={name} class="flex w-full cursor-pointer items-center">
-	<input
-		type="checkbox"
-		class="checkbox"
-		{name}
-		id={name}
-		bind:checked={$formData[name]}
-		aria-invalid={errors ? 'true' : undefined}
-		{...constraints}
-		{disabled}
-	/>
-	<span class="label ml-3 whitespace-break-spaces">{label}</span>
-</label>
-<FormFieldErrors {errors} />
+<Field {form} {name}>
+	{#snippet children({ constraints })}
+		<Control>
+			{#snippet children({ props })}
+				<div class="flex w-full items-center">
+					<input
+						{...props}
+						type="checkbox"
+						class="checkbox"
+						bind:checked={$checked}
+						{disabled}
+						{...constraints}
+					/>
+					<Label class="label ml-3 cursor-pointer whitespace-break-spaces">{label}</Label>
+				</div>
+			{/snippet}
+		</Control>
+		<FormFieldErrors />
+	{/snippet}
+</Field>

@@ -1,10 +1,19 @@
 <script lang="ts">
-	import { slide } from 'svelte/transition';
-	let { errors }: { errors: string[] } = $props();
+	import { FieldErrors } from 'formsnap';
+
+	/**
+	 * The error list of the surrounding `Field`, in DaisyUI's validator styling.
+	 *
+	 * Formsnap owns the wiring: the container gets the id the control points at through
+	 * `aria-describedby` plus `aria-live`, so a validation error is announced instead of only
+	 * appearing. Renders nothing visible while the field is valid.
+	 */
 </script>
 
-<span class="validator-hint">
-	{#each errors as error}
-		<span class="text-error">{error}</span>
-	{/each}
-</span>
+<FieldErrors class="validator-hint">
+	{#snippet children({ errors, errorProps })}
+		{#each errors as error}
+			<span {...errorProps} class="text-error">{error}</span>
+		{/each}
+	{/snippet}
+</FieldErrors>

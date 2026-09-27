@@ -1,11 +1,11 @@
-<script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { type SuperForm } from 'sveltekit-superforms';
-	import FormFieldErrors from './FormFieldErrors.svelte';
-	import FormLabel from './FormLabel.svelte';
+<script lang="ts" generics="A extends Record<string, unknown>, B, N extends FormPath<A> & keyof A">
+	import { type SuperForm, type FormPath } from 'sveltekit-superforms';
+	import { Control, Field, Label } from 'formsnap';
 	import FormDescription from './FormDescription.svelte';
+	import FormFieldErrors from './FormFieldErrors.svelte';
 
 	interface Props {
-		name: string;
+		name: N;
 		label?: string;
 		description?: string;
 		placeholder?: string;
@@ -15,31 +15,35 @@
 	}
 
 	let { form, label, description, name, placeholder, options, disabled = false }: Props = $props();
-	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
-	let errors = $derived($formErrors[name]);
-	let constraints = $derived($formConstraints[name]);
+	let { form: formData } = form;
 </script>
 
-<label for={name} class="flex w-full flex-col">
-	<FormLabel {label} />
-	<FormDescription {description} />
-	<select
-		class="select select-bordered validator w-full"
-		{placeholder}
-		{name}
-		id={name}
-		bind:value={$formData[name]}
-		aria-invalid={errors ? 'true' : undefined}
-		{disabled}
-		{...constraints}
-	>
-		<option disabled selected={!$formData[name]} value={null}>{placeholder}</option>
-		{#each options as option}
-			<option value={option.value} selected={option.value === $formData[name]}
-				>{option.label}</option
-			>
-		{/each}
-	</select>
-
-	<FormFieldErrors {errors} />
-</label>
+<Field {form} {name}>
+	{#snippet children({ constraints })}
+		<div class="flex w-full flex-col">
+			<Control>
+				{#snippet children({ props })}
+					{#if label}
+						<Label class="label mb-2 whitespace-break-spaces">{label}</Label>
+					{/if}
+					<FormDescription {description} />
+					<select
+						{...props}
+						class="select select-bordered validator w-full"
+						bind:value={$formData[name]}
+						{disabled}
+						{...constraints}
+					>
+						<option disabled selected={!$formData[name]} value={null}>{placeholder}</option>
+						{#each options as option}
+							<option value={option.value} selected={option.value === $formData[name]}
+								>{option.label}</option
+							>
+						{/each}
+					</select>
+				{/snippet}
+			</Control>
+			<FormFieldErrors />
+		</div>
+	{/snippet}
+</Field>

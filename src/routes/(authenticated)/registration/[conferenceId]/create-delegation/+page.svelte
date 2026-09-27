@@ -2,9 +2,8 @@
 	import Steps from '$lib/components/Steps.svelte';
 	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
-	import { superForm } from 'sveltekit-superforms';
+	import { defaults, superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
@@ -13,35 +12,38 @@
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import type { Snippet } from 'svelte';
 	import { qr } from '@svelte-put/qr/svg';
+	import { client } from '$lib/api/rumbleClient/client';
 
-	let { data }: { data: PageData } = $props();
-	let form = superForm(data.form, {
-		resetForm: false,
-		validationMethod: 'oninput',
-		validators: zod4Client(applicationFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		},
-		onResult({ result }) {
-			switch (result.type) {
-				case 'success':
-					entryCode = result.data?.delegation?.entryCode;
-					step++;
-					break;
+	const conferenceId = $derived(page.params.conferenceId!);
 
-				case 'error':
-					toast.error(result.error.message);
-					break;
-				default:
-					throw new Error('Unknown result type');
+	let step = $state(0);
+	let entryCode = $state<string>();
+
+	const form = superForm(
+		defaults({ school: '', motivation: '', experience: '' }, zod4Client(applicationFormSchema)),
+		{
+			SPA: true,
+			resetForm: false,
+			validationMethod: 'oninput',
+			validators: zod4Client(applicationFormSchema),
+			onError(e) {
+				toast.error(e.result.error.message);
+			},
+			async onUpdate({ form: validated }) {
+				if (!validated.valid) return;
+				const delegation = await client.mutate.createDelegation({
+					__args: { ...validated.data, conferenceId },
+					id: true,
+					entryCode: true
+				});
+				entryCode = delegation.entryCode;
+				step++;
 			}
 		}
-	});
-	let step = $state(0);
+	);
 
-	let entryCode = $derived<string | undefined>(undefined);
 	let referralLink = $derived(
-		`${data.origin}/registration/${page.params.conferenceId!}/join-delegation?code=${entryCode}`
+		`${page.url.origin}/registration/${conferenceId}/join-delegation?code=${entryCode}`
 	);
 </script>
 
@@ -140,7 +142,8 @@
 				</p>
 			{/snippet}
 			{@render CopyCard(ReferralCode, () => {
-				navigator.clipboard.writeText(entryCode as string);
+				if (!entryCode) return;
+				navigator.clipboard.writeText(entryCode);
 				toast.success(m.codeCopied());
 			})}
 			<a class="btn btn-primary btn-lg mt-10 w-full" href="/dashboard">{m.toDashboard()}</a>
