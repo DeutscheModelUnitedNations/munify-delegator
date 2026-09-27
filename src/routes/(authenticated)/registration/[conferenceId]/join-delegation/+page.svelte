@@ -1,13 +1,10 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { page } from '$app/state';
-	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import DelegationPreview from '$lib/components/DelegationPreview.svelte';
 	import { entryCodeLength } from '$api/services/entryCodeGenerator';
-
-	let { data }: { data: PageData } = $props();
 
 	// Invitation links carry the entry code, so the field starts filled in.
 	let code = $state<string>(page.url.searchParams.get('code') ?? '');
@@ -33,7 +30,7 @@
 				/>
 
 				{#if code && code.length === entryCodeLength}
-					<DelegationPreview conferenceId={data.conferenceId} entryCode={code} />
+					<DelegationPreview conferenceId={page.params.conferenceId!} entryCode={code} />
 				{/if}
 
 				<a class="btn btn-warning mt-16" href=".">{m.back()}</a>

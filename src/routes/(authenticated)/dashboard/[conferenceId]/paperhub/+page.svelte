@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchMyPaperHubRoles } from './myPaperHubRoles';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { page } from '$app/state';
-	import type { PageData } from './$types';
 	import PaperEnum from '$lib/components/paper/paperEnum';
 	import { client, type PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import PaperHubOverview from './PaperHubOverview.svelte';
@@ -9,13 +11,15 @@
 	import GlobalPapersView from './GlobalPapersView.svelte';
 	import { queryParam } from 'sveltekit-search-params';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
 
 	const paperQueryData = $derived(
 		await client.liveQuery.papers({
 			__args: {
 				where: {
-					authorId: { eq: data.user.sub },
+					authorId: { eq: currentUser.sub },
 					conferenceId: { eq: page.params.conferenceId! }
 				}
 			},
@@ -34,24 +38,25 @@
 	);
 
 	// Check if user is team member with review access (data comes from layout load)
-	let isTeamMember = $derived((data.teamMembers?.length ?? 0) > 0);
+	const myRoles = $derived(await fetchMyPaperHubRoles(page.params.conferenceId!));
+	let isTeamMember = $derived(myRoles.isReviewer);
 
 	// Check if user is a supervisor with supervised students
-	let isSupervisor = $derived(!!data.supervisor && (data.supervisedDelegationIds?.length ?? 0) > 0);
+	let isSupervisor = $derived(!!myRoles.supervisor && myRoles.supervisedDelegationIds.length > 0);
 
 	// Check if user is a paper author (only delegation members can submit papers)
-	let isPaperAuthor = $derived(!!data.participation?.delegationMember);
+	let isPaperAuthor = $derived(!!participation?.delegationMember);
 
 	// Check if user is a single participant (they can only view papers, not submit)
 	let isSingleParticipant = $derived(
-		!!data.participation?.singleParticipant && !data.participation?.delegationMember
+		!!participation?.singleParticipant && !participation?.delegationMember
 	);
 
 	// Check if user is a participant (delegation member, single participant, or supervisor)
 	let isParticipant = $derived(
-		!!data.participation?.delegationMember ||
-			!!data.participation?.singleParticipant ||
-			!!data.participation?.supervisor
+		!!participation?.delegationMember ||
+			!!participation?.singleParticipant ||
+			!!participation?.supervisor
 	);
 
 	// View toggle state persisted in URL search params
@@ -91,7 +96,7 @@
 				isPaperAuthor) // Paper authors can switch between my papers and global
 	);
 
-	let isNSA = $derived(!!data.participation?.delegationMember?.delegation?.assignedNonStateActor);
+	let isNSA = $derived(!!participation?.delegationMember?.delegation?.assignedNonStateActor);
 </script>
 
 {#snippet PaperTypeBlock(paperType: PapertypeEnum, description: string, href: string)}
@@ -161,11 +166,11 @@
 	</div>
 
 	{#if currentView === 'team' && isTeamMember}
-		<PaperHubOverview conferenceId={data.conferenceId} />
+		<PaperHubOverview conferenceId={page.params.conferenceId!} />
 	{:else if currentView === 'supervisor' && isSupervisor}
-		<SupervisorPaperHubView conferenceId={data.conferenceId} />
+		<SupervisorPaperHubView conferenceId={page.params.conferenceId!} />
 	{:else if currentView === 'global' && isParticipant}
-		<GlobalPapersView conferenceId={data.conferenceId} />
+		<GlobalPapersView conferenceId={page.params.conferenceId!} />
 	{:else}
 		{#if paperQueryData && paperQueryData.length > 0}
 			<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
-	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -81,14 +80,12 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 	};
 
 	const deleteEntry = async (id: string) => {
 		const promise = Promise.resolve(client.mutate.deleteRoleApplication({ __args: { id } }));
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 	};
 </script>
 
@@ -240,7 +237,6 @@
 										});
 										toast.promise(promise, genericPromiseToastMessages);
 										await promise;
-										await invalidateAll();
 									}}
 								/>
 							{/snippet}
@@ -274,7 +270,6 @@
 										});
 										toast.promise(promise, genericPromiseToastMessages);
 										await promise;
-										await invalidateAll();
 									}}
 								/>
 							{/snippet}

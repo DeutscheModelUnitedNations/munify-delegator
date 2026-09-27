@@ -1,15 +1,19 @@
 <script lang="ts">
 	import Selection from '$lib/components/selection';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchConferencePaymentData } from '../conferencePaymentData';
+	import { page } from '$app/state';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
-	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 
-	let { data }: { data: PageData } = $props();
-	let conferencePaymentData = $derived(data.conferencePaymentData);
-	let participation = $derived(data.participation);
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	let conferencePaymentData = $derived(await fetchConferencePaymentData(page.params.conferenceId!));
 	let delegationMembers = $derived(participation?.delegationMember?.delegation.members);
 
 	let isReferenceCreated = $state(false);
@@ -140,7 +144,7 @@
 
 	<ReferenceMaker
 		users={selectedParticipants}
-		ownUserId={data.user.sub}
+		ownUserId={currentUser.sub}
 		{conferencePaymentData}
 		bind:isReferenceCreated
 	/>

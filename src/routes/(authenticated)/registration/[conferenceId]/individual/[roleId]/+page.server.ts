@@ -1,4 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
+import { fetchCurrentUser } from '$lib/api/currentUser';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { client } from '$lib/api/rumbleClient/client';
@@ -7,7 +8,7 @@ import { m } from '$lib/paraglide/messages';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 
 export const load: PageServerLoad = async (event) => {
-	const { user } = await event.parent();
+	const user = await fetchCurrentUser();
 
 	// An existing application prefills the form, so the participant can amend it.
 	const [existing, role] = await Promise.all([

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageProps } from './$types';
 
-	let { data }: PageProps = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	const dbUser = await client.query.user({
-		__args: { id: data.user.sub },
+		__args: { id: currentUser.sub },
 		wantsJoinTeamInformation: true
 	});
 
@@ -17,7 +17,7 @@
 	const toggleSignUp = async (value: boolean) => {
 		loading = true;
 		const promise = client.mutate.updateUsersNewsletterPreferences({
-			__args: { email: data.user.email, wantsJoinTeamInformation: value },
+			__args: { email: currentUser.email, wantsJoinTeamInformation: value },
 			id: true
 		});
 		toast.promise(promise, {

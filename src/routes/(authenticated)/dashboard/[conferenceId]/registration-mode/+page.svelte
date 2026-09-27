@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import { page } from '$app/state';
 	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
@@ -9,11 +9,11 @@
 	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	const participation = $derived(
 		await fetchMyConferenceParticipation({
-			userId: data.user.sub,
+			userId: currentUser.sub,
 			conferenceId: page.params.conferenceId!
 		})
 	);
@@ -24,8 +24,8 @@
 	let teamMember = $derived(participation?.teamMember);
 
 	// User identity from OIDC
-	let fullName = $derived(`${data.user.given_name} ${data.user.family_name}`);
-	let userId = $derived(data.user.sub);
+	let fullName = $derived(`${currentUser.given_name} ${currentUser.family_name}`);
+	let userId = $derived(currentUser.sub);
 
 	// Live timestamp
 	let currentTime = $state(new Date());

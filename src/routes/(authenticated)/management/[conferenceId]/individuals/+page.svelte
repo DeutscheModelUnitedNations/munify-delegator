@@ -2,8 +2,8 @@
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
+	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
@@ -11,10 +11,9 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
-	const { data }: { data: PageData } = $props();
 	const singleParticipants = $derived(
 		await client.liveQuery.singleParticipants({
-			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
 			id: true,
 			applied: true,
 			school: true,
@@ -121,7 +120,7 @@
 		if (btn) {
 			e.stopPropagation();
 			const userId = btn.getAttribute('data-userid');
-			if (userId) openUserCard(userId, data.conferenceId);
+			if (userId) openUserCard(userId, page.params.conferenceId!);
 		}
 	}}
 >
@@ -139,7 +138,7 @@
 {#if $selectedParticipantRow}
 	<IndividualDrawer
 		singleParticipantId={$selectedParticipantRow}
-		conferenceId={data.conferenceId}
+		conferenceId={page.params.conferenceId!}
 		open={$selectedParticipantRow !== null}
 		onClose={() => ($selectedParticipantRow = null)}
 	/>

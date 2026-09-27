@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import { client, type Mutation } from '$lib/api/rumbleClient/client';
-	import type { PageData } from './$types';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -15,8 +15,6 @@
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-
-	let { data }: { data: PageData } = $props();
 
 	let params = queryParameters({ queryUserId: true });
 	let hotkeyDebounce = $state(false);
@@ -46,7 +44,7 @@
 
 	/** Everything the scan drawer shows about the person behind a scanned code. */
 	async function fetchUserData(userId: string) {
-		const forUser = { conferenceId: { eq: data.conferenceId }, userId: { eq: userId } };
+		const forUser = { conferenceId: { eq: page.params.conferenceId! }, userId: { eq: userId } };
 
 		const [user, delegationMembers, supervisors, singleParticipants, statuses] = await Promise.all([
 			client.query.user({
@@ -179,7 +177,7 @@
 			return;
 		}
 		const promise = client.mutate.updateConferenceParticipantStatus({
-			__args: { ...change, id: statusId, conferenceId: data.conferenceId, userId },
+			__args: { ...change, id: statusId, conferenceId: page.params.conferenceId!, userId },
 			id: true,
 			accessCardId: true
 		});
@@ -216,7 +214,7 @@
 				await client.mutate.createAttendanceEntry({
 					__args: {
 						userId: userDetails.id,
-						conferenceId: data.conferenceId,
+						conferenceId: page.params.conferenceId!,
 						occasion: $occasion.trim()
 					},
 					id: true
@@ -341,7 +339,7 @@
 		<button
 			class="btn btn-soft btn-sm"
 			onclick={() => {
-				if ($params.queryUserId) openUserCard($params.queryUserId, data.conferenceId);
+				if ($params.queryUserId) openUserCard($params.queryUserId, page.params.conferenceId!);
 			}}
 			aria-label={m.details()}
 		>

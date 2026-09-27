@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
+	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
 	import type { TableColumns } from 'svelte-table';
-	import type { PageData } from './$types';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/Modal.svelte';
@@ -36,10 +36,9 @@
 		}[];
 	}
 
-	let { data }: { data: PageData } = $props();
 	const committees = $derived(
 		await client.liveQuery.committees({
-			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
 			id: true,
 			abbreviation: true,
 			name: true
@@ -131,7 +130,7 @@
 			presentUsers.map(async (user) => {
 				await client.mutate.updateConferenceParticipantStatus({
 					__args: {
-						conferenceId: data.conferenceId,
+						conferenceId: page.params.conferenceId!,
 						didAttend: true,
 						userEmail: user.email
 					},
@@ -157,7 +156,7 @@
 			absentUsers.map(async (user) => {
 				await client.mutate.updateConferenceParticipantStatus({
 					__args: {
-						conferenceId: data.conferenceId,
+						conferenceId: page.params.conferenceId!,
 						didAttend: false,
 						userEmail: user.email
 					},
@@ -246,7 +245,7 @@
 
 {#snippet gotoUser()}
 	<a
-		href={`/management/${data.conferenceId}/participants?selected=${selectedUser?.email}`}
+		href={`/management/${page.params.conferenceId!}/participants?selected=${selectedUser?.email}`}
 		target="_blank"
 	>
 		<button class="btn btn-primary">

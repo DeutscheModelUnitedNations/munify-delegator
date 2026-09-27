@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { page } from '$app/state';
 	import { fetchConferenceSeatMap } from './conferenceSeatMap';
 	import NSAs from './sections/NSAs.svelte';
 	import SingleParticipants from './sections/SingleParticipants.svelte';
@@ -12,8 +12,7 @@
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 
-	let { data }: { data: PageData } = $props();
-	let conferenceId = $derived(data.conferenceId);
+	let conferenceId = $derived(page.params.conferenceId!);
 
 	const params = queryParameters({
 		assignUserId: true

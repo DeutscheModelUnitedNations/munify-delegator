@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import { client, type MediaconsentstatusEnum, type Mutation } from '$lib/api/rumbleClient/client';
-	import type { PageData } from './$types';
 	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
@@ -19,14 +19,12 @@
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
-	let { data }: { data: PageData } = $props();
-
 	let params = queryParameters({ queryUserId: true });
 	let hotkeyDebounce = $state(false);
 
 	const conference = $derived(
 		await client.liveQuery.conference({
-			__args: { id: data.conferenceId },
+			__args: { id: page.params.conferenceId! },
 			id: true,
 			startConference: true,
 			nextDocumentNumber: true
@@ -54,7 +52,7 @@
 			}),
 			client.query.conferenceParticipantStatuses({
 				__args: {
-					where: { conferenceId: { eq: data.conferenceId }, userId: { eq: userId } }
+					where: { conferenceId: { eq: page.params.conferenceId! }, userId: { eq: userId } }
 				},
 				id: true,
 				termsAndConditions: true,
@@ -126,7 +124,7 @@
 			return;
 		}
 		const promise = client.mutate.updateConferenceParticipantStatus({
-			__args: { ...change, id: statusId, conferenceId: data.conferenceId, userId },
+			__args: { ...change, id: statusId, conferenceId: page.params.conferenceId!, userId },
 			id: true,
 			termsAndConditions: true,
 			guardianConsent: true,
@@ -240,7 +238,7 @@
 		<button
 			class="btn btn-soft btn-sm"
 			onclick={() => {
-				if ($params.queryUserId) openUserCard($params.queryUserId, data.conferenceId);
+				if ($params.queryUserId) openUserCard($params.queryUserId, page.params.conferenceId!);
 			}}
 			aria-label={m.details()}
 		>

@@ -2,8 +2,9 @@
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
@@ -12,11 +13,11 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import codenmz from '$lib/helpers/codenamize';
 
-	const { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	const fetchedDelegations = $derived(
 		await client.liveQuery.delegations({
-			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
 			id: true,
 			entryCode: true,
 			applied: true,
@@ -138,9 +139,9 @@
 {#if $selectedDelegationRow}
 	<DelegationDrawer
 		delegationId={$selectedDelegationRow}
-		conferenceId={data.conferenceId}
+		conferenceId={page.params.conferenceId!}
 		open={$selectedDelegationRow !== null}
 		onClose={() => ($selectedDelegationRow = null)}
-		userData={data.user}
+		userData={currentUser}
 	/>
 {/if}

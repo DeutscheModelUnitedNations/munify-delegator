@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { page } from '$app/state';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
@@ -7,16 +9,13 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
-	import type { PageData } from './$types';
 	import { z } from 'zod';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
-	let { data }: { data: PageData } = $props();
-
 	const teamMembers = $derived(
 		await client.liveQuery.teamMembers({
-			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
 			id: true,
 			role: true,
 			user: {
@@ -35,7 +34,7 @@
 			}
 		})
 	);
-	let isAdmin = data.isAdmin;
+	const isAdmin = $derived((await getCurrentUser()).isAdmin);
 
 	let inviteMembersModalOpen = $state(false);
 
@@ -116,7 +115,7 @@
 	};
 
 	const handleOpenUserCard = (userId: string) => {
-		openUserCard(userId, data.conferenceId);
+		openUserCard(userId, page.params.conferenceId!);
 	};
 
 	// Expose functions globally for onclick handlers in rendered HTML
@@ -222,5 +221,8 @@
 </div>
 
 {#if inviteMembersModalOpen}
-	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={data.conferenceId} />
+	<InviteTeamMembersModal
+		bind:open={inviteMembersModalOpen}
+		conferenceId={page.params.conferenceId!}
+	/>
 {/if}

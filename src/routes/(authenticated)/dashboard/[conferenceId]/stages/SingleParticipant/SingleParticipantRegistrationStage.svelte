@@ -4,9 +4,8 @@
 	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
-	import type { PageData } from '../../$types';
 	import type { ApplicationForm } from '../../applicationForm';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
@@ -43,7 +42,6 @@
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			await invalidateAll();
 		}
 	});
 	let formData = $derived(form.form);
@@ -61,7 +59,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 	};
 
 	const deleteAllApplications = async () => {
@@ -76,7 +73,6 @@
 		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		goto('/dashboard');
 	};
 
@@ -93,7 +89,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		goto('/dashboard');
 	};
 

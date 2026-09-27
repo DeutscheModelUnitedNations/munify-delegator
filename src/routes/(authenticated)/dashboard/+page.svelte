@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { goto } from '$app/navigation';
 	import { fetchMyConferences } from './myConferences';
 	import { m } from '$lib/paraglide/messages';
@@ -7,9 +7,9 @@
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import MyConferenceCard from '$lib/components/dashboard/MyConferenceCard.svelte';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
-	const { conferences } = $derived(await fetchMyConferences(data.user.sub));
+	const { conferences } = $derived(await fetchMyConferences(currentUser.sub));
 
 	// Someone taking part in exactly one conference has nothing to pick, so they go straight to it.
 	$effect(() => {

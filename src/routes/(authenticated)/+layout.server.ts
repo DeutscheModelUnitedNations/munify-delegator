@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
+import { oidc } from '$api/services/oidcContext';
 import { redirect } from '@sveltejs/kit';
-import { client } from '$lib/api/rumbleClient/client';
 import { configPublic } from '$config/public';
 // --- TEMPORARY: Migration notice imports (remove after migration period) ---
 import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/migrationNotice';
@@ -14,51 +14,17 @@ import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/mig
 // we should not use load functions for authentication
 // instead we should use server hooks to protect routes based on the url?
 
+/**
+ * The sign-in guard for everything behind it.
+ *
+ * Data deliberately does not travel through here: components read the signed-in person from
+ * `$lib/state/currentUser.svelte`. What is left is the part that genuinely has to be a server
+ * `load` — deciding whether there is a session at all, and starting the OIDC flow with the cookies
+ * that needs.
+ */
 export const load: LayoutServerLoad = async (event) => {
-	const [offlineUserRefresh, myOIDCRoles] = await Promise.all([
-		client.query.offlineUserRefresh({
-			user: {
-				sub: true,
-				email: true,
-				family_name: true,
-				given_name: true,
-				locale: true,
-				phone: true,
-				preferred_username: true,
-				hasPassword: true,
-				mfaVerificationFactors: true,
-				ssoIdentities: { issuer: true, identityId: true },
-				socialIdentities: true
-			}
-		}),
-		client.query.myOIDCRoles()
-	]);
-
-	const claims = offlineUserRefresh.user;
-	if (claims) {
-		// Copied field by field rather than spread: what the generated client returns is a
-		// subscribeable proxy, and `load` data has to survive being serialized into the page.
-		return {
-			user: {
-				sub: claims.sub,
-				email: claims.email,
-				family_name: claims.family_name,
-				given_name: claims.given_name,
-				locale: claims.locale,
-				phone: claims.phone,
-				preferred_username: claims.preferred_username,
-				hasPassword: claims.hasPassword,
-				mfaVerificationFactors: [...claims.mfaVerificationFactors],
-				ssoIdentities: claims.ssoIdentities.map((identity) => ({
-					issuer: identity.issuer,
-					identityId: identity.identityId
-				})),
-				socialIdentities: [...claims.socialIdentities],
-				myOIDCRoles: [...myOIDCRoles],
-				isAdmin: myOIDCRoles.includes('admin')
-			}
-		};
-	}
+	const { user } = await oidc(event.cookies);
+	if (user) return;
 
 	// --- TEMPORARY: Migration notice redirect (remove after migration period) ---
 	if (configPublic.PUBLIC_OIDC_MIGRATION_NOTICE) {

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { PageData } from '../../$types';
 	import type { ApplicationForm } from '../../applicationForm';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
@@ -7,7 +6,7 @@
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import RoleApplicationTable from './RoleApplicationTable.svelte';
 	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
@@ -56,7 +55,6 @@
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			invalidateAll();
 		}
 	});
 	let formData = $derived(form.form);
@@ -140,7 +138,6 @@
 		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		goto('/dashboard');
 	};
 
@@ -155,7 +152,6 @@
 		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 		goto('/dashboard');
 	};
 
@@ -172,7 +168,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 	};
 
 	const removeMember = async (memberId: string) => {
@@ -186,7 +181,6 @@
 		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 	};
 
 	const completeRegistration = async () => {
@@ -201,7 +195,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await invalidateAll();
 	};
 </script>
 
@@ -285,7 +278,6 @@
 						});
 						toast.promise(promise, { ...genericPromiseToastMessages, success: m.codeRotated() });
 						await promise;
-						await invalidateAll();
 					}}
 				/>
 			</DashboardContentCard>

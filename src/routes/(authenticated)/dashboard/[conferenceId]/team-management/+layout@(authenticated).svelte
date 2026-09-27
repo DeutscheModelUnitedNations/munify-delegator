@@ -1,5 +1,6 @@
 <script lang="ts">
 	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import { page } from '$app/state';
 	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -7,24 +8,24 @@
 	import type { LayoutData } from './$types';
 	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
 
-	let { data, children }: { data: LayoutData; children: Snippet } = $props();
+	let { children }: { children: Snippet } = $props();
 	let navbarExpanded = $state(true);
 </script>
 
 <div class="flex min-w-0 grow basis-0 overflow-hidden">
 	<SideNavigationDrawer
-		navigateBackHref={`/dashboard/${data.conferenceId}`}
+		navigateBackHref={`/dashboard/${page.params.conferenceId!}`}
 		bind:expanded={navbarExpanded}
 	>
 		<NavMenu>
 			<NavMenuButton
-				href={`/dashboard/${data.conferenceId}/team-management/members`}
+				href={`/dashboard/${page.params.conferenceId!}/team-management/members`}
 				icon="fa-users"
 				title={m.teamMembers()}
 				bind:expanded={navbarExpanded}
 			/>
 			<NavMenuButton
-				href={`/dashboard/${data.conferenceId}/team-management/invitations`}
+				href={`/dashboard/${page.params.conferenceId!}/team-management/invitations`}
 				icon="fa-envelope"
 				title={m.pendingInvitations()}
 				bind:expanded={navbarExpanded}
@@ -37,4 +38,4 @@
 	</div>
 </div>
 
-<UserCardDrawer conferenceId={data.conferenceId} />
+<UserCardDrawer conferenceId={page.params.conferenceId!} />

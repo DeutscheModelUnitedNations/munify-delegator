@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		createSvelteTable,
@@ -41,13 +41,11 @@
 		hidden: boolean;
 	}
 
-	let { data }: { data: PageData } = $props();
-
 	/** Only entries still waiting - assigned ones have become real registrations. */
 	const waitingListEntries = $derived(
 		await client.liveQuery.waitingListEntries({
 			__args: {
-				where: { conferenceId: { eq: data.conferenceId }, assigned: { eq: false } }
+				where: { conferenceId: { eq: page.params.conferenceId! }, assigned: { eq: false } }
 			},
 			id: true,
 			user: {
@@ -69,7 +67,14 @@
 			createdAt: true
 		})
 	);
-	const conference = $derived(data.conferences.find((c) => c.id === data.conferenceId));
+	// Only the start date, to work out how old each person will be by then.
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: page.params.conferenceId! },
+			id: true,
+			startConference: true
+		})
+	);
 
 	let filterHidden = $state(true);
 	let sorting = $state<SortingState>([{ id: 'createdAt', desc: false }]);
@@ -121,7 +126,7 @@
 				renderComponent(WaitingListActions, {
 					entryId: row.original.id,
 					userId: row.original.userId,
-					conferenceId: data.conferenceId,
+					conferenceId: page.params.conferenceId!,
 					hidden: row.original.hidden
 				}),
 			enableSorting: false
@@ -246,7 +251,7 @@
 	});
 
 	function handleRowClick(row: WaitingListRow) {
-		openUserCard(row.userId, data.conferenceId);
+		openUserCard(row.userId, page.params.conferenceId!);
 	}
 
 	function handleGlobalFilterChange(value: string) {

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { page } from '$app/state';
 	import { fetchExistingRegistrations } from './existingRegistrations';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
@@ -10,13 +12,14 @@
 	import UndrawLetter from '$assets/undraw/letter.svg';
 	import UndrawEducator from '$assets/undraw/educator.svg';
 
-	import type { PageData } from './$types';
 	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	/** Which of the three registration paths the caller has already taken, if any. */
-	const existing = $derived(await fetchExistingRegistrations(data.conferenceId, data.user.sub));
+	const existing = $derived(
+		await fetchExistingRegistrations(page.params.conferenceId!, currentUser.sub)
+	);
 	let showAssistant = $state(false);
 
 	// Any existing registration in this conference, in any role, closes the flow.
@@ -62,7 +65,7 @@
 				title={m.createDelegation()}
 				img={UndrawNew}
 				btnText={m.createDelegation()}
-				btnLink={`${data.conferenceId}/create-delegation`}
+				btnLink={`${page.params.conferenceId!}/create-delegation`}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -79,7 +82,7 @@
 				title={m.joinDelegation()}
 				img={UndrawTeam}
 				btnText={m.enterCode()}
-				btnLink={`${data.conferenceId}/join-delegation`}
+				btnLink={`${page.params.conferenceId!}/join-delegation`}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -96,7 +99,7 @@
 				title={m.individualApplication()}
 				img={UndrawLetter}
 				btnText={m.individualApplication()}
-				btnLink={`${data.conferenceId}/individual`}
+				btnLink={`${page.params.conferenceId!}/individual`}
 				disabled={individualBlocked}
 			>
 				<CardInfoSectionWithIcons
@@ -113,7 +116,7 @@
 				title={m.supervisor()}
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
-				btnLink={`${data.conferenceId}/supervisor`}
+				btnLink={`${page.params.conferenceId!}/supervisor`}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -170,10 +173,10 @@
 
 						linkStyle default stroke-width:3px;
 
-						click E "/registration/${data.conferenceId}/create-delegation"
-						click D "/registration/${data.conferenceId}/join-delegation"
-						click Individual "/registration/${data.conferenceId}/individual"
-						click G "/registration/${data.conferenceId}/supervisor"
+						click E "/registration/${page.params.conferenceId!}/create-delegation"
+						click D "/registration/${page.params.conferenceId!}/join-delegation"
+						click Individual "/registration/${page.params.conferenceId!}/individual"
+						click G "/registration/${page.params.conferenceId!}/supervisor"
 				`}
 				></MermaidWrapper>
 			</div>
@@ -182,5 +185,8 @@
 </div>
 
 {#if showAssistant}
-	<AssistantModal onClose={() => (showAssistant = false)} conferenceId={data.conferenceId} />
+	<AssistantModal
+		onClose={() => (showAssistant = false)}
+		conferenceId={page.params.conferenceId!}
+	/>
 {/if}

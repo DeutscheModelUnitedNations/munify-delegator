@@ -1,18 +1,19 @@
 <script lang="ts">
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
+	import { page } from '$app/state';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
-	import type { PageData } from './$types';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
 
-	let { data }: { data: PageData } = $props();
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
 
 	let code = queryParam('code');
 
-	let conferenceId = $derived(data.participation?.conference?.id);
+	let conferenceId = $derived(participation?.conference?.id);
 
 	function fetchPreview(connectionCode: string) {
 		return client.query.previewConferenceSupervisor({
@@ -35,7 +36,6 @@
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 
-		await invalidateAll();
 		goto(`/dashboard/${conferenceId}`);
 	};
 

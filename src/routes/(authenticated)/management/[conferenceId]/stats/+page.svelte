@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import DaysUntil from './widgets/DaysUntil.svelte';
-	import type { PageData } from './$types';
 	import AppliedChartAndStats from './widgets/AppliedChartAndStats.svelte';
 	import AgeChart from './widgets/AgeChart.svelte';
 	import Filter from './widgets/Filter.svelte';
@@ -32,20 +32,17 @@
 	import PaperStats from './widgets/PaperStats.svelte';
 	import { fetchConferenceStatistics } from './statsQuery';
 
-	let { data }: { data: PageData } = $props();
-
 	// The filter is part of the query, so one derived await covers both the first render and
 	// every later filter change; `$effect.pending()` reports the refetch in between.
 	const { getFilter } = unifiedFilter();
 	const graphqlFilter = $derived(mapFilterToGraphQL(getFilter()));
-	const statsData = $derived(await fetchConferenceStatistics(data.conferenceId, graphqlFilter));
+	const statsData = $derived(
+		await fetchConferenceStatistics(page.params.conferenceId!, graphqlFilter)
+	);
 	const isLoading = $derived($effect.pending() > 0);
 
-	// Create reactive data object for widgets
-	const reactiveData = $derived({
-		...data,
-		stats: statsData
-	});
+	// What the widgets take: just the currently filtered statistics.
+	const reactiveData = $derived({ stats: statsData });
 
 	onMount(() => {
 		const history: StatsTypeHistoryEntry[] = JSON.parse(
@@ -56,21 +53,21 @@
 			!history.find(
 				(x) =>
 					`${x.timestamp}_${x.conferenceId}` ===
-					`${format(Date.now(), 'yyyy-MM-dd')}_${data.conferenceId}`
+					`${format(Date.now(), 'yyyy-MM-dd')}_${page.params.conferenceId!}`
 			) &&
 			statsData
 		) {
 			history.unshift({
 				stats: statsData,
 				timestamp: format(Date.now(), 'yyyy-MM-dd'),
-				conferenceId: data.conferenceId
+				conferenceId: page.params.conferenceId!
 			});
 		}
 		setHistory(history);
 
 		localStorage.setItem('statsHistory', JSON.stringify(history));
 
-		setHistory(history.filter((x) => x.conferenceId === data.conferenceId));
+		setHistory(history.filter((x) => x.conferenceId === page.params.conferenceId!));
 		setSelectedHistory(
 			history.find((x) => x.timestamp !== format(Date.now(), 'yyyy-MM-dd'))?.timestamp
 		);

@@ -1,5 +1,8 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
+	import { page } from '$app/state';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { makeApplicationForm } from './applicationForm';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
@@ -17,8 +20,12 @@
 	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 
-	let { data }: { data: PageData } = $props();
-	let participation = $derived(data.participation);
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	const isOfAgeAtConference = $derived(
+		ofAgeAtConference(participation?.conference?.startConference, participation?.user?.birthday)
+	);
 	const applicationForm = $derived(makeApplicationForm(participation ?? undefined));
 	let conference = $derived(participation?.conference);
 	let delegationMember = $derived(participation?.delegationMember);
@@ -61,7 +68,7 @@
 		{#if (singleParticipant?.assignedRole || delegationMember?.delegation?.assignedNation || delegationMember?.delegation?.assignedNonStateActor) && (conference?.state === 'PREPARATION' || conference?.state === 'ACTIVE')}
 			<SurveySection
 				conferenceId={conference!.id}
-				userId={data.user.sub}
+				userId={currentUser.sub}
 				conferenceTimezone={conference!.timezone}
 			/>
 		{/if}
@@ -73,25 +80,25 @@
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
-						userId={data.user.sub}
+						userId={currentUser.sub}
 						{status}
-						ofAgeAtConference={data.ofAgeAtConference}
+						ofAgeAtConference={isOfAgeAtConference}
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
 					/>
 					<SingleParticipantPreparationStage
 						{conference}
 						{singleParticipant}
-						user={data.user}
+						user={currentUser}
 						{status}
-						ofAgeAtConference={data.ofAgeAtConference}
+						ofAgeAtConference={isOfAgeAtConference}
 					/>
 				{:else if conference!.state === 'POST'}
 					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
 						<Certificate
 							conferenceId={conference!.id}
-							userId={data.user.sub}
-							didAttend={!!data.participation?.participantStatus?.didAttend}
+							userId={currentUser.sub}
+							didAttend={!!participation?.participantStatus?.didAttend}
 							customConferenceRole={singleParticipant.assignedRole}
 						/>
 					{:catch error}
@@ -108,8 +115,8 @@
 				{#if conference!.state === 'PREPARATION' || conference!.state === 'ACTIVE'}
 					<ConferenceStatusWidget
 						conferenceId={conference!.id}
-						userId={data.user.sub}
-						ofAgeAtConference={data.ofAgeAtConference}
+						userId={currentUser.sub}
+						ofAgeAtConference={isOfAgeAtConference}
 						{status}
 						unlockPayment={conference?.unlockPayments}
 						unlockPostals={conference?.unlockPostals}
@@ -117,15 +124,15 @@
 					<DelegationPreparationStage
 						{delegationMember}
 						{conference}
-						user={data.user}
+						user={currentUser}
 						{status}
-						ofAgeAtConference={data.ofAgeAtConference}
+						ofAgeAtConference={isOfAgeAtConference}
 					/>
 				{:else if conference!.state === 'POST'}
 					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
 						<Certificate
 							conferenceId={conference!.id}
-							userId={data.user.sub}
+							userId={currentUser.sub}
 							didAttend={!!status?.didAttend}
 							country={delegationMember.delegation.assignedNation}
 							nonStateActor={delegationMember.delegation.assignedNonStateActor}
@@ -160,7 +167,7 @@
 					{#await import('./stages/Common/Certificate.svelte') then { default: Certificate }}
 						<Certificate
 							conferenceId={conference!.id}
-							userId={data.user.sub}
+							userId={currentUser.sub}
 							didAttend={!!status?.didAttend}
 							isSupervisor={true}
 							totalStudentsCount={totalStudents}
@@ -172,11 +179,11 @@
 				{:else}
 					{#await import('./stages/Supervisor/Supervisor.svelte') then { default: Supervisor }}
 						<Supervisor
-							user={data.user}
+							user={currentUser}
 							{conference}
 							{supervisor}
 							{status}
-							ofAge={data.ofAgeAtConference}
+							ofAge={isOfAgeAtConference}
 						/>
 					{:catch error}
 						<ChunkLoadError {error} />

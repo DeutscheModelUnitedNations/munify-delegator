@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { LayoutData } from './$types';
+	import { page } from '$app/state';
 	import { getProject } from './appData.svelte';
 	import Tabs from '$lib/components/tabs/Tabs.svelte';
 	import Tab from '$lib/components/tabs/Tab.svelte';
 
-	let { data, children }: { data: LayoutData; children: Snippet } = $props();
+	let { children }: { children: Snippet } = $props();
+
+	const tab = $derived(page.route.id?.split('/').pop());
 
 	const downloadData = () => {
 		const filename = `assignment-assistant-data_${new Date().toISOString()}.json`;
@@ -35,21 +37,11 @@
 
 <main class="hidden w-full flex-col p-10 lg:flex">
 	<Tabs>
-		<Tab active={data.tab === 'sighting'} title="Sichtung" icon="eye" href="sighting" />
-		<Tab
-			active={data.tab === 'weighting'}
-			title="Gewichtung"
-			icon="balance-scale"
-			href="weighting"
-		/>
-		<Tab active={data.tab === 'singles'} title="Singles" icon="user-tie" href="singles" />
-		<Tab active={data.tab === 'assignment'} title="Zuweisung" icon="split" href="assignment" />
-		<Tab
-			active={data.tab === 'summary'}
-			title="Zusammenfassung"
-			icon="clipboard-list"
-			href="summary"
-		/>
+		<Tab active={tab === 'sighting'} title="Sichtung" icon="eye" href="sighting" />
+		<Tab active={tab === 'weighting'} title="Gewichtung" icon="balance-scale" href="weighting" />
+		<Tab active={tab === 'singles'} title="Singles" icon="user-tie" href="singles" />
+		<Tab active={tab === 'assignment'} title="Zuweisung" icon="split" href="assignment" />
+		<Tab active={tab === 'summary'} title="Zusammenfassung" icon="clipboard-list" href="summary" />
 	</Tabs>
 
 	{@render children?.()}

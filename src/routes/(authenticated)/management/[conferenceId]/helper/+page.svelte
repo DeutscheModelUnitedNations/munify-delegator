@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
+	import { page } from '$app/state';
 	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
 	import ParticipantStatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import Section from './Section.svelte';
-
-	let { data } = $props();
 
 	const switchAttendanceState = async (value: boolean) => {
 		loading = true;
@@ -16,7 +15,7 @@
 		}
 		try {
 			await client.mutate.updateAllConferenceParticipantStatus({
-				__args: { conferenceId: data.conferenceId, didAttend: value },
+				__args: { conferenceId: page.params.conferenceId!, didAttend: value },
 				changed: true
 			});
 			toast.success(m.changesSuccessful());

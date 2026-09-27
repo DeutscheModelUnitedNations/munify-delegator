@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { fetchCurrentUser } from '$lib/api/currentUser';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { userFormSchema } from './form-schema';
@@ -9,7 +10,7 @@ import { client } from '$lib/api/rumbleClient/client';
 import { configPublic } from '$config/public';
 
 export const load: PageServerLoad = async (event) => {
-	const { user } = await event.parent();
+	const user = await fetchCurrentUser();
 	const fullUser = await client.query.user({
 		__args: { id: user.sub },
 		givenName: true,

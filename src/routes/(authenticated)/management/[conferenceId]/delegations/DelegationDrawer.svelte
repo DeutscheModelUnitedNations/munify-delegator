@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import type { CurrentUser } from '$lib/state/currentUser.svelte';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import CommitteeAssignmentModal from './CommitteeAssignmentModal.svelte';
-	import type { PageData } from './$types';
 	import codenmz from '$lib/helpers/codenamize';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
@@ -16,7 +16,7 @@
 		delegationId: string;
 		open?: boolean;
 		onClose?: () => void;
-		userData: PageData['user'];
+		userData: CurrentUser;
 	}
 	let { delegationId, open = $bindable(false), onClose, conferenceId, userData }: Props = $props();
 

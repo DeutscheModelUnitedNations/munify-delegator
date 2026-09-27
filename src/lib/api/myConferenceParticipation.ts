@@ -1,4 +1,5 @@
 import { client } from './rumbleClient/client';
+import { getCurrentUser } from '$lib/state/currentUser.svelte';
 
 /** Everything the dashboard needs about one person's involvement in one conference. */
 const userSummary = {
@@ -48,7 +49,7 @@ export async function fetchMyConferenceParticipation({
 		singleParticipants,
 		teamMembers
 	] = await Promise.all([
-		client.query.user({ __args: { id: userId }, id: true, birthday: true }),
+		client.liveQuery.user({ __args: { id: userId }, id: true, birthday: true }),
 		client.query
 			.conferenceParticipantStatuses({
 				__args: { where: forUser },
@@ -60,7 +61,7 @@ export async function fetchMyConferenceParticipation({
 				didAttend: true
 			})
 			.then((rows) => rows.at(0) ?? null),
-		client.query.conference({
+		client.liveQuery.conference({
 			__args: { id: conferenceId },
 			id: true,
 			title: true,
@@ -266,3 +267,14 @@ export async function fetchMyConferenceParticipation({
 }
 
 export type MyConferenceParticipation = Awaited<ReturnType<typeof fetchMyConferenceParticipation>>;
+
+/**
+ * The caller's own participation, which is what every dashboard page wants.
+ *
+ * Await it in a `$derived` so the page follows both the conference in the URL and the live updates
+ * the mutations publish.
+ */
+export async function fetchMyParticipation(conferenceId: string) {
+	const user = await getCurrentUser();
+	return fetchMyConferenceParticipation({ userId: user.sub, conferenceId });
+}

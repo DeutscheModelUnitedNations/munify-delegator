@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { PageData } from './$types';
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		validateResolution,
@@ -14,8 +13,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getPaperTypeIcon } from '$lib/utils/enumIcons';
 	import { page } from '$app/stores';
-
-	let { data }: { data: PageData } = $props();
 
 	const paperData = $derived(
 		await client.liveQuery.findPublicPaperContent({

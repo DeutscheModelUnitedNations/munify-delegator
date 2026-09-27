@@ -1,5 +1,6 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
+	import { page } from '$app/state';
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import {
 		getSingleApplications,
@@ -12,14 +13,11 @@
 
 	import SingleParticipantCard from '../SingleParticipantCard.svelte';
 	import { onMount } from 'svelte';
-	import type { PageData } from './$types';
-
-	let { data }: { data: PageData } = $props();
 
 	let dragging = $state(false);
 
 	onMount(() => {
-		loadProjects(data.projectId);
+		loadProjects(page.params.projectId!);
 	});
 
 	function handleDrop(state: DragDropState<{ id: string }>) {

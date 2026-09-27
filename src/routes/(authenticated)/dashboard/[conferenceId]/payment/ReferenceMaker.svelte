@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import type { ConferencePaymentData } from './+layout';
+	import type { ConferencePaymentData } from './conferencePaymentData';
 	import DisabledInput from '$lib/components/DisabledInput.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';

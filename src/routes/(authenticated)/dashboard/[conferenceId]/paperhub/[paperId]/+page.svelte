@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchMyPaperHubRoles } from '../myPaperHubRoles';
 	import {
 		validateResolution,
 		createEmptyResolution,
@@ -24,7 +25,7 @@
 	import { getStatusBadgeClass } from '$lib/utils/paperStatusHelpers';
 
 	import { toast } from 'svelte-sonner';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperReviewSection from './PaperReviewSection.svelte';
 	import {
@@ -35,7 +36,7 @@
 	} from '$lib/utils/resolutionExport';
 	import type { PaperTypstMeta } from '$lib/helpers/paperTypst';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	const paperData = $derived(
 		await client.liveQuery.paper({
@@ -100,10 +101,11 @@
 	);
 
 	// View mode detection
-	let isAuthor = $derived(paperData?.author.id === data.user.sub);
-	let isReviewer = $derived((data.teamMembers?.length ?? 0) > 0);
+	let isAuthor = $derived(paperData?.author.id === currentUser.sub);
+	const myRoles = $derived(await fetchMyPaperHubRoles($page.params.conferenceId!));
+	let isReviewer = $derived(myRoles.isReviewer);
 	let isSupervisor = $derived(
-		!!data.supervisedDelegationIds?.includes(paperData?.delegation.id ?? '')
+		myRoles.supervisedDelegationIds.includes(paperData?.delegation.id ?? '')
 	);
 	let baseViewMode = $derived<'author' | 'reviewer' | 'supervisor'>(
 		isAuthor ? 'author' : isReviewer ? 'reviewer' : isSupervisor ? 'supervisor' : 'author'
@@ -400,8 +402,6 @@
 			error: submit ? m.paperSubmitError() : m.paperSaveDraftError()
 		});
 		await promise;
-
-		await invalidateAll();
 	};
 
 	// Quote selection state for reviewers

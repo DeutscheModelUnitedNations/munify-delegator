@@ -3,7 +3,7 @@
 	import { client, type PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import { writable, get } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import PaperEditor from '$lib/components/paper/editor';
 	import { translatePaperStatus } from '$lib/utils/enumTranslations';
@@ -440,7 +440,6 @@
 			}
 
 			// Reload data
-			await invalidateAll();
 		} finally {
 			isSubmitting = false;
 		}

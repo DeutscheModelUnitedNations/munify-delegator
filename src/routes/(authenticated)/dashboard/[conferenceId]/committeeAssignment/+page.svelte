@@ -1,16 +1,15 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
 	import { fetchCommitteeAssignment } from './committeeAssignment';
 	import formatNames from '$lib/helpers/formatNames';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	const assignment = $derived(
-		await fetchCommitteeAssignment(page.params.conferenceId!, data.user.sub)
+		await fetchCommitteeAssignment(page.params.conferenceId!, currentUser.sub)
 	);
 	const delegationMember = $derived(assignment.delegationMember);
 	let members = $derived(delegationMember?.delegation.members);
@@ -71,7 +70,6 @@
 			alert(m.failedToAssignCommittees());
 			throw new Error('Failed to assign committees');
 		}
-		invalidateAll();
 	};
 </script>
 

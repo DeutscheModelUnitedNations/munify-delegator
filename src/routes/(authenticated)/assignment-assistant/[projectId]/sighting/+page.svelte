@@ -2,15 +2,13 @@
 	import TextPreview from '$lib/components/TextPreview.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
-	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
+	import { page as routeState } from '$app/state';
 	import Application from './Application.svelte';
 
 	import SchoolFilter from './SchoolFilter.svelte';
 	import codenmz from '$lib/helpers/codenamize';
 	import { getConference, loadProjects, getApplications } from '../appData.svelte';
-
-	let { data }: PageProps = $props();
 
 	const params = queryParameters({
 		page: {
@@ -38,13 +36,14 @@
 	let searchActive = $derived($params.search.length > 2);
 	let filterActive = $derived($params.filter.length > 0 && !searchActive);
 
+	const projectId = $derived(routeState.params.projectId!);
 	let page = $derived($params.page ?? 1);
 	let pageSize = $derived($params.pageSize ?? 10);
 
 	let conference = $state(getConference());
 
 	onMount(() => {
-		loadProjects(data.projectId);
+		loadProjects(projectId);
 	});
 
 	const setPage = (newPage: number) => {

@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
-	import type { PageData } from './$types';
-
-	let { data }: { data: PageData } = $props();
 
 	/** Invitations that are still open: neither accepted nor withdrawn. */
 	const pendingInvitations = $derived(
 		await client.liveQuery.teamMemberInvitations({
 			__args: {
 				where: {
-					conferenceId: { eq: data.conferenceId },
+					conferenceId: { eq: page.params.conferenceId! },
 					usedAt: { isNull: true },
 					revokedAt: { isNull: true }
 				}
@@ -51,5 +49,8 @@
 </div>
 
 {#if inviteMembersModalOpen}
-	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={data.conferenceId} />
+	<InviteTeamMembersModal
+		bind:open={inviteMembersModalOpen}
+		conferenceId={page.params.conferenceId!}
+	/>
 {/if}

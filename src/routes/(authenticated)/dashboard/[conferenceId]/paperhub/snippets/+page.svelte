@@ -23,7 +23,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import type { PageData } from './$types';
 	import Modal from '$lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
 	import StarterKit from '@tiptap/starter-kit';
@@ -38,8 +37,6 @@
 		isValidTipTapContent,
 		getEmptyTipTapDocument
 	} from '$lib/components/paper/editor/contentValidation';
-
-	let { data }: { data: PageData } = $props();
 
 	const snippets = $derived(
 		await client.liveQuery.myReviewerSnippets({

@@ -1,16 +1,14 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
-	import type { PageData } from './$types';
-
-	let { data }: { data: PageData } = $props();
 
 	// Seeded once and then owned by the form: a refetch must not overwrite what is being typed.
 	const announcement = await client.query.conference({
-		__args: { id: data.conferenceId },
+		__args: { id: page.params.conferenceId! },
 		info: true,
 		showInfoExpanded: true
 	});
@@ -23,7 +21,7 @@
 		saving = true;
 		try {
 			await client.mutate.updateConference({
-				__args: { id: data.conferenceId, info, showInfoExpanded },
+				__args: { id: page.params.conferenceId!, info, showInfoExpanded },
 				id: true
 			});
 			toast.success(m.saved());

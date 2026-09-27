@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
+	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
@@ -10,10 +10,9 @@
 	import DownloadCategoryCard from './DownloadCategoryCard.svelte';
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
 
-	let { data }: { data: PageData } = $props();
 	const committees = $derived(
 		await client.liveQuery.committees({
-			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
 			id: true,
 			name: true,
 			abbreviation: true
@@ -34,7 +33,7 @@
 		description={m.badgeDataDescription()}
 		icon="fas fa-id-badge"
 	>
-		<BadgeData {committees} conferenceId={data.conferenceId} />
+		<BadgeData {committees} conferenceId={page.params.conferenceId!} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -42,7 +41,7 @@
 		description={m.registrationListsDescription()}
 		icon="fas fa-clipboard-list"
 	>
-		<ConferenceRegistrationList conferenceId={data.conferenceId} />
+		<ConferenceRegistrationList conferenceId={page.params.conferenceId!} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -50,7 +49,7 @@
 		description={m.participantStatusDescription()}
 		icon="fas fa-user-check"
 	>
-		<ParticipantStatusExport conferenceId={data.conferenceId} />
+		<ParticipantStatusExport conferenceId={page.params.conferenceId!} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -58,7 +57,7 @@
 		description={m.referenceDataDescription()}
 		icon="fas fa-globe"
 	>
-		<AllNations conferenceId={data.conferenceId} />
+		<AllNations conferenceId={page.params.conferenceId!} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -66,6 +65,6 @@
 		description={m.integrationExportsDescription()}
 		icon="fas fa-plug"
 	>
-		<ChaseSeedExport conferenceId={data.conferenceId} />
+		<ChaseSeedExport conferenceId={page.params.conferenceId!} />
 	</DownloadCategoryCard>
 </div>

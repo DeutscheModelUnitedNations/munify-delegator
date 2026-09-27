@@ -1,6 +1,6 @@
 <script lang="ts">
 	import codenamize from '$lib/helpers/codenamize';
-	import type { PageData } from '../../$types';
+	import type { CurrentUser } from '$lib/state/currentUser.svelte';
 	import { alpha3Code, m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -23,7 +23,6 @@
 		type RecipientData
 	} from '$lib/utils/pdfGenerator';
 	import { toast } from 'svelte-sonner';
-	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import EntryCode from '../Common/EntryCode.svelte';
 	import SupervisorContentCard from './SupervisorContentCard.svelte';
@@ -34,7 +33,7 @@
 	// TODO these components need some refactoring
 
 	interface Props {
-		user: PageData['user'];
+		user: CurrentUser;
 		conference: NonNullable<MyConferenceParticipation['conference']>;
 		supervisor: NonNullable<MyConferenceParticipation['supervisor']>;
 		status: MyConferenceParticipation['participantStatus'];
@@ -164,8 +163,6 @@
 			error: m.genericToastError()
 		});
 		await promise;
-
-		await invalidateAll();
 	};
 
 	/** The consent documents are only needed when one is actually downloaded, so they are fetched here. */
@@ -620,7 +617,6 @@
 				error: m.genericToastError()
 			});
 			await promise;
-			await invalidateAll();
 		}}
 	/>
 </DashboardSection>

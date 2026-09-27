@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from '../../$types';
+	import type { CurrentUser } from '$lib/state/currentUser.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
@@ -13,7 +13,7 @@
 	interface Props {
 		conference: NonNullable<MyConferenceParticipation['conference']>;
 		singleParticipant: NonNullable<MyConferenceParticipation['singleParticipant']>;
-		user: PageData['user'];
+		user: CurrentUser;
 		status: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
 	}

@@ -1,4 +1,5 @@
 import { client } from '$lib/api/rumbleClient/client';
+import { fetchCurrentUser } from '$lib/api/currentUser';
 import { nullFieldsToUndefined } from '$lib/helpers/nullFieldsToUndefined';
 import { fail, message, superValidate } from 'sveltekit-superforms';
 import type { Actions, PageServerLoad } from './$types';
@@ -7,7 +8,7 @@ import { waitingListFormSchema } from './form-schema';
 import { m } from '$lib/paraglide/messages';
 
 export const load: PageServerLoad = async (event) => {
-	const { user } = await event.parent();
+	const user = await fetchCurrentUser();
 
 	const [waitingListEntry] = await client.query.waitingListEntries({
 		__args: {

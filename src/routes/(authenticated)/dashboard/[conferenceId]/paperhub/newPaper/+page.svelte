@@ -1,10 +1,10 @@
 <script lang="ts">
 	import PaperEditor from '$lib/components/paper/editor';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { page } from '$app/state';
 	import { fetchNewPaperContext } from './newPaperContext';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
@@ -13,7 +13,7 @@
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
 	import { editorContentStore } from '$lib/components/paper/editor/editorStore';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { browser } from '$app/environment';
@@ -49,7 +49,7 @@
 		return m.timeAgoDays({ count: days });
 	}
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
 	// Create persisted store for this conference's paper draft (only on browser)
 	const draftStore = browser
@@ -177,7 +177,7 @@
 	const context = $derived(
 		await fetchNewPaperContext(
 			page.params.conferenceId!,
-			data.user.sub,
+			currentUser.sub,
 			page.url.searchParams.get('type')
 		)
 	);
@@ -256,7 +256,7 @@
 		const promise = client.mutate.createPaper({
 			__args: {
 				conferenceId: page.params.conferenceId!,
-				authorId: data.user.sub,
+				authorId: currentUser.sub,
 				delegationId,
 				type: $formData.type,
 				content,
@@ -272,8 +272,6 @@
 		});
 
 		const created = await promise;
-
-		await invalidateAll();
 
 		if (created.id) {
 			// Clear store so next paper creation starts fresh

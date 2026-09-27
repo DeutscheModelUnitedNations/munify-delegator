@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageProps } from './$types';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		downloadCompletePostalRegistrationPDF,
@@ -9,15 +10,16 @@
 	} from '$lib/utils/pdfGenerator';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import formatNames, { formatInitials } from '$lib/helpers/formatNames';
-	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
 
-	let { data }: PageProps = $props();
+	const currentUser = $derived(await getCurrentUser());
 
-	const conferenceData = $derived(data.participation);
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+
+	const conferenceData = $derived(participation);
 	const conference = $derived(conferenceData?.conference);
-	const userData = $derived(data.user);
+	const userData = $derived(currentUser);
 	const userId = $derived(userData.sub);
 
 	function fetchDetails(id: string, conferenceId: string) {
@@ -72,8 +74,6 @@
 	async function handleGeneratePDF() {
 		loading = true;
 		try {
-			await invalidateAll();
-
 			const user = details?.[0];
 			const conferenceConsents = details?.[1];
 

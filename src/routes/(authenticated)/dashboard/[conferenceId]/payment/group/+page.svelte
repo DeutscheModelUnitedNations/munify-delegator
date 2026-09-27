@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchConferencePaymentData } from '../conferencePaymentData';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
-	import type { PageData } from './$types';
 	import Selection from '$lib/components/selection';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
@@ -14,9 +16,10 @@
 		familyName: string | null;
 	};
 
-	let { data }: { data: PageData } = $props();
-	let conferencePaymentData = $derived(data.conferencePaymentData);
-	let participation = $derived(data.participation);
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	let conferencePaymentData = $derived(await fetchConferencePaymentData(page.params.conferenceId!));
 	let supervisorData = $derived(participation.supervisor);
 	let userData = $derived(supervisorData?.user);
 	let delegationMembers = $derived(supervisorData?.supervisedDelegationMembers);
@@ -216,7 +219,7 @@
 
 	<ReferenceMaker
 		users={selectedParticipants}
-		ownUserId={data.user.sub}
+		ownUserId={currentUser.sub}
 		{conferencePaymentData}
 		bind:isReferenceCreated
 	/>

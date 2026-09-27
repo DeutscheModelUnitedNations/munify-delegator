@@ -4,7 +4,6 @@
 	import { fetchSurveyDetail } from './surveyDetail';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
-	import type { PageData } from './$types';
 	import {
 		datetimeLocalToDate,
 		dateToDatetimeLocal,
@@ -19,9 +18,9 @@
 	import SurveyExportButtons from './SurveyExportButtons.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 
-	let { data }: { data: PageData } = $props();
-
-	const detail = $derived(await fetchSurveyDetail(data.conferenceId, page.params.surveyId!));
+	const detail = $derived(
+		await fetchSurveyDetail(page.params.conferenceId!, page.params.surveyId!)
+	);
 	const survey = $derived(detail.survey);
 	const notAnsweredParticipants = $derived(detail.usersNotAnswered);
 
@@ -396,7 +395,7 @@
 					count={option.countSurveyAnswers}
 					limit={option.upperLimit}
 					{participants}
-					conferenceId={data.conferenceId}
+					conferenceId={page.params.conferenceId!}
 				/>
 			{/each}
 
@@ -404,7 +403,7 @@
 				title={m.notAssignedParticipants()}
 				count={notAnsweredParticipants.length}
 				participants={notAnsweredParticipants}
-				conferenceId={data.conferenceId}
+				conferenceId={page.params.conferenceId!}
 			/>
 		</div>
 
@@ -419,7 +418,7 @@
 					surveyTitle={survey.title}
 					options={survey.options}
 					surveyId={page.params.surveyId!}
-					conferenceId={data.conferenceId}
+					conferenceId={page.params.conferenceId!}
 				/>
 			</DownloadCategoryCard>
 		{/if}

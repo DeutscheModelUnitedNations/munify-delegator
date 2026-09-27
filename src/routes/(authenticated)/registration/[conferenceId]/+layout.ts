@@ -26,6 +26,4 @@ export const load: LayoutLoad = async (event) => {
 				redirect(307, `/registration/${event.params.conferenceId}/waiting-list`);
 			}
 	}
-
-	return { conferenceId: event.params.conferenceId };
 };

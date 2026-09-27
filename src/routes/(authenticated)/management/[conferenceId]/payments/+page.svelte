@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
+	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
@@ -12,8 +12,6 @@
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-
-	let { data }: { data: PageData } = $props();
 
 	let params = queryParameters({
 		searchValue: {
@@ -86,14 +84,14 @@
 	async function loadReference(searchValue: string) {
 		referenceFetching = true;
 		try {
-			reference = await fetchPaymentReference(searchValue, data.conferenceId);
+			reference = await fetchPaymentReference(searchValue, page.params.conferenceId!);
 		} finally {
 			referenceFetching = false;
 		}
 	}
 
 	async function loadLastConfirmed() {
-		lastConfirmed = await fetchLastConfirmed(data.conferenceId);
+		lastConfirmed = await fetchLastConfirmed(page.params.conferenceId!);
 	}
 
 	let recieveDate = $state<string>(new Date().toISOString().split('T')[0]);
@@ -101,7 +99,7 @@
 	const getPaymentStatus = (userId: string) => {
 		const user = referencedUsers?.find((user) => user.id === userId);
 		const status = user?.conferenceParticipantStatus.find(
-			(status) => status.conference.id === data.conferenceId
+			(status) => status.conference.id === page.params.conferenceId!
 		);
 		return status ? status.paymentStatus : 'PENDING';
 	};
@@ -353,7 +351,7 @@
 						<div class="truncate text-sm opacity-60">{user.id}</div>
 						<button
 							class="btn btn-soft btn-sm ml-auto"
-							onclick={() => openUserCard(user.id, data.conferenceId)}
+							onclick={() => openUserCard(user.id, page.params.conferenceId!)}
 							aria-label="Details for {formatNames(
 								user.givenName ?? undefined,
 								user.familyName ?? undefined

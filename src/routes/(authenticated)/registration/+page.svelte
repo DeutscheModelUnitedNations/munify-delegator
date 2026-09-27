@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import svgempty from '$assets/undraw/empty_street.svg';
 	import ConferenceCard from '$lib/components/conferenceCard/ConferenceCard.svelte';
 	import { fetchOpenConferences } from './openConferences';
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
 
-	const open = $derived(await fetchOpenConferences(data.user.sub));
+	const open = $derived(await fetchOpenConferences(currentUser.sub));
 	const conferences = $derived(open.conferences);
 
 	/** Every conference the caller already has a registration in, in any of the three roles. */

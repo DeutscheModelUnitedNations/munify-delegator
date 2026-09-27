@@ -1,22 +1,21 @@
 <script lang="ts">
 	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
+	import { fetchMyConferences } from './myConferences.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
 	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
-	import type { LayoutData as PageData } from './$types';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { page } from '$app/stores';
 	import { dev } from '$app/environment';
 
 	interface Props {
 		children: Snippet;
-		data: PageData;
 	}
 
-	let { children, data }: Props = $props();
-	let conferences = $derived(data.myConferences);
+	let { children }: Props = $props();
+	const conferences = $derived(await fetchMyConferences());
 
 	let upcomingConferences = $derived(conferences?.filter((c) => c.startConference > new Date()));
 	let activeConferences = $derived(

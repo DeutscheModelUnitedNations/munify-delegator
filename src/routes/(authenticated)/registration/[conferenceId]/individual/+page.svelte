@@ -1,13 +1,12 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import PlainCard from '$lib/components/PlainCard.svelte';
 
-	let { data }: { data: PageData } = $props();
 	const roles = $derived(
 		await client.liveQuery.customConferenceRoles({
-			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
 			id: true,
 			name: true,
 			description: true,

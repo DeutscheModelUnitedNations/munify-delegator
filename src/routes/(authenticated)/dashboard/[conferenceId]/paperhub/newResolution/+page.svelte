@@ -1,10 +1,11 @@
 <script lang="ts">
 	import PaperEditor from '$lib/components/paper/editor';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { page } from '$app/state';
 	import { fetchNewResolutionContext } from './newResolutionContext';
 	import { m } from '$lib/paraglide/messages';
 	import { superForm } from 'sveltekit-superforms';
-	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
@@ -12,7 +13,7 @@
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { toast } from 'svelte-sonner';
 	import { resolutionStore } from '$lib/components/paper/editor/editorStore';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
 		type ResolutionHeaderData,
@@ -69,7 +70,9 @@
 		return m.timeAgoDays({ count: days });
 	}
 
-	let { data }: { data: PageData } = $props();
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
 
 	// Create persisted store for this conference's resolution draft (only on browser)
 	const draftStore = browser
@@ -194,12 +197,12 @@
 	});
 
 	const context = $derived(
-		await fetchNewResolutionContext(page.params.conferenceId!, data.user.sub)
+		await fetchNewResolutionContext(page.params.conferenceId!, currentUser.sub)
 	);
 	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
-	let conference = $derived(data.participation?.conference);
+	let conference = $derived(participation?.conference);
 
 	let form = superForm(context.form, {
 		onSubmit: (input) => {
@@ -269,7 +272,7 @@
 		const promise = client.mutate.createPaper({
 			__args: {
 				conferenceId: page.params.conferenceId!,
-				authorId: data.user.sub,
+				authorId: currentUser.sub,
 				delegationId,
 				type: 'WORKING_PAPER',
 				content,
@@ -285,8 +288,6 @@
 		});
 
 		const created = await promise;
-
-		await invalidateAll();
 
 		if (created.id) {
 			// Clear store so next paper creation starts fresh

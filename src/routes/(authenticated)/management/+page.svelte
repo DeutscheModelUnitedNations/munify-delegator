@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$types';
+	import { fetchMyManagedConferences } from './myManagedConferences';
 
-	let { data }: { data: PageData } = $props();
-	let { conferences } = $derived(data);
+	const conferences = $derived(await fetchMyManagedConferences());
 </script>
 
 <div class="flex w-full flex-col items-center gap-4 p-10">

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
+	import { page } from '$app/state';
 	import FormFileInput from '$lib/components/form/FormFile.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { superForm } from 'sveltekit-superforms';
@@ -253,7 +254,7 @@
 
 		try {
 			const templates = await client.query.conference({
-				__args: { id: data.conferenceId },
+				__args: { id: page.params.conferenceId! },
 				contractContent: true,
 				guardianConsentContent: true,
 				mediaConsentContent: true,
@@ -312,7 +313,7 @@
 
 		try {
 			const templates = await client.query.conference({
-				__args: { id: data.conferenceId },
+				__args: { id: page.params.conferenceId! },
 				certificateContent: true
 			});
 
