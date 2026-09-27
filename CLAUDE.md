@@ -246,11 +246,18 @@ bun run preview
   function and its result type (`conferenceCalendar.ts`, `assignmentProject.ts`), and let child
   components import that type for their props.
 
-- **`load` functions are for four things only**: redirect guards, OIDC/cookie work, page options
-  like `ssr = false`, and pages that use SvelteKit **form actions** (there the load hands the
-  action its superforms object, which is the framework's contract). Everything else fetches in the
-  component. A `load` must never return what the generated client gave it: those are subscribeable
+- **`load` functions are for four things only**: redirect and 403 guards, OIDC/cookie work, page
+  options like `ssr = false`, and pages that use SvelteKit **form actions** (there the load hands
+  the action its superforms object, which is the framework's contract). Everything else fetches in
+  the component, and a guard returns nothing — route parameters come from `page.params`, not from
+  load data. A `load` must never return what the generated client gave it: those are subscribeable
   proxies, and `load` data has to be serialized into the page.
+- **Global state lives in `$lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
+  signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
+  Cache such a singleton **only in the browser**: module state on the server is shared by every
+  request the process serves, so caching there hands one visitor's identity to the next. For the
+  same reason the urql client answers server-side operations `network-only` — see the comment on
+  `requestPolicy` in `src/lib/api/client.ts`.
 - **Forms without an action** are SPA forms that submit through a mutation. Build their initial
   value with superforms' `defaults()` in the component rather than `superValidate` on the server.
 - **Regeneration** happens on dev server start, so a handler change is only visible to the

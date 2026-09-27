@@ -127,8 +127,10 @@ bun run machine-translate
 - **Generated client**: `client.query.x({ __args, …selection })` and `client.mutate.x(…)`, written
   into `src/lib/api/rumbleClient/` on dev server start
 - **Fetching happens in components**, not in `load`: `const x = $derived(await client.liveQuery.…)`
-  at the top of `<script>`. `load` survives only for redirect guards, OIDC work, page options and
-  pages with form actions
+  at the top of `<script>`. `load` survives only for redirect/403 guards, OIDC work, page options
+  and pages with form actions, and a guard returns no data
+- **Global state**: `$lib/state/currentUser.svelte` for the signed-in person, cached in the browser
+  only — module state on the server is shared across requests
 - **SSR**: component fetches during SSR go through the remote function in
   `src/api/graphql.remote.ts`, which runs the schema in-process rather than over HTTP
 - **After mutations**: usually nothing — mutations publish to the tables they write and `liveQuery`
