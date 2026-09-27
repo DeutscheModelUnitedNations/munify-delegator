@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
-	import { cache, graphql } from '$houdini';
+	import type { PageData } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import Form from '$lib/components/form/Form.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
@@ -17,8 +17,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let query = $derived(data.data);
-	let committees = $derived(query.findManyCommittees);
+	let committees = $derived(data.committees);
 
 	let form = superForm(data.addAgendaItemForm, {
 		resetForm: true,
@@ -28,7 +27,6 @@
 			toast.error(e.result.error.message);
 		},
 		onResult(_e) {
-			cache.markStale();
 			invalidateAll();
 		}
 	});
@@ -59,74 +57,44 @@
 		confirmText: string;
 	}>({ id: '', title: '', paperCount: 0, confirmText: '' });
 
-	const DeleteAgendaItemMutation = graphql(`
-		mutation DeleteAgendaItemMutation($id: String!) {
-			deleteOneAgendaItem(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
-	const UpdateCommitteeMutation = graphql(`
-		mutation UpdateCommitteeMutation(
-			$id: String!
-			$name: String
-			$abbreviation: String
-			$resolutionHeadline: String
-		) {
-			updateOneCommittee(
-				where: { id: $id }
-				data: { name: $name, abbreviation: $abbreviation, resolutionHeadline: $resolutionHeadline }
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateAgendaItemMutation = graphql(`
-		mutation UpdateAgendaItemMutation($id: String!, $title: String!, $teaserText: String) {
-			updateOneAgendaItem(
-				where: { id: $id }
-				data: { title: { set: $title }, teaserText: { set: $teaserText } }
-			) {
-				id
-			}
-		}
-	`);
-
 	async function saveCommittee() {
-		const promise = UpdateCommitteeMutation.mutate({
-			id: editingCommittee.id,
-			name: editingCommittee.name,
-			abbreviation: editingCommittee.abbreviation,
-			resolutionHeadline: editingCommittee.resolutionHeadline
+		const promise = client.mutate.updateCommittee({
+			__args: {
+				id: editingCommittee.id,
+				name: editingCommittee.name,
+				abbreviation: editingCommittee.abbreviation,
+				resolutionHeadline: editingCommittee.resolutionHeadline
+			},
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editCommitteeModalOpen = false;
-		cache.markStale();
 		invalidateAll();
 	}
 
 	async function saveAgendaItem() {
-		const promise = UpdateAgendaItemMutation.mutate({
-			id: editingAgendaItem.id,
-			title: editingAgendaItem.title,
-			teaserText: editingAgendaItem.teaserText
+		const promise = client.mutate.updateAgendaItem({
+			__args: {
+				id: editingAgendaItem.id,
+				title: editingAgendaItem.title,
+				teaserText: editingAgendaItem.teaserText
+			},
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editAgendaItemModalOpen = false;
-		cache.markStale();
 		invalidateAll();
 	}
 
 	async function confirmDelete() {
-		const promise = DeleteAgendaItemMutation.mutate({ id: deleteConfirmation.id });
+		const promise = Promise.resolve(
+			client.mutate.deleteAgendaItem({ __args: { id: deleteConfirmation.id } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		deleteModalOpen = false;
-		cache.markStale();
 		invalidateAll();
 	}
 

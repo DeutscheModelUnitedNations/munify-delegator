@@ -1,135 +1,88 @@
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 import { fail, message, superValidate, withFiles } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
-import { cache, graphql } from '$houdini';
-import { error, type Actions } from '@sveltejs/kit';
+import { client } from '$lib/api/rumbleClient/client';
+import { error } from '@sveltejs/kit';
 import { m } from '$lib/paraglide/messages';
 import { nullFieldsToUndefined } from '$lib/helpers/nullFieldsToUndefined';
 import { conferenceSettingsFormSchema } from './form-schema';
 import { AddAgendaItemFormSchema } from './committees/form-schema';
 import dayjs from 'dayjs';
 
-const conferenceQuery = graphql(`
-	query ConferenceFormPrepopulationQuery($id: String!) {
-		findUniqueConference(where: { id: $id }) {
-			title
-			location
-			longTitle
-			startAssignment
-			registrationDeadlineGracePeriodMinutes
-			startConference
-			state
-			website
-			endConference
-			imageDataURL
-			emblemDataURL
-			logoDataURL
-			language
-			linkToPreparationGuide
-			linkToTeamWiki
-			linkToServicesPage
-			isOpenPaperSubmission
-			showCalendar
-			timezone
-			unlockPayments
-			unlockPostals
-			feeAmount
-			bic
-			currency
-			bankName
-			iban
-			accountHolder
-			postalName
-			postalStreet
-			postalApartment
-			postalZip
-			postalCity
-			postalCountry
-			contractContentSet
-			guardianConsentContentSet
-			mediaConsentContentSet
-			termsAndConditionsContentSet
-			certificateContentSet
-		}
-	}
-`);
+function fetchConference(id: string) {
+	return client.query.conference({
+		__args: { id },
+		title: true,
+		location: true,
+		longTitle: true,
+		startAssignment: true,
+		registrationDeadlineGracePeriodMinutes: true,
+		startConference: true,
+		state: true,
+		website: true,
+		endConference: true,
+		imageDataURL: true,
+		emblemDataURL: true,
+		logoDataURL: true,
+		language: true,
+		linkToPreparationGuide: true,
+		linkToTeamWiki: true,
+		linkToServicesPage: true,
+		isOpenPaperSubmission: true,
+		showCalendar: true,
+		timezone: true,
+		unlockPayments: true,
+		unlockPostals: true,
+		feeAmount: true,
+		bic: true,
+		currency: true,
+		bankName: true,
+		iban: true,
+		accountHolder: true,
+		postalName: true,
+		postalStreet: true,
+		postalApartment: true,
+		postalZip: true,
+		postalCity: true,
+		postalCountry: true,
+		contractContentSet: true,
+		guardianConsentContentSet: true,
+		mediaConsentContentSet: true,
+		termsAndConditionsContentSet: true,
+		certificateContentSet: true
+	});
+}
 
-const conferenceUpdate = graphql(`
-	mutation UpdateConferenceFromFormMutation(
-		$data: ConferenceUpdateDataInput!
-		$where: ConferenceWhereUniqueInput!
-	) {
-		updateOneConference(data: $data, where: $where) {
-			id
-			certificateContentSet
-			termsAndConditionsContentSet
-			mediaConsentContentSet
-			guardianConsentContentSet
-			contractContentSet
+function fetchCommittees(conferenceId: string) {
+	return client.query.committees({
+		__args: { where: { conferenceId: { eq: conferenceId } } },
+		id: true,
+		abbreviation: true,
+		name: true,
+		numOfSeatsPerDelegation: true,
+		resolutionHeadline: true,
+		nations: { alpha2Code: true, alpha3Code: true },
+		agendaItems: {
+			id: true,
+			title: true,
+			teaserText: true,
+			papers: { id: true }
 		}
-	}
-`);
-
-const ConfigurationCommitteesQuery = graphql(`
-	query ConfigurationCommitteesQuery($conferenceId: String!) {
-		findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
-			id
-			abbreviation
-			name
-			numOfSeatsPerDelegation
-			resolutionHeadline
-			nations {
-				alpha2Code
-				alpha3Code
-			}
-			agendaItems {
-				id
-				title
-				teaserText
-				papers {
-					id
-				}
-			}
-		}
-	}
-`);
-
-const AddAgendaItemMutation = graphql(`
-	mutation AddAgendaItemMutationConfig(
-		$committeeId: String!
-		$title: String!
-		$teaserText: String
-	) {
-		createOneAgendaItem(
-			data: { committeeId: $committeeId, title: $title, teaserText: $teaserText }
-		) {
-			id
-		}
-	}
-`);
+	});
+}
 
 export const load: PageServerLoad = async (event) => {
-	const [conferenceResult, committeesResult] = await Promise.all([
-		conferenceQuery.fetch({
-			event,
-			variables: { id: event.params.conferenceId },
-			blocking: true
-		}),
-		ConfigurationCommitteesQuery.fetch({
-			event,
-			variables: { conferenceId: event.params.conferenceId },
-			blocking: true
-		})
+	const [conference, committeesData] = await Promise.all([
+		fetchConference(event.params.conferenceId),
+		fetchCommittees(event.params.conferenceId)
 	]);
-
-	const conference = conferenceResult.data?.findUniqueConference;
 
 	if (!conference) {
 		throw error(404, m.notFound());
 	}
 
 	const form = await superValidate(
-		nullFieldsToUndefined(conference) as any,
+		nullFieldsToUndefined(conference),
 		zod4(conferenceSettingsFormSchema)
 	);
 
@@ -138,7 +91,7 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		form,
 		addAgendaItemForm,
-		committeesData: committeesResult.data?.findManyCommittees ?? [],
+		committeesData,
 		imageDataURL: conference.imageDataURL,
 		emblemDataURL: conference.emblemDataURL,
 		logoDataURL: conference.logoDataURL,
@@ -163,15 +116,15 @@ export const actions = {
 			// "Cannot stringify arbitrary non-POJOs".
 			return fail(400, withFiles({ form }));
 		}
-		await conferenceUpdate.mutate(
-			{
-				data: form.data,
-				where: {
-					id: event.params.conferenceId
-				}
-			},
-			{ event }
-		);
+		await client.mutate.updateConference({
+			__args: { ...form.data, id: event.params.conferenceId },
+			id: true,
+			certificateContentSet: true,
+			termsAndConditionsContentSet: true,
+			mediaConsentContentSet: true,
+			guardianConsentContentSet: true,
+			contractContentSet: true
+		});
 
 		return message(withFiles(form), m.saved());
 	},
@@ -180,15 +133,10 @@ export const actions = {
 		if (!form.valid) {
 			return fail(400, { addAgendaItemForm: form });
 		}
-		await AddAgendaItemMutation.mutate(
-			{
-				...form.data,
-				teaserText: form.data.teaserText || undefined
-			},
-			{ event }
-		);
-
-		cache.markStale();
+		await client.mutate.createAgendaItem({
+			__args: { ...form.data, teaserText: form.data.teaserText || undefined },
+			id: true
+		});
 
 		return message(form, m.saved());
 	}

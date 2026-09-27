@@ -19,7 +19,7 @@
 		type RecipientData
 	} from '$lib/utils/pdfGenerator';
 	import formatNames from '$lib/helpers/formatNames';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { queryParam } from 'sveltekit-search-params';
 	import Modal from '$lib/components/Modal.svelte';
@@ -38,7 +38,6 @@
 			toast.error(e.result.error.message);
 		},
 		onResult(_e) {
-			cache.markStale();
 			invalidateAll();
 		}
 	});
@@ -88,7 +87,6 @@
 			toast.error(e.result.error.message);
 		},
 		onResult(_e) {
-			cache.markStale();
 			invalidateAll();
 		}
 	});
@@ -173,75 +171,44 @@
 		}
 	];
 
-	// Committee mutations
-	const DeleteAgendaItemMutation = graphql(`
-		mutation DeleteAgendaItemMutationConfig($id: String!) {
-			deleteOneAgendaItem(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
-	const UpdateCommitteeMutation = graphql(`
-		mutation UpdateCommitteeMutationConfig(
-			$id: String!
-			$name: String
-			$abbreviation: String
-			$resolutionHeadline: String
-		) {
-			updateOneCommittee(
-				where: { id: $id }
-				data: { name: $name, abbreviation: $abbreviation, resolutionHeadline: $resolutionHeadline }
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateAgendaItemMutation = graphql(`
-		mutation UpdateAgendaItemMutationConfig($id: String!, $title: String!, $teaserText: String) {
-			updateOneAgendaItem(
-				where: { id: $id }
-				data: { title: { set: $title }, teaserText: { set: $teaserText } }
-			) {
-				id
-			}
-		}
-	`);
-
 	async function saveCommittee() {
-		const promise = UpdateCommitteeMutation.mutate({
-			id: editingCommittee.id,
-			name: editingCommittee.name,
-			abbreviation: editingCommittee.abbreviation,
-			resolutionHeadline: editingCommittee.resolutionHeadline
+		const promise = client.mutate.updateCommittee({
+			__args: {
+				id: editingCommittee.id,
+				name: editingCommittee.name,
+				abbreviation: editingCommittee.abbreviation,
+				resolutionHeadline: editingCommittee.resolutionHeadline
+			},
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editCommitteeModalOpen = false;
-		cache.markStale();
 		invalidateAll();
 	}
 
 	async function saveAgendaItem() {
-		const promise = UpdateAgendaItemMutation.mutate({
-			id: editingAgendaItem.id,
-			title: editingAgendaItem.title,
-			teaserText: editingAgendaItem.teaserText
+		const promise = client.mutate.updateAgendaItem({
+			__args: {
+				id: editingAgendaItem.id,
+				title: editingAgendaItem.title,
+				teaserText: editingAgendaItem.teaserText
+			},
+			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		editAgendaItemModalOpen = false;
-		cache.markStale();
 		invalidateAll();
 	}
 
 	async function confirmDelete() {
-		const promise = DeleteAgendaItemMutation.mutate({ id: deleteConfirmation.id });
+		const promise = Promise.resolve(
+			client.mutate.deleteAgendaItem({ __args: { id: deleteConfirmation.id } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
 		deleteModalOpen = false;
-		cache.markStale();
 		invalidateAll();
 	}
 
@@ -284,30 +251,15 @@
 	async function handleGeneratePostalPDF() {
 		loading = true;
 
-		const getPostalBasePDFData = graphql(`
-			query GetPostalBasePDFDataForExample($conferenceId: String!) {
-				findUniqueConference(where: { id: $conferenceId }) {
-					contractContent
-					guardianConsentContent
-					mediaConsentContent
-					termsAndConditionsContent
-				}
-			}
-		`);
-
-		const pdfData = await getPostalBasePDFData.fetch({
-			variables: {
-				conferenceId: data.conferenceId
-			}
-		});
-
-		if (pdfData.errors) {
-			toast.error('Could not get Template from Server');
-			loading = false;
-			return;
-		}
-
 		try {
+			const templates = await client.query.conference({
+				__args: { id: data.conferenceId },
+				contractContent: true,
+				guardianConsentContent: true,
+				mediaConsentContent: true,
+				termsAndConditionsContent: true
+			});
+
 			const recipientData: RecipientData = {
 				name: $formData.postalName ?? 'Not set',
 				address: $formData.postalStreet ?? 'Not set',
@@ -331,10 +283,10 @@
 				false,
 				participantData,
 				recipientData,
-				pdfData.data?.findUniqueConference?.contractContent ?? undefined,
-				pdfData.data?.findUniqueConference?.guardianConsentContent ?? undefined,
-				pdfData.data?.findUniqueConference?.mediaConsentContent ?? undefined,
-				pdfData.data?.findUniqueConference?.termsAndConditionsContent ?? undefined,
+				templates.contractContent ?? undefined,
+				templates.guardianConsentContent ?? undefined,
+				templates.mediaConsentContent ?? undefined,
+				templates.termsAndConditionsContent ?? undefined,
 				'test_postal_registration.pdf'
 			);
 		} catch (error) {
@@ -358,35 +310,23 @@
 
 		loading = true;
 
-		const getCertificateBasePDFData = graphql(`
-			query GetCertificateBasePDFDataForExample($conferenceId: String!) {
-				findUniqueConference(where: { id: $conferenceId }) {
-					certificateContent
-				}
-			}
-		`);
+		try {
+			const templates = await client.query.conference({
+				__args: { id: data.conferenceId },
+				certificateContent: true
+			});
 
-		const pdfData = await getCertificateBasePDFData.fetch({
-			variables: {
-				conferenceId: data.conferenceId
-			}
-		});
-
-		if (pdfData.errors) {
-			toast.error('Could not get Template from Server');
+			await downloadCompleteCertificate(
+				{
+					fullName: 'Antonio Guterres',
+					jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
+				},
+				templates.certificateContent ?? undefined,
+				`test_certificate.pdf`
+			);
+		} finally {
 			loading = false;
-			return;
 		}
-
-		await downloadCompleteCertificate(
-			{
-				fullName: 'Antonio Guterres',
-				jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
-			},
-			pdfData.data?.findUniqueConference?.certificateContent ?? undefined,
-			`test_certificate.pdf`
-		);
-		loading = false;
 	}
 
 	function handleSaveClick() {
