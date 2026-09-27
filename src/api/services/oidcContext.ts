@@ -11,7 +11,7 @@ import { configPrivate } from '$config/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { GraphQLError } from 'graphql';
 import { jwtVerify } from 'jose';
-import { db } from '$db/db';
+import { db } from '$api/db/db';
 
 const TokenCookieSchema = z
 	.object({
@@ -211,7 +211,7 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 					throw new Error('Impersonation token missing sub claim');
 				}
 
-				const dbUser = await db.user.findUnique({ where: { id: verifiedPayload.sub } });
+				const dbUser = await db.query.user.findFirst({ where: { id: verifiedPayload.sub } });
 				if (!dbUser) {
 					throw new Error(`Impersonated user ${verifiedPayload.sub} not found in database`);
 				}
@@ -219,9 +219,9 @@ export async function oidc(cookies: RequestEvent['cookies']) {
 				const impersonatedUser: OIDCUser = {
 					sub: verifiedPayload.sub,
 					email: dbUser.email ?? '',
-					preferred_username: dbUser.preferred_username ?? undefined,
-					family_name: dbUser.family_name ?? undefined,
-					given_name: dbUser.given_name ?? undefined,
+					preferred_username: dbUser.preferredUsername ?? undefined,
+					family_name: dbUser.familyName ?? undefined,
+					given_name: dbUser.givenName ?? undefined,
 					locale: dbUser.locale ?? undefined,
 					phone: dbUser.phone ?? undefined,
 					// Spread custom JWT claims (roles, mfa, password, etc.)

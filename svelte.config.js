@@ -24,7 +24,6 @@ const config = {
 		alias: {
 			$api: 'src/api',
 			$assets: 'src/assets',
-			$db: 'prisma',
 			$config: 'src/lib/config'
 		}
 	}

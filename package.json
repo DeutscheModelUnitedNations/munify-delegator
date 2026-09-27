@@ -187,6 +187,9 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
+		"db:reset": "bun ./src/api/db/reset.ts",
+		"db:seed:dev": "bun ./src/api/db/seedDev.ts",
+		"db:nuke": "docker compose -f ./dev.docker-compose.yml down -v && docker compose -f ./dev.docker-compose.yml up -d --wait && bun run db:migrate",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",
 		"dev:server": "svelte-kit sync && vite",
@@ -201,7 +204,6 @@
 		"install-git-hooks": "bunx lefthook install",
 		"lint": "eslint . --cache --cache-strategy content",
 		"preview": "vite preview",
-		"studio": "prisma studio",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"typecheck": "tsc --noEmit"

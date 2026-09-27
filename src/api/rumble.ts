@@ -4,8 +4,6 @@ import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
 import { dev } from '$app/environment';
 import { db, schema } from './db/db';
 import { context } from './context';
-import { db as prismaDb } from '$db/db';
-import { getDatamodel } from '../../prisma/pothos/generated';
 
 // Tells the dev server to reload the schema builder's cache, so fields and queries from a
 // previous build don't accumulate. Mirrors chase.
@@ -33,10 +31,6 @@ export const {
 	pothosConfig: {
 		// SimpleObjects backs the ad-hoc result types a few mutations return (invitation batches,
 		// review results). Rumble does not load it by default.
-		plugins: [ValidationPlugin, SimpleObjectsPlugin],
-		// Type-only, mirror image of the `drizzle` key in resolvers/builder.ts: the legacy
-		// @pothos/plugin-prisma marks `prisma` required on every builder. Inert - not in
-		// `plugins` - and removed once the legacy stack is gone.
-		prisma: { client: prismaDb, dmmf: getDatamodel() }
+		plugins: [ValidationPlugin, SimpleObjectsPlugin]
 	}
 });

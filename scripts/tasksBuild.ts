@@ -32,9 +32,11 @@ const OPTIONS: Parameters<typeof build>[0] = {
 		};
 	},
 	external: [
-		// ...Object.keys(packagejson.dependencies),
-		// ...Object.keys(packagejson.peerDependencies),
-		...Object.keys(packagejson.devDependencies)
+		...Object.keys(packagejson.devDependencies),
+		// Real runtime dependencies, installed in Dockerfile.tasks rather than bundled: `pg`
+		// resolves its optional native bindings dynamically, which a bundle cannot carry.
+		'drizzle-orm',
+		'pg'
 	]
 };
 

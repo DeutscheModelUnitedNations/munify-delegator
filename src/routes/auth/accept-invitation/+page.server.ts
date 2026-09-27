@@ -1,4 +1,4 @@
-import { db } from '$db/db';
+import { db } from '$api/db/db';
 import {
 	hashToken,
 	isTokenExpired,
@@ -19,9 +19,8 @@ export const load: PageServerLoad = async (event) => {
 	const hashedToken = hashToken(token);
 
 	// Find the invitation
-	const invitation = await db.teamMemberInvitation.findUnique({
-		where: { token: hashedToken },
-		include: { conference: true }
+	const invitation = await db.query.teamMemberInvitation.findFirst({
+		where: { token: hashedToken }
 	});
 
 	if (!invitation) {
