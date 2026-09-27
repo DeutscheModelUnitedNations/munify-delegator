@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m, singleParticipants } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
@@ -14,68 +14,59 @@
 	}
 	let { supervisorId, open = $bindable(false), onClose, conferenceId }: Props = $props();
 
-	const supervisorQuery = graphql(`
-		query SupervisorDrawerQuery($supervisorId: String!) {
-			findUniqueConferenceSupervisor(where: { id: $supervisorId }) {
-				id
-				plansOwnAttendenceAtConference
-				user {
-					id
-					given_name
-					family_name
+	const person = { id: true, givenName: true, familyName: true } as const;
+
+	function fetchSupervisor(id: string) {
+		return client.query.conferenceSupervisor({
+			__args: { id },
+			id: true,
+			plansOwnAttendenceAtConference: true,
+			user: person,
+			supervisedDelegationMembers: {
+				id: true,
+				user: person,
+				isHeadDelegate: true,
+				delegation: {
+					id: true,
+					entryCode: true,
+					applied: true,
+					members: { id: true },
+					school: true
 				}
-				supervisedDelegationMembers {
-					id
-					user {
-						id
-						given_name
-						family_name
-					}
-					isHeadDelegate
-					delegation {
-						id
-						entryCode
-						applied
-						members {
-							id
-						}
-						school
-					}
-				}
-				supervisedSingleParticipants {
-					id
-					school
-					applied
-					user {
-						given_name
-						family_name
-					}
-				}
+			},
+			supervisedSingleParticipants: {
+				id: true,
+				school: true,
+				applied: true,
+				user: person
 			}
+		});
+	}
+
+	let supervisor = $state<Awaited<ReturnType<typeof fetchSupervisor>>>();
+	let loading = $state(false);
+
+	async function loadSupervisor(id: string) {
+		loading = true;
+		try {
+			supervisor = await fetchSupervisor(id);
+		} finally {
+			loading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		supervisorQuery.fetch({ variables: { supervisorId } });
+		void loadSupervisor(supervisorId);
 	});
 
-	const mutationChangeSupervisorStatus = graphql(`
-		mutation changeSupervisorStatusMutation($id: String!, $plansOwnAttendence: Boolean!) {
-			updateOneConferenceSupervisor(
-				where: { id: $id }
-				data: { plansOwnAttendenceAtConference: $plansOwnAttendence }
-			) {
-				id
-				plansOwnAttendenceAtConference
-			}
-		}
-	`);
-
 	const changeAdministrativeStatus = async (plansOwnAttendence: boolean) => {
-		await mutationChangeSupervisorStatus.mutate({
-			id: $supervisorQuery?.data?.findUniqueConferenceSupervisor?.id,
-			plansOwnAttendence: plansOwnAttendence
+		if (!supervisor) return;
+		await client.mutate.updateConferenceSupervisor({
+			__args: { id: supervisor.id, plansOwnAttendenceAtConference: plansOwnAttendence },
+			id: true,
+			plansOwnAttendenceAtConference: true
 		});
+		await loadSupervisor(supervisor.id);
 	};
 </script>
 
@@ -84,14 +75,14 @@
 	{onClose}
 	category={m.supervisor()}
 	title={formatNames(
-		$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user?.given_name,
-		$supervisorQuery?.data?.findUniqueConferenceSupervisor?.user?.family_name,
+		supervisor?.user?.givenName ?? undefined,
+		supervisor?.user?.familyName ?? undefined,
 		{ givenNameFirst: false }
 	)}
-	id={$supervisorQuery?.data?.findUniqueConferenceSupervisor?.id ?? 'N/A'}
-	loading={$supervisorQuery.fetching}
+	id={supervisor?.id ?? 'N/A'}
+	{loading}
 >
-	{#if $supervisorQuery?.data?.findUniqueConferenceSupervisor?.plansOwnAttendenceAtConference}
+	{#if supervisor?.plansOwnAttendenceAtConference}
 		<div class="alert alert-success">
 			<i class="fas fa-location-check"></i>
 			{m.supervisorPlansOwnAttendance()}
@@ -108,8 +99,7 @@
 		falseicon="fa-cloud"
 		trueicon="fa-location-check"
 		falsecolor="btn-info"
-		status={$supervisorQuery?.data?.findUniqueConferenceSupervisor
-			?.plansOwnAttendenceAtConference ?? false}
+		status={supervisor?.plansOwnAttendenceAtConference ?? false}
 		changeStatus={async (newStatus: boolean) => changeAdministrativeStatus(newStatus)}
 	/>
 	<div class="flex flex-col">
@@ -126,17 +116,14 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#if $supervisorQuery?.data?.findUniqueConferenceSupervisor?.supervisedDelegationMembers?.length ?? 0 > 0}
+					{#if supervisor?.supervisedDelegationMembers?.length ?? 0 > 0}
 						{@const delegationIds = new Set(
-							$supervisorQuery?.data?.findUniqueConferenceSupervisor?.supervisedDelegationMembers.map(
-								(x) => x.delegation.id
-							) ?? []
+							supervisor?.supervisedDelegationMembers.map((x) => x.delegation.id) ?? []
 						)}
 						{#each delegationIds ?? [] as delegationId}
-							{@const delegation =
-								$supervisorQuery?.data?.findUniqueConferenceSupervisor?.supervisedDelegationMembers.find(
-									(x) => x.delegation.id === delegationId
-								)?.delegation}
+							{@const delegation = supervisor?.supervisedDelegationMembers.find(
+								(x) => x.delegation.id === delegationId
+							)?.delegation}
 							<tr>
 								<td>
 									{#if delegation?.applied}
@@ -164,12 +151,12 @@
 									</a>
 								</td>
 							</tr>
-							{#each $supervisorQuery?.data?.findUniqueConferenceSupervisor?.supervisedDelegationMembers?.filter((x) => x.delegation.id === delegationId) ?? [] as member}
+							{#each supervisor?.supervisedDelegationMembers?.filter((x) => x.delegation.id === delegationId) ?? [] as member}
 								<tr class="text-xs">
 									<td class="text-right"><i class="fa-duotone fa-arrow-turn-down-right"></i></td>
 									<td colspan="3">
-										{member.user.given_name}
-										<span class="uppercase">{member.user.family_name}</span>
+										{member.user.givenName}
+										<span class="uppercase">{member.user.familyName}</span>
 										{#if member.isHeadDelegate}
 											<i class="fa-duotone fa-medal ml-2"></i>
 										{/if}
@@ -212,9 +199,8 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#if $supervisorQuery?.data?.findUniqueConferenceSupervisor?.supervisedSingleParticipants?.length ?? 0 > 0}
-						{@const singleParticipants =
-							$supervisorQuery?.data?.findUniqueConferenceSupervisor?.supervisedSingleParticipants}
+					{#if supervisor?.supervisedSingleParticipants?.length ?? 0 > 0}
+						{@const singleParticipants = supervisor?.supervisedSingleParticipants}
 						{#each singleParticipants ?? [] as singleParticipant}
 							<tr>
 								<td>
@@ -225,8 +211,8 @@
 									{/if}
 								</td>
 								<td class="">
-									{singleParticipant.user.given_name}
-									<span class="uppercase">{singleParticipant.user.family_name}</span>
+									{singleParticipant.user.givenName}
+									<span class="uppercase">{singleParticipant.user.familyName}</span>
 								</td>
 								<td>
 									{singleParticipant?.school}
@@ -257,7 +243,7 @@
 		<button
 			class="btn"
 			onclick={() => {
-				const userId = $supervisorQuery?.data?.findUniqueConferenceSupervisor?.user.id;
+				const userId = supervisor?.user.id;
 				if (userId) openUserCard(userId, conferenceId);
 			}}
 		>

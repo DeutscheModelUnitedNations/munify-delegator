@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
-	import { cache, graphql } from '$houdini';
-	import type { SingleParticipantDrawerQueryVariables } from './$houdini';
 	import { client } from '$lib/api/rumbleClient/client';
 	import Flag from '$lib/components/Flag.svelte';
 	import formatNames from '$lib/helpers/formatNames';
@@ -19,81 +17,76 @@
 	}
 	let { singleParticipantId, open = $bindable(false), onClose, conferenceId }: Props = $props();
 
-	export const _SingleParticipantDrawerQueryVariables: SingleParticipantDrawerQueryVariables =
-		() => {
-			return {
-				singleParticipantId: singleParticipantId
-			};
-		};
+	const person = { id: true, givenName: true, familyName: true } as const;
 
-	const singleParticipantQuery = graphql(`
-		query SingleParticipantDrawerQuery($singleParticipantId: String!) {
-			findUniqueSingleParticipant(where: { id: $singleParticipantId }) {
-				id
-				applied
-				school
-				motivation
-				experience
-				user {
-					id
-					given_name
-					family_name
-				}
-				appliedForRoles {
-					name
-					fontAwesomeIcon
-				}
-				assignedRole {
-					id
-					name
-					fontAwesomeIcon
-				}
-				supervisors {
-					id
-					plansOwnAttendenceAtConference
-					user {
-						id
-						given_name
-						family_name
-					}
-				}
-			}
+	function fetchSingleParticipant(id: string) {
+		return client.query.singleParticipant({
+			__args: { id },
+			id: true,
+			applied: true,
+			school: true,
+			motivation: true,
+			experience: true,
+			user: person,
+			appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
+			assignedRole: { id: true, name: true, fontAwesomeIcon: true },
+			supervisors: { id: true, plansOwnAttendenceAtConference: true, user: person }
+		});
+	}
+
+	let singleParticipant = $state<Awaited<ReturnType<typeof fetchSingleParticipant>>>();
+	let loading = $state(false);
+
+	async function loadSingleParticipant(id: string) {
+		loading = true;
+		try {
+			singleParticipant = await fetchSingleParticipant(id);
+		} finally {
+			loading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		singleParticipantQuery.fetch({ variables: { singleParticipantId } });
+		void loadSingleParticipant(singleParticipantId);
 	});
 
-	let supervisors = $derived(
-		$singleParticipantQuery.data?.findUniqueSingleParticipant?.supervisors ?? []
-	);
+	let supervisors = $derived(singleParticipant?.supervisors ?? []);
+
+	const revokeApplication = async () => {
+		if (!singleParticipant) return;
+		if (!confirm(m.confirmRevokeApplication())) return;
+		const promise = client.mutate.updateSingleParticipant({
+			__args: { id: singleParticipant.id, applied: false },
+			id: true,
+			applied: true
+		});
+		toast.promise(promise, genericPromiseToastMessages);
+		await promise;
+		await loadSingleParticipant(singleParticipant.id);
+		await invalidateAll();
+	};
 </script>
 
 <Drawer
 	bind:open
 	{onClose}
 	title={formatNames(
-		$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.given_name,
-		$singleParticipantQuery?.data?.findUniqueSingleParticipant?.user?.family_name,
+		singleParticipant?.user?.givenName ?? undefined,
+		singleParticipant?.user?.familyName ?? undefined,
 		{ givenNameFirst: false }
 	)}
-	id={$singleParticipantQuery?.data?.findUniqueSingleParticipant?.id ?? 'N/A'}
+	id={singleParticipant?.id ?? 'N/A'}
 	category={m.singleParticipant()}
-	loading={$singleParticipantQuery.fetching}
+	{loading}
 >
-	{#if $singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole}
+	{#if singleParticipant?.assignedRole}
 		<div class="alert">
-			<Flag
-				nsa
-				icon={$singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole
-					.fontAwesomeIcon ?? 'fa-hand-point-up'}
-			/>
+			<Flag nsa icon={singleParticipant?.assignedRole.fontAwesomeIcon ?? 'fa-hand-point-up'} />
 			<h3 class="text-xl font-bold">
-				{$singleParticipantQuery.data?.findUniqueSingleParticipant?.assignedRole.name}
+				{singleParticipant?.assignedRole.name}
 			</h3>
 		</div>
-	{:else if $singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied}
+	{:else if singleParticipant?.applied}
 		<div class="alert alert-success">
 			<i class="fas fa-check"></i>
 			{m.registrationCompleted()}
@@ -118,19 +111,19 @@
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
 					<td>
-						{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.school}
+						{singleParticipant?.school}
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-fire-flame-curved text-lg"></i></td>
 					<td>
-						{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.motivation}
+						{singleParticipant?.motivation}
 					</td>
 				</tr>
 				<tr>
 					<td class="text-center"><i class="fa-duotone fa-compass text-lg"></i></td>
 					<td>
-						{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.experience}
+						{singleParticipant?.experience}
 					</td>
 				</tr>
 				<tr>
@@ -138,10 +131,10 @@
 					<td>
 						<div class="flex items-center gap-2">
 							<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
-								{$singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles.length}
+								{singleParticipant?.appliedForRoles.length}
 							</div>
 							<div class="flex flex-col">
-								{#each $singleParticipantQuery?.data?.findUniqueSingleParticipant?.appliedForRoles ?? [] as role (role.id)}
+								{#each singleParticipant?.appliedForRoles ?? [] as role (role.id)}
 									<div>
 										<i class="fa-duotone fa-{(role?.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
 										{role.name}
@@ -183,8 +176,8 @@
 								{/if}
 							</td>
 							<td>
-								<span class="capitalize">{supervisor.user.given_name}</span>
-								<span class="uppercase">{supervisor.user.family_name}</span>
+								<span class="capitalize">{supervisor.user.givenName}</span>
+								<span class="uppercase">{supervisor.user.familyName}</span>
 							</td>
 							<td>
 								<a
@@ -207,7 +200,7 @@
 		<button
 			class="btn"
 			onclick={() => {
-				const userId = $singleParticipantQuery?.data?.findUniqueSingleParticipant?.user.id;
+				const userId = singleParticipant?.user.id;
 				if (userId) openUserCard(userId, conferenceId);
 			}}
 		>
@@ -219,23 +212,8 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
 		<button
-			class="btn {!$singleParticipantQuery?.data?.findUniqueSingleParticipant?.applied &&
-				'btn-disabled'} btn-error"
-			onclick={async () => {
-				if (!confirm(m.confirmRevokeApplication())) return;
-				const promise = client.mutate.updateSingleParticipant({
-					__args: {
-						id: $singleParticipantQuery!.data!.findUniqueSingleParticipant!.id!,
-						applied: false
-					},
-					id: true,
-					applied: true
-				});
-				toast.promise(promise, genericPromiseToastMessages);
-				await promise;
-				cache.markStale();
-				await invalidateAll();
-			}}
+			class="btn {!singleParticipant?.applied && 'btn-disabled'} btn-error"
+			onclick={revokeApplication}
 		>
 			{m.revokeApplication()}
 			<i class="fa-solid fa-file-slash"></i>

@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import { type PageData } from './$houdini';
-	import type { AdministrativeStatus } from '@prisma/client';
+	import type { PageData } from './$types';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
 	import { onDestroy, onMount } from 'svelte';
@@ -35,74 +34,67 @@
 
 	// --- Data queries ---
 
-	const paymentReferenceByIdQuery = graphql(`
-		query PaymentReferenceByIdQuery($reference: String!, $conferenceId: String!) {
-			findUniquePaymentTransaction(
-				where: { id: $reference, conferenceId: { equals: $conferenceId } }
-			) {
-				id
-				amount
-				createdAt
-				recievedAt
-			}
-			findManyUsers(
-				where: {
-					paymentTransactionsReferences: {
-						some: { paymentTransaction: { id: { equals: $reference } } }
+	function fetchPaymentReference(reference: string, conferenceId: string) {
+		return Promise.all([
+			client.query.paymentTransactions({
+				__args: { where: { id: { eq: reference }, conferenceId: { eq: conferenceId } } },
+				id: true,
+				amount: true,
+				createdAt: true,
+				recievedAt: true
+			}),
+			client.query.users({
+				__args: {
+					where: {
+						paymentTransactionsReferences: { paymentTransaction: { id: { eq: reference } } }
 					}
-				}
-			) {
-				id
-				conferenceParticipantStatus {
-					conference {
-						id
-					}
-					paymentStatus
-				}
-				given_name
-				family_name
-			}
-			findUniqueConference(where: { id: $conferenceId }) {
-				currency
-			}
-		}
-	`);
+				},
+				id: true,
+				conferenceParticipantStatus: { conference: { id: true }, paymentStatus: true },
+				givenName: true,
+				familyName: true
+			}),
+			client.query.conference({ __args: { id: conferenceId }, currency: true })
+		]);
+	}
 
-	const lastConfirmedQuery = graphql(`
-		query lastConfirmedQuery($conferenceId: String!) {
-			findManyPaymentTransactions(
-				where: { conferenceId: { equals: $conferenceId }, recievedAt: { not: null } }
-				orderBy: { updatedAt: desc }
-				take: 1
-			) {
-				id
-				recievedAt
-				createdAt
-				amount
-			}
-		}
-	`);
+	/** The most recently confirmed transaction, shown so the desk can see its last action. */
+	function fetchLastConfirmed(conferenceId: string) {
+		return client.query.paymentTransactions({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, recievedAt: { isNotNull: true } },
+				orderBy: { updatedAt: 'desc' },
+				limit: 1
+			},
+			id: true,
+			recievedAt: true,
+			createdAt: true,
+			amount: true
+		});
+	}
 
-	const changeReferenceMutation = graphql(`
-		mutation ChangeReferenceMutation(
-			$reference: ID!
-			$status: AdministrativeStatus!
-			$recievedAt: DateTime
-		) {
-			updateOnePaymentTransaction(
-				id: $reference
-				assignedStatus: $status
-				recievedAt: $recievedAt
-			) {
-				id
-				recievedAt
-			}
-		}
-	`);
+	type ReferenceResult = Awaited<ReturnType<typeof fetchPaymentReference>>;
 
-	let paymentTransaction = $derived($paymentReferenceByIdQuery.data?.findUniquePaymentTransaction);
-	let referencedUsers = $derived($paymentReferenceByIdQuery.data?.findManyUsers);
-	let conference = $derived($paymentReferenceByIdQuery.data?.findUniqueConference);
+	let reference = $state<ReferenceResult>();
+	let referenceFetching = $state(false);
+	let lastConfirmed = $state<Awaited<ReturnType<typeof fetchLastConfirmed>>>();
+
+	let paymentTransaction = $derived(reference?.[0][0]);
+	let referencedUsers = $derived(reference?.[1]);
+	let conference = $derived(reference?.[2]);
+
+	async function loadReference(searchValue: string) {
+		referenceFetching = true;
+		try {
+			reference = await fetchPaymentReference(searchValue, data.conferenceId);
+		} finally {
+			referenceFetching = false;
+		}
+	}
+
+	async function loadLastConfirmed() {
+		lastConfirmed = await fetchLastConfirmed(data.conferenceId);
+	}
 
 	let recieveDate = $state<string>(new Date().toISOString().split('T')[0]);
 
@@ -119,9 +111,7 @@
 	// Fetch payment data when search value changes
 	$effect(() => {
 		if ($params.searchValue) {
-			paymentReferenceByIdQuery.fetch({
-				variables: { conferenceId: data.conferenceId, reference: $params.searchValue }
-			});
+			void loadReference($params.searchValue);
 		}
 	});
 
@@ -139,11 +129,7 @@
 	});
 	$effect(() => {
 		const searchVal = $params.searchValue;
-		if (
-			searchVal &&
-			$paymentReferenceByIdQuery.data?.findUniquePaymentTransaction?.id === searchVal &&
-			!$paymentReferenceByIdQuery.fetching
-		) {
+		if (searchVal && paymentTransaction?.id === searchVal && !referenceFetching) {
 			lastLoadedReference = searchVal;
 			showPaymentDrawer = true;
 		}
@@ -151,7 +137,7 @@
 
 	// --- Actions ---
 
-	const changeTransactionStatus = async (status: AdministrativeStatus) => {
+	const changeTransactionStatus = async (status: AdministrativestatusEnum) => {
 		if (!paymentTransaction?.id) {
 			console.error('No transaction id');
 			return;
@@ -162,17 +148,18 @@
 			return;
 		}
 
-		const promise = changeReferenceMutation.mutate({
-			reference: paymentTransaction.id,
-			status,
-			recievedAt: recieveDate ? new Date(recieveDate) : undefined
+		const promise = client.mutate.updatePaymentTransaction({
+			__args: {
+				id: paymentTransaction.id,
+				assignedStatus: status,
+				recievedAt: recieveDate ? new Date(recieveDate) : undefined
+			},
+			id: true,
+			recievedAt: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
-		paymentReferenceByIdQuery.fetch({
-			variables: { conferenceId: data.conferenceId, reference: $params.searchValue }
-		});
+		await loadReference($params.searchValue);
 	};
 
 	const markReceivedAndNext = async () => {
@@ -182,7 +169,7 @@
 		try {
 			recieveDate = new Date().toISOString().split('T')[0];
 			await changeTransactionStatus('DONE');
-			await lastConfirmedQuery.fetch({ variables: { conferenceId: data.conferenceId } });
+			await loadLastConfirmed();
 			showPaymentDrawer = false;
 			$params.searchValue = '';
 			setTimeout(() => {
@@ -205,8 +192,7 @@
 	// --- Hotkeys ---
 
 	onMount(() => {
-		// Fetch the most recent confirmed transaction
-		lastConfirmedQuery.fetch({ variables: { conferenceId: data.conferenceId } });
+		void loadLastConfirmed();
 
 		hotkeys('esc', () => {
 			resetView();
@@ -235,8 +221,8 @@
 		<h2 class="text-2xl font-bold">{m.payment()}</h2>
 		<p>{@html m.paymentAdminDescription()}</p>
 		<!-- Show last confirmed transaction if available -->
-		{#if $lastConfirmedQuery.data?.findManyPaymentTransactions?.length}
-			{@const last = $lastConfirmedQuery.data.findManyPaymentTransactions[0]}
+		{#if lastConfirmed?.length}
+			{@const last = lastConfirmed[0]}
 			{#if last.recievedAt}
 				<div class="alert alert-success">
 					<i class="fa-solid fa-money-bill-transfer text-lg"></i>
@@ -279,11 +265,11 @@
 	</div>
 
 	<!-- Loading / error state -->
-	{#if $params.searchValue && $paymentReferenceByIdQuery?.fetching}
+	{#if $params.searchValue && referenceFetching}
 		<div class="flex items-center justify-center py-4">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
-	{:else if $params.searchValue && !$paymentReferenceByIdQuery?.data?.findUniquePaymentTransaction && !$paymentReferenceByIdQuery?.fetching}
+	{:else if $params.searchValue && !paymentTransaction && !referenceFetching}
 		<div class="alert alert-warning">
 			<i class="fa-solid fa-triangle-exclamation text-lg"></i>
 			<div>{m.noPaymentFound()}</div>
@@ -362,13 +348,16 @@
 							<i class="fa-duotone fa-hourglass-half text-2xl"></i>
 						{/if}
 						<div class="text-lg font-bold">
-							{formatNames(user.given_name, user.family_name)}
+							{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
 						</div>
 						<div class="truncate text-sm opacity-60">{user.id}</div>
 						<button
 							class="btn btn-soft btn-sm ml-auto"
 							onclick={() => openUserCard(user.id, data.conferenceId)}
-							aria-label="Details for {formatNames(user.given_name, user.family_name)}"
+							aria-label="Details for {formatNames(
+								user.givenName ?? undefined,
+								user.familyName ?? undefined
+							)}"
 						>
 							<i class="fa-duotone fa-id-card"></i>
 						</button>
