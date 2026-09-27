@@ -3,20 +3,11 @@
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { locales } from '$lib/paraglide/runtime';
 	import { m, userId } from '$lib/paraglide/messages';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import type { LayoutServerLoadEvent } from './$types';
 	import { browser } from '$app/environment';
 
 	type Parameters = keyof LayoutServerLoadEvent['params'];
-
-	const conferenceTitleQuery = graphql(`
-		query ConferenceTitleQuery($conferenceId: String!) {
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				title
-			}
-		}
-	`);
 
 	interface LocalizedBreadcrumb {
 		translation: string;
@@ -287,10 +278,12 @@
 						// although this would prevent computational breadcrumbs which depend on client side data
 						// it's alright for now I guess
 						if (browser) {
-							const r = await conferenceTitleQuery.fetch({
-								variables: { conferenceId: segment.value }
+							const conference = await client.query.conference({
+								__args: { id: segment.value },
+								id: true,
+								title: true
 							});
-							return r.data?.findUniqueConference?.title ?? breadcrumb.translation;
+							return conference?.title ?? breadcrumb.translation;
 						}
 
 						return breadcrumb.translation;

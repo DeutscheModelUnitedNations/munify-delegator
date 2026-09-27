@@ -5,7 +5,8 @@
 	import Flag from '$lib/components/Flag.svelte';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 
-	type TeamRole = 'PROJECT_MANAGEMENT' | 'PARTICIPANT_CARE' | 'REVIEWER' | 'MEMBER';
+	import { translateTeamRole } from '$lib/utils/enumTranslations';
+	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
 
 	interface DelegationMember {
 		id: string;
@@ -46,7 +47,7 @@
 	interface TeamMember {
 		id: string;
 		conference: { id: string };
-		role: TeamRole;
+		role: TeamroleEnum;
 	}
 
 	interface Conference {
@@ -57,8 +58,8 @@
 		website: string | null;
 		imageDataURL: string | null;
 		state: string;
-		startConference: string;
-		endConference: string;
+		startConference: Date;
+		endConference: Date;
 		delegationMembers: DelegationMember[];
 		singleParticipants: SingleParticipant[];
 		conferenceSupervisors: Supervisor[];
@@ -240,25 +241,11 @@
 		}
 
 		if (participation.type === 'teamMember') {
-			return m.teamMemberWithRole({ role: getTeamRoleLabel(participation.teamRole) });
+			return m.teamMemberWithRole({ role: translateTeamRole(participation.teamRole ?? 'MEMBER') });
 		}
 
 		return '';
 	});
-
-	function getTeamRoleLabel(role?: TeamRole | null): string {
-		switch (role) {
-			case 'PROJECT_MANAGEMENT':
-				return m.teamRoleProjectManagement();
-			case 'PARTICIPANT_CARE':
-				return m.teamRoleParticipantCare();
-			case 'REVIEWER':
-				return m.teamRoleReviewer();
-			case 'MEMBER':
-			default:
-				return m.teamRoleMember();
-		}
-	}
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',

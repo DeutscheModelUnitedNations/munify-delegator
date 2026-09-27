@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql, type ConferenceSchools$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { type TableColumns } from 'svelte-table';
 	import { toast } from 'svelte-sonner';
@@ -15,56 +15,45 @@
 
 	let { conferenceId }: Props = $props();
 
-	let conferenceSchoolsQuery = graphql(`
-		query ConferenceSchools($conferenceId: String!) {
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				schools {
-					school
-					delegationCount
-					delegationMembers
-					singleParticipants
-					sumParticipants
-				}
-			}
+	const schoolSelection = {
+		school: true,
+		delegationCount: true,
+		delegationMembers: true,
+		singleParticipants: true,
+		sumParticipants: true
+	} as const;
+
+	function fetchSchools() {
+		return client.query.conference({
+			__args: { id: conferenceId },
+			id: true,
+			schools: schoolSelection
+		});
+	}
+
+	type SchoolRow = Awaited<ReturnType<typeof fetchSchools>>['schools'][number];
+
+	let schoolsLoading = $state(false);
+	let normalizing = $state(false);
+	let loadedSchools = $state<SchoolRow[]>([]);
+
+	async function loadSchools() {
+		schoolsLoading = true;
+		try {
+			loadedSchools = (await fetchSchools()).schools;
+		} finally {
+			schoolsLoading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		if (conferenceId) {
-			conferenceSchoolsQuery.fetch({ variables: { conferenceId } });
-		}
+		if (conferenceId) void loadSchools();
 	});
-
-	const normalizeSchools = graphql(`
-		mutation NormalizeSchools(
-			$conferenceId: String!
-			$schoolsToMerge: [String!]!
-			$newSchoolName: String!
-		) {
-			normalizeSchoolsInConference(
-				conferenceId: $conferenceId
-				schoolsToMerge: $schoolsToMerge
-				newSchoolName: $newSchoolName
-			) {
-				id
-				schools {
-					school
-					delegationCount
-					delegationMembers
-					singleParticipants
-					sumParticipants
-				}
-			}
-		}
-	`);
 
 	let newSchoolName = $state('');
 	let selectedSchools = $state<string[]>([]);
 
-	const schools = $derived.by(() => {
-		return $conferenceSchoolsQuery.data?.findUniqueConference?.schools ?? [];
-	});
+	const schools = $derived(loadedSchools);
 
 	$effect(() => {
 		if (newSchoolName) {
@@ -79,9 +68,7 @@
 		}
 	});
 
-	const columns: TableColumns<
-		NonNullable<ConferenceSchools$result['findUniqueConference']>['schools'][number]
-	> = [
+	const columns: TableColumns<SchoolRow> = [
 		{
 			key: 'selected',
 			title: '',
@@ -139,20 +126,27 @@
 			return;
 		}
 
+		normalizing = true;
 		try {
-			await normalizeSchools.mutate({
-				conferenceId,
-				schoolsToMerge: Array.from(selectedSchools),
-				newSchoolName: newSchoolName.trim()
+			await client.mutate.normalizeSchoolsInConference({
+				__args: {
+					conferenceId,
+					schoolsToMerge: [...selectedSchools],
+					newSchoolName: newSchoolName.trim()
+				},
+				id: true,
+				schools: schoolSelection
 			});
 
 			toast.success(m.cleanupNormalizeSchoolsSuccess({ count: selectedSchools.length }));
 			selectedSchools = [];
 			newSchoolName = '';
-			conferenceSchoolsQuery.fetch({ variables: { conferenceId } });
+			await loadSchools();
 		} catch (error) {
 			toast.error(m.cleanupNormalizeSchoolsFailed());
 			console.error(error);
+		} finally {
+			normalizing = false;
 		}
 	};
 
@@ -168,7 +162,7 @@
 	});
 </script>
 
-{#if $conferenceSchoolsQuery.fetching}
+{#if schoolsLoading}
 	<div class="flex items-center justify-center p-8">
 		<span class="loading loading-spinner loading-lg"></span>
 	</div>
@@ -211,9 +205,9 @@
 				type="button"
 				onclick={handleNormalize}
 				class="btn btn-primary"
-				disabled={$normalizeSchools.fetching || selectedSchools.length < 1 || !newSchoolName.trim()}
+				disabled={normalizing || selectedSchools.length < 1 || !newSchoolName.trim()}
 			>
-				{#if $normalizeSchools.fetching}
+				{#if normalizing}
 					<span class="loading loading-spinner"></span>
 				{/if}
 				{#if selectedSchools.length === 1}
