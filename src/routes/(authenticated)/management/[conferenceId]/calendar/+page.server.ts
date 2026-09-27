@@ -1,86 +1,60 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
 import type { PageServerLoad } from './$types';
 
-const ConferenceTimezoneQuery = graphql(`
-	query ConferenceTimezoneQuery($conferenceId: String!) {
-		findUniqueConference(where: { id: $conferenceId }) {
-			timezone
-		}
-	}
-`);
-
-const CalendarManagementQuery = graphql(`
-	query CalendarManagementQuery($conferenceId: String!) {
-		findManyCalendarDays(
-			where: { conferenceId: { equals: $conferenceId } }
-			orderBy: { sortOrder: asc }
-		) {
-			id
-			name
-			date
-			sortOrder
-			tracks {
-				id
-				name
-				description
-				sortOrder
-			}
-			entries {
-				id
-				startTime
-				endTime
-				name
-				description
-				fontAwesomeIcon
-				color
-				place {
-					id
-					name
-					address
-					latitude
-					longitude
-					directions
-					info
-					websiteUrl
-					sitePlanDataURL
-				}
-				placeId
-				room
-				calendarTrackId
-			}
-		}
-		findManyPlaces(where: { conferenceId: { equals: $conferenceId } }, orderBy: { name: asc }) {
-			id
-			name
-			address
-			latitude
-			longitude
-			directions
-			info
-			websiteUrl
-			sitePlanDataURL
-		}
-	}
-`);
+const placeSelection = {
+	id: true,
+	name: true,
+	address: true,
+	latitude: true,
+	longitude: true,
+	directions: true,
+	info: true,
+	websiteUrl: true,
+	sitePlanDataURL: true
+} as const;
 
 export const load: PageServerLoad = async (event) => {
-	const [{ data }, { data: conferenceData }] = await Promise.all([
-		CalendarManagementQuery.fetch({
-			event,
-			variables: { conferenceId: event.params.conferenceId },
-			blocking: true
+	const conferenceId = event.params.conferenceId;
+
+	const [calendarDays, places, conference] = await Promise.all([
+		client.query.calendarDays({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { sortOrder: 'asc' }
+			},
+			id: true,
+			name: true,
+			date: true,
+			sortOrder: true,
+			tracks: { id: true, name: true, description: true, sortOrder: true },
+			entries: {
+				id: true,
+				startTime: true,
+				endTime: true,
+				name: true,
+				description: true,
+				fontAwesomeIcon: true,
+				color: true,
+				place: placeSelection,
+				placeId: true,
+				room: true,
+				calendarTrackId: true
+			}
 		}),
-		ConferenceTimezoneQuery.fetch({
-			event,
-			variables: { conferenceId: event.params.conferenceId },
-			blocking: true
-		})
+		client.query.places({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { name: 'asc' }
+			},
+			...placeSelection
+		}),
+		client.query.conference({ __args: { id: conferenceId }, timezone: true })
 	]);
 
 	return {
-		calendarDays: data?.findManyCalendarDays ?? [],
-		places: data?.findManyPlaces ?? [],
-		conferenceId: event.params.conferenceId,
-		timezone: conferenceData?.findUniqueConference?.timezone ?? 'Europe/Berlin'
+		calendarDays,
+		places,
+		conferenceId,
+		timezone: conference?.timezone ?? 'Europe/Berlin'
 	};
 };

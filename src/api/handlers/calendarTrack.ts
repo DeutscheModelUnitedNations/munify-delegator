@@ -66,10 +66,11 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await db
 				.update(schema.calendarTrack)
+				// `description` is nullable, so an explicit null clears it.
 				.set({
 					name: args.name ?? undefined,
-					description: args.description ?? undefined,
-					sortOrder: args.sortOrder ?? undefined
+					sortOrder: args.sortOrder ?? undefined,
+					description: args.description
 				})
 				.where(
 					ctx.abilities.calendarTrack.filter('update').merge({ where: { id: args.id } }).sql.where

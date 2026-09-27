@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
 	import ColorPaletteSelector from '$lib/components/calendar/ColorPaletteSelector.svelte';
-	import type { CalendarEntryColor$options } from '$houdini';
+	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 	import { translateCalendarEntryColor } from '$lib/utils/enumTranslations';
 	import { downloadJSON } from '$lib/utils/downloadHelpers';
 	import {
@@ -161,45 +161,6 @@
 	let isLoading = $state(false);
 
 	// === Day CRUD ===
-	const CreateDayMutation = graphql(`
-		mutation CreateCalendarDay(
-			$conferenceId: String!
-			$name: String!
-			$date: DateTime!
-			$sortOrder: Int!
-		) {
-			createOneCalendarDay(
-				data: { conferenceId: $conferenceId, name: $name, date: $date, sortOrder: $sortOrder }
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateDayMutation = graphql(`
-		mutation UpdateCalendarDay(
-			$id: String!
-			$name: StringFieldUpdateOperationsInput
-			$date: DateTimeFieldUpdateOperationsInput
-			$sortOrder: IntFieldUpdateOperationsInput
-		) {
-			updateOneCalendarDay(
-				where: { id: $id }
-				data: { name: $name, date: $date, sortOrder: $sortOrder }
-			) {
-				id
-			}
-		}
-	`);
-
-	const DeleteDayMutation = graphql(`
-		mutation DeleteCalendarDay($id: String!) {
-			deleteOneCalendarDay(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
 	// Day modal state
 	let showCreateDayModal = $state(false);
 	let showEditDayModal = $state(false);
@@ -212,26 +173,6 @@
 	let daySortOrder = $state(0);
 
 	// === Day Export/Import ===
-	const ImportCalendarDayMutation = graphql(`
-		mutation ImportCalendarDay(
-			$conferenceId: String!
-			$name: String!
-			$date: DateTime!
-			$sortOrder: Int!
-			$importData: JSONObject!
-		) {
-			importCalendarDay(
-				conferenceId: $conferenceId
-				name: $name
-				date: $date
-				sortOrder: $sortOrder
-				importData: $importData
-			) {
-				id
-			}
-		}
-	`);
-
 	let importData = $state<CalendarDayExportData | null>(null);
 	let importError = $state('');
 
@@ -319,22 +260,27 @@
 		isLoading = true;
 		try {
 			if (importData) {
-				await ImportCalendarDayMutation.mutate({
-					conferenceId: data.conferenceId,
-					name: dayName,
-					date: new Date(dayDate),
-					sortOrder: daySortOrder,
-					importData: JSON.stringify(importData)
+				await client.mutate.importCalendarDay({
+					__args: {
+						conferenceId: data.conferenceId,
+						name: dayName,
+						date: new Date(dayDate),
+						sortOrder: daySortOrder,
+						importData
+					},
+					id: true
 				});
 			} else {
-				await CreateDayMutation.mutate({
-					conferenceId: data.conferenceId,
-					name: dayName,
-					date: new Date(dayDate),
-					sortOrder: daySortOrder
+				await client.mutate.createCalendarDay({
+					__args: {
+						conferenceId: data.conferenceId,
+						name: dayName,
+						date: new Date(dayDate),
+						sortOrder: daySortOrder
+					},
+					id: true
 				});
 			}
-			cache.markStale();
 			await invalidateAll();
 			showCreateDayModal = false;
 		} catch (error) {
@@ -348,13 +294,15 @@
 		if (!dayToEdit || !dayName || !dayDate) return;
 		isLoading = true;
 		try {
-			await UpdateDayMutation.mutate({
-				id: dayToEdit.id,
-				name: { set: dayName },
-				date: { set: new Date(dayDate) },
-				sortOrder: { set: daySortOrder }
+			await client.mutate.updateCalendarDay({
+				__args: {
+					id: dayToEdit.id,
+					name: dayName,
+					date: new Date(dayDate),
+					sortOrder: daySortOrder
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showEditDayModal = false;
 			dayToEdit = null;
@@ -369,8 +317,7 @@
 		if (!dayToDelete) return;
 		isLoading = true;
 		try {
-			await DeleteDayMutation.mutate({ id: dayToDelete.id });
-			cache.markStale();
+			await client.mutate.deleteCalendarDay({ __args: { id: dayToDelete.id } });
 			await invalidateAll();
 			showDeleteDayModal = false;
 			dayToDelete = null;
@@ -382,50 +329,6 @@
 	}
 
 	// === Track CRUD ===
-	const CreateTrackMutation = graphql(`
-		mutation CreateCalendarTrack(
-			$calendarDayId: String!
-			$name: String!
-			$description: String
-			$sortOrder: Int!
-		) {
-			createOneCalendarTrack(
-				data: {
-					calendarDayId: $calendarDayId
-					name: $name
-					description: $description
-					sortOrder: $sortOrder
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateTrackMutation = graphql(`
-		mutation UpdateCalendarTrack(
-			$id: String!
-			$name: StringFieldUpdateOperationsInput
-			$description: NullableStringFieldUpdateOperationsInput
-			$sortOrder: IntFieldUpdateOperationsInput
-		) {
-			updateOneCalendarTrack(
-				where: { id: $id }
-				data: { name: $name, description: $description, sortOrder: $sortOrder }
-			) {
-				id
-			}
-		}
-	`);
-
-	const DeleteTrackMutation = graphql(`
-		mutation DeleteCalendarTrack($id: String!) {
-			deleteOneCalendarTrack(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
 	let showCreateTrackModal = $state(false);
 	let showEditTrackModal = $state(false);
 	let showDeleteTrackModal = $state(false);
@@ -455,13 +358,15 @@
 		if (!trackName || !selectedDayId) return;
 		isLoading = true;
 		try {
-			await CreateTrackMutation.mutate({
-				calendarDayId: selectedDayId,
-				name: trackName,
-				description: trackDescription || null,
-				sortOrder: trackSortOrder
+			await client.mutate.createCalendarTrack({
+				__args: {
+					calendarDayId: selectedDayId,
+					name: trackName,
+					description: trackDescription || null,
+					sortOrder: trackSortOrder
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showCreateTrackModal = false;
 		} catch (error) {
@@ -475,13 +380,15 @@
 		if (!trackToEdit || !trackName) return;
 		isLoading = true;
 		try {
-			await UpdateTrackMutation.mutate({
-				id: trackToEdit.id,
-				name: { set: trackName },
-				description: { set: trackDescription || null },
-				sortOrder: { set: trackSortOrder }
+			await client.mutate.updateCalendarTrack({
+				__args: {
+					id: trackToEdit.id,
+					name: trackName,
+					description: trackDescription || null,
+					sortOrder: trackSortOrder
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showEditTrackModal = false;
 			trackToEdit = null;
@@ -496,8 +403,7 @@
 		if (!trackToDelete) return;
 		isLoading = true;
 		try {
-			await DeleteTrackMutation.mutate({ id: trackToDelete.id });
-			cache.markStale();
+			await client.mutate.deleteCalendarTrack({ __args: { id: trackToDelete.id } });
 			await invalidateAll();
 			showDeleteTrackModal = false;
 			trackToDelete = null;
@@ -509,80 +415,6 @@
 	}
 
 	// === Entry CRUD ===
-	const CreateEntryMutation = graphql(`
-		mutation CreateCalendarEntry(
-			$calendarDayId: String!
-			$calendarTrackId: String
-			$name: String!
-			$description: String
-			$startTime: DateTime!
-			$endTime: DateTime!
-			$fontAwesomeIcon: String
-			$color: CalendarEntryColor!
-			$placeId: String
-			$room: String
-		) {
-			createOneCalendarEntry(
-				data: {
-					calendarDayId: $calendarDayId
-					calendarTrackId: $calendarTrackId
-					name: $name
-					description: $description
-					startTime: $startTime
-					endTime: $endTime
-					fontAwesomeIcon: $fontAwesomeIcon
-					color: $color
-					placeId: $placeId
-					room: $room
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateEntryMutation = graphql(`
-		mutation UpdateCalendarEntry(
-			$id: String!
-			$name: StringFieldUpdateOperationsInput
-			$description: NullableStringFieldUpdateOperationsInput
-			$startTime: DateTimeFieldUpdateOperationsInput
-			$endTime: DateTimeFieldUpdateOperationsInput
-			$fontAwesomeIcon: NullableStringFieldUpdateOperationsInput
-			$color: EnumCalendarEntryColorFieldUpdateOperationsInput
-			$placeId: NullableStringFieldUpdateOperationsInput
-			$room: NullableStringFieldUpdateOperationsInput
-			$calendarTrackId: NullableStringFieldUpdateOperationsInput
-			$calendarDayId: StringFieldUpdateOperationsInput
-		) {
-			updateOneCalendarEntry(
-				where: { id: $id }
-				data: {
-					name: $name
-					description: $description
-					startTime: $startTime
-					endTime: $endTime
-					fontAwesomeIcon: $fontAwesomeIcon
-					color: $color
-					placeId: $placeId
-					room: $room
-					calendarTrackId: $calendarTrackId
-					calendarDayId: $calendarDayId
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const DeleteEntryMutation = graphql(`
-		mutation DeleteCalendarEntry($id: String!) {
-			deleteOneCalendarEntry(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
 	let showCreateEntryModal = $state(false);
 	let showEditEntryModal = $state(false);
 	let showDeleteEntryModal = $state(false);
@@ -599,7 +431,7 @@
 	let entryStartTime = $state('');
 	let entryEndTime = $state('');
 	let entryIcon = $state('');
-	let entryColor = $state<CalendarEntryColor$options>('SESSION');
+	let entryColor = $state<CalendarentrycolorEnum>('SESSION');
 	let entryPlaceId = $state<string | null>(null);
 	let entryRoom = $state('');
 	let entryTrackId = $state<string | null>(null);
@@ -682,14 +514,16 @@
 			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 			const newEnd = new Date(newDayDate);
 			newEnd.setUTCHours(oldEnd.getUTCHours(), oldEnd.getUTCMinutes(), 0, 0);
-			await UpdateEntryMutation.mutate({
-				id: entryToMove.id,
-				calendarDayId: { set: targetDayId },
-				startTime: { set: newStart },
-				endTime: { set: newEnd },
-				calendarTrackId: { set: null }
+			await client.mutate.updateCalendarEntry({
+				__args: {
+					id: entryToMove.id,
+					calendarDayId: targetDayId,
+					startTime: newStart,
+					endTime: newEnd,
+					calendarTrackId: null
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showChangeDayModal = false;
 			entryToMove = null;
@@ -725,17 +559,20 @@
 				// eslint-disable-next-line svelte/prefer-svelte-reactivity -- plain Date for mutation arg
 				const newEnd = new Date(targetDate);
 				newEnd.setUTCHours(oldEnd.getUTCHours(), oldEnd.getUTCMinutes(), 0, 0);
-				return CreateEntryMutation.mutate({
-					calendarDayId: copyTargetDayId!,
-					calendarTrackId: targetTrackId,
-					name: entry.name,
-					description: entry.description ?? null,
-					startTime: newStart,
-					endTime: newEnd,
-					fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
-					color: entry.color,
-					placeId: entry.placeId ?? null,
-					room: entry.room ?? null
+				return client.mutate.createCalendarEntry({
+					__args: {
+						calendarDayId: copyTargetDayId!,
+						calendarTrackId: targetTrackId,
+						name: entry.name,
+						description: entry.description ?? null,
+						startTime: newStart,
+						endTime: newEnd,
+						fontAwesomeIcon: entry.fontAwesomeIcon ?? null,
+						color: entry.color,
+						placeId: entry.placeId ?? null,
+						room: entry.room ?? null
+					},
+					id: true
 				});
 			});
 			const results = await Promise.allSettled(mutations);
@@ -743,7 +580,6 @@
 			if (failures.length > 0) {
 				console.error(`Failed to copy ${failures.length} entries:`, failures);
 			}
-			cache.markStale();
 			await invalidateAll();
 			showCopyDayModal = false;
 		} catch (error) {
@@ -773,19 +609,21 @@
 		isLoading = true;
 		try {
 			const dayDate = new Date(selectedDay.date);
-			await CreateEntryMutation.mutate({
-				calendarDayId: selectedDayId,
-				calendarTrackId: entryTrackId || null,
-				name: entryName,
-				description: entryDescription || null,
-				startTime: combineDateTime(dayDate, entryStartTime),
-				endTime: combineDateTime(dayDate, entryEndTime),
-				fontAwesomeIcon: entryIcon || null,
-				color: entryColor,
-				placeId: entryPlaceId || null,
-				room: entryRoom || null
+			await client.mutate.createCalendarEntry({
+				__args: {
+					calendarDayId: selectedDayId,
+					calendarTrackId: entryTrackId || null,
+					name: entryName,
+					description: entryDescription || null,
+					startTime: combineDateTime(dayDate, entryStartTime),
+					endTime: combineDateTime(dayDate, entryEndTime),
+					fontAwesomeIcon: entryIcon || null,
+					color: entryColor,
+					placeId: entryPlaceId || null,
+					room: entryRoom || null
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showCreateEntryModal = false;
 		} catch (error) {
@@ -800,19 +638,21 @@
 		isLoading = true;
 		try {
 			const dayDate = new Date(selectedDay.date);
-			await UpdateEntryMutation.mutate({
-				id: entryToEdit.id,
-				name: { set: entryName },
-				description: { set: entryDescription || null },
-				startTime: { set: combineDateTime(dayDate, entryStartTime) },
-				endTime: { set: combineDateTime(dayDate, entryEndTime) },
-				fontAwesomeIcon: { set: entryIcon || null },
-				color: { set: entryColor },
-				placeId: { set: entryPlaceId || null },
-				room: { set: entryRoom || null },
-				calendarTrackId: { set: entryTrackId || null }
+			await client.mutate.updateCalendarEntry({
+				__args: {
+					id: entryToEdit.id,
+					name: entryName,
+					description: entryDescription || null,
+					startTime: combineDateTime(dayDate, entryStartTime),
+					endTime: combineDateTime(dayDate, entryEndTime),
+					fontAwesomeIcon: entryIcon || null,
+					color: entryColor,
+					placeId: entryPlaceId || null,
+					room: entryRoom || null,
+					calendarTrackId: entryTrackId || null
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showEditEntryModal = false;
 			entryToEdit = null;
@@ -827,8 +667,7 @@
 		if (!entryToDelete) return;
 		isLoading = true;
 		try {
-			await DeleteEntryMutation.mutate({ id: entryToDelete.id });
-			cache.markStale();
+			await client.mutate.deleteCalendarEntry({ __args: { id: entryToDelete.id } });
 			await invalidateAll();
 			showDeleteEntryModal = false;
 			entryToDelete = null;
@@ -840,74 +679,6 @@
 	}
 
 	// === Place CRUD ===
-	const CreatePlaceMutation = graphql(`
-		mutation CreatePlace(
-			$conferenceId: String!
-			$name: String!
-			$address: String
-			$latitude: Float
-			$longitude: Float
-			$directions: String
-			$info: String
-			$websiteUrl: String
-			$sitePlanDataURL: String
-		) {
-			createOnePlace(
-				data: {
-					conferenceId: $conferenceId
-					name: $name
-					address: $address
-					latitude: $latitude
-					longitude: $longitude
-					directions: $directions
-					info: $info
-					websiteUrl: $websiteUrl
-					sitePlanDataURL: $sitePlanDataURL
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdatePlaceMutation = graphql(`
-		mutation UpdatePlace(
-			$id: String!
-			$name: StringFieldUpdateOperationsInput
-			$address: NullableStringFieldUpdateOperationsInput
-			$latitude: NullableFloatFieldUpdateOperationsInput
-			$longitude: NullableFloatFieldUpdateOperationsInput
-			$directions: NullableStringFieldUpdateOperationsInput
-			$info: NullableStringFieldUpdateOperationsInput
-			$websiteUrl: NullableStringFieldUpdateOperationsInput
-			$sitePlanDataURL: NullableStringFieldUpdateOperationsInput
-		) {
-			updateOnePlace(
-				where: { id: $id }
-				data: {
-					name: $name
-					address: $address
-					latitude: $latitude
-					longitude: $longitude
-					directions: $directions
-					info: $info
-					websiteUrl: $websiteUrl
-					sitePlanDataURL: $sitePlanDataURL
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const DeletePlaceMutation = graphql(`
-		mutation DeletePlace($id: String!) {
-			deleteOnePlace(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
 	let showCreatePlaceModal = $state(false);
 	let showEditPlaceModal = $state(false);
 	let showDeletePlaceModal = $state(false);
@@ -1049,18 +820,20 @@
 		if (!placeName) return;
 		isLoading = true;
 		try {
-			await CreatePlaceMutation.mutate({
-				conferenceId: data.conferenceId,
-				name: placeName,
-				address: placeAddress || null,
-				latitude: placeLatitude ? parseFloat(placeLatitude) : null,
-				longitude: placeLongitude ? parseFloat(placeLongitude) : null,
-				directions: placeDirections || null,
-				info: placeInfo || null,
-				websiteUrl: placeWebsiteUrl || null,
-				sitePlanDataURL: placeSitePlanDataURL
+			await client.mutate.createPlace({
+				__args: {
+					conferenceId: data.conferenceId,
+					name: placeName,
+					address: placeAddress || null,
+					latitude: placeLatitude ? parseFloat(placeLatitude) : null,
+					longitude: placeLongitude ? parseFloat(placeLongitude) : null,
+					directions: placeDirections || null,
+					info: placeInfo || null,
+					websiteUrl: placeWebsiteUrl || null,
+					sitePlanDataURL: placeSitePlanDataURL
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showCreatePlaceModal = false;
 		} catch (error) {
@@ -1074,18 +847,20 @@
 		if (!placeToEdit || !placeName) return;
 		isLoading = true;
 		try {
-			await UpdatePlaceMutation.mutate({
-				id: placeToEdit.id,
-				name: { set: placeName },
-				address: { set: placeAddress || null },
-				latitude: { set: placeLatitude ? parseFloat(placeLatitude) : null },
-				longitude: { set: placeLongitude ? parseFloat(placeLongitude) : null },
-				directions: { set: placeDirections || null },
-				info: { set: placeInfo || null },
-				websiteUrl: { set: placeWebsiteUrl || null },
-				sitePlanDataURL: { set: placeSitePlanDataURL }
+			await client.mutate.updatePlace({
+				__args: {
+					id: placeToEdit.id,
+					name: placeName,
+					address: placeAddress || null,
+					latitude: placeLatitude ? parseFloat(placeLatitude) : null,
+					longitude: placeLongitude ? parseFloat(placeLongitude) : null,
+					directions: placeDirections || null,
+					info: placeInfo || null,
+					websiteUrl: placeWebsiteUrl || null,
+					sitePlanDataURL: placeSitePlanDataURL
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showEditPlaceModal = false;
 			placeToEdit = null;
@@ -1100,8 +875,7 @@
 		if (!placeToDelete) return;
 		isLoading = true;
 		try {
-			await DeletePlaceMutation.mutate({ id: placeToDelete.id });
-			cache.markStale();
+			await client.mutate.deletePlace({ __args: { id: placeToDelete.id } });
 			await invalidateAll();
 			showDeletePlaceModal = false;
 			placeToDelete = null;

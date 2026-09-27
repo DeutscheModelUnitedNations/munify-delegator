@@ -80,22 +80,26 @@ schemaBuilder.mutationFields((t) => ({
 			fontAwesomeIcon: t.arg.string(),
 			color: t.arg({ type: calendarEntryColorEnum }),
 			room: t.arg.string(),
+			calendarDayId: t.arg.id(),
 			calendarTrackId: t.arg.id(),
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
 			await db
 				.update(schema.calendarEntry)
+				// An omitted argument arrives as `undefined` and leaves the column alone; an
+				// explicit `null` clears it. Only the non-nullable columns coerce null away.
 				.set({
 					name: args.name ?? undefined,
 					startTime: args.startTime ?? undefined,
 					endTime: args.endTime ?? undefined,
-					description: args.description ?? undefined,
-					fontAwesomeIcon: args.fontAwesomeIcon ?? undefined,
 					color: args.color ?? undefined,
-					room: args.room ?? undefined,
-					calendarTrackId: args.calendarTrackId ?? undefined,
-					placeId: args.placeId ?? undefined
+					calendarDayId: args.calendarDayId ?? undefined,
+					description: args.description,
+					fontAwesomeIcon: args.fontAwesomeIcon,
+					room: args.room,
+					calendarTrackId: args.calendarTrackId,
+					placeId: args.placeId
 				})
 				.where(
 					ctx.abilities.calendarEntry.filter('update').merge({ where: { id: args.id } }).sql.where

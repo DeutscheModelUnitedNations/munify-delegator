@@ -80,15 +80,17 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await db
 				.update(schema.place)
+				// Every column but the name is nullable, so an explicit null clears it while an
+				// omitted argument leaves it alone.
 				.set({
 					name: args.name ?? undefined,
-					address: args.address ?? undefined,
-					latitude: args.latitude ?? undefined,
-					longitude: args.longitude ?? undefined,
-					directions: args.directions ?? undefined,
-					info: args.info ?? undefined,
-					websiteUrl: args.websiteUrl ?? undefined,
-					sitePlanDataURL: args.sitePlanDataURL ?? undefined
+					address: args.address,
+					latitude: args.latitude,
+					longitude: args.longitude,
+					directions: args.directions,
+					info: args.info,
+					websiteUrl: args.websiteUrl,
+					sitePlanDataURL: args.sitePlanDataURL
 				})
 				.where(ctx.abilities.place.filter('update').merge({ where: { id: args.id } }).sql.where);
 
