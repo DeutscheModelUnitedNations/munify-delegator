@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
 	import type { TableColumns } from 'svelte-table';
@@ -112,22 +112,6 @@
 		}
 	];
 
-	const updateParticipantAttendanceStatus = graphql(`
-		mutation ImportUpdateParticipantAttendanceStatus(
-			$conferenceId: ID!
-			$didAttend: Boolean!
-			$userEmail: ID!
-		) {
-			updateOneConferenceParticipantStatus(
-				where: { conferenceId: $conferenceId, userEmail: $userEmail }
-				data: { didAttend: $didAttend }
-			) {
-				id
-				didAttend
-			}
-		}
-	`);
-
 	async function applyPresent() {
 		loading = true;
 		if (!confirm(m.cannotBeUndone())) {
@@ -138,10 +122,14 @@
 
 		await Promise.all(
 			presentUsers.map(async (user) => {
-				await updateParticipantAttendanceStatus.mutate({
-					conferenceId: data.conferenceId,
-					didAttend: true,
-					userEmail: user.email
+				await client.mutate.updateConferenceParticipantStatus({
+					__args: {
+						conferenceId: data.conferenceId,
+						didAttend: true,
+						userEmail: user.email
+					},
+					id: true,
+					didAttend: true
 				});
 			})
 		);
@@ -160,10 +148,14 @@
 
 		await Promise.all(
 			absentUsers.map(async (user) => {
-				await updateParticipantAttendanceStatus.mutate({
-					conferenceId: data.conferenceId,
-					didAttend: false,
-					userEmail: user.email
+				await client.mutate.updateConferenceParticipantStatus({
+					__args: {
+						conferenceId: data.conferenceId,
+						didAttend: false,
+						userEmail: user.email
+					},
+					id: true,
+					didAttend: true
 				});
 			})
 		);

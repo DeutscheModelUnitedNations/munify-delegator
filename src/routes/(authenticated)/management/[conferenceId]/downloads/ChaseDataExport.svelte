@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { downloadJSON } from '$lib/utils/downloadHelpers';
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
@@ -15,108 +15,56 @@
 
 	let loading = $state(false);
 
-	const conferenceDataQuery = graphql(`
-		query ConferenceDataQuery($conferenceId: String!) {
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				title
-				committees {
-					id
-					name
-					abbreviation
-					agendaItems {
-						id
-						title
-					}
-				}
+	const exportUser = {
+		id: true,
+		email: true,
+		givenName: true,
+		familyName: true
+	} as const;
 
-				singleParticipants {
-					id
-					user {
-						id
-						email
-						given_name
-						family_name
-					}
-					assignedRole {
-						id
-					}
+	function fetchConferenceData() {
+		return client.query.conference({
+			__args: { id: conferenceId },
+			id: true,
+			title: true,
+			committees: {
+				id: true,
+				name: true,
+				abbreviation: true,
+				agendaItems: { id: true, title: true }
+			},
+			singleParticipants: { id: true, user: exportUser, assignedRole: { id: true } },
+			conferenceSupervisors: { id: true, user: exportUser },
+			nonStateActors: { id: true, name: true, fontAwesomeIcon: true },
+			delegationMembers: {
+				id: true,
+				assignedCommittee: { id: true },
+				user: exportUser,
+				delegation: {
+					id: true,
+					assignedNation: { alpha3Code: true },
+					assignedNonStateActor: { id: true }
 				}
-
-				conferenceSupervisors {
-					id
-					user {
-						id
-						email
-						given_name
-						family_name
-					}
-				}
-
-				nonStateActors {
-					id
-					name
-					fontAwesomeIcon
-				}
-
-				delegationMembers {
-					id
-					assignedCommittee {
-						id
-					}
-					user {
-						id
-						email
-						given_name
-						family_name
-					}
-					delegation {
-						id
-						assignedNation {
-							alpha3Code
-						}
-						assignedNonStateActor {
-							id
-						}
-					}
-				}
-
-				teamMembers {
-					id
-					role
-					user {
-						id
-						email
-						given_name
-						family_name
-					}
-				}
-			}
-
-			findManyNations {
-				alpha2Code
-				alpha3Code
-			}
-		}
-	`);
+			},
+			teamMembers: { id: true, role: true, user: exportUser }
+		});
+	}
 
 	const getAndProcessData = async () => {
 		loading = true;
 		try {
-			const data = (
-				await conferenceDataQuery.fetch({
-					variables: { conferenceId }
-				})
-			).data;
+			const [conferenceData, nations] = await Promise.all([
+				fetchConferenceData(),
+				client.query.nations({ alpha2Code: true, alpha3Code: true })
+			]);
 
-			const conferenceData = data?.findUniqueConference;
 			if (!conferenceData) {
 				alert(m.httpGenericError());
 				return;
 			}
 
-			const composeUserName = (user: { given_name: string; family_name: string }) => {
-				const name = `${user.given_name} ${user.family_name}`.trim();
+			const composeUserName = (user: { givenName: string | null; familyName: string | null }) => {
+				const name = `${user.givenName ?? ''} ${user.familyName ?? ''}`.trim();
 				return name.length > 0 ? name : undefined;
 			};
 
@@ -139,7 +87,7 @@
 			// Build representation ID map first (needed by committeeMembers)
 			const representationAlpha3CodeToIdMap = new SvelteMap<string, string>();
 			const representations = [
-				...data.findManyNations.map((nation) => {
+				...nations.map((nation) => {
 					const id = nanoid(30);
 					representationAlpha3CodeToIdMap.set(nation.alpha3Code, id);
 					return {

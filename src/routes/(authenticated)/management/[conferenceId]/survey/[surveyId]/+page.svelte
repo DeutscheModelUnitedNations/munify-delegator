@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql, cache } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import type { PageData } from './$types';
@@ -22,77 +22,6 @@
 
 	let survey = $derived(data.survey);
 	let notAnsweredParticipants = $derived(data.usersNotAnswered);
-
-	// Mutations
-	const UpdateSurveyMutation = graphql(`
-		mutation UpdateSurveyQuestionFromDetail(
-			$id: String!
-			$title: StringFieldUpdateOperationsInput
-			$description: StringFieldUpdateOperationsInput
-			$deadline: DateTimeFieldUpdateOperationsInput
-			$draft: BoolFieldUpdateOperationsInput
-			$hidden: BoolFieldUpdateOperationsInput
-			$showSelectionOnDashboard: BoolFieldUpdateOperationsInput
-		) {
-			updateOneSurveyQuestion(
-				where: { id: $id }
-				data: {
-					title: $title
-					description: $description
-					deadline: $deadline
-					draft: $draft
-					hidden: $hidden
-					showSelectionOnDashboard: $showSelectionOnDashboard
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const CreateOptionMutation = graphql(`
-		mutation CreateSurveyOptionFromDetail(
-			$questionId: String!
-			$title: String!
-			$description: String!
-			$upperLimit: Int!
-		) {
-			createOneSurveyOption(
-				data: {
-					questionId: $questionId
-					title: $title
-					description: $description
-					upperLimit: $upperLimit
-				}
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateOptionMutation = graphql(`
-		mutation UpdateSurveyOptionFromDetail(
-			$id: String!
-			$title: StringFieldUpdateOperationsInput
-			$description: StringFieldUpdateOperationsInput
-			$upperLimit: IntFieldUpdateOperationsInput
-		) {
-			updateOneSurveyOption(
-				where: { id: $id }
-				data: { title: $title, description: $description, upperLimit: $upperLimit }
-			) {
-				id
-			}
-		}
-	`);
-
-	const DeleteOptionMutation = graphql(`
-		mutation DeleteSurveyOptionFromDetail($id: String!) {
-			deleteOneSurveyOption(where: { id: $id }) {
-				id
-			}
-		}
-	`);
 
 	// Tab state
 	type SurveyTab = 'settings' | 'results';
@@ -190,11 +119,10 @@
 		if (!survey) return;
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id: survey.id,
-				draft: { set: !survey.draft }
+			await client.mutate.updateSurveyQuestion({
+				__args: { id: survey.id, draft: !survey.draft },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle draft status:', error);
@@ -207,11 +135,10 @@
 		if (!survey) return;
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id: survey.id,
-				hidden: { set: !survey.hidden }
+			await client.mutate.updateSurveyQuestion({
+				__args: { id: survey.id, hidden: !survey.hidden },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle hidden status:', error);
@@ -224,11 +151,10 @@
 		if (!survey) return;
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id: survey.id,
-				showSelectionOnDashboard: { set: !survey.showSelectionOnDashboard }
+			await client.mutate.updateSurveyQuestion({
+				__args: { id: survey.id, showSelectionOnDashboard: !survey.showSelectionOnDashboard },
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to toggle showSelectionOnDashboard:', error);
@@ -250,13 +176,15 @@
 		if (!survey || !editTitle || !editDescription || !editDeadline) return;
 		isLoading = true;
 		try {
-			await UpdateSurveyMutation.mutate({
-				id: survey.id,
-				title: { set: editTitle },
-				description: { set: editDescription },
-				deadline: { set: datetimeLocalToDate(editDeadline, data.conferenceTimezone) }
+			await client.mutate.updateSurveyQuestion({
+				__args: {
+					id: survey.id,
+					title: editTitle,
+					description: editDescription,
+					deadline: datetimeLocalToDate(editDeadline, data.conferenceTimezone)
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			editingSurvey = false;
 		} catch (error) {
@@ -277,13 +205,15 @@
 		if (!survey || !createOptionTitle) return;
 		isLoading = true;
 		try {
-			await CreateOptionMutation.mutate({
-				questionId: survey.id,
-				title: createOptionTitle,
-				description: createOptionDescription,
-				upperLimit: createOptionUpperLimit
+			await client.mutate.createSurveyOption({
+				__args: {
+					questionId: survey.id,
+					title: createOptionTitle,
+					description: createOptionDescription,
+					upperLimit: createOptionUpperLimit
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			showCreateOptionModal = false;
 		} catch (error) {
@@ -304,13 +234,15 @@
 		if (!editingOption || !updateOptionTitle) return;
 		isLoading = true;
 		try {
-			await UpdateOptionMutation.mutate({
-				id: editingOption,
-				title: { set: updateOptionTitle },
-				description: { set: updateOptionDescription },
-				upperLimit: { set: updateOptionUpperLimit }
+			await client.mutate.updateSurveyOption({
+				__args: {
+					id: editingOption,
+					title: updateOptionTitle,
+					description: updateOptionDescription,
+					upperLimit: updateOptionUpperLimit
+				},
+				id: true
 			});
-			cache.markStale();
 			await invalidateAll();
 			editingOption = null;
 		} catch (error) {
@@ -329,10 +261,7 @@
 		if (!optionToDelete) return;
 		isLoading = true;
 		try {
-			await DeleteOptionMutation.mutate({
-				id: optionToDelete.id
-			});
-			cache.markStale();
+			await client.mutate.deleteSurveyOption({ __args: { id: optionToDelete.id } });
 			await invalidateAll();
 			showDeleteOptionModal = false;
 			optionToDelete = null;
