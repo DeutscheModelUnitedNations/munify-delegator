@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import DashboardSection from './DashboardSection.svelte';
 	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -11,63 +11,54 @@
 
 	let { conferenceId, timezone = 'UTC' }: Props = $props();
 
-	const calendarStore = graphql(`
-		query DashboardCalendarQuery($conferenceId: String!) {
-			findManyCalendarDays(
-				where: { conferenceId: { equals: $conferenceId } }
-				orderBy: { sortOrder: asc }
-			) {
-				id
-				name
-				date
-				sortOrder
-				tracks {
-					id
-					name
-					description
-					sortOrder
-				}
-				entries {
-					id
-					startTime
-					endTime
-					name
-					description
-					fontAwesomeIcon
-					color
-					place {
-						id
-						name
-						address
-						latitude
-						longitude
-						directions
-						info
-						websiteUrl
-					}
-					room
-					calendarTrackId
-				}
+	let calendarDays = $state<Awaited<ReturnType<typeof fetchCalendarDays>> | undefined>();
+
+	function fetchCalendarDays() {
+		return client.query.calendarDays({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { sortOrder: 'asc' }
+			},
+			id: true,
+			name: true,
+			date: true,
+			sortOrder: true,
+			tracks: { id: true, name: true, description: true, sortOrder: true },
+			entries: {
+				id: true,
+				startTime: true,
+				endTime: true,
+				name: true,
+				description: true,
+				fontAwesomeIcon: true,
+				color: true,
+				place: {
+					id: true,
+					name: true,
+					address: true,
+					latitude: true,
+					longitude: true,
+					directions: true,
+					info: true,
+					websiteUrl: true
+				},
+				room: true,
+				calendarTrackId: true
 			}
-		}
-	`);
+		});
+	}
 
 	$effect(() => {
-		calendarStore.fetch({ variables: { conferenceId } });
+		void fetchCalendarDays().then((result) => {
+			calendarDays = result;
+		});
 	});
 
 	let days = $derived(
-		($calendarStore.data?.findManyCalendarDays ?? []).map((day) => ({
+		(calendarDays ?? []).map((day) => ({
 			...day,
-			date: new Date(day.date),
 			tracks: [...day.tracks].sort((a, b) => a.sortOrder - b.sortOrder),
-			entries: [...day.entries]
-				.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-				.map((e) => ({
-					...e,
-					startTime: new Date(e.startTime),
-					endTime: new Date(e.endTime)
-				}))
+			entries: [...day.entries].sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
 		}))
 	);
 </script>

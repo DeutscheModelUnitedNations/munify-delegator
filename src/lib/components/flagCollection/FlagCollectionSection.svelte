@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
@@ -21,42 +21,56 @@
 		}
 	});
 
-	const flagCollectionQuery = graphql(`
-		query FlagCollectionQuery($conferenceId: String!) {
-			flagCollection(conferenceId: $conferenceId) {
-				flags {
-					id
-					type
-					alpha2Code
-					alpha3Code
-					name
-					abbreviation
-					fontAwesomeIcon
-					totalPieces
-					foundPieces
-					unlockedPieces
-					pieces {
-						id
-						agendaItemId
-						agendaItemTitle
-						committeeAbbreviation
-						state
-					}
-					isComplete
-				}
-				stats {
-					totalFlags
-					completedFlags
-					totalPieces
-					foundPieces
-					unlockedPieces
-				}
+	function fetchFlagCollection() {
+		return client.query.flagCollection({
+			__args: { conferenceId },
+			flags: {
+				id: true,
+				type: true,
+				alpha2Code: true,
+				alpha3Code: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true,
+				totalPieces: true,
+				foundPieces: true,
+				unlockedPieces: true,
+				pieces: {
+					id: true,
+					agendaItemId: true,
+					agendaItemTitle: true,
+					committeeAbbreviation: true,
+					state: true
+				},
+				isComplete: true
+			},
+			stats: {
+				totalFlags: true,
+				completedFlags: true,
+				totalPieces: true,
+				foundPieces: true,
+				unlockedPieces: true
 			}
-		}
-	`);
+		});
+	}
+
+	let flagCollection = $state<Awaited<ReturnType<typeof fetchFlagCollection>>>();
+	let flagsLoading = $state(false);
+	let flagsError = $state<string>();
 
 	$effect(() => {
-		flagCollectionQuery.fetch({ variables: { conferenceId } });
+		flagsLoading = true;
+		flagsError = undefined;
+		void fetchFlagCollection()
+			.then((result) => {
+				flagCollection = result;
+			})
+			.catch((error: unknown) => {
+				flagsError = error instanceof Error ? error.message : String(error);
+			})
+			.finally(() => {
+				flagsLoading = false;
+			});
 	});
 
 	// Filter options
@@ -64,7 +78,7 @@
 	let filterState = $state<FilterOption>('all');
 
 	let filteredFlags = $derived.by(() => {
-		const flags = $flagCollectionQuery.data?.flagCollection?.flags ?? [];
+		const flags = flagCollection?.flags ?? [];
 		let filtered: typeof flags;
 		switch (filterState) {
 			case 'incomplete':
@@ -108,8 +122,8 @@
 				<p class="text-sm text-base-content/60">{m.flagCollectionDescription()}</p>
 			</div>
 		</div>
-		{#if $flagCollectionQuery.data?.flagCollection?.stats}
-			{@const stats = $flagCollectionQuery.data.flagCollection.stats}
+		{#if flagCollection?.stats}
+			{@const stats = flagCollection.stats}
 			<div class="badge badge-primary badge-lg gap-2">
 				<i class="fa-solid fa-trophy"></i>
 				{stats.completedFlags}/{stats.totalFlags}
@@ -119,17 +133,17 @@
 
 	{#if isExpanded}
 		<div class="p-4 pt-0">
-			{#if $flagCollectionQuery.fetching}
+			{#if flagsLoading}
 				<div class="flex justify-center p-8">
 					<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
 				</div>
-			{:else if $flagCollectionQuery.errors?.length}
+			{:else if flagsError}
 				<div class="alert alert-error">
 					<i class="fa-solid fa-exclamation-triangle"></i>
-					<span>{$flagCollectionQuery.errors[0].message}</span>
+					<span>{flagsError}</span>
 				</div>
-			{:else if $flagCollectionQuery.data?.flagCollection}
-				{@const data = $flagCollectionQuery.data.flagCollection}
+			{:else if flagCollection}
+				{@const data = flagCollection}
 
 				<!-- Stats -->
 				<CollectionStats stats={data.stats} />

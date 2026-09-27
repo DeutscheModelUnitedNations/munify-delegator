@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
@@ -8,23 +8,37 @@
 
 	let { conferenceId }: Props = $props();
 
-	const leaderboardQuery = graphql(`
-		query ReviewerLeaderboardQuery($conferenceId: String!) {
-			reviewerLeaderboard(conferenceId: $conferenceId) {
-				anonymizedName
-				firstReviews
-				totalReviews
-				isCurrentUser
-			}
-		}
-	`);
+	function fetchLeaderboard() {
+		return client.query.reviewerLeaderboard({
+			__args: { conferenceId },
+			anonymizedName: true,
+			firstReviews: true,
+			totalReviews: true,
+			isCurrentUser: true
+		});
+	}
+
+	let leaderboard = $state<Awaited<ReturnType<typeof fetchLeaderboard>>>();
+	let leaderboardLoading = $state(false);
+	let leaderboardError = $state<string>();
 
 	$effect(() => {
-		leaderboardQuery.fetch({ variables: { conferenceId } });
+		leaderboardLoading = true;
+		leaderboardError = undefined;
+		void fetchLeaderboard()
+			.then((result) => {
+				leaderboard = result;
+			})
+			.catch((error: unknown) => {
+				leaderboardError = error instanceof Error ? error.message : String(error);
+			})
+			.finally(() => {
+				leaderboardLoading = false;
+			});
 	});
 
 	let maxReviews = $derived(
-		Math.max(...($leaderboardQuery.data?.reviewerLeaderboard?.map((r) => r.totalReviews) ?? [1]))
+		Math.max(...(leaderboard?.map((reviewer) => reviewer.totalReviews) ?? [1]))
 	);
 
 	let isExpanded = $state(false);
@@ -49,28 +63,28 @@
 				<p class="text-sm text-base-content/60">{m.reviewerLeaderboardDescription()}</p>
 			</div>
 		</div>
-		{#if $leaderboardQuery.data?.reviewerLeaderboard?.length}
+		{#if leaderboard?.length}
 			<div class="badge badge-primary badge-lg gap-2">
 				<i class="fa-solid fa-users"></i>
-				{$leaderboardQuery.data.reviewerLeaderboard.length}
+				{leaderboard.length}
 			</div>
 		{/if}
 	</div>
 
 	{#if isExpanded}
 		<div class="p-4 pt-4">
-			{#if $leaderboardQuery.fetching}
+			{#if leaderboardLoading}
 				<div class="flex justify-center p-8">
 					<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
 				</div>
-			{:else if $leaderboardQuery.errors?.length}
+			{:else if leaderboardError}
 				<div class="alert alert-error">
 					<i class="fa-solid fa-exclamation-triangle"></i>
-					<span>{$leaderboardQuery.errors[0].message}</span>
+					<span>{leaderboardError}</span>
 				</div>
-			{:else if $leaderboardQuery.data?.reviewerLeaderboard?.length}
+			{:else if leaderboard?.length}
 				<div class="space-y-2">
-					{#each $leaderboardQuery.data.reviewerLeaderboard as reviewer, i}
+					{#each leaderboard as reviewer, i}
 						{@const additionalReviews = reviewer.totalReviews - reviewer.firstReviews}
 						<div
 							class="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 {reviewer.isCurrentUser
