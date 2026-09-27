@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from '../../$houdini';
+	import type { PageData } from '../../$types';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
 	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
@@ -10,9 +10,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import SelectDelegationPreferencesModal from './SelectDelegationPreferencesModal.svelte';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
-	import { cache } from '$houdini';
 	import formatNames from '$lib/helpers/formatNames';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
@@ -50,14 +49,12 @@
 			toast.error(e.result.error.message);
 		},
 		onSubmit: async () => {
-			const promise = updateFieldMutation.mutate({
-				where: { id: delegationMember.delegation.id },
-				...$formData
+			const promise = client.mutate.updateDelegation({
+				__args: { id: delegationMember.delegation.id, ...$formData },
+				id: true
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			// TODO this is weird. When I invalidate the cache and make him refetch here, the form resets and the data is back to the old version. Fix this!
-			cache.markStale();
 			invalidateAll();
 		}
 	});
@@ -131,80 +128,17 @@
 		}
 	]);
 
-	const deleteMemberMutation = graphql(`
-		mutation DeleteDelegationMemberMutation($where: DelegationMemberWhereUniqueInput!) {
-			deleteOneDelegationMember(where: $where) {
-				id
-			}
-		}
-	`);
-
-	const deleteDelegationMutation = graphql(`
-		mutation DeleteDelegationMutation($where: DelegationWhereUniqueInput!) {
-			deleteOneDelegation(where: $where) {
-				id
-			}
-		}
-	`);
-
-	//TODO we should use the where/data input ways for all resolvers to prevent these kinds of mutations
-	const makeHeadDelegateMutation = graphql(`
-		mutation MakeHeadDelegateMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
-			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
-				id
-				members {
-					id
-					isHeadDelegate
-				}
-			}
-		}
-	`);
-
-	const applyMutation = graphql(`
-		mutation SetDelegationAppliedMutation($where: DelegationWhereUniqueInput!) {
-			updateOneDelegation(where: $where, applied: true) {
-				id
-			}
-		}
-	`);
-
-	const updateFieldMutation = graphql(`
-		mutation UpdateDelegationFieldsMutation(
-			$where: DelegationWhereUniqueInput!
-			$experience: String
-			$motivation: String
-			$school: String
-		) {
-			updateOneDelegation(
-				where: $where
-				experience: $experience
-				motivation: $motivation
-				school: $school
-			) {
-				id
-			}
-		}
-	`);
-
-	const resetEntryCodeMutation = graphql(`
-		mutation ResetEntryCodeMutation($where: DelegationWhereUniqueInput!) {
-			updateOneDelegation(where: $where, resetEntryCode: true) {
-				id
-				entryCode
-			}
-		}
-	`);
-
 	const leaveDelegation = async () => {
 		if (!delegationMember.delegation) {
 			console.error('Error: Delegation Data not found');
 			return;
 		}
 		if (!confirm(m.leaveDelegationConfirmation())) return;
-		const promise = deleteMemberMutation.mutate({ where: { id: delegationMember.id } });
+		const promise = Promise.resolve(
+			client.mutate.deleteDelegationMember({ __args: { id: delegationMember.id } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
 	};
@@ -215,12 +149,11 @@
 			return;
 		}
 		if (!confirm(m.deleteDelegationConfirmation())) return;
-		const promise = deleteDelegationMutation.mutate({
-			where: { id: delegationMember.delegation.id }
-		});
+		const promise = Promise.resolve(
+			client.mutate.deleteDelegation({ __args: { id: delegationMember.delegation.id } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
 	};
@@ -231,13 +164,13 @@
 			return;
 		}
 		if (!confirm(m.makeHeadDelegateConfirmation())) return;
-		const promise = makeHeadDelegateMutation.mutate({
-			where: { id: delegationMember.delegation.id },
-			userId
+		const promise = client.mutate.updateDelegation({
+			__args: { id: delegationMember.delegation.id, newHeadDelegateUserId: userId },
+			id: true,
+			members: { id: true, isHeadDelegate: true }
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 	};
 
@@ -247,10 +180,11 @@
 			return;
 		}
 		if (!confirm(m.removeMemberConfirmation())) return;
-		const promise = deleteMemberMutation.mutate({ where: { id: memberId } });
+		const promise = Promise.resolve(
+			client.mutate.deleteDelegationMember({ __args: { id: memberId } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 	};
 
@@ -260,10 +194,12 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		const promise = applyMutation.mutate({ where: { id: delegationMember.delegation.id } });
+		const promise = client.mutate.updateDelegation({
+			__args: { id: delegationMember.delegation.id, applied: true },
+			id: true
+		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 	};
 </script>
@@ -341,12 +277,13 @@
 					{referralLink}
 					userHasRotationPermission={userIsHeadDelegate}
 					rotationFn={async () => {
-						const promise = resetEntryCodeMutation.mutate({
-							where: { id: delegationMember.delegation.id }
+						const promise = client.mutate.updateDelegation({
+							__args: { id: delegationMember.delegation.id, resetEntryCode: true },
+							id: true,
+							entryCode: true
 						});
 						toast.promise(promise, { ...genericPromiseToastMessages, success: m.codeRotated() });
 						await promise;
-						cache.markStale();
 						await invalidateAll();
 					}}
 				/>

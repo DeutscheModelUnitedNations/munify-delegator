@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
-	import type { Nation } from '@prisma/client';
 	import { invalidateAll } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
@@ -8,7 +7,7 @@
 	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 	import getNationRegionalGroup from '$lib/helpers/getNationRegionalGroup';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
@@ -24,9 +23,10 @@
 
 	let { open, onClose, conference, delegationMember }: Props = $props();
 
+	type CommitteeNation = (typeof conference)['committees'][number]['nations'][number];
+
 	let nations = $derived.by(() => {
-		// TODO Use Houdini Types instead of Prisma Types
-		const nations = new Array<Omit<Omit<Nation, 'createdAt'>, 'updatedAt'>>();
+		const nations = new Array<CommitteeNation>();
 		conference.committees.forEach((committee) => {
 			committee.nations.forEach((nation) => {
 				if (!nations.find((n) => n.alpha3Code === nation.alpha3Code)) nations.push(nation);
@@ -73,79 +73,21 @@
 			delegationMember.delegation?.appliedForRoles.length === 0
 	);
 
-	const deleteEntryMutation = graphql(`
-		mutation DeleteRoleApplicationMutation($where: RoleApplicationWhereUniqueInput!) {
-			deleteOneRoleApplication(where: $where) {
-				id
-				delegation {
-					members {
-						id
-						delegation {
-							appliedForRoles {
-								id
-								rank
-							}
-						}
-					}
-				}
-			}
-		}
-	`);
-
-	const swapEntryMutation = graphql(`
-		mutation SwapRoleApplicationRanksMutation($a: ID!, $b: ID!) {
-			swapRoleApplicationRanks(firstRoleApplicationId: $a, secondRoleApplicationId: $b) {
-				firstRoleApplication {
-					id
-					rank
-				}
-				secpndRoleApplication {
-					id
-					rank
-				}
-			}
-		}
-	`);
-
-	const createEntryMutation = graphql(`
-		mutation CreateRoleApplicationRanksMutation(
-			$delegationId: ID!
-			$nonStateActorId: ID
-			$nationId: ID
-		) {
-			createOneRoleApplication(
-				delegationId: $delegationId
-				nationId: $nationId
-				nonStateActorId: $nonStateActorId
-			) {
-				id
-				delegation {
-					appliedForRoles {
-						id
-						rank
-						nonStateActor {
-							name
-							fontAwesomeIcon
-						}
-					}
-				}
-			}
-		}
-	`);
-
 	const swapEntry = async (firstId: string, secondId: string) => {
-		const promise = swapEntryMutation.mutate({ a: firstId, b: secondId });
+		const promise = client.mutate.swapRoleApplicationRanks({
+			__args: { firstRoleApplicationId: firstId, secondRoleApplicationId: secondId },
+			id: true,
+			rank: true
+		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 	};
 
 	const deleteEntry = async (id: string) => {
-		const promise = deleteEntryMutation.mutate({ where: { id } });
+		const promise = Promise.resolve(client.mutate.deleteRoleApplication({ __args: { id } }));
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 	};
 </script>
@@ -289,13 +231,15 @@
 									cssClass="bg-base-300"
 									onClick={async () => {
 										if (!delegationMember.delegation) return;
-										const promise = createEntryMutation.mutate({
-											nationId: nation.alpha3Code,
-											delegationId: delegationMember.delegation.id
+										const promise = client.mutate.createRoleApplication({
+											__args: {
+												nationId: nation.alpha3Code,
+												delegationId: delegationMember.delegation.id
+											},
+											id: true
 										});
 										toast.promise(promise, genericPromiseToastMessages);
 										await promise;
-										cache.markStale();
 										await invalidateAll();
 									}}
 								/>
@@ -321,13 +265,15 @@
 									cssClass="bg-base-300"
 									onClick={async () => {
 										if (!delegationMember.delegation) return;
-										const promise = createEntryMutation.mutate({
-											nonStateActorId: nsa.id,
-											delegationId: delegationMember.delegation.id
+										const promise = client.mutate.createRoleApplication({
+											__args: {
+												nonStateActorId: nsa.id,
+												delegationId: delegationMember.delegation.id
+											},
+											id: true
 										});
 										toast.promise(promise, genericPromiseToastMessages);
 										await promise;
-										cache.markStale();
 										await invalidateAll();
 									}}
 								/>

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import codenamize from '$lib/helpers/codenamize';
-	import type { PageData } from '../../$houdini';
+	import type { PageData } from '../../$types';
 	import { alpha3Code, m } from '$lib/paraglide/messages';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
@@ -52,7 +52,7 @@
 				)
 	);
 	let rejectedParticipants = $derived.by(() => {
-		const res: Partial<{ given_name: string; family_name: string; id: string }>[] = [];
+		const res: { givenName: string | null; familyName: string | null; id: string }[] = [];
 		if (isStateParticipantRegistration) return res;
 		supervisor.supervisedDelegationMembers
 			.filter((x) => !x.delegation.assignedNation && !x.delegation.assignedNonStateActor)
@@ -149,39 +149,14 @@
 		return supervisorPaid && allMembersPaid && allSinglesPaid;
 	});
 
-	const getName = (
-		user: { given_name: string; family_name: string } & { [key: string]: any },
-		shortenGiven = false
-	) => {
-		if (shortenGiven) {
-			return `${user.given_name.charAt(0)}. ${user.family_name}`;
-		}
-		return formatNames(user.given_name, user.family_name);
-	};
-
-	const updateQuery = graphql(`
-		mutation SupervisorAttendanceChangeMutation(
-			$where: ConferenceSupervisorWhereUniqueInput!
-			$data: ConferenceSupervisorUpdateDataInput!
-		) {
-			updateOneConferenceSupervisor(where: $where, data: $data) {
-				id
-				plansOwnAttendenceAtConference
-			}
-		}
-	`);
-
 	const handlePresenceChange = async (e: Event) => {
-		const promise = updateQuery.mutate({
-			where: {
-				conferenceId_userId: {
-					conferenceId: conference.id,
-					userId: user.sub
-				}
-			},
-			data: {
+		const promise = client.mutate.updateConferenceSupervisor({
+			__args: {
+				id: supervisor.id,
 				plansOwnAttendenceAtConference: (e.target as HTMLInputElement).checked
-			}
+			},
+			id: true,
+			plansOwnAttendenceAtConference: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),
@@ -190,43 +165,38 @@
 		});
 		await promise;
 
-		cache.markStale();
 		await invalidateAll();
 	};
 
-	// const allParticipants = $derived([...supervisor.supervisedSingleParticipants, ...supervisor.supervisedDelegationMembers].sort((a, b) => a.user.family_name.localeCompare(b.user.family_name)));
-
-	const userQuery = graphql(`
-		query GetUserDetailsForPostalRegistration($id: String!, $conferenceId: String!) {
-			findUniqueUser(where: { id: $id }) {
-				id
-				given_name
-				family_name
-				street
-				apartment
-				zip
-				city
-				country
-				birthday
-			}
-
-			findUniqueConference(where: { id: $conferenceId }) {
-				id
-				contractContent
-				guardianConsentContent
-				mediaConsentContent
-				termsAndConditionsContent
-			}
-		}
-	`);
+	/** The consent documents are only needed when one is actually downloaded, so they are fetched here. */
+	function fetchPostalDetails(id: string, conferenceId: string) {
+		return Promise.all([
+			client.query.user({
+				__args: { id },
+				id: true,
+				givenName: true,
+				familyName: true,
+				street: true,
+				apartment: true,
+				zip: true,
+				city: true,
+				country: true,
+				birthday: true
+			}),
+			client.query.conference({
+				__args: { id: conferenceId },
+				id: true,
+				contractContent: true,
+				guardianConsentContent: true,
+				mediaConsentContent: true,
+				termsAndConditionsContent: true
+			})
+		]);
+	}
 
 	const downloadPostalDocuments = async (userId: string) => {
 		try {
-			const userDetailsStore = await userQuery.fetch({
-				variables: { id: userId, conferenceId: conference!.id }
-			});
-			const user = userDetailsStore?.data?.findUniqueUser;
-			const conferenceData = userDetailsStore?.data?.findUniqueConference;
+			const [user, conferenceConsents] = await fetchPostalDetails(userId, conference.id);
 
 			if (user) {
 				if (!user.street || !user.zip || !user.city || !user.country || !user.birthday) {
@@ -244,7 +214,7 @@
 
 				const participantData: ParticipantData = {
 					id: user.id,
-					name: formatNames(user.given_name, user.family_name, {
+					name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
 						givenNameFirst: true,
 						familyNameUppercase: true,
 						givenNameUppercase: true
@@ -257,11 +227,11 @@
 					ofAgeAtConference(conference?.startConference, user.birthday ?? new Date()),
 					participantData,
 					recipientData,
-					conferenceData?.contractContent ?? undefined,
-					conferenceData?.guardianConsentContent ?? undefined,
-					conferenceData?.mediaConsentContent ?? undefined,
-					conferenceData?.termsAndConditionsContent ?? undefined,
-					`${formatInitials(user.given_name, user.family_name)}_postal_registration.pdf`
+					conferenceConsents?.contractContent ?? undefined,
+					conferenceConsents?.guardianConsentContent ?? undefined,
+					conferenceConsents?.mediaConsentContent ?? undefined,
+					conferenceConsents?.termsAndConditionsContent ?? undefined,
+					`${formatInitials(user.givenName ?? undefined, user.familyName ?? undefined)}_postal_registration.pdf`
 				);
 
 				toast.success(m.postalRegistrationPDFGenerated());
@@ -274,15 +244,6 @@
 			toast.error(m.errorGeneratingPostalRegistrationPDF());
 		}
 	};
-
-	const rotateConnectionCodeMutation = graphql(`
-		mutation RotateSupervisorConnectionCode($id: ID!) {
-			rotateSupervisorConnectionCode(id: $id) {
-				id
-				connectionCode
-			}
-		}
-	`);
 
 	const linkContext = $derived<DashboardLinkContext>({
 		conferenceId: conference.id,
@@ -648,8 +609,10 @@
 		referralLink={connectionLink}
 		userHasRotationPermission={true}
 		rotationFn={async () => {
-			const promise = rotateConnectionCodeMutation.mutate({
-				id: supervisor.id
+			const promise = client.mutate.rotateSupervisorConnectionCode({
+				__args: { id: supervisor.id },
+				id: true,
+				connectionCode: true
 			});
 			toast.promise(promise, {
 				loading: m.genericToastLoading(),
@@ -657,7 +620,6 @@
 				error: m.genericToastError()
 			});
 			await promise;
-			cache.markStale();
 			await invalidateAll();
 		}}
 	/>
@@ -697,7 +659,10 @@
 						{#each rejectedParticipants as rejectedParticipant (rejectedParticipant.id)}
 							<tr>
 								<td>
-									{formatNames(rejectedParticipant.given_name, rejectedParticipant.family_name)}
+									{formatNames(
+										rejectedParticipant.givenName ?? undefined,
+										rejectedParticipant.familyName ?? undefined
+									)}
 								</td>
 							</tr>
 						{/each}

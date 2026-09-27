@@ -5,7 +5,8 @@
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import type { PageData } from '../../$types';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import { superForm } from 'sveltekit-superforms';
@@ -21,7 +22,7 @@
 	interface Props {
 		singleParticipant: NonNullable<MyConferenceParticipation['singleParticipant']>;
 		conference: NonNullable<MyConferenceParticipation['conference']>;
-		applicationForm: any;
+		applicationForm: PageData['applicationForm'];
 	}
 
 	let { singleParticipant, conference, applicationForm }: Props = $props();
@@ -35,53 +36,16 @@
 			toast.error(e.result.error.message);
 		},
 		onSubmit: async () => {
-			const promise = updateMutation.mutate({
-				where: { id: singleParticipant.id },
-				...$formData
+			const promise = client.mutate.updateSingleParticipant({
+				__args: { id: singleParticipant.id, ...$formData },
+				id: true
 			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			cache.markStale();
 			await invalidateAll();
 		}
 	});
 	let formData = $derived(form.form);
-
-	const updateMutation = graphql(`
-		mutation UpdateSingleParticipantMutation(
-			$where: SingleParticipantWhereUniqueInput!
-			$applied: Boolean
-			$applyForRolesIdList: [ID!]
-			$unApplyForRolesIdList: [ID!]
-			$experience: String
-			$school: String
-			$motivation: String
-		) {
-			updateOneSingleParticipant(
-				where: $where
-				applied: $applied
-				applyForRolesIdList: $applyForRolesIdList
-				experience: $experience
-				school: $school
-				motivation: $motivation
-				unApplyForRolesIdList: $unApplyForRolesIdList
-			) {
-				id
-				applied
-				appliedForRoles {
-					id
-				}
-			}
-		}
-	`);
-
-	const deleteMutation = graphql(`
-		mutation DeleteSingleParticipantMutation($where: SingleParticipantWhereUniqueInput!) {
-			deleteOneSingleParticipant(where: $where) {
-				id
-			}
-		}
-	`);
 
 	const completeRegistration = async () => {
 		if (!singleParticipant) {
@@ -89,13 +53,13 @@
 			return;
 		}
 		if (!confirm(m.completeSignupConfirmation())) return;
-		const promise = updateMutation.mutate({
-			where: { id: singleParticipant.id },
+		const promise = client.mutate.updateSingleParticipant({
+			__args: { id: singleParticipant.id, applied: true },
+			id: true,
 			applied: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 	};
 
@@ -106,12 +70,11 @@
 		}
 		if (!confirm(m.deleteAllApplicationsConfirmation())) return;
 
-		const promise = deleteMutation.mutate({
-			where: { id: singleParticipant.id }
-		});
+		const promise = Promise.resolve(
+			client.mutate.deleteSingleParticipant({ __args: { id: singleParticipant.id } })
+		);
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
 	};
@@ -122,13 +85,13 @@
 			return;
 		}
 		if (!confirm(m.deleteApplicationConfirmation())) return;
-		const promise = updateMutation.mutate({
-			where: { id: singleParticipant.id },
-			unApplyForRolesIdList: [id]
+		const promise = client.mutate.updateSingleParticipant({
+			__args: { id: singleParticipant.id, unApplyForRolesIdList: [id] },
+			id: true,
+			appliedForRoles: { id: true }
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		cache.markStale();
 		await invalidateAll();
 		goto('/dashboard');
 	};
