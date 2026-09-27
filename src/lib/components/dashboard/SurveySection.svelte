@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import DashboardSection from './DashboardSection.svelte';
 	import SurveyCard from '$lib/components/survey/SurveyCard.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -12,53 +12,57 @@
 
 	let { conferenceId, userId, conferenceTimezone }: Props = $props();
 
-	const surveyStore = graphql(`
-		query DashboardSurveySectionQuery($conferenceId: String!, $userId: String!) {
-			findManySurveyQuestions(
-				where: {
-					conferenceId: { equals: $conferenceId }
-					draft: { equals: false }
-					hidden: { equals: false }
+	/** The published questions plus this person's answers to them. */
+	async function fetchSurveys() {
+		const [questions, answers] = await Promise.all([
+			client.query.surveyQuestions({
+				__args: {
+					where: {
+						conferenceId: { eq: conferenceId },
+						draft: { eq: false },
+						hidden: { eq: false }
+					},
+					orderBy: { createdAt: 'desc' }
+				},
+				id: true,
+				title: true,
+				description: true,
+				deadline: true,
+				showSelectionOnDashboard: true,
+				options: {
+					id: true,
+					title: true,
+					description: true,
+					upperLimit: true,
+					countSurveyAnswers: true
 				}
-				orderBy: { createdAt: desc }
-			) {
-				id
-				title
-				description
-				deadline
-				showSelectionOnDashboard
-				options {
-					id
-					title
-					description
-					upperLimit
-					countSurveyAnswers
-				}
-			}
-			findManySurveyAnswers(
-				where: {
-					question: { conferenceId: { equals: $conferenceId }, hidden: { equals: false } }
-					userId: { equals: $userId }
-				}
-			) {
-				id
-				question {
-					id
-				}
-				option {
-					id
-					title
-				}
-			}
-		}
-	`);
+			}),
+			client.query.surveyAnswers({
+				__args: {
+					where: {
+						question: { conferenceId: { eq: conferenceId }, hidden: { eq: false } },
+						userId: { eq: userId }
+					}
+				},
+				id: true,
+				question: { id: true },
+				option: { id: true, title: true }
+			})
+		]);
+
+		return { questions, answers };
+	}
+
+	let surveys = $state<Awaited<ReturnType<typeof fetchSurveys>>>();
 
 	$effect(() => {
-		surveyStore.fetch({ variables: { conferenceId, userId } });
+		void fetchSurveys().then((result) => {
+			surveys = result;
+		});
 	});
 
-	let questions = $derived($surveyStore.data?.findManySurveyQuestions ?? []);
-	let answers = $derived($surveyStore.data?.findManySurveyAnswers ?? []);
+	let questions = $derived(surveys?.questions ?? []);
+	let answers = $derived(surveys?.answers ?? []);
 
 	let allAnswered = $derived(
 		questions.length > 0 && questions.every((q) => answers.some((a) => a.question.id === q.id))

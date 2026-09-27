@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import DeadlineDisplay from '$lib/components/DeadlineDisplay.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -44,40 +44,21 @@
 
 	let questionLocked = $derived(new Date(question.deadline) < new Date());
 
-	const updateOneSurveyAnswerMutation = graphql(`
-		mutation DashboardUpdateSurveyAnswer(
-			$userId: String!
-			$questionId: String!
-			$optionId: String!
-		) {
-			updateOneSurveyAnswer(
-				where: { userId: $userId, questionId: $questionId }
-				data: { optionId: $optionId }
-			) {
-				id
-				question {
-					id
-				}
-				option {
-					id
-					countSurveyAnswers
-				}
-			}
-		}
-	`);
-
 	const updateChoice = async () => {
 		if (!newAnswer || questionLocked || loading) return;
 		loading = true;
-		await updateOneSurveyAnswerMutation.mutate({
-			userId,
-			questionId: question.id,
-			optionId: newAnswer
-		});
-		cache.markStale();
-		await invalidateAll();
-		loading = false;
-		open = false;
+		try {
+			await client.mutate.updateSurveyAnswer({
+				__args: { userId, questionId: question.id, optionId: newAnswer },
+				id: true,
+				question: { id: true },
+				option: { id: true, countSurveyAnswers: true }
+			});
+			await invalidateAll();
+			open = false;
+		} finally {
+			loading = false;
+		}
 	};
 </script>
 

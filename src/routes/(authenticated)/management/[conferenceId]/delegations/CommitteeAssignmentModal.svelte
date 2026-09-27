@@ -1,75 +1,61 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { cache, graphql, type DelegationDrawerQuery$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
-	import type { GetCommitteeDataForCommitteeAssignmentVariables } from './$houdini';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+
+	interface Member {
+		id: string;
+		user: { givenName: string | null; familyName: string | null };
+		assignedCommittee: { id: string } | null;
+	}
 
 	interface Props {
 		open: boolean;
-		members?: NonNullable<DelegationDrawerQuery$result['findUniqueDelegation']>['members'];
-		nation?: NonNullable<DelegationDrawerQuery$result['findUniqueDelegation']>['assignedNation'];
+		members?: Member[];
+		nation?: { alpha3Code: string } | null;
 		conferenceId: string;
 	}
 
 	let { open = $bindable(false), members: unsortedMembers, nation, conferenceId }: Props = $props();
 
-	const CommitteeDataQuery = graphql(`
-		query GetCommitteeDataForCommitteeAssignment($conferenceId: String!) {
-			findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
-				id
-				abbreviation
-				nations {
-					alpha2Code
-					alpha3Code
-				}
-				numOfSeatsPerDelegation
-			}
-		}
-	`);
+	let committees = $state<
+		{ id: string; abbreviation: string; nations: { alpha3Code: string }[] }[]
+	>([]);
+	let committeesLoading = $state(false);
 
 	$effect(() => {
-		CommitteeDataQuery.fetch({ variables: { conferenceId } });
+		committeesLoading = true;
+		void client.query
+			.committees({
+				__args: { where: { conferenceId: { eq: conferenceId } } },
+				id: true,
+				abbreviation: true,
+				nations: { alpha2Code: true, alpha3Code: true },
+				numOfSeatsPerDelegation: true
+			})
+			.then((result) => {
+				committees = result;
+			})
+			.finally(() => {
+				committeesLoading = false;
+			});
 	});
 
+	// Only the committees the delegation's nation actually holds a seat in.
 	let filteredCommittees = $derived(
-		$CommitteeDataQuery.data
-			? $CommitteeDataQuery.data.findManyCommittees?.filter((c) =>
-					c.nations.map((n) => n.alpha3Code).includes(nation?.alpha3Code ?? '')
-				)
-			: []
-	);
-
-	let members = $derived(
-		unsortedMembers?.sort((a, b) =>
-			(a.user.family_name + a.user.given_name).localeCompare(a.user.family_name + a.user.given_name)
+		committees.filter((committee) =>
+			committee.nations.some((n) => n.alpha3Code === nation?.alpha3Code)
 		)
 	);
 
-	const updateDelegationMemberAssignedCommittee = graphql(`
-		mutation UpdateDelegationMemberAssignedCommittee(
-			$delegationMemberId: String!
-			$committeeId: ID!
-		) {
-			updateOneDelegationMemberCommittee(
-				where: { id: $delegationMemberId }
-				data: { assignedCommitteeId: $committeeId }
-			) {
-				id
-			}
-		}
-	`);
+	const sortKey = (member: Member) =>
+		`${member.user.familyName ?? ''}${member.user.givenName ?? ''}`;
 
-	const resetCommitteeAssignmentForAllDelegationMembers = graphql(`
-		mutation ResetCommitteeAssignmentForAllDelegationMembers($delegationMemberIds: [String!]) {
-			updateManyDelegationMemberCommittee(where: { id: { in: $delegationMemberIds } }, data: {}) {
-				count
-			}
-		}
-	`);
+	let members = $derived(unsortedMembers?.toSorted((a, b) => sortKey(a).localeCompare(sortKey(b))));
 
 	let loading = $state(false);
 </script>
@@ -81,13 +67,14 @@
 			if (!members) return;
 			loading = true;
 			try {
-				const promise = resetCommitteeAssignmentForAllDelegationMembers.mutate({
-					delegationMemberIds: members.map((m) => m.id)
-				});
+				const promise = Promise.resolve(
+					client.mutate.updateManyDelegationMemberCommittee({
+						__args: { conferenceId, ids: members.map((member) => member.id) }
+					})
+				);
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
 
-				cache.markStale();
 				await invalidateAll();
 			} finally {
 				loading = false;
@@ -104,7 +91,7 @@
 {/snippet}
 
 <Modal bind:open title={m.committeeAssignment()} {action} fullWidth>
-	{#if $CommitteeDataQuery.fetching}
+	{#if committeesLoading}
 		<div class="w-full items-center justify-center">
 			<i class="fa-duotone fa-spin fa-spinner"></i>
 		</div>
@@ -126,7 +113,7 @@
 				{#each members as member}
 					<tr>
 						<td>
-							{formatNames(member.user.given_name, member.user.family_name)}
+							{formatNames(member.user.givenName ?? undefined, member.user.familyName ?? undefined)}
 						</td>
 						{#each filteredCommittees as committee}
 							{@const active = member.assignedCommittee?.id === committee.id}
@@ -137,14 +124,13 @@
 									onclick={async () => {
 										loading = true;
 										try {
-											const promise = updateDelegationMemberAssignedCommittee.mutate({
-												committeeId: committee.id,
-												delegationMemberId: member.id
+											const promise = client.mutate.updateDelegationMemberCommittee({
+												__args: { assignedCommitteeId: committee.id, id: member.id },
+												id: true
 											});
 											toast.promise(promise, genericPromiseToastMessages);
 											await promise;
 
-											cache.markStale();
 											await invalidateAll();
 										} finally {
 											loading = false;

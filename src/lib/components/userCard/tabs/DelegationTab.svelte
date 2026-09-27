@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { cache, graphql } from '$houdini';
 	import { openUserCard } from '../userCardState.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -20,95 +19,67 @@
 
 	let { delegationId, conferenceId, userId, conferenceState }: Props = $props();
 
-	const delegationQuery = graphql(`
-		query UserCardDelegationQuery($delegationId: String!) {
-			findUniqueDelegation(where: { id: $delegationId }) {
-				id
-				school
-				entryCode
-				applied
-				motivation
-				experience
-				assignedNation {
-					alpha2Code
-					alpha3Code
-				}
-				assignedNonStateActor {
-					id
-					name
-					abbreviation
-					fontAwesomeIcon
-				}
-				members {
-					id
-					isHeadDelegate
-					user {
-						id
-						given_name
-						family_name
-					}
-					assignedCommittee {
-						id
-						abbreviation
-						name
-					}
-				}
-				appliedForRoles {
-					id
-					rank
-					nation {
-						alpha2Code
-						alpha3Code
-					}
-					nonStateActor {
-						name
-						fontAwesomeIcon
-					}
-				}
+	function fetchDelegation() {
+		return client.query.delegation({
+			__args: { id: delegationId },
+			id: true,
+			school: true,
+			entryCode: true,
+			applied: true,
+			motivation: true,
+			experience: true,
+			assignedNation: { alpha2Code: true, alpha3Code: true },
+			assignedNonStateActor: {
+				id: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true
+			},
+			members: {
+				id: true,
+				isHeadDelegate: true,
+				user: { id: true, givenName: true, familyName: true },
+				assignedCommittee: { id: true, abbreviation: true, name: true }
+			},
+			appliedForRoles: {
+				id: true,
+				rank: true,
+				nation: { alpha2Code: true, alpha3Code: true },
+				nonStateActor: { name: true, fontAwesomeIcon: true }
 			}
+		});
+	}
+
+	let loadedDelegation = $state<Awaited<ReturnType<typeof fetchDelegation>>>();
+	let delegationLoading = $state(false);
+
+	async function loadDelegation() {
+		delegationLoading = true;
+		try {
+			loadedDelegation = await fetchDelegation();
+		} finally {
+			delegationLoading = false;
 		}
-	`);
+	}
 
 	$effect(() => {
-		delegationQuery.fetch({ variables: { delegationId } });
+		void loadDelegation();
 	});
 
-	const delegation = $derived($delegationQuery.data?.findUniqueDelegation);
+	const delegation = $derived(loadedDelegation);
 	const members = $derived(
 		delegation?.members.toSorted((a, b) => {
-			const fullName = (x: typeof a) => x.user.family_name + x.user.given_name;
+			const fullName = (x: typeof a) => `${x.user.familyName ?? ''}${x.user.givenName ?? ''}`;
 			return fullName(a).localeCompare(fullName(b));
 		})
 	);
 	const currentMember = $derived(delegation?.members.find((member) => member.user.id === userId));
 
-	// Mutations
-	const makeHeadDelegateMutation = graphql(`
-		mutation UserCardMakeHeadDelegateMutation($where: DelegationWhereUniqueInput!, $userId: ID!) {
-			updateOneDelegation(where: $where, newHeadDelegateUserId: $userId) {
-				id
-				members {
-					id
-					isHeadDelegate
-				}
-			}
-		}
-	`);
-
-	const changeDelegationSchoolMutation = graphql(`
-		mutation UserCardChangeDelegationSchoolMutation($delegationId: String!, $newSchool: String!) {
-			updateOneDelegation(where: { id: $delegationId }, school: $newSchool) {
-				id
-				school
-			}
-		}
-	`);
-
 	// State for modals
 	type MemberType = {
 		id: string;
 		isHeadDelegate: boolean;
-		user: { id: string; given_name: string; family_name: string };
+		user: { id: string; givenName: string | null; familyName: string | null };
 		assignedCommittee: { id: string; abbreviation: string; name: string } | null;
 	};
 
@@ -127,10 +98,13 @@
 		const newSchool = prompt(m.enterNewSchoolName());
 		if (!newSchool) return;
 		try {
-			const promise = changeDelegationSchoolMutation.mutate({ delegationId, newSchool });
+			const promise = client.mutate.updateDelegation({
+				__args: { id: delegationId, school: newSchool },
+				id: true,
+				school: true
+			});
 			toast.promise(promise, genericPromiseToastMessages);
 			await promise;
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to change school name:', error);
@@ -141,11 +115,11 @@
 		if (!selectedMember || selectedMember.isHeadDelegate) return;
 		isUpdatingHeadDelegate = true;
 		try {
-			await makeHeadDelegateMutation.mutate({
-				where: { id: delegationId },
-				userId: selectedMember.user.id
+			await client.mutate.updateDelegation({
+				__args: { id: delegationId, newHeadDelegateUserId: selectedMember.user.id },
+				id: true,
+				members: { id: true, isHeadDelegate: true }
 			});
-			cache.markStale();
 			await invalidateAll();
 		} catch (error) {
 			console.error('Failed to update head delegate:', error);
@@ -157,7 +131,7 @@
 	}
 </script>
 
-{#if $delegationQuery.fetching}
+{#if delegationLoading}
 	<div class="flex flex-col gap-3">
 		<div class="skeleton h-24 w-full"></div>
 		<div class="skeleton h-48 w-full"></div>
@@ -245,9 +219,8 @@
 					});
 					toast.promise(promise, genericPromiseToastMessages);
 					await promise;
-					cache.markStale();
 					await invalidateAll();
-					await delegationQuery.fetch({ variables: { delegationId } });
+					await loadDelegation();
 				}}
 			>
 				<i class="fa-duotone fa-arrow-rotate-left"></i>
@@ -284,7 +257,6 @@
 						});
 						toast.promise(promise, genericPromiseToastMessages);
 						await promise;
-						cache.markStale();
 						await invalidateAll();
 					}}
 				>
@@ -311,8 +283,8 @@
 					{#each members ?? [] as member (member.id)}
 						<tr class={member.user.id === userId ? 'bg-base-300/50 font-bold' : ''}>
 							<td>
-								<span class="capitalize">{member.user.given_name}</span>
-								<span class="uppercase">{member.user.family_name}</span>
+								<span class="capitalize">{member.user.givenName}</span>
+								<span class="uppercase">{member.user.familyName}</span>
 								{#if member.isHeadDelegate}
 									<span class="badge badge-accent badge-xs ml-1"
 										><i class="fa-solid fa-medal"></i>{m.headDelegate()}</span
@@ -326,9 +298,13 @@
 								<button
 									class="btn btn-ghost btn-xs btn-square"
 									onclick={() => openUserCard(member.user.id, conferenceId)}
-									title={formatNames(member.user.given_name, member.user.family_name, {
-										givenNameFirst: true
-									})}
+									title={formatNames(
+										member.user.givenName ?? undefined,
+										member.user.familyName ?? undefined,
+										{
+											givenNameFirst: true
+										}
+									)}
 								>
 									<i class="fa-duotone fa-id-card"></i>
 								</button>
@@ -404,7 +380,7 @@
 							disabled={member.isHeadDelegate || isUpdatingHeadDelegate}
 							class="radio"
 						/>
-						<span>{member.user.given_name} {member.user.family_name}</span>
+						<span>{member.user.givenName} {member.user.familyName}</span>
 						{#if member.isHeadDelegate}
 							<span class="badge badge-accent">
 								<i class="fa-solid fa-medal"></i>
