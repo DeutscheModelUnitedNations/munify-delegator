@@ -177,6 +177,18 @@ bun run preview
   query({ table: 'committee' }); // generates `committee(id)` and `committees(where, limit, …)`
   ```
 
+- **Every mutation publishes.** A handler makes one pubsub instance per table it writes:
+
+  ```ts
+  const pubsub = rumblePubsub({ table: 'committee' });
+  // …
+  pubsub.updated(args.id); // or created() / removed()
+  ```
+
+  Publish for **every** table a resolver touches, not just its own — deleting a delegation has to
+  announce its members too, or a subscriber watching members never hears about it. Use `updated(id)`
+  when one row changed and the bare `updated()` for a bulk write with no single id.
+
 - **Authorization** lives in those `abilityBuilder` calls. An ability is a drizzle filter, so it
   composes into a query rather than being checked after the fact:
 
@@ -248,11 +260,11 @@ bun run preview
   server-side fetching works without the app being able to fetch its own relative URL. It has to
   stay a remote function: `client.ts` is shared with the browser, and only a remote import is
   stubbed out there. Needs `kit.experimental.remoteFunctions` in `svelte.config.js`.
-- **After a mutation**, a component that fetched its own data reloads by calling its fetch function
-  again, or relies on graphcache patching the entities the mutation returned. `invalidateAll()`
-  only re-runs `load` functions, so it does nothing for component-level fetches. Unlike chase, no
-  handler publishes to `pubsub`, so `liveQuery`'s subscription half never fires — it behaves as a
-  query plus cache reactivity.
+- **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
+  mutation publishes to the tables it writes, so open queries are told to refresh themselves. Reach
+  for an explicit refetch only where a page holds data outside a `liveQuery`. `invalidateAll()`
+  still re-runs the remaining `load` functions (the layouts), but it does not reach a component's
+  own fetch.
 
 #### 3. Authentication & Authorization
 

@@ -131,8 +131,11 @@ bun run machine-translate
   pages with form actions
 - **SSR**: component fetches during SSR go through the remote function in
   `src/api/graphql.remote.ts`, which runs the schema in-process rather than over HTTP
-- **After mutations**: call the component's fetch function again; `invalidateAll()` only re-runs
-  `load` functions
+- **After mutations**: usually nothing — mutations publish to the tables they write and `liveQuery`
+  refreshes itself. `invalidateAll()` still re-runs the remaining layout loads but not a
+  component's own fetch
+- **Subscriptions**: served over SSE on `/api/graphql`, with Redis (`REDIS_URL`) as the event
+  target so several instances share events
 
 #### Authentication & Authorization
 
