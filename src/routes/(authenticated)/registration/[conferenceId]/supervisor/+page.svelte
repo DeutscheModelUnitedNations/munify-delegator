@@ -3,31 +3,17 @@
 	import type { PageData } from './$types';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-
-	const createSupervisorMutation = graphql(`
-		mutation CreateConferenceSupervisorMutation(
-			$conferenceId: ID!
-			$plansOwnAttendenceAtConference: Boolean!
-		) {
-			createOneConferenceSupervisor(
-				conferenceId: $conferenceId
-				plansOwnAttendenceAtConference: $plansOwnAttendenceAtConference
-			) {
-				id
-			}
-		}
-	`);
 
 	let { data }: { data: PageData } = $props();
 
 	let plansOwnAttendenceAtConference = $state(true);
 
 	const signup = async () => {
-		const promise = createSupervisorMutation.mutate({
-			conferenceId: data.conferenceId,
-			plansOwnAttendenceAtConference
+		const promise = client.mutate.createConferenceSupervisor({
+			__args: { conferenceId: data.conferenceId, plansOwnAttendenceAtConference },
+			id: true
 		});
 		toast.promise(promise, {
 			loading: m.genericToastLoading(),

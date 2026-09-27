@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { onMount } from 'svelte';
 	import LoadingData from '../components/LoadingData.svelte';
 	import formatNames from '$lib/helpers/formatNames';
@@ -12,43 +12,45 @@
 
 	let { userIds, startConference }: Props = $props();
 
-	const getApplicationUserDetailsQuery = graphql(`
-		query GetApplicationUserDetails($userIds: [String!]) {
-			findManyUsers(where: { id: { in: $userIds } }) {
-				id
-				given_name
-				family_name
-				gender
-				birthday
-				globalNotes
-				conferenceParticipationsCount
-			}
-		}
-	`);
+	function fetchUsers(ids: string[]) {
+		return client.query.users({
+			__args: { where: { id: { in: ids } } },
+			id: true,
+			givenName: true,
+			familyName: true,
+			gender: true,
+			birthday: true,
+			globalNotes: true,
+			conferenceParticipationsCount: true
+		});
+	}
+
+	let users = $state<Awaited<ReturnType<typeof fetchUsers>>>();
+	let usersLoading = $state(false);
 
 	$effect(() => {
 		if (userIds.length === 0) return;
-		getApplicationUserDetailsQuery.fetch({
-			variables: {
-				userIds: userIds
-			}
-		});
+		usersLoading = true;
+		void fetchUsers(userIds)
+			.then((result) => {
+				users = result;
+			})
+			.finally(() => {
+				usersLoading = false;
+			});
 	});
 </script>
 
 <tr>
 	<td class="text-center"><i class="fa-duotone fa-users text-lg"></i></td>
 	<td>
-		<LoadingData
-			fetching={$getApplicationUserDetailsQuery.fetching}
-			error={!$getApplicationUserDetailsQuery.data?.findManyUsers}
-		>
+		<LoadingData fetching={usersLoading} error={!users}>
 			<ul class="flex list-inside list-disc flex-col justify-center gap-1">
-				{#each $getApplicationUserDetailsQuery.data?.findManyUsers ?? [] as user (user.id)}
+				{#each users ?? [] as user (user.id)}
 					<li>
-						{formatNames(user.given_name, user.family_name)}
+						{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
 						<span class="badge badge-xs badge-neutral">
-							{getAgeAtConference(user.birthday, startConference) ?? '?'}
+							{(user.birthday && getAgeAtConference(user.birthday, startConference)) ?? '?'}
 						</span>
 						<span
 							class="badge badge-xs {user.gender === 'FEMALE'

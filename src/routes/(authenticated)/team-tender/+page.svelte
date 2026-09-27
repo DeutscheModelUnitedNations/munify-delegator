@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
@@ -10,22 +10,11 @@
 	let signedUp = $state(data.wantsJoinTeamInformation);
 	let loading = $state(false);
 
-	const updatePreferenceMutation = graphql(`
-		mutation UpdateTeamTenderPreference($email: String!, $wantsJoinTeamInformation: Boolean!) {
-			updateOneUsersNewsletterPreferences(
-				email: $email
-				wantsJoinTeamInformation: $wantsJoinTeamInformation
-			) {
-				id
-			}
-		}
-	`);
-
 	const toggleSignUp = async (value: boolean) => {
 		loading = true;
-		const promise = updatePreferenceMutation.mutate({
-			email: data.user.email,
-			wantsJoinTeamInformation: value
+		const promise = client.mutate.updateUsersNewsletterPreferences({
+			__args: { email: data.user.email, wantsJoinTeamInformation: value },
+			id: true
 		});
 		toast.promise(promise, {
 			success: value ? m.teamTenderSignUpSuccess() : m.teamTenderUnsubscribeSuccess(),
@@ -34,7 +23,6 @@
 		});
 		try {
 			await promise;
-			cache.markStale();
 			await invalidateAll();
 			signedUp = value;
 		} finally {

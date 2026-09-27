@@ -2,7 +2,7 @@
 	import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 	import { m } from '$lib/paraglide/messages';
 	import { z } from 'zod';
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
@@ -33,22 +33,11 @@
 		}
 	});
 
-	const seedNewConferenceMutation = graphql(`
-		mutation seedNewConferenceMutation($data: JSONObject!) {
-			seedNewConference(data: $data) {
-				success
-				conferenceId
-			}
-		}
-	`);
-
 	const seedNewConference = () => {
 		if (!seedData) return;
 
 		toast.promise(
-			seedNewConferenceMutation.mutate({
-				data: seedData
-			}),
+			client.mutate.seedNewConference({ __args: { data: seedData }, id: true }),
 			genericPromiseToastMessages
 		);
 	};

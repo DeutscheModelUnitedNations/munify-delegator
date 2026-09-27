@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import Footer from '../Footer.svelte';
 	import type { PageProps } from './$types';
@@ -15,27 +15,19 @@
 		if (data.prefillEmail) email = data.prefillEmail;
 	});
 
-	const unsubscribeAllMutation = graphql(`
-		mutation UnsubscribeAllMutation($email: String!, $all: Boolean!) {
-			updateOneUsersNewsletterPreferences(
-				email: $email
-				wantsJoinTeamInformation: $all
-				wantsToReceiveGeneralInformation: $all
-			) {
-				id
-			}
-		}
-	`);
-
 	const unsubscribe = async () => {
 		if (!email) {
 			toast.error(m.unsubscribeEmailMissing());
 			return;
 		}
 		loading = true;
-		const promise = unsubscribeAllMutation.mutate({
-			email,
-			all: false
+		const promise = client.mutate.updateUsersNewsletterPreferences({
+			__args: {
+				email,
+				wantsJoinTeamInformation: false,
+				wantsToReceiveGeneralInformation: false
+			},
+			id: true
 		});
 		toast.promise(promise, {
 			success: m.unsubscribeSuccess(),
