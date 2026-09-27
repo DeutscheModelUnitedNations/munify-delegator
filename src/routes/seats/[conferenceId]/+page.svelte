@@ -8,7 +8,7 @@
 	import CommitteePool from './CommitteePool.svelte';
 	import { dev } from '$app/environment';
 
-	const conference = await fetchConferenceSeats(page.params.conferenceId!);
+	const conference = $derived(await fetchConferenceSeats(page.params.conferenceId!));
 
 	const { nonStateActors: nonStateActorPool, committees } = $derived(conference);
 

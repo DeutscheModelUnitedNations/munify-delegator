@@ -25,7 +25,14 @@
 	let params = queryParameters({ queryUserId: true });
 	let hotkeyDebounce = $state(false);
 
-	let conference = $derived(data.conference);
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: data.conferenceId },
+			id: true,
+			startConference: true,
+			nextDocumentNumber: true
+		})
+	);
 
 	// Drawer state
 	let showUserDrawer = $state(false);

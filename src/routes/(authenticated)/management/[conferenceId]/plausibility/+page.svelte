@@ -2,6 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { error } from '@sveltejs/kit';
 	import type { PageData } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';
 	import PlausibilityOverviewItem from './PlausibilityOverviewItem.svelte';
 
@@ -10,7 +11,18 @@
 	}
 
 	let { data }: Props = $props();
-	let plausibility = $derived(data.plausibility);
+	const userSummary = { id: true, givenName: true, familyName: true } as const;
+
+	const plausibility = $derived(
+		await client.liveQuery.conferencePlausibility({
+			__args: { conferenceId: data.conferenceId },
+			dataMissing: userSummary,
+			shouldBeSupervisor: userSummary,
+			shouldNotBeSupervisor: userSummary,
+			tooOldUsers: userSummary,
+			tooYoungUsers: userSummary
+		})
+	);
 
 	if (!plausibility) {
 		error(404, 'Could not find plausibility data');

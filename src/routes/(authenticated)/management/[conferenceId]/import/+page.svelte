@@ -37,7 +37,14 @@
 	}
 
 	let { data }: { data: PageData } = $props();
-	let committees = $derived(data.committees);
+	const committees = $derived(
+		await client.liveQuery.committees({
+			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			id: true,
+			abbreviation: true,
+			name: true
+		})
+	);
 	let loading = $state(false);
 	let fileInput = $state<string>();
 	let threshold = $state(20);

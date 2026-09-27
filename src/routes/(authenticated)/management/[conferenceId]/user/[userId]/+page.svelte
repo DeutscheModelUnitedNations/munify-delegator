@@ -1,6 +1,7 @@
 <script lang="ts">
 	import UserCardContent from '$lib/components/userCard/UserCardContent.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 
 	const { data }: { data: PageData } = $props();
@@ -19,6 +20,6 @@
 		<h1 class="text-xl font-bold">{m.adminUserCard()}</h1>
 	</div>
 	<div class="bg-base-100 min-h-0 flex-1">
-		<UserCardContent userId={data.userId} conferenceId={data.conferenceId} mode="page" />
+		<UserCardContent userId={page.params.userId!} conferenceId={data.conferenceId} mode="page" />
 	</div>
 </div>

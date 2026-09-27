@@ -4,6 +4,7 @@
 	import { type TableColumns } from 'svelte-table';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
 	import IndividualDrawer from './IndividualDrawer.svelte';
@@ -11,7 +12,19 @@
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 
 	const { data }: { data: PageData } = $props();
-	const singleParticipants = $derived(data.singleParticipants);
+	const singleParticipants = $derived(
+		await client.liveQuery.singleParticipants({
+			__args: { where: { conferenceId: { eq: data.conferenceId } } },
+			id: true,
+			applied: true,
+			school: true,
+			appliedForRoles: { id: true, fontAwesomeIcon: true, name: true },
+			assignedRole: { id: true, fontAwesomeIcon: true, name: true },
+			motivation: true,
+			experience: true,
+			user: { id: true, familyName: true, givenName: true }
+		})
+	);
 	const { getTableSize } = getTableSettings();
 
 	let selectedParticipantRow = queryParam('selected');
