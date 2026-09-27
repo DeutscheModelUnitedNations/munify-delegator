@@ -19,7 +19,7 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { page } from '$app/stores';
-	import type { PageData } from './$types';
+	import { fetchConferenceParticipants } from './conferenceParticipants';
 	import type { ParticipantRow, ColumnMeta } from './types';
 	import { transformParticipants } from './dataTransform';
 	import { createColumnDefs } from './columns';
@@ -29,16 +29,16 @@
 	import FilterDrawer from './FilterDrawer.svelte';
 	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
 
-	const { data }: { data: PageData } = $props();
 	const conferenceId = $derived($page.params.conferenceId ?? '');
 
-	const conference = $derived(data.conference);
+	const registrations = $derived(await fetchConferenceParticipants(conferenceId));
+	const conference = $derived(registrations.conference);
 	const conferenceState = $derived(conference?.state);
 	const startConference = $derived(conference?.startConference);
 	const endConference = $derived(conference?.endConference);
 
 	const participants: ParticipantRow[] = $derived.by(() => {
-		return transformParticipants(data, startConference, endConference);
+		return transformParticipants(registrations, startConference, endConference);
 	});
 
 	const columns = createColumnDefs();

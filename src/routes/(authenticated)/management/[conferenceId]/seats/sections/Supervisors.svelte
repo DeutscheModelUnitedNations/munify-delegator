@@ -2,13 +2,13 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { PageData } from '../$types';
+	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		supervisors: PageData['supervisors'];
+		supervisors: ConferenceSeatMap['supervisors'];
 		conferenceId: string;
 	}
 

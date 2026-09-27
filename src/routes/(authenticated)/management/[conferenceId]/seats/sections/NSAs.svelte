@@ -2,15 +2,15 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { PageData } from '../$types';
+	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 	import DownloadNSADataBtn from '../downloads/DownloadNSADataBtn.svelte';
 
 	interface Props {
-		nonStateActors: PageData['nonStateActors'];
-		delegations: PageData['delegations'];
+		nonStateActors: ConferenceSeatMap['nonStateActors'];
+		delegations: ConferenceSeatMap['delegations'];
 		conferenceId: string;
 	}
 

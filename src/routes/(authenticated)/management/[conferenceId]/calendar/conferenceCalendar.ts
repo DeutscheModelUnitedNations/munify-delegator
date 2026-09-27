@@ -1,5 +1,4 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageServerLoad } from './$types';
 
 const placeSelection = {
 	id: true,
@@ -13,9 +12,8 @@ const placeSelection = {
 	sitePlanDataURL: true
 } as const;
 
-export const load: PageServerLoad = async (event) => {
-	const conferenceId = event.params.conferenceId;
-
+/** The whole programme of a conference: its days with tracks and entries, plus its places. */
+export async function fetchConferenceCalendar(conferenceId: string) {
 	const [calendarDays, places, conference] = await Promise.all([
 		client.query.calendarDays({
 			__args: {
@@ -50,11 +48,11 @@ export const load: PageServerLoad = async (event) => {
 		}),
 		client.query.conference({ __args: { id: conferenceId }, timezone: true })
 	]);
-
 	return {
 		calendarDays,
 		places,
-		conferenceId,
 		timezone: conference?.timezone ?? 'Europe/Berlin'
 	};
-};
+}
+
+export type ConferenceCalendar = Awaited<ReturnType<typeof fetchConferenceCalendar>>;

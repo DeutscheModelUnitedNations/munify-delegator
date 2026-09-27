@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
+	import { fetchConferenceCalendar } from './conferenceCalendar';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
@@ -91,8 +92,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let calendarDays = $derived(data.calendarDays);
-	let places = $derived(data.places);
+	const calendar = $derived(await fetchConferenceCalendar(data.conferenceId));
+	const calendarDays = $derived(calendar.calendarDays);
+	const places = $derived(calendar.places);
 
 	// Tab state
 	let activeTab = $state<'preview' | 'days' | 'tracks' | 'places' | 'entries'>('preview');
@@ -968,7 +970,7 @@
 		{:else}
 			<CalendarDisplay
 				days={previewDays}
-				timezone={data.timezone}
+				timezone={calendar.timezone}
 				onEditEntry={handleDrawerEditEntry}
 				onEditPlace={handleDrawerEditPlace}
 			/>

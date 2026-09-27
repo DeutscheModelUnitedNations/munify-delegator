@@ -1,5 +1,4 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageLoad } from './$types';
 
 /** The columns every participant table row needs, whatever the registration type. */
 const participantUser = {
@@ -17,8 +16,8 @@ const participantUser = {
 	conferenceParticipationsCount: true
 } as const;
 
-export const load: PageLoad = async (event) => {
-	const conferenceId = event.params.conferenceId;
+/** Every registration of a conference, whatever its type, for the participants table. */
+export async function fetchConferenceParticipants(conferenceId: string) {
 	const inConference = { where: { conferenceId: { eq: conferenceId } } };
 
 	const [
@@ -93,4 +92,6 @@ export const load: PageLoad = async (event) => {
 		teamMembers,
 		participantStatuses
 	};
-};
+}
+
+export type ConferenceParticipants = Awaited<ReturnType<typeof fetchConferenceParticipants>>;

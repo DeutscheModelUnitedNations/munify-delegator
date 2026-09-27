@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { fetchConferenceSeatMap } from './conferenceSeatMap';
 	import NSAs from './sections/NSAs.svelte';
 	import SingleParticipants from './sections/SingleParticipants.svelte';
 	import Supervisors from './sections/Supervisors.svelte';
@@ -24,13 +25,14 @@
 	let assignUser = $state<Awaited<ReturnType<typeof lookupUser>>>();
 	let assignUserLoading = $state(false);
 
-	let committees = $derived(data.committees);
-	let nations = $derived(data.nations);
-	let roles = $derived(data.roles);
-	let delegations = $derived(data.delegations);
-	let nonStateActors = $derived(data.nonStateActors);
-	let singleParticipants = $derived(data.singleParticipants);
-	let supervisors = $derived(data.supervisors);
+	const seatMap = $derived(await fetchConferenceSeatMap(conferenceId));
+	const committees = $derived(seatMap.committees);
+	const nations = $derived(seatMap.nations);
+	const roles = $derived(seatMap.roles);
+	const delegations = $derived(seatMap.delegations);
+	const nonStateActors = $derived(seatMap.nonStateActors);
+	const singleParticipants = $derived(seatMap.singleParticipants);
+	const supervisors = $derived(seatMap.supervisors);
 
 	$effect(() => {
 		if (!$params.assignUserId) {

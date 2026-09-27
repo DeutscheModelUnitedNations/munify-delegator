@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { PageData } from '../$types';
+	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -10,9 +10,9 @@
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		delegations: PageData['delegations'];
-		committees: PageData['committees'];
-		nations: PageData['nations'];
+		delegations: ConferenceSeatMap['delegations'];
+		committees: ConferenceSeatMap['committees'];
+		nations: ConferenceSeatMap['nations'];
 		conferenceId: string;
 		assignUserId?: string;
 	}

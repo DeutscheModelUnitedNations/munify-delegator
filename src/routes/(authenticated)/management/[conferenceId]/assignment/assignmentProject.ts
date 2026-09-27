@@ -1,9 +1,7 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageLoad } from './$types';
 
 /** Everything the assignment assistant needs to open a project for a conference. */
-export const load: PageLoad = async (event) => {
-	const conferenceId = event.params.conferenceId;
+export async function fetchAssignmentProject(conferenceId: string) {
 	const applied = { where: { conferenceId: { eq: conferenceId }, applied: { eq: true } } };
 
 	const [delegations, singleParticipants, conference] = await Promise.all([
@@ -62,4 +60,6 @@ export const load: PageLoad = async (event) => {
 	]);
 
 	return { delegations, singleParticipants, conference };
-};
+}
+
+export type AssignmentProject = Awaited<ReturnType<typeof fetchAssignmentProject>>;

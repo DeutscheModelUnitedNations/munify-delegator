@@ -8,11 +8,14 @@
 		type ProjectData
 	} from '../../../../(authenticated)/assignment-assistant/[projectId]/appData.svelte';
 	import type { PageData } from './$types';
+	import { fetchAssignmentProject } from './assignmentProject';
 
 	let { data }: { data: PageData } = $props();
-	let delegations = $derived(data.delegations);
-	let conference = $derived(data.conference);
-	let singleParticipants = $derived(data.singleParticipants);
+
+	const project = $derived(await fetchAssignmentProject(data.conferenceId));
+	const delegations = $derived(project.delegations);
+	const conference = $derived(project.conference);
+	const singleParticipants = $derived(project.singleParticipants);
 
 	let fileInput = $state<string>();
 

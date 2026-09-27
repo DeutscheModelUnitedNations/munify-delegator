@@ -1,10 +1,9 @@
 import { client } from '$lib/api/rumbleClient/client';
-import type { PageLoad } from './$types';
 
 const seatHolder = { id: true, givenName: true, familyName: true } as const;
 
-export const load: PageLoad = async (event) => {
-	const conferenceId = event.params.conferenceId;
+/** Who holds which seat: the committees and roles on offer, and who has been given them. */
+export async function fetchConferenceSeatMap(conferenceId: string) {
 	const inConference = { where: { conferenceId: { eq: conferenceId } } };
 
 	const [committees, nations, roles, delegations, nonStateActors, singleParticipants, supervisors] =
@@ -77,4 +76,6 @@ export const load: PageLoad = async (event) => {
 			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
 		)
 	};
-};
+}
+
+export type ConferenceSeatMap = Awaited<ReturnType<typeof fetchConferenceSeatMap>>;

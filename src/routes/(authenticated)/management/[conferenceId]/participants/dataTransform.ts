@@ -1,13 +1,13 @@
 import type { AdministrativeStatus, ParticipantRow } from './types';
 import { getAgeAtConference, ofAgeAtConference } from '$lib/helpers/ageChecker';
-import type { PageData } from './$types';
+import type { ConferenceParticipants } from './conferenceParticipants';
 
 type QueryData = {
-	delegationMembers: PageData['delegationMembers'];
-	conferenceSupervisors: PageData['conferenceSupervisors'];
-	singleParticipants: PageData['singleParticipants'];
-	teamMembers: PageData['teamMembers'];
-	participantStatuses: PageData['participantStatuses'];
+	delegationMembers: ConferenceParticipants['delegationMembers'];
+	conferenceSupervisors: ConferenceParticipants['conferenceSupervisors'];
+	singleParticipants: ConferenceParticipants['singleParticipants'];
+	teamMembers: ConferenceParticipants['teamMembers'];
+	participantStatuses: ConferenceParticipants['participantStatuses'];
 };
 
 function computePostalRegistrationStatus(
