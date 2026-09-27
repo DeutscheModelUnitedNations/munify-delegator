@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import { systemAdmin } from '$api/services/authHelper';
 import { GraphQLError } from 'graphql';
 
@@ -11,6 +11,7 @@ abilityBuilder.nation.allow(['update', 'delete']).when(systemAdmin);
 
 export const NationRef = object({ table: 'nation' });
 query({ table: 'nation' });
+const pubsub = rumblePubsub({ table: 'nation' });
 
 /**
  * Mutation surface taken from the legacy API's schema: the legacy `createOneNation`
@@ -32,6 +33,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Nation not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

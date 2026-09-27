@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -69,6 +76,7 @@ const BulkStatusUpdateResult = schemaBuilder.simpleObject(
 	}
 );
 query({ table: 'conferenceParticipantStatus' });
+const pubsub = rumblePubsub({ table: 'conferenceParticipantStatus' });
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
@@ -162,6 +170,9 @@ schemaBuilder.mutationFields((t) => ({
 				statusId = created.id;
 			}
 
+			// Updated or created on the spot, so one notification on whichever row now holds it.
+			pubsub.updated(statusId);
+
 			return db.query.conferenceParticipantStatus
 				.findFirst(
 					query(
@@ -222,6 +233,8 @@ schemaBuilder.mutationFields((t) => ({
 				}
 			});
 
+			pubsub.created();
+
 			return { changed: changed.length };
 		}
 	}),
@@ -241,6 +254,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Participant status not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

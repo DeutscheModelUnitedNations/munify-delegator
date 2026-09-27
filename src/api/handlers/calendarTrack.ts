@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertMayManageCalendarDay,
@@ -20,6 +20,7 @@ abilityBuilder.calendarTrack.allow(['update', 'delete']).when((ctx) => {
 
 export const CalendarTrackRef = object({ table: 'calendarTrack' });
 query({ table: 'calendarTrack' });
+const pubsub = rumblePubsub({ table: 'calendarTrack' });
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarTrack: t.drizzleField({
@@ -43,6 +44,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.returning()
 				.then(assertFirstEntryExists);
+
+			pubsub.created();
 
 			return db.query.calendarTrack
 				.findFirst(
@@ -76,6 +79,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.calendarTrack.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.calendarTrack
 				.findFirst(
 					query(
@@ -101,6 +106,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Calendar track not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

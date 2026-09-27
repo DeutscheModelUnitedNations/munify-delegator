@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertMayManageCalendarDay,
@@ -20,6 +27,7 @@ abilityBuilder.calendarEntry.allow(['update', 'delete']).when((ctx) => {
 
 export const CalendarEntryRef = object({ table: 'calendarEntry' });
 query({ table: 'calendarEntry' });
+const pubsub = rumblePubsub({ table: 'calendarEntry' });
 
 const calendarEntryColorEnum = enum_({ tsName: 'calendarEntryColor' });
 
@@ -57,6 +65,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.returning()
 				.then(assertFirstEntryExists);
+
+			pubsub.created();
 
 			return db.query.calendarEntry
 				.findFirst(
@@ -105,6 +115,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.calendarEntry.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.calendarEntry
 				.findFirst(
 					query(
@@ -130,6 +142,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Calendar entry not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

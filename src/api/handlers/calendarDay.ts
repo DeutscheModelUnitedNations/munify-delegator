@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertMayManageConference,
@@ -21,6 +21,11 @@ abilityBuilder.calendarDay.allow(['update', 'delete']).when((ctx) => {
 
 export const CalendarDayRef = object({ table: 'calendarDay' });
 query({ table: 'calendarDay' });
+const pubsub = rumblePubsub({ table: 'calendarDay' });
+// An import brings a whole day's programme with it: its tracks, its entries and their places.
+const calendarTrackPubsub = rumblePubsub({ table: 'calendarTrack' });
+const calendarEntryPubsub = rumblePubsub({ table: 'calendarEntry' });
+const placePubsub = rumblePubsub({ table: 'place' });
 
 schemaBuilder.mutationFields((t) => ({
 	createCalendarDay: t.drizzleField({
@@ -44,6 +49,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.returning()
 				.then(assertFirstEntryExists);
+
+			pubsub.created();
 
 			return db.query.calendarDay
 				.findFirst(
@@ -76,6 +83,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.calendarDay.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.calendarDay
 				.findFirst(
 					query(
@@ -100,6 +109,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Calendar day not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})
@@ -222,6 +233,11 @@ schemaBuilder.mutationFields((t) => ({
 
 				return day;
 			});
+
+			pubsub.created();
+			calendarTrackPubsub.created();
+			calendarEntryPubsub.created();
+			placePubsub.created();
 
 			return db.query.calendarDay
 				.findFirst(

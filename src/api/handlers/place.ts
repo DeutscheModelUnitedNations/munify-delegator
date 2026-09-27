@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertMayManageConference,
@@ -20,6 +20,7 @@ abilityBuilder.place.allow(['update', 'delete']).when((ctx) => {
 
 export const PlaceRef = object({ table: 'place' });
 query({ table: 'place' });
+const pubsub = rumblePubsub({ table: 'place' });
 
 schemaBuilder.mutationFields((t) => ({
 	createPlace: t.drizzleField({
@@ -53,6 +54,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.returning()
 				.then(assertFirstEntryExists);
+
+			pubsub.created();
 
 			return db.query.place
 				.findFirst(
@@ -94,6 +97,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.where(ctx.abilities.place.filter('update').merge({ where: { id: args.id } }).sql.where);
 
+			pubsub.updated(args.id);
+
 			return db.query.place
 				.findFirst(
 					query(ctx.abilities.place.filter('read').merge({ where: { id: args.id } }).query.single)
@@ -118,6 +123,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Place not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

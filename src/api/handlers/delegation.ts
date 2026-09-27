@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
@@ -54,6 +54,9 @@ abilityBuilder.delegation.allow('read').when((ctx) => {
 
 export const DelegationRef = object({ table: 'delegation' });
 query({ table: 'delegation' });
+const pubsub = rumblePubsub({ table: 'delegation' });
+// Creating a delegation also seats its head delegate, and deleting one takes its members with it.
+const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
 
 schemaBuilder.mutationFields((t) => ({
 	createDelegation: t.drizzleField({
@@ -106,6 +109,9 @@ schemaBuilder.mutationFields((t) => ({
 
 				return delegation;
 			});
+
+			pubsub.created();
+			delegationMemberPubsub.created();
 
 			return db.query.delegation
 				.findFirst(
@@ -223,6 +229,12 @@ schemaBuilder.mutationFields((t) => ({
 				});
 			}
 
+			pubsub.updated(args.id);
+			// A new head delegate flips the flag on two members.
+			if (args.newHeadDelegateUserId) {
+				delegationMemberPubsub.updated();
+			}
+
 			return db.query.delegation
 				.findFirst(
 					query(
@@ -246,6 +258,9 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Delegation not found, or not yours to delete');
 			}
+			pubsub.removed();
+			delegationMemberPubsub.removed();
+
 			return true;
 		}
 	})
@@ -271,6 +286,10 @@ schemaBuilder.mutationFields((t) => ({
 			if (doomed.length === 0) return [];
 
 			await db.delete(schema.delegation).where(filter.sql.where);
+
+			pubsub.removed();
+			delegationMemberPubsub.removed();
+
 			return doomed;
 		}
 	})

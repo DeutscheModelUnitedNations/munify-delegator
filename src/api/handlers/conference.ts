@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import { isTeamMemberOf } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { NationRef } from './nation';
@@ -211,6 +211,13 @@ export const ConferenceRef = object({
 });
 
 query({ table: 'conference' });
+const pubsub = rumblePubsub({ table: 'conference' });
+// Seeding a conference fills it, and normalizing schools rewrites registrations inside it.
+const committeePubsub = rumblePubsub({ table: 'committee' });
+const customConferenceRolePubsub = rumblePubsub({ table: 'customConferenceRole' });
+const nonStateActorPubsub = rumblePubsub({ table: 'nonStateActor' });
+const delegationPubsub = rumblePubsub({ table: 'delegation' });
+const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -253,6 +260,9 @@ schemaBuilder.mutationFields((t) => ({
 						);
 				});
 			}
+
+			delegationPubsub.updated();
+			singleParticipantPubsub.updated();
 
 			return db.query.conference
 				.findFirst(
@@ -372,6 +382,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.conference.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.conference
 				.findFirst(
 					query(
@@ -395,6 +407,15 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Conference not found, or not yours to delete');
 			}
+
+			// Everything inside the conference cascades away with it.
+			pubsub.removed();
+			committeePubsub.removed();
+			customConferenceRolePubsub.removed();
+			nonStateActorPubsub.removed();
+			delegationPubsub.removed();
+			singleParticipantPubsub.removed();
+
 			return true;
 		}
 	})
@@ -479,6 +500,11 @@ schemaBuilder.mutationFields((t) => ({
 
 				return conference;
 			});
+
+			pubsub.created();
+			committeePubsub.created();
+			customConferenceRolePubsub.created();
+			nonStateActorPubsub.created();
 
 			return db.query.conference
 				.findFirst(

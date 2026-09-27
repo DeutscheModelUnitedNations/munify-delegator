@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	TEAM_ADMIN_ROLES,
 	assertMayManageConference,
@@ -28,6 +28,7 @@ abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
 
 export const TeamMemberRef = object({ table: 'teamMember' });
 query({ table: 'teamMember' });
+const pubsub = rumblePubsub({ table: 'teamMember' });
 
 const teamRoleEnum = enum_({ tsName: 'teamRole' });
 
@@ -64,6 +65,8 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+
 			return db.query.teamMember
 				.findFirst(
 					query(
@@ -89,6 +92,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.teamMember.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.teamMember
 				.findFirst(
 					query(
@@ -112,6 +117,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Team member not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

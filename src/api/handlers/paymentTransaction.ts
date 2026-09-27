@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
@@ -20,6 +27,14 @@ abilityBuilder.paymentTransaction.allow(['read', 'update']).when((ctx) => {
 
 export const PaymentTransactionRef = object({ table: 'paymentTransaction' });
 query({ table: 'paymentTransaction' });
+const pubsub = rumblePubsub({ table: 'paymentTransaction' });
+// A transaction names the people it covers, and confirming one settles their payment status.
+const userReferenceInPaymentTransactionPubsub = rumblePubsub({
+	table: 'userReferenceInPaymentTransaction'
+});
+const conferenceParticipantStatusPubsub = rumblePubsub({
+	table: 'conferenceParticipantStatus'
+});
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 
@@ -86,6 +101,9 @@ schemaBuilder.mutationFields((t) => ({
 				}
 			});
 
+			pubsub.created();
+			userReferenceInPaymentTransactionPubsub.created();
+
 			return db.query.paymentTransaction
 				.findFirst(
 					query(
@@ -139,6 +157,9 @@ schemaBuilder.mutationFields((t) => ({
 						});
 				}
 			});
+
+			pubsub.updated(args.id);
+			conferenceParticipantStatusPubsub.updated();
 
 			return db.query.paymentTransaction
 				.findFirst(

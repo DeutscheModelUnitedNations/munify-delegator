@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -45,6 +45,9 @@ abilityBuilder.singleParticipant.allow('read').when((ctx) => {
 
 export const SingleParticipantRef = object({ table: 'singleParticipant' });
 query({ table: 'singleParticipant' });
+const pubsub = rumblePubsub({ table: 'singleParticipant' });
+// Assigning someone from the waiting list also settles their entry there.
+const waitingListEntryPubsub = rumblePubsub({ table: 'waitingListEntry' });
 
 /** Links a single participant to a custom conference role (the join table behind `appliedForRoles`). */
 async function applyForRoles(singleParticipantId: string, roleIds: string[]) {
@@ -136,6 +139,8 @@ schemaBuilder.mutationFields((t) => ({
 
 			await applyForRoles(rowId, [args.roleId]);
 
+			pubsub.created();
+
 			return db.query.singleParticipant
 				.findFirst(
 					query(
@@ -217,6 +222,8 @@ schemaBuilder.mutationFields((t) => ({
 			await applyForRoles(args.id, args.applyForRolesIdList ?? []);
 			await unapplyForRoles(args.id, args.unApplyForRolesIdList ?? []);
 
+			pubsub.updated(args.id);
+
 			return db.query.singleParticipant
 				.findFirst(
 					query(
@@ -242,6 +249,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Single participant not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})
@@ -267,6 +276,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (doomed.length === 0) return [];
 
 			await db.delete(schema.singleParticipant).where(filter.sql.where);
+			pubsub.removed();
+
 			return doomed;
 		}
 	})
@@ -316,6 +327,9 @@ schemaBuilder.mutationFields((t) => ({
 					.returning()
 					.then(assertFirstEntryExists);
 			});
+
+			pubsub.created();
+			waitingListEntryPubsub.updated();
 
 			return db.query.singleParticipant
 				.findFirst(

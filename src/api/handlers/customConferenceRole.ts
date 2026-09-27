@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -15,6 +15,7 @@ abilityBuilder.customConferenceRole.allow(['update', 'delete']).when((ctx) => {
 
 export const CustomConferenceRoleRef = object({ table: 'customConferenceRole' });
 query({ table: 'customConferenceRole' });
+const pubsub = rumblePubsub({ table: 'customConferenceRole' });
 
 /**
  * Mutation surface taken from the legacy API's schema: the legacy `createOneCustomConferenceRole`
@@ -44,6 +45,8 @@ schemaBuilder.mutationFields((t) => ({
 						.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.customConferenceRole
 				.findFirst(
 					query(
@@ -69,6 +72,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Custom conference role not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import { type TeamRole, systemAdmin, userId } from '$api/services/authHelper';
 import { m } from '$lib/paraglide/messages';
 import { fetchUserParticipations } from '$api/services/participation';
@@ -75,6 +82,9 @@ abilityBuilder.paper.allow('read').when((ctx) => {
 
 export const PaperRef = object({ table: 'paper' });
 query({ table: 'paper' });
+const pubsub = rumblePubsub({ table: 'paper' });
+// Every content change is a new version row rather than an edit in place.
+const paperVersionPubsub = rumblePubsub({ table: 'paperVersion' });
 
 const paperTypeEnum = enum_({ tsName: 'paperType' });
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
@@ -130,6 +140,9 @@ schemaBuilder.mutationFields((t) => ({
 
 				return paper;
 			});
+
+			pubsub.created();
+			paperVersionPubsub.created();
 
 			return db.query.paper
 				.findFirst(
@@ -195,6 +208,9 @@ schemaBuilder.mutationFields((t) => ({
 				});
 			});
 
+			pubsub.updated(args.paperId);
+			paperVersionPubsub.created();
+
 			return db.query.paper
 				.findFirst(
 					query(
@@ -216,6 +232,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Paper not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

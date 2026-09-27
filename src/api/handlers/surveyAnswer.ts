@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -29,6 +29,7 @@ abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
 
 export const SurveyAnswerRef = object({ table: 'surveyAnswer' });
 query({ table: 'surveyAnswer' });
+const pubsub = rumblePubsub({ table: 'surveyAnswer' });
 
 /**
  * Answering a survey is a single mutation: there is no separate create, because the first answer
@@ -113,6 +114,9 @@ schemaBuilder.mutationFields((t) => ({
 							})
 							.returning({ id: schema.surveyAnswer.id })
 					)[0].id;
+
+			// An upsert, so one notification on whichever row ended up holding the answer.
+			pubsub.updated(answerId);
 
 			return db.query.surveyAnswer
 				.findFirst(

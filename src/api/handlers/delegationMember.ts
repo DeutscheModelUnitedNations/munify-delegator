@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
@@ -69,6 +69,11 @@ abilityBuilder.delegationMember.allow('update').when((ctx) => {
 
 export const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
+const pubsub = rumblePubsub({ table: 'delegationMember' });
+// This handler also writes these, and a subscriber watching them has to hear about it.
+const delegationPubsub = rumblePubsub({ table: 'delegation' });
+const waitingListEntryPubsub = rumblePubsub({ table: 'waitingListEntry' });
+const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
 
 schemaBuilder.mutationFields((t) => ({
 	/** Joining a delegation by entry code. */
@@ -111,6 +116,8 @@ schemaBuilder.mutationFields((t) => ({
 
 			// The delegation just grew, so applications it can no longer seat are dropped.
 			await tidyRoleApplications(delegation.id);
+
+			pubsub.created();
 
 			return db.query.delegationMember
 				.findFirst(
@@ -174,6 +181,16 @@ schemaBuilder.mutationFields((t) => ({
 			if (delegationId) {
 				await tidyRoleApplications(delegationId);
 			}
+
+			pubsub.removed();
+			// The delegation either lost its last member and went with it, or had a new head
+			// delegate promoted into place.
+			if (delegationId) {
+				delegationPubsub.updated(delegationId);
+			} else {
+				delegationPubsub.removed();
+			}
+
 			return true;
 		}
 	})
@@ -207,6 +224,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (doomed.length === 0) return [];
 
 			await db.delete(schema.delegationMember).where(filter.sql.where);
+			pubsub.removed();
+
 			return doomed;
 		}
 	})
@@ -342,6 +361,12 @@ schemaBuilder.mutationFields((t) => ({
 				return member.id;
 			});
 
+			pubsub.created();
+			delegationPubsub.created();
+			waitingListEntryPubsub.updated();
+			// An existing single registration for the same person is cleared out of the way.
+			singleParticipantPubsub.removed();
+
 			return db.query.delegationMember
 				.findFirst(
 					query(
@@ -406,6 +431,8 @@ schemaBuilder.mutationFields((t) => ({
 					.where(updatable.sql.where);
 			});
 
+			pubsub.updated(args.id);
+
 			return db.query.delegationMember
 				.findFirst(
 					query(
@@ -440,6 +467,8 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.returning({ id: schema.delegationMember.id });
+
+			pubsub.updated(args.ids);
 
 			return updated.length;
 		}
@@ -499,6 +528,8 @@ schemaBuilder.mutationFields((t) => ({
 						.where(eq(schema.delegationMember.id, member.id));
 				}
 			});
+
+			pubsub.updated();
 
 			return db.query.delegationMember.findMany(
 				query(

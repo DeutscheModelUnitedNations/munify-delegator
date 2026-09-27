@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { schemaBuilder } from '$api/rumble';
+import { pubsub as rumblePubsub, schemaBuilder } from '$api/rumble';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -52,6 +52,11 @@ async function reconnectSupervisor(
 		console.error(`Failed to reconnect supervisor ${supervisorId} to member ${memberId}:`, error);
 	}
 }
+
+// The assignment run rewrites registrations wholesale, across three tables.
+const delegationPubsub = rumblePubsub({ table: 'delegation' });
+const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
+const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -267,6 +272,10 @@ schemaBuilder.mutationFields((t) => ({
 					);
 				}
 			});
+
+			delegationPubsub.updated();
+			delegationMemberPubsub.updated();
+			singleParticipantPubsub.updated();
 
 			return true;
 		}

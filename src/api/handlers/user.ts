@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isSystemAdmin,
@@ -155,6 +155,14 @@ export const UserRef = object({
 	})
 });
 query({ table: 'user' });
+const pubsub = rumblePubsub({ table: 'user' });
+// Unregistering somebody tears down every registration they hold in that conference.
+const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
+const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
+const conferenceSupervisorPubsub = rumblePubsub({ table: 'conferenceSupervisor' });
+const conferenceParticipantStatusPubsub = rumblePubsub({
+	table: 'conferenceParticipantStatus'
+});
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -215,6 +223,11 @@ schemaBuilder.mutationFields((t) => ({
 							.where
 					);
 			});
+
+			delegationMemberPubsub.removed();
+			singleParticipantPubsub.removed();
+			conferenceSupervisorPubsub.removed();
+			conferenceParticipantStatusPubsub.removed();
 
 			return db.query.user
 				.findFirst(
@@ -293,6 +306,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.where(ctx.abilities.user.filter('update').merge({ where: { id: args.id } }).sql.where);
 
+			pubsub.updated(args.id);
+
 			return db.query.user
 				.findFirst(
 					query(ctx.abilities.user.filter('read').merge({ where: { id: args.id } }).query.single)
@@ -321,6 +336,9 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.where(eq(schema.user.email, args.email));
 
+			// Addressed by email rather than id, so this is a table-wide notification.
+			pubsub.updated();
+
 			return db.query.user
 				.findFirst(
 					query(
@@ -343,6 +361,8 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.user)
 				.set({ globalNotes: args.globalNotes })
 				.where(ctx.abilities.user.filter('update').merge({ where: { id: args.id } }).sql.where);
+
+			pubsub.updated(args.id);
 
 			return db.query.user
 				.findFirst(
@@ -371,6 +391,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.where(ctx.abilities.user.filter('update').merge({ where: { id: args.id } }).sql.where);
 
+			pubsub.updated(args.id);
+
 			return db.query.user
 				.findFirst(
 					query(ctx.abilities.user.filter('read').merge({ where: { id: args.id } }).query.single)
@@ -390,6 +412,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('User not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})
@@ -564,6 +588,9 @@ schemaBuilder.mutationFields((t) => ({
 					})
 					.onConflictDoUpdate({ target: schema.user.id, set: { email, locale } })
 					.returning();
+
+				// An upsert on sign-in, so one notification on whichever row now holds the account.
+				pubsub.updated(user.id);
 
 				return {
 					userNeedsAdditionalInfo: !userFormSchema.safeParse({

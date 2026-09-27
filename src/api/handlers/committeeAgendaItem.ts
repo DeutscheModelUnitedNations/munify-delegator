@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	type TeamRole,
 	isTeamMemberOfConference,
@@ -22,6 +29,7 @@ abilityBuilder.committeeAgendaItem.allow(['update', 'delete']).when((ctx) => {
 
 export const CommitteeAgendaItemRef = object({ table: 'committeeAgendaItem' });
 query({ table: 'committeeAgendaItem' });
+const pubsub = rumblePubsub({ table: 'committeeAgendaItem' });
 
 const reviewHelpStatusEnum = enum_({ tsName: 'reviewHelpStatus' });
 
@@ -57,6 +65,8 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+
 			return db.query.committeeAgendaItem
 				.findFirst(
 					query(
@@ -84,6 +94,8 @@ schemaBuilder.mutationFields((t) => ({
 						.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.committeeAgendaItem
 				.findFirst(
 					query(
@@ -109,6 +121,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Agenda item not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	}),
@@ -152,6 +166,8 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.committeeAgendaItem)
 				.set({ reviewHelpStatus: args.status })
 				.where(eq(schema.committeeAgendaItem.id, args.agendaItemId));
+
+			pubsub.updated(args.agendaItemId);
 
 			return db.query.committeeAgendaItem
 				.findFirst(

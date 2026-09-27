@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import { systemAdmin, userId } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -14,6 +14,7 @@ abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when((ctx) =>
 
 export const ReviewerSnippetRef = object({ table: 'reviewerSnippet' });
 query({ table: 'reviewerSnippet' });
+const pubsub = rumblePubsub({ table: 'reviewerSnippet' });
 
 /**
  * Snippet names are unique per user, so create rejects a duplicate rather than relying on the
@@ -48,6 +49,8 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+
 			return db.query.reviewerSnippet
 				.findFirst(
 					query(
@@ -79,6 +82,8 @@ schemaBuilder.mutationFields((t) => ({
 				throw new GraphQLError('Snippet not found or access denied');
 			}
 
+			pubsub.updated(args.id);
+
 			return db.query.reviewerSnippet
 				.findFirst(
 					query(
@@ -103,6 +108,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Snippet not found or access denied');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

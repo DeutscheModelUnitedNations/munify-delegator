@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertMayManageConference,
@@ -26,6 +26,7 @@ abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when((ctx) => 
 
 export const SurveyQuestionRef = object({ table: 'surveyQuestion' });
 query({ table: 'surveyQuestion' });
+const pubsub = rumblePubsub({ table: 'surveyQuestion' });
 
 schemaBuilder.mutationFields((t) => ({
 	createSurveyQuestion: t.drizzleField({
@@ -55,6 +56,8 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.returning()
 				.then(assertFirstEntryExists);
+
+			pubsub.created();
 
 			return db.query.surveyQuestion
 				.findFirst(
@@ -93,6 +96,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.surveyQuestion.filter('update').merge({ where: { id: args.id } }).sql.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.surveyQuestion
 				.findFirst(
 					query(
@@ -117,6 +122,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Survey question not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

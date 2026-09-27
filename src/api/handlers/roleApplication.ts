@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
@@ -41,6 +41,7 @@ abilityBuilder.roleApplication.allow('read').when((ctx) => {
 
 export const RoleApplicationRef = object({ table: 'roleApplication' });
 query({ table: 'roleApplication' });
+const pubsub = rumblePubsub({ table: 'roleApplication' });
 
 schemaBuilder.mutationFields((t) => ({
 	createRoleApplication: t.drizzleField({
@@ -83,6 +84,8 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+
 			return db.query.roleApplication
 				.findFirst(
 					query(
@@ -107,6 +110,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Role application not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	}),
@@ -146,6 +151,8 @@ schemaBuilder.mutationFields((t) => ({
 					.set({ rank: second.rank })
 					.where(updateFilter(args.firstRoleApplicationId).sql.where);
 			});
+
+			pubsub.updated([args.firstRoleApplicationId, args.secondRoleApplicationId]);
 
 			return db.query.roleApplication.findMany(
 				query(

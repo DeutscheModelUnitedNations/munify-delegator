@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	TEAM_ADMIN_ROLES,
 	isSystemAdmin,
@@ -46,6 +53,9 @@ export const TeamMemberInvitationRef = object({
 	})
 });
 query({ table: 'teamMemberInvitation' });
+const pubsub = rumblePubsub({ table: 'teamMemberInvitation' });
+// Inviting somebody the app already knows seats them on the team straight away.
+const teamMemberPubsub = rumblePubsub({ table: 'teamMember' });
 
 const teamRoleEnum = enum_({ tsName: 'teamRole' });
 
@@ -263,6 +273,9 @@ schemaBuilder.mutationFields((t) => ({
 				}
 			}
 
+			pubsub.created();
+			teamMemberPubsub.created();
+
 			return { created, errors };
 		}
 	}),
@@ -288,6 +301,8 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.teamMemberInvitation)
 				.set({ revokedAt: new Date() })
 				.where(eq(schema.teamMemberInvitation.id, args.invitationId));
+
+			pubsub.updated(args.invitationId);
 
 			return { success: true, message: null };
 		}
@@ -344,6 +359,8 @@ schemaBuilder.mutationFields((t) => ({
 					}).catch((err) => console.error('Failed to send invitation email:', err));
 				}
 			}
+
+			pubsub.updated(args.invitationId);
 
 			return { success: true, newToken, newExpiresAt, message: null };
 		}

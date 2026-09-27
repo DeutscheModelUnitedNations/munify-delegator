@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -67,6 +67,10 @@ abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 
 export const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
+const pubsub = rumblePubsub({ table: 'conferenceSupervisor' });
+// The supervision links are join tables, so a change there shows up on the two sides of it.
+const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
+const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
 
 schemaBuilder.mutationFields((t) => ({
 	createConferenceSupervisor: t.drizzleField({
@@ -118,6 +122,8 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
@@ -143,6 +149,8 @@ schemaBuilder.mutationFields((t) => ({
 					ctx.abilities.conferenceSupervisor.filter('update').merge({ where: { id: args.id } }).sql
 						.where
 				);
+
+			pubsub.updated(args.id);
 
 			return db.query.conferenceSupervisor
 				.findFirst(
@@ -206,6 +214,15 @@ schemaBuilder.mutationFields((t) => ({
 					.onConflictDoNothing();
 			}
 
+			// Nothing on the supervisor row itself changed, but who it supervises did.
+			pubsub.updated(supervisor.id);
+			if (participation.foundDelegationMember) {
+				delegationMemberPubsub.updated(participation.foundDelegationMember.id);
+			}
+			if (participation.foundSingleParticipant) {
+				singleParticipantPubsub.updated(participation.foundSingleParticipant.id);
+			}
+
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
@@ -238,6 +255,8 @@ schemaBuilder.mutationFields((t) => ({
 				.set({ connectionCode: makeEntryCode() })
 				.where(eq(schema.conferenceSupervisor.id, supervisor.id));
 
+			pubsub.updated(supervisor.id);
+
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
@@ -264,6 +283,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Supervisor not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})
@@ -294,6 +315,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (doomed.length === 0) return [];
 
 			await db.delete(schema.conferenceSupervisor).where(filter.sql.where);
+			pubsub.removed();
+
 			return doomed;
 		}
 	})

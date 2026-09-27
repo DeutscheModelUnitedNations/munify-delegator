@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
@@ -33,6 +33,11 @@ abilityBuilder.attendanceEntry.allow(['update', 'delete']).when((ctx) => {
 
 export const AttendanceEntryRef = object({ table: 'attendanceEntry' });
 query({ table: 'attendanceEntry' });
+const pubsub = rumblePubsub({ table: 'attendanceEntry' });
+// Recording attendance also flips the participant's status for the conference.
+const conferenceParticipantStatusPubsub = rumblePubsub({
+	table: 'conferenceParticipantStatus'
+});
 
 schemaBuilder.mutationFields((t) => ({
 	createAttendanceEntry: t.drizzleField({
@@ -87,6 +92,9 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+			conferenceParticipantStatusPubsub.updated();
+
 			return db.query.attendanceEntry
 				.findFirst(
 					query(
@@ -111,6 +119,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Attendance entry not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

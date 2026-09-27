@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	isOwnUser,
@@ -28,6 +28,7 @@ abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when((ctx) =
 
 export const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });
+const pubsub = rumblePubsub({ table: 'waitingListEntry' });
 
 schemaBuilder.mutationFields((t) => ({
 	createWaitingListEntry: t.drizzleField({
@@ -73,6 +74,8 @@ schemaBuilder.mutationFields((t) => ({
 				.returning()
 				.then(assertFirstEntryExists);
 
+			pubsub.created();
+
 			return db.query.waitingListEntry
 				.findFirst(
 					query(
@@ -111,6 +114,8 @@ schemaBuilder.mutationFields((t) => ({
 						.where
 				);
 
+			pubsub.updated(args.id);
+
 			return db.query.waitingListEntry
 				.findFirst(
 					query(
@@ -136,6 +141,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Waiting list entry not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

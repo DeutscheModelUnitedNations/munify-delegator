@@ -1,5 +1,5 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, query, schemaBuilder } from '$api/rumble';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
 import { GraphQLError } from 'graphql';
 
@@ -15,6 +15,7 @@ abilityBuilder.nonStateActor.allow(['update', 'delete']).when((ctx) => {
 
 export const NonStateActorRef = object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });
+const pubsub = rumblePubsub({ table: 'nonStateActor' });
 
 /**
  * Mutation surface taken from the legacy API's schema: the legacy `createOneNonStateActor`
@@ -34,6 +35,8 @@ schemaBuilder.mutationFields((t) => ({
 			if (deleted.length === 0) {
 				throw new GraphQLError('Non state actor not found, or not yours to delete');
 			}
+			pubsub.removed();
+
 			return true;
 		}
 	})

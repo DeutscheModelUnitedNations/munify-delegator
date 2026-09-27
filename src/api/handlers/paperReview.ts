@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, enum_, object, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import { type TeamRole, systemAdmin, userId } from '$api/services/authHelper';
 import { sendNewReviewNotification } from '$api/services/email';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -37,6 +44,10 @@ abilityBuilder.paperReview.allow('read').when((ctx) => {
 
 export const PaperReviewRef = object({ table: 'paperReview' });
 query({ table: 'paperReview' });
+const pubsub = rumblePubsub({ table: 'paperReview' });
+// A review moves the paper's status and stamps the version it reviewed.
+const paperPubsub = rumblePubsub({ table: 'paper' });
+const paperVersionPubsub = rumblePubsub({ table: 'paperVersion' });
 
 const paperStatusEnum = enum_({ tsName: 'paperStatus' });
 
@@ -109,6 +120,10 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			const reviewer = ctx.mustBeLoggedIn();
+
+			pubsub.created();
+			paperPubsub.updated(args.paperId);
+			paperVersionPubsub.updated();
 
 			return db.transaction(async (tx) => {
 				const paper = await tx.query.paper
