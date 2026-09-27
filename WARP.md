@@ -126,9 +126,13 @@ bun run machine-translate
 
 - **Generated client**: `client.query.x({ __args, …selection })` and `client.mutate.x(…)`, written
   into `src/lib/api/rumbleClient/` on dev server start
-- **Load Functions**: SvelteKit `+page.ts` / `+page.server.ts` call the client; server-side calls go
-  through the remote functions in `src/api/graphql.remote.ts` rather than over HTTP
-- **After mutations**: `invalidateAll()`, since there is no normalized cache to invalidate
+- **Fetching happens in components**, not in `load`: `const x = $derived(await client.liveQuery.…)`
+  at the top of `<script>`. `load` survives only for redirect guards, OIDC work, page options and
+  pages with form actions
+- **SSR**: component fetches during SSR go through the remote function in
+  `src/api/graphql.remote.ts`, which runs the schema in-process rather than over HTTP
+- **After mutations**: call the component's fetch function again; `invalidateAll()` only re-runs
+  `load` functions
 
 #### Authentication & Authorization
 
@@ -195,8 +199,8 @@ After modifying `src/api/db/schema.ts`:
 2. **API Changes**: Modify a handler in `src/api/handlers/` → restart the dev server, which rebuilds
    the schema and regenerates the frontend client
 3. **Frontend Changes**: Edit Svelte components → Vite hot-reloads
-4. **Adding Operations**: Call `client.query` / `client.mutate` with a selection object; there are no
-   GraphQL documents in this codebase
+4. **Adding Operations**: Call `client.liveQuery` / `client.mutate` with a selection object in the
+   component; there are no GraphQL documents and no data-loading `load` functions in this codebase
 5. **Permission Changes**: Edit the `abilityBuilder` calls at the top of the entity's handler
 
 ## Commit Convention

@@ -211,15 +211,48 @@ bun run preview
   Mutations returning a scalar have no selection to describe; wrap them for `toast.promise` with
   `Promise.resolve(client.mutate.deleteX({ __args: { id } }))`.
 
+- **Where to fetch**: in the component, at the top of `<script>`, not in a `load`. This is chase's
+  idiom and what `compilerOptions.experimental.async` is for:
+
+  ```ts
+  const delegations = $derived(
+  	await client.liveQuery.delegations({
+  		__args: { where: { conferenceId: { eq: data.conferenceId } } },
+  		id: true,
+  		school: true
+  	})
+  );
+  ```
+
+  Use `$derived(await …)` whenever the query depends on a route param or other reactive value — a
+  bare top-level `await` runs **once**, so the page would keep showing the conference you navigated
+  away from. svelte-check flags the bare form with `state_referenced_locally`; that warning is a
+  real bug, not noise. A plain `await` is right only for something seeded once, such as the initial
+  value of a form field.
+
+  When a page needs several queries, put them in a co-located module that exports the fetch
+  function and its result type (`conferenceCalendar.ts`, `assignmentProject.ts`), and let child
+  components import that type for their props.
+
+- **`load` functions are for four things only**: redirect guards, OIDC/cookie work, page options
+  like `ssr = false`, and pages that use SvelteKit **form actions** (there the load hands the
+  action its superforms object, which is the framework's contract). Everything else fetches in the
+  component. A `load` must never return what the generated client gave it: those are subscribeable
+  proxies, and `load` data has to be serialized into the page.
+- **Forms without an action** are SPA forms that submit through a mutation. Build their initial
+  value with superforms' `defaults()` in the component rather than `superValidate` on the server.
 - **Regeneration** happens on dev server start, so a handler change is only visible to the
   frontend after a restart. `src/lib/api/rumbleClient/` is generated and committed; never edit it.
-- **SSR** goes through `src/api/graphql.remote.ts`. `remoteFunctionsExchange` in
-  `src/lib/api/client.ts` routes there whenever `browser` is false, which is why server loads work
-  without the app being able to fetch its own relative URL. Needs
-  `kit.experimental.remoteFunctions` in `svelte.config.js`.
-- **After a mutation** call `invalidateAll()` to re-run the loads whose data changed. Components
-  that fetch on their own reload by calling their fetch function again — there is no normalized
-  cache to mark stale.
+- **SSR** goes through `src/api/graphql.remote.ts`, which executes the schema in-process.
+  `ssrExchange` in `src/lib/api/client.ts` routes there whenever `browser` is false, which is why
+  server-side fetching works without the app being able to fetch its own relative URL. It has to
+  stay a remote function: `client.ts` is shared with the browser, and only a remote import is
+  stubbed out there. Needs `kit.experimental.remoteFunctions` in `svelte.config.js`.
+- **After a mutation**, a component that fetched its own data reloads by calling its fetch function
+  again, or relies on graphcache patching the entities the mutation returned. `invalidateAll()`
+  only re-runs `load` functions, so it does nothing for component-level fetches. Unlike chase, no
+  handler publishes to `pubsub`, so `liveQuery`'s subscription half never fires — it behaves as a
+  query plus cache reactivity.
 
 #### 3. Authentication & Authorization
 
@@ -348,8 +381,8 @@ Required variables (see `.env.example`):
 ### Adding a Frontend Feature
 
 1. Create/modify components in `src/lib/components/`
-2. Fetch through `client.query` / `client.mutate` — in a load function when the page needs the data
-   to render, in the component when it is only needed once something is opened
+2. Fetch in the component with `$derived(await client.liveQuery.…)`; do not add a `load` function
+   (see "Frontend Data Fetching" for the four cases where one is still right)
 3. Add translations to `messages/` directory
 
 ### Database Schema Changes

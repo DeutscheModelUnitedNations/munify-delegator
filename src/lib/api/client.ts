@@ -65,5 +65,9 @@ export const urqlClient = new Client({
 	exchanges: [nativeDateExchange, cacheExchange({ schema }), ssrExchange, fetchExchange],
 	fetchOptions: {
 		credentials: 'include'
-	}
+	},
+	// What the generated client configures for itself, and what component-level fetching needs:
+	// cached data renders immediately while the network answer refreshes it. The default,
+	// `cache-first`, would hand back a stale entity forever once it had been read once.
+	requestPolicy: 'cache-and-network'
 });
