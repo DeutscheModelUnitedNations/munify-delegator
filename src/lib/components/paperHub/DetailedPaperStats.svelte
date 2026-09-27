@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { PaperStatus$options, PaperType$options } from '$houdini';
+	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import type { EChartsOption } from 'echarts';
 	import BarChart from '$lib/components/charts/echarts/BarChart.svelte';
 	import MultiSeriesBarChart from '$lib/components/charts/echarts/MultiSeriesBarChart.svelte';
@@ -8,8 +8,8 @@
 	import EChartsBase from '$lib/components/charts/echarts/EChartsBase.svelte';
 
 	interface Paper {
-		type: PaperType$options;
-		status: PaperStatus$options;
+		type: PapertypeEnum;
+		status: PaperstatusEnum;
 		versions: Array<{ reviews: Array<{ id: string }> }>;
 	}
 
@@ -88,13 +88,8 @@
 
 	// Status by type (stacked bar) chart data
 	let statusByTypeData = $derived.by(() => {
-		const statuses: PaperStatus$options[] = [
-			'SUBMITTED',
-			'REVISED',
-			'CHANGES_REQUESTED',
-			'ACCEPTED'
-		];
-		const types: PaperType$options[] = ['POSITION_PAPER', 'WORKING_PAPER', 'INTRODUCTION_PAPER'];
+		const statuses: PaperstatusEnum[] = ['SUBMITTED', 'REVISED', 'CHANGES_REQUESTED', 'ACCEPTED'];
+		const types: PapertypeEnum[] = ['POSITION_PAPER', 'WORKING_PAPER', 'INTRODUCTION_PAPER'];
 
 		const labels = [
 			m.paperStatusSubmitted(),
@@ -141,15 +136,10 @@
 		);
 
 		const labels = filteredCommittees.map((c) => c.abbreviation);
-		const statuses: PaperStatus$options[] = [
-			'SUBMITTED',
-			'REVISED',
-			'CHANGES_REQUESTED',
-			'ACCEPTED'
-		];
+		const statuses: PaperstatusEnum[] = ['SUBMITTED', 'REVISED', 'CHANGES_REQUESTED', 'ACCEPTED'];
 		const types: Array<'POSITION_PAPER' | 'WORKING_PAPER'> = ['POSITION_PAPER', 'WORKING_PAPER'];
 
-		const statusLabels: Record<PaperStatus$options, string> = {
+		const statusLabels: Record<PaperstatusEnum, string> = {
 			DRAFT: m.paperStatusDraft(),
 			SUBMITTED: m.paperStatusSubmitted(),
 			REVISED: m.paperStatusRevised(),

@@ -266,7 +266,9 @@ export function computeSubscriberState(user: MailSyncUser): ComputedSubscriberSt
 
 	return {
 		email: user.email.trim(),
-		formattedName: formatNames(user.given_name, user.family_name, { familyNameUppercase: false }),
+		formattedName: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
+			familyNameUppercase: false
+		}),
 		listNames: [...new Set(allListNames)],
 		attribs: {
 			userId: user.id,

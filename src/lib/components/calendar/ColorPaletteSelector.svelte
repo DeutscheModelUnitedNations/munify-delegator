@@ -1,16 +1,16 @@
 <script lang="ts">
-	import type { CalendarEntryColor$options } from '$houdini';
+	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 	import { allColors, getColorConfig } from './calendarColors';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
-		value: CalendarEntryColor$options;
-		onchange: (color: CalendarEntryColor$options) => void;
+		value: CalendarentrycolorEnum;
+		onchange: (color: CalendarentrycolorEnum) => void;
 	}
 
 	let { value, onchange }: Props = $props();
 
-	const colorLabels: Record<CalendarEntryColor$options, () => string> = {
+	const colorLabels: Record<CalendarentrycolorEnum, () => string> = {
 		SESSION: () => m.calendarSession(),
 		WORKSHOP: () => m.calendarWorkshop(),
 		LOGISTICS: () => m.calendarLogistics(),

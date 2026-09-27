@@ -5,7 +5,6 @@
 	import { goto } from '$app/navigation';
 	import DelegationPreview from '$lib/components/DelegationPreview.svelte';
 	import { entryCodeLength } from '$api/services/entryCodeGenerator';
-	import { graphql } from '$houdini';
 
 	let { data }: { data: PageData } = $props();
 

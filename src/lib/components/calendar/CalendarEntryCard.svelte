@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { CalendarEntryColor$options } from '$houdini';
+	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 	import { getColorConfig } from './calendarColors';
 
 	interface Props {
 		name: string;
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
-		color: CalendarEntryColor$options;
+		color: CalendarentrycolorEnum;
 		startTime: Date;
 		endTime: Date;
 		place?: { name: string } | null;

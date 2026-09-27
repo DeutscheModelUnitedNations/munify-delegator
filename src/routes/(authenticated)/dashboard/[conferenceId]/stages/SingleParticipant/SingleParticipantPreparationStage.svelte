@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from '../../$houdini';
+	import type { PageData } from '../../$types';
 	import { m } from '$lib/paraglide/messages';
 	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';

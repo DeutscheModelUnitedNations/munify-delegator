@@ -1,9 +1,9 @@
-import type { ConferenceState$options } from '$houdini';
+import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
 
 export type RegistrationStatus = 'OPEN' | 'CLOSED' | 'WAITING_LIST' | 'NOT_YET_OPEN' | 'UNKNOWN';
 
 export const getRegistrationStatus = (
-	conferenceState: ConferenceState$options,
+	conferenceState: ConferencestateEnum,
 	startAssignment: Date
 ): RegistrationStatus => {
 	if (conferenceState === 'PRE') {

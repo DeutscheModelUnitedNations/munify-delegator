@@ -3896,7 +3896,7 @@ export type WaitinglistentryWhereInputArgument = {
 };
 		
 export const defaultOptions: ConstructorParameters<Client>[0] = {
-  url: "/api/graphql2",
+  url: "/api/graphql",
   fetchSubscriptions: true,
   exchanges: [cacheExchange({ schema }), nativeDateExchange, fetchExchange],
   fetchOptions: {

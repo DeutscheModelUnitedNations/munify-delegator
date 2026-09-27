@@ -1,7 +1,11 @@
-import type { CalendarEntryColor$options, PaperStatus$options, PaperType$options } from '$houdini';
+import type {
+	CalendarentrycolorEnum,
+	PaperstatusEnum,
+	PapertypeEnum
+} from '$lib/api/rumbleClient/client';
 import { m } from '$lib/paraglide/messages';
 
-export function translatePaperStatus(paperStatus: PaperStatus$options) {
+export function translatePaperStatus(paperStatus: PaperstatusEnum) {
 	switch (paperStatus) {
 		case 'DRAFT':
 			return m.paperStatusDraft();
@@ -16,7 +20,7 @@ export function translatePaperStatus(paperStatus: PaperStatus$options) {
 	}
 }
 
-export function translatePaperType(paperType: PaperType$options) {
+export function translatePaperType(paperType: PapertypeEnum) {
 	switch (paperType) {
 		case 'POSITION_PAPER':
 			return m.paperTypePositionPaper();
@@ -27,7 +31,7 @@ export function translatePaperType(paperType: PaperType$options) {
 	}
 }
 
-export function translateCalendarEntryColor(color: CalendarEntryColor$options) {
+export function translateCalendarEntryColor(color: CalendarentrycolorEnum) {
 	switch (color) {
 		case 'SESSION':
 			return m.calendarSession();

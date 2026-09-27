@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceHeader from '$lib/components/dashboard/ConferenceHeader.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';

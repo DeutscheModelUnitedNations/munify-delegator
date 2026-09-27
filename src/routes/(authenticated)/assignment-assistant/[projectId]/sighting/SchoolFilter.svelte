@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { getSchools } from '../appData.svelte';
 

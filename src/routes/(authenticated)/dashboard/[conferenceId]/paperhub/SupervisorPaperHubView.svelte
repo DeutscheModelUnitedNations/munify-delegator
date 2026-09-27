@@ -5,7 +5,7 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import PaperEnum from '$lib/components/paper/paperEnum';
 	import { goto } from '$app/navigation';
-	import type { PaperStatus$options, PaperType$options } from '$houdini';
+	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
 
 	interface Props {
 		conferenceId: string;

@@ -22,7 +22,7 @@
 	} from '$lib/components/paper/editor/diffViewer';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { getStatusBadgeClass } from '$lib/utils/paperStatusHelpers';
-	import { cache, graphql } from '$houdini';
+
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';

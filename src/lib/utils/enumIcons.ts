@@ -1,6 +1,6 @@
-import type { PaperStatus$options, PaperType$options } from '$houdini';
+import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
 
-export function getPaperTypeIcon(type: PaperType$options) {
+export function getPaperTypeIcon(type: PapertypeEnum) {
 	switch (type) {
 		case 'POSITION_PAPER':
 			return 'fa-file';
@@ -13,7 +13,7 @@ export function getPaperTypeIcon(type: PaperType$options) {
 	}
 }
 
-export function getPaperStatusIcon(s: PaperStatus$options) {
+export function getPaperStatusIcon(s: PaperstatusEnum) {
 	switch (s) {
 		case 'SUBMITTED':
 			return 'fa-paper-plane';

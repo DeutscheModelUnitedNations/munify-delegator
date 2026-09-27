@@ -1,4 +1,4 @@
-import { CalendarEntryColor, type CalendarEntryColor$options } from '$houdini';
+import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 
 interface ColorConfig {
 	bg: string;
@@ -7,7 +7,7 @@ interface ColorConfig {
 	ring: string;
 }
 
-const colorMap: Record<CalendarEntryColor$options, ColorConfig> = {
+const colorMap: Record<CalendarentrycolorEnum, ColorConfig> = {
 	SESSION: {
 		bg: 'bg-primary/15',
 		border: 'border-primary',
@@ -58,8 +58,18 @@ const colorMap: Record<CalendarEntryColor$options, ColorConfig> = {
 	}
 };
 
-export function getColorConfig(color: CalendarEntryColor$options): ColorConfig {
+export function getColorConfig(color: CalendarentrycolorEnum): ColorConfig {
 	return colorMap[color];
 }
 
-export const allColors = Object.keys(colorMap) as CalendarEntryColor$options[];
+/** Listed explicitly so it can drive a zod enum; `colorMap` above keeps it exhaustive. */
+export const allColors = [
+	'SESSION',
+	'WORKSHOP',
+	'LOGISTICS',
+	'SOCIAL',
+	'CEREMONY',
+	'BREAK',
+	'HIGHLIGHT',
+	'INFO'
+] as const satisfies readonly CalendarentrycolorEnum[];

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Steps from '$lib/components/Steps.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import Form from '$lib/components/form/Form.svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod4Client } from 'sveltekit-superforms/adapters';

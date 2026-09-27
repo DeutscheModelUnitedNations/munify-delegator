@@ -1,9 +1,9 @@
-import type { PaperStatus$options } from '$houdini';
+import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 
 /**
  * Returns the appropriate DaisyUI badge class for a paper status
  */
-export const getStatusBadgeClass = (status: PaperStatus$options): string => {
+export const getStatusBadgeClass = (status: PaperstatusEnum): string => {
 	switch (status) {
 		case 'SUBMITTED':
 			return 'badge-warning';

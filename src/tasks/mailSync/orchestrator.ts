@@ -1,5 +1,5 @@
 import { config } from '../config';
-import { tasksDb } from '../tasksDb';
+import { db } from '$api/db/db';
 import { logTaskStart, logTaskEnd, taskError } from '../logs';
 import { ensureListsExist } from './listManager';
 import { fetchSubscriberMap } from './subscriberFetcher';
@@ -22,7 +22,7 @@ export async function runMailSync(): Promise<void> {
 		console.info('\nSTEP 1: Updating Lists');
 		console.info('======================');
 
-		const conferences = await tasksDb.conference.findMany();
+		const conferences = await db.query.conference.findMany({ columns: { id: true, title: true } });
 		const listNameToId = await ensureListsExist(conferences);
 		if (!listNameToId) return;
 

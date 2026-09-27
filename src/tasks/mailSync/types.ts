@@ -1,4 +1,5 @@
-import type { Prisma } from '@prisma/client';
+import { db } from '$api/db/db';
+import type { UserFilter } from '$api/services/statisticsFilters';
 
 // List type constants
 
@@ -20,52 +21,47 @@ export const CONFERENCE_LIST_TYPES = [
 export type GlobalListType = (typeof GLOBAL_LIST_TYPES)[number];
 export type ConferenceListType = (typeof CONFERENCE_LIST_TYPES)[number];
 
-// Prisma query args for fetching only the fields needed by computeSubscriberState().
-// Avoids loading large Conference fields (data URL images, legal documents)
-// that cause ~5-13 MB per user in memory.
+// Only the fields computeSubscriberState() needs. Loading whole conferences instead would pull
+// their data-URL images and legal documents along, which cost ~5-13 MB per user.
 
-const conferenceSelect = {
-	select: { id: true, title: true, state: true }
-} as const;
+const conferenceColumns = { columns: { id: true, title: true, state: true } } as const;
 
-export const mailSyncUserArgs = {
-	select: {
+const mailSyncUserQuery = {
+	columns: {
 		id: true,
 		email: true,
-		given_name: true,
-		family_name: true,
+		givenName: true,
+		familyName: true,
 		wantsToReceiveGeneralInformation: true,
-		wantsJoinTeamInformation: true,
+		wantsJoinTeamInformation: true
+	},
+	with: {
 		delegationMemberships: {
-			select: {
-				conferenceId: true,
-				isHeadDelegate: true,
+			columns: { conferenceId: true, isHeadDelegate: true },
+			with: {
 				delegation: {
-					select: {
+					columns: {
 						applied: true,
 						assignedNationAlpha3Code: true,
-						assignedNonStateActorId: true,
-						conference: conferenceSelect
-					}
+						assignedNonStateActorId: true
+					},
+					with: { conference: conferenceColumns }
 				}
 			}
 		},
 		singleParticipant: {
-			select: {
-				conferenceId: true,
-				applied: true,
-				assignedRoleId: true,
-				conference: conferenceSelect
-			}
+			columns: { conferenceId: true, applied: true, assignedRoleId: true },
+			with: { conference: conferenceColumns }
 		},
 		conferenceSupervisor: {
-			select: {
-				conferenceId: true,
-				conference: conferenceSelect,
+			columns: { conferenceId: true },
+			with: {
+				conference: conferenceColumns,
 				supervisedDelegationMembers: {
-					select: {
+					columns: {},
+					with: {
 						delegation: {
-							select: {
+							columns: {
 								applied: true,
 								assignedNationAlpha3Code: true,
 								assignedNonStateActorId: true
@@ -73,25 +69,27 @@ export const mailSyncUserArgs = {
 						}
 					}
 				},
-				supervisedSingleParticipants: {
-					select: {
-						applied: true,
-						assignedRoleId: true
-					}
-				}
+				supervisedSingleParticipants: { columns: { applied: true, assignedRoleId: true } }
 			}
 		},
 		teamMember: {
-			select: {
-				conferenceId: true,
-				role: true,
-				conference: conferenceSelect
-			}
+			columns: { conferenceId: true, role: true },
+			with: { conference: conferenceColumns }
 		}
 	}
-} as const satisfies Prisma.UserDefaultArgs;
+} as const;
 
-export type MailSyncUser = Prisma.UserGetPayload<typeof mailSyncUserArgs>;
+/** One page of the users the mail sync cares about, ordered so the cursor below is stable. */
+export function findMailSyncUsers(args: { where: UserFilter; limit: number }) {
+	return db.query.user.findMany({
+		...mailSyncUserQuery,
+		where: args.where,
+		orderBy: { id: 'asc' },
+		limit: args.limit
+	});
+}
+
+export type MailSyncUser = Awaited<ReturnType<typeof findMailSyncUsers>>[number];
 
 // Listmonk subscriber as returned by the API
 

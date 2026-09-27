@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { PaperType$options } from '$houdini';
+	import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import { getPaperTypeIcon } from '$lib/utils/enumIcons';
 	import { translatePaperType } from '$lib/utils/enumTranslations';
 	import Common from './Common.svelte';
 
 	interface Props {
-		type: PaperType$options;
+		type: PapertypeEnum;
 		size?: 'xs' | 'sm' | 'md';
 	}
 

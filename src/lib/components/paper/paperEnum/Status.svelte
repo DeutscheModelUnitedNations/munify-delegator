@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { PaperStatus$options } from '$houdini';
+	import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 	import { getPaperStatusIcon } from '$lib/utils/enumIcons';
 	import { translatePaperStatus } from '$lib/utils/enumTranslations';
 	import Common from './Common.svelte';
 
 	interface Props {
-		status: PaperStatus$options;
+		status: PaperstatusEnum;
 		size?: 'xs' | 'sm' | 'md';
 	}
 

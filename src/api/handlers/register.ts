@@ -41,7 +41,7 @@ import { clientCreator } from '$api/rumble';
 if (dev || building) {
 	await clientCreator({
 		outputPath: 'src/lib/api/rumbleClient',
-		apiUrl: '/api/graphql2',
+		apiUrl: '/api/graphql',
 		useExternalUrqlClient: '../client',
 		removeExisting: false,
 		autoIncludeIdField: false

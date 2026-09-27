@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { PageData } from './$types';
 	import PaperEnum from '$lib/components/paper/paperEnum';
-	import { type PaperType$options } from '$houdini';
+	import type { PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
 	import GlobalPapersView from './GlobalPapersView.svelte';
@@ -73,7 +73,7 @@
 	let isNSA = $derived(!!data.participation?.delegationMember?.delegation?.assignedNonStateActor);
 </script>
 
-{#snippet PaperTypeBlock(paperType: PaperType$options, description: string, href: string)}
+{#snippet PaperTypeBlock(paperType: PapertypeEnum, description: string, href: string)}
 	<div class="card w-full bg-base-300 shadow-md flex flex-col items-center p-4 gap-4">
 		<PaperEnum.Type type={paperType} size="md" />
 		<p class="text-sm text-center">{description}</p>

@@ -1,8 +1,8 @@
 import { config } from './config';
-import { tasksDb } from './tasksDb';
+import { db } from '$api/db/db';
 import { IncomingWebhook } from '@slack/webhook';
 import { logTaskEnd, logTaskStart, taskWarning } from './logs';
-import { conferenceStats } from '$api/services/stats';
+import { conferenceStats } from '$api/services/statistics';
 import fs from 'fs';
 import { getLocale } from '$lib/paraglide/runtime';
 import { registerTask } from './registry';
@@ -55,20 +55,12 @@ async function runConferenceStatus(): Promise<void> {
 	const webhook = new IncomingWebhook(config.SLACK_NOTIFICATION_WEBHOOK!);
 	const startTime = logTaskStart(TASK_NAME);
 
-	const conferencesWithOpenRegistration = await tasksDb.conference.findMany({
-		where: {
-			state: {
-				equals: 'PARTICIPANT_REGISTRATION'
-			},
-			startAssignment: {
-				gte: new Date()
-			}
-		}
+	const conferencesWithOpenRegistration = await db.query.conference.findMany({
+		where: { state: 'PARTICIPANT_REGISTRATION', startAssignment: { gte: new Date() } }
 	});
 
 	for (const conference of conferencesWithOpenRegistration) {
 		const { countdowns, registrationStatistics: rs } = await conferenceStats({
-			db: tasksDb,
 			conferenceId: conference.id
 		});
 

@@ -5,12 +5,12 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/utils/enumIcons';
 	import { translatePaperType, translatePaperStatus } from '$lib/utils/enumTranslations';
-	import type { PaperStatus$options, PaperType$options } from '$houdini';
+	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
 
 	interface Paper {
 		id: string;
-		type: PaperType$options;
-		status: PaperStatus$options;
+		type: PapertypeEnum;
+		status: PaperstatusEnum;
 		createdAt: string | null;
 		updatedAt: string | null;
 		firstSubmittedAt: string | null;
@@ -55,7 +55,7 @@
 	}: Props = $props();
 
 	// Type colors for icon badges
-	const getTypeColor = (type: PaperType$options) => {
+	const getTypeColor = (type: PapertypeEnum) => {
 		switch (type) {
 			case 'POSITION_PAPER':
 				return 'text-primary';
@@ -67,7 +67,7 @@
 	};
 
 	// Status colors for icon badges
-	const getStatusColor = (status: PaperStatus$options) => {
+	const getStatusColor = (status: PaperstatusEnum) => {
 		switch (status) {
 			case 'SUBMITTED':
 				return 'text-warning';

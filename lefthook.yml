@@ -23,7 +23,8 @@ pre-push:
   parallel: true
   commands:
     test:
-      run: bun test
+      # vitest, like CI — bun's own runner cannot resolve SvelteKit's aliases and virtual modules
+      run: bun run test
     lint:
       run: bunx eslint "{push_files}" --cache --cache-strategy content
     format:

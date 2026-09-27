@@ -19,7 +19,7 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { page } from '$app/stores';
-	import type { PageData } from './$houdini';
+	import type { PageData } from './$types';
 	import type { ParticipantRow, ColumnMeta } from './types';
 	import { transformParticipants } from './dataTransform';
 	import { createColumnDefs } from './columns';

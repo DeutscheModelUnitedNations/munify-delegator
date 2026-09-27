@@ -64,7 +64,7 @@ const remoteFunctionsExchange: Exchange = ({ forward }) => {
  * `offlineExchange` nor crosstab sync. Add them only against a concrete requirement.
  */
 export const urqlClient = new Client({
-	url: '/api/graphql2',
+	url: '/api/graphql',
 	exchanges: [
 		nativeDateExchange,
 		cacheExchange({ schema }),

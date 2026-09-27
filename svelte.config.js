@@ -25,8 +25,7 @@ const config = {
 			$api: 'src/api',
 			$assets: 'src/assets',
 			$db: 'prisma',
-			$config: 'src/lib/config',
-			$houdini: './.houdini'
+			$config: 'src/lib/config'
 		}
 	}
 };

@@ -9,7 +9,6 @@
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import { cache } from '$houdini';
 	import { invalidateAll } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
@@ -22,7 +21,6 @@
 			toast.error(e.result.error.message);
 		},
 		async onUpdate(_e) {
-			cache.markStale();
 			await invalidateAll();
 		}
 	});

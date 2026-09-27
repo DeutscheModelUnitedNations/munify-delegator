@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CalendarEntryColor$options } from '$houdini';
+	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 	import CalendarDayView from './CalendarDayView.svelte';
 	import CalendarEntryDrawer from './CalendarEntryDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -18,7 +18,7 @@
 		name: string;
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
-		color: CalendarEntryColor$options;
+		color: CalendarentrycolorEnum;
 		place?: {
 			id: string;
 			name: string;

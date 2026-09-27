@@ -30,8 +30,6 @@ src/lib/paraglide
 /tasksOut/*
 empheralData/*
 
-$houdini
-.houdini
 tasksOut
 
 dev-get-data.sh

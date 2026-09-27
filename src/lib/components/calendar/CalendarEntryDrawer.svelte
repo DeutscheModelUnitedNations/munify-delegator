@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Drawer } from 'vaul-svelte';
 	import type { DrawerDirection } from 'vaul-svelte';
-	import type { CalendarEntryColor$options } from '$houdini';
+	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
 	import { browser } from '$app/environment';
 	import { getColorConfig } from './calendarColors';
 	import { translateCalendarEntryColor } from '$lib/utils/enumTranslations';
@@ -26,7 +26,7 @@
 		name: string;
 		description?: string | null;
 		fontAwesomeIcon?: string | null;
-		color: CalendarEntryColor$options;
+		color: CalendarentrycolorEnum;
 		place?: Place | null;
 		room?: string | null;
 		calendarTrackId?: string | null;

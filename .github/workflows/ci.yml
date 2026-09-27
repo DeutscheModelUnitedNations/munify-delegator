@@ -78,7 +78,6 @@ jobs:
       - run: bunx svelte-kit sync
       - run: bunx prisma generate
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
-      - run: bunx houdini generate
       - run: bun run check
 
   build:
@@ -92,7 +91,6 @@ jobs:
       - run: bunx svelte-kit sync
       - run: bunx prisma generate
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
-      - run: bunx houdini generate
       - run: bun run build
 
   # Codebase intelligence report (fallow): dead code, circular dependencies,

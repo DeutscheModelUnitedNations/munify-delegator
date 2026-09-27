@@ -4,7 +4,7 @@
 	import singlePayment from '$assets/undraw/single_payment.svg';
 	import delegationPayment from '$assets/undraw/delegation_payment.svg';
 	import groupPayment from '$assets/undraw/group_payment.svg';
-	import { type PageData } from './$houdini';
+	import { type PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 

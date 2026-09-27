@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { ConferenceState$options } from '$houdini';
+	import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		title: string;
 		longTitle?: string | null;
-		state: ConferenceState$options;
+		state: ConferencestateEnum;
 		startDate?: Date | null;
 		endDate?: Date | null;
 		emblemDataURL?: string | null;
@@ -41,7 +41,7 @@
 		return `${formatDate(start)} – ${formatDate(end)}`;
 	};
 
-	const translateState = (s: ConferenceState$options) => {
+	const translateState = (s: ConferencestateEnum) => {
 		switch (s) {
 			case 'PRE':
 				return m.conferenceStatusPre();
@@ -58,7 +58,7 @@
 		}
 	};
 
-	const getStateColor = (s: ConferenceState$options) => {
+	const getStateColor = (s: ConferencestateEnum) => {
 		switch (s) {
 			case 'PRE':
 				return 'badge-neutral';

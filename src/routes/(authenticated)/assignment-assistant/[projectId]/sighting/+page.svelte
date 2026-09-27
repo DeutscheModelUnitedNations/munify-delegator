@@ -5,7 +5,7 @@
 	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
 	import Application from './Application.svelte';
-	import { graphql } from '$houdini';
+
 	import SchoolFilter from './SchoolFilter.svelte';
 	import codenmz from '$lib/helpers/codenamize';
 	import { getConference, loadProjects, getApplications } from '../appData.svelte';

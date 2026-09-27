@@ -1,4 +1,3 @@
-import type { Conference } from '@prisma/client';
 import { listmonkClient } from '../apis/listmonk/listmonkClient';
 import { taskError } from '../logs';
 import { GLOBAL_LIST_TYPES, CONFERENCE_LIST_TYPES } from './types';
@@ -21,7 +20,7 @@ function errorToString(res: { error?: unknown }): string | undefined {
  * Returns a Map of listName -> listId for O(1) lookups.
  */
 export async function ensureListsExist(
-	conferences: Conference[]
+	conferences: { id: string; title: string }[]
 ): Promise<Map<string, number> | undefined> {
 	const listNameToId = new Map<string, number>();
 

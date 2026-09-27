@@ -1,6 +1,5 @@
 import { config } from '../config';
-import { tasksDb } from '../tasksDb';
-import { mailSyncUserArgs, type MailSyncUser } from './types';
+import { findMailSyncUsers, type MailSyncUser } from './types';
 import dayjs from 'dayjs';
 
 /**
@@ -16,38 +15,21 @@ export async function processUsersInBatches(
 	let totalProcessed = 0;
 	let lastId: string | undefined;
 
-	const whereClause = {
+	const participatesInARecentConference = {
 		OR: [
-			{
-				delegationMemberships: {
-					some: { conference: { endConference: { lt } } }
-				}
-			},
-			{
-				singleParticipant: {
-					some: { conference: { endConference: { lt } } }
-				}
-			},
-			{
-				conferenceSupervisor: {
-					some: { conference: { endConference: { lt } } }
-				}
-			},
-			{
-				teamMember: {
-					some: { conference: { endConference: { lt } } }
-				}
-			}
+			{ delegationMemberships: { conference: { endConference: { lt } } } },
+			{ singleParticipant: { conference: { endConference: { lt } } } },
+			{ conferenceSupervisor: { conference: { endConference: { lt } } } },
+			{ teamMember: { conference: { endConference: { lt } } } }
 		]
 	};
 
 	while (true) {
-		const batch = await tasksDb.user.findMany({
-			take: batchSize,
-			...(lastId ? { skip: 1, cursor: { id: lastId } } : {}),
-			orderBy: { id: 'asc' },
-			where: whereClause,
-			...mailSyncUserArgs
+		const batch = await findMailSyncUsers({
+			where: lastId
+				? { AND: [participatesInARecentConference, { id: { gt: lastId } }] }
+				: participatesInARecentConference,
+			limit: batchSize
 		});
 
 		if (batch.length === 0) break;

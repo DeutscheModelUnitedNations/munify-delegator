@@ -1,11 +1,11 @@
-import type { PaperStatus$options } from '$houdini';
+import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 
 export interface VersionForComparison {
 	id: string;
 	version: number;
 	content?: any;
 	createdAt: string | Date;
-	status?: PaperStatus$options | null;
+	status?: PaperstatusEnum | null;
 }
 
 export interface DiffSegment {
