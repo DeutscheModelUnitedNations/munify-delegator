@@ -1,38 +1,8 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { stringify } from 'csv-stringify/browser/esm/sync';
-
-	const getCommitteeUserData = graphql(`
-		query getCommitteeUserData($id: String!) {
-			findUniqueCommittee(where: { id: $id }) {
-				id
-				abbreviation
-				name
-				conference {
-					id
-					title
-				}
-				delegationMembers {
-					id
-					delegation {
-						id
-						assignedNation {
-							alpha3Code
-							alpha2Code
-						}
-					}
-					user {
-						id
-						given_name
-						family_name
-						email
-					}
-				}
-			}
-		}
-	`);
 
 	interface Props {
 		committee: {
@@ -48,50 +18,59 @@
 
 	const downloadCommitteeData = async () => {
 		loading = true;
-		const { data } = await getCommitteeUserData.fetch({ variables: { id: committee.id } });
-		if (
-			!data ||
-			!data?.findUniqueCommittee ||
-			!data?.findUniqueCommittee?.delegationMembers ||
-			data?.findUniqueCommittee?.delegationMembers.length === 0
-		) {
-			alert('No data found');
+		try {
+			const committeeData = await client.query.committee({
+				__args: { id: committee.id },
+				id: true,
+				abbreviation: true,
+				name: true,
+				conference: { id: true, title: true },
+				delegationMembers: {
+					id: true,
+					delegation: {
+						id: true,
+						assignedNation: { alpha3Code: true, alpha2Code: true }
+					},
+					user: { id: true, givenName: true, familyName: true, email: true }
+				}
+			});
+
+			if (committeeData.delegationMembers.length === 0) {
+				alert('No data found');
+				return;
+			}
+
+			const csv = [
+				[m.alpha3Code(), m.nation(), m.firstName(), m.lastName(), m.email()],
+				...[...committeeData.delegationMembers]
+					.sort((a, b) =>
+						(a.delegation.assignedNation?.alpha3Code ?? '').localeCompare(
+							b.delegation.assignedNation?.alpha3Code ?? ''
+						)
+					)
+					.map((member) => [
+						member.delegation.assignedNation?.alpha3Code.toUpperCase(),
+						member.delegation.assignedNation?.alpha3Code
+							? getFullTranslatedCountryNameFromISO3Code(
+									member.delegation.assignedNation.alpha3Code
+								)
+							: '',
+						member.user.givenName,
+						member.user.familyName,
+						member.user.email
+					])
+			];
+
+			const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${committeeData.conference.title.replace(' ', '_')}_${committee.abbreviation}_delegation_members.csv`;
+			a.click();
+			window.URL.revokeObjectURL(url);
+		} finally {
 			loading = false;
 		}
-
-		const csv = [
-			[m.alpha3Code(), m.nation(), m.firstName(), m.lastName(), m.email()],
-			...data!
-				.findUniqueCommittee!.delegationMembers.sort((a, b) => {
-					if (
-						!a.delegation.assignedNation?.alpha3Code ||
-						!b.delegation.assignedNation?.alpha3Code
-					) {
-						return 0;
-					}
-					return a.delegation.assignedNation?.alpha3Code.localeCompare(
-						b.delegation.assignedNation?.alpha3Code
-					);
-				})
-				.map((member) => [
-					member.delegation.assignedNation?.alpha3Code.toUpperCase(),
-					member.delegation.assignedNation?.alpha3Code
-						? getFullTranslatedCountryNameFromISO3Code(member.delegation.assignedNation?.alpha3Code)
-						: '',
-					member.user.given_name,
-					member.user.family_name,
-					member.user.email
-				])
-		];
-
-		const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
-		const url = window.URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${data!.findUniqueCommittee!.conference.title.replace(' ', '_')}_${committee.abbreviation}_delegation_members.csv`;
-		a.click();
-		window.URL.revokeObjectURL(url);
-		loading = false;
 	};
 </script>
 
