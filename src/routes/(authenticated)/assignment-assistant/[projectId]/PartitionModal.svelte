@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getDelegationApplication, splitDelegation, type Member } from './appData.svelte';
 
 	interface Props {
@@ -15,24 +15,39 @@
 
 	let buckets = $state<Member[][]>([[]]);
 
-	const getUserDetailsQuery = graphql(`
-		query GetUserDetailsForPartition($userIds: [String!]) {
-			findManyUsers(where: { id: { in: $userIds } }) {
-				id
-				given_name
-				family_name
-			}
-		}
-	`);
+	let users = $state<{ id: string; givenName: string | null; familyName: string | null }[]>([]);
+	let usersLoading = $state(false);
+	let usersFailed = $state(false);
 
 	$effect(() => {
 		if (!id) return;
-		getUserDetailsQuery.fetch({
-			variables: {
-				userIds: buckets.flat().map((x) => x.user.id)
-			}
-		});
+		const userIds = buckets.flat().map((member) => member.user.id);
+		// An empty `in` list would compile to invalid SQL, so there is nothing to ask for.
+		if (userIds.length === 0) {
+			users = [];
+			return;
+		}
+		usersLoading = true;
+		usersFailed = false;
+		void client.query
+			.users({
+				__args: { where: { id: { in: userIds } } },
+				id: true,
+				givenName: true,
+				familyName: true
+			})
+			.then((result) => {
+				users = result;
+			})
+			.catch(() => {
+				usersFailed = true;
+			})
+			.finally(() => {
+				usersLoading = false;
+			});
 	});
+
+	const nameOf = (userId: string) => users.find((user) => user.id === userId);
 
 	$effect(() => {
 		if (!id) {
@@ -90,15 +105,10 @@
 							>
 								<i class="fas fa-grip-dots"></i>
 								<p>
-									<LoadingData
-										fetching={$getUserDetailsQuery.fetching}
-										error={$getUserDetailsQuery.error}
-									>
+									<LoadingData fetching={usersLoading} error={usersFailed}>
 										{formatNames(
-											$getUserDetailsQuery.data?.findManyUsers.find((u) => u.id === member.user.id)
-												?.given_name,
-											$getUserDetailsQuery.data?.findManyUsers.find((u) => u.id === member.user.id)
-												?.family_name
+											nameOf(member.user.id)?.givenName ?? undefined,
+											nameOf(member.user.id)?.familyName ?? undefined
 										)}
 									</LoadingData>
 									{#if member.isHeadDelegate}
