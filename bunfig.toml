@@ -1,0 +1,5 @@
+[test]
+# `bun test` uses Bun's own runner, not the `test` script, and scans the whole repo by default -
+# which picks up the Playwright specs in e2e/ and fails, since they need the Playwright runner.
+# Unit tests live in src/; run the e2e suite with `bun run test:e2e`.
+root = "src"
