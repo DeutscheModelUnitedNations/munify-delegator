@@ -143,7 +143,10 @@ async function completeMandatoryProfile(page: Page, claims: TestUserClaims): Pro
 
 	await page.locator('input[name="given_name"]').fill(claims.given_name);
 	await page.locator('input[name="family_name"]').fill(claims.family_name);
-	await page.locator('#gender').selectOption('NO_STATEMENT');
+	// formsnap generates a random `id` per field (`useId()`) rather than one derived from the
+	// field name, so `#gender` no longer matches anything - select by `name` instead, like the
+	// two inputs above.
+	await page.locator('select[name="gender"]').selectOption('NO_STATEMENT');
 
 	const beforePath = new URL(page.url()).pathname;
 	const saveButton = page.locator('.card-body form button.btn-primary').first();

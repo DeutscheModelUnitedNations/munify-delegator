@@ -50,10 +50,10 @@ test('a head delegate can generate a delegation payment reference covering all m
 
 	const feeRes = await headPage.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniqueConference(where: { id: "${conferenceId}" }) { feeAmount } }`
+			query: `query { conference(id: "${conferenceId}") { feeAmount } }`
 		}
 	});
-	const feeAmount = (await feeRes.json())?.data?.findUniqueConference?.feeAmount as number;
+	const feeAmount = (await feeRes.json())?.data?.conference?.feeAmount as number;
 	expect(feeAmount).toBeGreaterThan(0);
 
 	await headPage.goto(`/dashboard/${conferenceId}/payment/delegation`);

@@ -26,9 +26,9 @@ test('an author can edit an existing draft paper and submit it', async ({ page }
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniquePaper(where: { id: "${E2E_DRAFT_PAPER_ID}" }) { status } }`
+			query: `query { paper(id: "${E2E_DRAFT_PAPER_ID}") { status } }`
 		}
 	});
-	const data = (await res.json())?.data?.findUniquePaper;
+	const data = (await res.json())?.data?.paper;
 	expect(data?.status).toBe('SUBMITTED');
 });

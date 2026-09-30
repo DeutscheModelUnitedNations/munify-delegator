@@ -49,9 +49,9 @@ test.fixme('an admin can change a conference setting through the confirm-preview
 
 		const res = await page.request.post('/api/graphql', {
 			data: {
-				query: `query { findUniqueConference(where: { id: "${E2E_CONFERENCE_ID}" }) { location } }`
+				query: `query { conference(id: "${E2E_CONFERENCE_ID}") { location } }`
 			}
 		});
-		expect((await res.json())?.data?.findUniqueConference?.location).toBe(newLocation);
+		expect((await res.json())?.data?.conference?.location).toBe(newLocation);
 	}).toPass({ timeout: 60_000 });
 });

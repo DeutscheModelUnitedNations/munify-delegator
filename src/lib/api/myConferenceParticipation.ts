@@ -275,6 +275,13 @@ export type MyConferenceParticipation = Awaited<ReturnType<typeof fetchMyConfere
  * the mutations publish.
  */
 export async function fetchMyParticipation(conferenceId: string) {
+	// `page.params.conferenceId!` at call sites asserts this is always set, but a `$derived(await
+	// …)` can re-run once during first hydration before SvelteKit's reactive `page` state has
+	// settled, passing `undefined` through the assertion. Rumble's client serializes an `undefined`
+	// argument as `null` rather than omitting it, which a non-nullable `ID!` argument then rejects -
+	// so skip the request rather than fire one that can only fail.
+	if (!conferenceId) return undefined;
+
 	const user = await getCurrentUser();
 	return fetchMyConferenceParticipation({ userId: user.sub, conferenceId });
 }

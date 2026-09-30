@@ -72,6 +72,27 @@ abilityBuilder.user.allow('read').when((ctx) => {
 		: undefined;
 });
 
+// Project management and participant care see the delegates, single participants, supervisors
+// and waiting-list entrants of the conferences they manage. Dropped during the CASL -> rumble
+// port (present in the legacy abilities/entities/user.ts, absent here) - without this, reading
+// a participant's own User record 404s the whole page for anything driven by a non-nullable
+// `user` relation, e.g. the management assignment project.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const id = userId(ctx);
+	if (!id) return undefined;
+	const team = { teamMembers: { user: { id }, role: { in: [...PARTICIPANT_CARE_ROLES] } } };
+	return {
+		where: {
+			OR: [
+				{ delegationMemberships: { delegation: { conference: team } } },
+				{ singleParticipant: { conference: team } },
+				{ conferenceSupervisor: { conference: team } },
+				{ waitingListEntry: { conference: team } }
+			]
+		}
+	};
+});
+
 // Supervisors see the other supervisors of the participants they share.
 // Carried over from CASL with its original caveat that this is broader than needed.
 abilityBuilder.user.allow('read').when((ctx) => {

@@ -103,10 +103,10 @@ test('a head delegate can set preferences and complete their delegation signup',
 
 	const res = await headPage.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyDelegations(where: { entryCode: { equals: "${entryCode}" } }) { applied appliedForRoles { id } } }`
+			query: `query { delegations(where: { entryCode: { eq: "${entryCode}" } }) { applied appliedForRoles { id } } }`
 		}
 	});
 	const json = await res.json();
-	expect(json.data?.findManyDelegations?.[0]?.applied).toBe(true);
-	expect(json.data?.findManyDelegations?.[0]?.appliedForRoles?.length).toBe(3);
+	expect(json.data?.delegations?.[0]?.applied).toBe(true);
+	expect(json.data?.delegations?.[0]?.appliedForRoles?.length).toBe(3);
 });

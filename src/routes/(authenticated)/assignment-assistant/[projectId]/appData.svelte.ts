@@ -34,8 +34,14 @@ export const AppliedForDelegationRoleSchema = z.object({
 	rank: z.number(),
 	nation: NationSchema.nullish(),
 	nonStateActor: NonStateActorSchema.nullish(),
-	fontAwesomeIcon: z.undefined(),
-	name: z.undefined()
+	// `.optional()` on top of `z.undefined()`: this only discriminates the role-application union
+	// from AppliedForSingleRoleSchema below, and a `JSON` GraphQL scalar round-trips through real
+	// JSON, which drops `undefined`-valued keys entirely (`JSON.stringify({ a: undefined })` is
+	// `"{}"`) - so the key is always *absent* on arrival, never present-with-undefined. Zod 4's
+	// `z.undefined()` alone requires the key to exist (unlike zod 3, which this schema was written
+	// against), so it rejects every real payload without `.optional()`.
+	fontAwesomeIcon: z.undefined().optional(),
+	name: z.undefined().optional()
 });
 
 export const UserSchema = z.object({
@@ -58,9 +64,10 @@ export const AppliedForSingleRoleSchema = z.object({
 	id: z.string(),
 	fontAwesomeIcon: z.string().nullable(),
 	name: z.string(),
-	rank: z.undefined(),
-	nation: z.undefined(),
-	nonStateActor: z.undefined()
+	// See the matching comment on AppliedForDelegationRoleSchema above.
+	rank: z.undefined().optional(),
+	nation: z.undefined().optional(),
+	nonStateActor: z.undefined().optional()
 });
 
 export const SightingPropsSchema = z.object({
@@ -96,8 +103,9 @@ export const DelegationSchema = z.object({
 	appliedForRoles: z.array(AppliedForDelegationRoleSchema),
 	members: z.array(MemberSchema),
 	school: z.string().optional(),
-	supervisors: z.undefined(),
-	user: z.undefined(),
+	// See the matching comment on AppliedForDelegationRoleSchema above.
+	supervisors: z.undefined().optional(),
+	user: z.undefined().optional(),
 	splittedFrom: z.string().nullish(),
 	splittedInto: z.array(z.string()).nullish(),
 	...SightingPropsSchema.shape,
@@ -111,9 +119,10 @@ export const SingleParticipantSchema = z.object({
 	appliedForRoles: z.array(AppliedForSingleRoleSchema),
 	school: z.string().optional(),
 	supervisors: z.optional(z.array(SupervisorSchema)),
-	members: z.undefined(),
-	splittedFrom: z.undefined(),
-	splittedInto: z.undefined(),
+	// See the matching comment on AppliedForDelegationRoleSchema above.
+	members: z.undefined().optional(),
+	splittedFrom: z.undefined().optional(),
+	splittedInto: z.undefined().optional(),
 	...SightingPropsSchema.shape,
 	...SingleAssignmentSchema.shape
 });

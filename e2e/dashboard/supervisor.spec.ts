@@ -42,10 +42,10 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	// --- verify both changes actually persisted server-side, not just client-side state ---
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyConferenceSupervisors(where: { user: { email: { equals: "${supervisor.email}" } } }) { plansOwnAttendenceAtConference connectionCode } }`
+			query: `query { conferenceSupervisors(where: { user: { email: { eq: "${supervisor.email}" } } }) { plansOwnAttendenceAtConference connectionCode } }`
 		}
 	});
-	const data = (await res.json())?.data?.findManyConferenceSupervisors?.[0];
+	const data = (await res.json())?.data?.conferenceSupervisors?.[0];
 	expect(data?.plansOwnAttendenceAtConference).toBe(false);
 	expect(data?.connectionCode).not.toBe(originalCode);
 });

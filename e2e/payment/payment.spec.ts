@@ -49,10 +49,10 @@ test('a participant can generate a payment reference and an admin can mark it re
 			async () => {
 				const res = await adminPage.request.post('/api/graphql', {
 					data: {
-						query: `query { findUniquePaymentTransaction(where: { id: "${reference}" }) { recievedAt } }`
+						query: `query { paymentTransaction(id: "${reference}") { recievedAt } }`
 					}
 				});
-				return (await res.json())?.data?.findUniquePaymentTransaction?.recievedAt ?? null;
+				return (await res.json())?.data?.paymentTransaction?.recievedAt ?? null;
 			},
 			{ timeout: 15_000 }
 		)

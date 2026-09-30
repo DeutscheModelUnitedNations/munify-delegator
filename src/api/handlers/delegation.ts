@@ -217,6 +217,12 @@ schemaBuilder.mutationFields((t) => ({
 					throw new GraphQLError('No new head delegate member found');
 				}
 
+				// Order is safe here only because `updatable` above is checked once, up front, and
+				// these writes go by raw id rather than re-deriving an ability filter per statement.
+				// The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
+				// ability on every statement inside the transaction, so demoting the acting head
+				// delegate first revoked their own permission before the promotion ran. Don't
+				// reintroduce a per-statement ability re-check here without also promoting first.
 				await db.transaction(async (tx) => {
 					await tx
 						.update(schema.delegationMember)

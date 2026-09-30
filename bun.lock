@@ -26,7 +26,7 @@
         "@inlang/cli": "^3.3.3",
         "@inlang/paraglide-js": "^2.24.1",
         "@lingual/i18n-check": "^0.9.5",
-        "@m1212e/rumble": "^0.23.23",
+        "@m1212e/rumble": "^0.23.24",
         "@magidoc/plugin-svelte-marked": "^6.3.0",
         "@opentelemetry/exporter-trace-otlp-http": "^0.57.2",
         "@opentelemetry/instrumentation": "^0.57.2",
@@ -556,7 +556,7 @@
 
     "@lix-js/sdk-win32-x64": ["@lix-js/sdk-win32-x64@0.17.0", "", { "os": "win32", "cpu": "x64" }, "sha512-/uYvg0c5R9+BtQ1aJqBE9VCwNSYSaZORUjo5u6ukAFkH7XuN1ZnpTzoI9K6HE82/dxlCymMsP3Ga/rQVpQn4hA=="],
 
-    "@m1212e/rumble": ["@m1212e/rumble@0.23.23", "", { "dependencies": { "@escape.tech/graphql-armor": "^3.2.0", "@graphql-yoga/plugin-disable-introspection": "^2.22.2", "@opentelemetry/api": "^1.9.1", "@opentelemetry/semantic-conventions": "^1.42.0", "@pothos/core": "^4.13.0", "@pothos/plugin-drizzle": "^0.17.4", "@pothos/plugin-smart-subscriptions": "^4.1.4", "@pothos/plugin-tracing": "^1.1.2", "@pothos/plugin-validation": "^4.3.2", "@pothos/tracing-opentelemetry": "^1.2.0", "@urql/core": "^6.0.3", "@urql/exchange-graphcache": "^9.0.1", "@urql/introspection": "^1.2.1", "dataloader": "^2.2.3", "devalue": "^5.8.1", "es-toolkit": "^1.49.0", "graphql-scalars": "^1.25.0", "graphql-yoga": "^5.21.2", "lib-address": "^0.7.0", "libphonenumber-js": "^1.13.12", "pluralize": "^8.0.0", "wonka": "^6.3.6", "zod": "^4.5.4" }, "peerDependencies": { "@m1212e/sofa-api": "^0.18.11", "drizzle-orm": "^1", "graphql": "^16", "graphql-ws": "^6", "svelte": "^5", "typescript": "^4 || ^5 || ^6" }, "optionalPeers": ["@m1212e/sofa-api", "graphql-ws", "svelte"] }, "sha512-KWEjR/Xxic/B4RUEMyhW3TqPGYOSddJGzwMQ4a1T849OdFRGW13mTX/rHwaWwy/NjQf+IYRg7XJxj1pz3m+Izg=="],
+    "@m1212e/rumble": ["@m1212e/rumble@0.23.24", "", { "dependencies": { "@escape.tech/graphql-armor": "^3.2.0", "@graphql-yoga/plugin-disable-introspection": "^2.22.2", "@opentelemetry/api": "^1.9.1", "@opentelemetry/semantic-conventions": "^1.42.0", "@pothos/core": "^4.13.0", "@pothos/plugin-drizzle": "^0.17.4", "@pothos/plugin-smart-subscriptions": "^4.1.4", "@pothos/plugin-tracing": "^1.1.2", "@pothos/plugin-validation": "^4.3.2", "@pothos/tracing-opentelemetry": "^1.2.0", "@urql/core": "^6.0.3", "@urql/exchange-graphcache": "^9.0.1", "@urql/introspection": "^1.2.1", "dataloader": "^2.2.3", "devalue": "^5.8.1", "es-toolkit": "^1.49.0", "graphql-scalars": "^1.25.0", "graphql-yoga": "^5.21.2", "lib-address": "^0.7.0", "libphonenumber-js": "^1.13.12", "pluralize": "^8.0.0", "wonka": "^6.3.6", "zod": "^4.5.4" }, "peerDependencies": { "@m1212e/sofa-api": "^0.18.11", "drizzle-orm": "^1", "graphql": "^16", "graphql-ws": "^6", "svelte": "^5", "typescript": "^4 || ^5 || ^6" }, "optionalPeers": ["@m1212e/sofa-api", "graphql-ws", "svelte"] }, "sha512-dp6KO2C6L/yJt18U85V4354KXdnfFQsYYwqDZcl6izOND8juF+xwtEltghobsdz8b8g121uVVCmYmQeaypBi3A=="],
 
     "@m1212e/sveltekit-oidc": ["@m1212e/sveltekit-oidc@0.0.46", "", { "dependencies": { "jose": "^6.2.3", "openid-client": "^6.8.4", "typebox": "^1.1.38" }, "peerDependencies": { "svelte": "^5.0.0" } }, "sha512-IwrsxIbyWZj/kxCPhRQjwk6UVd596iA+gP0slTTnM/f2GH0BQKYUa0Ef4+Ohqdo71g2MFvxs7Xhlkyvh2Nh9Aw=="],
 

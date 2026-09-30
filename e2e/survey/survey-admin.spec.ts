@@ -38,10 +38,10 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	// with no stable hook, and repeated runs leave several surveys on this page.
 	const created = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManySurveyQuestions(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, title: { equals: "${surveyTitle}" } }) { id } }`
+			query: `query { surveyQuestions(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, title: { eq: "${surveyTitle}" } }) { id } }`
 		}
 	});
-	const surveyId = (await created.json())?.data?.findManySurveyQuestions?.[0]?.id;
+	const surveyId = (await created.json())?.data?.surveyQuestions?.[0]?.id;
 	expect(surveyId, 'survey question was not persisted').toBeTruthy();
 
 	await page.locator(`a[href$="/survey/${surveyId}"]`).first().click();
@@ -70,10 +70,10 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	// Confirm it actually persisted rather than only rendering optimistically.
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManySurveyQuestions(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, title: { equals: "${surveyTitle}" } }) { title options { title upperLimit } } }`
+			query: `query { surveyQuestions(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, title: { eq: "${surveyTitle}" } }) { title options { title upperLimit } } }`
 		}
 	});
-	const question = (await res.json())?.data?.findManySurveyQuestions?.[0];
+	const question = (await res.json())?.data?.surveyQuestions?.[0];
 	expect(question?.title).toBe(surveyTitle);
 	expect(question?.options).toEqual([{ title: optionTitle, upperLimit: 5 }]);
 });

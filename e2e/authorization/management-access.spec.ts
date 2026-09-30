@@ -46,12 +46,12 @@ test('a plain participant cannot read other participants through the API', async
 	// behind it must refuse too, otherwise the route guard is the only thing protecting the data.
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyConferenceParticipantStatuss(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" } }) { id } }`
+			query: `query { conferenceParticipantStatuses(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" } }) { id } }`
 		}
 	});
 	const json = await res.json();
 
-	const rows = json?.data?.findManyConferenceParticipantStatuss;
+	const rows = json?.data?.conferenceParticipantStatuses;
 	// Either the resolver errors, or it scopes the result to nothing this user may see.
 	expect(json.errors !== undefined || (Array.isArray(rows) && rows.length === 0)).toBe(true);
 });

@@ -72,11 +72,11 @@ test('an admin can apply a nation assignment to a delegation via the assignment 
 			async () => {
 				const res = await page.request.post('/api/graphql', {
 					data: {
-						query: `query { findUniqueDelegation(where: { id: "${E2E_ASSIGNMENT_DELEGATION_ID}" }) { assignedNation { alpha3Code } } }`
+						query: `query { delegation(id: "${E2E_ASSIGNMENT_DELEGATION_ID}") { assignedNation { alpha3Code } } }`
 					}
 				});
 				const json = await res.json();
-				return json?.data?.findUniqueDelegation?.assignedNation?.alpha3Code;
+				return json?.data?.delegation?.assignedNation?.alpha3Code;
 			},
 			{ timeout: 15_000 }
 		)

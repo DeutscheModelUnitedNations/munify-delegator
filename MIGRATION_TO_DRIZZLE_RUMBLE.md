@@ -416,10 +416,19 @@ Added scripts: `db:generate`, `db:migrate`, `db:push`, `db:studio` (chase's name
 **Verified**: `typecheck` clean, `check` 0 errors / 127 warnings, `test` 153/153,
 `lint` 0 errors, `format:check` clean.
 
-**Open item for deployment (Phase F):** the baseline migration contains full `CREATE TABLE`
+**Deployment (resolved 2026-09-29):** the baseline migration contains full `CREATE TABLE`
 statements, so it must be marked as already-applied on existing databases rather than run —
-`drizzle-kit migrate` against production would fail on tables that already exist. Decide
-whether to insert the journal row manually or to run `migrate` only on fresh databases.
+`drizzle-kit migrate` against production would fail on tables that already exist.
+`bun run db:migrate:baseline` (`src/api/db/markBaselineApplied.ts`) does this: it copies just the
+baseline folder into a temp dir and calls drizzle-orm's migrator in `init` mode against it, which
+records the baseline as applied without executing its SQL. `init` isn't exposed on the public
+`MigrationConfig` type (it's wired for drizzle-kit's own `pull --init`, not `migrate()`), but the
+runtime supports it as a plain property — see the `TYPE-SAFETY-EXCEPTION` comment in that file.
+Verified end-to-end against a throwaway database: `db:migrate:baseline` then `db:migrate` applies
+exactly the two follow-up migrations and reproduces the same snake_case schema as a fresh
+`db:migrate` run; running `db:migrate:baseline` again against an already-migrated database is a
+no-op. Run it once against production before the first `db:migrate` of this branch; skip it
+entirely for any database that never had the pre-Drizzle schema (dev, CI, a fresh staging DB).
 
 ### Phase D — API: Pothos/CASL → Rumble handlers — **authorization layer DONE (2026-09-25)**
 

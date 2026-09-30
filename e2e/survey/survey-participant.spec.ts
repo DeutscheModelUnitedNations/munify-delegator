@@ -43,10 +43,10 @@ test('a participant can answer a published survey from their dashboard', async (
 			async () => {
 				const res = await page.request.post('/api/graphql', {
 					data: {
-						query: `query { findManySurveyAnswers(where: { questionId: { equals: "${E2E_SURVEY_QUESTION_ID}" } }) { option { id } } }`
+						query: `query { surveyAnswers(where: { questionId: { eq: "${E2E_SURVEY_QUESTION_ID}" } }) { option { id } } }`
 					}
 				});
-				const rows = (await res.json())?.data?.findManySurveyAnswers;
+				const rows = (await res.json())?.data?.surveyAnswers;
 				return Array.isArray(rows)
 					? rows.map((r: { option: { id: string } }) => r.option.id)
 					: undefined;

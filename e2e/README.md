@@ -22,7 +22,7 @@ export DATABASE_URL="postgres://postgres:postgres@localhost:15432/postgres"
 export PUBLIC_OIDC_AUTHORITY="http://localhost:18080/default/.well-known/openid-configuration"
 export E2E_PORT=5174
 
-bunx prisma migrate deploy   # first time only
+bun run db:migrate   # first time only
 bunx playwright test
 ```
 

@@ -21,9 +21,9 @@ test('a participant can submit a waiting-list entry', async ({ page }) => {
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniqueWaitingListEntry(where: { conferenceId_userId: { conferenceId: "${E2E_CONFERENCE_ID}", userId: "${participant.preferred_username}" } }) { school } }`
+			query: `query { waitingListEntries(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, userId: { eq: "${participant.preferred_username}" } }) { school } }`
 		}
 	});
-	const entry = (await res.json())?.data?.findUniqueWaitingListEntry;
+	const entry = (await res.json())?.data?.waitingListEntries?.[0];
 	expect(entry?.school).toBe('E2E Test School');
 });

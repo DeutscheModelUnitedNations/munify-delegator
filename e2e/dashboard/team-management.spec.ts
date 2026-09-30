@@ -36,10 +36,10 @@ test('a project manager can invite a team member by email', async ({ page }) => 
 			async () => {
 				const res = await page.request.post('/api/graphql', {
 					data: {
-						query: `query { findManyTeamMemberInvitations(where: { conferenceId: { equals: "${E2E_CONFERENCE_ID}" }, email: { equals: "${invitee}" } }) { email role } }`
+						query: `query { teamMemberInvitations(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, email: { eq: "${invitee}" } }) { email role } }`
 					}
 				});
-				return (await res.json())?.data?.findManyTeamMemberInvitations?.length ?? 0;
+				return (await res.json())?.data?.teamMemberInvitations?.length ?? 0;
 			},
 			{ timeout: 15_000 }
 		)
