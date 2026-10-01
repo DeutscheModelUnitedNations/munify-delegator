@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
 	import { datetimeLocalToDate, formatInTimezone } from '$lib/helpers/conferenceTimezoneDate';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const surveys = $derived(
 		await client.liveQuery.surveyQuestions({
 			__args: {
-				where: { conferenceId: { eq: page.params.conferenceId! } },
+				where: { conferenceId: { eq: params.conferenceId } },
 				orderBy: { createdAt: 'desc' }
 			},
 			id: true,
@@ -28,14 +30,16 @@
 		})
 	);
 
-	const conferenceTimezone = $derived(
-		(
-			await client.liveQuery.conference({
-				__args: { id: page.params.conferenceId! },
-				timezone: true
-			})
-		)?.timezone ?? 'UTC'
+	// Two deriveds, not one: reading `.timezone` inside the derived that creates the live query
+	// subscribes that derived to its own query, so the query's first update re-runs it, which
+	// creates a new query, which updates again - the page never stops re-rendering.
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: params.conferenceId },
+			timezone: true
+		})
 	);
+	const conferenceTimezone = $derived(conference?.timezone ?? 'UTC');
 	let visibleSurveys = $derived(surveys.filter((s) => !s.hidden));
 	let hiddenSurveys = $derived(surveys.filter((s) => s.hidden));
 
@@ -74,7 +78,7 @@
 		try {
 			await client.mutate.createSurveyQuestion({
 				__args: {
-					conferenceId: page.params.conferenceId!,
+					conferenceId: params.conferenceId,
 					title: createTitle,
 					description: createDescription,
 					deadline: datetimeLocalToDate(createDeadline, conferenceTimezone),
@@ -185,7 +189,7 @@
 					<i class="fa-duotone fa-box-archive"></i>
 					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 				</button>
-				<a href="/management/{page.params.conferenceId!}/survey/{survey.id}" class="btn btn-sm">
+				<a href="/management/{params.conferenceId}/survey/{survey.id}" class="btn btn-sm">
 					<i class="fas fa-edit"></i>
 					{m.edit()}
 				</a>
@@ -266,7 +270,7 @@
 			</div>
 		{/if}
 
-		<a class="btn btn-primary" href="/management/{page.params.conferenceId!}/survey/{survey.id}">
+		<a class="btn btn-primary" href="/management/{params.conferenceId}/survey/{survey.id}">
 			{m.details()}
 		</a>
 	</div>

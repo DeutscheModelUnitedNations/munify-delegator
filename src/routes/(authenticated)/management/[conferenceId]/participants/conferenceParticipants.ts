@@ -71,7 +71,22 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 		}),
 		client.liveQuery.teamMembers({ __args: inConference, role: true, user: participantUser }),
 		client.liveQuery.conferenceParticipantStatuses({
-			__args: inConference,
+			__args: {
+				where: {
+					conferenceId: { eq: conferenceId },
+					// Only the statuses of people registered here, which are the rows the table joins
+					// them onto. A status can outlive its registration, and the non-nullable `user` of
+					// someone the caller may no longer read would fail the whole query.
+					user: {
+						OR: [
+							{ delegationMemberships: { conferenceId: { eq: conferenceId } } },
+							{ singleParticipant: { conferenceId: { eq: conferenceId } } },
+							{ conferenceSupervisor: { conferenceId: { eq: conferenceId } } },
+							{ teamMember: { conferenceId: { eq: conferenceId } } }
+						]
+					}
+				}
+			},
 			user: { id: true },
 			paymentStatus: true,
 			termsAndConditions: true,

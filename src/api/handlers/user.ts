@@ -1,6 +1,7 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
+	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	isSystemAdmin,
 	systemAdmin,
@@ -91,6 +92,20 @@ abilityBuilder.user.allow('read').when((ctx) => {
 			]
 		}
 	};
+});
+
+// Reviewers and conference management see the authors of the conference's papers. They can read
+// every paper there, and a paper's `author` is non-nullable, so without this a single paper by
+// someone the team member may not otherwise read fails the whole review page.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const id = userId(ctx);
+	return id
+		? {
+				where: {
+					papers: { conference: { teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } } } }
+				}
+			}
+		: undefined;
 });
 
 // Supervisors see the other supervisors of the participants they share.

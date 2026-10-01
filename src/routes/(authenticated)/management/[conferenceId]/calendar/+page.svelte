@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import { fetchConferenceCalendar } from './conferenceCalendar';
 	import { m } from '$lib/paraglide/messages';
 	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
@@ -12,6 +11,9 @@
 		calendarDayExportSchema,
 		type CalendarDayExportData
 	} from '$lib/schemata/calendarDayExport';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 	// === Plus Code (Open Location Code) utilities ===
 	const PLUS_CODE_ALPHABET = '23456789CFGHJMPQRVWX';
 
@@ -89,7 +91,7 @@
 		return encodePlusCode(cLat, cLng);
 	}
 
-	const calendar = $derived(await fetchConferenceCalendar(page.params.conferenceId!));
+	const calendar = $derived(await fetchConferenceCalendar(params.conferenceId));
 	const calendarDays = $derived(calendar.calendarDays);
 	const places = $derived(calendar.places);
 
@@ -261,7 +263,7 @@
 			if (importData) {
 				await client.mutate.importCalendarDay({
 					__args: {
-						conferenceId: page.params.conferenceId!,
+						conferenceId: params.conferenceId,
 						name: dayName,
 						date: new Date(dayDate),
 						sortOrder: daySortOrder,
@@ -272,7 +274,7 @@
 			} else {
 				await client.mutate.createCalendarDay({
 					__args: {
-						conferenceId: page.params.conferenceId!,
+						conferenceId: params.conferenceId,
 						name: dayName,
 						date: new Date(dayDate),
 						sortOrder: daySortOrder
@@ -810,7 +812,7 @@
 		try {
 			await client.mutate.createPlace({
 				__args: {
-					conferenceId: page.params.conferenceId!,
+					conferenceId: params.conferenceId,
 					name: placeName,
 					address: placeAddress || null,
 					latitude: placeLatitude ? parseFloat(placeLatitude) : null,

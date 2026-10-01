@@ -1,7 +1,9 @@
 <script lang="ts">
 	import UserCardContent from '$lib/components/userCard/UserCardContent.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/state';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 </script>
 
 <svelte:head>
@@ -10,17 +12,13 @@
 
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col">
 	<div class="mb-3 flex items-center gap-2">
-		<a href="/management/{page.params.conferenceId!}/participants" class="btn btn-ghost btn-sm">
+		<a href="/management/{params.conferenceId}/participants" class="btn btn-ghost btn-sm">
 			<i class="fa-duotone fa-arrow-left"></i>
 			{m.back()}
 		</a>
 		<h1 class="text-xl font-bold">{m.adminUserCard()}</h1>
 	</div>
 	<div class="bg-base-100 min-h-0 flex-1">
-		<UserCardContent
-			userId={page.params.userId!}
-			conferenceId={page.params.conferenceId!}
-			mode="page"
-		/>
+		<UserCardContent userId={params.userId} conferenceId={params.conferenceId} mode="page" />
 	</div>
 </div>

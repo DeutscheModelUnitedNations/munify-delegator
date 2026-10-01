@@ -71,10 +71,13 @@ export async function fetchConferenceSeatMap(conferenceId: string) {
 		delegations,
 		nonStateActors,
 		singleParticipants,
-		// The order argument cannot reach through to the user's name, so this sorts here.
-		supervisors: [...supervisors].sort((a, b) =>
-			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
-		)
+		// The order argument cannot reach through to the user's name, so this sorts here - in a
+		// getter, so the sorted copy is taken from the live list each time rather than once.
+		get supervisors() {
+			return [...supervisors].sort((a, b) =>
+				(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
+			);
+		}
 	};
 }
 

@@ -30,8 +30,11 @@
 	import type { z } from 'zod';
 	import { fileToDataURL } from '$lib/helpers/fileToDataURL';
 	import dayjs from 'dayjs';
+	import type { PageProps } from './$types';
 
-	const conferenceId = page.params.conferenceId!;
+	let { params }: PageProps = $props();
+
+	const conferenceId = params.conferenceId;
 
 	// Seeded once: these are the form's initial values, and re-reading them while the settings are
 	// being edited would discard the edits.
@@ -430,7 +433,7 @@
 
 		try {
 			const templates = await client.query.conference({
-				__args: { id: page.params.conferenceId! },
+				__args: { id: params.conferenceId },
 				contractContent: true,
 				guardianConsentContent: true,
 				mediaConsentContent: true,
@@ -489,7 +492,7 @@
 
 		try {
 			const templates = await client.query.conference({
-				__args: { id: page.params.conferenceId! },
+				__args: { id: params.conferenceId },
 				certificateContent: true
 			});
 

@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Claims accepted by the mock-oauth2-server login form (see mock-oidc-landingpage.html)
- * and normalized by src/api/services/OIDC.ts into an OIDCUser.
+ * Claims the oidc-mock login page (oidc-mock.yaml, served by `vite dev`) signs into the tokens,
+ * normalized by src/api/services/OIDC.ts into an OIDCUser.
  */
 export interface TestUserClaims {
 	email: string;
@@ -40,8 +40,8 @@ export function makeTestUser(
  * Claims for a user with a fixed, predictable id - use this (instead of `makeTestUser`) whenever
  * a test needs the DB fixtures (TeamMember, DelegationMember, ...) seeded ahead of time in
  * e2e/seed/seed.ts, since those rows are created against a fixed userId that must match this
- * user's OIDC `sub`. The mock-oauth2-server login form uses whatever `preferred_username` we
- * submit as the token's `sub`, so `id` must be exactly the id used when seeding.
+ * user's OIDC `sub`. `loginAs` signs in with `preferred_username` as the token's `sub`, so `id`
+ * must be exactly the id used when seeding.
  */
 export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {}): TestUserClaims {
 	return {
@@ -55,30 +55,33 @@ export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {
 }
 
 /**
- * Drives the mock-oauth2-server (dev.docker-compose.yml `mockoidc` service) login page to
- * authenticate as `claims`, then - for a brand new user - completes the mandatory
- * "additional info" profile form the app requires before granting access to the rest of
- * the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
+ * Path the oidc-mock provider lives under (`base_path` in oidc-mock.yaml), derived from the same
+ * env var the app uses. Its Vite plugin serves the login page on the app's own origin and
+ * rewrites the app's redirects to it into relative ones, so the provider is recognised by path,
+ * not by origin.
  */
-/**
- * Origin of the mock OIDC provider, derived from the same env var the app itself uses so the
- * suite keeps working when the provider is remapped to a non-default port (running alongside
- * other local projects, or CI sharding). Falls back to the dev.docker-compose.yml default.
- */
-const OIDC_ORIGIN = new URL(
-	process.env.PUBLIC_OIDC_AUTHORITY ??
-		'http://localhost:8080/default/.well-known/openid-configuration'
-).origin;
+const OIDC_BASE_PATH = new URL(
+	(
+		process.env.PUBLIC_OIDC_AUTHORITY ??
+		'http://127.0.0.1:8090/oidc/.well-known/openid-configuration'
+	).replace(/\/\.well-known\/openid-configuration$/, '')
+).pathname;
 
 /** True while `url` is on the mock OIDC provider rather than the app under test. */
 function isOidcUrl(url: string | URL): boolean {
 	try {
-		return new URL(url.toString()).origin === OIDC_ORIGIN;
+		const { pathname } = new URL(url.toString());
+		return pathname === OIDC_BASE_PATH || pathname.startsWith(`${OIDC_BASE_PATH}/`);
 	} catch {
 		return false;
 	}
 }
 
+/**
+ * Signs in on the oidc-mock login page as `claims`, then - for a brand new user - completes the
+ * mandatory "additional info" profile form the app requires before granting access to the rest
+ * of the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
+ */
 export async function loginAs(
 	page: Page,
 	claims: TestUserClaims,
@@ -88,9 +91,13 @@ export async function loginAs(
 	await page.goto(startUrl);
 
 	await page.waitForURL((url) => isOidcUrl(url), { timeout: 15_000 });
-	await page.locator('input[name="username"]').fill(claims.preferred_username);
-	await page.locator('textarea[name="claims"]').fill(JSON.stringify(claims));
-	await page.locator('form button[type="submit"]').click();
+	// The page's "custom claims" form: any `sub`, any claims. Its per-user buttons are for the
+	// fixed accounts in oidc-mock.yaml, which the suite does not use. The form sits in a collapsed
+	// <details>, so it is opened first.
+	await page.getByText('Sign in with custom claims').click();
+	await page.locator('#custom_sub').fill(claims.preferred_username);
+	await page.locator('#custom_claims').fill(JSON.stringify(claims));
+	await page.locator('button[name="custom"]').click();
 
 	await page.waitForURL((url) => !isOidcUrl(url), { timeout: 15_000 });
 
@@ -103,18 +110,21 @@ export async function loginAs(
 	// few extra round trips to finish hydrating before a test's first real interaction. Without
 	// that buffer, an interaction fired immediately after this function returns can race
 	// SvelteKit's hydration (the click/input fires before the handler is attached and is lost).
-	// `networkidle` is a reasonable proxy for "hydration + initial data fetch settled".
-	await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+	await waitForHydration(page);
 }
 
 /**
  * `page.reload()` (or any fresh navigation) followed immediately by an interaction is prone to
- * the same hydration race as a fresh `loginAs` login (see the `networkidle` wait there) - the
+ * the same hydration race as a fresh `loginAs` login (see the hydration wait there) - the
  * click/input can fire before Svelte's handler is attached. Use this after any `page.reload()`
  * a test does mid-flow, right before the next interaction.
  */
 export async function waitForHydration(page: Page): Promise<void> {
-	await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+	// The root layout sets this in `onMount`. Not `networkidle`: the subscription stream stays open
+	// for as long as the page shows live data, so the network never goes idle on most pages.
+	await page.waitForFunction(() => document.body.dataset.hydrated === 'true', undefined, {
+		timeout: 15_000
+	});
 }
 
 /**

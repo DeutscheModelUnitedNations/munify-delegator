@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { sentrySvelteKit } from '@sentry/sveltekit';
+import { oidcMock } from 'oidc-mock/vite';
 
 export default defineConfig({
 	plugins: [
@@ -10,6 +11,9 @@ export default defineConfig({
 			autoUploadSourceMaps: false // We upload manually via CI to Bugsink
 		}),
 		tailwindcss(),
+		// The local OIDC provider (oidc-mock.yaml). Only runs under `vite dev` and `vite preview`;
+		// it has to come before SvelteKit so it can answer the login page itself.
+		oidcMock(),
 		sveltekit(),
 		paraglideVitePlugin({
 			project: './project.inlang',

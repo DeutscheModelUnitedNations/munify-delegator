@@ -13,8 +13,11 @@
 	import type { Snippet } from 'svelte';
 	import { qr } from '@svelte-put/qr/svg';
 	import { client } from '$lib/api/rumbleClient/client';
+	import type { PageProps } from './$types';
 
-	const conferenceId = $derived(page.params.conferenceId!);
+	let { params }: PageProps = $props();
+
+	const conferenceId = $derived(params.conferenceId);
 
 	let step = $state(0);
 	let entryCode = $state<string>();

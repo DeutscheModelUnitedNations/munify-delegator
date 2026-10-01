@@ -42,5 +42,4 @@ dev-restart-database.sh
 dev.docker-compose.yml
 lefthook.yml
 LICENSE.md
-mock-oidc-landingpage.html
 README.md

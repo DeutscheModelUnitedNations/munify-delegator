@@ -10,10 +10,12 @@
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { page } from '$app/state';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import type { PageProps } from './$types';
 
-	const conferenceId = page.params.conferenceId!;
+	let { params }: PageProps = $props();
+
+	const conferenceId = params.conferenceId;
 	const user = await getCurrentUser();
 
 	// Seeded once, on purpose: this is the initial value of a form, and re-reading it while someone

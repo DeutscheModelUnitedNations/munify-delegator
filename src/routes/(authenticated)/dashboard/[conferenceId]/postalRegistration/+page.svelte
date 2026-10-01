@@ -12,10 +12,13 @@
 	import formatNames, { formatInitials } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/state';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
 
 	const conferenceData = $derived(participation);
 	const conference = $derived(conferenceData?.conference);
@@ -147,7 +150,7 @@
 						<div>{m.completeAddressAndBirthdayForPostalRegistration()}</div>
 						<a
 							class="btn no-underline"
-							href={`/my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${page.params.conferenceId}`)}`}
+							href={`/my-account?redirect=${encodeURIComponent(`${page.url.origin}/dashboard/${params.conferenceId}`)}`}
 						>
 							{m.updateProfile()}
 							<i class="fas fa-user-edit"></i>

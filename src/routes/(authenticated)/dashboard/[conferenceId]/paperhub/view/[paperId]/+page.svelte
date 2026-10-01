@@ -12,11 +12,13 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { getPaperTypeIcon } from '$lib/utils/enumIcons';
-	import { page } from '$app/stores';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const paperData = $derived(
 		await client.liveQuery.findPublicPaperContent({
-			__args: { paperId: $page.params.paperId! },
+			__args: { paperId: params.paperId },
 			id: true,
 			type: true,
 			status: true,
@@ -146,7 +148,7 @@
 	<!-- Back Button -->
 	<div>
 		<a
-			href={`/dashboard/${$page.params.conferenceId}/paperhub?viewToggle=global`}
+			href={`/dashboard/${params.conferenceId}/paperhub?viewToggle=global`}
 			class="btn btn-ghost btn-sm"
 		>
 			<i class="fa-solid fa-arrow-left"></i>

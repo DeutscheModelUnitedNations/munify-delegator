@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
 		createSvelteTable,
@@ -20,6 +19,9 @@
 	import { m } from '$lib/paraglide/messages';
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	type WaitingListEntry = (typeof waitingListEntries)[number];
 
@@ -45,7 +47,7 @@
 	const waitingListEntries = $derived(
 		await client.liveQuery.waitingListEntries({
 			__args: {
-				where: { conferenceId: { eq: page.params.conferenceId! }, assigned: { eq: false } }
+				where: { conferenceId: { eq: params.conferenceId }, assigned: { eq: false } }
 			},
 			id: true,
 			user: {
@@ -70,7 +72,7 @@
 	// Only the start date, to work out how old each person will be by then.
 	const conference = $derived(
 		await client.liveQuery.conference({
-			__args: { id: page.params.conferenceId! },
+			__args: { id: params.conferenceId },
 			id: true,
 			startConference: true
 		})
@@ -126,7 +128,7 @@
 				renderComponent(WaitingListActions, {
 					entryId: row.original.id,
 					userId: row.original.userId,
-					conferenceId: page.params.conferenceId!,
+					conferenceId: params.conferenceId,
 					hidden: row.original.hidden
 				}),
 			enableSorting: false
@@ -251,7 +253,7 @@
 	});
 
 	function handleRowClick(row: WaitingListRow) {
-		openUserCard(row.userId, page.params.conferenceId!);
+		openUserCard(row.userId, params.conferenceId);
 	}
 
 	function handleGlobalFilterChange(value: string) {

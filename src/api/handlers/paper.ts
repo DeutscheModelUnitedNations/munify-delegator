@@ -7,7 +7,7 @@ import {
 	query,
 	schemaBuilder
 } from '$api/rumble';
-import { type TeamRole, systemAdmin, userId } from '$api/services/authHelper';
+import { PAPER_ROLES, systemAdmin, userId } from '$api/services/authHelper';
 import { m } from '$lib/paraglide/messages';
 import { fetchUserParticipations } from '$api/services/participation';
 import { CommitteeRef } from './committee';
@@ -17,13 +17,6 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
 import codenmz from '$lib/helpers/codenamize';
-
-/** Roles that may see and manage papers in their conference. */
-const PAPER_ROLES = [
-	'REVIEWER',
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE'
-] as const satisfies readonly TeamRole[];
 
 const paperTeam = (id: string) => ({
 	teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } }

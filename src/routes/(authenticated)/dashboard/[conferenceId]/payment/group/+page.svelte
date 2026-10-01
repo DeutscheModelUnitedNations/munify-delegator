@@ -3,12 +3,14 @@
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
-	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import Selection from '$lib/components/selection';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	type MinimalUserData = {
 		id: string;
@@ -18,16 +20,30 @@
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
-	let conferencePaymentData = $derived(await fetchConferencePaymentData(page.params.conferenceId!));
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
+	let conferencePaymentData = $derived(await fetchConferencePaymentData(params.conferenceId));
 	let supervisorData = $derived(participation.supervisor);
 	let userData = $derived(supervisorData?.user);
 	let delegationMembers = $derived(supervisorData?.supervisedDelegationMembers);
 	let singleParticipants = $derived(supervisorData?.supervisedSingleParticipants);
-	/** Every supervisor of the conference, so a group payment can name the ones it covers. */
+	/**
+	 * The supervisors sharing a participant with the caller, so a group payment can name the ones it
+	 * covers. Not every supervisor of the conference: the caller may list those, but may only read
+	 * the `user` of the ones they share a participant with, and a non-nullable `user` that comes
+	 * back null fails the whole query.
+	 */
+	const sharesAParticipant = $derived({ supervisors: { userId: { eq: currentUser.sub } } });
 	const allOtherSupervisors = $derived(
 		await client.liveQuery.conferenceSupervisors({
-			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
+			__args: {
+				where: {
+					conferenceId: { eq: params.conferenceId },
+					OR: [
+						{ supervisedDelegationMembers: sharesAParticipant },
+						{ supervisedSingleParticipants: sharesAParticipant }
+					]
+				}
+			},
 			id: true,
 			user: { id: true, givenName: true, familyName: true },
 			supervisedDelegationMembers: { id: true },

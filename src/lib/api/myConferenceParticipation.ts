@@ -42,7 +42,7 @@ export async function fetchMyConferenceParticipation({
 
 	const [
 		user,
-		participantStatus,
+		participantStatuses,
 		conference,
 		delegationMembers,
 		supervisors,
@@ -50,17 +50,15 @@ export async function fetchMyConferenceParticipation({
 		teamMembers
 	] = await Promise.all([
 		client.liveQuery.user({ __args: { id: userId }, id: true, birthday: true }),
-		client.query
-			.conferenceParticipantStatuses({
-				__args: { where: forUser },
-				id: true,
-				paymentStatus: true,
-				termsAndConditions: true,
-				guardianConsent: true,
-				mediaConsent: true,
-				didAttend: true
-			})
-			.then((rows) => rows.at(0) ?? null),
+		client.liveQuery.conferenceParticipantStatuses({
+			__args: { where: forUser },
+			id: true,
+			paymentStatus: true,
+			termsAndConditions: true,
+			guardianConsent: true,
+			mediaConsent: true,
+			didAttend: true
+		}),
 		client.liveQuery.conference({
 			__args: { id: conferenceId },
 			id: true,
@@ -104,165 +102,170 @@ export async function fetchMyConferenceParticipation({
 				fontAwesomeIcon: true
 			}
 		}),
-		client.query
-			.delegationMembers({
-				__args: { where: forUser },
+		client.liveQuery.delegationMembers({
+			__args: { where: forUser },
+			id: true,
+			isHeadDelegate: true,
+			assignedCommittee: committeeSummary,
+			delegation: {
+				id: true,
+				entryCode: true,
+				school: true,
+				experience: true,
+				motivation: true,
+				applied: true,
+				members: {
+					id: true,
+					isHeadDelegate: true,
+					assignedCommittee: committeeSummary,
+					user: {
+						...userSummary,
+						conferenceParticipantStatus: participantStatusSummary
+					}
+				},
+				assignedNation: { alpha3Code: true, alpha2Code: true },
+				assignedNonStateActor: {
+					id: true,
+					abbreviation: true,
+					name: true,
+					description: true,
+					fontAwesomeIcon: true,
+					seatAmount: true
+				},
+				appliedForRoles: {
+					id: true,
+					rank: true,
+					nonStateActor: {
+						id: true,
+						fontAwesomeIcon: true,
+						name: true,
+						seatAmount: true,
+						description: true
+					},
+					nation: { alpha3Code: true, alpha2Code: true }
+				}
+			},
+			supervisors: {
+				id: true,
+				user: { givenName: true, familyName: true, pronouns: true, email: true }
+			}
+		}),
+		client.liveQuery.conferenceSupervisors({
+			__args: { where: forUser },
+			id: true,
+			plansOwnAttendenceAtConference: true,
+			connectionCode: true,
+			user: { id: true, familyName: true, givenName: true },
+			supervisedDelegationMembers: {
 				id: true,
 				isHeadDelegate: true,
 				assignedCommittee: committeeSummary,
+				supervisors: { id: true },
+				user: { ...userSummary, conferenceParticipantStatus: participantStatusSummary },
 				delegation: {
 					id: true,
+					applied: true,
 					entryCode: true,
 					school: true,
 					experience: true,
 					motivation: true,
-					applied: true,
-					members: {
+					appliedForRoles: {
 						id: true,
-						isHeadDelegate: true,
-						assignedCommittee: committeeSummary,
-						user: {
-							...userSummary,
-							conferenceParticipantStatus: participantStatusSummary
+						rank: true,
+						nation: {
+							alpha2Code: true,
+							alpha3Code: true,
+							committees: {
+								abbreviation: true,
+								name: true,
+								numOfSeatsPerDelegation: true
+							}
+						},
+						nonStateActor: {
+							id: true,
+							name: true,
+							abbreviation: true,
+							fontAwesomeIcon: true,
+							seatAmount: true
 						}
 					},
-					assignedNation: { alpha3Code: true, alpha2Code: true },
+					assignedNation: {
+						alpha2Code: true,
+						alpha3Code: true,
+						committees: { numOfSeatsPerDelegation: true }
+					},
 					assignedNonStateActor: {
 						id: true,
 						abbreviation: true,
 						name: true,
-						description: true,
-						fontAwesomeIcon: true,
-						seatAmount: true
+						fontAwesomeIcon: true
 					},
-					appliedForRoles: {
+					members: {
 						id: true,
-						rank: true,
-						nonStateActor: {
-							id: true,
-							fontAwesomeIcon: true,
-							name: true,
-							seatAmount: true,
-							description: true
-						},
-						nation: { alpha3Code: true, alpha2Code: true }
-					}
-				},
-				supervisors: {
-					id: true,
-					user: { givenName: true, familyName: true, pronouns: true, email: true }
-				}
-			})
-			.then((rows) => rows.at(0) ?? null),
-		client.query
-			.conferenceSupervisors({
-				__args: { where: forUser },
-				id: true,
-				plansOwnAttendenceAtConference: true,
-				connectionCode: true,
-				user: { id: true, familyName: true, givenName: true },
-				supervisedDelegationMembers: {
-					id: true,
-					isHeadDelegate: true,
-					assignedCommittee: committeeSummary,
-					supervisors: { id: true },
-					user: { ...userSummary, conferenceParticipantStatus: participantStatusSummary },
-					delegation: {
+						isHeadDelegate: true,
+						assignedCommittee: committeeSummary
+					},
+					papers: {
 						id: true,
-						applied: true,
-						entryCode: true,
-						school: true,
-						experience: true,
-						motivation: true,
-						appliedForRoles: {
-							id: true,
-							rank: true,
-							nation: {
-								alpha2Code: true,
-								alpha3Code: true,
-								committees: {
-									abbreviation: true,
-									name: true,
-									numOfSeatsPerDelegation: true
-								}
-							},
-							nonStateActor: {
-								id: true,
-								name: true,
-								abbreviation: true,
-								fontAwesomeIcon: true,
-								seatAmount: true
-							}
-						},
-						assignedNation: {
-							alpha2Code: true,
-							alpha3Code: true,
-							committees: { numOfSeatsPerDelegation: true }
-						},
-						assignedNonStateActor: {
-							id: true,
-							abbreviation: true,
-							name: true,
-							fontAwesomeIcon: true
-						},
-						members: {
-							id: true,
-							isHeadDelegate: true,
-							assignedCommittee: committeeSummary
-						},
-						papers: {
-							id: true,
-							status: true,
-							type: true,
-							firstSubmittedAt: true,
-							author: { id: true },
-							agendaItem: { id: true, title: true }
-						}
+						status: true,
+						type: true,
+						firstSubmittedAt: true,
+						author: { id: true },
+						agendaItem: { id: true, title: true }
 					}
-				},
-				supervisedSingleParticipants: {
-					id: true,
-					school: true,
-					motivation: true,
-					experience: true,
-					applied: true,
-					supervisors: { id: true },
-					user: { ...userSummary, conferenceParticipantStatus: participantStatusSummary },
-					appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
-					assignedRole: { id: true, name: true, fontAwesomeIcon: true }
 				}
-			})
-			.then((rows) => rows.at(0) ?? null),
-		client.query
-			.singleParticipants({
-				__args: { where: forUser },
+			},
+			supervisedSingleParticipants: {
 				id: true,
 				school: true,
 				motivation: true,
 				experience: true,
 				applied: true,
-				appliedForRoles: { id: true, name: true, description: true, fontAwesomeIcon: true },
-				assignedRole: { id: true, name: true, description: true, fontAwesomeIcon: true },
-				user: { id: true, givenName: true, familyName: true, pronouns: true },
-				supervisors: {
-					id: true,
-					user: { givenName: true, familyName: true, pronouns: true, email: true }
-				}
-			})
-			.then((rows) => rows.at(0) ?? null),
-		client.query
-			.teamMembers({ __args: { where: forUser }, id: true, role: true })
-			.then((rows) => rows.at(0) ?? null)
+				supervisors: { id: true },
+				user: { ...userSummary, conferenceParticipantStatus: participantStatusSummary },
+				appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
+				assignedRole: { id: true, name: true, fontAwesomeIcon: true }
+			}
+		}),
+		client.liveQuery.singleParticipants({
+			__args: { where: forUser },
+			id: true,
+			school: true,
+			motivation: true,
+			experience: true,
+			applied: true,
+			appliedForRoles: { id: true, name: true, description: true, fontAwesomeIcon: true },
+			assignedRole: { id: true, name: true, description: true, fontAwesomeIcon: true },
+			user: { id: true, givenName: true, familyName: true, pronouns: true },
+			supervisors: {
+				id: true,
+				user: { givenName: true, familyName: true, pronouns: true, email: true }
+			}
+		}),
+		client.liveQuery.teamMembers({ __args: { where: forUser }, id: true, role: true })
 	]);
 
+	// The lists are live proxies: reading through them is what subscribes a component to the
+	// updates mutations publish. Taking `.at(0)` once, up front, would hand out the first row as it
+	// was on load and freeze it there, so the single rows are getters that read the list each time.
 	return {
 		user,
-		participantStatus,
 		conference,
-		delegationMember: delegationMembers,
-		supervisor: supervisors,
-		singleParticipant: singleParticipants,
-		teamMember: teamMembers
+		get participantStatus() {
+			return participantStatuses.at(0) ?? null;
+		},
+		get delegationMember() {
+			return delegationMembers.at(0) ?? null;
+		},
+		get supervisor() {
+			return supervisors.at(0) ?? null;
+		},
+		get singleParticipant() {
+			return singleParticipants.at(0) ?? null;
+		},
+		get teamMember() {
+			return teamMembers.at(0) ?? null;
+		}
 	};
 }
 

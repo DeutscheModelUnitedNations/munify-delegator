@@ -1,20 +1,22 @@
 <script lang="ts">
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
-	import { page } from '$app/state';
 	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
 	const participation = $derived(
 		await fetchMyConferenceParticipation({
 			userId: currentUser.sub,
-			conferenceId: page.params.conferenceId!
+			conferenceId: params.conferenceId
 		})
 	);
 	let conference = $derived(participation?.conference);

@@ -30,7 +30,14 @@ export async function fetchCommitteeAssignment(conferenceId: string, userId: str
 		})
 	]);
 
-	return { delegationMember: delegationMembers.at(0) ?? null, committees };
+	// A getter, not `delegationMembers.at(0)` taken once: reading through the live list is what
+	// lets the page see the assignments it just saved.
+	return {
+		get delegationMember() {
+			return delegationMembers.at(0) ?? null;
+		},
+		committees
+	};
 }
 
 export type CommitteeAssignment = Awaited<ReturnType<typeof fetchCommitteeAssignment>>;

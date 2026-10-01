@@ -29,13 +29,20 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 		})
 	]);
 
-	const supervisor = supervisors.at(0) ?? null;
-
+	// Getters rather than values computed once here: they read through the live lists on every
+	// access, which is what carries a later update to the page.
 	return {
-		isReviewer: teamMembers.length > 0,
-		supervisor,
-		supervisedDelegationIds: [
-			...new Set(supervisor?.supervisedDelegationMembers.map((m) => m.delegation.id) ?? [])
-		]
+		get isReviewer() {
+			return teamMembers.length > 0;
+		},
+		get supervisor() {
+			return supervisors.at(0) ?? null;
+		},
+		get supervisedDelegationIds() {
+			const supervisor = supervisors.at(0);
+			return [
+				...new Set(supervisor?.supervisedDelegationMembers.map((m) => m.delegation.id) ?? [])
+			];
+		}
 	};
 }

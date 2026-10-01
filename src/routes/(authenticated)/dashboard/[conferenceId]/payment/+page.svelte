@@ -1,13 +1,15 @@
 <script lang="ts">
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
-	import { page } from '$app/state';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
 	import singlePayment from '$assets/undraw/single_payment.svg';
 	import delegationPayment from '$assets/undraw/delegation_payment.svg';
 	import groupPayment from '$assets/undraw/group_payment.svg';
+	import type { PageProps } from './$types';
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	let { params }: PageProps = $props();
+
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
 
 	let isDelegation = $derived(!!participation?.delegationMember);
 	let isSupervisor = $derived(!!participation?.supervisor);

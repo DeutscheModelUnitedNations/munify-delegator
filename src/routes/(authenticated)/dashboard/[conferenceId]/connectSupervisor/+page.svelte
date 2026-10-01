@@ -1,6 +1,5 @@
 <script lang="ts">
 	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
-	import { page } from '$app/state';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
@@ -8,8 +7,11 @@
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
+	import type { PageProps } from './$types';
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	let { params }: PageProps = $props();
+
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
 
 	let code = queryParam('code');
 

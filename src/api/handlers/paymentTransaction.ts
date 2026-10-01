@@ -9,6 +9,7 @@ import {
 } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	isOwnUser,
 	isTeamMemberOfConference,
 	systemAdmin
 } from '$api/services/authHelper';
@@ -22,6 +23,14 @@ abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(syste
 // Only project management and participant care of the conference, as in the CASL rules.
 abilityBuilder.paymentTransaction.allow(['read', 'update']).when((ctx) => {
 	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
+	return where ? { where } : undefined;
+});
+
+// Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
+// its creator, whose reference is the whole point of the payment pages. The legacy resolver
+// returned it without a read check, so this is what keeps that working through the ability layer.
+abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
+	const where = isOwnUser(ctx);
 	return where ? { where } : undefined;
 });
 

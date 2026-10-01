@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client, type AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
 	import hotkeys from 'hotkeys-js';
@@ -12,6 +11,9 @@
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import type { PageProps } from './$types';
+
+	let { params: routeParams }: PageProps = $props();
 
 	let params = queryParameters({
 		searchValue: {
@@ -84,14 +86,14 @@
 	async function loadReference(searchValue: string) {
 		referenceFetching = true;
 		try {
-			reference = await fetchPaymentReference(searchValue, page.params.conferenceId!);
+			reference = await fetchPaymentReference(searchValue, routeParams.conferenceId);
 		} finally {
 			referenceFetching = false;
 		}
 	}
 
 	async function loadLastConfirmed() {
-		lastConfirmed = await fetchLastConfirmed(page.params.conferenceId!);
+		lastConfirmed = await fetchLastConfirmed(routeParams.conferenceId);
 	}
 
 	let recieveDate = $state<string>(new Date().toISOString().split('T')[0]);
@@ -99,7 +101,7 @@
 	const getPaymentStatus = (userId: string) => {
 		const user = referencedUsers?.find((user) => user.id === userId);
 		const status = user?.conferenceParticipantStatus.find(
-			(status) => status.conference.id === page.params.conferenceId!
+			(status) => status.conference.id === routeParams.conferenceId
 		);
 		return status ? status.paymentStatus : 'PENDING';
 	};
@@ -351,7 +353,7 @@
 						<div class="truncate text-sm opacity-60">{user.id}</div>
 						<button
 							class="btn btn-soft btn-sm ml-auto"
-							onclick={() => openUserCard(user.id, page.params.conferenceId!)}
+							onclick={() => openUserCard(user.id, routeParams.conferenceId)}
 							aria-label="Details for {formatNames(
 								user.givenName ?? undefined,
 								user.familyName ?? undefined

@@ -10,12 +10,14 @@
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import type { PageProps } from './$types';
 
-	const conferenceId = page.params.conferenceId!;
-	const roleId = page.params.roleId!;
+	let { params }: PageProps = $props();
+
+	const conferenceId = params.conferenceId;
+	const roleId = params.roleId;
 	const user = await getCurrentUser();
 
 	const role = $derived(

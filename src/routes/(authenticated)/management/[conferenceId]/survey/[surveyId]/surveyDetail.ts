@@ -59,14 +59,16 @@ export async function fetchSurveyDetail(conferenceId: string, surveyId: string) 
 		})
 	]);
 
-	// Somebody can hold both kinds of registration, so the two lists are deduplicated by user.
-	const byId = new Map(
-		[...delegationMembers, ...singleParticipants].map((row) => [row.user.id, row.user])
-	);
-
 	return {
 		survey,
-		usersNotAnswered: [...byId.values()],
+		// A getter over the live lists, so an answer coming in takes its author off the list.
+		// Somebody can hold both kinds of registration, so the two are deduplicated by user.
+		get usersNotAnswered() {
+			const byId = new Map(
+				[...delegationMembers, ...singleParticipants].map((row) => [row.user.id, row.user])
+			);
+			return [...byId.values()];
+		},
 		conferenceTimezone: conference?.timezone ?? 'UTC'
 	};
 }

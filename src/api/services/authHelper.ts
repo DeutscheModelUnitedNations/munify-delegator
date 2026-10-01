@@ -31,6 +31,13 @@ export const PARTICIPANT_CARE_ROLES = [
 	'PARTICIPANT_CARE'
 ] as const satisfies readonly TeamRole[];
 
+/** Roles that may see and manage papers in their conference. */
+export const PAPER_ROLES = [
+	'REVIEWER',
+	'PROJECT_MANAGEMENT',
+	'PARTICIPANT_CARE'
+] as const satisfies readonly TeamRole[];
+
 export const TEAM_ADMIN_ROLES = [
 	'PROJECT_MANAGEMENT',
 	'TEAM_COORDINATOR'

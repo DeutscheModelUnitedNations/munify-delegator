@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import {
 		assignNationToDelegation,
 		assignNSAToDelegation,
@@ -22,12 +21,15 @@
 	import PartitionModal from '../PartitionModal.svelte';
 	import TextPreview from '$lib/components/TextPreview.svelte';
 	import { onMount } from 'svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	let dragging = $state(false);
 	let optionsModalOpen = $state<string | undefined>(undefined);
 
 	onMount(() => {
-		loadProjects(page.params.projectId!);
+		loadProjects(params.projectId);
 	});
 
 	let largestApplication = $derived(() =>

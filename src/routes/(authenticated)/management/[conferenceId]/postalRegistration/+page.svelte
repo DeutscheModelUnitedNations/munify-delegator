@@ -18,13 +18,16 @@
 	import Kbd from '$lib/components/Kbd.svelte';
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import type { PageProps } from './$types';
+
+	let { params: routeParams }: PageProps = $props();
 
 	let params = queryParameters({ queryUserId: true });
 	let hotkeyDebounce = $state(false);
 
 	const conference = $derived(
 		await client.liveQuery.conference({
-			__args: { id: page.params.conferenceId! },
+			__args: { id: routeParams.conferenceId },
 			id: true,
 			startConference: true,
 			nextDocumentNumber: true
@@ -52,7 +55,7 @@
 			}),
 			client.query.conferenceParticipantStatuses({
 				__args: {
-					where: { conferenceId: { eq: page.params.conferenceId! }, userId: { eq: userId } }
+					where: { conferenceId: { eq: routeParams.conferenceId }, userId: { eq: userId } }
 				},
 				id: true,
 				termsAndConditions: true,
@@ -124,7 +127,7 @@
 			return;
 		}
 		const promise = client.mutate.updateConferenceParticipantStatus({
-			__args: { ...change, id: statusId, conferenceId: page.params.conferenceId!, userId },
+			__args: { ...change, id: statusId, conferenceId: routeParams.conferenceId, userId },
 			id: true,
 			termsAndConditions: true,
 			guardianConsent: true,
@@ -238,7 +241,7 @@
 		<button
 			class="btn btn-soft btn-sm"
 			onclick={() => {
-				if ($params.queryUserId) openUserCard($params.queryUserId, page.params.conferenceId!);
+				if ($params.queryUserId) openUserCard($params.queryUserId, routeParams.conferenceId);
 			}}
 			aria-label={m.details()}
 		>

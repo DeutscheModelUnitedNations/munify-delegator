@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
 	import { getWeights, setNonWishMalus, setNullRating, setRatingFactor } from '../weights.svelte';
 	import { loadProjects } from '../appData.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	onMount(() => {
-		loadProjects(page.params.projectId!);
+		loadProjects(params.projectId);
 	});
 </script>
 

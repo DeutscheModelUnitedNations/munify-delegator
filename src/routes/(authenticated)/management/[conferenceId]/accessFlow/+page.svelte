@@ -15,6 +15,9 @@
 	import TopDrawer from '$lib/components/TopDrawer.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import type { PageProps } from './$types';
+
+	let { params: routeParams }: PageProps = $props();
 
 	let params = queryParameters({ queryUserId: true });
 	let hotkeyDebounce = $state(false);
@@ -44,7 +47,7 @@
 
 	/** Everything the scan drawer shows about the person behind a scanned code. */
 	async function fetchUserData(userId: string) {
-		const forUser = { conferenceId: { eq: page.params.conferenceId! }, userId: { eq: userId } };
+		const forUser = { conferenceId: { eq: routeParams.conferenceId }, userId: { eq: userId } };
 
 		const [user, delegationMembers, supervisors, singleParticipants, statuses] = await Promise.all([
 			client.query.user({
@@ -177,7 +180,7 @@
 			return;
 		}
 		const promise = client.mutate.updateConferenceParticipantStatus({
-			__args: { ...change, id: statusId, conferenceId: page.params.conferenceId!, userId },
+			__args: { ...change, id: statusId, conferenceId: routeParams.conferenceId, userId },
 			id: true,
 			accessCardId: true
 		});
@@ -214,7 +217,7 @@
 				await client.mutate.createAttendanceEntry({
 					__args: {
 						userId: userDetails.id,
-						conferenceId: page.params.conferenceId!,
+						conferenceId: routeParams.conferenceId,
 						occasion: $occasion.trim()
 					},
 					id: true
@@ -339,7 +342,7 @@
 		<button
 			class="btn btn-soft btn-sm"
 			onclick={() => {
-				if ($params.queryUserId) openUserCard($params.queryUserId, page.params.conferenceId!);
+				if ($params.queryUserId) openUserCard($params.queryUserId, routeParams.conferenceId);
 			}}
 			aria-label={m.details()}
 		>

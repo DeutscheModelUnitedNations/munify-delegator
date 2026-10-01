@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
@@ -9,10 +8,13 @@
 	import CsvSettingsPanel from './CsvSettingsPanel.svelte';
 	import DownloadCategoryCard from './DownloadCategoryCard.svelte';
 	import ParticipantStatusExport from './ParticipantStatusExport.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const committees = $derived(
 		await client.liveQuery.committees({
-			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
+			__args: { where: { conferenceId: { eq: params.conferenceId } } },
 			id: true,
 			name: true,
 			abbreviation: true
@@ -33,7 +35,7 @@
 		description={m.badgeDataDescription()}
 		icon="fas fa-id-badge"
 	>
-		<BadgeData {committees} conferenceId={page.params.conferenceId!} />
+		<BadgeData {committees} conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -41,7 +43,7 @@
 		description={m.registrationListsDescription()}
 		icon="fas fa-clipboard-list"
 	>
-		<ConferenceRegistrationList conferenceId={page.params.conferenceId!} />
+		<ConferenceRegistrationList conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -49,7 +51,7 @@
 		description={m.participantStatusDescription()}
 		icon="fas fa-user-check"
 	>
-		<ParticipantStatusExport conferenceId={page.params.conferenceId!} />
+		<ParticipantStatusExport conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -57,7 +59,7 @@
 		description={m.referenceDataDescription()}
 		icon="fas fa-globe"
 	>
-		<AllNations conferenceId={page.params.conferenceId!} />
+		<AllNations conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard
@@ -65,6 +67,6 @@
 		description={m.integrationExportsDescription()}
 		icon="fas fa-plug"
 	>
-		<ChaseSeedExport conferenceId={page.params.conferenceId!} />
+		<ChaseSeedExport conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 </div>

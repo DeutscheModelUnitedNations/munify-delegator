@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import { fetchSurveyDetail } from './surveyDetail';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames from '$lib/helpers/formatNames';
@@ -17,10 +16,11 @@
 	import DownloadCategoryCard from '../../downloads/DownloadCategoryCard.svelte';
 	import SurveyExportButtons from './SurveyExportButtons.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import type { PageProps } from './$types';
 
-	const detail = $derived(
-		await fetchSurveyDetail(page.params.conferenceId!, page.params.surveyId!)
-	);
+	let { params }: PageProps = $props();
+
+	const detail = $derived(await fetchSurveyDetail(params.conferenceId, params.surveyId));
 	const survey = $derived(detail.survey);
 	const notAnsweredParticipants = $derived(detail.usersNotAnswered);
 
@@ -395,7 +395,7 @@
 					count={option.countSurveyAnswers}
 					limit={option.upperLimit}
 					{participants}
-					conferenceId={page.params.conferenceId!}
+					conferenceId={params.conferenceId}
 				/>
 			{/each}
 
@@ -403,7 +403,7 @@
 				title={m.notAssignedParticipants()}
 				count={notAnsweredParticipants.length}
 				participants={notAnsweredParticipants}
-				conferenceId={page.params.conferenceId!}
+				conferenceId={params.conferenceId}
 			/>
 		</div>
 
@@ -417,8 +417,8 @@
 				<SurveyExportButtons
 					surveyTitle={survey.title}
 					options={survey.options}
-					surveyId={page.params.surveyId!}
-					conferenceId={page.params.conferenceId!}
+					surveyId={params.surveyId}
+					conferenceId={params.conferenceId}
 				/>
 			</DownloadCategoryCard>
 		{/if}

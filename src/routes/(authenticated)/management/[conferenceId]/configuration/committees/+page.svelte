@@ -10,11 +10,13 @@
 	import { defaults, superForm } from 'sveltekit-superforms';
 	import { AddAgendaItemFormSchema } from './form-schema';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { page } from '$app/state';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import type { PageProps } from './$types';
 
-	const conferenceId = $derived(page.params.conferenceId!);
+	let { params }: PageProps = $props();
+
+	const conferenceId = $derived(params.conferenceId);
 
 	const committees = $derived(
 		await client.liveQuery.committees({

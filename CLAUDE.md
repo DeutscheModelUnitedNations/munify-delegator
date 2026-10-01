@@ -199,8 +199,17 @@ bun run preview
   Reach for an explicit check in `services/authHelper.ts` only when the answer is needed before a
   row exists.
 
-- The endpoint is `src/routes/api/graphql/+server.ts`. Adding fields needs a **dev server restart**:
-  the schema builder is populated at module init.
+- The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
+  instance it, `/api/graphql/stream` and the SSR remote function all share. Adding fields needs a
+  **dev server restart**: the schema builder is populated at module init.
+- **Subscriptions share one stream per tab** (graphql-sse's single connection mode, wired up in
+  `src/lib/api/client.ts`). The browser reserves a stream with `PUT /api/graphql/stream`, holds it
+  open with a `GET`, and starts each subscription with a short `POST` whose results arrive on that
+  stream. Never go back to one response per subscription (urql's `fetchSubscriptions`): over
+  HTTP/1.1 a browser allows six connections per host, and a page with six live queries would hold
+  them all, queueing every later mutation, subscription and lazily imported chunk forever. The
+  reservation lives in the process's memory, so several app instances need sticky sessions for
+  `/api/graphql/stream`; the events themselves still fan out through Redis.
 
 #### 2. Frontend Data Fetching (generated rumble client)
 
@@ -250,9 +259,25 @@ bun run preview
   `ssr = false`, and cookie work that has to happen before anything renders — of which only
   `auth/accept-invitation` is left. There are **no form-action loads any more**; every form submits
   through a mutation (see Forms below). Everything else fetches in the component, and a guard
-  returns nothing — route parameters come from `page.params`, not from load data. A `load` must
+  returns nothing — route parameters come from the `params` prop, not from load data. A `load` must
   never return what the generated client gave it: those are subscribeable proxies, and `load` data
   has to be serialized into the page.
+- **Route parameters come from the `params` prop**, never from `page.params`:
+
+  ```ts
+  let { params }: PageProps = $props(); // LayoutProps in a layout
+  const conference = $derived(await fetchConference(params.conferenceId));
+  ```
+
+  `page` from `$app/state` is `$state` that SvelteKit writes when it hydrates, and that write sits
+  in a batch that stays pending until the page's first async work settles. A live-query update
+  landing in that window starts a second batch, and Svelte shows a later batch the _previous_
+  value of anything a pending batch wrote — so an async derived re-run there reads the placeholder
+  `page`, `params` is `{}`, and that result is the one that sticks. The page renders as if the
+  conference did not exist. The prop is handed to the component rather than written in a batch,
+  so it does not have this problem. Name it `routeParams` where the page already has a `params`
+  (a `sveltekit-search-params` store).
+
 - **Global state lives in `$lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
   Cache such a singleton **only in the browser**: module state on the server is shared by every
@@ -323,6 +348,12 @@ bun run preview
   `src/hooks.server.ts`) protects `AUTHENTICATED_ROUTES`, serves `/auth/login-callback` and
   `/auth/logout-callback` **without any `+page` files**, refreshes tokens, and puts the validated
   session on `event.locals.oidc`. There is no auth code in route loads.
+- **Locally, the provider is [oidc-mock](https://github.com/strehk/oidc-mock)**, started by the
+  `oidcMock()` plugin in `vite.config.ts` whenever `vite dev` runs - no container. Its users live
+  in `oidc-mock.yaml` (edits apply on the next login), its login page is served on the app's own
+  origin under `/oidc`, and `PUBLIC_OIDC_AUTHORITY` points at
+  `http://127.0.0.1:8090/oidc/.well-known/openid-configuration`. The e2e suite signs in through the
+  login page's custom-claims form.
 - **Login-time user upsert** lives in `src/api/services/upsertSelf.ts`, passed to the library as
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.

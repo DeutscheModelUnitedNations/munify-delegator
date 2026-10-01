@@ -1,0 +1,43 @@
+# Local OIDC provider for development and the e2e suite: https://github.com/strehk/oidc-mock
+#
+# `vite dev` starts it through the `oidcMock()` plugin in vite.config.ts - there is no separate
+# service to run. Point the app at it with
+#   PUBLIC_OIDC_AUTHORITY=http://127.0.0.1:8090/oidc/.well-known/openid-configuration
+#
+# Edits to `users` apply on the next login, without a restart. `host`, `port` and `base_path`
+# need one.
+
+host: 127.0.0.1
+port: 8090
+base_path: /oidc
+
+# The login page's "custom claims" box. The e2e suite signs in through it (see
+# e2e/support/auth.ts), so it has to stay on.
+custom_login: true
+
+# `roles` is what OIDC_ROLE_CLAIM names, and src/api/context.ts only keeps the names it knows
+# (`admin`, `member`, `service_user`).
+users:
+  - sub: dev-admin
+    label: Admin
+    description: System admin - every conference, every permission
+    claims:
+      email: admin@delegator.local
+      email_verified: true
+      given_name: Ada
+      family_name: Admin
+      preferred_username: dev-admin
+      locale: de
+      roles: [admin]
+
+  - sub: dev-participant
+    label: Participant
+    description: Plain account without roles, for registering as a participant
+    claims:
+      email: participant@delegator.local
+      email_verified: true
+      given_name: Paul
+      family_name: Participant
+      preferred_username: dev-participant
+      locale: de
+      roles: []

@@ -18,7 +18,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import { queryParam } from 'sveltekit-search-params';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
-	import { page } from '$app/stores';
 	import { fetchConferenceParticipants } from './conferenceParticipants';
 	import type { ParticipantRow, ColumnMeta } from './types';
 	import { transformParticipants } from './dataTransform';
@@ -28,8 +27,11 @@
 	import TableToolbar from './TableToolbar.svelte';
 	import FilterDrawer from './FilterDrawer.svelte';
 	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
+	import type { PageProps } from './$types';
 
-	const conferenceId = $derived($page.params.conferenceId ?? '');
+	let { params: routeParams }: PageProps = $props();
+
+	const conferenceId = $derived(routeParams.conferenceId ?? '');
 
 	const registrations = $derived(await fetchConferenceParticipants(conferenceId));
 	const conference = $derived(registrations.conference);

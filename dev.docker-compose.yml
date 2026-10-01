@@ -22,47 +22,6 @@ services:
     volumes:
       - delegator-dev:/var/lib/postgresql/data
 
-  # When using the mock server this can be helpful to paste into the form to create a valid token with claims etc.
-  # {
-  #  "email": "my@mail.com",
-  #  "family_name": "Munify",
-  #  "given_name": "Delegator Jr.",
-  #  "preferred_username": "delegatoruser_123",
-  #  "locale": "de",
-  #  "roles": ["admin"]
-  # }
-  mockoidc:
-    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
-    ports:
-      - 8080:8080
-    environment:
-      JSON_CONFIG: >
-        {
-          "interactiveLogin": true,
-          "httpServer": "NettyWrapper",
-          "tokenCallbacks": [
-              {
-                "issuerId": "issuer1",
-                "tokenExpiry": 120,
-                "requestMappings": [
-                  {
-                    "requestParam": "code",
-                    "match": "code1",
-                    "claims": {
-                      "sub": "subByCode",
-                      "aud": [
-                          "audByCode"
-                      ]
-                    }
-                  }
-                ]
-              }
-          ],
-          "loginPagePath": "/static/mock-oidc-landingpage.html"
-        }
-    volumes:
-      - ./mock-oidc-landingpage.html:/static/mock-oidc-landingpage.html
-
   # app:
   #   image: munifydelegator
   #   depends_on:
@@ -72,7 +31,7 @@ services:
   #     - PORT=3000
   #     - DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres
 
-  #     - PUBLIC_OIDC_AUTHORITY=http://localhost:8080
+  #     - PUBLIC_OIDC_AUTHORITY=http://127.0.0.1:8090/oidc/.well-known/openid-configuration
   #     # - PUBLIC_OIDC_AUTHORITY=https://guard.munify.cloud
 
   #     - PUBLIC_OIDC_CLIENT_ID=delegator

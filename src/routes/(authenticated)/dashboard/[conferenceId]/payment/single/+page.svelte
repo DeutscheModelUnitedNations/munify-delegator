@@ -2,11 +2,13 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
-	import { page } from '$app/state';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
-	let conferencePaymentData = $derived(await fetchConferencePaymentData(page.params.conferenceId!));
+	let conferencePaymentData = $derived(await fetchConferencePaymentData(params.conferenceId));
 </script>
 
 <div class="flex flex-col gap-2">

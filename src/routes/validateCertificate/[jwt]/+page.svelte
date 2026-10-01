@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { blur } from 'svelte/transition';
-	import { page } from '$app/state';
 	import { verifyCertificate } from './verifyCertificate';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const { fullName, conferenceTitle, conferenceStartDate, conferenceEndDate } =
-		await verifyCertificate(page.params.jwt!);
+		await verifyCertificate(params.jwt);
 </script>
 
 <div class="bg-base-200 flex h-screen w-full flex-col items-center justify-center p-6">

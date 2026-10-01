@@ -26,6 +26,9 @@
 	import { browser } from '$app/environment';
 	import { persisted } from 'svelte-persisted-store';
 	import { get } from 'svelte/store';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// Types for draft persistence
 	interface ResolutionDraft {
@@ -72,11 +75,11 @@
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
 
 	// Create persisted store for this conference's resolution draft (only on browser)
 	const draftStore = browser
-		? persisted<ResolutionDraft | null>(`resolutionDraft_${page.params.conferenceId}`, null)
+		? persisted<ResolutionDraft | null>(`resolutionDraft_${params.conferenceId}`, null)
 		: null;
 
 	// Check for existing draft SYNCHRONOUSLY before render
@@ -196,9 +199,7 @@
 		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
-	const context = $derived(
-		await fetchNewResolutionContext(page.params.conferenceId!, currentUser.sub)
-	);
+	const context = $derived(await fetchNewResolutionContext(params.conferenceId, currentUser.sub));
 	const delegationMember = $derived(context.delegationMember);
 	let delegation = $derived(delegationMember?.delegation);
 	let committee = $derived(delegationMember?.assignedCommittee);
@@ -271,7 +272,7 @@
 
 		const promise = client.mutate.createPaper({
 			__args: {
-				conferenceId: page.params.conferenceId!,
+				conferenceId: params.conferenceId,
 				authorId: currentUser.sub,
 				delegationId,
 				type: 'WORKING_PAPER',
@@ -296,7 +297,7 @@
 			if (draftStore) {
 				draftStore.set(null);
 			}
-			goto(`/dashboard/${page.params.conferenceId}/paperhub`);
+			goto(`/dashboard/${params.conferenceId}/paperhub`);
 		}
 	};
 </script>

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/state';
 	import { error } from '@sveltejs/kit';
 	import type { PageData } from './$types';
 	import { client } from '$lib/api/rumbleClient/client';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';
 	import PlausibilityOverviewItem from './PlausibilityOverviewItem.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	interface Props {
 		data: PageData;
@@ -15,7 +17,7 @@
 
 	const plausibility = $derived(
 		await client.liveQuery.conferencePlausibility({
-			__args: { conferenceId: page.params.conferenceId! },
+			__args: { conferenceId: params.conferenceId },
 			dataMissing: userSummary,
 			shouldBeSupervisor: userSummary,
 			shouldNotBeSupervisor: userSummary,
@@ -69,26 +71,26 @@
 	<PlausibilityDetails
 		headline={m.plausibilityTooYoung()}
 		items={plausibility.tooYoungUsers}
-		conferenceId={page.params.conferenceId!}
+		conferenceId={params.conferenceId}
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityTooOld()}
 		items={plausibility.tooOldUsers}
-		conferenceId={page.params.conferenceId!}
+		conferenceId={params.conferenceId}
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldBeSupervisor()}
 		items={plausibility.shouldBeSupervisor}
-		conferenceId={page.params.conferenceId!}
+		conferenceId={params.conferenceId}
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityShouldNotBeSupervisor()}
 		items={plausibility.shouldNotBeSupervisor}
-		conferenceId={page.params.conferenceId!}
+		conferenceId={params.conferenceId}
 	/>
 	<PlausibilityDetails
 		headline={m.plausibilityIncompleteOrInvalidData()}
 		items={plausibility.dataMissing}
-		conferenceId={page.params.conferenceId!}
+		conferenceId={params.conferenceId}
 	/>
 </div>

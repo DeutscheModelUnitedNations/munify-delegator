@@ -5,14 +5,16 @@
 	compatibility with any bookmarked URLs but may be removed in the future.
 -->
 <script lang="ts">
-	import { page } from '$app/state';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
-			__args: { id: page.params.conferenceId! },
+			__args: { id: params.conferenceId },
 			id: true,
 			title: true,
 			info: true

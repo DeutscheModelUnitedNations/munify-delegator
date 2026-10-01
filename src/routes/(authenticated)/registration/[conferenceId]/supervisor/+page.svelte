@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	let plansOwnAttendenceAtConference = $state(true);
 
 	const signup = async () => {
 		const promise = client.mutate.createConferenceSupervisor({
-			__args: { conferenceId: page.params.conferenceId!, plansOwnAttendenceAtConference },
+			__args: { conferenceId: params.conferenceId, plansOwnAttendenceAtConference },
 			id: true
 		});
 		toast.promise(promise, {
@@ -19,7 +21,7 @@
 			error: m.genericToastError()
 		});
 		await promise;
-		goto(`/dashboard/${page.params.conferenceId!}`);
+		goto(`/dashboard/${params.conferenceId}`);
 	};
 </script>
 

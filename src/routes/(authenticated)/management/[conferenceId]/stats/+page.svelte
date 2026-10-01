@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/state';
 	import DaysUntil from './widgets/DaysUntil.svelte';
 	import AppliedChartAndStats from './widgets/AppliedChartAndStats.svelte';
 	import AgeChart from './widgets/AgeChart.svelte';
@@ -31,14 +30,15 @@
 	import PostalPaymentProgress from './widgets/PostalPaymentProgress.svelte';
 	import PaperStats from './widgets/PaperStats.svelte';
 	import { fetchConferenceStatistics } from './statsQuery';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// The filter is part of the query, so one derived await covers both the first render and
 	// every later filter change; `$effect.pending()` reports the refetch in between.
 	const { getFilter } = unifiedFilter();
 	const graphqlFilter = $derived(mapFilterToGraphQL(getFilter()));
-	const statsData = $derived(
-		await fetchConferenceStatistics(page.params.conferenceId!, graphqlFilter)
-	);
+	const statsData = $derived(await fetchConferenceStatistics(params.conferenceId, graphqlFilter));
 	const isLoading = $derived($effect.pending() > 0);
 
 	// What the widgets take: just the currently filtered statistics.
@@ -53,21 +53,21 @@
 			!history.find(
 				(x) =>
 					`${x.timestamp}_${x.conferenceId}` ===
-					`${format(Date.now(), 'yyyy-MM-dd')}_${page.params.conferenceId!}`
+					`${format(Date.now(), 'yyyy-MM-dd')}_${params.conferenceId}`
 			) &&
 			statsData
 		) {
 			history.unshift({
 				stats: statsData,
 				timestamp: format(Date.now(), 'yyyy-MM-dd'),
-				conferenceId: page.params.conferenceId!
+				conferenceId: params.conferenceId
 			});
 		}
 		setHistory(history);
 
 		localStorage.setItem('statsHistory', JSON.stringify(history));
 
-		setHistory(history.filter((x) => x.conferenceId === page.params.conferenceId!));
+		setHistory(history.filter((x) => x.conferenceId === params.conferenceId));
 		setSelectedHistory(
 			history.find((x) => x.timestamp !== format(Date.now(), 'yyyy-MM-dd'))?.timestamp
 		);

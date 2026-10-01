@@ -16,13 +16,17 @@
 	import DelegationRegistrationStage from './stages/Delegation/DelegationRegistrationStage.svelte';
 	import DelegationPreparationStage from './stages/Delegation/DelegationPreparationStage.svelte';
 	import TeamMemberDashboard from './stages/TeamMember/TeamMemberDashboard.svelte';
+	import Supervisor from './stages/Supervisor/Supervisor.svelte';
 	import { configPublic } from '$config/public';
 	import SurveySection from '$lib/components/dashboard/SurveySection.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
+	import type { PageProps } from './$types';
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	let { params }: PageProps = $props();
+
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
 	const isOfAgeAtConference = $derived(
 		ofAgeAtConference(participation?.conference?.startConference, participation?.user?.birthday)
 	);
@@ -177,17 +181,13 @@
 						<ChunkLoadError {error} />
 					{/await}
 				{:else}
-					{#await import('./stages/Supervisor/Supervisor.svelte') then { default: Supervisor }}
-						<Supervisor
-							user={currentUser}
-							{conference}
-							{supervisor}
-							{status}
-							ofAge={isOfAgeAtConference}
-						/>
-					{:catch error}
-						<ChunkLoadError {error} />
-					{/await}
+					<Supervisor
+						user={currentUser}
+						{conference}
+						{supervisor}
+						{status}
+						ofAge={isOfAgeAtConference}
+					/>
 				{/if}
 			{:else}
 				<ApplicationRejected />

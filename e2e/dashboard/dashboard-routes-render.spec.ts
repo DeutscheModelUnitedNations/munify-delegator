@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fixedTestUser, loginAs } from '../support/auth';
+import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_PREP_CONFERENCE_ID, E2E_PREP_PARTICIPANT_USER_ID } from '../seed/seed';
 
 // The participant-side counterpart to management-routes-render.spec.ts. Uses the PREPARATION
@@ -31,7 +31,7 @@ test('the participant dashboard routes render for an assigned participant', asyn
 		pageErrors.length = 0;
 
 		const res = await page.goto(path);
-		await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+		await waitForHydration(page);
 
 		if ((res?.status() ?? 500) >= 400) {
 			failures.push(`${path}: HTTP ${res?.status()}`);

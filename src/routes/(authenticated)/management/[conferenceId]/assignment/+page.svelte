@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import Spinner from '$lib/components/Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { prettifyError } from 'zod';
@@ -9,8 +8,11 @@
 		type ProjectData
 	} from '../../../../(authenticated)/assignment-assistant/[projectId]/appData.svelte';
 	import { fetchAssignmentProject } from './assignmentProject';
+	import type { PageProps } from './$types';
 
-	const project = $derived(await fetchAssignmentProject(page.params.conferenceId!));
+	let { params }: PageProps = $props();
+
+	const project = $derived(await fetchAssignmentProject(params.conferenceId));
 	const delegations = $derived(project.delegations);
 	const conference = $derived(project.conference);
 	const singleParticipants = $derived(project.singleParticipants);
@@ -46,11 +48,11 @@
 		if (!fileInput) return;
 		const file = fileInput;
 		const jsonData = JSON.parse(file);
-		if (page.params.conferenceId! !== jsonData.conference.id) {
+		if (params.conferenceId !== jsonData.conference.id) {
 			alert('File is from a different conference');
 			return;
 		}
-		sendAssignmentData(page.params.conferenceId!, jsonData);
+		sendAssignmentData(params.conferenceId, jsonData);
 	};
 
 	const sendAssignmentData = async (conferenceId: string, projectData: ProjectData) => {

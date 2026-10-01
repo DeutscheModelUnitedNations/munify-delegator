@@ -2,18 +2,20 @@
 	import Selection from '$lib/components/selection';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
-	import { page } from '$app/state';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
 	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
 	import { onMount } from 'svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
-	let conferencePaymentData = $derived(await fetchConferencePaymentData(page.params.conferenceId!));
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
+	let conferencePaymentData = $derived(await fetchConferencePaymentData(params.conferenceId));
 	let delegationMembers = $derived(participation?.delegationMember?.delegation.members);
 
 	let isReferenceCreated = $state(false);

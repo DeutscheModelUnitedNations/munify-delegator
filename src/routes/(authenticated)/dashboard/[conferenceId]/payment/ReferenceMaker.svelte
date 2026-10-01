@@ -31,26 +31,32 @@
 	let paymentFor = $derived(users.map((x) => x.id));
 
 	async function generateReference() {
-		referenceLoading = true;
-
 		if (!conferencePaymentData) {
 			console.error('No conference payment data found');
 			return;
 		}
 
-		const paymentTransaction = await client.mutate.createPaymentTransaction({
-			__args: {
-				conferenceId: conferencePaymentData.id,
-				userId: ownUserId,
-				paymentFor
-			},
-			id: true
-		});
+		referenceLoading = true;
+		try {
+			const paymentTransaction = await client.mutate.createPaymentTransaction({
+				__args: {
+					conferenceId: conferencePaymentData.id,
+					userId: ownUserId,
+					paymentFor
+				},
+				id: true
+			});
 
-		reference = paymentTransaction.id;
-		referenceLoading = false;
-		isReferenceCreated = true;
-		toast.success(m.referenceGeneratedSuccessfully());
+			reference = paymentTransaction.id;
+			isReferenceCreated = true;
+			toast.success(m.referenceGeneratedSuccessfully());
+		} catch (error) {
+			// Without this the button stays disabled on its spinner, with no hint anything failed.
+			console.error(error);
+			toast.error(m.genericToastError());
+		} finally {
+			referenceLoading = false;
+		}
 	}
 </script>
 

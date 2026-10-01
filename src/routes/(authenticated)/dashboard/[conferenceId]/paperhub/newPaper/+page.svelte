@@ -19,6 +19,9 @@
 	import { browser } from '$app/environment';
 	import { persisted } from 'svelte-persisted-store';
 	import { get } from 'svelte/store';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// Types for draft persistence (Position/Introduction Papers only)
 	interface PaperDraft {
@@ -53,7 +56,7 @@
 
 	// Create persisted store for this conference's paper draft (only on browser)
 	const draftStore = browser
-		? persisted<PaperDraft | null>(`paperDraft_${page.params.conferenceId}`, null)
+		? persisted<PaperDraft | null>(`paperDraft_${params.conferenceId}`, null)
 		: null;
 
 	// Check for existing draft SYNCHRONOUSLY before render
@@ -176,7 +179,7 @@
 
 	const context = $derived(
 		await fetchNewPaperContext(
-			page.params.conferenceId!,
+			params.conferenceId,
 			currentUser.sub,
 			page.url.searchParams.get('type')
 		)
@@ -255,7 +258,7 @@
 
 		const promise = client.mutate.createPaper({
 			__args: {
-				conferenceId: page.params.conferenceId!,
+				conferenceId: params.conferenceId,
 				authorId: currentUser.sub,
 				delegationId,
 				type: $formData.type,
@@ -280,7 +283,7 @@
 			if (draftStore) {
 				draftStore.set(null);
 			}
-			goto(`/dashboard/${page.params.conferenceId}/paperhub`);
+			goto(`/dashboard/${params.conferenceId}/paperhub`);
 		}
 	};
 </script>

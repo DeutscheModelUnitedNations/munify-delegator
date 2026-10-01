@@ -1,7 +1,7 @@
 import { execute } from 'graphql';
 import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
-import { GET } from '../routes/api/graphql/+server';
+import { yoga } from '$api/yoga';
 
 /**
  * The GraphQL entry point used during SSR.
@@ -34,7 +34,7 @@ const graphqlRequestSchema = z.object({
 export const graphqlOperation = query(graphqlRequestSchema, async (request) => {
 	const requestEvent = getRequestEvent();
 
-	const envelop = GET.getEnveloped(requestEvent);
+	const envelop = yoga.getEnveloped(requestEvent);
 	const contextValue = envelop.contextFactory ? await envelop.contextFactory() : undefined;
 
 	return execute({

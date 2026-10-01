@@ -26,7 +26,6 @@
 
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import PaperReviewSection from './PaperReviewSection.svelte';
 	import {
 		downloadResolutionPdf,
@@ -35,12 +34,15 @@
 		downloadPaperTypst
 	} from '$lib/utils/resolutionExport';
 	import type { PaperTypstMeta } from '$lib/helpers/paperTypst';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
 	const paperData = $derived(
 		await client.liveQuery.paper({
-			__args: { id: $page.params.paperId! },
+			__args: { id: params.paperId },
 			id: true,
 			type: true,
 			status: true,
@@ -102,7 +104,7 @@
 
 	// View mode detection
 	let isAuthor = $derived(paperData?.author.id === currentUser.sub);
-	const myRoles = $derived(await fetchMyPaperHubRoles($page.params.conferenceId!));
+	const myRoles = $derived(await fetchMyPaperHubRoles(params.conferenceId));
 	let isReviewer = $derived(myRoles.isReviewer);
 	let isSupervisor = $derived(
 		myRoles.supervisedDelegationIds.includes(paperData?.delegation.id ?? '')
@@ -123,7 +125,7 @@
 	// Watch the route param directly - it is guaranteed to change on navigation, while the loaded
 	// paper arrives a tick later.
 	$effect(() => {
-		const routePaperId = $page.params.paperId;
+		const routePaperId = params.paperId;
 		if (routePaperId && routePaperId !== currentPaperId) {
 			// Route changed - reset initialized to show loading state
 			// and wait for paperData to arrive
@@ -133,7 +135,7 @@
 
 	// Initialize stores when paper data arrives
 	$effect(() => {
-		const routePaperId = $page.params.paperId;
+		const routePaperId = params.paperId;
 		if (paperData && paperData.id === routePaperId && routePaperId !== currentPaperId) {
 			// Reset validation error and raw content
 			resolutionValidationError = null;
@@ -443,7 +445,7 @@
 		await promise;
 
 		// Navigate back to paperhub
-		const conferenceId = $page.params.conferenceId;
+		const conferenceId = params.conferenceId;
 		goto(`/dashboard/${conferenceId}/paperhub`);
 	};
 

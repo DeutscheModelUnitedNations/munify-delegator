@@ -1,0 +1,40 @@
+diff --git a/out/client.cjs b/out/client.cjs
+index c777b38ef6582179a8e499490cf05c5e28ba4df4..fc580ff4396171ac7054aaa2207bf2d0307ac24e 100644
+--- a/out/client.cjs
++++ b/out/client.cjs
+@@ -99,8 +99,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
+ 	})));
+ 	const subscriberReady = svelteReactivityReady.then(() => {
+ 		svelteSubscriber = createSubscriber((update) => {
++			// Announce every emission on the next task. urql emits synchronously - a replayed value
++			// on subscribe, or a cache hit fanned out to every operation with the same key when some
++			// other query is issued - and that code often runs inside a `$derived`, where calling
++			// `update()` throws `state_unsafe_mutation` and leaves the page unrendered. A microtask
++			// is not enough: Svelte flushes its batches in microtasks too, and an update landing
++			// between them trips its "Batch has scheduled roots" invariant.
+ 			const unsub = observable.subscribe((_d) => {
+-				update();
++				setTimeout(update, 0);
+ 			});
+ 			return () => unsub.unsubscribe();
+ 		});
+diff --git a/out/client.mjs b/out/client.mjs
+index 97bed01f8ff71543366e131e1b0a52b04d9879f7..5943fcad7785958f19d2553e92e9b6248e8a2cc3 100644
+--- a/out/client.mjs
++++ b/out/client.mjs
+@@ -98,8 +98,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
+ 	})));
+ 	const subscriberReady = svelteReactivityReady.then(() => {
+ 		svelteSubscriber = createSubscriber((update) => {
++			// Announce every emission on the next task. urql emits synchronously - a replayed value
++			// on subscribe, or a cache hit fanned out to every operation with the same key when some
++			// other query is issued - and that code often runs inside a `$derived`, where calling
++			// `update()` throws `state_unsafe_mutation` and leaves the page unrendered. A microtask
++			// is not enough: Svelte flushes its batches in microtasks too, and an update landing
++			// between them trips its "Batch has scheduled roots" invariant.
+ 			const unsub = observable.subscribe((_d) => {
+-				update();
++				setTimeout(update, 0);
+ 			});
+ 			return () => unsub.unsubscribe();
+ 		});

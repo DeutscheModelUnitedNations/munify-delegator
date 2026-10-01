@@ -3,24 +3,26 @@
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchMyPaperHubRoles } from './myPaperHubRoles';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
-	import { page } from '$app/state';
 	import PaperEnum from '$lib/components/paper/paperEnum';
 	import { client, type PapertypeEnum } from '$lib/api/rumbleClient/client';
 	import PaperHubOverview from './PaperHubOverview.svelte';
 	import SupervisorPaperHubView from './SupervisorPaperHubView.svelte';
 	import GlobalPapersView from './GlobalPapersView.svelte';
 	import { queryParam } from 'sveltekit-search-params';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const participation = $derived(await fetchMyParticipation(page.params.conferenceId!));
+	const participation = $derived(await fetchMyParticipation(params.conferenceId));
 
 	const paperQueryData = $derived(
 		await client.liveQuery.papers({
 			__args: {
 				where: {
 					authorId: { eq: currentUser.sub },
-					conferenceId: { eq: page.params.conferenceId! }
+					conferenceId: { eq: params.conferenceId }
 				}
 			},
 			id: true,
@@ -38,7 +40,7 @@
 	);
 
 	// Check if user is team member with review access (data comes from layout load)
-	const myRoles = $derived(await fetchMyPaperHubRoles(page.params.conferenceId!));
+	const myRoles = $derived(await fetchMyPaperHubRoles(params.conferenceId));
 	let isTeamMember = $derived(myRoles.isReviewer);
 
 	// Check if user is a supervisor with supervised students
@@ -166,11 +168,11 @@
 	</div>
 
 	{#if currentView === 'team' && isTeamMember}
-		<PaperHubOverview conferenceId={page.params.conferenceId!} />
+		<PaperHubOverview conferenceId={params.conferenceId} />
 	{:else if currentView === 'supervisor' && isSupervisor}
-		<SupervisorPaperHubView conferenceId={page.params.conferenceId!} />
+		<SupervisorPaperHubView conferenceId={params.conferenceId} />
 	{:else if currentView === 'global' && isParticipant}
-		<GlobalPapersView conferenceId={page.params.conferenceId!} />
+		<GlobalPapersView conferenceId={params.conferenceId} />
 	{:else}
 		{#if paperQueryData && paperQueryData.length > 0}
 			<div class="w-full flex flex-col bg-base-200 p-4 rounded-box">

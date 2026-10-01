@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
 	import type { TableColumns } from 'svelte-table';
@@ -8,6 +7,9 @@
 	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/Modal.svelte';
 	import { getLocale } from '$lib/paraglide/runtime';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// TODO we could improve this by defining and applying a ZOD schema
 	// for this import
@@ -38,7 +40,7 @@
 
 	const committees = $derived(
 		await client.liveQuery.committees({
-			__args: { where: { conferenceId: { eq: page.params.conferenceId! } } },
+			__args: { where: { conferenceId: { eq: params.conferenceId } } },
 			id: true,
 			abbreviation: true,
 			name: true
@@ -130,7 +132,7 @@
 			presentUsers.map(async (user) => {
 				await client.mutate.updateConferenceParticipantStatus({
 					__args: {
-						conferenceId: page.params.conferenceId!,
+						conferenceId: params.conferenceId,
 						didAttend: true,
 						userEmail: user.email
 					},
@@ -156,7 +158,7 @@
 			absentUsers.map(async (user) => {
 				await client.mutate.updateConferenceParticipantStatus({
 					__args: {
-						conferenceId: page.params.conferenceId!,
+						conferenceId: params.conferenceId,
 						didAttend: false,
 						userEmail: user.email
 					},
@@ -245,7 +247,7 @@
 
 {#snippet gotoUser()}
 	<a
-		href={`/management/${page.params.conferenceId!}/participants?selected=${selectedUser?.email}`}
+		href={`/management/${params.conferenceId}/participants?selected=${selectedUser?.email}`}
 		target="_blank"
 	>
 		<button class="btn btn-primary">

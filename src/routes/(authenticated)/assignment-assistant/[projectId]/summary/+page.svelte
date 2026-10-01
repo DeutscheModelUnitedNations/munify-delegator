@@ -1,6 +1,5 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import { page } from '$app/state';
 	import codenamize from '$lib/helpers/codenamize';
 	import formatNames from '$lib/helpers/formatNames';
 	import { onMount } from 'svelte';
@@ -18,9 +17,12 @@
 	} from '../appData.svelte';
 	import DelegationCard from '../DelegationCard.svelte';
 	import NationCard from '../NationCard.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	onMount(() => {
-		loadProjects(page.params.projectId!);
+		loadProjects(params.projectId);
 	});
 	const project = $derived(getProject());
 

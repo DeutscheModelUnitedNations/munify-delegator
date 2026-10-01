@@ -24,6 +24,12 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	}).toPass({ timeout: 20_000 });
 	await waitForHydration(page);
 
+	// `waitUntil: 'commit'` resolves as soon as the URL changes, while the signup form - which has an
+	// attendance toggle of its own - is still on screen. Wait for the dashboard's connection code,
+	// which only the supervisor stage renders, so the toggle below is the dashboard's.
+	const connectionCode = page.locator('p.font-mono');
+	await expect(connectionCode).toBeVisible({ timeout: 15_000 });
+
 	// --- toggle own attendance off (defaults to true on signup) ---
 	const attendanceToggle = page.locator('input[type="checkbox"].toggle-success');
 	await expect(attendanceToggle).toBeChecked({ timeout: 15_000 });
@@ -33,8 +39,6 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	});
 
 	// --- rotate the connection code ---
-	const connectionCode = page.locator('p.font-mono');
-	await expect(connectionCode).toBeVisible({ timeout: 15_000 });
 	const originalCode = (await connectionCode.textContent())?.trim();
 	await page.getByRole('button', { name: 'Rotate entry code' }).click();
 	await expect(connectionCode).not.toHaveText(originalCode!, { timeout: 15_000 });

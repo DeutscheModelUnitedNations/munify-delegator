@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 	import { fetchCommitteeAssignment } from './committeeAssignment';
 	import formatNames from '$lib/helpers/formatNames';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	const currentUser = $derived(await getCurrentUser());
 
-	const assignment = $derived(
-		await fetchCommitteeAssignment(page.params.conferenceId!, currentUser.sub)
-	);
+	const assignment = $derived(await fetchCommitteeAssignment(params.conferenceId, currentUser.sub));
 	const delegationMember = $derived(assignment.delegationMember);
 	let members = $derived(delegationMember?.delegation.members);
 	let delegation = $derived(delegationMember?.delegation);
@@ -57,7 +57,7 @@
 		// Only send unassigned members to the mutation
 		const assigned = await client.mutate.assignCommitteesToDelegationMembers({
 			__args: {
-				conferenceId: page.params.conferenceId ?? '',
+				conferenceId: params.conferenceId ?? '',
 				assignments: unassignedMembers.map((member) => ({
 					delegationMemberId: member.delegationMemberId,
 					committeeId: member.committeeId ?? ''

@@ -168,6 +168,12 @@ schemaBuilder.mutationFields((t) => ({
 				.filter('update')
 				.merge({ where: { id: args.id } });
 
+			// Checked up front: the role changes below go to the join table directly, so an update
+			// that matched no row would otherwise not stop them.
+			await db.query.singleParticipant
+				.findFirst({ ...updatable.query.single, columns: { id: true } })
+				.then(assertFindFirstExists);
+
 			if (args.applied) {
 				const participant = await db.query.singleParticipant
 					.findFirst({
@@ -208,16 +214,18 @@ schemaBuilder.mutationFields((t) => ({
 				motivation: args.motivation
 			});
 
-			await db
-				.update(schema.singleParticipant)
-				// School, motivation and experience are nullable, so an explicit null clears them.
-				.set({
-					school: args.school,
-					experience: args.experience,
-					motivation: args.motivation,
-					applied: args.applied ?? undefined
-				})
-				.where(updatable.sql.where);
+			// School, motivation and experience are nullable, so an explicit null clears them.
+			const values = {
+				school: args.school,
+				experience: args.experience,
+				motivation: args.motivation,
+				applied: args.applied ?? undefined
+			};
+			// A call that only changes role applications has nothing to set, and drizzle rejects an
+			// empty `set` ("No values to set").
+			if (Object.values(values).some((value) => value !== undefined)) {
+				await db.update(schema.singleParticipant).set(values).where(updatable.sql.where);
+			}
 
 			await applyForRoles(args.id, args.applyForRolesIdList ?? []);
 			await unapplyForRoles(args.id, args.unApplyForRolesIdList ?? []);

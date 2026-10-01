@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/state';
 	import formatNames from '$lib/helpers/formatNames';
 	import Modal from './Modal.svelte';
 	import NormalizeSchools from './NormalizeSchools.svelte';
 	import Section from './Section.svelte';
 	import type { ModalData } from './types';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	let modalData = $state<ModalData>();
 
@@ -35,7 +37,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.cleanupNormalizeSchoolsTitle()}</h3>
 		<p>{@html m.cleanupNormalizeSchoolsDescription()}</p>
-		<NormalizeSchools conferenceId={page.params.conferenceId!} />
+		<NormalizeSchools conferenceId={params.conferenceId} />
 	</div>
 </div>
 

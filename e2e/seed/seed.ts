@@ -13,8 +13,8 @@
  *
  * ID scheme: "actor" users (team members/reviewers/etc that log in during a test) get a fixed,
  * predictable id so a spec can seed their DB rows here and then log in as them - the app derives
- * a user's DB id straight from the OIDC `sub` claim, and the mock-oauth2-server login form uses
- * whatever `preferred_username` we send as the token's `sub` (see e2e/support/auth.ts
+ * a user's DB id straight from the OIDC `sub` claim, and `loginAs` signs in on the oidc-mock
+ * login page with `preferred_username` as the token's `sub` (see e2e/support/auth.ts
  * `fixedTestUser`). "Target" users (acted upon, never log in themselves) are just plain seeded
  * rows.
  */

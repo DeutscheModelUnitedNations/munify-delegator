@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { fetchConferenceSeats } from './conferenceSeats';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
@@ -7,8 +6,11 @@
 	import { m } from '$lib/paraglide/messages';
 	import CommitteePool from './CommitteePool.svelte';
 	import { dev } from '$app/environment';
+	import type { PageProps } from './$types';
 
-	const conference = $derived(await fetchConferenceSeats(page.params.conferenceId!));
+	let { params }: PageProps = $props();
+
+	const conference = $derived(await fetchConferenceSeats(params.conferenceId));
 
 	const { nonStateActors: nonStateActorPool, committees } = $derived(conference);
 

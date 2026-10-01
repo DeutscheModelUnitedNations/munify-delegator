@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
 	import { persisted } from 'svelte-persisted-store';
 	import { get } from 'svelte/store';
 	import { untrack } from 'svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// --- Types ---
 
@@ -37,7 +39,7 @@
 
 	// --- Props & Params ---
 
-	const conferenceId: string = $derived($page.params.conferenceId ?? '');
+	const conferenceId: string = $derived(params.conferenceId ?? '');
 
 	// --- Session state ---
 
@@ -47,7 +49,7 @@
 	// --- localStorage backup ---
 
 	const sessionStore = persisted<ScanSession | null>(
-		`attendanceSession-${$page.params.conferenceId}`,
+		`attendanceSession-${params.conferenceId}`,
 		null
 	);
 

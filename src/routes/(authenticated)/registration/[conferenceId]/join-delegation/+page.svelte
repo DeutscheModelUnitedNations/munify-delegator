@@ -5,6 +5,9 @@
 	import { goto } from '$app/navigation';
 	import DelegationPreview from '$lib/components/DelegationPreview.svelte';
 	import { entryCodeLength } from '$api/services/entryCodeGenerator';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// Invitation links carry the entry code, so the field starts filled in.
 	let code = $state<string>(page.url.searchParams.get('code') ?? '');
@@ -30,7 +33,7 @@
 				/>
 
 				{#if code && code.length === entryCodeLength}
-					<DelegationPreview conferenceId={page.params.conferenceId!} entryCode={code} />
+					<DelegationPreview conferenceId={params.conferenceId} entryCode={code} />
 				{/if}
 
 				<a class="btn btn-warning mt-16" href=".">{m.back()}</a>

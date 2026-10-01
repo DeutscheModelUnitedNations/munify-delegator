@@ -18,8 +18,17 @@
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';
 	import DevTools from '$lib/components/DevTools.svelte';
+	import { onMount } from 'svelte';
 
 	let { children }: LayoutProps = $props();
+
+	// Marks the document once the client has taken over the server-rendered page. The e2e suite
+	// waits for it (`waitForHydration`): a click that lands before hydration attaches its handler is
+	// lost, and `networkidle` - the obvious stand-in - never arrives while the subscription stream
+	// is open.
+	onMount(() => {
+		document.body.dataset.hydrated = 'true';
+	});
 
 	const changeFaDuotoneTheme = () => {
 		const r = document.querySelector(':root');

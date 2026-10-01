@@ -80,13 +80,17 @@ export async function fetchMyConferences(userId: string) {
 			})
 		]);
 
+	// A getter, so the grouping is redone from the live lists on every read instead of being frozen
+	// at fetch time - a registration made elsewhere then shows up on its conference card.
 	return {
-		conferences: conferences.map((conference) => ({
-			...conference,
-			delegationMembers: delegationMembers.filter((row) => row.conference.id === conference.id),
-			singleParticipants: singleParticipants.filter((row) => row.conference.id === conference.id),
-			conferenceSupervisors: supervisors.filter((row) => row.conference.id === conference.id),
-			teamMembers: teamMembers.filter((row) => row.conference.id === conference.id)
-		}))
+		get conferences() {
+			return conferences.map((conference) => ({
+				...conference,
+				delegationMembers: delegationMembers.filter((row) => row.conference.id === conference.id),
+				singleParticipants: singleParticipants.filter((row) => row.conference.id === conference.id),
+				conferenceSupervisors: supervisors.filter((row) => row.conference.id === conference.id),
+				teamMembers: teamMembers.filter((row) => row.conference.id === conference.id)
+			}));
+		}
 	};
 }

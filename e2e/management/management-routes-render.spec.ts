@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fixedTestUser, loginAs } from '../support/auth';
+import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_ASSIGNMENT_ADMIN_ID } from '../seed/seed';
 
 // Breadth over depth: most management routes had no coverage at all, and the cheapest regression
@@ -49,7 +49,7 @@ test('every management route renders for an authorised admin', async ({ page }) 
 		pageErrors.length = 0;
 
 		const res = await page.goto(path);
-		await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+		await waitForHydration(page);
 
 		if ((res?.status() ?? 500) >= 400) {
 			failures.push(`${path}: HTTP ${res?.status()}`);
