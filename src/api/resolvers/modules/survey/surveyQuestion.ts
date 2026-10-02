@@ -17,6 +17,7 @@ import {
 } from '$db/generated/graphql/SurveyQuestion/object.base';
 import { builder } from '../../builder';
 import { db } from '$db/db';
+import { GraphQLError } from 'graphql';
 
 builder.prismaObject('SurveyQuestion', {
 	fields: (t) => ({
@@ -83,22 +84,24 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx, info) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				// Verify user is team member with appropriate role for this conference
+				// Verify user is a system admin or a team member with appropriate role for this conference
 				const conferenceId = args.data.conferenceId;
 				if (!conferenceId) {
-					throw new Error('Conference ID is required');
+					throw new GraphQLError('Conference ID is required');
 				}
 
-				const teamMember = await db.teamMember.findFirst({
-					where: {
-						conferenceId,
-						userId: user.sub,
-						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
-					}
-				});
+				if (!user.hasRole('admin')) {
+					const teamMember = await db.teamMember.findFirst({
+						where: {
+							conferenceId,
+							userId: user.sub,
+							role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+						}
+					});
 
-				if (!teamMember) {
-					throw new Error('Access denied - requires team member status');
+					if (!teamMember) {
+						throw new GraphQLError('Access denied - requires team member status');
+					}
 				}
 
 				return field.resolve(query, root, args, ctx, info);
