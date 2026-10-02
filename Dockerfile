@@ -9,7 +9,10 @@ ARG OS_UPDATES_DATE
 RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade; apt-get -y install curl
 # we need to use node and bun for generating prisma files, see https://github.com/prisma/prisma/issues/21241
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash
-RUN apt-get install -y nodejs
+# Only the node binary is needed (everything else runs through bun/bunx). Drop the npm bundled
+# with nodejs: it ships its own outdated copies of e.g. brace-expansion and undici that the
+# Trivy image scan flags and that package.json overrides cannot reach.
+RUN apt-get install -y nodejs && rm -rf /usr/lib/node_modules/npm /usr/bin/npm /usr/bin/npx
 
 FROM dual AS runner
 WORKDIR /run
