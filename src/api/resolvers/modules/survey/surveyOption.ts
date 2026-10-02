@@ -1,5 +1,6 @@
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
+import { requireToBeConferenceAdmin } from '$api/services/requireUserToBeConferenceAdmin';
 import {
 	createOneSurveyOptionMutationObject,
 	deleteOneSurveyOptionMutationObject,
@@ -96,20 +97,7 @@ builder.mutationFields((t) => {
 					throw new GraphQLError('Survey question not found');
 				}
 
-				// Verify user is a system admin or a team member with appropriate role
-				if (!user.hasRole('admin')) {
-					const teamMember = await db.teamMember.findFirst({
-						where: {
-							conferenceId: question.conferenceId,
-							userId: user.sub,
-							role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
-						}
-					});
-
-					if (!teamMember) {
-						throw new GraphQLError('Access denied - requires team member status');
-					}
-				}
+				await requireToBeConferenceAdmin({ conferenceId: question.conferenceId, user });
 
 				return field.resolve(query, root, args, ctx, info);
 			}
