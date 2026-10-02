@@ -3,7 +3,7 @@ import type { Insert } from '../rows';
 
 export function makeSeedCalendarDay(
 	options: Pick<Insert<'calendarDay'>, 'conferenceId' | 'date' | 'name' | 'sortOrder'>
-): Insert<'calendarDay'> {
+): Insert<'calendarDay'> & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		date: options.date,
@@ -18,7 +18,7 @@ export function makeSeedCalendarDay(
 export function makeSeedCalendarTrack(
 	options: Pick<Insert<'calendarTrack'>, 'calendarDayId' | 'name' | 'sortOrder'> &
 		Partial<Pick<Insert<'calendarTrack'>, 'description'>>
-): Insert<'calendarTrack'> {
+): Insert<'calendarTrack'> & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		name: options.name,
@@ -44,7 +44,7 @@ export function makeSeedPlace(
 				| 'sitePlanDataURL'
 			>
 		>
-): Insert<'place'> {
+): Insert<'place'> & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		name: options.name,
@@ -72,7 +72,7 @@ export function makeSeedCalendarEntry(
 				'calendarTrackId' | 'description' | 'fontAwesomeIcon' | 'placeId' | 'room'
 			>
 		>
-): Insert<'calendarEntry'> {
+): Insert<'calendarEntry'> & { id: string } {
 	return {
 		id: faker.database.mongodbObjectId(),
 		name: options.name,

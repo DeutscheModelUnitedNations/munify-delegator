@@ -83,9 +83,11 @@ export function makeSeedConference(
 		postalZip: faker.location.zipCode(),
 		postalCity: faker.location.city(),
 		postalCountry: faker.location.country(),
-		termsAndConditionsContent: faker.lorem.paragraph(),
-		guardianConsentContent: faker.lorem.paragraph(),
-		mediaConsentContent: faker.lorem.paragraph(),
+		// These hold uploaded PDF templates (data URLs) that pdf-lib loads; text would make the postal
+		// registration download fail. The dev seed fills them with real PDFs where it needs them.
+		termsAndConditionsContent: null,
+		guardianConsentContent: null,
+		mediaConsentContent: null,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past(),
 		imageDataURL:

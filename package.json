@@ -195,6 +195,7 @@
 		"db:studio": "drizzle-kit studio",
 		"db:reset": "bun ./src/api/db/reset.ts",
 		"db:seed:dev": "bun ./src/api/db/seedDev.ts",
+		"dev:accounts": "bun ./scripts/writeOidcMockUsers.ts",
 		"db:nuke": "docker compose -f ./dev.docker-compose.yml down -v && docker compose -f ./dev.docker-compose.yml up -d --wait && bun run db:migrate",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:docker\"",
 		"dev:docker": "docker compose -f ./dev.docker-compose.yml up",

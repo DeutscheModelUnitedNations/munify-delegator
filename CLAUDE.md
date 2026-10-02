@@ -53,8 +53,11 @@ bun run db:push
 # Drop every table and enum (WARNING: deletes all data)
 bun run db:reset
 
-# Wipe and refill the dev database with faker data
+# Wipe and refill the dev database: every conference stage, persona accounts, crowd
 bun run db:seed:dev
+
+# Rewrite oidc-mock.yaml's users from src/api/db/seed-data/devAccounts.ts
+bun run dev:accounts
 
 # Recreate the container from scratch and migrate it
 bun run db:nuke
@@ -149,7 +152,7 @@ bun run preview
     dev-time generator for the typed frontend client.
   - `context.ts` - Request context (OIDC data plus `mustBeLoggedIn` / `hasRole`)
   - `db/` - `schema.ts` (tables), `relations.ts` (the relational API's graph), `db.ts` (client),
-    `reset.ts`, `seedDev.ts` and the faker factories under `seed-data/`
+    `reset.ts`, `seedDev.ts` (scenarios in `seed-dev/`) and the faker factories under `seed-data/`
   - `graphql.remote.ts` - SvelteKit remote functions that execute the schema in-process, which
     is how server-side loads reach the API without an HTTP round trip
   - `services/` - Backend business logic services
@@ -386,6 +389,17 @@ bun run preview
   origin under `/oidc`, and `PUBLIC_OIDC_AUTHORITY` points at
   `http://127.0.0.1:8090/oidc/.well-known/openid-configuration`. The e2e suite signs in through the
   login page's custom-claims form.
+- **Dev accounts and the dev seed belong together.** `src/api/db/seed-data/devAccounts.ts` lists
+  every account on the login page; `bun run dev:accounts` writes them into `oidc-mock.yaml`
+  (never edit its `users` by hand - `devAccounts.test.ts` fails on drift), and
+  `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Eight
+  conferences cover the stages (`seed-dev/plans.ts`: pre, registration open / in its grace period
+  / closed, preparation with everything and with nothing unlocked, active, post). Team personas
+  hold one team role everywhere; `[Registration]` personas cover the application steps;
+  `[Participant]` personas keep one role (head delegate, minor, supervisor, rejected, …) across
+  preparation, active and post, so one login tours the stages. The seed prints the conference ids,
+  join codes and invitation links at the end. A new state the UI branches on gets a persona or a
+  conference flag here, so it stays reachable with one click.
 - **Login-time user upsert** lives in `src/api/services/upsertSelf.ts`, passed to the library as
   `userLoggedInSuccessfully`. It creates or refreshes the row, redeems a pending team-member
   invitation, and redirects to `/auth/email-conflict` or `/my-account` when it has to.

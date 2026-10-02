@@ -19,19 +19,3 @@ export function makeSeedDelegation(
 		updatedAt: faker.date.past()
 	};
 }
-
-/**
- * Gives a seeded delegation a role: the nation or the non-state actor, chosen at random. A role
- * that is missing (the pool ran out) leaves the delegation without one.
- */
-export function assignSeedRole(
-	delegation: Insert<'delegation'>,
-	nation: { alpha3Code: string } | undefined,
-	nonStateActor: { id?: string } | undefined
-) {
-	if (faker.datatype.boolean()) {
-		delegation.assignedNationAlpha3Code = nation?.alpha3Code ?? null;
-	} else {
-		delegation.assignedNonStateActorId = nonStateActor?.id ?? null;
-	}
-}

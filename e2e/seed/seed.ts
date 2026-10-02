@@ -1,9 +1,9 @@
 /**
  * Minimal, deterministic fixture data for the Playwright e2e suite.
  *
- * This intentionally does NOT reuse src/api/db/seedDev.ts: that script seeds 1000 users and five
- * fully-populated conferences (including assignment data for non-PARTICIPANT_REGISTRATION
- * conferences), which is both slow and calls `reset()`, wiping every table - the opposite of
+ * This intentionally does NOT reuse src/api/db/seedDev.ts: that script seeds hundreds of users and
+ * eight fully-populated conferences (one per stage, with persona accounts in each), which is both
+ * slow and calls `reset()`, wiping every table - the opposite of
  * what a suite that runs repeatedly against a persistent database wants. e2e fixtures should be
  * small, fast, and owned by the e2e suite so they don't drift or break with unrelated dev-seed
  * changes.
