@@ -4,6 +4,8 @@
 	import type { PageData } from './$types';
 	import PieChart from '$lib/components/Charts/ECharts/PieChart.svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { isHttpError } from '@sveltejs/kit';
+	import { toast } from 'svelte-sonner';
 	import { datetimeLocalToDate, formatInTimezone } from '$lib/services/conferenceTimezoneDate';
 
 	let { data }: { data: PageData } = $props();
@@ -109,6 +111,11 @@
 			createDeadline = '';
 		} catch (error) {
 			console.error('Failed to create survey:', error);
+			// GraphQL errors are already toasted by the Houdini client (src/client.ts), which then
+			// throws an HttpError - only toast for failures it did not see (network, reload, ...)
+			if (!isHttpError(error)) {
+				toast.error(m.genericError());
+			}
 		} finally {
 			isLoading = false;
 		}
