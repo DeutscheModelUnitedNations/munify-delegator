@@ -20,10 +20,10 @@
 	}: Props = $props();
 
 	const categories: { key: ColumnCategory; label: string }[] = [
-		{ key: 'personal', label: m.givenName() },
-		{ key: 'role', label: m.participationType() },
-		{ key: 'status', label: m.postalRegistration() },
-		{ key: 'computed', label: m.conferenceAge() }
+		{ key: 'personal', label: m.personalData() },
+		{ key: 'role', label: m.participation() },
+		{ key: 'status', label: m.status() },
+		{ key: 'computed', label: m.computedValues() }
 	];
 
 	const allColumns = $derived(table.getAllColumns().filter((col) => col.columnDef.meta));
