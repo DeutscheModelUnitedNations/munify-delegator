@@ -419,6 +419,7 @@
 	"completeSignupWarningText": "Obwohl du bereits eine Delegation angelegt hast oder einer beigetreten bist, ist die Registrierung noch nicht abgeschlossen. Bitte schließe die Registrierung rechtzeitig vor Ablauf der Anmeldefrist ab, damit wir die Anmeldung deiner Delegation im Auswahlverfahren berücksichtigen können.",
 	"completeSignupWarningTextSingleParticipant": "Obwohl du dich bereits für eine Rolle beworben haben, ist die Registrierung noch nicht abgeschlossen. Bitte schließe deine Registrierung rechtzeitig vor Ablauf der Anmeldefrist ab, damit wir die Bewerbung im Auswahlverfahren berücksichtigen können.",
 	"completedFlags": "Vollständige Flaggen",
+	"computedValues": "Berechnete Werte",
 	"conference": "Konferenz",
 	"conferenceAge": "Konferenzalter",
 	"conferenceBirthday": "Geburtstag während der Konferenz",
