@@ -9,6 +9,7 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
+import { nullToUndefined } from '$api/services/args';
 
 // Ported from abilities/entities/surveyQuestion.ts
 abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -24,7 +25,7 @@ abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when((ctx) => 
 	return where ? { where } : undefined;
 });
 
-export const SurveyQuestionRef = object({ table: 'surveyQuestion' });
+const SurveyQuestionRef = object({ table: 'surveyQuestion' });
 query({ table: 'surveyQuestion' });
 const pubsub = rumblePubsub({ table: 'surveyQuestion' });
 
@@ -50,9 +51,9 @@ schemaBuilder.mutationFields((t) => ({
 					title: args.title,
 					description: args.description,
 					deadline: args.deadline,
-					draft: args.draft ?? undefined,
-					hidden: args.hidden ?? undefined,
-					showSelectionOnDashboard: args.showSelectionOnDashboard ?? undefined
+					draft: nullToUndefined(args.draft),
+					hidden: nullToUndefined(args.hidden),
+					showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
 				})
 				.returning()
 				.then(assertFirstEntryExists);
@@ -62,8 +63,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.surveyQuestion
 				.findFirst(
 					query(
-						ctx.abilities.surveyQuestion.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.surveyQuestion.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -85,15 +86,16 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.surveyQuestion)
 				.set({
-					title: args.title ?? undefined,
-					description: args.description ?? undefined,
-					deadline: args.deadline ?? undefined,
-					draft: args.draft ?? undefined,
-					hidden: args.hidden ?? undefined,
-					showSelectionOnDashboard: args.showSelectionOnDashboard ?? undefined
+					title: nullToUndefined(args.title),
+					description: nullToUndefined(args.description),
+					deadline: nullToUndefined(args.deadline),
+					draft: nullToUndefined(args.draft),
+					hidden: nullToUndefined(args.hidden),
+					showSelectionOnDashboard: nullToUndefined(args.showSelectionOnDashboard)
 				})
 				.where(
-					ctx.abilities.surveyQuestion.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.surveyQuestion.filter('update')).merge({ where: { id: args.id } })
+						.sql.where
 				);
 
 			pubsub.updated(args.id);
@@ -101,8 +103,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.surveyQuestion
 				.findFirst(
 					query(
-						ctx.abilities.surveyQuestion.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.surveyQuestion.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -116,7 +118,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.surveyQuestion)
 				.where(
-					ctx.abilities.surveyQuestion.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.surveyQuestion.filter('delete')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.surveyQuestion.id });
 			if (deleted.length === 0) {

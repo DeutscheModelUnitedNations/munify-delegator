@@ -3,7 +3,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { getUserCardState, closeUserCard, openUserCard } from './userCardState.svelte';
 	import UserCardContent from './UserCardContent.svelte';
-	import { queryParam } from 'sveltekit-search-params';
+	import { queryParameters } from 'sveltekit-search-params';
 
 	interface Props {
 		conferenceId: string;
@@ -12,32 +12,33 @@
 	let { conferenceId }: Props = $props();
 
 	const cardState = getUserCardState();
-	const userCardParam = queryParam('userCard');
+	const params = queryParameters({ userCard: true });
 
 	// Guard to prevent URL→State effect from re-opening during close.
-	// Setting $userCardParam uses goto() internally (async), so the param store
-	// still holds the old value when closeUserCard() synchronously updates state.
+	// params.userCard is only cleared by the State -> URL effect below (and the URL
+	// itself only changes once goto() resolves), so it still holds the old value
+	// when closeUserCard() synchronously updates state.
 	let closing = $state(false);
 
 	// URL -> State sync: if page loads with ?userCard=xxx, open the drawer
 	$effect(() => {
-		if ($userCardParam && !cardState.isOpen && !closing) {
-			openUserCard($userCardParam, conferenceId);
+		if (params.userCard && !cardState.isOpen && !closing) {
+			openUserCard(params.userCard, conferenceId);
 		}
 	});
 
 	// State -> URL sync
 	$effect(() => {
 		if (cardState.isOpen && cardState.userId) {
-			$userCardParam = cardState.userId;
+			params.userCard = cardState.userId;
 		} else if (!cardState.isOpen) {
-			$userCardParam = null;
+			params.userCard = null;
 		}
 	});
 
 	// Reset closing guard once the URL param has actually been cleared
 	$effect(() => {
-		if (closing && !$userCardParam) {
+		if (closing && !params.userCard) {
 			closing = false;
 		}
 	});

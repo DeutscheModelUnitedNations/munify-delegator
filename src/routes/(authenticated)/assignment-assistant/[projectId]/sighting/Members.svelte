@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import { onMount } from 'svelte';
 	import LoadingData from '../components/LoadingData.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import { getAgeAtConference } from '$lib/helpers/ageChecker';
@@ -20,7 +19,6 @@
 			familyName: true,
 			gender: true,
 			birthday: true,
-			globalNotes: true,
 			conferenceParticipationsCount: true
 		});
 	}
@@ -39,6 +37,15 @@
 				usersLoading = false;
 			});
 	});
+
+	/** The badge colour and icon for each gender; anything else gets the neutral one. */
+	const genderBadges: Record<string, { color: string; icon: string }> = {
+		FEMALE: { color: 'bg-pink-600', icon: 'venus' },
+		MALE: { color: 'bg-blue-500', icon: 'mars' }
+	};
+	const otherGenderBadge = { color: 'bg-gray-500', icon: 'venus-mars' };
+	const genderBadge = (gender: string | null | undefined) =>
+		(gender && genderBadges[gender]) || otherGenderBadge;
 </script>
 
 <tr>
@@ -47,25 +54,14 @@
 		<LoadingData fetching={usersLoading} error={!users}>
 			<ul class="flex list-inside list-disc flex-col justify-center gap-1">
 				{#each users ?? [] as user (user.id)}
+					{@const badge = genderBadge(user.gender)}
 					<li>
 						{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
 						<span class="badge badge-xs badge-neutral">
 							{(user.birthday && getAgeAtConference(user.birthday, startConference)) ?? '?'}
 						</span>
-						<span
-							class="badge badge-xs {user.gender === 'FEMALE'
-								? 'bg-pink-600'
-								: user.gender === 'MALE'
-									? 'bg-blue-500'
-									: 'bg-gray-500'}"
-						>
-							<i
-								class="fa-solid fa-{user.gender === 'FEMALE'
-									? 'venus'
-									: user.gender === 'MALE'
-										? 'mars'
-										: 'venus-mars'}"
-							></i>
+						<span class="badge badge-xs {badge.color}">
+							<i class="fa-solid fa-{badge.icon}"></i>
 						</span>
 						{#if user.conferenceParticipationsCount > 0}
 							<span class="badge badge-xs badge-warning">

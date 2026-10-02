@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import UserCardContent from '$lib/components/userCard/UserCardContent.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { PageProps } from './$types';
@@ -12,7 +13,10 @@
 
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col">
 	<div class="mb-3 flex items-center gap-2">
-		<a href="/management/{params.conferenceId}/participants" class="btn btn-ghost btn-sm">
+		<a
+			href={resolve(`/management/${params.conferenceId}/participants`)}
+			class="btn btn-ghost btn-sm"
+		>
 			<i class="fa-duotone fa-arrow-left"></i>
 			{m.back()}
 		</a>

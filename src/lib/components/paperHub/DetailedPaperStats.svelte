@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
-	import type { EChartsOption } from 'echarts';
+	import type { EChartsOption, TooltipComponentFormatterCallbackParams } from 'echarts';
 	import BarChart from '$lib/components/charts/echarts/BarChart.svelte';
 	import MultiSeriesBarChart from '$lib/components/charts/echarts/MultiSeriesBarChart.svelte';
 	import GaugeChart from '$lib/components/charts/echarts/GaugeChart.svelte';
 	import EChartsBase from '$lib/components/charts/echarts/EChartsBase.svelte';
+	import { committeeTooltip, paperTypeChartColors, paperTypeLabel } from './paperStatsCharts';
 
 	interface Paper {
 		type: PapertypeEnum;
@@ -27,11 +28,6 @@
 	let { allPapers, committeesWithPapers }: Props = $props();
 
 	// Color scheme constants
-	const PAPER_TYPE_COLORS = {
-		POSITION_PAPER: '#3b82f6', // blue
-		WORKING_PAPER: '#8b5cf6' // violet
-	} as const;
-
 	const PAPER_STATUS_COLORS = {
 		SUBMITTED: '#facc15', // warning/yellow
 		REVISED: '#38bdf8', // info/blue
@@ -99,21 +95,11 @@
 		];
 
 		const series = types.map((type) => ({
-			name:
-				type === 'POSITION_PAPER'
-					? m.paperTypePositionPaper()
-					: type === 'WORKING_PAPER'
-						? m.paperTypeWorkingPaper()
-						: m.paperTypeIntroductionPaper(),
+			name: paperTypeLabel(type),
 			data: statuses.map(
 				(status) => allPapers.filter((p) => p.type === type && p.status === status).length
 			),
-			color:
-				type === 'POSITION_PAPER'
-					? PAPER_TYPE_COLORS.POSITION_PAPER
-					: type === 'WORKING_PAPER'
-						? PAPER_TYPE_COLORS.WORKING_PAPER
-						: '#f59e0b'
+			color: paperTypeChartColors[type]
 		}));
 
 		return { labels, series };
@@ -187,30 +173,11 @@
 				axisPointer: {
 					type: 'shadow'
 				},
-				formatter: (params: any) => {
-					if (!Array.isArray(params) || params.length === 0) return '';
-					const committee = params[0].axisValue;
-					let tooltip = `<strong>${committee}</strong><br/>`;
-
-					// Group by paper type
-					for (const type of types) {
-						const typeTotal = params
-							.filter((p: any) => p.seriesName.startsWith(typeLabels[type]))
-							.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
-
-						if (typeTotal > 0) {
-							tooltip += `<br/><strong>${typeLabels[type]}: ${typeTotal}</strong><br/>`;
-							params
-								.filter((p: any) => p.seriesName.startsWith(typeLabels[type]) && p.value > 0)
-								.forEach((p: any) => {
-									const statusName = p.seriesName.split(' - ')[1];
-									tooltip += `${p.marker} ${statusName}: ${p.value}<br/>`;
-								});
-						}
-					}
-
-					return tooltip;
-				}
+				formatter: (params: TooltipComponentFormatterCallbackParams) =>
+					committeeTooltip(
+						params,
+						types.map((type) => typeLabels[type])
+					)
 			},
 			legend: {
 				bottom: 0,

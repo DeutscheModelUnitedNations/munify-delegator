@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Alpha3 } from 'convert-iso-codes';
 	import { onMount } from 'svelte';
 	interface Props {
 		size?: 'xs' | 'sm' | 'md' | 'lg';

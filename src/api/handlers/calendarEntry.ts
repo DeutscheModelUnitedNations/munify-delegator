@@ -15,6 +15,7 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
+import { nullToUndefined } from '$api/services/args';
 
 // Ported from abilities/entities/calendarEntry.ts
 abilityBuilder.calendarEntry.allow('read');
@@ -25,7 +26,7 @@ abilityBuilder.calendarEntry.allow(['update', 'delete']).when((ctx) => {
 	return calendarDay ? { where: { calendarDay } } : undefined;
 });
 
-export const CalendarEntryRef = object({ table: 'calendarEntry' });
+const CalendarEntryRef = object({ table: 'calendarEntry' });
 query({ table: 'calendarEntry' });
 const pubsub = rumblePubsub({ table: 'calendarEntry' });
 
@@ -56,12 +57,12 @@ schemaBuilder.mutationFields((t) => ({
 					name: args.name,
 					startTime: args.startTime,
 					endTime: args.endTime,
-					description: args.description ?? undefined,
-					fontAwesomeIcon: args.fontAwesomeIcon ?? undefined,
-					color: args.color ?? undefined,
-					room: args.room ?? undefined,
-					calendarTrackId: args.calendarTrackId ?? undefined,
-					placeId: args.placeId ?? undefined
+					description: nullToUndefined(args.description),
+					fontAwesomeIcon: nullToUndefined(args.fontAwesomeIcon),
+					color: nullToUndefined(args.color),
+					room: nullToUndefined(args.room),
+					calendarTrackId: nullToUndefined(args.calendarTrackId),
+					placeId: nullToUndefined(args.placeId)
 				})
 				.returning()
 				.then(assertFirstEntryExists);
@@ -71,8 +72,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarEntry
 				.findFirst(
 					query(
-						ctx.abilities.calendarEntry.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -100,11 +101,11 @@ schemaBuilder.mutationFields((t) => ({
 				// An omitted argument arrives as `undefined` and leaves the column alone; an
 				// explicit `null` clears it. Only the non-nullable columns coerce null away.
 				.set({
-					name: args.name ?? undefined,
-					startTime: args.startTime ?? undefined,
-					endTime: args.endTime ?? undefined,
-					color: args.color ?? undefined,
-					calendarDayId: args.calendarDayId ?? undefined,
+					name: nullToUndefined(args.name),
+					startTime: nullToUndefined(args.startTime),
+					endTime: nullToUndefined(args.endTime),
+					color: nullToUndefined(args.color),
+					calendarDayId: nullToUndefined(args.calendarDayId),
 					description: args.description,
 					fontAwesomeIcon: args.fontAwesomeIcon,
 					room: args.room,
@@ -112,7 +113,8 @@ schemaBuilder.mutationFields((t) => ({
 					placeId: args.placeId
 				})
 				.where(
-					ctx.abilities.calendarEntry.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.calendarEntry.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -120,8 +122,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarEntry
 				.findFirst(
 					query(
-						ctx.abilities.calendarEntry.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.calendarEntry.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -135,7 +137,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.calendarEntry)
 				.where(
-					ctx.abilities.calendarEntry.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.calendarEntry.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.calendarEntry.id });
 

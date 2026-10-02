@@ -5,45 +5,26 @@
 	import codenamize from '$lib/helpers/codenamize';
 	import formatNames from '$lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { getConference, type Delegation } from './appData.svelte';
+	import { getConference, type ProjectDelegation } from './appData.svelte';
 	import LoadingData from './components/LoadingData.svelte';
+	import ApplicationDetailIcons from './ApplicationDetailIcons.svelte';
 	import { getWeights } from './weights.svelte';
+	import { fetchApplicationSchool, fetchSupervisorNames } from './applicationDetails';
 
 	interface Props {
-		application: Delegation;
+		application: ProjectDelegation;
 	}
 
 	let { application }: Props = $props();
 
 	let optionsOpen = $state(false);
 
-	/**
-	 * The card only receives ids. An application id can name a delegation or a single
-	 * participant, so both are looked up and whichever exists wins.
-	 */
+	/** The card only receives ids; these are the details it shows. */
 	async function fetchDetails(applicationId: string, supervisorIds: string[], userIds: string[]) {
-		const [delegations, singleParticipants, supervisors, users] = await Promise.all([
-			client.query.delegations({
-				__args: { where: { id: { eq: applicationId } } },
-				id: true,
-				school: true,
-				experience: true,
-				motivation: true
-			}),
-			client.query.singleParticipants({
-				__args: { where: { id: { eq: applicationId } } },
-				id: true,
-				school: true,
-				experience: true,
-				motivation: true
-			}),
+		const [application, supervisors, users] = await Promise.all([
+			fetchApplicationSchool(applicationId),
+			fetchSupervisorNames(supervisorIds),
 			// An empty `in` list would compile to invalid SQL.
-			supervisorIds.length > 0
-				? client.query.conferenceSupervisors({
-						__args: { where: { id: { in: supervisorIds } } },
-						user: { id: true, givenName: true, familyName: true }
-					})
-				: [],
 			userIds.length > 0
 				? client.query.users({
 						__args: { where: { id: { in: userIds } } },
@@ -56,11 +37,7 @@
 				: []
 		]);
 
-		return {
-			application: delegations.at(0) ?? singleParticipants.at(0),
-			supervisors,
-			users
-		};
+		return { application, supervisors, users };
 	}
 
 	let details = $state<Awaited<ReturnType<typeof fetchDetails>>>();
@@ -138,55 +115,39 @@
 				).toFixed(1)}
 			</div>
 		</LoadingData>
-		{#if application.note}
-			<div class="tooltip" data-tip={application.note}>
-				<i class="fas fa-sticky-note"></i>
-			</div>
-		{/if}
-		<div class="tooltip" data-tip={application.id}>
-			<i class="fas fa-barcode-scan"></i>
-		</div>
-		<LoadingData fetching={detailsLoading} error={detailsFailed}>
-			<div class="tooltip" data-tip={applicationDetails?.school}>
-				<i class="fas fa-school"></i>
-			</div>
-		</LoadingData>
-		{#if application.appliedForRoles.length > 0}
-			<div
-				class="tooltip"
-				data-tip={application.appliedForRoles
-					.map((x) =>
-						x.nation?.alpha3Code
-							? getFullTranslatedCountryNameFromISO3Code(x.nation?.alpha3Code ?? '')
-							: x.nonStateActor?.abbreviation
-					)
-					.join(', ')}
-			>
-				<i class="fas fa-flag"></i>
-			</div>
-		{/if}
-		<LoadingData fetching={detailsLoading} error={detailsFailed}>
-			<div
-				class="tooltip"
-				data-tip={userDetails
-					.map((x) => formatNames(x.givenName ?? undefined, x.familyName ?? undefined))
-					.join(', ')}
-			>
-				<i class="fas fa-users"></i>
-			</div>
-		</LoadingData>
-		{#if supervisorDetails?.length > 0}
+		<ApplicationDetailIcons
+			id={application.id}
+			note={application.note}
+			school={applicationDetails?.school}
+			supervisors={supervisorDetails}
+			loading={detailsLoading}
+			failed={detailsFailed}
+		>
+			{#if application.appliedForRoles.length > 0}
+				<div
+					class="tooltip"
+					data-tip={application.appliedForRoles
+						.map((x) =>
+							x.nation?.alpha3Code
+								? getFullTranslatedCountryNameFromISO3Code(x.nation?.alpha3Code ?? '')
+								: x.nonStateActor?.abbreviation
+						)
+						.join(', ')}
+				>
+					<i class="fas fa-flag"></i>
+				</div>
+			{/if}
 			<LoadingData fetching={detailsLoading} error={detailsFailed}>
 				<div
 					class="tooltip"
-					data-tip={supervisorDetails
-						.map((x) => formatNames(x.user.givenName ?? undefined, x.user.familyName ?? undefined))
+					data-tip={userDetails
+						.map((x) => formatNames(x.givenName ?? undefined, x.familyName ?? undefined))
 						.join(', ')}
 				>
-					<i class="fas fa-chalkboard-user"></i>
+					<i class="fas fa-users"></i>
 				</div>
 			</LoadingData>
-		{/if}
+		</ApplicationDetailIcons>
 		{#if application.splittedFrom}
 			<div class="tooltip" data-tip={`Zerteilt von ${codenamize(application.splittedFrom)}`}>
 				<i class="fas fa-split"></i>

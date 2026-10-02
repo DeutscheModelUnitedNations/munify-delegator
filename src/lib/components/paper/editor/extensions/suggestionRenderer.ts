@@ -1,10 +1,11 @@
 import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
 import { computePosition, flip, offset, shift } from '@floating-ui/dom';
+import type { JSONContent } from '@tiptap/core';
 
 export interface SnippetItem {
 	id: string;
 	name: string;
-	content: any; // JSONContent
+	content: JSONContent;
 }
 
 interface RendererState {
@@ -17,7 +18,7 @@ interface RendererState {
  * Creates a DaisyUI-styled dropdown element for snippet suggestions
  * Uses Floating UI for automatic positioning
  */
-export function createSuggestionRenderer(onSelectSnippet?: (snippet: SnippetItem) => void) {
+export function createSuggestionRenderer() {
 	let popup: HTMLElement | null = null;
 	let state: RendererState = {
 		selectedIndex: 0,
@@ -87,7 +88,7 @@ export function createSuggestionRenderer(onSelectSnippet?: (snippet: SnippetItem
 		const item = state.items[index];
 		if (item && state.command) {
 			// Always call state.command which handles deleting the trigger text
-			// and internally invokes onSelectSnippet if provided (see SnippetSuggestion.ts)
+			// and invokes the extension's onSelectSnippet if provided (see SnippetSuggestion.ts)
 			state.command(item);
 		}
 	}
@@ -119,6 +120,24 @@ export function createSuggestionRenderer(onSelectSnippet?: (snippet: SnippetItem
 		popup.style.left = `${x}px`;
 		popup.style.top = `${y}px`;
 	}
+
+	function moveSelection(index: number): void {
+		state.selectedIndex = index;
+		renderItems();
+	}
+
+	/** The keys the dropdown claims while it is open, and what each does. */
+	const keyHandlers = new Map<string, () => void>([
+		['ArrowUp', () => moveSelection(Math.max(0, state.selectedIndex - 1))],
+		['ArrowDown', () => moveSelection(Math.min(state.items.length - 1, state.selectedIndex + 1))],
+		[
+			'Enter',
+			() => {
+				if (state.items.length > 0) selectItem(state.selectedIndex);
+			}
+		],
+		['Escape', () => {}]
+	]);
 
 	function escapeHtml(text: string): string {
 		const div = document.createElement('div');
@@ -152,36 +171,13 @@ export function createSuggestionRenderer(onSelectSnippet?: (snippet: SnippetItem
 			updatePosition(props.clientRect);
 		},
 
-		onKeyDown(props: SuggestionKeyDownProps): boolean {
-			const { event } = props;
-
-			if (event.key === 'ArrowUp') {
-				event.preventDefault();
-				state.selectedIndex = Math.max(0, state.selectedIndex - 1);
-				renderItems();
-				return true;
-			}
-
-			if (event.key === 'ArrowDown') {
-				event.preventDefault();
-				state.selectedIndex = Math.min(state.items.length - 1, state.selectedIndex + 1);
-				renderItems();
-				return true;
-			}
-
-			if (event.key === 'Enter') {
-				event.preventDefault();
-				if (state.items.length > 0) {
-					selectItem(state.selectedIndex);
-				}
-				return true;
-			}
-
-			if (event.key === 'Escape') {
-				return true;
-			}
-
-			return false;
+		onKeyDown({ event }: SuggestionKeyDownProps): boolean {
+			const handler = keyHandlers.get(event.key);
+			if (!handler) return false;
+			// Escape is claimed without preventing the default, so the editor still sees it
+			if (event.key !== 'Escape') event.preventDefault();
+			handler();
+			return true;
 		},
 
 		onExit(): void {

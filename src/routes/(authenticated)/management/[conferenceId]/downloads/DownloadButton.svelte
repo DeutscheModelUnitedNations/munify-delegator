@@ -2,9 +2,10 @@
 	interface Props {
 		title: string;
 		icon?: string;
+		/** Shows the spinner; a promise returned by `onclick` shows it on its own until it settles */
 		loading?: boolean;
 		disabled?: boolean;
-		onclick: () => void;
+		onclick: () => void | Promise<void>;
 	}
 
 	let {
@@ -14,14 +15,28 @@
 		disabled = false,
 		onclick
 	}: Props = $props();
+
+	let running = $state(false);
+	const busy = $derived(loading || running);
+
+	async function handleClick() {
+		const result = onclick();
+		if (!(result instanceof Promise)) return;
+		running = true;
+		try {
+			await result;
+		} finally {
+			running = false;
+		}
+	}
 </script>
 
 <button
 	class="btn btn-outline btn-sm gap-2 justify-start h-auto py-2 min-h-0"
-	disabled={disabled || loading}
-	onclick={() => onclick()}
+	disabled={disabled || busy}
+	onclick={handleClick}
 >
-	{#if loading}
+	{#if busy}
 		<span class="loading loading-spinner loading-xs"></span>
 	{:else}
 		<i class="{icon} text-sm opacity-70"></i>

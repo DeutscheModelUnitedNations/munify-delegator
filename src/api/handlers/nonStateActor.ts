@@ -13,7 +13,7 @@ abilityBuilder.nonStateActor.allow(['update', 'delete']).when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const NonStateActorRef = object({ table: 'nonStateActor' });
+object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });
 const pubsub = rumblePubsub({ table: 'nonStateActor' });
 
@@ -29,7 +29,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.nonStateActor)
 				.where(
-					ctx.abilities.nonStateActor.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.nonStateActor.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.nonStateActor.id });
 			if (deleted.length === 0) {

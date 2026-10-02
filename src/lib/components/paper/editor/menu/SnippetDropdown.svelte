@@ -28,7 +28,7 @@
 		</button>
 
 		<ul
-			tabindex="0"
+			tabindex="-1"
 			class="dropdown-content menu bg-base-100 rounded-box shadow-lg z-[100] w-56 p-2 border border-base-300 mt-2"
 		>
 			{#if snippets.length === 0}
@@ -38,7 +38,7 @@
 					</span>
 				</li>
 			{:else}
-				{#each snippets as snippet}
+				{#each snippets as snippet (snippet.id)}
 					<li>
 						<button type="button" class="cursor-pointer" onclick={() => handleSelect(snippet)}>
 							<i class="fa-solid fa-bookmark text-primary"></i>

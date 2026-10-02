@@ -20,14 +20,14 @@
 				<thead>
 					<tr>
 						<th></th>
-						{#each xLabels as label}
+						{#each xLabels as label, column (column)}
 							<th class="text-center text-xs">{typeof label === 'string' ? label : label.label}</th>
 						{/each}
 						<th class="text-center text-xs font-bold">Σ</th>
 					</tr>
 				</thead>
 				<tbody>
-					{#each data as rowData, i}
+					{#each data as rowData, i (i)}
 						<tr>
 							<th class="text-xs">
 								{#if typeof yLabels[i] === 'string'}
@@ -37,7 +37,7 @@
 									{yLabels[i].label}
 								{/if}
 							</th>
-							{#each rowData as entry}
+							{#each rowData as entry, column (column)}
 								<td class="text-center">{entry}</td>
 							{/each}
 							<td class="text-center font-bold">{rowData.reduce((a, b) => a + b, 0)}</td>
@@ -45,7 +45,7 @@
 					{/each}
 					<tr class="border-t border-base-300">
 						<th class="text-xs font-bold">Σ</th>
-						{#each data[0] as _, i}
+						{#each Array.from(data[0] ?? [], (_, column) => column) as i (i)}
 							<td class="text-center font-bold">{data.reduce((a, b) => a + b[i], 0)}</td>
 						{/each}
 						<td class="text-center font-bold"

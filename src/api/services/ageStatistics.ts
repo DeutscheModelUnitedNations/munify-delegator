@@ -64,6 +64,117 @@ function appliedCondition(filter: StatsFilterType) {
 	}
 }
 
+/** A row whose user's birthday may or may not be known. */
+interface WithBirthday {
+	user: { birthday: Date | null };
+}
+
+/**
+ * Accumulates the ages of every category as the categories are fetched, along with the counts of
+ * participants with and without a known birthday.
+ */
+class AgeCollector {
+	readonly categories: AgeCategoryStats[] = [];
+	readonly ageData: { age: number; categoryId: string }[] = [];
+	totalWithBirthday = 0;
+	totalWithoutBirthday = 0;
+
+	constructor(private readonly referenceDate: Date) {}
+
+	ageOf(row: WithBirthday) {
+		const birthday = row.user.birthday;
+		if (!birthday) return undefined;
+		return getAgeAtConference(birthday, this.referenceDate);
+	}
+
+	/** Books both halves of one category fetch: those with a birthday and those without. */
+	count<T>(withBirthday: T[], withoutBirthday: unknown[]) {
+		this.totalWithBirthday += withBirthday.length;
+		this.totalWithoutBirthday += withoutBirthday.length;
+		return withBirthday;
+	}
+
+	/** Adds a category, unless none of its rows has a usable age. */
+	addCategory(category: Omit<AgeCategoryStats, 'count' | 'average'>, rows: WithBirthday[]) {
+		const ages: number[] = [];
+		for (const row of rows) {
+			const age = this.ageOf(row);
+			if (age === undefined) continue;
+			ages.push(age);
+			this.ageData.push({ age, categoryId: category.categoryId });
+		}
+		if (ages.length === 0) return;
+		this.categories.push({ ...category, count: ages.length, average: average(ages) });
+	}
+
+	/** The distribution always spans at least 10 to 30 so the chart keeps a stable x axis. */
+	distribution() {
+		const allAges = this.ageData.map((entry) => entry.age);
+		const minAge = Math.min(10, ...allAges);
+		const maxAge = Math.max(30, ...allAges);
+		const distribution: AgeDistributionEntry[] = [];
+
+		for (let age = minAge; age <= maxAge; age++) {
+			const entries = this.ageData.filter((entry) => entry.age === age);
+			if (entries.length === 0) continue;
+
+			const categoryIds = [...new Set(entries.map((entry) => entry.categoryId))];
+			distribution.push({
+				age,
+				count: entries.length,
+				byCategory: categoryIds.map((categoryId) => ({
+					categoryId,
+					count: entries.filter((entry) => entry.categoryId === categoryId).length
+				}))
+			});
+		}
+		return distribution;
+	}
+
+	overall(): AgeOverall {
+		const allAges = this.ageData.map((entry) => entry.age);
+		return {
+			average: allAges.length > 0 ? average(allAges) : null,
+			total: this.totalWithBirthday,
+			missingBirthdays: this.totalWithoutBirthday
+		};
+	}
+}
+
+/** Per-committee ages of nation delegates, in the order the committees first appear. */
+function committeeBreakdown(
+	collector: AgeCollector,
+	members: (WithBirthday & {
+		assignedCommittee: { id: string; name: string; abbreviation: string } | null;
+	})[]
+): AgeCommitteeStats[] {
+	const committeeAges = new Map<string, { name: string; abbreviation: string; ages: number[] }>();
+
+	for (const member of members) {
+		const age = collector.ageOf(member);
+		const committee = member.assignedCommittee;
+		if (age === undefined || !committee) continue;
+		const existing = committeeAges.get(committee.id);
+		if (existing) {
+			existing.ages.push(age);
+		} else {
+			committeeAges.set(committee.id, {
+				name: committee.name,
+				abbreviation: committee.abbreviation,
+				ages: [age]
+			});
+		}
+	}
+
+	return [...committeeAges].map(([committeeId, data]) => ({
+		committeeId,
+		committeeName: data.name,
+		abbreviation: data.abbreviation,
+		count: data.ages.length,
+		average: average(data.ages)
+	}));
+}
+
 /**
  * Age breakdown of a conference's participants, split into the categories the dashboard shows:
  * nation delegates (further split by committee), non-state actor participants, delegation members
@@ -81,12 +192,8 @@ export async function getAgeStatistics({
 	filter: StatsFilterType;
 	referenceDate: Date;
 }): Promise<AgeStatisticsResult> {
-	const categories: AgeCategoryStats[] = [];
-	const committeeStats: AgeCommitteeStats[] = [];
-	const ageData: { age: number; categoryId: string }[] = [];
-
-	let totalWithBirthday = 0;
-	let totalWithoutBirthday = 0;
+	const collector = new AgeCollector(referenceDate);
+	let committeeStats: AgeCommitteeStats[] = [];
 
 	/** Both halves of one category: the members whose age is known and those whose is not. */
 	async function fetchDelegationMembers(delegation: DelegationFilter) {
@@ -104,125 +211,7 @@ export async function getAgeStatistics({
 				columns: { id: true }
 			})
 		]);
-
-		totalWithBirthday += withBirthday.length;
-		totalWithoutBirthday += withoutBirthday.length;
-		return withBirthday;
-	}
-
-	const applied = appliedCondition(filter);
-
-	// Nation delegates. Their committee assignment also feeds the per-committee breakdown.
-	if (filter !== 'APPLIED_WITHOUT_ROLE') {
-		const members = await fetchDelegationMembers({
-			assignedNationAlpha3Code: { isNotNull: true },
-			...applied
-		});
-
-		const committeeAges = new Map<string, { name: string; abbreviation: string; ages: number[] }>();
-		const ages: number[] = [];
-
-		for (const member of members) {
-			const birthday = member.user.birthday;
-			if (!birthday) continue;
-			const age = getAgeAtConference(birthday, referenceDate);
-			if (age === undefined) continue;
-			ages.push(age);
-			ageData.push({ age, categoryId: 'nationDelegates' });
-
-			const committee = member.assignedCommittee;
-			if (!committee) continue;
-			const existing = committeeAges.get(committee.id);
-			if (existing) {
-				existing.ages.push(age);
-			} else {
-				committeeAges.set(committee.id, {
-					name: committee.name,
-					abbreviation: committee.abbreviation,
-					ages: [age]
-				});
-			}
-		}
-
-		if (ages.length > 0) {
-			categories.push({
-				categoryId: 'nationDelegates',
-				categoryName: 'Nation Delegates',
-				categoryType: 'delegationMember',
-				count: ages.length,
-				average: average(ages)
-			});
-		}
-
-		for (const [committeeId, data] of committeeAges) {
-			committeeStats.push({
-				committeeId,
-				committeeName: data.name,
-				abbreviation: data.abbreviation,
-				count: data.ages.length,
-				average: average(data.ages)
-			});
-		}
-	}
-
-	// Non-state actor participants. Delegations with a nation are excluded to avoid counting
-	// the same member twice.
-	if (filter !== 'APPLIED_WITHOUT_ROLE') {
-		const members = await fetchDelegationMembers({
-			assignedNonStateActorId: { isNotNull: true },
-			assignedNationAlpha3Code: { isNull: true },
-			...applied
-		});
-
-		const ages: number[] = [];
-		for (const member of members) {
-			const birthday = member.user.birthday;
-			if (!birthday) continue;
-			const age = getAgeAtConference(birthday, referenceDate);
-			if (age === undefined) continue;
-			ages.push(age);
-			ageData.push({ age, categoryId: 'nsaParticipants' });
-		}
-
-		if (ages.length > 0) {
-			categories.push({
-				categoryId: 'nsaParticipants',
-				categoryName: 'NSA Participants',
-				categoryType: 'delegationMember',
-				count: ages.length,
-				average: average(ages)
-			});
-		}
-	}
-
-	// Delegation members whose delegation has no assignment at all. Role-based filters have
-	// nothing to say about them, so they only show up for the other three.
-	if (filter === 'ALL' || filter === 'APPLIED' || filter === 'NOT_APPLIED') {
-		const members = await fetchDelegationMembers({
-			assignedNationAlpha3Code: { isNull: true },
-			assignedNonStateActorId: { isNull: true },
-			...applied
-		});
-
-		const ages: number[] = [];
-		for (const member of members) {
-			const birthday = member.user.birthday;
-			if (!birthday) continue;
-			const age = getAgeAtConference(birthday, referenceDate);
-			if (age === undefined) continue;
-			ages.push(age);
-			ageData.push({ age, categoryId: 'unassignedDelegationMembers' });
-		}
-
-		if (ages.length > 0) {
-			categories.push({
-				categoryId: 'unassignedDelegationMembers',
-				categoryName: 'Unassigned Delegation Members',
-				categoryType: 'delegationMember',
-				count: ages.length,
-				average: average(ages)
-			});
-		}
+		return collector.count(withBirthday, withoutBirthday);
 	}
 
 	/** The same two-sided fetch for single participants. */
@@ -238,18 +227,59 @@ export async function getAgeStatistics({
 				columns: { id: true }
 			})
 		]);
-
-		totalWithBirthday += withBirthday.length;
-		totalWithoutBirthday += withoutBirthday.length;
-		return withBirthday;
+		return collector.count(withBirthday, withoutBirthday);
 	}
 
-	const singleParticipantBase = {
-		conferenceId,
-		...applied,
-		...(filter === 'APPLIED_WITH_ROLE' ? { assignedRoleId: { isNotNull: true } } : {}),
-		...(filter === 'APPLIED_WITHOUT_ROLE' ? { assignedRoleId: { isNull: true } } : {})
-	};
+	const applied = appliedCondition(filter);
+
+	if (filter !== 'APPLIED_WITHOUT_ROLE') {
+		// Nation delegates. Their committee assignment also feeds the per-committee breakdown.
+		const nationDelegates = await fetchDelegationMembers({
+			assignedNationAlpha3Code: { isNotNull: true },
+			...applied
+		});
+		collector.addCategory(
+			{
+				categoryId: 'nationDelegates',
+				categoryName: 'Nation Delegates',
+				categoryType: 'delegationMember'
+			},
+			nationDelegates
+		);
+		committeeStats = committeeBreakdown(collector, nationDelegates);
+
+		// Non-state actor participants. Delegations with a nation are excluded to avoid counting
+		// the same member twice.
+		collector.addCategory(
+			{
+				categoryId: 'nsaParticipants',
+				categoryName: 'NSA Participants',
+				categoryType: 'delegationMember'
+			},
+			await fetchDelegationMembers({
+				assignedNonStateActorId: { isNotNull: true },
+				assignedNationAlpha3Code: { isNull: true },
+				...applied
+			})
+		);
+	}
+
+	// Delegation members whose delegation has no assignment at all. Role-based filters have
+	// nothing to say about them, so they only show up for the other three.
+	if (filter === 'ALL' || filter === 'APPLIED' || filter === 'NOT_APPLIED') {
+		collector.addCategory(
+			{
+				categoryId: 'unassignedDelegationMembers',
+				categoryName: 'Unassigned Delegation Members',
+				categoryType: 'delegationMember'
+			},
+			await fetchDelegationMembers({
+				assignedNationAlpha3Code: { isNull: true },
+				assignedNonStateActorId: { isNull: true },
+				...applied
+			})
+		);
+	}
 
 	// Single participants, one category per conference role.
 	if (filter !== 'APPLIED_WITHOUT_ROLE') {
@@ -259,92 +289,33 @@ export async function getAgeStatistics({
 		});
 
 		for (const role of roles) {
-			const participants = await fetchSingleParticipants({
-				...singleParticipantBase,
-				assignedRoleId: role.id
-			});
-
-			const ages: number[] = [];
-			for (const participant of participants) {
-				const birthday = participant.user.birthday;
-				if (!birthday) continue;
-				const age = getAgeAtConference(birthday, referenceDate);
-				if (age === undefined) continue;
-				ages.push(age);
-				ageData.push({ age, categoryId: `role_${role.id}` });
-			}
-
-			if (ages.length > 0) {
-				categories.push({
+			collector.addCategory(
+				{
 					categoryId: `role_${role.id}`,
 					categoryName: role.name,
-					categoryType: 'singleParticipant',
-					count: ages.length,
-					average: average(ages)
-				});
-			}
+					categoryType: 'singleParticipant'
+				},
+				await fetchSingleParticipants({ conferenceId, ...applied, assignedRoleId: role.id })
+			);
 		}
 	}
 
 	// Single participants without a role. Meaningless when the filter asks for role holders.
 	if (filter !== 'APPLIED_WITH_ROLE') {
-		const participants = await fetchSingleParticipants({
-			conferenceId,
-			assignedRoleId: { isNull: true },
-			...(filter === 'APPLIED' || filter === 'APPLIED_WITHOUT_ROLE' ? { applied: true } : {}),
-			...(filter === 'NOT_APPLIED' ? { applied: false } : {})
-		});
-
-		const ages: number[] = [];
-		for (const participant of participants) {
-			const birthday = participant.user.birthday;
-			if (!birthday) continue;
-			const age = getAgeAtConference(birthday, referenceDate);
-			if (age === undefined) continue;
-			ages.push(age);
-			ageData.push({ age, categoryId: 'unassigned' });
-		}
-
-		if (ages.length > 0) {
-			categories.push({
-				categoryId: 'unassigned',
-				categoryName: 'Unassigned',
-				categoryType: 'singleParticipant',
-				count: ages.length,
-				average: average(ages)
-			});
-		}
-	}
-
-	// The distribution always spans at least 10 to 30 so the chart keeps a stable x axis.
-	const allAges = ageData.map((entry) => entry.age);
-	const minAge = Math.min(10, ...allAges);
-	const maxAge = Math.max(30, ...allAges);
-	const distribution: AgeDistributionEntry[] = [];
-
-	for (let age = minAge; age <= maxAge; age++) {
-		const entries = ageData.filter((entry) => entry.age === age);
-		if (entries.length === 0) continue;
-
-		const categoryIds = [...new Set(entries.map((entry) => entry.categoryId))];
-		distribution.push({
-			age,
-			count: entries.length,
-			byCategory: categoryIds.map((categoryId) => ({
-				categoryId,
-				count: entries.filter((entry) => entry.categoryId === categoryId).length
-			}))
-		});
+		collector.addCategory(
+			{ categoryId: 'unassigned', categoryName: 'Unassigned', categoryType: 'singleParticipant' },
+			await fetchSingleParticipants({
+				conferenceId,
+				...applied,
+				assignedRoleId: { isNull: true }
+			})
+		);
 	}
 
 	return {
-		overall: {
-			average: allAges.length > 0 ? average(allAges) : null,
-			total: totalWithBirthday,
-			missingBirthdays: totalWithoutBirthday
-		},
-		distribution,
-		byCategory: categories,
+		overall: collector.overall(),
+		distribution: collector.distribution(),
+		byCategory: collector.categories,
 		byCommittee: committeeStats
 	};
 }

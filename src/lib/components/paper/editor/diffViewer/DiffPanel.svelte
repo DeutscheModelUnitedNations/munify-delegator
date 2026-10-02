@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { DiffSegment } from './types';
+	import { splitIntoDiffLines } from './diffUtils';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
@@ -11,51 +12,7 @@
 
 	let { title, versionNumber, date, segments }: Props = $props();
 
-	// Process segments into lines with change indicators
-	interface DiffLine {
-		parts: Array<{ text: string; type: 'equal' | 'insert' | 'delete' }>;
-		hasChange: boolean;
-		changeType: 'none' | 'insert' | 'delete' | 'mixed';
-	}
-
-	let lines = $derived.by(() => {
-		const result: DiffLine[] = [];
-		let currentLine: DiffLine = { parts: [], hasChange: false, changeType: 'none' };
-
-		for (const segment of segments) {
-			const textParts = segment.text.split('\n');
-
-			for (let i = 0; i < textParts.length; i++) {
-				const text = textParts[i];
-
-				if (text.length > 0 || i === 0) {
-					currentLine.parts.push({ text, type: segment.type });
-
-					if (segment.type !== 'equal') {
-						currentLine.hasChange = true;
-						if (currentLine.changeType === 'none') {
-							currentLine.changeType = segment.type;
-						} else if (currentLine.changeType !== segment.type) {
-							currentLine.changeType = 'mixed';
-						}
-					}
-				}
-
-				// If not the last part, this means we hit a newline - push current line and start new
-				if (i < textParts.length - 1) {
-					result.push(currentLine);
-					currentLine = { parts: [], hasChange: false, changeType: 'none' };
-				}
-			}
-		}
-
-		// Push the last line if it has content
-		if (currentLine.parts.length > 0) {
-			result.push(currentLine);
-		}
-
-		return result;
-	});
+	let lines = $derived(splitIntoDiffLines(segments));
 </script>
 
 <div class="diff-panel flex flex-col h-full border border-base-300 rounded-box">
@@ -72,7 +29,7 @@
 
 	<div class="panel-content bg-base-100 rounded-b-box flex-1 overflow-auto">
 		<div class="diff-content font-mono text-sm">
-			{#each lines as line, lineIndex}
+			{#each lines as line, lineIndex (lineIndex)}
 				<div
 					class="diff-line flex"
 					class:line-has-insert={line.changeType === 'insert'}
@@ -89,7 +46,7 @@
 
 					<!-- Line content -->
 					<div class="diff-line-content flex-1 px-3 py-0.5 whitespace-pre-wrap break-words">
-						{#each line.parts as part}
+						{#each line.parts as part, partIndex (partIndex)}
 							{#if part.type === 'insert'}
 								<mark class="diff-insert">{part.text}</mark>
 							{:else if part.type === 'delete'}

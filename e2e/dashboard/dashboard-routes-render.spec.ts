@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_PREP_CONFERENCE_ID, E2E_PREP_PARTICIPANT_USER_ID } from '../seed/seed';
 

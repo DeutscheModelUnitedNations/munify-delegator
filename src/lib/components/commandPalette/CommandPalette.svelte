@@ -11,6 +11,14 @@
 	} from './commandPaletteState.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { getAllPages, getConfigEntries, type PageEntry, type ConfigEntry } from './pageRegistry';
+	import {
+		describeItem,
+		flattenResults,
+		resultTarget,
+		searchHint,
+		steppedIndex,
+		type ResultItem
+	} from './commandPaletteItems';
 	import CommandPaletteItem from './CommandPaletteItem.svelte';
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
@@ -98,25 +106,16 @@
 	let transactionResults = $state<SearchResults['transactions']>([]);
 
 	// Combined flat list for keyboard navigation
-	type ResultItem =
-		| { type: 'page'; data: PageEntry }
-		| { type: 'user'; data: SearchResults['users'][number] }
-		| { type: 'delegation'; data: SearchResults['delegations'][number] }
-		| { type: 'config'; data: ConfigEntry }
-		| { type: 'foreignUser'; data: SearchResults['foreignUsers'][number] }
-		| { type: 'transaction'; data: SearchResults['transactions'][number] };
-
-	// Order: users, delegations, pages, config, foreignUsers
-	let flatList = $derived.by((): ResultItem[] => {
-		const items: ResultItem[] = [];
-		for (const u of userResults) items.push({ type: 'user', data: u });
-		for (const d of delegationResults) items.push({ type: 'delegation', data: d });
-		for (const t of transactionResults) items.push({ type: 'transaction', data: t });
-		for (const p of pageResults) items.push({ type: 'page', data: p });
-		for (const c of configResults) items.push({ type: 'config', data: c });
-		for (const f of foreignUserResults) items.push({ type: 'foreignUser', data: f });
-		return items;
-	});
+	let flatList = $derived(
+		flattenResults({
+			users: userResults,
+			delegations: delegationResults,
+			transactions: transactionResults,
+			pages: pageResults,
+			configs: configResults,
+			foreignUsers: foreignUserResults
+		})
+	);
 
 	// Debounced server search — called from oninput handler, not from $effect
 	function triggerServerSearch(term: string) {
@@ -170,52 +169,30 @@
 
 	function selectItem(item: ResultItem) {
 		closeCommandPalette();
-		switch (item.type) {
-			case 'page':
-				goto(item.data.href);
-				break;
-			case 'user':
-				openUserCard(item.data.id, conferenceId);
-				break;
-			case 'delegation':
-				if (item.data.headDelegateUserId) {
-					openUserCard(item.data.headDelegateUserId, conferenceId);
-				} else {
-					goto(`/management/${conferenceId}/delegations?filter=${item.data.entryCode}`);
-				}
-				break;
-			case 'config':
-				goto(`/management/${conferenceId}/configuration?tab=${item.data.tab}`);
-				break;
-			case 'foreignUser':
-				openUserCard(item.data.id, conferenceId);
-				break;
-			case 'transaction':
-				goto(`/management/${conferenceId}/payments?searchValue=${item.data.id}`);
-				break;
-		}
+		const target = resultTarget(item, conferenceId);
+		if ('userId' in target) openUserCard(target.userId, conferenceId);
+		else goto(target.href);
 	}
 
+	function selectActive() {
+		const item = flatList[activeIndex];
+		if (item) selectItem(item);
+	}
+
+	function moveActive(index: number | undefined) {
+		if (index === undefined) return;
+		activeIndex = index;
+		scrollActiveIntoView();
+	}
+
+	const handledKeys = ['ArrowDown', 'ArrowUp', 'Enter', 'Escape'];
+
 	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'ArrowDown') {
-			e.preventDefault();
-			if (flatList.length === 0) return;
-			activeIndex = Math.min(activeIndex + 1, flatList.length - 1);
-			scrollActiveIntoView();
-		} else if (e.key === 'ArrowUp') {
-			e.preventDefault();
-			if (flatList.length === 0) return;
-			activeIndex = Math.max(activeIndex - 1, 0);
-			scrollActiveIntoView();
-		} else if (e.key === 'Enter') {
-			e.preventDefault();
-			if (flatList[activeIndex]) {
-				selectItem(flatList[activeIndex]);
-			}
-		} else if (e.key === 'Escape') {
-			e.preventDefault();
-			closeCommandPalette();
-		}
+		if (!handledKeys.includes(e.key)) return;
+		e.preventDefault();
+		if (e.key === 'Escape') closeCommandPalette();
+		else if (e.key === 'Enter') selectActive();
+		else moveActive(steppedIndex(e.key, activeIndex, flatList.length));
 	}
 
 	function scrollActiveIntoView() {
@@ -225,49 +202,41 @@
 		});
 	}
 
-	function getParticipationTypeLabel(type: string): string {
-		switch (type) {
-			case 'delegation':
-				return m.delegationMember();
-			case 'single':
-				return m.singleParticipant();
-			case 'supervisor':
-				return m.supervisor();
-			case 'team':
-				return m.teamMember();
-			default:
-				return type;
-		}
-	}
+	/** The heading of each result group; server-searched groups show the spinner while searching. */
+	const groupHeadings: Record<
+		ResultItem['type'],
+		{ title: () => string; icon: string; fromServer: boolean }
+	> = {
+		user: { title: m.commandPaletteUsers, icon: 'fa-users', fromServer: true },
+		delegation: {
+			title: m.commandPaletteDelegations,
+			icon: 'fa-users-viewfinder',
+			fromServer: true
+		},
+		transaction: { title: m.payment, icon: 'fa-money-bill-transfer', fromServer: true },
+		page: { title: m.commandPalettePages, icon: 'fa-file', fromServer: false },
+		config: { title: m.commandPaletteConfiguration, icon: 'fa-gears', fromServer: false },
+		foreignUser: { title: m.commandPaletteForeignUsers, icon: 'fa-user-xmark', fromServer: false }
+	};
 
-	// Track the global index for each item to determine active state
-	// Order: users, delegations, transactions, pages, config, foreignUsers
-	function getGlobalIndex(
-		type: 'user' | 'delegation' | 'transaction' | 'page' | 'config' | 'foreignUser',
-		localIndex: number
-	): number {
-		if (type === 'user') return localIndex;
-		if (type === 'delegation') return userResults.length + localIndex;
-		if (type === 'transaction') return userResults.length + delegationResults.length + localIndex;
-		if (type === 'page')
-			return userResults.length + delegationResults.length + transactionResults.length + localIndex;
-		if (type === 'config')
-			return (
-				userResults.length +
-				delegationResults.length +
-				transactionResults.length +
-				pageResults.length +
-				localIndex
-			);
-		return (
-			userResults.length +
-			delegationResults.length +
-			transactionResults.length +
-			pageResults.length +
-			configResults.length +
-			localIndex
-		);
-	}
+	/** `flatList` cut into its groups, each item with its index in the flat list. */
+	let groups = $derived.by(() => {
+		const result: {
+			type: ResultItem['type'];
+			items: { item: ResultItem; index: number }[];
+		}[] = [];
+		flatList.forEach((item, index) => {
+			const last = result.at(-1);
+			if (last?.type === item.type) last.items.push({ item, index });
+			else result.push({ type: item.type, items: [{ item, index }] });
+		});
+		return result;
+	});
+
+	const searchTerm = $derived(searchInput.trim());
+
+	/** The note under the results: too short a term, or nothing found for a long enough one. */
+	const hint = $derived(searchHint(searchTerm, flatList.length, searchLoading));
 
 	// Global Ctrl+K / Cmd+K shortcut via native listener for reliability
 	function handleGlobalKeydown(e: KeyboardEvent) {
@@ -316,145 +285,34 @@
 
 			<!-- Results -->
 			<div class="max-h-80 overflow-y-auto p-1" role="listbox">
-				{#if userResults.length > 0}
-					<CommandPaletteResultGroup
-						title={m.commandPaletteUsers()}
-						icon="fa-users"
-						loading={searchLoading}
-					>
-						{#each userResults as user, i (user.id)}
-							{@const idx = getGlobalIndex('user', i)}
-							<div data-command-palette-active={idx === activeIndex}>
-								<CommandPaletteItem
-									icon="fa-user"
-									primary="{user.givenName} {user.familyName}"
-									secondary="{user.email} · {getParticipationTypeLabel(user.participationType)}"
-									active={idx === activeIndex}
-									onclick={() => selectItem({ type: 'user', data: user })}
-								/>
-							</div>
-						{/each}
-					</CommandPaletteResultGroup>
-				{:else if searchLoading && searchInput.trim().length >= 2}
+				{#if userResults.length === 0 && searchLoading && searchTerm.length >= 2}
 					<CommandPaletteResultGroup title={m.commandPaletteUsers()} icon="fa-users" loading={true}>
 						<div class="px-3 py-2 text-sm text-base-content/40"></div>
 					</CommandPaletteResultGroup>
 				{/if}
 
-				{#if delegationResults.length > 0}
+				{#each groups as group (group.type)}
+					{@const heading = groupHeadings[group.type]}
 					<CommandPaletteResultGroup
-						title={m.commandPaletteDelegations()}
-						icon="fa-users-viewfinder"
-						loading={searchLoading}
+						title={heading.title()}
+						icon={heading.icon}
+						loading={heading.fromServer && searchLoading}
 					>
-						{#each delegationResults as delegation, i (delegation.id)}
-							{@const idx = getGlobalIndex('delegation', i)}
-							<div data-command-palette-active={idx === activeIndex}>
+						{#each group.items as { item, index } (item.data.id)}
+							<div data-command-palette-active={index === activeIndex}>
 								<CommandPaletteItem
-									icon="fa-users-viewfinder"
-									primary={delegation.school ?? delegation.entryCode}
-									secondary="{delegation.entryCode} · {delegation.memberCount} {m.members()}"
-									active={idx === activeIndex}
-									onclick={() => selectItem({ type: 'delegation', data: delegation })}
+									{...describeItem(item)}
+									active={index === activeIndex}
+									onclick={() => selectItem(item)}
 								/>
 							</div>
 						{/each}
 					</CommandPaletteResultGroup>
-				{/if}
+				{/each}
 
-				{#if transactionResults.length > 0}
-					<CommandPaletteResultGroup
-						title={m.payment()}
-						icon="fa-money-bill-transfer"
-						loading={searchLoading}
-					>
-						{#each transactionResults as transaction, i (transaction.id)}
-							{@const idx = getGlobalIndex('transaction', i)}
-							<div data-command-palette-active={idx === activeIndex}>
-								<CommandPaletteItem
-									icon={transaction.recievedAt ? 'fa-circle-check' : 'fa-circle-xmark'}
-									primary={transaction.id}
-									secondary={transaction.recievedAt
-										? m.commandPalettePaymentReceived({
-												amount: transaction.amount,
-												currency: transaction.currency,
-												date: new Date(transaction.recievedAt).toLocaleDateString(undefined, {
-													year: 'numeric',
-													month: 'long',
-													day: 'numeric'
-												})
-											})
-										: m.commandPalettePaymentNotReceived({
-												amount: transaction.amount,
-												currency: transaction.currency
-											})}
-									active={idx === activeIndex}
-									onclick={() => selectItem({ type: 'transaction', data: transaction })}
-								/>
-							</div>
-						{/each}
-					</CommandPaletteResultGroup>
-				{/if}
-
-				{#if pageResults.length > 0}
-					<CommandPaletteResultGroup title={m.commandPalettePages()} icon="fa-file">
-						{#each pageResults as page, i (page.id)}
-							{@const idx = getGlobalIndex('page', i)}
-							<div data-command-palette-active={idx === activeIndex}>
-								<CommandPaletteItem
-									icon={page.icon}
-									primary={page.title()}
-									active={idx === activeIndex}
-									onclick={() => selectItem({ type: 'page', data: page })}
-								/>
-							</div>
-						{/each}
-					</CommandPaletteResultGroup>
-				{/if}
-
-				{#if configResults.length > 0}
-					<CommandPaletteResultGroup title={m.commandPaletteConfiguration()} icon="fa-gears">
-						{#each configResults as config, i (config.id)}
-							{@const idx = getGlobalIndex('config', i)}
-							<div data-command-palette-active={idx === activeIndex}>
-								<CommandPaletteItem
-									icon={config.icon}
-									primary={config.title()}
-									secondary={config.section()}
-									active={idx === activeIndex}
-									onclick={() => selectItem({ type: 'config', data: config })}
-								/>
-							</div>
-						{/each}
-					</CommandPaletteResultGroup>
-				{/if}
-
-				{#if foreignUserResults.length > 0}
-					<CommandPaletteResultGroup title={m.commandPaletteForeignUsers()} icon="fa-user-xmark">
-						{#each foreignUserResults as foreignUser, i (foreignUser.id)}
-							{@const idx = getGlobalIndex('foreignUser', i)}
-							<div data-command-palette-active={idx === activeIndex}>
-								<CommandPaletteItem
-									icon="fa-user-xmark"
-									primary="{foreignUser.givenName} {foreignUser.familyName}"
-									secondary={foreignUser.email}
-									active={idx === activeIndex}
-									onclick={() => selectItem({ type: 'foreignUser', data: foreignUser })}
-								/>
-							</div>
-						{/each}
-					</CommandPaletteResultGroup>
-				{/if}
-
-				{#if flatList.length === 0 && searchInput.trim().length >= 2 && !searchLoading}
+				{#if hint}
 					<div class="px-4 py-8 text-center text-sm text-base-content/40">
-						{m.commandPaletteNoResults()}
-					</div>
-				{/if}
-
-				{#if searchInput.trim().length > 0 && searchInput.trim().length < 2}
-					<div class="px-4 py-8 text-center text-sm text-base-content/40">
-						{m.commandPaletteMinChars()}
+						{hint}
 					</div>
 				{/if}
 			</div>

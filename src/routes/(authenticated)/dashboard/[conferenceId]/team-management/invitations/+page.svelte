@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
+	import TeamManagementPage from '../TeamManagementPage.svelte';
 	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
 	import type { PageProps } from './$types';
 
@@ -25,21 +25,9 @@
 			invitedBy: { givenName: true, familyName: true }
 		})
 	);
-
-	let inviteMembersModalOpen = $state(false);
 </script>
 
-<div class="flex flex-col gap-4 p-6">
-	<div class="flex justify-between items-center">
-		<h1 class="text-3xl font-bold">{m.pendingInvitations()}</h1>
-		<div class="flex gap-2">
-			<button class="btn btn-primary" onclick={() => (inviteMembersModalOpen = true)}>
-				<i class="fa-duotone fa-envelope"></i>
-				{m.inviteTeamMembers()}
-			</button>
-		</div>
-	</div>
-
+<TeamManagementPage title={m.pendingInvitations()} conferenceId={params.conferenceId}>
 	{#if pendingInvitations.length > 0}
 		<PendingInvitationsTable invitations={pendingInvitations} />
 	{:else}
@@ -48,8 +36,4 @@
 			<p>{m.noResults()}</p>
 		</div>
 	{/if}
-</div>
-
-{#if inviteMembersModalOpen}
-	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={params.conferenceId} />
-{/if}
+</TeamManagementPage>

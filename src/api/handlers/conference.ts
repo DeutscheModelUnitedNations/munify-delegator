@@ -12,14 +12,8 @@ import { GraphQLError } from 'graphql';
 import type { InferSelectModel } from 'drizzle-orm';
 import { UserRef } from './user';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
-
-type SchoolRow = {
-	school: string;
-	delegationCount: number;
-	delegationMembers: number;
-	singleParticipants: number;
-	sumParticipants: number;
-};
+import { nullToUndefined } from '$api/services/args';
+import { distinctNationCodes, schoolRows } from '$api/services/conferenceAggregates';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
@@ -39,7 +33,7 @@ abilityBuilder.conference.allow(['update', 'delete']).when((ctx) => ({
 	where: isTeamMemberOf(ctx, ['PROJECT_MANAGEMENT'])
 }));
 
-export const ConferenceRef = object({
+const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
 		// The four document templates and the certificate template are long HTML blobs. The
@@ -149,7 +143,7 @@ export const ConferenceRef = object({
 			resolve: async (conference, _args, ctx) => {
 				const [delegations, participants] = await Promise.all([
 					db.query.delegation.findMany(
-						ctx.abilities.delegation.filter('read').merge({
+						(await ctx.abilities.delegation.filter('read')).merge({
 							where: {
 								conferenceId: conference.id,
 								applied: true,
@@ -158,7 +152,7 @@ export const ConferenceRef = object({
 						}).query.many
 					),
 					db.query.singleParticipant.findMany(
-						ctx.abilities.singleParticipant.filter('read').merge({
+						(await ctx.abilities.singleParticipant.filter('read')).merge({
 							where: {
 								conferenceId: conference.id,
 								applied: true,
@@ -173,38 +167,7 @@ export const ConferenceRef = object({
 					columns: { delegationId: true }
 				});
 
-				const bySchool = new Map<string, SchoolRow>();
-				const entryFor = (school: string) => {
-					const existing = bySchool.get(school) ?? {
-						school,
-						delegationCount: 0,
-						delegationMembers: 0,
-						singleParticipants: 0,
-						sumParticipants: 0
-					};
-					bySchool.set(school, existing);
-					return existing;
-				};
-
-				for (const delegation of delegations) {
-					if (!delegation.school) continue;
-					const members = memberCounts.filter(
-						(member) => member.delegationId === delegation.id
-					).length;
-					const entry = entryFor(delegation.school);
-					entry.delegationCount++;
-					entry.delegationMembers += members;
-					entry.sumParticipants += members;
-				}
-
-				for (const participant of participants) {
-					if (!participant.school) continue;
-					const entry = entryFor(participant.school);
-					entry.singleParticipants++;
-					entry.sumParticipants++;
-				}
-
-				return [...bySchool.values()];
+				return schoolRows(delegations, memberCounts, participants);
 			}
 		})
 	})
@@ -240,9 +203,9 @@ schemaBuilder.mutationFields((t) => ({
 						.set({ school: args.newSchoolName })
 						.where(
 							and(
-								ctx.abilities.delegation
-									.filter('update')
-									.merge({ where: { conferenceId: args.conferenceId } }).sql.where,
+								(await ctx.abilities.delegation.filter('update')).merge({
+									where: { conferenceId: args.conferenceId }
+								}).sql.where,
 								inArray(schema.delegation.school, args.schoolsToMerge)
 							)
 						);
@@ -252,9 +215,9 @@ schemaBuilder.mutationFields((t) => ({
 						.set({ school: args.newSchoolName })
 						.where(
 							and(
-								ctx.abilities.singleParticipant
-									.filter('update')
-									.merge({ where: { conferenceId: args.conferenceId } }).sql.where,
+								(await ctx.abilities.singleParticipant.filter('update')).merge({
+									where: { conferenceId: args.conferenceId }
+								}).sql.where,
 								inArray(schema.singleParticipant.school, args.schoolsToMerge)
 							)
 						);
@@ -267,8 +230,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conference
 				.findFirst(
 					query(
-						ctx.abilities.conference.filter('read').merge({ where: { id: args.conferenceId } })
-							.query.single
+						(await ctx.abilities.conference.filter('read')).merge({
+							where: { id: args.conferenceId }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -335,28 +299,29 @@ schemaBuilder.mutationFields((t) => ({
 				// An omitted argument arrives as `undefined` and leaves the column alone; an
 				// explicit `null` clears it. Only the non-nullable columns coerce null away.
 				.set({
-					title: args.title ?? undefined,
+					title: nullToUndefined(args.title),
 					longTitle: args.longTitle,
 					location: args.location,
 					language: args.language,
 					website: args.website,
 					info: args.info,
-					showInfoExpanded: args.showInfoExpanded ?? undefined,
+					showInfoExpanded: nullToUndefined(args.showInfoExpanded),
 					linkToPreparationGuide: args.linkToPreparationGuide,
 					linkToTeamWiki: args.linkToTeamWiki,
 					linkToServicesPage: args.linkToServicesPage,
 					linkToPaperInbox: args.linkToPaperInbox,
-					isOpenPaperSubmission: args.isOpenPaperSubmission ?? undefined,
-					showCalendar: args.showCalendar ?? undefined,
-					timezone: args.timezone ?? undefined,
-					state: args.state ?? undefined,
-					startAssignment: args.startAssignment ?? undefined,
-					startConference: args.startConference ?? undefined,
-					endConference: args.endConference ?? undefined,
-					registrationDeadlineGracePeriodMinutes:
-						args.registrationDeadlineGracePeriodMinutes ?? undefined,
-					unlockPayments: args.unlockPayments ?? undefined,
-					unlockPostals: args.unlockPostals ?? undefined,
+					isOpenPaperSubmission: nullToUndefined(args.isOpenPaperSubmission),
+					showCalendar: nullToUndefined(args.showCalendar),
+					timezone: nullToUndefined(args.timezone),
+					state: nullToUndefined(args.state),
+					startAssignment: nullToUndefined(args.startAssignment),
+					startConference: nullToUndefined(args.startConference),
+					endConference: nullToUndefined(args.endConference),
+					registrationDeadlineGracePeriodMinutes: nullToUndefined(
+						args.registrationDeadlineGracePeriodMinutes
+					),
+					unlockPayments: nullToUndefined(args.unlockPayments),
+					unlockPostals: nullToUndefined(args.unlockPostals),
 					feeAmount: args.feeAmount,
 					accountHolder: args.accountHolder,
 					iban: args.iban,
@@ -379,7 +344,8 @@ schemaBuilder.mutationFields((t) => ({
 					certificateContent: args.certificateContent
 				})
 				.where(
-					ctx.abilities.conference.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.conference.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -387,7 +353,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conference
 				.findFirst(
 					query(
-						ctx.abilities.conference.filter('read').merge({ where: { id: args.id } }).query.single
+						(await ctx.abilities.conference.filter('read')).merge({ where: { id: args.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -401,7 +368,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.conference)
 				.where(
-					ctx.abilities.conference.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.conference.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.conference.id });
 			if (deleted.length === 0) {
@@ -509,8 +477,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conference
 				.findFirst(
 					query(
-						ctx.abilities.conference.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.conference.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -531,21 +499,14 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			const conference = await db.query.conference
 				.findFirst({
-					...ctx.abilities.conference.filter('read').merge({ where: { id: args.conferenceId } })
-						.query.single,
+					...(await ctx.abilities.conference.filter('read')).merge({
+						where: { id: args.conferenceId }
+					}).query.single,
 					with: { committees: { with: { nations: true } } }
 				})
 				.then(assertFindFirstExists);
 
-			const seen = new Set<string>();
-			const alpha3Codes: string[] = [];
-			for (const committee of conference.committees) {
-				for (const nation of committee.nations) {
-					if (seen.has(nation.alpha2Code)) continue;
-					seen.add(nation.alpha2Code);
-					alpha3Codes.push(nation.alpha3Code);
-				}
-			}
+			const alpha3Codes = distinctNationCodes(conference.committees);
 			if (alpha3Codes.length === 0) return [];
 
 			// Re-queried through `query()` so the caller's field selection is honoured.
@@ -611,7 +572,7 @@ schemaBuilder.queryFields((t) => ({
 				]
 			};
 			const supervising = { conferenceSupervisor: { conferenceId: args.conferenceId } };
-			const readableUsers = ctx.abilities.user.filter('read');
+			const readableUsers = await ctx.abilities.user.filter('read');
 
 			const [tooYoungUsers, tooOldUsers, shouldBeSupervisor, shouldNotBeSupervisor, candidates] =
 				await Promise.all([

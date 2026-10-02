@@ -26,7 +26,7 @@
 		assignUserId: true
 	});
 
-	let search = $state($params.assignUserId ?? '');
+	let search = $state(params.assignUserId ?? '');
 	let loading = $state(false);
 
 	$effect(() => {
@@ -72,8 +72,8 @@
 			await addParticipant();
 			open = false;
 			user = undefined;
-			if ($params.assignUserId) {
-				$params.assignUserId = null;
+			if (params.assignUserId) {
+				params.assignUserId = null;
 			}
 		}}>{m.addUser()}</button
 	>

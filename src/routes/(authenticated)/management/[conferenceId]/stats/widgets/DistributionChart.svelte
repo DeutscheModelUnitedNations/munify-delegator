@@ -1,34 +1,32 @@
 <script lang="ts">
 	import { PieChart } from '$lib/components/charts/echarts';
 	import { m } from '$lib/paraglide/messages';
-	import { unifiedFilter } from '../stats.svelte';
-	import type { StatsWidgetData } from '../statsQuery';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter, unifiedFilter } from '../stats.svelte';
+	import { distributionChartData } from './chartData';
 
-	let props: { data: StatsWidgetData } = $props();
-	let stats = $derived(props.data.stats);
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			registered: {
+				delegationMembers: { total: true, applied: true, notApplied: true },
+				singleParticipants: { total: true, applied: true, notApplied: true },
+				supervisors: true
+			},
+			roleBased: {
+				delegationMembersWithRole: true,
+				delegationMembersWithoutRole: true,
+				singleParticipantsWithRole: true,
+				singleParticipantsWithoutRole: true
+			}
+		})
+	);
 
 	let { getFilteredValue } = unifiedFilter();
 
-	const chartData = $derived.by(() => {
-		if (!stats?.registered) return [];
-
-		const delegationMembers =
-			getFilteredValue(stats.registered.delegationMembers, stats.roleBased, 'delegationMembers') ??
-			0;
-		const singleParticipants =
-			getFilteredValue(
-				stats.registered.singleParticipants,
-				stats.roleBased,
-				'singleParticipants'
-			) ?? 0;
-		const supervisors = stats.registered.supervisors;
-
-		return [
-			{ name: m.delegationMembers(), value: delegationMembers, color: '#3b82f6' }, // blue/primary
-			{ name: m.singleParticipants(), value: singleParticipants, color: '#8b5cf6' }, // violet/secondary
-			{ name: m.supervisors(), value: supervisors, color: '#f59e0b' } // amber/accent
-		];
-	});
+	const chartData = $derived(distributionChartData(stats, getFilteredValue));
 
 	const total = $derived(chartData.reduce((sum, item) => sum + item.value, 0));
 </script>

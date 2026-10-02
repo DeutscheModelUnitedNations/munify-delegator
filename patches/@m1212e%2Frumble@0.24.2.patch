@@ -1,0 +1,209 @@
+diff --git a/node_modules/@m1212e/rumble/.bun-tag-140b55d03bac10a7 b/.bun-tag-140b55d03bac10a7
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/@m1212e/rumble/.bun-tag-25c5eea05cb6e6c5 b/.bun-tag-25c5eea05cb6e6c5
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/out/client.cjs b/out/client.cjs
+index 16489af3daf65889eba3c318a9009ccc8a70740c..99aa312ae4ddd4bf495ca0484f5e65bd8d32f3d6 100644
+--- a/out/client.cjs
++++ b/out/client.cjs
+@@ -122,8 +122,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
+ 	})));
+ 	const subscriberReady = svelteReactivityReady.then(() => {
+ 		svelteSubscriber = createSubscriber((update) => {
++			// Announce every emission on the next task. urql emits synchronously - a replayed value
++			// on subscribe, or a cache hit fanned out to every operation with the same key when some
++			// other query is issued - and that code often runs inside a `$derived`, where calling
++			// `update()` throws `state_unsafe_mutation` and leaves the page unrendered. A microtask
++			// is not enough: Svelte flushes its batches in microtasks too, and an update landing
++			// between them trips its "Batch has scheduled roots" invariant.
+ 			const unsub = observable.subscribe((_d) => {
+-				update();
++				setTimeout(update, 0);
+ 			});
+ 			return () => unsub.unsubscribe();
+ 		});
+@@ -197,10 +203,13 @@ function makeGraphQLSubscriptionRequest({ subscriptionName, input, client, schem
+ 	}), wonka.toObservable);
+ }
+ function stringifySelection({ parentTypeName, selection, types, autoIncludeIdField, varCtx }) {
+-	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined") selection[autoIncludeIdField] = true;
+ 	const parentType = types.find((t) => t.name === parentTypeName);
++	// Only where the type has the field (result objects without an identity have none), all the way
++	// down, and without writing it into the caller's selection object, which is often shared.
++	const entries = Object.entries(selection);
++	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined" && parentType && "fields" in parentType && parentType.fields.some((f) => f.name === autoIncludeIdField)) entries.unshift([autoIncludeIdField, true]);
+ 	return `{
+-${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
++${entries.filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
+ 		if (typeof value === "object") {
+ 			const subField = parentType && "fields" in parentType ? parentType.fields.find((f) => f.name === key) : void 0;
+ 			let argsString = "";
+@@ -215,6 +224,7 @@ ${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key
+ 				parentTypeName: subNamedType.name,
+ 				selection: value,
+ 				types,
++				autoIncludeIdField,
+ 				varCtx
+ 			})}
+ `;
+diff --git a/out/client.mjs b/out/client.mjs
+index 59cfe39669ed9619fc092417897580b2d6585765..90f01ff2b1344cd585a71c6a2ce5ec8150b4fa39 100644
+--- a/out/client.mjs
++++ b/out/client.mjs
+@@ -121,8 +121,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
+ 	})));
+ 	const subscriberReady = svelteReactivityReady.then(() => {
+ 		svelteSubscriber = createSubscriber((update) => {
++			// Announce every emission on the next task. urql emits synchronously - a replayed value
++			// on subscribe, or a cache hit fanned out to every operation with the same key when some
++			// other query is issued - and that code often runs inside a `$derived`, where calling
++			// `update()` throws `state_unsafe_mutation` and leaves the page unrendered. A microtask
++			// is not enough: Svelte flushes its batches in microtasks too, and an update landing
++			// between them trips its "Batch has scheduled roots" invariant.
+ 			const unsub = observable.subscribe((_d) => {
+-				update();
++				setTimeout(update, 0);
+ 			});
+ 			return () => unsub.unsubscribe();
+ 		});
+@@ -196,10 +202,13 @@ function makeGraphQLSubscriptionRequest({ subscriptionName, input, client, schem
+ 	}), toObservable);
+ }
+ function stringifySelection({ parentTypeName, selection, types, autoIncludeIdField, varCtx }) {
+-	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined") selection[autoIncludeIdField] = true;
+ 	const parentType = types.find((t) => t.name === parentTypeName);
++	// Only where the type has the field (result objects without an identity have none), all the way
++	// down, and without writing it into the caller's selection object, which is often shared.
++	const entries = Object.entries(selection);
++	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined" && parentType && "fields" in parentType && parentType.fields.some((f) => f.name === autoIncludeIdField)) entries.unshift([autoIncludeIdField, true]);
+ 	return `{
+-${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
++${entries.filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
+ 		if (typeof value === "object") {
+ 			const subField = parentType && "fields" in parentType ? parentType.fields.find((f) => f.name === key) : void 0;
+ 			let argsString = "";
+@@ -214,6 +223,7 @@ ${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key
+ 				parentTypeName: subNamedType.name,
+ 				selection: value,
+ 				types,
++				autoIncludeIdField,
+ 				varCtx
+ 			})}
+ `;
+diff --git a/out/generate-0QFVc3Sg.mjs b/out/generate-0QFVc3Sg.mjs
+index 2a0402fc7d793c4ea71eb2a8b372f62b6a26b833..2d913017163cdaeca8416e7b5ef10bb57528bab8 100644
+--- a/out/generate-0QFVc3Sg.mjs
++++ b/out/generate-0QFVc3Sg.mjs
+@@ -1,5 +1,14 @@
+ import { GraphQLEnumType, GraphQLInputObjectType, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType } from "graphql";
+-import { access, mkdir, rm, writeFile } from "node:fs/promises";
++import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
++// Writes only when the content differs. Rewriting an identical file on every dev server start
++// still counts as a change to a file watcher, and Vite reloads every open page for it.
++async function writeFileIfChanged(path, content) {
++	try {
++		if (await readFile(path, "utf8") === content) return;
++	} catch {}
++	await writeFile(path, content);
++}
++
+ import { join } from "node:path";
+ import { getIntrospectedSchema, minifyIntrospectionQuery } from "@urql/introspection";
+ import { uneval } from "devalue";
+@@ -216,7 +225,7 @@ export type ${key} = ${rep};
+ 	});
+ 	imports.push(...c.imports);
+ 	code += c.code;
+-	await Promise.all([writeFile(join(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), writeFile(join(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
++	await Promise.all([writeFileIfChanged(join(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), writeFileIfChanged(join(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
+ import type { IntrospectionQuery } from "graphql";
+ export const schema = ${uneval(minifyIntrospectionQuery(getIntrospectedSchema(schema), {
+ 		includeEnums: true,
+diff --git a/out/generate-CM3XjmlO.cjs b/out/generate-CM3XjmlO.cjs
+index e0340a3c99fb26a933c851636ea5f2d432330c06..063b17b15e07bbef0f64858235ba21a4a629d99d 100644
+--- a/out/generate-CM3XjmlO.cjs
++++ b/out/generate-CM3XjmlO.cjs
+@@ -180,6 +180,16 @@ function makeStringLiteralUnionFromEnum(enumType) {
+ }
+ //#endregion
+ //#region lib/client/generate/generate.ts
++
++// Writes only when the content differs. Rewriting an identical file on every dev server start
++// still counts as a change to a file watcher, and Vite reloads every open page for it.
++async function writeFileIfChanged(path, content) {
++	try {
++		if (await (0, node_fs_promises.readFile)(path, "utf8") === content) return;
++	} catch {}
++	await (0, node_fs_promises.writeFile)(path, content);
++}
++
+ async function generateFromSchema({ outputPath, schema, rumbleImportPath = "@m1212e/rumble/client", apiUrl, useExternalUrqlClient = false, removeExisting = true, forceReactivity, autoIncludeIdField }) {
+ 	if (removeExisting) try {
+ 		await (0, node_fs_promises.access)(outputPath);
+@@ -216,7 +226,7 @@ export type ${key} = ${rep};
+ 	});
+ 	imports.push(...c.imports);
+ 	code += c.code;
+-	await Promise.all([(0, node_fs_promises.writeFile)((0, node_path.join)(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), (0, node_fs_promises.writeFile)((0, node_path.join)(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
++	await Promise.all([writeFileIfChanged((0, node_path.join)(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), writeFileIfChanged((0, node_path.join)(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
+ import type { IntrospectionQuery } from "graphql";
+ export const schema = ${(0, devalue.uneval)((0, _urql_introspection.minifyIntrospectionQuery)((0, _urql_introspection.getIntrospectedSchema)(schema), {
+ 		includeEnums: true,
+diff --git a/out/index.cjs b/out/index.cjs
+index f9b239149278637f0e65d1990315ac1476e133a4..1c9e5c5ddc39351298e737e1ab14403fd3e749f3 100644
+--- a/out/index.cjs
++++ b/out/index.cjs
+@@ -2032,7 +2032,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
+ 					let filterSpecifier = "many";
+ 					if ((0, drizzle_orm.is)(value, drizzle_orm.One)) {
+ 						isMany = false;
+-						nullable = value.optional || !value.sourceColumns.every((column) => column.notNull);
++						nullable = value.optional || !value.sourceColumns.every((column) => (column._?.column ?? column).notNull); // drizzle 1.0 rc.5+ wraps relation columns in a RelationsBuilderColumn whose column sits at `_.column`
+ 						filterSpecifier = "single";
+ 					}
+ 					const subscribe = (subscriptions, _element) => {
+@@ -2894,9 +2894,13 @@ const createSchemaBuilder = ({ db, pubsub, pothosConfig, otel, logger, validatio
+ 			relations: db._.relations,
+ 			getTableConfig(table) {
+ 				const columns = (0, drizzle_orm.isTable)(table) ? Object.values((0, drizzle_orm.getTableColumns)(table)) : [];
++				// @pothos/plugin-drizzle 0.20 reads drizzle's TableConfig shape: primary keys as key
++				// objects carrying their columns, not a flat column list.
++				const primaryColumns = columns.filter((v) => v.primary);
+ 				return {
+ 					columns,
+-					primaryKeys: columns.filter((v) => v.primary)
++					primaryKeys: primaryColumns.length > 0 ? [{ columns: primaryColumns }] : [],
++					uniqueConstraints: []
+ 				};
+ 			}
+ 		},
+diff --git a/out/index.mjs b/out/index.mjs
+index 3d9f5e0488a3cac498651288397826b983561866..42ad0cffaab3cbb9fdb0e91ff17cba69ca9fa515 100644
+--- a/out/index.mjs
++++ b/out/index.mjs
+@@ -2002,7 +2002,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
+ 					let filterSpecifier = "many";
+ 					if (is(value, One)) {
+ 						isMany = false;
+-						nullable = value.optional || !value.sourceColumns.every((column) => column.notNull);
++						nullable = value.optional || !value.sourceColumns.every((column) => (column._?.column ?? column).notNull); // drizzle 1.0 rc.5+ wraps relation columns in a RelationsBuilderColumn whose column sits at `_.column`
+ 						filterSpecifier = "single";
+ 					}
+ 					const subscribe = (subscriptions, _element) => {
+@@ -2864,9 +2864,13 @@ const createSchemaBuilder = ({ db, pubsub, pothosConfig, otel, logger, validatio
+ 			relations: db._.relations,
+ 			getTableConfig(table) {
+ 				const columns = isTable(table) ? Object.values(getTableColumns(table)) : [];
++				// @pothos/plugin-drizzle 0.20 reads drizzle's TableConfig shape: primary keys as key
++				// objects carrying their columns, not a flat column list.
++				const primaryColumns = columns.filter((v) => v.primary);
+ 				return {
+ 					columns,
+-					primaryKeys: columns.filter((v) => v.primary)
++					primaryKeys: primaryColumns.length > 0 ? [{ columns: primaryColumns }] : [],
++					uniqueConstraints: []
+ 				};
+ 			}
+ 		},

@@ -2,17 +2,30 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadSupervisorDataBtn from '../downloads/DownloadSupervisorDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		supervisors: ConferenceSeatMap['supervisors'];
 		conferenceId: string;
 	}
 
-	let { supervisors, conferenceId }: Props = $props();
+	let { conferenceId }: Props = $props();
+
+	const supervisorList = $derived(
+		await client.liveQuery.conferenceSupervisors({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			user: { id: true, givenName: true, familyName: true }
+		})
+	);
+
+	// The order argument cannot reach through to the user's name, so this sorts here.
+	const supervisors = $derived(
+		[...supervisorList].sort((a, b) =>
+			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
+		)
+	);
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 	let plansOwnAttendenceAtConference = $state(false);

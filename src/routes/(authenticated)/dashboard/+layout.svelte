@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
 	import { fetchMyConferences } from './myConferences.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
@@ -7,7 +6,7 @@
 	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import Spinner from '$lib/components/Spinner.svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { dev } from '$app/environment';
 
 	interface Props {
@@ -30,54 +29,38 @@
 	<title>{dev ? '[dev] ' : ''}MUNify Delegator - {m.dashboard()}</title>
 </svelte:head>
 
+<!-- One group of conferences; the upcoming and past ones only label themselves while the
+navigation is expanded -->
+{#snippet conferenceGroup(
+	label: string,
+	group: { id: string; title: string }[] | undefined,
+	muted: boolean
+)}
+	{#if group && group.length > 0}
+		{#if !muted || navbarExpanded}
+			<div class="h-6"></div>
+			<p class="pb-2 text-xs {muted ? 'text-gray-500' : ''}">{label}</p>
+		{/if}
+		{#each group as { id, title } (id)}
+			<NavMenuButton
+				href="/dashboard/{id}"
+				icon="fa-flag"
+				{title}
+				active={page.url.pathname.includes(id)}
+				bind:expanded={navbarExpanded}
+			/>
+		{/each}
+	{/if}
+{/snippet}
+
 <SideNavigationDrawer bind:expanded={navbarExpanded}>
 	<NavMenu>
 		{#if !conferences}
 			<Spinner />
 		{:else}
-			{#if activeConferences && activeConferences.length > 0}
-				<div class="h-6"></div>
-				<p class="pb-2 text-xs">{m.activeConferences()}</p>
-				{#each activeConferences as { id, title }}
-					<NavMenuButton
-						href="/dashboard/{id}"
-						icon="fa-flag"
-						{title}
-						active={$page.url.pathname.includes(id)}
-						bind:expanded={navbarExpanded}
-					/>
-				{/each}
-			{/if}
-			{#if upcomingConferences && upcomingConferences.length > 0}
-				{#if navbarExpanded}
-					<div class="h-6"></div>
-					<p class="pb-2 text-xs text-gray-500">{m.upcomingConferences()}</p>
-				{/if}
-				{#each upcomingConferences as { id, title }}
-					<NavMenuButton
-						href="/dashboard/{id}"
-						icon="fa-flag"
-						{title}
-						active={$page.url.pathname.includes(id)}
-						bind:expanded={navbarExpanded}
-					/>
-				{/each}
-			{/if}
-			{#if pastConferences && pastConferences.length > 0}
-				{#if navbarExpanded}
-					<div class="h-6"></div>
-					<p class="pb-2 text-xs text-gray-500">{m.pastConferences()}</p>
-				{/if}
-				{#each pastConferences as { id, title }}
-					<NavMenuButton
-						href="/dashboard/{id}"
-						icon="fa-flag"
-						{title}
-						active={$page.url.pathname.includes(id)}
-						bind:expanded={navbarExpanded}
-					/>
-				{/each}
-			{/if}
+			{@render conferenceGroup(m.activeConferences(), activeConferences, false)}
+			{@render conferenceGroup(m.upcomingConferences(), upcomingConferences, true)}
+			{@render conferenceGroup(m.pastConferences(), pastConferences, true)}
 		{/if}
 	</NavMenu>
 </SideNavigationDrawer>

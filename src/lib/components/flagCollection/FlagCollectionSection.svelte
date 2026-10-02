@@ -5,6 +5,9 @@
 	import { browser } from '$app/environment';
 	import FlagCard from './FlagCard.svelte';
 	import CollectionStats from './CollectionStats.svelte';
+	import CollapsibleCard from '$lib/components/CollapsibleCard.svelte';
+	import LoadState from '$lib/components/LoadState.svelte';
+	import { filterAndSortFlags } from './flagCollectionLayout';
 
 	interface Props {
 		conferenceId: string;
@@ -77,134 +80,86 @@
 	type FilterOption = 'all' | 'incomplete' | 'unlocked' | 'complete';
 	let filterState = $state<FilterOption>('all');
 
-	let filteredFlags = $derived.by(() => {
-		const flags = flagCollection?.flags ?? [];
-		let filtered: typeof flags;
-		switch (filterState) {
-			case 'incomplete':
-				filtered = flags.filter((f) => !f.isComplete);
-				break;
-			case 'unlocked':
-				// Flags with at least one UNLOCKED piece (not found yet)
-				filtered = flags.filter((f) => f.pieces.some((p) => p.state === 'UNLOCKED'));
-				break;
-			case 'complete':
-				filtered = flags.filter((f) => f.isComplete);
-				break;
-			default:
-				filtered = [...flags];
-		}
-		// Sort by pieces discovered (descending), then alphabetically by name
-		return filtered.sort((a, b) => {
-			if (b.foundPieces !== a.foundPieces) {
-				return b.foundPieces - a.foundPieces;
-			}
-			return a.name.localeCompare(b.name);
-		});
-	});
+	type Flag = NonNullable<typeof flagCollection>['flags'][number];
+
+	const hasUnlockedPiece = (f: Flag) => f.pieces.some((p) => p.state === 'UNLOCKED');
+
+	/** The filter tabs, in order, each with the flags it keeps. */
+	const filterOptions: { id: FilterOption; label: () => string; keep: (f: Flag) => boolean }[] = [
+		{ id: 'all', label: m.filterAll, keep: () => true },
+		{ id: 'incomplete', label: m.filterIncomplete, keep: (f) => !f.isComplete },
+		// Flags with at least one UNLOCKED piece (not found yet)
+		{ id: 'unlocked', label: m.filterUnlocked, keep: hasUnlockedPiece },
+		{ id: 'complete', label: m.filterComplete, keep: (f) => f.isComplete }
+	];
+
+	let filteredFlags = $derived(
+		filterAndSortFlags(
+			flagCollection?.flags,
+			filterOptions.find((option) => option.id === filterState)?.keep
+		)
+	);
 </script>
 
-<div id="flag-collection" class="card bg-base-200 border border-base-300">
-	<!-- Header -->
-	<div
-		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-lg"
-		onclick={() => (isExpanded = !isExpanded)}
-		onkeypress={(e) => e.key === 'Enter' && (isExpanded = !isExpanded)}
-		role="button"
-		tabindex="0"
-	>
-		<div class="flex items-center gap-3">
-			<i class="fa-solid {isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-base-content/50"
-			></i>
-			<i class="fa-solid fa-puzzle-piece text-primary text-xl"></i>
-			<div>
-				<h3 class="text-lg font-bold">{m.flagCollection()}</h3>
-				<p class="text-sm text-base-content/60">{m.flagCollectionDescription()}</p>
-			</div>
+{#snippet collection(data: NonNullable<typeof flagCollection>)}
+	<!-- Stats -->
+	<CollectionStats stats={data.stats} />
+
+	<!-- Filter Tabs -->
+	<div class="flex justify-between items-center mt-4 mb-3">
+		<div class="tabs tabs-boxed">
+			{#each filterOptions as option (option.id)}
+				<button
+					class="tab"
+					class:tab-active={filterState === option.id}
+					onclick={() => (filterState = option.id)}
+				>
+					{option.label()} ({data.flags.filter(option.keep).length})
+				</button>
+			{/each}
 		</div>
-		{#if flagCollection?.stats}
-			{@const stats = flagCollection.stats}
-			<div class="badge badge-primary badge-lg gap-2">
-				<i class="fa-solid fa-trophy"></i>
-				{stats.completedFlags}/{stats.totalFlags}
-			</div>
-		{/if}
 	</div>
 
-	{#if isExpanded}
-		<div class="p-4 pt-0">
-			{#if flagsLoading}
-				<div class="flex justify-center p-8">
-					<i class="fa-duotone fa-spinner fa-spin text-4xl"></i>
-				</div>
-			{:else if flagsError}
-				<div class="alert alert-error">
-					<i class="fa-solid fa-exclamation-triangle"></i>
-					<span>{flagsError}</span>
-				</div>
-			{:else if flagCollection}
-				{@const data = flagCollection}
-
-				<!-- Stats -->
-				<CollectionStats stats={data.stats} />
-
-				<!-- Filter Tabs -->
-				<div class="flex justify-between items-center mt-4 mb-3">
-					<div class="tabs tabs-boxed">
-						<button
-							class="tab"
-							class:tab-active={filterState === 'all'}
-							onclick={() => (filterState = 'all')}
-						>
-							{m.filterAll()} ({data.flags.length})
-						</button>
-						<button
-							class="tab"
-							class:tab-active={filterState === 'incomplete'}
-							onclick={() => (filterState = 'incomplete')}
-						>
-							{m.filterIncomplete()} ({data.flags.filter((f) => !f.isComplete).length})
-						</button>
-						<button
-							class="tab"
-							class:tab-active={filterState === 'unlocked'}
-							onclick={() => (filterState = 'unlocked')}
-						>
-							{m.filterUnlocked()} ({data.flags.filter((f) =>
-								f.pieces.some((p) => p.state === 'UNLOCKED')
-							).length})
-						</button>
-						<button
-							class="tab"
-							class:tab-active={filterState === 'complete'}
-							onclick={() => (filterState = 'complete')}
-						>
-							{m.filterComplete()} ({data.flags.filter((f) => f.isComplete).length})
-						</button>
-					</div>
-				</div>
-
-				<!-- Flags Grid -->
-				{#if filteredFlags.length > 0}
-					<div
-						class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
-					>
-						{#each filteredFlags as flag (flag.id)}
-							<FlagCard {flag} />
-						{/each}
-					</div>
-				{:else}
-					<div class="alert alert-info">
-						<i class="fa-solid fa-info-circle"></i>
-						<span>{m.noFlagsInFilter()}</span>
-					</div>
-				{/if}
-			{:else}
-				<div class="alert alert-info">
-					<i class="fa-solid fa-info-circle"></i>
-					<span>{m.noFlagsYet()}</span>
-				</div>
-			{/if}
+	<!-- Flags Grid -->
+	{#if filteredFlags.length > 0}
+		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+			{#each filteredFlags as flag (flag.id)}
+				<FlagCard {flag} />
+			{/each}
+		</div>
+	{:else}
+		<div class="alert alert-info">
+			<i class="fa-solid fa-info-circle"></i>
+			<span>{m.noFlagsInFilter()}</span>
 		</div>
 	{/if}
-</div>
+{/snippet}
+
+<CollapsibleCard
+	id="flag-collection"
+	icon="puzzle-piece"
+	title={m.flagCollection()}
+	description={m.flagCollectionDescription()}
+	bind:expanded={isExpanded}
+	contentClass="p-4 pt-0"
+>
+	{#snippet badge()}
+		{#if flagCollection?.stats}
+			<div class="badge badge-primary badge-lg gap-2">
+				<i class="fa-solid fa-trophy"></i>
+				{flagCollection.stats.completedFlags}/{flagCollection.stats.totalFlags}
+			</div>
+		{/if}
+	{/snippet}
+
+	<LoadState loading={flagsLoading} error={flagsError}>
+		{#if flagCollection}
+			{@render collection(flagCollection)}
+		{:else}
+			<div class="alert alert-info">
+				<i class="fa-solid fa-info-circle"></i>
+				<span>{m.noFlagsYet()}</span>
+			</div>
+		{/if}
+	</LoadState>
+</CollapsibleCard>

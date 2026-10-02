@@ -11,21 +11,15 @@
 
 	let { status, size = 'sm' }: Props = $props();
 
-	let color = $derived.by(() => {
-		switch (status) {
-			case 'SUBMITTED':
-				return 'badge-warning badge-soft';
-			case 'REVISED':
-				return 'badge-info badge-soft';
-			case 'CHANGES_REQUESTED':
-				return 'badge-error badge-soft';
-			case 'ACCEPTED':
-				return 'badge-success badge-soft';
-			case 'DRAFT':
-			default:
-				return 'badge-ghost';
-		}
-	});
+	/** Badge classes per status; drafts and anything unlisted get the ghost badge. */
+	const statusColors: Partial<Record<PaperstatusEnum, string>> = {
+		SUBMITTED: 'badge-warning badge-soft',
+		REVISED: 'badge-info badge-soft',
+		CHANGES_REQUESTED: 'badge-error badge-soft',
+		ACCEPTED: 'badge-success badge-soft'
+	};
+
+	let color = $derived(statusColors[status] ?? 'badge-ghost');
 
 	let icon = $derived(getPaperStatusIcon(status));
 </script>

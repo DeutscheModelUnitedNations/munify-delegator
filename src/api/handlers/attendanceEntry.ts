@@ -9,6 +9,7 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
+import type { Context } from '$api/context';
 
 // Ported from abilities/entities/attendanceEntry.ts
 abilityBuilder.attendanceEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -31,13 +32,27 @@ abilityBuilder.attendanceEntry.allow(['update', 'delete']).when((ctx) => {
 	return conferenceParticipantStatus ? { where: { conferenceParticipantStatus } } : undefined;
 });
 
-export const AttendanceEntryRef = object({ table: 'attendanceEntry' });
+const AttendanceEntryRef = object({ table: 'attendanceEntry' });
 query({ table: 'attendanceEntry' });
 const pubsub = rumblePubsub({ table: 'attendanceEntry' });
 // Recording attendance also flips the participant's status for the conference.
 const conferenceParticipantStatusPubsub = rumblePubsub({
 	table: 'conferenceParticipantStatus'
 });
+
+/**
+ * Any team member of the conference may record attendance, not just management - and a system
+ * admin passes without being on the team. Both match the legacy resolver.
+ */
+async function assertMayRecordAttendance(ctx: Context, conferenceId: string, callerId: string) {
+	if (isSystemAdmin(ctx)) return;
+	const teamMember = await db.query.teamMember.findFirst({
+		where: { conferenceId, userId: callerId }
+	});
+	if (!teamMember) {
+		throw new GraphQLError('Only team members can create attendance entries.');
+	}
+}
 
 schemaBuilder.mutationFields((t) => ({
 	createAttendanceEntry: t.drizzleField({
@@ -56,16 +71,7 @@ schemaBuilder.mutationFields((t) => ({
 				throw new GraphQLError('Occasion must not be empty.');
 			}
 
-			// Any team member of the conference may record attendance, not just management - and a
-			// system admin passes without being on the team. Both match the legacy resolver.
-			if (!isSystemAdmin(ctx)) {
-				const teamMember = await db.query.teamMember.findFirst({
-					where: { conferenceId: args.conferenceId, userId: callerId }
-				});
-				if (!teamMember) {
-					throw new GraphQLError('Only team members can create attendance entries.');
-				}
-			}
+			await assertMayRecordAttendance(ctx, args.conferenceId, callerId);
 
 			// The participant status row is created on demand, as the legacy upsert did. The no-op
 			// `set` is how Postgres returns the existing row on conflict.
@@ -98,8 +104,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.attendanceEntry
 				.findFirst(
 					query(
-						ctx.abilities.attendanceEntry.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.attendanceEntry.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -113,7 +120,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.attendanceEntry)
 				.where(
-					ctx.abilities.attendanceEntry.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.attendanceEntry.filter('delete')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.attendanceEntry.id });
 			if (deleted.length === 0) {

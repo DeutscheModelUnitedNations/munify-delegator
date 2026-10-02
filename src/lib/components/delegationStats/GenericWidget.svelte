@@ -9,7 +9,7 @@
 </script>
 
 <Wrapper>
-	{#each content as stat}
+	{#each content as stat, statIndex (statIndex)}
 		<div class="stat">
 			<div class="stat-figure text-secondary">
 				<i class="fa-duotone text-3xl fa-{stat.icon}"></i>

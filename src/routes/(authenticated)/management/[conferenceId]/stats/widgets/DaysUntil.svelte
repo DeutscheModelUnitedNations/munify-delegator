@@ -1,8 +1,16 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { StatsWidgetData } from '../statsQuery';
-	let props: { data: StatsWidgetData } = $props();
-	let stats = $derived(props.data.stats);
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
+
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			countdowns: { daysUntilConference: true, daysUntilEndRegistration: true }
+		})
+	);
 </script>
 
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
@@ -13,7 +21,7 @@
 					<i class="fa-duotone fa-hourglass-clock text-2xl text-base-content/70"></i>
 				</div>
 				<div class="stat-title text-xs">{m.daysUntilConference()}</div>
-				<div class="stat-value text-xl">{stats?.countdowns?.daysUntilConference ?? '-'}</div>
+				<div class="stat-value text-xl">{stats.countdowns.daysUntilConference ?? '-'}</div>
 			</div>
 		</div>
 	</div>
@@ -27,7 +35,7 @@
 					<i class="fa-duotone fa-check-to-slot text-2xl text-base-content/70"></i>
 				</div>
 				<div class="stat-title text-xs">{m.daysUntilEndRegistration()}</div>
-				<div class="stat-value text-xl">{stats?.countdowns?.daysUntilEndRegistration ?? '-'}</div>
+				<div class="stat-value text-xl">{stats.countdowns.daysUntilEndRegistration ?? '-'}</div>
 			</div>
 		</div>
 	</div>

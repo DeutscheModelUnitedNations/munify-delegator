@@ -4,7 +4,7 @@ import ReadOnlyContent from './ReadOnlyContent.svelte';
 import * as DiffViewer from './diffViewer';
 import * as Resolution from './resolution';
 
-export const Editor = {
+const Editor = {
 	PaperFormat,
 	Resolution,
 	ReviewFormat,
@@ -12,5 +12,4 @@ export const Editor = {
 	DiffViewer
 };
 
-export type { SvelteComponent } from 'svelte';
 export default Editor;

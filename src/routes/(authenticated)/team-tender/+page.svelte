@@ -3,8 +3,10 @@
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 
-	const currentUser = $derived(await getCurrentUser());
+	// The signed-in person does not change while the page is open.
+	const currentUser = await getCurrentUser();
 
 	const dbUser = await client.query.user({
 		__args: { id: currentUser.sub },
@@ -66,7 +68,7 @@
 			{/if}
 
 			<div class="divider"></div>
-			<a class="link link-hover text-sm" href="/my-account">
+			<a class="link link-hover text-sm" href={resolve('/my-account')}>
 				{m.teamTenderManagePreferences()}
 			</a>
 		</div>

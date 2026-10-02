@@ -72,7 +72,7 @@ bun run format
 # Type checking (PREFERRED for development - fast feedback)
 bun run check          # Single run - use this to verify changes
 bun run check:watch    # Watch mode
-bun run typecheck      # TypeScript only
+bun run typecheck      # TypeScript only (tsc is TypeScript 7, installed as @typescript/native)
 
 # Lint (slow - runs automatically on git push via lefthook)
 bun run lint           # Only run manually when specifically needed
@@ -85,8 +85,19 @@ bun run fallow:health  # Health score with letter grade
 # Testing
 bun test               # Run tests once
 bun run test:watch     # Watch mode
-bun run coverage       # With coverage report
+bun run coverage       # Unit tests with coverage (coverage/unit)
+bun run test:e2e:coverage  # e2e suite with server + browser coverage (coverage/e2e-*)
 ```
+
+**Coverage feeds fallow's CRAP scores.** Both coverage commands end in `scripts/mergeCoverage.ts`,
+which merges whatever reports exist into `coverage/coverage-final.json` (and an HTML report in
+`coverage/report/`); the `fallow*` scripts, the lefthook hooks and the CI fallow job pass that file
+to fallow, which otherwise only estimates coverage. The e2e run records the browser through the
+`page` fixture in `e2e/support/test.ts` (specs import `test` from there, not from
+`@playwright/test`), and the server through `NODE_V8_COVERAGE`, which `scripts/serverCoverage.ts`
+maps back to the sources: Vite's module runner evaluates modules with `new AsyncFunction`, which
+Node keeps no source map for, so c8 cannot. Generated code (Paraglide, the rumble client) is left
+out by `scripts/coverageScope.ts`. CI scores with unit coverage only.
 
 **Note:** Prefer `bun run check` over `bun run lint` during development. Linting is slow (~2 min) and runs automatically on push via lefthook pre-push hooks. Use `bun run check` for quick type-checking feedback.
 
@@ -251,9 +262,30 @@ bun run preview
   real bug, not noise. A plain `await` is right only for something seeded once, such as the initial
   value of a form field.
 
-  When a page needs several queries, put them in a co-located module that exports the fetch
-  function and its result type (`conferenceCalendar.ts`, `assignmentProject.ts`), and let child
-  components import that type for their props.
+- **Each component fetches what it renders, and nothing more.** A page fetches only what decides
+  _which_ sections to show (often just ids), and hands each section the ids it needs; the section
+  queries its own fields. Never fetch a large tree at the top and prop-drill it down: every
+  component then re-renders on every change anywhere in it, and nobody can tell which field is
+  still used. `fetchMyParticipation` is the model: it only answers who the caller is in a
+  conference (role, ids, a few discriminating fields), and the dashboard stages fetch the rest.
+  Small overlapping queries are cheap: they share one normalized cache record per entity.
+
+  - **You never need to select `id`.** The generated client adds it to every selection of a type
+    that has one (`autoIncludeIdField` in `src/api/handlers/register.ts`), because graphcache
+    cannot normalize a selection without it - it stores it embedded, overwrites the link other
+    queries of the same field hold, and their next read comes back `undefined`. A type keyed by
+    something else (a nation, by `alpha3Code`) belongs in `customKeyFields` in
+    `$lib/api/cacheKeys.ts`, and then that field has to be selected.
+  - **Key a query by primitives, never by reading through another live result inside the same
+    `$derived`.** Reading a field of a live result subscribes the reading `$derived` to that
+    result's updates, so a `$derived` that also issues a query would issue it again on every update.
+    Pull the id out first (`const delegationId = $derived(member.delegation.id)`) and query with
+    that; likewise read fields of a fresh result in a second `$derived`, not in the one that awaited
+    it. (rumble only announces updates whose data actually changed, which stops the resulting
+    loops, but the extra queries are still waste.)
+  - When a component needs several queries, run them with `Promise.all` in one
+    `$derived(await …)`. A module that exports a fetch function and its result type is still right
+    when several components share a shape (`conferenceParticipants.ts`).
 
 - **`load` functions are for three things only**: redirect and 403 guards, page options like
   `ssr = false`, and cookie work that has to happen before anything renders — of which only
@@ -276,7 +308,7 @@ bun run preview
   `page`, `params` is `{}`, and that result is the one that sticks. The page renders as if the
   conference did not exist. The prop is handed to the component rather than written in a batch,
   so it does not have this problem. Name it `routeParams` where the page already has a `params`
-  (a `sveltekit-search-params` store).
+  (a `sveltekit-search-params` object).
 
 - **Global state lives in `$lib/state/*.svelte.ts`**, chase's pattern. `getCurrentUser()` is the
   signed-in person; `fetchMyParticipation(conferenceId)` is what the caller is in one conference.
@@ -429,7 +461,8 @@ See **[CLAUDE-UI.md](./CLAUDE-UI.md)** for comprehensive UI design documentation
 - **Modals**: Use `Modal` component with `action` snippet for footer buttons
 - **Layout**: Use DaisyUI classes; prefer `bg-base-*` and semantic colors
 - **Icons**: Use FontAwesome Duotone (`fa-duotone fa-icon-name`)
-- **URL State**: Use `sveltekit-search-params` for URL-persisted state
+- **URL State**: Use `sveltekit-search-params` for URL-persisted state (v4: `queryParameters()` returns a
+  reactive object - read and assign `params.x`, no `$` store syntax)
 
 **Maintenance**: When creating new UI components, significantly modifying existing ones (props, usage patterns), or deprecating components, update CLAUDE-UI.md accordingly. Keep documentation in sync with the actual component implementations.
 
@@ -599,6 +632,43 @@ This project uses Model Context Protocol (MCP) servers to enhance AI-assisted de
   unclear
 - Vitest MCP provides structured test output optimized for AI analysis
 - Memory MCP remembers context across conversation sessions
+
+## Dependency Notes
+
+Some versions are held back or wired up on purpose. Check here before "updating to latest":
+
+- **drizzle-orm / drizzle-kit / drizzle-seed track the `1.0.0-rc.5` builds, not npm's `latest`**,
+  which is the 0.x line without the relational API v2 this app is built on. After any drizzle bump,
+  regenerate the client and check `git diff src/lib/api/rumbleClient` for `| null` creeping into
+  relations: newer builds wrap relation columns in a `RelationsBuilderColumn`, which our rumble patch
+  unwraps.
+- **graphql is on 17.** `@escape.tech/graphql-armor` still pins 16 and keeps a nested copy; that is
+  fine because armor only parses and walks documents (verified: depth and alias limits still reject
+  over-limit queries on a production build). Anything else that brings its own graphql copy would
+  not be - schema building fails every `instanceof` check across two copies.
+- **TypeScript is installed twice.** svelte-check needs TypeScript 6 (`typescript`); `tsc` itself is
+  TypeScript 7, aliased as `@typescript/native`, and is what `bun run typecheck` runs.
+- **Sentry**: `dataCollection` is derived from `*_SENTRY_SEND_DEFAULT_PII` in
+  `$lib/sentryDataCollection.ts` (Sentry 11 collects everything by default), and the Vite plugin
+  runs with `buildTimeInstrumentation: false` - tracing is off, and that instrumentation inlines
+  graphql into the server bundle, breaking rumble's client generator during `vite build`.
+- **Emails** import from `@better-svelte-email/components` and `@better-svelte-email/server`, not
+  the `better-svelte-email` umbrella, whose root re-exports a preview module with raw `.svelte`
+  files that Node cannot load during SSR.
+- **rumble is patched** (`patches/`), each fix meant to go upstream:
+  - live queries announce updates on the next task (urql emits synchronously, often inside a
+    `$derived`, where an immediate update throws `state_unsafe_mutation`);
+  - `autoIncludeIdField` applies to nested selections too, and only to types that have the field;
+  - relation nullability unwraps drizzle's `RelationsBuilderColumn` before reading `notNull`;
+  - `getTableConfig` hands `@pothos/plugin-drizzle` 0.20 drizzle's shape (primary keys as key
+    objects with their columns), or any field returning plain rows crashes in its `ModelLoader`;
+  - the client generator does not rewrite unchanged files (a rewrite makes Vite reload every open
+    page, mid-test in e2e).
+
+  Since 0.24.1 rumble itself drops live-query updates whose data did not change.
+
+- **sveltekit-breadcrumbs is patched** to drop two leftover `console.log`s that dumped the route
+  glob on every page render, in the browser and the server log alike.
 
 ## Development Workflow
 

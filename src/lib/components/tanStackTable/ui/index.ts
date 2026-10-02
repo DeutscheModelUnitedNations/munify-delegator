@@ -15,5 +15,3 @@ export const DataTable = {
 	Cell: TableCell,
 	Pagination: TablePagination
 };
-
-export default DataTable;

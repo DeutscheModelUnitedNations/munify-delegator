@@ -3,6 +3,7 @@ import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } 
 import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
+import { nullToUndefined } from '$api/services/args';
 
 // Ported from abilities/entities/customConferenceRole.ts
 abilityBuilder.customConferenceRole.allow('read');
@@ -13,7 +14,7 @@ abilityBuilder.customConferenceRole.allow(['update', 'delete']).when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const CustomConferenceRoleRef = object({ table: 'customConferenceRole' });
+const CustomConferenceRoleRef = object({ table: 'customConferenceRole' });
 query({ table: 'customConferenceRole' });
 const pubsub = rumblePubsub({ table: 'customConferenceRole' });
 
@@ -35,14 +36,15 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.customConferenceRole)
 				.set({
-					name: args.name ?? undefined,
-					description: args.description ?? undefined,
-					fontAwesomeIcon: args.fontAwesomeIcon ?? undefined,
-					seatAmount: args.seatAmount ?? undefined
+					name: nullToUndefined(args.name),
+					description: nullToUndefined(args.description),
+					fontAwesomeIcon: nullToUndefined(args.fontAwesomeIcon),
+					seatAmount: nullToUndefined(args.seatAmount)
 				})
 				.where(
-					ctx.abilities.customConferenceRole.filter('update').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.customConferenceRole.filter('update')).merge({
+						where: { id: args.id }
+					}).sql.where
 				);
 
 			pubsub.updated(args.id);
@@ -50,8 +52,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.customConferenceRole
 				.findFirst(
 					query(
-						ctx.abilities.customConferenceRole.filter('read').merge({ where: { id: args.id } })
-							.query.single
+						(await ctx.abilities.customConferenceRole.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -65,8 +68,9 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.customConferenceRole)
 				.where(
-					ctx.abilities.customConferenceRole.filter('delete').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.customConferenceRole.filter('delete')).merge({
+						where: { id: args.id }
+					}).sql.where
 				)
 				.returning({ id: schema.customConferenceRole.id });
 			if (deleted.length === 0) {

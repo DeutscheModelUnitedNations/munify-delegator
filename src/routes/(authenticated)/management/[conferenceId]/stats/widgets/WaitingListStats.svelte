@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { PieChart } from '$lib/components/charts/echarts';
-	import type { StatsWidgetData } from '../statsQuery';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
 
-	let props: { data: StatsWidgetData } = $props();
-	let stats = $derived(props.data.stats);
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			waitingList: { total: true, visible: true, hidden: true, assigned: true, unassigned: true }
+		})
+	);
 
 	const chartData = $derived.by(() => {
 		if (!stats?.waitingList) return [];

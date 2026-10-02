@@ -1,13 +1,32 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { GaugeChart, StackedBarChart, BarChart } from '$lib/components/charts/echarts';
-	import type { PostalPaymentProgress } from '../stats.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
 
-	interface Props {
-		progress: PostalPaymentProgress;
-	}
+	let { conferenceId }: { conferenceId: string } = $props();
 
-	let { progress }: Props = $props();
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			postalPaymentProgress: {
+				maxParticipants: true,
+				postalDone: true,
+				postalPending: true,
+				postalProblem: true,
+				postalPercentage: true,
+				paymentDone: true,
+				paymentPending: true,
+				paymentProblem: true,
+				paymentPercentage: true,
+				bothComplete: true,
+				postalOnlyComplete: true,
+				paymentOnlyComplete: true,
+				neitherComplete: true
+			}
+		})
+	);
+	const progress = $derived(stats.postalPaymentProgress);
 
 	// Postal status breakdown
 	const postalData = $derived([

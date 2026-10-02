@@ -17,7 +17,7 @@ export type DelegationMemberFilter = WhereOf<typeof db.query.delegationMember>;
 export type UserFilter = WhereOf<typeof db.query.user>;
 
 /** The conditions a filter puts on a single participant, without the conference scope. */
-export function singleParticipantConditions(filter: StatsFilterType): SingleParticipantFilter {
+function singleParticipantConditions(filter: StatsFilterType): SingleParticipantFilter {
 	switch (filter) {
 		case 'ALL':
 			return {};

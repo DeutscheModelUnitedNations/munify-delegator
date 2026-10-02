@@ -2,48 +2,30 @@
 	// import ManagementHeader from '$lib/components/ManagementHeader.svelte';
 	// import PrintHeader from '$lib/components/dataTable/PrintHeader.svelte';
 	import { type TableColumns } from 'svelte-table';
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getTableSettings } from '$lib/components/dataTable/dataTableSettings.svelte';
-	import DataTable from '$lib/components/dataTable/DataTable.svelte';
+	import { appliedColumn } from '$lib/components/dataTable/commonColumns';
+	import RegistrationAdminTable from '$lib/components/registrationAdmin/RegistrationAdminTable.svelte';
 	import DelegationDrawer from './DelegationDrawer.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { queryParam } from 'sveltekit-search-params';
 	import codenmz from '$lib/helpers/codenamize';
 	import type { PageProps } from './$types';
+	import { assignedRoleName } from './delegationRole';
 
-	let { params }: PageProps = $props();
+	let { params: routeParams }: PageProps = $props();
 
-	const currentUser = $derived(await getCurrentUser());
-
+	// Only what the table's columns show and search; the drawer fetches the rest of a delegation.
 	const fetchedDelegations = $derived(
 		await client.liveQuery.delegations({
-			__args: { where: { conferenceId: { eq: params.conferenceId } } },
+			__args: { where: { conferenceId: { eq: routeParams.conferenceId } } },
 			id: true,
 			entryCode: true,
 			applied: true,
 			school: true,
-			motivation: true,
-			experience: true,
 			assignedNation: { alpha2Code: true, alpha3Code: true },
-			assignedNonStateActor: {
-				id: true,
-				abbreviation: true,
-				name: true,
-				description: true,
-				fontAwesomeIcon: true
-			},
-			members: {
-				id: true,
-				isHeadDelegate: true,
-				user: { id: true, givenName: true, familyName: true },
-				supervisors: {
-					id: true,
-					plansOwnAttendenceAtConference: true,
-					user: { id: true, givenName: true, familyName: true }
-				}
-			},
+			assignedNonStateActor: { id: true, name: true, fontAwesomeIcon: true },
+			members: { id: true },
 			appliedForRoles: { id: true }
 		})
 	);
@@ -57,10 +39,8 @@
 						name: getFullTranslatedCountryNameFromISO3Code(d.assignedNation.alpha3Code)
 					}
 				: undefined
-		})) ?? []
+		}))
 	);
-
-	let selectedDelegationRow = queryParam('selected');
 
 	const { getTableSize } = getTableSettings();
 
@@ -76,23 +56,12 @@
 			value: (row) => row.entryCode,
 			class: 'font-mono'
 		},
-		{
-			key: 'applied',
-			title: 'Applied',
-			value: (row) => (row.applied ? 1 : 0),
-			renderValue: (row) =>
-				row.applied
-					? `<i class="fa-solid fa-circle-check text-success text-${getTableSize()}"></i>`
-					: `<i class="fa-solid fa-hourglass-half text-warning text-${getTableSize()}"></i>`,
-			parseHTML: true,
-			sortable: true,
-			class: 'text-center'
-		},
+		appliedColumn(getTableSize),
 		{
 			key: 'role',
 			title: m.role(),
 			parseHTML: true,
-			value: (row) => row.assignedNation?.name ?? row.assignedNonStateActor?.name ?? 'N/A',
+			value: assignedRoleName,
 			renderValue: (row) =>
 				row.assignedNation
 					? `<div class="w-[2rem] h-[1.5rem] rounded flex items-center justify-center overflow-hidden shadow bg-base-300 tooltip" data-tip="${row.assignedNation.name}"><span class="fi fi-${row.assignedNation.alpha2Code} !w-full !leading-[100rem]"></span></div>`
@@ -127,23 +96,20 @@
 	// TODO export data
 </script>
 
-<DataTable
+<RegistrationAdminTable
+	conferenceId={routeParams.conferenceId}
 	{columns}
 	rows={delegations}
-	enableSearch={true}
 	additionallyIndexedKeys={['assignedNation.name']}
-	queryParamKey="filter"
-	rowSelected={(row) => {
-		$selectedDelegationRow = row.id;
-	}}
-/>
-
-{#if $selectedDelegationRow}
-	<DelegationDrawer
-		delegationId={$selectedDelegationRow}
-		conferenceId={params.conferenceId}
-		open={$selectedDelegationRow !== null}
-		onClose={() => ($selectedDelegationRow = null)}
-		userData={currentUser}
-	/>
-{/if}
+	category={m.delegation()}
+	pendingHeader={(selectedId) => ({ id: selectedId, title: codenmz(selectedId) })}
+>
+	{#snippet drawer(selectedId, close)}
+		<DelegationDrawer
+			delegationId={selectedId}
+			conferenceId={routeParams.conferenceId}
+			open
+			onClose={close}
+		/>
+	{/snippet}
+</RegistrationAdminTable>

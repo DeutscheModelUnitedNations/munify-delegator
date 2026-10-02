@@ -27,9 +27,38 @@ abilityBuilder.surveyAnswer.allow(['read', 'update', 'delete']).when((ctx) => {
 	return question ? { where: { question } } : undefined;
 });
 
-export const SurveyAnswerRef = object({ table: 'surveyAnswer' });
+const SurveyAnswerRef = object({ table: 'surveyAnswer' });
 query({ table: 'surveyAnswer' });
 const pubsub = rumblePubsub({ table: 'surveyAnswer' });
+
+/** Organizers may overfill an option and answer past the deadline; participants may not. */
+async function assertMayChooseOption(
+	option: {
+		upperLimit: number | null;
+		surveyAnswers: unknown[];
+		question: { conferenceId: string; deadline: Date };
+	},
+	callerId: string,
+	isAdmin: boolean
+) {
+	const isOrganizer =
+		isAdmin ||
+		(await db.query.teamMember.findFirst({
+			where: {
+				conferenceId: option.question.conferenceId,
+				userId: callerId,
+				role: { in: [...PARTICIPANT_CARE_ROLES] }
+			}
+		})) !== undefined;
+	if (isOrganizer) return;
+
+	if (option.upperLimit && option.surveyAnswers.length >= option.upperLimit) {
+		throw new GraphQLError(m.optionUpperLimitReached(option.upperLimit));
+	}
+	if (option.question.deadline < new Date()) {
+		throw new GraphQLError(m.questionDeadlinePassed());
+	}
+}
 
 /**
  * Answering a survey is a single mutation: there is no separate create, because the first answer
@@ -62,28 +91,10 @@ schemaBuilder.mutationFields((t) => ({
 				})
 				.then(assertFindFirstExists);
 
-			// Organizers may overfill an option and answer past the deadline; participants may not.
-			const isOrganizer =
-				isSystemAdmin(ctx) ||
-				(await db.query.teamMember.findFirst({
-					where: {
-						conferenceId: option.question.conferenceId,
-						userId: caller.sub,
-						role: { in: [...PARTICIPANT_CARE_ROLES] }
-					}
-				})) !== undefined;
-
-			if (!isOrganizer) {
-				if (option.upperLimit && option.surveyAnswers.length >= option.upperLimit) {
-					throw new GraphQLError(m.optionUpperLimitReached(option.upperLimit));
-				}
-				if (option.question.deadline < new Date()) {
-					throw new GraphQLError(m.questionDeadlinePassed());
-				}
-			}
+			await assertMayChooseOption(option, caller.sub, isSystemAdmin(ctx));
 
 			const existing = await db.query.surveyAnswer.findFirst({
-				...ctx.abilities.surveyAnswer.filter('update').merge({
+				...(await ctx.abilities.surveyAnswer.filter('update')).merge({
 					where: args.id
 						? { id: args.id }
 						: { questionId: args.questionId ?? undefined, userId: args.userId ?? undefined }
@@ -121,8 +132,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.surveyAnswer
 				.findFirst(
 					query(
-						ctx.abilities.surveyAnswer.filter('read').merge({ where: { id: answerId } }).query
-							.single
+						(await ctx.abilities.surveyAnswer.filter('read')).merge({ where: { id: answerId } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);

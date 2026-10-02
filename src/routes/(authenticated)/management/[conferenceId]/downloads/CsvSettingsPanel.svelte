@@ -68,7 +68,7 @@
 					value={currentSettings.delimiter}
 					onchange={(e) => updateDelimiter(e.currentTarget.value as CsvDelimiter)}
 				>
-					{#each delimiters as delimiter}
+					{#each delimiters as delimiter (delimiter)}
 						<option value={delimiter}>{getDelimiterLabel(delimiter)}</option>
 					{/each}
 				</select>
@@ -82,7 +82,7 @@
 					value={currentSettings.encoding}
 					onchange={(e) => updateEncoding(e.currentTarget.value as CsvEncoding)}
 				>
-					{#each encodings as encoding}
+					{#each encodings as encoding (encoding)}
 						<option value={encoding}>{getEncodingLabel(encoding)}</option>
 					{/each}
 				</select>

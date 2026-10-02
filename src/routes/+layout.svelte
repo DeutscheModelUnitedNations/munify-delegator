@@ -31,17 +31,17 @@
 	});
 
 	const changeFaDuotoneTheme = () => {
-		const r = document.querySelector(':root');
+		const r = document.documentElement;
 		if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-			(r as any)?.style.setProperty('--fa-primary-color', '#b1cbed');
-			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
-			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
-			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
+			r.style.setProperty('--fa-primary-color', '#b1cbed');
+			r.style.setProperty('--fa-primary-opacity', '1');
+			r.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			r.style.setProperty('--fa-secondary-opacity', '1');
 		} else {
-			(r as any)?.style.setProperty('--fa-primary-color', '#000000');
-			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
-			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
-			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
+			r.style.setProperty('--fa-primary-color', '#000000');
+			r.style.setProperty('--fa-primary-opacity', '1');
+			r.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			r.style.setProperty('--fa-secondary-opacity', '1');
 		}
 
 		//--fa-primary-opacity: 1;
@@ -81,7 +81,8 @@
 {/if}
 
 <div style="display:none">
-	{#each locales as locale}
+	{#each locales as locale (locale)}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- localizeHref builds a locale-prefixed URL from the current pathname at runtime, which resolve() cannot type -->
 		<a href={localizeHref(page.url.pathname, { locale })}>{locale}</a>
 	{/each}
 </div>

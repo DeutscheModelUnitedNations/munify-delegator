@@ -44,6 +44,8 @@ if (dev || building) {
 		apiUrl: '/api/graphql',
 		useExternalUrqlClient: '../client',
 		removeExisting: false,
-		autoIncludeIdField: false
+		// Graphcache can only normalize an entity whose key it was given; without one it stores the
+		// selection embedded and overwrites the link other queries of the same field hold.
+		autoIncludeIdField: true
 	});
 }

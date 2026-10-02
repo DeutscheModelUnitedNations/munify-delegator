@@ -3,19 +3,13 @@
 	import Wrapper from './Wrapper.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	import type { Row } from '$api/db/rows';
 
 	interface Props {
-		country?: NonNullable<
-			MyConferenceParticipation['delegationMember']
-		>['delegation']['assignedNation'];
-		committees?: NonNullable<MyConferenceParticipation['conference']>['committees'] | null;
-		nonStateActor?: NonNullable<
-			MyConferenceParticipation['delegationMember']
-		>['delegation']['assignedNonStateActor'];
-		customConferenceRole?: NonNullable<
-			MyConferenceParticipation['singleParticipant']
-		>['assignedRole'];
+		country?: Pick<Row<'nation'>, 'alpha2Code' | 'alpha3Code'> | null;
+		committees?: Pick<Row<'committee'>, 'name' | 'numOfSeatsPerDelegation'>[] | null;
+		nonStateActor?: Pick<Row<'nonStateActor'>, 'name' | 'fontAwesomeIcon' | 'seatAmount'> | null;
+		customConferenceRole?: Pick<Row<'customConferenceRole'>, 'name' | 'fontAwesomeIcon'> | null;
 	}
 
 	let { country, nonStateActor, committees, customConferenceRole }: Props = $props();
@@ -43,7 +37,7 @@
 		</div>
 		<div class="stat-desc mt-2 flex flex-wrap gap-1">
 			{#if committees && committees.length > 0}
-				{#each committees as committee}
+				{#each committees as committee, committeeIndex (committeeIndex)}
 					<div class="badge">
 						{committee.name}{committee.numOfSeatsPerDelegation !== 1
 							? ` (${committee.numOfSeatsPerDelegation}x)`

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';
@@ -11,15 +10,6 @@
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
-
-	const committees = $derived(
-		await client.liveQuery.committees({
-			__args: { where: { conferenceId: { eq: params.conferenceId } } },
-			id: true,
-			name: true,
-			abbreviation: true
-		})
-	);
 </script>
 
 <div class="flex flex-col gap-8 p-10">
@@ -35,7 +25,7 @@
 		description={m.badgeDataDescription()}
 		icon="fas fa-id-badge"
 	>
-		<BadgeData {committees} conferenceId={params.conferenceId} />
+		<BadgeData conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard

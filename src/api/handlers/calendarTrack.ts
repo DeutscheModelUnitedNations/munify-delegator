@@ -18,7 +18,7 @@ abilityBuilder.calendarTrack.allow(['update', 'delete']).when((ctx) => {
 	return calendarDay ? { where: { calendarDay } } : undefined;
 });
 
-export const CalendarTrackRef = object({ table: 'calendarTrack' });
+const CalendarTrackRef = object({ table: 'calendarTrack' });
 query({ table: 'calendarTrack' });
 const pubsub = rumblePubsub({ table: 'calendarTrack' });
 
@@ -50,8 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarTrack
 				.findFirst(
 					query(
-						ctx.abilities.calendarTrack.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.calendarTrack.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -76,7 +76,8 @@ schemaBuilder.mutationFields((t) => ({
 					description: args.description
 				})
 				.where(
-					ctx.abilities.calendarTrack.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.calendarTrack.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -84,8 +85,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarTrack
 				.findFirst(
 					query(
-						ctx.abilities.calendarTrack.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.calendarTrack.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -99,7 +100,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.calendarTrack)
 				.where(
-					ctx.abilities.calendarTrack.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.calendarTrack.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.calendarTrack.id });
 

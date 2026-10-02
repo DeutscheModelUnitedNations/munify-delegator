@@ -7,8 +7,9 @@
 
 	let { params }: PageProps = $props();
 
-	const currentUser = $derived(await getCurrentUser());
-	let conferencePaymentData = $derived(await fetchConferencePaymentData(params.conferenceId));
+	const [currentUser, conferencePaymentData] = $derived(
+		await Promise.all([getCurrentUser(), fetchConferencePaymentData(params.conferenceId)])
+	);
 </script>
 
 <div class="flex flex-col gap-2">

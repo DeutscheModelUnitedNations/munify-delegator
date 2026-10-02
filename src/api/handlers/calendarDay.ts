@@ -1,4 +1,4 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
@@ -7,7 +7,10 @@ import {
 	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { calendarDayExportSchema } from '$lib/schemata/calendarDayExport';
+import {
+	type CalendarDayExportData,
+	calendarDayExportSchema
+} from '$lib/schemata/calendarDayExport';
 import { GraphQLError } from 'graphql';
 
 // Ported from abilities/entities/calendarDay.ts
@@ -19,7 +22,7 @@ abilityBuilder.calendarDay.allow(['update', 'delete']).when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const CalendarDayRef = object({ table: 'calendarDay' });
+const CalendarDayRef = object({ table: 'calendarDay' });
 query({ table: 'calendarDay' });
 const pubsub = rumblePubsub({ table: 'calendarDay' });
 // An import brings a whole day's programme with it: its tracks, its entries and their places.
@@ -55,8 +58,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarDay
 				.findFirst(
 					query(
-						ctx.abilities.calendarDay.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -80,7 +83,8 @@ schemaBuilder.mutationFields((t) => ({
 					sortOrder: args.sortOrder ?? undefined
 				})
 				.where(
-					ctx.abilities.calendarDay.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.calendarDay.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -88,7 +92,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarDay
 				.findFirst(
 					query(
-						ctx.abilities.calendarDay.filter('read').merge({ where: { id: args.id } }).query.single
+						(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id: args.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -102,7 +107,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.calendarDay)
 				.where(
-					ctx.abilities.calendarDay.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.calendarDay.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.calendarDay.id });
 
@@ -115,6 +121,99 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	})
 }));
+
+/** The import document arrives either as a JSON string or already parsed. */
+function parseImportData(importData: unknown) {
+	let raw = importData;
+	if (typeof importData === 'string') {
+		try {
+			raw = JSON.parse(importData);
+		} catch {
+			throw new GraphQLError('Invalid import data: malformed JSON');
+		}
+	}
+
+	const parsed = calendarDayExportSchema.safeParse(raw);
+	if (!parsed.success) {
+		throw new GraphQLError(`Invalid import data: ${parsed.error.message}`);
+	}
+	return parsed.data;
+}
+
+/** Creates the day's tracks and maps each track name to its new id. */
+async function importTracks(
+	tx: Transaction,
+	dayId: string,
+	tracks: CalendarDayExportData['tracks']
+) {
+	const trackIdByName = new Map<string, string>();
+	for (const track of tracks) {
+		const row = await tx
+			.insert(schema.calendarTrack)
+			.values({
+				calendarDayId: dayId,
+				name: track.name,
+				description: track.description,
+				sortOrder: track.sortOrder
+			})
+			.returning()
+			.then(assertFirstEntryExists);
+		trackIdByName.set(track.name, row.id);
+	}
+	return trackIdByName;
+}
+
+/** The places the entries name, each once: the first entry naming a place describes it. */
+function distinctPlaces(entries: CalendarDayExportData['entries']) {
+	const byName = new Map<string, NonNullable<CalendarDayExportData['entries'][number]['place']>>();
+	for (const entry of entries) {
+		if (entry.place && !byName.has(entry.place.name)) byName.set(entry.place.name, entry.place);
+	}
+	return [...byName.values()];
+}
+
+/** Maps each place the entries name to its id, reusing a place the conference already has. */
+async function importPlaces(
+	tx: Transaction,
+	conferenceId: string,
+	entries: CalendarDayExportData['entries']
+) {
+	const placeIdByName = new Map<string, string>();
+	for (const place of distinctPlaces(entries)) {
+		const existing = await tx.query.place.findFirst({
+			where: { conferenceId, name: place.name }
+		});
+		if (existing) {
+			placeIdByName.set(place.name, existing.id);
+			continue;
+		}
+
+		const row = await tx
+			.insert(schema.place)
+			.values({
+				conferenceId,
+				name: place.name,
+				address: place.address,
+				latitude: place.latitude,
+				longitude: place.longitude,
+				directions: place.directions,
+				info: place.info,
+				websiteUrl: place.websiteUrl
+			})
+			.returning()
+			.then(assertFirstEntryExists);
+		placeIdByName.set(place.name, row.id);
+	}
+	return placeIdByName;
+}
+
+/** An "HH:MM" time anchored to the given date in UTC. */
+function timeOnDay(date: Date, time: string) {
+	const [hour, minute] = time.split(':').map(Number);
+	const result = new Date(date);
+	result.setUTCHours(hour ?? 0, minute ?? 0, 0, 0);
+	return result;
+}
 
 /**
  * Imports a whole day - tracks, places and entries - from an exported JSON document.
@@ -136,22 +235,7 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await assertMayManageConference(args.conferenceId, ctx.oidc.user?.sub);
 
-			const raw =
-				typeof args.importData === 'string'
-					? (() => {
-							try {
-								return JSON.parse(args.importData);
-							} catch {
-								throw new GraphQLError('Invalid import data: malformed JSON');
-							}
-						})()
-					: args.importData;
-
-			const parsed = calendarDayExportSchema.safeParse(raw);
-			if (!parsed.success) {
-				throw new GraphQLError(`Invalid import data: ${parsed.error.message}`);
-			}
-			const importData = parsed.data;
+			const importData = parseImportData(args.importData);
 
 			const created = await db.transaction(async (tx) => {
 				const day = await tx
@@ -165,64 +249,16 @@ schemaBuilder.mutationFields((t) => ({
 					.returning()
 					.then(assertFirstEntryExists);
 
-				const trackIdByName = new Map<string, string>();
-				for (const track of importData.tracks) {
-					const row = await tx
-						.insert(schema.calendarTrack)
-						.values({
-							calendarDayId: day.id,
-							name: track.name,
-							description: track.description,
-							sortOrder: track.sortOrder
-						})
-						.returning()
-						.then(assertFirstEntryExists);
-					trackIdByName.set(track.name, row.id);
-				}
-
-				const placeIdByName = new Map<string, string>();
-				for (const entry of importData.entries) {
-					if (!entry.place || placeIdByName.has(entry.place.name)) continue;
-
-					const existing = await tx.query.place.findFirst({
-						where: { conferenceId: args.conferenceId, name: entry.place.name }
-					});
-					if (existing) {
-						placeIdByName.set(entry.place.name, existing.id);
-						continue;
-					}
-
-					const row = await tx
-						.insert(schema.place)
-						.values({
-							conferenceId: args.conferenceId,
-							name: entry.place.name,
-							address: entry.place.address,
-							latitude: entry.place.latitude,
-							longitude: entry.place.longitude,
-							directions: entry.place.directions,
-							info: entry.place.info,
-							websiteUrl: entry.place.websiteUrl
-						})
-						.returning()
-						.then(assertFirstEntryExists);
-					placeIdByName.set(entry.place.name, row.id);
-				}
+				const trackIdByName = await importTracks(tx, day.id, importData.tracks);
+				const placeIdByName = await importPlaces(tx, args.conferenceId, importData.entries);
 
 				for (const entry of importData.entries) {
-					const [startHour, startMinute] = entry.startTime.split(':').map(Number);
-					const [endHour, endMinute] = entry.endTime.split(':').map(Number);
-					const startTime = new Date(args.date);
-					startTime.setUTCHours(startHour ?? 0, startMinute ?? 0, 0, 0);
-					const endTime = new Date(args.date);
-					endTime.setUTCHours(endHour ?? 0, endMinute ?? 0, 0, 0);
-
 					await tx.insert(schema.calendarEntry).values({
 						calendarDayId: day.id,
 						name: entry.name,
 						description: entry.description,
-						startTime,
-						endTime,
+						startTime: timeOnDay(args.date, entry.startTime),
+						endTime: timeOnDay(args.date, entry.endTime),
 						fontAwesomeIcon: entry.fontAwesomeIcon,
 						color: entry.color,
 						room: entry.room,
@@ -242,8 +278,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.calendarDay
 				.findFirst(
 					query(
-						ctx.abilities.calendarDay.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.calendarDay.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);

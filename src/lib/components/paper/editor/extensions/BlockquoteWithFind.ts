@@ -1,7 +1,7 @@
 import Blockquote from '@tiptap/extension-blockquote';
 import { findAndHighlightCite, type FindCiteResult } from '$lib/helpers/citeNavigation';
 
-export interface BlockquoteWithFindOptions {
+interface BlockquoteWithFindOptions {
 	/**
 	 * Callback to get the paper container element for searching
 	 */
@@ -30,7 +30,7 @@ export const BlockquoteWithFind = Blockquote.extend<BlockquoteWithFindOptions>({
 	},
 
 	addNodeView() {
-		return ({ node, HTMLAttributes, getPos, editor }) => {
+		return ({ HTMLAttributes }) => {
 			// Create the blockquote element
 			const blockquote = document.createElement('blockquote');
 

@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/sveltekit';
+import { sentryDataCollection } from '$lib/sentryDataCollection';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import {
@@ -21,7 +22,7 @@ if (!building && configPrivate.SENTRY_DSN) {
 		dsn: configPrivate.SENTRY_DSN,
 		environment: configPrivate.NODE_ENV,
 		tracesSampleRate: 0, // Bugsink doesn't support tracing
-		sendDefaultPii: configPrivate.SENTRY_SEND_DEFAULT_PII ?? false
+		dataCollection: sentryDataCollection(configPrivate.SENTRY_SEND_DEFAULT_PII ?? false)
 	});
 }
 

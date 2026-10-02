@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
-	import hotkeys from 'hotkeys-js';
 	import StatusWidget from './StatusWidget.svelte';
 
 	interface Props {

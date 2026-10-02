@@ -24,6 +24,14 @@
 	type TeamRoleValue =
 		'MEMBER' | 'REVIEWER' | 'PARTICIPANT_CARE' | 'TEAM_COORDINATOR' | 'PROJECT_MANAGEMENT';
 
+	const teamRoles: TeamRoleValue[] = [
+		'MEMBER',
+		'REVIEWER',
+		'PARTICIPANT_CARE',
+		'TEAM_COORDINATOR',
+		'PROJECT_MANAGEMENT'
+	];
+
 	const validEmailStatuses: EmailStatusValue[] = [
 		'exists',
 		'new_user',
@@ -47,6 +55,27 @@
 
 	let emailStatuses = $state<EmailStatus[]>([]);
 	let hasExternalEmails = $derived(emailStatuses.some((e) => e.selected && e.isExternal));
+
+	/** Whether an address can still be invited: it is neither a member nor already invited. */
+	const isInvitable = (e: EmailStatus) =>
+		e.status !== 'already_member' && e.status !== 'pending_invitation';
+
+	let canSend = $derived(!isSending && emailStatuses.some((e) => e.selected && isInvitable(e)));
+	let allSelected = $derived(
+		emailStatuses.every((e) => e.selected || e.status === 'already_member')
+	);
+
+	function selectAll(checked: boolean) {
+		emailStatuses = emailStatuses.map((es) => ({
+			...es,
+			selected: es.status === 'already_member' ? false : checked
+		}));
+	}
+
+	function setRole(index: number, value: string) {
+		const role = teamRoles.find((r) => r === value);
+		if (role) emailStatuses[index].role = role;
+	}
 
 	const organizationDomain = configPublic.PUBLIC_TEAM_ORGANIZATION_DOMAIN;
 
@@ -100,9 +129,7 @@
 	}
 
 	async function handleSendInvitations() {
-		const selectedEmails = emailStatuses.filter(
-			(e) => e.selected && e.status !== 'already_member' && e.status !== 'pending_invitation'
-		);
+		const selectedEmails = emailStatuses.filter((e) => e.selected && isInvitable(e));
 
 		if (selectedEmails.length === 0) {
 			toast.error(m.noEmailsSelected());
@@ -173,139 +200,126 @@
 	}
 </script>
 
+{#snippet emailRow(emailStatus: EmailStatus, i: number)}
+	<tr class={emailStatus.status === 'already_member' ? 'opacity-50' : ''}>
+		<td>
+			<input
+				type="checkbox"
+				class="checkbox"
+				disabled={!isInvitable(emailStatus)}
+				checked={emailStatus.selected}
+				onchange={(e) => {
+					emailStatuses[i].selected = e.currentTarget.checked;
+				}}
+			/>
+		</td>
+		<td>
+			<div class="flex items-center gap-2">
+				{emailStatus.email}
+				{#if emailStatus.isExternal}
+					<span class="badge badge-warning badge-sm">{m.externalDomain()}</span>
+				{/if}
+			</div>
+		</td>
+		<td>
+			<span class="badge {getStatusBadge(emailStatus.status).class}"
+				>{getStatusBadge(emailStatus.status).text}</span
+			>
+		</td>
+		<td>
+			{#if isInvitable(emailStatus)}
+				<select
+					class="select select-bordered select-sm"
+					value={emailStatus.role}
+					onchange={(e) => setRole(i, e.currentTarget.value)}
+				>
+					{#each teamRoles as role (role)}
+						<option value={role}>{translateTeamRole(role)}</option>
+					{/each}
+				</select>
+			{:else}
+				<span class="text-base-content/50">—</span>
+			{/if}
+		</td>
+	</tr>
+{/snippet}
+
+{#snippet enterStep()}
+	<div class="flex flex-col gap-4">
+		<FormFieldset title={m.emailAddresses()}>
+			<textarea
+				class="textarea textarea-bordered w-full h-32"
+				bind:value={emailInput}
+				placeholder={m.enterEmailsPlaceholder()}></textarea>
+			<p class="text-sm text-base-content/70">{m.separateEmailsHint()}</p>
+		</FormFieldset>
+
+		<div class="modal-action">
+			<button class="btn" onclick={handleClose}>{m.cancel()}</button>
+			<button
+				class="btn btn-primary"
+				onclick={handleCheckEmails}
+				disabled={!emailInput.trim() || isChecking}
+			>
+				{#if isChecking}
+					<i class="fa-solid fa-spinner fa-spin"></i>
+				{/if}
+				{m.checkEmails()}
+			</button>
+		</div>
+	</div>
+{/snippet}
+
+{#snippet reviewStep()}
+	<div class="flex flex-col gap-4">
+		{#if hasExternalEmails}
+			<div class="alert alert-warning">
+				<i class="fa-duotone fa-triangle-exclamation"></i>
+				<span>{m.externalEmailWarning({ domain: organizationDomain ?? '' })}</span>
+			</div>
+		{/if}
+
+		<div class="overflow-x-auto">
+			<table class="table table-zebra">
+				<thead>
+					<tr>
+						<th>
+							<input
+								type="checkbox"
+								class="checkbox"
+								checked={allSelected}
+								onchange={(e) => selectAll(e.currentTarget.checked)}
+							/>
+						</th>
+						<th>{m.email()}</th>
+						<th>{m.status()}</th>
+						<th>{m.role()}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each emailStatuses as emailStatus, i (emailStatus.email)}
+						{@render emailRow(emailStatus, i)}
+					{/each}
+				</tbody>
+			</table>
+		</div>
+
+		<div class="modal-action">
+			<button class="btn" onclick={() => (step = 'enter')}>{m.back()}</button>
+			<button class="btn btn-primary" onclick={handleSendInvitations} disabled={!canSend}>
+				{#if isSending}
+					<i class="fa-solid fa-spinner fa-spin"></i>
+				{/if}
+				{m.sendInvitations()}
+			</button>
+		</div>
+	</div>
+{/snippet}
+
 <Modal bind:open title={m.inviteTeamMembers()} onclose={handleClose} fullWidth={step === 'review'}>
 	{#if step === 'enter'}
-		<div class="flex flex-col gap-4">
-			<FormFieldset title={m.emailAddresses()}>
-				<textarea
-					class="textarea textarea-bordered w-full h-32"
-					bind:value={emailInput}
-					placeholder={m.enterEmailsPlaceholder()}></textarea>
-				<p class="text-sm text-base-content/70">{m.separateEmailsHint()}</p>
-			</FormFieldset>
-
-			<div class="modal-action">
-				<button class="btn" onclick={handleClose}>{m.cancel()}</button>
-				<button
-					class="btn btn-primary"
-					onclick={handleCheckEmails}
-					disabled={!emailInput.trim() || isChecking}
-				>
-					{#if isChecking}
-						<i class="fa-solid fa-spinner fa-spin"></i>
-					{/if}
-					{m.checkEmails()}
-				</button>
-			</div>
-		</div>
+		{@render enterStep()}
 	{:else if step === 'review'}
-		<div class="flex flex-col gap-4">
-			{#if hasExternalEmails}
-				<div class="alert alert-warning">
-					<i class="fa-duotone fa-triangle-exclamation"></i>
-					<span>{m.externalEmailWarning({ domain: organizationDomain ?? '' })}</span>
-				</div>
-			{/if}
-
-			<div class="overflow-x-auto">
-				<table class="table table-zebra">
-					<thead>
-						<tr>
-							<th>
-								<input
-									type="checkbox"
-									class="checkbox"
-									checked={emailStatuses.every((e) => e.selected || e.status === 'already_member')}
-									onchange={(e) => {
-										const checked = e.currentTarget.checked;
-										emailStatuses = emailStatuses.map((es) => ({
-											...es,
-											selected: es.status === 'already_member' ? false : checked
-										}));
-									}}
-								/>
-							</th>
-							<th>{m.email()}</th>
-							<th>{m.status()}</th>
-							<th>{m.role()}</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each emailStatuses as emailStatus, i}
-							<tr class={emailStatus.status === 'already_member' ? 'opacity-50' : ''}>
-								<td>
-									<input
-										type="checkbox"
-										class="checkbox"
-										disabled={emailStatus.status === 'already_member' ||
-											emailStatus.status === 'pending_invitation'}
-										checked={emailStatus.selected}
-										onchange={(e) => {
-											emailStatuses[i].selected = e.currentTarget.checked;
-										}}
-									/>
-								</td>
-								<td>
-									<div class="flex items-center gap-2">
-										{emailStatus.email}
-										{#if emailStatus.isExternal}
-											<span class="badge badge-warning badge-sm">{m.externalDomain()}</span>
-										{/if}
-									</div>
-								</td>
-								<td>
-									<span class="badge {getStatusBadge(emailStatus.status).class}"
-										>{getStatusBadge(emailStatus.status).text}</span
-									>
-								</td>
-								<td>
-									{#if emailStatus.status !== 'already_member' && emailStatus.status !== 'pending_invitation'}
-										<select
-											class="select select-bordered select-sm"
-											value={emailStatus.role}
-											onchange={(e) => {
-												emailStatuses[i].role = e.currentTarget.value as TeamRoleValue;
-											}}
-										>
-											<option value="MEMBER">{translateTeamRole('MEMBER')}</option>
-											<option value="REVIEWER">{translateTeamRole('REVIEWER')}</option>
-											<option value="PARTICIPANT_CARE"
-												>{translateTeamRole('PARTICIPANT_CARE')}</option
-											>
-											<option value="TEAM_COORDINATOR"
-												>{translateTeamRole('TEAM_COORDINATOR')}</option
-											>
-											<option value="PROJECT_MANAGEMENT"
-												>{translateTeamRole('PROJECT_MANAGEMENT')}</option
-											>
-										</select>
-									{:else}
-										<span class="text-base-content/50">—</span>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-
-			<div class="modal-action">
-				<button class="btn" onclick={() => (step = 'enter')}>{m.back()}</button>
-				<button
-					class="btn btn-primary"
-					onclick={handleSendInvitations}
-					disabled={isSending ||
-						!emailStatuses.some(
-							(e) =>
-								e.selected && e.status !== 'already_member' && e.status !== 'pending_invitation'
-						)}
-				>
-					{#if isSending}
-						<i class="fa-solid fa-spinner fa-spin"></i>
-					{/if}
-					{m.sendInvitations()}
-				</button>
-			</div>
-		</div>
+		{@render reviewStep()}
 	{/if}
 </Modal>

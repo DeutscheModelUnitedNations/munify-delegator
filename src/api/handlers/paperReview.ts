@@ -1,4 +1,4 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
 import {
 	abilityBuilder,
 	enum_,
@@ -8,10 +8,11 @@ import {
 	schemaBuilder
 } from '$api/rumble';
 import { type TeamRole, systemAdmin, userId } from '$api/services/authHelper';
+import type { Context } from '$api/context';
 import { sendNewReviewNotification } from '$api/services/email';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
-import { and, count, eq, isNotNull, ne } from 'drizzle-orm';
+import { and, count, eq } from 'drizzle-orm';
 
 const PAPER_ROLES = [
 	'REVIEWER',
@@ -42,7 +43,7 @@ abilityBuilder.paperReview.allow('read').when((ctx) => {
 		: undefined;
 });
 
-export const PaperReviewRef = object({ table: 'paperReview' });
+object({ table: 'paperReview' });
 query({ table: 'paperReview' });
 const pubsub = rumblePubsub({ table: 'paperReview' });
 // A review moves the paper's status and stamps the version it reviewed.
@@ -101,6 +102,221 @@ const reviewedPaperWhere = (delegationId: string, conferenceId: string) => ({
 	versions: { reviews: {} }
 });
 
+function fetchPaperForReview(tx: Transaction, paperId: string) {
+	return tx.query.paper
+		.findFirst({
+			where: { id: paperId },
+			with: {
+				versions: { orderBy: { version: 'desc' }, limit: 1 },
+				author: true,
+				agendaItem: { with: { committee: true } },
+				delegation: { with: { assignedNation: true, assignedNonStateActor: true } },
+				conference: true
+			}
+		})
+		.then(assertFindFirstExists);
+}
+
+type PaperForReview = Awaited<ReturnType<typeof fetchPaperForReview>>;
+
+/** Rejects the review unless the reviewer may review, and the paper and verdict allow it. */
+async function assertMayReview(
+	tx: Transaction,
+	paper: PaperForReview,
+	reviewerId: string,
+	newStatus: string
+) {
+	// Reviewing is a team-member action; the read ability alone is not enough.
+	const teamMember = await tx.query.teamMember.findFirst({
+		where: {
+			conferenceId: paper.conferenceId,
+			userId: reviewerId,
+			role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
+		}
+	});
+	if (!teamMember) {
+		throw new GraphQLError('Only team members can create reviews');
+	}
+
+	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
+		throw new GraphQLError(`Cannot review a paper with status ${paper.status}`);
+	}
+	if (!ALLOWED_NEW_STATUSES.includes(newStatus)) {
+		throw new GraphQLError(`Invalid review status: ${newStatus}`);
+	}
+
+	const latestVersion = paper.versions[0];
+	if (!latestVersion) {
+		throw new GraphQLError('Paper has no versions - cannot create review');
+	}
+	return latestVersion;
+}
+
+/** The committee and agenda item a paper belongs to, if it belongs to one. */
+function agendaItemLabel(paper: PaperForReview) {
+	return paper.agendaItem?.committee
+		? `${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
+		: undefined;
+}
+
+/** Whether a `count()` row, which a query over no rows may leave out, counted nothing. */
+function isZeroCount(row: { value: number } | undefined) {
+	return (row?.value ?? 0) === 0;
+}
+
+/** Nation delegations: one piece per agenda item, found when it has no review yet. */
+async function isFirstNationPieceReview(
+	tx: Transaction,
+	paper: PaperForReview,
+	agendaItemId: string
+) {
+	const [existing] = await tx
+		.select({ value: count() })
+		.from(schema.paperReview)
+		.innerJoin(schema.paperVersion, eq(schema.paperReview.paperVersionId, schema.paperVersion.id))
+		.innerJoin(schema.paper, eq(schema.paperVersion.paperId, schema.paper.id))
+		.where(
+			and(
+				eq(schema.paper.delegationId, paper.delegationId),
+				eq(schema.paper.agendaItemId, agendaItemId),
+				eq(schema.paper.conferenceId, paper.conferenceId)
+			)
+		);
+	return isZeroCount(existing);
+}
+
+/**
+ * Non-state actors: the introduction paper is its own piece, and the first two other papers to
+ * be reviewed count one more piece each.
+ */
+async function isFirstNsaPieceReview(tx: Transaction, paper: PaperForReview) {
+	const reviewedOfKind = await tx.query.paper.findMany({
+		where: {
+			...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
+			type:
+				paper.type === 'INTRODUCTION_PAPER' ? 'INTRODUCTION_PAPER' : { ne: 'INTRODUCTION_PAPER' }
+		},
+		columns: { id: true }
+	});
+	if (paper.type === 'INTRODUCTION_PAPER') return reviewedOfKind.length === 0;
+	if (reviewedOfKind.length >= 2) return false;
+
+	const [existing] = await tx
+		.select({ value: count() })
+		.from(schema.paperReview)
+		.innerJoin(schema.paperVersion, eq(schema.paperReview.paperVersionId, schema.paperVersion.id))
+		.where(eq(schema.paperVersion.paperId, paper.id));
+	return isZeroCount(existing);
+}
+
+/** Whether this review, written before it is inserted, finds a new piece of the flag. */
+function isFirstReviewForPiece(tx: Transaction, paper: PaperForReview) {
+	const delegation = paper.delegation;
+	if (delegation?.assignedNationAlpha3Code && paper.agendaItemId) {
+		return isFirstNationPieceReview(tx, paper, paper.agendaItemId);
+	}
+	if (delegation?.assignedNonStateActorId) {
+		return isFirstNsaPieceReview(tx, paper);
+	}
+	return false;
+}
+
+type UnlockedPiece = typeof UnlockedPieceData.$inferType;
+
+async function nationPiece(
+	tx: Transaction,
+	paper: PaperForReview,
+	nation: { alpha2Code: string; alpha3Code: string }
+): Promise<UnlockedPiece> {
+	const committees = await tx.query.committee.findMany({
+		where: { conferenceId: paper.conferenceId, nations: { alpha3Code: nation.alpha3Code } },
+		with: { agendaItems: { columns: { id: true } } }
+	});
+	const totalPieces = committees.reduce((sum, committee) => sum + committee.agendaItems.length, 0);
+	const found = await tx.query.paper.findMany({
+		where: {
+			...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
+			agendaItemId: { isNotNull: true }
+		},
+		columns: { id: true }
+	});
+	return {
+		flagId: nation.alpha3Code,
+		// The client translates the code into a display name.
+		flagName: nation.alpha3Code,
+		flagType: 'NATION',
+		flagAlpha2Code: nation.alpha2Code,
+		flagAlpha3Code: nation.alpha3Code,
+		fontAwesomeIcon: null,
+		pieceName: agendaItemLabel(paper) ?? 'Paper',
+		foundCount: found.length,
+		totalCount: totalPieces,
+		isComplete: found.length >= totalPieces
+	};
+}
+
+const NSA_PIECE_COUNT = 3;
+
+async function nsaPiece(
+	tx: Transaction,
+	paper: PaperForReview,
+	nsa: { id: string; name: string; fontAwesomeIcon: string | null }
+): Promise<UnlockedPiece> {
+	const found = await tx.query.paper.findMany({
+		where: reviewedPaperWhere(paper.delegationId, paper.conferenceId),
+		columns: { id: true }
+	});
+	return {
+		flagId: nsa.id,
+		flagName: nsa.name,
+		flagType: 'NSA',
+		flagAlpha2Code: null,
+		flagAlpha3Code: null,
+		fontAwesomeIcon: nsa.fontAwesomeIcon,
+		pieceName:
+			paper.type === 'INTRODUCTION_PAPER'
+				? 'Introduction Paper'
+				: (agendaItemLabel(paper) ?? `Paper ${found.length}`),
+		foundCount: Math.min(found.length, NSA_PIECE_COUNT),
+		totalCount: NSA_PIECE_COUNT,
+		isComplete: found.length >= NSA_PIECE_COUNT
+	};
+}
+
+/** The flag piece a first review just uncovered, counted after the review was written. */
+async function unlockedPiece(tx: Transaction, paper: PaperForReview) {
+	const delegation = paper.delegation;
+	if (!delegation) return null;
+	if (delegation.assignedNation) return nationPiece(tx, paper, delegation.assignedNation);
+	if (delegation.assignedNonStateActor) {
+		return nsaPiece(tx, paper, delegation.assignedNonStateActor);
+	}
+	return null;
+}
+
+function notifyAuthor(
+	paper: PaperForReview,
+	reviewer: Pick<ReturnType<Context['mustBeLoggedIn']>, 'given_name' | 'family_name' | 'email'>,
+	newStatus: string,
+	origin: string
+) {
+	if (!paper.author) return;
+	const paperType = PAPER_TYPE_LABELS[paper.type] ?? paper.type;
+	sendNewReviewNotification({
+		recipientEmail: paper.author.email,
+		recipientName: `${paper.author.givenName} ${paper.author.familyName}`,
+		paperTitle: agendaItemLabel(paper) ?? paperType,
+		paperType,
+		reviewerName: `${reviewer.given_name} ${reviewer.family_name}`,
+		reviewerEmail: reviewer.email,
+		newStatus: STATUS_LABELS[newStatus] ?? newStatus,
+		conferenceTitle: paper.conference?.title ?? '',
+		paperUrl: `${origin}/dashboard/${paper.conferenceId}/paperhub/${paper.id}`
+	}).catch((error) => {
+		console.error('Failed to send review notification email:', error);
+	});
+}
+
 schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Records a reviewer's verdict on a paper's latest version.
@@ -126,95 +342,9 @@ schemaBuilder.mutationFields((t) => ({
 			paperVersionPubsub.updated();
 
 			return db.transaction(async (tx) => {
-				const paper = await tx.query.paper
-					.findFirst({
-						where: { id: args.paperId },
-						with: {
-							versions: { orderBy: { version: 'desc' }, limit: 1 },
-							author: true,
-							agendaItem: { with: { committee: true } },
-							delegation: { with: { assignedNation: true, assignedNonStateActor: true } },
-							conference: true
-						}
-					})
-					.then(assertFindFirstExists);
-
-				// Reviewing is a team-member action; the read ability alone is not enough.
-				const teamMember = await tx.query.teamMember.findFirst({
-					where: {
-						conferenceId: paper.conferenceId,
-						userId: reviewer.sub,
-						role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
-					}
-				});
-				if (!teamMember) {
-					throw new GraphQLError('Only team members can create reviews');
-				}
-
-				if (!REVIEWABLE_STATUSES.includes(paper.status)) {
-					throw new GraphQLError(`Cannot review a paper with status ${paper.status}`);
-				}
-				if (!ALLOWED_NEW_STATUSES.includes(args.newStatus)) {
-					throw new GraphQLError(`Invalid review status: ${args.newStatus}`);
-				}
-
-				const latestVersion = paper.versions[0];
-				if (!latestVersion) {
-					throw new GraphQLError('Paper has no versions - cannot create review');
-				}
-
-				const delegation = paper.delegation;
-				let wasFirstReviewForPiece = false;
-
-				if (delegation?.assignedNationAlpha3Code && paper.agendaItemId) {
-					// Nation delegations: one piece per agenda item.
-					const [existing] = await tx
-						.select({ value: count() })
-						.from(schema.paperReview)
-						.innerJoin(
-							schema.paperVersion,
-							eq(schema.paperReview.paperVersionId, schema.paperVersion.id)
-						)
-						.innerJoin(schema.paper, eq(schema.paperVersion.paperId, schema.paper.id))
-						.where(
-							and(
-								eq(schema.paper.delegationId, paper.delegationId),
-								eq(schema.paper.agendaItemId, paper.agendaItemId),
-								eq(schema.paper.conferenceId, paper.conferenceId)
-							)
-						);
-					wasFirstReviewForPiece = (existing?.value ?? 0) === 0;
-				} else if (delegation?.assignedNonStateActorId) {
-					if (paper.type === 'INTRODUCTION_PAPER') {
-						const reviewed = await tx.query.paper.findMany({
-							where: {
-								...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
-								type: 'INTRODUCTION_PAPER'
-							},
-							columns: { id: true }
-						});
-						wasFirstReviewForPiece = reviewed.length === 0;
-					} else {
-						const reviewed = await tx.query.paper.findMany({
-							where: {
-								...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
-								type: { ne: 'INTRODUCTION_PAPER' }
-							},
-							columns: { id: true }
-						});
-						if (reviewed.length < 2) {
-							const [existing] = await tx
-								.select({ value: count() })
-								.from(schema.paperReview)
-								.innerJoin(
-									schema.paperVersion,
-									eq(schema.paperReview.paperVersionId, schema.paperVersion.id)
-								)
-								.where(eq(schema.paperVersion.paperId, paper.id));
-							wasFirstReviewForPiece = (existing?.value ?? 0) === 0;
-						}
-					}
-				}
+				const paper = await fetchPaperForReview(tx, args.paperId);
+				const latestVersion = await assertMayReview(tx, paper, reviewer.sub, args.newStatus);
+				const wasFirstReviewForPiece = await isFirstReviewForPiece(tx, paper);
 
 				const review = await tx
 					.insert(schema.paperReview)
@@ -237,85 +367,9 @@ schemaBuilder.mutationFields((t) => ({
 					.set({ status: args.newStatus })
 					.where(eq(schema.paperVersion.id, latestVersion.id));
 
-				const paperTitle = paper.agendaItem?.committee
-					? `${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
-					: (PAPER_TYPE_LABELS[paper.type] ?? paper.type);
+				notifyAuthor(paper, reviewer, args.newStatus, ctx.url.origin);
 
-				if (paper.author) {
-					sendNewReviewNotification({
-						recipientEmail: paper.author.email,
-						recipientName: `${paper.author.givenName} ${paper.author.familyName}`,
-						paperTitle,
-						paperType: PAPER_TYPE_LABELS[paper.type] ?? paper.type,
-						reviewerName: `${reviewer.given_name} ${reviewer.family_name}`,
-						reviewerEmail: reviewer.email,
-						newStatus: STATUS_LABELS[args.newStatus] ?? args.newStatus,
-						conferenceTitle: paper.conference?.title ?? '',
-						paperUrl: `${ctx.url.origin}/dashboard/${paper.conferenceId}/paperhub/${paper.id}`
-					}).catch((error) => {
-						console.error('Failed to send review notification email:', error);
-					});
-				}
-
-				let unlockedPieceData: typeof UnlockedPieceData.$inferType | null = null;
-
-				if (wasFirstReviewForPiece && delegation?.assignedNation) {
-					const nation = delegation.assignedNation;
-					const committees = await tx.query.committee.findMany({
-						where: { conferenceId: paper.conferenceId, nations: { alpha3Code: nation.alpha3Code } },
-						with: { agendaItems: { columns: { id: true } } }
-					});
-					const totalPieces = committees.reduce(
-						(sum, committee) => sum + committee.agendaItems.length,
-						0
-					);
-					const found = await tx.query.paper.findMany({
-						where: {
-							...reviewedPaperWhere(paper.delegationId, paper.conferenceId),
-							agendaItemId: { isNotNull: true }
-						},
-						columns: { id: true }
-					});
-					unlockedPieceData = {
-						flagId: nation.alpha3Code,
-						// The client translates the code into a display name.
-						flagName: nation.alpha3Code,
-						flagType: 'NATION',
-						flagAlpha2Code: nation.alpha2Code,
-						flagAlpha3Code: nation.alpha3Code,
-						fontAwesomeIcon: null,
-						pieceName: paper.agendaItem?.committee
-							? `${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
-							: 'Paper',
-						foundCount: found.length,
-						totalCount: totalPieces,
-						isComplete: found.length >= totalPieces
-					};
-				} else if (wasFirstReviewForPiece && delegation?.assignedNonStateActor) {
-					const nsa = delegation.assignedNonStateActor;
-					const NSA_PIECE_COUNT = 3;
-					const found = await tx.query.paper.findMany({
-						where: reviewedPaperWhere(paper.delegationId, paper.conferenceId),
-						columns: { id: true }
-					});
-					unlockedPieceData = {
-						flagId: nsa.id,
-						flagName: nsa.name,
-						flagType: 'NSA',
-						flagAlpha2Code: null,
-						flagAlpha3Code: null,
-						fontAwesomeIcon: nsa.fontAwesomeIcon,
-						pieceName:
-							paper.type === 'INTRODUCTION_PAPER'
-								? 'Introduction Paper'
-								: paper.agendaItem?.committee
-									? `${paper.agendaItem.committee.abbreviation}: ${paper.agendaItem.title}`
-									: `Paper ${found.length}`,
-						foundCount: Math.min(found.length, NSA_PIECE_COUNT),
-						totalCount: NSA_PIECE_COUNT,
-						isComplete: found.length >= NSA_PIECE_COUNT
-					};
-				}
+				const unlockedPieceData = wasFirstReviewForPiece ? await unlockedPiece(tx, paper) : null;
 
 				return {
 					reviewId: review.id,

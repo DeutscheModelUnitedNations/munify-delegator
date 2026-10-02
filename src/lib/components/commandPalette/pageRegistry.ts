@@ -1,10 +1,12 @@
+import { resolve } from '$app/paths';
+import type { ResolvedPathname } from '$app/types';
 import { m } from '$lib/paraglide/messages';
 
 export interface PageEntry {
 	id: string;
 	title: () => string;
 	icon: string;
-	href: string;
+	href: ResolvedPathname;
 	category: string;
 	keywords: string[];
 }
@@ -24,7 +26,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'stats',
 			title: () => m.adminStats(),
 			icon: 'fa-chart-pie',
-			href: `/management/${conferenceId}/stats`,
+			href: resolve('/(authenticated)/management/[conferenceId]/stats', { conferenceId }),
 			category: 'management',
 			keywords: ['statistik', 'statistics', 'übersicht', 'overview', 'zahlen', 'numbers']
 		},
@@ -32,7 +34,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'configuration',
 			title: () => m.settings(),
 			icon: 'fa-gears',
-			href: `/management/${conferenceId}/configuration`,
+			href: resolve('/(authenticated)/management/[conferenceId]/configuration', { conferenceId }),
 			category: 'management',
 			keywords: [
 				'einstellungen',
@@ -47,7 +49,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'seats',
 			title: () => m.seats(),
 			icon: 'fa-chair-office',
-			href: `/management/${conferenceId}/seats`,
+			href: resolve('/(authenticated)/management/[conferenceId]/seats', { conferenceId }),
 			category: 'management',
 			keywords: ['plätze', 'seats', 'gremien', 'committees', 'nationen', 'nations']
 		},
@@ -55,7 +57,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'participants',
 			title: () => m.adminUsers(),
 			icon: 'fa-users',
-			href: `/management/${conferenceId}/participants`,
+			href: resolve('/(authenticated)/management/[conferenceId]/participants', { conferenceId }),
 			category: 'tables',
 			keywords: ['teilnehmende', 'participants', 'nutzer', 'users', 'personen']
 		},
@@ -63,7 +65,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'delegations',
 			title: () => m.adminDelegations(),
 			icon: 'fa-users-viewfinder',
-			href: `/management/${conferenceId}/delegations`,
+			href: resolve('/(authenticated)/management/[conferenceId]/delegations', { conferenceId }),
 			category: 'tables',
 			keywords: ['delegationen', 'delegations', 'schulen', 'schools', 'gruppen', 'groups']
 		},
@@ -71,7 +73,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'individuals',
 			title: () => m.adminSingleParticipants(),
 			icon: 'fa-user',
-			href: `/management/${conferenceId}/individuals`,
+			href: resolve('/(authenticated)/management/[conferenceId]/individuals', { conferenceId }),
 			category: 'tables',
 			keywords: ['einzelteilnehmende', 'individual', 'einzelpersonen', 'single', 'rollen', 'roles']
 		},
@@ -79,7 +81,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'supervisors',
 			title: () => m.adminSupervisors(),
 			icon: 'fa-chalkboard-user',
-			href: `/management/${conferenceId}/supervisors`,
+			href: resolve('/(authenticated)/management/[conferenceId]/supervisors', { conferenceId }),
 			category: 'tables',
 			keywords: ['betreuer', 'supervisors', 'betreuende', 'aufsicht']
 		},
@@ -87,7 +89,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'waitingList',
 			title: () => m.waitingList(),
 			icon: 'fa-user-clock',
-			href: `/management/${conferenceId}/waitingList`,
+			href: resolve('/(authenticated)/management/[conferenceId]/waitingList', { conferenceId }),
 			category: 'tables',
 			keywords: ['warteliste', 'waiting list', 'nachrücker', 'wartend']
 		},
@@ -95,7 +97,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'assignment',
 			title: () => m.adminAssignment(),
 			icon: 'fa-shuffle',
-			href: `/management/${conferenceId}/assignment`,
+			href: resolve('/(authenticated)/management/[conferenceId]/assignment', { conferenceId }),
 			category: 'workflows',
 			keywords: ['zuweisung', 'assignment', 'zuteilen', 'verteilen', 'assign']
 		},
@@ -103,7 +105,9 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'postalRegistration',
 			title: () => m.postalRegistration(),
 			icon: 'fa-envelope',
-			href: `/management/${conferenceId}/postalRegistration`,
+			href: resolve('/(authenticated)/management/[conferenceId]/postalRegistration', {
+				conferenceId
+			}),
 			category: 'workflows',
 			keywords: ['postalische anmeldung', 'postal registration', 'brief', 'post', 'dokumente']
 		},
@@ -111,7 +115,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'payments',
 			title: () => m.payment(),
 			icon: 'fa-money-bill-transfer',
-			href: `/management/${conferenceId}/payments`,
+			href: resolve('/(authenticated)/management/[conferenceId]/payments', { conferenceId }),
 			category: 'workflows',
 			keywords: ['zahlung', 'payment', 'geld', 'money', 'überweisung', 'transfer', 'bezahlung']
 		},
@@ -119,7 +123,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'accessFlow',
 			title: () => m.accessFlow(),
 			icon: 'fa-id-card-clip',
-			href: `/management/${conferenceId}/accessFlow`,
+			href: resolve('/(authenticated)/management/[conferenceId]/accessFlow', { conferenceId }),
 			category: 'workflows',
 			keywords: ['zugang', 'access', 'einlass', 'check-in', 'registrierung', 'badge']
 		},
@@ -127,7 +131,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'announcement',
 			title: () => m.announcementSectionTitle(),
 			icon: 'fa-bullhorn',
-			href: `/management/${conferenceId}/announcement`,
+			href: resolve('/(authenticated)/management/[conferenceId]/announcement', { conferenceId }),
 			category: 'communication',
 			keywords: ['ankündigungen', 'announcements', 'nachrichten', 'messages', 'mitteilungen']
 		},
@@ -135,7 +139,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'calendar',
 			title: () => m.calendar(),
 			icon: 'fa-calendar-days',
-			href: `/management/${conferenceId}/calendar`,
+			href: resolve('/(authenticated)/management/[conferenceId]/calendar', { conferenceId }),
 			category: 'communication',
 			keywords: ['kalender', 'calendar', 'zeitplan', 'schedule', 'termine', 'events']
 		},
@@ -143,7 +147,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'survey',
 			title: () => m.survey(),
 			icon: 'fa-chart-pie',
-			href: `/management/${conferenceId}/survey`,
+			href: resolve('/(authenticated)/management/[conferenceId]/survey', { conferenceId }),
 			category: 'communication',
 			keywords: ['umfrage', 'survey', 'abstimmung', 'poll', 'fragebogen']
 		},
@@ -151,7 +155,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'plausibility',
 			title: () => m.adminPlausibility(),
 			icon: 'fa-shield-check',
-			href: `/management/${conferenceId}/plausibility`,
+			href: resolve('/(authenticated)/management/[conferenceId]/plausibility', { conferenceId }),
 			category: 'maintenance',
 			keywords: ['plausibilität', 'plausibility', 'prüfung', 'check', 'validierung']
 		},
@@ -159,7 +163,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'cleanup',
 			title: () => m.cleanup(),
 			icon: 'fa-broom',
-			href: `/management/${conferenceId}/cleanup`,
+			href: resolve('/(authenticated)/management/[conferenceId]/cleanup', { conferenceId }),
 			category: 'maintenance',
 			keywords: ['aufräumen', 'cleanup', 'bereinigen', 'clean']
 		},
@@ -167,7 +171,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'helper',
 			title: () => m.helper(),
 			icon: 'fa-gear-code',
-			href: `/management/${conferenceId}/helper`,
+			href: resolve('/(authenticated)/management/[conferenceId]/helper', { conferenceId }),
 			category: 'maintenance',
 			keywords: ['helfer', 'helper', 'werkzeuge', 'tools', 'hilfsmittel']
 		},
@@ -175,7 +179,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'import',
 			title: () => m.import(),
 			icon: 'fa-file-import',
-			href: `/management/${conferenceId}/import`,
+			href: resolve('/(authenticated)/management/[conferenceId]/import', { conferenceId }),
 			category: 'maintenance',
 			keywords: ['import', 'importieren', 'daten', 'data', 'hochladen', 'upload']
 		},
@@ -183,7 +187,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'downloads',
 			title: () => m.downloads(),
 			icon: 'fa-download',
-			href: `/management/${conferenceId}/downloads`,
+			href: resolve('/(authenticated)/management/[conferenceId]/downloads', { conferenceId }),
 			category: 'maintenance',
 			keywords: ['downloads', 'herunterladen', 'export', 'exportieren']
 		},
@@ -191,7 +195,7 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			id: 'team-management',
 			title: () => m.teamManagement(),
 			icon: 'fa-user-group',
-			href: `/dashboard/${conferenceId}/team-management`,
+			href: resolve('/(authenticated)/dashboard/[conferenceId]/team-management', { conferenceId }),
 			category: 'management',
 			keywords: ['team', 'verwaltung', 'management', 'mitglieder', 'members']
 		}

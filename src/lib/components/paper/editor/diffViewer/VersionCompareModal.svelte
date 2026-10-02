@@ -3,6 +3,7 @@
 	import DiffPanel from './DiffPanel.svelte';
 	import { computeDiff, areContentsEqual } from './diffUtils';
 	import type { VersionForComparison } from './types';
+	import { orderVersions } from './orderVersions';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
@@ -14,15 +15,9 @@
 	let { open = $bindable(), baseVersion, compareVersion }: Props = $props();
 
 	// Sort versions so lower version number is always "before"
-	let sortedVersions = $derived.by(() => {
-		if (!baseVersion || !compareVersion) return null;
-
-		const isBaseOlder = baseVersion.version < compareVersion.version;
-		return {
-			before: isBaseOlder ? baseVersion : compareVersion,
-			after: isBaseOlder ? compareVersion : baseVersion
-		};
-	});
+	let sortedVersions = $derived(
+		baseVersion && compareVersion ? orderVersions(baseVersion, compareVersion) : null
+	);
 
 	let diffResult = $derived.by(() => {
 		if (!sortedVersions) return null;

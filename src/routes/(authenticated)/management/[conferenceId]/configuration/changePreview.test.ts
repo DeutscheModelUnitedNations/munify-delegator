@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { collectConfigChanges, groupConfigChanges } from './changePreview';
+import { collectConfigChanges, formatValue, groupConfigChanges } from './changePreview';
 
 type ConferenceState = 'PRE' | 'PARTICIPANT_REGISTRATION' | 'PREPARATION' | 'ACTIVE' | 'POST';
 
@@ -157,5 +157,58 @@ describe('groupConfigChanges', () => {
 		const groups = groupConfigChanges(changes);
 		expect(groups.map((g) => g.key)).toEqual(['general', 'status', 'payments']);
 		expect(groups.every((g) => g.changes.length > 0)).toBe(true);
+	});
+});
+
+describe('collectConfigChanges for files', () => {
+	test('labels an upload without a stored document as not set before', () => {
+		const changes = collect(
+			{ ...saved, certificateBasePDF: new File(['x'], 'tiny.pdf') },
+			{ certificateBasePDF: true }
+		);
+		expect(changes).toHaveLength(1);
+		expect(changes[0].before).toBe(formatValue(undefined));
+		expect(changes[0].after).toBe('tiny.pdf (1 B)');
+		expect(changes[0].highImpact).toBe(false);
+		expect(changes[0].note).toBeUndefined();
+	});
+
+	test('reports clearing a text field as a change to not set', () => {
+		const changes = collect({ ...saved, location: '' }, { location: true });
+		expect(changes).toHaveLength(1);
+		expect(changes[0].before).toBe('Kiel');
+		expect(changes[0].after).toBe(formatValue(null));
+	});
+});
+
+describe('formatValue', () => {
+	test('shows every empty value, including an empty file input, the same way', () => {
+		const notSet = formatValue(undefined);
+		expect(notSet).not.toBe('');
+		expect(formatValue(null)).toBe(notSet);
+		expect(formatValue('')).toBe(notSet);
+		expect(formatValue(new File([], ''))).toBe(notSet);
+	});
+
+	test('shows booleans as distinct on and off labels', () => {
+		expect(formatValue(true)).not.toBe(formatValue(false));
+	});
+
+	test('formats dates, numbers and strings', () => {
+		const date = new Date('2026-03-12T09:00:00Z');
+		expect(formatValue(date)).toBe(date.toLocaleString());
+		expect(formatValue(1234.5)).toBe((1234.5).toLocaleString());
+		expect(formatValue('Kiel')).toBe('Kiel');
+	});
+
+	test('names a file with its size in B, KB or MB', () => {
+		expect(formatValue(new File(['abc'], 'a.pdf'))).toBe('a.pdf (3 B)');
+		expect(formatValue(new File(['x'.repeat(1536)], 'b.pdf'))).toBe('b.pdf (1.5 KB)');
+		expect(formatValue(new File(['x'.repeat(2 * 1024 * 1024)], 'c.pdf'))).toBe('c.pdf (2.0 MB)');
+	});
+
+	test('falls back to JSON for anything else', () => {
+		expect(formatValue({ a: 1 })).toBe('{"a":1}');
+		expect(formatValue(Symbol('s'))).toBe('');
 	});
 });

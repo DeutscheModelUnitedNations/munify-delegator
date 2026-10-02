@@ -5,6 +5,7 @@
 	compatibility with any bookmarked URLs but may be removed in the future.
 -->
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
@@ -24,7 +25,11 @@
 
 <div class="flex w-full flex-col gap-4">
 	<div class="flex items-center gap-2">
-		<a class="btn btn-square btn-ghost" aria-label="back" href="./">
+		<a
+			class="btn btn-square btn-ghost"
+			aria-label="back"
+			href={resolve(`/dashboard/${params.conferenceId}`)}
+		>
 			<i class="fas fa-arrow-left"></i>
 		</a>
 		<h1 class="text-2xl font-bold">{m.conferenceInfo()}</h1>

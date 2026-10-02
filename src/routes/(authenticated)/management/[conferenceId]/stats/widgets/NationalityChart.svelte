@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { PieChart, BarChart } from '$lib/components/charts/echarts';
-	import type { NationalityStats } from '../stats.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
 
-	interface Props {
-		nationalityDistribution: NationalityStats[];
-	}
+	let { conferenceId }: { conferenceId: string } = $props();
 
-	let { nationalityDistribution }: Props = $props();
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			nationalityDistribution: { country: true, count: true }
+		})
+	);
+	const nationalityDistribution = $derived(stats.nationalityDistribution);
 
 	// Sort by count descending
 	const sortedData = $derived([...nationalityDistribution].sort((a, b) => b.count - a.count));
@@ -36,54 +41,61 @@
 	let showPieChart = $state(true);
 </script>
 
-<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
-	<div class="card-body p-4">
-		<div class="flex items-center justify-between">
-			<h2 class="card-title text-base font-semibold">
-				<i class="fa-duotone fa-globe text-base-content/70"></i>
-				{m.statsNationalityDistribution()}
-			</h2>
-			<div class="join">
-				<button
-					class="btn btn-sm join-item {showPieChart ? 'btn-active' : ''}"
-					onclick={() => (showPieChart = true)}
-				>
-					<i class="fa-solid fa-chart-pie"></i>
-				</button>
-				<button
-					class="btn btn-sm join-item {!showPieChart ? 'btn-active' : ''}"
-					onclick={() => (showPieChart = false)}
-				>
-					<i class="fa-solid fa-chart-bar"></i>
-				</button>
+<!-- Hidden entirely while there is nothing to show. -->
+{#if nationalityDistribution.length > 0}
+	<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12 xl:col-span-6">
+		<div class="card-body p-4">
+			<div class="flex items-center justify-between">
+				<h2 class="card-title text-base font-semibold">
+					<i class="fa-duotone fa-globe text-base-content/70"></i>
+					{m.statsNationalityDistribution()}
+				</h2>
+				<div class="join">
+					<button
+						class="btn btn-sm join-item {showPieChart ? 'btn-active' : ''}"
+						onclick={() => (showPieChart = true)}
+						aria-label={m.statsShowPieChart()}
+						aria-pressed={showPieChart}
+					>
+						<i class="fa-solid fa-chart-pie"></i>
+					</button>
+					<button
+						class="btn btn-sm join-item {!showPieChart ? 'btn-active' : ''}"
+						onclick={() => (showPieChart = false)}
+						aria-label={m.statsShowBarChart()}
+						aria-pressed={!showPieChart}
+					>
+						<i class="fa-solid fa-chart-bar"></i>
+					</button>
+				</div>
 			</div>
+
+			{#if nationalityDistribution.length === 0}
+				<div class="flex h-40 items-center justify-center text-sm opacity-50">
+					{m.noDataAvailable()}
+				</div>
+			{:else}
+				<!-- Summary -->
+				<div class="stats bg-base-100 w-full mb-4">
+					<div class="stat py-2 px-3">
+						<div class="stat-title text-xs">{m.statsUniqueCountries()}</div>
+						<div class="stat-value text-xl">{uniqueCountries}</div>
+					</div>
+					<div class="stat py-2 px-3">
+						<div class="stat-title text-xs">{m.statsTotalParticipants()}</div>
+						<div class="stat-value text-xl">{totalParticipants}</div>
+					</div>
+				</div>
+
+				<!-- Chart -->
+				<div class="rounded-lg bg-base-100 p-4">
+					{#if showPieChart}
+						<PieChart data={pieData} height="300px" />
+					{:else}
+						<BarChart labels={barLabels} values={barValues} horizontal height="350px" />
+					{/if}
+				</div>
+			{/if}
 		</div>
-
-		{#if nationalityDistribution.length === 0}
-			<div class="flex h-40 items-center justify-center text-sm opacity-50">
-				{m.noDataAvailable()}
-			</div>
-		{:else}
-			<!-- Summary -->
-			<div class="stats bg-base-100 w-full mb-4">
-				<div class="stat py-2 px-3">
-					<div class="stat-title text-xs">{m.statsUniqueCountries()}</div>
-					<div class="stat-value text-xl">{uniqueCountries}</div>
-				</div>
-				<div class="stat py-2 px-3">
-					<div class="stat-title text-xs">{m.statsTotalParticipants()}</div>
-					<div class="stat-value text-xl">{totalParticipants}</div>
-				</div>
-			</div>
-
-			<!-- Chart -->
-			<div class="rounded-lg bg-base-100 p-4">
-				{#if showPieChart}
-					<PieChart data={pieData} height="300px" />
-				{:else}
-					<BarChart labels={barLabels} values={barValues} horizontal height="350px" />
-				{/if}
-			</div>
-		{/if}
-	</div>
-</section>
+	</section>
+{/if}

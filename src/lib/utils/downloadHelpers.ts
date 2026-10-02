@@ -55,6 +55,13 @@ export const downloadJSON = (data: object, filename: string): void => {
 };
 
 /**
+ * Downloads generated PDF bytes as a file
+ */
+export const downloadPDF = (bytes: Uint8Array, filename: string): void => {
+	triggerDownload(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }), filename);
+};
+
+/**
  * Triggers a browser download for a blob
  */
 const triggerDownload = (blob: Blob, filename: string): void => {

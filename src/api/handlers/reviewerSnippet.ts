@@ -12,7 +12,7 @@ abilityBuilder.reviewerSnippet.allow(['read', 'update', 'delete']).when((ctx) =>
 	return id ? { where: { userId: id } } : undefined;
 });
 
-export const ReviewerSnippetRef = object({ table: 'reviewerSnippet' });
+const ReviewerSnippetRef = object({ table: 'reviewerSnippet' });
 query({ table: 'reviewerSnippet' });
 const pubsub = rumblePubsub({ table: 'reviewerSnippet' });
 
@@ -54,8 +54,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.reviewerSnippet
 				.findFirst(
 					query(
-						ctx.abilities.reviewerSnippet.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.reviewerSnippet.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -74,7 +75,8 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.reviewerSnippet)
 				.set({ name: args.name, content: args.content })
 				.where(
-					ctx.abilities.reviewerSnippet.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.reviewerSnippet.filter('update')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.reviewerSnippet.id });
 
@@ -87,8 +89,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.reviewerSnippet
 				.findFirst(
 					query(
-						ctx.abilities.reviewerSnippet.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.reviewerSnippet.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -102,7 +104,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.reviewerSnippet)
 				.where(
-					ctx.abilities.reviewerSnippet.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.reviewerSnippet.filter('delete')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.reviewerSnippet.id });
 			if (deleted.length === 0) {
@@ -123,7 +126,7 @@ schemaBuilder.queryFields((t) => ({
 			ctx.mustBeLoggedIn();
 			return db.query.reviewerSnippet.findMany(
 				query({
-					...ctx.abilities.reviewerSnippet.filter('read').query.many,
+					...(await ctx.abilities.reviewerSnippet.filter('read')).query.many,
 					orderBy: { name: 'asc' }
 				})
 			);

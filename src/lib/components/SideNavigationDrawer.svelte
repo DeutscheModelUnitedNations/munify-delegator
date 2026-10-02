@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ResolvedPathname } from '$app/types';
 	import { m } from '$lib/paraglide/messages';
 	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
 	import { isMobileOrTablet } from '$lib/utils/detectMobile';
@@ -9,7 +10,7 @@
 	interface Props {
 		expanded?: boolean;
 		subtitle?: string;
-		navigateBackHref?: string;
+		navigateBackHref?: ResolvedPathname;
 		enableDefaultNavigationButtons?: boolean;
 		children: Snippet;
 	}

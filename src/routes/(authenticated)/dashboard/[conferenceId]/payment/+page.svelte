@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 	import { m } from '$lib/paraglide/messages';
@@ -26,7 +27,7 @@
 		<UndrawCard
 			title={m.singlePayment()}
 			btnText={m.singlePaymentBtn()}
-			btnLink="./payment/single"
+			btnLink={resolve(`/dashboard/${params.conferenceId}/payment/single`)}
 			img={singlePayment}
 			disabled={supervisorIsNotPresent}
 			disabledText={m.paymentMethodNotAvailable()}
@@ -37,7 +38,7 @@
 			<UndrawCard
 				title={m.delegationPayment()}
 				btnText={m.delegationPaymentBtn()}
-				btnLink="./payment/delegation"
+				btnLink={resolve(`/dashboard/${params.conferenceId}/payment/delegation`)}
 				img={delegationPayment}
 				disabled={!isDelegation}
 				disabledText={m.paymentMethodNotAvailable()}
@@ -49,7 +50,7 @@
 			<UndrawCard
 				title={m.groupPayment()}
 				btnText={m.groupPaymentBtn()}
-				btnLink="./payment/group"
+				btnLink={resolve(`/dashboard/${params.conferenceId}/payment/group`)}
 				img={groupPayment}
 				disabled={!isSupervisor}
 				disabledText={m.paymentMethodNotAvailable()}

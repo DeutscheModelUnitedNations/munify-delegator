@@ -1,11 +1,22 @@
 import { client } from '$lib/api/rumbleClient/client';
 
-/** Everything the assignment assistant needs to open a project for a conference. */
+/**
+ * Everything the assignment assistant needs to open a project for a conference. Read once, when
+ * the project file is downloaded: the page itself displays none of it.
+ */
 export async function fetchAssignmentProject(conferenceId: string) {
+	const inConference = { where: { conferenceId: { eq: conferenceId } } };
 	const applied = { where: { conferenceId: { eq: conferenceId }, applied: { eq: true } } };
 
-	const [delegations, singleParticipants, conference] = await Promise.all([
-		client.liveQuery.delegations({
+	const [
+		delegations,
+		singleParticipants,
+		conference,
+		nonStateActors,
+		committees,
+		individualApplicationOptions
+	] = await Promise.all([
+		client.query.delegations({
 			__args: applied,
 			id: true,
 			school: true,
@@ -28,7 +39,7 @@ export async function fetchAssignmentProject(conferenceId: string) {
 				supervisors: { id: true, user: { id: true } }
 			}
 		}),
-		client.liveQuery.singleParticipants({
+		client.query.singleParticipants({
 			__args: applied,
 			id: true,
 			school: true,
@@ -36,30 +47,46 @@ export async function fetchAssignmentProject(conferenceId: string) {
 			user: { id: true },
 			appliedForRoles: { id: true, fontAwesomeIcon: true, name: true }
 		}),
-		client.liveQuery.conference({
+		client.query.conference({
 			__args: { id: conferenceId },
 			id: true,
 			title: true,
-			startConference: true,
-			nonStateActors: {
-				id: true,
-				name: true,
-				fontAwesomeIcon: true,
-				abbreviation: true,
-				seatAmount: true
-			},
-			committees: {
-				id: true,
-				name: true,
-				abbreviation: true,
-				numOfSeatsPerDelegation: true,
-				nations: { alpha2Code: true, alpha3Code: true }
-			},
-			individualApplicationOptions: { id: true, name: true, fontAwesomeIcon: true }
+			startConference: true
+		}),
+		client.query.nonStateActors({
+			__args: inConference,
+			id: true,
+			name: true,
+			fontAwesomeIcon: true,
+			abbreviation: true,
+			seatAmount: true
+		}),
+		client.query.committees({
+			__args: inConference,
+			id: true,
+			name: true,
+			abbreviation: true,
+			numOfSeatsPerDelegation: true,
+			nations: { alpha2Code: true, alpha3Code: true }
+		}),
+		client.query.customConferenceRoles({
+			__args: inConference,
+			id: true,
+			name: true,
+			fontAwesomeIcon: true
 		})
 	]);
 
-	return { delegations, singleParticipants, conference };
+	return {
+		delegations,
+		singleParticipants,
+		conference: {
+			id: conference.id,
+			title: conference.title,
+			startConference: conference.startConference,
+			nonStateActors,
+			committees,
+			individualApplicationOptions
+		}
+	};
 }
-
-export type AssignmentProject = Awaited<ReturnType<typeof fetchAssignmentProject>>;

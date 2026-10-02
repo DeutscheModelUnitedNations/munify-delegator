@@ -1,153 +1,63 @@
 <script lang="ts">
-	import Selection from '$lib/components/selection';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchConferencePaymentData } from '../conferencePaymentData';
-	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames, { sortByNames } from '$lib/helpers/formatNames';
-	import { toast } from 'svelte-sonner';
 	import ReferenceMaker from '../ReferenceMaker.svelte';
-	import { onMount } from 'svelte';
+	import ParticipantSelectionCard from '../ParticipantSelectionCard.svelte';
+	import SelectableParticipantsFieldset from '../SelectableParticipantsFieldset.svelte';
+	import { PaymentParticipantSelection } from '../participantSelection.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
-	const currentUser = $derived(await getCurrentUser());
+	/**
+	 * The conference's payment details and the caller's membership, for the delegation a payment can
+	 * cover - in one derived, so neither waits on the other.
+	 */
+	async function fetchDelegationPayment(conferenceId: string) {
+		const user = await getCurrentUser();
+		return Promise.all([
+			user,
+			fetchConferencePaymentData(conferenceId),
+			client.liveQuery.delegationMembers({
+				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+				delegation: {
+					members: { id: true, user: { id: true, givenName: true, familyName: true } }
+				}
+			})
+		]);
+	}
 
-	const participation = $derived(await fetchMyParticipation(params.conferenceId));
-	let conferencePaymentData = $derived(await fetchConferencePaymentData(params.conferenceId));
-	let delegationMembers = $derived(participation?.delegationMember?.delegation.members);
+	const [currentUser, conferencePaymentData, myMemberships] = $derived(
+		await fetchDelegationPayment(params.conferenceId)
+	);
+	let delegationMembers = $derived(myMemberships.at(0)?.delegation.members);
 
-	let isReferenceCreated = $state(false);
-	let isInitialized = $state(false);
-
-	type MinimalUserData = {
-		id: string;
-		givenName: string;
-		familyName: string;
-	};
-	let selectedParticipants = $state<MinimalUserData[]>([]);
-
-	const addParticipant = (user: { id: string; givenName: string; familyName: string }) => {
-		if (isReferenceCreated) {
-			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
-			return;
-		}
-
-		if (!selectedParticipants.map((x) => x.id).includes(user.id)) {
-			selectedParticipants = [...selectedParticipants, user];
-		}
-	};
-
-	const removeParticipant = (user: MinimalUserData) => {
-		if (isReferenceCreated) {
-			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
-			return;
-		}
-
-		selectedParticipants = selectedParticipants.filter((x) => x.id !== user.id);
-	};
-
-	const addOrRemoveParticipant = (user: MinimalUserData, selected: boolean) => {
-		if (isReferenceCreated) {
-			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
-			return;
-		}
-
-		if (selected) {
-			addParticipant(user);
-		} else {
-			removeParticipant(user);
-		}
-	};
-
-	const addDefaultParticipants = () => {
-		if (isReferenceCreated) {
-			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
-			return;
-		}
-
-		if (!delegationMembers) return;
-		selectedParticipants = [...delegationMembers.map((member) => member.user)];
-	};
-
-	const removeAllParticipants = () => {
-		if (isReferenceCreated) {
-			toast.error(m.cannotChangeParticipantsAfterReferenceCreated());
-			return;
-		}
-
-		selectedParticipants = [];
-	};
-
-	$effect(() => {
-		if (delegationMembers && !isInitialized) {
-			addDefaultParticipants();
-			isInitialized = true;
-		}
-	});
+	const selection = new PaymentParticipantSelection(
+		() => delegationMembers?.map((member) => member.user),
+		() => !!delegationMembers
+	);
 </script>
 
 <div class="flex flex-col gap-2">
 	<h1 class="text-2xl font-bold">{m.delegationPayment()}</h1>
 	<p>{m.delegationPaymentDescription()}</p>
 
-	<div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-lg p-4 shadow-lg">
-		<h2 class="text-2xl font-bold">
-			<i class="fa-duotone fa-list-check mr-4"></i>
-			{m.selectParticipants()}
-		</h2>
-
-		<div class="join join-horizontal">
-			<button
-				class="btn btn-sm join-item"
-				onclick={addDefaultParticipants}
-				disabled={isReferenceCreated}
-			>
-				<i class="fa-duotone fa-check-double"></i>
-				{m.selectAll()}
-			</button>
-			<button
-				class="btn btn-sm join-item"
-				onclick={removeAllParticipants}
-				disabled={isReferenceCreated}
-			>
-				<i class="fa-duotone fa-xmark"></i>
-				{m.deselectAll()}
-			</button>
-		</div>
-
+	<ParticipantSelectionCard {selection}>
 		{#if delegationMembers}
-			<Selection.Fieldset title={m.delegationMembers()}>
-				{#each delegationMembers.sort((a, b) => sortByNames(a.user, b.user)) as member}
-					<Selection.Item
-						label={formatNames(
-							member.user.givenName ?? undefined,
-							member.user.familyName ?? undefined
-						)}
-						selected={selectedParticipants.map((x) => x.id).includes(member.user.id)}
-						changeSelection={(selected) => addOrRemoveParticipant(member.user, selected)}
-						disabled={isReferenceCreated}
-					/>
-				{/each}
-			</Selection.Fieldset>
+			<SelectableParticipantsFieldset
+				title={m.delegationMembers()}
+				{selection}
+				participants={delegationMembers}
+			/>
 		{/if}
-
-		<div class="alert alert-info mt-4">
-			<i class="fa-solid fa-info-circle mr-2 text-2xl"></i>
-			<div>
-				<h3 class="font-bold">{m.participantsNotFoundTitle()}</h3>
-				<p>
-					{m.participantsNotFoundDescription()}
-				</p>
-			</div>
-		</div>
-	</div>
+	</ParticipantSelectionCard>
 
 	<ReferenceMaker
-		users={selectedParticipants}
+		users={selection.selected}
 		ownUserId={currentUser.sub}
 		{conferencePaymentData}
-		bind:isReferenceCreated
+		onReferenceCreated={() => (selection.isReferenceCreated = true)}
 	/>
 </div>

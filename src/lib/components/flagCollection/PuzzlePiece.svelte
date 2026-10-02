@@ -10,65 +10,45 @@
 
 	let { state, title, compact = false, overlay = false }: Props = $props();
 
+	/**
+	 * Per state: the tile classes (`bg`), the overlay classes for the flag reveal effect
+	 * (`overlay`), the icon color on a tile and on an overlay, and the default tooltip.
+	 */
+	const stateStyles: Record<
+		Props['state'],
+		{ bg: string; overlay: string; icon: string; overlayIcon: string; tooltip: () => string }
+	> = {
+		LOCKED: {
+			bg: 'bg-base-300',
+			overlay: 'piece-locked',
+			icon: 'text-base-content/30',
+			overlayIcon: 'text-white/30',
+			tooltip: m.pieceLockedTooltip
+		},
+		UNLOCKED: {
+			bg: 'bg-base-200 border-2 border-dashed border-primary/50',
+			overlay: 'piece-unlocked',
+			icon: 'text-primary/50',
+			overlayIcon: 'text-white/70',
+			tooltip: m.pieceUnlockedTooltip
+		},
+		FOUND: {
+			bg: 'bg-primary/20 border border-primary/30',
+			overlay: 'piece-found',
+			icon: 'text-success',
+			overlayIcon: 'text-success drop-shadow-md',
+			tooltip: m.pieceFoundTooltip
+		}
+	};
+
+	let stateStyle = $derived(stateStyles[state]);
 	// Original tile-based styling (for backwards compatibility)
-	let bgClass = $derived.by(() => {
-		if (overlay) return '';
-		switch (state) {
-			case 'LOCKED':
-				return 'bg-base-300';
-			case 'UNLOCKED':
-				return 'bg-base-200 border-2 border-dashed border-primary/50';
-			case 'FOUND':
-				return 'bg-primary/20 border border-primary/30';
-		}
-	});
-
+	let bgClass = $derived(overlay ? '' : stateStyle.bg);
 	// Overlay-based styling (for flag reveal effect)
-	let overlayClass = $derived.by(() => {
-		if (!overlay) return '';
-		switch (state) {
-			case 'LOCKED':
-				return 'piece-locked';
-			case 'UNLOCKED':
-				return 'piece-unlocked';
-			case 'FOUND':
-				return 'piece-found';
-		}
-	});
-
-	let tooltipText = $derived.by(() => {
-		// Use title prop if provided (e.g., agenda item title), otherwise use state-based tooltip
-		if (title) return title;
-		switch (state) {
-			case 'LOCKED':
-				return m.pieceLockedTooltip();
-			case 'UNLOCKED':
-				return m.pieceUnlockedTooltip();
-			case 'FOUND':
-				return m.pieceFoundTooltip();
-		}
-	});
-
-	let iconClass = $derived.by(() => {
-		if (overlay) {
-			switch (state) {
-				case 'LOCKED':
-					return 'text-white/30';
-				case 'UNLOCKED':
-					return 'text-white/70';
-				case 'FOUND':
-					return 'text-success drop-shadow-md';
-			}
-		}
-		switch (state) {
-			case 'LOCKED':
-				return 'text-base-content/30';
-			case 'UNLOCKED':
-				return 'text-primary/50';
-			case 'FOUND':
-				return 'text-success';
-		}
-	});
+	let overlayClass = $derived(overlay ? stateStyle.overlay : '');
+	// Use title prop if provided (e.g., agenda item title), otherwise use state-based tooltip
+	let tooltipText = $derived(title || stateStyle.tooltip());
+	let iconClass = $derived(overlay ? stateStyle.overlayIcon : stateStyle.icon);
 </script>
 
 <div

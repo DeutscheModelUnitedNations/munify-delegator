@@ -1,20 +1,37 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
+	import SeatsIconHeader from '../SeatsIconHeader.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import DownloadSingleParticipantsDataBtn from '../downloads/DownloadSingleParticipantsDataBtn.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		singleParticipants: ConferenceSeatMap['singleParticipants'];
-		roles: ConferenceSeatMap['roles'];
 		conferenceId: string;
 	}
 
-	let { singleParticipants, roles, conferenceId }: Props = $props();
+	let { conferenceId }: Props = $props();
+
+	const roles = $derived(
+		await client.liveQuery.customConferenceRoles({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			name: true,
+			fontAwesomeIcon: true,
+			seatAmount: true
+		})
+	);
+
+	const singleParticipants = $derived(
+		await client.liveQuery.singleParticipants({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
+			id: true,
+			user: { id: true, givenName: true, familyName: true },
+			assignedRole: { id: true }
+		})
+	);
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
@@ -39,21 +56,9 @@
 	title={m.singleParticipants()}
 	downloadButton={downloadSingleParticipantsDataBtn}
 >
-	<thead>
-		<tr>
-			<td class="text-left">
-				<i class="fa-duotone fa-masks-theater"></i>
-			</td>
-			<td class="text-left">
-				<i class="fa-duotone fa-users"></i>
-			</td>
-			<td>
-				<i class="fa-duotone fa-sigma"></i>
-			</td>
-		</tr>
-	</thead>
+	<SeatsIconHeader icon="fa-masks-theater" />
 	<tbody>
-		{#each roles as role}
+		{#each roles as role (role.id)}
 			{@const participants = singleParticipants.filter((sp) => sp.assignedRole?.id === role.id)}
 			<tr>
 				<td class="flex items-center gap-2">
@@ -62,7 +67,7 @@
 				</td>
 				<td>
 					<div class="flex flex-wrap gap-1">
-						{#each participants as participant}
+						{#each participants as participant (participant.id)}
 							<InitialsButton
 								given_name={participant.user.givenName}
 								family_name={participant.user.familyName}

@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import ParticipantStatusWidget from '$lib/components/ParticipantStatusWidget.svelte';
-	import ParticipantStatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import formatNames from '$lib/helpers/formatNames';
 	import { toast } from 'svelte-sonner';
 	import Section from './Section.svelte';
 	import type { PageProps } from './$types';
@@ -32,6 +29,7 @@
 <div class="flex w-full flex-col flex-wrap gap-8 p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.helper()}</h2>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.helperDescription()}</p>
 	</div>
 	<Section title={m.switchAttendanceState()} description={m.switchAttendanceStateDescription()}>

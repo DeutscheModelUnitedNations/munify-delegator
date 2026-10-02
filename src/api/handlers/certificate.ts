@@ -2,7 +2,7 @@ import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
 import { generateSeededRsa } from '$api/services/deterministicRSAKeypair';
 import { configPrivate } from '$config/private';
-import formatNames from '$lib/helpers/formatNames';
+import { certificateContents } from '$api/services/certificatePayload';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { SignJWT, exportJWK } from 'jose';
 import { certificateAlg } from './certificateConfig';
@@ -19,13 +19,7 @@ const jwkPublicKey = exportJWK((await keyPair).publicKey).then((key) => {
 	return key;
 });
 
-export interface CertificateJWTPayload extends Record<string, unknown> {
-	/** Deliberately terse: these end up in a QR code, so every byte counts. */
-	n: string;
-	t: string;
-	s: number;
-	e: number;
-}
+export type { CertificateJWTPayload } from '$api/services/certificatePayload';
 
 const JWK = schemaBuilder.simpleObject('JWK', {
 	fields: (t) => ({
@@ -68,7 +62,7 @@ schemaBuilder.queryFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const status = await db.query.conferenceParticipantStatus
 				.findFirst({
-					...ctx.abilities.conferenceParticipantStatus.filter('read').merge({
+					...(await ctx.abilities.conferenceParticipantStatus.filter('read')).merge({
 						where: { conferenceId: args.conferenceId, userId: args.userId }
 					}).query.single,
 					with: {
@@ -85,28 +79,17 @@ schemaBuilder.queryFields((t) => ({
 				})
 				.then(assertFindFirstExists);
 
-			if (!status.didAttend || !status.conference) {
+			const contents = certificateContents(status);
+			if (!contents) {
 				return { jwt: null, fullName: null };
 			}
 
-			const fullName = formatNames(status.user?.givenName, status.user?.familyName, {
-				familyNameUppercase: false,
-				givenNameUppercase: false
-			});
-
-			const payload: CertificateJWTPayload = {
-				n: fullName,
-				t: status.conference.longTitle || status.conference.title,
-				s: status.conference.startConference?.getTime() ?? 0,
-				e: status.conference.endConference?.getTime() ?? 0
-			};
-
-			const jwt = await new SignJWT(payload)
+			const jwt = await new SignJWT(contents.payload)
 				.setProtectedHeader({ alg: certificateAlg })
 				.setIssuedAt()
 				.sign((await keyPair).privateKey);
 
-			return { jwt, fullName };
+			return { jwt, fullName: contents.fullName };
 		}
 	}),
 

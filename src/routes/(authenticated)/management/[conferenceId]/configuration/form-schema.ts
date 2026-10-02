@@ -130,3 +130,5 @@ export const conferenceSettingsFormSchema = z.object({
 		.refine((f) => (f.size ? f.size < 10_000_000 : true), 'Max 10mb upload size.')
 		.optional()
 });
+
+export type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;

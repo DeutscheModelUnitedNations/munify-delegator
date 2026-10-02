@@ -68,11 +68,7 @@
 		questions.length > 0 && questions.every((q) => answers.some((a) => a.question.id === q.id))
 	);
 
-	let sectionCollapsed = $state(false);
-
-	$effect(() => {
-		sectionCollapsed = allAnswered;
-	});
+	let sectionCollapsed = $derived(allAnswered);
 
 	let pinnedSelections = $derived(
 		questions

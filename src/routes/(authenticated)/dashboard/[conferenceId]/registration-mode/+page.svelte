@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
+	import { describeParticipant } from './participantInfo';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -20,10 +20,6 @@
 		})
 	);
 	let conference = $derived(participation?.conference);
-	let delegationMember = $derived(participation?.delegationMember);
-	let singleParticipant = $derived(participation?.singleParticipant);
-	let supervisor = $derived(participation?.supervisor);
-	let teamMember = $derived(participation?.teamMember);
 
 	// User identity from OIDC
 	let fullName = $derived(`${currentUser.given_name} ${currentUser.family_name}`);
@@ -48,83 +44,7 @@
 		}
 	});
 
-	// Determine participant type and role info
-	type ParticipantInfo = {
-		type: 'delegation' | 'single' | 'team' | 'supervisor' | 'unassigned' | 'none';
-		roleDisplay: string;
-		committeeAbbreviation?: string;
-		alpha2Code?: string;
-		isNSA?: boolean;
-		nsaIcon?: string | null;
-	};
-
-	let participantInfo = $derived.by((): ParticipantInfo => {
-		// Delegation Member with assigned nation
-		if (delegationMember?.delegation?.assignedNation) {
-			const nation = delegationMember.delegation.assignedNation;
-			const committee = delegationMember.assignedCommittee;
-			return {
-				type: 'delegation',
-				roleDisplay: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
-				committeeAbbreviation: committee?.abbreviation,
-				alpha2Code: nation.alpha2Code.toLowerCase()
-			};
-		}
-
-		// Delegation Member with assigned NSA
-		if (delegationMember?.delegation?.assignedNonStateActor) {
-			const nsa = delegationMember.delegation.assignedNonStateActor;
-			return {
-				type: 'delegation',
-				roleDisplay: nsa.name,
-				isNSA: true,
-				nsaIcon: nsa.fontAwesomeIcon
-			};
-		}
-
-		// Delegation Member without assignment
-		if (delegationMember) {
-			return { type: 'unassigned', roleDisplay: '' };
-		}
-
-		// Single Participant with assigned role
-		if (singleParticipant?.assignedRole) {
-			const role = singleParticipant.assignedRole;
-			return {
-				type: 'single',
-				roleDisplay: role.name,
-				isNSA: true,
-				nsaIcon: role.fontAwesomeIcon
-			};
-		}
-
-		// Single Participant without assignment
-		if (singleParticipant) {
-			return { type: 'unassigned', roleDisplay: '' };
-		}
-
-		// Team Member (always valid)
-		if (teamMember) {
-			return {
-				type: 'team',
-				roleDisplay: translateTeamRole(teamMember.role),
-				isNSA: true,
-				nsaIcon: 'users-gear'
-			};
-		}
-
-		// Supervisor (always valid)
-		if (supervisor) {
-			return {
-				type: 'supervisor',
-				roleDisplay: m.supervisor(),
-				isNSA: true,
-				nsaIcon: 'chalkboard-user'
-			};
-		}
-
-		return { type: 'none', roleDisplay: '' };
-	});
+	let participantInfo = $derived(describeParticipant(participation));
 
 	let isValidParticipant = $derived(
 		participantInfo.type !== 'unassigned' && participantInfo.type !== 'none'
@@ -207,7 +127,7 @@
 
 	<!-- Back Button -->
 	<div class="mt-auto w-full pt-4">
-		<a href="/dashboard/{conference?.id}" class="btn btn-ghost btn-sm gap-2">
+		<a href={resolve(`/dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
 			<i class="fa-solid fa-arrow-left"></i>
 			{m.backToDashboard()}
 		</a>

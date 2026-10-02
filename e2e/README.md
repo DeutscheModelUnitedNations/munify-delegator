@@ -62,6 +62,10 @@ Rules worth keeping when adding fixtures:
 
 ## Writing specs that stay green
 
+- **Import `test` and `expect` from `../support/test`**, not from `@playwright/test`. It is the
+  same `test`, plus the browser coverage `bun run test:e2e:coverage` records for the default
+  `page` (pages on contexts a spec opens itself are not recorded).
+
 - **Never look up a row by position in a paginated table.** Registration specs create new users
   on every run, so the seeded rows drift off page one. Filter first - the participants table
   takes a `?search=` query param.

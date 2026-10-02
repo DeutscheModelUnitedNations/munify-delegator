@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
-	import { onDestroy, onMount, type Snippet } from 'svelte';
+	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { persisted } from 'svelte-persisted-store';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
@@ -39,14 +39,48 @@
 	let videoElem: HTMLVideoElement;
 	let canvasElem: HTMLCanvasElement;
 	let streaming = $state(false);
-	let useCamera = persisted(persistKey, false);
+	// The storage key and the formats are configuration fixed for the scanner's lifetime.
+	let useCamera = persisted(
+		untrack(() => persistKey),
+		false
+	);
 	let manualInputElem = $state<HTMLInputElement>();
 
 	const barcodeDetector: BarcodeDetector = new BarcodeDetector({
-		formats: barcodeFormats
+		formats: untrack(() => barcodeFormats)
 	});
 
 	// --- Camera / Scanner functions ---
+
+	/** The camera error messages, by the `DOMException` names browsers use for each failure. */
+	const cameraErrorMessages: Record<string, () => string> = {
+		NotAllowedError: m.cameraAccessDenied,
+		PermissionDeniedError: m.cameraAccessDenied,
+		NotFoundError: m.noCameraFound,
+		NotReadableError: m.cameraInUse,
+		TrackStartError: m.cameraInUse,
+		OverconstrainedError: m.cameraConstraintsError,
+		AbortError: m.cameraAborted
+	};
+
+	function cameraErrorMessage(error: unknown): string {
+		if (error instanceof DOMException) {
+			return (cameraErrorMessages[error.name] ?? m.cameraFailed)();
+		}
+		if (error instanceof Error) return m.cameraGenericError({ error: error.message });
+		return m.cameraFailed();
+	}
+
+	/** Constraints that pick the selected camera, falling back to the first one available. */
+	async function selectedCameraConstraints(): Promise<MediaTrackConstraints> {
+		const devices = await navigator.mediaDevices.enumerateDevices();
+		availableVideoDevices = devices.filter((device) => device.kind === 'videoinput');
+		if (selectedVideoDeviceIndex >= availableVideoDevices.length) {
+			selectedVideoDeviceIndex = 0;
+		}
+		if (availableVideoDevices.length === 0) return {};
+		return { deviceId: { ideal: availableVideoDevices[selectedVideoDeviceIndex].deviceId } };
+	}
 
 	async function startVideo() {
 		scannedCode = null;
@@ -58,40 +92,14 @@
 			if (streaming) {
 				stopVideo();
 			}
-			const devices = await navigator.mediaDevices.enumerateDevices();
-			availableVideoDevices = devices.filter((device) => device.kind === 'videoinput');
-			if (selectedVideoDeviceIndex >= availableVideoDevices.length) {
-				selectedVideoDeviceIndex = 0;
-			}
-			const videoConstraints: MediaTrackConstraints = {};
-			if (availableVideoDevices.length > 0) {
-				videoConstraints.deviceId = {
-					ideal: availableVideoDevices[selectedVideoDeviceIndex].deviceId
-				};
-			}
+			const videoConstraints = await selectedCameraConstraints();
 			const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
 			videoElem.srcObject = stream;
 			await videoElem.play();
 			streaming = true;
 		} catch (error) {
 			console.error('Error accessing camera:', error);
-			let errorMessage = m.cameraFailed();
-			if (error instanceof DOMException) {
-				if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-					errorMessage = m.cameraAccessDenied();
-				} else if (error.name === 'NotFoundError') {
-					errorMessage = m.noCameraFound();
-				} else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-					errorMessage = m.cameraInUse();
-				} else if (error.name === 'OverconstrainedError') {
-					errorMessage = m.cameraConstraintsError();
-				} else if (error.name === 'AbortError') {
-					errorMessage = m.cameraAborted();
-				}
-			} else if (error instanceof Error) {
-				errorMessage = m.cameraGenericError({ error: error.message });
-			}
-			toast.error(errorMessage);
+			toast.error(cameraErrorMessage(error));
 		}
 	}
 

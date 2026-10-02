@@ -1,43 +1,32 @@
 <script lang="ts">
+	import ActionModal from '$lib/components/ActionModal.svelte';
+	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import PieChart from '$lib/components/charts/echarts/PieChart.svelte';
-	import { datetimeLocalToDate, formatInTimezone } from '$lib/helpers/conferenceTimezoneDate';
+	import { surveyFields } from './surveyForm';
+	import SurveyCard from './SurveyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
-	const surveys = $derived(
-		await client.liveQuery.surveyQuestions({
-			__args: {
-				where: { conferenceId: { eq: params.conferenceId } },
-				orderBy: { createdAt: 'desc' }
-			},
-			id: true,
-			title: true,
-			description: true,
-			deadline: true,
-			draft: true,
-			hidden: true,
-			showSelectionOnDashboard: true,
-			options: {
+	// Only what decides which section a survey goes into (each card fetches its own details), and
+	// the timezone deadlines are entered in. One derived, so neither waits on the other.
+	//
+	// `.timezone` is read in a second derived, not here: reading it inside the derived that creates
+	// the live query subscribes that derived to its own query, so the query's first update re-runs
+	// it, which creates a new query, which updates again - the page never stops re-rendering.
+	const [surveys, conference] = $derived(
+		await Promise.all([
+			client.liveQuery.surveyQuestions({
+				__args: {
+					where: { conferenceId: { eq: params.conferenceId } },
+					orderBy: { createdAt: 'desc' }
+				},
 				id: true,
-				title: true,
-				description: true,
-				countSurveyAnswers: true,
-				upperLimit: true
-			}
-		})
-	);
-
-	// Two deriveds, not one: reading `.timezone` inside the derived that creates the live query
-	// subscribes that derived to its own query, so the query's first update re-runs it, which
-	// creates a new query, which updates again - the page never stops re-rendering.
-	const conference = $derived(
-		await client.liveQuery.conference({
-			__args: { id: params.conferenceId },
-			timezone: true
-		})
+				hidden: true
+			}),
+			client.liveQuery.conference({ __args: { id: params.conferenceId }, timezone: true })
+		])
 	);
 	const conferenceTimezone = $derived(conference?.timezone ?? 'UTC');
 	let visibleSurveys = $derived(surveys.filter((s) => !s.hidden));
@@ -46,7 +35,7 @@
 	// Modal state
 	let showCreateModal = $state(false);
 	let showDeleteModal = $state(false);
-	let surveyToDelete = $state<(typeof surveys)[0] | null>(null);
+	let surveyToDelete = $state<{ id: string; title: string } | null>(null);
 	let isLoading = $state(false);
 	let hiddenSurveysExpanded = $state(false);
 
@@ -55,35 +44,14 @@
 	let createDescription = $state('');
 	let createDeadline = $state('');
 
-	// Helpers
-	const getTotalAnswers = (survey: (typeof surveys)[0]) => {
-		return survey.options.reduce((sum, opt) => sum + opt.countSurveyAnswers, 0);
-	};
-
-	const getChartData = (survey: (typeof surveys)[0]) => {
-		return survey.options.map((opt) => ({
-			name: opt.title,
-			value: opt.countSurveyAnswers
-		}));
-	};
-
-	const formatDeadline = (date: Date) => {
-		return formatInTimezone(date, conferenceTimezone);
-	};
-
 	// Actions
 	const createSurvey = async () => {
-		if (!createTitle || !createDescription || !createDeadline) return;
+		const fields = surveyFields(createTitle, createDescription, createDeadline, conferenceTimezone);
+		if (!fields) return;
 		isLoading = true;
 		try {
 			await client.mutate.createSurveyQuestion({
-				__args: {
-					conferenceId: params.conferenceId,
-					title: createTitle,
-					description: createDescription,
-					deadline: datetimeLocalToDate(createDeadline, conferenceTimezone),
-					draft: true
-				},
+				__args: { conferenceId: params.conferenceId, ...fields, draft: true },
 				id: true
 			});
 			showCreateModal = false;
@@ -92,48 +60,6 @@
 			createDeadline = '';
 		} catch (error) {
 			console.error('Failed to create survey:', error);
-		} finally {
-			isLoading = false;
-		}
-	};
-
-	const toggleDraft = async (id: string, currentDraft: boolean) => {
-		isLoading = true;
-		try {
-			await client.mutate.updateSurveyQuestion({
-				__args: { id, draft: !currentDraft },
-				id: true
-			});
-		} catch (error) {
-			console.error('Failed to toggle draft status:', error);
-		} finally {
-			isLoading = false;
-		}
-	};
-
-	const toggleHidden = async (id: string, currentHidden: boolean) => {
-		isLoading = true;
-		try {
-			await client.mutate.updateSurveyQuestion({
-				__args: { id, hidden: !currentHidden },
-				id: true
-			});
-		} catch (error) {
-			console.error('Failed to toggle hidden status:', error);
-		} finally {
-			isLoading = false;
-		}
-	};
-
-	const toggleShowSelection = async (id: string, currentValue: boolean) => {
-		isLoading = true;
-		try {
-			await client.mutate.updateSurveyQuestion({
-				__args: { id, showSelectionOnDashboard: !currentValue },
-				id: true
-			});
-		} catch (error) {
-			console.error('Failed to toggle showSelectionOnDashboard:', error);
 		} finally {
 			isLoading = false;
 		}
@@ -153,128 +79,11 @@
 		}
 	};
 
-	const confirmDelete = (survey: (typeof surveys)[0]) => {
+	const confirmDelete = (survey: { id: string; title: string }) => {
 		surveyToDelete = survey;
 		showDeleteModal = true;
 	};
 </script>
-
-{#snippet surveyCard(survey: (typeof surveys)[0])}
-	<div class="bg-base-200 flex w-full flex-col gap-4 rounded-lg p-4">
-		<div class="flex flex-col gap-2">
-			<h3 class="text-xl font-bold">{survey.title}</h3>
-			<div class="flex flex-wrap items-center gap-2">
-				{#if survey.draft}
-					<span class="badge badge-warning w-fit">{m.surveyIsDraft()}</span>
-				{:else}
-					<span class="badge badge-success w-fit">{m.surveyIsLive()}</span>
-				{/if}
-				{#if survey.hidden}
-					<span class="badge badge-neutral w-fit">
-						<i class="fa-duotone fa-box-archive mr-1"></i>
-						{m.archivedSurvey()}
-					</span>
-				{/if}
-			</div>
-			<p class="whitespace-pre-line text-sm opacity-70">{survey.description}</p>
-			<div class="flex flex-wrap gap-2">
-				<button
-					class="btn btn-sm {survey.draft ? 'btn-success' : 'btn-warning'}"
-					onclick={() => toggleDraft(survey.id, survey.draft)}
-				>
-					<i class="fas {survey.draft ? 'fa-eye' : 'fa-eye-slash'}"></i>
-					{survey.draft ? m.publishSurvey() : m.unpublishSurvey()}
-				</button>
-				<button class="btn btn-ghost btn-sm" onclick={() => toggleHidden(survey.id, survey.hidden)}>
-					<i class="fa-duotone fa-box-archive"></i>
-					{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
-				</button>
-				<a href="/management/{params.conferenceId}/survey/{survey.id}" class="btn btn-sm">
-					<i class="fas fa-edit"></i>
-					{m.edit()}
-				</a>
-				<button class="btn btn-error btn-sm" onclick={() => confirmDelete(survey)}>
-					<i class="fas fa-trash"></i>
-					{m.delete()}
-				</button>
-			</div>
-
-			<!-- Toggle switches -->
-			<div class="mt-2 flex flex-col gap-2">
-				<label class="flex cursor-pointer items-center gap-2">
-					<input
-						type="checkbox"
-						class="toggle toggle-success toggle-sm"
-						checked={survey.showSelectionOnDashboard}
-						onchange={() => toggleShowSelection(survey.id, survey.showSelectionOnDashboard)}
-					/>
-					<span class="text-sm">{m.showSelectionOnDashboard()}</span>
-					<span class="text-base-content/50 text-xs"
-						>({m.showSelectionOnDashboardDescription()})</span
-					>
-				</label>
-			</div>
-		</div>
-
-		{#if survey.options.length > 0}
-			<div class="flex items-start gap-4">
-				<div class="w-28 shrink-0">
-					<PieChart
-						data={getChartData(survey)}
-						donut={true}
-						showLegend={false}
-						showLabels={false}
-						height="112px"
-					/>
-				</div>
-				<div class="flex flex-1 flex-col gap-2 overflow-hidden">
-					<!-- Summary stats table -->
-					<div class="bg-base-300 overflow-hidden rounded-t-lg">
-						<table class="table table-sm">
-							<tbody>
-								<tr class="border-base-200">
-									<td class="font-medium">{m.deadline()}</td>
-									<td class="text-right font-medium">{formatDeadline(survey.deadline)}</td>
-								</tr>
-								<tr class="border-base-200 border-b-0">
-									<td class="font-medium">{m.totalAnswers()}</td>
-									<td class="text-right font-medium">{getTotalAnswers(survey)}</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-					<!-- Per-option stats table -->
-					{#if survey.options.length > 0}
-						<div class="bg-base-300 overflow-hidden rounded-b-lg">
-							<table class="table table-sm">
-								<tbody>
-									{#each survey.options as option, i (option.id)}
-										<tr class="border-base-200" class:border-b-0={i === survey.options.length - 1}>
-											<td class="text-base-content/60 truncate text-xs">{option.title}</td>
-											<td class="text-base-content/60 text-right text-xs">
-												{option.countSurveyAnswers}{#if option.upperLimit > 0}<span
-														class="text-base-content/40">/{option.upperLimit}</span
-													>{/if}
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					{/if}
-				</div>
-			</div>
-		{:else}
-			<div class="bg-base-300 rounded p-4 text-center text-sm opacity-70">
-				{m.noOptionsYet()}
-			</div>
-		{/if}
-
-		<a class="btn btn-primary" href="/management/{params.conferenceId}/survey/{survey.id}">
-			{m.details()}
-		</a>
-	</div>
-{/snippet}
 
 <div class="flex flex-col gap-6 p-4">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -296,7 +105,12 @@
 		</div>
 	{:else}
 		{#each visibleSurveys as survey (survey.id)}
-			{@render surveyCard(survey)}
+			<SurveyCard
+				surveyId={survey.id}
+				conferenceId={params.conferenceId}
+				{conferenceTimezone}
+				onDelete={confirmDelete}
+			/>
 		{/each}
 
 		{#if hiddenSurveys.length > 0}
@@ -308,7 +122,12 @@
 				</div>
 				<div class="collapse-content flex flex-col gap-4">
 					{#each hiddenSurveys as survey (survey.id)}
-						{@render surveyCard(survey)}
+						<SurveyCard
+							surveyId={survey.id}
+							conferenceId={params.conferenceId}
+							{conferenceTimezone}
+							onDelete={confirmDelete}
+						/>
 					{/each}
 				</div>
 			</div>
@@ -318,77 +137,38 @@
 
 <!-- Create Survey Modal -->
 {#if showCreateModal}
-	<div class="modal modal-open">
-		<div class="modal-box">
-			<h3 class="text-lg font-bold">{m.createSurvey()}</h3>
-			<div class="mt-4 flex flex-col gap-4">
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.title()}</legend>
-					<input type="text" bind:value={createTitle} class="input w-full" required />
-				</fieldset>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.description()}</legend>
-					<textarea bind:value={createDescription} class="textarea w-full" required></textarea>
-				</fieldset>
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">{m.deadline()}</legend>
-					<input type="datetime-local" bind:value={createDeadline} class="input w-full" required />
-				</fieldset>
-				<div class="modal-action">
-					<button type="button" class="btn" onclick={() => (showCreateModal = false)}>
-						{m.cancel()}
-					</button>
-					<button
-						type="button"
-						class="btn btn-primary"
-						onclick={createSurvey}
-						disabled={isLoading || !createTitle || !createDescription || !createDeadline}
-					>
-						{#if isLoading}
-							<span class="loading loading-spinner loading-sm"></span>
-						{/if}
-						{m.create()}
-					</button>
-				</div>
-			</div>
-		</div>
-		<div class="modal-backdrop" onclick={() => (showCreateModal = false)}></div>
-	</div>
+	<ActionModal
+		title={m.createSurvey()}
+		confirmLabel={m.create()}
+		confirmDisabled={!createTitle || !createDescription || !createDeadline}
+		loading={isLoading}
+		onConfirm={createSurvey}
+		onClose={() => (showCreateModal = false)}
+	>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">{m.title()}</legend>
+			<input type="text" bind:value={createTitle} class="input w-full" required />
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">{m.description()}</legend>
+			<textarea bind:value={createDescription} class="textarea w-full" required></textarea>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">{m.deadline()}</legend>
+			<input type="datetime-local" bind:value={createDeadline} class="input w-full" required />
+		</fieldset>
+	</ActionModal>
 {/if}
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal && surveyToDelete}
-	<div class="modal modal-open">
-		<div class="modal-box">
-			<h3 class="text-lg font-bold">{m.confirmDeleteSurvey()}</h3>
-			<p class="py-4">
-				{m.confirmDeleteSurveyDescription({ title: surveyToDelete.title })}
-			</p>
-			<div class="modal-action">
-				<button
-					type="button"
-					class="btn"
-					onclick={() => {
-						showDeleteModal = false;
-						surveyToDelete = null;
-					}}
-				>
-					{m.cancel()}
-				</button>
-				<button type="button" class="btn btn-error" onclick={deleteSurvey} disabled={isLoading}>
-					{#if isLoading}
-						<span class="loading loading-spinner loading-sm"></span>
-					{/if}
-					{m.delete()}
-				</button>
-			</div>
-		</div>
-		<div
-			class="modal-backdrop"
-			onclick={() => {
-				showDeleteModal = false;
-				surveyToDelete = null;
-			}}
-		></div>
-	</div>
+	<ConfirmDeleteModal
+		title={m.confirmDeleteSurvey()}
+		text={m.confirmDeleteSurveyDescription({ title: surveyToDelete.title })}
+		onConfirm={deleteSurvey}
+		onClose={() => {
+			showDeleteModal = false;
+			surveyToDelete = null;
+		}}
+	/>
 {/if}

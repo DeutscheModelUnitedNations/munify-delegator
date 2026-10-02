@@ -30,7 +30,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each todos as todo}
+		{#each todos as todo, todoIndex (todoIndex)}
 			<tr>
 				<td>
 					{#if todo.completed}
@@ -51,6 +51,7 @@
 						<a
 							href={todo.helpLink}
 							target="_blank"
+							rel="external"
 							class="btn btn-circle btn-sm"
 							aria-label="Help-Link"
 						>

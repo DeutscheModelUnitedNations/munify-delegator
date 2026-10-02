@@ -23,23 +23,11 @@ export async function fetchNewPaperContext(
 				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
 			},
 			id: true,
-			user: { id: true },
-			assignedCommittee: {
-				id: true,
-				name: true,
-				abbreviation: true,
-				resolutionHeadline: true,
-				agendaItems: { id: true, title: true }
-			},
+			assignedCommittee: { id: true, name: true, agendaItems: { id: true, title: true } },
 			delegation: {
 				id: true,
-				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: {
-					id: true,
-					abbreviation: true,
-					name: true,
-					fontAwesomeIcon: true
-				}
+				assignedNation: { alpha3Code: true },
+				assignedNonStateActor: { id: true, name: true }
 			}
 		}),
 		client.liveQuery.committeeAgendaItems({

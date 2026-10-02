@@ -2,7 +2,6 @@
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
@@ -10,14 +9,52 @@
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 
 	interface Props {
-		delegations: ConferenceSeatMap['delegations'];
-		committees: ConferenceSeatMap['committees'];
-		nations: ConferenceSeatMap['nations'];
 		conferenceId: string;
-		assignUserId?: string;
 	}
 
-	let { delegations, committees, nations, conferenceId, assignUserId }: Props = $props();
+	let { conferenceId }: Props = $props();
+
+	// In one derived, so none of the three waits on another.
+	const [committees, nations, delegations] = $derived(
+		await Promise.all([
+			client.liveQuery.committees({
+				__args: { where: { conferenceId: { eq: conferenceId } } },
+				id: true,
+				name: true,
+				abbreviation: true,
+				numOfSeatsPerDelegation: true
+			}),
+			client.liveQuery.nations({
+				__args: { where: { committees: { conferenceId: { eq: conferenceId } } } },
+				alpha2Code: true,
+				alpha3Code: true,
+				committees: { id: true, numOfSeatsPerDelegation: true }
+			}),
+			client.liveQuery.delegations({
+				__args: {
+					where: {
+						conferenceId: { eq: conferenceId },
+						assignedNationAlpha3Code: { isNotNull: true }
+					}
+				},
+				id: true,
+				assignedNation: { alpha3Code: true },
+				members: {
+					id: true,
+					assignedCommittee: { id: true },
+					user: { id: true, givenName: true, familyName: true }
+				}
+			})
+		])
+	);
+
+	const sortedNations = $derived(
+		[...nations].sort((a, b) =>
+			getFullTranslatedCountryNameFromISO3Code(a.alpha3Code).localeCompare(
+				getFullTranslatedCountryNameFromISO3Code(b.alpha3Code)
+			)
+		)
+	);
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
@@ -33,15 +70,155 @@
 			id: true
 		});
 	};
+
+	type Nation = (typeof sortedNations)[number];
+	type Committee = (typeof committees)[number];
+	type Delegation = (typeof delegations)[number];
+
+	/** Per committee: how many of its seats are taken, and how many the nations have in it. */
+	const committeeSeats = $derived(
+		new Map(
+			committees.map((committee) => [
+				committee.id,
+				{
+					occupied: delegations.reduce(
+						(acc, delegation) =>
+							acc +
+							delegation.members.filter((dm) => dm.assignedCommittee?.id === committee.id).length,
+						0
+					),
+					total: nations.reduce(
+						(acc, nation) =>
+							acc +
+							(nation.committees.find((c) => c.id === committee.id)?.numOfSeatsPerDelegation ?? 0),
+						0
+					)
+				}
+			])
+		)
+	);
+
+	/** The seats a nation has across this conference's committees. */
+	function nationSeatTotal(nation: Nation) {
+		const committeeIds = committees.map((c) => c.id);
+		return nation.committees.reduce(
+			(acc, committee) =>
+				committeeIds.includes(committee.id) ? acc + committee.numOfSeatsPerDelegation : acc,
+			0
+		);
+	}
+
+	/** `count` keys for an `{#each}` that renders one thing per seat. */
+	const seatKeys = (count: number) => Array.from({ length: count }, (_, seat) => seat);
 </script>
+
+{#snippet addParticipantBtn(nation: Nation, committee: Committee, warning: boolean = false)}
+	<AddParticipantBtn
+		bind:user
+		targetRole={`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
+		addParticipant={async () => await addParticipant(nation.alpha3Code, committee.id)}
+		{warning}
+	/>
+{/snippet}
+
+<!-- The seats a nation's delegation has in one committee: who sits there, and free seats to fill. -->
+{#snippet seatCell(
+	nation: Nation,
+	committee: Committee,
+	delegation: Delegation | undefined,
+	sumSeats: number
+)}
+	{@const seatsPerCommittee = committee.numOfSeatsPerDelegation}
+	{@const assignedDelegationMember = (delegation?.members ?? []).filter(
+		(dm) => dm.assignedCommittee?.id === committee.id
+	)}
+	{#if !delegation}
+		{#each seatKeys(seatsPerCommittee) as seat (seat)}
+			{@render addParticipantBtn(nation, committee)}
+		{/each}
+	{:else if assignedDelegationMember.length > 0}
+		<div class="flex justify-center gap-1">
+			{#each assignedDelegationMember as member (member.id)}
+				<InitialsButton
+					given_name={member.user.givenName}
+					family_name={member.user.familyName}
+					userId={member.user.id}
+					{conferenceId}
+				/>
+			{/each}
+
+			{#each seatKeys(seatsPerCommittee - assignedDelegationMember.length) as seat (seat)}
+				{@render addParticipantBtn(nation, committee)}
+			{/each}
+		</div>
+	{:else if delegation.members.length < sumSeats}
+		{#each seatKeys(seatsPerCommittee) as seat (seat)}
+			{@render addParticipantBtn(
+				nation,
+				committee,
+				delegation.members.some((x) => !x.assignedCommittee)
+			)}
+		{/each}
+	{:else}
+		<div class="tooltip" data-tip={m.committeeAssignment()}>
+			<div
+				class="border-info flex h-8 w-10 items-center justify-center rounded-md border border-dotted"
+			>
+				<i class="fas fa-hourglass-half text-info"></i>
+			</div>
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet nationRow(nation: Nation)}
+	{@const delegation = delegations.find((d) => d.assignedNation?.alpha3Code === nation.alpha3Code)}
+	{@const sumSeats = nationSeatTotal(nation)}
+	<tr>
+		<td>
+			<div
+				class="tooltip tooltip-right flex items-center gap-2"
+				data-tip={getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
+			>
+				<Flag alpha2Code={nation.alpha2Code} size="xs" />
+				{nation.alpha3Code.toUpperCase()}
+				<span class="hidden w-[12ch] truncate text-left text-xs text-gray-400 xl:block">
+					{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
+				</span>
+			</div>
+		</td>
+		{#each committees as committee (committee.id)}
+			{#if nation.committees.find((c) => c.id === committee.id)}
+				<td>{@render seatCell(nation, committee, delegation, sumSeats)}</td>
+			{:else}
+				<td class="opacity-20">
+					<div class="flex justify-center gap-2">
+						{#each seatKeys(committee.numOfSeatsPerDelegation) as seat (seat)}
+							<i class="fas fa-circle-small text-[8px]"></i>
+						{/each}
+					</div>
+				</td>
+			{/if}
+		{/each}
+		<td>
+			{delegation?.members.length ?? 0}
+			{#if sumSeats !== (delegation?.members.length ?? 0)}
+				<span class="text-xs">/ {sumSeats} </span>
+			{/if}
+		</td>
+	</tr>
+{/snippet}
 
 <SeatsTableSection title={m.seats()}>
 	<thead>
 		<tr>
 			<th></th>
-			{#each committees as committee}
+			{#each committees as committee (committee.id)}
 				<th>
-					<DownloadCommitteeDataBtn {committee} />
+					<DownloadCommitteeDataBtn
+						{conferenceId}
+						committeeId={committee.id}
+						abbreviation={committee.abbreviation}
+					/>
 				</th>
 			{/each}
 		</tr>
@@ -49,27 +226,13 @@
 			<th class="text-left">
 				<i class="fa-duotone fa-sigma"></i>
 			</th>
-			{#each committees as committee}
-				{@const occupiedSeats = delegations.reduce((acc, delegation) => {
-					return (
-						acc +
-						delegation.members.filter((dm) => dm.assignedCommittee?.id === committee.id).length
-					);
-				}, 0)}
-				{@const sumSeats = nations.reduce((acc, nation) => {
-					if (nation.committees.find((c) => c.id === committee.id)) {
-						return (
-							acc +
-							(nation.committees.find((c) => c.id === committee.id)?.numOfSeatsPerDelegation ?? 0)
-						);
-					}
-					return acc;
-				}, 0)}
+			{#each committees as committee (committee.id)}
+				{@const seats = committeeSeats.get(committee.id)}
 				<td>
-					<span class={occupiedSeats === sumSeats ? 'font-normal' : ''}>
-						{occupiedSeats}
+					<span class={seats?.occupied === seats?.total ? 'font-normal' : ''}>
+						{seats?.occupied ?? 0}
 					</span>
-					<span class="text-xs font-normal">/ {sumSeats} </span>
+					<span class="text-xs font-normal">/ {seats?.total ?? 0} </span>
 				</td>
 			{/each}
 		</tr>
@@ -77,7 +240,7 @@
 			<th class="text-left">
 				<i class="fa-duotone fa-flag"></i>
 			</th>
-			{#each committees as committee}
+			{#each committees as committee (committee.id)}
 				<th>
 					<div class="tooltip" data-tip={committee.name}>
 						{committee.abbreviation}
@@ -88,100 +251,8 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each nations.sort( (a, b) => getFullTranslatedCountryNameFromISO3Code(a.alpha3Code).localeCompare(getFullTranslatedCountryNameFromISO3Code(b.alpha3Code)) ) ?? [] as nation}
-			{@const delegation = delegations.find(
-				(d) => d.assignedNation?.alpha3Code === nation.alpha3Code
-			)}
-			{@const sumSeats = nation.committees.reduce((acc, committee) => {
-				if (committees.flatMap((c) => c.id).includes(committee.id)) {
-					return acc + committee.numOfSeatsPerDelegation;
-				}
-				return acc;
-			}, 0)}
-			<tr>
-				<td>
-					<div
-						class="tooltip tooltip-right flex items-center gap-2"
-						data-tip={getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
-					>
-						<Flag alpha2Code={nation.alpha2Code} size="xs" />
-						{nation.alpha3Code.toUpperCase()}
-						<span class="hidden w-[12ch] truncate text-left text-xs text-gray-400 xl:block">
-							{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
-						</span>
-					</div>
-				</td>
-				{#each committees as committee}
-					{@const seatsPerCommittee = committee.numOfSeatsPerDelegation}
-					{#if nation.committees.find((c) => c.id === committee.id)}
-						{#snippet addParticipantBtn(warning: boolean = false)}
-							<AddParticipantBtn
-								bind:user
-								targetRole={`${getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)} / ${committee.abbreviation}`}
-								addParticipant={async () => await addParticipant(nation.alpha3Code, committee.id)}
-								{warning}
-							/>
-						{/snippet}
-
-						<td>
-							{#if delegation}
-								{@const assignedDelegationMember = delegation.members.filter(
-									(dm) => dm.assignedCommittee?.id === committee.id
-								)}
-
-								{#if assignedDelegationMember && assignedDelegationMember.length > 0}
-									<div class="flex justify-center gap-1">
-										{#each assignedDelegationMember as member}
-											<InitialsButton
-												given_name={member.user.givenName}
-												family_name={member.user.familyName}
-												userId={member.user.id}
-												{conferenceId}
-											/>
-										{/each}
-
-										{#each Array.from( { length: seatsPerCommittee - assignedDelegationMember.length } ) as _, index (index)}
-											{@render addParticipantBtn()}
-										{/each}
-									</div>
-								{:else if delegation.members.length < sumSeats}
-									{#each Array.from({ length: seatsPerCommittee }) as _, index (index)}
-										{@render addParticipantBtn(
-											delegation.members.some((x) => !x.assignedCommittee)
-										)}
-									{/each}
-								{:else}
-									<div class="tooltip" data-tip={m.committeeAssignment()}>
-										<div
-											class="border-info flex h-8 w-10 items-center justify-center rounded-md border border-dotted"
-										>
-											<i class="fas fa-hourglass-half text-info"></i>
-										</div>
-									</div>
-								{/if}
-							{:else}
-								{#each Array.from({ length: seatsPerCommittee }) as _, index (index)}
-									{@render addParticipantBtn()}
-								{/each}
-							{/if}
-						</td>
-					{:else}
-						<td class="opacity-20">
-							<div class="flex justify-center gap-2">
-								{#each Array.from({ length: seatsPerCommittee }) as _, index (index)}
-									<i class="fas fa-circle-small text-[8px]"></i>
-								{/each}
-							</div>
-						</td>
-					{/if}
-				{/each}
-				<td>
-					{delegation?.members.length ?? 0}
-					{#if sumSeats !== (delegation?.members.length ?? 0)}
-						<span class="text-xs">/ {sumSeats} </span>
-					{/if}
-				</td>
-			</tr>
+		{#each sortedNations as nation (nation.alpha3Code)}
+			{@render nationRow(nation)}
 		{/each}
 	</tbody>
 </SeatsTableSection>

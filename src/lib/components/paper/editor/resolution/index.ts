@@ -8,12 +8,6 @@ export {
 	// Types
 	type Resolution,
 	type ResolutionHeaderData,
-	type OperativeClause,
-	type PreambleClause,
-	type SubClause,
-	type ClauseBlock,
-	type TextBlock,
-	type SubclausesBlock,
 	// Validation and migration
 	validateResolution,
 	migrateResolution,

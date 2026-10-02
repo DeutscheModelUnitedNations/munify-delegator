@@ -12,8 +12,10 @@ import { enum_ } from '$api/rumble';
 import { eq } from 'drizzle-orm';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { GraphQLError } from 'graphql';
-import * as Sentry from '@sentry/sveltekit';
 import { configPublic } from '$config/public';
+import { isUniqueViolationOn } from '$api/services/emailConflict';
+import { reportEmailConflict } from '$api/services/reportEmailConflict';
+import type { Context } from '$api/context';
 
 // Ported from abilities/entities/user.ts, plus the impersonation rules that lived in
 // abilities/abilities.ts.
@@ -73,6 +75,20 @@ abilityBuilder.user.allow('read').when((ctx) => {
 		: undefined;
 });
 
+/** A conference the given user manages as project management or participant care. */
+function managingTeam(id: string) {
+	return { teamMembers: { user: { id }, role: { in: [...PARTICIPANT_CARE_ROLES] } } };
+}
+
+/** A user taking part in the given conference as delegate, single participant or supervisor. */
+function participationsIn(conference: ReturnType<typeof managingTeam>) {
+	return [
+		{ delegationMemberships: { delegation: { conference } } },
+		{ singleParticipant: { conference } },
+		{ conferenceSupervisor: { conference } }
+	];
+}
+
 // Project management and participant care see the delegates, single participants, supervisors
 // and waiting-list entrants of the conferences they manage. Dropped during the CASL -> rumble
 // port (present in the legacy abilities/entities/user.ts, absent here) - without this, reading
@@ -81,16 +97,9 @@ abilityBuilder.user.allow('read').when((ctx) => {
 abilityBuilder.user.allow('read').when((ctx) => {
 	const id = userId(ctx);
 	if (!id) return undefined;
-	const team = { teamMembers: { user: { id }, role: { in: [...PARTICIPANT_CARE_ROLES] } } };
+	const team = managingTeam(id);
 	return {
-		where: {
-			OR: [
-				{ delegationMemberships: { delegation: { conference: team } } },
-				{ singleParticipant: { conference: team } },
-				{ conferenceSupervisor: { conference: team } },
-				{ waitingListEntry: { conference: team } }
-			]
-		}
+		where: { OR: [...participationsIn(team), { waitingListEntry: { conference: team } }] }
 	};
 });
 
@@ -138,16 +147,7 @@ abilityBuilder.user.allow('impersonate').when((ctx) => {
 	if (isSystemAdmin(ctx)) return 'allow';
 	const id = userId(ctx);
 	if (!id) return undefined;
-	const team = { teamMembers: { user: { id }, role: { in: [...PARTICIPANT_CARE_ROLES] } } };
-	return {
-		where: {
-			OR: [
-				{ delegationMemberships: { delegation: { conference: team } } },
-				{ singleParticipant: { conference: team } },
-				{ conferenceSupervisor: { conference: team } }
-			]
-		}
-	};
+	return { where: { OR: participationsIn(managingTeam(id)) } };
 });
 
 export const UserRef = object({
@@ -233,26 +233,30 @@ schemaBuilder.mutationFields((t) => ({
 				// they are allowed to.
 				await tx
 					.delete(schema.delegationMember)
-					.where(ctx.abilities.delegationMember.filter('delete').merge({ where: scope }).sql.where);
+					.where(
+						(await ctx.abilities.delegationMember.filter('delete')).merge({ where: scope }).sql
+							.where
+					);
 
 				await tx
 					.delete(schema.singleParticipant)
 					.where(
-						ctx.abilities.singleParticipant.filter('delete').merge({ where: scope }).sql.where
+						(await ctx.abilities.singleParticipant.filter('delete')).merge({ where: scope }).sql
+							.where
 					);
 
 				await tx
 					.delete(schema.conferenceSupervisor)
 					.where(
-						ctx.abilities.conferenceSupervisor.filter('delete').merge({ where: scope }).sql.where
-					);
-
-				await tx
-					.delete(schema.conferenceParticipantStatus)
-					.where(
-						ctx.abilities.conferenceParticipantStatus.filter('delete').merge({ where: scope }).sql
+						(await ctx.abilities.conferenceSupervisor.filter('delete')).merge({ where: scope }).sql
 							.where
 					);
+
+				await tx.delete(schema.conferenceParticipantStatus).where(
+					(await ctx.abilities.conferenceParticipantStatus.filter('delete')).merge({
+						where: scope
+					}).sql.where
+				);
 			});
 
 			delegationMemberPubsub.removed();
@@ -263,7 +267,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.user
 				.findFirst(
 					query(
-						ctx.abilities.user.filter('read').merge({ where: { id: args.userId } }).query.single
+						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.userId } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -335,13 +340,17 @@ schemaBuilder.mutationFields((t) => ({
 					wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
 					wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
 				})
-				.where(ctx.abilities.user.filter('update').merge({ where: { id: args.id } }).sql.where);
+				.where(
+					(await ctx.abilities.user.filter('update')).merge({ where: { id: args.id } }).sql.where
+				);
 
 			pubsub.updated(args.id);
 
 			return db.query.user
 				.findFirst(
-					query(ctx.abilities.user.filter('read').merge({ where: { id: args.id } }).query.single)
+					query(
+						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.id } }).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -373,7 +382,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.user
 				.findFirst(
 					query(
-						ctx.abilities.user.filter('read').merge({ where: { email: args.email } }).query.single
+						(await ctx.abilities.user.filter('read')).merge({ where: { email: args.email } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -391,13 +401,17 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.user)
 				.set({ globalNotes: args.globalNotes })
-				.where(ctx.abilities.user.filter('update').merge({ where: { id: args.id } }).sql.where);
+				.where(
+					(await ctx.abilities.user.filter('update')).merge({ where: { id: args.id } }).sql.where
+				);
 
 			pubsub.updated(args.id);
 
 			return db.query.user
 				.findFirst(
-					query(ctx.abilities.user.filter('read').merge({ where: { id: args.id } }).query.single)
+					query(
+						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.id } }).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -420,13 +434,17 @@ schemaBuilder.mutationFields((t) => ({
 					familyName: args.familyName ?? undefined,
 					birthday: args.birthday ?? undefined
 				})
-				.where(ctx.abilities.user.filter('update').merge({ where: { id: args.id } }).sql.where);
+				.where(
+					(await ctx.abilities.user.filter('update')).merge({ where: { id: args.id } }).sql.where
+				);
 
 			pubsub.updated(args.id);
 
 			return db.query.user
 				.findFirst(
-					query(ctx.abilities.user.filter('read').merge({ where: { id: args.id } }).query.single)
+					query(
+						(await ctx.abilities.user.filter('read')).merge({ where: { id: args.id } }).query.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -438,7 +456,9 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.user)
-				.where(ctx.abilities.user.filter('delete').merge({ where: { id: args.id } }).sql.where)
+				.where(
+					(await ctx.abilities.user.filter('delete')).merge({ where: { id: args.id } }).sql.where
+				)
 				.returning({ id: schema.user.id });
 			if (deleted.length === 0) {
 				throw new GraphQLError('User not found, or not yours to delete');
@@ -492,17 +512,6 @@ const UpsertSelfResult = schemaBuilder.simpleObject('UpsertSelfResult', {
 	})
 });
 
-/** Postgres reports a unique index violation as 23505. */
-function isUniqueViolationOn(error: unknown, column: string) {
-	if (typeof error !== 'object' || error === null) return false;
-	const candidate: { code?: unknown; constraint?: unknown; detail?: unknown } = error;
-	if (candidate.code !== '23505') return false;
-	return (
-		String(candidate.constraint ?? '').includes(column) ||
-		String(candidate.detail ?? '').includes(column)
-	);
-}
-
 /** Enough of an address to recognise it in a log without writing the whole thing down. */
 function maskEmail(email: string): string {
 	const [localPart, domain] = email.split('@');
@@ -513,6 +522,33 @@ function maskEmail(email: string): string {
 		return `${localPart[0]}***@${domain}`;
 	}
 	return `${localPart.slice(0, 2)}***@${domain}`;
+}
+
+/** Answers an email conflict on the mutation with an error the frontend can tell apart. */
+async function throwEmailConflict(
+	userSubject: string,
+	email: string,
+	error: unknown
+): Promise<never> {
+	const conflict = await reportEmailConflict(userSubject, email, error, maskEmail);
+
+	throw new GraphQLError('Email address is already in use by another account', {
+		extensions: {
+			code: 'EMAIL_CONFLICT',
+			isNewUser: conflict.isNewUser,
+			maskedConflictingEmail: conflict.maskedConflictingEmail,
+			maskedExistingEmail: conflict.maskedExistingEmail,
+			refId: conflict.refId
+		}
+	});
+}
+
+/** The claims the caller's own row is written from; an account without an email cannot have one. */
+function selfClaims(caller: ReturnType<Context['mustBeLoggedIn']>) {
+	if (!caller.email) {
+		throw new GraphQLError('OIDC result is missing required field: email');
+	}
+	return { email: caller.email, locale: caller.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE };
 }
 
 schemaBuilder.mutationFields((t) => ({
@@ -527,11 +563,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: UpsertSelfResult,
 		resolve: async (_root, _args, ctx) => {
 			const caller = ctx.mustBeLoggedIn();
-			if (!caller.email) {
-				throw new GraphQLError('OIDC result is missing required field: email');
-			}
-			const email = caller.email;
-			const locale = caller.locale ?? configPublic.PUBLIC_DEFAULT_LOCALE;
+			const { email, locale } = selfClaims(caller);
 
 			try {
 				const [user] = await db
@@ -560,51 +592,7 @@ schemaBuilder.mutationFields((t) => ({
 				};
 			} catch (error) {
 				if (!isUniqueViolationOn(error, 'email')) throw error;
-
-				// Someone else already holds this address. Two ways to get here: a brand new
-				// account whose address is taken, or an existing account changing to a taken one.
-				// The frontend shows a different page for each, so say which it is.
-				const existing = await db.query.user.findFirst({
-					where: { id: caller.sub },
-					columns: { email: true }
-				});
-
-				const isNewUser = existing === undefined;
-				const maskedConflictingEmail = maskEmail(email);
-				const maskedExistingEmail = existing?.email ? maskEmail(existing.email) : undefined;
-				const refId = caller.sub.slice(-8);
-
-				console.error(`[EMAIL_CONFLICT] ${isNewUser ? 'New user' : 'Email change'} conflict:`, {
-					userSubject: caller.sub,
-					conflictingEmail: maskedConflictingEmail,
-					existingUserEmail: maskedExistingEmail ?? 'N/A',
-					refId,
-					timestamp: new Date().toISOString()
-				});
-
-				Sentry.captureException(error, {
-					level: 'warning',
-					tags: {
-						error_type: 'email_conflict',
-						scenario: isNewUser ? 'new_user' : 'email_change'
-					},
-					extra: {
-						userSubject: caller.sub,
-						conflictingEmail: maskedConflictingEmail,
-						existingUserEmail: maskedExistingEmail ?? 'N/A',
-						refId
-					}
-				});
-
-				throw new GraphQLError('Email address is already in use by another account', {
-					extensions: {
-						code: 'EMAIL_CONFLICT',
-						isNewUser,
-						maskedConflictingEmail,
-						maskedExistingEmail,
-						refId
-					}
-				});
+				return throwEmailConflict(caller.sub, email, error);
 			}
 		}
 	})
@@ -642,13 +630,28 @@ schemaBuilder.queryFields((t) => ({
 
 			return db.query.user.findMany(
 				query({
-					...ctx.abilities.user.filter('impersonate').query.many,
+					...(await ctx.abilities.user.filter('impersonate')).query.many,
 					orderBy: { preferredUsername: 'asc' }
 				})
 			);
 		}
 	})
 }));
+
+/** Participant care, project management (of any conference) and admins may look users up. */
+async function assertMayPreviewUsers(ctx: Context) {
+	const caller = ctx.mustBeLoggedIn();
+	if (isSystemAdmin(ctx)) return;
+
+	const privileged = await db.query.teamMember.findFirst({
+		where: { userId: caller.sub, role: { in: [...PARTICIPANT_CARE_ROLES] } }
+	});
+	if (!privileged) {
+		throw new GraphQLError(
+			'You are not allowed to preview users. You need to be a team member with the role PARTICIPANT_CARE or PROJECT_MANAGEMENT or an admin.'
+		);
+	}
+}
 
 const UserPreview = schemaBuilder.simpleObject('UserPreview', {
 	fields: (t) => ({
@@ -671,18 +674,7 @@ schemaBuilder.queryFields((t) => ({
 		type: UserPreview,
 		args: { emailOrId: t.arg.string({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const caller = ctx.mustBeLoggedIn();
-
-			if (!isSystemAdmin(ctx)) {
-				const privileged = await db.query.teamMember.findFirst({
-					where: { userId: caller.sub, role: { in: [...PARTICIPANT_CARE_ROLES] } }
-				});
-				if (!privileged) {
-					throw new GraphQLError(
-						'You are not allowed to preview users. You need to be a team member with the role PARTICIPANT_CARE or PROJECT_MANAGEMENT or an admin.'
-					);
-				}
-			}
+			await assertMayPreviewUsers(ctx);
 
 			const found = await db.query.user
 				.findFirst({ where: { OR: [{ id: args.emailOrId }, { email: args.emailOrId }] } })

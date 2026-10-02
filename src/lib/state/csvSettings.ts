@@ -4,7 +4,7 @@ import { browser } from '$app/environment';
 export type CsvDelimiter = ';' | ',' | '\t' | '|';
 export type CsvEncoding = 'utf-8' | 'utf-8-bom' | 'iso-8859-1';
 
-export interface CsvSettings {
+interface CsvSettings {
 	delimiter: CsvDelimiter;
 	encoding: CsvEncoding;
 }

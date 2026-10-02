@@ -9,6 +9,7 @@
 	}
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import LoadingData from './components/LoadingData.svelte';
+	import { dropMove, movedBetweenBuckets } from './dropRouting';
 	import formatNames from '$lib/helpers/formatNames';
 
 	let { open, close, id }: Props = $props();
@@ -60,17 +61,10 @@
 	});
 
 	const handleDrop = (state: DragDropState<{ id: string }>) => {
-		if (!id) return;
-		const { draggedItem, sourceContainer, targetContainer } = state;
-		if (!targetContainer || sourceContainer === targetContainer || !draggedItem.id) return;
-		if (sourceContainer === targetContainer) return;
-		const sourceBucket = parseInt(sourceContainer.split('-')[1]);
-		const targetBucket = parseInt(targetContainer.split('-')[1]);
-		const member = getDelegationApplication(id)!.members.find((x) => x.user.id === draggedItem.id);
-
-		if (!member) return;
-		buckets[sourceBucket] = buckets[sourceBucket].filter((x) => x.user.id !== draggedItem.id);
-		buckets[targetBucket] = [...buckets[targetBucket], member];
+		const move = dropMove(state);
+		if (!id || !move) return;
+		const member = getDelegationApplication(id)!.members.find((x) => x.user.id === move.itemId);
+		if (member) buckets = movedBetweenBuckets(buckets, move, member);
 	};
 
 	const apply = () => {
@@ -84,7 +78,7 @@
 	<div class="modal-box w-11/12 max-w-5xl">
 		<h3 class="text-lg font-bold">Zerteilen</h3>
 		<div class="flex gap-2 p-4">
-			{#each buckets as bucket, i}
+			{#each buckets as bucket, i (i)}
 				<div
 					class="bg-base-200 flex flex-1 flex-col gap-2 rounded-lg p-4"
 					use:droppable={{
@@ -94,7 +88,7 @@
 						}
 					}}
 				>
-					{#each bucket as member}
+					{#each bucket as member (member.id)}
 						<div class="flex items-center gap-2">
 							<div
 								class="bg-base-300 flex cursor-grab items-center gap-2 rounded-md p-2 shadow-md"

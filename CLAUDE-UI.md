@@ -450,6 +450,38 @@ When using superforms inside a modal, integrate the Form component:
 </Modal>
 ```
 
+### ActionModal and ConfirmDeleteModal
+
+For a modal that only asks for a confirmation (with or without a few fields), prefer these to a
+hand-built `Modal`. Both are always open: render them inside an `{#if}` and close them in
+`onClose`, which cancelling and the backdrop call.
+
+```svelte
+{#if editing}
+	<ActionModal
+		title={m.edit()}
+		confirmLabel={m.save()}
+		loading={saving}
+		onConfirm={save}
+		onClose={() => (editing = false)}
+	>
+		<input class="input" bind:value={name} />
+	</ActionModal>
+{/if}
+
+{#if deleting}
+	<ConfirmDeleteModal
+		title={m.delete()}
+		text={m.reallyDelete()}
+		onConfirm={remove}
+		onClose={() => (deleting = false)}
+	/>
+{/if}
+```
+
+`ConfirmDeleteModal` tracks its own loading state while `onConfirm` (async) runs. `ActionModal`
+also takes `subtitle` (snippet), `confirmClass`, `confirmDisabled`, `bodyClass` and `boxClass`.
+
 ---
 
 ## Drawer Component
@@ -560,13 +592,13 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 
-	let params = queryParameters({ queryUserId: true });
+	const params = queryParameters({ queryUserId: true });
 	let scannerRef: BarcodeScanner;
 </script>
 
 <BarcodeScanner
 	bind:this={scannerRef}
-	bind:scannedCode={$params.queryUserId}
+	bind:scannedCode={params.queryUserId}
 	barcodeFormats={['data_matrix', 'code_128']}
 	persistKey="useCameraForMyPage"
 	manualPlaceholder="Enter code..."
@@ -760,6 +792,27 @@ With expandable rows:
 </DataTable>
 ```
 
+Columns every person table repeats live in `dataTable/commonColumns.ts`: `nameColumn()`,
+`appliedColumn()` and `userCardColumn()`. The last renders a button as an HTML string, so the
+table has to sit in `RegistrationAdminTable`, which picks up its clicks.
+
+### CollapsibleCard
+
+A card whose header toggles its body, with an optional `badge` snippet at the header's end:
+
+```svelte
+<CollapsibleCard icon="users" title={m.members()} bind:expanded>
+	{#snippet badge()}<span class="badge">{count}</span>{/snippet}
+	<MemberList {delegationId} />
+</CollapsibleCard>
+```
+
+### LoadState
+
+`<LoadState {loading} {error}>…</LoadState>` shows a spinner while `loading`, the error once one
+occurred, and its children otherwise - for state a component loads by hand rather than through an
+awaited `$derived`.
+
 ### DelegationStats
 
 Statistics widgets using DaisyUI stats component:
@@ -823,6 +876,11 @@ Sidebar navigation:
 </NavMenu>
 ```
 
+### ConferenceSidebarLayout
+
+The layout of a conference area with its own side navigation (team management): pass the menu's entries as the `nav` snippet; it also mounts the user card drawer
+those pages open.
+
 ### Tabs
 
 Tab navigation:
@@ -877,6 +935,12 @@ Colored status indicator with optional blink:
 
 **Colors**: `success`, `warning`, `error`, `info`
 **Sizes**: `xs`, `sm`, `md`, `lg`, `xl`
+
+### OptionalTooltip
+
+`<OptionalTooltip tip={track.description}>…</OptionalTooltip>` wraps its children in a DaisyUI tooltip only
+when `tip` is set, and renders them bare otherwise - such as a calendar track that may have a
+description.
 
 ### Badges
 
@@ -1036,17 +1100,20 @@ For card-based layouts:
 
 ## URL State Management
 
-Use `sveltekit-search-params` for URL-persisted state:
+Use `sveltekit-search-params` (v4, runes-based) for URL-persisted state. `queryParameters` returns a
+reactive object: read `params.x`, assign `params.x = …` to navigate, and assign `null` to drop the
+key. Call it during component init. Name it `params`, and the route prop `routeParams` where both
+exist.
 
 ```svelte
 <script lang="ts">
-	import { queryParam } from 'sveltekit-search-params';
+	import { queryParameters, ssp } from 'sveltekit-search-params';
 
-	const tabParam = queryParam('tab');
-	let activeTab = $derived($tabParam ?? 'overview');
+	const params = queryParameters({ tab: true, page: ssp.number(1) });
+	let activeTab = $derived(params.tab ?? 'overview');
 
 	function setTab(tab: string) {
-		$tabParam = tab;
+		params.tab = tab;
 	}
 </script>
 ```

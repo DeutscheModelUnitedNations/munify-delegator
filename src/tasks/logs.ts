@@ -66,7 +66,7 @@ export function taskError(taskName: string, message: string, error?: string | Er
 	]);
 }
 
-export function slackNotification(blocks: IncomingWebhookSendArguments['blocks']) {
+function slackNotification(blocks: IncomingWebhookSendArguments['blocks']) {
 	if (config.SLACK_ERROR_WEBHOOK) {
 		const webhook = new IncomingWebhook(config.SLACK_ERROR_WEBHOOK!);
 		webhook.send({

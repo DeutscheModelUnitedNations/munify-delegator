@@ -2,6 +2,7 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	isInOwnDelegation,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId
@@ -9,6 +10,7 @@ import {
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { count, eq } from 'drizzle-orm';
+import { countGiven, nullToUndefined } from '$api/services/args';
 
 // Ported from abilities/entities/roleApplication.ts
 abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -21,8 +23,8 @@ abilityBuilder.roleApplication.allow('read').when((ctx) => {
 
 // Delegation members see their own delegation's applications.
 abilityBuilder.roleApplication.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { delegation: { members: { user: { id } } } } } : undefined;
+	const where = isInOwnDelegation(ctx);
+	return where ? { where } : undefined;
 });
 
 // Only the head delegate may change them.
@@ -39,7 +41,7 @@ abilityBuilder.roleApplication.allow('read').when((ctx) => {
 	return id ? { where: { delegation: { members: { supervisors: { user: { id } } } } } } : undefined;
 });
 
-export const RoleApplicationRef = object({ table: 'roleApplication' });
+const RoleApplicationRef = object({ table: 'roleApplication' });
 query({ table: 'roleApplication' });
 const pubsub = rumblePubsub({ table: 'roleApplication' });
 
@@ -52,18 +54,20 @@ schemaBuilder.mutationFields((t) => ({
 			nonStateActorId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			if (!args.nationId && !args.nonStateActorId) {
+			const targets = countGiven(args.nationId, args.nonStateActorId);
+			if (targets === 0) {
 				throw new GraphQLError('Either nationId or nonStateActorId must be provided');
 			}
-			if (args.nationId && args.nonStateActorId) {
+			if (targets > 1) {
 				throw new GraphQLError('Only one of nationId or nonStateActorId can be provided');
 			}
 
 			// The caller must be allowed to update the delegation the application belongs to.
 			await db.query.delegation
 				.findFirst(
-					ctx.abilities.delegation.filter('update').merge({ where: { id: args.delegationId } })
-						.query.single
+					(await ctx.abilities.delegation.filter('update')).merge({
+						where: { id: args.delegationId }
+					}).query.single
 				)
 				.then(assertFindFirstExists);
 
@@ -77,8 +81,8 @@ schemaBuilder.mutationFields((t) => ({
 				.insert(schema.roleApplication)
 				.values({
 					delegationId: args.delegationId,
-					nationId: args.nationId ?? undefined,
-					nonStateActorId: args.nonStateActorId ?? undefined,
+					nationId: nullToUndefined(args.nationId),
+					nonStateActorId: nullToUndefined(args.nonStateActorId),
 					rank: (existing?.value ?? 0) + 1
 				})
 				.returning()
@@ -89,8 +93,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.roleApplication
 				.findFirst(
 					query(
-						ctx.abilities.roleApplication.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.roleApplication.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -104,7 +109,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.roleApplication)
 				.where(
-					ctx.abilities.roleApplication.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.roleApplication.filter('delete')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.roleApplication.id });
 			if (deleted.length === 0) {
@@ -123,8 +129,8 @@ schemaBuilder.mutationFields((t) => ({
 			secondRoleApplicationId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updateFilter = (id: string) =>
-				ctx.abilities.roleApplication.filter('update').merge({ where: { id } });
+			const canUpdate = await ctx.abilities.roleApplication.filter('update');
+			const updateFilter = (id: string) => canUpdate.merge({ where: { id } });
 
 			await db.transaction(async (tx) => {
 				const [first, second] = await Promise.all([
@@ -156,7 +162,7 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.roleApplication.findMany(
 				query(
-					ctx.abilities.roleApplication.filter('read').merge({
+					(await ctx.abilities.roleApplication.filter('read')).merge({
 						where: { id: { in: [args.firstRoleApplicationId, args.secondRoleApplicationId] } }
 					}).query.many
 				)

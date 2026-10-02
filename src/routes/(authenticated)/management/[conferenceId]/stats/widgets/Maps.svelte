@@ -2,14 +2,11 @@
 	import { Map, TileLayer, Popup, Marker } from 'sveaflet';
 	import { divIcon, point } from 'leaflet';
 	import { MarkerCluster } from 'sveaflet-markercluster';
-	import type { ConferenceStatistics } from '../statsQuery';
 	import type { ZipCoordinate } from '../zip-api/+server';
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
-
-	interface Props {
-		addresses: ConferenceStatistics['addresses'];
-	}
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
 
 	type Coordinate = {
 		zip: string;
@@ -20,7 +17,15 @@
 		zipCount: number;
 	};
 
-	let { addresses }: Props = $props();
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			addresses: { country: true, zip: true, _count: { zip: true } }
+		})
+	);
+	const addresses = $derived(stats.addresses);
 	let coordinates: Coordinate[] = $state([]);
 
 	// fetch coordinates

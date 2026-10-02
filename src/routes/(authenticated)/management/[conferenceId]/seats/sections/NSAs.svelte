@@ -1,20 +1,43 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import SeatsTableSection from '../SeatsTableSection.svelte';
+	import SeatsIconHeader from '../SeatsIconHeader.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
-	import type { ConferenceSeatMap } from '../conferenceSeatMap';
 	import InitialsButton from '../InitialsButton.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
 	import DownloadNSADataBtn from '../downloads/DownloadNSADataBtn.svelte';
 
 	interface Props {
-		nonStateActors: ConferenceSeatMap['nonStateActors'];
-		delegations: ConferenceSeatMap['delegations'];
 		conferenceId: string;
 	}
 
-	let { nonStateActors, delegations, conferenceId }: Props = $props();
+	let { conferenceId }: Props = $props();
+
+	// In one derived, so neither waits on the other.
+	const [nonStateActors, delegations] = $derived(
+		await Promise.all([
+			client.liveQuery.nonStateActors({
+				__args: { where: { conferenceId: { eq: conferenceId } } },
+				id: true,
+				name: true,
+				abbreviation: true,
+				fontAwesomeIcon: true,
+				seatAmount: true
+			}),
+			client.liveQuery.delegations({
+				__args: {
+					where: {
+						conferenceId: { eq: conferenceId },
+						assignedNonStateActorId: { isNotNull: true }
+					}
+				},
+				id: true,
+				assignedNonStateActor: { id: true },
+				members: { id: true, user: { id: true, givenName: true, familyName: true } }
+			})
+		])
+	);
 
 	let user = $state<Partial<UserPreview> | undefined>(undefined);
 
@@ -36,21 +59,9 @@
 {/snippet}
 
 <SeatsTableSection title={m.nsaSeats()} downloadButton={downloadNSADataBtn}>
-	<thead>
-		<tr>
-			<td class="text-left">
-				<i class="fa-duotone fa-megaphone"></i>
-			</td>
-			<td class="text-left">
-				<i class="fa-duotone fa-users"></i>
-			</td>
-			<td>
-				<i class="fa-duotone fa-sigma"></i>
-			</td>
-		</tr>
-	</thead>
+	<SeatsIconHeader icon="fa-megaphone" />
 	<tbody>
-		{#each nonStateActors as nsa}
+		{#each nonStateActors as nsa (nsa.id)}
 			{@const delegation = delegations.find((d) => d.assignedNonStateActor?.id === nsa.id)}
 			<tr>
 				<td>
@@ -72,7 +83,7 @@
 							/>
 						{/snippet}
 						{#if delegation}
-							{#each delegation.members as member}
+							{#each delegation.members as member (member.id)}
 								<InitialsButton
 									given_name={member.user.givenName}
 									family_name={member.user.familyName}

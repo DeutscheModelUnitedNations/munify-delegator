@@ -58,7 +58,46 @@
 	};
 
 	let loading = $state(false);
+
+	const statusIcons: Record<AdministrativestatusEnum, string> = {
+		DONE: 'fa-circle-check text-success',
+		PROBLEM: 'fa-triangle-exclamation fa-beat text-error',
+		PENDING: 'fa-hourglass-half text-warning'
+	};
+
+	const download = async (run: () => Promise<void>) => {
+		loading = true;
+		await run();
+		loading = false;
+	};
 </script>
+
+{#snippet valueOrDash(value: string | null | undefined, dashClass: string)}
+	{#if value}
+		{value}
+	{:else}
+		<i class="{dashClass} fa-dash"></i>
+	{/if}
+{/snippet}
+
+{#snippet statusCell(status: AdministrativestatusEnum, tooltip: string)}
+	<div class="tooltip" data-tip={tooltip}>
+		<i class="fas {statusIcons[status]}"></i>
+	</div>
+{/snippet}
+
+{#snippet downloadButton(run: () => Promise<void>)}
+	<div class="tooltip" data-tip={m.downloadPostalDocuments()}>
+		<button
+			class="btn btn-ghost btn-sm mr-1"
+			onclick={() => download(run)}
+			disabled={loading}
+			aria-label="Download Postal Registration PDF"
+		>
+			<i class={loading ? 'fa-solid fa-spinner fa-spin' : 'fa-duotone fa-download'}></i>
+		</button>
+	</div>
+{/snippet}
 
 <tr>
 	<td
@@ -70,20 +109,12 @@
 		{/if}
 	</td>
 	<td>
-		{#if pronouns}
-			{pronouns}
-		{:else}
-			<i class="fa-duotone fa-dash"></i>
-		{/if}
+		{@render valueOrDash(pronouns, 'fa-duotone')}
 	</td>
 
 	{#if committee != undefined}
 		<td>
-			{#if committee}
-				{committee}
-			{:else}
-				<i class="fas fa-dash"></i>
-			{/if}
+			{@render valueOrDash(committee, 'fas')}
 		</td>
 	{/if}
 
@@ -98,47 +129,14 @@
 	{#if withPostalStatus}
 		<td class="text-center">
 			{#if downloadPostalDocuments}
-				<div class="tooltip" data-tip={m.downloadPostalDocuments()}>
-					<button
-						class="btn btn-ghost btn-sm mr-1"
-						onclick={async () => {
-							loading = true;
-							await downloadPostalDocuments();
-							loading = false;
-						}}
-						disabled={loading}
-						aria-label="Download Postal Registration PDF"
-					>
-						{#if loading}
-							<i class="fa-solid fa-spinner fa-spin"></i>
-						{:else}
-							<i class="fa-duotone fa-download"></i>
-						{/if}
-					</button>
-				</div>
+				{@render downloadButton(downloadPostalDocuments)}
 			{/if}
-			<div class="tooltip" data-tip={getMailStatusTooltip()}>
-				{#if postalSatus === 'DONE'}
-					<i class="fas fa-circle-check text-success"></i>
-				{:else if postalSatus === 'PROBLEM'}
-					<i class="fas fa-triangle-exclamation fa-beat text-error"></i>
-				{:else}
-					<i class="fas fa-hourglass-half text-warning"></i>
-				{/if}
-			</div>
+			{@render statusCell(postalSatus, getMailStatusTooltip())}
 		</td>
 	{/if}
 	{#if withPaymentStatus}
 		<td class="text-center">
-			<div class="tooltip" data-tip={getPaymentStatusTooltip()}>
-				{#if paymentStatus === 'DONE'}
-					<i class="fas fa-circle-check text-success"></i>
-				{:else if paymentStatus === 'PROBLEM'}
-					<i class="fas fa-triangle-exclamation fa-beat text-error"></i>
-				{:else}
-					<i class="fas fa-hourglass-half text-warning"></i>
-				{/if}
-			</div>
+			{@render statusCell(paymentStatus, getPaymentStatusTooltip())}
 		</td>
 	{/if}
 	{#if withPaperCount}

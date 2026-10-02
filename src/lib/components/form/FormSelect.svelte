@@ -1,8 +1,6 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B, N extends FormPath<A> & keyof A">
 	import { type SuperForm, type FormPath } from 'sveltekit-superforms';
-	import { Control, Field, Label } from 'formsnap';
-	import FormDescription from './FormDescription.svelte';
-	import FormFieldErrors from './FormFieldErrors.svelte';
+	import FormField from './FormField.svelte';
 
 	interface Props {
 		name: N;
@@ -15,35 +13,24 @@
 	}
 
 	let { form, label, description, name, placeholder, options, disabled = false }: Props = $props();
-	let { form: formData } = form;
+	let { form: formData } = $derived(form);
 </script>
 
-<Field {form} {name}>
-	{#snippet children({ constraints })}
-		<div class="flex w-full flex-col">
-			<Control>
-				{#snippet children({ props })}
-					{#if label}
-						<Label class="label mb-2 whitespace-break-spaces">{label}</Label>
-					{/if}
-					<FormDescription {description} />
-					<select
-						{...props}
-						class="select select-bordered validator w-full"
-						bind:value={$formData[name]}
-						{disabled}
-						{...constraints}
-					>
-						<option disabled selected={!$formData[name]} value={null}>{placeholder}</option>
-						{#each options as option}
-							<option value={option.value} selected={option.value === $formData[name]}
-								>{option.label}</option
-							>
-						{/each}
-					</select>
-				{/snippet}
-			</Control>
-			<FormFieldErrors />
-		</div>
+<FormField {form} {name} {label} {description}>
+	{#snippet input({ props, constraints })}
+		<select
+			{...props}
+			class="select select-bordered validator w-full"
+			bind:value={$formData[name]}
+			{disabled}
+			{...constraints}
+		>
+			<option disabled selected={!$formData[name]} value={null}>{placeholder}</option>
+			{#each options as option (option.value)}
+				<option value={option.value} selected={option.value === $formData[name]}
+					>{option.label}</option
+				>
+			{/each}
+		</select>
 	{/snippet}
-</Field>
+</FormField>

@@ -1,7 +1,7 @@
 import { rumble } from '@m1212e/rumble';
 import ValidationPlugin from '@pothos/plugin-validation';
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects';
-import { dev } from '$app/environment';
+import { trace } from '@opentelemetry/api';
 import { Redis } from 'ioredis';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import { configPrivate } from '$config/private';
@@ -23,16 +23,9 @@ if (configPrivate.REDIS_URL) {
 	eventTarget = createRedisEventTarget({ publishClient, subscribeClient });
 }
 
-// Tells the dev server to reload the schema builder's cache, so fields and queries from a
-// previous build don't accumulate. Mirrors chase.
-if (dev) {
-	import('$api/handlers/register');
-}
-
 export const {
 	abilityBuilder,
 	schemaBuilder,
-	whereArg,
 	object,
 	query,
 	pubsub,
@@ -48,6 +41,13 @@ export const {
 	// `impersonate` is delegator-specific: the CASL layer modelled it as an action on User and
 	// the management UI depends on it. Chase has no equivalent, so there is no pattern to copy.
 	actions: ['read', 'update', 'delete', 'impersonate'],
+	// One span per operation and resolver, into the provider `src/instrumentation.server.ts`
+	// registers. Variables stay out of the spans: they regularly carry personal data.
+	otel: {
+		enabled: !!configPrivate.OTEL_ENDPOINT_URL,
+		tracer: trace.getTracer(configPrivate.OTEL_SERVICE_NAME, configPrivate.OTEL_SERVICE_VERSION),
+		includeVariables: false
+	},
 	pothosConfig: {
 		// SimpleObjects backs the ad-hoc result types a few mutations return (invitation batches,
 		// review results). Rumble does not load it by default.

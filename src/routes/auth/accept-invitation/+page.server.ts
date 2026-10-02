@@ -1,11 +1,8 @@
 import { db } from '$api/db/db';
-import {
-	hashToken,
-	isTokenExpired,
-	pendingInvitationCookieName
-} from '$api/services/invitationToken';
+import { hashToken, pendingInvitationCookieName } from '$api/services/invitationToken';
 import { claimPendingInvitation } from '$api/services/upsertSelf';
 import type { PageServerLoad } from './$types';
+import { assertInvitationUsable } from './invitationValidity';
 import { error, redirect } from '@sveltejs/kit';
 
 /**
@@ -32,21 +29,7 @@ export const load: PageServerLoad = async (event) => {
 		where: { token: hashedToken }
 	});
 
-	if (!invitation) {
-		error(404, 'Invitation not found or invalid');
-	}
-
-	if (invitation.revokedAt) {
-		error(410, 'This invitation has been revoked');
-	}
-
-	if (invitation.usedAt) {
-		error(410, 'This invitation has already been used');
-	}
-
-	if (isTokenExpired(invitation.expiresAt)) {
-		error(410, 'This invitation has expired');
-	}
+	assertInvitationUsable(invitation);
 
 	// Store the plaintext token in httpOnly cookie for processing after login
 	event.cookies.set(pendingInvitationCookieName, token, {

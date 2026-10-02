@@ -13,7 +13,7 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin
 } from '$api/services/authHelper';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
+import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
 
@@ -34,7 +34,7 @@ abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const PaymentTransactionRef = object({ table: 'paymentTransaction' });
+const PaymentTransactionRef = object({ table: 'paymentTransaction' });
 query({ table: 'paymentTransaction' });
 const pubsub = rumblePubsub({ table: 'paymentTransaction' });
 // A transaction names the people it covers, and confirming one settles their payment status.
@@ -116,7 +116,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.paymentTransaction
 				.findFirst(
 					query(
-						ctx.abilities.paymentTransaction.filter('read').merge({ where: { id } }).query.single
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({ where: { id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -131,9 +132,9 @@ schemaBuilder.mutationFields((t) => ({
 			recievedAt: t.arg({ type: 'DateTime' })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updatable = ctx.abilities.paymentTransaction
-				.filter('update')
-				.merge({ where: { id: args.id } });
+			const updatable = (await ctx.abilities.paymentTransaction.filter('update')).merge({
+				where: { id: args.id }
+			});
 
 			const transaction = await db.query.paymentTransaction
 				.findFirst({ ...updatable.query.single, with: { paymentFor: true } })
@@ -173,8 +174,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.paymentTransaction
 				.findFirst(
 					query(
-						ctx.abilities.paymentTransaction.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.paymentTransaction.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);

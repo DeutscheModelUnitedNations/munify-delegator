@@ -1,9 +1,11 @@
-<script lang="ts" generics="TData">
+<script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { Table, ColumnFiltersState } from '$lib/components/tanStackTable';
+	import type { ParticipantTableFeatures } from './tableFeatures';
+	import type { ParticipantRow } from './types';
 
 	interface Props {
-		table: Table<TData>;
+		table: Table<ParticipantTableFeatures, ParticipantRow>;
 		globalFilter: string;
 		onGlobalFilterChange: (value: string) => void;
 		columnFilters: ColumnFiltersState;
@@ -38,7 +40,11 @@
 			oninput={(e) => onGlobalFilterChange(e.currentTarget.value)}
 		/>
 		{#if globalFilter}
-			<button class="btn btn-ghost btn-xs btn-circle" onclick={() => onGlobalFilterChange('')}>
+			<button
+				class="btn btn-ghost btn-xs btn-circle"
+				aria-label={m.reset()}
+				onclick={() => onGlobalFilterChange('')}
+			>
 				<i class="fa-duotone fa-xmark"></i>
 			</button>
 		{/if}
@@ -51,6 +57,7 @@
 					{table.getColumn(filter.id)?.columnDef.header ?? filter.id}
 					<button
 						class="btn btn-xs btn-ghost"
+						aria-label={m.reset()}
 						onclick={() => table.getColumn(filter.id)?.setFilterValue(undefined)}
 					>
 						<i class="fa-duotone fa-xmark text-xs"></i>

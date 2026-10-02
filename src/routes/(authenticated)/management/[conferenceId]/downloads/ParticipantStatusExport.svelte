@@ -3,11 +3,15 @@
 	import { m } from '$lib/paraglide/messages';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import type {
-		AdministrativestatusEnum,
-		MediaconsentstatusEnum
-	} from '$lib/api/rumbleClient/client';
 	import DownloadButton from './DownloadButton.svelte';
+	import { fetchParticipantStatusesByUser } from './participantStatuses';
+	import {
+		defaultStatus,
+		exportRow,
+		formatSupervisorNames,
+		type ExportedUser,
+		type RoleColumns
+	} from './participantStatusRows';
 
 	interface Props {
 		conferenceId: string;
@@ -86,202 +90,59 @@
 		});
 	}
 
-	function fetchStatuses() {
-		return client.query.conferenceParticipantStatuses({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
-			id: true,
-			user: { id: true },
-			termsAndConditions: true,
-			guardianConsent: true,
-			mediaConsent: true,
-			mediaConsentStatus: true,
-			paymentStatus: true,
-			didAttend: true
-		});
-	}
-
-	interface StatusData {
-		termsAndConditions: AdministrativestatusEnum;
-		guardianConsent: AdministrativestatusEnum;
-		mediaConsent: AdministrativestatusEnum;
-		mediaConsentStatus: MediaconsentstatusEnum;
-		paymentStatus: AdministrativestatusEnum;
-		didAttend: boolean;
-	}
-
-	const defaultStatus: StatusData = {
-		termsAndConditions: 'PENDING',
-		guardianConsent: 'PENDING',
-		mediaConsent: 'PENDING',
-		mediaConsentStatus: 'NOT_SET',
-		paymentStatus: 'PENDING',
-		didAttend: false
-	};
-
-	const formatSupervisorNames = (
-		supervisors: Array<{ user: { givenName: string | null; familyName: string | null } }>
-	): string => {
-		return supervisors
-			.map((s) => `${s.user.givenName ?? ''} ${s.user.familyName ?? ''}`.trim())
-			.filter((name) => name.length > 0)
-			.join(', ');
-	};
-
-	// Summarize postal status from termsAndConditions, guardianConsent, mediaConsent
-	// 1. PROBLEM if any are PROBLEM
-	// 2. PENDING if any are PENDING (and none are PROBLEM)
-	// 3. DONE otherwise
-	const summarizePostalStatus = (status: StatusData): AdministrativestatusEnum => {
-		const postalFields = [status.termsAndConditions, status.guardianConsent, status.mediaConsent];
-		if (postalFields.some((s) => s === 'PROBLEM')) return 'PROBLEM';
-		if (postalFields.some((s) => s === 'PENDING')) return 'PENDING';
-		return 'DONE';
-	};
-
-	// Calculate combined postal and payment status
-	// Returns one of: "Postal and Payment pending", "Only Postal pending", "Only Payment pending", "Both not pending"
-	const calculateCombinedStatus = (status: StatusData): string => {
-		const postalSummary = summarizePostalStatus(status);
-		const postalPending = postalSummary !== 'DONE';
-		const paymentPending = status.paymentStatus !== 'DONE';
-
-		if (postalPending && paymentPending) return 'Postal and Payment pending';
-		if (postalPending && !paymentPending) return 'Only Postal pending';
-		if (!postalPending && paymentPending) return 'Only Payment pending';
-		return 'Both not pending';
-	};
-
 	const getParticipantStatusExport = async () => {
 		loading = true;
 		try {
-			const [nationDelegations, nsaDelegations, singleParticipants, supervisors, statuses] =
+			const [nationDelegations, nsaDelegations, singleParticipants, supervisors, statusMap] =
 				await Promise.all([
 					fetchNationDelegations(),
 					fetchNsaDelegations(),
 					fetchSingleParticipants(),
 					fetchAttendingSupervisors(),
-					fetchStatuses()
+					fetchParticipantStatusesByUser(conferenceId)
 				]);
 
-			const statusMap = new Map<string, StatusData>(
-				statuses.map((s) => [
-					s.user.id,
-					{
-						termsAndConditions: s.termsAndConditions,
-						guardianConsent: s.guardianConsent,
-						mediaConsent: s.mediaConsent,
-						mediaConsentStatus: s.mediaConsentStatus,
-						paymentStatus: s.paymentStatus,
-						didAttend: s.didAttend
-					}
-				])
-			);
+			const row = (user: ExportedUser, role: RoleColumns) =>
+				exportRow(user, role, statusMap.get(user.id) ?? defaultStatus);
 
-			const getStatus = (userId: string): StatusData => {
-				return statusMap.get(userId) ?? defaultStatus;
-			};
-
-			const rows: string[][] = [];
-
-			// Process delegations (nation assigned)
-			for (const delegation of nationDelegations) {
-				const nationName = getFullTranslatedCountryNameFromISO3Code(
-					delegation.assignedNation?.alpha3Code ?? ''
-				);
-				for (const member of delegation.members) {
-					const status = getStatus(member.user.id);
-					rows.push([
-						member.user.id,
-						member.user.email ?? '',
-						member.user.givenName ?? '',
-						member.user.familyName ?? '',
-						'Delegation',
-						nationName,
-						member.assignedCommittee?.name ?? '',
-						formatSupervisorNames(member.supervisors),
-						status.termsAndConditions,
-						status.guardianConsent,
-						status.mediaConsent,
-						summarizePostalStatus(status),
-						status.mediaConsentStatus,
-						status.paymentStatus,
-						status.didAttend.toString(),
-						calculateCombinedStatus(status)
-					]);
-				}
-			}
-
-			// Process NSAs
-			for (const delegation of nsaDelegations) {
-				const nsaName = delegation.assignedNonStateActor?.name ?? '';
-				for (const member of delegation.members) {
-					const status = getStatus(member.user.id);
-					rows.push([
-						member.user.id,
-						member.user.email ?? '',
-						member.user.givenName ?? '',
-						member.user.familyName ?? '',
-						'NSA',
-						nsaName,
-						'',
-						formatSupervisorNames(member.supervisors),
-						status.termsAndConditions,
-						status.guardianConsent,
-						status.mediaConsent,
-						summarizePostalStatus(status),
-						status.mediaConsentStatus,
-						status.paymentStatus,
-						status.didAttend.toString(),
-						calculateCombinedStatus(status)
-					]);
-				}
-			}
-
-			// Process single participants
-			for (const participant of singleParticipants) {
-				const status = getStatus(participant.user.id);
-				rows.push([
-					participant.user.id,
-					participant.user.email ?? '',
-					participant.user.givenName ?? '',
-					participant.user.familyName ?? '',
-					'SingleParticipant',
-					participant.assignedRole?.name ?? '',
-					'',
-					formatSupervisorNames(participant.supervisors),
-					status.termsAndConditions,
-					status.guardianConsent,
-					status.mediaConsent,
-					summarizePostalStatus(status),
-					status.mediaConsentStatus,
-					status.paymentStatus,
-					status.didAttend.toString(),
-					calculateCombinedStatus(status)
-				]);
-			}
-
-			// Process supervisors
-			for (const supervisor of supervisors) {
-				const status = getStatus(supervisor.user.id);
-				rows.push([
-					supervisor.user.id,
-					supervisor.user.email ?? '',
-					supervisor.user.givenName ?? '',
-					supervisor.user.familyName ?? '',
-					'Supervisor',
-					'Supervisor',
-					'',
-					'', // Supervisors don't have supervisors
-					status.termsAndConditions,
-					status.guardianConsent,
-					status.mediaConsent,
-					summarizePostalStatus(status),
-					status.mediaConsentStatus,
-					status.paymentStatus,
-					status.didAttend.toString(),
-					calculateCombinedStatus(status)
-				]);
-			}
+			const rows: string[][] = [
+				// Delegations (nation assigned)
+				...nationDelegations.flatMap((delegation) => {
+					const nationName = getFullTranslatedCountryNameFromISO3Code(
+						delegation.assignedNation?.alpha3Code ?? ''
+					);
+					return delegation.members.map((member) =>
+						row(member.user, {
+							roleType: 'Delegation',
+							roleName: nationName,
+							committee: member.assignedCommittee?.name,
+							supervisors: formatSupervisorNames(member.supervisors)
+						})
+					);
+				}),
+				// NSAs
+				...nsaDelegations.flatMap((delegation) =>
+					delegation.members.map((member) =>
+						row(member.user, {
+							roleType: 'NSA',
+							roleName: delegation.assignedNonStateActor?.name ?? '',
+							supervisors: formatSupervisorNames(member.supervisors)
+						})
+					)
+				),
+				// Single participants
+				...singleParticipants.map((participant) =>
+					row(participant.user, {
+						roleType: 'SingleParticipant',
+						roleName: participant.assignedRole?.name ?? '',
+						supervisors: formatSupervisorNames(participant.supervisors)
+					})
+				),
+				// Supervisors, who have no supervisors of their own
+				...supervisors.map((supervisor) =>
+					row(supervisor.user, { roleType: 'Supervisor', roleName: 'Supervisor' })
+				)
+			];
 
 			if (rows.length === 0) {
 				console.error('No data found');

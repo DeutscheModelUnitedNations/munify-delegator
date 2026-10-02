@@ -1,5 +1,7 @@
+import { resolve } from '$app/paths';
 import { m } from '$lib/paraglide/messages';
 import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
+import type { DashboardHref } from './dashboardLinks';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;
@@ -15,19 +17,20 @@ export interface TeamDashboardLink {
 	icon: string;
 	getTitle: () => string;
 	getDescription: () => string;
-	getHref: (ctx: TeamDashboardLinkContext) => string;
+	getHref: (ctx: TeamDashboardLinkContext) => DashboardHref;
 	external?: boolean;
 	isVisible: (ctx: TeamDashboardLinkContext) => boolean;
 	allowedRoles?: TeamroleEnum[];
 }
 
-export const teamDashboardLinks: TeamDashboardLink[] = [
+const teamDashboardLinks: TeamDashboardLink[] = [
 	{
 		id: 'administration',
 		icon: 'bars-progress',
 		getTitle: () => m.administration(),
 		getDescription: () => m.manageConference(),
-		getHref: (ctx) => `/management/${ctx.conferenceId}`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/management/[conferenceId]', { conferenceId: ctx.conferenceId }),
 		external: false,
 		isVisible: () => true,
 		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
@@ -37,7 +40,10 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'barcode-read',
 		getTitle: () => m.attendanceScanner(),
 		getDescription: () => m.attendanceScannerDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/attendance`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/attendance', {
+				conferenceId: ctx.conferenceId
+			}),
 		external: false,
 		isVisible: () => true
 	},
@@ -46,7 +52,10 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'user-group',
 		getTitle: () => m.teamCoordination(),
 		getDescription: () => m.teamCoordinationDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/team-management`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/team-management', {
+				conferenceId: ctx.conferenceId
+			}),
 		external: false,
 		isVisible: () => true,
 		allowedRoles: ['PROJECT_MANAGEMENT', 'TEAM_COORDINATOR']
@@ -56,7 +65,10 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'files',
 		getTitle: () => m.paperHub(),
 		getDescription: () => m.reviewPapers(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/paperhub`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/paperhub', {
+				conferenceId: ctx.conferenceId
+			}),
 		external: false,
 		isVisible: () => true,
 		allowedRoles: ['REVIEWER', 'PROJECT_MANAGEMENT']
@@ -66,7 +78,7 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'book-open',
 		getTitle: () => m.teamWiki(),
 		getDescription: () => m.teamWikiDescription(),
-		getHref: (ctx) => ctx.linkToTeamWiki ?? '',
+		getHref: (ctx) => ({ externalUrl: ctx.linkToTeamWiki ?? '' }),
 		external: true,
 		isVisible: (ctx) => !!ctx.linkToTeamWiki
 	},
@@ -75,7 +87,7 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'toolbox',
 		getTitle: () => m.servicesPage(),
 		getDescription: () => m.servicesPageDescription(),
-		getHref: (ctx) => ctx.linkToServicesPage ?? '',
+		getHref: (ctx) => ({ externalUrl: ctx.linkToServicesPage ?? '' }),
 		external: true,
 		isVisible: (ctx) => !!ctx.linkToServicesPage
 	},
@@ -84,7 +96,7 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'book-bookmark',
 		getTitle: () => m.preparation(),
 		getDescription: () => m.teamPreparationDescription(),
-		getHref: (ctx) => ctx.linkToPreparationGuide ?? '',
+		getHref: (ctx) => ({ externalUrl: ctx.linkToPreparationGuide ?? '' }),
 		external: true,
 		isVisible: (ctx) => !!ctx.linkToPreparationGuide
 	},
@@ -93,7 +105,7 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'person-seat',
 		getTitle: () => m.conferenceSeats(),
 		getDescription: () => m.seatsLinkDescription(),
-		getHref: (ctx) => `/seats/${ctx.conferenceId}`,
+		getHref: (ctx) => resolve('/seats/[conferenceId]', { conferenceId: ctx.conferenceId }),
 		external: true,
 		isVisible: () => true
 	},
@@ -102,7 +114,7 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		icon: 'circle-question',
 		getTitle: () => m.appDocs(),
 		getDescription: () => m.appDocsDescription(),
-		getHref: (ctx) => ctx.docsUrl ?? '',
+		getHref: (ctx) => ({ externalUrl: ctx.docsUrl ?? '' }),
 		external: true,
 		isVisible: (ctx) => !!ctx.docsUrl
 	}

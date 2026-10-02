@@ -1,5 +1,5 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import FormSubmitButton from './FormSubmitButton.svelte';
 	import type { SuperForm } from 'sveltekit-superforms';
 	interface Props {
@@ -21,7 +21,15 @@
 		formElement = $bindable(),
 		action
 	}: Props = $props();
-	let { message, enhance, allErrors, submitting, tainted, isTainted } = $derived(form);
+	let { message, enhance, allErrors, submitting, isTainted } = $derived(form);
+
+	// Every form submits through a mutation in `onUpdate`; there is no server action behind it. A
+	// submit before hydration attaches `enhance` would post natively and land on a 405 page, so the
+	// button stays disabled until the form has mounted.
+	let mounted = $state(false);
+	onMount(() => {
+		mounted = true;
+	});
 </script>
 
 <form
@@ -39,7 +47,9 @@
 	{#if showSubmitButton}
 		<FormSubmitButton
 			{form}
-			disabled={$allErrors.length > 0 || (requireTaintedToSubmit ? !isTainted() : false)}
+			disabled={!mounted ||
+				$allErrors.length > 0 ||
+				(requireTaintedToSubmit ? !isTainted() : false)}
 			loading={$submitting}
 		/>
 	{/if}

@@ -2,56 +2,57 @@ import { defaults } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/api/rumbleClient/client';
-import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+import { paperEntityName } from '../paperDisplay';
 import { newResolutionSchema } from './form-schema';
 
 /**
- * The delegation writing the resolution and the form seeded with its name and committee.
+ * The delegation writing the resolution, the conference its header names, and the form seeded
+ * with the delegation's name and committee.
  * `defaults` rather than `superValidate`: the resolution is created by a GraphQL mutation in SPA
  * mode, so there is no action to validate against.
  */
 export async function fetchNewResolutionContext(conferenceId: string, userId: string) {
-	const [delegationMember] = await client.liveQuery.delegationMembers({
-		__args: {
-			where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
-		},
-		id: true,
-		user: { id: true },
-		assignedCommittee: {
+	const [delegationMembers, conference] = await Promise.all([
+		client.liveQuery.delegationMembers({
+			__args: {
+				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
+			},
 			id: true,
-			name: true,
-			abbreviation: true,
-			resolutionHeadline: true,
-			agendaItems: { id: true, title: true }
-		},
-		delegation: {
-			id: true,
-			assignedNation: { alpha2Code: true, alpha3Code: true },
-			assignedNonStateActor: {
+			assignedCommittee: {
 				id: true,
-				abbreviation: true,
 				name: true,
-				fontAwesomeIcon: true
+				abbreviation: true,
+				resolutionHeadline: true,
+				agendaItems: { id: true, title: true }
+			},
+			delegation: {
+				id: true,
+				assignedNation: { alpha3Code: true },
+				assignedNonStateActor: { id: true, name: true }
 			}
-		}
-	});
+		}),
+		// What the resolution header prints about the conference
+		client.liveQuery.conference({
+			__args: { id: conferenceId },
+			id: true,
+			title: true,
+			longTitle: true,
+			emblemDataURL: true
+		})
+	]);
 
-	const committee = delegationMember?.assignedCommittee;
-	const delegation = delegationMember?.delegation;
-
-	if (!delegation) {
+	const delegationMember = delegationMembers.at(0);
+	if (!delegationMember) {
 		error(400, 'Delegation member does not exist');
 	}
 
 	const form = defaults(
 		{
-			delegation: delegation.assignedNation
-				? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
-				: (delegation.assignedNonStateActor?.name ?? ''),
-			committee: committee?.name
+			delegation: paperEntityName(delegationMember.delegation) ?? '',
+			committee: delegationMember.assignedCommittee?.name
 		},
 		zod4(newResolutionSchema)
 	);
 
-	return { form, delegationMember: delegationMember ?? null };
+	return { form, delegationMember, conference };
 }

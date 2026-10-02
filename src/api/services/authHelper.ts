@@ -87,6 +87,12 @@ export function isOwnUser(ctx: Context) {
 	return { user: { id } };
 }
 
+/** Matches a row whose `delegation` has the logged-in user among its members. */
+export function isInOwnDelegation(ctx: Context) {
+	const id = userId(ctx);
+	return id ? { delegation: { members: { user: { id } } } } : undefined;
+}
+
 /**
  * Creation cannot be expressed as an ability filter - there is no row to filter on yet - so the
  * legacy resolvers checked team membership inline before inserting. This is that check, shared

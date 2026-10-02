@@ -1,4 +1,5 @@
 import { db, schema } from '$api/db/db';
+import type { Insert } from '$api/db/rows';
 import {
 	abilityBuilder,
 	enum_,
@@ -17,7 +18,7 @@ import {
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
-import { eq, max } from 'drizzle-orm';
+import { type SQL, eq, max } from 'drizzle-orm';
 
 // Ported from abilities/entities/conferenceParticipantStatus.ts
 abilityBuilder.conferenceParticipantStatus.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -64,7 +65,7 @@ abilityBuilder.conferenceParticipantStatus.allow(['read', 'update', 'delete']).w
 	return where ? { where } : undefined;
 });
 
-export const ConferenceParticipantStatusRef = object({ table: 'conferenceParticipantStatus' });
+const ConferenceParticipantStatusRef = object({ table: 'conferenceParticipantStatus' });
 
 const BulkStatusUpdateResult = schemaBuilder.simpleObject(
 	'UpdateAllConferenceParticipantStatusResponse',
@@ -80,6 +81,61 @@ const pubsub = rumblePubsub({ table: 'conferenceParticipantStatus' });
 
 const administrativeStatusEnum = enum_({ tsName: 'administrativeStatus' });
 const mediaConsentStatusEnum = enum_({ tsName: 'mediaConsentStatus' });
+
+/** The user a status is addressed to, when it is addressed by user id or email. */
+async function targetUserIdOf(args: { userId?: string | null; userEmail?: string | null }) {
+	if (args.userId) return args.userId;
+	if (!args.userEmail) return undefined;
+	const found = await db.query.user
+		.findFirst({ where: { email: args.userEmail } })
+		.then(assertFindFirstExists);
+	return found.id;
+}
+
+/** "Assign the next free number" is resolved per conference, as in the legacy resolver. */
+async function documentNumberOf(args: {
+	conferenceId: string;
+	assignedDocumentNumber?: number | null;
+	assignNextDocumentNumber?: boolean | null;
+}) {
+	if (!args.assignNextDocumentNumber) return args.assignedDocumentNumber ?? undefined;
+	const [highest] = await db
+		.select({ value: max(schema.conferenceParticipantStatus.assignedDocumentNumber) })
+		.from(schema.conferenceParticipantStatus)
+		.where(eq(schema.conferenceParticipantStatus.conferenceId, args.conferenceId));
+	return (highest?.value ?? 0) + 1;
+}
+
+type StatusValues = Partial<Insert<'conferenceParticipantStatus'>>;
+
+/** Updates the status row the caller's `update` ability narrowed down to. */
+async function updateStatus(updatable: SQL | undefined, values: StatusValues) {
+	const [updated] = await db
+		.update(schema.conferenceParticipantStatus)
+		.set(values)
+		.where(updatable)
+		.returning({ id: schema.conferenceParticipantStatus.id });
+	if (!updated) {
+		throw new GraphQLError('Participant status not found, or not yours to update');
+	}
+	return updated.id;
+}
+
+async function createStatus(
+	values: StatusValues,
+	conferenceId: string,
+	userId: string | undefined
+) {
+	if (!userId) {
+		throw new GraphQLError('A userId or userEmail is required to create a status');
+	}
+	const created = await db
+		.insert(schema.conferenceParticipantStatus)
+		.values({ ...values, userId, conferenceId })
+		.returning()
+		.then(assertFirstEntryExists);
+	return created.id;
+}
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -111,23 +167,8 @@ schemaBuilder.mutationFields((t) => ({
 				);
 			}
 
-			let targetUserId = args.userId ?? undefined;
-			if (!targetUserId && args.userEmail) {
-				const found = await db.query.user
-					.findFirst({ where: { email: args.userEmail } })
-					.then(assertFindFirstExists);
-				targetUserId = found.id;
-			}
-
-			// "Assign the next free number" is resolved per conference, as in the legacy resolver.
-			let documentNumber = args.assignedDocumentNumber ?? undefined;
-			if (args.assignNextDocumentNumber) {
-				const [highest] = await db
-					.select({ value: max(schema.conferenceParticipantStatus.assignedDocumentNumber) })
-					.from(schema.conferenceParticipantStatus)
-					.where(eq(schema.conferenceParticipantStatus.conferenceId, args.conferenceId));
-				documentNumber = (highest?.value ?? 0) + 1;
-			}
+			const targetUserId = await targetUserIdOf(args);
+			const documentNumber = await documentNumberOf(args);
 
 			const values = {
 				termsAndConditions: args.termsAndConditions ?? undefined,
@@ -144,31 +185,14 @@ schemaBuilder.mutationFields((t) => ({
 				where: args.id ? { id: args.id } : { conferenceId: args.conferenceId, userId: targetUserId }
 			});
 
-			let statusId: string;
-			if (existing) {
-				const updatable = ctx.abilities.conferenceParticipantStatus
-					.filter('update')
-					.merge({ where: { id: existing.id } });
-				const [updated] = await db
-					.update(schema.conferenceParticipantStatus)
-					.set(values)
-					.where(updatable.sql.where)
-					.returning({ id: schema.conferenceParticipantStatus.id });
-				if (!updated) {
-					throw new GraphQLError('Participant status not found, or not yours to update');
-				}
-				statusId = updated.id;
-			} else {
-				if (!targetUserId) {
-					throw new GraphQLError('A userId or userEmail is required to create a status');
-				}
-				const created = await db
-					.insert(schema.conferenceParticipantStatus)
-					.values({ ...values, userId: targetUserId, conferenceId: args.conferenceId })
-					.returning()
-					.then(assertFirstEntryExists);
-				statusId = created.id;
-			}
+			const statusId = existing
+				? await updateStatus(
+						(await ctx.abilities.conferenceParticipantStatus.filter('update')).merge({
+							where: { id: existing.id }
+						}).sql.where,
+						values
+					)
+				: await createStatus(values, args.conferenceId, targetUserId);
 
 			// Updated or created on the spot, so one notification on whichever row now holds it.
 			pubsub.updated(statusId);
@@ -176,9 +200,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conferenceParticipantStatus
 				.findFirst(
 					query(
-						ctx.abilities.conferenceParticipantStatus
-							.filter('read')
-							.merge({ where: { id: statusId } }).query.single
+						(await ctx.abilities.conferenceParticipantStatus.filter('read')).merge({
+							where: { id: statusId }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -246,9 +270,9 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.conferenceParticipantStatus)
 				.where(
-					ctx.abilities.conferenceParticipantStatus
-						.filter('delete')
-						.merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.conferenceParticipantStatus.filter('delete')).merge({
+						where: { id: args.id }
+					}).sql.where
 				)
 				.returning({ id: schema.conferenceParticipantStatus.id });
 			if (deleted.length === 0) {

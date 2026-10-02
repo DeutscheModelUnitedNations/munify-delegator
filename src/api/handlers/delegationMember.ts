@@ -1,13 +1,15 @@
-import { db, schema } from '$api/db/db';
+import { type Transaction, db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	isInOwnDelegation,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId
 } from '$api/services/authHelper';
 import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
+import { assignedRoleConditions, countGiven, nullToUndefined } from '$api/services/args';
 import { assertMayManageConference } from '$api/services/authHelper';
 import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
 import { m } from '$lib/paraglide/messages';
@@ -20,8 +22,8 @@ abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemA
 
 // Co-delegates see each other.
 abilityBuilder.delegationMember.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id ? { where: { delegation: { members: { user: { id } } } } } : undefined;
+	const where = isInOwnDelegation(ctx);
+	return where ? { where } : undefined;
 });
 
 // Supervisors see the delegates of the delegations they supervise.
@@ -67,7 +69,7 @@ abilityBuilder.delegationMember.allow('update').when((ctx) => {
 		: undefined;
 });
 
-export const DelegationMemberRef = object({ table: 'delegationMember' });
+const DelegationMemberRef = object({ table: 'delegationMember' });
 query({ table: 'delegationMember' });
 const pubsub = rumblePubsub({ table: 'delegationMember' });
 // This handler also writes these, and a subscriber watching them has to hear about it.
@@ -122,8 +124,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.delegationMember
 				.findFirst(
 					query(
-						ctx.abilities.delegationMember.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.delegationMember.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -138,9 +141,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const deletable = ctx.abilities.delegationMember
-				.filter('delete')
-				.merge({ where: { id: args.id } });
+			const deletable = (await ctx.abilities.delegationMember.filter('delete')).merge({
+				where: { id: args.id }
+			});
 
 			const delegationId = await db.transaction(async (tx) => {
 				const [deleted] = await tx
@@ -208,7 +211,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: [DelegationMemberRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const filter = ctx.abilities.delegationMember.filter('delete').merge({
+			const filter = (await ctx.abilities.delegationMember.filter('delete')).merge({
 				where: {
 					assignedCommitteeId: { isNull: true },
 					delegation: {
@@ -231,6 +234,81 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
+/** Placeholder details, so an assigned delegation looks "applied" like any other. */
+const ASSIGNED_DELEGATION_INFOS = {
+	applied: true,
+	experience: 'No Info',
+	school: 'No Info',
+	motivation: 'Assigned by management'
+};
+
+/** Removes the user's delegation membership or single registration in the conference, if any. */
+async function clearParticipation(tx: Transaction, conferenceId: string, userId: string) {
+	if (!(await isUserAlreadyRegistered({ userId, conferenceId }))) return;
+
+	const removedMember = await tx
+		.delete(schema.delegationMember)
+		.where(
+			and(
+				eq(schema.delegationMember.conferenceId, conferenceId),
+				eq(schema.delegationMember.userId, userId)
+			)
+		)
+		.returning({ id: schema.delegationMember.id });
+	if (removedMember.length > 0) return;
+
+	const removedSingle = await tx
+		.delete(schema.singleParticipant)
+		.where(
+			and(
+				eq(schema.singleParticipant.conferenceId, conferenceId),
+				eq(schema.singleParticipant.userId, userId)
+			)
+		)
+		.returning({ id: schema.singleParticipant.id });
+	if (removedSingle.length === 0) {
+		throw new GraphQLError(
+			'User is already part of the conference and records could not be deleted'
+		);
+	}
+}
+
+type AssignedDelegation = { id: string; members: { isHeadDelegate: boolean }[] };
+
+/**
+ * The delegation that carries the role: the existing one, or a new one created for it. An
+ * existing delegation without members gets the placeholder details.
+ */
+async function prepareAssignedDelegation(
+	tx: Transaction,
+	conferenceId: string,
+	role: { assignedNationAlpha3Code?: string | null; assignedNonStateActorId?: string | null },
+	existing: AssignedDelegation | undefined
+): Promise<AssignedDelegation> {
+	if (!existing) {
+		const created = await tx
+			.insert(schema.delegation)
+			.values({
+				conferenceId,
+				assignedNationAlpha3Code: nullToUndefined(role.assignedNationAlpha3Code),
+				assignedNonStateActorId: nullToUndefined(role.assignedNonStateActorId),
+				entryCode: makeEntryCode(),
+				...ASSIGNED_DELEGATION_INFOS
+			})
+			.returning()
+			.then(assertFirstEntryExists);
+		return { ...created, members: [] };
+	}
+
+	if (existing.members.length === 0) {
+		await tx
+			.update(schema.delegation)
+			.set(ASSIGNED_DELEGATION_INFOS)
+			.where(eq(schema.delegation.id, existing.id));
+	}
+	return existing;
+}
+
 schemaBuilder.mutationFields((t) => ({
 	/**
 	 * Management placing a user straight into an assigned delegation, bypassing the normal
@@ -252,88 +330,22 @@ schemaBuilder.mutationFields((t) => ({
 				ctx
 			});
 
-			if (!args.assignedNationAlpha3Code && !args.assignedNonStateActorId) {
+			if (countGiven(args.assignedNationAlpha3Code, args.assignedNonStateActorId) === 0) {
 				throw new GraphQLError(
 					'Either assignedNationAlpha3Code or assignedNonStateActorId must be provided'
 				);
 			}
 
-			// Placeholder details, so an assigned delegation looks "applied" like any other.
-			const delegationInfos = {
-				applied: true,
-				experience: 'No Info',
-				school: 'No Info',
-				motivation: 'Assigned by management'
-			};
-
 			const memberId = await db.transaction(async (tx) => {
-				let delegation = await tx.query.delegation.findFirst({
-					where: {
-						conferenceId: args.conferenceId,
-						OR: [
-							...(args.assignedNationAlpha3Code
-								? [{ assignedNationAlpha3Code: args.assignedNationAlpha3Code }]
-								: []),
-							...(args.assignedNonStateActorId
-								? [{ assignedNonStateActorId: args.assignedNonStateActorId }]
-								: [])
-						]
-					},
+				const existing = await tx.query.delegation.findFirst({
+					where: { conferenceId: args.conferenceId, OR: assignedRoleConditions(args) },
 					with: { members: true }
 				});
 
 				// Existing participation is cleared first, so the user can be moved.
-				if (
-					await isUserAlreadyRegistered({ userId: args.userId, conferenceId: args.conferenceId })
-				) {
-					const removedMember = await tx
-						.delete(schema.delegationMember)
-						.where(
-							and(
-								eq(schema.delegationMember.conferenceId, args.conferenceId),
-								eq(schema.delegationMember.userId, args.userId)
-							)
-						)
-						.returning({ id: schema.delegationMember.id });
+				await clearParticipation(tx, args.conferenceId, args.userId);
 
-					if (removedMember.length === 0) {
-						const removedSingle = await tx
-							.delete(schema.singleParticipant)
-							.where(
-								and(
-									eq(schema.singleParticipant.conferenceId, args.conferenceId),
-									eq(schema.singleParticipant.userId, args.userId)
-								)
-							)
-							.returning({ id: schema.singleParticipant.id });
-
-						if (removedSingle.length === 0) {
-							throw new GraphQLError(
-								'User is already part of the conference and records could not be deleted'
-							);
-						}
-					}
-				}
-
-				if (!delegation) {
-					const created = await tx
-						.insert(schema.delegation)
-						.values({
-							conferenceId: args.conferenceId,
-							assignedNationAlpha3Code: args.assignedNationAlpha3Code ?? undefined,
-							assignedNonStateActorId: args.assignedNonStateActorId ?? undefined,
-							entryCode: makeEntryCode(),
-							...delegationInfos
-						})
-						.returning()
-						.then(assertFirstEntryExists);
-					delegation = { ...created, members: [] };
-				} else if (delegation.members.length === 0) {
-					await tx
-						.update(schema.delegation)
-						.set(delegationInfos)
-						.where(eq(schema.delegation.id, delegation.id));
-				}
+				const delegation = await prepareAssignedDelegation(tx, args.conferenceId, args, existing);
 
 				// Best-effort: not every assigned user came from the waiting list.
 				await tx
@@ -352,7 +364,7 @@ schemaBuilder.mutationFields((t) => ({
 						conferenceId: args.conferenceId,
 						userId: args.userId,
 						delegationId: delegation.id,
-						assignedCommitteeId: args.assignedCommitteeId ?? undefined,
+						assignedCommitteeId: nullToUndefined(args.assignedCommitteeId),
 						isHeadDelegate: !delegation.members.some((m) => m.isHeadDelegate)
 					})
 					.returning()
@@ -370,8 +382,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.delegationMember
 				.findFirst(
 					query(
-						ctx.abilities.delegationMember.filter('read').merge({ where: { id: memberId } }).query
-							.single
+						(await ctx.abilities.delegationMember.filter('read')).merge({ where: { id: memberId } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -392,9 +404,9 @@ schemaBuilder.mutationFields((t) => ({
 			assignedCommitteeId: t.arg.id({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updatable = ctx.abilities.delegationMember
-				.filter('update')
-				.merge({ where: { id: args.id } });
+			const updatable = (await ctx.abilities.delegationMember.filter('update')).merge({
+				where: { id: args.id }
+			});
 
 			await db.transaction(async (tx) => {
 				const member = await tx.query.delegationMember
@@ -436,8 +448,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.delegationMember
 				.findFirst(
 					query(
-						ctx.abilities.delegationMember.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.delegationMember.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -460,9 +472,9 @@ schemaBuilder.mutationFields((t) => ({
 				.set({ assignedCommitteeId: args.assignedCommitteeId ?? null })
 				.where(
 					and(
-						ctx.abilities.delegationMember
-							.filter('update')
-							.merge({ where: { conferenceId: args.conferenceId } }).sql.where,
+						(await ctx.abilities.delegationMember.filter('update')).merge({
+							where: { conferenceId: args.conferenceId }
+						}).sql.where,
 						inArray(schema.delegationMember.id, args.ids)
 					)
 				)
@@ -506,9 +518,9 @@ schemaBuilder.mutationFields((t) => ({
 
 					const member = await tx.query.delegationMember
 						.findFirst({
-							...ctx.abilities.delegationMember
-								.filter('update')
-								.merge({ where: { id: assignment.delegationMemberId } }).query.single,
+							...(await ctx.abilities.delegationMember.filter('update')).merge({
+								where: { id: assignment.delegationMemberId }
+							}).query.single,
 							with: { delegation: true }
 						})
 						.then(assertFindFirstExists);
@@ -533,9 +545,9 @@ schemaBuilder.mutationFields((t) => ({
 
 			return db.query.delegationMember.findMany(
 				query(
-					ctx.abilities.delegationMember
-						.filter('read')
-						.merge({ where: { conferenceId: args.conferenceId } }).query.many
+					(await ctx.abilities.delegationMember.filter('read')).merge({
+						where: { conferenceId: args.conferenceId }
+					}).query.many
 				)
 			);
 		}

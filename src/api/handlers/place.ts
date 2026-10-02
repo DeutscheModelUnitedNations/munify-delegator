@@ -18,7 +18,17 @@ abilityBuilder.place.allow(['update', 'delete']).when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const PlaceRef = object({ table: 'place' });
+const PlaceRef = object({
+	table: 'place',
+	adjust: (t) => ({
+		// The site plan is an uploaded image as a data URL, often megabytes. Lists only need to know
+		// whether there is one, so they can ask for this rather than the image itself.
+		hasSitePlan: t.field({
+			type: 'Boolean',
+			resolve: (place) => !!place.sitePlanDataURL
+		})
+	})
+});
 query({ table: 'place' });
 const pubsub = rumblePubsub({ table: 'place' });
 
@@ -60,7 +70,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.place
 				.findFirst(
 					query(
-						ctx.abilities.place.filter('read').merge({ where: { id: created.id } }).query.single
+						(await ctx.abilities.place.filter('read')).merge({ where: { id: created.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -95,13 +106,18 @@ schemaBuilder.mutationFields((t) => ({
 					websiteUrl: args.websiteUrl,
 					sitePlanDataURL: args.sitePlanDataURL
 				})
-				.where(ctx.abilities.place.filter('update').merge({ where: { id: args.id } }).sql.where);
+				.where(
+					(await ctx.abilities.place.filter('update')).merge({ where: { id: args.id } }).sql.where
+				);
 
 			pubsub.updated(args.id);
 
 			return db.query.place
 				.findFirst(
-					query(ctx.abilities.place.filter('read').merge({ where: { id: args.id } }).query.single)
+					query(
+						(await ctx.abilities.place.filter('read')).merge({ where: { id: args.id } }).query
+							.single
+					)
 				)
 				.then(assertFindFirstExists);
 		}
@@ -117,7 +133,9 @@ schemaBuilder.mutationFields((t) => ({
 			// caller their delete succeeded is worse than either.
 			const deleted = await db
 				.delete(schema.place)
-				.where(ctx.abilities.place.filter('delete').merge({ where: { id: args.id } }).sql.where)
+				.where(
+					(await ctx.abilities.place.filter('delete')).merge({ where: { id: args.id } }).sql.where
+				)
 				.returning({ id: schema.place.id });
 
 			if (deleted.length === 0) {

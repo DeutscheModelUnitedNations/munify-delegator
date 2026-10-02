@@ -12,7 +12,7 @@ import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 // Ported from abilities/entities/conferenceSupervisor.ts
 abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -65,7 +65,7 @@ abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 		: undefined;
 });
 
-export const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
+const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
 const pubsub = rumblePubsub({ table: 'conferenceSupervisor' });
 // The supervision links are join tables, so a change there shows up on the two sides of it.
@@ -127,8 +127,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
-						ctx.abilities.conferenceSupervisor.filter('read').merge({ where: { id: created.id } })
-							.query.single
+						(await ctx.abilities.conferenceSupervisor.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -146,8 +147,9 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.conferenceSupervisor)
 				.set({ plansOwnAttendenceAtConference: args.plansOwnAttendenceAtConference ?? undefined })
 				.where(
-					ctx.abilities.conferenceSupervisor.filter('update').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.conferenceSupervisor.filter('update')).merge({
+						where: { id: args.id }
+					}).sql.where
 				);
 
 			pubsub.updated(args.id);
@@ -155,8 +157,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
-						ctx.abilities.conferenceSupervisor.filter('read').merge({ where: { id: args.id } })
-							.query.single
+						(await ctx.abilities.conferenceSupervisor.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -226,9 +229,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
-						ctx.abilities.conferenceSupervisor
-							.filter('read')
-							.merge({ where: { id: supervisor.id } }).query.single
+						(await ctx.abilities.conferenceSupervisor.filter('read')).merge({
+							where: { id: supervisor.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -260,9 +263,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.conferenceSupervisor
 				.findFirst(
 					query(
-						ctx.abilities.conferenceSupervisor
-							.filter('read')
-							.merge({ where: { id: supervisor.id } }).query.single
+						(await ctx.abilities.conferenceSupervisor.filter('read')).merge({
+							where: { id: supervisor.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -276,8 +279,9 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.conferenceSupervisor)
 				.where(
-					ctx.abilities.conferenceSupervisor.filter('delete').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.conferenceSupervisor.filter('delete')).merge({
+						where: { id: args.id }
+					}).sql.where
 				)
 				.returning({ id: schema.conferenceSupervisor.id });
 			if (deleted.length === 0) {
@@ -301,7 +305,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: [ConferenceSupervisorRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const filter = ctx.abilities.conferenceSupervisor.filter('delete').merge({
+			const filter = (await ctx.abilities.conferenceSupervisor.filter('delete')).merge({
 				where: {
 					NOT: {
 						OR: [{ supervisedDelegationMembers: {} }, { supervisedSingleParticipants: {} }]

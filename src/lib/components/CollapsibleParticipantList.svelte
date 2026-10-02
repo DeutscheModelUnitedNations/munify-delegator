@@ -39,7 +39,7 @@
 	<div class="collapse-content">
 		{#if participants.length > 0}
 			<div class="columns-1 sm:columns-2 md:columns-3 xl:columns-4 gap-2 pt-2">
-				{#each participants as user}
+				{#each participants as user (user.id)}
 					<p>
 						<button
 							class="hover:underline cursor-pointer"

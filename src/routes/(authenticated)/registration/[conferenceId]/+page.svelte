@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { fetchExistingRegistrations } from './existingRegistrations';
@@ -39,6 +40,7 @@
 	<hero class="my-20 text-center">
 		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signup()}</h1>
 		<p class="max-ch-md">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			{@html m.conferenceSignupIntroduction()}
 		</p>
 		<div role="alert " class="alert md:alert-horizontal alert-vertical mt-10">
@@ -65,7 +67,7 @@
 				title={m.createDelegation()}
 				img={UndrawNew}
 				btnText={m.createDelegation()}
-				btnLink={`${params.conferenceId}/create-delegation`}
+				btnLink={resolve(`/registration/${params.conferenceId}/create-delegation`)}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -82,7 +84,7 @@
 				title={m.joinDelegation()}
 				img={UndrawTeam}
 				btnText={m.enterCode()}
-				btnLink={`${params.conferenceId}/join-delegation`}
+				btnLink={resolve(`/registration/${params.conferenceId}/join-delegation`)}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -99,7 +101,7 @@
 				title={m.individualApplication()}
 				img={UndrawLetter}
 				btnText={m.individualApplication()}
-				btnLink={`${params.conferenceId}/individual`}
+				btnLink={resolve(`/registration/${params.conferenceId}/individual`)}
 				disabled={individualBlocked}
 			>
 				<CardInfoSectionWithIcons
@@ -116,7 +118,7 @@
 				title={m.supervisor()}
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
-				btnLink={`${params.conferenceId}/supervisor`}
+				btnLink={resolve(`/registration/${params.conferenceId}/supervisor`)}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons

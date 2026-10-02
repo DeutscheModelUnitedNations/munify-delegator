@@ -1,12 +1,11 @@
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import type { SuggestionOptions } from '@tiptap/suggestion';
-import type { JSONContent } from '@tiptap/core';
 import { createSuggestionRenderer, type SnippetItem } from './suggestionRenderer';
 
 export type { SnippetItem } from './suggestionRenderer';
 
-export interface SnippetSuggestionOptions {
+interface SnippetSuggestionOptions {
 	/** Static array of snippets OR a getter function that returns current snippets */
 	snippets: SnippetItem[] | (() => SnippetItem[]);
 	onSelectSnippet?: (snippet: SnippetItem) => void;
@@ -67,7 +66,7 @@ export const SnippetSuggestion = Extension.create<SnippetSuggestionOptions>({
 					}
 				},
 
-				render: () => createSuggestionRenderer(onSelectSnippet),
+				render: () => createSuggestionRenderer(),
 
 				...this.options.suggestion
 			})

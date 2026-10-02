@@ -12,7 +12,7 @@
 
 <FieldErrors class="validator-hint">
 	{#snippet children({ errors, errorProps })}
-		{#each errors as error}
+		{#each errors as error, errorIndex (errorIndex)}
 			<span {...errorProps} class="text-error">{error}</span>
 		{/each}
 	{/snippet}

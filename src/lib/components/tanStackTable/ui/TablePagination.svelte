@@ -1,17 +1,38 @@
-<script lang="ts" generics="TData">
-	import type { Table } from '@tanstack/table-core';
+<script lang="ts">
+	import type { PaginationState } from '$lib/components/tanStackTable';
 	import { m } from '$lib/paraglide/messages';
 
+	/**
+	 * The slice of a v9 table this component drives. A structural type rather than
+	 * `Table<TFeatures, TData>`: feature APIs only exist on a table whose concrete
+	 * features include pagination and filtering, which a generic `TFeatures` cannot
+	 * express. Any table registering `rowPaginationFeature` and
+	 * `columnFilteringFeature` satisfies it.
+	 */
+	interface PaginatedTable {
+		atoms: { pagination: { get: () => PaginationState } };
+		getPageCount: () => number;
+		getFilteredRowModel: () => { rows: ArrayLike<unknown> };
+		setPageSize: (pageSize: number) => void;
+		firstPage: () => void;
+		previousPage: () => void;
+		nextPage: () => void;
+		lastPage: () => void;
+		getCanPreviousPage: () => boolean;
+		getCanNextPage: () => boolean;
+	}
+
 	interface Props {
-		table: Table<TData>;
+		table: PaginatedTable;
 		pageSizeOptions?: number[];
 	}
 
 	let { table, pageSizeOptions = [10, 20, 50, 100] }: Props = $props();
 
-	const pageIndex = $derived(table.getState().pagination.pageIndex);
+	const pagination = $derived(table.atoms.pagination.get());
+	const pageIndex = $derived(pagination.pageIndex);
 	const pageCount = $derived(table.getPageCount());
-	const pageSize = $derived(table.getState().pagination.pageSize);
+	const pageSize = $derived(pagination.pageSize);
 	const totalRows = $derived(table.getFilteredRowModel().rows.length);
 </script>
 
@@ -30,7 +51,7 @@
 					table.setPageSize(Number(e.currentTarget.value));
 				}}
 			>
-				{#each pageSizeOptions as size}
+				{#each pageSizeOptions as size (size)}
 					<option value={size}>{size}</option>
 				{/each}
 			</select>

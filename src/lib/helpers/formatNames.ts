@@ -90,58 +90,32 @@ export default function formatNames(
 		delimiter?: string;
 	}
 ): string {
-	// Normalize inputs: convert undefined to empty string and trim whitespace
-	const normalizedGivenName = givenName ? givenName.trim() : '';
-	const normalizedFamilyName = familyName ? familyName.trim() : '';
-
-	// Set default options
 	const defaultOptions = {
 		givenNameFirst: true, // Default to given name first
 		givenNameUppercase: false,
 		familyNameUppercase: false,
 		delimiter: ' ' // Default delimiter is a space
 	};
-
 	const effectiveOptions = { ...defaultOptions, ...options };
 
-	let formattedGivenName: string;
-	let formattedFamilyName: string;
+	const formattedGivenName = formatNamePart(givenName, effectiveOptions.givenNameUppercase);
+	const formattedFamilyName = formatNamePart(familyName, effectiveOptions.familyNameUppercase);
 
-	// Apply capitalization correction first
-	formattedGivenName = toTitleCaseNamePart(normalizedGivenName);
-	formattedFamilyName = toTitleCaseNamePart(normalizedFamilyName);
+	// A missing name leaves the other one standing alone, without a delimiter.
+	const ordered = effectiveOptions.givenNameFirst
+		? [formattedGivenName, formattedFamilyName]
+		: [formattedFamilyName, formattedGivenName];
+	// String(): an explicitly undefined delimiter is spelled out, as a template literal would.
+	return ordered.filter((name) => name.length > 0).join(String(effectiveOptions.delimiter));
+}
 
-	// Then apply uppercase options, which should override the title casing if specified.
-	if (effectiveOptions.givenNameUppercase) {
-		formattedGivenName = normalizedGivenName.toUpperCase(); // Use original for full uppercase
-	}
-	if (effectiveOptions.familyNameUppercase) {
-		formattedFamilyName = normalizedFamilyName.toUpperCase(); // Use original for full uppercase
-	}
-
-	// Handle cases where one or both names are empty after normalization
-	if (!formattedGivenName && !formattedFamilyName) {
-		return ''; // If both are empty, return an empty string
-	} else if (!formattedGivenName) {
-		// If given name is empty, ensure family name is in correct casing if it was
-		// fully uppercased by option, otherwise use title cased.
-		return effectiveOptions.familyNameUppercase
-			? normalizedFamilyName.toUpperCase()
-			: formattedFamilyName;
-	} else if (!formattedFamilyName) {
-		// If family name is empty, ensure given name is in correct casing if it was
-		// fully uppercased by option, otherwise use title cased.
-		return effectiveOptions.givenNameUppercase
-			? normalizedGivenName.toUpperCase()
-			: formattedGivenName;
-	}
-
-	// Assemble the full name based on the givenNameFirst option
-	if (effectiveOptions.givenNameFirst) {
-		return `${formattedGivenName}${effectiveOptions.delimiter}${formattedFamilyName}`;
-	} else {
-		return `${formattedFamilyName}${effectiveOptions.delimiter}${formattedGivenName}`;
-	}
+/**
+ * One trimmed name part, in title case (with the usual lowercase particles) or, when asked to,
+ * fully uppercased from the original spelling.
+ */
+function formatNamePart(name: string | undefined, uppercase: boolean): string {
+	const normalized = name ? name.trim() : '';
+	return uppercase ? normalized.toUpperCase() : toTitleCaseNamePart(normalized);
 }
 
 /**

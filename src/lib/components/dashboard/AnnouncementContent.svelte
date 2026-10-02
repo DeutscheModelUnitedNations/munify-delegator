@@ -8,7 +8,8 @@
 	}
 
 	let { info, showExpanded = false }: Props = $props();
-	let isExpanded = $state(showExpanded);
+	// Follows the conference's setting until the reader toggles it themselves.
+	let isExpanded = $derived(showExpanded);
 
 	const TRUNCATE_THRESHOLD = 400;
 	const shouldTruncate = $derived(!showExpanded && info.length > TRUNCATE_THRESHOLD);

@@ -1,17 +1,18 @@
 <script lang="ts">
-	import CardInfoSectionWithIcons from './CardInfoSectionWithIcons.svelte';
+	import type { ComponentProps } from 'svelte';
+	import { resolve } from '$app/paths';
+	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
 	import { getLocale } from '$lib/paraglide/runtime.js';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 	import { m } from '$lib/paraglide/messages';
 	import type { fetchOpenConferences } from '../../../routes/(authenticated)/registration/openConferences';
-	import { getRegistrationStatus, type RegistrationStatus } from '$lib/utils/registrationStatus';
-	import { getWaitingListStatus } from '$lib/helpers/waitingListStatus';
-	import StatusLight from '../StatusLight.svelte';
+	import { getConferenceRegistrationStatus } from '$lib/helpers/conferenceRegistrationStatus';
 	import RegistrationStatusLight from '../RegistrationStatusLight.svelte';
 
 	interface ConferenceCardProps {
 		conference: Awaited<ReturnType<typeof fetchOpenConferences>>['conferences'][number];
-		baseSlug: string;
+		/** The route family the card's buttons lead into. */
+		baseSlug: '/registration';
 		btnText?: string;
 		alreadyRegistered?: boolean;
 		alwaysEnableButton?: boolean;
@@ -25,17 +26,9 @@
 		alwaysEnableButton = false
 	}: ConferenceCardProps = $props();
 
-	let registrationStatus = $derived(
-		getRegistrationStatus(conference.state, new Date(conference.startAssignment))
-	);
-
-	let waitingListStatus = $derived(
-		getWaitingListStatus(
-			conference.totalSeats,
-			conference.totalParticipants,
-			conference.waitingListLength
-		)
-	);
+	let status = $derived(getConferenceRegistrationStatus(conference));
+	let registrationStatus = $derived(status.registrationStatus);
+	let waitingListStatus = $derived(status.waitingListStatus);
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
@@ -77,10 +70,11 @@
 	};
 
 	const cardInfoItems = () => {
-		const items: { fontAwesomeIcon: string; text?: string; link?: string }[] = [
+		const items: ComponentProps<typeof CardInfoSectionWithIcons>['items'] = [
 			{
 				fontAwesomeIcon: 'fa-calendar',
-				text: `<span class="whitespace-nowrap">
+				// Two locale-formatted dates, kept from breaking inside themselves
+				trustedHtml: `<span class="whitespace-nowrap">
 								${new Date(conference.startConference).toLocaleDateString(getLocale(), dateOptions)}
 							</span> - <span class="whitespace-nowrap">
 							${new Date(conference.endConference).toLocaleDateString(getLocale(), dateOptions)}
@@ -126,17 +120,32 @@
 		<CardInfoSectionWithIcons items={cardInfoItems()} />
 		<div class="card-actions mt-4 h-full flex-col items-end justify-end">
 			{#if alreadyRegistered && !alwaysEnableButton}
-				<a href={`/dashboard/${conference.id}`} class="btn btn-success">
+				<a
+					href={resolve('/(authenticated)/dashboard/[conferenceId]', {
+						conferenceId: conference.id
+					})}
+					class="btn btn-success"
+				>
 					{btnText ?? m.dashboard()}
 					<i class="fas fa-arrow-right"></i>
 				</a>
 			{:else if registrationStatus === 'OPEN' || alwaysEnableButton}
-				<a href="{baseSlug}/{conference.id}" class="btn btn-primary">
+				<a
+					href={resolve(`/(authenticated)${baseSlug}/[conferenceId]`, {
+						conferenceId: conference.id
+					})}
+					class="btn btn-primary"
+				>
 					{btnText ?? m.signup()}
 					<i class="fas fa-arrow-right"></i>
 				</a>
 			{:else if registrationStatus === 'WAITING_LIST'}
-				<a href="{baseSlug}/{conference.id}/waiting-list" class="btn btn-accent">
+				<a
+					href={resolve(`/(authenticated)${baseSlug}/[conferenceId]/waiting-list`, {
+						conferenceId: conference.id
+					})}
+					class="btn btn-accent"
+				>
 					{btnText ?? (waitingListStatus === 'VACANCIES' ? m.vacanciesBtn() : m.waitingListBtn())}
 					<i class="fas fa-arrow-right"></i>
 				</a>
@@ -146,7 +155,11 @@
 					{btnText ?? m.signup()}
 				</button>
 			{/if}
-			<a href="/seats/{conference.id}" target="_blank" class="btn btn-outline btn-primary">
+			<a
+				href={resolve('/seats/[conferenceId]', { conferenceId: conference.id })}
+				target="_blank"
+				class="btn btn-outline btn-primary"
+			>
 				{m.conferenceSeats()}
 				<i class="fas fa-arrow-up-right-from-square"></i>
 			</a>

@@ -29,7 +29,7 @@
 	$effect(() => {
 		for (const s of status) {
 			if (s.hotkey) {
-				hotkeys(s.hotkey ?? '', (event, handler) => {
+				hotkeys(s.hotkey ?? '', (event) => {
 					event.preventDefault();
 					btnClick(s.value);
 				});
@@ -52,7 +52,7 @@
 		{title}
 	</h3>
 	<div class="join w-full">
-		{#each status as { value, faIcon, color, hotkey }}
+		{#each status as { value, faIcon, color, hotkey } (value)}
 			<button
 				class="btn {activeStatus === value && `${color}`} join-item flex-1"
 				aria-label={`${value}`}

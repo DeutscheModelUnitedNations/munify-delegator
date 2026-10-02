@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Divider from './Divider.svelte';
 
 	interface Props {
 		title: string;

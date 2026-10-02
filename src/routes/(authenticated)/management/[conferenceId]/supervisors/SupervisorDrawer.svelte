@@ -1,10 +1,13 @@
 <script lang="ts">
-	import { m, singleParticipants } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
+	import { m } from '$lib/paraglide/messages';
 	import Drawer from '$lib/components/Drawer.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import formatNames from '$lib/helpers/formatNames';
 	import StatusWidgetBoolean from '$lib/components/BooleanStatusWidget.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import UserCardButton from '$lib/components/registrationAdmin/UserCardButton.svelte';
+	import SupervisedTable from './SupervisedTable.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -16,9 +19,9 @@
 
 	const person = { id: true, givenName: true, familyName: true } as const;
 
-	function fetchSupervisor(id: string) {
-		return client.query.conferenceSupervisor({
-			__args: { id },
+	const supervisor = $derived(
+		await client.liveQuery.conferenceSupervisor({
+			__args: { id: supervisorId },
 			id: true,
 			plansOwnAttendenceAtConference: true,
 			user: person,
@@ -38,51 +41,63 @@
 				id: true,
 				school: true,
 				applied: true,
-				user: person
+				user: { givenName: true, familyName: true }
 			}
-		});
-	}
+		})
+	);
 
-	let supervisor = $state<Awaited<ReturnType<typeof fetchSupervisor>>>();
-	let loading = $state(false);
-
-	async function loadSupervisor(id: string) {
-		loading = true;
-		try {
-			supervisor = await fetchSupervisor(id);
-		} finally {
-			loading = false;
-		}
-	}
-
-	$effect(() => {
-		void loadSupervisor(supervisorId);
+	/** Each supervised delegation once, with the supervised members that belong to it. */
+	const delegations = $derived.by(() => {
+		const members = supervisor.supervisedDelegationMembers;
+		const unique = members
+			.map((member) => member.delegation)
+			.filter((d, i, all) => all.findIndex((other) => other.id === d.id) === i);
+		return unique.map((delegation) => ({
+			delegation,
+			members: members.filter((member) => member.delegation.id === delegation.id)
+		}));
 	});
 
 	const changeAdministrativeStatus = async (plansOwnAttendence: boolean) => {
-		if (!supervisor) return;
 		await client.mutate.updateConferenceSupervisor({
 			__args: { id: supervisor.id, plansOwnAttendenceAtConference: plansOwnAttendence },
 			id: true,
 			plansOwnAttendenceAtConference: true
 		});
-		await loadSupervisor(supervisor.id);
 	};
 </script>
+
+{#snippet appliedIcon(applied: boolean)}
+	{#if applied}
+		<i class="fa-solid fa-circle-check text-success"></i>
+	{:else}
+		<i class="fa-solid fa-hourglass-half text-error"></i>
+	{/if}
+{/snippet}
+
+{#snippet detailsLink(list: 'delegations' | 'individuals', selectedId: string)}
+	<a
+		class="btn btn-sm"
+		href={resolve(`/management/${conferenceId}/${list}?selected=${selectedId}`)}
+		aria-label="Details"
+	>
+		<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+	</a>
+{/snippet}
 
 <Drawer
 	bind:open
 	{onClose}
 	category={m.supervisor()}
 	title={formatNames(
-		supervisor?.user?.givenName ?? undefined,
-		supervisor?.user?.familyName ?? undefined,
+		supervisor.user.givenName ?? undefined,
+		supervisor.user.familyName ?? undefined,
 		{ givenNameFirst: false }
 	)}
-	id={supervisor?.id ?? 'N/A'}
-	{loading}
+	id={supervisor.id}
+	loading={false}
 >
-	{#if supervisor?.plansOwnAttendenceAtConference}
+	{#if supervisor.plansOwnAttendenceAtConference}
 		<div class="alert alert-success">
 			<i class="fas fa-location-check"></i>
 			{m.supervisorPlansOwnAttendance()}
@@ -99,154 +114,76 @@
 		falseicon="fa-cloud"
 		trueicon="fa-location-check"
 		falsecolor="btn-info"
-		status={supervisor?.plansOwnAttendenceAtConference ?? false}
+		status={supervisor.plansOwnAttendenceAtConference}
 		changeStatus={async (newStatus: boolean) => changeAdministrativeStatus(newStatus)}
 	/>
-	<div class="flex flex-col">
-		<h3 class="text-xl font-bold">{m.delegations()}</h3>
-		<div class="overflow-x-auto">
-			<table class="table">
-				<thead>
-					<tr>
-						<th></th>
-						<th></th>
-						<th></th>
-						<th></th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#if supervisor?.supervisedDelegationMembers?.length ?? 0 > 0}
-						{@const delegationIds = new Set(
-							supervisor?.supervisedDelegationMembers.map((x) => x.delegation.id) ?? []
-						)}
-						{#each delegationIds ?? [] as delegationId}
-							{@const delegation = supervisor?.supervisedDelegationMembers.find(
-								(x) => x.delegation.id === delegationId
-							)?.delegation}
-							<tr>
-								<td>
-									{#if delegation?.applied}
-										<i class="fa-solid fa-circle-check text-success"></i>
-									{:else}
-										<i class="fa-solid fa-hourglass-half text-error"></i>
-									{/if}
-								</td>
-								<td class="font-mono">
-									{delegation?.entryCode}
-								</td>
-								<td>
-									{delegation?.members.length}
-								</td>
-								<td>
-									{delegation?.school}
-								</td>
-								<td>
-									<a
-										class="btn btn-sm"
-										href={`/management/${conferenceId}/delegations?selected=${delegation?.id}`}
-										aria-label="Details"
-									>
-										<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-									</a>
-								</td>
-							</tr>
-							{#each supervisor?.supervisedDelegationMembers?.filter((x) => x.delegation.id === delegationId) ?? [] as member}
-								<tr class="text-xs">
-									<td class="text-right"><i class="fa-duotone fa-arrow-turn-down-right"></i></td>
-									<td colspan="3">
-										{member.user.givenName}
-										<span class="uppercase">{member.user.familyName}</span>
-										{#if member.isHeadDelegate}
-											<i class="fa-duotone fa-medal ml-2"></i>
-										{/if}
-									</td>
-									<td>
-										<button
-											class="btn btn-ghost btn-sm btn-square"
-											onclick={() => {
-												if (member.user?.id) openUserCard(member.user.id, conferenceId);
-											}}
-											aria-label="Details"
-										>
-											<i class="fa-duotone fa-id-card"></i>
-										</button>
-									</td>
-								</tr>
-							{/each}
-							<tr><td></td></tr>
-						{/each}
-					{:else}
-						<tr>
-							<td>{m.noDelegationsFound()}</td>
-						</tr>
-					{/if}
-				</tbody>
-			</table>
-		</div>
-	</div>
+	<SupervisedTable
+		title={m.delegations()}
+		columnCount={5}
+		empty={delegations.length === 0}
+		emptyMessage={m.noDelegationsFound()}
+	>
+		{#each delegations as { delegation, members } (delegation.id)}
+			<tr>
+				<td>{@render appliedIcon(delegation.applied)}</td>
+				<td class="font-mono">
+					{delegation.entryCode}
+				</td>
+				<td>
+					{delegation.members.length}
+				</td>
+				<td>
+					{delegation.school}
+				</td>
+				<td>
+					{@render detailsLink('delegations', delegation.id)}
+				</td>
+			</tr>
+			{#each members as member (member.id)}
+				<tr class="text-xs">
+					<td class="text-right"><i class="fa-duotone fa-arrow-turn-down-right"></i></td>
+					<td colspan="3">
+						{member.user.givenName}
+						<span class="uppercase">{member.user.familyName}</span>
+						{#if member.isHeadDelegate}
+							<i class="fa-duotone fa-medal ml-2"></i>
+						{/if}
+					</td>
+					<td>
+						<UserCardButton userId={member.user.id} {conferenceId} />
+					</td>
+				</tr>
+			{/each}
+			<tr><td></td></tr>
+		{/each}
+	</SupervisedTable>
 
-	<div class="flex flex-col">
-		<h3 class="text-xl font-bold">{m.singleParticipants()}</h3>
-		<div class="overflow-x-auto">
-			<table class="table">
-				<thead>
-					<tr>
-						<th></th>
-						<th></th>
-						<th></th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#if supervisor?.supervisedSingleParticipants?.length ?? 0 > 0}
-						{@const singleParticipants = supervisor?.supervisedSingleParticipants}
-						{#each singleParticipants ?? [] as singleParticipant}
-							<tr>
-								<td>
-									{#if singleParticipant?.applied}
-										<i class="fa-solid fa-circle-check text-success"></i>
-									{:else}
-										<i class="fa-solid fa-hourglass-half text-error"></i>
-									{/if}
-								</td>
-								<td class="">
-									{singleParticipant.user.givenName}
-									<span class="uppercase">{singleParticipant.user.familyName}</span>
-								</td>
-								<td>
-									{singleParticipant?.school}
-								</td>
-								<td>
-									<a
-										class="btn btn-sm"
-										href={`/management/${conferenceId}/individuals?selected=${singleParticipant?.id}`}
-										aria-label="Details"
-									>
-										<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-									</a>
-								</td>
-							</tr>
-						{/each}
-					{:else}
-						<tr>
-							<td>{m.noSingleParticipantsFound()}</td>
-						</tr>
-					{/if}
-				</tbody>
-			</table>
-		</div>
-	</div>
+	<SupervisedTable
+		title={m.singleParticipants()}
+		columnCount={4}
+		empty={supervisor.supervisedSingleParticipants.length === 0}
+		emptyMessage={m.noSingleParticipantsFound()}
+	>
+		{#each supervisor.supervisedSingleParticipants as singleParticipant (singleParticipant.id)}
+			<tr>
+				<td>{@render appliedIcon(singleParticipant.applied)}</td>
+				<td class="">
+					{singleParticipant.user.givenName}
+					<span class="uppercase">{singleParticipant.user.familyName}</span>
+				</td>
+				<td>
+					{singleParticipant.school}
+				</td>
+				<td>
+					{@render detailsLink('individuals', singleParticipant.id)}
+				</td>
+			</tr>
+		{/each}
+	</SupervisedTable>
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<button
-			class="btn"
-			onclick={() => {
-				const userId = supervisor?.user.id;
-				if (userId) openUserCard(userId, conferenceId);
-			}}
-		>
+		<button class="btn" onclick={() => openUserCard(supervisor.user.id, conferenceId)}>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-id-card"></i>
 		</button>

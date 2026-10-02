@@ -1,16 +1,8 @@
-import {
-	PDFDocument,
-	rgb,
-	StandardFonts,
-	PageSizes,
-	PDFPage,
-	PDFFont,
-	PDFName,
-	PDFString
-} from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont, PDFName, PDFString } from 'pdf-lib';
 import bwipjs from '@bwip-js/browser';
 import { toast } from 'svelte-sonner';
 import fontkit from '@pdf-lib/fontkit';
+import { downloadPDF } from '$lib/utils/downloadHelpers';
 
 export interface ParticipantData {
 	id: string;
@@ -126,7 +118,7 @@ class PDFUtils {
 	}
 
 	drawFoldMarks() {
-		const { width, height } = this.page.getSize();
+		const { height } = this.page.getSize();
 		const foldHeight = 1; // Height of the fold mark
 
 		const marks = [
@@ -203,20 +195,44 @@ abstract class PDFPageGenerator {
 	}
 }
 
-class ContractGenerator extends PDFPageGenerator {
+/** A generator that fills a participant's details into the first page of a template. */
+abstract class ParticipantFormGenerator extends PDFPageGenerator {
+	protected participantData: ParticipantData;
+	protected page: PDFPage;
+	constructor(pdfDoc: PDFDocument, styles = defaultStyles, participantData: ParticipantData) {
+		super(pdfDoc, styles);
+		this.participantData = participantData;
+		this.page = this.pdfDoc.getPage(0);
+	}
+
+	/** Writes one form field value in the custom font at the left margin. */
+	protected drawField(text: string, y: number, size = this.styles.fontSize.heading) {
+		this.page.drawText(text, {
+			x: this.styles.margin.left,
+			y,
+			size,
+			font: this.custfont,
+			color: rgb(0, 0, 0)
+		});
+	}
+
+	/** Writes the participant's name and birthday, the second one `gap` points below the first. */
+	protected drawNameAndBirthday(nameY: number, gap: number) {
+		this.drawField(this.participantData.name, nameY);
+		this.drawField(this.participantData.birthday, nameY - gap);
+	}
+}
+
+class ContractGenerator extends ParticipantFormGenerator {
 	private recipientData: RecipientData;
-	private participantData: ParticipantData;
-	private page: PDFPage;
 	constructor(
 		pdfDoc: PDFDocument,
 		styles = defaultStyles,
 		recipientData: RecipientData,
 		participantData: ParticipantData
 	) {
-		super(pdfDoc, styles);
+		super(pdfDoc, styles, participantData);
 		this.recipientData = recipientData;
-		this.participantData = participantData;
-		this.page = this.pdfDoc.getPage(0);
 	}
 	protected async generateContent(): Promise<void> {
 		const { width, height } = this.page.getSize();
@@ -275,92 +291,22 @@ class ContractGenerator extends PDFPageGenerator {
 		});
 
 		// Participant Fields
-		yPosition = height - 320;
-		this.page.drawText(this.participantData.name, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.heading,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
-		yPosition = height - 380;
-		this.page.drawText(this.participantData.birthday, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.heading,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
+		this.drawNameAndBirthday(height - 320, 60);
 	}
 }
 
-class GuardianGenerator extends PDFPageGenerator {
-	private participantData: ParticipantData;
-	private page: PDFPage;
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles, participantData: ParticipantData) {
-		super(pdfDoc, styles);
-		this.participantData = participantData;
-		this.page = this.pdfDoc.getPage(0);
-	}
+class GuardianGenerator extends ParticipantFormGenerator {
 	protected async generateContent(): Promise<void> {
-		const { width, height } = this.page.getSize();
-		let yPosition: number;
-
-		yPosition = height - 180;
-		this.page.drawText(this.participantData.name, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.heading,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
-		yPosition = height - 240;
-		this.page.drawText(this.participantData.birthday, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.heading,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
+		const { height } = this.page.getSize();
+		this.drawNameAndBirthday(height - 180, 60);
 	}
 }
 
-class MediaGenerator extends PDFPageGenerator {
-	private participantData: ParticipantData;
-	private page: PDFPage;
-	constructor(pdfDoc: PDFDocument, styles = defaultStyles, participantData: ParticipantData) {
-		super(pdfDoc, styles);
-		this.participantData = participantData;
-		this.page = this.pdfDoc.getPage(0);
-	}
+class MediaGenerator extends ParticipantFormGenerator {
 	protected async generateContent(): Promise<void> {
-		const { width, height } = this.page.getSize();
-		let yPosition: number;
-
-		yPosition = height - 225;
-		this.page.drawText(this.participantData.name, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.heading,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
-		yPosition -= 42;
-		this.page.drawText(this.participantData.birthday, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: this.styles.fontSize.heading,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
-		yPosition -= 42;
-		this.page.drawText(this.participantData.address, {
-			x: this.styles.margin.left,
-			y: yPosition,
-			size: 10,
-			font: this.custfont,
-			color: rgb(0, 0, 0)
-		});
+		const { height } = this.page.getSize();
+		this.drawNameAndBirthday(height - 225, 42);
+		this.drawField(this.participantData.address, height - 225 - 84, 10);
 	}
 }
 
@@ -556,46 +502,45 @@ class CertificateGenerator extends PDFPageGenerator {
 	}
 }
 
+/** Copies every page of `source` to the end of `target`. */
+async function appendPages(target: PDFDocument, source: PDFDocument) {
+	const copiedPages = await target.copyPages(source, source.getPageIndices());
+	copiedPages.forEach((page) => {
+		target.addPage(page);
+	});
+}
+
 // Main function to generate complete PDF
-export async function generateCompletePostalRegistrationPDF(
+async function generateCompletePostalRegistrationPDF(
 	isOfAge: boolean,
 	participant: ParticipantData,
 	recipient: RecipientData,
-	contract?: string,
-	guardianAgreement?: string,
-	medialAgreement?: string,
-	termsAndConditions?: string
+	contract: string,
+	guardianAgreement: string,
+	medialAgreement: string,
+	termsAndConditions: string
 ): Promise<Uint8Array> {
 	// Determine which pages to include based on age
-	const pageGenerators: any[] = [];
+	const pageGenerators: PDFPageGenerator[] = [];
 
 	// First PDF is always included
 	pageGenerators.push(
-		new ContractGenerator(
-			await PDFDocument.load(contract || ''),
-			defaultStyles,
-			recipient,
-			participant
-		)
+		new ContractGenerator(await PDFDocument.load(contract), defaultStyles, recipient, participant)
 	);
 
 	if (!isOfAge) {
 		// Second PDF depends on age
 		pageGenerators.push(
-			new GuardianGenerator(
-				await PDFDocument.load(guardianAgreement || ''),
-				defaultStyles,
-				participant
-			)
+			new GuardianGenerator(await PDFDocument.load(guardianAgreement), defaultStyles, participant)
 		);
 	}
 
 	// // Third page depends on age
 	pageGenerators.push(
-		new MediaGenerator(await PDFDocument.load(medialAgreement || ''), defaultStyles, participant)
+		new MediaGenerator(await PDFDocument.load(medialAgreement), defaultStyles, participant)
 	);
 
-	const singlePDFs: any[] = [];
+	const singlePDFs: PDFDocument[] = [];
 
 	// Generate all pages
 	for (const generator of pageGenerators) {
@@ -605,22 +550,13 @@ export async function generateCompletePostalRegistrationPDF(
 	// Create a new PDF document
 	const mergedPdfDoc = await PDFDocument.create();
 	for (const pdf of singlePDFs) {
-		const copiedPages = await mergedPdfDoc.copyPages(pdf, pdf.getPageIndices());
-		copiedPages.forEach((page) => {
-			mergedPdfDoc.addPage(page);
-		});
+		await appendPages(mergedPdfDoc, pdf);
 	}
 
 	// Track main page count before adding appendix (terms and conditions)
 	const mainPageCount = mergedPdfDoc.getPageCount();
 
-	if (termsAndConditions) {
-		const termsPdf = await PDFDocument.load(termsAndConditions);
-		const copiedPages = await mergedPdfDoc.copyPages(termsPdf, termsPdf.getPageIndices());
-		copiedPages.forEach((page) => {
-			mergedPdfDoc.addPage(page);
-		});
-	}
+	await appendPages(mergedPdfDoc, await PDFDocument.load(termsAndConditions));
 
 	// Add page numbers, participant name, data-matrix barcode, and participant ID to each page
 	await numerateDocument(mergedPdfDoc, participant.id, participant.name, mainPageCount);
@@ -630,61 +566,47 @@ export async function generateCompletePostalRegistrationPDF(
 	return mergedPdfBytes;
 }
 
+/** The template content, or a toast naming what is missing and an error when there is none. */
+function requireContent(content: string | null | undefined, missingMessage: string): string {
+	if (content) return content;
+	toast.error(missingMessage);
+	throw new Error('Missing required PDF content');
+}
+
 // Export function for usage
 export async function downloadCompletePostalRegistrationPDF(
 	isOfAge: boolean,
 	participant: ParticipantData,
 	recipient: RecipientData,
-	contract?: string,
-	guardianAgreement?: string,
-	medialAgreement?: string,
-	termsAndConditions?: string,
+	contract?: string | null,
+	guardianAgreement?: string | null,
+	medialAgreement?: string | null,
+	termsAndConditions?: string | null,
 	fileName: string = 'postal_registration.pdf'
 ): Promise<void> {
-	if (!contract) {
-		toast.error('Missing contract content');
-		throw new Error('Missing required PDF content');
-	}
-	if (!guardianAgreement) {
-		toast.error('Missing guardian agreement content');
-		throw new Error('Missing required PDF content');
-	}
-	if (!medialAgreement) {
-		toast.error('Missing media agreement content');
-		throw new Error('Missing required PDF content');
-	}
-	if (!termsAndConditions) {
-		toast.error('Missing terms and conditions content');
-		throw new Error('Missing required PDF content');
-	}
+	const contractContent = requireContent(contract, 'Missing contract content');
+	const guardianContent = requireContent(guardianAgreement, 'Missing guardian agreement content');
+	const mediaContent = requireContent(medialAgreement, 'Missing media agreement content');
+	const termsContent = requireContent(termsAndConditions, 'Missing terms and conditions content');
 	try {
 		const pdfBytes = await generateCompletePostalRegistrationPDF(
 			isOfAge,
 			participant,
 			recipient,
-			contract,
-			guardianAgreement,
-			medialAgreement,
-			termsAndConditions
+			contractContent,
+			guardianContent,
+			mediaContent,
+			termsContent
 		);
 
-		const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = fileName;
-		link.click();
-		URL.revokeObjectURL(url);
+		downloadPDF(pdfBytes, fileName);
 	} catch (error) {
 		console.error('Error generating registration form:', error);
 		throw error;
 	}
 }
 
-export async function generateCertificatePDF(
-	data: ParticipantCertificateData,
-	certificate: string
-) {
+async function generateCertificatePDF(data: ParticipantCertificateData, certificate: string) {
 	const pageGenerator = new CertificateGenerator(
 		await PDFDocument.load(certificate || ''),
 		defaultStyles,
@@ -710,13 +632,7 @@ export async function downloadCompleteCertificate(
 		}
 		const pdfBytes = await generateCertificatePDF(data, certificate);
 
-		const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = fileName;
-		link.click();
-		URL.revokeObjectURL(url);
+		downloadPDF(pdfBytes, fileName);
 	} catch (error) {
 		console.error('Error generating registration form:', error);
 		throw error;

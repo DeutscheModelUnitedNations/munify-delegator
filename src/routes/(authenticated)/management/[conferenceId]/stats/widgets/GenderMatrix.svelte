@@ -1,9 +1,23 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import type { StatsWidgetData } from '../statsQuery';
 	import NumberMatrix from './NumberMatrix.svelte';
-	let props: { data: StatsWidgetData } = $props();
-	let genderData = $derived(props.data.stats.gender);
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
+
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			gender: {
+				delegationMembers: { male: true, female: true, diverse: true, noStatement: true },
+				singleParticipants: { male: true, female: true, diverse: true, noStatement: true },
+				supervisors: { male: true, female: true, diverse: true, noStatement: true },
+				teamMembers: { male: true, female: true, diverse: true, noStatement: true }
+			}
+		})
+	);
+	let genderData = $derived(stats.gender);
 
 	let matrixData = $derived.by(() => {
 		return [

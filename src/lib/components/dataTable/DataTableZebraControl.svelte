@@ -11,8 +11,8 @@
 			type="checkbox"
 			class="toggle"
 			checked={getZebra()}
-			onchange={(e: any) => {
-				setZebra(e.target.checked);
+			onchange={(e) => {
+				setZebra(e.currentTarget.checked);
 			}}
 		/>
 	</div>

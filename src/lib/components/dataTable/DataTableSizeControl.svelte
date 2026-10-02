@@ -30,8 +30,8 @@
 			value={translateTableSize(getTableSize())}
 			class="range"
 			step="1"
-			onchange={(e: any) => {
-				switch (e.target.value) {
+			onchange={(e) => {
+				switch (e.currentTarget.value) {
 					case '0':
 						setTableSize('xs');
 						break;

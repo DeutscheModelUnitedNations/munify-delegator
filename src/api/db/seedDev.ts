@@ -8,7 +8,7 @@ import { makeSeedConference } from './seed-data/conference';
 import { makeSeedCommittee } from './seed-data/committee';
 import { makeSeedNSA } from './seed-data/nonStateActor';
 import { makeSeedCustomConferenceRole } from './seed-data/customConferenceRole';
-import { makeSeedDelegation } from './seed-data/delegation';
+import { assignSeedRole, makeSeedDelegation } from './seed-data/delegation';
 import { makeSeedDelegationMember } from './seed-data/delegationMember';
 import { makeSeedConferenceSupervisor } from './seed-data/conferenceSupervisor';
 import { makeSeedSingleParticipant } from './seed-data/singleParticipant';
@@ -123,11 +123,7 @@ for (const conference of [
 	const delegations = times(DELEGATIONS_PER_CONFERENCE, (index) => {
 		const delegation = makeSeedDelegation({ conferenceId });
 		if (conferenceIsInAssignedState) {
-			if (faker.datatype.boolean()) {
-				delegation.assignedNationAlpha3Code = nationsToAssign[index]?.alpha3Code ?? null;
-			} else {
-				delegation.assignedNonStateActorId = nonStateActorsToAssign[index]?.id ?? null;
-			}
+			assignSeedRole(delegation, nationsToAssign[index], nonStateActorsToAssign[index]);
 		}
 		return delegation;
 	});

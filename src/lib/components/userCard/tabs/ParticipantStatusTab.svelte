@@ -6,90 +6,57 @@
 	import ParticipantStatusMediaWidget from '$lib/components/ParticipantStatusMediaWidget.svelte';
 	import ParticipantAssignedDocumentWidget from '$lib/components/ParticipantAssignedDocumentWidget.svelte';
 	import ParticipantPaymentWidget from '$lib/components/ParticipantPaymentWidget.svelte';
-	import AccessCardSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AccessCardSection.svelte';
-	import AttendanceSection from '../../../../routes/(authenticated)/management/[conferenceId]/participants/AttendanceSection.svelte';
+	import AccessCardSection from '../AccessCardSection.svelte';
+	import AttendanceSection from '../AttendanceSection.svelte';
+	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import GuardianConsentNotNeeded from '$lib/components/GuardianConsentNotNeeded.svelte';
 	import {
-		downloadCompletePostalRegistrationPDF,
+		downloadPostalRegistrationDocuments,
+		fetchPostalRegistrationSources,
+		formatPostalParticipantName
+	} from '$lib/api/postalRegistrationSources';
+	import {
 		downloadCompleteCertificate,
 		type ParticipantData,
 		type RecipientData
 	} from '$lib/utils/pdfGenerator';
 	import formatNames from '$lib/helpers/formatNames';
 
-	type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
-
 	interface Props {
-		status:
-			| {
-					id: string;
-					paymentStatus?: string | null;
-					termsAndConditions?: string | null;
-					guardianConsent?: string | null;
-					mediaConsent?: string | null;
-					mediaConsentStatus?: MediaconsentstatusEnum | null;
-					didAttend?: boolean | null;
-					assignedDocumentNumber?: number | null;
-					accessCardId?: string | null;
-					attendanceEntries?: {
-						id: string;
-						timestamp: Date;
-						occasion: string;
-						recordedBy: { id: string; givenName: string | null; familyName: string | null };
-					}[];
-			  }
-			| null
-			| undefined;
 		userId: string;
 		conferenceId: string;
-		user:
-			| {
-					id: string;
-					givenName?: string | null;
-					familyName?: string | null;
-					street?: string | null;
-					apartment?: string | null;
-					zip?: string | null;
-					city?: string | null;
-					country?: string | null;
-					birthday?: Date | null;
-			  }
-			| null
-			| undefined;
-		conference:
-			| {
-					id: string;
-					startConference?: Date | null;
-					endConference?: Date | null;
-					title?: string | null;
-					postalName?: string | null;
-					postalStreet?: string | null;
-					postalApartment?: string | null;
-					postalZip?: string | null;
-					postalCity?: string | null;
-					postalCountry?: string | null;
-			  }
-			| null
-			| undefined;
-		birthday?: Date | null;
 		isConferenceSupervisor: boolean;
-		onUpdate?: () => void;
 	}
 
-	let {
-		status,
-		userId,
-		conferenceId,
-		user,
-		conference,
-		birthday,
-		isConferenceSupervisor,
-		onUpdate
-	}: Props = $props();
+	let { userId, conferenceId, isConferenceSupervisor }: Props = $props();
 
-	const isAdult = $derived(ofAgeAtConference(conference?.startConference, birthday));
+	/** The status row plus the two dates that decide whether a guardian has to consent. */
+	async function fetchStatus(userId: string, conferenceId: string) {
+		const [statuses, user, conference] = await Promise.all([
+			client.liveQuery.conferenceParticipantStatuses({
+				__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } } },
+				id: true,
+				paymentStatus: true,
+				termsAndConditions: true,
+				guardianConsent: true,
+				mediaConsent: true,
+				mediaConsentStatus: true,
+				didAttend: true,
+				assignedDocumentNumber: true,
+				accessCardId: true
+			}),
+			client.liveQuery.user({ __args: { id: userId }, id: true, birthday: true }),
+			client.liveQuery.conference({ __args: { id: conferenceId }, id: true, startConference: true })
+		]);
+		return { statuses, user, conference };
+	}
+
+	const data = $derived(await fetchStatus(userId, conferenceId));
+	const status = $derived(data.statuses.at(0));
+
+	const isAdult = $derived(ofAgeAtConference(data.conference.startConference, data.user.birthday));
 
 	/** The mutation's own argument type minus the identifying fields this component fills in. */
 	type StatusChange = Omit<
@@ -109,82 +76,62 @@
 			assignedDocumentNumber: true,
 			accessCardId: true
 		});
-		toast.promise(promise, {
-			loading: m.genericToastLoading(),
-			success: m.genericToastSuccess(),
-			error: m.genericToastError()
-		});
+		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		onUpdate?.();
 	};
 
+	/** Everything the postal documents need is read when they are asked for, not kept live. */
 	const downloadPostalDocs = async () => {
 		try {
-			const baseContent = await client.query.conference({
-				__args: { id: conferenceId },
-				id: true,
-				contractContent: true,
-				guardianConsentContent: true,
-				mediaConsentContent: true,
-				termsAndConditionsContent: true
-			});
+			const { user, conference } = await fetchPostalRegistrationSources(userId, conferenceId);
 
 			if (
-				!conference?.postalName ||
-				!conference?.postalStreet ||
-				!conference?.postalZip ||
-				!conference?.postalCity ||
-				!conference?.postalCountry
+				!conference.postalName ||
+				!conference.postalStreet ||
+				!conference.postalZip ||
+				!conference.postalCity ||
+				!conference.postalCountry
 			) {
 				toast.error(m.httpGenericError());
 				return;
 			}
 
-			if (user) {
-				if (!user.birthday) {
-					toast.error(m.httpMissingRequiredData());
-					return;
-				}
-
-				const recipientData: RecipientData = {
-					name: `${conference.postalName}`,
-					address: `${conference.postalStreet} ${conference.postalApartment ?? ''}`,
-					zip: conference.postalZip?.toString() ?? '',
-					city: conference.postalCity ?? '',
-					country: conference.postalCountry ?? ''
-				};
-
-				const participantData: ParticipantData = {
-					id: user.id,
-					name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-						givenNameFirst: true,
-						familyNameUppercase: true,
-						givenNameUppercase: true
-					}),
-					address: [
-						[user.street, user.apartment].filter(Boolean).join(' '),
-						[user.zip, user.city].filter(Boolean).join(' '),
-						user.country
-					]
-						.filter(Boolean)
-						.join(', '),
-					birthday: user.birthday.toLocaleDateString()
-				};
-
-				await downloadCompletePostalRegistrationPDF(
-					ofAgeAtConference(conference.startConference, user.birthday),
-					participantData,
-					recipientData,
-					baseContent.contractContent ?? undefined,
-					baseContent.guardianConsentContent ?? undefined,
-					baseContent.mediaConsentContent ?? undefined,
-					baseContent.termsAndConditionsContent ?? undefined,
-					`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-						givenNameFirst: false,
-						delimiter: '_'
-					})}_postal_registration.pdf`
-				);
+			if (!user.birthday) {
+				toast.error(m.httpMissingRequiredData());
+				return;
 			}
+
+			const recipientData: RecipientData = {
+				name: `${conference.postalName}`,
+				address: `${conference.postalStreet} ${conference.postalApartment ?? ''}`,
+				zip: conference.postalZip.toString(),
+				city: conference.postalCity,
+				country: conference.postalCountry
+			};
+
+			const participantData: ParticipantData = {
+				id: user.id,
+				name: formatPostalParticipantName(user.givenName, user.familyName),
+				address: [
+					[user.street, user.apartment].filter(Boolean).join(' '),
+					[user.zip, user.city].filter(Boolean).join(' '),
+					user.country
+				]
+					.filter(Boolean)
+					.join(', '),
+				birthday: user.birthday.toLocaleDateString()
+			};
+
+			await downloadPostalRegistrationDocuments({
+				conference,
+				birthday: user.birthday,
+				participant: participantData,
+				recipient: recipientData,
+				fileName: `${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
+					givenNameFirst: false,
+					delimiter: '_'
+				})}_postal_registration.pdf`
+			});
 		} catch (error) {
 			console.error('Error generating PDF:', error);
 			toast.error(m.httpGenericError());
@@ -193,7 +140,7 @@
 
 	const downloadCertificate = async () => {
 		try {
-			const [conferenceData, jwtData] = await Promise.all([
+			const [conferenceData, jwtData, user] = await Promise.all([
 				client.query.conference({
 					__args: { id: conferenceId },
 					certificateContent: true,
@@ -203,7 +150,8 @@
 					__args: { conferenceId, userId },
 					jwt: true,
 					fullName: true
-				})
+				}),
+				client.query.user({ __args: { id: userId }, id: true, givenName: true, familyName: true })
 			]);
 
 			if (!jwtData?.fullName || !jwtData?.jwt) {
@@ -211,16 +159,14 @@
 				return;
 			}
 
-			if (user) {
-				await downloadCompleteCertificate(
-					jwtData,
-					conferenceData.certificateContent ?? undefined,
-					`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
-						givenNameFirst: false,
-						delimiter: '_'
-					})}_certificate.pdf`
-				);
-			}
+			await downloadCompleteCertificate(
+				jwtData,
+				conferenceData.certificateContent ?? undefined,
+				`${formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
+					givenNameFirst: false,
+					delimiter: '_'
+				})}_certificate.pdf`
+			);
 		} catch (error) {
 			console.error('Error generating PDF:', error);
 			toast.error(m.certificateDownloadError());
@@ -235,7 +181,7 @@
 			<ParticipantStatusWidget
 				title={m.payment()}
 				faIcon="money-bill"
-				status={(status?.paymentStatus ?? 'PENDING') as AdministrativeStatus}
+				status={status?.paymentStatus ?? 'PENDING'}
 				changeStatus={async (newStatus) =>
 					await changeAdministrativeStatus({ paymentStatus: newStatus })}
 			/>
@@ -251,7 +197,7 @@
 			<ParticipantStatusWidget
 				title={m.userAgreement()}
 				faIcon="file-signature"
-				status={(status?.termsAndConditions ?? 'PENDING') as AdministrativeStatus}
+				status={status?.termsAndConditions ?? 'PENDING'}
 				changeStatus={async (newStatus) =>
 					await changeAdministrativeStatus({ termsAndConditions: newStatus })}
 			/>
@@ -262,7 +208,7 @@
 					<ParticipantStatusWidget
 						title={m.guardianAgreement()}
 						faIcon="shield-halved"
-						status={(status?.guardianConsent ?? 'PENDING') as AdministrativeStatus}
+						status={status?.guardianConsent ?? 'PENDING'}
 						changeStatus={async (newStatus) =>
 							await changeAdministrativeStatus({ guardianConsent: newStatus })}
 					/>
@@ -271,7 +217,7 @@
 			<ParticipantStatusWidget
 				title={m.mediaAgreement()}
 				faIcon="camera"
-				status={(status?.mediaConsent ?? 'PENDING') as AdministrativeStatus}
+				status={status?.mediaConsent ?? 'PENDING'}
 				changeStatus={async (newStatus) =>
 					await changeAdministrativeStatus({ mediaConsent: newStatus })}
 			/>
@@ -305,14 +251,7 @@
 			accessCardId={status?.accessCardId}
 			onSave={async (value) => await changeAdministrativeStatus({ accessCardId: value })}
 		/>
-		<AttendanceSection
-			{userId}
-			{conferenceId}
-			entries={status?.attendanceEntries ?? []}
-			onChanged={async () => {
-				onUpdate?.();
-			}}
-		/>
+		<AttendanceSection {userId} {conferenceId} />
 	</div>
 
 	<div class="divider"></div>

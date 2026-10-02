@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { openUserCard } from '../userCardState.svelte';
-	import formatNames from '$lib/helpers/formatNames';
+	import PersonName from '../PersonName.svelte';
+	import OpenUserCardButton from '../OpenUserCardButton.svelte';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import codenmz from '$lib/helpers/codenamize';
@@ -10,31 +10,20 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 
 	interface Props {
-		userId: string;
+		supervisorId: string;
 		conferenceId: string;
-		conferenceSupervisor: {
-			id: string;
-			plansOwnAttendenceAtConference: boolean;
-			connectionCode: string;
-		};
-		onUpdate?: () => void;
 	}
 
-	let { userId, conferenceId, conferenceSupervisor, onUpdate }: Props = $props();
-
-	const copyConnectionCode = async () => {
-		await navigator.clipboard.writeText(conferenceSupervisor.connectionCode);
-		toast.success(m.codeCopied());
-	};
+	let { supervisorId, conferenceId }: Props = $props();
 
 	const studentSelection = { id: true, givenName: true, familyName: true } as const;
 
-	function fetchSupervisedStudents() {
-		return client.query.conferenceSupervisors({
-			__args: {
-				where: { conferenceId: { eq: conferenceId }, userId: { eq: userId } }
-			},
+	const conferenceSupervisor = $derived(
+		await client.liveQuery.conferenceSupervisor({
+			__args: { id: supervisorId },
 			id: true,
+			plansOwnAttendenceAtConference: true,
+			connectionCode: true,
 			supervisedDelegationMembers: {
 				id: true,
 				isHeadDelegate: true,
@@ -46,7 +35,7 @@
 					applied: true,
 					members: { id: true },
 					assignedNation: { alpha2Code: true, alpha3Code: true },
-					assignedNonStateActor: { name: true, abbreviation: true, fontAwesomeIcon: true }
+					assignedNonStateActor: { name: true, fontAwesomeIcon: true }
 				},
 				assignedCommittee: { id: true, abbreviation: true }
 			},
@@ -57,26 +46,15 @@
 				school: true,
 				assignedRole: { id: true, name: true }
 			}
-		});
-	}
+		})
+	);
+	const delegationMembers = $derived(conferenceSupervisor.supervisedDelegationMembers);
+	const singleParticipants = $derived(conferenceSupervisor.supervisedSingleParticipants);
 
-	let loadedSupervisors = $state<Awaited<ReturnType<typeof fetchSupervisedStudents>>>();
-	let studentsLoading = $state(false);
-
-	$effect(() => {
-		studentsLoading = true;
-		void fetchSupervisedStudents()
-			.then((result) => {
-				loadedSupervisors = result;
-			})
-			.finally(() => {
-				studentsLoading = false;
-			});
-	});
-
-	const supervisor = $derived(loadedSupervisors?.[0]);
-	const delegationMembers = $derived(supervisor?.supervisedDelegationMembers ?? []);
-	const singleParticipants = $derived(supervisor?.supervisedSingleParticipants ?? []);
+	const copyConnectionCode = async () => {
+		await navigator.clipboard.writeText(conferenceSupervisor.connectionCode);
+		toast.success(m.codeCopied());
+	};
 
 	// Group delegation members by their delegation
 	const groupedDelegations = $derived.by(() => {
@@ -116,7 +94,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		onUpdate?.();
 	};
 
 	const rotateCode = async () => {
@@ -128,9 +105,140 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		onUpdate?.();
 	};
+
+	const sortedSingleParticipants = $derived(
+		singleParticipants.toSorted((a, b) =>
+			(a.user.familyName ?? '').localeCompare(b.user.familyName ?? '')
+		)
+	);
+
+	type Group = (typeof groupedDelegations)[number];
 </script>
+
+{#snippet appliedIcon(applied: boolean)}
+	{#if applied}
+		<i class="fa-solid fa-circle-check text-success"></i>
+	{:else}
+		<i class="fa-solid fa-hourglass-half text-error"></i>
+	{/if}
+{/snippet}
+
+{#snippet attendancePlanBadge()}
+	{#if conferenceSupervisor.plansOwnAttendenceAtConference}
+		<span class="badge badge-sm badge-success">
+			<i class="fa-solid fa-location-check"></i>
+			{m.supervisorPlansOwnAttendance()}</span
+		>
+	{:else}
+		<span class="badge badge-sm badge-info">
+			<i class="fa-solid fa-cloud"></i>
+			{m.supervisorDoesNotPlanOwnAttendance()}</span
+		>
+	{/if}
+{/snippet}
+
+{#snippet delegationAssignment(delegation: Group['delegation'])}
+	{#if delegation.assignedNation}
+		<Flag alpha2Code={delegation.assignedNation.alpha2Code} size="xs" />
+	{:else if delegation.assignedNonStateActor}
+		<Flag
+			nsa
+			icon={delegation.assignedNonStateActor.fontAwesomeIcon ?? 'fa-hand-point-up'}
+			size="xs"
+		/>
+	{/if}
+	<div class="flex flex-col">
+		<div>
+			<span class="font-bold">{codenmz(delegation.id)}</span>
+			{#if delegation.assignedNation}
+				<span class="text-base-content/60 text-xs"
+					>({getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)})</span
+				>
+			{:else if delegation.assignedNonStateActor}
+				<span class="text-base-content/60 text-xs">({delegation.assignedNonStateActor.name})</span>
+			{/if}
+		</div>
+		{#if delegation.school}
+			<span class="text-base-content/60 text-xs">{delegation.school}</span>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet delegationGroupRows(group: Group)}
+	<!-- Delegation header row -->
+	<tr class="bg-base-200/50">
+		<td>{@render appliedIcon(group.delegation.applied)}</td>
+		<td>
+			<div class="flex items-center gap-2">
+				{@render delegationAssignment(group.delegation)}
+			</div>
+		</td>
+		<td>
+			<code class="bg-base-300 rounded px-1 text-xs font-mono">{group.delegation.entryCode}</code>
+		</td>
+		<td>
+			<span class="badge badge-sm"
+				>{group.delegation.members.length}
+				{m.delegationMembers()}</span
+			>
+		</td>
+		<td></td>
+	</tr>
+	<!-- Nested member rows -->
+	{#each group.members as member (member.id)}
+		<tr class="text-sm">
+			<td class="text-right">
+				<i class="fa-duotone fa-arrow-turn-down-right text-base-content/40"></i>
+			</td>
+			<td colspan="2">
+				<PersonName
+					givenName={member.user.givenName}
+					familyName={member.user.familyName}
+					isHeadDelegate={member.isHeadDelegate}
+				/>
+			</td>
+			<td>
+				{member.assignedCommittee?.abbreviation ?? ''}
+			</td>
+			<td>
+				<OpenUserCardButton user={member.user} {conferenceId} />
+			</td>
+		</tr>
+	{/each}
+{/snippet}
+
+{#snippet singleParticipantsTable()}
+	<table class="table table-sm">
+		<thead>
+			<tr>
+				<th></th>
+				<th>{m.name()}</th>
+				<th>{m.schoolOrInstitution()}</th>
+				<th>{m.assignedRole()}</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each sortedSingleParticipants as participant (participant.id)}
+				<tr>
+					<td>{@render appliedIcon(participant.applied)}</td>
+					<td>
+						<PersonName
+							givenName={participant.user.givenName}
+							familyName={participant.user.familyName}
+						/>
+					</td>
+					<td>{participant.school ?? 'N/A'}</td>
+					<td>{participant.assignedRole?.name ?? 'N/A'}</td>
+					<td>
+						<OpenUserCardButton user={participant.user} {conferenceId} />
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+{/snippet}
 
 <div class="flex flex-col gap-6">
 	<!-- Supervisor Info Card -->
@@ -150,17 +258,7 @@
 			</div>
 			<div class="flex items-center gap-1">
 				<span class="text-base-content/60">{m.attendancePlan()}:</span>
-				{#if conferenceSupervisor.plansOwnAttendenceAtConference}
-					<span class="badge badge-sm badge-success">
-						<i class="fa-solid fa-location-check"></i>
-						{m.supervisorPlansOwnAttendance()}</span
-					>
-				{:else}
-					<span class="badge badge-sm badge-info">
-						<i class="fa-solid fa-cloud"></i>
-						{m.supervisorDoesNotPlanOwnAttendance()}</span
-					>
-				{/if}
+				{@render attendancePlanBadge()}
 			</div>
 		</div>
 	</div>
@@ -183,178 +281,40 @@
 	</div>
 
 	<!-- Students list -->
-	{#if studentsLoading}
-		<div class="flex flex-col gap-3">
-			<div class="skeleton h-24 w-full"></div>
-			<div class="skeleton h-24 w-full"></div>
-		</div>
-	{:else if delegationMembers.length === 0 && singleParticipants.length === 0}
+	{#if delegationMembers.length === 0 && singleParticipants.length === 0}
 		<div class="alert alert-info">
 			<i class="fa-duotone fa-graduation-cap"></i>
 			<span>{m.userCardNoStudents()}</span>
 		</div>
-	{:else}
-		{#if groupedDelegations.length > 0}
-			<div>
-				<div class="divider"></div>
-				<h3 class="mb-2 text-lg font-bold">
-					{m.delegations()}
-				</h3>
-				<div class="overflow-x-auto">
-					<table class="table table-sm">
-						<tbody>
-							{#each groupedDelegations as group}
-								<!-- Delegation header row -->
-								<tr class="bg-base-200/50">
-									<td>
-										{#if group.delegation.applied}
-											<i class="fa-solid fa-circle-check text-success"></i>
-										{:else}
-											<i class="fa-solid fa-hourglass-half text-error"></i>
-										{/if}
-									</td>
-									<td>
-										<div class="flex items-center gap-2">
-											{#if group.delegation.assignedNation}
-												<Flag alpha2Code={group.delegation.assignedNation.alpha2Code} size="xs" />
-											{:else if group.delegation.assignedNonStateActor}
-												<Flag
-													nsa
-													icon={group.delegation.assignedNonStateActor.fontAwesomeIcon ??
-														'fa-hand-point-up'}
-													size="xs"
-												/>
-											{/if}
-											<div class="flex flex-col">
-												<div>
-													<span class="font-bold">{codenmz(group.delegation.id)}</span>
-													{#if group.delegation.assignedNation}
-														<span class="text-base-content/60 text-xs"
-															>({getFullTranslatedCountryNameFromISO3Code(
-																group.delegation.assignedNation.alpha3Code
-															)})</span
-														>
-													{:else if group.delegation.assignedNonStateActor}
-														<span class="text-base-content/60 text-xs"
-															>({group.delegation.assignedNonStateActor.name})</span
-														>
-													{/if}
-												</div>
-												{#if group.delegation.school}
-													<span class="text-base-content/60 text-xs">{group.delegation.school}</span
-													>
-												{/if}
-											</div>
-										</div>
-									</td>
-									<td>
-										<code class="bg-base-300 rounded px-1 text-xs font-mono"
-											>{group.delegation.entryCode}</code
-										>
-									</td>
-									<td>
-										<span class="badge badge-sm"
-											>{group.delegation.members.length}
-											{m.delegationMembers()}</span
-										>
-									</td>
-									<td></td>
-								</tr>
-								<!-- Nested member rows -->
-								{#each group.members as member (member.id)}
-									<tr class="text-sm">
-										<td class="text-right">
-											<i class="fa-duotone fa-arrow-turn-down-right text-base-content/40"></i>
-										</td>
-										<td colspan="2">
-											<span class="capitalize">{member.user.givenName}</span>
-											<span class="uppercase">{member.user.familyName}</span>
-											{#if member.isHeadDelegate}
-												<span class="badge badge-accent badge-xs ml-1"
-													><i class="fa-solid fa-medal"></i>
-													{m.headDelegate()}</span
-												>
-											{/if}
-										</td>
-										<td>
-											{member.assignedCommittee?.abbreviation ?? ''}
-										</td>
-										<td>
-											<button
-												class="btn btn-ghost btn-xs btn-square"
-												onclick={() => openUserCard(member.user.id, conferenceId)}
-												title={formatNames(
-													member.user.givenName ?? undefined,
-													member.user.familyName ?? undefined,
-													{
-														givenNameFirst: true
-													}
-												)}
-											>
-												<i class="fa-duotone fa-id-card"></i>
-											</button>
-										</td>
-									</tr>
-								{/each}
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		{/if}
+	{/if}
 
-		{#if singleParticipants.length > 0}
-			<div>
-				<div class="divider"></div>
-				<h3 class="mb-2 text-lg font-bold">
-					{m.adminSingleParticipants()}
-				</h3>
-				<div class="overflow-x-auto">
-					<table class="table table-sm">
-						<thead>
-							<tr>
-								<th></th>
-								<th>{m.name()}</th>
-								<th>{m.schoolOrInstitution()}</th>
-								<th>{m.assignedRole()}</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each singleParticipants.toSorted( (a, b) => (a.user.familyName ?? '').localeCompare(b.user.familyName ?? '') ) as participant (participant.id)}
-								<tr>
-									<td>
-										{#if participant.applied}
-											<i class="fa-solid fa-circle-check text-success"></i>
-										{:else}
-											<i class="fa-solid fa-hourglass-half text-error"></i>
-										{/if}
-									</td>
-									<td>
-										<span class="capitalize">{participant.user.givenName}</span>
-										<span class="uppercase">{participant.user.familyName}</span>
-									</td>
-									<td>{participant.school ?? 'N/A'}</td>
-									<td>{participant.assignedRole?.name ?? 'N/A'}</td>
-									<td>
-										<button
-											class="btn btn-ghost btn-xs btn-square"
-											onclick={() => openUserCard(participant.user.id, conferenceId)}
-											title={formatNames(
-												participant.user.givenName ?? undefined,
-												participant.user.familyName ?? undefined,
-												{ givenNameFirst: true }
-											)}
-										>
-											<i class="fa-duotone fa-id-card"></i>
-										</button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+	{#if groupedDelegations.length > 0}
+		<div>
+			<div class="divider"></div>
+			<h3 class="mb-2 text-lg font-bold">
+				{m.delegations()}
+			</h3>
+			<div class="overflow-x-auto">
+				<table class="table table-sm">
+					<tbody>
+						{#each groupedDelegations as group (group.delegation.id)}
+							{@render delegationGroupRows(group)}
+						{/each}
+					</tbody>
+				</table>
 			</div>
-		{/if}
+		</div>
+	{/if}
+
+	{#if singleParticipants.length > 0}
+		<div>
+			<div class="divider"></div>
+			<h3 class="mb-2 text-lg font-bold">
+				{m.adminSingleParticipants()}
+			</h3>
+			<div class="overflow-x-auto">
+				{@render singleParticipantsTable()}
+			</div>
+		</div>
 	{/if}
 </div>

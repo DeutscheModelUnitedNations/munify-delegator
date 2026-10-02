@@ -1,7 +1,8 @@
 <script lang="ts">
 	import * as echarts from 'echarts';
-	import type { EChartsOption, SetOptionOpts } from 'echarts';
+	import type { EChartsOption } from 'echarts';
 	import { onMount } from 'svelte';
+	import { themedChartOptions, type ThemeColors } from './chartOptions';
 
 	interface Props {
 		options: EChartsOption;
@@ -25,11 +26,7 @@
 	let chartInstance: echarts.ECharts | null = null;
 
 	// Get theme colors from CSS custom properties
-	function getThemeColors(): {
-		textColor: string;
-		backgroundColor: string;
-		borderColor: string;
-	} {
+	function getThemeColors(): ThemeColors {
 		if (typeof window === 'undefined') {
 			return {
 				textColor: '#374151',
@@ -62,18 +59,7 @@
 	];
 
 	// Merge theme colors with options
-	const themedOptions = $derived.by(() => {
-		const theme = getThemeColors();
-		return {
-			...options,
-			color: options.color || colorPalette,
-			backgroundColor: options.backgroundColor || theme.backgroundColor,
-			textStyle: {
-				color: theme.textColor,
-				...(options.textStyle || {})
-			}
-		} as EChartsOption;
-	});
+	const themedOptions = $derived(themedChartOptions(options, getThemeColors(), colorPalette));
 
 	onMount(() => {
 		if (!chartContainer) return;
@@ -90,20 +76,10 @@
 		// Handle theme changes
 		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		const handleThemeChange = () => {
-			if (chartInstance) {
-				// Recompute themed options with fresh theme colors
-				const theme = getThemeColors();
-				const freshThemedOptions = {
-					...options,
-					color: options.color || colorPalette,
-					backgroundColor: options.backgroundColor || theme.backgroundColor,
-					textStyle: {
-						color: theme.textColor,
-						...(options.textStyle || {})
-					}
-				} as EChartsOption;
-				chartInstance.setOption(freshThemedOptions, { notMerge: true });
-			}
+			// Recompute themed options with fresh theme colors
+			chartInstance?.setOption(themedChartOptions(options, getThemeColors(), colorPalette), {
+				notMerge: true
+			});
 		};
 		mediaQuery.addEventListener('change', handleThemeChange);
 

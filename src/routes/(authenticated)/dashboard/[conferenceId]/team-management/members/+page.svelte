@@ -3,15 +3,14 @@
 	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import DataTable from '$lib/components/dataTable/DataTable.svelte';
-	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
+	import TeamManagementPage from '../TeamManagementPage.svelte';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { client } from '$lib/api/rumbleClient/client';
-	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { z } from 'zod';
-	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { startImpersonation } from '$lib/api/startImpersonation';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -38,8 +37,6 @@
 		})
 	);
 	const isAdmin = $derived((await getCurrentUser()).isAdmin);
-
-	let inviteMembersModalOpen = $state(false);
 
 	// Dedicated schema for profile completeness validation
 	const profileCompletenessSchema = z.object({
@@ -102,21 +99,6 @@
 		await promise;
 	};
 
-	const handleImpersonate = async (userId: string) => {
-		try {
-			const promise = Promise.resolve(
-				client.mutate.startImpersonation({ __args: { targetUserId: userId } })
-			);
-			toast.promise(promise, genericPromiseToastMessages);
-			await promise;
-			await goto('/dashboard');
-			window.location.reload();
-		} catch (error) {
-			console.error('Failed to start impersonation:', error);
-			toast.error(m.impersonationFailed());
-		}
-	};
-
 	const handleOpenUserCard = (userId: string) => {
 		openUserCard(userId, params.conferenceId);
 	};
@@ -124,7 +106,7 @@
 	// Expose functions globally for onclick handlers in rendered HTML
 	onMount(() => {
 		window.handleTeamMemberDelete = handleDelete;
-		window.handleTeamMemberImpersonate = handleImpersonate;
+		window.handleTeamMemberImpersonate = startImpersonation;
 		window.handleTeamMemberOpenUserCard = handleOpenUserCard;
 		return () => {
 			delete window.handleTeamMemberDelete;
@@ -209,20 +191,6 @@
 	];
 </script>
 
-<div class="flex flex-col gap-4 p-6">
-	<div class="flex justify-between items-center">
-		<h1 class="text-3xl font-bold">{m.teamMembers()}</h1>
-		<div class="flex gap-2">
-			<button class="btn btn-primary" onclick={() => (inviteMembersModalOpen = true)}>
-				<i class="fa-duotone fa-envelope"></i>
-				{m.inviteTeamMembers()}
-			</button>
-		</div>
-	</div>
-
+<TeamManagementPage title={m.teamMembers()} conferenceId={params.conferenceId}>
 	<DataTable {columns} rows={teamMembers} />
-</div>
-
-{#if inviteMembersModalOpen}
-	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={params.conferenceId} />
-{/if}
+</TeamManagementPage>

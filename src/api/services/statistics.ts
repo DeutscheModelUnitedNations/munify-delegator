@@ -54,37 +54,23 @@ async function genderOf(where: UserFilter) {
 	return { male, female, diverse, noStatement };
 }
 
-/**
- * Everything the conference statistics dashboard shows, in one pass.
- *
- * Not every block honours the filter: registration totals, supervisor breakdown, postal and
- * payment progress, the waiting list and the paper statistics always describe the whole
- * conference, because they are about its operational state rather than about a subset of
- * registrations. The blocks that do respond to the filter say so at their definition.
- */
-export async function conferenceStats({
-	conferenceId,
-	filter = 'ALL'
-}: {
-	conferenceId: string;
-	filter?: StatsFilterType;
-}) {
-	const conference = await db.query.conference
-		.findFirst({ where: { id: conferenceId } })
-		.then(assertFindFirstExists);
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+function countdownsOf(conference: { startConference: Date; startAssignment: Date }) {
 	const now = new Date();
-	const countdowns = {
+	return {
 		daysUntilConference: Math.floor(
-			(conference.startConference.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+			(conference.startConference.getTime() - now.getTime()) / MS_PER_DAY
 		),
 		daysUntilEndRegistration: Math.floor(
-			(conference.startAssignment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+			(conference.startAssignment.getTime() - now.getTime()) / MS_PER_DAY
 		)
 	};
+}
 
-	// ── Registration totals (unfiltered) ────────────────────────────────────
+// ── Registration totals (unfiltered) ────────────────────────────────────────
 
+async function fetchRegistrations(conferenceId: string) {
 	const [delegations, singleParticipants, supervisors, roles] = await Promise.all([
 		db.query.delegation.findMany({
 			where: { conferenceId },
@@ -120,44 +106,52 @@ export async function conferenceStats({
 			with: { singleParticipant: { columns: { applied: true } } }
 		})
 	]);
+	return { delegations, singleParticipants, supervisors, roles };
+}
 
-	// A supervisor is selected by a filter through the participants they supervise.
-	const filteredSupervisors = supervisors.filter((supervisor) => {
-		const appliedDelegation = supervisor.supervisedDelegationMembers.some(
-			(member) => member.delegation.applied
+type Registrations = Awaited<ReturnType<typeof fetchRegistrations>>;
+type Supervisor = Registrations['supervisors'][number];
+
+/** A supervisor is selected by a filter through the participants they supervise. */
+function supervisorMatchesFilter(supervisor: Supervisor, filter: StatsFilterType) {
+	const anyApplied =
+		supervisor.supervisedDelegationMembers.some((member) => member.delegation.applied) ||
+		supervisor.supervisedSingleParticipants.some((participant) => participant.applied);
+	const withRole =
+		supervisor.supervisedDelegationMembers.some(
+			(member) =>
+				member.delegation.applied &&
+				(member.delegation.assignedNationAlpha3Code || member.delegation.assignedNonStateActorId)
+		) ||
+		supervisor.supervisedSingleParticipants.some(
+			(participant) => participant.applied && participant.assignedRoleId
 		);
-		const appliedSingle = supervisor.supervisedSingleParticipants.some(
-			(participant) => participant.applied
-		);
-		const withRole =
-			supervisor.supervisedDelegationMembers.some(
-				(member) =>
-					member.delegation.applied &&
-					(member.delegation.assignedNationAlpha3Code || member.delegation.assignedNonStateActorId)
-			) ||
-			supervisor.supervisedSingleParticipants.some(
-				(participant) => participant.applied && participant.assignedRoleId
-			);
-		const anyApplied = appliedDelegation || appliedSingle;
 
-		switch (filter) {
-			case 'ALL':
-				return true;
-			case 'APPLIED':
-				return anyApplied;
-			case 'NOT_APPLIED':
-				return !anyApplied;
-			case 'APPLIED_WITH_ROLE':
-				return withRole;
-			case 'APPLIED_WITHOUT_ROLE':
-				return anyApplied && !withRole;
-		}
-	});
+	switch (filter) {
+		case 'ALL':
+			return true;
+		case 'APPLIED':
+			return anyApplied;
+		case 'NOT_APPLIED':
+			return !anyApplied;
+		case 'APPLIED_WITH_ROLE':
+			return withRole;
+		case 'APPLIED_WITHOUT_ROLE':
+			return anyApplied && !withRole;
+	}
+}
 
-	const filteredSupervisorUserIds = filteredSupervisors
+/** Users of the supervisors who attend the conference themselves. */
+function attendingSupervisorUserIds(supervisors: Supervisor[]) {
+	return supervisors
 		.filter((supervisor) => supervisor.plansOwnAttendenceAtConference)
 		.map((supervisor) => supervisor.userId);
+}
 
+function registrationStatisticsOf(
+	{ delegations, singleParticipants, roles }: Registrations,
+	filteredSupervisorCount: number
+) {
 	const delegationsApplied = delegations.filter((delegation) => delegation.applied).length;
 	const delegationMembersTotal = delegations.reduce(
 		(sum, delegation) => sum + delegation.members.length,
@@ -174,7 +168,7 @@ export async function conferenceStats({
 	const totalApplied = delegationMembersApplied + singleParticipantsApplied;
 	const totalNotApplied = delegationMembersTotal + singleParticipants.length - totalApplied;
 
-	const registrationStatistics = {
+	return {
 		total: totalApplied + totalNotApplied,
 		notApplied: totalNotApplied,
 		applied: totalApplied,
@@ -200,57 +194,50 @@ export async function conferenceStats({
 				notApplied: role.singleParticipant.filter((participant) => !participant.applied).length
 			}))
 		},
-		supervisors: filteredSupervisors.length
+		supervisors: filteredSupervisorCount
+	};
+}
+
+// ── Supervisors (unfiltered) ────────────────────────────────────────────────
+
+function supervisorStatsOf(supervisors: Supervisor[]) {
+	const stats = {
+		total: supervisors.length,
+		accepted: 0,
+		rejected: 0,
+		plansAttendance: 0,
+		doesNotPlanAttendance: 0,
+		acceptedAndPresent: 0,
+		acceptedAndNotPresent: 0,
+		rejectedAndPresent: 0,
+		rejectedAndNotPresent: 0
 	};
 
-	// ── Supervisors (unfiltered) ────────────────────────────────────────────
+	for (const supervisor of supervisors) {
+		// "Accepted" means at least one of their participants got a role.
+		const accepted =
+			supervisor.supervisedDelegationMembers.some(
+				(member) =>
+					member.delegation.assignedNationAlpha3Code || member.delegation.assignedNonStateActorId
+			) ||
+			supervisor.supervisedSingleParticipants.some((participant) => participant.assignedRoleId);
+		const present = supervisor.plansOwnAttendenceAtConference;
 
-	const supervisorStats = supervisors.reduce(
-		(acc, supervisor) => {
-			// "Accepted" means at least one of their participants got a role.
-			const hasAcceptedParticipant =
-				supervisor.supervisedDelegationMembers.some(
-					(member) =>
-						member.delegation.assignedNationAlpha3Code || member.delegation.assignedNonStateActorId
-				) ||
-				supervisor.supervisedSingleParticipants.some((participant) => participant.assignedRoleId);
-			const plansOwn = supervisor.plansOwnAttendenceAtConference;
+		stats[present ? 'plansAttendance' : 'doesNotPlanAttendance']++;
+		stats[accepted ? 'accepted' : 'rejected']++;
+		if (accepted) stats[present ? 'acceptedAndPresent' : 'acceptedAndNotPresent']++;
+		else stats[present ? 'rejectedAndPresent' : 'rejectedAndNotPresent']++;
+	}
+	return stats;
+}
 
-			if (plansOwn) acc.plansAttendance++;
-			else acc.doesNotPlanAttendance++;
+// ── Diet and gender (filtered) ──────────────────────────────────────────────
 
-			if (hasAcceptedParticipant) {
-				acc.accepted++;
-				if (plansOwn) acc.acceptedAndPresent++;
-				else acc.acceptedAndNotPresent++;
-			} else {
-				acc.rejected++;
-				if (plansOwn) acc.rejectedAndPresent++;
-				else acc.rejectedAndNotPresent++;
-			}
-			return acc;
-		},
-		{
-			total: supervisors.length,
-			accepted: 0,
-			rejected: 0,
-			plansAttendance: 0,
-			doesNotPlanAttendance: 0,
-			acceptedAndPresent: 0,
-			acceptedAndNotPresent: 0,
-			rejectedAndPresent: 0,
-			rejectedAndNotPresent: 0
-		}
-	);
-
-	// ── Age, diet and gender (filtered) ─────────────────────────────────────
-
-	const ageStatistics = await getAgeStatistics({
-		conferenceId,
-		filter,
-		referenceDate: conference.endConference ?? conference.startConference ?? new Date()
-	});
-
+async function dietAndGenderOf(
+	conferenceId: string,
+	filter: StatsFilterType,
+	filteredSupervisorUserIds: string[]
+) {
 	const singleParticipantUsers: UserFilter = {
 		singleParticipant: singleParticipantWhere(conferenceId, filter)
 	};
@@ -259,6 +246,8 @@ export async function conferenceStats({
 	};
 	const teamMemberUsers: UserFilter = { teamMember: { conferenceId } };
 	const supervisorUsers: UserFilter = { id: { in: filteredSupervisorUserIds } };
+	// An empty `in` list would compile to invalid SQL, so the answer is filled in directly.
+	const noSupervisors = filteredSupervisorUserIds.length === 0;
 
 	const [
 		singleParticipantDiet,
@@ -272,32 +261,34 @@ export async function conferenceStats({
 	] = await Promise.all([
 		dietOf(singleParticipantUsers),
 		dietOf(delegationMemberUsers),
-		// An empty `in` list would compile to invalid SQL, so the answer is filled in directly.
-		filteredSupervisorUserIds.length === 0 ? zeroDiet : dietOf(supervisorUsers),
+		noSupervisors ? zeroDiet : dietOf(supervisorUsers),
 		dietOf(teamMemberUsers),
 		genderOf(singleParticipantUsers),
 		genderOf(delegationMemberUsers),
-		filteredSupervisorUserIds.length === 0 ? zeroGender : genderOf(supervisorUsers),
+		noSupervisors ? zeroGender : genderOf(supervisorUsers),
 		genderOf(teamMemberUsers)
 	]);
 
-	const diet = {
-		singleParticipants: singleParticipantDiet,
-		delegationMembers: delegationMemberDiet,
-		supervisors: supervisorDiet,
-		teamMembers: teamMemberDiet
+	return {
+		diet: {
+			singleParticipants: singleParticipantDiet,
+			delegationMembers: delegationMemberDiet,
+			supervisors: supervisorDiet,
+			teamMembers: teamMemberDiet
+		},
+		gender: {
+			singleParticipants: singleParticipantGender,
+			delegationMembers: delegationMemberGender,
+			supervisors: supervisorGender,
+			teamMembers: teamMemberGender
+		}
 	};
+}
 
-	const gender = {
-		singleParticipants: singleParticipantGender,
-		delegationMembers: delegationMemberGender,
-		supervisors: supervisorGender,
-		teamMembers: teamMemberGender
-	};
+// ── Postal and payment status (unfiltered) ──────────────────────────────────
 
-	// ── Postal and payment status (unfiltered) ──────────────────────────────
-
-	const participantStatuses = await db.query.conferenceParticipantStatus.findMany({
+async function fetchParticipantStatuses(conferenceId: string) {
+	return db.query.conferenceParticipantStatus.findMany({
 		where: { conferenceId },
 		columns: {
 			userId: true,
@@ -309,33 +300,28 @@ export async function conferenceStats({
 		},
 		with: { user: { columns: { birthday: true } } }
 	});
+}
 
-	/** Guardian consent only matters for participants who are still minors at the conference. */
-	const isPostalDone = (entry: (typeof participantStatuses)[number]) =>
-		entry.termsAndConditions === 'DONE' &&
-		(ofAgeAtConference(conference.startConference, entry.user.birthday) ||
-			entry.guardianConsent === 'DONE') &&
-		entry.mediaConsent === 'DONE';
+type ParticipantStatus = Awaited<ReturnType<typeof fetchParticipantStatuses>>[number];
 
-	const hasPostalProblem = (entry: (typeof participantStatuses)[number]) =>
-		entry.termsAndConditions === 'PROBLEM' ||
-		(!ofAgeAtConference(conference.startConference, entry.user.birthday) &&
-			entry.guardianConsent === 'PROBLEM') ||
-		entry.mediaConsent === 'PROBLEM';
-
-	const status = {
-		paymentStatus: {
-			done: participantStatuses.filter((entry) => entry.paymentStatus === 'DONE').length,
-			problem: participantStatuses.filter((entry) => entry.paymentStatus === 'PROBLEM').length
-		},
-		postalStatus: {
-			done: participantStatuses.filter(isPostalDone).length,
-			problem: participantStatuses.filter(hasPostalProblem).length
-		},
-		didAttend: participantStatuses.filter((entry) => entry.didAttend).length
+/** Guardian consent only matters for participants who are still minors at the conference. */
+function postalChecks(startConference: Date) {
+	return {
+		isPostalDone: (entry: ParticipantStatus) =>
+			entry.termsAndConditions === 'DONE' &&
+			(ofAgeAtConference(startConference, entry.user.birthday) ||
+				entry.guardianConsent === 'DONE') &&
+			entry.mediaConsent === 'DONE',
+		hasPostalProblem: (entry: ParticipantStatus) =>
+			entry.termsAndConditions === 'PROBLEM' ||
+			(!ofAgeAtConference(startConference, entry.user.birthday) &&
+				entry.guardianConsent === 'PROBLEM') ||
+			entry.mediaConsent === 'PROBLEM'
 	};
+}
 
-	// Only participants who actually got a seat are expected to complete postal and payment.
+/** Only participants who actually got a seat are expected to complete postal and payment. */
+async function progressUserIdsOf(conferenceId: string, supervisors: Supervisor[]) {
 	const [membersWithRole, participantsWithRole] = await Promise.all([
 		db.query.delegationMember.findMany({
 			where: {
@@ -355,62 +341,115 @@ export async function conferenceStats({
 		})
 	]);
 
-	const progressUserIds = new Set([
+	return new Set([
 		...membersWithRole.map((member) => member.userId),
 		...participantsWithRole.map((participant) => participant.userId),
-		...supervisors
-			.filter((supervisor) => supervisor.plansOwnAttendenceAtConference)
-			.map((supervisor) => supervisor.userId)
+		...attendingSupervisorUserIds(supervisors)
 	]);
-	const maxParticipants = progressUserIds.size;
+}
 
-	let postalDone = 0;
-	let postalPending = 0;
-	let postalProblem = 0;
-	let paymentDone = 0;
-	let paymentPending = 0;
-	let paymentProblem = 0;
-	let bothComplete = 0;
-	let postalOnlyComplete = 0;
-	let paymentOnlyComplete = 0;
+function percentage(part: number, whole: number) {
+	return whole > 0 ? Math.round((part / whole) * 100) : 0;
+}
+
+function postalBucket(done: boolean, problem: boolean) {
+	if (done) return 'postalDone';
+	return problem ? 'postalProblem' : 'postalPending';
+}
+
+function paymentBucket(status: ParticipantStatus['paymentStatus']) {
+	if (status === 'DONE') return 'paymentDone';
+	return status === 'PROBLEM' ? 'paymentProblem' : 'paymentPending';
+}
+
+/** Which of postal and payment are complete; neither is not counted, it is the remainder. */
+function completionBucket(postal: boolean, payment: boolean) {
+	if (postal && payment) return 'bothComplete';
+	if (postal) return 'postalOnlyComplete';
+	if (payment) return 'paymentOnlyComplete';
+	return undefined;
+}
+
+function postalPaymentProgressOf(
+	participantStatuses: ParticipantStatus[],
+	progressUserIds: Set<string>,
+	{ isPostalDone, hasPostalProblem }: ReturnType<typeof postalChecks>
+) {
+	const maxParticipants = progressUserIds.size;
+	const counts = {
+		postalDone: 0,
+		postalPending: 0,
+		postalProblem: 0,
+		paymentDone: 0,
+		paymentPending: 0,
+		paymentProblem: 0,
+		bothComplete: 0,
+		postalOnlyComplete: 0,
+		paymentOnlyComplete: 0
+	};
 
 	for (const entry of participantStatuses) {
 		if (!progressUserIds.has(entry.userId)) continue;
 
 		const postal = isPostalDone(entry);
-		if (postal) postalDone++;
-		else if (hasPostalProblem(entry)) postalProblem++;
-		else postalPending++;
+		counts[postalBucket(postal, hasPostalProblem(entry))]++;
 
 		const payment = entry.paymentStatus === 'DONE';
-		if (payment) paymentDone++;
-		else if (entry.paymentStatus === 'PROBLEM') paymentProblem++;
-		else paymentPending++;
+		counts[paymentBucket(entry.paymentStatus)]++;
 
-		if (postal && payment) bothComplete++;
-		else if (postal) postalOnlyComplete++;
-		else if (payment) paymentOnlyComplete++;
+		const completion = completionBucket(postal, payment);
+		if (completion) counts[completion]++;
 	}
 
-	const postalPaymentProgress = {
+	return {
 		maxParticipants,
-		postalDone,
-		postalPending,
-		postalProblem,
-		postalPercentage: maxParticipants > 0 ? Math.round((postalDone / maxParticipants) * 100) : 0,
-		paymentDone,
-		paymentPending,
-		paymentProblem,
-		paymentPercentage: maxParticipants > 0 ? Math.round((paymentDone / maxParticipants) * 100) : 0,
-		bothComplete,
-		postalOnlyComplete,
-		paymentOnlyComplete,
+		postalDone: counts.postalDone,
+		postalPending: counts.postalPending,
+		postalProblem: counts.postalProblem,
+		postalPercentage: percentage(counts.postalDone, maxParticipants),
+		paymentDone: counts.paymentDone,
+		paymentPending: counts.paymentPending,
+		paymentProblem: counts.paymentProblem,
+		paymentPercentage: percentage(counts.paymentDone, maxParticipants),
+		bothComplete: counts.bothComplete,
+		postalOnlyComplete: counts.postalOnlyComplete,
+		paymentOnlyComplete: counts.paymentOnlyComplete,
 		// Participants with no status row at all fall in here too.
-		neitherComplete: maxParticipants - bothComplete - postalOnlyComplete - paymentOnlyComplete
+		neitherComplete:
+			maxParticipants - counts.bothComplete - counts.postalOnlyComplete - counts.paymentOnlyComplete
+	};
+}
+
+async function participantStatusStatsOf(
+	conferenceId: string,
+	startConference: Date,
+	supervisors: Supervisor[]
+) {
+	const participantStatuses = await fetchParticipantStatuses(conferenceId);
+	const checks = postalChecks(startConference);
+
+	const status = {
+		paymentStatus: {
+			done: participantStatuses.filter((entry) => entry.paymentStatus === 'DONE').length,
+			problem: participantStatuses.filter((entry) => entry.paymentStatus === 'PROBLEM').length
+		},
+		postalStatus: {
+			done: participantStatuses.filter(checks.isPostalDone).length,
+			problem: participantStatuses.filter(checks.hasPostalProblem).length
+		},
+		didAttend: participantStatuses.filter((entry) => entry.didAttend).length
 	};
 
-	// ── Addresses and nationalities (filtered) ──────────────────────────────
+	const progressUserIds = await progressUserIdsOf(conferenceId, supervisors);
+	return {
+		status,
+		postalPaymentProgress: postalPaymentProgressOf(participantStatuses, progressUserIds, checks)
+	};
+}
 
+// ── Addresses and nationalities (filtered) ──────────────────────────────────
+
+async function addressesAndNationalitiesOf(conferenceId: string, filter: StatsFilterType) {
 	const filteredUsers = await db.query.user.findMany({
 		where: userWhere(conferenceId, filter),
 		columns: { country: true, zip: true }
@@ -424,6 +463,7 @@ export async function conferenceStats({
 			_count: { zip: number; country: number; _all: number };
 		}
 	>();
+	const nationalityCounts = new Map<string, number>();
 
 	for (const user of filteredUsers) {
 		const key = `${user.country ?? ''}:${user.zip ?? ''}`;
@@ -436,93 +476,74 @@ export async function conferenceStats({
 		if (user.zip !== null) existing._count.zip++;
 		if (user.country !== null) existing._count.country++;
 		addressGroups.set(key, existing);
-	}
 
-	const addresses = [...addressGroups.values()];
-
-	const nationalityCounts = new Map<string, number>();
-	for (const user of filteredUsers) {
 		if (user.country === null) continue;
 		nationalityCounts.set(user.country, (nationalityCounts.get(user.country) ?? 0) + 1);
 	}
 
-	const nationalityDistribution = [...nationalityCounts.entries()].map(([country, count]) => ({
-		country,
-		countryCode: country,
-		count
-	}));
-
-	// ── Role assignment breakdown (filtered) ────────────────────────────────
-
-	const withRoleDelegation: DelegationFilter = {
-		OR: [
-			{ assignedNationAlpha3Code: { isNotNull: true } },
-			{ assignedNonStateActorId: { isNotNull: true } }
-		]
+	return {
+		addresses: [...addressGroups.values()],
+		nationalityDistribution: [...nationalityCounts.entries()].map(([country, count]) => ({
+			country,
+			countryCode: country,
+			count
+		}))
 	};
-	const withoutRoleDelegation: DelegationFilter = {
-		assignedNationAlpha3Code: { isNull: true },
-		assignedNonStateActorId: { isNull: true }
-	};
-	const filteredDelegation = delegationConditions(filter);
+}
 
+// ── Role assignment breakdown (filtered) ────────────────────────────────────
+
+const withRoleDelegation: DelegationFilter = {
+	OR: [
+		{ assignedNationAlpha3Code: { isNotNull: true } },
+		{ assignedNonStateActorId: { isNotNull: true } }
+	]
+};
+const withoutRoleDelegation: DelegationFilter = {
+	assignedNationAlpha3Code: { isNull: true },
+	assignedNonStateActorId: { isNull: true }
+};
+
+/** Members, single participants and delegations on one side of the role split. */
+async function roleSplitCounts(conferenceId: string, filter: StatsFilterType, withRole: boolean) {
+	const delegationSide = withRole ? withRoleDelegation : withoutRoleDelegation;
+	return Promise.all([
+		countDelegationMembers({
+			conferenceId,
+			delegation: { ...delegationConditions(filter), ...delegationSide }
+		}),
+		countSingleParticipants({
+			...singleParticipantWhere(conferenceId, filter),
+			assignedRoleId: withRole ? { isNotNull: true } : { isNull: true }
+		}),
+		countDelegations({
+			where: { ...delegationWhere(conferenceId, filter), ...delegationSide },
+			columns: { id: true }
+		})
+	]);
+}
+
+async function roleBasedOf(conferenceId: string, filter: StatsFilterType) {
 	// A filter that already selects one side of the split makes the other side meaningless, so
 	// it stays at zero rather than showing a number the filter contradicts.
 	const showWithRole = filter !== 'NOT_APPLIED' && filter !== 'APPLIED_WITHOUT_ROLE';
 	const showWithoutRole = filter !== 'NOT_APPLIED' && filter !== 'APPLIED_WITH_ROLE';
-
-	const [
-		delegationMembersWithRole,
-		delegationMembersWithoutRole,
-		singleParticipantsWithRole,
-		singleParticipantsWithoutRole,
-		delegationsWithAssignment,
-		delegationsWithoutAssignment
-	] = await Promise.all([
-		showWithRole
-			? countDelegationMembers({
-					conferenceId,
-					delegation: { ...filteredDelegation, ...withRoleDelegation }
-				})
-			: 0,
-		showWithoutRole
-			? countDelegationMembers({
-					conferenceId,
-					delegation: { ...filteredDelegation, ...withoutRoleDelegation }
-				})
-			: 0,
-		showWithRole
-			? countSingleParticipants({
-					...singleParticipantWhere(conferenceId, filter),
-					assignedRoleId: { isNotNull: true }
-				})
-			: 0,
-		showWithoutRole
-			? countSingleParticipants({
-					...singleParticipantWhere(conferenceId, filter),
-					assignedRoleId: { isNull: true }
-				})
-			: 0,
-		showWithRole
-			? countDelegations({
-					where: { ...delegationWhere(conferenceId, filter), ...withRoleDelegation },
-					columns: { id: true }
-				})
-			: 0,
-		showWithoutRole
-			? countDelegations({
-					where: { ...delegationWhere(conferenceId, filter), ...withoutRoleDelegation },
-					columns: { id: true }
-				})
-			: 0
-	]);
+	const zeros: [number, number, number] = [0, 0, 0];
 
 	// Committee seats only exist for nations, so non-state actors are left out here.
 	const committeeAssignedDelegation: DelegationFilter = {
 		applied: true,
 		assignedNationAlpha3Code: { isNotNull: true }
 	};
-	const [delegationMembersWithCommittee, delegationMembersWithoutCommittee] = await Promise.all([
+
+	const [
+		[delegationMembersWithRole, singleParticipantsWithRole, delegationsWithAssignment],
+		[delegationMembersWithoutRole, singleParticipantsWithoutRole, delegationsWithoutAssignment],
+		delegationMembersWithCommittee,
+		delegationMembersWithoutCommittee
+	] = await Promise.all([
+		showWithRole ? roleSplitCounts(conferenceId, filter, true) : zeros,
+		showWithoutRole ? roleSplitCounts(conferenceId, filter, false) : zeros,
 		countDelegationMembers({
 			conferenceId,
 			assignedCommitteeId: { isNotNull: true },
@@ -535,7 +556,7 @@ export async function conferenceStats({
 		})
 	]);
 
-	const roleBased = {
+	return {
 		delegationMembersWithRole,
 		delegationMembersWithoutRole,
 		delegationMembersWithCommittee,
@@ -545,9 +566,11 @@ export async function conferenceStats({
 		delegationsWithAssignment,
 		delegationsWithoutAssignment
 	};
+}
 
-	// ── Committee fill rates (unfiltered, applied delegations only) ─────────
+// ── Committee fill rates (unfiltered, applied delegations only) ─────────────
 
+async function committeeFillRatesOf(conferenceId: string) {
 	const committees = await db.query.committee.findMany({
 		where: { conferenceId },
 		with: {
@@ -559,7 +582,7 @@ export async function conferenceStats({
 		}
 	});
 
-	const committeeFillRates = committees.map((committee) => {
+	return committees.map((committee) => {
 		const totalSeats = committee.nations.length * committee.numOfSeatsPerDelegation;
 		const assignedSeats = committee.delegationMembers.length;
 		return {
@@ -568,12 +591,83 @@ export async function conferenceStats({
 			abbreviation: committee.abbreviation,
 			totalSeats,
 			assignedSeats,
-			fillPercentage: totalSeats > 0 ? Math.round((assignedSeats / totalSeats) * 100) : 0
+			fillPercentage: percentage(assignedSeats, totalSeats)
 		};
 	});
+}
 
-	// ── Registration timeline (filtered) ────────────────────────────────────
+// ── Registration timeline and schools (filtered) ────────────────────────────
 
+type TimelineDay = {
+	delegations: number;
+	delegationMembers: number;
+	singleParticipants: number;
+	supervisors: number;
+};
+
+const dayOf = (date: Date) => date.toISOString().split('T')[0];
+
+/** Running totals per day; days without registrations are filled in so the x axis stays linear. */
+function cumulativeTimeline(timeline: Map<string, TimelineDay>) {
+	const sortedDays = [...timeline.keys()].sort();
+	const registrationTimeline: {
+		date: string;
+		cumulativeDelegations: number;
+		cumulativeDelegationMembers: number;
+		cumulativeSingleParticipants: number;
+		cumulativeSupervisors: number;
+	}[] = [];
+	if (sortedDays.length === 0) return registrationTimeline;
+
+	const totals = { delegations: 0, delegationMembers: 0, singleParticipants: 0, supervisors: 0 };
+	const cursor = new Date(sortedDays[0]);
+	const end = new Date(sortedDays[sortedDays.length - 1]);
+
+	while (cursor <= end) {
+		const date = dayOf(cursor);
+		const day = timeline.get(date);
+		if (day) {
+			totals.delegations += day.delegations;
+			totals.delegationMembers += day.delegationMembers;
+			totals.singleParticipants += day.singleParticipants;
+			totals.supervisors += day.supervisors;
+		}
+		registrationTimeline.push({
+			date,
+			cumulativeDelegations: totals.delegations,
+			cumulativeDelegationMembers: totals.delegationMembers,
+			cumulativeSingleParticipants: totals.singleParticipants,
+			cumulativeSupervisors: totals.supervisors
+		});
+		cursor.setDate(cursor.getDate() + 1);
+	}
+	return registrationTimeline;
+}
+
+function schoolStatsOf(delegations: { school: string | null; members: unknown[] }[]) {
+	const schoolMap = new Map<string, { delegationCount: number; memberCount: number }>();
+	for (const delegation of delegations) {
+		const school = delegation.school || 'Unknown';
+		const existing = schoolMap.get(school) ?? { delegationCount: 0, memberCount: 0 };
+		existing.delegationCount++;
+		existing.memberCount += delegation.members.length;
+		schoolMap.set(school, existing);
+	}
+
+	return [...schoolMap.entries()]
+		.map(([school, data]) => ({
+			school,
+			delegationCount: data.delegationCount,
+			memberCount: data.memberCount
+		}))
+		.sort((a, b) => b.memberCount - a.memberCount);
+}
+
+async function timelineAndSchoolsOf(
+	conferenceId: string,
+	filter: StatsFilterType,
+	filteredSupervisors: Supervisor[]
+) {
 	const [timelineDelegations, timelineSingleParticipants] = await Promise.all([
 		db.query.delegation.findMany({
 			where: delegationWhere(conferenceId, filter),
@@ -586,14 +680,7 @@ export async function conferenceStats({
 		})
 	]);
 
-	type TimelineDay = {
-		delegations: number;
-		delegationMembers: number;
-		singleParticipants: number;
-		supervisors: number;
-	};
 	const timeline = new Map<string, TimelineDay>();
-	const dayOf = (date: Date) => date.toISOString().split('T')[0];
 	const dayEntry = (date: Date) => {
 		const key = dayOf(date);
 		const existing = timeline.get(key) ?? {
@@ -618,94 +705,35 @@ export async function conferenceStats({
 		dayEntry(supervisor.createdAt).supervisors++;
 	}
 
-	const sortedDays = [...timeline.keys()].sort();
-	const registrationTimeline: {
-		date: string;
-		cumulativeDelegations: number;
-		cumulativeDelegationMembers: number;
-		cumulativeSingleParticipants: number;
-		cumulativeSupervisors: number;
-	}[] = [];
+	return {
+		registrationTimeline: cumulativeTimeline(timeline),
+		// Same set of delegations the timeline is built from, grouped by school instead of by day.
+		schoolStats: schoolStatsOf(timelineDelegations)
+	};
+}
 
-	if (sortedDays.length > 0) {
-		// Days without registrations are filled in so the chart's x axis stays linear.
-		let cumulativeDelegations = 0;
-		let cumulativeDelegationMembers = 0;
-		let cumulativeSingleParticipants = 0;
-		let cumulativeSupervisors = 0;
+// ── Waiting list (unfiltered) ───────────────────────────────────────────────
 
-		const cursor = new Date(sortedDays[0]);
-		const end = new Date(sortedDays[sortedDays.length - 1]);
-
-		while (cursor <= end) {
-			const date = dayOf(cursor);
-			const day = timeline.get(date);
-			if (day) {
-				cumulativeDelegations += day.delegations;
-				cumulativeDelegationMembers += day.delegationMembers;
-				cumulativeSingleParticipants += day.singleParticipants;
-				cumulativeSupervisors += day.supervisors;
-			}
-			registrationTimeline.push({
-				date,
-				cumulativeDelegations,
-				cumulativeDelegationMembers,
-				cumulativeSingleParticipants,
-				cumulativeSupervisors
-			});
-			cursor.setDate(cursor.getDate() + 1);
-		}
-	}
-
-	// ── Schools (filtered) ──────────────────────────────────────────────────
-
-	// Same set of delegations the timeline is built from, grouped by school instead of by day.
-	const schoolMap = new Map<string, { delegationCount: number; memberCount: number }>();
-	for (const delegation of timelineDelegations) {
-		const school = delegation.school || 'Unknown';
-		const existing = schoolMap.get(school) ?? { delegationCount: 0, memberCount: 0 };
-		existing.delegationCount++;
-		existing.memberCount += delegation.members.length;
-		schoolMap.set(school, existing);
-	}
-
-	const schoolStats = [...schoolMap.entries()]
-		.map(([school, data]) => ({
-			school,
-			delegationCount: data.delegationCount,
-			memberCount: data.memberCount
-		}))
-		.sort((a, b) => b.memberCount - a.memberCount);
-
-	// ── Waiting list (unfiltered) ───────────────────────────────────────────
-
+async function waitingListOf(conferenceId: string) {
 	const waitingListEntries = await db.query.waitingListEntry.findMany({
 		where: { conferenceId },
 		columns: { hidden: true, assigned: true }
 	});
 
-	const waitingListVisible = waitingListEntries.filter((entry) => !entry.hidden).length;
-	const waitingListAssigned = waitingListEntries.filter((entry) => entry.assigned).length;
-	const waitingList = {
+	const visible = waitingListEntries.filter((entry) => !entry.hidden).length;
+	const assigned = waitingListEntries.filter((entry) => entry.assigned).length;
+	return {
 		total: waitingListEntries.length,
-		visible: waitingListVisible,
-		hidden: waitingListEntries.length - waitingListVisible,
-		assigned: waitingListAssigned,
-		unassigned: waitingListEntries.length - waitingListAssigned
+		visible,
+		hidden: waitingListEntries.length - visible,
+		assigned,
+		unassigned: waitingListEntries.length - assigned
 	};
+}
 
-	// ── Papers (unfiltered) ─────────────────────────────────────────────────
+// ── Papers (unfiltered) ─────────────────────────────────────────────────────
 
-	const papers = await db.query.paper.findMany({
-		where: { conferenceId },
-		columns: { id: true, type: true, status: true, agendaItemId: true },
-		with: { versions: { columns: { id: true }, with: { reviews: { columns: { id: true } } } } }
-	});
-
-	const papersWithReviews = papers.filter((paper) =>
-		paper.versions.some((version) => version.reviews.length > 0)
-	).length;
-
+async function papersByCommitteeOf(papers: { agendaItemId: string | null }[]) {
 	const agendaItemIds = [
 		...new Set(papers.map((paper) => paper.agendaItemId).filter((id) => id !== null))
 	];
@@ -738,32 +766,100 @@ export async function conferenceStats({
 		}
 	}
 
-	const paperStats = {
+	return [...papersByCommittee.entries()].map(([committeeId, data]) => ({
+		committeeId,
+		name: data.name,
+		abbreviation: data.abbreviation,
+		count: data.count
+	}));
+}
+
+async function paperStatsOf(conferenceId: string) {
+	const papers = await db.query.paper.findMany({
+		where: { conferenceId },
+		columns: { id: true, type: true, status: true, agendaItemId: true },
+		with: { versions: { columns: { id: true }, with: { reviews: { columns: { id: true } } } } }
+	});
+
+	const papersWithReviews = papers.filter((paper) =>
+		paper.versions.some((version) => version.reviews.length > 0)
+	).length;
+	const countWhere = (predicate: (paper: (typeof papers)[number]) => boolean) =>
+		papers.filter(predicate).length;
+
+	return {
 		total: papers.length,
 		byType: {
-			positionPaper: papers.filter((paper) => paper.type === 'POSITION_PAPER').length,
-			workingPaper: papers.filter((paper) => paper.type === 'WORKING_PAPER').length,
-			introductionPaper: papers.filter((paper) => paper.type === 'INTRODUCTION_PAPER').length
+			positionPaper: countWhere((paper) => paper.type === 'POSITION_PAPER'),
+			workingPaper: countWhere((paper) => paper.type === 'WORKING_PAPER'),
+			introductionPaper: countWhere((paper) => paper.type === 'INTRODUCTION_PAPER')
 		},
 		byStatus: {
-			draft: papers.filter((paper) => paper.status === 'DRAFT').length,
-			submitted: papers.filter((paper) => paper.status === 'SUBMITTED').length,
-			changesRequested: papers.filter((paper) => paper.status === 'CHANGES_REQUESTED').length,
-			accepted: papers.filter((paper) => paper.status === 'ACCEPTED').length
+			draft: countWhere((paper) => paper.status === 'DRAFT'),
+			submitted: countWhere((paper) => paper.status === 'SUBMITTED'),
+			changesRequested: countWhere((paper) => paper.status === 'CHANGES_REQUESTED'),
+			accepted: countWhere((paper) => paper.status === 'ACCEPTED')
 		},
 		withReviews: papersWithReviews,
 		withoutReviews: papers.length - papersWithReviews,
-		byCommittee: [...papersByCommittee.entries()].map(([committeeId, data]) => ({
-			committeeId,
-			name: data.name,
-			abbreviation: data.abbreviation,
-			count: data.count
-		}))
+		byCommittee: await papersByCommitteeOf(papers)
 	};
+}
+
+/**
+ * Everything the conference statistics dashboard shows, in one pass.
+ *
+ * Not every block honours the filter: registration totals, supervisor breakdown, postal and
+ * payment progress, the waiting list and the paper statistics always describe the whole
+ * conference, because they are about its operational state rather than about a subset of
+ * registrations. The blocks that do respond to the filter say so at their definition.
+ */
+export async function conferenceStats({
+	conferenceId,
+	filter = 'ALL'
+}: {
+	conferenceId: string;
+	filter?: StatsFilterType;
+}) {
+	const conference = await db.query.conference
+		.findFirst({ where: { id: conferenceId } })
+		.then(assertFindFirstExists);
+
+	const registrations = await fetchRegistrations(conferenceId);
+	const filteredSupervisors = registrations.supervisors.filter((supervisor) =>
+		supervisorMatchesFilter(supervisor, filter)
+	);
+
+	const ageStatistics = await getAgeStatistics({
+		conferenceId,
+		filter,
+		referenceDate: conference.endConference ?? conference.startConference ?? new Date()
+	});
+	const { diet, gender } = await dietAndGenderOf(
+		conferenceId,
+		filter,
+		attendingSupervisorUserIds(filteredSupervisors)
+	);
+	const { status, postalPaymentProgress } = await participantStatusStatsOf(
+		conferenceId,
+		conference.startConference,
+		registrations.supervisors
+	);
+	const { addresses, nationalityDistribution } = await addressesAndNationalitiesOf(
+		conferenceId,
+		filter
+	);
+	const roleBased = await roleBasedOf(conferenceId, filter);
+	const committeeFillRates = await committeeFillRatesOf(conferenceId);
+	const { registrationTimeline, schoolStats } = await timelineAndSchoolsOf(
+		conferenceId,
+		filter,
+		filteredSupervisors
+	);
 
 	return {
-		countdowns,
-		registrationStatistics,
+		countdowns: countdownsOf(conference),
+		registrationStatistics: registrationStatisticsOf(registrations, filteredSupervisors.length),
 		ageStatistics,
 		diet,
 		gender,
@@ -774,9 +870,9 @@ export async function conferenceStats({
 		registrationTimeline,
 		nationalityDistribution,
 		schoolStats,
-		waitingList,
-		supervisorStats,
+		waitingList: await waitingListOf(conferenceId),
+		supervisorStats: supervisorStatsOf(registrations.supervisors),
 		postalPaymentProgress,
-		paperStats
+		paperStats: await paperStatsOf(conferenceId)
 	};
 }

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { E2E_CONFERENCE_ID } from '../seed/seed';
 
 // Unauthenticated, publicly reachable routes. None of them had coverage, and the certificate

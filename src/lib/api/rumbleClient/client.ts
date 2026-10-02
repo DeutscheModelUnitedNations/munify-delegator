@@ -2149,6 +2149,7 @@ export type Place = {
   conferenceId: ID,
   createdAt: DateTime,
   directions: String | null,
+  hasSitePlan: Boolean,
   id: ID,
   info: String | null,
   latitude: Float | null,
@@ -3918,6 +3919,7 @@ export const client = {
 	  urqlClient,
 	  availableSubscriptions: new Set(["attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntry"]),
 		schema,
+    autoIncludeIdField: 'id'
   }),
   /**
    * A mutation that can be used to e.g. create, update or delete data.
@@ -3925,6 +3927,7 @@ export const client = {
   mutate: makeMutation<Mutation>({
 	  urqlClient,
 		schema,
+    autoIncludeIdField: 'id'
   }),
   /**
    * A continuous stream of results that updates when the server sends new data.
@@ -3932,6 +3935,7 @@ export const client = {
   subscribe: makeSubscription<Subscription>({
 	  urqlClient,
 		schema,
+    autoIncludeIdField: 'id'
   }),
   /**
    * A one-time fetch of data.
@@ -3939,5 +3943,6 @@ export const client = {
   query: makeQuery<Query>({
 	  urqlClient,
 		schema,
+    autoIncludeIdField: 'id'
   }),
 }

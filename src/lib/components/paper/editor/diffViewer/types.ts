@@ -3,7 +3,7 @@ import type { PaperstatusEnum } from '$lib/api/rumbleClient/client';
 export interface VersionForComparison {
 	id: string;
 	version: number;
-	content?: any;
+	content?: unknown;
 	createdAt: string | Date;
 	status?: PaperstatusEnum | null;
 }

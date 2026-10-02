@@ -3,64 +3,33 @@
 	import { m } from '$lib/paraglide/messages';
 	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
-	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
-	import { getLinksForUserType, type DashboardLinkContext } from '$lib/data/dashboardLinks';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
-	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
+	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
 
 	interface Props {
-		conference: NonNullable<MyConferenceParticipation['conference']>;
+		conferenceId: string;
 		singleParticipant: NonNullable<MyConferenceParticipation['singleParticipant']>;
 		user: CurrentUser;
 		status: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
 	}
 
-	let { conference, singleParticipant, user, status, ofAgeAtConference }: Props = $props();
-
-	const linkContext = $derived<DashboardLinkContext>({
-		conferenceId: conference.id,
-		userType: 'singleParticipant',
-		conferenceState: conference.state,
-		unlockPayments: conference.unlockPayments,
-		unlockPostals: conference.unlockPostals,
-		hasConferenceInfo: !!conference.info,
-		linkToPreparationGuide: conference.linkToPreparationGuide,
-		isOpenPaperSubmission: conference.isOpenPaperSubmission,
-		linkToPaperInbox: conference.linkToPaperInbox,
-		paymentStatus: status?.paymentStatus,
-		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAgeAtConference),
-		user
-	});
-
-	const visibleLinks = $derived(getLinksForUserType('singleParticipant', linkContext));
+	let { conferenceId, singleParticipant, user, status, ofAgeAtConference }: Props = $props();
 </script>
 
-<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
-	<DashboardLinksGrid>
-		{#each visibleLinks as link (link.id)}
-			{@const badge = link.getBadge?.(linkContext)}
-			<DashboardLinkCard
-				href={link.getHref(linkContext)}
-				icon={link.icon}
-				title={link.getTitle()}
-				description={link.getDescription()}
-				external={link.external}
-				disabled={link.isDisabled(linkContext)}
-				badge={badge?.value}
-				badgeType={badge?.type}
-				important={link.isImportant?.(linkContext) ?? false}
-			/>
-		{/each}
-	</DashboardLinksGrid>
-</DashboardSection>
+<DashboardQuickLinks
+	{conferenceId}
+	userType="singleParticipant"
+	{user}
+	{status}
+	{ofAgeAtConference}
+/>
 
 <DashboardSection icon="masks-theater" title={m.role()} description={m.roleDescription()}>
 	<div class="stats bg-base-200 shadow">
-		<RoleWidget customConferenceRole={singleParticipant?.assignedRole} />
+		<RoleWidget customConferenceRole={singleParticipant.assignedRole} />
 	</div>
 </DashboardSection>
 
-<SupervisorTable supervisors={singleParticipant.supervisors} conferenceId={conference.id} />
+<SupervisorTable singleParticipantId={singleParticipant.id} {conferenceId} />

@@ -1,20 +1,19 @@
 <script lang="ts">
-	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { goto } from '$app/navigation';
-	import { fetchMyConferences } from './myConferences';
+	import { resolve } from '$app/paths';
+	import { fetchMyConferences } from './myConferences.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import MyConferenceCard from '$lib/components/dashboard/MyConferenceCard.svelte';
 
-	const currentUser = $derived(await getCurrentUser());
-
-	const { conferences } = $derived(await fetchMyConferences(currentUser.sub));
+	// The same list the side navigation shows; each card fetches its own details.
+	const conferences = $derived(await fetchMyConferences());
 
 	// Someone taking part in exactly one conference has nothing to pick, so they go straight to it.
 	$effect(() => {
 		if (conferences.length === 1) {
-			goto(`/dashboard/${conferences[0].id}`, { replaceState: true });
+			goto(resolve(`/dashboard/${conferences[0].id}`), { replaceState: true });
 		}
 	});
 
@@ -47,12 +46,12 @@
 			>
 				<div class="flex flex-col gap-4">
 					{#each sortedConferences as conference (conference.id)}
-						<MyConferenceCard {conference} />
+						<MyConferenceCard conferenceId={conference.id} />
 					{/each}
 
 					<!-- Register for another conference card -->
 					<a
-						href="/registration"
+						href={resolve('/registration')}
 						class="card bg-base-100 border-primary hover:bg-base-200 border-2 border-dashed transition-colors"
 					>
 						<div class="card-body items-center justify-center py-8">

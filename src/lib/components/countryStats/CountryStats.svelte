@@ -9,38 +9,33 @@
 
 	let { countryCode }: Props = $props();
 
+	/** German short scales; no population reaches a trillion, so one table serves every stat. */
+	const scales = [
+		{ factor: 10 ** 12, suffix: ' Bio.' },
+		{ factor: 10 ** 9, suffix: ' Mrd.' },
+		{ factor: 10 ** 6, suffix: ' Mio.' }
+	];
+
+	const formatLargeNumber = (value: number) => {
+		const scale = scales.find(({ factor }) => value >= factor);
+		if (!scale) return numeral(value).format('0.0a');
+		return numeral(value / scale.factor).format('0.0a') + scale.suffix;
+	};
+
 	const stats = [
 		{
 			icon: 'users',
 			title: 'Bevölkerung',
 			desc: 'Einwohnerzahl',
 			wbIndicator: 'SP.POP.TOTL',
-			formatter: (value: number) => {
-				if (value >= 10 ** 9) {
-					return numeral(value / 10 ** 9).format('0.0a') + ' Mrd.';
-				} else if (value >= 10 ** 6) {
-					return numeral(value / 10 ** 6).format('0.0a') + ' Mio.';
-				} else {
-					return numeral(value).format('0.0a');
-				}
-			}
+			formatter: formatLargeNumber
 		},
 		{
 			icon: 'chart-line-up',
 			title: 'Bruttoinlandsprodukt (BIP)',
 			desc: 'US-Dollar',
 			wbIndicator: 'NY.GDP.MKTP.CD',
-			formatter: (value: number) => {
-				if (value >= 10 ** 12) {
-					return numeral(value / 10 ** 12).format('0.0a') + ' Bio.';
-				} else if (value >= 10 ** 9) {
-					return numeral(value / 10 ** 9).format('0.0a') + ' Mrd.';
-				} else if (value >= 10 ** 6) {
-					return numeral(value / 10 ** 6).format('0.0a') + ' Mio.';
-				} else {
-					return numeral(value).format('0.0a');
-				}
-			}
+			formatter: formatLargeNumber
 		},
 		{
 			icon: 'chart-line-up',
@@ -92,7 +87,7 @@
 			<div class="stat-value">{getFullTranslatedCountryNameFromISO3Code(countryCode)}</div>
 		</div>
 	</div>
-	{#each stats as stat}
+	{#each stats as stat (stat.wbIndicator)}
 		<SingleStatFromWb {...stat} {countryCode} />
 	{/each}
 </div>

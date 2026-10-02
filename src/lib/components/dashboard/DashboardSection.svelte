@@ -42,22 +42,7 @@
 
 <section class="{cardClasses} {class_}">
 	<div class="card-body">
-		<div
-			class="flex items-start gap-4 {collapsible ? 'cursor-pointer select-none' : ''}"
-			class:mb-4={!collapsed}
-			role={collapsible ? 'button' : undefined}
-			tabindex={collapsible ? 0 : undefined}
-			aria-expanded={collapsible ? !collapsed : undefined}
-			onclick={collapsible ? () => (collapsed = !collapsed) : undefined}
-			onkeydown={collapsible
-				? (e: KeyboardEvent) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.preventDefault();
-							collapsed = !collapsed;
-						}
-					}
-				: undefined}
-		>
+		{#snippet header()}
 			<div class={iconClasses}>
 				<i class="fa-duotone fa-{icon} text-xl"></i>
 			</div>
@@ -87,7 +72,29 @@
 					<p class="text-base-content/60 mt-1 text-sm">{description}</p>
 				{/if}
 			</div>
-		</div>
+		{/snippet}
+		{#if collapsible}
+			<div
+				class="flex cursor-pointer items-start gap-4 select-none"
+				class:mb-4={!collapsed}
+				role="button"
+				tabindex="0"
+				aria-expanded={!collapsed}
+				onclick={() => (collapsed = !collapsed)}
+				onkeydown={(e: KeyboardEvent) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						collapsed = !collapsed;
+					}
+				}}
+			>
+				{@render header()}
+			</div>
+		{:else}
+			<div class="flex items-start gap-4" class:mb-4={!collapsed}>
+				{@render header()}
+			</div>
+		{/if}
 		{#if !collapsed}
 			{@render children()}
 		{/if}

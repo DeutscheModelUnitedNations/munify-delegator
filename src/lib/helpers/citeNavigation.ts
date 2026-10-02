@@ -106,34 +106,72 @@ function findAndWrapMatches(container: HTMLElement, searchText: string): HTMLEle
 	return highlightSpans;
 }
 
-/**
- * Highlights all occurrences of searchText within a single block element
- */
-function highlightTextInBlock(block: HTMLElement, searchText: string): HTMLElement[] {
-	const highlightSpans: HTMLElement[] = [];
+type TextNodeSpan = { node: Text; start: number; end: number };
 
-	// Build list of text nodes
-	const textNodes: Text[] = [];
+/**
+ * The block's text nodes, each with where its whitespace-normalized text starts and ends in the
+ * block's combined normalized text, and that combined text.
+ */
+function mapTextNodes(block: HTMLElement): { combinedText: string; nodeMap: TextNodeSpan[] } {
+	let combinedText = '';
+	const nodeMap: TextNodeSpan[] = [];
 	const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
 	let node: Node | null;
 	while ((node = walker.nextNode())) {
-		textNodes.push(node as Text);
-	}
-
-	// Build combined text with position mapping
-	let combinedText = '';
-	const nodeMap: { node: Text; start: number; end: number }[] = [];
-
-	for (const textNode of textNodes) {
-		const nodeText = textNode.textContent || '';
-		const normalizedNodeText = nodeText.replace(/\s+/g, ' ');
+		if (!(node instanceof Text)) continue;
+		const normalizedNodeText = (node.textContent || '').replace(/\s+/g, ' ');
 		nodeMap.push({
-			node: textNode,
+			node,
 			start: combinedText.length,
 			end: combinedText.length + normalizedNodeText.length
 		});
 		combinedText += normalizedNodeText;
 	}
+	return { combinedText, nodeMap };
+}
+
+/**
+ * Wraps the part of `node` that the normalized range [matchStart, matchEnd) of the combined text
+ * covers in a highlight span. Returns the span, or undefined if the node holds none of the match
+ * or the range cannot be wrapped.
+ */
+function highlightInNode(
+	{ node, start, end }: TextNodeSpan,
+	matchStart: number,
+	matchEnd: number
+): HTMLElement | undefined {
+	// Check if this node overlaps with our match
+	if (end <= matchStart || start >= matchEnd) return undefined;
+
+	// Calculate overlap within this node
+	const overlapStart = Math.max(0, matchStart - start);
+	const overlapEnd = Math.min(end - start, matchEnd - start);
+
+	// Map normalized positions back to original text positions
+	const positions = mapNormalizedToOriginal(node.textContent || '', overlapStart, overlapEnd);
+	if (positions.start >= positions.end) return undefined;
+
+	try {
+		const range = document.createRange();
+		range.setStart(node, positions.start);
+		range.setEnd(node, positions.end);
+
+		const span = document.createElement('span');
+		span.className = 'cite-highlight';
+		range.surroundContents(span);
+		return span;
+	} catch {
+		// surroundContents can fail if range spans element boundaries
+		return undefined;
+	}
+}
+
+/**
+ * Highlights all occurrences of searchText within a single block element
+ */
+function highlightTextInBlock(block: HTMLElement, searchText: string): HTMLElement[] {
+	const highlightSpans: HTMLElement[] = [];
+	const { combinedText, nodeMap } = mapTextNodes(block);
 
 	// Find all occurrences of search text
 	let searchIndex = 0;
@@ -141,37 +179,9 @@ function highlightTextInBlock(block: HTMLElement, searchText: string): HTMLEleme
 		const searchEnd = searchIndex + searchText.length;
 
 		// Find which text nodes this match spans
-		for (const { node, start, end } of nodeMap) {
-			// Check if this node overlaps with our match
-			if (end <= searchIndex || start >= searchEnd) {
-				continue;
-			}
-
-			// Calculate overlap within this node
-			const overlapStart = Math.max(0, searchIndex - start);
-			const overlapEnd = Math.min(end - start, searchEnd - start);
-
-			// Map normalized positions back to original text positions
-			const originalText = node.textContent || '';
-			const positions = mapNormalizedToOriginal(originalText, overlapStart, overlapEnd);
-
-			if (positions.start >= positions.end) {
-				continue;
-			}
-
-			try {
-				const range = document.createRange();
-				range.setStart(node, positions.start);
-				range.setEnd(node, positions.end);
-
-				const span = document.createElement('span');
-				span.className = 'cite-highlight';
-				range.surroundContents(span);
-				highlightSpans.push(span);
-			} catch {
-				// surroundContents can fail if range spans element boundaries
-				continue;
-			}
+		for (const entry of nodeMap) {
+			const span = highlightInNode(entry, searchIndex, searchEnd);
+			if (span) highlightSpans.push(span);
 		}
 
 		searchIndex = searchEnd;

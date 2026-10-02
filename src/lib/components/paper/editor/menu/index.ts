@@ -1,12 +1,13 @@
 import Button from './Button.svelte';
 import Divider from './Divider.svelte';
+import ToggleButtons from './ToggleButtons.svelte';
 import Wrapper from './Wrapper.svelte';
 
-export const Menu = {
+const Menu = {
 	Wrapper,
 	Button,
-	Divider
+	Divider,
+	ToggleButtons
 };
 
-export type { SvelteComponent } from 'svelte';
 export default Menu;

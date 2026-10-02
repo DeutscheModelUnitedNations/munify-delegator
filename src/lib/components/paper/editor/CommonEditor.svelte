@@ -6,6 +6,8 @@
 	import { paperStatsStore, type PaperStats } from './paperStatsStore';
 	import { m } from '$lib/paraglide/messages';
 	import type { EditorOptions, Editor as CoreEditor } from '@tiptap/core';
+	import type { EditorState } from '@tiptap/pm/state';
+	import { getSafeTipTapContent } from './contentValidation';
 
 	interface Props {
 		settings: Partial<EditorOptions>;
@@ -68,7 +70,7 @@
 	};
 
 	// Custom shouldShow for quote bubble menu - works even in read-only mode
-	const shouldShowQuoteBubble = ({ state }: { state: any }) => {
+	const shouldShowQuoteBubble = ({ state }: { state: EditorState }) => {
 		const { from, to } = state.selection;
 		// Show only when there's actual text selected (not just cursor)
 		return from !== to;
@@ -77,10 +79,14 @@
 	let editor = $state<Readable<Editor> | null>(null);
 	let isDestroyed = $state(false);
 
+	/** The store holds whatever a page seeded it with; only a string or a TipTap document is content. */
+	const storedContent = (value: unknown) =>
+		typeof value === 'string' ? value : getSafeTipTapContent(value);
+
 	onMount(() => {
 		editor = createEditor({
 			...settings,
-			content: $editorContentStore ?? baseContent ?? undefined,
+			content: storedContent($editorContentStore) ?? baseContent ?? undefined,
 			editorProps: {
 				attributes: {
 					class: `${additionalClasses} focus:outline-none px-2 pb-2`

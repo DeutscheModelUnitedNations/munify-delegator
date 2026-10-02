@@ -1,14 +1,15 @@
-<script lang="ts" generics="RowData">
+<script lang="ts" generics="RowData extends object">
 	import SvelteTable, { type TableColumns } from 'svelte-table';
 	import { getTableSettings } from './dataTableSettings.svelte';
 	import Fuse from 'fuse.js';
 	import { m } from '$lib/paraglide/messages';
-	import { onMount, type Snippet } from 'svelte';
+	import { onMount, untrack, type Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import DataTableSettingsButton from './DataTableSettingsButton.svelte';
 	import PrintHeader from './DataTablePrintHeader.svelte';
 	import ExportButton from './DataTableExportButton.svelte';
-	import { queryParam } from 'sveltekit-search-params';
+	import { queryParameters } from 'sveltekit-search-params';
+	import { expandKeyOf, soleFilteredRow, toggleExpandedKey } from './dataTableRows';
 
 	interface Props {
 		columns: TableColumns<RowData>;
@@ -23,7 +24,6 @@
 		rowKey?: string;
 		selected?: string[];
 		expandedRowContent?: Snippet<[RowData]>;
-		filterOptions?: TableColumns<RowData>[number]['key'][];
 		additionallyIndexedKeys?: string[];
 		rowSelected?: (row: RowData) => void;
 		tableClass?: string;
@@ -41,7 +41,6 @@
 		rowKey = 'id',
 		selected = $bindable([]),
 		expandedRowContent,
-		filterOptions,
 		additionallyIndexedKeys = [],
 		title = page.url.pathname.split('/').pop()!,
 		tableClass,
@@ -56,25 +55,20 @@
 		}))
 	);
 
-	let searchPattern = queryParam(queryParamKey ?? 'filter');
-	let expanded = $state<string[]>([]);
+	// The URL key is fixed for a table's lifetime; the search params object cannot follow a change.
+	const searchKey = untrack(() => queryParamKey) ?? 'filter';
+	const params = queryParameters({ [searchKey]: true });
+	let expanded = $state<(string | number)[]>([]);
 
 	const toggleExpanded = (row: RowData) => {
-		let rowKey = (row as any).rowKey ?? (row as any).id;
-		if (expanded.includes(rowKey)) {
-			expanded = expanded.filter((r) => r !== rowKey);
-		} else {
-			if (expandSingle) {
-				expanded = [rowKey];
-			} else {
-				expanded = [...expanded, rowKey];
-			}
-		}
+		const rowKey = expandKeyOf(row);
+		if (rowKey === undefined) return;
+		expanded = toggleExpandedKey(expanded, rowKey, expandSingle);
 	};
 
 	const searchableRows = $derived.by(() => {
 		return rows.map((row) => {
-			const newRow: { [key: string]: any } = { __original__: row };
+			const newRow: { __original__: RowData; [key: string]: unknown } = { __original__: row };
 			let all = '';
 			for (const column of columns) {
 				if (column.value) {
@@ -106,34 +100,28 @@
 		})
 	);
 	let searchedColumns = $derived(
-		$searchPattern != null
+		params[searchKey] != null
 			? fuse
 					.search({
-						$and: $searchPattern
+						$and: params[searchKey]
 							.split(' ')
 							.filter((p) => p.trim())
 							.map((p) => ({ __search__all: p }))
 					})
-					.map((i) => i.item.__original__ ?? i.item)
+					.map((i) => i.item.__original__)
 			: rows
 	);
 
 	onMount(() => {
-		if (
-			searchedColumns.length === 1 &&
-			queryParamKey &&
-			page.url.searchParams.get(queryParamKey) &&
-			rowSelected
-		) {
-			// we assume that we hit a single result with a filter query key and therefore want
-			// this entry to be selected automatically
-			rowSelected(searchedColumns[0]);
-		}
+		// we assume that we hit a single result with a filter query key and therefore want
+		// this entry to be selected automatically
+		const row = soleFilteredRow(searchedColumns, queryParamKey, page.url.searchParams);
+		if (row) rowSelected?.(row);
 	});
 
 	$effect(() => {
-		if ($searchPattern == '') {
-			$searchPattern = null;
+		if (params[searchKey] == '') {
+			params[searchKey] = null;
 		}
 	});
 </script>
@@ -141,11 +129,11 @@
 <div class="flex min-w-0 items-center overflow-x-auto">
 	{#if enableSearch}
 		<label class="no-print input input-bordered mr-3 flex w-full items-center gap-2">
-			<input type="text" class="grow" bind:value={$searchPattern} placeholder={m.search()} />
-			{#if $searchPattern !== ''}
+			<input type="text" class="grow" bind:value={params[searchKey]} placeholder={m.search()} />
+			{#if params[searchKey] !== ''}
 				<button
 					class="btn btn-square btn-ghost btn-sm"
-					onclick={() => ($searchPattern = '')}
+					onclick={() => (params[searchKey] = '')}
 					aria-label="Reset search"
 				>
 					<i class="fa-duotone fa-times"></i>
@@ -156,10 +144,10 @@
 		</label>
 	{/if}
 	<DataTableSettingsButton />
-	<ExportButton exportedData={rows as any} />
+	<ExportButton exportedData={rows} />
 </div>
 
-<PrintHeader {title} searchPattern={$searchPattern ?? ''} />
+<PrintHeader {title} searchPattern={params[searchKey] ?? ''} />
 
 <div
 	class="svelte-table-wrapper mt-4 max-h-[80vh] min-w-0 overflow-x-auto transition-all duration-300 {tableClass}"

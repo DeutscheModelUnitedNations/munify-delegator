@@ -1,4 +1,4 @@
-type Extendable<T> = T & { [key: string]: any };
+type Extendable<T> = T & { [key: string]: unknown };
 
 type Nation = Extendable<{
 	alpha3Code: string;

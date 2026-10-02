@@ -284,14 +284,22 @@ function nationCodeToLocalName(code: string, locale = getLocale(), official = fa
 
 // we build an index of nation codes to translation objects
 type TranslationObject = { [key in (typeof locales)[number]]: string };
-export const NationIso3ToLocalNamesMap = new SvelteMap<string, TranslationObject>();
+const NationIso3ToLocalNamesMap = new SvelteMap<string, TranslationObject>();
+
+function hasEveryLocale(
+	translations: Partial<TranslationObject>
+): translations is TranslationObject {
+	return locales.every((languageTag) => typeof translations[languageTag] === 'string');
+}
 
 for (const nation of allNations) {
-	const translationObject: TranslationObject = {} as any;
+	const translationObject: Partial<TranslationObject> = {};
 	for (const languageTag of locales) {
 		translationObject[languageTag] = nationCodeToLocalName(nation.cca3, languageTag);
 	}
-	NationIso3ToLocalNamesMap.set(nation.cca3, translationObject);
+	if (hasEveryLocale(translationObject)) {
+		NationIso3ToLocalNamesMap.set(nation.cca3, translationObject);
+	}
 }
 
 Object.freeze(NationIso3ToLocalNamesMap);

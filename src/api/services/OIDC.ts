@@ -36,7 +36,7 @@ function asString(value: unknown): string | undefined {
  * Logto uses `username` instead of `preferred_username`, and a single `name` instead of
  * `given_name`/`family_name`.
  */
-export function normalizeOIDCClaims(claims: Record<string, unknown>) {
+function normalizeOIDCClaims(claims: Record<string, unknown>) {
 	const sub = asString(claims.sub);
 	if (!sub) {
 		throw new Error('OIDC claim "sub" is missing or invalid');

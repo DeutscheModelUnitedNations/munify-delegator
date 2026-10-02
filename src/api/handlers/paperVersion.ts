@@ -29,7 +29,7 @@ abilityBuilder.paperVersion.allow('read').when((ctx) => {
 		: undefined;
 });
 
-export const PaperVersionRef = object({
+object({
 	table: 'paperVersion',
 	adjust: (t) => ({
 		/**

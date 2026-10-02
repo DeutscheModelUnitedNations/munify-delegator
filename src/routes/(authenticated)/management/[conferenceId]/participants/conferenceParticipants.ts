@@ -16,7 +16,12 @@ const participantUser = {
 	conferenceParticipationsCount: true
 } as const;
 
-/** Every registration of a conference, whatever its type, for the participants table. */
+/**
+ * Every registration of a conference, whatever its type, for the participants table.
+ *
+ * One list query per registration type, holding only what the table's columns show, filter and
+ * export. Everything else about a person is fetched by the user card when a row is opened.
+ */
 export async function fetchConferenceParticipants(conferenceId: string) {
 	const inConference = { where: { conferenceId: { eq: conferenceId } } };
 
@@ -37,16 +42,11 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 		client.liveQuery.delegationMembers({
 			__args: inConference,
 			isHeadDelegate: true,
-			assignedCommittee: { name: true, abbreviation: true },
+			assignedCommittee: { name: true },
 			delegation: {
 				school: true,
-				entryCode: true,
 				assignedNation: { alpha2Code: true, alpha3Code: true },
-				assignedNonStateActor: {
-					name: true,
-					abbreviation: true,
-					fontAwesomeIcon: true
-				}
+				assignedNonStateActor: { name: true, fontAwesomeIcon: true }
 			},
 			user: participantUser
 		}),
@@ -92,7 +92,6 @@ export async function fetchConferenceParticipants(conferenceId: string) {
 			termsAndConditions: true,
 			guardianConsent: true,
 			mediaConsent: true,
-			mediaConsentStatus: true,
 			didAttend: true,
 			assignedDocumentNumber: true,
 			accessCardId: true

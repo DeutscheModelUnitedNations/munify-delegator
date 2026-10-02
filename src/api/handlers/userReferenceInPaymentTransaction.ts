@@ -10,7 +10,7 @@ abilityBuilder.userReferenceInPaymentTransaction
 	.allow(['read', 'update', 'delete'])
 	.when(systemAdmin);
 
-export const UserReferenceInPaymentTransactionRef = object({
+object({
 	table: 'userReferenceInPaymentTransaction'
 });
 query({ table: 'userReferenceInPaymentTransaction' });

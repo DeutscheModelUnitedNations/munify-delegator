@@ -5,35 +5,36 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import DownloadButton from './DownloadButton.svelte';
+	import { badgeHeader, badgeRow, compareByFamilyName, type Badge } from './exportFormatting';
 
 	interface Props {
-		committees: {
-			id: string;
-			name: string;
-			abbreviation: string;
-		}[];
 		conferenceId: string;
 	}
 
-	let { committees, conferenceId }: Props = $props();
+	let { conferenceId }: Props = $props();
 
-	let loadingStates = $state<Record<string, boolean>>({});
-
-	const setLoading = (key: string, value: boolean) => {
-		loadingStates = { ...loadingStates, [key]: value };
-	};
-
-	const badgeUser = {
-		id: true,
-		givenName: true,
-		familyName: true,
-		pronouns: true,
-		conferenceParticipantStatus: {
+	const committees = $derived(
+		await client.liveQuery.committees({
+			__args: { where: { conferenceId: { eq: conferenceId } } },
 			id: true,
-			mediaConsentStatus: true,
-			conference: { id: true }
-		}
-	} as const;
+			name: true
+		})
+	);
+
+	// Only this conference's status row, not every conference the person ever attended.
+	function badgeUser() {
+		return {
+			id: true,
+			givenName: true,
+			familyName: true,
+			pronouns: true,
+			conferenceParticipantStatus: {
+				__args: { where: { conferenceId: { eq: conferenceId } } },
+				id: true,
+				mediaConsentStatus: true
+			}
+		} as const;
+	}
 
 	function fetchCommitteeBadgeData(committeeId: string) {
 		return client.query.committee({
@@ -42,7 +43,7 @@
 			abbreviation: true,
 			delegationMembers: {
 				id: true,
-				user: badgeUser,
+				user: badgeUser(),
 				delegation: {
 					id: true,
 					assignedNation: { alpha2Code: true, alpha3Code: true }
@@ -60,7 +61,7 @@
 				}
 			},
 			id: true,
-			user: badgeUser,
+			user: badgeUser(),
 			delegation: {
 				id: true,
 				assignedNonStateActor: { id: true, name: true, abbreviation: true }
@@ -77,7 +78,7 @@
 				}
 			},
 			id: true,
-			user: badgeUser,
+			user: badgeUser(),
 			assignedRole: { name: true }
 		});
 	}
@@ -86,7 +87,7 @@
 		return client.query.conferenceSupervisors({
 			__args: { where: { conferenceId: { eq: conferenceId } } },
 			id: true,
-			user: badgeUser,
+			user: badgeUser(),
 			supervisedDelegationMembers: {
 				delegation: {
 					applied: true,
@@ -106,264 +107,145 @@
 		});
 	}
 
-	const exportBadgeCSV = (
-		badgeData: {
-			name: string;
-			committee?: string | null;
-			countryName: string;
-			countryAlpha2Code?: string | null;
-			alternativeImage?: string | null;
-			pronouns?: string | null;
-			id?: string | null;
-			mediaConsentStatus?: MediaconsentstatusEnum;
-		}[],
-		filename: string
-	) => {
-		const header = [
-			'name',
-			'committee',
-			'countryName',
-			'countryAlpha2Code',
-			'alternativeImage',
-			'pronouns',
-			'id',
-			'mediaConsentStatus'
-		];
-		const data = badgeData.map((x) => [
-			x.name,
-			x.committee ?? '',
-			x.countryName,
-			x.countryAlpha2Code ?? '',
-			x.alternativeImage ?? '',
-			x.pronouns ?? '',
-			x.id ?? '',
-			x.mediaConsentStatus ?? 'NOT_SET'
-		]);
-		downloadCSV(header, data, filename);
+	interface BadgeUser {
+		id: string;
+		givenName: string | null;
+		familyName: string | null;
+		pronouns: string | null;
+	}
+
+	/** The fields every badge takes from the person wearing it. */
+	function personOnBadge(user: BadgeUser) {
+		return {
+			name: formatNames(user.givenName ?? undefined, user.familyName ?? undefined, {
+				familyNameUppercase: false
+			}),
+			pronouns: user.pronouns,
+			id: user.id
+		};
+	}
+
+	/** The person's media consent in this conference, as `badgeUser` selects it. */
+	function mediaConsentOf(user: {
+		conferenceParticipantStatus: { mediaConsentStatus: MediaconsentstatusEnum }[];
+	}): MediaconsentstatusEnum {
+		return user.conferenceParticipantStatus[0]?.mediaConsentStatus ?? 'NOT_SET';
+	}
+
+	/** Sorts by `label`, then by family name. */
+	function compareByLabelThenFamilyName<T extends { user: BadgeUser }>(label: (item: T) => string) {
+		return (a: T, b: T) => label(a).localeCompare(label(b)) || compareByFamilyName(a, b);
+	}
+
+	const exportBadgeCSV = (badgeData: Badge[], filename: string) => {
+		downloadCSV(badgeHeader, badgeData.map(badgeRow), filename);
 	};
 
 	const getCommitteeBadgeData = async (committeeId: string) => {
-		const key = `committee-${committeeId}`;
-		setLoading(key, true);
-		try {
-			const resData = await fetchCommitteeBadgeData(committeeId);
+		const resData = await fetchCommitteeBadgeData(committeeId);
 
-			const badgeData = resData.delegationMembers
-				.filter((member) => !!member.delegation.assignedNation)
-				.sort((a, b) => {
-					const countryCompare = getFullTranslatedCountryNameFromISO3Code(
-						a.delegation.assignedNation!.alpha3Code
-					).localeCompare(
-						getFullTranslatedCountryNameFromISO3Code(b.delegation.assignedNation!.alpha3Code)
-					);
-					if (countryCompare !== 0) return countryCompare;
-					return (a.user.familyName ?? '').localeCompare(b.user.familyName ?? '');
-				})
-				.map((member) => ({
-					name: formatNames(
-						member.user.givenName ?? undefined,
-						member.user.familyName ?? undefined,
-						{
-							familyNameUppercase: false
-						}
-					),
-					committee: resData.abbreviation,
-					countryName: getFullTranslatedCountryNameFromISO3Code(
-						member.delegation.assignedNation!.alpha3Code
-					),
-					countryAlpha2Code: member.delegation.assignedNation!.alpha2Code,
-					alternativeImage: '',
-					pronouns: member.user.pronouns,
-					id: member.user.id,
-					mediaConsentStatus:
-						member.user.conferenceParticipantStatus.find((conference) => {
-							return conference.conference.id === conferenceId;
-						})?.mediaConsentStatus ?? 'NOT_SET'
-				}));
+		const badgeData = resData.delegationMembers.flatMap((member) => {
+			const nation = member.delegation.assignedNation;
+			return nation ? [{ user: member.user, nation }] : [];
+		});
+		const countryName = (member: (typeof badgeData)[number]) =>
+			getFullTranslatedCountryNameFromISO3Code(member.nation.alpha3Code);
 
-			exportBadgeCSV(
-				badgeData,
-				`${resData.abbreviation}_badge_data_${new Date().toISOString()}.csv`
-			);
-		} finally {
-			setLoading(key, false);
-		}
+		exportBadgeCSV(
+			badgeData.sort(compareByLabelThenFamilyName(countryName)).map((member) => ({
+				...personOnBadge(member.user),
+				committee: resData.abbreviation,
+				countryName: countryName(member),
+				countryAlpha2Code: member.nation.alpha2Code,
+				alternativeImage: '',
+				mediaConsentStatus: mediaConsentOf(member.user)
+			})),
+			`${resData.abbreviation}_badge_data_${new Date().toISOString()}.csv`
+		);
 	};
 
 	const getNSAData = async () => {
-		const key = 'nsa';
-		setLoading(key, true);
-		try {
-			const resData = await fetchNsaBadgeData();
+		const resData = await fetchNsaBadgeData();
 
-			const badgeData = resData
-				.filter((member) => !!member.delegation.assignedNonStateActor)
-				.sort((a, b) => {
-					const countryCompare = a.delegation.assignedNonStateActor!.name.localeCompare(
-						b.delegation.assignedNonStateActor!.name
-					);
-					if (countryCompare !== 0) return countryCompare;
-					return (a.user.familyName ?? '').localeCompare(b.user.familyName ?? '');
-				})
-				.map((member) => ({
-					name: formatNames(
-						member.user.givenName ?? undefined,
-						member.user.familyName ?? undefined,
-						{
-							familyNameUppercase: false
-						}
-					),
-					countryName: member.delegation.assignedNonStateActor!.name,
-					countryAlpha2Code: 'un',
-					alternativeImage: '',
-					pronouns: member.user.pronouns,
-					id: member.user.id,
-					mediaConsentStatus:
-						member.user.conferenceParticipantStatus.find((conference) => {
-							return conference.conference.id === conferenceId;
-						})?.mediaConsentStatus ?? 'NOT_SET'
-				}));
+		const badgeData = resData.flatMap((member) => {
+			const nsa = member.delegation.assignedNonStateActor;
+			return nsa ? [{ user: member.user, label: nsa.name }] : [];
+		});
 
-			exportBadgeCSV(badgeData, `NSA_badge_data_${new Date().toISOString()}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		exportBadgeCSV(
+			badgeData.sort(compareByLabelThenFamilyName((member) => member.label)).map((member) => ({
+				...personOnBadge(member.user),
+				countryName: member.label,
+				countryAlpha2Code: 'un',
+				alternativeImage: '',
+				mediaConsentStatus: mediaConsentOf(member.user)
+			})),
+			`NSA_badge_data_${new Date().toISOString()}.csv`
+		);
 	};
 
 	const getSingleParticipantsData = async () => {
-		const key = 'single';
-		setLoading(key, true);
-		try {
-			const resData = await fetchSingleParticipantBadgeData();
+		const resData = await fetchSingleParticipantBadgeData();
 
-			const badgeData = resData
-				.filter((member) => !!member.assignedRole)
-				.sort((a, b) => {
-					const countryCompare = a.assignedRole!.name.localeCompare(b.assignedRole!.name);
-					if (countryCompare !== 0) return countryCompare;
-					return (a.user.familyName ?? '').localeCompare(b.user.familyName ?? '');
-				})
-				.map((member) => ({
-					name: formatNames(
-						member.user.givenName ?? undefined,
-						member.user.familyName ?? undefined,
-						{
-							familyNameUppercase: false
-						}
-					),
-					countryName: member.assignedRole!.name,
-					countryAlpha2Code: 'un',
-					alternativeImage: '',
-					pronouns: member.user.pronouns,
-					id: member.user.id,
-					mediaConsentStatus:
-						member.user.conferenceParticipantStatus.find((conference) => {
-							return conference.conference.id === conferenceId;
-						})?.mediaConsentStatus ?? 'NOT_SET'
-				}));
+		const badgeData = resData.flatMap((member) =>
+			member.assignedRole ? [{ user: member.user, label: member.assignedRole.name }] : []
+		);
 
-			exportBadgeCSV(badgeData, `single_participants_badge_data_${new Date().toISOString()}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		exportBadgeCSV(
+			badgeData.sort(compareByLabelThenFamilyName((member) => member.label)).map((member) => ({
+				...personOnBadge(member.user),
+				countryName: member.label,
+				countryAlpha2Code: 'un',
+				alternativeImage: '',
+				mediaConsentStatus: mediaConsentOf(member.user)
+			})),
+			`single_participants_badge_data_${new Date().toISOString()}.csv`
+		);
 	};
 
 	const getSupervisorData = async () => {
-		const key = 'supervisors';
-		setLoading(key, true);
-		try {
-			const resData = await fetchSupervisorBadgeData();
+		const resData = await fetchSupervisorBadgeData();
 
-			const badgeData = resData
-				.filter(
-					(supervisor) =>
-						supervisor.supervisedDelegationMembers.some(
-							(dm) =>
-								dm.delegation.applied &&
-								(dm.delegation.assignedNation || dm.delegation.assignedNonStateActor)
-						) || supervisor.supervisedSingleParticipants.some((sp) => sp.applied && sp.assignedRole)
-				)
-				.sort((a, b) => (a.user.familyName ?? '').localeCompare(b.user.familyName ?? ''))
-				.map((supervisor) => ({
-					name: formatNames(
-						supervisor.user.givenName ?? undefined,
-						supervisor.user.familyName ?? undefined,
-						{
-							familyNameUppercase: false
-						}
-					),
-					countryName: m.supervisor(),
-					countryAlpha2Code: '',
-					alternativeImage: 'supervisor',
-					pronouns: supervisor.user.pronouns,
-					id: supervisor.user.id,
-					mediaConsentStatus:
-						supervisor.user.conferenceParticipantStatus.find((conference) => {
-							return conference.conference.id === conferenceId;
-						})?.mediaConsentStatus ?? 'NOT_SET'
-				}));
+		const badgeData = resData
+			.filter(
+				(supervisor) =>
+					supervisor.supervisedDelegationMembers.some(
+						(dm) =>
+							dm.delegation.applied &&
+							(dm.delegation.assignedNation || dm.delegation.assignedNonStateActor)
+					) || supervisor.supervisedSingleParticipants.some((sp) => sp.applied && sp.assignedRole)
+			)
+			.sort(compareByFamilyName)
+			.map((supervisor) => ({
+				...personOnBadge(supervisor.user),
+				countryName: m.supervisor(),
+				countryAlpha2Code: '',
+				alternativeImage: 'supervisor',
+				mediaConsentStatus: mediaConsentOf(supervisor.user)
+			}));
 
-			exportBadgeCSV(badgeData, `supervisors_badge_data_${new Date().toISOString()}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		exportBadgeCSV(badgeData, `supervisors_badge_data_${new Date().toISOString()}.csv`);
 	};
 
 	const getTeamMemberData = async () => {
-		const key = 'teamMembers';
-		setLoading(key, true);
-		try {
-			const resData = await fetchTeamMemberBadgeData();
+		const resData = await fetchTeamMemberBadgeData();
 
-			const badgeData = resData
-				.sort((a, b) => (a.user.familyName ?? '').localeCompare(b.user.familyName ?? ''))
-				.map((member) => ({
-					name: formatNames(
-						member.user.givenName ?? undefined,
-						member.user.familyName ?? undefined,
-						{
-							familyNameUppercase: false
-						}
-					),
-					countryName: m.teamBadge(),
-					countryAlpha2Code: 'un',
-					alternativeImage: '',
-					pronouns: member.user.pronouns,
-					id: member.user.id,
-					mediaConsentStatus: 'ALLOWED_ALL' as const
-				}));
+		const badgeData = resData.sort(compareByFamilyName).map((member) => ({
+			...personOnBadge(member.user),
+			countryName: m.teamBadge(),
+			countryAlpha2Code: 'un',
+			alternativeImage: '',
+			mediaConsentStatus: 'ALLOWED_ALL' as const
+		}));
 
-			exportBadgeCSV(badgeData, `team_members_badge_data_${new Date().toISOString()}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		exportBadgeCSV(badgeData, `team_members_badge_data_${new Date().toISOString()}.csv`);
 	};
 </script>
 
 {#each committees as committee (committee.id)}
-	<DownloadButton
-		onclick={() => getCommitteeBadgeData(committee.id)}
-		title={committee.name}
-		loading={loadingStates[`committee-${committee.id}`] ?? false}
-	/>
+	<DownloadButton onclick={() => getCommitteeBadgeData(committee.id)} title={committee.name} />
 {/each}
-<DownloadButton
-	onclick={() => getNSAData()}
-	title={m.nonStateActors()}
-	loading={loadingStates['nsa'] ?? false}
-/>
-<DownloadButton
-	onclick={() => getSingleParticipantsData()}
-	title={m.singleParticipants()}
-	loading={loadingStates['single'] ?? false}
-/>
-<DownloadButton
-	onclick={() => getSupervisorData()}
-	title={m.supervisors()}
-	loading={loadingStates['supervisors'] ?? false}
-/>
-<DownloadButton
-	onclick={() => getTeamMemberData()}
-	title={m.teamMembers()}
-	loading={loadingStates['teamMembers'] ?? false}
-/>
+<DownloadButton onclick={getNSAData} title={m.nonStateActors()} />
+<DownloadButton onclick={getSingleParticipantsData} title={m.singleParticipants()} />
+<DownloadButton onclick={getSupervisorData} title={m.supervisors()} />
+<DownloadButton onclick={getTeamMemberData} title={m.teamMembers()} />

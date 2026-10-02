@@ -1,251 +1,84 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { getLocale } from '$lib/paraglide/runtime.js';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
 
-	import { translateTeamRole } from '$lib/utils/enumTranslations';
-	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
-
-	interface DelegationMember {
-		id: string;
-		isHeadDelegate: boolean;
-		conference: { id: string };
-		assignedCommittee: { id: string; abbreviation: string; name: string } | null;
-		delegation: {
-			id: string;
-			applied: boolean;
-			assignedNation: { alpha2Code: string; alpha3Code: string } | null;
-			assignedNonStateActor: { id: string; name: string; fontAwesomeIcon: string | null } | null;
-		};
-	}
-
-	interface SingleParticipant {
-		id: string;
-		conference: { id: string };
-		applied: boolean;
-		assignedRole: { id: string; name: string; fontAwesomeIcon: string | null } | null;
-	}
-
-	interface Supervisor {
-		id: string;
-		conference: { id: string };
-		supervisedDelegationMembers: {
-			id: string;
-			delegation: {
-				assignedNation: { alpha2Code: string } | null;
-				assignedNonStateActor: { id: string } | null;
-			};
-		}[];
-		supervisedSingleParticipants: {
-			id: string;
-			assignedRole: { id: string } | null;
-		}[];
-	}
-
-	interface TeamMember {
-		id: string;
-		conference: { id: string };
-		role: TeamroleEnum;
-	}
-
-	interface Conference {
-		id: string;
-		title: string;
-		longTitle: string | null;
-		location: string | null;
-		website: string | null;
-		imageDataURL: string | null;
-		state: string;
-		startConference: Date;
-		endConference: Date;
-		delegationMembers: DelegationMember[];
-		singleParticipants: SingleParticipant[];
-		conferenceSupervisors: Supervisor[];
-		teamMembers: TeamMember[];
-	}
+	import {
+		participationOf,
+		roleIcon as roleIconOf,
+		roleText as roleTextOf,
+		type ApplicationStatus
+	} from './myConferenceCardParticipation';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
 
 	interface Props {
-		conference: Conference;
+		conferenceId: string;
 	}
 
-	let { conference }: Props = $props();
+	let { conferenceId }: Props = $props();
 
-	// Determine participation type and details
-	const participation = $derived.by(() => {
-		const delegationMember = conference.delegationMembers?.[0];
-		const singleParticipant = conference.singleParticipants?.[0];
-		const supervisor = conference.conferenceSupervisors?.[0];
-		const teamMember = conference.teamMembers?.[0];
+	const [conference, myParticipation] = $derived(
+		await Promise.all([
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
+				id: true,
+				title: true,
+				longTitle: true,
+				location: true,
+				website: true,
+				imageDataURL: true,
+				state: true,
+				startConference: true,
+				endConference: true
+			}),
+			fetchMyParticipation(conferenceId)
+		])
+	);
 
-		if (teamMember) {
-			return {
-				type: 'teamMember' as const,
-				status: 'accepted' as const,
-				teamRole: teamMember.role
-			};
-		}
+	/**
+	 * A supervisor's card counts their students, which only a supervisor needs fetched. Keyed by the
+	 * id alone, so a live update of the participation does not issue this query again.
+	 */
+	const supervisorId = $derived(myParticipation?.supervisor?.id);
+	const supervisedStudents = $derived(
+		supervisorId
+			? await client.liveQuery.conferenceSupervisor({
+					__args: { id: supervisorId },
+					supervisedDelegationMembers: {
+						id: true,
+						delegation: {
+							assignedNation: { alpha2Code: true },
+							assignedNonStateActor: { id: true }
+						}
+					},
+					supervisedSingleParticipants: { id: true, assignedRole: { id: true } }
+				})
+			: undefined
+	);
 
-		if (delegationMember) {
-			const delegation = delegationMember.delegation;
-			const hasAssignment = !!delegation.assignedNation || !!delegation.assignedNonStateActor;
-			let status: 'accepted' | 'pending' | 'applied' | 'rejected';
+	const participation = $derived(
+		participationOf(myParticipation, supervisedStudents, conference.state)
+	);
 
-			if (hasAssignment) {
-				status = 'accepted';
-			} else if (!delegation.applied) {
-				status = 'pending';
-			} else if (conference.state === 'PARTICIPANT_REGISTRATION') {
-				status = 'applied';
-			} else {
-				status = 'rejected';
-			}
+	const statusDisplay: Record<
+		ApplicationStatus,
+		{ badge: string; icon: string; text: () => string }
+	> = {
+		accepted: { badge: 'badge-success', icon: 'fa-check', text: m.statusAccepted },
+		pending: { badge: 'badge-warning', icon: 'fa-clock', text: m.statusPending },
+		applied: { badge: 'badge-info', icon: 'fa-paper-plane', text: m.statusApplied },
+		rejected: { badge: 'badge-error', icon: 'fa-times', text: m.statusRejected }
+	};
 
-			return {
-				type: 'delegation' as const,
-				status,
-				country: delegation.assignedNation,
-				nonStateActor: delegation.assignedNonStateActor,
-				committee: delegationMember.assignedCommittee,
-				isHeadDelegate: delegationMember.isHeadDelegate
-			};
-		}
+	const statusBadgeClass = $derived(statusDisplay[participation.status].badge);
+	const statusIcon = $derived(statusDisplay[participation.status].icon);
+	const statusText = $derived(statusDisplay[participation.status].text());
 
-		if (singleParticipant) {
-			let status: 'accepted' | 'pending' | 'applied' | 'rejected';
-
-			if (singleParticipant.assignedRole) {
-				status = 'accepted';
-			} else if (!singleParticipant.applied) {
-				status = 'pending';
-			} else if (conference.state === 'PARTICIPANT_REGISTRATION') {
-				status = 'applied';
-			} else {
-				status = 'rejected';
-			}
-
-			return {
-				type: 'singleParticipant' as const,
-				status,
-				customRole: singleParticipant.assignedRole
-			};
-		}
-
-		if (supervisor) {
-			const supervisedDelegationMembers = supervisor.supervisedDelegationMembers ?? [];
-			const supervisedSingleParticipants = supervisor.supervisedSingleParticipants ?? [];
-
-			const totalStudents =
-				supervisedDelegationMembers.length + supervisedSingleParticipants.length;
-
-			const acceptedDelegations = supervisedDelegationMembers.filter(
-				(dm) => dm.delegation.assignedNation || dm.delegation.assignedNonStateActor
-			);
-			const acceptedSingleParticipants = supervisedSingleParticipants.filter(
-				(sp) => sp.assignedRole
-			);
-			const acceptedStudentCount = acceptedDelegations.length + acceptedSingleParticipants.length;
-
-			let status: 'accepted' | 'pending' | 'applied' | 'rejected';
-
-			if (acceptedStudentCount > 0) {
-				status = 'accepted';
-			} else if (conference.state === 'PARTICIPANT_REGISTRATION') {
-				status = 'pending';
-			} else {
-				status = 'rejected';
-			}
-
-			return {
-				type: 'supervisor' as const,
-				status,
-				studentCount: totalStudents,
-				acceptedStudentCount
-			};
-		}
-
-		return {
-			type: 'unknown' as const,
-			status: 'pending' as const
-		};
-	});
-
-	const statusBadgeClass = $derived.by(() => {
-		switch (participation.status) {
-			case 'accepted':
-				return 'badge-success';
-			case 'pending':
-				return 'badge-warning';
-			case 'applied':
-				return 'badge-info';
-			case 'rejected':
-				return 'badge-error';
-			default:
-				return 'badge-ghost';
-		}
-	});
-
-	const statusIcon = $derived.by(() => {
-		switch (participation.status) {
-			case 'accepted':
-				return 'fa-check';
-			case 'pending':
-				return 'fa-clock';
-			case 'applied':
-				return 'fa-paper-plane';
-			case 'rejected':
-				return 'fa-times';
-			default:
-				return 'fa-question';
-		}
-	});
-
-	const statusText = $derived.by(() => {
-		switch (participation.status) {
-			case 'accepted':
-				return m.statusAccepted();
-			case 'pending':
-				return m.statusPending();
-			case 'applied':
-				return m.statusApplied();
-			case 'rejected':
-				return m.statusRejected();
-			default:
-				return '';
-		}
-	});
-
-	const roleText = $derived.by(() => {
-		if (participation.type === 'delegation') {
-			if (participation.country) {
-				return m.delegateFor({
-					country: getFullTranslatedCountryNameFromISO3Code(participation.country.alpha3Code)
-				});
-			}
-			if (participation.nonStateActor) {
-				return m.delegateFor({ country: participation.nonStateActor.name });
-			}
-			return m.delegation();
-		}
-
-		if (participation.type === 'singleParticipant') {
-			if (participation.customRole) {
-				return participation.customRole.name;
-			}
-			return m.singleParticipant();
-		}
-
-		if (participation.type === 'supervisor') {
-			return m.supervisorWithStudents({ count: participation.studentCount ?? 0 });
-		}
-
-		if (participation.type === 'teamMember') {
-			return m.teamMemberWithRole({ role: translateTeamRole(participation.teamRole ?? 'MEMBER') });
-		}
-
-		return '';
-	});
+	const roleIcon = $derived(roleIconOf(participation));
+	const roleText = $derived(roleTextOf(participation));
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
@@ -327,34 +160,11 @@
 						icon={participation.nonStateActor?.fontAwesomeIcon}
 						size="xs"
 					/>
-				{:else if participation.type === 'delegation'}
+				{:else if roleIcon}
 					<div
 						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
 					>
-						<i class="fa-solid fa-users text-sm"></i>
-					</div>
-				{:else if participation.type === 'singleParticipant'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
-						<i
-							class="fa-solid fa-{(participation.customRole?.fontAwesomeIcon ?? 'user').replace(
-								'fa-',
-								''
-							)} text-sm"
-						></i>
-					</div>
-				{:else if participation.type === 'supervisor'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
-						<i class="fa-solid fa-chalkboard-teacher text-sm"></i>
-					</div>
-				{:else if participation.type === 'teamMember'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
-						<i class="fa-solid fa-users-gear text-sm"></i>
+						<i class="fa-solid {roleIcon} text-sm"></i>
 					</div>
 				{/if}
 
@@ -379,14 +189,17 @@
 				<a
 					href={conference.website}
 					target="_blank"
-					rel="noopener noreferrer"
+					rel="external noopener noreferrer"
 					class="btn btn-ghost btn-sm"
 				>
 					<i class="fa-duotone fa-globe"></i>
 					{m.conferenceInfo()}
 				</a>
 			{/if}
-			<a href="/dashboard/{conference.id}" class="btn btn-primary btn-sm">
+			<a
+				href={resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId: conference.id })}
+				class="btn btn-primary btn-sm"
+			>
 				{m.goToDashboard()}
 				<i class="fa-solid fa-arrow-right"></i>
 			</a>

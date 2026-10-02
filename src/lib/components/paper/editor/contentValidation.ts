@@ -12,11 +12,12 @@ export function isValidTipTapContent(content: unknown): content is JSONContent {
 	}
 
 	// TipTap content must have a 'type' property
-	if (!('type' in content) || typeof (content as JSONContent).type !== 'string') {
-		return false;
-	}
+	return 'type' in content && typeof content.type === 'string';
+}
 
-	return true;
+/** Whether the content is a TipTap document without any nodes, which is what a reset store holds. */
+export function isEmptyTipTapDocument(content: JSONContent | undefined) {
+	return content?.type === 'doc' && !content.content?.length;
 }
 
 /**

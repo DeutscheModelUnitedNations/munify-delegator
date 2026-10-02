@@ -4,7 +4,6 @@
 
 	interface Props {
 		name: string;
-		description?: string | null;
 		fontAwesomeIcon?: string | null;
 		color: CalendarentrycolorEnum;
 		startTime: Date;
@@ -17,7 +16,6 @@
 
 	let {
 		name,
-		description,
 		fontAwesomeIcon,
 		color,
 		startTime,

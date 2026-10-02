@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import Footer from '../Footer.svelte';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { m } from '$lib/paraglide/messages';
 
 	// Unsubscribe links carry the address, so the field starts filled in.
 	let email = $state(page.url.searchParams.get('email') ?? '');
-	let loading = $state(false);
 	let unsubscribed = $state(false);
 
 	const unsubscribe = async () => {
@@ -15,7 +14,6 @@
 			toast.error(m.unsubscribeEmailMissing());
 			return;
 		}
-		loading = true;
 		const promise = client.mutate.updateUsersNewsletterPreferences({
 			__args: {
 				email,
@@ -29,12 +27,8 @@
 			error: m.unsubscribeError(),
 			loading: m.unsubscribeLoading()
 		});
-		try {
-			await promise;
-			unsubscribed = true;
-		} finally {
-			loading = false;
-		}
+		await promise;
+		unsubscribed = true;
 	};
 </script>
 
@@ -50,7 +44,7 @@
 					>{m.unsubscribeAllNewslettersButton()}</button
 				>
 				<h3 class="mt-6 text-lg">{m.usubscribeSomeOnly()}</h3>
-				<a class="btn btn-primary" href="/my-account">{m.goToProfile()}</a>
+				<a class="btn btn-primary" href={resolve('/my-account')}>{m.goToProfile()}</a>
 			</div>
 		</div>
 	{:else}
@@ -58,7 +52,7 @@
 			<div class="card-body">
 				<h1 class="text-xl">{m.unsubscribedAll()}</h1>
 				<h3 class="mt-10 text-lg">{m.unsubscribeRegret()}</h3>
-				<a class="btn btn-primary" href="/my-account">{m.goToProfile()}</a>
+				<a class="btn btn-primary" href={resolve('/my-account')}>{m.goToProfile()}</a>
 				<p class="max-w-lg text-xs">
 					{m.unsubscribeNote()}
 				</p>

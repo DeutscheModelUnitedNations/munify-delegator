@@ -1,26 +1,31 @@
-export { createSvelteTable } from './createSvelteTable.svelte';
-export { default as FlexRender } from './FlexRender.svelte';
-export { renderComponent, renderSnippet } from './renderHelpers';
+export { renderComponent } from './renderHelpers';
+export { autoFilterFns, autoSortFns, columnCanGlobalFilter } from './defaults';
 
-// Re-export commonly used types and functions from table-core
+// Re-export the official Svelte 5 adapter and the table-core API it builds on
 export {
-	getCoreRowModel,
-	getSortedRowModel,
-	getFilteredRowModel,
-	getPaginationRowModel,
-	getFacetedRowModel,
-	getFacetedUniqueValues,
-	getFacetedMinMaxValues,
+	createTable,
+	FlexRender,
+	tableFeatures,
+	metaHelper,
+	rowSortingFeature,
+	columnFilteringFeature,
+	globalFilteringFeature,
+	rowPaginationFeature,
+	columnVisibilityFeature,
+	columnFacetingFeature,
+	createSortedRowModel,
+	createFilteredRowModel,
+	createPaginatedRowModel,
+	createFacetedRowModel,
+	createFacetedUniqueValues,
+	createFacetedMinMaxValues,
 	type ColumnDef,
 	type SortingState,
 	type PaginationState,
 	type ColumnFiltersState,
-	type VisibilityState,
+	type ColumnVisibilityState,
 	type FilterFn,
-	type Column,
-	type TableOptions,
-	type Row,
-	type Header,
-	type Cell,
+	type TableFeatures,
+	type RowData,
 	type Table
-} from '@tanstack/table-core';
+} from '@tanstack/svelte-table';

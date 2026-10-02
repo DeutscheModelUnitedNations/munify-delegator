@@ -1,20 +1,8 @@
 import { client } from '$lib/api/rumbleClient/client';
 
-const placeSelection = {
-	id: true,
-	name: true,
-	address: true,
-	latitude: true,
-	longitude: true,
-	directions: true,
-	info: true,
-	websiteUrl: true,
-	sitePlanDataURL: true
-} as const;
-
-/** The whole programme of a conference: its days with tracks and entries, plus its places. */
+/** The whole programme of a conference as the preview shows it: days, tracks, entries, places. */
 export async function fetchConferenceCalendar(conferenceId: string) {
-	const [calendarDays, places, conference] = await Promise.all([
+	const [calendarDays, conference] = await Promise.all([
 		client.liveQuery.calendarDays({
 			__args: {
 				where: { conferenceId: { eq: conferenceId } },
@@ -33,26 +21,25 @@ export async function fetchConferenceCalendar(conferenceId: string) {
 				description: true,
 				fontAwesomeIcon: true,
 				color: true,
-				place: placeSelection,
-				placeId: true,
+				place: {
+					id: true,
+					name: true,
+					address: true,
+					latitude: true,
+					longitude: true,
+					directions: true,
+					info: true,
+					websiteUrl: true,
+					sitePlanDataURL: true
+				},
 				room: true,
 				calendarTrackId: true
 			}
-		}),
-		client.liveQuery.places({
-			__args: {
-				where: { conferenceId: { eq: conferenceId } },
-				orderBy: { name: 'asc' }
-			},
-			...placeSelection
 		}),
 		client.liveQuery.conference({ __args: { id: conferenceId }, timezone: true })
 	]);
 	return {
 		calendarDays,
-		places,
 		timezone: conference?.timezone ?? 'Europe/Berlin'
 	};
 }
-
-export type ConferenceCalendar = Awaited<ReturnType<typeof fetchConferenceCalendar>>;

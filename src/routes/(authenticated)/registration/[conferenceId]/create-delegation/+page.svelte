@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Steps from '$lib/components/Steps.svelte';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import Form from '$lib/components/form/Form.svelte';
 	import { defaults, superForm } from 'sveltekit-superforms';
@@ -62,11 +63,12 @@
 		<div class="flex w-full max-w-lg flex-col gap-6 text-center">
 			<h1 class="text-3xl tracking-wider uppercase">{m.createDelegation()}</h1>
 			{#if step === 0}
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 				{@html m.createDelegationProcessExplaination()}
 				<button class="btn btn-primary btn-lg" type="button" onclick={() => step++}
 					>{m.next()}</button
 				>
-				<a class="btn btn-warning" href=".">{m.back()}</a>
+				<a class="btn btn-warning" href={resolve(`/registration/${conferenceId}`)}>{m.back()}</a>
 			{:else}
 				<Form {form}>
 					<p>
@@ -149,7 +151,9 @@
 				navigator.clipboard.writeText(entryCode);
 				toast.success(m.codeCopied());
 			})}
-			<a class="btn btn-primary btn-lg mt-10 w-full" href="/dashboard">{m.toDashboard()}</a>
+			<a class="btn btn-primary btn-lg mt-10 w-full" href={resolve('/dashboard')}
+				>{m.toDashboard()}</a
+			>
 		</div>
 	{/if}
 </div>

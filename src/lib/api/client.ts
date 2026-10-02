@@ -14,6 +14,7 @@ import { browser } from '$app/environment';
 import { graphqlOperation } from '$api/graphql.remote';
 import { schema } from './rumbleClient/schema';
 import { GRAPHQL_STREAM_ENDPOINT } from './streamEndpoint';
+import { graphcacheKeys } from './cacheKeys';
 
 /** `AnyVariables` includes `void` for operations that take none; the remote call wants a record. */
 function toVariables(variables: AnyVariables): Record<string, unknown> | undefined {
@@ -109,7 +110,7 @@ export const urqlClient = new Client({
 	// nested fields as functions, and this is what turns a response into plain data.
 	exchanges: [
 		nativeDateExchange,
-		cacheExchange({ schema }),
+		cacheExchange({ schema, keys: graphcacheKeys(schema) }),
 		ssrExchange,
 		sseSubscriptionExchange,
 		fetchExchange

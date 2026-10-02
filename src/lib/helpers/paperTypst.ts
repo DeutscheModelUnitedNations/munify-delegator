@@ -69,91 +69,98 @@ function attrNumber(attrs: Record<string, unknown> | undefined, key: string): nu
 	return typeof v === 'number' ? v : undefined;
 }
 
+/** How each supported mark wraps the content it applies to. */
+const MARK_WRAPPERS = new Map<string, (content: string, mark: TipTapMark) => string>([
+	['bold', (content) => `#strong[${content}]`],
+	['italic', (content) => `#emph[${content}]`],
+	['underline', (content) => `#underline[${content}]`],
+	['superscript', (content) => `#super[${content}]`],
+	['subscript', (content) => `#sub[${content}]`],
+	[
+		'link',
+		(content, mark) => `#link("${escapeString(attrString(mark.attrs, 'href') ?? '')}")[${content}]`
+	]
+]);
+
+/** Wraps the content in its marks, in order; unknown marks are left out. */
+function applyMarks(content: string, marks: TipTapMark[] | undefined): string {
+	return (marks ?? []).reduce(
+		(out, mark) => MARK_WRAPPERS.get(mark.type)?.(out, mark) ?? out,
+		content
+	);
+}
+
+function isTextNode(node: TipTapNode): boolean {
+	return node.type === 'text' || typeof node.text === 'string';
+}
+
+/** Render one inline node (text or hardBreak) into Typst content. */
+function renderInlineNode(node: TipTapNode): string {
+	if (node.type === 'hardBreak') return '#linebreak()';
+	// Unexpected inline child — fall back to its own inline content.
+	if (!isTextNode(node)) return renderInline(node.content);
+	return applyMarks(escapeText(node.text ?? ''), node.marks);
+}
+
 /** Render an array of inline nodes (text + hardBreak) into Typst content. */
 function renderInline(nodes: TipTapNode[] | undefined): string {
 	if (!nodes) return '';
+	return nodes.map(renderInlineNode).join('');
+}
+
+function childrenOf(node: TipTapNode): TipTapNode[] {
+	return node.content ?? [];
+}
+
+/** Render a node's block children, leaving out the ones that render to nothing. */
+function renderBlocks(nodes: TipTapNode[], separator: string): string {
 	return nodes
-		.map((node) => {
-			if (node.type === 'hardBreak') return '#linebreak()';
-			if (node.type === 'text' || typeof node.text === 'string') {
-				let out = escapeText(node.text ?? '');
-				for (const mark of node.marks ?? []) {
-					switch (mark.type) {
-						case 'bold':
-							out = `#strong[${out}]`;
-							break;
-						case 'italic':
-							out = `#emph[${out}]`;
-							break;
-						case 'underline':
-							out = `#underline[${out}]`;
-							break;
-						case 'superscript':
-							out = `#super[${out}]`;
-							break;
-						case 'subscript':
-							out = `#sub[${out}]`;
-							break;
-						case 'link': {
-							const href = attrString(mark.attrs, 'href') ?? '';
-							out = `#link("${escapeString(href)}")[${out}]`;
-							break;
-						}
-						default:
-							break;
-					}
-				}
-				return out;
-			}
-			// Unexpected inline child — fall back to its own inline content.
-			return renderInline(node.content);
-		})
-		.join('');
+		.map((child) => renderBlock(child))
+		.filter((s) => s.length > 0)
+		.join(separator);
 }
 
 /** Render the inline content of a list item (its block children, flattened). */
 function renderListItem(item: TipTapNode): string {
-	return (item.content ?? [])
-		.map((child) => renderBlock(child))
-		.filter((s) => s.length > 0)
-		.join('\n');
+	return renderBlocks(childrenOf(item), '\n');
 }
+
+function renderListItems(list: TipTapNode): string {
+	return childrenOf(list)
+		.map((li) => `[${renderListItem(li)}]`)
+		.join(', ');
+}
+
+/** How each supported block node renders. */
+const BLOCK_RENDERERS = new Map<string, (node: TipTapNode) => string>([
+	['paragraph', (node) => renderInline(node.content)],
+	[
+		'heading',
+		(node) =>
+			`#heading(level: ${attrNumber(node.attrs, 'level') ?? 2})[${renderInline(node.content)}]`
+	],
+	['bulletList', (node) => `#list(${renderListItems(node)})`],
+	['orderedList', (node) => `#enum(${renderListItems(node)})`],
+	[
+		'blockquote',
+		(node) =>
+			`#quote(block: true)[${childrenOf(node)
+				.map((child) => renderBlock(child))
+				.join('\n\n')}]`
+	],
+	['listItem', renderListItem]
+]);
 
 /** Render a single block-level node into a Typst snippet. */
 function renderBlock(node: TipTapNode): string {
-	switch (node.type) {
-		case 'paragraph':
-			return renderInline(node.content);
-		case 'heading': {
-			const level = attrNumber(node.attrs, 'level') ?? 2;
-			return `#heading(level: ${level})[${renderInline(node.content)}]`;
-		}
-		case 'bulletList':
-			return `#list(${(node.content ?? []).map((li) => `[${renderListItem(li)}]`).join(', ')})`;
-		case 'orderedList':
-			return `#enum(${(node.content ?? []).map((li) => `[${renderListItem(li)}]`).join(', ')})`;
-		case 'blockquote':
-			return `#quote(block: true)[${(node.content ?? [])
-				.map((child) => renderBlock(child))
-				.join('\n\n')}]`;
-		case 'listItem':
-			return renderListItem(node);
-		default:
-			// doc / unknown container — render children as blocks.
-			return (node.content ?? [])
-				.map((child) => renderBlock(child))
-				.filter((s) => s.length > 0)
-				.join('\n\n');
-	}
+	const render = BLOCK_RENDERERS.get(node.type ?? '');
+	// doc / unknown container — render children as blocks.
+	return render ? render(node) : renderBlocks(childrenOf(node), '\n\n');
 }
 
 /** Serialize TipTap document JSON + metadata into a full Typst source string. */
 export function paperToTypst(content: TipTapNode | null | undefined, meta: PaperTypstMeta): string {
-	const doc: TipTapNode = content ?? {};
-	const body = (doc.content ?? [])
-		.map((child) => renderBlock(child))
-		.filter((s) => s.length > 0)
-		.join('\n\n');
+	const body = renderBlocks(childrenOf(content ?? {}), '\n\n');
 
 	const headerLines: string[] = [];
 	if (meta.entityName) headerLines.push(`#strong[${escapeText(meta.entityName)}]`);

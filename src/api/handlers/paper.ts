@@ -10,6 +10,8 @@ import {
 import { PAPER_ROLES, systemAdmin, userId } from '$api/services/authHelper';
 import { m } from '$lib/paraglide/messages';
 import { fetchUserParticipations } from '$api/services/participation';
+import { paperSubmissionChanges } from '$api/services/paperSubmission';
+import type { Row } from '$api/db/rows';
 import { CommitteeRef } from './committee';
 import { CommitteeAgendaItemRef } from './committeeAgendaItem';
 import type { InferSelectModel } from 'drizzle-orm';
@@ -73,7 +75,7 @@ abilityBuilder.paper.allow('read').when((ctx) => {
 		: undefined;
 });
 
-export const PaperRef = object({ table: 'paper' });
+const PaperRef = object({ table: 'paper' });
 query({ table: 'paper' });
 const pubsub = rumblePubsub({ table: 'paper' });
 // Every content change is a new version row rather than an edit in place.
@@ -140,7 +142,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.paper
 				.findFirst(
 					query(
-						ctx.abilities.paper.filter('read').merge({ where: { id: created.id } }).query.single
+						(await ctx.abilities.paper.filter('read')).merge({ where: { id: created.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -163,8 +166,8 @@ schemaBuilder.mutationFields((t) => ({
 			await db.transaction(async (tx) => {
 				const paper = await tx.query.paper
 					.findFirst({
-						...ctx.abilities.paper.filter('update').merge({ where: { id: args.paperId } }).query
-							.single,
+						...(await ctx.abilities.paper.filter('update')).merge({ where: { id: args.paperId } })
+							.query.single,
 						with: { versions: { with: { reviews: true } }, conference: true }
 					})
 					.then(assertFindFirstExists);
@@ -173,30 +176,17 @@ schemaBuilder.mutationFields((t) => ({
 					throw new GraphQLError(m.paperSubmissionClosed());
 				}
 
-				const isFirstSubmission = paper.firstSubmittedAt === null && args.status !== 'DRAFT';
-				const hasAnyReviews = paper.versions.some((version) => version.reviews.length > 0);
-
-				// A resubmission of an already-reviewed paper counts as REVISED, not SUBMITTED - and a
-				// client asking for REVISED directly is normalised to SUBMITTED first so the rule below
-				// is the only thing that can produce REVISED.
-				let status: typeof args.status = args.status === 'REVISED' ? 'SUBMITTED' : args.status;
-				if (status === 'SUBMITTED' && hasAnyReviews) {
-					status = 'REVISED';
-				}
+				const { status, firstSubmittedAt } = paperSubmissionChanges(paper, args.status, new Date());
 
 				await tx
 					.update(schema.paper)
-					.set({
-						status: status ?? undefined,
-						firstSubmittedAt: isFirstSubmission ? new Date() : undefined,
-						updatedAt: new Date()
-					})
+					.set({ status, firstSubmittedAt, updatedAt: new Date() })
 					.where(eq(schema.paper.id, args.paperId));
 
 				await tx.insert(schema.paperVersion).values({
 					paperId: args.paperId,
 					content: args.content,
-					status: status ?? undefined,
+					status,
 					version: paper.versions.length + 1
 				});
 			});
@@ -207,7 +197,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.paper
 				.findFirst(
 					query(
-						ctx.abilities.paper.filter('read').merge({ where: { id: args.paperId } }).query.single
+						(await ctx.abilities.paper.filter('read')).merge({ where: { id: args.paperId } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -220,7 +211,9 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.paper)
-				.where(ctx.abilities.paper.filter('delete').merge({ where: { id: args.id } }).sql.where)
+				.where(
+					(await ctx.abilities.paper.filter('delete')).merge({ where: { id: args.id } }).sql.where
+				)
 				.returning({ id: schema.paper.id });
 			if (deleted.length === 0) {
 				throw new GraphQLError('Paper not found, or not yours to delete');
@@ -258,7 +251,7 @@ schemaBuilder.queryFields((t) => ({
 
 			return db.query.paper.findMany(
 				query(
-					ctx.abilities.paper.filter('read').merge({
+					(await ctx.abilities.paper.filter('read')).merge({
 						where: {
 							conferenceId: args.conferenceId,
 							status: { ne: 'DRAFT' },
@@ -290,7 +283,7 @@ schemaBuilder.queryFields((t) => ({
 
 			return db.query.paper.findMany(
 				query(
-					ctx.abilities.paper.filter('read').merge({
+					(await ctx.abilities.paper.filter('read')).merge({
 						where: {
 							conferenceId: args.conferenceId,
 							delegationId: { in: delegationIds },
@@ -308,13 +301,21 @@ async function assertConferenceParticipant(conferenceId: string, callerId: strin
 	if (!callerId) {
 		throw new GraphQLError('Must be logged in');
 	}
-	const participation = await fetchUserParticipations({ conferenceId, userId: callerId });
-	if (
-		!participation.foundDelegationMember &&
-		!participation.foundSingleParticipant &&
-		!participation.foundSupervisor
-	) {
+	const { foundDelegationMember, foundSingleParticipant, foundSupervisor } =
+		await fetchUserParticipations({ conferenceId, userId: callerId });
+	if (![foundDelegationMember, foundSingleParticipant, foundSupervisor].some(Boolean)) {
 		throw new GraphQLError('Access denied - requires conference participant status');
+	}
+}
+
+/** Readers who neither wrote nor review a paper must be participants, and may not see drafts. */
+async function assertPublicReader(
+	paper: { conferenceId: string; status: Row<'paper'>['status'] },
+	callerId: string
+) {
+	await assertConferenceParticipant(paper.conferenceId, callerId);
+	if (paper.status === 'DRAFT') {
+		throw new GraphQLError('Access denied - cannot view draft papers');
 	}
 }
 
@@ -328,7 +329,7 @@ schemaBuilder.queryFields((t) => ({
 
 			return db.query.paper.findMany(
 				query(
-					ctx.abilities.paper.filter('read').merge({
+					(await ctx.abilities.paper.filter('read')).merge({
 						where: {
 							conferenceId: args.conferenceId,
 							status: { ne: 'DRAFT' },
@@ -369,12 +370,7 @@ schemaBuilder.queryFields((t) => ({
 				}
 			});
 
-			if (!isAuthor && !teamMember) {
-				await assertConferenceParticipant(paper.conferenceId, callerId);
-				if (paper.status === 'DRAFT') {
-					throw new GraphQLError('Access denied - cannot view draft papers');
-				}
-			}
+			if (!isAuthor && !teamMember) await assertPublicReader(paper, callerId);
 
 			return db.query.paper
 				.findFirst(query({ where: { id: args.paperId } }))

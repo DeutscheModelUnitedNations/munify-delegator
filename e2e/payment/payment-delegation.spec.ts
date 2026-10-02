@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -8,6 +8,10 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a head delegate can generate a delegation payment reference covering all members', async ({
 	browser
 }) => {
+	// Two separate sign-ups, each through the full login and profile flow, plus the flow itself
+	// run within a few seconds of the default 30s.
+	test.setTimeout(90_000);
+
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
 	headPage.on('dialog', (dialog) => dialog.accept());

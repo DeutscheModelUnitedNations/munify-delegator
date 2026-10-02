@@ -11,27 +11,34 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
-	const conferenceId = params.conferenceId;
-	const roleId = params.roleId;
+	// Read once: they seed the form below, and this page is only ever entered from another route
+	// (the role list), which mounts it afresh, so they cannot change while it is open.
+	const { conferenceId, roleId } = untrack(() => ({
+		conferenceId: params.conferenceId,
+		roleId: params.roleId
+	}));
 	const user = await getCurrentUser();
 
-	const role = $derived(
-		await client.liveQuery.customConferenceRole({ __args: { id: roleId }, name: true })
-	);
-
-	// An existing application prefills the form, so the participant can amend it. Read once: this is
-	// the form's initial value, and re-reading it mid-edit would discard what was typed.
-	const [existing] = await client.query.singleParticipants({
-		__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
-		experience: true,
-		motivation: true,
-		school: true
-	});
+	// Both keyed by the ids read once above, so a plain await is enough; the role's name stays live
+	// through its query. An existing application prefills the form, so the participant can amend
+	// it. Read once: this is the form's initial value, and re-reading it mid-edit would discard
+	// what was typed.
+	const [role, [existing]] = await Promise.all([
+		client.liveQuery.customConferenceRole({ __args: { id: roleId }, name: true }),
+		client.query.singleParticipants({
+			__args: { where: { conferenceId: { eq: conferenceId }, userId: { eq: user.sub } } },
+			experience: true,
+			motivation: true,
+			school: true
+		})
+	]);
 
 	const form = superForm(
 		defaults(
@@ -58,7 +65,7 @@
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
-				await goto('/dashboard');
+				await goto(resolve('/dashboard'));
 			}
 		}
 	);
@@ -91,5 +98,9 @@
 			/>
 		</FormFieldset>
 	</Form>
-	<a class="btn btn-warning mt-8" type="button" href=".">{m.back()}</a>
+	<a
+		class="btn btn-warning mt-8"
+		type="button"
+		href={resolve(`/registration/${conferenceId}/individual`)}>{m.back()}</a
+	>
 </div>

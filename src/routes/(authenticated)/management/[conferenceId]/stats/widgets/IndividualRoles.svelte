@@ -1,16 +1,31 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { unifiedFilter, getHistory, getSelectedHistory } from '../stats.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { unifiedFilter, getSelectedHistoryEntry, statsQueryFilter } from '../stats.svelte';
 	import StatsDesc from './StatsDesc.svelte';
-	import type { StatsWidgetData } from '../statsQuery';
-	let props: { data: StatsWidgetData } = $props();
-	let stats = $derived(props.data.stats);
+
+	let { conferenceId }: { conferenceId: string } = $props();
+
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			registered: {
+				singleParticipants: {
+					byRole: {
+						role: true,
+						fontAwesomeIcon: true,
+						total: true,
+						applied: true,
+						notApplied: true
+					}
+				}
+			}
+		})
+	);
 
 	let { getFilteredValue } = unifiedFilter();
 
-	let selectedHistory = $derived.by(() =>
-		getHistory()?.find((x) => x.timestamp === getSelectedHistory())
-	);
+	let selectedHistory = $derived(getSelectedHistoryEntry());
 
 	// Get the filtered value for a role
 	function getRoleValue(role: { total: number; applied: number; notApplied: number }) {
@@ -40,7 +55,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each stats?.registered.singleParticipants.byRole ?? [] as role, i}
+					{#each stats.registered.singleParticipants.byRole as role, i (i)}
 						<tr>
 							<td>
 								<i class="fa-duotone fa-{role.fontAwesomeIcon?.replace('fa-', '')} mr-2 text-lg"

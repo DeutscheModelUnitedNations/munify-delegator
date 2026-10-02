@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PuzzlePiece from './PuzzlePiece.svelte';
 	import { getNsaGradients } from '$lib/helpers/nsaGradient';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { computeGridLayout } from './flagCollectionLayout';
 
 	interface Piece {
 		id: string;
@@ -24,81 +24,7 @@
 	let nsaGradients = $derived(nsaId ? getNsaGradients(nsaId) : null);
 
 	// Calculate optimal grid layout ensuring full coverage
-	interface GridCell {
-		piece: Piece;
-		rowStart: number;
-		rowEnd: number;
-		colStart: number;
-		colEnd: number;
-	}
-
-	let gridLayout = $derived.by(() => {
-		const count = pieces.length;
-		if (count === 0) return { rows: 1, cols: 1, cells: [] as GridCell[] };
-
-		// Calculate optimal grid dimensions (wider than tall for flag aspect ratio)
-		let cols: number;
-		let rows: number;
-
-		if (count === 1) {
-			cols = 1;
-			rows = 1;
-		} else if (count === 2) {
-			cols = 2;
-			rows = 1;
-		} else if (count === 3) {
-			cols = 3;
-			rows = 1;
-		} else if (count === 4) {
-			cols = 2;
-			rows = 2;
-		} else {
-			// For larger counts, aim for ~1.5:1 aspect ratio (flag-like)
-			cols = Math.ceil(Math.sqrt(count * 1.5));
-			rows = Math.ceil(count / cols);
-		}
-
-		const totalCells = rows * cols;
-		const extraCells = totalCells - count;
-
-		// Create grid cells with spans for pieces that need to fill extra space
-		const cells: GridCell[] = [];
-		let pieceIndex = 0;
-		let currentRow = 1;
-		let currentCol = 1;
-
-		// Distribute extra cells evenly among first `extraCells` pieces (they get colspan=2)
-		const piecesWithSpan = new SvelteSet<number>();
-		for (let i = 0; i < extraCells; i++) {
-			// Spread the spanning pieces evenly
-			const spanIndex = Math.floor((i * count) / Math.max(extraCells, 1));
-			piecesWithSpan.add(spanIndex);
-		}
-
-		for (let i = 0; i < count; i++) {
-			const piece = pieces[i];
-			const hasSpan = piecesWithSpan.has(i);
-			const colSpan = hasSpan ? 2 : 1;
-
-			// Check if we need to wrap to next row
-			if (currentCol + colSpan - 1 > cols) {
-				currentRow++;
-				currentCol = 1;
-			}
-
-			cells.push({
-				piece,
-				rowStart: currentRow,
-				rowEnd: currentRow + 1,
-				colStart: currentCol,
-				colEnd: currentCol + colSpan
-			});
-
-			currentCol += colSpan;
-		}
-
-		return { rows, cols, cells };
-	});
+	let gridLayout = $derived(computeGridLayout(pieces));
 
 	let gridStyle = $derived(
 		`grid-template-columns: repeat(${gridLayout.cols}, 1fr); grid-template-rows: repeat(${gridLayout.rows}, 1fr);`

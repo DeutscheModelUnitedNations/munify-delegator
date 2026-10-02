@@ -14,14 +14,14 @@ function youngestAllowedBirthday() {
 	return new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000);
 }
 
-export function toGender(value: string | null | undefined): Gender {
+function toGender(value: string | null | undefined): Gender {
 	if (value === 'MALE' || value === 'FEMALE' || value === 'DIVERSE' || value === 'NO_STATEMENT') {
 		return value;
 	}
 	return 'NO_STATEMENT';
 }
 
-export function toFoodPreference(value: string | null | undefined): FoodPreference {
+function toFoodPreference(value: string | null | undefined): FoodPreference {
 	if (value === 'OMNIVORE' || value === 'VEGETARIAN' || value === 'VEGAN') {
 		return value;
 	}
@@ -44,25 +44,31 @@ export type UserFormSource = {
 	emergencyContacts?: string | null;
 };
 
+function toBirthday(value: Date | string | null | undefined): Date {
+	if (value instanceof Date) return value;
+	return value ? new Date(value) : youngestAllowedBirthday();
+}
+
+/** A required text field starts out empty rather than null. */
+function toText(value: string | null | undefined): string {
+	return value ?? '';
+}
+
 export function buildUserFormValues(user: UserFormSource | null | undefined) {
+	const source: UserFormSource = user ?? {};
 	return {
-		given_name: user?.givenName ?? '',
-		family_name: user?.familyName ?? '',
-		birthday:
-			user?.birthday instanceof Date
-				? user.birthday
-				: user?.birthday
-					? new Date(user.birthday)
-					: youngestAllowedBirthday(),
-		phone: user?.phone ?? '',
-		street: user?.street ?? '',
-		apartment: user?.apartment ?? null,
-		zip: user?.zip ?? '',
-		city: user?.city ?? '',
-		country: user?.country ?? '',
-		gender: toGender(user?.gender),
-		pronouns: user?.pronouns ?? null,
-		foodPreference: toFoodPreference(user?.foodPreference),
-		emergencyContacts: user?.emergencyContacts ?? ''
+		given_name: toText(source.givenName),
+		family_name: toText(source.familyName),
+		birthday: toBirthday(source.birthday),
+		phone: toText(source.phone),
+		street: toText(source.street),
+		apartment: source.apartment ?? null,
+		zip: toText(source.zip),
+		city: toText(source.city),
+		country: toText(source.country),
+		gender: toGender(source.gender),
+		pronouns: source.pronouns ?? null,
+		foodPreference: toFoodPreference(source.foodPreference),
+		emergencyContacts: toText(source.emergencyContacts)
 	};
 }

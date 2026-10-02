@@ -23,7 +23,7 @@
 
 	let { form, label, description, name, accept, inputClass = '' }: Props = $props();
 
-	const file = fileProxy(form, name);
+	const file = $derived(fileProxy(form, name));
 </script>
 
 <Field {form} {name}>

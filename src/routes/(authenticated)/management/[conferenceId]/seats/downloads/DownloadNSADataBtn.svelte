@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import { stringify } from 'csv-stringify/browser/esm/sync';
 	import GenericDownloadButton from './GenericDownloadButton.svelte';
+	import { downloadSemicolonCsv, fetchConferenceTitle, fileNamePrefix } from './seatDownloads';
+	import { compareByText } from './sortRows';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
-	let loading = $state(false);
-
 	const downloadNSAData = async () => {
-		loading = true;
-		try {
-			const members = await client.query.delegationMembers({
+		const [members, title] = await Promise.all([
+			client.query.delegationMembers({
 				__args: {
 					where: {
 						delegation: { assignedNonStateActorId: { isNotNull: true } },
@@ -19,42 +17,31 @@
 					}
 				},
 				id: true,
-				delegation: { assignedNonStateActor: { abbreviation: true } },
-				conference: { title: true },
+				delegation: { id: true, assignedNonStateActor: { id: true, abbreviation: true } },
 				user: { id: true, givenName: true, familyName: true, email: true }
-			});
+			}),
+			fetchConferenceTitle(conferenceId)
+		]);
 
-			if (members.length === 0) {
-				alert('No data found');
-				return;
-			}
+		if (members.length === 0) {
+			alert('No data found');
+			return;
+		}
 
-			const csv = [
+		downloadSemicolonCsv(
+			[
 				[m.name(), m.firstName(), m.lastName(), m.email()],
 				...[...members]
-					.sort((a, b) =>
-						(a.delegation.assignedNonStateActor?.abbreviation ?? '').localeCompare(
-							b.delegation.assignedNonStateActor?.abbreviation ?? ''
-						)
-					)
+					.sort(compareByText((member) => member.delegation.assignedNonStateActor?.abbreviation))
 					.map((member) => [
 						member.delegation.assignedNonStateActor?.abbreviation,
 						member.user.givenName,
 						member.user.familyName,
 						member.user.email
 					])
-			];
-
-			const blob = new Blob([stringify(csv, { delimiter: ';' })], { type: 'text/csv' });
-			const url = window.URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `${members[0].conference.title.replace(' ', '_')}_nsa_members.csv`;
-			a.click();
-			window.URL.revokeObjectURL(url);
-		} finally {
-			loading = false;
-		}
+			],
+			`${fileNamePrefix(title)}_nsa_members.csv`
+		);
 	};
 </script>
 

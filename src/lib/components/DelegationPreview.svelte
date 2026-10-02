@@ -4,6 +4,7 @@
 	import Spinner from './Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		conferenceId: string;
@@ -94,7 +95,7 @@
 					__args: { entryCode, conferenceId },
 					id: true
 				});
-				goto(`/dashboard/${conferenceId}`);
+				goto(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
 			}}>{m.confirm()}</button
 		>
 	</div>

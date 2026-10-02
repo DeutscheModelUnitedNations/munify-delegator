@@ -1,4 +1,4 @@
-import type { ColumnDef } from '$lib/components/tanStackTable';
+import type { ColumnDef, RowData, TableFeatures } from '$lib/components/tanStackTable';
 import { m } from '$lib/paraglide/messages';
 import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
 import {
@@ -21,82 +21,66 @@ function statusText(value: string | null): string {
 	return translateAdministrativeStatus(value);
 }
 
-export function getPlainTextValue(row: ParticipantRow, columnId: string): string {
-	switch (columnId) {
-		case 'userId':
-			return row.userId;
-		case 'family_name':
-			return capitalizeFirstLetter(row.family_name);
-		case 'given_name':
-			return capitalizeFirstLetter(row.given_name);
-		case 'email':
-			return row.email ?? '';
-		case 'phone':
-			return row.phone ?? '';
-		case 'birthday':
-			return row.birthday
-				? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(row.birthday)
-				: '';
-		case 'ageAtConference':
-			return row.ageAtConference !== null ? String(row.ageAtConference) : '';
-		case 'hasBirthdayDuringConference':
-			return booleanText(row.hasBirthdayDuringConference);
-		case 'gender':
-			return row.gender ? translateGender(row.gender) : '';
-		case 'pronouns':
-			return row.pronouns ?? '';
-		case 'foodPreference':
-			return row.foodPreference ? translateFoodPreference(row.foodPreference) : '';
-		case 'city':
-			return row.city ? capitalizeFirstLetter(row.city) : '';
-		case 'country':
-			return row.country ?? '';
-		case 'role':
-			return translateParticipationRole(row.role);
-		case 'nation':
-			if (row.nsaName) return row.nsaName;
-			if (row.nationAlpha3Code)
-				return getFullTranslatedCountryNameFromISO3Code(row.nationAlpha3Code);
-			return '';
-		case 'committee':
-			return row.committee ?? '';
-		case 'delegationSchool':
-			return row.delegationSchool ?? '';
-		case 'isHeadDelegate':
-			return booleanText(row.isHeadDelegate);
-		case 'assignedRoleName':
-			return row.assignedRoleName ?? '';
-		case 'teamRole':
-			return row.teamRole ? translateTeamRole(row.teamRole) : '';
-		case 'plansOwnAttendance':
-			return booleanText(row.plansOwnAttendance);
-		case 'paymentStatus':
-			return statusText(row.paymentStatus);
-		case 'postalRegistrationStatus':
-			return statusText(row.postalRegistrationStatus);
-		case 'termsAndConditions':
-			return statusText(row.termsAndConditions);
-		case 'guardianConsent':
-			if (row.ageAtConference !== null && row.ageAtConference >= 18) return m.notRequired();
-			return statusText(row.guardianConsent);
-		case 'mediaConsent':
-			return statusText(row.mediaConsent);
-		case 'didAttend':
-			return booleanText(row.didAttend);
-		case 'accepted':
-			return booleanText(row.accepted);
-		case 'documentNumber':
-			return row.documentNumber !== null ? String(row.documentNumber) : '';
-		case 'accessCardId':
-			return row.accessCardId ?? '';
-		case 'participationCount':
-			return String(row.participationCount);
-		default:
-			return '';
-	}
+function text(value: string | null): string {
+	return value ?? '';
 }
 
-export function getColumnHeader<TData>(col: ColumnDef<TData>): string {
+function numberText(value: number | null): string {
+	return value !== null ? String(value) : '';
+}
+
+/** Each exportable column as plain text, keyed by column id. */
+const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
+	userId: (row) => row.userId,
+	family_name: (row) => capitalizeFirstLetter(row.family_name),
+	given_name: (row) => capitalizeFirstLetter(row.given_name),
+	email: (row) => text(row.email),
+	phone: (row) => text(row.phone),
+	birthday: (row) =>
+		row.birthday
+			? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(row.birthday)
+			: '',
+	ageAtConference: (row) => numberText(row.ageAtConference),
+	hasBirthdayDuringConference: (row) => booleanText(row.hasBirthdayDuringConference),
+	gender: (row) => (row.gender ? translateGender(row.gender) : ''),
+	pronouns: (row) => text(row.pronouns),
+	foodPreference: (row) => (row.foodPreference ? translateFoodPreference(row.foodPreference) : ''),
+	city: (row) => (row.city ? capitalizeFirstLetter(row.city) : ''),
+	country: (row) => text(row.country),
+	role: (row) => translateParticipationRole(row.role),
+	nation: (row) => {
+		if (row.nsaName) return row.nsaName;
+		if (row.nationAlpha3Code) return getFullTranslatedCountryNameFromISO3Code(row.nationAlpha3Code);
+		return '';
+	},
+	committee: (row) => text(row.committee),
+	delegationSchool: (row) => text(row.delegationSchool),
+	isHeadDelegate: (row) => booleanText(row.isHeadDelegate),
+	assignedRoleName: (row) => text(row.assignedRoleName),
+	teamRole: (row) => (row.teamRole ? translateTeamRole(row.teamRole) : ''),
+	plansOwnAttendance: (row) => booleanText(row.plansOwnAttendance),
+	paymentStatus: (row) => statusText(row.paymentStatus),
+	postalRegistrationStatus: (row) => statusText(row.postalRegistrationStatus),
+	termsAndConditions: (row) => statusText(row.termsAndConditions),
+	guardianConsent: (row) =>
+		row.ageAtConference !== null && row.ageAtConference >= 18
+			? m.notRequired()
+			: statusText(row.guardianConsent),
+	mediaConsent: (row) => statusText(row.mediaConsent),
+	didAttend: (row) => booleanText(row.didAttend),
+	accepted: (row) => booleanText(row.accepted),
+	documentNumber: (row) => numberText(row.documentNumber),
+	accessCardId: (row) => text(row.accessCardId),
+	participationCount: (row) => String(row.participationCount)
+};
+
+export function getPlainTextValue(row: ParticipantRow, columnId: string): string {
+	return Object.hasOwn(plainTextValues, columnId) ? plainTextValues[columnId](row) : '';
+}
+
+export function getColumnHeader<TFeatures extends TableFeatures, TData extends RowData>(
+	col: ColumnDef<TFeatures, TData>
+): string {
 	const header = col.header;
 	if (typeof header === 'string') return header;
 	return col.id ?? ('accessorKey' in col ? String(col.accessorKey) : '');

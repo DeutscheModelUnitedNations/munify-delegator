@@ -371,6 +371,25 @@ const StatisticsResult = schemaBuilder.simpleObject('StatisticsResult', {
 	})
 });
 
+/**
+ * `conferenceStats` computes every block in one pass, whatever the query selected, and the stats
+ * page asks for it once per widget so each one fetches only what it renders. Requests for the same
+ * conference and filter that arrive while a computation is running share it, so a page load (or
+ * the refetch a published mutation triggers) costs one computation rather than one per widget.
+ * Nothing is kept once it settles, so no request is ever answered with an earlier result.
+ */
+const statsInFlight = new Map<string, ReturnType<typeof conferenceStats>>();
+
+function sharedConferenceStats(args: Parameters<typeof conferenceStats>[0]) {
+	const key = `${args.conferenceId}:${args.filter}`;
+	const running = statsInFlight.get(key);
+	if (running) return running;
+
+	const computation = conferenceStats(args).finally(() => statsInFlight.delete(key));
+	statsInFlight.set(key, computation);
+	return computation;
+}
+
 schemaBuilder.queryFields((t) => ({
 	getConferenceStatistics: t.field({
 		type: StatisticsResult,
@@ -384,7 +403,7 @@ schemaBuilder.queryFields((t) => ({
 				ctx
 			});
 
-			const stats = await conferenceStats({
+			const stats = await sharedConferenceStats({
 				conferenceId: args.conferenceId,
 				filter: args.filter ?? 'ALL'
 			});

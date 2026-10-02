@@ -2,7 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { stringify } from 'csv-stringify/browser/esm/sync';
 	interface Props {
-		exportedData: Record<string, string>[];
+		exportedData: object[];
 	}
 
 	let { exportedData }: Props = $props();

@@ -8,12 +8,6 @@ import type { JSONContent } from '@tiptap/core';
 const PLACEHOLDER_REGEX = /\{\{([\p{L}\p{N}\s\-_,.!?]+)\}\}/gu;
 
 /**
- * Regex for detecting potentially malformed placeholders (unclosed braces).
- * Matches {{ followed by content but not properly closed with }}
- */
-const MALFORMED_REGEX = /\{\{(?:[^{}]*(?:\{(?!\{)[^{}]*)*)?(?:$|\}(?!\}))/g;
-
-/**
  * Maximum allowed length for a placeholder name.
  */
 const MAX_PLACEHOLDER_LENGTH = 50;
@@ -29,6 +23,25 @@ export interface PlaceholderValidation {
 	empty: string[];
 }
 
+/** Calls `visit` with the text of every text node in the document, depth first. */
+function forEachText(node: JSONContent, visit: (text: string) => void) {
+	if (!node) return;
+	if (node.type === 'text' && node.text) visit(node.text);
+	if (node.content && Array.isArray(node.content)) {
+		for (const child of node.content) forEachText(child, visit);
+	}
+}
+
+/** Every `{{…}}` match in `text`; group 1 is the untrimmed name. */
+function placeholderMatches(text: string): RegExpExecArray[] {
+	// Reset lastIndex before starting
+	PLACEHOLDER_REGEX.lastIndex = 0;
+	const matches: RegExpExecArray[] = [];
+	let match;
+	while ((match = PLACEHOLDER_REGEX.exec(text)) !== null) matches.push(match);
+	return matches;
+}
+
 /**
  * Extracts placeholder names from TipTap JSON content.
  * Placeholders follow the pattern: {{placeholderName}}
@@ -37,28 +50,52 @@ export interface PlaceholderValidation {
 export function extractPlaceholders(content: JSONContent): string[] {
 	const placeholders = new Set<string>();
 
-	function traverse(node: JSONContent) {
-		if (!node) return;
-
-		if (node.type === 'text' && node.text) {
-			let match;
-			// Reset lastIndex before starting
-			PLACEHOLDER_REGEX.lastIndex = 0;
-			while ((match = PLACEHOLDER_REGEX.exec(node.text)) !== null) {
-				const placeholder = match[1].trim();
-				if (placeholder.length > 0) {
-					placeholders.add(placeholder);
-				}
+	forEachText(content, (text) => {
+		for (const match of placeholderMatches(text)) {
+			const placeholder = match[1].trim();
+			if (placeholder.length > 0) {
+				placeholders.add(placeholder);
 			}
 		}
+	});
 
-		if (node.content && Array.isArray(node.content)) {
-			node.content.forEach(traverse);
-		}
-	}
-
-	traverse(content);
 	return Array.from(placeholders);
+}
+
+/** Shortens a malformed fragment for display. */
+function truncateFragment(fragment: string): string {
+	return fragment.substring(0, Math.min(30, fragment.length)) + (fragment.length > 30 ? '...' : '');
+}
+
+/**
+ * The `{{` in `text` that do not open a proper placeholder: those never closed, and those with
+ * another `{{` before their `}}`.
+ */
+function malformedFragments(text: string): string[] {
+	const fragments: string[] = [];
+	let searchPos = 0;
+	while (searchPos < text.length) {
+		const openIdx = text.indexOf('{{', searchPos);
+		if (openIdx === -1) break;
+
+		// Check if this is a valid placeholder by looking for }}
+		const closeIdx = text.indexOf('}}', openIdx + 2);
+		if (closeIdx === -1) {
+			// No closing braces found - malformed
+			fragments.push(truncateFragment(text.substring(openIdx)));
+			break;
+		}
+
+		// Check if there's another {{ before the }}
+		const innerOpenIdx = text.indexOf('{{', openIdx + 2);
+		if (innerOpenIdx !== -1 && innerOpenIdx < closeIdx) {
+			// Nested {{ found - malformed
+			fragments.push(truncateFragment(text.substring(openIdx, closeIdx + 2)));
+		}
+
+		searchPos = closeIdx + 2;
+	}
+	return fragments;
 }
 
 /**
@@ -76,72 +113,29 @@ export function validatePlaceholders(content: JSONContent): PlaceholderValidatio
 	const validSet = new Set<string>();
 	const malformedSet = new Set<string>();
 
-	function traverse(node: JSONContent) {
-		if (!node) return;
+	forEachText(content, (text) => {
+		// Check for empty placeholders "{{}}" which PLACEHOLDER_REGEX doesn't match
+		if (text.includes('{{}}')) {
+			result.empty.push('{{}}');
+		}
 
-		if (node.type === 'text' && node.text) {
-			// Check for empty placeholders "{{}}" which PLACEHOLDER_REGEX doesn't match
-			if (node.text.includes('{{}}')) {
-				result.empty.push('{{}}');
-			}
+		// Find all valid placeholders
+		for (const match of placeholderMatches(text)) {
+			const trimmed = match[1].trim();
 
-			// Find all valid placeholders
-			PLACEHOLDER_REGEX.lastIndex = 0;
-			let match;
-			while ((match = PLACEHOLDER_REGEX.exec(node.text)) !== null) {
-				const placeholder = match[1];
-				const trimmed = placeholder.trim();
-
-				if (trimmed.length === 0) {
-					result.empty.push(match[0]);
-				} else if (trimmed.length > MAX_PLACEHOLDER_LENGTH) {
-					result.tooLong.push(trimmed);
-				} else {
-					validSet.add(trimmed);
-				}
-			}
-
-			// Then, check for malformed patterns
-			// Look for {{ that aren't part of valid placeholders
-			const text = node.text;
-			let searchPos = 0;
-			while (searchPos < text.length) {
-				const openIdx = text.indexOf('{{', searchPos);
-				if (openIdx === -1) break;
-
-				// Check if this is a valid placeholder by looking for }}
-				const closeIdx = text.indexOf('}}', openIdx + 2);
-				if (closeIdx === -1) {
-					// No closing braces found - malformed
-					const remaining = text.substring(openIdx);
-					malformedSet.add(
-						remaining.substring(0, Math.min(30, remaining.length)) +
-							(remaining.length > 30 ? '...' : '')
-					);
-					break;
-				}
-
-				// Check if there's another {{ before the }}
-				const innerOpenIdx = text.indexOf('{{', openIdx + 2);
-				if (innerOpenIdx !== -1 && innerOpenIdx < closeIdx) {
-					// Nested {{ found - malformed
-					const malformedPart = text.substring(openIdx, closeIdx + 2);
-					malformedSet.add(
-						malformedPart.substring(0, Math.min(30, malformedPart.length)) +
-							(malformedPart.length > 30 ? '...' : '')
-					);
-				}
-
-				searchPos = closeIdx + 2;
+			if (trimmed.length === 0) {
+				result.empty.push(match[0]);
+			} else if (trimmed.length > MAX_PLACEHOLDER_LENGTH) {
+				result.tooLong.push(trimmed);
+			} else {
+				validSet.add(trimmed);
 			}
 		}
 
-		if (node.content && Array.isArray(node.content)) {
-			node.content.forEach(traverse);
-		}
-	}
+		// Then, check for malformed patterns
+		for (const fragment of malformedFragments(text)) malformedSet.add(fragment);
+	});
 
-	traverse(content);
 	result.valid = Array.from(validSet);
 	result.malformed = Array.from(malformedSet);
 
@@ -182,11 +176,4 @@ export function replacePlaceholders(
 
 	traverse(cloned);
 	return cloned;
-}
-
-/**
- * Checks if a TipTap JSON content contains any placeholders.
- */
-export function hasPlaceholders(content: JSONContent): boolean {
-	return extractPlaceholders(content).length > 0;
 }

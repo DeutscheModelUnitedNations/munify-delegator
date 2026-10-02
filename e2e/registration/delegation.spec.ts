@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 

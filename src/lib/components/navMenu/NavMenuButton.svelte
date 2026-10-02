@@ -1,11 +1,12 @@
 <script lang="ts">
+	import type { ResolvedPathname } from '$app/types';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { isMobileOrTablet } from '$lib/utils/detectMobile';
 
 	interface Props {
 		title: string;
-		href: string;
+		href: ResolvedPathname;
 		icon: string;
 		active?: boolean;
 		expanded: boolean;

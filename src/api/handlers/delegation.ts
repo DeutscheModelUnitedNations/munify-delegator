@@ -7,6 +7,7 @@ import {
 	userId
 } from '$api/services/authHelper';
 import { fetchUserParticipations } from '$api/services/participation';
+import { assertApplicationReady } from '$api/services/applicationReadiness';
 import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import formatNames from '$lib/helpers/formatNames';
@@ -14,8 +15,7 @@ import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
-import { eq, inArray } from 'drizzle-orm';
-import dayjs from 'dayjs';
+import { eq } from 'drizzle-orm';
 
 // Ported from abilities/entities/delegation.ts
 abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -52,11 +52,43 @@ abilityBuilder.delegation.allow('read').when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const DelegationRef = object({ table: 'delegation' });
+const DelegationRef = object({ table: 'delegation' });
 query({ table: 'delegation' });
 const pubsub = rumblePubsub({ table: 'delegation' });
 // Creating a delegation also seats its head delegate, and deleting one takes its members with it.
 const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
+
+/** Hands the head delegate role from the current holder to another member of the delegation. */
+async function transferHeadDelegate(
+	members: { id: string; userId: string; isHeadDelegate: boolean }[],
+	newHeadDelegateUserId: string
+) {
+	const current = members.find((member) => member.isHeadDelegate);
+	if (!current) {
+		throw new GraphQLError('No head delegate member found');
+	}
+	const next = members.find((member) => member.userId === newHeadDelegateUserId);
+	if (!next) {
+		throw new GraphQLError('No new head delegate member found');
+	}
+
+	// Order is safe here only because the caller checks `updatable` once, up front, and
+	// these writes go by raw id rather than re-deriving an ability filter per statement.
+	// The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
+	// ability on every statement inside the transaction, so demoting the acting head
+	// delegate first revoked their own permission before the promotion ran. Don't
+	// reintroduce a per-statement ability re-check here without also promoting first.
+	await db.transaction(async (tx) => {
+		await tx
+			.update(schema.delegationMember)
+			.set({ isHeadDelegate: false })
+			.where(eq(schema.delegationMember.id, current.id));
+		await tx
+			.update(schema.delegationMember)
+			.set({ isHeadDelegate: true })
+			.where(eq(schema.delegationMember.id, next.id));
+	});
+}
 
 schemaBuilder.mutationFields((t) => ({
 	createDelegation: t.drizzleField({
@@ -116,8 +148,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.delegation
 				.findFirst(
 					query(
-						ctx.abilities.delegation.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -136,7 +168,9 @@ schemaBuilder.mutationFields((t) => ({
 			motivation: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updatable = ctx.abilities.delegation.filter('update').merge({ where: { id: args.id } });
+			const updatable = (await ctx.abilities.delegation.filter('update')).merge({
+				where: { id: args.id }
+			});
 
 			const delegation = await db.query.delegation
 				.findFirst({
@@ -153,32 +187,7 @@ schemaBuilder.mutationFields((t) => ({
 					if (delegation.members.length < 2) {
 						throw new GraphQLError(m.notEnoughMembers());
 					}
-					if (delegation.appliedForRoles.length < 3) {
-						throw new GraphQLError(m.notEnoughtRoleApplications());
-					}
-					if (
-						!delegation.school ||
-						!delegation.experience ||
-						!delegation.motivation ||
-						!applicationFormSchema.safeParse({
-							school: args.school ?? delegation.school,
-							motivation: args.motivation ?? delegation.motivation,
-							experience: args.experience ?? delegation.experience
-						}).success
-					) {
-						throw new GraphQLError(m.missingInformation());
-					}
-					// `conference` is a required FK, but the relational type is nullable, so this is
-					// narrowed rather than asserted.
-					const conference = delegation.conference;
-					if (
-						conference &&
-						dayjs(conference.startAssignment)
-							.add(conference.registrationDeadlineGracePeriodMinutes, 'minute')
-							.isBefore(dayjs())
-					) {
-						throw new GraphQLError(m.applicationTimeframeClosed());
-					}
+					assertApplicationReady(delegation, args, 3);
 				}
 
 				await db
@@ -206,33 +215,7 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			if (args.newHeadDelegateUserId) {
-				const current = delegation.members.find((member) => member.isHeadDelegate);
-				if (!current) {
-					throw new GraphQLError('No head delegate member found');
-				}
-				const next = delegation.members.find(
-					(member) => member.userId === args.newHeadDelegateUserId
-				);
-				if (!next) {
-					throw new GraphQLError('No new head delegate member found');
-				}
-
-				// Order is safe here only because `updatable` above is checked once, up front, and
-				// these writes go by raw id rather than re-deriving an ability filter per statement.
-				// The legacy Prisma/CASL port of this mutation re-evaluated the caller's `update`
-				// ability on every statement inside the transaction, so demoting the acting head
-				// delegate first revoked their own permission before the promotion ran. Don't
-				// reintroduce a per-statement ability re-check here without also promoting first.
-				await db.transaction(async (tx) => {
-					await tx
-						.update(schema.delegationMember)
-						.set({ isHeadDelegate: false })
-						.where(eq(schema.delegationMember.id, current.id));
-					await tx
-						.update(schema.delegationMember)
-						.set({ isHeadDelegate: true })
-						.where(eq(schema.delegationMember.id, next.id));
-				});
+				await transferHeadDelegate(delegation.members, args.newHeadDelegateUserId);
 			}
 
 			pubsub.updated(args.id);
@@ -244,7 +227,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.delegation
 				.findFirst(
 					query(
-						ctx.abilities.delegation.filter('read').merge({ where: { id: args.id } }).query.single
+						(await ctx.abilities.delegation.filter('read')).merge({ where: { id: args.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -258,7 +242,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.delegation)
 				.where(
-					ctx.abilities.delegation.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.delegation.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.delegation.id });
 			if (deleted.length === 0) {
@@ -283,9 +268,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: [DelegationRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const filter = ctx.abilities.delegation
-				.filter('delete')
-				.merge({ where: { NOT: { members: {} }, conferenceId: args.conferenceId } });
+			const filter = (await ctx.abilities.delegation.filter('delete')).merge({
+				where: { NOT: { members: {} }, conferenceId: args.conferenceId }
+			});
 
 			// Read before deleting: afterwards there is nothing left to return.
 			const doomed = await db.query.delegation.findMany(query(filter.query.many));

@@ -1,9 +1,6 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B, N extends FormPath<A> & keyof A">
 	import { type SuperForm, type FormPath } from 'sveltekit-superforms';
-	import { Control, Field, Label } from 'formsnap';
-	import FormDescription from './FormDescription.svelte';
-	import FormFieldErrors from './FormFieldErrors.svelte';
-	import FormConstraints from './FormConstraints.svelte';
+	import FormField from './FormField.svelte';
 
 	interface Props {
 		name: N;
@@ -15,29 +12,24 @@
 	}
 
 	let { form, label, name, placeholder, description, disabled = false }: Props = $props();
-	let { form: formData } = form;
+	let { form: formData } = $derived(form);
 </script>
 
-<Field {form} {name}>
-	{#snippet children({ constraints })}
-		<div class="flex w-full flex-col text-left">
-			<Control>
-				{#snippet children({ props })}
-					{#if label}
-						<Label class="label mb-2 whitespace-break-spaces">{label}</Label>
-					{/if}
-					<FormDescription {description} />
-					<textarea
-						{...props}
-						{placeholder}
-						class="textarea validator w-full"
-						bind:value={$formData[name]}
-						{disabled}
-						{...constraints}></textarea>
-				{/snippet}
-			</Control>
-			<FormConstraints {form} {name} />
-			<FormFieldErrors />
-		</div>
+<FormField
+	{form}
+	{name}
+	{label}
+	{description}
+	showConstraints
+	class="flex w-full flex-col text-left"
+>
+	{#snippet input({ props, constraints })}
+		<textarea
+			{...props}
+			{placeholder}
+			class="textarea validator w-full"
+			bind:value={$formData[name]}
+			{disabled}
+			{...constraints}></textarea>
 	{/snippet}
-</Field>
+</FormField>

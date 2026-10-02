@@ -9,12 +9,12 @@ import {
 } from '$api/services/authHelper';
 import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
 import { assertMayManageConference } from '$api/services/authHelper';
+import { assertApplicationReady } from '$api/services/applicationReadiness';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { and, eq, inArray } from 'drizzle-orm';
-import dayjs from 'dayjs';
 
 // Ported from abilities/entities/singleParticipant.ts
 abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -43,7 +43,7 @@ abilityBuilder.singleParticipant.allow('read').when((ctx) => {
 	return id ? { where: { supervisors: { user: { id } } } } : undefined;
 });
 
-export const SingleParticipantRef = object({ table: 'singleParticipant' });
+const SingleParticipantRef = object({ table: 'singleParticipant' });
 query({ table: 'singleParticipant' });
 const pubsub = rumblePubsub({ table: 'singleParticipant' });
 // Assigning someone from the waiting list also settles their entry there.
@@ -144,8 +144,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.singleParticipant
 				.findFirst(
 					query(
-						ctx.abilities.singleParticipant.filter('read').merge({ where: { id: rowId } }).query
-							.single
+						(await ctx.abilities.singleParticipant.filter('read')).merge({ where: { id: rowId } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -164,9 +164,9 @@ schemaBuilder.mutationFields((t) => ({
 			applied: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const updatable = ctx.abilities.singleParticipant
-				.filter('update')
-				.merge({ where: { id: args.id } });
+			const updatable = (await ctx.abilities.singleParticipant.filter('update')).merge({
+				where: { id: args.id }
+			});
 
 			// Checked up front: the role changes below go to the join table directly, so an update
 			// that matched no row would otherwise not stop them.
@@ -182,30 +182,7 @@ schemaBuilder.mutationFields((t) => ({
 					})
 					.then(assertFindFirstExists);
 
-				if (participant.appliedForRoles.length < 1) {
-					throw new GraphQLError(m.notEnoughtRoleApplications());
-				}
-				if (
-					!participant.school ||
-					!participant.experience ||
-					!participant.motivation ||
-					!applicationFormSchema.safeParse({
-						school: args.school ?? participant.school,
-						motivation: args.motivation ?? participant.motivation,
-						experience: args.experience ?? participant.experience
-					}).success
-				) {
-					throw new GraphQLError(m.missingInformation());
-				}
-				const conference = participant.conference;
-				if (
-					conference &&
-					dayjs(conference.startAssignment)
-						.add(conference.registrationDeadlineGracePeriodMinutes, 'minute')
-						.isBefore(dayjs())
-				) {
-					throw new GraphQLError(m.applicationTimeframeClosed());
-				}
+				assertApplicationReady(participant, args, 1);
 			}
 
 			applicationFormSchema.parse({
@@ -235,8 +212,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.singleParticipant
 				.findFirst(
 					query(
-						ctx.abilities.singleParticipant.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.singleParticipant.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -250,8 +227,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.singleParticipant)
 				.where(
-					ctx.abilities.singleParticipant.filter('delete').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.singleParticipant.filter('delete')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.singleParticipant.id });
 			if (deleted.length === 0) {
@@ -275,9 +252,9 @@ schemaBuilder.mutationFields((t) => ({
 		type: [SingleParticipantRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const filter = ctx.abilities.singleParticipant
-				.filter('delete')
-				.merge({ where: { assignedRoleId: { isNull: true }, conferenceId: args.conferenceId } });
+			const filter = (await ctx.abilities.singleParticipant.filter('delete')).merge({
+				where: { assignedRoleId: { isNull: true }, conferenceId: args.conferenceId }
+			});
 
 			// Read before deleting: afterwards there is nothing left to return.
 			const doomed = await db.query.singleParticipant.findMany(query(filter.query.many));
@@ -342,8 +319,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.singleParticipant
 				.findFirst(
 					query(
-						ctx.abilities.singleParticipant.filter('read').merge({ where: { id: created.id } })
-							.query.single
+						(await ctx.abilities.singleParticipant.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);

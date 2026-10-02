@@ -1,22 +1,10 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages';
 	import DaysUntil from './widgets/DaysUntil.svelte';
 	import AppliedChartAndStats from './widgets/AppliedChartAndStats.svelte';
 	import AgeChart from './widgets/AgeChart.svelte';
 	import Filter from './widgets/Filter.svelte';
 	import DistributionChart from './widgets/DistributionChart.svelte';
 	import IndividualRoles from './widgets/IndividualRoles.svelte';
-	import { format } from 'date-fns';
-	import { onMount } from 'svelte';
-	import {
-		getHistory,
-		getSelectedHistory,
-		setHistory,
-		setSelectedHistory,
-		unifiedFilter,
-		mapFilterToGraphQL,
-		type StatsTypeHistoryEntry
-	} from './stats.svelte';
 	import DietMatrix from './widgets/DietMatrix.svelte';
 	import GenderMatrix from './widgets/GenderMatrix.svelte';
 	import Maps from './widgets/Maps.svelte';
@@ -29,138 +17,57 @@
 	import SupervisorStats from './widgets/SupervisorStats.svelte';
 	import PostalPaymentProgress from './widgets/PostalPaymentProgress.svelte';
 	import PaperStats from './widgets/PaperStats.svelte';
-	import { fetchConferenceStatistics } from './statsQuery';
+	import HistoryComparison from './widgets/HistoryComparison.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
-	// The filter is part of the query, so one derived await covers both the first render and
-	// every later filter change; `$effect.pending()` reports the refetch in between.
-	const { getFilter } = unifiedFilter();
-	const graphqlFilter = $derived(mapFilterToGraphQL(getFilter()));
-	const statsData = $derived(await fetchConferenceStatistics(params.conferenceId, graphqlFilter));
+	// Every widget fetches the statistics it renders, with the filter as part of its query, so a
+	// filter change refetches them all; `$effect.pending()` reports that refetch.
 	const isLoading = $derived($effect.pending() > 0);
-
-	// What the widgets take: just the currently filtered statistics.
-	const reactiveData = $derived({ stats: statsData });
-
-	onMount(() => {
-		const history: StatsTypeHistoryEntry[] = JSON.parse(
-			localStorage.getItem('statsHistory') ?? '[]'
-		);
-
-		if (
-			!history.find(
-				(x) =>
-					`${x.timestamp}_${x.conferenceId}` ===
-					`${format(Date.now(), 'yyyy-MM-dd')}_${params.conferenceId}`
-			) &&
-			statsData
-		) {
-			history.unshift({
-				stats: statsData,
-				timestamp: format(Date.now(), 'yyyy-MM-dd'),
-				conferenceId: params.conferenceId
-			});
-		}
-		setHistory(history);
-
-		localStorage.setItem('statsHistory', JSON.stringify(history));
-
-		setHistory(history.filter((x) => x.conferenceId === params.conferenceId));
-		setSelectedHistory(
-			history.find((x) => x.timestamp !== format(Date.now(), 'yyyy-MM-dd'))?.timestamp
-		);
-	});
 </script>
 
-{#if !statsData}
-	<div class="flex flex-col items-center justify-center gap-4 py-16">
-		<i class="fa-duotone fa-chart-simple text-6xl text-base-content/30"></i>
-		<p class="text-base-content/70">{m.noStatsAvailable()}</p>
-	</div>
-{:else}
-	<div class="grid grid-cols-2 gap-3 md:grid-cols-12 relative">
-		<!-- Loading overlay -->
-		{#if isLoading}
-			<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-lg">
-				<span class="loading loading-spinner loading-lg text-primary"></span>
-			</div>
-		{/if}
+<div class="grid grid-cols-2 gap-3 md:grid-cols-12 relative">
+	<!-- Loading overlay -->
+	{#if isLoading}
+		<div class="absolute inset-0 bg-base-100/50 z-10 flex items-center justify-center rounded-lg">
+			<span class="loading loading-spinner loading-lg text-primary"></span>
+		</div>
+	{/if}
 
-		<Filter />
-		<DaysUntil data={reactiveData} />
+	<Filter />
+	<DaysUntil conferenceId={params.conferenceId} />
 
-		<AppliedChartAndStats stats={reactiveData.stats} />
+	<AppliedChartAndStats conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.roleBased}
-			<RoleStats roleBased={reactiveData.stats.roleBased} />
-		{/if}
+	<RoleStats conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.supervisorStats}
-			<SupervisorStats supervisorStats={reactiveData.stats.supervisorStats} />
-		{/if}
-		{#if reactiveData.stats.waitingList}
-			<WaitingListStats data={reactiveData} />
-		{/if}
-		<DistributionChart data={reactiveData} />
+	<SupervisorStats conferenceId={params.conferenceId} />
+	<WaitingListStats conferenceId={params.conferenceId} />
+	<DistributionChart conferenceId={params.conferenceId} />
 
-		<IndividualRoles data={reactiveData} />
+	<IndividualRoles conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.postalPaymentProgress}
-			<PostalPaymentProgress progress={reactiveData.stats.postalPaymentProgress} />
-		{/if}
+	<PostalPaymentProgress conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.committeeFillRates && reactiveData.stats.committeeFillRates.length > 0}
-			<CommitteeFillRates committeeFillRates={reactiveData.stats.committeeFillRates} />
-		{/if}
+	<CommitteeFillRates conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.paperStats && reactiveData.stats.paperStats.total > 0}
-			<PaperStats paperStats={reactiveData.stats.paperStats} />
-		{/if}
+	<PaperStats conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.registrationTimeline && reactiveData.stats.registrationTimeline.length > 0}
-			<RegistrationTimeline registrationTimeline={reactiveData.stats.registrationTimeline} />
-		{/if}
+	<RegistrationTimeline conferenceId={params.conferenceId} />
 
-		<AgeChart data={reactiveData} />
+	<AgeChart conferenceId={params.conferenceId} />
 
-		{#if reactiveData.stats.nationalityDistribution && reactiveData.stats.nationalityDistribution.length > 0}
-			<NationalityChart nationalityDistribution={reactiveData.stats.nationalityDistribution} />
-		{/if}
-		{#if reactiveData.stats.schoolStats && reactiveData.stats.schoolStats.length > 0}
-			<SchoolStats schoolStats={reactiveData.stats.schoolStats} />
-		{/if}
+	<NationalityChart conferenceId={params.conferenceId} />
+	<SchoolStats conferenceId={params.conferenceId} />
 
-		<!-- Row 9: Diet and Gender Matrix -->
-		<DietMatrix data={reactiveData} />
-		<GenderMatrix data={reactiveData} />
+	<!-- Row 9: Diet and Gender Matrix -->
+	<DietMatrix conferenceId={params.conferenceId} />
+	<GenderMatrix conferenceId={params.conferenceId} />
 
-		<!-- Row 10: Map -->
-		<Maps addresses={reactiveData.stats.addresses} />
+	<!-- Row 10: Map -->
+	<Maps conferenceId={params.conferenceId} />
 
-		<!-- Row 11: History Comparison (Full width) -->
-		<section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-12">
-			<div class="card-body p-4">
-				<h2 class="card-title text-base font-semibold">
-					<i class="fa-duotone fa-clock-rotate-left text-base-content/70"></i>
-					{m.historyComparison()}
-				</h2>
-				<p class="text-sm text-base-content/70">{@html m.historyComparisonDescription()}</p>
-				<select
-					class="select select-bordered w-full max-w-xs bg-base-100"
-					onchange={(e) => setSelectedHistory((e.target as any)?.value)}
-				>
-					{#each getHistory()?.map((x) => x.timestamp) ?? [] as timestamp}
-						<option selected={timestamp === getSelectedHistory()}>
-							{timestamp}
-						</option>
-					{/each}
-					{#if getHistory()?.length === 0 || getHistory() === undefined}
-						<option selected disabled>{m.noHistory()}</option>
-					{/if}
-				</select>
-			</div>
-		</section>
-	</div>
-{/if}
+	<!-- Row 11: History Comparison (Full width) -->
+	<HistoryComparison conferenceId={params.conferenceId} />
+</div>

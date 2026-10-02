@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
 	function getContentPreview(content: unknown): string {
 		if (!content || typeof content !== 'object') return '';
 		const jsonContent = content as JSONContent;
@@ -31,7 +31,7 @@
 	import type { JSONContent } from '@tiptap/core';
 	import type { Readable } from 'svelte/store';
 	import Menu from '$lib/components/paper/editor/menu';
-	import { validatePlaceholders } from '$lib/helpers/snippetPlaceholders';
+	import { checkSnippet, saveErrorMessage } from './snippetValidation';
 	import { PlaceholderHighlight } from '$lib/components/paper/editor/extensions/PlaceholderHighlight';
 	import {
 		isValidTipTapContent,
@@ -114,77 +114,41 @@
 		editor = undefined;
 	}
 
+	/** Updates the snippet being edited, or creates it if it is new. */
+	function saveSnippet(name: string, content: JSONContent) {
+		return editingId
+			? client.mutate.updateReviewerSnippet({
+					__args: { id: editingId, name, content },
+					id: true,
+					name: true,
+					content: true
+				})
+			: client.mutate.createReviewerSnippet({
+					__args: { name, content },
+					id: true,
+					name: true,
+					content: true
+				});
+	}
+
 	async function handleSave() {
-		if (!editName.trim()) {
-			toast.error(m.snippetNameRequired());
-			return;
-		}
-
-		// Check if content has actual text (recursively checks all node types)
-		function hasTextNode(node: JSONContent): boolean {
-			if (node.type === 'text' && node.text?.trim()) {
-				return true;
-			}
-			if (node.content && Array.isArray(node.content)) {
-				return node.content.some(hasTextNode);
-			}
-			return false;
-		}
-
-		const hasContent = editContent.content?.some(hasTextNode) ?? false;
-
-		if (!hasContent) {
-			toast.error(m.snippetContentRequired());
-			return;
-		}
-
-		// Validate placeholders
-		const validation = validatePlaceholders(editContent);
-
-		if (validation.malformed.length > 0) {
-			toast.error(m.malformedPlaceholders());
-			return;
-		}
-
-		if (validation.empty.length > 0) {
-			toast.error(m.emptyPlaceholders());
-			return;
-		}
-
-		if (validation.tooLong.length > 0) {
-			toast.error(m.placeholderTooLong());
+		const check = checkSnippet(editName, editContent);
+		if (check.error) {
+			toast.error(check.error);
 			return;
 		}
 
 		// Show detected placeholders as info
-		if (validation.valid.length > 0) {
+		if (check.hasPlaceholders) {
 			toast.success(m.detectedPlaceholders());
 		}
 
 		try {
-			if (editingId) {
-				// Update existing
-				await client.mutate.updateReviewerSnippet({
-					__args: { id: editingId, name: editName.trim(), content: editContent },
-					id: true,
-					name: true,
-					content: true
-				});
-				toast.success(m.snippetSaved());
-			} else {
-				// Create new
-				await client.mutate.createReviewerSnippet({
-					__args: { name: editName.trim(), content: editContent },
-					id: true,
-					name: true,
-					content: true
-				});
-				toast.success(m.snippetSaved());
-			}
+			await saveSnippet(editName.trim(), editContent);
+			toast.success(m.snippetSaved());
 			closeModal();
 		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : m.genericError();
-			toast.error(message);
+			toast.error(saveErrorMessage(error));
 		}
 	}
 
@@ -281,7 +245,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each snippets as snippet}
+						{#each snippets as snippet (snippet.id)}
 							{@const contentPreview = getContentPreview(snippet.content)}
 							<tr>
 								<td class="font-medium">

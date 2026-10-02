@@ -8,7 +8,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
  */
 const PLACEHOLDER_REGEX = /\{\{([\p{L}\p{N}\s\-_,.!?]+)\}\}/gu;
 
-export interface PlaceholderHighlightOptions {
+interface PlaceholderHighlightOptions {
 	/**
 	 * CSS class to apply to highlighted placeholders
 	 */

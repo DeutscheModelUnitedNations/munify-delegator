@@ -8,21 +8,24 @@
 
 	let { role }: Props = $props();
 
-	const config = $derived.by(() => {
-		switch (role) {
-			case 'DELEGATION_MEMBER':
-				return { label: m.delegationMember(), icon: 'fa-users-viewfinder', color: 'badge-primary' };
-			case 'SINGLE_PARTICIPANT':
-				return { label: m.singleParticipant(), icon: 'fa-user', color: 'badge-accent' };
-			case 'SUPERVISOR':
-				return { label: m.supervisor(), icon: 'fa-chalkboard-user', color: 'badge-success' };
-			case 'TEAM_MEMBER':
-				return { label: m.teamMember(), icon: 'fa-user-group', color: 'badge-info' };
-		}
-	});
+	const roleBadges: Record<
+		ParticipationRole,
+		{ label: () => string; icon: string; color: string }
+	> = {
+		DELEGATION_MEMBER: {
+			label: m.delegationMember,
+			icon: 'fa-users-viewfinder',
+			color: 'badge-primary'
+		},
+		SINGLE_PARTICIPANT: { label: m.singleParticipant, icon: 'fa-user', color: 'badge-accent' },
+		SUPERVISOR: { label: m.supervisor, icon: 'fa-chalkboard-user', color: 'badge-success' },
+		TEAM_MEMBER: { label: m.teamMember, icon: 'fa-user-group', color: 'badge-info' }
+	};
+
+	const config = $derived(roleBadges[role]);
 </script>
 
 <span class="badge {config.color} badge-soft badge-sm gap-1">
 	<i class="fa-solid {config.icon}"></i>
-	{config.label}
+	{config.label()}
 </span>

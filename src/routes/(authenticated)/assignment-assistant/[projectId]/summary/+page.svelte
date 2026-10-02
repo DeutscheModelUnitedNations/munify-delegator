@@ -1,8 +1,8 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
 	import codenamize from '$lib/helpers/codenamize';
-	import formatNames from '$lib/helpers/formatNames';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import {
 		getApplications,
 		getConference,
@@ -11,8 +11,8 @@
 		getNSAs,
 		getProject,
 		loadProjects,
-		type Delegation,
-		type Nation,
+		type ProjectDelegation,
+		type ProjectNation,
 		type NonStateActor
 	} from '../appData.svelte';
 	import DelegationCard from '../DelegationCard.svelte';
@@ -34,10 +34,10 @@
 
 	const getSplittings = $derived(() => {
 		const applications = getApplications();
-		return (applications.filter((x) => !!x.splittedInto) as Delegation[]).map((x) => {
+		return (applications.filter((x) => !!x.splittedInto) as ProjectDelegation[]).map((x) => {
 			const parent = x;
 			const children = x.splittedInto!.map((id) => applications.find((y) => y.id === id));
-			return { parent, children: children as Delegation[] };
+			return { parent, children: children as ProjectDelegation[] };
 		});
 	});
 
@@ -45,8 +45,8 @@
 		const applications = getDelegationApplications();
 		const nations = getNations();
 		const NSAs = getNSAs();
-		const res: ({ applications: Delegation[] } & (
-			{ nation: Nation; nsa: never } | { nation: never; nsa: NonStateActor }
+		const res: ({ applications: ProjectDelegation[] } & (
+			{ nation: ProjectNation; nsa: never } | { nation: never; nsa: NonStateActor }
 		))[] = [];
 		nations.forEach((x) => {
 			const assignments = applications.filter(
@@ -116,7 +116,7 @@
 	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
 		<h2 class="text-xl font-bold"><i class="fas fa-user-slash mr-3"></i>Ausschlüsse</h2>
 		<div class="flex flex-wrap gap-2">
-			{#each getRejections() as application}
+			{#each getRejections() as application (application.id)}
 				<DelegationCard {application} />
 			{/each}
 		</div>
@@ -124,7 +124,7 @@
 	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
 		<h2 class="text-xl font-bold"><i class="fas fa-split mr-3"></i>Zerteilungen</h2>
 		<div class="flex flex-col gap-6">
-			{#each getSplittings() as { parent, children }}
+			{#each getSplittings() as { parent } (parent.id)}
 				<div class="flex grow-0 items-center justify-start gap-2">
 					<div class="bg-base-300 flex items-center rounded-md p-2 shadow">
 						<div class="flex flex-col">
@@ -141,7 +141,7 @@
 						<a
 							aria-label="Details"
 							class="btn btn-ghost btn-sm"
-							href={`/management/${getConference()?.id}/delegations?selected=${parent.id}`}
+							href={resolve(`/management/${getConference()?.id}/delegations?selected=${parent.id}`)}
 							target="_blank"
 						>
 							<i class="fas fa-up-right-from-square"></i>
@@ -167,16 +167,16 @@
 	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
 		<h2 class="text-xl font-bold"><i class="fas fa-merge mr-3"></i>Zusammenführungen</h2>
 		<div class="flex flex-wrap gap-2">
-			{#each getMerges() as { applications, nation, nsa }}
+			{#each getMerges() as { applications, nation, nsa } (nation ? nation.alpha3Code : nsa.id)}
 				{#if nation}
 					<NationCard {nation}>
-						{#each applications as application}
+						{#each applications as application (application.id)}
 							<DelegationCard {application} />
 						{/each}
 					</NationCard>
 				{:else if nsa}
 					<NationCard {nsa}>
-						{#each applications as application}
+						{#each applications as application (application.id)}
 							<DelegationCard {application} />
 						{/each}
 					</NationCard>
@@ -186,7 +186,9 @@
 	</div>
 
 	{#if project}
-		<a class="btn btn-primary" href={'/management/' + project.data.conference.id + '/assignment'}
+		<a
+			class="btn btn-primary"
+			href={resolve(`/management/${project.data.conference.id}/assignment`)}
 			>Zurück zur Admin Oberfläche</a
 		>
 	{/if}

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, makeTestUser } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_PAYMENT_ADMIN_ID } from '../seed/seed';
 

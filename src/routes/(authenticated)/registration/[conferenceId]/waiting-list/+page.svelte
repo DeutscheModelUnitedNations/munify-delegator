@@ -11,11 +11,14 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
+	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
-	const conferenceId = params.conferenceId;
+	// Read once: it seeds the form below, and this page is only ever entered from another route,
+	// which mounts it afresh, so the conference cannot change while it is open.
+	const conferenceId = untrack(() => params.conferenceId);
 	const user = await getCurrentUser();
 
 	// Seeded once, on purpose: this is the initial value of a form, and re-reading it while someone
@@ -69,6 +72,7 @@
 	<hero class="mt-20 text-center">
 		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.vacanciesSlashWaitingList()}</h1>
 		<p class="max-ch-md">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			{@html m.vacanciesSlashWaitingListDescription()}
 		</p>
 	</hero>
@@ -76,6 +80,7 @@
 	{#if alreadyOnWaitingList}
 		<div class="alert alert-success alert-vertical sm:alert-horizontal mt-10">
 			<i class="fas fa-circle-check"></i>
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			{@html m.alreadyOnWaitingList()}
 		</div>
 	{/if}

@@ -16,7 +16,7 @@ export default function getSimplifiedPostalStatus(
 				Row<'conferenceParticipantStatus'>,
 				'termsAndConditions' | 'guardianConsent' | 'mediaConsent'
 		  > & {
-				[key: string]: any;
+				[key: string]: unknown;
 		  })
 		| undefined
 		| null,

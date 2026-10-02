@@ -22,7 +22,7 @@
 
 	// A typed proxy rather than indexing the form store: it is what makes `bind:checked` type-check
 	// against a boolean field instead of the store's `unknown`.
-	const { value: checked } = formFieldProxy<A, N, boolean>(form, name);
+	const { value: checked } = $derived(formFieldProxy<A, N, boolean>(form, name));
 </script>
 
 <Field {form} {name}>

@@ -12,7 +12,8 @@ import {
 	isSystemAdmin,
 	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	userId,
+	type TeamRole
 } from '$api/services/authHelper';
 import {
 	getInvitationExpiryDate,
@@ -38,7 +39,7 @@ abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ct
 	return where ? { where } : undefined;
 });
 
-export const TeamMemberInvitationRef = object({
+object({
 	table: 'teamMemberInvitation',
 	adjust: (t) => ({
 		/** Whether the invited address already has an account, which changes the invitation copy. */
@@ -126,6 +127,29 @@ const RegenerateInvitationResult = schemaBuilder.simpleObject('RegenerateInvitat
 		message: t.string({ nullable: true })
 	})
 });
+
+/** Mails a regenerated invitation's new link. Sending happens in the background, best-effort. */
+async function resendInvitationEmail(
+	invitation: { conferenceId: string; email: string; role: TeamRole },
+	callerId: string,
+	origin: string,
+	token: string,
+	expiresAt: Date
+) {
+	const conference = await db.query.conference.findFirst({
+		where: { id: invitation.conferenceId }
+	});
+	if (!conference) return;
+
+	sendTeamInvitationEmail({
+		recipientEmail: invitation.email,
+		conferenceTitle: conference.title,
+		roleName: translateTeamRole(invitation.role),
+		inviterName: await inviterDisplayName(callerId),
+		inviteUrl: `${origin}/auth/accept-invitation?token=${token}`,
+		expiresAt
+	}).catch((err) => console.error('Failed to send invitation email:', err));
+}
 
 schemaBuilder.mutationFields((t) => ({
 	/**
@@ -345,19 +369,7 @@ schemaBuilder.mutationFields((t) => ({
 				.where(eq(schema.teamMemberInvitation.id, args.invitationId));
 
 			if (args.sendEmail) {
-				const conference = await db.query.conference.findFirst({
-					where: { id: invitation.conferenceId }
-				});
-				if (conference) {
-					sendTeamInvitationEmail({
-						recipientEmail: invitation.email,
-						conferenceTitle: conference.title,
-						roleName: translateTeamRole(invitation.role),
-						inviterName: await inviterDisplayName(callerId),
-						inviteUrl: `${ctx.url.origin}/auth/accept-invitation?token=${newToken}`,
-						expiresAt: newExpiresAt
-					}).catch((err) => console.error('Failed to send invitation email:', err));
-				}
+				await resendInvitationEmail(invitation, callerId, ctx.url.origin, newToken, newExpiresAt);
 			}
 
 			pubsub.updated(args.invitationId);

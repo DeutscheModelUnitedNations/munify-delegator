@@ -1,17 +1,11 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { error } from '@sveltejs/kit';
-	import type { PageData } from './$types';
 	import { client } from '$lib/api/rumbleClient/client';
 	import PlausibilityDetails from './PlausibilityDetails.svelte';
 	import PlausibilityOverviewItem from './PlausibilityOverviewItem.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
-
-	interface Props {
-		data: PageData;
-	}
 
 	const userSummary = { id: true, givenName: true, familyName: true } as const;
 
@@ -25,10 +19,6 @@
 			tooYoungUsers: userSummary
 		})
 	);
-
-	if (!plausibility) {
-		error(404, 'Could not find plausibility data');
-	}
 </script>
 
 <div class="flex flex-col gap-8 p-10">

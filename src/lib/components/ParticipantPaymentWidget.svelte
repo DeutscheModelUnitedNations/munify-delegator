@@ -2,6 +2,7 @@
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		userId: string;
@@ -104,7 +105,13 @@
 						{/if}
 						<button
 							class="btn btn-ghost btn-xs btn-square"
-							onclick={() => goto(`/management/${conferenceId}/payments?searchValue=${ref.id}`)}
+							onclick={() =>
+								goto(
+									resolve(
+										`/(authenticated)/management/[conferenceId]/payments?searchValue=${ref.id}`,
+										{ conferenceId }
+									)
+								)}
 							title={m.payment()}
 						>
 							<i class="fa-duotone fa-money-bill-transfer"></i>

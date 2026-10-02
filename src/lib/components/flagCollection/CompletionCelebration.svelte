@@ -24,7 +24,7 @@
 </script>
 
 <div class="celebration-container absolute inset-0 overflow-hidden pointer-events-none">
-	{#each particles as particle}
+	{#each particles as particle, particleIndex (particleIndex)}
 		<div
 			class="particle"
 			style="

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { ResolvedPathname } from '$app/types';
 	import { m } from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
@@ -6,7 +7,7 @@
 		title: string;
 		img: string;
 		btnText: string;
-		btnLink: string;
+		btnLink: ResolvedPathname;
 		disabled?: boolean;
 		disabledText?: string;
 		children?: Snippet;

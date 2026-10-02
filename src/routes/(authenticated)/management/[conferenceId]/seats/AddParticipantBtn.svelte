@@ -34,7 +34,7 @@
 >
 	<button
 		aria-label={m.addParticipant()}
-		class="btn {$params.assignUserId ? '' : 'btn-outline'} {warning
+		class="btn {params.assignUserId ? '' : 'btn-outline'} {warning
 			? 'btn-warning'
 			: 'btn-success'} btn-sm w-10"
 		onclick={() => (open = true)}
@@ -42,14 +42,14 @@
 		{#if warning}
 			<i class="fas fa-diamond-exclamation"></i>
 		{:else}
-			<i class="fas fa-plus {$params.assignUserId ? 'fa-beat' : ''}"></i>
+			<i class="fas fa-plus {params.assignUserId ? 'fa-beat' : ''}"></i>
 		{/if}
 	</button>
 </div>
 
 <UserSearchModal bind:open bind:user {targetRole} {addParticipant}>
 	{#if formElements}
-		{#each formElements as element}
+		{#each formElements as element, index (index)}
 			<div class="bg-base-200 rounded-lg p-4">
 				{@render element()}
 			</div>

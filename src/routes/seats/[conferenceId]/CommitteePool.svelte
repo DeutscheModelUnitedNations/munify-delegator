@@ -38,7 +38,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each committees as committee}
+		{#each committees as committee (committee.id)}
 			<tr>
 				<td>{committee.abbreviation}</td>
 				<td>{committee.name}</td>
@@ -46,7 +46,7 @@
 				<td class="text-center">{committee.numOfSeatsPerDelegation}</td>
 				<td>
 					<ul class="ml-4 list-disc">
-						{#each committee.agendaItems as agendaItem}
+						{#each committee.agendaItems as agendaItem (agendaItem.id)}
 							<li class="list-item">
 								{#if agendaItem.teaserText}
 									<button class="btn-link" onclick={() => (drawerAgendaItem = agendaItem.id)}>

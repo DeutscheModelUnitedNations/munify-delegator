@@ -3,22 +3,22 @@
 	import { m } from '$lib/paraglide/messages';
 	import { ofAgeAtConference } from '$lib/helpers/ageChecker';
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
-	import formatNames from '$lib/helpers/formatNames';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import type { AdministrativestatusEnum } from '$lib/api/rumbleClient/client';
 	import DownloadButton from './DownloadButton.svelte';
+	import { fetchConferenceStart, fetchParticipantStatusesByUser } from './participantStatuses';
+	import {
+		compareByName,
+		nonStateActorName,
+		registrationStatusColumns,
+		sortableName,
+		supervisorRow
+	} from './exportFormatting';
 
 	interface Props {
 		conferenceId: string;
 	}
 
 	let { conferenceId }: Props = $props();
-
-	let loadingStates = $state<Record<string, boolean>>({});
-
-	const setLoading = (key: string, value: boolean) => {
-		loadingStates = { ...loadingStates, [key]: value };
-	};
 
 	const listedUser = {
 		id: true,
@@ -27,17 +27,18 @@
 		birthday: true
 	} as const;
 
-	function fetchParticipantStatuses() {
-		return client.query.conferenceParticipantStatuses({
-			__args: { where: { conferenceId: { eq: conferenceId } } },
-			id: true,
-			user: { id: true },
-			conference: { startConference: true },
-			paymentStatus: true,
-			termsAndConditions: true,
-			guardianConsent: true,
-			mediaConsent: true
-		});
+	/** The statuses to join against, and the conference start that decides who is of age. */
+	async function fetchParticipantStatuses() {
+		const [statuses, startConference] = await Promise.all([
+			fetchParticipantStatusesByUser(conferenceId),
+			fetchConferenceStart(conferenceId)
+		]);
+		return {
+			get: (userId: string) => statuses.get(userId),
+			// a person without a status row was never counted as of age, so this keeps that
+			ofAge: (userId: string, birthday: Parameters<typeof ofAgeAtConference>[1]) =>
+				ofAgeAtConference(statuses.has(userId) ? startConference : undefined, birthday)
+		};
 	}
 
 	function fetchNationDelegations() {
@@ -95,310 +96,145 @@
 		});
 	}
 
-	const formatRegistrationStatus = (status: AdministrativestatusEnum | undefined) => {
-		switch (status) {
-			case 'DONE':
-				return '';
-			case 'PENDING':
-				return 'X';
-			case 'PROBLEM':
-				return 'P';
-			default:
-				return 'X';
+	type ParticipantStatusData = Awaited<ReturnType<typeof fetchParticipantStatuses>>;
+
+	/** The payment and paperwork columns, and whether the person is of age. */
+	function statusColumns(
+		participantStatusData: ParticipantStatusData,
+		user: { id: string; birthday: Parameters<typeof ofAgeAtConference>[1] }
+	) {
+		return registrationStatusColumns(
+			participantStatusData.get(user.id),
+			participantStatusData.ofAge(user.id, user.birthday)
+		);
+	}
+
+	/** The header of `participantColumns`. */
+	const participantHeader = () => [
+		m.familyName(),
+		m.givenName(),
+		m.payment(),
+		m.termsAndConditions(),
+		m.guardianAgreement(),
+		m.mediaAgreement(),
+		m.ofAge()
+	];
+
+	/** One person's row after the leading columns: name, then `statusColumns`. */
+	function participantColumns(
+		participantStatusData: ParticipantStatusData,
+		user: {
+			id: string;
+			givenName: string | null;
+			familyName: string | null;
+			birthday: Parameters<typeof ofAgeAtConference>[1];
 		}
-	};
+	) {
+		return [
+			user.familyName ?? '',
+			user.givenName ?? '',
+			...statusColumns(participantStatusData, user)
+		];
+	}
 
 	const getConferenceRegistrationListDelegationsData = async () => {
-		const key = 'delegations';
-		setLoading(key, true);
-		try {
-			const [participantStatusData, delegations] = await Promise.all([
-				fetchParticipantStatuses(),
-				fetchNationDelegations()
-			]);
+		const [participantStatusData, delegations] = await Promise.all([
+			fetchParticipantStatuses(),
+			fetchNationDelegations()
+		]);
 
-			const delegationData = delegations;
+		const header = [m.country(), m.committee(), ...participantHeader()];
 
-			const header = [
-				m.country(),
-				m.committee(),
-				m.familyName(),
-				m.givenName(),
-				m.payment(),
-				m.termsAndConditions(),
-				m.guardianAgreement(),
-				m.mediaAgreement(),
-				m.ofAge()
-			];
+		const nationName = (delegation: (typeof delegations)[number]) =>
+			getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation?.alpha3Code ?? '');
 
-			const data = delegationData
-				?.sort((a, b) =>
-					getFullTranslatedCountryNameFromISO3Code(
-						a.assignedNation?.alpha3Code ?? ''
-					).localeCompare(
-						getFullTranslatedCountryNameFromISO3Code(b.assignedNation?.alpha3Code ?? '')
-					)
-				)
-				?.flatMap((delegation) => {
-					const nation = getFullTranslatedCountryNameFromISO3Code(
-						delegation.assignedNation?.alpha3Code ?? ''
-					);
-					return delegation.members
-						.sort((a, b) =>
-							formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
-								givenNameFirst: false
-							}).localeCompare(
-								formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
-									givenNameFirst: false
-								})
-							)
-						)
-						.map((member) => {
-							const status = participantStatusData?.find(
-								(status) => status.user.id === member.user.id
-							);
-							const ofAge = ofAgeAtConference(
-								status?.conference.startConference,
-								member.user.birthday
-							);
-							return [
-								nation,
-								member.assignedCommittee?.abbreviation ?? '',
-								member.user.familyName ?? '',
-								member.user.givenName ?? '',
-								formatRegistrationStatus(status?.paymentStatus),
-								formatRegistrationStatus(status?.termsAndConditions),
-								ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
-								formatRegistrationStatus(status?.mediaConsent),
-								ofAge ? 'Y' : 'N'
-							];
-						});
-				});
+		const data = delegations
+			.sort((a, b) => nationName(a).localeCompare(nationName(b)))
+			.flatMap((delegation) =>
+				delegation.members
+					.sort(compareByName)
+					.map((member) => [
+						nationName(delegation),
+						member.assignedCommittee?.abbreviation ?? '',
+						...participantColumns(participantStatusData, member.user)
+					])
+			);
 
-			if (!data) {
-				console.error('No data found');
-				alert(m.httpGenericError());
-				return;
-			}
-
-			downloadCSV(header, data, `RegistrationData_Delegation_${conferenceId}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		downloadCSV(header, data, `RegistrationData_Delegation_${conferenceId}.csv`);
 	};
 
 	const getConferenceRegistrationListNSAData = async () => {
-		const key = 'nsa';
-		setLoading(key, true);
-		try {
-			const [participantStatusData, nsas] = await Promise.all([
-				fetchParticipantStatuses(),
-				fetchNsaDelegations()
-			]);
+		const [participantStatusData, nsas] = await Promise.all([
+			fetchParticipantStatuses(),
+			fetchNsaDelegations()
+		]);
 
-			const nsaData = nsas;
+		const header = [m.nonStateActor(), ...participantHeader()];
 
-			const header = [
-				m.nonStateActor(),
-				m.familyName(),
-				m.givenName(),
-				m.payment(),
-				m.termsAndConditions(),
-				m.guardianAgreement(),
-				m.mediaAgreement(),
-				m.ofAge()
-			];
+		const data = nsas
+			.sort((a, b) => nonStateActorName(a).localeCompare(nonStateActorName(b)))
+			.flatMap((nsa) =>
+				nsa.members
+					.sort(compareByName)
+					.map((member) => [
+						nonStateActorName(nsa),
+						...participantColumns(participantStatusData, member.user)
+					])
+			);
 
-			const data = nsaData
-				?.sort((a, b) =>
-					(a.assignedNonStateActor?.name ?? '').localeCompare(b.assignedNonStateActor?.name ?? '')
-				)
-				?.flatMap((nsa) => {
-					return nsa.members
-						.sort((a, b) =>
-							formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
-								givenNameFirst: false
-							}).localeCompare(
-								formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
-									givenNameFirst: false
-								})
-							)
-						)
-						.map((member) => {
-							const status = participantStatusData?.find(
-								(status) => status.user.id === member.user.id
-							);
-							const ofAge = ofAgeAtConference(
-								status?.conference.startConference,
-								member.user.birthday
-							);
-							return [
-								nsa.assignedNonStateActor?.name ?? '',
-								member.user.familyName ?? '',
-								member.user.givenName ?? '',
-								formatRegistrationStatus(status?.paymentStatus),
-								formatRegistrationStatus(status?.termsAndConditions),
-								ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
-								formatRegistrationStatus(status?.mediaConsent),
-								ofAge ? 'Y' : 'N'
-							];
-						});
-				});
-
-			if (!data) {
-				console.error('No data found');
-				alert(m.httpGenericError());
-				return;
-			}
-
-			downloadCSV(header, data, `RegistrationData_NSA_${conferenceId}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		downloadCSV(header, data, `RegistrationData_NSA_${conferenceId}.csv`);
 	};
 
 	const getConferenceRegistrationListSingleParticipantData = async () => {
-		const key = 'single';
-		setLoading(key, true);
-		try {
-			const [participantStatusData, singleParticipants] = await Promise.all([
-				fetchParticipantStatuses(),
-				fetchSingleParticipants()
+		const [participantStatusData, singleParticipants] = await Promise.all([
+			fetchParticipantStatuses(),
+			fetchSingleParticipants()
+		]);
+
+		const header = [m.role(), ...participantHeader()];
+
+		const sortKey = (singleParticipant: (typeof singleParticipants)[number]) =>
+			(singleParticipant.assignedRole?.name ?? '') + sortableName(singleParticipant.user);
+
+		const data = singleParticipants
+			.sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
+			.map((singleParticipant) => [
+				singleParticipant.assignedRole?.name ?? '',
+				...participantColumns(participantStatusData, singleParticipant.user)
 			]);
 
-			const singleParticipantData = singleParticipants;
-
-			const header = [
-				m.role(),
-				m.familyName(),
-				m.givenName(),
-				m.payment(),
-				m.termsAndConditions(),
-				m.guardianAgreement(),
-				m.mediaAgreement(),
-				m.ofAge()
-			];
-
-			const data = singleParticipantData
-				?.sort((a, b) =>
-					(
-						(a.assignedRole?.name ?? '') +
-						formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
-							givenNameFirst: false
-						})
-					).localeCompare(
-						(b.assignedRole?.name ?? '') +
-							formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
-								givenNameFirst: false
-							})
-					)
-				)
-				?.map((singleParticipant) => {
-					const status = participantStatusData?.find(
-						(status) => status.user.id === singleParticipant.user.id
-					);
-					const ofAge = ofAgeAtConference(
-						status?.conference.startConference,
-						singleParticipant.user.birthday
-					);
-					return [
-						singleParticipant.assignedRole?.name ?? '',
-						singleParticipant.user.familyName ?? '',
-						singleParticipant.user.givenName ?? '',
-						formatRegistrationStatus(status?.paymentStatus),
-						formatRegistrationStatus(status?.termsAndConditions),
-						ofAge ? '' : formatRegistrationStatus(status?.guardianConsent),
-						formatRegistrationStatus(status?.mediaConsent),
-						ofAge ? 'Y' : 'N'
-					];
-				});
-
-			if (!data) {
-				console.error('No data found');
-				alert(m.httpGenericError());
-				return;
-			}
-
-			downloadCSV(header, data, `RegistrationData_SingleParticipant_${conferenceId}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		downloadCSV(header, data, `RegistrationData_SingleParticipant_${conferenceId}.csv`);
 	};
 
 	const getConferenceRegistrationListSupervisorsData = async () => {
-		const key = 'supervisors';
-		setLoading(key, true);
-		try {
-			const [participantStatusData, supervisors] = await Promise.all([
-				fetchParticipantStatuses(),
-				fetchSupervisors()
-			]);
+		const [participantStatusData, supervisors] = await Promise.all([
+			fetchParticipantStatuses(),
+			fetchSupervisors()
+		]);
 
-			const supervisorData = supervisors;
+		const header = [
+			m.familyName(),
+			m.givenName(),
+			m.payment(),
+			m.termsAndConditions(),
+			m.mediaAgreement(),
+			m.supervisorPlansOwnAttendance()
+		];
 
-			const header = [
-				m.familyName(),
-				m.givenName(),
-				m.payment(),
-				m.termsAndConditions(),
-				m.mediaAgreement(),
-				m.supervisorPlansOwnAttendance()
-			];
+		const data = supervisors
+			.sort(compareByName)
+			.map((supervisor) =>
+				supervisorRow(supervisor, participantStatusData.get(supervisor.user.id))
+			);
 
-			const data = supervisorData
-				?.sort((a, b) =>
-					formatNames(a.user.givenName ?? undefined, a.user.familyName ?? undefined, {
-						givenNameFirst: false
-					}).localeCompare(
-						formatNames(b.user.givenName ?? undefined, b.user.familyName ?? undefined, {
-							givenNameFirst: false
-						})
-					)
-				)
-				?.map((supervisor) => {
-					const status = participantStatusData?.find(
-						(status) => status.user.id === supervisor.user.id
-					);
-					return [
-						supervisor.user.familyName ?? '',
-						supervisor.user.givenName ?? '',
-						formatRegistrationStatus(status?.paymentStatus),
-						formatRegistrationStatus(status?.termsAndConditions),
-						formatRegistrationStatus(status?.mediaConsent),
-						supervisor.plansOwnAttendenceAtConference ? 'Y' : 'N'
-					];
-				});
-
-			if (!data) {
-				console.error('No data found');
-				alert(m.httpGenericError());
-				return;
-			}
-
-			downloadCSV(header, data, `RegistrationData_Supervisors_${conferenceId}.csv`);
-		} finally {
-			setLoading(key, false);
-		}
+		downloadCSV(header, data, `RegistrationData_Supervisors_${conferenceId}.csv`);
 	};
 </script>
 
+<DownloadButton onclick={getConferenceRegistrationListDelegationsData} title={m.delegations()} />
+<DownloadButton onclick={getConferenceRegistrationListNSAData} title={m.nonStateActors()} />
 <DownloadButton
-	onclick={() => getConferenceRegistrationListDelegationsData()}
-	title={m.delegations()}
-	loading={loadingStates['delegations'] ?? false}
-/>
-<DownloadButton
-	onclick={() => getConferenceRegistrationListNSAData()}
-	title={m.nonStateActors()}
-	loading={loadingStates['nsa'] ?? false}
-/>
-<DownloadButton
-	onclick={() => getConferenceRegistrationListSingleParticipantData()}
+	onclick={getConferenceRegistrationListSingleParticipantData}
 	title={m.singleParticipants()}
-	loading={loadingStates['single'] ?? false}
 />
-<DownloadButton
-	onclick={() => getConferenceRegistrationListSupervisorsData()}
-	title={m.supervisors()}
-	loading={loadingStates['supervisors'] ?? false}
-/>
+<DownloadButton onclick={getConferenceRegistrationListSupervisorsData} title={m.supervisors()} />

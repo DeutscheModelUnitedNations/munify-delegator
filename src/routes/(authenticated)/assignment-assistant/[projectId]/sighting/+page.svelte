@@ -3,12 +3,15 @@
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 	import { onMount } from 'svelte';
-	import { page as routeState } from '$app/state';
 	import Application from './Application.svelte';
 
 	import SchoolFilter from './SchoolFilter.svelte';
 	import codenmz from '$lib/helpers/codenamize';
 	import { getConference, loadProjects, getApplications } from '../appData.svelte';
+	import type { PageProps } from './$types';
+	import { isOnPage, isSchoolSelected } from './sightingFilters';
+
+	let { params: routeParams }: PageProps = $props();
 
 	const params = queryParameters({
 		page: {
@@ -33,21 +36,42 @@
 		}
 	});
 
-	let searchActive = $derived($params.search.length > 2);
-	let filterActive = $derived($params.filter.length > 0 && !searchActive);
+	let searchActive = $derived(params.search.length > 2);
+	let filterActive = $derived(params.filter.length > 0 && !searchActive);
 
-	const projectId = $derived(routeState.params.projectId!);
-	let page = $derived($params.page ?? 1);
-	let pageSize = $derived($params.pageSize ?? 10);
+	let page = $derived(params.page ?? 1);
+	let pageSize = $derived(params.pageSize ?? 10);
 
 	let conference = $state(getConference());
 
 	onMount(() => {
-		loadProjects(projectId);
+		loadProjects(routeParams.projectId);
 	});
 
 	const setPage = (newPage: number) => {
-		$params.page = newPage;
+		params.page = newPage;
+	};
+
+	let totalPages = $derived(Math.ceil(getApplications().length / pageSize));
+
+	type ProjectApplication = ReturnType<typeof getApplications>[number];
+
+	const matchesSearch = (application: ProjectApplication) => {
+		const search = params.search.toLowerCase();
+		return (
+			codenmz(application.id).toLowerCase().includes(search) ||
+			application.school?.toLowerCase()?.includes(search)
+		);
+	};
+
+	/**
+	 * A search or a school filter shows every application it matches; otherwise the applications
+	 * are paged.
+	 */
+	const isShown = (application: ProjectApplication, index: number) => {
+		if (searchActive) return matchesSearch(application);
+		if (filterActive) return isSchoolSelected(params.filter, application.school);
+		return isOnPage(index, page, pageSize);
 	};
 </script>
 
@@ -99,37 +123,30 @@
 
 <div class="mt-6 flex flex-col gap-4">
 	<div class="flex flex-col items-center gap-4">
-		<SchoolFilter bind:filter={$params.filter} />
+		<SchoolFilter bind:filter={params.filter} />
 		<label class="input input-bordered flex items-center gap-2">
-			<input type="text" class="grow" placeholder="Suche" bind:value={$params.search} />
+			<input type="text" class="grow" placeholder="Suche" bind:value={params.search} />
 		</label>
 	</div>
 
-	{#if $params.filter.length === 0 && searchActive}
+	{#if params.filter.length === 0 && searchActive}
 		<div class="flex items-center justify-center">
-			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+			<Pagination active={page} total={totalPages} {setPage} />
 		</div>
 	{/if}
 
-	{#each getApplications() as application, index}
-		{@const inCurrentPage = index >= (page - 1) * pageSize && index < page * pageSize}
-		{@const filterOrSearchActive = filterActive || searchActive}
-		{@const inFilter = filterActive && $params.filter?.includes(application.school ?? '')}
-		{@const inSearch =
-			searchActive &&
-			(codenmz(application.id).toLowerCase().includes($params.search.toLowerCase()) ||
-				application.school?.toLowerCase()?.includes($params.search.toLowerCase()))}
-		{#if (!filterOrSearchActive && inCurrentPage) || inFilter || inSearch}
+	{#each getApplications() as application, index (application.id)}
+		{#if isShown(application, index)}
 			<Application {application} startConference={conference?.startConference ?? new Date()} />
 		{/if}
 	{/each}
 
-	{#if $params.filter.length === 0 && $params.search === ''}
+	{#if params.filter.length === 0 && params.search === ''}
 		<div class="flex flex-col items-center justify-center gap-4">
-			<Pagination active={page} total={Math.ceil(getApplications().length / pageSize)} {setPage} />
+			<Pagination active={page} total={totalPages} {setPage} />
 			<div class="flex items-center gap-4">
 				<div>Pro Seite:</div>
-				<select class="select select-bordered" bind:value={$params.pageSize}>
+				<select class="select select-bordered" bind:value={params.pageSize}>
 					<option value="10" selected>10</option>
 					<option value="20">20</option>
 					<option value="50">50</option>

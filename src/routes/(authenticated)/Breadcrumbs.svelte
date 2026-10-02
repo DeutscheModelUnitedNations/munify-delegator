@@ -2,7 +2,7 @@
 	import { Breadcrumbs } from 'sveltekit-breadcrumbs';
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { locales } from '$lib/paraglide/runtime';
-	import { m, userId } from '$lib/paraglide/messages';
+	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import type { LayoutProps } from './$types';
 	import { browser } from '$app/environment';
@@ -305,11 +305,12 @@
 import path via the parameter! -->
 <Breadcrumbs
 	importObject={import.meta.glob('./**/+page*.svelte')}
-	availableLanguageTags={locales as any as string[]}
+	availableLanguageTags={[...locales]}
 	homePath="/"
 >
 	{#snippet pathSnippet(pathSegment: PathSegmentType)}
 		{@const breadcrumb = getBreadcrumb(pathSegment)}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
 		<a class="btn btn-ghost btn-sm !no-underline" href={pathSegment.href}>
 			<i class="fa-duotone fa-{breadcrumb.icon}"></i>
 			<p class="ml-1">

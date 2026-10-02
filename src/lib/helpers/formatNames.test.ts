@@ -1,4 +1,4 @@
-import formatNames from '$lib/helpers/formatNames';
+import formatNames, { sortByNames } from '$lib/helpers/formatNames';
 import { expect, test, describe } from 'vitest';
 
 describe('formatNames', () => {
@@ -489,5 +489,17 @@ describe('formatNames', () => {
 
 	test("should correct 'jOhN dOe' to 'John DOE' with familyNameUppercase true", () => {
 		expect(formatNames('jOhN', 'dOe', { familyNameUppercase: true })).toBe('John DOE');
+	});
+});
+
+describe('sortByNames', () => {
+	test('orders by family name, then given name, treating missing names as empty', () => {
+		const people = [
+			{ givenName: 'Max', familyName: 'Mustermann' },
+			{ givenName: 'Anna', familyName: 'Mustermann' },
+			{ givenName: 'Zoe', familyName: 'Abel' },
+			{ givenName: null, familyName: undefined }
+		];
+		expect(people.sort(sortByNames).map((p) => p.givenName)).toEqual([null, 'Zoe', 'Anna', 'Max']);
 	});
 });

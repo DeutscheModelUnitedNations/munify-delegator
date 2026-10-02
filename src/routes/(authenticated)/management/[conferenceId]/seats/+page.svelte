@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { fetchConferenceSeatMap } from './conferenceSeatMap';
 	import NSAs from './sections/NSAs.svelte';
 	import SingleParticipants from './sections/SingleParticipants.svelte';
 	import Supervisors from './sections/Supervisors.svelte';
@@ -26,22 +25,13 @@
 	let assignUser = $state<Awaited<ReturnType<typeof lookupUser>>>();
 	let assignUserLoading = $state(false);
 
-	const seatMap = $derived(await fetchConferenceSeatMap(conferenceId));
-	const committees = $derived(seatMap.committees);
-	const nations = $derived(seatMap.nations);
-	const roles = $derived(seatMap.roles);
-	const delegations = $derived(seatMap.delegations);
-	const nonStateActors = $derived(seatMap.nonStateActors);
-	const singleParticipants = $derived(seatMap.singleParticipants);
-	const supervisors = $derived(seatMap.supervisors);
-
 	$effect(() => {
-		if (!$params.assignUserId) {
+		if (!params.assignUserId) {
 			assignUser = undefined;
 			return;
 		}
 		assignUserLoading = true;
-		const promise = lookupUser($params.assignUserId);
+		const promise = lookupUser(params.assignUserId);
 		toast.promise(promise, genericPromiseToastMessages);
 		void promise
 			.then((result) => {
@@ -54,7 +44,7 @@
 </script>
 
 <div class="flex w-full flex-col items-start gap-10 p-4">
-	{#if $params.assignUserId}
+	{#if params.assignUserId}
 		<div class="w-full">
 			<div class="alert alert-warning w-full">
 				{#if assignUserLoading}
@@ -76,8 +66,8 @@
 		</div>
 	{/if}
 
-	<Delegations {delegations} {committees} {nations} {conferenceId} />
-	<NSAs {nonStateActors} {delegations} {conferenceId} />
-	<SingleParticipants {singleParticipants} {roles} {conferenceId} />
-	<Supervisors {supervisors} {conferenceId} />
+	<Delegations {conferenceId} />
+	<NSAs {conferenceId} />
+	<SingleParticipants {conferenceId} />
+	<Supervisors {conferenceId} />
 </div>

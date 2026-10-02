@@ -10,6 +10,7 @@ import {
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { waitingListFormSchema } from '../../routes/(authenticated)/registration/[conferenceId]/waiting-list/form-schema';
+import { nullToUndefined } from '$api/services/args';
 
 // Ported from abilities/entities/waitingListEntry.ts
 abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -26,7 +27,7 @@ abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when((ctx) =
 	return where ? { where } : undefined;
 });
 
-export const WaitingListEntryRef = object({ table: 'waitingListEntry' });
+const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });
 const pubsub = rumblePubsub({ table: 'waitingListEntry' });
 
@@ -69,7 +70,7 @@ schemaBuilder.mutationFields((t) => ({
 					school: args.school,
 					motivation: args.motivation,
 					experience: args.experience,
-					requests: args.requests ?? undefined
+					requests: nullToUndefined(args.requests)
 				})
 				.returning()
 				.then(assertFirstEntryExists);
@@ -79,8 +80,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.waitingListEntry
 				.findFirst(
 					query(
-						ctx.abilities.waitingListEntry.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.waitingListEntry.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -102,16 +104,16 @@ schemaBuilder.mutationFields((t) => ({
 			await db
 				.update(schema.waitingListEntry)
 				.set({
-					school: args.school ?? undefined,
-					motivation: args.motivation ?? undefined,
-					experience: args.experience ?? undefined,
-					requests: args.requests ?? undefined,
-					hidden: args.hidden ?? undefined,
-					assigned: args.assigned ?? undefined
+					school: nullToUndefined(args.school),
+					motivation: nullToUndefined(args.motivation),
+					experience: nullToUndefined(args.experience),
+					requests: nullToUndefined(args.requests),
+					hidden: nullToUndefined(args.hidden),
+					assigned: nullToUndefined(args.assigned)
 				})
 				.where(
-					ctx.abilities.waitingListEntry.filter('update').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.waitingListEntry.filter('update')).merge({ where: { id: args.id } })
+						.sql.where
 				);
 
 			pubsub.updated(args.id);
@@ -119,8 +121,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.waitingListEntry
 				.findFirst(
 					query(
-						ctx.abilities.waitingListEntry.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.waitingListEntry.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -134,8 +136,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.waitingListEntry)
 				.where(
-					ctx.abilities.waitingListEntry.filter('delete').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.waitingListEntry.filter('delete')).merge({ where: { id: args.id } })
+						.sql.where
 				)
 				.returning({ id: schema.waitingListEntry.id });
 			if (deleted.length === 0) {

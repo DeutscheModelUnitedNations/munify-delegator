@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getLocale } from '$lib/paraglide/runtime';
@@ -11,67 +12,39 @@
 
 	let { userId, conferenceId }: Props = $props();
 
-	function fetchPapers() {
-		return client.query.papers({
+	// Drafts are the author's own business; the admin card only shows submitted work.
+	const papers = $derived(
+		await client.liveQuery.papers({
 			__args: {
-				where: { conferenceId: { eq: conferenceId }, authorId: { eq: userId } }
+				where: {
+					conferenceId: { eq: conferenceId },
+					authorId: { eq: userId },
+					NOT: { status: 'DRAFT' }
+				}
 			},
 			id: true,
 			type: true,
 			status: true,
 			firstSubmittedAt: true,
-			createdAt: true,
 			agendaItem: { id: true, title: true, committee: { id: true, abbreviation: true } },
-			versions: {
-				id: true,
-				createdAt: true,
-				reviews: { id: true, statusBefore: true, statusAfter: true, createdAt: true }
-			}
-		});
-	}
-
-	let loadedPapers = $state<Awaited<ReturnType<typeof fetchPapers>>>();
-	let papersLoading = $state(false);
-
-	$effect(() => {
-		papersLoading = true;
-		void fetchPapers()
-			.then((result) => {
-				loadedPapers = result;
-			})
-			.finally(() => {
-				papersLoading = false;
-			});
-	});
-
-	// Drafts are the author's own business; the admin card only shows submitted work.
-	const papers = $derived((loadedPapers ?? []).filter((paper) => paper.status !== 'DRAFT'));
+			versions: { id: true, reviews: { id: true } }
+		})
+	);
 
 	const totalReviews = (paper: (typeof papers)[number]) =>
 		paper.versions.reduce((sum, v) => sum + v.reviews.length, 0);
 
-	const statusBadge = (status: string) => {
-		switch (status) {
-			case 'ACCEPTED':
-				return 'badge-success';
-			case 'CHANGES_REQUESTED':
-				return 'badge-error';
-			case 'SUBMITTED':
-				return 'badge-info';
-			case 'REVISED':
-				return 'badge-accent';
-			default:
-				return 'badge-ghost';
-		}
+	const statusBadges: Partial<Record<string, string>> = {
+		ACCEPTED: 'badge-success',
+		CHANGES_REQUESTED: 'badge-error',
+		SUBMITTED: 'badge-info',
+		REVISED: 'badge-accent'
 	};
+
+	const statusBadge = (status: string) => statusBadges[status] ?? 'badge-ghost';
 </script>
 
-{#if papersLoading}
-	<div class="flex flex-col gap-3">
-		<div class="skeleton h-20 w-full"></div>
-		<div class="skeleton h-20 w-full"></div>
-	</div>
-{:else if papers.length === 0}
+{#if papers.length === 0}
 	<div class="alert alert-info">
 		<i class="fa-duotone fa-file-lines"></i>
 		<span>{m.userCardNoPapers()}</span>
@@ -95,7 +68,10 @@
 						{/if}
 					</div>
 					<a
-						href="/dashboard/{conferenceId}/paperhub/{paper.id}"
+						href={resolve('/(authenticated)/dashboard/[conferenceId]/paperhub/[paperId]', {
+							conferenceId,
+							paperId: paper.id
+						})}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="btn btn-ghost btn-xs btn-square"

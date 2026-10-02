@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { fakerDE as faker } from '@faker-js/faker';
+	import type { SuperForm } from 'sveltekit-superforms';
+	import type { z } from 'zod';
+	import type { userFormSchema } from './form-schema';
 	interface Props {
-		form: any;
+		form: SuperForm<z.infer<typeof userFormSchema>>;
 	}
 
 	let { form }: Props = $props();

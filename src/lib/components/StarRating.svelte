@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	interface Props {
 		rating: number;
 		changeRating?: (rating: number) => void;
@@ -15,30 +16,29 @@
 		return 'text-green-500';
 	};
 
-	const getTextSizeClass: () => string = () => {
-		switch (size) {
-			case 'xs':
-				return 'text-xs';
-			case 'sm':
-				return 'text-sm';
-			case 'md':
-				return 'text-base';
-			case 'lg':
-				return 'text-lg';
-			case 'xl':
-				return 'text-xl';
-		}
+	const textSizeClasses: Record<NonNullable<Props['size']>, string> = {
+		xs: 'text-xs',
+		sm: 'text-sm',
+		md: 'text-base',
+		lg: 'text-lg',
+		xl: 'text-xl'
 	};
+
+	const getTextSizeClass = () => textSizeClasses[size];
 </script>
 
 <div class="flex {getTextSizeClass()}">
 	{#if rating && changeRating}
-		<i
-			class="fas fa-times text-md text-base-300 mr-2 cursor-pointer hover:text-red-500"
+		<button
+			type="button"
+			class="text-md text-base-300 mr-2 cursor-pointer hover:text-red-500"
 			onclick={deleteRating}
-		></i>
+			aria-label={m.delete()}
+		>
+			<i class="fas fa-times"></i>
+		</button>
 	{/if}
-	{#each { length: Math.floor(rating) } as _, i}
+	{#each { length: Math.floor(rating) }, i}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<i
@@ -62,7 +62,7 @@
 			}}
 		></i>
 	{/if}
-	{#each { length: Math.floor(5 - rating) } as _, i}
+	{#each { length: Math.floor(5 - rating) }, i}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<i

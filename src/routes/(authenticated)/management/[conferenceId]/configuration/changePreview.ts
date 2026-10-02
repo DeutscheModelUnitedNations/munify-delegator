@@ -1,9 +1,7 @@
 import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
-import type { z } from 'zod';
-import type { conferenceSettingsFormSchema } from './form-schema';
+import type { ConferenceSettings } from './form-schema';
 
-type ConferenceSettings = z.infer<typeof conferenceSettingsFormSchema>;
 type SettingsFieldKey = keyof ConferenceSettings;
 
 /**
@@ -12,15 +10,9 @@ type SettingsFieldKey = keyof ConferenceSettings;
  */
 export type ChangeGroupKey = 'general' | 'status' | 'links' | 'payments' | 'documents';
 
-export const changeGroupOrder: ChangeGroupKey[] = [
-	'general',
-	'status',
-	'links',
-	'payments',
-	'documents'
-];
+const changeGroupOrder: ChangeGroupKey[] = ['general', 'status', 'links', 'payments', 'documents'];
 
-export function changeGroupLabel(group: ChangeGroupKey): string {
+function changeGroupLabel(group: ChangeGroupKey): string {
 	switch (group) {
 		case 'general':
 			return m.general();
@@ -218,12 +210,12 @@ function formatFileSize(bytes: number): string {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatValue(value: unknown): string {
-	if (value === undefined || value === null || value === '') return m.configChangeValueNotSet();
+/** The generic display of a settings value; `format` in a field description overrides it. */
+export function formatValue(value: unknown): string {
+	if (isEmpty(value)) return m.configChangeValueNotSet();
 	if (typeof value === 'boolean') return value ? m.on() : m.off();
 	if (value instanceof Date) return value.toLocaleString();
-	if (isUploadedFile(value)) return `${value.name} (${formatFileSize(value.size)})`;
-	if (value instanceof File) return m.configChangeValueNotSet();
+	if (value instanceof File) return `${value.name} (${formatFileSize(value.size)})`;
 	if (typeof value === 'number') return value.toLocaleString();
 	if (typeof value === 'string') return value;
 	return JSON.stringify(value) ?? '';
@@ -259,6 +251,11 @@ export interface ChangePreviewInput {
 	existingFiles: Partial<Record<SettingsFieldKey, boolean>>;
 }
 
+/** A file cannot be shown by value, so its previous state is only "exists" or "not set". */
+function fileBeforeLabel(exists: boolean | undefined): string {
+	return exists ? m.configChangeFileExisting() : m.configChangeValueNotSet();
+}
+
 export function collectConfigChanges({
 	saved,
 	current,
@@ -287,11 +284,7 @@ export function collectConfigChanges({
 			key,
 			group: description.group,
 			label: description.label(),
-			before: isFile
-				? existingFiles[key]
-					? m.configChangeFileExisting()
-					: m.configChangeValueNotSet()
-				: format(before),
+			before: isFile ? fileBeforeLabel(existingFiles[key]) : format(before),
 			after: format(after),
 			isFile,
 			highImpact: description.highImpact ?? false,

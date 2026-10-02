@@ -22,7 +22,7 @@ abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when((ctx) => {
 	return question ? { where: { question } } : undefined;
 });
 
-export const SurveyOptionRef = object({
+const SurveyOptionRef = object({
 	table: 'surveyOption',
 	adjust: (t) => ({
 		/** How many participants picked this option - the survey result, in effect. */
@@ -70,8 +70,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.surveyOption
 				.findFirst(
 					query(
-						ctx.abilities.surveyOption.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.surveyOption.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -95,7 +95,8 @@ schemaBuilder.mutationFields((t) => ({
 					upperLimit: args.upperLimit ?? undefined
 				})
 				.where(
-					ctx.abilities.surveyOption.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.surveyOption.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -103,7 +104,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.surveyOption
 				.findFirst(
 					query(
-						ctx.abilities.surveyOption.filter('read').merge({ where: { id: args.id } }).query.single
+						(await ctx.abilities.surveyOption.filter('read')).merge({ where: { id: args.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -117,7 +119,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.surveyOption)
 				.where(
-					ctx.abilities.surveyOption.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.surveyOption.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.surveyOption.id });
 			if (deleted.length === 0) {

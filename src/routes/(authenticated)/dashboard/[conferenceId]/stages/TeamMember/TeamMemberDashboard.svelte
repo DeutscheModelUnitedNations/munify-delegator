@@ -6,34 +6,33 @@
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import type { TeamroleEnum } from '$lib/api/rumbleClient/client';
 	import { getTeamLinksForRole, type TeamDashboardLinkContext } from '$lib/data/teamDashboardLinks';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { configPublic } from '$config/public';
 
 	interface Props {
 		conferenceId: string;
-		conferenceTitle: string;
 		role: TeamroleEnum;
-		linkToTeamWiki?: string | null;
-		linkToServicesPage?: string | null;
-		linkToPreparationGuide?: string | null;
-		docsUrl?: string | null;
 	}
 
-	let {
-		conferenceId,
-		conferenceTitle,
-		role,
-		linkToTeamWiki,
-		linkToServicesPage,
-		linkToPreparationGuide,
-		docsUrl
-	}: Props = $props();
+	let { conferenceId, role }: Props = $props();
+
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: conferenceId },
+			title: true,
+			linkToTeamWiki: true,
+			linkToServicesPage: true,
+			linkToPreparationGuide: true
+		})
+	);
 
 	let linkContext = $derived<TeamDashboardLinkContext>({
 		conferenceId,
 		role,
-		linkToTeamWiki,
-		linkToServicesPage,
-		linkToPreparationGuide,
-		docsUrl
+		linkToTeamWiki: conference.linkToTeamWiki,
+		linkToServicesPage: conference.linkToServicesPage,
+		linkToPreparationGuide: conference.linkToPreparationGuide,
+		docsUrl: configPublic.PUBLIC_DOCS_URL
 	});
 
 	let visibleLinks = $derived(getTeamLinksForRole(linkContext));
@@ -42,7 +41,7 @@
 <DashboardSection
 	icon="users-gear"
 	title={m.teamMemberDashboard()}
-	description={`${conferenceTitle} · ${translateTeamRole(role)}`}
+	description={`${conference.title} · ${translateTeamRole(role)}`}
 >
 	<DashboardLinksGrid>
 		{#each visibleLinks as link (link.id)}

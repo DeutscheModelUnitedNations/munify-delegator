@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
@@ -40,10 +41,22 @@
 		}
 	});
 
+	type MemberWithCommittee = (typeof membersWithCommittees)[number];
+	type Committee = (typeof committees)[number];
+
+	const unassignedMembers = $derived(membersWithCommittees.filter((x) => !x.alreadyAssigned));
+
+	/** Whether every seat of `committee` is taken, so it cannot be picked for another member. */
+	const isCommitteeFull = (committee: Committee, memberId: string | undefined) =>
+		membersWithCommittees.some(
+			(x) =>
+				x.delegationMemberId !== memberId &&
+				committee.numOfSeatsPerDelegation <=
+					membersWithCommittees.filter((y) => y.committeeId === committee.id).length
+		);
+
 	const sendCommitteeAssignment = async () => {
 		// Only validate unassigned members - already assigned ones are locked
-		const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned);
-
 		if (unassignedMembers.some((x) => !x.committeeId)) {
 			alert(m.pleaseAssignAllMembers());
 			return;
@@ -73,9 +86,28 @@
 	};
 </script>
 
+{#snippet committeeCell(memberWithCommittee: MemberWithCommittee, memberId: string | undefined)}
+	{#if memberWithCommittee.alreadyAssigned}
+		{@const assignedCommittee = committees?.find((c) => c.id === memberWithCommittee.committeeId)}
+		<div class="flex items-center gap-2">
+			<span class="badge badge-success">{assignedCommittee?.abbreviation}</span>
+			<span class="text-xs text-gray-500">({m.alreadyAssigned()})</span>
+		</div>
+	{:else}
+		<select class="select" bind:value={memberWithCommittee.committeeId}>
+			<option value="" selected>{m.pleaseSelect()}</option>
+			{#each committees ?? [] as committee (committee.id)}
+				<option value={committee.id} disabled={isCommitteeFull(committee, memberId)}>
+					{committee.abbreviation}
+				</option>
+			{/each}
+		</select>
+	{/if}
+{/snippet}
+
 <div class="flex w-full flex-col gap-4">
 	<div class="flex items-center gap-4">
-		<a class="btn btn-square" aria-label="Back" href=".">
+		<a class="btn btn-square" aria-label="Back" href={resolve(`/dashboard/${params.conferenceId}`)}>
 			<i class="fa-duotone fa-arrow-left text-xl"></i>
 		</a>
 		<h1 class="text-2xl font-bold">{m.committeeAssignment()}</h1>
@@ -93,7 +125,7 @@
 	<section class="flex flex-col gap-4">
 		<h3 class="font-bold">{m.theFollowingCommitteesAreAssignable()}:</h3>
 		<div class="flex flex-col gap-1">
-			{#each committees ?? [] as committee}
+			{#each committees ?? [] as committee (committee.id)}
 				<div class="badge badge-primary badge-lg">
 					<span class="font-bold">{committee.abbreviation}</span
 					>&emsp;{committee.name}&emsp;({committee.numOfSeatsPerDelegation}
@@ -110,45 +142,18 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each membersWithCommittees ?? [] as memberWithCommittee}
+				{#each membersWithCommittees ?? [] as memberWithCommittee (memberWithCommittee.delegationMemberId)}
 					{@const member = members?.find((me) => me.id === memberWithCommittee.delegationMemberId)}
 					<tr>
 						<td>{formatNames(member?.user.givenName, member?.user.familyName)}</td>
 						<td>
-							{#if memberWithCommittee.alreadyAssigned}
-								{@const assignedCommittee = committees?.find(
-									(c) => c.id === memberWithCommittee.committeeId
-								)}
-								<div class="flex items-center gap-2">
-									<span class="badge badge-success">{assignedCommittee?.abbreviation}</span>
-									<span class="text-xs text-gray-500">({m.alreadyAssigned()})</span>
-								</div>
-							{:else}
-								<select class="select" bind:value={memberWithCommittee.committeeId}>
-									<option value="" selected>{m.pleaseSelect()}</option>
-									{#each committees ?? [] as committee}
-										<option
-											value={committee.id}
-											disabled={membersWithCommittees.some(
-												(x) =>
-													x.delegationMemberId !== member?.id &&
-													committee.numOfSeatsPerDelegation <=
-														membersWithCommittees.filter((y) => y.committeeId === committee.id)
-															.length
-											)}
-										>
-											{committee.abbreviation}
-										</option>
-									{/each}
-								</select>
-							{/if}
+							{@render committeeCell(memberWithCommittee, member?.id)}
 						</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
 		{#if delegationMember?.isHeadDelegate}
-			{@const unassignedMembers = membersWithCommittees.filter((x) => !x.alreadyAssigned)}
 			{#if unassignedMembers.length > 0}
 				<button
 					class="btn btn-primary"

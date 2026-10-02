@@ -16,11 +16,11 @@
 	import PlaceholderPromptModal from './PlaceholderPromptModal.svelte';
 	import { extractPlaceholders, replacePlaceholders } from '$lib/helpers/snippetPlaceholders';
 	import type { JSONContent } from '@tiptap/core';
-	import { getSafeTipTapContent } from './contentValidation';
+	import { getSafeTipTapContent, isEmptyTipTapDocument } from './contentValidation';
 	import { UndoRedo } from '@tiptap/extensions';
 
 	interface Props {
-		contentStore: Writable<any>;
+		contentStore: Writable<JSONContent>;
 		placeholder?: string;
 		quoteToInsert?: string;
 		onQuoteInserted?: () => void;
@@ -29,10 +29,12 @@
 	}
 
 	let {
+		// Read and written as `$contentStore` below; fallow does not count store auto-subscriptions.
+		// fallow-ignore-next-line unused-component-prop
 		contentStore,
 		placeholder = '',
 		quoteToInsert,
-		onQuoteInserted,
+		onQuoteInserted = () => {},
 		paperContainer = null,
 		snippets = []
 	}: Props = $props();
@@ -86,21 +88,21 @@
 
 	// Insert quote when quoteToInsert changes
 	$effect(() => {
-		if (quoteToInsert && $editor && quoteToInsert !== lastInsertedQuote) {
-			$editor
-				.chain()
-				.focus()
-				.insertContent([
-					{
-						type: 'blockquote',
-						content: [{ type: 'paragraph', content: [{ type: 'text', text: quoteToInsert }] }]
-					},
-					{ type: 'paragraph' }
-				])
-				.run();
-			lastInsertedQuote = quoteToInsert;
-			onQuoteInserted?.();
-		}
+		const quote = quoteToInsert;
+		if (!$editor || !quote || quote === lastInsertedQuote) return;
+		$editor
+			.chain()
+			.focus()
+			.insertContent([
+				{
+					type: 'blockquote',
+					content: [{ type: 'paragraph', content: [{ type: 'text', text: quote }] }]
+				},
+				{ type: 'paragraph' }
+			])
+			.run();
+		lastInsertedQuote = quote;
+		onQuoteInserted();
 	});
 
 	const setLink = () => {
@@ -165,10 +167,8 @@
 
 	// Clear editor when store is reset externally (e.g., after review submission)
 	$effect(() => {
-		const content = $contentStore;
 		// Check if store contains an empty TipTap document (reset state)
-		const isEmptyDocument =
-			content?.type === 'doc' && (!content.content || content.content.length === 0);
+		const isEmptyDocument = isEmptyTipTapDocument($contentStore);
 		// Only clear if store is empty document AND editor actually has content
 		if ($editor && isEmptyDocument && !$editor.isEmpty) {
 			$editor.commands.clearContent();
@@ -197,39 +197,11 @@
 				icon="fa-rotate-right"
 			/>
 			<Menu.Divider />
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleHeading({ level: 2 }).run()}
-				active={$editor.isActive('heading', { level: 2 })}
-				label={m.heading2()}
-				icon="fa-heading"
-			/>
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleHeading({ level: 3 }).run()}
-				active={$editor.isActive('heading', { level: 3 })}
-				label={m.heading3()}
-				icon="fa-h"
-			/>
+			<Menu.ToggleButtons editor={$editor} items={['heading2', 'heading3']} />
 
 			<Menu.Divider />
 
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleBold().run()}
-				active={$editor.isActive('bold')}
-				label={m.bold()}
-				icon="fa-bold"
-			/>
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleItalic().run()}
-				active={$editor.isActive('italic')}
-				label={m.italic()}
-				icon="fa-italic"
-			/>
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleUnderline().run()}
-				active={$editor.isActive('underline')}
-				label={m.underline()}
-				icon="fa-underline"
-			/>
+			<Menu.ToggleButtons editor={$editor} items={['bold', 'italic', 'underline']} />
 			<Menu.Button
 				onClick={setLink}
 				active={$editor.isActive('link')}
@@ -239,24 +211,7 @@
 
 			<Menu.Divider />
 
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleBulletList().run()}
-				active={$editor.isActive('bulletList')}
-				label={m.bulletList()}
-				icon="fa-list"
-			/>
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleOrderedList().run()}
-				active={$editor.isActive('orderedList')}
-				label={m.orderedList()}
-				icon="fa-list-ol"
-			/>
-			<Menu.Button
-				onClick={() => $editor.chain().focus().toggleBlockquote().run()}
-				active={$editor.isActive('blockquote')}
-				label={m.blockquote()}
-				icon="fa-quote-left"
-			/>
+			<Menu.ToggleButtons editor={$editor} items={['bulletList', 'orderedList', 'blockquote']} />
 
 			<Menu.Divider />
 

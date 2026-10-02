@@ -10,6 +10,7 @@
 	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
 	import FakeUser from './FakeUser.svelte';
+	import LoginInformationCard from './LoginInformationCard.svelte';
 	import { toast } from 'svelte-sonner';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
 	import { dev } from '$app/environment';
@@ -17,7 +18,6 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { buildUserFormValues } from '$lib/api/userFormValues';
-	import { configPublic } from '$config/public';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -33,16 +33,6 @@
 		if (!target) return undefined;
 		return new URL(target, page.url.origin).host === page.url.host ? target : undefined;
 	});
-
-	// Logto Account Center deep-link support
-	const accountCenterUrl =
-		configPublic.PUBLIC_OIDC_ACCOUNT_URL ??
-		configPublic.PUBLIC_OIDC_AUTHORITY.replace(/\/oidc\/?$/, '') + '/account';
-
-	function accountUrl(path: string) {
-		const back = `${page.url.origin}/my-account`;
-		return `${accountCenterUrl}/${path}?redirect=${encodeURIComponent(back)}`;
-	}
 
 	// Seeded once: this is the form's initial value, and re-reading the row while someone edits it
 	// would throw their changes away.
@@ -92,6 +82,7 @@
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
 				const target = redirectUrl;
+				// eslint-disable-next-line svelte/no-navigation-without-resolve -- runtime same-origin path from ?redirect=, checked in redirectUrl; resolve() only takes typed routes
 				if (target) await goto(target);
 			}
 		}
@@ -114,11 +105,6 @@
 			toast.success(successMap[success]());
 		}
 	});
-
-	const mfaFactors = $derived(user.mfaVerificationFactors ?? []);
-	const hasPasskey = $derived(mfaFactors.includes('WebAuthn'));
-	const hasTotp = $derived(mfaFactors.includes('Totp'));
-	const hasBackupCodes = $derived(mfaFactors.includes('BackupCode'));
 </script>
 
 {#if redirectUrl}
@@ -248,136 +234,7 @@
 			</div>
 		</div>
 
-		<div class="card bg-base-100 border-base-200 border shadow-xl">
-			<div class="card-body">
-				<div class="card-title block text-center">{m.loginInformation()}</div>
-				<div class="divide-base-200 divide-y">
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-user text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.loginName()}</div>
-							<div class="truncate">{user.preferred_username ?? '–'}</div>
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl('username')}
-							aria-label="Change username"
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-envelope text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.email()}</div>
-							<div class="truncate">{user.email}</div>
-						</div>
-						<a class="btn btn-ghost btn-sm" href={accountUrl('email')} aria-label="Change email">
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-key text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.password()}</div>
-							{#if user.hasPassword}
-								<div>•••••</div>
-							{/if}
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl('password')}
-							aria-label="Change password"
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-fingerprint text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.passkeys()}</div>
-							{#if hasPasskey}
-								<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
-							{/if}
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl(hasPasskey ? 'passkey/manage' : 'passkey/add')}
-							aria-label={hasPasskey ? 'Manage passkeys' : 'Add passkey'}
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-shield-keyhole text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.authenticatorApp()}</div>
-							{#if hasTotp}
-								<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
-							{/if}
-						</div>
-						<a
-							class="btn btn-ghost btn-sm"
-							href={accountUrl(hasTotp ? 'authenticator-app/replace' : 'authenticator-app')}
-							aria-label={hasTotp ? 'Replace authenticator app' : 'Set up authenticator app'}
-						>
-							<i class="fa-duotone fa-pen-to-square"></i>
-						</a>
-					</div>
-					{#if hasPasskey || hasTotp}
-						<div class="flex items-center gap-3 py-3">
-							<i class="fa-duotone fa-file-shield text-base-content/60 w-5 text-center"></i>
-							<div class="flex-1 min-w-0">
-								<div class="text-xs text-base-content/60">{m.backupCodes()}</div>
-								{#if hasBackupCodes}
-									<div class="text-success text-sm"><i class="fa-duotone fa-check"></i></div>
-								{/if}
-							</div>
-							<a
-								class="btn btn-ghost btn-sm"
-								href={accountUrl(hasBackupCodes ? 'backup-codes/manage' : 'backup-codes/generate')}
-								aria-label={hasBackupCodes ? 'Manage backup codes' : 'Generate backup codes'}
-							>
-								<i class="fa-duotone fa-pen-to-square"></i>
-							</a>
-						</div>
-					{/if}
-					{#if user.ssoIdentities?.length || user.socialIdentities?.length}
-						<div class="flex items-center gap-3 py-3">
-							<i class="fa-duotone fa-link text-base-content/60 w-5 text-center"></i>
-							<div class="flex-1 min-w-0">
-								<div class="text-xs text-base-content/60">{m.ssoIdentities()}</div>
-								<div class="flex flex-wrap gap-1 mt-1">
-									{#each user.socialIdentities ?? [] as provider}
-										<span class="badge badge-sm capitalize">{provider}</span>
-									{/each}
-									{#each user.ssoIdentities ?? [] as sso}
-										<span class="badge badge-sm">{sso.issuer}</span>
-									{/each}
-								</div>
-							</div>
-						</div>
-					{/if}
-					<div class="flex items-center gap-3 py-3">
-						<i class="fa-duotone fa-binary text-base-content/60 w-5 text-center"></i>
-						<div class="flex-1 min-w-0">
-							<div class="text-xs text-base-content/60">{m.userId()}</div>
-							<div class="truncate font-mono text-sm">{user.sub}</div>
-						</div>
-					</div>
-					{#if user.myOIDCRoles.length}
-						<div class="flex items-center gap-3 py-3">
-							<i class="fa-duotone fa-user-lock text-base-content/60 w-5 text-center"></i>
-							<div class="flex-1 min-w-0">
-								<div class="text-xs text-base-content/60">{m.rights()}</div>
-								<div>{user.myOIDCRoles.map((x) => x.toUpperCase()).join(', ')}</div>
-							</div>
-						</div>
-					{/if}
-				</div>
-				<p class="mt-4 text-center text-sm">{@html m.deleteAccountGPDR()}</p>
-			</div>
-		</div>
+		<LoginInformationCard {user} />
 	</div>
 </div>
 

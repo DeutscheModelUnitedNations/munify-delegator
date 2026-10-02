@@ -1,3 +1,5 @@
+import { resolve } from '$app/paths';
+import type { ResolvedPathname } from '$app/types';
 import { m } from '$lib/paraglide/messages';
 import generatePaperInboxLinkWithParams from '$lib/helpers/paperInboxLink';
 
@@ -24,12 +26,15 @@ export interface DashboardLinkContext {
 	user?: { sub: string; email: string };
 }
 
+/** Where a dashboard link points: a route of this app, or a URL outside it. */
+export type DashboardHref = ResolvedPathname | { externalUrl: string };
+
 export interface DashboardLink {
 	id: string;
 	icon: string;
 	getTitle: () => string;
 	getDescription: () => string;
-	getHref: (ctx: DashboardLinkContext) => string;
+	getHref: (ctx: DashboardLinkContext) => DashboardHref;
 	external?: boolean;
 	showFor: UserType[];
 	isVisible: (ctx: DashboardLinkContext) => boolean;
@@ -40,13 +45,16 @@ export interface DashboardLink {
 	isImportant?: (ctx: DashboardLinkContext) => boolean;
 }
 
-export const dashboardLinks: DashboardLink[] = [
+const dashboardLinks: DashboardLink[] = [
 	{
 		id: 'committeeAssignment',
 		icon: 'arrows-turn-to-dots',
 		getTitle: () => m.committeeAssignment(),
 		getDescription: () => m.committeeAssignmentLinkDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/committeeAssignment`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/committeeAssignment', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation'],
 		isVisible: (ctx) =>
 			!!ctx.isHeadDelegate && !!ctx.hasNationAssigned && !!ctx.membersLackCommittees,
@@ -57,7 +65,10 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'id-badge',
 		getTitle: () => m.registrationMode(),
 		getDescription: () => m.registrationModeLinkDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/registration-mode`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/registration-mode', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		isVisible: (ctx) => ctx.conferenceState === 'ACTIVE',
 		isDisabled: () => false
@@ -67,7 +78,10 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'hand-holding-circle-dollar',
 		getTitle: () => m.payment(),
 		getDescription: () => m.paymentLinkDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/payment`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/payment', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		isVisible: (ctx) => ctx.paymentStatus !== 'DONE',
 		isDisabled: (ctx) => !ctx.unlockPayments,
@@ -79,7 +93,10 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'envelopes-bulk',
 		getTitle: () => m.postalRegistration(),
 		getDescription: () => m.postalRegistrationLinkDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/postalRegistration`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/postalRegistration', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		isVisible: (ctx) => ctx.postalRegistrationStatus !== 'DONE',
 		isDisabled: (ctx) => !ctx.unlockPostals,
@@ -91,7 +108,7 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'book-bookmark',
 		getTitle: () => m.preparation(),
 		getDescription: () => m.preparationDescription(),
-		getHref: (ctx) => ctx.linkToPreparationGuide ?? '',
+		getHref: (ctx) => ({ externalUrl: ctx.linkToPreparationGuide ?? '' }),
 		external: true,
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		isVisible: (ctx) => !!ctx.linkToPreparationGuide,
@@ -102,7 +119,10 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'files',
 		getTitle: () => m.paperHub(),
 		getDescription: () => m.paperHubDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/paperhub`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/paperhub', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation', 'supervisor'],
 		isVisible: (ctx) => !!ctx.isOpenPaperSubmission,
 		isDisabled: () => false
@@ -112,7 +132,10 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'folder-open',
 		getTitle: () => m.paperHubGlobal(),
 		getDescription: () => m.paperHubGlobalDescription(),
-		getHref: (ctx) => `/dashboard/${ctx.conferenceId}/paperhub?view=global`,
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/paperhub?view=global', {
+				conferenceId: ctx.conferenceId
+			}),
 		showFor: ['delegation', 'supervisor', 'singleParticipant'],
 		isVisible: (ctx) => !!ctx.isOpenPaperSubmission,
 		isDisabled: () => false
@@ -122,10 +145,12 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'file-circle-plus',
 		getTitle: () => m.paperInbox(),
 		getDescription: () => m.paperInboxDescription(),
-		getHref: (ctx) =>
-			ctx.user && ctx.linkToPaperInbox
-				? generatePaperInboxLinkWithParams(ctx.linkToPaperInbox, ctx.user)
-				: '',
+		getHref: (ctx) => ({
+			externalUrl:
+				ctx.user && ctx.linkToPaperInbox
+					? generatePaperInboxLinkWithParams(ctx.linkToPaperInbox, ctx.user)
+					: ''
+		}),
 		external: true,
 		showFor: ['delegation', 'singleParticipant'],
 		isVisible: (ctx) => !!ctx.linkToPaperInbox && !!ctx.user,
@@ -136,7 +161,7 @@ export const dashboardLinks: DashboardLink[] = [
 		icon: 'person-seat',
 		getTitle: () => m.conferenceSeats(),
 		getDescription: () => m.seatsLinkDescription(),
-		getHref: (ctx) => `/seats/${ctx.conferenceId}`,
+		getHref: (ctx) => resolve('/seats/[conferenceId]', { conferenceId: ctx.conferenceId }),
 		external: true,
 		showFor: ['delegation', 'singleParticipant', 'supervisor'],
 		isVisible: (ctx) =>

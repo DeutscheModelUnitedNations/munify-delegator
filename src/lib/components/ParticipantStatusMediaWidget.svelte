@@ -1,5 +1,4 @@
 <script lang="ts">
-	import hotkeys from 'hotkeys-js';
 	import StatusWidget from './StatusWidget.svelte';
 	import type { MediaconsentstatusEnum } from '$lib/api/rumbleClient/client';
 

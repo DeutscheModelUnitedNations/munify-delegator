@@ -1,13 +1,28 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { PieChart, StackedBarChart } from '$lib/components/charts/echarts';
-	import type { SupervisorStats } from '../stats.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
 
-	interface Props {
-		supervisorStats: SupervisorStats;
-	}
+	let { conferenceId }: { conferenceId: string } = $props();
 
-	let { supervisorStats }: Props = $props();
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			supervisorStats: {
+				total: true,
+				accepted: true,
+				rejected: true,
+				plansAttendance: true,
+				doesNotPlanAttendance: true,
+				acceptedAndPresent: true,
+				acceptedAndNotPresent: true,
+				rejectedAndPresent: true,
+				rejectedAndNotPresent: true
+			}
+		})
+	);
+	const supervisorStats = $derived(stats.supervisorStats);
 
 	// Pie chart data: Accepted vs Rejected
 	const acceptanceData = $derived([

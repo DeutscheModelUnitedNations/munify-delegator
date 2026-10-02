@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { unifiedFilter, type StatsFilter } from '../stats.svelte';
+	import { unifiedFilter, type StatsFilterOption } from '../stats.svelte';
 
 	let { getFilter, setFilter } = unifiedFilter();
 
-	const filterOptions: { value: StatsFilter; label: () => string }[] = [
+	const filterOptions: { value: StatsFilterOption; label: () => string }[] = [
 		{ value: 'all', label: () => m.statsFilterAll() },
 		{ value: 'applied', label: () => m.statsFilterApplied() },
 		{ value: 'notApplied', label: () => m.statsFilterNotApplied() },
@@ -21,9 +21,9 @@
 		</h2>
 		<select
 			class="select select-bordered w-full bg-base-100"
-			onchange={(e) => setFilter(e.currentTarget.value as StatsFilter)}
+			onchange={(e) => setFilter(e.currentTarget.value as StatsFilterOption)}
 		>
-			{#each filterOptions as option}
+			{#each filterOptions as option (option.value)}
 				<option value={option.value} selected={getFilter() === option.value}>
 					{option.label()}
 				</option>

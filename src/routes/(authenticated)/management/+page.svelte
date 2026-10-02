@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
 	import { fetchMyManagedConferences } from './myManagedConferences';
 
@@ -26,7 +27,7 @@
 							<td>{conference.title}</td>
 							<td>{conference.myMembership}</td>
 							<td>
-								<a class="btn" href={`management/${conference.id}`}
+								<a class="btn" href={resolve(`/management/${conference.id}`)}
 									>{m.open()}<i class="fa-duotone fa-arrow-right"></i></a
 								>
 							</td>
@@ -38,7 +39,7 @@
 			{m.noResults()}
 		{/if}
 	</div>
-	<a class="btn btn-ghost btn-sm self-center" href="/management/seed">
+	<a class="btn btn-ghost btn-sm self-center" href={resolve('/management/seed')}>
 		<i class="fa-duotone fa-seedling"></i>
 		{m.seedConference()}
 	</a>

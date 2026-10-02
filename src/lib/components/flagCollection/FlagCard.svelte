@@ -1,5 +1,6 @@
 <script lang="ts">
 	import FlagRevealGrid from './FlagRevealGrid.svelte';
+	import { toggleButtonProps } from '$lib/helpers/toggleButtonProps';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 
 	interface Piece {
@@ -40,17 +41,38 @@
 	let progressPercent = $derived(
 		flag.totalPieces > 0 ? (flag.foundPieces / flag.totalPieces) * 100 : 0
 	);
+
+	const pieceIcons: Record<Piece['state'], string> = {
+		FOUND: 'fa-check text-success',
+		UNLOCKED: 'fa-puzzle-piece text-primary/50',
+		LOCKED: 'fa-lock text-base-content/30'
+	};
 </script>
+
+{#snippet pieceList()}
+	<div class="mt-3 pt-3 border-t border-base-200">
+		<ul class="text-xs space-y-1">
+			{#each flag.pieces as piece (piece.id)}
+				<li class="flex items-center gap-2">
+					<i class="fa-solid {pieceIcons[piece.state]}"></i>
+					<span class="truncate {piece.state === 'LOCKED' ? 'opacity-50' : ''}">
+						{#if piece.committeeAbbreviation}
+							<span class="font-semibold">{piece.committeeAbbreviation}:</span>
+						{/if}
+						{piece.agendaItemTitle ?? 'Piece'}
+					</span>
+				</li>
+			{/each}
+		</ul>
+	</div>
+{/snippet}
 
 <div
 	class="card bg-base-100 shadow-sm hover:shadow-md transition-all cursor-pointer"
 	class:ring-2={flag.isComplete}
 	class:ring-success={flag.isComplete}
 	class:flag-complete-pulse={flag.isComplete}
-	onclick={() => (expanded = !expanded)}
-	onkeypress={(e) => e.key === 'Enter' && (expanded = !expanded)}
-	role="button"
-	tabindex="0"
+	{...toggleButtonProps(() => (expanded = !expanded))}
 >
 	<div class="p-2">
 		<!-- Flag name header -->
@@ -82,27 +104,7 @@
 
 		<!-- Expanded piece list -->
 		{#if expanded && flag.pieces.length > 0}
-			<div class="mt-3 pt-3 border-t border-base-200">
-				<ul class="text-xs space-y-1">
-					{#each flag.pieces as piece}
-						<li class="flex items-center gap-2">
-							{#if piece.state === 'FOUND'}
-								<i class="fa-solid fa-check text-success"></i>
-							{:else if piece.state === 'UNLOCKED'}
-								<i class="fa-solid fa-puzzle-piece text-primary/50"></i>
-							{:else}
-								<i class="fa-solid fa-lock text-base-content/30"></i>
-							{/if}
-							<span class="truncate {piece.state === 'LOCKED' ? 'opacity-50' : ''}">
-								{#if piece.committeeAbbreviation}
-									<span class="font-semibold">{piece.committeeAbbreviation}:</span>
-								{/if}
-								{piece.agendaItemTitle ?? 'Piece'}
-							</span>
-						</li>
-					{/each}
-				</ul>
-			</div>
+			{@render pieceList()}
 		{/if}
 	</div>
 </div>

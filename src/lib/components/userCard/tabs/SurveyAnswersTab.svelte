@@ -1,45 +1,55 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import SurveyCard from '../../../../routes/(authenticated)/management/[conferenceId]/participants/SurveyCard.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import SurveyAnswerCard from '../SurveyAnswerCard.svelte';
 
 	interface Props {
-		surveyQuestions: Array<{
-			id: string;
-			title: string;
-			options: Array<{
-				id: string;
-				title: string;
-				countSurveyAnswers: number;
-				upperLimit: number;
-			}>;
-		}>;
-		surveyAnswers: Array<{
-			id: string;
-			question: { id: string; title: string };
-			option: { id: string; title: string };
-		}>;
 		conferenceId: string;
 		userId: string;
-		onUpdate?: () => void;
 	}
 
-	let { surveyQuestions, surveyAnswers, conferenceId, userId, onUpdate }: Props = $props();
+	let { conferenceId, userId }: Props = $props();
+
+	/** The conference's visible surveys and how this person answered them. */
+	async function fetchSurveys(conferenceId: string, userId: string) {
+		const [questions, answers] = await Promise.all([
+			client.liveQuery.surveyQuestions({
+				__args: { where: { conferenceId: { eq: conferenceId }, hidden: { eq: false } } },
+				id: true,
+				title: true,
+				options: { id: true, title: true, countSurveyAnswers: true, upperLimit: true }
+			}),
+			client.liveQuery.surveyAnswers({
+				__args: {
+					where: {
+						userId: { eq: userId },
+						question: { conferenceId: { eq: conferenceId } }
+					}
+				},
+				id: true,
+				question: { id: true },
+				option: { id: true, title: true }
+			})
+		]);
+		return { questions, answers };
+	}
+
+	const surveys = $derived(await fetchSurveys(conferenceId, userId));
 </script>
 
-{#if surveyQuestions.length === 0}
+{#if surveys.questions.length === 0}
 	<div class="alert alert-info">
 		<i class="fa-duotone fa-chart-pie"></i>
 		<span>{m.userCardNoSurveys()}</span>
 	</div>
 {:else}
 	<div class="flex flex-col gap-3">
-		{#each surveyQuestions as survey (survey.id)}
-			<SurveyCard
+		{#each surveys.questions as survey (survey.id)}
+			<SurveyAnswerCard
 				{survey}
-				surveyAnswer={surveyAnswers?.find((a) => a.question.id === survey.id)}
+				surveyAnswer={surveys.answers.find((a) => a.question.id === survey.id)}
 				{conferenceId}
 				{userId}
-				onAnswered={onUpdate}
 			/>
 		{/each}
 	</div>

@@ -26,8 +26,9 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.nation)
 				.where(
-					ctx.abilities.nation.filter('delete').merge({ where: { alpha3Code: args.alpha3Code } })
-						.sql.where
+					(await ctx.abilities.nation.filter('delete')).merge({
+						where: { alpha3Code: args.alpha3Code }
+					}).sql.where
 				)
 				.returning({ alpha3Code: schema.nation.alpha3Code });
 			if (deleted.length === 0) {

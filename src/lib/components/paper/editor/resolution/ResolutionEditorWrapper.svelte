@@ -60,12 +60,12 @@
 	const labels = getResolutionLabels();
 
 	// Handle copy success with toast notification
-	function handleCopySuccess(phrase: string) {
+	function handleCopySuccess() {
 		toast.success(m.phraseCopied());
 	}
 
 	// Handle copy error with toast notification
-	function handleCopyError(error: Error) {
+	function handleCopyError() {
 		toast.error(m.copyFailed());
 	}
 </script>

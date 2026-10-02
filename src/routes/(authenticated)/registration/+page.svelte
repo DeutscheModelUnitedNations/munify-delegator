@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import svgempty from '$assets/undraw/empty_street.svg';
 	import ConferenceCard from '$lib/components/conferenceCard/ConferenceCard.svelte';
@@ -36,14 +37,14 @@
 				<h1 class="text-center text-3xl">{m.noConferenceOpenForRegistration()}</h1>
 				<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
 				<div class="flex flex-col gap-4 md:flex-row-reverse">
-					<a class="btn mt-10" href="/">{m.backToHome()}</a>
+					<a class="btn mt-10" href={resolve('/')}>{m.backToHome()}</a>
 				</div>
 			</section>
 		{:else}
 			<section
 				class="flex flex-col flex-wrap items-center justify-center gap-8 md:flex-row md:items-stretch"
 			>
-				{#each conferences as conference}
+				{#each conferences as conference (conference.id)}
 					<ConferenceCard
 						{conference}
 						alreadyRegistered={alreadyRegistered(conference.id)}

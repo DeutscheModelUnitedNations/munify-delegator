@@ -1,24 +1,19 @@
 <script lang="ts">
-	import DelegationStatusTableWrapper from '$lib/components/delegationStatusTable/Wrapper.svelte';
-	import DelegationStatusTableEntry from '$lib/components/delegationStatusTable/Entry.svelte';
 	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import CountryStats from '$lib/components/countryStats/CountryStats.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
-	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
-	import DashboardLinkCard from '$lib/components/dashboard/DashboardLinkCard.svelte';
-	import { getLinksForUserType, type DashboardLinkContext } from '$lib/data/dashboardLinks';
-	import formatNames from '$lib/helpers/formatNames';
-	import getSimplifiedPostalStatus from '$lib/helpers/getSimplifiedPostalStatus';
-	import { ofAgeAtConference as computeOfAge } from '$lib/helpers/ageChecker';
+	import { client } from '$lib/api/rumbleClient/client';
 	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
 	import SupervisorTable from '../Common/SupervisorTable.svelte';
 	import DelegationNameDisplay from '$lib/components/DelegationNameDisplay.svelte';
+	import DashboardQuickLinks from '../../sections/DashboardQuickLinks.svelte';
+	import DelegationMembersStatusSection from './DelegationMembersStatusSection.svelte';
 
 	interface Props {
+		conferenceId: string;
 		delegationMember: NonNullable<MyConferenceParticipation['delegationMember']>;
-		conference: NonNullable<MyConferenceParticipation['conference']>;
 		user: {
 			sub: string;
 			email: string;
@@ -27,58 +22,53 @@
 		ofAgeAtConference: boolean;
 	}
 
-	let { delegationMember, conference, user, status, ofAgeAtConference }: Props = $props();
+	let { conferenceId, delegationMember, user, status, ofAgeAtConference }: Props = $props();
+
+	const assignedNation = $derived(delegationMember.delegation.assignedNation);
+	// A primitive, so the queries below only run again when the delegation actually changes rather
+	// than on every live update of the membership they were handed.
+	const delegationId = $derived(delegationMember.delegation.id);
+
+	const [delegation, conference] = $derived(
+		await Promise.all([
+			client.liveQuery.delegation({
+				__args: { id: delegationId },
+				members: { id: true, assignedCommittee: { id: true } }
+			}),
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
+				committees: {
+					id: true,
+					name: true,
+					numOfSeatsPerDelegation: true,
+					nations: { alpha3Code: true }
+				}
+			})
+		])
+	);
 
 	const delegationStats = $derived([
 		{
 			icon: 'users',
 			title: m.members(),
-			value: delegationMember.delegation.members.length,
+			value: delegation.members.length,
 			desc: m.inTheDelegation()
 		}
 	]);
-
-	const linkContext = $derived<DashboardLinkContext>({
-		conferenceId: conference.id,
-		userType: 'delegation',
-		conferenceState: conference.state,
-		isHeadDelegate: delegationMember.isHeadDelegate,
-		unlockPayments: conference.unlockPayments,
-		unlockPostals: conference.unlockPostals,
-		hasConferenceInfo: !!conference.info,
-		linkToPreparationGuide: conference.linkToPreparationGuide,
-		isOpenPaperSubmission: conference.isOpenPaperSubmission,
-		linkToPaperInbox: conference.linkToPaperInbox,
-		hasNationAssigned: !!delegationMember.delegation.assignedNation,
-		membersLackCommittees: delegationMember.delegation.members.some(
-			(member) => !member.assignedCommittee
-		),
-		paymentStatus: status?.paymentStatus,
-		postalRegistrationStatus: getSimplifiedPostalStatus(status, ofAgeAtConference),
-		user
-	});
-
-	const visibleLinks = $derived(getLinksForUserType('delegation', linkContext));
 </script>
 
-<DashboardSection icon="link" title={m.quickLinks()} description={m.quickLinksDescription()}>
-	<DashboardLinksGrid>
-		{#each visibleLinks as link (link.id)}
-			{@const badge = link.getBadge?.(linkContext)}
-			<DashboardLinkCard
-				href={link.getHref(linkContext)}
-				icon={link.icon}
-				title={link.getTitle()}
-				description={link.getDescription()}
-				external={link.external}
-				disabled={link.isDisabled(linkContext)}
-				badge={badge?.value}
-				badgeType={badge?.type}
-				important={link.isImportant?.(linkContext) ?? false}
-			/>
-		{/each}
-	</DashboardLinksGrid>
-</DashboardSection>
+<DashboardQuickLinks
+	{conferenceId}
+	userType="delegation"
+	{user}
+	{status}
+	{ofAgeAtConference}
+	extraContext={{
+		isHeadDelegate: delegationMember.isHeadDelegate,
+		hasNationAssigned: !!assignedNation,
+		membersLackCommittees: delegation.members.some((member) => !member.assignedCommittee)
+	}}
+/>
 
 <DashboardSection
 	icon="chart-line"
@@ -87,57 +77,29 @@
 >
 	<div class="stats bg-base-200 shadow">
 		<RoleWidget
-			country={delegationMember.delegation.assignedNation}
-			committees={delegationMember.delegation.assignedNation &&
+			country={assignedNation}
+			committees={assignedNation &&
 				conference.committees.filter((c) =>
-					c.nations.some(
-						(n) => n.alpha3Code === delegationMember.delegation.assignedNation?.alpha3Code
-					)
+					c.nations.some((n) => n.alpha3Code === assignedNation.alpha3Code)
 				)}
 			nonStateActor={delegationMember.delegation.assignedNonStateActor}
 		/>
 	</div>
 	<GenericWidget content={delegationStats} />
-	<DelegationNameDisplay delegationId={delegationMember.delegation.id} />
+	<DelegationNameDisplay {delegationId} />
 </DashboardSection>
 
-<DashboardSection
-	icon="users"
-	title={m.delegationMembers()}
-	description={m.delegationMembersDescription()}
->
-	<DelegationStatusTableWrapper withEmail withCommittee withPostalSatus withPaymentStatus>
-		{#each delegationMember.delegation.members ?? [] as member}
-			{@const participantStatus = member.user.conferenceParticipantStatus.find(
-				(x) => x.conference.id === conference.id
-			)}
-			<DelegationStatusTableEntry
-				name={formatNames(member.user.givenName, member.user.familyName)}
-				pronouns={member.user.pronouns ?? ''}
-				headDelegate={member.isHeadDelegate}
-				email={member.user.email}
-				committee={member.assignedCommittee?.abbreviation ?? ''}
-				withPaymentStatus
-				withPostalStatus
-				postalSatus={getSimplifiedPostalStatus(
-					participantStatus,
-					computeOfAge(conference.startConference, member.user.birthday)
-				)}
-				paymentStatus={participantStatus?.paymentStatus}
-			/>
-		{/each}
-	</DelegationStatusTableWrapper>
-</DashboardSection>
+<DelegationMembersStatusSection {conferenceId} {delegationId} />
 
-<SupervisorTable supervisors={delegationMember.supervisors} conferenceId={conference.id} />
+<SupervisorTable delegationMemberId={delegationMember.id} {conferenceId} />
 
-{#if delegationMember.delegation.assignedNation}
+{#if assignedNation}
 	<DashboardSection
 		icon="globe"
 		title={m.informationOnYourCountry()}
 		description={m.informationOnYourCountryDescription()}
 	>
-		<CountryStats countryCode={delegationMember.delegation.assignedNation?.alpha3Code} />
+		<CountryStats countryCode={assignedNation.alpha3Code} />
 	</DashboardSection>
 {:else if delegationMember.delegation.assignedNonStateActor}
 	{@const nsa = delegationMember.delegation.assignedNonStateActor}

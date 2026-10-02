@@ -8,7 +8,7 @@
 
 	let { form, name }: Props = $props();
 
-	let { form: formData, constraints: formConstraints } = form;
+	let { form: formData, constraints: formConstraints } = $derived(form);
 	let constraints = $derived($formConstraints[name]);
 </script>
 

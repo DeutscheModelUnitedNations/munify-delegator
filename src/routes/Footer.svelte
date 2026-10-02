@@ -3,6 +3,7 @@
 	import { configPublic } from '$config/public';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 </script>
 
 <div class="w-full p-4 print:hidden">
@@ -10,13 +11,14 @@
 		class="footer footer-center footer-horizontal bg-base-200 text-base-content mt-3 flex-col rounded-xl p-10"
 	>
 		<nav class="flex flex-col flex-wrap justify-center gap-4 md:flex-row">
-			<a class="link-hover link" href="/">{m.home()}</a>
-			<a class="link-hover link" href="/registration">{m.registration()}</a>
-			<a class="link-hover link" href="/dashboard">{m.dashboard()}</a>
-			<a class="link-hover link" href="/my-account">{m.myAccount()}</a>
-			<a class="link-hover link" href="https://dmun.de/impressum" target="_blank"
-				>{@html m.imprintAndPrivacy()}</a
-			>
+			<a class="link-hover link" href={resolve('/')}>{m.home()}</a>
+			<a class="link-hover link" href={resolve('/registration')}>{m.registration()}</a>
+			<a class="link-hover link" href={resolve('/dashboard')}>{m.dashboard()}</a>
+			<a class="link-hover link" href={resolve('/my-account')}>{m.myAccount()}</a>
+			<a class="link-hover link" href="https://dmun.de/impressum" target="_blank">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
+				{@html m.imprintAndPrivacy()}
+			</a>
 		</nav>
 		<LanguageSwitcher />
 		<nav>

@@ -41,7 +41,8 @@ schemaBuilder.mutationFields((t) => ({
 					resolutionHeadline: args.resolutionHeadline
 				})
 				.where(
-					ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.committee.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -49,7 +50,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.committee
 				.findFirst(
 					query(
-						ctx.abilities.committee.filter('read').merge({ where: { id: args.id } }).query.single
+						(await ctx.abilities.committee.filter('read')).merge({ where: { id: args.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -62,7 +64,10 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const deleted = await db
 				.delete(schema.committee)
-				.where(ctx.abilities.committee.filter('delete').merge({ where: { id: args.id } }).sql.where)
+				.where(
+					(await ctx.abilities.committee.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
+				)
 				.returning({ id: schema.committee.id });
 			if (deleted.length === 0) {
 				throw new GraphQLError('Committee not found, or not yours to delete');

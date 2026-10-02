@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { readSelectedTextFile } from '$lib/helpers/readSelectedTextFile';
+	import { resolve } from '$app/paths';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Section from '../helper/Section.svelte';
@@ -42,7 +44,6 @@
 		await client.liveQuery.committees({
 			__args: { where: { conferenceId: { eq: params.conferenceId } } },
 			id: true,
-			abbreviation: true,
 			name: true
 		})
 	);
@@ -71,20 +72,17 @@
 	let presentUsers = $derived(users?.filter((x) => x.attendancePercentage >= threshold));
 	let absentUsers = $derived(users?.filter((x) => x.attendancePercentage < threshold));
 	let selectedUser = $state<NonNullable<typeof presentUsers>[number] | undefined>(undefined);
+	let selectedUserTimestamps = $derived(
+		[
+			...(parsedUsers?.find((u) => u.user?.userEmail === selectedUser?.email)
+				?.presenceChangedTimestamps ?? [])
+		].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+	);
 
-	const setFileInput = (e: Event) => {
-		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const result = e.target?.result;
-			if (typeof result === 'string') {
-				fileInput = result;
-			}
-		};
-		reader.readAsText(file);
-	};
+	const setFileInput = (e: Event) =>
+		readSelectedTextFile(e, (text) => {
+			fileInput = text;
+		});
 
 	// TODO fetch user name from backend
 	const columns: TableColumns<NonNullable<typeof presentUsers>[number]> = [
@@ -172,7 +170,7 @@
 		loading = false;
 	}
 
-	function selectUser(user: any) {
+	function selectUser(user: NonNullable<typeof presentUsers>[number]) {
 		selectedUser = user;
 	}
 </script>
@@ -180,6 +178,7 @@
 <div class="flex w-full flex-col flex-wrap gap-8 p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.import()}</h2>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.importDescription()}</p>
 	</div>
 	<Section title={m.importPresenceData()} description={m.importPresenceDataDescription()}>
@@ -247,7 +246,9 @@
 
 {#snippet gotoUser()}
 	<a
-		href={`/management/${params.conferenceId}/participants?selected=${selectedUser?.email}`}
+		href={resolve(
+			`/management/${params.conferenceId}/participants?selected=${selectedUser?.email}`
+		)}
 		target="_blank"
 	>
 		<button class="btn btn-primary">
@@ -272,9 +273,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each parsedUsers
-				?.find((u) => u.user?.userEmail === selectedUser?.email)
-				?.presenceChangedTimestamps?.sort((a, b) => new Date(a!.timestamp).getTime() - new Date(b!.timestamp).getTime())! as timestamp}
+			{#each selectedUserTimestamps as timestamp (timestamp.id)}
 				<tr>
 					<td
 						>{new Date(timestamp.timestamp).toLocaleDateString(getLocale()) +

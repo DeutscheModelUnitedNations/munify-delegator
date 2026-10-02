@@ -8,7 +8,9 @@ import {
 	doublePrecision,
 	boolean,
 	index,
-	uniqueIndex
+	uniqueIndex,
+	type AnyPgColumn,
+	type UpdateDeleteAction
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { nanoid } from '../../lib/helpers/nanoid';
@@ -50,6 +52,51 @@ const defaultIdAndCreatedAt = {
 		.primaryKey(),
 	createdAt: defaultTimestamps.createdAt
 };
+
+/**
+ * A required reference to the conference or user a row belongs to. Every foreign key here
+ * cascades on update; what differs between tables is only how a delete of the parent behaves.
+ * Functions rather than shared builders, so each table gets its own column instance.
+ */
+const conferenceRef = (onDelete: UpdateDeleteAction) =>
+	text()
+		.notNull()
+		.references(() => conference.id, { onDelete, onUpdate: 'cascade' });
+
+const userRef = (onDelete: UpdateDeleteAction) =>
+	text()
+		.notNull()
+		.references(() => user.id, { onDelete, onUpdate: 'cascade' });
+
+/**
+ * Prisma's implicit many-to-many join table: columns `a` and `b` referencing the two sides
+ * (cascading both ways), unique on the pair and indexed on `b`. The index names derive from the
+ * table name, as Prisma generated them.
+ */
+function implicitManyToMany<TName extends string>(
+	name: TName,
+	a: () => AnyPgColumn,
+	b: () => AnyPgColumn
+) {
+	return snakeCase.table(
+		name,
+		{
+			id: text()
+				.$defaultFn(() => nanoid())
+				.primaryKey(),
+			a: text().notNull().references(a, { onDelete: 'cascade', onUpdate: 'cascade' }),
+			b: text().notNull().references(b, { onDelete: 'cascade', onUpdate: 'cascade' })
+		},
+		(table) => [
+			uniqueIndex(`${name}_ab_key`).using(
+				'btree',
+				table.a.asc().nullsLast(),
+				table.b.asc().nullsLast()
+			),
+			index(`${name}_b_index`).using('btree', table.b.asc().nullsLast())
+		]
+	);
+}
 
 export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
 export const administrativeStatus = pgEnum('administrative_status', ['DONE', 'PROBLEM', 'PENDING']);
@@ -102,105 +149,28 @@ export const calendarEntryColor = pgEnum('calendar_entry_color', [
 	'INFO'
 ]);
 
-export const committeeToNation = snakeCase.table(
+export const committeeToNation = implicitManyToMany(
 	'committee_to_nation',
-	{
-		id: text()
-			.$defaultFn(() => nanoid())
-			.primaryKey(),
-		a: text()
-			.notNull()
-			.references(() => committee.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text()
-			.notNull()
-			.references(() => nation.alpha3Code, { onDelete: 'cascade', onUpdate: 'cascade' })
-	},
-	(table) => [
-		uniqueIndex('committee_to_nation_ab_key').using(
-			'btree',
-			table.a.asc().nullsLast(),
-			table.b.asc().nullsLast()
-		),
-		index('committee_to_nation_b_index').using('btree', table.b.asc().nullsLast())
-	]
+	() => committee.id,
+	() => nation.alpha3Code
 );
 
-export const conferenceSupervisorToDelegationMember = snakeCase.table(
+export const conferenceSupervisorToDelegationMember = implicitManyToMany(
 	'conference_supervisor_to_delegation_member',
-	{
-		id: text()
-			.$defaultFn(() => nanoid())
-			.primaryKey(),
-		a: text()
-			.notNull()
-			.references(() => conferenceSupervisor.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text()
-			.notNull()
-			.references(() => delegationMember.id, { onDelete: 'cascade', onUpdate: 'cascade' })
-	},
-	(table) => [
-		uniqueIndex('conference_supervisor_to_delegation_member_ab_key').using(
-			'btree',
-			table.a.asc().nullsLast(),
-			table.b.asc().nullsLast()
-		),
-		index('conference_supervisor_to_delegation_member_b_index').using(
-			'btree',
-			table.b.asc().nullsLast()
-		)
-	]
+	() => conferenceSupervisor.id,
+	() => delegationMember.id
 );
 
-export const conferenceSupervisorToSingleParticipant = snakeCase.table(
+export const conferenceSupervisorToSingleParticipant = implicitManyToMany(
 	'conference_supervisor_to_single_participant',
-	{
-		id: text()
-			.$defaultFn(() => nanoid())
-			.primaryKey(),
-		a: text()
-			.notNull()
-			.references(() => conferenceSupervisor.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text()
-			.notNull()
-			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' })
-	},
-	(table) => [
-		uniqueIndex('conference_supervisor_to_single_participant_ab_key').using(
-			'btree',
-			table.a.asc().nullsLast(),
-			table.b.asc().nullsLast()
-		),
-		index('conference_supervisor_to_single_participant_b_index').using(
-			'btree',
-			table.b.asc().nullsLast()
-		)
-	]
+	() => conferenceSupervisor.id,
+	() => singleParticipant.id
 );
 
-export const customConferenceRoleToSingleParticipant = snakeCase.table(
+export const customConferenceRoleToSingleParticipant = implicitManyToMany(
 	'custom_conference_role_to_single_participant',
-	{
-		id: text()
-			.$defaultFn(() => nanoid())
-			.primaryKey(),
-		a: text()
-			.notNull()
-			.references(() => customConferenceRole.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		b: text()
-			.notNull()
-			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' })
-	},
-	(table) => [
-		uniqueIndex('custom_conference_role_to_single_participant_ab_key').using(
-			'btree',
-			table.a.asc().nullsLast(),
-			table.b.asc().nullsLast()
-		),
-		index('custom_conference_role_to_single_participant_b_index').using(
-			'btree',
-			table.b.asc().nullsLast()
-		)
-	]
+	() => customConferenceRole.id,
+	() => singleParticipant.id
 );
 
 export const attendanceEntry = snakeCase.table('attendance_entry', {
@@ -212,9 +182,7 @@ export const attendanceEntry = snakeCase.table('attendance_entry', {
 	conferenceParticipantStatusId: text()
 		.notNull()
 		.references(() => conferenceParticipantStatus.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-	recordedById: text()
-		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' })
+	recordedById: userRef('restrict')
 });
 
 export const calendarDay = snakeCase.table(
@@ -224,9 +192,7 @@ export const calendarDay = snakeCase.table(
 		date: timestamp({ precision: 3 }).notNull(),
 		name: text().notNull(),
 		sortOrder: integer().notNull(),
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+		conferenceId: conferenceRef('cascade')
 	},
 	(table) => [
 		uniqueIndex('calendar_day_conference_id_sort_order_key').using(
@@ -280,9 +246,7 @@ export const committee = snakeCase.table('committee', {
 	...defaultIdAndTimestamps,
 	name: text().notNull(),
 	abbreviation: text().notNull(),
-	conferenceId: text()
-		.notNull()
-		.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+	conferenceId: conferenceRef('cascade'),
 	numOfSeatsPerDelegation: integer().default(1).notNull(),
 	resolutionHeadline: text()
 });
@@ -346,12 +310,8 @@ export const conferenceParticipantStatus = snakeCase.table(
 	'conference_participant_status',
 	{
 		...defaultIdAndTimestamps,
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		userId: userRef('restrict'),
+		conferenceId: conferenceRef('restrict'),
 		paymentStatus: administrativeStatus().default('PENDING').notNull(),
 		didAttend: boolean().default(false).notNull(),
 		guardianConsent: administrativeStatus().default('PENDING').notNull(),
@@ -383,12 +343,8 @@ export const conferenceSupervisor = snakeCase.table(
 	'conference_supervisor',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
+		userId: userRef('restrict'),
 		plansOwnAttendenceAtConference: boolean().notNull(),
 		connectionCode: text().notNull()
 	},
@@ -410,9 +366,7 @@ export const customConferenceRole = snakeCase.table(
 	'custom_conference_role',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('cascade'),
 		name: text().notNull(),
 		description: text().notNull(),
 		fontAwesomeIcon: text(),
@@ -431,9 +385,7 @@ export const delegation = snakeCase.table(
 	'delegation',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
 		entryCode: text().notNull(),
 		applied: boolean().default(false).notNull(),
 		school: text(),
@@ -471,15 +423,11 @@ export const delegationMember = snakeCase.table(
 	'delegation_member',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
 		delegationId: text()
 			.notNull()
 			.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		userId: userRef('restrict'),
 		isHeadDelegate: boolean().notNull(),
 		assignedCommitteeId: text().references(() => committee.id, {
 			onDelete: 'set null',
@@ -516,9 +464,7 @@ export const nonStateActor = snakeCase.table(
 	'non_state_actor',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('cascade'),
 		name: text().notNull(),
 		description: text().notNull(),
 		fontAwesomeIcon: text(),
@@ -541,9 +487,7 @@ export const nonStateActor = snakeCase.table(
 
 export const paper = snakeCase.table('paper', {
 	...defaultIdAndTimestamps,
-	authorId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+	authorId: userRef('restrict'),
 	delegationId: text()
 		.notNull()
 		.references(() => delegation.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -553,18 +497,14 @@ export const paper = snakeCase.table('paper', {
 		onUpdate: 'cascade'
 	}),
 	type: paperType().notNull(),
-	conferenceId: text()
-		.notNull()
-		.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+	conferenceId: conferenceRef('cascade'),
 	firstSubmittedAt: timestamp({ precision: 3 })
 });
 
 export const paperReview = snakeCase.table('paper_review', {
 	...defaultIdAndCreatedAt,
 	comments: jsonb().notNull(),
-	reviewerId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+	reviewerId: userRef('restrict'),
 	paperVersionId: text()
 		.notNull()
 		.references(() => paperVersion.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -597,12 +537,8 @@ export const paymentTransaction = snakeCase.table('payment_transaction', {
 	amount: doublePrecision().notNull(),
 	...defaultTimestamps,
 	recievedAt: timestamp({ precision: 3 }),
-	conferenceId: text()
-		.notNull()
-		.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-	userId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' })
+	conferenceId: conferenceRef('restrict'),
+	userId: userRef('restrict')
 });
 
 export const place = snakeCase.table(
@@ -617,9 +553,7 @@ export const place = snakeCase.table(
 		info: text(),
 		websiteUrl: text(),
 		sitePlanDataURL: text(),
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+		conferenceId: conferenceRef('cascade')
 	},
 	(table) => [
 		uniqueIndex('place_conference_id_name_key').using(
@@ -636,9 +570,7 @@ export const reviewerSnippet = snakeCase.table(
 		...defaultIdAndTimestamps,
 		name: text().notNull(),
 		content: jsonb().notNull(),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+		userId: userRef('cascade')
 	},
 	(table) => [
 		uniqueIndex('reviewer_snippet_user_id_name_key').using(
@@ -689,12 +621,8 @@ export const singleParticipant = snakeCase.table(
 	'single_participant',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
+		userId: userRef('restrict'),
 		applied: boolean().default(false).notNull(),
 		school: text(),
 		motivation: text(),
@@ -721,9 +649,7 @@ export const surveyAnswer = snakeCase.table(
 		questionId: text()
 			.notNull()
 			.references(() => surveyQuestion.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		userId: userRef('restrict'),
 		optionId: text()
 			.notNull()
 			.references(() => surveyOption.id, { onDelete: 'restrict', onUpdate: 'cascade' })
@@ -761,9 +687,7 @@ export const surveyQuestion = snakeCase.table(
 	'survey_question',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
 		title: text().notNull(),
 		description: text().notNull(),
 		deadline: timestamp({ precision: 3 }).notNull(),
@@ -784,12 +708,8 @@ export const teamMember = snakeCase.table(
 	'team_member',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
+		userId: userRef('restrict'),
 		role: teamRole().default('MEMBER').notNull()
 	},
 	(table) => [
@@ -811,12 +731,8 @@ export const teamMemberInvitation = snakeCase.table(
 		expiresAt: timestamp({ precision: 3 }).notNull(),
 		usedAt: timestamp({ precision: 3 }),
 		revokedAt: timestamp({ precision: 3 }),
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-		invitedById: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('cascade'),
+		invitedById: userRef('restrict'),
 		acceptedById: text().references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' })
 	},
 	(table) => [
@@ -871,9 +787,7 @@ export const userReferenceInPaymentTransaction = snakeCase.table(
 		paymentTransactionId: text()
 			.notNull()
 			.references(() => paymentTransaction.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' })
+		userId: userRef('restrict')
 	}
 );
 
@@ -881,12 +795,8 @@ export const waitingListEntry = snakeCase.table(
 	'waiting_list_entry',
 	{
 		...defaultIdAndTimestamps,
-		conferenceId: text()
-			.notNull()
-			.references(() => conference.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-		userId: text()
-			.notNull()
-			.references(() => user.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+		conferenceId: conferenceRef('restrict'),
+		userId: userRef('restrict'),
 		school: text().notNull(),
 		experience: text().notNull(),
 		motivation: text().notNull(),

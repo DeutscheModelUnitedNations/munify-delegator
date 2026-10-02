@@ -18,7 +18,12 @@ const config = {
 		// relative endpoint URL cannot be fetched from Node, so server-side operations execute
 		// the schema in-process instead. See src/api/graphql.remote.ts.
 		experimental: {
-			remoteFunctions: true
+			remoteFunctions: true,
+			// OpenTelemetry: `src/instrumentation.server.ts` sets up the exporter before the app
+			// loads, and SvelteKit emits spans for handle, loads and remote functions into it. Both
+			// are inert unless OTEL_ENDPOINT_URL is set.
+			instrumentation: { server: true },
+			tracing: { server: true }
 		},
 		adapter: adapter(),
 		alias: {

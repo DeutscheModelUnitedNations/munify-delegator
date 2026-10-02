@@ -26,7 +26,7 @@ abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
 	return where ? { where } : undefined;
 });
 
-export const TeamMemberRef = object({ table: 'teamMember' });
+const TeamMemberRef = object({ table: 'teamMember' });
 query({ table: 'teamMember' });
 const pubsub = rumblePubsub({ table: 'teamMember' });
 
@@ -70,8 +70,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.teamMember
 				.findFirst(
 					query(
-						ctx.abilities.teamMember.filter('read').merge({ where: { id: created.id } }).query
-							.single
+						(await ctx.abilities.teamMember.filter('read')).merge({ where: { id: created.id } })
+							.query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -89,7 +89,8 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.teamMember)
 				.set({ role: args.role })
 				.where(
-					ctx.abilities.teamMember.filter('update').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.teamMember.filter('update')).merge({ where: { id: args.id } }).sql
+						.where
 				);
 
 			pubsub.updated(args.id);
@@ -97,7 +98,8 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.teamMember
 				.findFirst(
 					query(
-						ctx.abilities.teamMember.filter('read').merge({ where: { id: args.id } }).query.single
+						(await ctx.abilities.teamMember.filter('read')).merge({ where: { id: args.id } }).query
+							.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -111,7 +113,8 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.teamMember)
 				.where(
-					ctx.abilities.teamMember.filter('delete').merge({ where: { id: args.id } }).sql.where
+					(await ctx.abilities.teamMember.filter('delete')).merge({ where: { id: args.id } }).sql
+						.where
 				)
 				.returning({ id: schema.teamMember.id });
 			if (deleted.length === 0) {

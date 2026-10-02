@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { EChartsOption } from 'echarts';
+	import type { EChartsOption, TooltipComponentFormatterCallbackParams } from 'echarts';
 	import EChartsBase from './EChartsBase.svelte';
+	import { percentOf, stackedBarTooltip } from './chartOptions';
 
 	interface StackedBarData {
 		name: string;
@@ -30,9 +31,13 @@
 
 	const total = $derived(data.reduce((sum, item) => sum + item.value, 0));
 
+	function formatTooltip(params: TooltipComponentFormatterCallbackParams) {
+		return stackedBarTooltip(params, total);
+	}
+
 	const options = $derived.by<EChartsOption>(() => {
 		// Build series data for stacked bar
-		const seriesData = data.map((item, index) => ({
+		const seriesData = data.map((item) => ({
 			name: item.name,
 			type: 'bar' as const,
 			stack: 'total',
@@ -41,8 +46,8 @@
 			label: {
 				show: showLabels && item.value > 0,
 				position: 'inside' as const,
-				formatter: (params: any) => {
-					const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
+				formatter: () => {
+					const percent = percentOf(item.value, total);
 					if (showPercentage && percent > 10) {
 						return `${percent}%`;
 					}
@@ -61,10 +66,7 @@
 			return {
 				tooltip: {
 					trigger: 'item',
-					formatter: (params: any) => {
-						const percent = total > 0 ? Math.round((params.value / total) * 100) : 0;
-						return `${params.seriesName}: ${params.value} (${percent}%)`;
-					}
+					formatter: formatTooltip
 				},
 				grid: {
 					left: 0,
@@ -89,10 +91,7 @@
 			return {
 				tooltip: {
 					trigger: 'item',
-					formatter: (params: any) => {
-						const percent = total > 0 ? Math.round((params.value / total) * 100) : 0;
-						return `${params.seriesName}: ${params.value} (${percent}%)`;
-					}
+					formatter: formatTooltip
 				},
 				grid: {
 					left: 0,

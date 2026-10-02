@@ -82,6 +82,7 @@
 				<i class="fas fa-wrench text-2xl"></i>
 				<div class="flex flex-col gap-2">
 					<h2 class="text-xl font-bold">{m.homeDraftDisclaimerHeader()}</h2>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 					<p>{@html m.homeDraftDisclaimer()}</p>
 				</div>
 			</div>
@@ -94,6 +95,7 @@
 						<a
 							href={configPublic.PUBLIC_FEEDBACK_URL}
 							target="_blank"
+							rel="external"
 							class="btn btn-primary sm:btn-wide shadow-md"
 						>
 							<i class="fas fa-bullhorn"></i>
@@ -106,6 +108,7 @@
 				<i class="fa-solid fa-message-question text-2xl"></i>
 				<div class="flex flex-col gap-2">
 					<h2 class="text-xl font-bold">{m.homeHelpWithTechnicalIssuesHeadline()}</h2>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 					<p>{@html m.homeHelpWithTechnicalIssues()}</p>
 				</div>
 			</div>

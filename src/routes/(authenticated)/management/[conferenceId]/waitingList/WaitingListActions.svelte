@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
@@ -64,7 +65,7 @@
 	</button>
 	<a
 		class="btn btn-primary btn-xs"
-		href="/management/{conferenceId}/seats?assignUserId={userId}"
+		href={resolve(`/management/${conferenceId}/seats?assignUserId=${userId}`)}
 		title={m.assignSeat()}
 		onclick={(e) => e.stopPropagation()}
 	>

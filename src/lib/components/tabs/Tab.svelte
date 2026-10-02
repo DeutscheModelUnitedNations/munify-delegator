@@ -1,11 +1,12 @@
 <script lang="ts">
+	import type { ResolvedPathname } from '$app/types';
 	interface Props {
 		active: boolean;
 		disabled?: boolean;
 		title: string;
 		icon: string;
 		onclick?: () => void;
-		href?: string;
+		href?: ResolvedPathname;
 	}
 	let { active, disabled = false, title, icon, onclick, href }: Props = $props();
 </script>

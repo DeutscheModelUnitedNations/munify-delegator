@@ -1,36 +1,9 @@
 <script lang="ts">
-	import type { CalendarentrycolorEnum } from '$lib/api/rumbleClient/client';
+	import type { CalendarEntry as Entry, CalendarTrack as Track } from './calendarTypes';
+	import OptionalTooltip from '$lib/components/OptionalTooltip.svelte';
 	import CalendarEntryCard from './CalendarEntryCard.svelte';
 	import CalendarTimeMarker from './CalendarTimeMarker.svelte';
-
-	interface Track {
-		id: string;
-		name: string;
-		description?: string | null;
-		sortOrder: number;
-	}
-
-	interface Entry {
-		id: string;
-		startTime: Date;
-		endTime: Date;
-		name: string;
-		description?: string | null;
-		fontAwesomeIcon?: string | null;
-		color: CalendarentrycolorEnum;
-		place?: {
-			id: string;
-			name: string;
-			address?: string | null;
-			latitude?: number | null;
-			longitude?: number | null;
-			directions?: string | null;
-			info?: string | null;
-			websiteUrl?: string | null;
-		} | null;
-		room?: string | null;
-		calendarTrackId?: string | null;
-	}
+	import { hourRange, utcHourOf } from './calendarHours';
 
 	interface Props {
 		dayName: string;
@@ -76,20 +49,7 @@
 			: entries
 	);
 
-	let timeRange = $derived.by(() => {
-		if (entries.length === 0) return { startHour: 8, endHour: 18 };
-		let earliest = Infinity;
-		let latest = -Infinity;
-		for (const entry of entries) {
-			const start = new Date(entry.startTime);
-			const end = new Date(entry.endTime);
-			const startH = start.getUTCHours() + start.getUTCMinutes() / 60;
-			const endH = end.getUTCHours() + end.getUTCMinutes() / 60;
-			if (startH < earliest) earliest = startH;
-			if (endH > latest) latest = endH;
-		}
-		return { startHour: Math.floor(earliest), endHour: Math.ceil(latest) };
-	});
+	let timeRange = $derived(hourRange(entries));
 
 	let hours = $derived(
 		Array.from(
@@ -101,10 +61,8 @@
 	let totalHeight = $derived(hours.length * hourHeight);
 
 	function getEntryStyle(entry: Entry): string {
-		const start = new Date(entry.startTime);
-		const end = new Date(entry.endTime);
-		const startH = start.getUTCHours() + start.getUTCMinutes() / 60;
-		const endH = end.getUTCHours() + end.getUTCMinutes() / 60;
+		const startH = utcHourOf(entry.startTime);
+		const endH = utcHourOf(entry.endTime);
 		const top = (startH - timeRange.startHour) * hourHeight;
 		const height = (endH - startH) * hourHeight;
 		return `top: ${top}px; height: ${height}px;`;
@@ -144,23 +102,14 @@
 		>
 			<div></div>
 			{#each visibleTracks as track (track.id)}
-				{#if track.description}
-					<div class="tooltip tooltip-bottom" data-tip={track.description}>
-						<div
-							class="bg-base-200 truncate rounded-t px-2 py-2 text-center text-xs font-medium"
-							title={track.name}
-						>
-							{track.name}
-						</div>
-					</div>
-				{:else}
+				<OptionalTooltip tip={track.description} class="tooltip-bottom">
 					<div
 						class="bg-base-200 truncate rounded-t px-2 py-2 text-center text-xs font-medium"
 						title={track.name}
 					>
 						{track.name}
 					</div>
-				{/if}
+				</OptionalTooltip>
 			{/each}
 		</div>
 	{/if}
@@ -187,7 +136,7 @@
 					style="top: {(hour - timeRange.startHour) * hourHeight}px;"
 				></div>
 				<!-- 15-minute dashed gridlines -->
-				{#each [0.25, 0.5, 0.75] as fraction}
+				{#each [0.25, 0.5, 0.75] as fraction (fraction)}
 					<div
 						class="border-base-200/40 absolute right-0 left-0 border-t border-dashed"
 						style="top: {(hour - timeRange.startHour + fraction) * hourHeight}px;"
@@ -196,7 +145,7 @@
 			{/each}
 
 			<!-- Vertical track dividers -->
-			{#each { length: columnCount - 1 } as _, i}
+			{#each { length: columnCount - 1 }, i}
 				<div
 					class="border-base-200/40 absolute top-0 bottom-0 border-l border-dashed"
 					style="left: calc((100% / {columnCount}) * {i + 1});"
@@ -217,7 +166,6 @@
 					>
 						<CalendarEntryCard
 							name={entry.name}
-							description={entry.description}
 							fontAwesomeIcon={entry.fontAwesomeIcon}
 							color={entry.color}
 							startTime={new Date(entry.startTime)}

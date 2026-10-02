@@ -1,4 +1,3 @@
-export { default as EChartsBase } from './EChartsBase.svelte';
 export { default as PieChart } from './PieChart.svelte';
 export { default as LineChart } from './LineChart.svelte';
 export { default as GaugeChart } from './GaugeChart.svelte';

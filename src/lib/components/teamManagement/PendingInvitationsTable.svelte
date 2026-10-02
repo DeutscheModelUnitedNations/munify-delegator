@@ -4,6 +4,7 @@
 	import { toast } from 'svelte-sonner';
 	import { translateTeamRole } from '$lib/utils/enumTranslations';
 	import { page } from '$app/stores';
+	import { runInvitationAction } from './invitationActions';
 
 	interface Invitation {
 		id: string;
@@ -26,65 +27,53 @@
 	async function handleRevoke(invitationId: string) {
 		if (!confirm(m.confirmRevokeInvitation())) return;
 
-		try {
-			const result = await client.mutate.revokeTeamMemberInvitation({
-				__args: { invitationId },
-				success: true,
-				message: true
-			});
-			if (result.success) {
+		await runInvitationAction(
+			() =>
+				client.mutate.revokeTeamMemberInvitation({
+					__args: { invitationId },
+					success: true,
+					message: true
+				}),
+			() => {
 				toast.success(m.invitationRevoked());
-			} else {
-				toast.error(result.message ?? m.httpGenericError());
-			}
-		} catch (error) {
-			toast.error(m.httpGenericError());
-			console.error('Failed to revoke invitation:', error);
-		}
+			},
+			'Failed to revoke invitation:'
+		);
 	}
 
 	async function handleRegenerateAndCopy(invitationId: string) {
-		try {
-			const result = await client.mutate.regenerateTeamMemberInvitation({
-				__args: { invitationId, sendEmail: false },
-				success: true,
-				newToken: true,
-				newExpiresAt: true,
-				message: true
-			});
-
-			if (result.success) {
-				if (result.newToken) {
-					const inviteUrl = `${$page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
-					await navigator.clipboard.writeText(inviteUrl);
-					toast.success(m.linkCopied());
-				}
-			} else {
-				toast.error(result.message ?? m.httpGenericError());
-			}
-		} catch (error) {
-			toast.error(m.httpGenericError());
-			console.error('Failed to regenerate invitation:', error);
-		}
+		await runInvitationAction(
+			() =>
+				client.mutate.regenerateTeamMemberInvitation({
+					__args: { invitationId, sendEmail: false },
+					success: true,
+					newToken: true,
+					newExpiresAt: true,
+					message: true
+				}),
+			async (result) => {
+				if (!result.newToken) return;
+				const inviteUrl = `${$page.url.origin}/auth/accept-invitation?token=${result.newToken}`;
+				await navigator.clipboard.writeText(inviteUrl);
+				toast.success(m.linkCopied());
+			},
+			'Failed to regenerate invitation:'
+		);
 	}
 
 	async function handleResendEmail(invitationId: string) {
-		try {
-			const result = await client.mutate.regenerateTeamMemberInvitation({
-				__args: { invitationId, sendEmail: true },
-				success: true,
-				message: true
-			});
-
-			if (result.success) {
+		await runInvitationAction(
+			() =>
+				client.mutate.regenerateTeamMemberInvitation({
+					__args: { invitationId, sendEmail: true },
+					success: true,
+					message: true
+				}),
+			() => {
 				toast.success(m.invitationResent());
-			} else {
-				toast.error(result.message ?? m.httpGenericError());
-			}
-		} catch (error) {
-			toast.error(m.httpGenericError());
-			console.error('Failed to resend invitation:', error);
-		}
+			},
+			'Failed to resend invitation:'
+		);
 	}
 
 	function formatDate(date: Date | string): string {
@@ -99,6 +88,41 @@
 		return new Date(date) < new Date();
 	}
 </script>
+
+{#snippet expiry(expiresAt: Date | string, expired: boolean)}
+	<span class={expired ? 'text-error' : ''}>
+		{formatDate(expiresAt)}
+		{#if expired}
+			<span class="text-xs">({m.expired()})</span>
+		{/if}
+	</span>
+{/snippet}
+
+{#snippet actions(invitationId: string)}
+	<div class="flex gap-2 justify-end">
+		<button
+			class="btn btn-sm btn-ghost"
+			onclick={() => handleRegenerateAndCopy(invitationId)}
+			title={m.copyLink()}
+		>
+			<i class="fa-duotone fa-copy"></i>
+		</button>
+		<button
+			class="btn btn-sm btn-ghost"
+			onclick={() => handleResendEmail(invitationId)}
+			title={m.resendInvitation()}
+		>
+			<i class="fa-duotone fa-paper-plane"></i>
+		</button>
+		<button
+			class="btn btn-sm btn-ghost text-error"
+			onclick={() => handleRevoke(invitationId)}
+			title={m.revokeInvitation()}
+		>
+			<i class="fa-duotone fa-ban"></i>
+		</button>
+	</div>
+{/snippet}
 
 {#if invitations.length > 0}
 	<div class="flex flex-col gap-4 mt-8">
@@ -117,7 +141,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each invitations as invitation}
+					{#each invitations as invitation (invitation.id)}
 						{@const expired = isExpired(invitation.expiresAt)}
 						<tr class={expired ? 'opacity-50' : ''}>
 							<td>{invitation.email}</td>
@@ -131,43 +155,12 @@
 									<span class="badge badge-info">{m.newUser()}</span>
 								{/if}
 							</td>
-							<td>
-								<span class={expired ? 'text-error' : ''}>
-									{formatDate(invitation.expiresAt)}
-									{#if expired}
-										<span class="text-xs">({m.expired()})</span>
-									{/if}
-								</span>
-							</td>
+							<td>{@render expiry(invitation.expiresAt, expired)}</td>
 							<td>
 								{invitation.invitedBy?.givenName}
 								{invitation.invitedBy?.familyName}
 							</td>
-							<td>
-								<div class="flex gap-2 justify-end">
-									<button
-										class="btn btn-sm btn-ghost"
-										onclick={() => handleRegenerateAndCopy(invitation.id)}
-										title={m.copyLink()}
-									>
-										<i class="fa-duotone fa-copy"></i>
-									</button>
-									<button
-										class="btn btn-sm btn-ghost"
-										onclick={() => handleResendEmail(invitation.id)}
-										title={m.resendInvitation()}
-									>
-										<i class="fa-duotone fa-paper-plane"></i>
-									</button>
-									<button
-										class="btn btn-sm btn-ghost text-error"
-										onclick={() => handleRevoke(invitation.id)}
-										title={m.revokeInvitation()}
-									>
-										<i class="fa-duotone fa-ban"></i>
-									</button>
-								</div>
-							</td>
+							<td>{@render actions(invitation.id)}</td>
 						</tr>
 					{/each}
 				</tbody>

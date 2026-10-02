@@ -1,28 +1,12 @@
-import * as Sentry from '@sentry/sveltekit';
 import { redirect } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '$api/db/db';
 import { configPublic } from '$config/public';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
-import { hashToken, isTokenExpired, pendingInvitationCookieName } from './invitationToken';
-
-/** Postgres reports a unique violation as 23505; the column shows up in the constraint name. */
-function isUniqueViolationOn(error: unknown, column: string) {
-	const cause = error instanceof Error && 'cause' in error ? error.cause : error;
-	if (!cause || typeof cause !== 'object') return false;
-	const code = 'code' in cause ? cause.code : undefined;
-	const constraint = 'constraint' in cause ? String(cause.constraint ?? '') : '';
-	const detail = 'detail' in cause ? String(cause.detail ?? '') : '';
-	return code === '23505' && (constraint.includes(column) || detail.includes(column));
-}
-
-function maskEmail(email: string): string {
-	const [localPart, domain] = email.split('@');
-	if (!domain) return '***';
-	if (localPart.length <= 2) return `${localPart[0] ?? ''}***@${domain}`;
-	return `${localPart.slice(0, 2)}***@${domain}`;
-}
+import { errorCause, isUniqueViolationOn } from './emailConflict';
+import { reportEmailConflict } from './reportEmailConflict';
+import { hashToken, isOpenInvitation, pendingInvitationCookieName } from './invitationToken';
 
 type Claims = {
 	sub: string;
@@ -32,6 +16,16 @@ type Claims = {
 	given_name?: string;
 	family_name?: string;
 };
+
+/** Answers an email conflict on login with the page explaining it. */
+async function redirectToEmailConflict(
+	userSubject: string,
+	email: string,
+	error: unknown
+): Promise<never> {
+	const conflict = await reportEmailConflict(userSubject, email, error);
+	redirect(302, conflict.redirectTo);
+}
 
 /**
  * Creates or refreshes the signed-in person's row from their OIDC claims.
@@ -66,50 +60,8 @@ export async function upsertSelfFromClaims(claims: Claims) {
 			.onConflictDoUpdate({ target: schema.user.id, set: { email, locale } })
 			.returning();
 	} catch (error) {
-		if (!isUniqueViolationOn(error, 'email')) throw error;
-
-		// Someone else already holds this address. Two ways to get here: a brand new account whose
-		// address is taken, or an existing account changing to a taken one. The frontend shows a
-		// different page for each, so say which it is.
-		const existing = await db.query.user.findFirst({
-			where: { id: claims.sub },
-			columns: { email: true }
-		});
-
-		const isNewUser = existing === undefined;
-		const maskedConflictingEmail = maskEmail(email);
-		const maskedExistingEmail = existing?.email ? maskEmail(existing.email) : undefined;
-		const refId = claims.sub.slice(-8);
-
-		console.error(`[EMAIL_CONFLICT] ${isNewUser ? 'New user' : 'Email change'} conflict:`, {
-			userSubject: claims.sub,
-			conflictingEmail: maskedConflictingEmail,
-			existingUserEmail: maskedExistingEmail ?? 'N/A',
-			refId,
-			timestamp: new Date().toISOString()
-		});
-
-		Sentry.captureException(error, {
-			level: 'warning',
-			tags: {
-				error_type: 'email_conflict',
-				scenario: isNewUser ? 'new_user' : 'email_change'
-			},
-			extra: {
-				userSubject: claims.sub,
-				conflictingEmail: maskedConflictingEmail,
-				existingUserEmail: maskedExistingEmail ?? 'N/A',
-				refId
-			}
-		});
-
-		const params = new URLSearchParams({
-			scenario: isNewUser ? 'new' : 'change',
-			email: maskedConflictingEmail,
-			ref: refId
-		});
-		if (maskedExistingEmail) params.set('existingEmail', maskedExistingEmail);
-		redirect(302, `/auth/email-conflict?${params.toString()}`);
+		if (!isUniqueViolationOn(errorCause(error), 'email')) throw error;
+		return redirectToEmailConflict(claims.sub, email, error);
 	}
 
 	await claimPendingInvitation(user.id);
@@ -166,14 +118,7 @@ export async function claimPendingInvitation(userId: string) {
 			where: { token: hashToken(token) }
 		});
 
-		if (
-			!invitation ||
-			invitation.revokedAt ||
-			invitation.usedAt ||
-			isTokenExpired(invitation.expiresAt)
-		) {
-			return;
-		}
+		if (!isOpenInvitation(invitation)) return;
 
 		const usedNow = { usedAt: new Date(), acceptedById: userId };
 		const invitationRow = eq(schema.teamMemberInvitation.id, invitation.id);

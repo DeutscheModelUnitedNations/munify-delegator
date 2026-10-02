@@ -12,10 +12,11 @@
 	import Kbd from '$lib/components/Kbd.svelte';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import type { PageProps } from './$types';
+	import { canMarkReceived, transactionReadyFor, transactionStatusUpdate } from './paymentFlow';
 
 	let { params: routeParams }: PageProps = $props();
 
-	let params = queryParameters({
+	const params = queryParameters({
 		searchValue: {
 			defaultValue: '',
 			encode: (value) => value.trim(),
@@ -50,7 +51,12 @@
 					}
 				},
 				id: true,
-				conferenceParticipantStatus: { conference: { id: true }, paymentStatus: true },
+				// only this conference's status, not every one the person ever had
+				conferenceParticipantStatus: {
+					__args: { where: { conferenceId: { eq: conferenceId } } },
+					id: true,
+					paymentStatus: true
+				},
 				givenName: true,
 				familyName: true
 			}),
@@ -100,24 +106,21 @@
 
 	const getPaymentStatus = (userId: string) => {
 		const user = referencedUsers?.find((user) => user.id === userId);
-		const status = user?.conferenceParticipantStatus.find(
-			(status) => status.conference.id === routeParams.conferenceId
-		);
-		return status ? status.paymentStatus : 'PENDING';
+		return user?.conferenceParticipantStatus[0]?.paymentStatus ?? 'PENDING';
 	};
 
 	// --- Effects ---
 
 	// Fetch payment data when search value changes
 	$effect(() => {
-		if ($params.searchValue) {
-			void loadReference($params.searchValue);
+		if (params.searchValue) {
+			void loadReference(params.searchValue);
 		}
 	});
 
 	// Drawer open/close management with stale data prevention
 	$effect(() => {
-		const searchVal = $params.searchValue;
+		const searchVal = params.searchValue;
 		if (!searchVal) {
 			showPaymentDrawer = false;
 			lastLoadedReference = '';
@@ -128,8 +131,8 @@
 		}
 	});
 	$effect(() => {
-		const searchVal = $params.searchValue;
-		if (searchVal && paymentTransaction?.id === searchVal && !referenceFetching) {
+		const searchVal = params.searchValue;
+		if (transactionReadyFor(searchVal, paymentTransaction?.id, referenceFetching)) {
 			lastLoadedReference = searchVal;
 			showPaymentDrawer = true;
 		}
@@ -138,28 +141,20 @@
 	// --- Actions ---
 
 	const changeTransactionStatus = async (status: AdministrativestatusEnum) => {
-		if (!paymentTransaction?.id) {
-			console.error('No transaction id');
-			return;
-		}
-
-		if (status === 'DONE' && !recieveDate) {
-			console.error('No date selected');
+		const update = transactionStatusUpdate(paymentTransaction?.id, status, recieveDate);
+		if ('error' in update) {
+			console.error(update.error);
 			return;
 		}
 
 		const promise = client.mutate.updatePaymentTransaction({
-			__args: {
-				id: paymentTransaction.id,
-				assignedStatus: status,
-				recievedAt: recieveDate ? new Date(recieveDate) : undefined
-			},
+			__args: update.args,
 			id: true,
 			recievedAt: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await loadReference($params.searchValue);
+		await loadReference(params.searchValue);
 	};
 
 	const markReceivedAndNext = async () => {
@@ -171,7 +166,7 @@
 			await changeTransactionStatus('DONE');
 			await loadLastConfirmed();
 			showPaymentDrawer = false;
-			$params.searchValue = '';
+			params.searchValue = '';
 			setTimeout(() => {
 				searchInputElem?.focus();
 			}, 300);
@@ -183,11 +178,36 @@
 	const resetView = () => {
 		recieveDate = new Date().toISOString().split('T')[0];
 		showPaymentDrawer = false;
-		$params.searchValue = '';
+		params.searchValue = '';
 		setTimeout(() => {
 			searchInputElem?.focus();
 		}, 300);
 	};
+
+	// --- Display ---
+
+	const formatLongDate = (date: Date | string) =>
+		new Date(date).toLocaleDateString(undefined, {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		});
+
+	/** The latest confirmed transaction, if it really has been received. */
+	const lastReceived = $derived.by(() => {
+		const last = lastConfirmed?.[0];
+		return last?.recievedAt ? { id: last.id, recievedAt: last.recievedAt } : undefined;
+	});
+
+	/** The icon telling where a referenced person's payment stands. */
+	function paymentStatusIcon(userId: string, transactionReceived: boolean) {
+		const status = getPaymentStatus(userId);
+		if (status === 'DONE') {
+			return transactionReceived ? 'fa-check' : 'fa-circle-exclamation-check fa-beat-fade';
+		}
+		if (status === 'PROBLEM') return 'fa-triangle-exclamation fa-beat-fade';
+		return 'fa-hourglass-half';
+	}
 
 	// --- Hotkeys ---
 
@@ -199,12 +219,7 @@
 		});
 
 		hotkeys('alt+a', () => {
-			if (
-				$params.searchValue &&
-				paymentTransaction &&
-				!paymentTransaction.recievedAt &&
-				!hotkeyDebounce
-			) {
+			if (canMarkReceived(params.searchValue, paymentTransaction, hotkeyDebounce)) {
 				markReceivedAndNext();
 			}
 		});
@@ -219,25 +234,16 @@
 <div class="flex w-full flex-col gap-8 md:p-10">
 	<div class="flex flex-col gap-2">
 		<h2 class="text-2xl font-bold">{m.payment()}</h2>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.paymentAdminDescription()}</p>
 		<!-- Show last confirmed transaction if available -->
-		{#if lastConfirmed?.length}
-			{@const last = lastConfirmed[0]}
-			{#if last.recievedAt}
-				<div class="alert alert-success">
-					<i class="fa-solid fa-money-bill-transfer text-lg"></i>
-					<div>
-						{m.latestPayment({
-							id: last.id,
-							date: new Date(last.recievedAt).toLocaleDateString(undefined, {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric'
-							})
-						})}
-					</div>
+		{#if lastReceived}
+			<div class="alert alert-success">
+				<i class="fa-solid fa-money-bill-transfer text-lg"></i>
+				<div>
+					{m.latestPayment({ id: lastReceived.id, date: formatLongDate(lastReceived.recievedAt) })}
 				</div>
-			{/if}
+			</div>
 		{/if}
 		<FormFieldset title={m.referenceSearch()}>
 			<div class="join w-full">
@@ -246,7 +252,7 @@
 					bind:this={searchInputElem}
 					placeholder={m.referenceSearch()}
 					class="input input-lg join-item w-full"
-					bind:value={$params.searchValue}
+					bind:value={params.searchValue}
 					onkeydown={(e) => {
 						if (e.key === 'Enter') {
 							searchInputElem?.blur();
@@ -265,17 +271,80 @@
 	</div>
 
 	<!-- Loading / error state -->
-	{#if $params.searchValue && referenceFetching}
+	{#if params.searchValue && referenceFetching}
 		<div class="flex items-center justify-center py-4">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
-	{:else if $params.searchValue && !paymentTransaction && !referenceFetching}
+	{:else if params.searchValue && !paymentTransaction && !referenceFetching}
 		<div class="alert alert-warning">
 			<i class="fa-solid fa-triangle-exclamation text-lg"></i>
 			<div>{m.noPaymentFound()}</div>
 		</div>
 	{/if}
 </div>
+
+{#snippet referencedUser(user: NonNullable<typeof referencedUsers>[number], received: boolean)}
+	{@const name = formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
+	<div class="bg-base-200 flex w-full items-center gap-4 rounded-md px-4 py-2">
+		<i class="fa-duotone {paymentStatusIcon(user.id, received)} text-2xl"></i>
+		<div class="text-lg font-bold">
+			{name}
+		</div>
+		<div class="truncate text-sm opacity-60">{user.id}</div>
+		<button
+			class="btn btn-soft btn-sm ml-auto"
+			onclick={() => openUserCard(user.id, routeParams.conferenceId)}
+			aria-label="Details for {name}"
+		>
+			<i class="fa-duotone fa-id-card"></i>
+		</button>
+	</div>
+{/snippet}
+
+{#snippet transactionDetails(transaction: NonNullable<typeof paymentTransaction>)}
+	<!-- Payment reference ID -->
+	<div class="mb-4">
+		<h1 class="font-mono text-2xl font-bold">{transaction.id}</h1>
+		<p class="opacity-60">
+			{new Date(transaction.createdAt).toLocaleString(undefined, {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: 'numeric',
+				second: 'numeric'
+			})}
+		</p>
+	</div>
+
+	<!-- Received status alert -->
+	{#if transaction.recievedAt}
+		<div class="alert alert-success mb-4">
+			<i class="fa-duotone fa-check text-2xl"></i>
+			{m.paymentRecieved({ date: formatLongDate(transaction.recievedAt) })}
+		</div>
+	{/if}
+
+	<!-- Amount display -->
+	<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-md p-3">
+		<div class="font-mono text-3xl font-bold">
+			{transaction.amount.toLocaleString(undefined, {
+				style: 'currency',
+				currency: conference?.currency ?? 'EUR'
+			})}
+		</div>
+	</div>
+
+	<!-- Referenced users -->
+	<div class="flex flex-col gap-2">
+		<h2 class="text-xl font-bold">{m.referencedUsers()}</h2>
+		<div class="flex flex-col gap-2">
+			{#each referencedUsers ?? [] as user (user.id)}
+				{@render referencedUser(user, !!transaction.recievedAt)}
+			{/each}
+		</div>
+	</div>
+{/snippet}
 
 <!-- Top drawer overlay for payment data -->
 <TopDrawer bind:open={showPaymentDrawer} title={m.payment()} titleIcon="fa-money-bill-transfer">
@@ -290,81 +359,8 @@
 		</button>
 	{/snippet}
 
-	{#if paymentTransaction && paymentTransaction.id === $params.searchValue}
-		<!-- Payment reference ID -->
-		<div class="mb-4">
-			<h1 class="font-mono text-2xl font-bold">{paymentTransaction.id}</h1>
-			<p class="opacity-60">
-				{new Date(paymentTransaction.createdAt).toLocaleString(undefined, {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric',
-					hour: 'numeric',
-					minute: 'numeric',
-					second: 'numeric'
-				})}
-			</p>
-		</div>
-
-		<!-- Received status alert -->
-		{#if paymentTransaction.recievedAt}
-			<div class="alert alert-success mb-4">
-				<i class="fa-duotone fa-check text-2xl"></i>
-				{m.paymentRecieved({
-					date: new Date(paymentTransaction.recievedAt).toLocaleDateString(undefined, {
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric'
-					})
-				})}
-			</div>
-		{/if}
-
-		<!-- Amount display -->
-		<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-md p-3">
-			<div class="font-mono text-3xl font-bold">
-				{paymentTransaction.amount.toLocaleString(undefined, {
-					style: 'currency',
-					currency: conference?.currency ?? 'EUR'
-				})}
-			</div>
-		</div>
-
-		<!-- Referenced users -->
-		<div class="flex flex-col gap-2">
-			<h2 class="text-xl font-bold">{m.referencedUsers()}</h2>
-			<div class="flex flex-col gap-2">
-				{#each referencedUsers ?? [] as user}
-					<div class="bg-base-200 flex w-full items-center gap-4 rounded-md px-4 py-2">
-						{#if getPaymentStatus(user.id) === 'DONE'}
-							{#if paymentTransaction.recievedAt}
-								<i class="fa-duotone fa-check text-2xl"></i>
-							{:else}
-								<i class="fa-duotone fa-circle-exclamation-check fa-beat-fade text-2xl"></i>
-							{/if}
-						{:else if getPaymentStatus(user.id) === 'PROBLEM'}
-							<i class="fa-duotone fa-triangle-exclamation fa-beat-fade text-2xl"></i>
-						{:else}
-							<i class="fa-duotone fa-hourglass-half text-2xl"></i>
-						{/if}
-						<div class="text-lg font-bold">
-							{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
-						</div>
-						<div class="truncate text-sm opacity-60">{user.id}</div>
-						<button
-							class="btn btn-soft btn-sm ml-auto"
-							onclick={() => openUserCard(user.id, routeParams.conferenceId)}
-							aria-label="Details for {formatNames(
-								user.givenName ?? undefined,
-								user.familyName ?? undefined
-							)}"
-						>
-							<i class="fa-duotone fa-id-card"></i>
-						</button>
-					</div>
-				{/each}
-			</div>
-		</div>
+	{#if paymentTransaction && paymentTransaction.id === params.searchValue}
+		{@render transactionDetails(paymentTransaction)}
 	{/if}
 
 	{#snippet footer()}

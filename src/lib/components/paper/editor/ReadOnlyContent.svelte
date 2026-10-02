@@ -11,7 +11,7 @@
 	import { getSafeTipTapContent } from './contentValidation';
 
 	interface Props {
-		content: any;
+		content: unknown;
 		paperContainer?: HTMLElement | null;
 	}
 

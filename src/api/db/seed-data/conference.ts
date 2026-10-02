@@ -9,81 +9,52 @@ const CONFERENCE_STATES = [
 	'POST'
 ] as const;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** A random date between `fromDays` and `toDays` days from now. */
+const inDays = (fromDays: number, toDays: number) => () =>
+	faker.date.between({
+		from: new Date(Date.now() + fromDays * DAY_MS),
+		to: new Date(Date.now() + toDays * DAY_MS)
+	});
+const past = () => faker.date.past();
+const future = () => faker.date.future();
+
+type ConferenceDates = Record<'startAssignment' | 'startConference' | 'endConference', () => Date>;
+
+/** Plausible dates for a conference in each state, relative to now. */
+const DATES_BY_STATE: Record<(typeof CONFERENCE_STATES)[number], ConferenceDates> = {
+	// Assignment in at least a week, the conference in at least two.
+	PRE: {
+		startAssignment: inDays(7, 14),
+		startConference: inDays(15, 21),
+		endConference: inDays(30, 35)
+	},
+	PARTICIPANT_REGISTRATION: {
+		startAssignment: past,
+		startConference: inDays(7, 14),
+		endConference: inDays(30, 35)
+	},
+	PREPARATION: {
+		startAssignment: past,
+		startConference: inDays(7, 14),
+		endConference: inDays(30, 35)
+	},
+	ACTIVE: { startAssignment: past, startConference: past, endConference: future },
+	POST: { startAssignment: past, startConference: past, endConference: past }
+};
+
 export function makeSeedConference(
 	options?: Partial<
 		Pick<Insert<'conference'>, 'state' | 'startAssignment' | 'startConference' | 'endConference'>
 	>
 ): Insert<'conference'> {
 	const state = options?.state ?? faker.helpers.arrayElement(CONFERENCE_STATES);
-	let startAssignment = options?.startAssignment;
-	let startConference = options?.startConference;
-	let endConference = options?.endConference;
-
-	if (!startAssignment) {
-		if (state === 'PRE') {
-			// in at least a week
-			startAssignment = faker.date.between({
-				from: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'PARTICIPANT_REGISTRATION') {
-			startAssignment = faker.date.past();
-		} else if (state === 'PREPARATION') {
-			startAssignment = faker.date.past();
-		} else if (state === 'ACTIVE') {
-			startAssignment = faker.date.past();
-		} else {
-			startAssignment = faker.date.past();
-		}
-	}
-
-	if (!startConference) {
-		if (state === 'PRE') {
-			// in at least two weeks
-			startConference = faker.date.between({
-				from: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'PARTICIPANT_REGISTRATION') {
-			startConference = faker.date.between({
-				from: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'PREPARATION') {
-			startConference = faker.date.between({
-				from: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'ACTIVE') {
-			startConference = faker.date.past();
-		} else {
-			startConference = faker.date.past();
-		}
-	}
-
-	if (!endConference) {
-		if (state === 'PRE') {
-			// in at least two weeks
-			endConference = faker.date.between({
-				from: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'PARTICIPANT_REGISTRATION') {
-			endConference = faker.date.between({
-				from: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'PREPARATION') {
-			endConference = faker.date.between({
-				from: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-				to: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000)
-			});
-		} else if (state === 'ACTIVE') {
-			endConference = faker.date.future();
-		} else {
-			endConference = faker.date.past();
-		}
-	}
+	const dates = DATES_BY_STATE[state];
+	// Generated in this order, and only where not given, so a seeded faker stays reproducible.
+	const startAssignment = options?.startAssignment || dates.startAssignment();
+	const startConference = options?.startConference || dates.startConference();
+	const endConference = options?.endConference || dates.endConference();
 
 	return {
 		id: faker.database.mongodbObjectId(),

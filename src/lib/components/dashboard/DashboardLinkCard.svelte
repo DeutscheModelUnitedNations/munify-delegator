@@ -1,6 +1,8 @@
 <script lang="ts">
+	import type { DashboardHref } from '$lib/data/dashboardLinks';
+
 	interface Props {
-		href: string;
+		href: DashboardHref;
 		icon: string;
 		title: string;
 		description: string;
@@ -23,6 +25,10 @@
 		important = false
 	}: Props = $props();
 
+	// Split once so each branch below gets a plainly typed value.
+	const externalUrl = $derived(typeof href === 'object' ? href.externalUrl : undefined);
+	const internalHref = $derived(typeof href === 'object' ? undefined : href);
+
 	const badgeClasses: Record<string, string> = {
 		info: 'badge-info',
 		warning: 'badge-warning',
@@ -44,27 +50,42 @@
 			<p class="text-base-content/50">{description}</p>
 		</div>
 	</div>
+{:else if externalUrl !== undefined}
+	<a
+		href={externalUrl}
+		class="card bg-base-200 hover:bg-base-300 transition-colors {important
+			? 'ring-2 ring-warning/40 bg-warning/5'
+			: ''}"
+		target="_blank"
+		rel="external noopener noreferrer"
+	>
+		{@render body()}
+	</a>
 {:else}
 	<a
-		{href}
+		href={internalHref}
 		class="card bg-base-200 hover:bg-base-300 transition-colors {important
 			? 'ring-2 ring-warning/40 bg-warning/5'
 			: ''}"
 		target={external ? '_blank' : undefined}
 		rel={external ? 'noopener noreferrer' : undefined}
 	>
-		<div class="card-body">
-			<div class="flex items-center gap-3">
-				<i class="fa-duotone fa-{icon.replace('fa-', '')} text-primary text-2xl"></i>
-				<h2 class="card-title">{title}</h2>
-				{#if badge !== undefined}
-					<span class="badge {badgeClasses[badgeType]}">{badge}</span>
-				{/if}
-				{#if external}
-					<i class="fa-solid fa-arrow-up-right-from-square text-xs text-base-content/50"></i>
-				{/if}
-			</div>
-			<p class="text-base-content/70">{description}</p>
-		</div>
+		{@render body()}
 	</a>
 {/if}
+
+{#snippet body()}
+	<div class="card-body">
+		<div class="flex items-center gap-3">
+			<i class="fa-duotone fa-{icon.replace('fa-', '')} text-primary text-2xl"></i>
+			<h2 class="card-title">{title}</h2>
+			{#if badge !== undefined}
+				<span class="badge {badgeClasses[badgeType]}">{badge}</span>
+			{/if}
+			{#if external}
+				<i class="fa-solid fa-arrow-up-right-from-square text-xs text-base-content/50"></i>
+			{/if}
+		</div>
+		<p class="text-base-content/70">{description}</p>
+	</div>
+{/snippet}

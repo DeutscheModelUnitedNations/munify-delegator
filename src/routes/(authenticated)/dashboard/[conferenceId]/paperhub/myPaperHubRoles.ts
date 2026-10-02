@@ -19,8 +19,7 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 				// `OR` does not constrain its branches - so each alternative repeats the scope.
 				where: { OR: REVIEW_ROLES.map((role) => ({ role, ...forUser })) }
 			},
-			id: true,
-			role: true
+			id: true
 		}),
 		client.liveQuery.conferenceSupervisors({
 			__args: { where: forUser },

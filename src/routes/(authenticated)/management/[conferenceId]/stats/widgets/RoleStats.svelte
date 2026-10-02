@@ -1,13 +1,26 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { PieChart } from '$lib/components/charts/echarts';
-	import type { RoleBased } from '../stats.svelte';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { statsQueryFilter } from '../stats.svelte';
 
-	interface Props {
-		roleBased: RoleBased;
-	}
+	let { conferenceId }: { conferenceId: string } = $props();
 
-	let { roleBased }: Props = $props();
+	const stats = $derived(
+		await client.liveQuery.getConferenceStatistics({
+			__args: { conferenceId, filter: statsQueryFilter() },
+			roleBased: {
+				delegationMembersWithRole: true,
+				delegationMembersWithoutRole: true,
+				delegationMembersWithCommittee: true,
+				delegationMembersWithoutCommittee: true,
+				singleParticipantsWithRole: true,
+				singleParticipantsWithoutRole: true,
+				delegationsWithAssignment: true
+			}
+		})
+	);
+	const roleBased = $derived(stats.roleBased);
 
 	const delegationData = $derived([
 		{ name: m.statsWithRole(), value: roleBased.delegationMembersWithRole },

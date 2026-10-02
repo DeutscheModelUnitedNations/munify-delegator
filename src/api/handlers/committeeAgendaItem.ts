@@ -70,8 +70,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.committeeAgendaItem
 				.findFirst(
 					query(
-						ctx.abilities.committeeAgendaItem.filter('read').merge({ where: { id: created.id } })
-							.query.single
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: created.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -90,8 +91,9 @@ schemaBuilder.mutationFields((t) => ({
 				.update(schema.committeeAgendaItem)
 				.set({ title: args.title ?? undefined, teaserText: args.teaserText ?? undefined })
 				.where(
-					ctx.abilities.committeeAgendaItem.filter('update').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.committeeAgendaItem.filter('update')).merge({
+						where: { id: args.id }
+					}).sql.where
 				);
 
 			pubsub.updated(args.id);
@@ -99,8 +101,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.committeeAgendaItem
 				.findFirst(
 					query(
-						ctx.abilities.committeeAgendaItem.filter('read').merge({ where: { id: args.id } }).query
-							.single
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: args.id }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);
@@ -114,8 +117,9 @@ schemaBuilder.mutationFields((t) => ({
 			const deleted = await db
 				.delete(schema.committeeAgendaItem)
 				.where(
-					ctx.abilities.committeeAgendaItem.filter('delete').merge({ where: { id: args.id } }).sql
-						.where
+					(await ctx.abilities.committeeAgendaItem.filter('delete')).merge({
+						where: { id: args.id }
+					}).sql.where
 				)
 				.returning({ id: schema.committeeAgendaItem.id });
 			if (deleted.length === 0) {
@@ -172,9 +176,9 @@ schemaBuilder.mutationFields((t) => ({
 			return db.query.committeeAgendaItem
 				.findFirst(
 					query(
-						ctx.abilities.committeeAgendaItem
-							.filter('read')
-							.merge({ where: { id: args.agendaItemId } }).query.single
+						(await ctx.abilities.committeeAgendaItem.filter('read')).merge({
+							where: { id: args.agendaItemId }
+						}).query.single
 					)
 				)
 				.then(assertFindFirstExists);

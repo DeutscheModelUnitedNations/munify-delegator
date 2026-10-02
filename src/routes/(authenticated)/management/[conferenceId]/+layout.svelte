@@ -7,7 +7,6 @@
 	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
 	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { LayoutData } from './$types';
 
 	let { children, params }: LayoutProps = $props();
 	let navbarExpanded = $state(true);

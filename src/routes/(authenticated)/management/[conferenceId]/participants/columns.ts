@@ -4,6 +4,7 @@ import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
 import { translateGender, translateTeamRole } from '$lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 import type { ColumnMeta, ParticipantRow } from './types';
+import type { ParticipantTableFeatures } from './tableFeatures';
 import { textFilterFn, enumFilterFn, booleanFilterFn, rangeFilterFn } from './filterFns';
 import RoleBadge from './RoleBadge.svelte';
 import StatusIcon from './StatusIcon.svelte';
@@ -23,7 +24,7 @@ function meta(
 	return { category, description, defaultVisible, filterType };
 }
 
-export function createColumnDefs(): ColumnDef<ParticipantRow>[] {
+export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, ParticipantRow>[] {
 	return [
 		// --- Personal ---
 		{
@@ -70,7 +71,7 @@ export function createColumnDefs(): ColumnDef<ParticipantRow>[] {
 							row.original.birthday
 						)
 					: '',
-			sortingFn: (rowA, rowB) => {
+			sortFn: (rowA, rowB) => {
 				const a = rowA.original.birthday?.getTime() ?? 0;
 				const b = rowB.original.birthday?.getTime() ?? 0;
 				return a - b;
@@ -151,7 +152,7 @@ export function createColumnDefs(): ColumnDef<ParticipantRow>[] {
 					nsaName: row.original.nsaName,
 					nsaIcon: row.original.nsaIcon
 				}),
-			sortingFn: (rowA, rowB, columnId) => {
+			sortFn: (rowA, rowB, columnId) => {
 				const a = rowA.getValue<string>(columnId) ?? '';
 				const b = rowB.getValue<string>(columnId) ?? '';
 				return a.localeCompare(b);

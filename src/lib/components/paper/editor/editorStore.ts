@@ -6,7 +6,8 @@ import {
 } from '@deutschemodelunitednations/munify-resolution-editor';
 
 // TipTap content for Position Papers and Introduction Papers
-export const editorContentStore = writable<any>();
+// Holds whatever a page seeds it with (a stored version's JSON, a local draft, or '' when empty).
+export const editorContentStore = writable<unknown>();
 
 // Resolution content for Working Papers.
 //

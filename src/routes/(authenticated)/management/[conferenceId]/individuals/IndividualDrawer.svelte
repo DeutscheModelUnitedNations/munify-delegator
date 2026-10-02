@@ -7,6 +7,10 @@
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import ApplicationStatusAlert from '$lib/components/registrationAdmin/ApplicationStatusAlert.svelte';
+	import DetailsTable from '$lib/components/registrationAdmin/DetailsTable.svelte';
+	import DetailRow from '$lib/components/registrationAdmin/DetailRow.svelte';
+	import SupervisorLinkTable from '$lib/components/registrationAdmin/SupervisorLinkTable.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -18,9 +22,9 @@
 
 	const person = { id: true, givenName: true, familyName: true } as const;
 
-	function fetchSingleParticipant(id: string) {
-		return client.query.singleParticipant({
-			__args: { id },
+	const singleParticipant = $derived(
+		await client.liveQuery.singleParticipant({
+			__args: { id: singleParticipantId },
 			id: true,
 			applied: true,
 			school: true,
@@ -29,30 +33,15 @@
 			user: person,
 			appliedForRoles: { id: true, name: true, fontAwesomeIcon: true },
 			assignedRole: { id: true, name: true, fontAwesomeIcon: true },
-			supervisors: { id: true, plansOwnAttendenceAtConference: true, user: person }
-		});
-	}
-
-	let singleParticipant = $state<Awaited<ReturnType<typeof fetchSingleParticipant>>>();
-	let loading = $state(false);
-
-	async function loadSingleParticipant(id: string) {
-		loading = true;
-		try {
-			singleParticipant = await fetchSingleParticipant(id);
-		} finally {
-			loading = false;
-		}
-	}
-
-	$effect(() => {
-		void loadSingleParticipant(singleParticipantId);
-	});
-
-	let supervisors = $derived(singleParticipant?.supervisors ?? []);
+			supervisors: {
+				id: true,
+				plansOwnAttendenceAtConference: true,
+				user: { givenName: true, familyName: true }
+			}
+		})
+	);
 
 	const revokeApplication = async () => {
-		if (!singleParticipant) return;
 		if (!confirm(m.confirmRevokeApplication())) return;
 		const promise = client.mutate.updateSingleParticipant({
 			__args: { id: singleParticipant.id, applied: false },
@@ -61,7 +50,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		await loadSingleParticipant(singleParticipant.id);
 	};
 </script>
 
@@ -69,139 +57,51 @@
 	bind:open
 	{onClose}
 	title={formatNames(
-		singleParticipant?.user?.givenName ?? undefined,
-		singleParticipant?.user?.familyName ?? undefined,
+		singleParticipant.user.givenName ?? undefined,
+		singleParticipant.user.familyName ?? undefined,
 		{ givenNameFirst: false }
 	)}
-	id={singleParticipant?.id ?? 'N/A'}
+	id={singleParticipant.id}
 	category={m.singleParticipant()}
-	{loading}
+	loading={false}
 >
-	{#if singleParticipant?.assignedRole}
+	{#if singleParticipant.assignedRole}
 		<div class="alert">
-			<Flag nsa icon={singleParticipant?.assignedRole.fontAwesomeIcon ?? 'fa-hand-point-up'} />
+			<Flag nsa icon={singleParticipant.assignedRole.fontAwesomeIcon ?? 'fa-hand-point-up'} />
 			<h3 class="text-xl font-bold">
-				{singleParticipant?.assignedRole.name}
+				{singleParticipant.assignedRole.name}
 			</h3>
 		</div>
-	{:else if singleParticipant?.applied}
-		<div class="alert alert-success">
-			<i class="fas fa-check"></i>
-			{m.registrationCompleted()}
-		</div>
 	{:else}
-		<div class="alert alert-warning">
-			<i class="fas fa-hourglass-half"></i>
-			{m.registrationNotCompleted()}
-		</div>
+		<ApplicationStatusAlert applied={singleParticipant.applied} />
 	{/if}
 
-	<div class="flex flex-col">
-		<h3 class="text-xl font-bold">{m.adminUserCardDetails()}</h3>
-		<table class="table">
-			<thead>
-				<tr>
-					<th></th>
-					<th class="w-full"></th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td class="text-center"><i class="fa-duotone fa-school text-lg"></i></td>
-					<td>
-						{singleParticipant?.school}
-					</td>
-				</tr>
-				<tr>
-					<td class="text-center"><i class="fa-duotone fa-fire-flame-curved text-lg"></i></td>
-					<td>
-						{singleParticipant?.motivation}
-					</td>
-				</tr>
-				<tr>
-					<td class="text-center"><i class="fa-duotone fa-compass text-lg"></i></td>
-					<td>
-						{singleParticipant?.experience}
-					</td>
-				</tr>
-				<tr>
-					<td class="text-center"><i class="fa-duotone fa-check-to-slot text-lg"></i></td>
-					<td>
-						<div class="flex items-center gap-2">
-							<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
-								{singleParticipant?.appliedForRoles.length}
-							</div>
-							<div class="flex flex-col">
-								{#each singleParticipant?.appliedForRoles ?? [] as role (role.id)}
-									<div>
-										<i class="fa-duotone fa-{(role?.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
-										{role.name}
-									</div>
-								{/each}
-							</div>
+	<DetailsTable>
+		<DetailRow icon="fa-school">{singleParticipant.school}</DetailRow>
+		<DetailRow icon="fa-fire-flame-curved">{singleParticipant.motivation}</DetailRow>
+		<DetailRow icon="fa-compass">{singleParticipant.experience}</DetailRow>
+		<DetailRow icon="fa-check-to-slot">
+			<div class="flex items-center gap-2">
+				<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
+					{singleParticipant.appliedForRoles.length}
+				</div>
+				<div class="flex flex-col">
+					{#each singleParticipant.appliedForRoles as role (role.id)}
+						<div>
+							<i class="fa-duotone fa-{(role.fontAwesomeIcon ?? '').replace('fa-', '')}"></i>
+							{role.name}
 						</div>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-
-	<div class="flex flex-col gap-2">
-		<h3 class="text-xl font-bold">{m.supervisors()}</h3>
-
-		{#if supervisors.length === 0}
-			<div class="alert alert-info">
-				<i class="fa-solid fa-user-slash"></i>
-				{m.noSupervisors()}
-			</div>
-		{:else}
-			<table class="table">
-				<thead>
-					<tr>
-						<th></th>
-						<th class="w-full"></th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each supervisors as supervisor, i (i)}
-						<tr>
-							<td>
-								{#if supervisor.plansOwnAttendenceAtConference}
-									<i class="fa-duotone fa-location-check text-lg"></i>
-								{:else}
-									<i class="fa-duotone fa-cloud text-lg"></i>
-								{/if}
-							</td>
-							<td>
-								<span class="capitalize">{supervisor.user.givenName}</span>
-								<span class="uppercase">{supervisor.user.familyName}</span>
-							</td>
-							<td>
-								<a
-									class="btn btn-sm"
-									href="/management/{conferenceId}/supervisors?selected={supervisor.id}"
-									aria-label="Details"
-								>
-									<i class="fa-duotone fa-arrow-up-right-from-square"></i>
-								</a>
-							</td>
-						</tr>
 					{/each}
-				</tbody>
-			</table>
-		{/if}
-	</div>
+				</div>
+			</div>
+		</DetailRow>
+	</DetailsTable>
+
+	<SupervisorLinkTable {conferenceId} supervisors={singleParticipant.supervisors} />
 
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.adminActions()}</h3>
-		<button
-			class="btn"
-			onclick={() => {
-				const userId = singleParticipant?.user.id;
-				if (userId) openUserCard(userId, conferenceId);
-			}}
-		>
+		<button class="btn" onclick={() => openUserCard(singleParticipant.user.id, conferenceId)}>
 			{m.adminUserCard()}
 			<i class="fa-duotone fa-id-card"></i>
 		</button>
@@ -210,7 +110,7 @@
 	<div class="flex flex-col gap-2">
 		<h3 class="text-xl font-bold">{m.dangerZone()}</h3>
 		<button
-			class="btn {!singleParticipant?.applied && 'btn-disabled'} btn-error"
+			class="btn {!singleParticipant.applied && 'btn-disabled'} btn-error"
 			onclick={revokeApplication}
 		>
 			{m.revokeApplication()}

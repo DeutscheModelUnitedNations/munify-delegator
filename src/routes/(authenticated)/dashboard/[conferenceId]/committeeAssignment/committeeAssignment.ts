@@ -39,5 +39,3 @@ export async function fetchCommitteeAssignment(conferenceId: string, userId: str
 		committees
 	};
 }
-
-export type CommitteeAssignment = Awaited<ReturnType<typeof fetchCommitteeAssignment>>;

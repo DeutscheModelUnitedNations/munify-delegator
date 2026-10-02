@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { readSelectedTextFile } from '$lib/helpers/readSelectedTextFile';
+	import { resolve } from '$app/paths';
 	import { client } from '$lib/api/rumbleClient/client';
-	import Spinner from '$lib/components/Spinner.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { prettifyError } from 'zod';
 	import {
@@ -12,28 +13,16 @@
 
 	let { params }: PageProps = $props();
 
-	const project = $derived(await fetchAssignmentProject(params.conferenceId));
-	const delegations = $derived(project.delegations);
-	const conference = $derived(project.conference);
-	const singleParticipants = $derived(project.singleParticipants);
+	let downloading = $state(false);
 
 	let fileInput = $state<string>();
 
 	let validationError = $state<string>();
 
-	const setFileInput = (e: Event) => {
-		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-		if (!file) return;
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const result = e.target?.result;
-			if (typeof result === 'string') {
-				fileInput = result;
-			}
-		};
-		reader.readAsText(file);
-	};
+	const setFileInput = (e: Event) =>
+		readSelectedTextFile(e, (text) => {
+			fileInput = text;
+		});
 
 	$effect(() => {
 		if (fileInput) {
@@ -68,8 +57,19 @@
 		alert('Assignment data successfully applied');
 	};
 
-	const downloadCurrentRegistrationData = () => {
-		if (!conference || !delegations || !singleParticipants) return;
+	const downloadCurrentRegistrationData = async () => {
+		downloading = true;
+		try {
+			await downloadProjectFile();
+		} finally {
+			downloading = false;
+		}
+	};
+
+	const downloadProjectFile = async () => {
+		const { conference, delegations, singleParticipants } = await fetchAssignmentProject(
+			params.conferenceId
+		);
 		// The project file's schema distinguishes delegations from single participants by which
 		// keys are absent, so the discriminating keys are spelled out here.
 		const data: ProjectData = {
@@ -122,49 +122,54 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `registration-data_${conference?.title.replace(' ', '-')}_${new Date().toISOString()}.json`;
+		a.download = `registration-data_${conference.title.replace(' ', '-')}_${new Date().toISOString()}.json`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
 </script>
 
-{#if !conference}
-	<Spinner />
-{:else}
-	<div class="flex flex-col gap-8 p-10">
-		<div class="flex flex-col gap-2">
-			<h2 class="text-2xl font-bold">{m.adminAssignment()}</h2>
-			<p>{@html m.adminAssignmentDescription()}</p>
+<div class="flex flex-col gap-8 p-10">
+	<div class="flex flex-col gap-2">
+		<h2 class="text-2xl font-bold">{m.adminAssignment()}</h2>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
+		<p>{@html m.adminAssignmentDescription()}</p>
 
-			<div class="mt-10 grid grid-cols-[auto_1fr] items-center justify-center gap-6">
-				<i class="fa-duotone fa-1 text-3xl"></i>
-				<button class="btn btn-primary" onclick={() => downloadCurrentRegistrationData()}>
+		<div class="mt-10 grid grid-cols-[auto_1fr] items-center justify-center gap-6">
+			<i class="fa-duotone fa-1 text-3xl"></i>
+			<button
+				class="btn btn-primary"
+				onclick={() => downloadCurrentRegistrationData()}
+				disabled={downloading}
+			>
+				{#if downloading}
+					<span class="loading loading-spinner loading-sm"></span>
+				{:else}
 					<i class="fas fa-download"></i>
-					{m.downloadCurrentRegistrationData()}
-				</button>
-				<i class="fa-duotone fa-2 text-3xl"></i>
-				<a class="btn btn-primary" href="/assignment-assistant">
-					<i class="fas fa-arrow-right"></i>
-					{m.startAssignment()}
-				</a>
-				<i class="fa-duotone fa-3 text-3xl"></i>
-				<input
-					class="file-input w-full"
-					type="file"
-					accept=".json"
-					onchange={(e) => setFileInput(e)}
-				/>
-				<i class="fa-duotone fa-4 text-3xl"></i>
-				<button
-					class="btn btn-primary {!fileInput && 'btn-disabled'}"
-					onclick={() => applyAssignment()}
-				>
-					<i class="fas fa-download"></i>
-					{m.applyAssignment()}
-				</button>
-			</div>
-
-			<pre class="mt-4 break-all whitespace-pre-wrap text-red-600">{validationError}</pre>
+				{/if}
+				{m.downloadCurrentRegistrationData()}
+			</button>
+			<i class="fa-duotone fa-2 text-3xl"></i>
+			<a class="btn btn-primary" href={resolve('/assignment-assistant')}>
+				<i class="fas fa-arrow-right"></i>
+				{m.startAssignment()}
+			</a>
+			<i class="fa-duotone fa-3 text-3xl"></i>
+			<input
+				class="file-input w-full"
+				type="file"
+				accept=".json"
+				onchange={(e) => setFileInput(e)}
+			/>
+			<i class="fa-duotone fa-4 text-3xl"></i>
+			<button
+				class="btn btn-primary {!fileInput && 'btn-disabled'}"
+				onclick={() => applyAssignment()}
+			>
+				<i class="fas fa-download"></i>
+				{m.applyAssignment()}
+			</button>
 		</div>
+
+		<pre class="mt-4 break-all whitespace-pre-wrap text-red-600">{validationError}</pre>
 	</div>
-{/if}
+</div>

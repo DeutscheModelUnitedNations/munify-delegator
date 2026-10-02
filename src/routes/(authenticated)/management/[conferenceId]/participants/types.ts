@@ -55,7 +55,6 @@ export interface ParticipantRow {
 	termsAndConditions: AdministrativeStatus | null;
 	guardianConsent: AdministrativeStatus | null;
 	mediaConsent: AdministrativeStatus | null;
-	mediaConsentStatus: string | null;
 	didAttend: boolean | null;
 	documentNumber: number | null;
 	accessCardId: string | null;

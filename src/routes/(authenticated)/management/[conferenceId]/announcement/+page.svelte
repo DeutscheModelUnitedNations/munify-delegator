@@ -4,13 +4,14 @@
 	import { toast } from 'svelte-sonner';
 	import Markdown from '$lib/components/markdown/Markdown.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import { untrack } from 'svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
 
 	// Seeded once and then owned by the form: a refetch must not overwrite what is being typed.
 	const announcement = await client.query.conference({
-		__args: { id: params.conferenceId },
+		__args: { id: untrack(() => params.conferenceId) },
 		info: true,
 		showInfoExpanded: true
 	});
@@ -39,6 +40,7 @@
 
 	<div class="alert alert-info mb-6">
 		<i class="fas fa-circle-info"></i>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<span>{@html m.markdownSyntaxHint()}</span>
 	</div>
 
@@ -46,19 +48,20 @@
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 			<!-- Editor side -->
 			<div class="flex flex-col gap-2 min-w-0">
-				<label class="label">
+				<label class="label" for="announcement-info">
 					<span class="label-text">{m.infos()}</span>
 				</label>
 				<textarea
+					id="announcement-info"
 					class="textarea textarea-bordered h-96 w-full font-mono text-sm"
 					bind:value={info}
 					placeholder={m.markdownSupportedPlaceholder()}></textarea>
 			</div>
 			<!-- Preview side -->
 			<div class="flex flex-col gap-2 min-w-0">
-				<label class="label">
+				<div class="label">
 					<span class="label-text">{m.preview()}</span>
-				</label>
+				</div>
 				<div class="bg-base-200 rounded-lg p-4 h-96 w-full overflow-auto prose prose-sm max-w-none">
 					<Markdown source={info} />
 				</div>

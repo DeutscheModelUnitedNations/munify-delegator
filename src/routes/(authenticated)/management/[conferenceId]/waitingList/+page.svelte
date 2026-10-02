@@ -1,47 +1,35 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import {
-		createSvelteTable,
-		FlexRender,
+		createTable,
 		renderComponent,
-		getCoreRowModel,
-		getSortedRowModel,
-		getFilteredRowModel,
-		getPaginationRowModel,
+		tableFeatures,
+		rowSortingFeature,
+		columnFilteringFeature,
+		globalFilteringFeature,
+		rowPaginationFeature,
+		columnVisibilityFeature,
+		createSortedRowModel,
+		createFilteredRowModel,
+		createPaginatedRowModel,
+		autoFilterFns,
+		autoSortFns,
+		columnCanGlobalFilter,
 		type ColumnDef,
 		type SortingState,
 		type PaginationState
 	} from '$lib/components/tanStackTable';
 	import { DataTable } from '$lib/components/tanStackTable/ui';
+	import SortableTable from '$lib/components/tanStackTable/ui/SortableTable.svelte';
 	import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
-	import { getAgeAtConference } from '$lib/helpers/ageChecker';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import HiddenIcon from './HiddenIcon.svelte';
 	import WaitingListActions from './WaitingListActions.svelte';
 	import type { PageProps } from './$types';
+	import { toWaitingListRow, visibleEntries, type WaitingListRow } from './waitingListRows';
 
 	let { params }: PageProps = $props();
-
-	type WaitingListEntry = (typeof waitingListEntries)[number];
-
-	interface WaitingListRow {
-		id: string;
-		userId: string;
-		createdAt: Date;
-		family_name: string;
-		given_name: string;
-		email: string;
-		phone: string | null;
-		conferenceAge: number | undefined;
-		participationCount: number;
-		city: string | null;
-		school: string | null;
-		motivation: string | null;
-		experience: string | null;
-		requests: string | null;
-		hidden: boolean;
-	}
 
 	/** Only entries still waiting - assigned ones have become real registrations. */
 	const waitingListEntries = $derived(
@@ -65,7 +53,6 @@
 			motivation: true,
 			requests: true,
 			hidden: true,
-			assigned: true,
 			createdAt: true
 		})
 	);
@@ -83,44 +70,33 @@
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 20 });
 	let globalFilter = $state('');
 
-	const rows: WaitingListRow[] = $derived.by(() => {
-		const entries = waitingListEntries;
-		const filtered = filterHidden ? entries.filter((e: WaitingListEntry) => !e.hidden) : entries;
-
-		return filtered.map((entry: WaitingListEntry) => ({
-			id: entry.id,
-			userId: entry.user.id,
-			createdAt: new Date(entry.createdAt),
-			family_name: entry.user.familyName,
-			given_name: entry.user.givenName,
-			email: entry.user.email,
-			phone: entry.user.phone ?? null,
-			conferenceAge:
-				entry.user.birthday && conference?.startConference
-					? getAgeAtConference(entry.user.birthday, conference.startConference)
-					: undefined,
-			participationCount: entry.user.conferenceParticipationsCount,
-			city: entry.user.city ?? null,
-			school: entry.school ?? null,
-			motivation: entry.motivation ?? null,
-			experience: entry.experience ?? null,
-			requests: entry.requests ?? null,
-			hidden: entry.hidden
-		}));
-	});
-
-	const totalCount = $derived(
-		filterHidden
-			? (waitingListEntries.filter((e: WaitingListEntry) => !e.hidden).length ?? 0)
-			: waitingListEntries.length
+	const startConference = $derived(conference?.startConference);
+	const visible = $derived(visibleEntries(waitingListEntries, filterHidden));
+	const rows: WaitingListRow[] = $derived(
+		visible.map((entry) => toWaitingListRow(entry, startConference))
 	);
+
+	const totalCount = $derived(visible.length);
 
 	const dateFormatter = new Intl.DateTimeFormat(undefined, {
 		dateStyle: 'medium',
 		timeStyle: 'short'
 	});
 
-	const columns: ColumnDef<WaitingListRow>[] = [
+	const features = tableFeatures({
+		rowSortingFeature,
+		columnFilteringFeature,
+		globalFilteringFeature,
+		rowPaginationFeature,
+		columnVisibilityFeature,
+		sortedRowModel: createSortedRowModel(),
+		filteredRowModel: createFilteredRowModel(),
+		paginatedRowModel: createPaginatedRowModel(),
+		filterFns: autoFilterFns,
+		sortFns: autoSortFns
+	});
+
+	const columns: ColumnDef<typeof features, WaitingListRow>[] = [
 		{
 			id: 'actions',
 			header: '',
@@ -220,7 +196,8 @@
 		}
 	];
 
-	const table = createSvelteTable({
+	const table = createTable({
+		features,
 		get data() {
 			return rows;
 		},
@@ -246,10 +223,7 @@
 			globalFilter = typeof updater === 'function' ? updater(globalFilter) : updater;
 		},
 		globalFilterFn: 'includesString',
-		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		getPaginationRowModel: getPaginationRowModel()
+		getColumnCanGlobalFilter: columnCanGlobalFilter
 	});
 
 	function handleRowClick(row: WaitingListRow) {
@@ -305,57 +279,7 @@
 		</button>
 	</div>
 
-	<DataTable.Root class="table-zebra table-sm">
-		<DataTable.Header>
-			{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-				<tr>
-					{#each headerGroup.headers as header (header.id)}
-						<DataTable.Head>
-							{#if !header.isPlaceholder}
-								<button
-									class="flex items-center gap-2"
-									class:cursor-pointer={header.column.getCanSort()}
-									onclick={() => header.column.toggleSorting()}
-								>
-									<FlexRender
-										content={header.column.columnDef.header}
-										context={header.getContext()}
-									/>
-									{#if header.column.getIsSorted() === 'asc'}
-										<i class="fa-duotone fa-arrow-down-a-z text-xs"></i>
-									{:else if header.column.getIsSorted() === 'desc'}
-										<i class="fa-duotone fa-arrow-down-z-a text-xs"></i>
-									{:else if header.column.getCanSort()}
-										<i class="fa-duotone fa-arrows-up-down text-xs opacity-30"></i>
-									{/if}
-								</button>
-							{/if}
-						</DataTable.Head>
-					{/each}
-				</tr>
-			{/each}
-		</DataTable.Header>
-		<DataTable.Body>
-			{#each table.getRowModel().rows as row (row.id)}
-				<DataTable.Row onclick={() => handleRowClick(row.original)}>
-					{#each row.getVisibleCells() as cell (cell.id)}
-						<DataTable.Cell>
-							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-						</DataTable.Cell>
-					{/each}
-				</DataTable.Row>
-			{:else}
-				<tr>
-					<td
-						colspan={table.getVisibleLeafColumns().length}
-						class="text-base-content/50 py-8 text-center"
-					>
-						{m.noResults()}
-					</td>
-				</tr>
-			{/each}
-		</DataTable.Body>
-	</DataTable.Root>
+	<SortableTable {table} onRowClick={handleRowClick} />
 
 	<DataTable.Pagination {table} />
 </div>

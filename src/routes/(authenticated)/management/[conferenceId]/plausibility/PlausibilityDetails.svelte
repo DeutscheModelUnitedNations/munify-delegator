@@ -16,7 +16,7 @@
 		<div class="w-fit">
 			<table class="table">
 				<tbody>
-					{#each items as user}
+					{#each items as user (user.id)}
 						<tr>
 							<td>{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}</td>
 							<td>

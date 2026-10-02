@@ -2,18 +2,65 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
-import { sentrySvelteKit } from '@sentry/sveltekit';
+import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import { oidcMock } from 'oidc-mock/vite';
+import { fileURLToPath } from 'node:url';
+import type { EnvironmentModuleNode, Plugin } from 'vite';
+
+/** Whether `file` is one of the modules, or imports one of them, directly or transitively. */
+function reachesFile(modules: EnvironmentModuleNode[], file: string) {
+	const seen = new Set<EnvironmentModuleNode>();
+	const queue = [...modules];
+	for (let mod = queue.pop(); mod; mod = queue.pop()) {
+		if (seen.has(mod)) continue;
+		seen.add(mod);
+		if (mod.file === file) return true;
+		queue.push(...mod.importers);
+	}
+	return false;
+}
+
+/**
+ * Rebuilds the rumble instance whenever a module that feeds the GraphQL schema changes in dev.
+ *
+ * The handlers register their abilities, objects and fields on the singleton `src/api/rumble.ts`
+ * creates, once, at module init. Re-running only an edited handler would register it a second
+ * time on a builder that has already been built, which rumble rejects. So when a change reaches
+ * `src/api/handlers/register.ts` through its importers, `src/api/rumble.ts` is invalidated with it:
+ * every importer of rumble (all handlers, `register.ts`, `yoga.ts`) then re-runs against a fresh
+ * builder. rumble.ts used to get this by importing `register.ts` itself in dev, which made every
+ * handler part of an import cycle.
+ */
+function rebuildRumbleOnSchemaChange(): Plugin {
+	const rumbleFile = fileURLToPath(new URL('./src/api/rumble.ts', import.meta.url));
+	const registerFile = fileURLToPath(new URL('./src/api/handlers/register.ts', import.meta.url));
+
+	return {
+		name: 'rebuild-rumble-on-schema-change',
+		apply: 'serve',
+		hotUpdate({ modules }) {
+			if (!reachesFile(modules, registerFile)) return;
+			const rumble = this.environment.moduleGraph.getModulesByFile(rumbleFile);
+			return rumble ? [...modules, ...rumble] : undefined;
+		}
+	};
+}
 
 export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
-			autoUploadSourceMaps: false // We upload manually via CI to Bugsink
+			autoUploadSourceMaps: false, // We upload manually via CI to Bugsink
+			// Tracing is off (Bugsink only takes errors), so the build-time tracing instrumentation has
+			// nothing to report. It also inlines the instrumented packages, graphql among them, into
+			// the server bundle, where rumble's schema and its client generator then disagree about
+			// which graphql they hold and the build fails.
+			buildTimeInstrumentation: false
 		}),
 		tailwindcss(),
 		// The local OIDC provider (oidc-mock.yaml). Only runs under `vite dev` and `vite preview`;
 		// it has to come before SvelteKit so it can answer the login page itself.
 		oidcMock(),
+		rebuildRumbleOnSchemaChange(),
 		sveltekit(),
 		paraglideVitePlugin({
 			project: './project.inlang',
@@ -44,7 +91,13 @@ export default defineConfig({
 		// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
 		include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
 		coverage: {
-			provider: 'v8'
+			provider: 'v8',
+			// Its own directory: vitest empties it on every run, and coverage/ also holds the e2e
+			// reports scripts/mergeCoverage.ts combines with this one.
+			reportsDirectory: 'coverage/unit',
+			// Generated code; scripts/coverageScope.ts leaves the same out of the e2e reports
+			exclude: ['src/lib/paraglide/**', 'src/lib/api/rumbleClient/**'],
+			reporter: ['text-summary', 'html', 'json']
 		}
 	}
 });

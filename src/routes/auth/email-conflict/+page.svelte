@@ -2,6 +2,7 @@
 	import accessDenied from '$assets/undraw/access_denied.svg';
 	import { m } from '$lib/paraglide/messages';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { configPublic } from '$config/public';
 
 	function isValidScenario(value: string | null): value is 'new' | 'change' {
@@ -36,12 +37,12 @@
 	);
 	const supportEmail = configPublic.PUBLIC_SUPPORT_EMAIL;
 
-	const mailtoLink = $derived.by(() => {
+	const mailtoQuery = $derived.by(() => {
 		const subject = encodeURIComponent(`Email Conflict - Ref: ${referenceId}`);
 		const body = encodeURIComponent(
 			`Reference ID: ${referenceId}\nScenario: ${scenario === 'new' ? 'New user registration' : 'Email change'}\nConflicting email: ${maskedEmail}\n\nPlease describe your issue:\n`
 		);
-		return `mailto:${supportEmail}?subject=${subject}&body=${body}`;
+		return `subject=${subject}&body=${body}`;
 	});
 </script>
 
@@ -52,10 +53,12 @@
 
 	{#if scenario === 'new'}
 		<p class="text-center">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/; the interpolated address is reduced by sanitizeMaskedEmail to [a-zA-Z0-9@._*-], which cannot form markup -->
 			{@html m.emailConflictNewUserDescription({ email: maskedEmail })}
 		</p>
 	{:else}
 		<p class="text-center">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/; the interpolated address is reduced by sanitizeMaskedEmail to [a-zA-Z0-9@._*-], which cannot form markup -->
 			{@html m.emailConflictEmailChangeDescription({ email: maskedEmail })}
 		</p>
 	{/if}
@@ -88,7 +91,7 @@
 					<h3 class="font-semibold">{m.emailConflictOption2Title()}</h3>
 					<p class="text-base-content/70">{m.emailConflictOption2Description()}</p>
 					<div class="flex flex-wrap items-center gap-3">
-						<a href={mailtoLink} class="btn btn-primary btn-sm">
+						<a href={`mailto:${supportEmail}?${mailtoQuery}`} class="btn btn-primary btn-sm">
 							<i class="fa-duotone fa-envelope"></i>
 							{m.emailConflictContactSupport()}
 						</a>
@@ -105,6 +108,7 @@
 		<div class="alert alert-warning">
 			<i class="fa-duotone fa-triangle-exclamation text-2xl"></i>
 			<p>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/; the interpolated address is reduced by sanitizeMaskedEmail to [a-zA-Z0-9@._*-], which cannot form markup -->
 				{@html m.emailConflictWarning({ existingEmail: maskedExistingEmail })}
 			</p>
 		</div>
@@ -115,5 +119,5 @@
 		<code class="font-mono">{referenceId}</code>
 	</div>
 
-	<a class="btn" href="/">{m.backToHome()}</a>
+	<a class="btn" href={resolve('/')}>{m.backToHome()}</a>
 </main>

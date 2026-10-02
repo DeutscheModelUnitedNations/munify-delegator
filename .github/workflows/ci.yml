@@ -153,9 +153,14 @@ jobs:
       - uses: ./.github/actions/setup-bun
       # Gives fallow a resolvable tsconfig chain ($lib, $app, ... path aliases).
       - run: bunx svelte-kit sync
+      # Unit coverage, merged into coverage/coverage-final.json, so CRAP is scored
+      # from measured coverage rather than estimated (FALLOW_COVERAGE below).
+      - run: bun run coverage
       # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
       # with write permissions on every PR.
       - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
+        env:
+          FALLOW_COVERAGE: coverage/coverage-final.json
         with:
           # The CLI version comes from the `fallow` devDependency in package.json,
           # pinned exactly there so CI and local runs analyse with the same binary.

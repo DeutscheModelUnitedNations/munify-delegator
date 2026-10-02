@@ -61,7 +61,7 @@
 	<div class="flex flex-col gap-4">
 		<p class="text-sm text-base-content/70">{m.fillPlaceholdersDescription()}</p>
 
-		{#each placeholders as placeholder, index}
+		{#each placeholders as placeholder, index (placeholder)}
 			<fieldset class="fieldset bg-base-200 border-base-300 rounded-box border p-4">
 				<legend class="fieldset-legend text-primary">{placeholder}</legend>
 				<input

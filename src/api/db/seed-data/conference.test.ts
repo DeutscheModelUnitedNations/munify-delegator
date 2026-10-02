@@ -22,10 +22,10 @@ describe('makeSeedConference', () => {
 				)
 			};
 
-			const { image, emblem, logo, ...formFields } = conferenceSettingsFormSchema.shape;
+			const uploadFields = new Set(['image', 'emblem', 'logo']);
 			const values = Object.fromEntries(
-				Object.keys(formFields)
-					.filter((key) => key in stored)
+				Object.keys(conferenceSettingsFormSchema.shape)
+					.filter((key) => !uploadFields.has(key) && key in stored)
 					.map((key) => [key, stored[key]])
 			);
 

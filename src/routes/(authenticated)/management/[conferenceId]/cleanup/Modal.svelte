@@ -17,7 +17,7 @@
 		<h1 class="text-2xl font-bold">{modalData?.message}</h1>
 		<p>{m.deleted()}: <span class="badge badge-primary">{modalData?.count}</span></p>
 		<div class="flex flex-row flex-wrap gap-1">
-			{#each modalData?.detailArray ?? [] as id}
+			{#each modalData?.detailArray ?? [] as id, index (index)}
 				<div class="badge badge-neutral badge-sm font-mono">{id}</div>
 			{/each}
 		</div>

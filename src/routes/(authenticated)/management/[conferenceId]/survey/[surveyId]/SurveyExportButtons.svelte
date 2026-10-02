@@ -4,63 +4,47 @@
 	import { downloadCSV } from '$lib/utils/downloadHelpers';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import DownloadButton from '../../downloads/DownloadButton.svelte';
-	import { SvelteMap } from 'svelte/reactivity';
-
-	interface SurveyOption {
-		id: string;
-		title: string;
-		description: string;
-		countSurveyAnswers: number;
-		upperLimit: number;
-	}
+	import {
+		buildUserRoleMap,
+		buildUserRow,
+		byFamilyName,
+		collectNotAnswered,
+		roleInfoOf,
+		type ExportDelegationMember,
+		type ExportSingleParticipant,
+		type ExportUser,
+		type RoleInfo
+	} from './surveyExport';
 
 	interface Props {
-		surveyTitle: string;
-		options: SurveyOption[];
 		surveyId: string;
 		conferenceId: string;
 	}
 
-	let { surveyTitle, options, surveyId, conferenceId }: Props = $props();
+	let { surveyId, conferenceId }: Props = $props();
+
+	// The file names and one button per option; the rows themselves are fetched on click.
+	const survey = $derived(
+		await client.liveQuery.surveyQuestion({
+			__args: { id: surveyId },
+			id: true,
+			title: true,
+			options: { id: true, title: true }
+		})
+	);
+	const surveyTitle = $derived(survey.title);
+	const options = $derived(survey.options);
+
+	type SurveyOption = (typeof options)[number];
 
 	let loadingStates = $state<Record<string, boolean>>({});
 	let exportDataCache: ExportData | null = null;
 
-	// Types for the export data
-	interface ExportUser {
-		id: string;
-		givenName: string | null;
-		familyName: string | null;
-		email: string | null;
-		pronouns: string | null;
-		birthday: Date | null;
-	}
-
-	interface ExportDelegationMember {
-		user: ExportUser;
-		delegation: {
-			assignedNation: { alpha3Code: string } | null;
-			assignedNonStateActor: { name: string } | null;
-		};
-		assignedCommittee: { name: string } | null;
-	}
-
-	interface ExportSingleParticipant {
-		user: ExportUser;
-		assignedRole: { name: string } | null;
-	}
-
-	interface ExportSurveyAnswer {
-		id: string;
-		option: { id: string };
-		user: ExportUser;
-	}
-
 	interface ExportData {
-		surveyAnswers: ExportSurveyAnswer[];
+		surveyAnswers: { id: string; option: { id: string }; user: ExportUser }[];
 		delegationMembers: ExportDelegationMember[];
 		singleParticipants: ExportSingleParticipant[];
-		userRoleMap: SvelteMap<string, { roleType: string; roleName: string; committee: string }>;
+		userRoleMap: Map<string, RoleInfo>;
 	}
 
 	const exportUser = {
@@ -116,78 +100,18 @@
 			})
 		]);
 
-		const surveyAnswers = survey?.surveyAnswers ?? [];
-
-		// Build a map of userId -> role info
-		const userRoleMap = new SvelteMap<
-			string,
-			{ roleType: string; roleName: string; committee: string }
-		>();
-
-		for (const dm of delegationMembers) {
-			const nation = dm.delegation.assignedNation;
-			const nsa = dm.delegation.assignedNonStateActor;
-
-			if (nation) {
-				userRoleMap.set(dm.user.id, {
-					roleType: 'Delegation',
-					roleName: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
-					committee: dm.assignedCommittee?.name ?? ''
-				});
-			} else if (nsa) {
-				userRoleMap.set(dm.user.id, {
-					roleType: 'NSA',
-					roleName: nsa.name,
-					committee: ''
-				});
-			}
-		}
-
-		for (const sp of singleParticipants) {
-			if (sp.assignedRole) {
-				userRoleMap.set(sp.user.id, {
-					roleType: 'SingleParticipant',
-					roleName: sp.assignedRole.name,
-					committee: ''
-				});
-			}
-		}
-
 		exportDataCache = {
-			surveyAnswers,
+			surveyAnswers: survey?.surveyAnswers ?? [],
 			delegationMembers,
 			singleParticipants,
-			userRoleMap
+			userRoleMap: buildUserRoleMap(
+				delegationMembers,
+				singleParticipants,
+				getFullTranslatedCountryNameFromISO3Code
+			)
 		};
 
 		return exportDataCache;
-	};
-
-	// Format birthday as YYYY-MM-DD
-	const formatBirthday = (birthday: Date | null): string => {
-		if (!birthday) return '';
-		const date = new Date(birthday);
-		return date.toISOString().split('T')[0];
-	};
-
-	// Build a user data row for CSV export
-	const buildUserRow = (
-		user: ExportUser,
-		roleInfo: { roleType: string; roleName: string; committee: string },
-		additionalColumns: string[] = []
-	): string[] => {
-		return [
-			user.id,
-			user.familyName ?? '',
-			user.givenName ?? '',
-			user.email ?? '',
-			user.pronouns ?? '',
-			formatBirthday(user.birthday),
-			roleInfo.roleType,
-			roleInfo.roleName,
-			roleInfo.committee,
-			...additionalColumns
-		];
 	};
 
 	// CSV headers for user data
@@ -212,14 +136,11 @@
 			const data = exportData.surveyAnswers
 				.map((answer) => {
 					const option = options.find((o) => o.id === answer.option.id);
-					const roleInfo = exportData.userRoleMap.get(answer.user.id) ?? {
-						roleType: '',
-						roleName: '',
-						committee: ''
-					};
-					return buildUserRow(answer.user, roleInfo, [option?.title ?? '']);
+					return buildUserRow(answer.user, roleInfoOf(exportData.userRoleMap, answer.user.id), [
+						option?.title ?? ''
+					]);
 				})
-				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
+				.sort(byFamilyName);
 
 			downloadCSV(header, data, `${surveyTitle}_results.csv`);
 		} finally {
@@ -233,40 +154,17 @@
 		try {
 			const exportData = await fetchExportData();
 
-			// Get all users who answered
 			const answeredUserIds = new Set(exportData.surveyAnswers.map((a) => a.user.id));
-
-			// Collect all conference participants who haven't answered
-			const notAnsweredUsers: {
-				user: ExportUser;
-				roleInfo: typeof exportData.userRoleMap extends Map<string, infer V> ? V : never;
-			}[] = [];
-
-			for (const dm of exportData.delegationMembers) {
-				if (!answeredUserIds.has(dm.user.id)) {
-					const roleInfo = exportData.userRoleMap.get(dm.user.id);
-					if (roleInfo) {
-						notAnsweredUsers.push({ user: dm.user, roleInfo });
-					}
-				}
-			}
-
-			for (const sp of exportData.singleParticipants) {
-				if (
-					!answeredUserIds.has(sp.user.id) &&
-					!notAnsweredUsers.some((u) => u.user.id === sp.user.id)
-				) {
-					const roleInfo = exportData.userRoleMap.get(sp.user.id);
-					if (roleInfo) {
-						notAnsweredUsers.push({ user: sp.user, roleInfo });
-					}
-				}
-			}
+			const notAnsweredUsers = collectNotAnswered(
+				answeredUserIds,
+				[...exportData.delegationMembers, ...exportData.singleParticipants],
+				exportData.userRoleMap
+			);
 
 			const header = getUserHeaders();
 			const data = notAnsweredUsers
 				.map(({ user, roleInfo }) => buildUserRow(user, roleInfo))
-				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
+				.sort(byFamilyName);
 
 			downloadCSV(header, data, `${surveyTitle}_not_answered.csv`);
 		} finally {
@@ -282,15 +180,10 @@
 			const header = getUserHeaders();
 			const data = exportData.surveyAnswers
 				.filter((answer) => answer.option.id === option.id)
-				.map((answer) => {
-					const roleInfo = exportData.userRoleMap.get(answer.user.id) ?? {
-						roleType: '',
-						roleName: '',
-						committee: ''
-					};
-					return buildUserRow(answer.user, roleInfo);
-				})
-				.sort((a, b) => a[1].localeCompare(b[1])); // Sort by family name
+				.map((answer) =>
+					buildUserRow(answer.user, roleInfoOf(exportData.userRoleMap, answer.user.id))
+				)
+				.sort(byFamilyName);
 
 			downloadCSV(header, data, `${surveyTitle}_${option.title}.csv`);
 		} finally {

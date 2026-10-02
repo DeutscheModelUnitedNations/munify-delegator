@@ -3,18 +3,34 @@ import type { DiffResult, DiffSegment } from './types';
 import type { Resolution } from '$lib/components/paper/editor/resolution';
 import { migrateResolution, serialize } from '$lib/components/paper/editor/resolution';
 
+/** The `type` of a TipTap JSON node, if the value is one. */
+function nodeType(node: unknown): unknown {
+	return typeof node === 'object' && node !== null && 'type' in node ? node.type : undefined;
+}
+
+/** The child nodes of a TipTap JSON node, if it has any. */
+function nodeChildren(node: unknown): unknown[] | undefined {
+	return typeof node === 'object' &&
+		node !== null &&
+		'content' in node &&
+		Array.isArray(node.content)
+		? node.content
+		: undefined;
+}
+
 /**
  * Extract plain text from a TipTap JSON node recursively
  */
-function extractNodeText(node: any): string {
-	if (!node) return '';
+function extractNodeText(node: unknown): string {
+	if (!node || typeof node !== 'object') return '';
 
-	if (node.type === 'text') {
-		return node.text || '';
+	if (nodeType(node) === 'text') {
+		return 'text' in node && node.text ? String(node.text) : '';
 	}
 
-	if (node.content && Array.isArray(node.content)) {
-		return node.content.map(extractNodeText).join('');
+	const children = nodeChildren(node);
+	if (children) {
+		return children.map(extractNodeText).join('');
 	}
 
 	return '';
@@ -23,11 +39,15 @@ function extractNodeText(node: any): string {
 /**
  * Check if content is a Resolution (vs TipTap JSON)
  */
-function isResolutionContent(content: any): content is Resolution {
+function isResolutionContent(content: unknown): content is Resolution {
 	return (
-		content &&
+		typeof content === 'object' &&
+		content !== null &&
+		'committeeName' in content &&
 		typeof content.committeeName === 'string' &&
+		'preamble' in content &&
 		Array.isArray(content.preamble) &&
+		'operative' in content &&
 		Array.isArray(content.operative)
 	);
 }
@@ -60,7 +80,7 @@ function serializeResolutionToText(rawResolution: Resolution): string {
  * Preserves paragraph structure with double newlines
  * Also handles Resolution content with labeled clauses
  */
-export function extractTextFromTipTapJson(content: any): string {
+export function extractTextFromTipTapJson(content: unknown): string {
 	if (!content) return '';
 
 	// Check if it's a Resolution
@@ -69,25 +89,27 @@ export function extractTextFromTipTapJson(content: any): string {
 	}
 
 	// Fall back to TipTap extraction
-	if (!content.content) return '';
+	const blocks = nodeChildren(content);
+	if (!blocks) return '';
 
-	return content.content
-		.map((node: any) => {
+	return blocks
+		.map((node) => {
+			const type = nodeType(node);
 			// Handle different block types
-			if (node.type === 'paragraph' || node.type === 'heading') {
+			if (type === 'paragraph' || type === 'heading') {
 				return extractNodeText(node);
 			}
-			if (node.type === 'bulletList') {
-				return node.content
-					?.map((item: any) => {
+			if (type === 'bulletList') {
+				return nodeChildren(node)
+					?.map((item) => {
 						const itemText = extractNodeText(item);
 						return `• ${itemText}`;
 					})
 					.join('\n');
 			}
-			if (node.type === 'orderedList') {
-				return node.content
-					?.map((item: any, index: number) => {
+			if (type === 'orderedList') {
+				return nodeChildren(node)
+					?.map((item, index) => {
 						const itemText = extractNodeText(item);
 						return `${index + 1}. ${itemText}`;
 					})
@@ -95,7 +117,7 @@ export function extractTextFromTipTapJson(content: any): string {
 			}
 			return extractNodeText(node);
 		})
-		.filter((text: string) => text.length > 0)
+		.filter((text) => text !== undefined && text.length > 0)
 		.join('\n\n');
 }
 
@@ -103,7 +125,7 @@ export function extractTextFromTipTapJson(content: any): string {
  * Compute diff between two TipTap JSON documents
  * Returns segments for both "before" and "after" panels
  */
-export function computeDiff(beforeContent: any, afterContent: any): DiffResult {
+export function computeDiff(beforeContent: unknown, afterContent: unknown): DiffResult {
 	const dmp = new DiffMatchPatch();
 
 	const beforeText = extractTextFromTipTapJson(beforeContent);
@@ -138,7 +160,7 @@ export function computeDiff(beforeContent: any, afterContent: any): DiffResult {
 /**
  * Check if two contents are identical
  */
-export function areContentsEqual(content1: any, content2: any): boolean {
+export function areContentsEqual(content1: unknown, content2: unknown): boolean {
 	const text1 = extractTextFromTipTapJson(content1);
 	const text2 = extractTextFromTipTapJson(content2);
 	return text1 === text2;
@@ -153,7 +175,7 @@ export interface DiffStats {
  * Compute character change statistics between two TipTap JSON documents
  * Returns the number of characters added and removed
  */
-export function computeDiffStats(beforeContent: any, afterContent: any): DiffStats {
+export function computeDiffStats(beforeContent: unknown, afterContent: unknown): DiffStats {
 	const dmp = new DiffMatchPatch();
 
 	const beforeText = extractTextFromTipTapJson(beforeContent);
@@ -175,4 +197,46 @@ export function computeDiffStats(beforeContent: any, afterContent: any): DiffSta
 	}
 
 	return { added, removed };
+}
+
+/** One rendered line of a diff panel, with the kind of change it carries. */
+interface DiffLine {
+	parts: DiffSegment[];
+	hasChange: boolean;
+	changeType: 'none' | 'insert' | 'delete' | 'mixed';
+}
+
+const emptyLine = (): DiffLine => ({ parts: [], hasChange: false, changeType: 'none' });
+
+/** Appends one piece of text to a line and folds its change into the line's change type. */
+function addPart(line: DiffLine, text: string, type: DiffSegment['type']) {
+	line.parts.push({ text, type });
+	if (type === 'equal') return;
+	line.hasChange = true;
+	if (line.changeType === 'none') line.changeType = type;
+	else if (line.changeType !== type) line.changeType = 'mixed';
+}
+
+/**
+ * Splits diff segments at their newlines into lines. An empty piece between two newlines still
+ * ends a line but adds no part, except at the start of a segment, where it is kept.
+ */
+export function splitIntoDiffLines(segments: DiffSegment[]): DiffLine[] {
+	const result: DiffLine[] = [];
+	let currentLine = emptyLine();
+
+	for (const segment of segments) {
+		const textParts = segment.text.split('\n');
+		textParts.forEach((text, i) => {
+			if (text.length > 0 || i === 0) addPart(currentLine, text, segment.type);
+			// Every part but the last ends at a newline
+			if (i < textParts.length - 1) {
+				result.push(currentLine);
+				currentLine = emptyLine();
+			}
+		});
+	}
+
+	if (currentLine.parts.length > 0) result.push(currentLine);
+	return result;
 }
