@@ -416,19 +416,17 @@ Added scripts: `db:generate`, `db:migrate`, `db:push`, `db:studio` (chase's name
 **Verified**: `typecheck` clean, `check` 0 errors / 127 warnings, `test` 153/153,
 `lint` 0 errors, `format:check` clean.
 
-**Deployment (resolved 2026-09-29):** the baseline migration contains full `CREATE TABLE`
-statements, so it must be marked as already-applied on existing databases rather than run —
-`drizzle-kit migrate` against production would fail on tables that already exist.
-`bun run db:migrate:baseline` (`src/api/db/markBaselineApplied.ts`) does this: it copies just the
-baseline folder into a temp dir and calls drizzle-orm's migrator in `init` mode against it, which
-records the baseline as applied without executing its SQL. `init` isn't exposed on the public
-`MigrationConfig` type (it's wired for drizzle-kit's own `pull --init`, not `migrate()`), but the
-runtime supports it as a plain property — see the `TYPE-SAFETY-EXCEPTION` comment in that file.
-Verified end-to-end against a throwaway database: `db:migrate:baseline` then `db:migrate` applies
-exactly the two follow-up migrations and reproduces the same snake_case schema as a fresh
-`db:migrate` run; running `db:migrate:baseline` again against an already-migrated database is a
-no-op. Run it once against production before the first `db:migrate` of this branch; skip it
-entirely for any database that never had the pre-Drizzle schema (dev, CI, a fresh staging DB).
+**Deployment (resolved 2026-10-02):** `drizzle-kit migrate` runs on production and on a fresh
+database alike, with no extra step. The baseline migration is the schema the Prisma version ends
+on, and its whole body sits inside a `DO` block guarded by `to_regclass('"User"') IS NULL`: on a
+database Prisma already built it does nothing and is just recorded as applied, on an empty one it
+creates the Prisma-era schema. `snake_case_alignment` and `join_table_surrogate_ids` then bring
+either kind of database to the current schema. The guard is a hand edit on top of drizzle-kit's
+output (statement breakpoints inside it are removed, it has to stay one statement) and has to be
+kept if the baseline is ever regenerated. Verified by applying main's 77 Prisma migrations to a
+throwaway database and running `drizzle-kit migrate`: it succeeds, `drizzle-kit generate` reports
+no drift against `schema.ts`, and the result matches a fresh `db:migrate` apart from the names of
+auto-generated constraints. This replaces the earlier `db:migrate:baseline` script, which is gone.
 
 ### Phase D — API: Pothos/CASL → Rumble handlers — **authorization layer DONE (2026-09-25)**
 

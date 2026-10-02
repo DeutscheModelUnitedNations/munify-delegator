@@ -11,10 +11,12 @@
 
 	interface Props {
 		conferenceId: string;
-		role: TeamroleEnum;
+		/** Absent for a system admin who is not part of the team. */
+		role?: TeamroleEnum;
+		isAdmin?: boolean;
 	}
 
-	let { conferenceId, role }: Props = $props();
+	let { conferenceId, role, isAdmin = false }: Props = $props();
 
 	const conference = $derived(
 		await client.liveQuery.conference({
@@ -29,6 +31,7 @@
 	let linkContext = $derived<TeamDashboardLinkContext>({
 		conferenceId,
 		role,
+		isAdmin,
 		linkToTeamWiki: conference.linkToTeamWiki,
 		linkToServicesPage: conference.linkToServicesPage,
 		linkToPreparationGuide: conference.linkToPreparationGuide,
@@ -41,7 +44,7 @@
 <DashboardSection
 	icon="users-gear"
 	title={m.teamMemberDashboard()}
-	description={`${conference.title} · ${translateTeamRole(role)}`}
+	description={role ? `${conference.title} · ${translateTeamRole(role)}` : conference.title}
 >
 	<DashboardLinksGrid>
 		{#each visibleLinks as link (link.id)}

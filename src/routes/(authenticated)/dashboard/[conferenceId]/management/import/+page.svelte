@@ -247,7 +247,7 @@
 {#snippet gotoUser()}
 	<a
 		href={resolve(
-			`/management/${params.conferenceId}/participants?selected=${selectedUser?.email}`
+			`/dashboard/${params.conferenceId}/management/participants?selected=${selectedUser?.email}`
 		)}
 		target="_blank"
 	>

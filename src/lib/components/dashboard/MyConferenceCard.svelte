@@ -13,12 +13,15 @@
 	} from './myConferenceCardParticipation';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { fetchMyParticipation } from '$lib/api/myConferenceParticipation';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 
 	interface Props {
 		conferenceId: string;
 	}
 
 	let { conferenceId }: Props = $props();
+
+	const currentUser = await getCurrentUser();
 
 	const [conference, myParticipation] = $derived(
 		await Promise.all([
@@ -93,6 +96,9 @@
 	});
 
 	const isRejected = $derived(participation.status === 'rejected');
+	// Listed without any part in it: only a system admin sees conferences like that, and has no
+	// application status to show.
+	const isAdminOnly = $derived(currentUser.isAdmin && participation.type === 'unknown');
 </script>
 
 <div
@@ -127,10 +133,12 @@
 							<p class="text-base-content/70 mt-0.5 text-sm">{conference.longTitle}</p>
 						{/if}
 					</div>
-					<div class="badge {statusBadgeClass} gap-1">
-						<i class="fa-solid {statusIcon} text-xs"></i>
-						{statusText}
-					</div>
+					{#if !isAdminOnly}
+						<div class="badge {statusBadgeClass} gap-1">
+							<i class="fa-solid {statusIcon} text-xs"></i>
+							{statusText}
+						</div>
+					{/if}
 				</div>
 
 				<!-- Date and Location -->
@@ -160,6 +168,12 @@
 						icon={participation.nonStateActor?.fontAwesomeIcon}
 						size="xs"
 					/>
+				{:else if isAdminOnly}
+					<div
+						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
+					>
+						<i class="fa-solid fa-user-shield text-sm"></i>
+					</div>
 				{:else if roleIcon}
 					<div
 						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
@@ -170,7 +184,10 @@
 
 				<!-- Role Text -->
 				<div class="flex-1">
-					<p class="font-medium">{roleText}</p>
+					<p class="font-medium">{isAdminOnly ? m.systemAdmin() : roleText}</p>
+					{#if isAdminOnly}
+						<p class="text-base-content/60 text-sm">{m.systemAdminNotParticipating()}</p>
+					{/if}
 					{#if participation.type === 'delegation' && participation.committee}
 						<p class="text-base-content/60 text-sm">
 							{participation.committee.name} ({participation.committee.abbreviation})

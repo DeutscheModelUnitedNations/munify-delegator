@@ -120,7 +120,10 @@
 				/>
 			{/key}
 		{:else if teamMember}
-			<TeamMemberDashboard {conferenceId} role={teamMember.role} />
+			<TeamMemberDashboard {conferenceId} role={teamMember.role} isAdmin={currentUser.isAdmin} />
+		{:else if currentUser.isAdmin}
+			<!-- A system admin needs no part in the conference to manage it -->
+			<TeamMemberDashboard {conferenceId} isAdmin />
 		{:else}
 			<NoConferenceIndicator />
 		{/if}

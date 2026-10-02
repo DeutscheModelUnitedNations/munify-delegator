@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { makeSeedConference } from './conference';
-import { conferenceSettingsFormSchema } from '../../../routes/(authenticated)/management/[conferenceId]/configuration/form-schema';
+import { conferenceSettingsFormSchema } from '../../../routes/(authenticated)/dashboard/[conferenceId]/management/configuration/form-schema';
 
 /**
  * A seeded conference has to be editable. The settings form validates more strictly than the

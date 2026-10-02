@@ -23,7 +23,7 @@ test.fixme('an admin can change a conference setting through the confirm-preview
 	const newLocation = `E2E Location ${Date.now()}`;
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/configuration`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/configuration`
 	});
 	await waitForHydration(page);
 

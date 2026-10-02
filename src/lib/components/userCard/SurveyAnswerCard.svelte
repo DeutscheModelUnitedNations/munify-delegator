@@ -94,7 +94,7 @@
 		{/if}
 		<a
 			class="btn btn-sm"
-			href={resolve('/(authenticated)/management/[conferenceId]/survey/[surveyId]', {
+			href={resolve('/(authenticated)/dashboard/[conferenceId]/management/survey/[surveyId]', {
 				conferenceId,
 				surveyId: survey.id
 			})}

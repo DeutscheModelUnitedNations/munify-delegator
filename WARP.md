@@ -87,7 +87,7 @@ bun run machine-translate
 - **`src/routes/`** - SvelteKit file-based routing
   - `(authenticated)/` - Protected routes requiring authentication
     - `dashboard/[conferenceId]/` - Participant-facing conference dashboard
-    - `management/[conferenceId]/` - Admin conference management UI
+    - `dashboard/[conferenceId]/management/` - Admin conference management UI
     - `registration/[conferenceId]/` - Registration flows (delegation, individual, supervisor)
     - `assignment-assistant/` - Committee assignment tooling
   - `api/graphql/` - GraphQL API endpoint

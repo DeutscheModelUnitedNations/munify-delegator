@@ -14,7 +14,7 @@
 <div class="mx-auto flex h-full w-full max-w-5xl flex-col">
 	<div class="mb-3 flex items-center gap-2">
 		<a
-			href={resolve(`/management/${params.conferenceId}/participants`)}
+			href={resolve(`/dashboard/${params.conferenceId}/management/participants`)}
 			class="btn btn-ghost btn-sm"
 		>
 			<i class="fa-duotone fa-arrow-left"></i>

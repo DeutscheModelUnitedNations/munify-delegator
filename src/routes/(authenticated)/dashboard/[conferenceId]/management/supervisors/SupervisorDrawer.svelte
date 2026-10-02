@@ -78,7 +78,7 @@
 {#snippet detailsLink(list: 'delegations' | 'individuals', selectedId: string)}
 	<a
 		class="btn btn-sm"
-		href={resolve(`/management/${conferenceId}/${list}?selected=${selectedId}`)}
+		href={resolve(`/dashboard/${conferenceId}/management/${list}?selected=${selectedId}`)}
 		aria-label="Details"
 	>
 		<i class="fa-duotone fa-arrow-up-right-from-square"></i>

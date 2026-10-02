@@ -47,7 +47,10 @@
 	let confirmDisplayName = $derived(formatNames(givenName ?? undefined, familyName ?? undefined));
 
 	let fullPageUrl = $derived(
-		resolve('/(authenticated)/management/[conferenceId]/user/[userId]', { conferenceId, userId })
+		resolve('/(authenticated)/dashboard/[conferenceId]/management/user/[userId]', {
+			conferenceId,
+			userId
+		})
 	);
 
 	const genderIcon = $derived.by(() => {

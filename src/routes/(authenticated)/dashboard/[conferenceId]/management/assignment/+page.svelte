@@ -7,7 +7,7 @@
 	import {
 		ProjectDataSchema,
 		type ProjectData
-	} from '../../../../(authenticated)/assignment-assistant/[projectId]/appData.svelte';
+	} from '../../../../assignment-assistant/[projectId]/appData.svelte';
 	import { fetchAssignmentProject } from './assignmentProject';
 	import type { PageProps } from './$types';
 

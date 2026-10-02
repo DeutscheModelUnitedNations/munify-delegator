@@ -141,7 +141,9 @@
 						<a
 							aria-label="Details"
 							class="btn btn-ghost btn-sm"
-							href={resolve(`/management/${getConference()?.id}/delegations?selected=${parent.id}`)}
+							href={resolve(
+								`/dashboard/${getConference()?.id}/management/delegations?selected=${parent.id}`
+							)}
 							target="_blank"
 						>
 							<i class="fas fa-up-right-from-square"></i>
@@ -188,7 +190,7 @@
 	{#if project}
 		<a
 			class="btn btn-primary"
-			href={resolve(`/management/${project.data.conference.id}/assignment`)}
+			href={resolve(`/dashboard/${project.data.conference.id}/management/assignment`)}
 			>Zurück zur Admin Oberfläche</a
 		>
 	{/if}

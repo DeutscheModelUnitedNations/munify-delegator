@@ -159,7 +159,10 @@
 				<i class="fa-duotone fa-box-archive"></i>
 				{survey.hidden ? m.unarchiveSurvey() : m.archiveSurvey()}
 			</button>
-			<a href={resolve(`/management/${conferenceId}/survey/${survey.id}`)} class="btn btn-sm">
+			<a
+				href={resolve(`/dashboard/${conferenceId}/management/survey/${survey.id}`)}
+				class="btn btn-sm"
+			>
 				<i class="fas fa-edit"></i>
 				{m.edit()}
 			</a>
@@ -196,7 +199,10 @@
 		</div>
 	{/if}
 
-	<a class="btn btn-primary" href={resolve(`/management/${conferenceId}/survey/${survey.id}`)}>
+	<a
+		class="btn btn-primary"
+		href={resolve(`/dashboard/${conferenceId}/management/survey/${survey.id}`)}
+	>
 		{m.details()}
 	</a>
 </div>

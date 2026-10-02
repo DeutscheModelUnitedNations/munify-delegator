@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { fetchMyConferences } from './myConferences.svelte';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
@@ -9,6 +10,7 @@
 
 	// The same list the side navigation shows; each card fetches its own details.
 	const conferences = $derived(await fetchMyConferences());
+	const currentUser = await getCurrentUser();
 
 	// Someone taking part in exactly one conference has nothing to pick, so they go straight to it.
 	$effect(() => {
@@ -34,15 +36,29 @@
 	});
 </script>
 
+{#snippet seedLink()}
+	{#if currentUser.isAdmin}
+		<a class="btn btn-ghost btn-sm self-center" href={resolve('/dashboard/seed')}>
+			<i class="fa-duotone fa-seedling"></i>
+			{m.seedConference()}
+		</a>
+	{/if}
+{/snippet}
+
 {#if conferences.length === 0}
-	<NoConferenceIndicator />
+	<div class="flex w-full flex-col items-center gap-4">
+		<NoConferenceIndicator />
+		{@render seedLink()}
+	</div>
 {:else}
 	<div class="flex w-full flex-col items-center">
 		<div class="flex w-full max-w-4xl flex-col gap-6">
 			<DashboardSection
 				icon="globe"
-				title={m.myConferences()}
-				description={m.myConferencesDescription()}
+				title={currentUser.isAdmin ? m.allConferences() : m.myConferences()}
+				description={currentUser.isAdmin
+					? m.allConferencesDescription()
+					: m.myConferencesDescription()}
 			>
 				<div class="flex flex-col gap-4">
 					{#each sortedConferences as conference (conference.id)}
@@ -61,6 +77,7 @@
 					</a>
 				</div>
 			</DashboardSection>
+			{@render seedLink()}
 		</div>
 	</div>
 {/if}

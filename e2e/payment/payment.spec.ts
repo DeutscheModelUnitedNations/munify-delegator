@@ -28,7 +28,7 @@ test('a participant can generate a payment reference and an admin can mark it re
 	const adminPage = await adminContext.newPage();
 
 	await loginAs(adminPage, fixedTestUser(E2E_PAYMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/payments`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/payments`
 	});
 
 	await adminPage.getByPlaceholder(/referenzsuche|reference search/i).fill(reference);

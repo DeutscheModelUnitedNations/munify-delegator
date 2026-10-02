@@ -24,7 +24,7 @@ test('a plain participant is refused every management route for a conference', a
 	await loginAs(page, makeTestUser('authz-outsider'), { startUrl: '/dashboard' });
 
 	for (const suffix of MANAGEMENT_ROUTES) {
-		const path = `/management/${E2E_CONFERENCE_ID}${suffix}`;
+		const path = `/dashboard/${E2E_CONFERENCE_ID}/management${suffix}`;
 		const res = await page.goto(path);
 
 		// Routes that render server-side fail the layout guard with a 403 status. Routes that opt

@@ -248,9 +248,11 @@ export const getMoreInfoLink = (id: string) => {
 	const project = getProject();
 	if (!project) return undefined;
 	if (project.data.singleParticipants.find((singleParticipant) => singleParticipant.id === id)) {
-		return resolve(`/management/${project.data.conference.id}/individuals?selected=${id}`);
+		return resolve(
+			`/dashboard/${project.data.conference.id}/management/individuals?selected=${id}`
+		);
 	}
-	return resolve(`/management/${project.data.conference.id}/delegations?selected=${id}`);
+	return resolve(`/dashboard/${project.data.conference.id}/management/delegations?selected=${id}`);
 };
 
 export const evaluateApplication = (id: string, evaluation: number) => {

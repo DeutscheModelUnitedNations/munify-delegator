@@ -392,7 +392,7 @@ bun run preview
 - **Dev accounts and the dev seed belong together.** `src/api/db/seed-data/devAccounts.ts` lists
   every account on the login page; `bun run dev:accounts` writes them into `oidc-mock.yaml`
   (never edit its `users` by hand - `devAccounts.test.ts` fails on drift), and
-  `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Eight
+  `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Nine
   conferences cover the stages (`seed-dev/plans.ts`: pre, registration open / in its grace period
   / closed, preparation with everything and with nothing unlocked, active, post). Team personas
   hold one team role everywhere; `[Registration]` personas cover the application steps;

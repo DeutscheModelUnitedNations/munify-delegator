@@ -1,7 +1,7 @@
 /**
  * Wipes the dev database and fills it with every state the app can show (`bun run db:seed:dev`).
  *
- * Eight conferences cover the life of a conference: before registration, three moments of the
+ * Nine conferences cover the life of a conference: before registration, three moments of the
  * registration window, preparation with and without its steps unlocked, the running conference
  * and the time after it (`seed-dev/plans.ts`). In them, the accounts on the oidc-mock login page
  * (`seed-data/devAccounts.ts`) each play one role: the team roles in every conference, the

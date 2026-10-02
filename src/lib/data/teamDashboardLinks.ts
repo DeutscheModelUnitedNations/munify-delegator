@@ -5,7 +5,9 @@ import type { DashboardHref } from './dashboardLinks';
 
 export interface TeamDashboardLinkContext {
 	conferenceId: string;
-	role: TeamroleEnum;
+	/** Absent for a system admin who is not part of the conference's team. */
+	role?: TeamroleEnum;
+	isAdmin?: boolean;
 	linkToTeamWiki?: string | null;
 	linkToServicesPage?: string | null;
 	linkToPreparationGuide?: string | null;
@@ -30,7 +32,9 @@ const teamDashboardLinks: TeamDashboardLink[] = [
 		getTitle: () => m.administration(),
 		getDescription: () => m.manageConference(),
 		getHref: (ctx) =>
-			resolve('/(authenticated)/management/[conferenceId]', { conferenceId: ctx.conferenceId }),
+			resolve('/(authenticated)/dashboard/[conferenceId]/management', {
+				conferenceId: ctx.conferenceId
+			}),
 		external: false,
 		isVisible: () => true,
 		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
@@ -123,7 +127,10 @@ const teamDashboardLinks: TeamDashboardLink[] = [
 export function getTeamLinksForRole(ctx: TeamDashboardLinkContext): TeamDashboardLink[] {
 	return teamDashboardLinks.filter((link) => {
 		if (!link.isVisible(ctx)) return false;
-		if (link.allowedRoles && !link.allowedRoles.includes(ctx.role)) return false;
+		if (link.allowedRoles && !ctx.isAdmin) {
+			const { role } = ctx;
+			if (!role || !link.allowedRoles.includes(role)) return false;
+		}
 		return true;
 	});
 }

@@ -11,7 +11,15 @@ import type { Insert } from '../rows';
  */
 
 export type ConferenceKey =
-	'pre' | 'registration' | 'grace' | 'closed' | 'preparation' | 'locked' | 'active' | 'post';
+	| 'pre'
+	| 'registration'
+	| 'grace'
+	| 'closed'
+	| 'preparation'
+	| 'locked'
+	| 'active'
+	| 'post'
+	| 'second';
 
 export interface ConferencePlan {
 	key: ConferenceKey;
@@ -239,6 +247,31 @@ export const conferencePlans: ConferencePlan[] = [
 			invitations: false
 		},
 		crowd: fullCrowd
+	},
+	{
+		key: 'second',
+		summary:
+			'PREPARATION: a second, smaller conference - dev-admin takes part in none, so its management dashboard shows without a role',
+		conference: {
+			title: 'Seed 9 · Second conference',
+			longTitle: 'Zweite Seed-Konferenz',
+			state: 'PREPARATION',
+			unlockPayments: true,
+			unlockPostals: true
+		},
+		days: { startAssignment: -25, startConference: 21, endConference: 24 },
+		assigned: true,
+		with: { ...noExtras, templates: true },
+		crowd: {
+			committees: 3,
+			nationsPerCommittee: [6, 10],
+			nonStateActors: 3,
+			customRoles: 3,
+			delegations: 5,
+			singles: 3,
+			supervisors: 2,
+			team: 2
+		}
 	}
 ];
 

@@ -9,7 +9,7 @@ test('a team member can mark a participant payment status as done from the parti
 		// Filter to the target via the page's `search` query param. The participants table
 		// paginates, and every run adds newly registered users to this conference, so the seeded
 		// target eventually falls off the first page and a bare row lookup starts timing out.
-		startUrl: `/management/${E2E_CONFERENCE_ID}/participants?search=${E2E_MGMT_TARGET_FAMILY_NAME}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/participants?search=${E2E_MGMT_TARGET_FAMILY_NAME}`
 	});
 
 	const targetRow = page.locator('tr', { hasText: E2E_MGMT_TARGET_FAMILY_NAME });

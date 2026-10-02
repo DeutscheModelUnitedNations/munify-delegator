@@ -15,7 +15,7 @@ test('an admin can split a delegation into two single-member delegations', async
 	page.on('dialog', (dialog) => dialog.accept());
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/assignment`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment`
 	});
 
 	const projectData = {

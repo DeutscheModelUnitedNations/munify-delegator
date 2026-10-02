@@ -13,7 +13,7 @@ test('an admin can create a survey question and add an option to it', async ({ p
 	const optionTitle = 'E2E Option A';
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/survey`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/survey`
 	});
 	await waitForHydration(page);
 

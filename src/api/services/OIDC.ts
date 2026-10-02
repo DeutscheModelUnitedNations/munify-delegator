@@ -9,7 +9,6 @@ export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 /** Everything behind the `(authenticated)` route group. */
 export const AUTHENTICATED_ROUTES = [
 	'/dashboard',
-	'/management',
 	'/registration',
 	'/assignment-assistant',
 	'/my-account',

@@ -65,7 +65,7 @@
 	</button>
 	<a
 		class="btn btn-primary btn-xs"
-		href={resolve(`/management/${conferenceId}/seats?assignUserId=${userId}`)}
+		href={resolve(`/dashboard/${conferenceId}/management/seats?assignUserId=${userId}`)}
 		title={m.assignSeat()}
 		onclick={(e) => e.stopPropagation()}
 	>

@@ -39,13 +39,13 @@ test('every management route renders for an authorised admin', async ({ page }) 
 	page.on('pageerror', (e) => pageErrors.push(e.message));
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID, { roles: ['admin'] }), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management`
 	});
 
 	const failures: string[] = [];
 
 	for (const suffix of ROUTES) {
-		const path = `/management/${E2E_CONFERENCE_ID}${suffix}`;
+		const path = `/dashboard/${E2E_CONFERENCE_ID}/management${suffix}`;
 		pageErrors.length = 0;
 
 		const res = await page.goto(path);

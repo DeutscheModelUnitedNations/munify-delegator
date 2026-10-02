@@ -49,7 +49,7 @@
 							<a
 								class="btn btn-sm"
 								href={resolve(
-									`/(authenticated)/management/[conferenceId]/supervisors?selected=${supervisor.id}`,
+									`/(authenticated)/dashboard/[conferenceId]/management/supervisors?selected=${supervisor.id}`,
 									{
 										conferenceId
 									}

@@ -190,7 +190,6 @@
 		"coverage": "vitest run --coverage && bun scripts/mergeCoverage.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:migrate:baseline": "bun ./src/api/db/markBaselineApplied.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"db:reset": "bun ./src/api/db/reset.ts",

@@ -6,5 +6,5 @@ export const load: PageLoad = async ({ params }) => {
 
 	if (conferenceId === undefined) error(404, 'Not found');
 
-	redirect(302, `/management/${conferenceId}/stats`);
+	redirect(302, `/dashboard/${conferenceId}/management/stats`);
 };

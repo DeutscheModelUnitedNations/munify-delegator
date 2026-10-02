@@ -1,13 +1,25 @@
-CREATE TYPE "AdministrativeStatus" AS ENUM('DONE', 'PROBLEM', 'PENDING');--> statement-breakpoint
-CREATE TYPE "CalendarEntryColor" AS ENUM('SESSION', 'WORKSHOP', 'LOGISTICS', 'SOCIAL', 'CEREMONY', 'BREAK', 'HIGHLIGHT', 'INFO');--> statement-breakpoint
-CREATE TYPE "ConferenceState" AS ENUM('PRE', 'PARTICIPANT_REGISTRATION', 'PREPARATION', 'ACTIVE', 'POST');--> statement-breakpoint
-CREATE TYPE "FoodPreference" AS ENUM('OMNIVORE', 'VEGETARIAN', 'VEGAN');--> statement-breakpoint
-CREATE TYPE "Gender" AS ENUM('MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT');--> statement-breakpoint
-CREATE TYPE "MediaConsentStatus" AS ENUM('NOT_SET', 'ALLOWED_ALL', 'PARTIALLY_ALLOWED', 'NOT_ALLOWED');--> statement-breakpoint
-CREATE TYPE "PaperStatus" AS ENUM('SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED', 'DRAFT', 'REVISED');--> statement-breakpoint
-CREATE TYPE "PaperType" AS ENUM('POSITION_PAPER', 'WORKING_PAPER', 'INTRODUCTION_PAPER');--> statement-breakpoint
-CREATE TYPE "ReviewHelpStatus" AS ENUM('UNSPECIFIED', 'HELP_NEEDED', 'NO_HELP_WANTED');--> statement-breakpoint
-CREATE TYPE "TeamRole" AS ENUM('PROJECT_MANAGEMENT', 'PARTICIPANT_CARE', 'MEMBER', 'REVIEWER', 'TEAM_COORDINATOR');--> statement-breakpoint
+-- Hand-edited on top of drizzle-kit's output: this migration is the schema the Prisma version of the
+-- app ends on, so a database that Prisma already built has every object below. The guard makes the
+-- whole script a no-op there (the migration is simply recorded as applied) and creates the schema
+-- on a fresh database. The two migrations after it then bring either kind of database to the
+-- current schema. Keep the guard if this file is ever regenerated.
+DO $baseline$
+BEGIN
+	IF to_regclass('"User"') IS NOT NULL THEN
+		RAISE NOTICE 'Prisma schema already present, skipping baseline';
+		RETURN;
+	END IF;
+
+CREATE TYPE "AdministrativeStatus" AS ENUM('DONE', 'PROBLEM', 'PENDING');
+CREATE TYPE "CalendarEntryColor" AS ENUM('SESSION', 'WORKSHOP', 'LOGISTICS', 'SOCIAL', 'CEREMONY', 'BREAK', 'HIGHLIGHT', 'INFO');
+CREATE TYPE "ConferenceState" AS ENUM('PRE', 'PARTICIPANT_REGISTRATION', 'PREPARATION', 'ACTIVE', 'POST');
+CREATE TYPE "FoodPreference" AS ENUM('OMNIVORE', 'VEGETARIAN', 'VEGAN');
+CREATE TYPE "Gender" AS ENUM('MALE', 'FEMALE', 'DIVERSE', 'NO_STATEMENT');
+CREATE TYPE "MediaConsentStatus" AS ENUM('NOT_SET', 'ALLOWED_ALL', 'PARTIALLY_ALLOWED', 'NOT_ALLOWED');
+CREATE TYPE "PaperStatus" AS ENUM('SUBMITTED', 'CHANGES_REQUESTED', 'ACCEPTED', 'DRAFT', 'REVISED');
+CREATE TYPE "PaperType" AS ENUM('POSITION_PAPER', 'WORKING_PAPER', 'INTRODUCTION_PAPER');
+CREATE TYPE "ReviewHelpStatus" AS ENUM('UNSPECIFIED', 'HELP_NEEDED', 'NO_HELP_WANTED');
+CREATE TYPE "TeamRole" AS ENUM('PROJECT_MANAGEMENT', 'PARTICIPANT_CARE', 'MEMBER', 'REVIEWER', 'TEAM_COORDINATOR');
 CREATE TABLE "AttendanceEntry" (
 	"id" text PRIMARY KEY,
 	"timestamp" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -17,7 +29,7 @@ CREATE TABLE "AttendanceEntry" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "CalendarDay" (
 	"id" text PRIMARY KEY,
 	"date" timestamp(3) NOT NULL,
@@ -27,7 +39,7 @@ CREATE TABLE "CalendarDay" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "CalendarEntry" (
 	"id" text PRIMARY KEY,
 	"startTime" timestamp(3) NOT NULL,
@@ -43,7 +55,7 @@ CREATE TABLE "CalendarEntry" (
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"placeId" text
 );
---> statement-breakpoint
+
 CREATE TABLE "CalendarTrack" (
 	"id" text PRIMARY KEY,
 	"name" text NOT NULL,
@@ -53,7 +65,7 @@ CREATE TABLE "CalendarTrack" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "Committee" (
 	"id" text PRIMARY KEY,
 	"name" text NOT NULL,
@@ -64,7 +76,7 @@ CREATE TABLE "Committee" (
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"resolutionHeadline" text
 );
---> statement-breakpoint
+
 CREATE TABLE "CommitteeAgendaItem" (
 	"id" text PRIMARY KEY,
 	"title" text NOT NULL,
@@ -74,13 +86,13 @@ CREATE TABLE "CommitteeAgendaItem" (
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"reviewHelpStatus" "ReviewHelpStatus" DEFAULT 'UNSPECIFIED'::"ReviewHelpStatus" NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "_CommitteeToNation" (
 	"A" text,
 	"B" text,
 	CONSTRAINT "_CommitteeToNation_AB_pkey" PRIMARY KEY("A","B")
 );
---> statement-breakpoint
+
 CREATE TABLE "Conference" (
 	"id" text PRIMARY KEY,
 	"title" text NOT NULL,
@@ -127,7 +139,7 @@ CREATE TABLE "Conference" (
 	"showCalendar" boolean DEFAULT false NOT NULL,
 	"timezone" text DEFAULT 'Europe/Berlin' NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "ConferenceParticipantStatus" (
 	"id" text PRIMARY KEY,
 	"userId" text NOT NULL,
@@ -143,7 +155,7 @@ CREATE TABLE "ConferenceParticipantStatus" (
 	"assigendDocumentNumber" integer,
 	"accessCardId" text
 );
---> statement-breakpoint
+
 CREATE TABLE "ConferenceSupervisor" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -153,19 +165,19 @@ CREATE TABLE "ConferenceSupervisor" (
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"connectionCode" text NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "_ConferenceSupervisorToDelegationMember" (
 	"A" text,
 	"B" text,
 	CONSTRAINT "_ConferenceSupervisorToDelegationMember_AB_pkey" PRIMARY KEY("A","B")
 );
---> statement-breakpoint
+
 CREATE TABLE "_ConferenceSupervisorToSingleParticipant" (
 	"A" text,
 	"B" text,
 	CONSTRAINT "_ConferenceSupervisorToSingleParticipant_AB_pkey" PRIMARY KEY("A","B")
 );
---> statement-breakpoint
+
 CREATE TABLE "CustomConferenceRole" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -176,13 +188,13 @@ CREATE TABLE "CustomConferenceRole" (
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"seatAmount" integer DEFAULT 1 NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "_CustomConferenceRoleToSingleParticipant" (
 	"A" text,
 	"B" text,
 	CONSTRAINT "_CustomConferenceRoleToSingleParticipant_AB_pkey" PRIMARY KEY("A","B")
 );
---> statement-breakpoint
+
 CREATE TABLE "Delegation" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -196,7 +208,7 @@ CREATE TABLE "Delegation" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "DelegationMember" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -207,14 +219,14 @@ CREATE TABLE "DelegationMember" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "Nation" (
 	"alpha3Code" text PRIMARY KEY,
 	"alpha2Code" text NOT NULL,
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "NonStateActor" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -226,7 +238,7 @@ CREATE TABLE "NonStateActor" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "Paper" (
 	"id" text PRIMARY KEY,
 	"authorId" text NOT NULL,
@@ -239,7 +251,7 @@ CREATE TABLE "Paper" (
 	"conferenceId" text NOT NULL,
 	"firstSubmittedAt" timestamp(3)
 );
---> statement-breakpoint
+
 CREATE TABLE "PaperReview" (
 	"id" text PRIMARY KEY,
 	"comments" jsonb NOT NULL,
@@ -249,7 +261,7 @@ CREATE TABLE "PaperReview" (
 	"statusAfter" "PaperStatus",
 	"statusBefore" "PaperStatus"
 );
---> statement-breakpoint
+
 CREATE TABLE "PaperVersion" (
 	"id" text PRIMARY KEY,
 	"version" integer NOT NULL,
@@ -258,7 +270,7 @@ CREATE TABLE "PaperVersion" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"status" "PaperStatus" DEFAULT 'DRAFT'::"PaperStatus" NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "PaymentTransaction" (
 	"id" text PRIMARY KEY,
 	"amount" double precision NOT NULL,
@@ -268,7 +280,7 @@ CREATE TABLE "PaymentTransaction" (
 	"userId" text NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "Place" (
 	"id" text PRIMARY KEY,
 	"name" text NOT NULL,
@@ -283,7 +295,7 @@ CREATE TABLE "Place" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "ReviewerSnippet" (
 	"id" text PRIMARY KEY,
 	"name" text NOT NULL,
@@ -292,7 +304,7 @@ CREATE TABLE "ReviewerSnippet" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "RoleApplication" (
 	"id" text PRIMARY KEY,
 	"nationId" text,
@@ -302,7 +314,7 @@ CREATE TABLE "RoleApplication" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "SingleParticipant" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -316,7 +328,7 @@ CREATE TABLE "SingleParticipant" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "SurveyAnswer" (
 	"id" text PRIMARY KEY,
 	"questionId" text NOT NULL,
@@ -325,7 +337,7 @@ CREATE TABLE "SurveyAnswer" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "SurveyOption" (
 	"id" text PRIMARY KEY,
 	"questionId" text NOT NULL,
@@ -335,7 +347,7 @@ CREATE TABLE "SurveyOption" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "SurveyQuestion" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -348,7 +360,7 @@ CREATE TABLE "SurveyQuestion" (
 	"hidden" boolean DEFAULT false NOT NULL,
 	"showSelectionOnDashboard" boolean DEFAULT false NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "TeamMember" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -357,7 +369,7 @@ CREATE TABLE "TeamMember" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "TeamMemberInvitation" (
 	"id" text PRIMARY KEY,
 	"email" text NOT NULL,
@@ -372,7 +384,7 @@ CREATE TABLE "TeamMemberInvitation" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "User" (
 	"id" text PRIMARY KEY,
 	"email" text NOT NULL,
@@ -397,7 +409,7 @@ CREATE TABLE "User" (
 	"emergencyContacts" text,
 	"globalNotes" text
 );
---> statement-breakpoint
+
 CREATE TABLE "UserReferenceInPaymentTransaction" (
 	"id" text PRIMARY KEY,
 	"paymentTransactionId" text NOT NULL,
@@ -405,7 +417,7 @@ CREATE TABLE "UserReferenceInPaymentTransaction" (
 	"createdAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updatedAt" timestamp(3) DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
+
 CREATE TABLE "WaitingListEntry" (
 	"id" text PRIMARY KEY,
 	"conferenceId" text NOT NULL,
@@ -419,102 +431,104 @@ CREATE TABLE "WaitingListEntry" (
 	"assigned" boolean DEFAULT false NOT NULL,
 	"hidden" boolean DEFAULT false NOT NULL
 );
---> statement-breakpoint
-CREATE UNIQUE INDEX "CalendarDay_conferenceId_sortOrder_key" ON "CalendarDay" ("conferenceId","sortOrder");--> statement-breakpoint
-CREATE UNIQUE INDEX "CalendarTrack_calendarDayId_sortOrder_key" ON "CalendarTrack" ("calendarDayId","sortOrder");--> statement-breakpoint
-CREATE INDEX "_CommitteeToNation_B_index" ON "_CommitteeToNation" ("B");--> statement-breakpoint
-CREATE UNIQUE INDEX "ConferenceParticipantStatus_conferenceId_assigendDocumentNu_key" ON "ConferenceParticipantStatus" ("conferenceId","assigendDocumentNumber");--> statement-breakpoint
-CREATE UNIQUE INDEX "ConferenceParticipantStatus_userId_conferenceId_key" ON "ConferenceParticipantStatus" ("userId","conferenceId");--> statement-breakpoint
-CREATE UNIQUE INDEX "ConferenceSupervisor_conferenceId_connectionCode_key" ON "ConferenceSupervisor" ("conferenceId","connectionCode");--> statement-breakpoint
-CREATE UNIQUE INDEX "ConferenceSupervisor_conferenceId_userId_key" ON "ConferenceSupervisor" ("conferenceId","userId");--> statement-breakpoint
-CREATE INDEX "_ConferenceSupervisorToDelegationMember_B_index" ON "_ConferenceSupervisorToDelegationMember" ("B");--> statement-breakpoint
-CREATE INDEX "_ConferenceSupervisorToSingleParticipant_B_index" ON "_ConferenceSupervisorToSingleParticipant" ("B");--> statement-breakpoint
-CREATE UNIQUE INDEX "CustomConferenceRole_conferenceId_name_key" ON "CustomConferenceRole" ("conferenceId","name");--> statement-breakpoint
-CREATE INDEX "_CustomConferenceRoleToSingleParticipant_B_index" ON "_CustomConferenceRoleToSingleParticipant" ("B");--> statement-breakpoint
-CREATE UNIQUE INDEX "Delegation_conferenceId_assignedNationAlpha3Code_key" ON "Delegation" ("conferenceId","assignedNationAlpha3Code");--> statement-breakpoint
-CREATE UNIQUE INDEX "Delegation_conferenceId_assignedNonStateActorId_key" ON "Delegation" ("conferenceId","assignedNonStateActorId");--> statement-breakpoint
-CREATE UNIQUE INDEX "Delegation_conferenceId_entryCode_key" ON "Delegation" ("conferenceId","entryCode");--> statement-breakpoint
-CREATE UNIQUE INDEX "DelegationMember_conferenceId_userId_key" ON "DelegationMember" ("conferenceId","userId");--> statement-breakpoint
-CREATE UNIQUE INDEX "DelegationMember_delegationId_userId_key" ON "DelegationMember" ("delegationId","userId");--> statement-breakpoint
-CREATE UNIQUE INDEX "Nation_alpha2Code_key" ON "Nation" ("alpha2Code");--> statement-breakpoint
-CREATE UNIQUE INDEX "NonStateActor_conferenceId_abbreviation_key" ON "NonStateActor" ("conferenceId","abbreviation");--> statement-breakpoint
-CREATE UNIQUE INDEX "NonStateActor_conferenceId_name_key" ON "NonStateActor" ("conferenceId","name");--> statement-breakpoint
-CREATE UNIQUE INDEX "PaperVersion_paperId_version_key" ON "PaperVersion" ("paperId","version");--> statement-breakpoint
-CREATE UNIQUE INDEX "Place_conferenceId_name_key" ON "Place" ("conferenceId","name");--> statement-breakpoint
-CREATE UNIQUE INDEX "ReviewerSnippet_userId_name_key" ON "ReviewerSnippet" ("userId","name");--> statement-breakpoint
-CREATE UNIQUE INDEX "RoleApplication_delegationId_nationId_key" ON "RoleApplication" ("delegationId","nationId");--> statement-breakpoint
-CREATE UNIQUE INDEX "RoleApplication_delegationId_nonStateActorId_key" ON "RoleApplication" ("delegationId","nonStateActorId");--> statement-breakpoint
-CREATE UNIQUE INDEX "RoleApplication_delegationId_rank_key" ON "RoleApplication" ("delegationId","rank");--> statement-breakpoint
-CREATE UNIQUE INDEX "SingleParticipant_conferenceId_userId_key" ON "SingleParticipant" ("conferenceId","userId");--> statement-breakpoint
-CREATE UNIQUE INDEX "SurveyAnswer_questionId_userId_key" ON "SurveyAnswer" ("questionId","userId");--> statement-breakpoint
-CREATE UNIQUE INDEX "SurveyOption_questionId_title_key" ON "SurveyOption" ("questionId","title");--> statement-breakpoint
-CREATE UNIQUE INDEX "SurveyQuestion_conferenceId_title_key" ON "SurveyQuestion" ("conferenceId","title");--> statement-breakpoint
-CREATE UNIQUE INDEX "TeamMember_conferenceId_userId_key" ON "TeamMember" ("conferenceId","userId");--> statement-breakpoint
-CREATE INDEX "TeamMemberInvitation_conferenceId_email_idx" ON "TeamMemberInvitation" ("conferenceId","email");--> statement-breakpoint
-CREATE UNIQUE INDEX "TeamMemberInvitation_conferenceId_email_pending_key" ON "TeamMemberInvitation" ("conferenceId","email") WHERE (("usedAt" IS NULL) AND ("revokedAt" IS NULL));--> statement-breakpoint
-CREATE INDEX "TeamMemberInvitation_conferenceId_idx" ON "TeamMemberInvitation" ("conferenceId");--> statement-breakpoint
-CREATE INDEX "TeamMemberInvitation_token_idx" ON "TeamMemberInvitation" ("token");--> statement-breakpoint
-CREATE UNIQUE INDEX "TeamMemberInvitation_token_key" ON "TeamMemberInvitation" ("token");--> statement-breakpoint
-CREATE UNIQUE INDEX "User_email_key" ON "User" ("email");--> statement-breakpoint
-CREATE UNIQUE INDEX "WaitingListEntry_conferenceId_userId_key" ON "WaitingListEntry" ("conferenceId","userId");--> statement-breakpoint
-ALTER TABLE "AttendanceEntry" ADD CONSTRAINT "AttendanceEntry_tZpYdr06IEqk_fkey" FOREIGN KEY ("conferenceParticipantStatusId") REFERENCES "ConferenceParticipantStatus"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "AttendanceEntry" ADD CONSTRAINT "AttendanceEntry_recordedById_User_id_fkey" FOREIGN KEY ("recordedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CalendarDay" ADD CONSTRAINT "CalendarDay_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CalendarEntry" ADD CONSTRAINT "CalendarEntry_calendarDayId_CalendarDay_id_fkey" FOREIGN KEY ("calendarDayId") REFERENCES "CalendarDay"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CalendarEntry" ADD CONSTRAINT "CalendarEntry_calendarTrackId_CalendarTrack_id_fkey" FOREIGN KEY ("calendarTrackId") REFERENCES "CalendarTrack"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CalendarEntry" ADD CONSTRAINT "CalendarEntry_placeId_Place_id_fkey" FOREIGN KEY ("placeId") REFERENCES "Place"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CalendarTrack" ADD CONSTRAINT "CalendarTrack_calendarDayId_CalendarDay_id_fkey" FOREIGN KEY ("calendarDayId") REFERENCES "CalendarDay"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Committee" ADD CONSTRAINT "Committee_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CommitteeAgendaItem" ADD CONSTRAINT "CommitteeAgendaItem_committeeId_Committee_id_fkey" FOREIGN KEY ("committeeId") REFERENCES "Committee"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_A_Committee_id_fkey" FOREIGN KEY ("A") REFERENCES "Committee"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_B_Nation_alpha3Code_fkey" FOREIGN KEY ("B") REFERENCES "Nation"("alpha3Code") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantStatus_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantStatus_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "ConferenceSupervisor" ADD CONSTRAINT "ConferenceSupervisor_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "ConferenceSupervisor" ADD CONSTRAINT "ConferenceSupervisor_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_ConferenceSupervisorToDelegationMember" ADD CONSTRAINT "_ConferenceSupervisorToDelegationMember_qbb5Tl3fXZ9Z_fkey" FOREIGN KEY ("A") REFERENCES "ConferenceSupervisor"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_ConferenceSupervisorToDelegationMember" ADD CONSTRAINT "_ConferenceSupervisorToDelegationMember_c9YL75qyYL1w_fkey" FOREIGN KEY ("B") REFERENCES "DelegationMember"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_ConferenceSupervisorToSingleParticipant" ADD CONSTRAINT "_ConferenceSupervisorToSingleParticipant_lOmvXaLQ7Emw_fkey" FOREIGN KEY ("A") REFERENCES "ConferenceSupervisor"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_ConferenceSupervisorToSingleParticipant" ADD CONSTRAINT "_ConferenceSupervisorToSingleParticipant_SYhIytq03cXG_fkey" FOREIGN KEY ("B") REFERENCES "SingleParticipant"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "CustomConferenceRole" ADD CONSTRAINT "CustomConferenceRole_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_OlTbG7SUhG4i_fkey" FOREIGN KEY ("A") REFERENCES "CustomConferenceRole"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_eEmIGzXiLYGr_fkey" FOREIGN KEY ("B") REFERENCES "SingleParticipant"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_assignedNationAlpha3Code_Nation_alpha3Code_fkey" FOREIGN KEY ("assignedNationAlpha3Code") REFERENCES "Nation"("alpha3Code") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_assignedNonStateActorId_NonStateActor_id_fkey" FOREIGN KEY ("assignedNonStateActorId") REFERENCES "NonStateActor"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_delegationId_Delegation_id_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_assignedCommitteeId_Committee_id_fkey" FOREIGN KEY ("assignedCommitteeId") REFERENCES "Committee"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "NonStateActor" ADD CONSTRAINT "NonStateActor_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Paper" ADD CONSTRAINT "Paper_authorId_User_id_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Paper" ADD CONSTRAINT "Paper_delegationId_Delegation_id_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Paper" ADD CONSTRAINT "Paper_agendaItemId_CommitteeAgendaItem_id_fkey" FOREIGN KEY ("agendaItemId") REFERENCES "CommitteeAgendaItem"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Paper" ADD CONSTRAINT "Paper_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "PaperReview" ADD CONSTRAINT "PaperReview_reviewerId_User_id_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "PaperReview" ADD CONSTRAINT "PaperReview_paperVersionId_PaperVersion_id_fkey" FOREIGN KEY ("paperVersionId") REFERENCES "PaperVersion"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "PaperVersion" ADD CONSTRAINT "PaperVersion_paperId_Paper_id_fkey" FOREIGN KEY ("paperId") REFERENCES "Paper"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "Place" ADD CONSTRAINT "Place_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "ReviewerSnippet" ADD CONSTRAINT "ReviewerSnippet_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_nationId_Nation_alpha3Code_fkey" FOREIGN KEY ("nationId") REFERENCES "Nation"("alpha3Code") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_nonStateActorId_NonStateActor_id_fkey" FOREIGN KEY ("nonStateActorId") REFERENCES "NonStateActor"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_delegationId_Delegation_id_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_assignedRoleId_CustomConferenceRole_id_fkey" FOREIGN KEY ("assignedRoleId") REFERENCES "CustomConferenceRole"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SurveyAnswer" ADD CONSTRAINT "SurveyAnswer_questionId_SurveyQuestion_id_fkey" FOREIGN KEY ("questionId") REFERENCES "SurveyQuestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SurveyAnswer" ADD CONSTRAINT "SurveyAnswer_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SurveyAnswer" ADD CONSTRAINT "SurveyAnswer_optionId_SurveyOption_id_fkey" FOREIGN KEY ("optionId") REFERENCES "SurveyOption"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SurveyOption" ADD CONSTRAINT "SurveyOption_questionId_SurveyQuestion_id_fkey" FOREIGN KEY ("questionId") REFERENCES "SurveyQuestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "SurveyQuestion" ADD CONSTRAINT "SurveyQuestion_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "TeamMemberInvitation" ADD CONSTRAINT "TeamMemberInvitation_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "TeamMemberInvitation" ADD CONSTRAINT "TeamMemberInvitation_invitedById_User_id_fkey" FOREIGN KEY ("invitedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "TeamMemberInvitation" ADD CONSTRAINT "TeamMemberInvitation_acceptedById_User_id_fkey" FOREIGN KEY ("acceptedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "UserReferenceInPaymentTransaction" ADD CONSTRAINT "UserReferenceInPaymentTransaction_5XV6pmj4zavE_fkey" FOREIGN KEY ("paymentTransactionId") REFERENCES "PaymentTransaction"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "UserReferenceInPaymentTransaction" ADD CONSTRAINT "UserReferenceInPaymentTransaction_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
-ALTER TABLE "WaitingListEntry" ADD CONSTRAINT "WaitingListEntry_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;--> statement-breakpoint
+
+CREATE UNIQUE INDEX "CalendarDay_conferenceId_sortOrder_key" ON "CalendarDay" ("conferenceId","sortOrder");
+CREATE UNIQUE INDEX "CalendarTrack_calendarDayId_sortOrder_key" ON "CalendarTrack" ("calendarDayId","sortOrder");
+CREATE INDEX "_CommitteeToNation_B_index" ON "_CommitteeToNation" ("B");
+CREATE UNIQUE INDEX "ConferenceParticipantStatus_conferenceId_assigendDocumentNu_key" ON "ConferenceParticipantStatus" ("conferenceId","assigendDocumentNumber");
+CREATE UNIQUE INDEX "ConferenceParticipantStatus_userId_conferenceId_key" ON "ConferenceParticipantStatus" ("userId","conferenceId");
+CREATE UNIQUE INDEX "ConferenceSupervisor_conferenceId_connectionCode_key" ON "ConferenceSupervisor" ("conferenceId","connectionCode");
+CREATE UNIQUE INDEX "ConferenceSupervisor_conferenceId_userId_key" ON "ConferenceSupervisor" ("conferenceId","userId");
+CREATE INDEX "_ConferenceSupervisorToDelegationMember_B_index" ON "_ConferenceSupervisorToDelegationMember" ("B");
+CREATE INDEX "_ConferenceSupervisorToSingleParticipant_B_index" ON "_ConferenceSupervisorToSingleParticipant" ("B");
+CREATE UNIQUE INDEX "CustomConferenceRole_conferenceId_name_key" ON "CustomConferenceRole" ("conferenceId","name");
+CREATE INDEX "_CustomConferenceRoleToSingleParticipant_B_index" ON "_CustomConferenceRoleToSingleParticipant" ("B");
+CREATE UNIQUE INDEX "Delegation_conferenceId_assignedNationAlpha3Code_key" ON "Delegation" ("conferenceId","assignedNationAlpha3Code");
+CREATE UNIQUE INDEX "Delegation_conferenceId_assignedNonStateActorId_key" ON "Delegation" ("conferenceId","assignedNonStateActorId");
+CREATE UNIQUE INDEX "Delegation_conferenceId_entryCode_key" ON "Delegation" ("conferenceId","entryCode");
+CREATE UNIQUE INDEX "DelegationMember_conferenceId_userId_key" ON "DelegationMember" ("conferenceId","userId");
+CREATE UNIQUE INDEX "DelegationMember_delegationId_userId_key" ON "DelegationMember" ("delegationId","userId");
+CREATE UNIQUE INDEX "Nation_alpha2Code_key" ON "Nation" ("alpha2Code");
+CREATE UNIQUE INDEX "NonStateActor_conferenceId_abbreviation_key" ON "NonStateActor" ("conferenceId","abbreviation");
+CREATE UNIQUE INDEX "NonStateActor_conferenceId_name_key" ON "NonStateActor" ("conferenceId","name");
+CREATE UNIQUE INDEX "PaperVersion_paperId_version_key" ON "PaperVersion" ("paperId","version");
+CREATE UNIQUE INDEX "Place_conferenceId_name_key" ON "Place" ("conferenceId","name");
+CREATE UNIQUE INDEX "ReviewerSnippet_userId_name_key" ON "ReviewerSnippet" ("userId","name");
+CREATE UNIQUE INDEX "RoleApplication_delegationId_nationId_key" ON "RoleApplication" ("delegationId","nationId");
+CREATE UNIQUE INDEX "RoleApplication_delegationId_nonStateActorId_key" ON "RoleApplication" ("delegationId","nonStateActorId");
+CREATE UNIQUE INDEX "RoleApplication_delegationId_rank_key" ON "RoleApplication" ("delegationId","rank");
+CREATE UNIQUE INDEX "SingleParticipant_conferenceId_userId_key" ON "SingleParticipant" ("conferenceId","userId");
+CREATE UNIQUE INDEX "SurveyAnswer_questionId_userId_key" ON "SurveyAnswer" ("questionId","userId");
+CREATE UNIQUE INDEX "SurveyOption_questionId_title_key" ON "SurveyOption" ("questionId","title");
+CREATE UNIQUE INDEX "SurveyQuestion_conferenceId_title_key" ON "SurveyQuestion" ("conferenceId","title");
+CREATE UNIQUE INDEX "TeamMember_conferenceId_userId_key" ON "TeamMember" ("conferenceId","userId");
+CREATE INDEX "TeamMemberInvitation_conferenceId_email_idx" ON "TeamMemberInvitation" ("conferenceId","email");
+CREATE UNIQUE INDEX "TeamMemberInvitation_conferenceId_email_pending_key" ON "TeamMemberInvitation" ("conferenceId","email") WHERE (("usedAt" IS NULL) AND ("revokedAt" IS NULL));
+CREATE INDEX "TeamMemberInvitation_conferenceId_idx" ON "TeamMemberInvitation" ("conferenceId");
+CREATE INDEX "TeamMemberInvitation_token_idx" ON "TeamMemberInvitation" ("token");
+CREATE UNIQUE INDEX "TeamMemberInvitation_token_key" ON "TeamMemberInvitation" ("token");
+CREATE UNIQUE INDEX "User_email_key" ON "User" ("email");
+CREATE UNIQUE INDEX "WaitingListEntry_conferenceId_userId_key" ON "WaitingListEntry" ("conferenceId","userId");
+ALTER TABLE "AttendanceEntry" ADD CONSTRAINT "AttendanceEntry_tZpYdr06IEqk_fkey" FOREIGN KEY ("conferenceParticipantStatusId") REFERENCES "ConferenceParticipantStatus"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AttendanceEntry" ADD CONSTRAINT "AttendanceEntry_recordedById_User_id_fkey" FOREIGN KEY ("recordedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CalendarDay" ADD CONSTRAINT "CalendarDay_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CalendarEntry" ADD CONSTRAINT "CalendarEntry_calendarDayId_CalendarDay_id_fkey" FOREIGN KEY ("calendarDayId") REFERENCES "CalendarDay"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CalendarEntry" ADD CONSTRAINT "CalendarEntry_calendarTrackId_CalendarTrack_id_fkey" FOREIGN KEY ("calendarTrackId") REFERENCES "CalendarTrack"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "CalendarEntry" ADD CONSTRAINT "CalendarEntry_placeId_Place_id_fkey" FOREIGN KEY ("placeId") REFERENCES "Place"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "CalendarTrack" ADD CONSTRAINT "CalendarTrack_calendarDayId_CalendarDay_id_fkey" FOREIGN KEY ("calendarDayId") REFERENCES "CalendarDay"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Committee" ADD CONSTRAINT "Committee_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CommitteeAgendaItem" ADD CONSTRAINT "CommitteeAgendaItem_committeeId_Committee_id_fkey" FOREIGN KEY ("committeeId") REFERENCES "Committee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_A_Committee_id_fkey" FOREIGN KEY ("A") REFERENCES "Committee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_CommitteeToNation" ADD CONSTRAINT "_CommitteeToNation_B_Nation_alpha3Code_fkey" FOREIGN KEY ("B") REFERENCES "Nation"("alpha3Code") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantStatus_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ConferenceParticipantStatus" ADD CONSTRAINT "ConferenceParticipantStatus_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ConferenceSupervisor" ADD CONSTRAINT "ConferenceSupervisor_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ConferenceSupervisor" ADD CONSTRAINT "ConferenceSupervisor_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "_ConferenceSupervisorToDelegationMember" ADD CONSTRAINT "_ConferenceSupervisorToDelegationMember_qbb5Tl3fXZ9Z_fkey" FOREIGN KEY ("A") REFERENCES "ConferenceSupervisor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_ConferenceSupervisorToDelegationMember" ADD CONSTRAINT "_ConferenceSupervisorToDelegationMember_c9YL75qyYL1w_fkey" FOREIGN KEY ("B") REFERENCES "DelegationMember"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_ConferenceSupervisorToSingleParticipant" ADD CONSTRAINT "_ConferenceSupervisorToSingleParticipant_lOmvXaLQ7Emw_fkey" FOREIGN KEY ("A") REFERENCES "ConferenceSupervisor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_ConferenceSupervisorToSingleParticipant" ADD CONSTRAINT "_ConferenceSupervisorToSingleParticipant_SYhIytq03cXG_fkey" FOREIGN KEY ("B") REFERENCES "SingleParticipant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CustomConferenceRole" ADD CONSTRAINT "CustomConferenceRole_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_OlTbG7SUhG4i_fkey" FOREIGN KEY ("A") REFERENCES "CustomConferenceRole"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "_CustomConferenceRoleToSingleParticipant" ADD CONSTRAINT "_CustomConferenceRoleToSingleParticipant_eEmIGzXiLYGr_fkey" FOREIGN KEY ("B") REFERENCES "SingleParticipant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_assignedNationAlpha3Code_Nation_alpha3Code_fkey" FOREIGN KEY ("assignedNationAlpha3Code") REFERENCES "Nation"("alpha3Code") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Delegation" ADD CONSTRAINT "Delegation_assignedNonStateActorId_NonStateActor_id_fkey" FOREIGN KEY ("assignedNonStateActorId") REFERENCES "NonStateActor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_delegationId_Delegation_id_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DelegationMember" ADD CONSTRAINT "DelegationMember_assignedCommitteeId_Committee_id_fkey" FOREIGN KEY ("assignedCommitteeId") REFERENCES "Committee"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "NonStateActor" ADD CONSTRAINT "NonStateActor_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Paper" ADD CONSTRAINT "Paper_authorId_User_id_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Paper" ADD CONSTRAINT "Paper_delegationId_Delegation_id_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Paper" ADD CONSTRAINT "Paper_agendaItemId_CommitteeAgendaItem_id_fkey" FOREIGN KEY ("agendaItemId") REFERENCES "CommitteeAgendaItem"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Paper" ADD CONSTRAINT "Paper_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PaperReview" ADD CONSTRAINT "PaperReview_reviewerId_User_id_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PaperReview" ADD CONSTRAINT "PaperReview_paperVersionId_PaperVersion_id_fkey" FOREIGN KEY ("paperVersionId") REFERENCES "PaperVersion"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PaperVersion" ADD CONSTRAINT "PaperVersion_paperId_Paper_id_fkey" FOREIGN KEY ("paperId") REFERENCES "Paper"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PaymentTransaction" ADD CONSTRAINT "PaymentTransaction_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Place" ADD CONSTRAINT "Place_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ReviewerSnippet" ADD CONSTRAINT "ReviewerSnippet_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_nationId_Nation_alpha3Code_fkey" FOREIGN KEY ("nationId") REFERENCES "Nation"("alpha3Code") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_nonStateActorId_NonStateActor_id_fkey" FOREIGN KEY ("nonStateActorId") REFERENCES "NonStateActor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "RoleApplication" ADD CONSTRAINT "RoleApplication_delegationId_Delegation_id_fkey" FOREIGN KEY ("delegationId") REFERENCES "Delegation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SingleParticipant" ADD CONSTRAINT "SingleParticipant_assignedRoleId_CustomConferenceRole_id_fkey" FOREIGN KEY ("assignedRoleId") REFERENCES "CustomConferenceRole"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "SurveyAnswer" ADD CONSTRAINT "SurveyAnswer_questionId_SurveyQuestion_id_fkey" FOREIGN KEY ("questionId") REFERENCES "SurveyQuestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SurveyAnswer" ADD CONSTRAINT "SurveyAnswer_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SurveyAnswer" ADD CONSTRAINT "SurveyAnswer_optionId_SurveyOption_id_fkey" FOREIGN KEY ("optionId") REFERENCES "SurveyOption"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SurveyOption" ADD CONSTRAINT "SurveyOption_questionId_SurveyQuestion_id_fkey" FOREIGN KEY ("questionId") REFERENCES "SurveyQuestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SurveyQuestion" ADD CONSTRAINT "SurveyQuestion_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TeamMember" ADD CONSTRAINT "TeamMember_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TeamMemberInvitation" ADD CONSTRAINT "TeamMemberInvitation_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TeamMemberInvitation" ADD CONSTRAINT "TeamMemberInvitation_invitedById_User_id_fkey" FOREIGN KEY ("invitedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "TeamMemberInvitation" ADD CONSTRAINT "TeamMemberInvitation_acceptedById_User_id_fkey" FOREIGN KEY ("acceptedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "UserReferenceInPaymentTransaction" ADD CONSTRAINT "UserReferenceInPaymentTransaction_5XV6pmj4zavE_fkey" FOREIGN KEY ("paymentTransactionId") REFERENCES "PaymentTransaction"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "UserReferenceInPaymentTransaction" ADD CONSTRAINT "UserReferenceInPaymentTransaction_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "WaitingListEntry" ADD CONSTRAINT "WaitingListEntry_conferenceId_Conference_id_fkey" FOREIGN KEY ("conferenceId") REFERENCES "Conference"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "WaitingListEntry" ADD CONSTRAINT "WaitingListEntry_userId_User_id_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+END
+$baseline$;

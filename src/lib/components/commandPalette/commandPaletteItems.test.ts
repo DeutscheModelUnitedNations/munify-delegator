@@ -33,7 +33,7 @@ const page: PageEntry = {
 	id: 'stats',
 	title: () => 'Stats',
 	icon: 'fa-chart-pie',
-	href: resolve('/(authenticated)/management/[conferenceId]/stats', { conferenceId }),
+	href: resolve('/(authenticated)/dashboard/[conferenceId]/management/stats', { conferenceId }),
 	category: 'management',
 	keywords: []
 };
@@ -85,18 +85,18 @@ describe('resultTarget', () => {
 		);
 		expect(target).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/delegations?filter=ABC')
+			expect.stringContaining('/conf-1/management/delegations?filter=ABC')
 		);
 	});
 	test('pages, configuration and transactions navigate', () => {
 		expect(resultTarget({ type: 'page', data: page }, conferenceId)).toEqual({ href: page.href });
 		expect(resultTarget({ type: 'config', data: config }, conferenceId)).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/configuration?tab=general')
+			expect.stringContaining('/conf-1/management/configuration?tab=general')
 		);
 		expect(resultTarget({ type: 'transaction', data: transaction }, conferenceId)).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/payments?searchValue=t1')
+			expect.stringContaining('/conf-1/management/payments?searchValue=t1')
 		);
 	});
 });

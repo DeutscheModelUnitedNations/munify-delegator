@@ -80,21 +80,21 @@ export function resultTarget(item: ResultItem, conferenceId: string): ResultTarg
 			if (item.data.headDelegateUserId) return { userId: item.data.headDelegateUserId };
 			return {
 				href: resolve(
-					`/(authenticated)/management/[conferenceId]/delegations?filter=${item.data.entryCode}`,
+					`/(authenticated)/dashboard/[conferenceId]/management/delegations?filter=${item.data.entryCode}`,
 					{ conferenceId }
 				)
 			};
 		case 'config':
 			return {
 				href: resolve(
-					`/(authenticated)/management/[conferenceId]/configuration?tab=${item.data.tab}`,
+					`/(authenticated)/dashboard/[conferenceId]/management/configuration?tab=${item.data.tab}`,
 					{ conferenceId }
 				)
 			};
 		case 'transaction':
 			return {
 				href: resolve(
-					`/(authenticated)/management/[conferenceId]/payments?searchValue=${item.data.id}`,
+					`/(authenticated)/dashboard/[conferenceId]/management/payments?searchValue=${item.data.id}`,
 					{ conferenceId }
 				)
 			};

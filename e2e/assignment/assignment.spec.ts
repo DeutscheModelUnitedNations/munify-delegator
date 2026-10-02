@@ -21,7 +21,7 @@ test('an admin can apply a nation assignment to a delegation via the assignment 
 	page.on('dialog', (dialog) => dialog.accept());
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/assignment`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment`
 	});
 
 	const projectData = {
