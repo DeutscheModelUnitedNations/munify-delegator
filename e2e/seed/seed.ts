@@ -3,10 +3,8 @@
  *
  * This intentionally does NOT reuse prisma/seed/dev/seed.ts: that script seeds ~1000 users and
  * five fully-populated conferences (including assignment data for non-PARTICIPANT_REGISTRATION
- * conferences), which is both slow and, at the time of writing, fails outright in some
- * environments (a PrismaClientValidationError surfaces from one of its concurrent
- * `db.delegation.update()` calls). e2e fixtures should be small, fast, and owned by the e2e
- * suite so they don't drift or break with unrelated dev-seed changes.
+ * conferences), which is slow and randomised. e2e fixtures should be small, fast, and owned by
+ * the e2e suite so they don't drift or break with unrelated dev-seed changes.
  *
  * Idempotent: safe to run against an already-seeded database (upserts by fixed id).
  * Used both as Playwright's `globalSetup` (default export) and standalone (`bun e2e/seed/seed.ts`).
