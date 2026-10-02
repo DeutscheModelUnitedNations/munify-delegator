@@ -7,12 +7,17 @@
 	import { toast } from 'svelte-sonner';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { cache, graphql } from '$houdini';
+	import { entryCodeLength } from '$api/services/entryCodeGenerator';
 
 	let { data }: { data: PageData } = $props();
 
 	let code = queryParam('code');
 
 	let conferenceId = $derived(data.conferenceQueryData?.findUniqueConference?.id);
+
+	// codes are uppercase only; normalize what users type or paste (incl. via link)
+	let normalizedCode = $derived(($code ?? '').trim().toUpperCase());
+	let codeComplete = $derived(normalizedCode.length === entryCodeLength);
 
 	const previewSupervisorQuery = graphql(`
 		query previewSupervisor($conferenceId: ID!, $connectionCode: String!) {
@@ -32,12 +37,16 @@
 	`);
 
 	const connect = async () => {
-		if (!conferenceId || !$code || !$previewSupervisorQuery.data?.previewConferenceSupervisor)
+		if (
+			!conferenceId ||
+			!codeComplete ||
+			!$previewSupervisorQuery.data?.previewConferenceSupervisor
+		)
 			return;
 
 		const promise = connectSupervisorMutation.mutate({
 			conferenceId,
-			connectionCode: $code
+			connectionCode: normalizedCode
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 
@@ -53,14 +62,10 @@
 		goto(`/dashboard/${conferenceId}`);
 	};
 	$effect(() => {
-		if ($code) {
-			if (!conferenceId) {
-				return;
-			}
-			previewSupervisorQuery.fetch({
-				variables: { conferenceId, connectionCode: $code }
-			});
-		}
+		if (!conferenceId || !codeComplete) return;
+		previewSupervisorQuery.fetch({
+			variables: { conferenceId, connectionCode: normalizedCode }
+		});
 	});
 </script>
 
@@ -71,15 +76,17 @@
 	>
 		<input
 			type="text"
-			class="input w-full max-w-lg font-mono tracking-[0.6rem]"
+			class="input w-full max-w-lg font-mono tracking-[0.6rem] uppercase"
 			bind:value={$code}
 		/>
 
-		{#if $code && $previewSupervisorQuery.fetching}
+		{#if !codeComplete}
+			<!-- wait until the full code has been entered -->
+		{:else if $previewSupervisorQuery.fetching}
 			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
-		{:else if $code && $previewSupervisorQuery.data?.previewConferenceSupervisor}
+		{:else if $previewSupervisorQuery.data?.previewConferenceSupervisor}
 			<div class="alert alert-info mt-4">
 				<div>
 					<h3 class="text-lg font-bold capitalize">
@@ -90,7 +97,7 @@
 					<button class="btn btn-primary mt-4" onclick={connect}>{m.connectSupervisorBtn()}</button>
 				</div>
 			</div>
-		{:else if $code}
+		{:else}
 			<div class="alert alert-warning mt-4">{m.notFound()}</div>
 		{/if}
 	</DashboardContentCard>

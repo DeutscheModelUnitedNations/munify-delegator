@@ -19,6 +19,9 @@ import {
 import { GraphQLError } from 'graphql';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
 
+// codes are generated in uppercase only, but users often type them in lowercase or paste surrounding whitespace
+const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
+
 builder.prismaObject('ConferenceSupervisor', {
 	fields: (t) => ({
 		id: t.field(ConferenceSupervisorIdFieldObject),
@@ -216,7 +219,7 @@ builder.queryFields((t) => {
 						where: {
 							conferenceId_connectionCode: {
 								conferenceId: args.conferenceId,
-								connectionCode: args.connectionCode
+								connectionCode: normalizeConnectionCode(args.connectionCode)
 							}
 						},
 						include: {
@@ -250,7 +253,7 @@ builder.mutationFields((t) => {
 					where: {
 						conferenceId_connectionCode: {
 							conferenceId: args.conferenceId,
-							connectionCode: args.connectionCode
+							connectionCode: normalizeConnectionCode(args.connectionCode)
 						}
 					}
 				});
@@ -344,15 +347,17 @@ builder.mutationFields((t) => {
 				id: t.arg.id({ required: true })
 			},
 			resolve: async (query, root, args, ctx, info) => {
-				const user = ctx.permissions.getLoggedInUserOrThrow();
+				ctx.permissions.getLoggedInUserOrThrow();
 
-				const supervisor = await db.conferenceSupervisor.findUniqueOrThrow({
+				// the supervisor themselves, PROJECT_MANAGEMENT & PARTICIPANT_CARE team members and admins
+				const supervisor = await db.conferenceSupervisor.findFirst({
 					where: {
-						id: args.id
+						id: args.id,
+						AND: [ctx.permissions.allowDatabaseAccessTo('update').ConferenceSupervisor]
 					}
 				});
 
-				if (supervisor.userId !== user.sub && !user.hasRole('admin')) {
+				if (!supervisor) {
 					throw new GraphQLError('You are not allowed to rotate this connection code.');
 				}
 
