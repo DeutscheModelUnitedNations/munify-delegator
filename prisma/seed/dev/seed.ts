@@ -24,6 +24,7 @@ import {
 	makeSeedCalendarEntry,
 	makeSeedPlace
 } from './calendarDay';
+import { COMMITTEES, CONFERENCES, CUSTOM_CONFERENCE_ROLES, NON_STATE_ACTORS } from './catalog';
 
 // force static seed for reproducible data
 faker.seed(123);
@@ -57,11 +58,12 @@ await _db.$transaction(async (db) => {
 
 	await Promise.all(
 		[
-			makeSeedConference({ state: 'PRE' }),
-			makeSeedConference({ state: 'PARTICIPANT_REGISTRATION' }),
-			makeSeedConference({ state: 'PREPARATION' }),
-			makeSeedConference({ state: 'ACTIVE' }),
-			makeSeedConference({ state: 'POST' })
+			makeSeedConference({ state: 'PRE', ...CONFERENCES[0] }),
+			makeSeedConference({ state: 'PARTICIPANT_REGISTRATION', ...CONFERENCES[1] }),
+			makeSeedConference({ state: 'PREPARATION', ...CONFERENCES[2] }),
+			// the ACTIVE conference's calendar below takes place in Hannover
+			makeSeedConference({ state: 'ACTIVE', ...CONFERENCES[3] }),
+			makeSeedConference({ state: 'POST', ...CONFERENCES[4] })
 		].map(async (conference) => {
 			await db.conference.upsert({
 				where: {
@@ -75,88 +77,17 @@ await _db.$transaction(async (db) => {
 				[ConferenceState.PRE, ConferenceState.PARTICIPANT_REGISTRATION] as ConferenceState[]
 			).includes(conference.state);
 
-			const committees = [
+			const committees = COMMITTEES.map((committee) =>
 				makeSeedCommittee({
 					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
-					nations: {
-						connect: faker.helpers
-							.arrayElements(nations, { min: 6, max: 36 })
-							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
-					}
-				}),
-				makeSeedCommittee({
-					conferenceId: conference.id,
+					...committee,
 					nations: {
 						connect: faker.helpers
 							.arrayElements(nations, { min: 6, max: 36 })
 							.map((nation) => ({ alpha3Code: nation.alpha3Code }))
 					}
 				})
-			];
+			);
 
 			const dbcommittees = await Promise.all(
 				committees.map((committee) => {
@@ -175,28 +106,9 @@ await _db.$transaction(async (db) => {
 
 			const allNationsRepresentedInCommittees = dbcommittees.flatMap((c) => c.nations);
 
-			const nonStateActors = [
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id }),
-				makeSeedNSA({ conferenceId: conference.id })
-			];
+			const nonStateActors = NON_STATE_ACTORS.map((nonStateActor) =>
+				makeSeedNSA({ conferenceId: conference.id, ...nonStateActor })
+			);
 
 			await Promise.all(
 				nonStateActors.map(async (nonStateActor) => {
@@ -210,14 +122,9 @@ await _db.$transaction(async (db) => {
 				})
 			);
 
-			const customConferenceRoles = [
-				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
-				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
-				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
-				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
-				makeSeedCustomConferenceRole({ conferenceId: conference.id }),
-				makeSeedCustomConferenceRole({ conferenceId: conference.id })
-			];
+			const customConferenceRoles = CUSTOM_CONFERENCE_ROLES.map((customConferenceRole) =>
+				makeSeedCustomConferenceRole({ conferenceId: conference.id, ...customConferenceRole })
+			);
 
 			await Promise.all(
 				customConferenceRoles.map(async (customConferenceRole) => {
@@ -350,75 +257,6 @@ await _db.$transaction(async (db) => {
 				})
 			);
 
-			const conferenceSupervisors = [
-				makeSeedConferenceSupervisor({
-					conferenceId: conference.id,
-					userId: takeXUsers(1)[0].id,
-					delegations: conferenceIsInAssignedState
-						? undefined
-						: {
-								connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
-							},
-					postAssignmentDelegeationMembers: conferenceIsInAssignedState
-						? {
-								connect: [
-									{ id: dbdelegations[1].members[0].id },
-									{ id: dbdelegations[1].members[1].id }
-								]
-							}
-						: undefined
-				}),
-				makeSeedConferenceSupervisor({
-					conferenceId: conference.id,
-					userId: takeXUsers(1)[0].id,
-					delegations: conferenceIsInAssignedState
-						? undefined
-						: {
-								connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
-							},
-					postAssignmentDelegeationMembers: conferenceIsInAssignedState
-						? {
-								connect: [
-									{ id: dbdelegations[1].members[0].id },
-									{ id: dbdelegations[1].members[1].id }
-								]
-							}
-						: undefined
-				}),
-				makeSeedConferenceSupervisor({
-					conferenceId: conference.id,
-					userId: takeXUsers(1)[0].id,
-					delegations: conferenceIsInAssignedState
-						? undefined
-						: {
-								connect: [{ id: delegations[0].id }, { id: delegations[1].id }]
-							},
-					postAssignmentDelegeationMembers: conferenceIsInAssignedState
-						? {
-								connect: [
-									{ id: dbdelegations[1].members[0].id },
-									{ id: dbdelegations[1].members[1].id }
-								]
-							}
-						: undefined
-				}),
-				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
-				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id })
-			];
-
-			await Promise.all(
-				conferenceSupervisors.map(async (conferenceSupervisor) => {
-					await db.conferenceSupervisor.upsert({
-						where: {
-							id: conferenceSupervisor.id
-						},
-						update: conferenceSupervisor,
-						create: conferenceSupervisor
-					});
-				})
-			);
-
 			const singleApplications = [
 				makeSeedSingleParticipant({
 					conferenceId: conference.id,
@@ -507,6 +345,50 @@ await _db.$transaction(async (db) => {
 						},
 						update: singleApplication,
 						create: singleApplication
+					});
+				})
+			);
+
+			// Supervisors are linked to the participants they supervise (delegation members and/or
+			// single participants), independent of whether roles have already been assigned. Members
+			// of a delegation are usually supervised together, and a member may have several
+			// supervisors. The last few supervisors stay unconnected ("dead" supervisors).
+			const connectMembersOf = (...delegationsToSupervise: typeof dbdelegations) => ({
+				connect: delegationsToSupervise.flatMap((d) => d.members.map((m) => ({ id: m.id })))
+			});
+
+			const conferenceSupervisors = [
+				makeSeedConferenceSupervisor({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					supervisedDelegationMembers: connectMembersOf(dbdelegations[0]),
+					supervisedSingleParticipants: {
+						connect: [{ id: singleApplications[0].id }, { id: singleApplications[1].id }]
+					}
+				}),
+				makeSeedConferenceSupervisor({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					supervisedDelegationMembers: connectMembersOf(dbdelegations[1])
+				}),
+				makeSeedConferenceSupervisor({
+					conferenceId: conference.id,
+					userId: takeXUsers(1)[0].id,
+					supervisedDelegationMembers: connectMembersOf(dbdelegations[1], dbdelegations[2])
+				}),
+				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id }),
+				makeSeedConferenceSupervisor({ conferenceId: conference.id, userId: takeXUsers(1)[0].id })
+			];
+
+			await Promise.all(
+				conferenceSupervisors.map(async (conferenceSupervisor) => {
+					await db.conferenceSupervisor.upsert({
+						where: {
+							id: conferenceSupervisor.id
+						},
+						update: conferenceSupervisor,
+						create: conferenceSupervisor
 					});
 				})
 			);
