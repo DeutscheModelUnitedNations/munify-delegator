@@ -12,6 +12,7 @@ import {
 } from '$db/generated/graphql/RoleApplication';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
+import { normalizeRoleApplicationRanks } from '$api/services/normalizeRoleApplicationRanks';
 
 const RoleApplicationObject = builder.prismaObject('RoleApplication', {
 	fields: (t) => ({
@@ -76,42 +77,46 @@ builder.mutationFields((t) => {
 					throw new GraphQLError('Only one of nationId or nonStateActorId can be provided');
 				}
 
-				const delegation = await db.delegation.findUniqueOrThrow({
-					where: {
-						id: args.delegationId,
-						AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
-					},
-					include: {
-						appliedForRoles: true
-					}
-				});
+				return await db.$transaction(async (tx) => {
+					const delegation = await tx.delegation.findUniqueOrThrow({
+						where: {
+							id: args.delegationId,
+							AND: [ctx.permissions.allowDatabaseAccessTo('update').Delegation]
+						}
+					});
 
-				const amountOfApplications = delegation.appliedForRoles.length;
+					// ranks may contain gaps (e.g. after tidyRoleApplications removed entries),
+					// so close them before appending to avoid colliding with an existing rank
+					await normalizeRoleApplicationRanks(tx, delegation.id);
+					const amountOfApplications = await tx.roleApplication.count({
+						where: { delegationId: delegation.id }
+					});
 
-				return await db.roleApplication.create({
-					...query,
-					data: {
-						rank: amountOfApplications + 1,
-						nation: args.nationId
-							? {
-									connect: {
-										alpha3Code: args.nationId
+					return await tx.roleApplication.create({
+						...query,
+						data: {
+							rank: amountOfApplications + 1,
+							nation: args.nationId
+								? {
+										connect: {
+											alpha3Code: args.nationId
+										}
 									}
-								}
-							: undefined,
-						nonStateActor: args.nonStateActorId
-							? {
-									connect: {
-										id: args.nonStateActorId
+								: undefined,
+							nonStateActor: args.nonStateActorId
+								? {
+										connect: {
+											id: args.nonStateActorId
+										}
 									}
+								: undefined,
+							delegation: {
+								connect: {
+									id: delegation.id
 								}
-							: undefined,
-						delegation: {
-							connect: {
-								id: delegation.id
 							}
 						}
-					}
+					});
 				});
 			}
 		})
@@ -225,24 +230,7 @@ builder.mutationFields((t) => {
 						}
 					});
 
-					const roleApplicationsOfDelegation = await db.roleApplication.findMany({
-						where: {
-							delegationId: deletedApplication.delegationId
-						}
-					});
-
-					for (const ra of roleApplicationsOfDelegation) {
-						if (ra.rank > deletedApplication.rank) {
-							await db.roleApplication.update({
-								where: {
-									id: ra.id
-								},
-								data: {
-									rank: ra.rank - 1
-								}
-							});
-						}
-					}
+					await normalizeRoleApplicationRanks(db, deletedApplication.delegationId);
 
 					// re fetch potentially changed relations of the deleted application since state might have changed
 					if (query.include?.delegation) {
