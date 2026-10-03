@@ -5,7 +5,8 @@ import {
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -22,16 +23,18 @@ abilityBuilder.roleApplication.allow('read').when((ctx) => {
 });
 
 // Delegation members see their own delegation's applications.
-abilityBuilder.roleApplication.allow('read').when((ctx) => {
-	const where = isInOwnDelegation(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.roleApplication.allow('read').when((ctx) => where(isInOwnDelegation(ctx)));
 
-// Only the head delegate may change them.
+// Only the head delegate may change them, and only until the delegation has applied - the same
+// line the delegation's own update ability draws.
 abilityBuilder.roleApplication.allow(['update', 'delete']).when((ctx) => {
 	const id = userId(ctx);
 	return id
-		? { where: { delegation: { members: { user: { id }, isHeadDelegate: true } } } }
+		? {
+				where: {
+					delegation: { applied: false, members: { user: { id }, isHeadDelegate: true } }
+				}
+			}
 		: undefined;
 });
 
@@ -63,13 +66,31 @@ schemaBuilder.mutationFields((t) => ({
 			}
 
 			// The caller must be allowed to update the delegation the application belongs to.
-			await db.query.delegation
-				.findFirst(
-					(await ctx.abilities.delegation.filter('update')).merge({
+			const delegation = await db.query.delegation
+				.findFirst({
+					...(await ctx.abilities.delegation.filter('update')).merge({
 						where: { id: args.delegationId }
-					}).query.single
-				)
+					}).query.single,
+					columns: { conferenceId: true }
+				})
 				.then(assertFindFirstExists);
+
+			// ...and the role applied for must be on offer in that conference.
+			const onOffer = args.nationId
+				? await db.query.nation.findFirst({
+						where: {
+							alpha3Code: args.nationId,
+							committees: { conferenceId: delegation.conferenceId }
+						},
+						columns: { alpha3Code: true }
+					})
+				: await db.query.nonStateActor.findFirst({
+						where: { id: args.nonStateActorId ?? '', conferenceId: delegation.conferenceId },
+						columns: { id: true }
+					});
+			if (!onOffer) {
+				throw new GraphQLError('This role is not on offer in the conference');
+			}
 
 			// Rank is assigned as "one past the current count", matching the legacy resolver.
 			const [existing] = await db

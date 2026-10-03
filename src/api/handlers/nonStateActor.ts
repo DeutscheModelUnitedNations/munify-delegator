@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
+import { isTeamMemberOfConference, systemAdmin, where } from '$api/services/authHelper';
 import { GraphQLError } from 'graphql';
 
 // Ported from abilities/entities/nonStateActor.ts
@@ -8,10 +8,9 @@ abilityBuilder.nonStateActor.allow('read');
 abilityBuilder.nonStateActor.allow(['update', 'delete']).when(systemAdmin);
 
 // Only the project management of the conference the NSA belongs to may change it.
-abilityBuilder.nonStateActor.allow(['update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT']);
-	return where ? { where } : undefined;
-});
+abilityBuilder.nonStateActor
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT'])));
 
 object({ table: 'nonStateActor' });
 query({ table: 'nonStateActor' });

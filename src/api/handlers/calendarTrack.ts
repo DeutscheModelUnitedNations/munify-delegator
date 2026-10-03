@@ -2,7 +2,7 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertMayManageCalendarDay,
+	assertTeamRoleForCalendarDay,
 	isTeamMemberOfConference,
 	systemAdmin
 } from '$api/services/authHelper';
@@ -32,7 +32,7 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageCalendarDay(args.calendarDayId, ctx.oidc.user?.sub);
+			await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
 
 			const created = await db
 				.insert(schema.calendarTrack)

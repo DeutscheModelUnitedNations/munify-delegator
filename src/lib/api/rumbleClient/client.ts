@@ -1773,7 +1773,7 @@ export type Mutation = {
     email: String,
     wantsJoinTeamInformation?: Boolean | null | undefined,
     wantsToReceiveGeneralInformation?: Boolean | null | undefined
-  }) => User,
+  }) => Boolean,
   updateWaitingListEntry: (p: {
     assigned?: Boolean | null | undefined,
     experience?: String | null | undefined,

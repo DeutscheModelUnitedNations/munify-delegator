@@ -1,9 +1,5 @@
 import { schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertMayManageConference,
-	userId
-} from '$api/services/authHelper';
+import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
 import { conferenceStats } from '$api/services/statistics';
 
 const StatsFilterEnum = schemaBuilder.enumType('StatsFilter', {
@@ -398,10 +394,7 @@ schemaBuilder.queryFields((t) => ({
 			filter: t.arg({ type: StatsFilterEnum, defaultValue: 'ALL' })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, userId(ctx), PARTICIPANT_CARE_ROLES, {
-				allowSystemAdmin: true,
-				ctx
-			});
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const stats = await sharedConferenceStats({
 				conferenceId: args.conferenceId,

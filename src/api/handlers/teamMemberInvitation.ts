@@ -7,12 +7,16 @@ import {
 	query,
 	schemaBuilder
 } from '$api/rumble';
+import type { ApiContext } from '$api/rumble';
 import {
+	PROJECT_MANAGEMENT_ROLES,
 	TEAM_ADMIN_ROLES,
-	isSystemAdmin,
+	assertMayGrantRole,
+	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId,
+	where,
 	type TeamRole
 } from '$api/services/authHelper';
 import {
@@ -30,18 +34,24 @@ import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
 import type { Context } from '$api/context';
 
-// Ported from abilities/entities/teamMemberInvitation.ts
 abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Project management and team coordinators manage invitations for their conference.
+// Project management manages every invitation of its conference.
+abilityBuilder.teamMemberInvitation
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+
+// Team coordinators manage the invitations they may hand out - everything but project management.
 abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, TEAM_ADMIN_ROLES);
-	return where ? { where } : undefined;
+	const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
+	return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
 });
 
 object({
 	table: 'teamMemberInvitation',
 	adjust: (t) => ({
+		/** Only the hash is stored, and nothing in the app needs even that back. */
+		token: t.field({ type: 'String', nullable: false, resolve: () => '' }),
 		/** Whether the invited address already has an account, which changes the invitation copy. */
 		userExists: t.field({
 			type: 'Boolean',
@@ -60,24 +70,19 @@ const teamMemberPubsub = rumblePubsub({ table: 'teamMember' });
 
 const teamRoleEnum = enum_({ tsName: 'teamRole' });
 
-/**
- * Invitation management is project management or team coordinator, or a system admin. Kept as an
- * explicit check rather than an ability filter because it is asked before a row exists.
- */
-async function canManageInvitations(ctx: Context, conferenceId: string) {
-	if (isSystemAdmin(ctx)) return true;
-	const callerId = userId(ctx);
-	if (!callerId) return false;
-	const teamMember = await db.query.teamMember.findFirst({
-		where: { conferenceId, userId: callerId, role: { in: [...TEAM_ADMIN_ROLES] } }
-	});
-	return Boolean(teamMember);
+async function assertMayManageInvitations(ctx: Context, conferenceId: string) {
+	await assertTeamRole(ctx, conferenceId, TEAM_ADMIN_ROLES);
 }
 
-async function assertMayManageInvitations(ctx: Context, conferenceId: string) {
-	if (!(await canManageInvitations(ctx, conferenceId))) {
-		throw new GraphQLError('You do not have permission to manage team invitations');
-	}
+/** An invitation the caller may change, or an error. */
+async function updatableInvitation(ctx: ApiContext, invitationId: string) {
+	return db.query.teamMemberInvitation
+		.findFirst(
+			(await ctx.abilities.teamMemberInvitation.filter('update')).merge({
+				where: { id: invitationId }
+			}).query.single
+		)
+		.then(assertFindFirstExists);
 }
 
 async function inviterDisplayName(callerId: string) {
@@ -188,6 +193,8 @@ schemaBuilder.mutationFields((t) => ({
 			for (const invitation of args.invitations) {
 				const email = invitation.email.toLowerCase().trim();
 				try {
+					await assertMayGrantRole(ctx, args.conferenceId, invitation.role);
+
 					const existingTeamMember = await db.query.teamMember.findFirst({
 						where: { conferenceId: args.conferenceId, user: { email } }
 					});
@@ -308,11 +315,7 @@ schemaBuilder.mutationFields((t) => ({
 		type: RevokeInvitationResult,
 		args: { invitationId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			const invitation = await db.query.teamMemberInvitation
-				.findFirst({ where: { id: args.invitationId } })
-				.then(assertFindFirstExists);
-
-			await assertMayManageInvitations(ctx, invitation.conferenceId);
+			const invitation = await updatableInvitation(ctx, args.invitationId);
 
 			if (invitation.revokedAt) {
 				return { success: false, message: 'Invitation is already revoked' };
@@ -344,11 +347,7 @@ schemaBuilder.mutationFields((t) => ({
 				throw new GraphQLError('Must be logged in');
 			}
 
-			const invitation = await db.query.teamMemberInvitation
-				.findFirst({ where: { id: args.invitationId } })
-				.then(assertFindFirstExists);
-
-			await assertMayManageInvitations(ctx, invitation.conferenceId);
+			const invitation = await updatableInvitation(ctx, args.invitationId);
 
 			if (invitation.usedAt) {
 				return {

@@ -1,6 +1,5 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import { userId } from '$api/services/authHelper';
 import { assertPaperReviewer } from './paper';
 
 /**
@@ -304,7 +303,7 @@ schemaBuilder.queryFields((t) => ({
 		type: FlagCollectionDataRef,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertPaperReviewer(args.conferenceId, userId(ctx));
+			await assertPaperReviewer(ctx, args.conferenceId);
 
 			const sources = await fetchFlagSources(args.conferenceId);
 			const { nationPieceStates, nsaPaperInfo } = tallyPapers(sources);

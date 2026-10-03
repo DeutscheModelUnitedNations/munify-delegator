@@ -14,14 +14,15 @@
 			toast.error(m.unsubscribeEmailMissing());
 			return;
 		}
-		const promise = client.mutate.updateUsersNewsletterPreferences({
-			__args: {
-				email,
-				wantsJoinTeamInformation: false,
-				wantsToReceiveGeneralInformation: false
-			},
-			id: true
-		});
+		const promise = Promise.resolve(
+			client.mutate.updateUsersNewsletterPreferences({
+				__args: {
+					email,
+					wantsJoinTeamInformation: false,
+					wantsToReceiveGeneralInformation: false
+				}
+			})
+		);
 		toast.promise(promise, {
 			success: m.unsubscribeSuccess(),
 			error: m.unsubscribeError(),

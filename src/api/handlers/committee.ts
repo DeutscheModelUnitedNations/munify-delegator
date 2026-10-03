@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
+import { isTeamMemberOfConference, systemAdmin, where } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 
@@ -8,10 +8,9 @@ import { GraphQLError } from 'graphql';
 abilityBuilder.committee.allow('read');
 abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 
-abilityBuilder.committee.allow(['update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT']);
-	return where ? { where } : undefined;
-});
+abilityBuilder.committee
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT'])));
 
 export const CommitteeRef = object({ table: 'committee' });
 query({ table: 'committee' });

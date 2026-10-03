@@ -1,12 +1,11 @@
 import { abilityBuilder, object, query } from '$api/rumble';
 import { hashEditorContent } from '$lib/components/paper/editor/contentHash';
-import { type TeamRole, systemAdmin, userId } from '$api/services/authHelper';
-
-const PAPER_ROLES = [
-	'REVIEWER',
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE'
-] as const satisfies readonly TeamRole[];
+import {
+	PAPER_ROLES,
+	isParticipantOfConference,
+	systemAdmin,
+	userId
+} from '$api/services/authHelper';
 
 // Ported from abilities/entities/paper/paperVersion.ts
 abilityBuilder.paperVersion.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -26,6 +25,31 @@ abilityBuilder.paperVersion.allow('read').when((ctx) => {
 					}
 				}
 			}
+		: undefined;
+});
+
+// Supervisors and participants read what they may read of the paper itself: the submitted text,
+// never a draft. Without these the public paper view and the supervisor view load a paper with
+// no versions, i.e. without its content.
+abilityBuilder.paperVersion.allow('read').when((ctx) => {
+	const id = userId(ctx);
+	return id
+		? {
+				where: {
+					status: { ne: 'DRAFT' },
+					paper: {
+						status: { ne: 'DRAFT' },
+						delegation: { members: { supervisors: { user: { id } } } }
+					}
+				}
+			}
+		: undefined;
+});
+
+abilityBuilder.paperVersion.allow('read').when((ctx) => {
+	const participant = isParticipantOfConference(ctx);
+	return participant
+		? { where: { status: { ne: 'DRAFT' }, paper: { ...participant, status: { ne: 'DRAFT' } } } }
 		: undefined;
 });
 

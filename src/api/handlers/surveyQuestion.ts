@@ -2,10 +2,11 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertMayManageConference,
+	assertTeamRole,
 	isTeamMemberOfConference,
+	isParticipantOfConference,
 	systemAdmin,
-	userId
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -14,16 +15,18 @@ import { nullToUndefined } from '$api/services/args';
 // Ported from abilities/entities/surveyQuestion.ts
 abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Any logged-in user may read every question. Note this is NOT a blanket allow: the CASL rule
-// sat inside `if (oidc?.user)`, so anonymous requests matched nothing.
-abilityBuilder.surveyQuestion.allow('read').when((ctx) => (userId(ctx) ? 'allow' : undefined));
+// Participants see the published questions of their own conferences - not drafts, and not the
+// ones the organizers hid.
+abilityBuilder.surveyQuestion.allow('read').when((ctx) => {
+	const participant = isParticipantOfConference(ctx);
+	return participant ? { where: { ...participant, draft: false, hidden: false } } : undefined;
+});
 
 // Participant care and project management manage their conference's questions.
 // Creation stays in the mutation resolver, as it did under CASL.
-abilityBuilder.surveyQuestion.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.surveyQuestion
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 const SurveyQuestionRef = object({ table: 'surveyQuestion' });
 query({ table: 'surveyQuestion' });
@@ -42,7 +45,7 @@ schemaBuilder.mutationFields((t) => ({
 			showSelectionOnDashboard: t.arg.boolean()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, ctx.oidc.user?.sub);
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const created = await db
 				.insert(schema.surveyQuestion)

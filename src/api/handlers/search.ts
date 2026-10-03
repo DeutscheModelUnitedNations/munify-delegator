@@ -1,10 +1,6 @@
 import { db } from '$api/db/db';
 import { schemaBuilder } from '$api/rumble';
-import {
-	PARTICIPANT_CARE_ROLES,
-	assertMayManageConference,
-	userId
-} from '$api/services/authHelper';
+import { PARTICIPANT_CARE_ROLES, assertTeamRole } from '$api/services/authHelper';
 
 /**
  * The organizers' search box: one query that looks through a conference's participants,
@@ -228,10 +224,7 @@ schemaBuilder.queryFields((t) => ({
 			searchTerm: t.arg.string({ required: true })
 		},
 		resolve: async (_root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, userId(ctx), PARTICIPANT_CARE_ROLES, {
-				allowSystemAdmin: true,
-				ctx
-			});
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const searchTerm = args.searchTerm.trim();
 			if (searchTerm.length < 2) {

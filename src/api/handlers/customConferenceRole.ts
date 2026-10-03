@@ -1,6 +1,6 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { isTeamMemberOfConference, systemAdmin } from '$api/services/authHelper';
+import { isTeamMemberOfConference, systemAdmin, where } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { nullToUndefined } from '$api/services/args';
@@ -9,10 +9,9 @@ import { nullToUndefined } from '$api/services/args';
 abilityBuilder.customConferenceRole.allow('read');
 abilityBuilder.customConferenceRole.allow(['update', 'delete']).when(systemAdmin);
 
-abilityBuilder.customConferenceRole.allow(['update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT']);
-	return where ? { where } : undefined;
-});
+abilityBuilder.customConferenceRole
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT'])));
 
 const CustomConferenceRoleRef = object({ table: 'customConferenceRole' });
 query({ table: 'customConferenceRole' });

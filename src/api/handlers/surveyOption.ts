@@ -3,9 +3,9 @@ import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } 
 import {
 	PARTICIPANT_CARE_ROLES,
 	isTeamMemberOfConference,
-	assertMayManageSurveyQuestion,
-	systemAdmin,
-	userId
+	assertTeamRoleForSurveyQuestion,
+	isParticipantOfConference,
+	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -13,8 +13,13 @@ import { GraphQLError } from 'graphql';
 // Ported from abilities/entities/surveyOption.ts
 abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Logged-in users only, as above.
-abilityBuilder.surveyOption.allow('read').when((ctx) => (userId(ctx) ? 'allow' : undefined));
+// Participants see the options of the questions they may see.
+abilityBuilder.surveyOption.allow('read').when((ctx) => {
+	const participant = isParticipantOfConference(ctx);
+	return participant
+		? { where: { question: { ...participant, draft: false, hidden: false } } }
+		: undefined;
+});
 
 // Scoped through the question, which carries the conference.
 abilityBuilder.surveyOption.allow(['read', 'update', 'delete']).when((ctx) => {
@@ -52,7 +57,7 @@ schemaBuilder.mutationFields((t) => ({
 			upperLimit: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageSurveyQuestion(args.questionId, ctx.oidc.user?.sub);
+			await assertTeamRoleForSurveyQuestion(ctx, args.questionId);
 
 			const created = await db
 				.insert(schema.surveyOption)

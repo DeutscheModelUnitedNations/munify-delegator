@@ -5,12 +5,13 @@ import {
 	isInOwnDelegation,
 	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { assignedRoleConditions, countGiven, nullToUndefined } from '$api/services/args';
-import { assertMayManageConference } from '$api/services/authHelper';
+import { assertTeamRole } from '$api/services/authHelper';
 import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -21,10 +22,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Co-delegates see each other.
-abilityBuilder.delegationMember.allow('read').when((ctx) => {
-	const where = isInOwnDelegation(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.delegationMember.allow('read').when((ctx) => where(isInOwnDelegation(ctx)));
 
 // Supervisors see the delegates of the delegations they supervise.
 abilityBuilder.delegationMember.allow('read').when((ctx) => {
@@ -33,10 +31,9 @@ abilityBuilder.delegationMember.allow('read').when((ctx) => {
 });
 
 // Project management and participant care manage their conference's delegation members.
-abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.delegationMember
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 // Only the head delegate may remove a delegate, and only before the delegation has applied.
 abilityBuilder.delegationMember.allow('delete').when((ctx) => {
@@ -234,6 +231,43 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
+/** Refuses a nation, non-state actor or committee that the conference does not have. */
+async function assertOfferedIn(
+	conferenceId: string,
+	role: {
+		assignedNationAlpha3Code?: string | null;
+		assignedNonStateActorId?: string | null;
+		assignedCommitteeId?: string | null;
+	}
+) {
+	const [nation, nsa, committee] = await Promise.all([
+		role.assignedNationAlpha3Code
+			? db.query.nation.findFirst({
+					where: {
+						alpha3Code: role.assignedNationAlpha3Code,
+						committees: { conferenceId }
+					},
+					columns: { alpha3Code: true }
+				})
+			: true,
+		role.assignedNonStateActorId
+			? db.query.nonStateActor.findFirst({
+					where: { id: role.assignedNonStateActorId, conferenceId },
+					columns: { id: true }
+				})
+			: true,
+		role.assignedCommitteeId
+			? db.query.committee.findFirst({
+					where: { id: role.assignedCommitteeId, conferenceId },
+					columns: { id: true }
+				})
+			: true
+	]);
+	if (!nation || !nsa || !committee) {
+		throw new GraphQLError('This role is not on offer in the conference');
+	}
+}
+
 /** Placeholder details, so an assigned delegation looks "applied" like any other. */
 const ASSIGNED_DELEGATION_INFOS = {
 	applied: true,
@@ -325,16 +359,14 @@ schemaBuilder.mutationFields((t) => ({
 			assignedCommitteeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, userId(ctx), PARTICIPANT_CARE_ROLES, {
-				allowSystemAdmin: true,
-				ctx
-			});
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			if (countGiven(args.assignedNationAlpha3Code, args.assignedNonStateActorId) === 0) {
 				throw new GraphQLError(
 					'Either assignedNationAlpha3Code or assignedNonStateActorId must be provided'
 				);
 			}
+			await assertOfferedIn(args.conferenceId, args);
 
 			const memberId = await db.transaction(async (tx) => {
 				const existing = await tx.query.delegation.findFirst({
@@ -416,8 +448,9 @@ schemaBuilder.mutationFields((t) => ({
 					})
 					.then(assertFindFirstExists);
 
+				// A committee of the member's own conference, not any committee id at all.
 				const committee = await tx.query.committee
-					.findFirst({ where: { id: args.assignedCommitteeId } })
+					.findFirst({ where: { id: args.assignedCommitteeId, conferenceId: member.conferenceId } })
 					.then(assertFindFirstExists);
 
 				const siblings = (member.delegation?.members ?? []).filter((x) => x.id !== member.id);
@@ -466,6 +499,11 @@ schemaBuilder.mutationFields((t) => ({
 		},
 		resolve: async (_root, args, ctx) => {
 			if (args.ids.length === 0) return 0;
+			if (args.assignedCommitteeId) {
+				await db.query.committee
+					.findFirst({ where: { id: args.assignedCommitteeId, conferenceId: args.conferenceId } })
+					.then(assertFindFirstExists);
+			}
 
 			const updated = await db
 				.update(schema.delegationMember)
@@ -486,6 +524,39 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	})
 }));
+
+/** Refuses when a delegation of the given members now fills a committee beyond its seats. */
+async function assertSeatLimits(tx: Transaction, memberIds: string[]) {
+	if (memberIds.length === 0) return;
+	const delegations = await tx.query.delegation.findMany({
+		where: { members: { id: { in: memberIds } } },
+		with: { members: { columns: { assignedCommitteeId: true } } }
+	});
+	const committeeIds = [
+		...new Set(
+			delegations.flatMap((delegation) =>
+				delegation.members.flatMap((member) => member.assignedCommitteeId ?? [])
+			)
+		)
+	];
+	if (committeeIds.length === 0) return;
+	const committees = await tx.query.committee.findMany({
+		where: { id: { in: committeeIds } },
+		columns: { id: true, numOfSeatsPerDelegation: true }
+	});
+	const seats = new Map(committees.map((c) => [c.id, c.numOfSeatsPerDelegation]));
+	for (const delegation of delegations) {
+		const taken = Map.groupBy(
+			delegation.members.flatMap((member) => member.assignedCommitteeId ?? []),
+			(committeeId) => committeeId
+		);
+		for (const [committeeId, members] of taken) {
+			if (members.length > (seats.get(committeeId) ?? 0)) {
+				throw new GraphQLError('A committee has more members of this delegation than it seats');
+			}
+		}
+	}
+}
 
 const CommitteeAssignmentInput = schemaBuilder.inputType('CommitteeAssignmentInput', {
 	fields: (t) => ({
@@ -539,6 +610,13 @@ schemaBuilder.mutationFields((t) => ({
 						.set({ assignedCommitteeId: assignment.committeeId })
 						.where(eq(schema.delegationMember.id, member.id));
 				}
+
+				// Each committee seats a fixed number of every delegation; the assignment page checks
+				// this too, but only the server can make it hold.
+				await assertSeatLimits(
+					tx,
+					args.assignments.map((assignment) => assignment.delegationMemberId)
+				);
 			});
 
 			pubsub.updated();

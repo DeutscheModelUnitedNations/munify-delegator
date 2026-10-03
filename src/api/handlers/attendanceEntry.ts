@@ -2,8 +2,9 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	assertTeamRole,
 	isTeamMemberOfConference,
-	isSystemAdmin,
+	participatesIn,
 	systemAdmin,
 	userId
 } from '$api/services/authHelper';
@@ -41,16 +42,20 @@ const conferenceParticipantStatusPubsub = rumblePubsub({
 });
 
 /**
- * Any team member of the conference may record attendance, not just management - and a system
- * admin passes without being on the team. Both match the legacy resolver.
+ * Any team member of the conference may record attendance, not just management - the scanner is
+ * on every team member's dashboard - and only for somebody who is part of the conference.
  */
-async function assertMayRecordAttendance(ctx: Context, conferenceId: string, callerId: string) {
-	if (isSystemAdmin(ctx)) return;
-	const teamMember = await db.query.teamMember.findFirst({
-		where: { conferenceId, userId: callerId }
+async function assertMayRecordAttendance(ctx: Context, conferenceId: string, subjectId: string) {
+	await assertTeamRole(ctx, conferenceId);
+	const subject = await db.query.user.findFirst({
+		where: {
+			id: subjectId,
+			OR: [...participatesIn({ id: conferenceId }).OR, { teamMember: { conferenceId } }]
+		},
+		columns: { id: true }
 	});
-	if (!teamMember) {
-		throw new GraphQLError('Only team members can create attendance entries.');
+	if (!subject) {
+		throw new GraphQLError('This user does not take part in the conference');
 	}
 }
 
@@ -71,7 +76,7 @@ schemaBuilder.mutationFields((t) => ({
 				throw new GraphQLError('Occasion must not be empty.');
 			}
 
-			await assertMayRecordAttendance(ctx, args.conferenceId, callerId);
+			await assertMayRecordAttendance(ctx, args.conferenceId, args.userId);
 
 			// The participant status row is created on demand, as the legacy upsert did. The no-op
 			// `set` is how Postgres returns the existing row on conflict.

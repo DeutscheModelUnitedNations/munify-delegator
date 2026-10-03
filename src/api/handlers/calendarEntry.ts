@@ -9,7 +9,7 @@ import {
 } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertMayManageCalendarDay,
+	assertTeamRoleForCalendarDay,
 	isTeamMemberOfConference,
 	systemAdmin
 } from '$api/services/authHelper';
@@ -32,6 +32,38 @@ const pubsub = rumblePubsub({ table: 'calendarEntry' });
 
 const calendarEntryColorEnum = enum_({ tsName: 'calendarEntryColor' });
 
+/**
+ * An entry's day, track and place are ids from the client, so each has to belong where the entry
+ * does: the track to the entry's day, the place and the day to the entry's conference. Otherwise a
+ * conference's calendar could pull in another conference's venues, or move entries over to it.
+ */
+async function assertReferences(
+	conferenceId: string,
+	refs: { calendarDayId: string; calendarTrackId?: string | null; placeId?: string | null }
+) {
+	const [day, track, place] = await Promise.all([
+		db.query.calendarDay.findFirst({
+			where: { id: refs.calendarDayId, conferenceId },
+			columns: { id: true }
+		}),
+		refs.calendarTrackId
+			? db.query.calendarTrack.findFirst({
+					where: { id: refs.calendarTrackId, calendarDayId: refs.calendarDayId },
+					columns: { id: true }
+				})
+			: true,
+		refs.placeId
+			? db.query.place.findFirst({
+					where: { id: refs.placeId, conferenceId },
+					columns: { id: true }
+				})
+			: true
+	]);
+	if (!day || !track || !place) {
+		throw new GraphQLError('Day, track and place must all belong to the same conference');
+	}
+}
+
 schemaBuilder.mutationFields((t) => ({
 	createCalendarEntry: t.drizzleField({
 		type: CalendarEntryRef,
@@ -48,7 +80,8 @@ schemaBuilder.mutationFields((t) => ({
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageCalendarDay(args.calendarDayId, ctx.oidc.user?.sub);
+			const day = await assertTeamRoleForCalendarDay(ctx, args.calendarDayId);
+			await assertReferences(day.conferenceId, args);
 
 			const created = await db
 				.insert(schema.calendarEntry)
@@ -96,6 +129,23 @@ schemaBuilder.mutationFields((t) => ({
 			placeId: t.arg.id()
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const entry = await db.query.calendarEntry
+				.findFirst({
+					...(await ctx.abilities.calendarEntry.filter('update')).merge({ where: { id: args.id } })
+						.query.single,
+					columns: { calendarDayId: true, calendarTrackId: true },
+					with: { calendarDay: { columns: { conferenceId: true } } }
+				})
+				.then(assertFindFirstExists);
+			const calendarDayId = args.calendarDayId ?? entry.calendarDayId;
+			await assertReferences(entry.calendarDay.conferenceId, {
+				calendarDayId,
+				// Moving to another day takes the track along only if it is that day's too.
+				calendarTrackId:
+					args.calendarTrackId === undefined ? entry.calendarTrackId : args.calendarTrackId,
+				placeId: args.placeId
+			});
+
 			await db
 				.update(schema.calendarEntry)
 				// An omitted argument arrives as `undefined` and leaves the column alone; an

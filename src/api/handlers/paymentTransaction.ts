@@ -9,9 +9,12 @@ import {
 } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	assertParticipantsOf,
+	hasTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
-	systemAdmin
+	systemAdmin,
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -21,18 +24,14 @@ import { eq } from 'drizzle-orm';
 abilityBuilder.paymentTransaction.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Only project management and participant care of the conference, as in the CASL rules.
-abilityBuilder.paymentTransaction.allow(['read', 'update']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.paymentTransaction
+	.allow(['read', 'update'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 // Whoever made a transfer reference sees it: `createPaymentTransaction` hands the new row back to
 // its creator, whose reference is the whole point of the payment pages. The legacy resolver
 // returned it without a read check, so this is what keeps that working through the ability layer.
-abilityBuilder.paymentTransaction.allow('read').when((ctx) => {
-	const where = isOwnUser(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.paymentTransaction.allow('read').when((ctx) => where(isOwnUser(ctx)));
 
 const PaymentTransactionRef = object({ table: 'paymentTransaction' });
 query({ table: 'paymentTransaction' });
@@ -74,9 +73,31 @@ schemaBuilder.mutationFields((t) => ({
 			paymentFor: t.arg.idList({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const caller = ctx.mustBeLoggedIn().sub;
 			const conference = await db.query.conference
 				.findFirst({ where: { id: args.conferenceId } })
 				.then(assertFindFirstExists);
+
+			// A reference is made by its payer, for people that payer can see in the conference -
+			// themselves, their delegation, the participants they supervise. Participant care may
+			// make one on anybody's behalf.
+			if (!(await hasTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES))) {
+				if (args.userId !== caller) {
+					throw new GraphQLError('Payment references can only be made in your own name');
+				}
+				const visible = await db.query.user.findMany({
+					...(await ctx.abilities.user.filter('read')).merge({
+						where: { id: { in: [...new Set(args.paymentFor)] } }
+					}).query.many,
+					columns: { id: true }
+				});
+				if (visible.length !== new Set(args.paymentFor).size) {
+					throw new GraphQLError(
+						'You can only pay for yourself, your delegation and the participants you supervise'
+					);
+				}
+			}
+			await assertParticipantsOf(args.conferenceId, args.paymentFor);
 
 			// Captured in a const so the narrowing survives into the transaction closure below,
 			// rather than reaching for a non-null assertion there.

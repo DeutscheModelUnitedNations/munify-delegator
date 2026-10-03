@@ -8,10 +8,10 @@ import {
 	schemaBuilder
 } from '$api/rumble';
 import {
-	type TeamRole,
+	PAPER_ROLES,
+	assertTeamRole,
 	isTeamMemberOfConference,
-	systemAdmin,
-	userId
+	systemAdmin
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -32,13 +32,6 @@ query({ table: 'committeeAgendaItem' });
 const pubsub = rumblePubsub({ table: 'committeeAgendaItem' });
 
 const reviewHelpStatusEnum = enum_({ tsName: 'reviewHelpStatus' });
-
-/** Roles that may flag an agenda item as needing review help. */
-const REVIEW_ROLES = [
-	'REVIEWER',
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE'
-] as const satisfies readonly TeamRole[];
 
 schemaBuilder.mutationFields((t) => ({
 	createAgendaItem: t.drizzleField({
@@ -138,11 +131,6 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: reviewHelpStatusEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
-			}
-
 			const agendaItem = await db.query.committeeAgendaItem
 				.findFirst({
 					where: { id: args.agendaItemId },
@@ -151,20 +139,8 @@ schemaBuilder.mutationFields((t) => ({
 				.then(assertFindFirstExists);
 
 			// Reviewers get this on top of the update ability, which they do not otherwise hold for
-			// agenda items - hence the separate check rather than an ability filter.
-			const teamMember = agendaItem.committee
-				? await db.query.teamMember.findFirst({
-						where: {
-							conferenceId: agendaItem.committee.conferenceId,
-							userId: callerId,
-							role: { in: [...REVIEW_ROLES] }
-						}
-					})
-				: undefined;
-
-			if (!teamMember) {
-				throw new GraphQLError('Access denied - requires reviewer status');
-			}
+			// agenda items - hence a role check rather than an ability filter.
+			await assertTeamRole(ctx, agendaItem.committee.conferenceId, PAPER_ROLES);
 
 			await db
 				.update(schema.committeeAgendaItem)

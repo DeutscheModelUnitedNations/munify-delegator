@@ -7,11 +7,20 @@ import {
 	query,
 	schemaBuilder
 } from '$api/rumble';
-import { PAPER_ROLES, systemAdmin, userId } from '$api/services/authHelper';
+import {
+	PAPER_ROLES,
+	assertTeamRole,
+	hasTeamRole,
+	isParticipantOfConference,
+	isSystemAdmin,
+	systemAdmin,
+	userId
+} from '$api/services/authHelper';
 import { m } from '$lib/paraglide/messages';
 import { fetchUserParticipations } from '$api/services/participation';
 import { paperSubmissionChanges } from '$api/services/paperSubmission';
 import type { Row } from '$api/db/rows';
+import type { Context } from '$api/context';
 import { CommitteeRef } from './committee';
 import { CommitteeAgendaItemRef } from './committeeAgendaItem';
 import type { InferSelectModel } from 'drizzle-orm';
@@ -52,30 +61,64 @@ abilityBuilder.paper.allow('read').when((ctx) => {
 		: undefined;
 });
 
-// Participants of a conference may see its submitted papers.
-//
-// NOTE: the CASL rule this replaces granted `list` only, not `read`, so a participant could
-// list these papers but not fetch one by id. Rumble has no separate list action (neither does
-// chase), so this maps to `read` and is the one place in the port where access widens.
+// Participants of a conference may see its submitted papers - the public paper hub.
 abilityBuilder.paper.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					conference: {
-						OR: [
-							{ delegations: { members: { userId: id } } },
-							{ singleParticipants: { userId: id } },
-							{ conferenceSupervisors: { userId: id } }
-						]
-					},
-					status: { ne: 'DRAFT' }
-				}
-			}
-		: undefined;
+	const participant = isParticipantOfConference(ctx);
+	return participant ? { where: { ...participant, status: { ne: 'DRAFT' } } } : undefined;
 });
 
 const PaperRef = object({ table: 'paper' });
+
+/**
+ * A paper is written by the caller, for a delegation they are a member of in that conference, on
+ * one of that conference's agenda items (or none, for an introduction paper). All three arrive as
+ * arguments, so all three are checked: the author cannot be somebody else, and the delegation and
+ * agenda item cannot belong to another conference.
+ */
+/** What an author may ask for; ACCEPTED and CHANGES_REQUESTED are verdicts, set by reviews. */
+const AUTHOR_STATUSES: readonly Row<'paper'>['status'][] = ['DRAFT', 'SUBMITTED', 'REVISED'];
+
+/**
+ * Refuses a status a save may not set. Authors move between draft and submitted; a reviewer
+ * editing the text keeps whatever verdict the paper already has. Neither may hand out a verdict.
+ */
+function assertSavableStatus(
+	requested: Row<'paper'>['status'] | null | undefined,
+	current?: Row<'paper'>['status']
+) {
+	if (!requested || requested === current || AUTHOR_STATUSES.includes(requested)) return;
+	throw new GraphQLError('A paper can only be accepted or sent back through a review');
+}
+
+async function assertMayAuthor(
+	ctx: Context,
+	args: {
+		conferenceId: string;
+		authorId: string;
+		delegationId: string;
+		agendaItemId?: string | null;
+	}
+) {
+	const caller = ctx.mustBeLoggedIn().sub;
+	if (args.authorId !== caller) {
+		throw new GraphQLError('Papers can only be written in your own name');
+	}
+	const membership = await db.query.delegationMember.findFirst({
+		where: { userId: caller, delegationId: args.delegationId, conferenceId: args.conferenceId },
+		columns: { id: true }
+	});
+	if (!membership) {
+		throw new GraphQLError('You can only write papers for your own delegation');
+	}
+	if (args.agendaItemId) {
+		await db.query.committeeAgendaItem
+			.findFirst({
+				where: { id: args.agendaItemId, committee: { conferenceId: args.conferenceId } },
+				columns: { id: true }
+			})
+			.then(assertFindFirstExists);
+	}
+}
 query({ table: 'paper' });
 const pubsub = rumblePubsub({ table: 'paper' });
 // Every content change is a new version row rather than an edit in place.
@@ -97,9 +140,8 @@ schemaBuilder.mutationFields((t) => ({
 			status: t.arg({ type: paperStatusEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			if (!userId(ctx)) {
-				throw new GraphQLError('Must be logged in');
-			}
+			await assertMayAuthor(ctx, args);
+			assertSavableStatus(args.status);
 
 			const created = await db.transaction(async (tx) => {
 				const conference = await tx.query.conference
@@ -175,6 +217,7 @@ schemaBuilder.mutationFields((t) => ({
 				if (!paper.conference?.isOpenPaperSubmission) {
 					throw new GraphQLError(m.paperSubmissionClosed());
 				}
+				assertSavableStatus(args.status, paper.status);
 
 				const { status, firstSubmittedAt } = paperSubmissionChanges(paper, args.status, new Date());
 
@@ -225,17 +268,9 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-/** Team roles that may see the whole conference's papers. */
-export async function assertPaperReviewer(conferenceId: string, callerId: string | undefined) {
-	if (!callerId) {
-		throw new GraphQLError('Must be logged in');
-	}
-	const teamMember = await db.query.teamMember.findFirst({
-		where: { conferenceId, userId: callerId, role: { in: [...PAPER_ROLES] } }
-	});
-	if (!teamMember) {
-		throw new GraphQLError('Access denied - requires team member status');
-	}
+/** Reviewers and conference management of the conference, or a system admin. */
+export function assertPaperReviewer(ctx: Context, conferenceId: string) {
+	return assertTeamRole(ctx, conferenceId, PAPER_ROLES);
 }
 
 schemaBuilder.queryFields((t) => ({
@@ -247,7 +282,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			await assertPaperReviewer(args.conferenceId, userId(ctx));
+			await assertPaperReviewer(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
 				query(
@@ -296,26 +331,14 @@ schemaBuilder.queryFields((t) => ({
 	})
 }));
 
-/** Any participant of the conference - delegate, single participant or supervisor. */
-async function assertConferenceParticipant(conferenceId: string, callerId: string | undefined) {
-	if (!callerId) {
-		throw new GraphQLError('Must be logged in');
-	}
+/** Any participant of the conference - delegate, single participant or supervisor - or an admin. */
+async function assertConferenceParticipant(ctx: Context, conferenceId: string) {
+	const caller = ctx.mustBeLoggedIn().sub;
+	if (isSystemAdmin(ctx)) return;
 	const { foundDelegationMember, foundSingleParticipant, foundSupervisor } =
-		await fetchUserParticipations({ conferenceId, userId: callerId });
+		await fetchUserParticipations({ conferenceId, userId: caller });
 	if (![foundDelegationMember, foundSingleParticipant, foundSupervisor].some(Boolean)) {
 		throw new GraphQLError('Access denied - requires conference participant status');
-	}
-}
-
-/** Readers who neither wrote nor review a paper must be participants, and may not see drafts. */
-async function assertPublicReader(
-	paper: { conferenceId: string; status: Row<'paper'>['status'] },
-	callerId: string
-) {
-	await assertConferenceParticipant(paper.conferenceId, callerId);
-	if (paper.status === 'DRAFT') {
-		throw new GraphQLError('Access denied - cannot view draft papers');
 	}
 }
 
@@ -325,7 +348,7 @@ schemaBuilder.queryFields((t) => ({
 		type: [PaperRef],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			await assertConferenceParticipant(args.conferenceId, userId(ctx));
+			await assertConferenceParticipant(ctx, args.conferenceId);
 
 			return db.query.paper.findMany(
 				query(
@@ -342,38 +365,21 @@ schemaBuilder.queryFields((t) => ({
 	}),
 
 	/**
-	 * A single paper for the public paper view.
-	 *
-	 * Authors and reviewers may read it in any state; everybody else must be a participant of the
-	 * conference and may not see drafts. The checks are ordered exactly as before, so an author
-	 * reading their own draft still succeeds.
+	 * A single paper for the public paper view: exactly what the read ability allows - authors and
+	 * reviewers in any state, participants of the conference once it is no longer a draft.
 	 */
 	findPublicPaperContent: t.drizzleField({
 		type: PaperRef,
 		args: { paperId: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			if (!callerId) {
-				throw new GraphQLError('Must be logged in');
-			}
-
-			const paper = await db.query.paper
-				.findFirst({ where: { id: args.paperId } })
-				.then(assertFindFirstExists);
-
-			const isAuthor = paper.authorId === callerId;
-			const teamMember = await db.query.teamMember.findFirst({
-				where: {
-					conferenceId: paper.conferenceId,
-					userId: callerId,
-					role: { in: [...PAPER_ROLES] }
-				}
-			});
-
-			if (!isAuthor && !teamMember) await assertPublicReader(paper, callerId);
-
+			ctx.mustBeLoggedIn();
 			return db.query.paper
-				.findFirst(query({ where: { id: args.paperId } }))
+				.findFirst(
+					query(
+						(await ctx.abilities.paper.filter('read')).merge({ where: { id: args.paperId } }).query
+							.single
+					)
+				)
 				.then(assertFindFirstExists);
 		}
 	})
@@ -419,12 +425,11 @@ const CommitteePaperGroup = schemaBuilder
  * own query. Grouping happens in memory rather than in SQL because the result is a nested shape
  * rather than an aggregate.
  */
-async function groupPapersByCommittee(conferenceId: string): Promise<CommitteeGroup[]> {
-	const papers = await db.query.paper.findMany({
-		where: { conferenceId, status: { ne: 'DRAFT' } },
-		with: { agendaItem: { with: { committee: true } } }
-	});
-
+function groupPapersByCommittee(
+	papers: (PaperRow & {
+		agendaItem: (AgendaItemRow & { committee: CommitteeRow | null }) | null;
+	})[]
+): CommitteeGroup[] {
 	const byCommittee = new Map<
 		string,
 		{ committee: CommitteeRow; items: Map<string, AgendaItemGroup> }
@@ -462,8 +467,15 @@ schemaBuilder.queryFields((t) => ({
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertPaperReviewer(args.conferenceId, userId(ctx));
-			return groupPapersByCommittee(args.conferenceId);
+			await assertPaperReviewer(ctx, args.conferenceId);
+			return groupPapersByCommittee(
+				await db.query.paper.findMany({
+					...(await ctx.abilities.paper.filter('read')).merge({
+						where: { conferenceId: args.conferenceId, status: { ne: 'DRAFT' } }
+					}).query.many,
+					with: { agendaItem: { with: { committee: true } } }
+				})
+			);
 		}
 	}),
 
@@ -472,8 +484,15 @@ schemaBuilder.queryFields((t) => ({
 		type: [CommitteePaperGroup],
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
-			await assertConferenceParticipant(args.conferenceId, userId(ctx));
-			return groupPapersByCommittee(args.conferenceId);
+			await assertConferenceParticipant(ctx, args.conferenceId);
+			return groupPapersByCommittee(
+				await db.query.paper.findMany({
+					...(await ctx.abilities.paper.filter('read')).merge({
+						where: { conferenceId: args.conferenceId, status: { ne: 'DRAFT' } }
+					}).query.many,
+					with: { agendaItem: { with: { committee: true } } }
+				})
+			);
 		}
 	})
 }));
@@ -517,7 +536,7 @@ schemaBuilder.queryFields((t) => ({
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			const callerId = userId(ctx);
-			await assertPaperReviewer(args.conferenceId, callerId);
+			await assertPaperReviewer(ctx, args.conferenceId);
 
 			const reviews = await fetchConferenceReviews(args.conferenceId);
 
@@ -559,14 +578,7 @@ schemaBuilder.queryFields((t) => ({
 			const callerId = userId(ctx);
 			if (!callerId) return null;
 
-			const teamMember = await db.query.teamMember.findFirst({
-				where: {
-					conferenceId: args.conferenceId,
-					userId: callerId,
-					role: { in: [...PAPER_ROLES] }
-				}
-			});
-			if (!teamMember) return null;
+			if (!(await hasTeamRole(ctx, args.conferenceId, PAPER_ROLES))) return null;
 
 			const reviews = await fetchConferenceReviews(args.conferenceId);
 
@@ -621,7 +633,7 @@ schemaBuilder.queryFields((t) => ({
 				})
 				.then(assertFindFirstExists);
 
-			await assertPaperReviewer(agendaItem.committee.conferenceId, userId(ctx));
+			await assertPaperReviewer(ctx, agendaItem.committee.conferenceId);
 
 			const papers = await db.query.paper.findMany({
 				where: { agendaItemId: args.agendaItemId, status: { in: ['SUBMITTED', 'REVISED'] } },

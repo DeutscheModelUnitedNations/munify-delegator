@@ -125,6 +125,8 @@ export const E2E_DRAFT_PAPER_VERSION_ID = 'e2e00000paperversion0001';
 
 // Papers: a delegate (already assigned to the committee) submits a paper, a reviewer reviews it.
 export const E2E_PAPER_REVIEWER_ID = 'e2e-paper-reviewer';
+/** A team coordinator: manages the team, but may not hand out project management. */
+export const E2E_TEAM_COORDINATOR_ID = 'e2e-team-coordinator';
 export const E2E_PAPER_DELEGATE_USER_ID = 'e2e-paper-delegate';
 export const E2E_PAPER_DELEGATION_ID = 'e2e00000delegation00000002';
 
@@ -251,10 +253,11 @@ export default async function seed() {
 	await upsertActorUser(E2E_CONNECT_PARTICIPANT_ID);
 	await upsertActorUser(E2E_SUPERVISED_PARTICIPANT_USER_ID);
 	await upsertActorUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID);
+	await upsertActorUser(E2E_TEAM_COORDINATOR_ID);
 
 	async function upsertTeamMember(
 		userId: string,
-		role: 'PARTICIPANT_CARE' | 'PROJECT_MANAGEMENT' | 'REVIEWER'
+		role: 'PARTICIPANT_CARE' | 'PROJECT_MANAGEMENT' | 'REVIEWER' | 'TEAM_COORDINATOR'
 	) {
 		const teamMember = {
 			...makeSeedTeamMember({ conferenceId: conference.id, userId, role }),
@@ -270,6 +273,7 @@ export default async function seed() {
 	await upsertTeamMember(E2E_PAYMENT_ADMIN_ID, 'PARTICIPANT_CARE');
 	await upsertTeamMember(E2E_ASSIGNMENT_ADMIN_ID, 'PROJECT_MANAGEMENT');
 	await upsertTeamMember(E2E_PAPER_REVIEWER_ID, 'REVIEWER');
+	await upsertTeamMember(E2E_TEAM_COORDINATOR_ID, 'TEAM_COORDINATOR');
 
 	// --- management fixture: a participant who never logs in, just gets acted on ---
 	const mgmtTargetParticipant = {
@@ -388,7 +392,9 @@ export default async function seed() {
 				userId,
 				isHeadDelegate: i === 0
 			}),
-			id: `e2e00000delegationmember000${3 + i}`
+			// Their own ids: `…member0004` belongs to the committee-assignment fixture below, whose
+			// upsert used to move the second split member out of this delegation.
+			id: `e2e00000delegationmembersplit${i + 1}`
 		};
 		await db
 			.insert(schema.delegationMember)

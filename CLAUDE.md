@@ -210,8 +210,28 @@ bun run preview
   ctx.abilities.committee.filter('update').merge({ where: { id: args.id } }).sql.where;
   ```
 
-  Reach for an explicit check in `services/authHelper.ts` only when the answer is needed before a
-  row exists.
+  `services/authHelper.ts` is the one place authorization is built from; its header holds the
+  role matrix (who may do what). Rules of thumb, all of them enforced by `e2e/authorization/`:
+
+  - **Rules compose from the helpers** (`isTeamMemberOfConference(ctx, roles)`, `isOwnUser`,
+    `isParticipantOfConference`, `isManagedUser`, …), wrapped with `where(...)`. A helper returns
+    `undefined` for "grants nothing" and never throws. Every table also gets
+    `.allow([...]).when(systemAdmin)` - rumble has no global wildcard.
+  - **Updates and deletes go through the row's own ability** (`filter('update').merge({ where:
+{ id } })`). Load the row through it first when the resolver needs the row anyway.
+  - **Creates check the parent with `assertTeamRole(ctx, conferenceId, roles)`**, which runs the
+    same `isTeamMemberOf` filter against the conference row (chase checks the parent's `update`
+    ability for the same reason). A system admin always passes.
+  - **Every id an argument names is checked to belong where the row goes**: a track to its day, a
+    place, role, committee or nation to the conference, a `userId` to the caller unless the
+    caller is participant care. A missing check here is how a team of one conference writes into
+    another.
+  - **Columns cannot be masked per rule.** rumble ORs the `where` of every matching rule and
+    unions their `columns` across the whole request, so a column hidden from one rule is shown by
+    any other. Private columns are overridden in `object({ adjust })` instead, with a resolver
+    that returns `null` (or `''` for a non-null column) per row: see the user's contact fields,
+    `globalNotes`, a supervisor's `connectionCode`, a delegation's `entryCode`. `hasTeamRole` is
+    memoized per request, so such resolvers can call it per row.
 
 - The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
   instance it, `/api/graphql/stream` and the SSR remote function all share. Adding fields needs a

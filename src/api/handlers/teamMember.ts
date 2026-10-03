@@ -1,29 +1,32 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
-	TEAM_ADMIN_ROLES,
-	assertMayManageConference,
+	PROJECT_MANAGEMENT_ROLES,
+	assertMayGrantRole,
+	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	where
 } from '$api/services/authHelper';
 import { enum_ } from '$api/rumble';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 
-// Ported from abilities/entities/teamMember.ts
 abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Team members can see each other.
-abilityBuilder.teamMember.allow('read').when((ctx) => {
-	const where = isTeamMemberOfConference(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.teamMember.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
 
-// Project management and team coordinators manage the team.
+// Project management manages the whole team.
+abilityBuilder.teamMember
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+
+// Team coordinators manage everybody but project management, which they can neither demote nor
+// remove (see `assertMayGrantRole` for the other direction).
 abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, TEAM_ADMIN_ROLES);
-	return where ? { where } : undefined;
+	const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
+	return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
 });
 
 const TeamMemberRef = object({ table: 'teamMember' });
@@ -41,12 +44,7 @@ schemaBuilder.mutationFields((t) => ({
 			role: t.arg({ type: teamRoleEnum })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			// Project management only - and, unlike the other create checks, a system admin who is
-			// not on the team passes too. That matches the legacy resolver exactly.
-			await assertMayManageConference(args.conferenceId, userId(ctx), ['PROJECT_MANAGEMENT'], {
-				allowSystemAdmin: true,
-				ctx
-			});
+			await assertTeamRole(ctx, args.conferenceId, PROJECT_MANAGEMENT_ROLES);
 
 			const existing = await db.query.teamMember.findFirst({
 				where: { conferenceId: args.conferenceId, userId: args.userId }
@@ -85,6 +83,15 @@ schemaBuilder.mutationFields((t) => ({
 			role: t.arg({ type: teamRoleEnum, required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
+			const member = await db.query.teamMember
+				.findFirst({
+					...(await ctx.abilities.teamMember.filter('update')).merge({ where: { id: args.id } })
+						.query.single,
+					columns: { conferenceId: true }
+				})
+				.then(assertFindFirstExists);
+			await assertMayGrantRole(ctx, member.conferenceId, args.role);
+
 			await db
 				.update(schema.teamMember)
 				.set({ role: args.role })

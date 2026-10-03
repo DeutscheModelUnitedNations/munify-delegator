@@ -7,18 +7,12 @@ import {
 	query,
 	schemaBuilder
 } from '$api/rumble';
-import { type TeamRole, systemAdmin, userId } from '$api/services/authHelper';
+import { PAPER_ROLES, hasTeamRole, systemAdmin, userId } from '$api/services/authHelper';
 import type { Context } from '$api/context';
 import { sendNewReviewNotification } from '$api/services/email';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { and, count, eq } from 'drizzle-orm';
-
-const PAPER_ROLES = [
-	'REVIEWER',
-	'PROJECT_MANAGEMENT',
-	'PARTICIPANT_CARE'
-] as const satisfies readonly TeamRole[];
 
 // Ported from abilities/entities/paper/paperReview.ts
 abilityBuilder.paperReview.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -120,22 +114,10 @@ function fetchPaperForReview(tx: Transaction, paperId: string) {
 type PaperForReview = Awaited<ReturnType<typeof fetchPaperForReview>>;
 
 /** Rejects the review unless the reviewer may review, and the paper and verdict allow it. */
-async function assertMayReview(
-	tx: Transaction,
-	paper: PaperForReview,
-	reviewerId: string,
-	newStatus: string
-) {
-	// Reviewing is a team-member action; the read ability alone is not enough.
-	const teamMember = await tx.query.teamMember.findFirst({
-		where: {
-			conferenceId: paper.conferenceId,
-			userId: reviewerId,
-			role: { in: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE'] }
-		}
-	});
-	if (!teamMember) {
-		throw new GraphQLError('Only team members can create reviews');
+async function assertMayReview(ctx: Context, paper: PaperForReview, newStatus: string) {
+	// Reviewing is a reviewer's action; reading the paper is not enough.
+	if (!(await hasTeamRole(ctx, paper.conferenceId, PAPER_ROLES))) {
+		throw new GraphQLError('Only reviewers can create reviews');
 	}
 
 	if (!REVIEWABLE_STATUSES.includes(paper.status)) {
@@ -337,13 +319,9 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (_root, args, ctx) => {
 			const reviewer = ctx.mustBeLoggedIn();
 
-			pubsub.created();
-			paperPubsub.updated(args.paperId);
-			paperVersionPubsub.updated();
-
-			return db.transaction(async (tx) => {
+			const result = await db.transaction(async (tx) => {
 				const paper = await fetchPaperForReview(tx, args.paperId);
-				const latestVersion = await assertMayReview(tx, paper, reviewer.sub, args.newStatus);
+				const latestVersion = await assertMayReview(ctx, paper, args.newStatus);
 				const wasFirstReviewForPiece = await isFirstReviewForPiece(tx, paper);
 
 				const review = await tx
@@ -377,6 +355,13 @@ schemaBuilder.mutationFields((t) => ({
 					unlockedPieceData
 				};
 			});
+
+			// After the commit, so subscribers refetch the review rather than the state before it.
+			pubsub.created();
+			paperPubsub.updated(args.paperId);
+			paperVersionPubsub.updated();
+
+			return result;
 		}
 	})
 }));

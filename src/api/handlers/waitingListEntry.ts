@@ -5,7 +5,8 @@ import {
 	isOwnUser,
 	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -16,16 +17,12 @@ import { nullToUndefined } from '$api/services/args';
 abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Users see their own entry.
-abilityBuilder.waitingListEntry.allow('read').when((ctx) => {
-	const where = isOwnUser(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.waitingListEntry.allow('read').when((ctx) => where(isOwnUser(ctx)));
 
 // Participant care and project management manage their conference's waiting list.
-abilityBuilder.waitingListEntry.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.waitingListEntry
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 const WaitingListEntryRef = object({ table: 'waitingListEntry' });
 query({ table: 'waitingListEntry' });

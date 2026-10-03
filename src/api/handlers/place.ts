@@ -2,9 +2,10 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertMayManageConference,
+	assertTeamRole,
 	isTeamMemberOfConference,
-	systemAdmin
+	systemAdmin,
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -13,10 +14,9 @@ import { GraphQLError } from 'graphql';
 abilityBuilder.place.allow('read');
 abilityBuilder.place.allow(['update', 'delete']).when(systemAdmin);
 
-abilityBuilder.place.allow(['update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.place
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 const PlaceRef = object({
 	table: 'place',
@@ -47,7 +47,7 @@ schemaBuilder.mutationFields((t) => ({
 			sitePlanDataURL: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, ctx.oidc.user?.sub);
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const created = await db
 				.insert(schema.place)

@@ -2,9 +2,11 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	hasTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { fetchUserParticipations } from '$api/services/participation';
 import { assertApplicationReady } from '$api/services/applicationReadiness';
@@ -41,18 +43,34 @@ abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
 });
 
 // Project management and participant care manage their conference's delegations.
-abilityBuilder.delegation.allow(['read', 'update']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.delegation
+	.allow(['read', 'update'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 // Any team member of the conference may see them.
-abilityBuilder.delegation.allow('read').when((ctx) => {
-	const where = isTeamMemberOfConference(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.delegation.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
 
-const DelegationRef = object({ table: 'delegation' });
+const DelegationRef = object({
+	table: 'delegation',
+	adjust: (t) => ({
+		/**
+		 * Whoever holds the code can join the delegation. Its members, their supervisors and
+		 * participant care hand it out; the rest of the team reads delegations without it. Nobody is
+		 * both on the team and a participant of one conference, so a team member without a care role
+		 * is never also a member or supervisor here.
+		 */
+		entryCode: t.field({
+			type: 'String',
+			nullable: false,
+			resolve: async (delegation, _args, ctx) => {
+				const onTeam = await hasTeamRole(ctx, delegation.conferenceId);
+				const caring =
+					onTeam && (await hasTeamRole(ctx, delegation.conferenceId, PARTICIPANT_CARE_ROLES));
+				return !onTeam || caring ? delegation.entryCode : '';
+			}
+		})
+	})
+});
 query({ table: 'delegation' });
 const pubsub = rumblePubsub({ table: 'delegation' });
 // Creating a delegation also seats its head delegate, and deleting one takes its members with it.

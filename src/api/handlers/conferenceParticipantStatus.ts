@@ -10,32 +10,35 @@ import {
 } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	assertTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
 	isSystemAdmin,
+	participatesIn,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { type SQL, eq, max } from 'drizzle-orm';
+import type { Context } from '$api/context';
+import { nullToUndefined } from '$api/services/args';
 
 // Ported from abilities/entities/conferenceParticipantStatus.ts
 abilityBuilder.conferenceParticipantStatus.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Users see their own status.
-abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => {
-	const where = isOwnUser(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => where(isOwnUser(ctx)));
 
-// Supervisors see the status of the participants they supervise.
-// Carried over with the original caveat: this is not scoped to a single conference.
+// Supervisors see the status of the participants they supervise, in the conference they supervise
+// them in.
 abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => {
 	const id = userId(ctx);
 	return id
 		? {
 				where: {
+					conference: { conferenceSupervisors: { user: { id } } },
 					user: {
 						OR: [
 							{ delegationMemberships: { supervisors: { user: { id } } } },
@@ -60,10 +63,9 @@ abilityBuilder.conferenceParticipantStatus.allow('read').when((ctx) => {
 });
 
 // Participant care and project management manage their conference's statuses.
-abilityBuilder.conferenceParticipantStatus.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.conferenceParticipantStatus
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 const ConferenceParticipantStatusRef = object({ table: 'conferenceParticipantStatus' });
 
@@ -121,13 +123,29 @@ async function updateStatus(updatable: SQL | undefined, values: StatusValues) {
 	return updated.id;
 }
 
+/**
+ * Creates a status row. There is no row for the update ability to judge yet, so this is the
+ * conference's participant care asking, for somebody who actually belongs to the conference.
+ */
 async function createStatus(
+	ctx: Context,
 	values: StatusValues,
 	conferenceId: string,
 	userId: string | undefined
 ) {
 	if (!userId) {
 		throw new GraphQLError('A userId or userEmail is required to create a status');
+	}
+	await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+	const member = await db.query.user.findFirst({
+		where: {
+			id: userId,
+			OR: [...participatesIn({ id: conferenceId }).OR, { teamMember: { conferenceId } }]
+		},
+		columns: { id: true }
+	});
+	if (!member) {
+		throw new GraphQLError('This user does not take part in the conference');
 	}
 	const created = await db
 		.insert(schema.conferenceParticipantStatus)
@@ -171,14 +189,14 @@ schemaBuilder.mutationFields((t) => ({
 			const documentNumber = await documentNumberOf(args);
 
 			const values = {
-				termsAndConditions: args.termsAndConditions ?? undefined,
-				guardianConsent: args.guardianConsent ?? undefined,
-				mediaConsent: args.mediaConsent ?? undefined,
-				mediaConsentStatus: args.mediaConsentStatus ?? undefined,
-				paymentStatus: args.paymentStatus ?? undefined,
-				didAttend: args.didAttend ?? undefined,
+				termsAndConditions: nullToUndefined(args.termsAndConditions),
+				guardianConsent: nullToUndefined(args.guardianConsent),
+				mediaConsent: nullToUndefined(args.mediaConsent),
+				mediaConsentStatus: nullToUndefined(args.mediaConsentStatus),
+				paymentStatus: nullToUndefined(args.paymentStatus),
+				didAttend: nullToUndefined(args.didAttend),
 				assignedDocumentNumber: documentNumber,
-				accessCardId: args.accessCardId ?? undefined
+				accessCardId: nullToUndefined(args.accessCardId)
 			};
 
 			const existing = await db.query.conferenceParticipantStatus.findFirst({
@@ -192,7 +210,7 @@ schemaBuilder.mutationFields((t) => ({
 						}).sql.where,
 						values
 					)
-				: await createStatus(values, args.conferenceId, targetUserId);
+				: await createStatus(ctx, values, args.conferenceId, targetUserId);
 
 			// Updated or created on the spot, so one notification on whichever row now holds it.
 			pubsub.updated(statusId);

@@ -3,10 +3,15 @@ import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } 
 import {
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
+	isManagedUser,
 	isSystemAdmin,
+	isTeamMemberOf,
+	participatesIn,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
+import type { Row } from '$api/db/rows';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
 import { eq } from 'drizzle-orm';
@@ -17,8 +22,7 @@ import { isUniqueViolationOn } from '$api/services/emailConflict';
 import { reportEmailConflict } from '$api/services/reportEmailConflict';
 import type { Context } from '$api/context';
 
-// Ported from abilities/entities/user.ts, plus the impersonation rules that lived in
-// abilities/abilities.ts.
+// System admins may do anything to any account, including impersonating it.
 abilityBuilder.user.allow(['read', 'update', 'delete', 'impersonate']).when(systemAdmin);
 
 // Users see and edit themselves.
@@ -75,33 +79,9 @@ abilityBuilder.user.allow('read').when((ctx) => {
 		: undefined;
 });
 
-/** A conference the given user manages as project management or participant care. */
-function managingTeam(id: string) {
-	return { teamMembers: { user: { id }, role: { in: [...PARTICIPANT_CARE_ROLES] } } };
-}
-
-/** A user taking part in the given conference as delegate, single participant or supervisor. */
-function participationsIn(conference: ReturnType<typeof managingTeam>) {
-	return [
-		{ delegationMemberships: { delegation: { conference } } },
-		{ singleParticipant: { conference } },
-		{ conferenceSupervisor: { conference } }
-	];
-}
-
-// Project management and participant care see the delegates, single participants, supervisors
-// and waiting-list entrants of the conferences they manage. Dropped during the CASL -> rumble
-// port (present in the legacy abilities/entities/user.ts, absent here) - without this, reading
-// a participant's own User record 404s the whole page for anything driven by a non-nullable
-// `user` relation, e.g. the management assignment project.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	if (!id) return undefined;
-	const team = managingTeam(id);
-	return {
-		where: { OR: [...participationsIn(team), { waitingListEntry: { conference: team } }] }
-	};
-});
+// Project management and participant care see everybody they look after: the participants,
+// waiting-list entrants and team of the conferences they manage.
+abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
 
 // Reviewers and conference management see the authors of the conference's papers. They can read
 // every paper there, and a paper's `author` is non-nullable, so without this a single paper by
@@ -118,7 +98,6 @@ abilityBuilder.user.allow('read').when((ctx) => {
 });
 
 // Supervisors see the other supervisors of the participants they share.
-// Carried over from CASL with its original caveat that this is broader than needed.
 abilityBuilder.user.allow('read').when((ctx) => {
 	const id = userId(ctx);
 	return id
@@ -142,17 +121,119 @@ abilityBuilder.user.allow('read').when((ctx) => {
 });
 
 // Project management and participant care may impersonate the participants of their own
-// conferences. The resolver applies further checks on top, as it did before.
+// conferences - not their team, and not anybody else. (Impersonation itself is stalled; see below.)
 abilityBuilder.user.allow('impersonate').when((ctx) => {
-	if (isSystemAdmin(ctx)) return 'allow';
-	const id = userId(ctx);
-	if (!id) return undefined;
-	return { where: { OR: participationsIn(managingTeam(id)) } };
+	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+	return conference ? { where: participatesIn(conference) } : undefined;
 });
+
+/**
+ * Per row, whether the caller looks after this user (see `isManagedUser`). Read rules cannot
+ * mask columns per row - rumble unions the columns of every rule that applies to a request - so
+ * the private fields below ask this instead. Rows are checked in one batched query per tick,
+ * and answers are kept for the rest of the request.
+ */
+const managedUserChecks = new WeakMap<
+	object,
+	{ answers: Map<string, Promise<boolean>>; pending: Map<string, (managed: boolean) => void> }
+>();
+
+function managesUser(ctx: Context, id: string): Promise<boolean> {
+	if (isSystemAdmin(ctx)) return Promise.resolve(true);
+	const filter = isManagedUser(ctx);
+	if (!filter) return Promise.resolve(false);
+
+	let state = managedUserChecks.get(ctx);
+	if (!state) {
+		state = { answers: new Map(), pending: new Map() };
+		managedUserChecks.set(ctx, state);
+	}
+	const known = state.answers.get(id);
+	if (known) return known;
+
+	const batch = state;
+	const answer = new Promise<boolean>((resolve) => {
+		if (batch.pending.size === 0) {
+			queueMicrotask(async () => {
+				const waiting = new Map(batch.pending);
+				batch.pending.clear();
+				const managed = await db.query.user.findMany({
+					where: { id: { in: [...waiting.keys()] }, ...filter },
+					columns: { id: true }
+				});
+				const managedIds = new Set(managed.map((user) => user.id));
+				for (const [waitingId, settle] of waiting) settle(managedIds.has(waitingId));
+			});
+		}
+		batch.pending.set(id, resolve);
+	});
+	state.answers.set(id, answer);
+	return answer;
+}
+
+/** Contact, address and care details: the person themselves, who looks after them, and admins. */
+async function mayReadPrivateFields(ctx: Context, user: { id: string }) {
+	return user.id === userId(ctx) || managesUser(ctx, user.id);
+}
+
+/** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
+async function assertManagesUser(ctx: Context, id: string) {
+	ctx.mustBeLoggedIn();
+	if (!(await managesUser(ctx, id))) {
+		throw new GraphQLError('User not found, or not one you look after');
+	}
+}
+
+const genderEnum = enum_({ tsName: 'gender' });
+// The column is an enum; the legacy arg was a loose string that Prisma rejected at runtime.
+const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
+
+type PrivateColumn =
+	| 'phone'
+	| 'street'
+	| 'apartment'
+	| 'zip'
+	| 'city'
+	| 'country'
+	| 'emergencyContacts'
+	| 'gender'
+	| 'foodPreference';
+
+/** Resolves a private column: null for anybody but the person, who looks after them, and admins. */
+const privateColumn =
+	<C extends PrivateColumn>(column: C) =>
+	async (user: Row<'user'>, _args: object, ctx: Context) =>
+		(await mayReadPrivateFields(ctx, user)) ? user[column] : null;
 
 export const UserRef = object({
 	table: 'user',
 	adjust: (t) => ({
+		// Co-delegates, supervisors and fellow team members may read a user's row for their name
+		// and age, but not how to reach them at home or what the care team noted about them.
+		phone: t.field({ type: 'String', nullable: true, resolve: privateColumn('phone') }),
+		street: t.field({ type: 'String', nullable: true, resolve: privateColumn('street') }),
+		apartment: t.field({ type: 'String', nullable: true, resolve: privateColumn('apartment') }),
+		zip: t.field({ type: 'String', nullable: true, resolve: privateColumn('zip') }),
+		city: t.field({ type: 'String', nullable: true, resolve: privateColumn('city') }),
+		country: t.field({ type: 'String', nullable: true, resolve: privateColumn('country') }),
+		emergencyContacts: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: privateColumn('emergencyContacts')
+		}),
+		gender: t.field({ type: genderEnum, nullable: true, resolve: privateColumn('gender') }),
+		foodPreference: t.field({
+			type: foodPreferenceEnum,
+			nullable: true,
+			resolve: privateColumn('foodPreference')
+		}),
+		/** The care team's notes on a person - never shown to the person themselves. */
+		globalNotes: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: async (user, _args, ctx) =>
+				(await managesUser(ctx, user.id)) ? user.globalNotes : null
+		}),
 		/**
 		 * How many conferences this person actually took part in - registrations that never got a
 		 * seat do not count, which is what makes this a useful "is this a returning participant"
@@ -276,10 +357,6 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-const genderEnum = enum_({ tsName: 'gender' });
-// The column is an enum; the legacy arg was a loose string that Prisma rejected at runtime.
-const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
-
 schemaBuilder.mutationFields((t) => ({
 	/** The my-account form. Validated with the same zod schema the form itself uses. */
 	updateUser: t.drizzleField({
@@ -357,36 +434,36 @@ schemaBuilder.mutationFields((t) => ({
 	}),
 
 	/**
-	 * Newsletter opt-ins, addressed by email rather than id and deliberately unauthenticated:
-	 * this backs the unsubscribe link in outgoing mail, where the recipient has no session.
+	 * Newsletter opt-ins, addressed by email rather than id. Opting out works without a session,
+	 * because this backs the unsubscribe link in outgoing mail; opting in is consent, so only the
+	 * account itself may give it. Answers `true` whether or not the address exists, so the
+	 * unsubscribe page cannot be used to find out who has an account.
 	 */
-	updateUsersNewsletterPreferences: t.drizzleField({
-		type: UserRef,
+	updateUsersNewsletterPreferences: t.field({
+		type: 'Boolean',
 		args: {
 			email: t.arg.string({ required: true }),
 			wantsToReceiveGeneralInformation: t.arg.boolean(),
 			wantsJoinTeamInformation: t.arg.boolean()
 		},
-		resolve: async (query, _root, args, ctx) => {
-			await db
+		resolve: async (_root, args, ctx) => {
+			const optsIn = args.wantsToReceiveGeneralInformation || args.wantsJoinTeamInformation;
+			if (optsIn && ctx.oidc.user?.email?.toLowerCase() !== args.email.toLowerCase()) {
+				throw new GraphQLError('Only the account itself may subscribe to the newsletter');
+			}
+
+			const updated = await db
 				.update(schema.user)
 				.set({
 					wantsToReceiveGeneralInformation: args.wantsToReceiveGeneralInformation ?? undefined,
 					wantsJoinTeamInformation: args.wantsJoinTeamInformation ?? undefined
 				})
-				.where(eq(schema.user.email, args.email));
+				.where(eq(schema.user.email, args.email))
+				.returning({ id: schema.user.id });
 
-			// Addressed by email rather than id, so this is a table-wide notification.
-			pubsub.updated();
+			for (const { id } of updated) pubsub.updated(id);
 
-			return db.query.user
-				.findFirst(
-					query(
-						(await ctx.abilities.user.filter('read')).merge({ where: { email: args.email } }).query
-							.single
-					)
-				)
-				.then(assertFindFirstExists);
+			return true;
 		}
 	}),
 
@@ -398,12 +475,12 @@ schemaBuilder.mutationFields((t) => ({
 			globalNotes: t.arg.string({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
+			await assertManagesUser(ctx, args.id);
+
 			await db
 				.update(schema.user)
 				.set({ globalNotes: args.globalNotes })
-				.where(
-					(await ctx.abilities.user.filter('update')).merge({ where: { id: args.id } }).sql.where
-				);
+				.where(eq(schema.user.id, args.id));
 
 			pubsub.updated(args.id);
 
@@ -427,6 +504,8 @@ schemaBuilder.mutationFields((t) => ({
 			birthday: t.arg({ type: 'DateTime' })
 		},
 		resolve: async (query, _root, args, ctx) => {
+			await assertManagesUser(ctx, args.id);
+
 			await db
 				.update(schema.user)
 				.set({
@@ -434,9 +513,7 @@ schemaBuilder.mutationFields((t) => ({
 					familyName: args.familyName ?? undefined,
 					birthday: args.birthday ?? undefined
 				})
-				.where(
-					(await ctx.abilities.user.filter('update')).merge({ where: { id: args.id } }).sql.where
-				);
+				.where(eq(schema.user.id, args.id));
 
 			pubsub.updated(args.id);
 

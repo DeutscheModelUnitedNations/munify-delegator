@@ -54,3 +54,6 @@ export const {
 		plugins: [ValidationPlugin, SimpleObjectsPlugin]
 	}
 });
+
+/** The context resolvers receive: the request context plus the caller's `abilities`. */
+export type ApiContext = (typeof schemaBuilder)['$inferSchemaTypes']['Context'];

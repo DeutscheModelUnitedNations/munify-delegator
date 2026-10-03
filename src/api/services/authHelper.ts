@@ -7,23 +7,33 @@ import type { teamRole } from '$api/db/schema';
 export type TeamRole = (typeof teamRole.enumValues)[number];
 
 /**
- * Shared authorization filters, mirroring munify-chase's `authHelper.ts`.
+ * Shared authorization, after munify-chase's `authHelper.ts`.
  *
- * Each helper returns a Drizzle relational `where` shape for
- * `abilityBuilder.<table>.allow(...).when((ctx) => ({ where: ... }))`, or `undefined` when the
- * rule grants nothing for this request.
+ * There are two kinds of helper here, and they are built from the same pieces on purpose:
  *
- * Two translation rules carried over from the CASL layer these replace:
+ * - **Filters** (`isTeamMemberOf`, `isOwnUser`, …) return a drizzle relational `where` shape for
+ *   `abilityBuilder.<table>.allow(...).when(...)`, or `undefined` when the rule grants nothing
+ *   for this request. They never throw: an anonymous request simply matches no rule.
+ * - **Assertions** (`assertTeamRole`, …) answer "may the caller do this here" when there is no
+ *   row to filter yet - creating something inside a conference. They run the very filter the
+ *   abilities use against the conference row, so a create and the update/delete of what it
+ *   created can never disagree about who is on the team.
  *
- * - Prisma's `some:` for a to-many relation has no Drizzle equivalent; a nested relation object
- *   already means "a related row matches". So `{ teamMembers: { some: { user: { id } } } }`
- *   becomes `{ teamMembers: { user: { id } } }`. Verified to compile to an EXISTS subquery.
- * - CASL registered its rules inside `if (oidc?.user)`, so an anonymous request simply matched
- *   no rule and got an empty result. These helpers therefore return `undefined` rather than
- *   calling `mustBeLoggedIn()`, which would turn that empty result into a thrown error.
+ * Who may do what, in one place:
  *
- * An empty object `{}` means "no restriction", which is how system admins get the wildcard the
- * CASL layer expressed as `can('manage', 'all')`.
+ * | Who                             | Scope                                                            |
+ * | ------------------------------- | ---------------------------------------------------------------- |
+ * | system admin (OIDC `admin`)     | everything, everywhere, whether on the team or not               |
+ * | PROJECT_MANAGEMENT              | the conference itself, its structure, its team, its participants |
+ * | PARTICIPANT_CARE                | the conference's participants, their papers, calendar and places |
+ * | TEAM_COORDINATOR                | the conference's team, short of granting PROJECT_MANAGEMENT      |
+ * | REVIEWER                        | the conference's papers                                          |
+ * | MEMBER (and every team role)    | reading the conference's registrations, recording attendance     |
+ * | participants                    | their own registration, delegation, papers and survey answers    |
+ * | supervisors                     | reading the participants they supervise                          |
+ *
+ * An empty object `{}` means "no restriction"; that is how a system admin passes a filter, since
+ * rumble has no global wildcard.
  */
 
 export const PARTICIPANT_CARE_ROLES = [
@@ -31,23 +41,25 @@ export const PARTICIPANT_CARE_ROLES = [
 	'PARTICIPANT_CARE'
 ] as const satisfies readonly TeamRole[];
 
-/** Roles that may see and manage papers in their conference. */
+/** Roles that may see and review the conference's papers. */
 export const PAPER_ROLES = [
 	'REVIEWER',
 	'PROJECT_MANAGEMENT',
 	'PARTICIPANT_CARE'
 ] as const satisfies readonly TeamRole[];
 
+/** Roles that manage the conference's team. */
 export const TEAM_ADMIN_ROLES = [
 	'PROJECT_MANAGEMENT',
 	'TEAM_COORDINATOR'
 ] as const satisfies readonly TeamRole[];
 
-/**
- * Mirrors the CASL layer's `can('manage', 'all')`. Rumble has no global wildcard, so every
- * handler applies this to its own table - otherwise a system admin would silently lose access
- * to any table whose other rules do not happen to match them.
- */
+/** Only the conference's leadership. */
+export const PROJECT_MANAGEMENT_ROLES = [
+	'PROJECT_MANAGEMENT'
+] as const satisfies readonly TeamRole[];
+
+/** For `abilityBuilder.x.allow(...).when(systemAdmin)`: the per-table stand-in for a wildcard. */
 export function systemAdmin(ctx: Context) {
 	return isSystemAdmin(ctx) ? ('allow' as const) : undefined;
 }
@@ -60,6 +72,16 @@ export function isSystemAdmin(ctx: Context) {
 /** The logged-in user's id, or undefined for anonymous requests. */
 export function userId(ctx: Context) {
 	return ctx.oidc.user?.sub;
+}
+
+/** The logged-in user's id; throws for anonymous requests. */
+export function callerId(ctx: Context) {
+	return ctx.mustBeLoggedIn().sub;
+}
+
+/** Wraps a filter for `.when()`: no filter means the rule grants nothing. */
+export function where<W extends object>(filter: W | undefined) {
+	return filter ? { where: filter } : undefined;
 }
 
 /** Matches a Conference row whose team includes the user, optionally with one of `roles`. */
@@ -75,16 +97,13 @@ export function isTeamMemberOf(ctx: Context, roles?: readonly TeamRole[]) {
 /** Matches a row whose `conference` has the user on its team, optionally with one of `roles`. */
 export function isTeamMemberOfConference(ctx: Context, roles?: readonly TeamRole[]) {
 	const conference = isTeamMemberOf(ctx, roles);
-	if (conference === undefined) return undefined;
-	return { conference };
+	return conference === undefined ? undefined : { conference };
 }
 
 /** Matches rows belonging to the logged-in user through a `user` relation. */
 export function isOwnUser(ctx: Context) {
-	if (isSystemAdmin(ctx)) return {};
 	const id = userId(ctx);
-	if (!id) return undefined;
-	return { user: { id } };
+	return id ? { user: { id } } : undefined;
 }
 
 /** Matches a row whose `delegation` has the logged-in user among its members. */
@@ -94,39 +113,120 @@ export function isInOwnDelegation(ctx: Context) {
 }
 
 /**
- * Creation cannot be expressed as an ability filter - there is no row to filter on yet - so the
- * legacy resolvers checked team membership inline before inserting. This is that check, shared
- * by the handlers that create conference-scoped rows.
+ * Matches a row whose `conference` the user takes part in as delegate, single participant or
+ * supervisor - the participant-side counterpart of `isTeamMemberOfConference`.
  */
-export async function assertMayManageConference(
+export function isParticipantOfConference(ctx: Context) {
+	const id = userId(ctx);
+	if (!id) return undefined;
+	return {
+		conference: {
+			OR: [
+				{ delegations: { members: { userId: id } } },
+				{ singleParticipants: { userId: id } },
+				{ conferenceSupervisors: { userId: id } }
+			]
+		}
+	};
+}
+
+/** A User row taking part in the conference as delegate, single participant or supervisor. */
+export function participatesIn(conference: { id: string } | object) {
+	return {
+		OR: [
+			{ delegationMemberships: { delegation: { conference } } },
+			{ singleParticipant: { conference } },
+			{ conferenceSupervisor: { conference } }
+		]
+	};
+}
+
+/**
+ * The User rows the caller looks after: the participants, waiting-list entrants and team of a
+ * conference where the caller is participant care or project management. A system admin looks
+ * after everybody.
+ */
+export function isManagedUser(ctx: Context) {
+	if (isSystemAdmin(ctx)) return {};
+	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
+	if (!conference) return undefined;
+	return {
+		OR: [
+			...participatesIn(conference).OR,
+			{ waitingListEntry: { conference } },
+			{ teamMember: { conference } }
+		]
+	};
+}
+
+/** Answers of `hasTeamRole`, per request: field resolvers ask it once per row. */
+const teamRoleAnswers = new WeakMap<object, Map<string, Promise<boolean>>>();
+
+/** Whether the caller holds one of `roles` on the conference's team, or is a system admin. */
+export function hasTeamRole(
+	ctx: Context,
 	conferenceId: string,
-	callerId: string | undefined,
-	roles: readonly TeamRole[] = PARTICIPANT_CARE_ROLES,
-	/**
-	 * Whether a system admin who is not on the conference team passes anyway. Off by default
-	 * because most legacy create resolvers checked team membership only - `createOneTeamMember`
-	 * is the one that also accepted the admin role, so only it opts in.
-	 */
-	options?: { allowSystemAdmin?: boolean; ctx?: Context }
+	roles?: readonly TeamRole[]
+): Promise<boolean> {
+	const team = isTeamMemberOf(ctx, roles);
+	if (!team) return Promise.resolve(false);
+
+	let answers = teamRoleAnswers.get(ctx);
+	if (!answers) {
+		answers = new Map();
+		teamRoleAnswers.set(ctx, answers);
+	}
+	const key = `${conferenceId}:${roles?.join(',') ?? '*'}`;
+	const known = answers.get(key);
+	if (known) return known;
+
+	const answer = db.query.conference
+		.findFirst({ where: { id: conferenceId, ...team }, columns: { id: true } })
+		.then((conference) => conference !== undefined);
+	answers.set(key, answer);
+	return answer;
+}
+
+/**
+ * Refuses unless the caller holds one of `roles` on the conference's team (any team role when
+ * omitted), or is a system admin.
+ *
+ * This is how a create is authorized: there is no row to run an ability filter against yet, so
+ * the conference it goes into is checked with the same filter the abilities use.
+ */
+export async function assertTeamRole(
+	ctx: Context,
+	conferenceId: string,
+	roles?: readonly TeamRole[]
 ) {
-	if (!callerId) {
-		throw new GraphQLError('Must be logged in');
-	}
-	if (options?.allowSystemAdmin && options.ctx && isSystemAdmin(options.ctx)) {
-		return;
-	}
-	const member = await db.query.teamMember.findFirst({
-		where: { conferenceId, userId: callerId, role: { in: [...roles] } }
-	});
-	if (!member) {
-		throw new GraphQLError(`Access denied - requires one of: ${roles.join(', ')}`);
+	ctx.mustBeLoggedIn();
+	if (!(await hasTeamRole(ctx, conferenceId, roles))) {
+		throw new GraphQLError(
+			roles
+				? `Access denied - requires one of: ${roles.join(', ')}`
+				: 'Access denied - requires team member status'
+		);
 	}
 }
 
+/**
+ * Refuses to hand out a team role the caller may not grant: project management and team
+ * coordinators manage the team, but only project management (or an admin) makes somebody project
+ * management - otherwise a coordinator could promote themselves.
+ */
+export async function assertMayGrantRole(ctx: Context, conferenceId: string, role: TeamRole) {
+	await assertTeamRole(
+		ctx,
+		conferenceId,
+		role === 'PROJECT_MANAGEMENT' ? PROJECT_MANAGEMENT_ROLES : TEAM_ADMIN_ROLES
+	);
+}
+
 /** Same check, for rows that reach their conference through a calendar day. */
-export async function assertMayManageCalendarDay(
+export async function assertTeamRoleForCalendarDay(
+	ctx: Context,
 	calendarDayId: string,
-	callerId: string | undefined
+	roles: readonly TeamRole[] = PARTICIPANT_CARE_ROLES
 ) {
 	const day = await db.query.calendarDay.findFirst({
 		where: { id: calendarDayId },
@@ -135,13 +235,15 @@ export async function assertMayManageCalendarDay(
 	if (!day) {
 		throw new GraphQLError('Calendar day not found');
 	}
-	await assertMayManageConference(day.conferenceId, callerId);
+	await assertTeamRole(ctx, day.conferenceId, roles);
+	return day;
 }
 
 /** Same check, for rows that reach their conference through a survey question. */
-export async function assertMayManageSurveyQuestion(
+export async function assertTeamRoleForSurveyQuestion(
+	ctx: Context,
 	questionId: string,
-	callerId: string | undefined
+	roles: readonly TeamRole[] = PARTICIPANT_CARE_ROLES
 ) {
 	const question = await db.query.surveyQuestion.findFirst({
 		where: { id: questionId },
@@ -150,5 +252,21 @@ export async function assertMayManageSurveyQuestion(
 	if (!question) {
 		throw new GraphQLError('Survey question not found');
 	}
-	await assertMayManageConference(question.conferenceId, callerId);
+	await assertTeamRole(ctx, question.conferenceId, roles);
+}
+
+/**
+ * Refuses unless every one of `userIds` takes part in the conference (delegate, single
+ * participant or supervisor). Guards writes that name other people by id.
+ */
+export async function assertParticipantsOf(conferenceId: string, userIds: readonly string[]) {
+	const unique = [...new Set(userIds)];
+	if (unique.length === 0) return;
+	const found = await db.query.user.findMany({
+		where: { id: { in: unique }, ...participatesIn({ id: conferenceId }) },
+		columns: { id: true }
+	});
+	if (found.length !== unique.length) {
+		throw new GraphQLError('Not every given user takes part in this conference');
+	}
 }

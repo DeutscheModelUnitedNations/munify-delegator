@@ -1,6 +1,15 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { isTeamMemberOf } from '$api/services/authHelper';
+import {
+	PARTICIPANT_CARE_ROLES,
+	PROJECT_MANAGEMENT_ROLES,
+	assertTeamRole,
+	hasTeamRole,
+	isTeamMemberOf,
+	where
+} from '$api/services/authHelper';
+import type { Row } from '$api/db/rows';
+import type { Context } from '$api/context';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { NationRef } from './nation';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
@@ -29,13 +38,30 @@ const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 abilityBuilder.conference.allow('read');
 
 // Update and delete are limited to the conference's own project management.
-abilityBuilder.conference.allow(['update', 'delete']).when((ctx) => ({
-	where: isTeamMemberOf(ctx, ['PROJECT_MANAGEMENT'])
-}));
+abilityBuilder.conference
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
+
+/** A link only the conference's team is meant to follow: null for everybody else. */
+const teamOnlyLink =
+	(column: 'linkToTeamWiki' | 'linkToServicesPage') =>
+	async (conference: Row<'conference'>, _args: object, ctx: Context) =>
+		(await hasTeamRole(ctx, conference.id)) ? conference[column] : null;
 
 const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
+		// Conferences are public, but the team's internal tools are not.
+		linkToTeamWiki: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: teamOnlyLink('linkToTeamWiki')
+		}),
+		linkToServicesPage: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: teamOnlyLink('linkToServicesPage')
+		}),
 		// The four document templates and the certificate template are long HTML blobs. The
 		// configuration UI only needs to know whether each one has been filled in, so these
 		// flags let it avoid transferring the content itself.
@@ -565,6 +591,7 @@ schemaBuilder.queryFields((t) => ({
 		type: PlausibilityResult,
 		args: { conferenceId: t.arg.id({ required: true }) },
 		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 			const participating = {
 				OR: [
 					{ singleParticipant: { conferenceId: args.conferenceId } },

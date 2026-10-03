@@ -18,10 +18,11 @@
 
 	const toggleSignUp = async (value: boolean) => {
 		loading = true;
-		const promise = client.mutate.updateUsersNewsletterPreferences({
-			__args: { email: currentUser.email, wantsJoinTeamInformation: value },
-			id: true
-		});
+		const promise = Promise.resolve(
+			client.mutate.updateUsersNewsletterPreferences({
+				__args: { email: currentUser.email, wantsJoinTeamInformation: value }
+			})
+		);
 		toast.promise(promise, {
 			success: value ? m.teamTenderSignUpSuccess() : m.teamTenderUnsubscribeSuccess(),
 			error: m.teamTenderError(),

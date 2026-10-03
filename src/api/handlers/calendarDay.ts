@@ -2,9 +2,10 @@ import { type Transaction, db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	assertMayManageConference,
+	assertTeamRole,
 	isTeamMemberOfConference,
-	systemAdmin
+	systemAdmin,
+	where
 } from '$api/services/authHelper';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import {
@@ -17,10 +18,9 @@ import { GraphQLError } from 'graphql';
 abilityBuilder.calendarDay.allow('read');
 abilityBuilder.calendarDay.allow(['update', 'delete']).when(systemAdmin);
 
-abilityBuilder.calendarDay.allow(['update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.calendarDay
+	.allow(['update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 const CalendarDayRef = object({ table: 'calendarDay' });
 query({ table: 'calendarDay' });
@@ -40,7 +40,7 @@ schemaBuilder.mutationFields((t) => ({
 			sortOrder: t.arg.int({ required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, ctx.oidc.user?.sub);
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const created = await db
 				.insert(schema.calendarDay)
@@ -233,7 +233,7 @@ schemaBuilder.mutationFields((t) => ({
 			importData: t.arg({ type: 'JSON', required: true })
 		},
 		resolve: async (query, _root, args, ctx) => {
-			await assertMayManageConference(args.conferenceId, ctx.oidc.user?.sub);
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const importData = parseImportData(args.importData);
 

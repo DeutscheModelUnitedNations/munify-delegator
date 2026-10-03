@@ -2,11 +2,14 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
+	assertTeamRole,
+	hasTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
 	isSystemAdmin,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/participation';
 import { makeEntryCode } from '$api/services/entryCodeGenerator';
@@ -18,10 +21,9 @@ import { eq } from 'drizzle-orm';
 abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Participant care and project management manage their conference's supervisors.
-abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES);
-	return where ? { where } : undefined;
-});
+abilityBuilder.conferenceSupervisor
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
 // Supervised participants see their own supervisors.
 abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
@@ -39,33 +41,44 @@ abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 });
 
 // Supervisors manage their own entry.
-abilityBuilder.conferenceSupervisor.allow(['read', 'update', 'delete']).when((ctx) => {
-	const where = isOwnUser(ctx);
-	return where ? { where } : undefined;
-});
+abilityBuilder.conferenceSupervisor
+	.allow(['read', 'update', 'delete'])
+	.when((ctx) => where(isOwnUser(ctx)));
 
-// Supervisors see the other supervisors of the same conference.
-// (Carried over from CASL with its original caveat: this is broader than it needs to be.)
+// Supervisors see the other supervisors of the participants they share - the group payment page
+// splits a fee between them.
 abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 	const id = userId(ctx);
-	return id ? { where: { conference: { conferenceSupervisors: { user: { id } } } } } : undefined;
+	if (!id) return undefined;
+	const supervisedByMe = { supervisors: { user: { id } } };
+	return {
+		where: {
+			OR: [
+				{ supervisedDelegationMembers: supervisedByMe },
+				{ supervisedSingleParticipants: supervisedByMe }
+			]
+		}
+	};
 });
 
-// Supervisors see each other's placeholders when they supervise the same delegation.
-abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					supervisedDelegationMembers: {
-						delegation: { members: { supervisors: { user: { id } } } }
-					}
-				}
-			}
-		: undefined;
+const ConferenceSupervisorRef = object({
+	table: 'conferenceSupervisor',
+	adjust: (t) => ({
+		/**
+		 * Whoever holds the code can attach themselves to this supervisor, so it is the supervisor's
+		 * to hand out: visible to them and to the conference's participant care, nobody else.
+		 */
+		connectionCode: t.field({
+			type: 'String',
+			nullable: false,
+			resolve: async (supervisor, _args, ctx) =>
+				supervisor.userId === userId(ctx) ||
+				(await hasTeamRole(ctx, supervisor.conferenceId, PARTICIPANT_CARE_ROLES))
+					? supervisor.connectionCode
+					: ''
+		})
+	})
 });
-
-const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
 const pubsub = rumblePubsub({ table: 'conferenceSupervisor' });
 // The supervision links are join tables, so a change there shows up on the two sides of it.
@@ -90,19 +103,8 @@ schemaBuilder.mutationFields((t) => ({
 
 			// Assigning somebody else needs participant care, project management or admin. Registering
 			// yourself does not - which is why the check is gated on `args.userId` being present.
-			if (args.userId && !isSystemAdmin(ctx)) {
-				const teamMember = await db.query.teamMember.findFirst({
-					where: {
-						conferenceId: args.conferenceId,
-						userId: callerId,
-						role: { in: [...PARTICIPANT_CARE_ROLES] }
-					}
-				});
-				if (!teamMember) {
-					throw new GraphQLError(
-						'Only team members with the roles PARTICIPANT_CARE or PROJECT_MANAGEMENT, or admins can assign supervisors.'
-					);
-				}
+			if (args.userId && args.userId !== callerId) {
+				await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 			}
 
 			if (await isUserAlreadyRegistered({ userId: subjectId, conferenceId: args.conferenceId })) {
@@ -180,6 +182,11 @@ schemaBuilder.mutationFields((t) => ({
 				throw new GraphQLError('Must be logged in');
 			}
 			const subjectId = args.userId ?? callerId;
+			// Connecting somebody else is participant care's job (the user card's supervisor modal);
+			// the code alone only lets a participant attach themselves.
+			if (subjectId !== callerId) {
+				await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			}
 
 			const supervisor = await db.query.conferenceSupervisor
 				.findFirst({
