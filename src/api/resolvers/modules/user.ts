@@ -25,7 +25,6 @@ import {
 	UserWantsJoinTeamInformationFieldObject,
 	UserPapersFieldObject,
 	UserPaperReviewsFieldObject,
-	UserGlobalNotesFieldObject,
 	UserEmergencyContactsFieldObject
 } from '$db/generated/graphql/User';
 import { db } from '$db/db';
@@ -59,6 +58,31 @@ function maskEmail(email: string): string {
 	return `${localPart.slice(0, 2)}***@${domain}`;
 }
 
+// Global notes are internal team notes about a user. Besides admins, only
+// PARTICIPANT_CARE & PROJECT_MANAGEMENT team members may read and write them,
+// and only for participants, supervisors or waiting list entries of their conferences.
+// The user themself must neither see nor edit them.
+function globalNotesManagedBy(callerId: string): Prisma.UserWhereInput {
+	const managedByCaller: Prisma.ConferenceWhereInput = {
+		teamMembers: {
+			some: {
+				user: { id: callerId },
+				role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+			}
+		}
+	};
+
+	return {
+		id: { not: callerId },
+		OR: [
+			{ delegationMemberships: { some: { conference: managedByCaller } } },
+			{ singleParticipant: { some: { conference: managedByCaller } } },
+			{ conferenceSupervisor: { some: { conference: managedByCaller } } },
+			{ waitingListEntry: { some: { conference: managedByCaller } } }
+		]
+	};
+}
+
 export const GQLUser = builder.prismaObject('User', {
 	fields: (t) => ({
 		id: t.field(UserIdFieldObject),
@@ -80,7 +104,20 @@ export const GQLUser = builder.prismaObject('User', {
 		emergencyContacts: t.field(UserEmergencyContactsFieldObject),
 		wantsToReceiveGeneralInformation: t.field(UserWantsToReceiveGeneralInformationFieldObject),
 		wantsJoinTeamInformation: t.field(UserWantsJoinTeamInformationFieldObject),
-		globalNotes: t.field(UserGlobalNotesFieldObject),
+		globalNotes: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: async (parent, args, ctx) => {
+				const user = ctx.oidc.user;
+				if (!user) return null;
+				if (user.hasRole('admin')) return parent.globalNotes;
+
+				const isManaged = await db.user.count({
+					where: { AND: [{ id: parent.id }, globalNotesManagedBy(user.sub)] }
+				});
+				return isManaged > 0 ? parent.globalNotes : null;
+			}
+		}),
 		papers: t.relation('papers', {
 			query: (_args, ctx) => ({
 				where: ctx.permissions.allowDatabaseAccessTo('list').Paper
@@ -348,31 +385,12 @@ builder.mutationFields((t) => {
 			resolve: async (query, root, args, ctx, info) => {
 				const user = ctx.permissions.getLoggedInUserOrThrow();
 
-				// PARTICIPANT_CARE & PROJECT_MANAGEMENT team members may write global notes
-				// for any participant, supervisor or waiting list entry of their conferences
-				const managedByCaller: Prisma.ConferenceWhereInput = {
-					teamMembers: {
-						some: {
-							user: { id: user.sub },
-							role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
-						}
-					}
-				};
-
-				args.where = {
-					...args.where,
-					AND: [
-						{
-							OR: [
-								ctx.permissions.allowDatabaseAccessTo('update').User,
-								{ delegationMemberships: { some: { conference: managedByCaller } } },
-								{ singleParticipant: { some: { conference: managedByCaller } } },
-								{ conferenceSupervisor: { some: { conference: managedByCaller } } },
-								{ waitingListEntry: { some: { conference: managedByCaller } } }
-							]
-						}
-					]
-				};
+				if (!user.hasRole('admin')) {
+					args.where = {
+						...args.where,
+						AND: [globalNotesManagedBy(user.sub)]
+					};
+				}
 
 				const res = await db.user.update({
 					where: args.where,
