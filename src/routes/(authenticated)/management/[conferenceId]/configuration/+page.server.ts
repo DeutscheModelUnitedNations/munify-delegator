@@ -9,6 +9,8 @@ import { conferenceSettingsFormSchema } from './form-schema';
 import { AddAgendaItemFormSchema } from './committees/form-schema';
 import dayjs from 'dayjs';
 
+const MAX_RESOLUTION_UPLOAD_FILES = 50;
+
 const conferenceQuery = graphql(`
 	query ConferenceFormPrepopulationQuery($id: String!) {
 		findUniqueConference(where: { id: $id }) {
@@ -251,6 +253,13 @@ export const actions = {
 			return fail(400, { uploadError: m.resolutionUploadNoFiles() });
 		}
 
+		// Cap the batch size so a single request can't allocate and persist an unbounded amount of data.
+		if (files.length > MAX_RESOLUTION_UPLOAD_FILES) {
+			return fail(400, {
+				uploadError: m.resolutionUploadTooManyFiles({ max: MAX_RESOLUTION_UPLOAD_FILES })
+			});
+		}
+
 		// PDF-only, max 10 MB each - mirrors the base document upload limits.
 		for (const file of files) {
 			const isPdf = file.type === 'application/pdf' && file.name.toLowerCase().endsWith('.pdf');
@@ -262,20 +271,34 @@ export const actions = {
 			}
 		}
 
+		// Upload each file independently so one failure doesn't hide which files were already stored.
+		const failed: string[] = [];
 		for (const file of files) {
-			await CreateResolutionMutation.mutate(
-				{
-					conferenceId,
-					committeeId: typeof committeeId === 'string' && committeeId ? committeeId : undefined,
-					title: undefined,
-					file
-				},
-				{ event }
-			);
+			try {
+				await CreateResolutionMutation.mutate(
+					{
+						conferenceId,
+						committeeId: typeof committeeId === 'string' && committeeId ? committeeId : undefined,
+						title: undefined,
+						file
+					},
+					{ event }
+				);
+			} catch {
+				failed.push(file.name);
+			}
 		}
 
 		cache.markStale();
 
-		return { uploaded: files.length };
+		const uploaded = files.length - failed.length;
+		if (failed.length > 0) {
+			return fail(500, {
+				uploaded,
+				uploadError: m.resolutionUploadPartialError({ files: failed.join(', ') })
+			});
+		}
+
+		return { uploaded };
 	}
 } satisfies Actions;

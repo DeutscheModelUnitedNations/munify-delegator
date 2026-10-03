@@ -799,27 +799,31 @@
 					<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
 				</button>
 			</FormFieldset>
-
-			<ResolutionManager resolutions={data.resolutionsData} committees={data.committeesData} />
-		</div>
-
-		<!-- Sticky Save Button -->
-		<div class="sticky bottom-4 mt-6 z-10 pointer-events-none">
-			<div
-				class="bg-base-100/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-base-300 pointer-events-auto max-w-md mx-auto"
-			>
-				<button
-					type="button"
-					onclick={handleSaveClick}
-					class="btn btn-primary w-full"
-					disabled={!$tainted || Object.keys($tainted).length === 0}
-				>
-					<i class="fas fa-save mr-2"></i>
-					{m.saveSettings()}
-				</button>
-			</div>
 		</div>
 	</Form>
+
+	<!-- Resolutions are managed via their own requests, so they must live outside the settings form:
+	     otherwise their buttons and inputs would submit ?/updateSettings. -->
+	<div class:hidden={currentTab !== 'documents'}>
+		<ResolutionManager resolutions={data.resolutionsData} committees={data.committeesData} />
+	</div>
+
+	<!-- Sticky Save Button -->
+	<div class="sticky bottom-4 mt-6 z-10 pointer-events-none">
+		<div
+			class="bg-base-100/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-base-300 pointer-events-auto max-w-md mx-auto"
+		>
+			<button
+				type="button"
+				onclick={handleSaveClick}
+				class="btn btn-primary w-full"
+				disabled={!$tainted || Object.keys($tainted).length === 0}
+			>
+				<i class="fas fa-save mr-2"></i>
+				{m.saveSettings()}
+			</button>
+		</div>
+	</div>
 </div>
 
 <Modal bind:open={confirmSaveModalOpen} title={m.confirmSave()}>

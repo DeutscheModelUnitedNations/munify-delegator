@@ -88,6 +88,11 @@
 						? result.data.uploadError
 						: m.resolutionUploadError();
 				toast.error(uploadError);
+				// Some files may have been stored before a later one failed - show them.
+				if (result.data && typeof result.data.uploaded === 'number' && result.data.uploaded > 0) {
+					cache.markStale();
+					await invalidateAll();
+				}
 			} else if (result.type === 'error') {
 				toast.error(result.error?.message ?? m.resolutionUploadError());
 			} else {
