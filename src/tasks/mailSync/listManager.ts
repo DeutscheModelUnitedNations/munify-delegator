@@ -1,40 +1,19 @@
 import type { Conference } from '@prisma/client';
 import { listmonkClient } from '../apis/listmonk/listmonkClient';
 import { taskError } from '../logs';
+import { GLOBAL_LIST_TYPES, CONFERENCE_LIST_TYPES } from './types';
 import {
-	GLOBAL_LIST_TYPES,
-	CONFERENCE_LIST_TYPES,
-	type GlobalListType,
-	type ConferenceListType
-} from './types';
+	createConferenceListName,
+	createGlobalListName,
+	createTagName,
+	isManagedListName
+} from './listNames';
 
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
 
 function errorToString(res: { error?: unknown }): string | undefined {
 	if (res.error == null) return undefined;
 	return typeof res.error === 'string' ? res.error : JSON.stringify(res.error);
-}
-
-// Naming functions
-
-export function shortenId(id: string) {
-	return id.slice(0, 6);
-}
-
-export function createGlobalListName(listType: GlobalListType) {
-	return `[global] ${listType}`;
-}
-
-export function createConferenceListName(
-	conferenceTitle: string,
-	conferenceId: string,
-	listType: ConferenceListType
-) {
-	return `[${shortenId(conferenceId)}] ${conferenceTitle} - ${listType}`;
-}
-
-export function createTagName(conferenceTitle: string, conferenceId: string) {
-	return `${shortenId(conferenceId)}-${conferenceTitle.replaceAll(' ', '_').toLowerCase()}`;
 }
 
 /**
@@ -127,10 +106,9 @@ export async function ensureListsExist(
 
 	// Delete orphan lists (only those matching our naming convention: [global] or [shortId])
 	console.info('Cleaning up orphan lists');
-	const managedListPattern = /^\[(?:global|[a-f0-9]{6})\] /;
 	const validIds = new Set(listNameToId.values());
 	const listsToDelete = existingLists?.filter(
-		(l) => l.id && !validIds.has(l.id) && l.name && managedListPattern.test(l.name)
+		(l) => l.id && !validIds.has(l.id) && l.name && isManagedListName(l.name)
 	);
 	for (const list of listsToDelete || []) {
 		const res = await listmonkClient.DELETE(`/lists/{list_id}`, {

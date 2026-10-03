@@ -75,6 +75,9 @@ export default defineConfig({
 	},
 	test: {
 		environment: 'jsdom',
+		// Unit tests live in src/. Without this, vitest's default glob also matches the Playwright
+		// specs under e2e/, which cannot run outside the Playwright runner (`bun run test:e2e`).
+		include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
 		coverage: {
 			provider: 'v8'
 		}

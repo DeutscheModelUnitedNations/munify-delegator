@@ -1,200 +1,148 @@
-import { listmonkClient } from '../apis/listmonk/listmonkClient';
 import deepEquals from '../helper/deepEquals';
 import { computeSubscriberState } from './listRules';
+import { isManagedListName } from './listNames';
 import type {
 	MailSyncUser,
 	ListmonkSubscriber,
 	ComputedSubscriberState,
-	SubscriberAttribs,
-	ClassificationResult,
-	BatchExecutionResult
+	SubscriberAction,
+	SubscriberPatch,
+	SyncPlan
 } from './types';
 
-// TYPE-SAFETY-EXCEPTION: openapi-fetch generates `Record<string, unknown>` for attribs,
-// but we use a strongly-typed SubscriberAttribs interface internally. This helper bridges
-// the boundary to the Listmonk API.
-function attribsForApi(attribs: SubscriberAttribs): Record<string, unknown> {
-	return attribs as unknown as Record<string, unknown>;
+/**
+ * Pass 1 of the sync: compare the desired state with Listmonk and decide what to do.
+ *
+ * Listmonk is shared with other systems (the DMUN member hub keeps its own lists there), and a
+ * person can be on lists of both. The plan therefore only ever touches what belongs to the
+ * delegator:
+ *
+ * - **Lists** are added and removed one by one, and only lists matching `isManagedListName`.
+ *   Lists of other systems stay where they are, whatever the subscriber's other lists look like.
+ * - **Attribs**: only our own keys (`userId`, `conferences`) are compared and written. Listmonk's
+ *   PATCH merges keys, so keys of other systems survive.
+ * - **Name**: set on create, and kept up to date only while the subscriber is on no foreign list.
+ *   Otherwise the other system owns it; two systems formatting the same name differently would
+ *   overwrite each other on every run.
+ * - **Subscribers are never deleted here.** One nobody claims anymore is released: removed from our
+ *   lists, our attribs set to `null`. Deleting subscribers that are left without any list is a
+ *   separate, shared step (`collectGarbage`), because only then is it certain nobody else needs
+ *   them.
+ *
+ * Everything in this file is pure, the API calls live in `subscriberActions.ts`.
+ */
+
+function ownAttribsMatch(subscriber: ListmonkSubscriber, state: ComputedSubscriberState) {
+	return (
+		deepEquals(subscriber.attribs?.userId, state.attribs.userId) &&
+		deepEquals(subscriber.attribs?.conferences, state.attribs.conferences)
+	);
 }
 
-function errorToString(res: { error?: unknown }): string {
-	if (res.error == null) return 'Unknown error';
-	return typeof res.error === 'string' ? res.error : JSON.stringify(res.error, null, 2);
+function hasOwnAttribs(subscriber: ListmonkSubscriber) {
+	return subscriber.attribs?.userId != null || subscriber.attribs?.conferences != null;
+}
+
+/** What to do for a user who should be on at least one list. */
+export function planForUser(
+	state: ComputedSubscriberState,
+	subscriber: ListmonkSubscriber | undefined,
+	listNameToId: Map<string, number>
+): SubscriberAction | undefined {
+	const desiredIds = new Set(
+		state.listNames
+			.map((name) => listNameToId.get(name))
+			.filter((id): id is number => id !== undefined)
+	);
+
+	if (!subscriber) {
+		if (desiredIds.size === 0) return undefined;
+		return {
+			kind: 'create',
+			userId: state.attribs.userId,
+			email: state.email,
+			name: state.formattedName,
+			attribs: state.attribs,
+			listIds: [...desiredIds]
+		};
+	}
+
+	const managedIds = new Set(
+		subscriber.lists.filter((l) => isManagedListName(l.name)).map((l) => l.id)
+	);
+	const hasForeignLists = subscriber.lists.some((l) => !isManagedListName(l.name));
+
+	const addListIds = [...desiredIds].filter((id) => !managedIds.has(id));
+	const removeListIds = [...managedIds].filter((id) => !desiredIds.has(id));
+
+	const nameOutdated = !hasForeignLists && subscriber.name !== state.formattedName;
+	const attribsOutdated = !ownAttribsMatch(subscriber, state);
+
+	let patch: SubscriberPatch | undefined;
+	if (nameOutdated || attribsOutdated) {
+		patch = {
+			...(nameOutdated && { name: state.formattedName }),
+			attribs: { userId: state.attribs.userId, conferences: state.attribs.conferences }
+		};
+	}
+
+	if (addListIds.length === 0 && removeListIds.length === 0 && !patch) return undefined;
+
+	return { kind: 'update', subscriberId: subscriber.id, addListIds, removeListIds, patch };
+}
+
+/** What to do with a subscriber no user claims anymore: take back what is ours, leave the rest. */
+export function planRelease(subscriber: ListmonkSubscriber): SubscriberAction | undefined {
+	const removeListIds = subscriber.lists.filter((l) => isManagedListName(l.name)).map((l) => l.id);
+	const ownAttribs = hasOwnAttribs(subscriber);
+
+	if (removeListIds.length === 0 && !ownAttribs) return undefined;
+
+	return {
+		kind: 'update',
+		subscriberId: subscriber.id,
+		addListIds: [],
+		removeListIds,
+		patch: ownAttribs ? { attribs: { userId: null, conferences: null } } : undefined
+	};
 }
 
 /**
- * Checks if a Listmonk subscriber already matches the computed desired state.
+ * Plans a batch of users. Every subscriber that is matched to a user is taken out of the map, so
+ * that after the last batch the map holds exactly the subscribers no user claims.
  */
-function subscriberMatchesState(
-	subscriber: ListmonkSubscriber,
-	state: ComputedSubscriberState
-): boolean {
-	const subscriberListNames = subscriber.lists.map((l) => l.name);
-
-	const listsMatch =
-		subscriberListNames.length === state.listNames.length &&
-		subscriberListNames.every((name) => state.listNames.includes(name)) &&
-		state.listNames.every((name) => subscriberListNames.includes(name));
-
-	const emailMatches = subscriber.email.toLowerCase() === state.email.toLowerCase();
-	const nameMatches = subscriber.name === state.formattedName;
-	const attribsMatch = deepEquals(subscriber.attribs, state.attribs);
-
-	return listsMatch && emailMatches && nameMatches && attribsMatch;
-}
-
-/**
- * Classifies a batch of users against the subscriber Map, storing only lightweight identifiers.
- * - Users without a matching subscriber → createEmails set
- * - Users with a non-matching subscriber → updateSubscriberIds map (subscriber removed from Map)
- * - Users with a matching subscriber → no action (subscriber removed from Map)
- * - Users with zero computed lists → skipped (subscriber stays in Map for deletion)
- */
-export function classifyUserBatch(
+export function planUserBatch(
 	users: MailSyncUser[],
 	subscriberMap: Map<string, ListmonkSubscriber>,
-	classification: ClassificationResult
+	listNameToId: Map<string, number>,
+	plan: SyncPlan
 ): void {
 	for (const user of users) {
 		const state = computeSubscriberState(user);
 
+		// Users without lists stay in the map and are released below like any unclaimed subscriber.
 		if (state.listNames.length === 0) {
-			classification.skippedNoLists++;
+			plan.skippedNoLists++;
 			continue;
 		}
 
-		const emailKey = user.email.toLowerCase().trim();
+		const emailKey = state.email.toLowerCase();
 		const subscriber = subscriberMap.get(emailKey);
+		subscriberMap.delete(emailKey);
 
-		if (!subscriber) {
-			classification.createEmails.add(emailKey);
-		} else if (!subscriberMatchesState(subscriber, state)) {
-			classification.updateSubscriberIds.set(emailKey, subscriber.id);
-			subscriberMap.delete(emailKey);
+		const action = planForUser(state, subscriber, listNameToId);
+		if (action) {
+			plan.userActions.push(action);
 		} else {
-			classification.upToDate++;
-			subscriberMap.delete(emailKey);
+			plan.upToDate++;
 		}
 	}
 }
 
-/**
- * After all user batches have been processed, any remaining subscribers in the Map
- * are orphans that should be deleted. Returns only their IDs.
- */
-export function collectDeleteIds(subscriberMap: Map<string, ListmonkSubscriber>): number[] {
-	const ids: number[] = [];
+/** Releases every subscriber left in the map after all users have been planned. */
+export function planReleases(subscriberMap: Map<string, ListmonkSubscriber>, plan: SyncPlan) {
 	for (const subscriber of subscriberMap.values()) {
-		ids.push(subscriber.id);
+		const action = planRelease(subscriber);
+		if (action) plan.releases.push(action);
 	}
-	return ids;
-}
-
-/**
- * Executes delete operations against the Listmonk API using subscriber IDs.
- */
-export async function executeDeletes(subscriberIds: number[]): Promise<void> {
-	if (subscriberIds.length === 0) return;
-
-	const total = subscriberIds.length;
-	let succeeded = 0;
-	let failed = 0;
-
-	console.info(`\nExecuting Delete operations: 0/${total}`);
-	for (const id of subscriberIds) {
-		const res = await listmonkClient.DELETE(`/subscribers/{id}`, {
-			params: {
-				path: { id }
-			}
-		});
-		if (res.error) {
-			failed++;
-			console.error(
-				`  ! Failed to delete subscriber ${id}: Listmonk API Error\n${errorToString(res)}`
-			);
-		} else {
-			succeeded++;
-			console.info(`  - Deleted subscriber ${id} [${succeeded + failed}/${total}]`);
-		}
-	}
-	console.info(`Delete operations finished: ${succeeded} succeeded, ${failed} failed`);
-}
-
-/**
- * Executes create and update operations for a single batch of users.
- * Re-computes subscriber state (cheap CPU) to avoid retaining full objects across batches.
- * Removes processed entries from classification sets/maps so they shrink over time.
- */
-export async function executeBatch(
-	users: MailSyncUser[],
-	classification: ClassificationResult,
-	listNameToId: Map<string, number>
-): Promise<BatchExecutionResult> {
-	const result: BatchExecutionResult = {
-		created: 0,
-		createFailed: 0,
-		updated: 0,
-		updateFailed: 0
-	};
-
-	for (const user of users) {
-		const emailKey = user.email.toLowerCase().trim();
-		const subscriberId = classification.updateSubscriberIds.get(emailKey);
-		const needsCreate = classification.createEmails.has(emailKey);
-
-		if (!needsCreate && subscriberId === undefined) continue;
-
-		const state = computeSubscriberState(user);
-		if (state.listNames.length === 0) continue;
-
-		const listIds = state.listNames
-			.map((name) => listNameToId.get(name))
-			.filter((id): id is number => id !== undefined);
-
-		if (needsCreate) {
-			const res = await listmonkClient.POST('/subscribers', {
-				body: {
-					email: state.email,
-					name: state.formattedName,
-					attribs: attribsForApi(state.attribs),
-					lists: listIds
-				}
-			});
-			if (res.error) {
-				result.createFailed++;
-				console.error(
-					`  ! Failed to create subscriber for user ${user.id}: Listmonk API Error\n${errorToString(res)}`
-				);
-			} else {
-				result.created++;
-				console.info(`  - Created subscriber for user ${user.id}`);
-			}
-			classification.createEmails.delete(emailKey);
-		} else if (subscriberId !== undefined) {
-			const res = await listmonkClient.PUT(`/subscribers/{id}`, {
-				params: {
-					path: { id: subscriberId }
-				},
-				body: {
-					email: state.email,
-					name: state.formattedName,
-					attribs: attribsForApi(state.attribs),
-					lists: listIds,
-					preconfirm_subscriptions: true
-				}
-			});
-			if (res.error) {
-				result.updateFailed++;
-				console.error(
-					`  ! Failed to update subscriber ${user.id}: Listmonk API Error\n${errorToString(res)}`
-				);
-			} else {
-				result.updated++;
-				console.info(`  - Updated subscriber ${user.id}`);
-			}
-			classification.updateSubscriberIds.delete(emailKey);
-		}
-	}
-
-	return result;
 }

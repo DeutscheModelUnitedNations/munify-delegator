@@ -6,6 +6,7 @@
 	import SquareButtonWithLoadingState from '$lib/components/SquareButtonWithLoadingState.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
+	import getNationRegionalGroup from '$lib/services/getNationRegionalGroup';
 	import NationsWithCommitteesTable from '$lib/components/NationsWithCommitteesTable.svelte';
 	import { cache, graphql, type MyConferenceparticipationQuery$result } from '$houdini';
 	import NationPool from '$lib/components/NationPool.svelte';
@@ -177,6 +178,7 @@
 									abbreviation: committee.abbreviation,
 									name: committee.name
 								}))}
+								includeActionCell
 							>
 								{#each delegationMember.delegation.appliedForRoles.sort((a, b) => a.rank - b.rank) as role, index}
 									<tr>
@@ -200,6 +202,18 @@
 												{/if}
 											</div>
 										</td>
+										{#if role.nonStateActor}
+											<td><i class="fa-duotone fa-minus"></i></td>
+										{:else}
+											<td
+												class="tooltip"
+												data-tip={role.nation
+													? getNationRegionalGroup(role.nation.alpha3Code)
+													: undefined}
+											>
+												<i class="fa-duotone fa-earth"></i>
+											</td>
+										{/if}
 										{#each conference.committees as committee}
 											{#if role.nonStateActor}
 												<td class="text-center"><i class="fa-duotone fa-minus"></i></td>

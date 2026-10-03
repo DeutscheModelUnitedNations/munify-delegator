@@ -1,5 +1,6 @@
 import type { OIDC } from '$api/context/oidc';
 import { db } from '$db/db';
+import { GraphQLError } from 'graphql';
 
 /**
  * This helper function checks if the user is a conference admin or global admin.
@@ -12,7 +13,7 @@ export async function requireToBeConferenceAdmin({
 	user: OIDC['user'];
 }) {
 	if (!user) {
-		throw new Error('User not found');
+		throw new GraphQLError('User not found');
 	}
 
 	const isAdmin = user.hasRole('admin');
@@ -34,5 +35,5 @@ export async function requireToBeConferenceAdmin({
 	});
 
 	if (conferenceAdminUser) return;
-	throw new Error('User is not a conference admin');
+	throw new GraphQLError('User is not a conference admin');
 }

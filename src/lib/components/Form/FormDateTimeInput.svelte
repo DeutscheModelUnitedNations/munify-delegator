@@ -1,5 +1,5 @@
 <script lang="ts" generics="A extends Record<string, unknown>, B">
-	import { type SuperForm, dateProxy } from 'sveltekit-superforms';
+	import { type SuperForm, type FormPathLeaves, formFieldProxy } from 'sveltekit-superforms';
 	import { DatePicker } from '@svelte-plugins/datepicker';
 	import { getLocale } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
@@ -8,6 +8,7 @@
 	import FormLabel from './FormLabel.svelte';
 	import FormDescription from './FormDescription.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
+	import { dateToFormValue, dateToInputValue, inputValueToDate } from '$lib/services/dateTimeInput';
 
 	// Dates and Date pickers in JS are a mess. I tried around a lot of things with this
 	// but all of non native inputs break acceissibility. According to this suggestion
@@ -42,21 +43,49 @@
 		disabled = false
 	}: Props = $props();
 
-	let { form: formData, constraints: formConstraints, errors: formErrors } = form;
 	let format: 'datetime-local' | 'date' = enableTime ? 'datetime-local' : 'date';
 
 	let isNonNativeDatepickerOpen = $state(false);
 
-	const proxyDate = dateProxy(form, name as any, { format });
-	let errors = $derived(($formErrors as any)[name]);
-	let constraints = $derived(($formConstraints as any)[name]);
+	type DateField = Date | undefined;
+	const {
+		value: field,
+		errors,
+		constraints
+	} = formFieldProxy<A, FormPathLeaves<A, DateField>, DateField>(
+		form,
+		name as FormPathLeaves<A, DateField>
+	);
 	let nativeDateInput = $state<HTMLInputElement>();
 
+	/** The value currently held by the form store, as a valid Date or undefined. */
+	let currentDate = $derived.by(() => {
+		const value = $field;
+		if (!(value instanceof Date) || Number.isNaN(value.getTime())) return undefined;
+		return value;
+	});
+
+	let inputValue = $derived(dateToInputValue(currentDate, enableTime));
+
+	// The native input only ever yields a wall-clock string without any timezone info
+	// ("2026-02-20T09:00"). Posting that string would make the server parse it in the
+	// *server's* timezone, silently shifting the instant on every save. We therefore
+	// submit an absolute ISO instant through a hidden field instead, which is
+	// unambiguous no matter which timezone the server runs in.
+	let submittedValue = $derived(dateToFormValue(currentDate));
+
+	function setDate(date: DateField) {
+		field.set(date);
+	}
+
+	function handleInput(value: string) {
+		setDate(inputValueToDate(value, enableTime));
+	}
+
 	let localizedDateString = $derived.by(() => {
-		if (!$proxyDate) return m.selectADate();
-		const date = new Date($proxyDate);
+		if (!currentDate) return m.selectADate();
 		if (enableTime) {
-			return date.toLocaleDateString(getLocale(), {
+			return currentDate.toLocaleDateString(getLocale(), {
 				year: 'numeric',
 				month: 'short',
 				day: 'numeric',
@@ -65,7 +94,8 @@
 				second: 'numeric'
 			});
 		} else {
-			return date.toLocaleDateString(getLocale(), {
+			return currentDate.toLocaleDateString(getLocale(), {
+				timeZone: 'UTC',
 				year: 'numeric',
 				month: 'short',
 				day: 'numeric'
@@ -85,7 +115,7 @@
 		// }
 	}
 
-	function nonNativeDatePickEvent(e: any) {
+	function nonNativeDatePickEvent(e: { startDate: string | number | Date; startDateTime: string }) {
 		const newDate = new SvelteDate(e.startDate);
 		if (enableTime) {
 			const timeNumbers = e.startDateTime.split(':').map(Number) as number[];
@@ -97,13 +127,13 @@
 			);
 		}
 
-		proxyDate.set(newDate.toISOString());
+		setDate(new Date(newDate.getTime()));
 	}
 </script>
 
 <DatePicker
 	onDayClick={nonNativeDatePickEvent}
-	startDate={new SvelteDate($proxyDate)}
+	startDate={new SvelteDate(currentDate ?? new Date())}
 	bind:isOpen={isNonNativeDatepickerOpen}
 	{enableFutureDates}
 	{enablePastDates}
@@ -118,17 +148,18 @@
 		<FormLabel {label} />
 		<FormDescription {description} />
 		<input
-			{name}
 			type={format}
 			id={name}
-			bind:value={$proxyDate}
+			value={inputValue}
+			oninput={(e) => handleInput(e.currentTarget.value)}
 			placeholder={m.selectADate()}
-			aria-invalid={errors ? 'true' : undefined}
+			aria-invalid={$errors ? 'true' : undefined}
 			class="input validator w-full"
 			lang={getLocale()}
 			{disabled}
-			{...constraints}
+			{...$constraints ?? {}}
 			bind:this={nativeDateInput}
 		/>
+		<input type="hidden" {name} value={submittedValue} {disabled} />
 	</label>
 </DatePicker>

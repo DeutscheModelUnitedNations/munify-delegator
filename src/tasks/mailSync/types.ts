@@ -132,10 +132,19 @@ export interface ListmonkSubscriber {
 	uuid: string;
 	email: string;
 	name: string;
-	attribs: SubscriberAttribs;
+	attribs: StoredAttribs;
 	status: string;
 	lists: ListAtSubscriber[];
 }
+
+/**
+ * Attribs as found in Listmonk. Other systems (e.g. the DMUN member hub) write their own
+ * top-level keys next to ours, and a released subscriber keeps our keys with `null` values
+ * because PATCH can only merge keys, not remove them.
+ */
+export type StoredAttribs = {
+	[K in keyof SubscriberAttribs]?: SubscriberAttribs[K] | null;
+} & Record<string, unknown>;
 
 // Computed desired state for a user's subscriber record
 
@@ -146,21 +155,43 @@ export interface ComputedSubscriberState {
 	attribs: SubscriberAttribs;
 }
 
-// Lightweight classification result — stores only identifiers, not full objects
+// What the sync is going to do with one subscriber. Planned in pass 1, executed in pass 2.
 
-export interface ClassificationResult {
-	createEmails: Set<string>;
-	updateSubscriberIds: Map<string, number>;
-	deleteSubscriberIds: number[];
+export interface SubscriberPatch {
+	name?: string;
+	attribs: Record<string, unknown>;
+}
+
+export type SubscriberAction =
+	| {
+			kind: 'create';
+			userId: string;
+			email: string;
+			name: string;
+			attribs: SubscriberAttribs;
+			listIds: number[];
+	  }
+	| {
+			kind: 'update';
+			subscriberId: number;
+			/** Only lists we manage. Lists of other systems are never touched. */
+			addListIds: number[];
+			removeListIds: number[];
+			patch: SubscriberPatch | undefined;
+	  };
+
+export interface SyncPlan {
+	/** Users that got a new subscriber or a changed one. */
+	userActions: SubscriberAction[];
+	/** Subscribers no user claims anymore: our lists and attribs are removed from them. */
+	releases: SubscriberAction[];
 	upToDate: number;
 	skippedNoLists: number;
 }
 
-export interface BatchExecutionResult {
-	created: number;
-	createFailed: number;
-	updated: number;
-	updateFailed: number;
+export interface PlanExecutionResult {
+	succeeded: number;
+	failed: number;
 }
 
 // List assignment rule interface for the plugin system
