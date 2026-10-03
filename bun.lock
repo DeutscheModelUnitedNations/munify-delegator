@@ -149,6 +149,7 @@
     },
   },
   "overrides": {
+    "@fastify/busboy": "3.2.2",
     "@isaacs/brace-expansion": "5.0.1",
     "axios": "1.20.0",
     "brace-expansion": "5.0.11",
@@ -407,7 +408,7 @@
 
     "@fallow-cli/win32-x64-msvc": ["@fallow-cli/win32-x64-msvc@3.22.0", "", { "os": "win32", "cpu": "x64" }, "sha512-UsuvlRhub13cHVnIqGlfE/czp0qxxDobUDm6jBIY9Ojw3n3WC94n6+lww6xUWsiXZLKwSM4T/xvAMWH0l48nHg=="],
 
-    "@fastify/busboy": ["@fastify/busboy@3.2.0", "", {}, "sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA=="],
+    "@fastify/busboy": ["@fastify/busboy@3.2.2", "", {}, "sha512-yXSS27qPExaXeuLvMRMXOLtpipzfQYNjG3FkunDWKGfMYjKuhFXko9CVzqxm8jcF+lmtS9Fd89QNdh9XDjnbNg=="],
 
     "@finom/zod-to-json-schema": ["@finom/zod-to-json-schema@3.24.12", "", { "peerDependencies": { "zod": "^3.25 || ^4.0.14" } }, "sha512-mf8CyoW+dFvsvROvHIXznrYWdmlxvBJGIeQpGJaD9iBn23kSSPiC7H0YIqgziMZJDFIzL4VEFCwpcUSHmoeNVw=="],
 
