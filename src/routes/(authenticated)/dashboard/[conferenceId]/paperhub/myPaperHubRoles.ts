@@ -19,7 +19,7 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 				// `OR` does not constrain its branches - so each alternative repeats the scope.
 				where: { OR: REVIEW_ROLES.map((role) => ({ role, ...forUser })) }
 			},
-			id: true
+			role: true
 		}),
 		client.liveQuery.conferenceSupervisors({
 			__args: { where: forUser },
@@ -33,6 +33,10 @@ export async function fetchMyPaperHubRoles(conferenceId: string) {
 	return {
 		get isReviewer() {
 			return teamMembers.length > 0;
+		},
+		/** Project management (or an admin) may delete any paper, not just a draft of their own. */
+		get mayDeleteAnyPaper() {
+			return user.isAdmin || teamMembers.some((member) => member.role === 'PROJECT_MANAGEMENT');
 		},
 		get supervisor() {
 			return supervisors.at(0) ?? null;

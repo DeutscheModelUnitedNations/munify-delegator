@@ -11,10 +11,13 @@ import {
 	PAPER_ROLES,
 	assertTeamRole,
 	hasTeamRole,
-	isParticipantOfConference,
+	PROJECT_MANAGEMENT_ROLES,
+	isInOwnDelegation,
 	isSystemAdmin,
+	isTeamMemberOfConference,
 	systemAdmin,
-	userId
+	userId,
+	where
 } from '$api/services/authHelper';
 import { m } from '$lib/paraglide/messages';
 import { fetchUserParticipations } from '$api/services/participation';
@@ -36,17 +39,27 @@ const paperTeam = (id: string) => ({
 // Ported from abilities/entities/paper/paper.ts
 abilityBuilder.paper.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Authors see and edit their own papers.
+// Authors see and edit their own papers, and may delete one while it is still a draft.
 abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
 	const id = userId(ctx);
 	return id ? { where: { author: { id } } } : undefined;
 });
+abilityBuilder.paper.allow('delete').when((ctx) => {
+	const id = userId(ctx);
+	return id ? { where: { author: { id }, status: 'DRAFT' } } : undefined;
+});
 
-// Reviewers and conference management see and manage the conference's papers.
-abilityBuilder.paper.allow(['read', 'update', 'delete']).when((ctx) => {
+// Reviewers and conference management see the conference's papers and may edit their text (the
+// reviewer edit mode); verdicts go through reviews.
+abilityBuilder.paper.allow(['read', 'update']).when((ctx) => {
 	const id = userId(ctx);
 	return id ? { where: { conference: paperTeam(id) } } : undefined;
 });
+
+// Only project management deletes somebody else's paper.
+abilityBuilder.paper
+	.allow('delete')
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
 // Supervisors see the submitted papers of the delegations they supervise.
 abilityBuilder.paper.allow('read').when((ctx) => {
@@ -61,10 +74,10 @@ abilityBuilder.paper.allow('read').when((ctx) => {
 		: undefined;
 });
 
-// Participants of a conference may see its submitted papers - the public paper hub.
+// Delegates see the submitted papers of their own delegation - nobody else's.
 abilityBuilder.paper.allow('read').when((ctx) => {
-	const participant = isParticipantOfConference(ctx);
-	return participant ? { where: { ...participant, status: { ne: 'DRAFT' } } } : undefined;
+	const delegation = isInOwnDelegation(ctx);
+	return delegation ? { where: { ...delegation, status: { ne: 'DRAFT' } } } : undefined;
 });
 
 const PaperRef = object({ table: 'paper' });

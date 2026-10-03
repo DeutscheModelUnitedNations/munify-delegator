@@ -209,8 +209,8 @@
 		<div class="mt-6 w-full h-12 skeleton"></div>
 	{/if}
 
-	<!-- Hidden Danger Zone (team members only) -->
-	{#if paperData && isReviewer}
+	<!-- Hidden Danger Zone: project management, or the author while it is still a draft -->
+	{#if paperData && (myRoles.mayDeleteAnyPaper || (isAuthor && paperData.status === 'DRAFT'))}
 		<PaperDangerZone
 			paperId={paperData.id}
 			conferenceId={params.conferenceId}
