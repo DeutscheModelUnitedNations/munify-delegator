@@ -12,10 +12,10 @@ pre-commit:
       priority: 2
       # Codebase intelligence (dead code, complexity, duplication, cycles) for
       # what this commit introduces: `--base HEAD` diffs the working tree, which
-      # is what is about to be committed. Advisory - `--brief` renders the same
-      # analysis but always exits 0, mirroring the deliberately non-blocking
-      # fallow job in CI. To gate commits instead, drop `--brief`.
-      run: bunx fallow audit --base HEAD --quiet --brief --gate-marker pre-commit
+      # is what is about to be committed. Blocking - the audit exits 1 on a fail
+      # verdict, i.e. when the commit introduces new findings (inherited ones do
+      # not count). Add `--brief` to make it advisory again.
+      run: bunx fallow audit --base HEAD --quiet --gate-marker pre-commit
       skip:
         - merge
         - rebase
