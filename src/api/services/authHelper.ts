@@ -74,11 +74,6 @@ export function userId(ctx: Context) {
 	return ctx.oidc.user?.sub;
 }
 
-/** The logged-in user's id; throws for anonymous requests. */
-export function callerId(ctx: Context) {
-	return ctx.mustBeLoggedIn().sub;
-}
-
 /** Wraps a filter for `.when()`: no filter means the rule grants nothing. */
 export function where<W extends object>(filter: W | undefined) {
 	return filter ? { where: filter } : undefined;
