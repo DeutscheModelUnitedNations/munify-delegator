@@ -33,6 +33,7 @@ import { configPublic } from '$config/public';
 import { userFormSchema } from '../../../routes/(authenticated)/my-account/form-schema';
 import { GraphQLError } from 'graphql';
 import { Gender } from '$db/generated/graphql/inputs';
+import type { Prisma } from '@prisma/client';
 
 // Helper for type narrowing without casting
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -345,9 +346,32 @@ builder.mutationFields((t) => {
 				globalNotes: t.arg.string()
 			},
 			resolve: async (query, root, args, ctx, info) => {
+				const user = ctx.permissions.getLoggedInUserOrThrow();
+
+				// PARTICIPANT_CARE & PROJECT_MANAGEMENT team members may write global notes
+				// for any participant, supervisor or waiting list entry of their conferences
+				const managedByCaller: Prisma.ConferenceWhereInput = {
+					teamMembers: {
+						some: {
+							user: { id: user.sub },
+							role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
+						}
+					}
+				};
+
 				args.where = {
 					...args.where,
-					AND: [ctx.permissions.allowDatabaseAccessTo('update').User]
+					AND: [
+						{
+							OR: [
+								ctx.permissions.allowDatabaseAccessTo('update').User,
+								{ delegationMemberships: { some: { conference: managedByCaller } } },
+								{ singleParticipant: { some: { conference: managedByCaller } } },
+								{ conferenceSupervisor: { some: { conference: managedByCaller } } },
+								{ waitingListEntry: { some: { conference: managedByCaller } } }
+							]
+						}
+					]
 				};
 
 				const res = await db.user.update({
