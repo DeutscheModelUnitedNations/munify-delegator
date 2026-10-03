@@ -226,12 +226,13 @@ bun run preview
     place, role, committee or nation to the conference, a `userId` to the caller unless the
     caller is participant care. A missing check here is how a team of one conference writes into
     another.
-  - **Columns cannot be masked per rule.** rumble ORs the `where` of every matching rule and
-    unions their `columns` across the whole request, so a column hidden from one rule is shown by
-    any other. Private columns are overridden in `object({ adjust })` instead, with a resolver
-    that returns `null` (or `''` for a non-null column) per row: see the user's contact fields,
-    `globalNotes`, a supervisor's `connectionCode`, a delegation's `entryCode`. `hasTeamRole` is
-    memoized per request, so such resolvers can call it per row.
+  - **A rule's `columns` apply to the whole request, not to the rows it matched.** rumble ORs
+    the rules that match and unions their columns, as a union of grants should. Visibility that
+    depends on how the reader relates to each row - a co-delegate's phone number, a supervisor's
+    `connectionCode`, a delegation's `entryCode`, a conference's bank details - therefore lives in
+    `object({ adjust })` resolvers that return `null` (or `''` for a non-null column) per row.
+    `hasTeamRole`, `isInConference` and the user handler's relation checks are memoized or batched
+    per request, so such resolvers can ask them per row.
 
 - The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
   instance it, `/api/graphql/stream` and the SSR remote function all share. Adding fields needs a
