@@ -1299,6 +1299,7 @@
 	"resolutionTopic": "TOPIC:",
 	"resolutionUnitedNations": "United Nations",
 	"resolutionUnknownPhrase": "Unknown opening phrase",
+	"resolutionUploadBatchTooLarge": "All files together may be at most {max} MB. Please upload them in several steps.",
 	"resolutionUploadCommitteeLabel": "Assign to committee (optional)",
 	"resolutionUploadError": "The resolutions could not be uploaded.",
 	"resolutionUploadLabel": "Upload resolutions (PDF)",

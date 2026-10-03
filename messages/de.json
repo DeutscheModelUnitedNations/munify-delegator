@@ -1299,6 +1299,7 @@
 	"resolutionTopic": "THEMA:",
 	"resolutionUnitedNations": "Vereinte Nationen",
 	"resolutionUnknownPhrase": "Unbekannter Operator",
+	"resolutionUploadBatchTooLarge": "Alle Dateien zusammen dürfen höchstens {max} MB groß sein. Bitte lade sie in mehreren Schritten hoch.",
 	"resolutionUploadCommitteeLabel": "Einem Gremium zuordnen (optional)",
 	"resolutionUploadError": "Die Resolutionen konnten nicht hochgeladen werden.",
 	"resolutionUploadLabel": "Resolutionen hochladen (PDF)",

@@ -12,10 +12,38 @@ import {
 	findUniqueResolutionQueryObject
 } from '$db/generated/graphql/Resolution';
 import { toDataURL } from '$api/services/fileToDataURL';
+import { resolutionTitle, resolutionUpdateData } from '$api/services/resolutionData';
+import { isPdfFile, MAX_RESOLUTION_FILE_SIZE } from '$lib/services/resolutionUpload';
 import { db } from '$db/db';
 import { GraphQLError } from 'graphql';
 
-export const GQLResolution = builder.prismaObject('Resolution', {
+/** A committee tag is optional, but if given it must belong to the resolution's conference. */
+async function assertCommitteeInConference(
+	committeeId: string | null | undefined,
+	conferenceId: string
+) {
+	if (!committeeId) return;
+	const committee = await db.committee.findFirst({
+		where: { id: committeeId, conferenceId },
+		select: { id: true }
+	});
+	if (!committee) {
+		throw new GraphQLError('The selected committee does not belong to this conference.');
+	}
+}
+
+// PDF-only, max 10 MB - the management page enforces the same limits, but the
+// mutation can be called directly, so the real boundary is here.
+function assertValidResolutionFile(file: File) {
+	if (!isPdfFile(file)) {
+		throw new GraphQLError('Only PDF files can be uploaded as resolutions.');
+	}
+	if (file.size > MAX_RESOLUTION_FILE_SIZE) {
+		throw new GraphQLError('Resolution files must not exceed 10 MB.');
+	}
+}
+
+builder.prismaObject('Resolution', {
 	fields: (t) => ({
 		id: t.field(ResolutionIdFieldObject),
 		title: t.field(ResolutionTitleFieldObject),
@@ -87,36 +115,16 @@ builder.mutationFields((t) => ({
 				throw new GraphQLError('You are not allowed to add resolutions to this conference.');
 			}
 
-			// A committee tag is optional, but if given it must belong to the same conference.
-			if (args.committeeId) {
-				const committee = await db.committee.findFirst({
-					where: { id: args.committeeId, conferenceId: args.conferenceId },
-					select: { id: true }
-				});
-				if (!committee) {
-					throw new GraphQLError('The selected committee does not belong to this conference.');
-				}
-			}
-
-			// PDF-only, max 10 MB - the management page enforces the same limits, but the
-			// mutation can be called directly, so the real boundary is here.
-			if (args.file.type !== 'application/pdf') {
-				throw new GraphQLError('Only PDF files can be uploaded as resolutions.');
-			}
-			if (args.file.size > 10_000_000) {
-				throw new GraphQLError('Resolution files must not exceed 10 MB.');
-			}
-
-			const content = await toDataURL(args.file);
-			const fileName = args.file.name || 'resolution.pdf';
+			await assertCommitteeInConference(args.committeeId, args.conferenceId);
+			assertValidResolutionFile(args.file);
 
 			return await db.resolution.create({
 				data: {
 					conferenceId: args.conferenceId,
 					committeeId: args.committeeId ?? null,
-					title: args.title?.trim() || fileName,
-					fileName,
-					content
+					title: resolutionTitle(args.title, args.file.name),
+					fileName: args.file.name,
+					content: await toDataURL(args.file)
 				},
 				...query
 			});
@@ -146,22 +154,11 @@ builder.mutationFields((t) => ({
 				throw new GraphQLError('You are not allowed to edit this resolution.');
 			}
 
-			if (args.committeeId) {
-				const committee = await db.committee.findFirst({
-					where: { id: args.committeeId, conferenceId: resolution.conferenceId },
-					select: { id: true }
-				});
-				if (!committee) {
-					throw new GraphQLError('The selected committee does not belong to this conference.');
-				}
-			}
+			await assertCommitteeInConference(args.committeeId, resolution.conferenceId);
 
 			return await db.resolution.update({
 				where: { id: args.id },
-				data: {
-					title: args.title?.trim() ? args.title.trim() : undefined,
-					committeeId: args.clearCommittee ? null : (args.committeeId ?? undefined)
-				},
+				data: resolutionUpdateData(args),
 				...query
 			});
 		}

@@ -1,4 +1,5 @@
 import { context } from '$api/context/context';
+import { fromDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -25,25 +26,18 @@ export const GET: RequestHandler = async (event) => {
 		throw error(404, 'Resolution not found');
 	}
 
-	const match = /^data:(?<mime>[^;,]+)?(?<base64>;base64)?,(?<data>.*)$/s.exec(resolution.content);
-	if (!match?.groups) {
+	const file = fromDataURL(resolution.content);
+	if (!file) {
 		throw error(500, 'Stored resolution has an invalid format');
 	}
-
-	const mime = match.groups.mime || 'application/pdf';
-	const isBase64 = !!match.groups.base64;
-	const raw = match.groups.data ?? '';
-	const bytes = isBase64
-		? Buffer.from(raw, 'base64')
-		: Buffer.from(decodeURIComponent(raw), 'utf-8');
 
 	// Sanitize the filename for the Content-Disposition header (strip quotes/newlines).
 	const safeName = (resolution.fileName || 'resolution.pdf').replace(/["\r\n]/g, '');
 
-	return new Response(bytes, {
+	return new Response(file.bytes, {
 		headers: {
-			'Content-Type': mime,
-			'Content-Length': String(bytes.byteLength),
+			'Content-Type': file.mime,
+			'Content-Length': String(file.bytes.byteLength),
 			'Content-Disposition': `attachment; filename="${safeName}"`,
 			'Cache-Control': 'private, no-store'
 		}

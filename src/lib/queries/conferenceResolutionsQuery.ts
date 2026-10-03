@@ -1,7 +1,7 @@
 import { graphql } from '$houdini';
 
 export const conferenceResolutionsQuery = graphql(`
-	query ConferenceResolutionsQuery($conferenceId: String!) {
+	query ConferenceResolutionsQuery($conferenceId: String!) @cache(policy: NetworkOnly) {
 		findManyResolutions(
 			where: { conferenceId: { equals: $conferenceId } }
 			orderBy: [{ createdAt: asc }]

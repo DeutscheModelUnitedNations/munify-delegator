@@ -816,7 +816,11 @@
 	<!-- Resolutions are managed via their own requests, so they must live outside the settings form:
 	     otherwise their buttons and inputs would submit ?/updateSettings. -->
 	<div class:hidden={currentTab !== 'documents'}>
-		<ResolutionManager resolutions={data.resolutionsData} committees={data.committeesData} />
+		<ResolutionManager
+			conferenceId={data.conferenceId}
+			resolutions={data.resolutionsData}
+			committees={data.committeesData}
+		/>
 	</div>
 
 	<!-- Sticky Save Button -->
