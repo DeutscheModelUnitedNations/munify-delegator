@@ -14,7 +14,16 @@
 	"ignoreDependencies": ["typst", "houdini-svelte"],
 	// Standalone scripts run directly with `bun <file>` (see CLAUDE.md), so no
 	// framework plugin or package.json script declares them as entry points.
-	"entry": ["prisma/seed/dev/seed.ts"],
+	// The conference dashboard lazy-loads these via `{#await import(...)}` in its
+	// markup, which fallow does not trace, so they (and everything they import)
+	// would otherwise be reported as unused files. Entries are globs, so the
+	// `(authenticated)` and `[conferenceId]` route segments are written as `*`.
+	"entry": [
+		"prisma/seed/dev/seed.ts",
+		"src/lib/components/Dashboard/CalendarSection.svelte",
+		"src/routes/*/dashboard/*/stages/Common/Certificate.svelte",
+		"src/routes/*/dashboard/*/stages/Supervisor/Supervisor.svelte"
+	],
 	"health": {
 		"thresholdOverrides": [
 			{

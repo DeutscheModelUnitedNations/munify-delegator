@@ -21,6 +21,7 @@ import { defineAbilitiesForSurveyQuestion } from './entities/surveyQuestion';
 import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
 import { defineAbilitiesForSurveyOption } from './entities/surveyOption';
 import { defineAbilitiesForCommitteeAgendaItem } from './entities/committeeAgendaItem';
+import { defineAbilitiesForResolution } from './entities/resolution';
 import { defineAbilitiesForWaitingListEntry } from './entities/waitingListEntry';
 import { defineAbilitiesForPaper } from './entities/paper/paper';
 import { defineAbilitiesForPaperVersion } from './entities/paper/paperVersion';
@@ -145,6 +146,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 
 	defineAbilitiesForCommittee(oidc, builder);
 	defineAbilitiesForCommitteeAgendaItem(oidc, builder);
+	defineAbilitiesForResolution(oidc, builder);
 	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForConferenceParticipantStatus(oidc, builder);
 	defineAbilitiesForConferenceSupervisor(oidc, builder);

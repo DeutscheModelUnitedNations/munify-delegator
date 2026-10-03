@@ -755,6 +755,7 @@ input CommitteeCreateInput {
   nations: NationCreateNestedManyWithoutCommitteesInput
   numOfSeatsPerDelegation: Int
   resolutionHeadline: String
+  resolutions: ResolutionCreateNestedManyWithoutCommitteeInput
   updatedAt: DateTime
 }
 
@@ -793,6 +794,7 @@ input CommitteeOrderByWithRelationInput {
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
   resolutionHeadline: SortOrder
+  resolutions: ResolutionOrderByRelationAggregateInput
   updatedAt: SortOrder
 }
 
@@ -834,6 +836,7 @@ input CommitteeUpdateInput {
   nations: NationUpdateManyWithoutCommitteesNestedInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
   resolutionHeadline: NullableStringFieldUpdateOperationsInput
+  resolutions: ResolutionUpdateManyWithoutCommitteeNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -874,6 +877,7 @@ input CommitteeWhereInput {
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
   resolutionHeadline: StringNullableFilter
+  resolutions: ResolutionListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -892,6 +896,7 @@ input CommitteeWhereUniqueInput {
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
   resolutionHeadline: StringNullableFilter
+  resolutions: ResolutionListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -1020,6 +1025,7 @@ input ConferenceCreateInput {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int
+  resolutions: ResolutionCreateNestedManyWithoutConferenceInput
   showCalendar: Boolean
   showInfoExpanded: Boolean
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
@@ -1083,6 +1089,7 @@ input ConferenceOrderByWithRelationInput {
   postalStreet: SortOrder
   postalZip: SortOrder
   registrationDeadlineGracePeriodMinutes: SortOrder
+  resolutions: ResolutionOrderByRelationAggregateInput
   showCalendar: SortOrder
   showInfoExpanded: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
@@ -1624,6 +1631,7 @@ input ConferenceUpdateInput {
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
   registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
+  resolutions: ResolutionUpdateManyWithoutConferenceNestedInput
   showCalendar: BoolFieldUpdateOperationsInput
   showInfoExpanded: BoolFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
@@ -1737,6 +1745,7 @@ input ConferenceWhereInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  resolutions: ResolutionListRelationFilter
   showCalendar: BoolFilter
   showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
@@ -1803,6 +1812,7 @@ input ConferenceWhereUniqueInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  resolutions: ResolutionListRelationFilter
   showCalendar: BoolFilter
   showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
@@ -3007,6 +3017,7 @@ type Mutation {
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
+  createResolution(committeeId: String, conferenceId: String!, file: File!, title: String): Resolution!
   createReviewerSnippet(content: Json!, name: String!): ReviewerSnippet!
   createTeamMemberInvitations(conferenceId: String!, invitations: [CreateInvitationInput!]!): CreateInvitationsResult!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
@@ -3036,6 +3047,7 @@ type Mutation {
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  deleteResolution(id: String!): Resolution!
   deleteReviewerSnippet(id: String!): ReviewerSnippet!
   importCalendarDay(conferenceId: String!, date: DateTime!, importData: JSONObject!, name: String!, sortOrder: Int!): ImportCalendarDayResult!
   normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
@@ -3075,6 +3087,7 @@ type Mutation {
   updateOneUsersIdentityInfo(birthday: DateTime, familyName: String, givenName: String, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  updateResolution(clearCommittee: Boolean, committeeId: String, id: String!, title: String): Resolution!
   updateReviewerSnippet(content: Json!, id: String!, name: String!): ReviewerSnippet!
   upsertSelf: UpsertSelfResult!
 }
@@ -4611,6 +4624,7 @@ type Query {
   findManyPapers(cursor: PaperWhereUniqueInput, distinct: [PaperScalarFieldEnum!], orderBy: [PaperOrderByWithRelationInput!], skip: Int, take: Int, where: PaperWhereInput): [Paper!]!
   findManyPaymentTransactions(cursor: PaymentTransactionWhereUniqueInput, distinct: [PaymentTransactionScalarFieldEnum!], orderBy: [PaymentTransactionOrderByWithRelationInput!], skip: Int, take: Int, where: PaymentTransactionWhereInput): [PaymentTransaction!]!
   findManyPlaces(cursor: PlaceWhereUniqueInput, distinct: [PlaceScalarFieldEnum!], orderBy: [PlaceOrderByWithRelationInput!], skip: Int, take: Int, where: PlaceWhereInput): [Place!]!
+  findManyResolutions(cursor: ResolutionWhereUniqueInput, distinct: [ResolutionScalarFieldEnum!], orderBy: [ResolutionOrderByWithRelationInput!], skip: Int, take: Int, where: ResolutionWhereInput): [Resolution!]!
   findManyRoleApplications(cursor: RoleApplicationWhereUniqueInput, distinct: [RoleApplicationScalarFieldEnum!], orderBy: [RoleApplicationOrderByWithRelationInput!], skip: Int, take: Int, where: RoleApplicationWhereInput): [RoleApplication!]!
   findManySingleParticipants(cursor: SingleParticipantWhereUniqueInput, distinct: [SingleParticipantScalarFieldEnum!], orderBy: [SingleParticipantOrderByWithRelationInput!], skip: Int, take: Int, where: SingleParticipantWhereInput): [SingleParticipant!]!
   findManySurveyAnswers(cursor: SurveyAnswerWhereUniqueInput, distinct: [SurveyAnswerScalarFieldEnum!], orderBy: [SurveyAnswerOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyAnswerWhereInput): [SurveyAnswer!]!
@@ -4640,6 +4654,7 @@ type Query {
   findUniquePaper(where: PaperWhereUniqueInput!): Paper
   findUniquePaymentTransaction(where: PaymentTransactionWhereUniqueInput!): PaymentTransaction
   findUniquePlace(where: PlaceWhereUniqueInput!): Place
+  findUniqueResolution(where: ResolutionWhereUniqueInput!): Resolution
   findUniqueRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   findUniqueSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   findUniqueSurveyAnswer(where: SurveyAnswerWhereUniqueInput!): SurveyAnswer
@@ -4677,6 +4692,146 @@ type RegenerateInvitationResult {
   newExpiresAt: DateTime
   newToken: String
   success: Boolean!
+}
+
+type Resolution {
+  """
+  Optional committee this resolution belongs to. Kept when the committee is
+  deleted so the resolution stays downloadable, just without a committee tag.
+  """
+  committee: Committee
+  committeeId: String
+  conference: Conference!
+  conferenceId: String!
+  createdAt: DateTime!
+
+  """
+  Original filename of the uploaded document (used for the download attachment name)
+  """
+  fileName: String!
+  id: ID!
+
+  """
+  Human readable title shown to participants (defaults to the uploaded filename)
+  """
+  title: String!
+}
+
+input ResolutionCreateInput {
+  committeeId: String
+  conferenceId: String!
+  content: String!
+  createdAt: DateTime
+  fileName: String!
+  id: String
+  title: String!
+  updatedAt: DateTime
+}
+
+input ResolutionCreateNestedManyWithoutCommitteeInput {
+  connect: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionCreateNestedManyWithoutConferenceInput {
+  connect: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionListRelationFilter {
+  every: ResolutionWhereInput
+  none: ResolutionWhereInput
+  some: ResolutionWhereInput
+}
+
+input ResolutionOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input ResolutionOrderByWithRelationInput {
+  committee: CommitteeOrderByWithRelationInput
+  committeeId: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  content: SortOrder
+  createdAt: SortOrder
+  fileName: SortOrder
+  id: SortOrder
+  title: SortOrder
+  updatedAt: SortOrder
+}
+
+enum ResolutionScalarFieldEnum {
+  committeeId
+  conferenceId
+  content
+  createdAt
+  fileName
+  id
+  title
+  updatedAt
+}
+
+input ResolutionUpdateInput {
+  committeeId: NullableStringFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  content: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  fileName: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input ResolutionUpdateManyMutationInput {
+  content: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  fileName: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input ResolutionUpdateManyWithoutCommitteeNestedInput {
+  connect: [ResolutionWhereUniqueInput!]
+  disconnect: [ResolutionWhereUniqueInput!]
+  set: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionUpdateManyWithoutConferenceNestedInput {
+  connect: [ResolutionWhereUniqueInput!]
+  disconnect: [ResolutionWhereUniqueInput!]
+  set: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionWhereInput {
+  AND: [ResolutionWhereInput!]
+  NOT: [ResolutionWhereInput!]
+  OR: [ResolutionWhereInput!]
+  committee: CommitteeWhereInput
+  committeeId: StringNullableFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  content: StringFilter
+  createdAt: DateTimeFilter
+  fileName: StringFilter
+  id: StringFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+}
+
+input ResolutionWhereUniqueInput {
+  AND: [ResolutionWhereInput!]
+  NOT: [ResolutionWhereInput!]
+  OR: [ResolutionWhereInput!]
+  committee: CommitteeWhereInput
+  committeeId: StringNullableFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  content: StringFilter
+  createdAt: DateTimeFilter
+  fileName: StringFilter
+  id: String
+  title: StringFilter
+  updatedAt: DateTimeFilter
 }
 
 enum ReviewHelpStatus {
