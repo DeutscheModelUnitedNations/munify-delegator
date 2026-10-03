@@ -1,5 +1,6 @@
 import { db } from '$db/db';
 import type { Prisma } from '@prisma/client';
+import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
 /**
  * In case a delegation changes during its existence, we need to check some state throughout the app.
@@ -86,4 +87,7 @@ export async function tidyRoleApplications(delegationWhere: Prisma.DelegationWhe
 			}
 		}
 	});
+
+	// close the gaps the deletions above may have left in the ranking
+	await normalizeRoleApplicationRanks(db, delegation.id);
 }
