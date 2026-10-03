@@ -196,41 +196,6 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Delegation members left without a committee, in delegations that were never assigned a nation
-	 * or non-state actor - i.e. everyone who did not make it into the conference.
-	 *
-	 * Rows are read before deletion so the caller still gets them back, which is what the legacy
-	 * resolver did - after the delete there is nothing left to query.
-	 */
-	deleteDeadDelegationMembers: t.drizzleField({
-		type: [DelegationMemberRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			const filter = (await ctx.abilities.delegationMember.filter('delete')).merge({
-				where: {
-					assignedCommitteeId: { isNull: true },
-					delegation: {
-						assignedNationAlpha3Code: { isNull: true },
-						assignedNonStateActorId: { isNull: true }
-					},
-					conferenceId: args.conferenceId
-				}
-			});
-
-			// Read before deleting: afterwards there is nothing left to return.
-			const doomed = await db.query.delegationMember.findMany(query(filter.query.many));
-			if (doomed.length === 0) return [];
-
-			await db.delete(schema.delegationMember).where(filter.sql.where);
-			pubsub.removed();
-
-			return doomed;
-		}
-	})
-}));
-
 /** Refuses a nation, non-state actor or committee that the conference does not have. */
 async function assertOfferedIn(
 	conferenceId: string,

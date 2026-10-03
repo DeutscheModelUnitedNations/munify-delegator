@@ -21,16 +21,20 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  *
  * Who may do what, in one place:
  *
- * | Who                             | Scope                                                            |
- * | ------------------------------- | ---------------------------------------------------------------- |
- * | system admin (OIDC `admin`)     | everything, everywhere, whether on the team or not               |
- * | PROJECT_MANAGEMENT              | the conference itself, its structure, its team, its participants |
- * | PARTICIPANT_CARE                | the conference's participants, their papers, calendar and places |
- * | TEAM_COORDINATOR                | the conference's team, short of granting PROJECT_MANAGEMENT      |
- * | REVIEWER                        | the conference's papers                                          |
- * | MEMBER (and every team role)    | reading the conference's registrations, recording attendance     |
- * | participants                    | their own registration, delegation, papers and survey answers    |
- * | supervisors                     | reading the participants they supervise                          |
+ * | Who                         | Scope                                                                |
+ * | --------------------------- | -------------------------------------------------------------------- |
+ * | system admin (OIDC `admin`) | everything, everywhere, whether on the team or not                   |
+ * | PROJECT_MANAGEMENT          | the conference itself, its structure, its team, its participants     |
+ * | PARTICIPANT_CARE            | the participants, their papers (as reviewers), calendar and places   |
+ * | TEAM_COORDINATOR            | the team, short of granting or removing PROJECT_MANAGEMENT           |
+ * | REVIEWER                    | the conference's papers                                              |
+ * | any team role               | reading registrations, recording attendance, teammates' phone numbers |
+ * | participants                | their own registration, delegation, papers and survey answers        |
+ * | supervisors                 | the participants they supervise, contact details included            |
+ * | anybody with a part in it   | the conference's payment and postal details and documents            |
+ *
+ * Registering, joining and editing a registration are open in every stage; only sending an
+ * application is bound to the registration stage (`assertApplicationReady`).
  *
  * An empty object `{}` means "no restriction"; that is how a system admin passes a filter, since
  * rumble has no global wildcard.
@@ -177,6 +181,35 @@ export function hasTeamRole(
 
 	const answer = db.query.conference
 		.findFirst({ where: { id: conferenceId, ...team }, columns: { id: true } })
+		.then((conference) => conference !== undefined);
+	answers.set(key, answer);
+	return answer;
+}
+
+/**
+ * Whether the caller has any part in the conference - any team role, or as delegate, single
+ * participant or supervisor - or is a system admin. Memoized per request like `hasTeamRole`.
+ */
+export function isInConference(ctx: Context, conferenceId: string): Promise<boolean> {
+	if (isSystemAdmin(ctx)) return Promise.resolve(true);
+	const team = isTeamMemberOf(ctx);
+	const participant = isParticipantOfConference(ctx);
+	if (!team || !participant) return Promise.resolve(false);
+
+	let answers = teamRoleAnswers.get(ctx);
+	if (!answers) {
+		answers = new Map();
+		teamRoleAnswers.set(ctx, answers);
+	}
+	const key = `${conferenceId}:member`;
+	const known = answers.get(key);
+	if (known) return known;
+
+	const answer = db.query.conference
+		.findFirst({
+			where: { id: conferenceId, OR: [team, participant.conference] },
+			columns: { id: true }
+		})
 		.then((conference) => conference !== undefined);
 	answers.set(key, answer);
 	return answer;

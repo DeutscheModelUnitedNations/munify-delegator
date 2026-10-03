@@ -38,9 +38,7 @@ export const {
 	context,
 	defaultLimit: 1000,
 	subscriptions: [{ eventTarget }],
-	// `impersonate` is delegator-specific: the CASL layer modelled it as an action on User and
-	// the management UI depends on it. Chase has no equivalent, so there is no pattern to copy.
-	actions: ['read', 'update', 'delete', 'impersonate'],
+	actions: ['read', 'update', 'delete'],
 	// One span per operation and resolver, into the provider `src/instrumentation.server.ts`
 	// registers. Variables stay out of the spans: they regularly carry personal data.
 	otel: {

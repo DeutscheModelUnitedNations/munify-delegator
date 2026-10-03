@@ -277,59 +277,6 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.then(assertFindFirstExists);
 		}
-	}),
-
-	deleteConferenceSupervisor: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.conferenceSupervisor)
-				.where(
-					(await ctx.abilities.conferenceSupervisor.filter('delete')).merge({
-						where: { id: args.id }
-					}).sql.where
-				)
-				.returning({ id: schema.conferenceSupervisor.id });
-			if (deleted.length === 0) {
-				throw new GraphQLError('Supervisor not found, or not yours to delete');
-			}
-			pubsub.removed();
-
-			return true;
-		}
-	})
-}));
-
-schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Supervisors left supervising nobody, once the dead participants above are gone.
-	 *
-	 * Rows are read before deletion so the caller still gets them back, which is what the legacy
-	 * resolver did - after the delete there is nothing left to query.
-	 */
-	deleteDeadSupervisors: t.drizzleField({
-		type: [ConferenceSupervisorRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			const filter = (await ctx.abilities.conferenceSupervisor.filter('delete')).merge({
-				where: {
-					NOT: {
-						OR: [{ supervisedDelegationMembers: {} }, { supervisedSingleParticipants: {} }]
-					},
-					conferenceId: args.conferenceId
-				}
-			});
-
-			// Read before deleting: afterwards there is nothing left to return.
-			const doomed = await db.query.conferenceSupervisor.findMany(query(filter.query.many));
-			if (doomed.length === 0) return [];
-
-			await db.delete(schema.conferenceSupervisor).where(filter.sql.where);
-			pubsub.removed();
-
-			return doomed;
-		}
 	})
 }));
 

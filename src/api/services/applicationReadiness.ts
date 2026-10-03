@@ -2,6 +2,7 @@ import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { GraphQLError } from 'graphql';
 import dayjs from 'dayjs';
+import type { Row } from '$api/db/rows';
 
 /** The application texts an update may change alongside applying. */
 export type ApplicationTextEdits = {
@@ -13,7 +14,8 @@ export type ApplicationTextEdits = {
 /**
  * Refuses an application from a delegation or single participant that is not ready for it: too
  * few role applications, incomplete texts (judged with this update's edits applied), or a closed
- * registration window.
+ * registration window. Only sent applications count, so this is where the conference's stage is
+ * enforced - registering, joining and editing are open in any stage.
  */
 export function assertApplicationReady(
 	applicant: {
@@ -21,7 +23,11 @@ export function assertApplicationReady(
 		experience: string | null;
 		motivation: string | null;
 		appliedForRoles: unknown[];
-		conference: { startAssignment: Date; registrationDeadlineGracePeriodMinutes: number } | null;
+		conference: {
+			state: Row<'conference'>['state'];
+			startAssignment: Date;
+			registrationDeadlineGracePeriodMinutes: number;
+		} | null;
 	},
 	edits: ApplicationTextEdits,
 	minRoleApplications: number
@@ -44,6 +50,9 @@ export function assertApplicationReady(
 	// `conference` is a required FK, but the relational type is nullable, so this is narrowed
 	// rather than asserted.
 	const conference = applicant.conference;
+	if (conference && conference.state !== 'PARTICIPANT_REGISTRATION') {
+		throw new GraphQLError(m.applicationTimeframeClosed());
+	}
 	if (
 		conference &&
 		dayjs(conference.startAssignment)

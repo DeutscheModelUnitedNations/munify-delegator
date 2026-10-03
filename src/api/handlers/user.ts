@@ -5,8 +5,6 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	isManagedUser,
 	isSystemAdmin,
-	isTeamMemberOf,
-	participatesIn,
 	systemAdmin,
 	userId,
 	where
@@ -22,8 +20,8 @@ import { isUniqueViolationOn } from '$api/services/emailConflict';
 import { reportEmailConflict } from '$api/services/reportEmailConflict';
 import type { Context } from '$api/context';
 
-// System admins may do anything to any account, including impersonating it.
-abilityBuilder.user.allow(['read', 'update', 'delete', 'impersonate']).when(systemAdmin);
+// System admins may do anything to any account.
+abilityBuilder.user.allow(['read', 'update', 'delete']).when(systemAdmin);
 
 // Users see and edit themselves.
 abilityBuilder.user.allow(['read', 'update']).when((ctx) => {
@@ -120,60 +118,101 @@ abilityBuilder.user.allow('read').when((ctx) => {
 		: undefined;
 });
 
-// Project management and participant care may impersonate the participants of their own
-// conferences - not their team, and not anybody else. (Impersonation itself is stalled; see below.)
-abilityBuilder.user.allow('impersonate').when((ctx) => {
-	const conference = isTeamMemberOf(ctx, PARTICIPANT_CARE_ROLES);
-	return conference ? { where: participatesIn(conference) } : undefined;
-});
-
 /**
- * Per row, whether the caller looks after this user (see `isManagedUser`). Read rules cannot
- * mask columns per row - rumble unions the columns of every rule that applies to a request - so
- * the private fields below ask this instead. Rows are checked in one batched query per tick,
- * and answers are kept for the rest of the request.
+ * Per row, whether a user stands in a given relation to the caller. Read rules cannot mask
+ * columns per row - rumble unions the columns of every rule that applies to a request - so the
+ * private fields below ask this instead. Each relation is a `where` on the user table; rows are
+ * checked in one batched query per relation and tick, and answers kept for the rest of the request.
  */
-const managedUserChecks = new WeakMap<
+type Relation = 'managed' | 'supervised' | 'teammate';
+
+const relationChecks = new WeakMap<
 	object,
-	{ answers: Map<string, Promise<boolean>>; pending: Map<string, (managed: boolean) => void> }
+	Map<
+		Relation,
+		{ answers: Map<string, Promise<boolean>>; pending: Map<string, (holds: boolean) => void> }
+	>
 >();
 
-function managesUser(ctx: Context, id: string): Promise<boolean> {
+/** The users standing in `relation` to the caller, or undefined if nobody can. */
+function relationFilter(ctx: Context, relation: Relation) {
+	const id = userId(ctx);
+	if (!id) return undefined;
+	switch (relation) {
+		case 'managed':
+			return isManagedUser(ctx);
+		case 'supervised': {
+			const supervisedByCaller = { supervisors: { user: { id } } };
+			return {
+				OR: [
+					{ delegationMemberships: supervisedByCaller },
+					{ singleParticipant: supervisedByCaller }
+				]
+			};
+		}
+		case 'teammate':
+			return { teamMember: { conference: { teamMembers: { user: { id } } } } };
+	}
+}
+
+function standsInRelation(ctx: Context, relation: Relation, id: string): Promise<boolean> {
 	if (isSystemAdmin(ctx)) return Promise.resolve(true);
-	const filter = isManagedUser(ctx);
+	const filter = relationFilter(ctx, relation);
 	if (!filter) return Promise.resolve(false);
 
-	let state = managedUserChecks.get(ctx);
-	if (!state) {
-		state = { answers: new Map(), pending: new Map() };
-		managedUserChecks.set(ctx, state);
+	let byRelation = relationChecks.get(ctx);
+	if (!byRelation) {
+		byRelation = new Map();
+		relationChecks.set(ctx, byRelation);
 	}
-	const known = state.answers.get(id);
+	let batch = byRelation.get(relation);
+	if (!batch) {
+		batch = { answers: new Map(), pending: new Map() };
+		byRelation.set(relation, batch);
+	}
+	const known = batch.answers.get(id);
 	if (known) return known;
 
-	const batch = state;
+	const { pending } = batch;
 	const answer = new Promise<boolean>((resolve) => {
-		if (batch.pending.size === 0) {
+		if (pending.size === 0) {
 			queueMicrotask(async () => {
-				const waiting = new Map(batch.pending);
-				batch.pending.clear();
-				const managed = await db.query.user.findMany({
+				const waiting = new Map(pending);
+				pending.clear();
+				const matching = await db.query.user.findMany({
 					where: { id: { in: [...waiting.keys()] }, ...filter },
 					columns: { id: true }
 				});
-				const managedIds = new Set(managed.map((user) => user.id));
-				for (const [waitingId, settle] of waiting) settle(managedIds.has(waitingId));
+				const matchingIds = new Set(matching.map((user) => user.id));
+				for (const [waitingId, settle] of waiting) settle(matchingIds.has(waitingId));
 			});
 		}
-		batch.pending.set(id, resolve);
+		pending.set(id, resolve);
 	});
-	state.answers.set(id, answer);
+	batch.answers.set(id, answer);
 	return answer;
 }
 
-/** Contact, address and care details: the person themselves, who looks after them, and admins. */
+/** Whether the caller looks after this user (see `isManagedUser`). */
+function managesUser(ctx: Context, id: string) {
+	return standsInRelation(ctx, 'managed', id);
+}
+
+/**
+ * Contact, address and care details: the person themselves, who looks after them, their
+ * supervisors, and admins.
+ */
 async function mayReadPrivateFields(ctx: Context, user: { id: string }) {
-	return user.id === userId(ctx) || managesUser(ctx, user.id);
+	return (
+		user.id === userId(ctx) ||
+		(await managesUser(ctx, user.id)) ||
+		standsInRelation(ctx, 'supervised', user.id)
+	);
+}
+
+/** A phone number, additionally, is shared within a conference's team. */
+async function mayReadPhone(ctx: Context, user: Row<'user'>) {
+	return (await mayReadPrivateFields(ctx, user)) || standsInRelation(ctx, 'teammate', user.id);
 }
 
 /** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
@@ -189,7 +228,6 @@ const genderEnum = enum_({ tsName: 'gender' });
 const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
 
 type PrivateColumn =
-	| 'phone'
 	| 'street'
 	| 'apartment'
 	| 'zip'
@@ -199,7 +237,7 @@ type PrivateColumn =
 	| 'gender'
 	| 'foodPreference';
 
-/** Resolves a private column: null for anybody but the person, who looks after them, and admins. */
+/** Resolves a private column: null for anybody `mayReadPrivateFields` does not let through. */
 const privateColumn =
 	<C extends PrivateColumn>(column: C) =>
 	async (user: Row<'user'>, _args: object, ctx: Context) =>
@@ -208,9 +246,13 @@ const privateColumn =
 export const UserRef = object({
 	table: 'user',
 	adjust: (t) => ({
-		// Co-delegates, supervisors and fellow team members may read a user's row for their name
-		// and age, but not how to reach them at home or what the care team noted about them.
-		phone: t.field({ type: 'String', nullable: true, resolve: privateColumn('phone') }),
+		// Co-delegates and fellow team members may read a user's row for their name and age, but
+		// not how to reach them at home or what the care team noted about them.
+		phone: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: async (user, _args, ctx) => ((await mayReadPhone(ctx, user)) ? user.phone : null)
+		}),
 		street: t.field({ type: 'String', nullable: true, resolve: privateColumn('street') }),
 		apartment: t.field({ type: 'String', nullable: true, resolve: privateColumn('apartment') }),
 		zip: t.field({ type: 'String', nullable: true, resolve: privateColumn('zip') }),
@@ -525,25 +567,6 @@ schemaBuilder.mutationFields((t) => ({
 				)
 				.then(assertFindFirstExists);
 		}
-	}),
-
-	deleteUser: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.user)
-				.where(
-					(await ctx.abilities.user.filter('delete')).merge({ where: { id: args.id } }).sql.where
-				)
-				.returning({ id: schema.user.id });
-			if (deleted.length === 0) {
-				throw new GraphQLError('User not found, or not yours to delete');
-			}
-			pubsub.removed();
-
-			return true;
-		}
 	})
 }));
 
@@ -698,20 +721,6 @@ schemaBuilder.queryFields((t) => ({
 		type: ImpersonationStatus,
 		// Always "not impersonating" while the feature is stalled; see the mutations above.
 		resolve: () => ({ isImpersonating: false, originalUser: null, impersonatedUser: null })
-	}),
-
-	impersonatableUsers: t.drizzleField({
-		type: [UserRef],
-		resolve: async (query, _root, _args, ctx) => {
-			ctx.mustBeLoggedIn();
-
-			return db.query.user.findMany(
-				query({
-					...(await ctx.abilities.user.filter('impersonate')).query.many,
-					orderBy: { preferredUsername: 'asc' }
-				})
-			);
-		}
 	})
 }));
 

@@ -275,35 +275,6 @@ schemaBuilder.mutationFields((t) => ({
 	})
 }));
 
-schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Delegations left with no members.
-	 *
-	 * Rows are read before deletion so the caller still gets them back, which is what the legacy
-	 * resolver did - after the delete there is nothing left to query.
-	 */
-	deleteEmptyDelegations: t.drizzleField({
-		type: [DelegationRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			const filter = (await ctx.abilities.delegation.filter('delete')).merge({
-				where: { NOT: { members: {} }, conferenceId: args.conferenceId }
-			});
-
-			// Read before deleting: afterwards there is nothing left to return.
-			const doomed = await db.query.delegation.findMany(query(filter.query.many));
-			if (doomed.length === 0) return [];
-
-			await db.delete(schema.delegation).where(filter.sql.where);
-
-			pubsub.removed();
-			delegationMemberPubsub.removed();
-
-			return doomed;
-		}
-	})
-}));
-
 const DelegationPreview = schemaBuilder.simpleObject('DelegationPreview', {
 	fields: (t) => ({
 		id: t.string(),

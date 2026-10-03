@@ -262,33 +262,6 @@ schemaBuilder.mutationFields((t) => ({
 }));
 
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Single participants who were never assigned a role.
-	 *
-	 * Rows are read before deletion so the caller still gets them back, which is what the legacy
-	 * resolver did - after the delete there is nothing left to query.
-	 */
-	deleteDeadSingleParticipants: t.drizzleField({
-		type: [SingleParticipantRef],
-		args: { conferenceId: t.arg.id({ required: true }) },
-		resolve: async (query, _root, args, ctx) => {
-			const filter = (await ctx.abilities.singleParticipant.filter('delete')).merge({
-				where: { assignedRoleId: { isNull: true }, conferenceId: args.conferenceId }
-			});
-
-			// Read before deleting: afterwards there is nothing left to return.
-			const doomed = await db.query.singleParticipant.findMany(query(filter.query.many));
-			if (doomed.length === 0) return [];
-
-			await db.delete(schema.singleParticipant).where(filter.sql.where);
-			pubsub.removed();
-
-			return doomed;
-		}
-	})
-}));
-
-schemaBuilder.mutationFields((t) => ({
 	/** Management assigning a user directly as a single participant with a role. */
 	createAppliedSingleParticipant: t.drizzleField({
 		type: SingleParticipantRef,

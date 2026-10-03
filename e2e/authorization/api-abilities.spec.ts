@@ -7,6 +7,7 @@ import {
 	E2E_PAPER_DELEGATE_USER_ID,
 	E2E_PAPER_DELEGATION_ID,
 	E2E_PAPER_REVIEWER_ID,
+	E2E_PAYMENT_ADMIN_ID,
 	E2E_PREP_CONFERENCE_ID,
 	E2E_PREP_PARTICIPANT_USER_ID,
 	E2E_SUPERVISOR_CONNECTION_CODE,
@@ -211,13 +212,30 @@ test('a team coordinator cannot hand out project management', async ({ page }) =
 	};
 	expect(outcome.created).toEqual([]);
 	expect(outcome.errors).toHaveLength(1);
+});
 
-	const promoted = await gql(
-		page,
-		`mutation ($id: ID!) { updateTeamMember(id: $id, role: PROJECT_MANAGEMENT) { id } }`,
-		{ id: `e2e-team-${E2E_TEAM_COORDINATOR_ID}` }
-	);
-	expectRefused(promoted, /requires one of: PROJECT_MANAGEMENT/);
+test('payment details and documents are for people with a part in the conference', async ({
+	browser,
+	request
+}) => {
+	const query = `query ($id: ID!) { conference(id: $id) { title iban accountHolder postalStreet } }`;
+	const read = async (post: typeof request.post) =>
+		(
+			(await (
+				await post('/api/graphql', { data: { query, variables: { id: E2E_CONFERENCE_ID } } })
+			).json()) as GraphQLResult
+		).data?.conference as Record<string, string | null>;
+
+	// Anonymous: the conference is public, its bank and postal details are not.
+	const anonymous = await read(request.post.bind(request));
+	expect(anonymous.title).toBeTruthy();
+	expect(anonymous).toMatchObject({ iban: null, accountHolder: null, postalStreet: null });
+
+	// A member of its team reads them.
+	const page = await (await browser.newContext()).newPage();
+	await loginAs(page, fixedTestUser(E2E_PAYMENT_ADMIN_ID), { startUrl: '/dashboard' });
+	const member = await read(page.request.post.bind(page.request));
+	expect(member.iban).toBeTruthy();
 });
 
 test('a reviewer reads delegations without their join codes', async ({ page }) => {

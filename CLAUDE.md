@@ -429,7 +429,8 @@ bun run preview
 - User context injected into the GraphQL context via `src/api/context.ts`, which reads
   `event.locals.oidc`
 - **rumble abilities** define fine-grained permissions per entity:
-  - Actions: `read`, `update`, `delete`, `impersonate` (declared in `src/api/rumble.ts`)
+  - Actions: `read`, `update`, `delete` (declared in `src/api/rumble.ts`); impersonation, when it
+    is redesigned, brings its own
   - Each entity's abilities live at the top of its handler
 - Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc.
 

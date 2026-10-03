@@ -75,7 +75,7 @@ const teamDashboardLinks: TeamDashboardLink[] = [
 			}),
 		external: false,
 		isVisible: () => true,
-		allowedRoles: ['REVIEWER', 'PROJECT_MANAGEMENT']
+		allowedRoles: ['REVIEWER', 'PROJECT_MANAGEMENT', 'PARTICIPANT_CARE']
 	},
 	{
 		id: 'teamWiki',

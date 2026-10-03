@@ -1,25 +1,26 @@
 import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
-import { isTeamMemberOfConference, systemAdmin, where } from '$api/services/authHelper';
+import {
+	PROJECT_MANAGEMENT_ROLES,
+	isTeamMemberOfConference,
+	systemAdmin,
+	where
+} from '$api/services/authHelper';
 import { assertFindFirstExists } from '@m1212e/rumble';
-import { GraphQLError } from 'graphql';
 
 // Ported from abilities/entities/committee.ts
 abilityBuilder.committee.allow('read');
 abilityBuilder.committee.allow(['update', 'delete']).when(systemAdmin);
 
+// Project management edits its committees; creating and removing them is the seeding document's job.
 abilityBuilder.committee
-	.allow(['update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, ['PROJECT_MANAGEMENT'])));
+	.allow('update')
+	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
 export const CommitteeRef = object({ table: 'committee' });
 query({ table: 'committee' });
 const pubsub = rumblePubsub({ table: 'committee' });
 
-/**
- * Only update and delete: `createOneCommittee` is commented out in the legacy resolver and does
- * not appear in the legacy API's schema, so it is deliberately not ported.
- */
 schemaBuilder.mutationFields((t) => ({
 	updateCommittee: t.drizzleField({
 		type: CommitteeRef,
@@ -54,27 +55,6 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
-		}
-	}),
-
-	deleteCommittee: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.committee)
-				.where(
-					(await ctx.abilities.committee.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
-				.returning({ id: schema.committee.id });
-			if (deleted.length === 0) {
-				throw new GraphQLError('Committee not found, or not yours to delete');
-			}
-
-			pubsub.removed();
-
-			return true;
 		}
 	})
 }));

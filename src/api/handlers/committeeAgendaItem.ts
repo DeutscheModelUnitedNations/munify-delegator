@@ -9,6 +9,7 @@ import {
 } from '$api/rumble';
 import {
 	PAPER_ROLES,
+	PROJECT_MANAGEMENT_ROLES,
 	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin
@@ -42,10 +43,13 @@ schemaBuilder.mutationFields((t) => ({
 			teaserText: t.arg.string()
 		},
 		resolve: async (query, _root, args, ctx) => {
-			// Agenda items are created by the chase integration, not by conference staff: the legacy
-			// resolver required the `admin` or `service_user` OIDC role rather than a team role.
-			if (!ctx.hasRole('admin') && !ctx.hasRole('service_user')) {
-				throw new GraphQLError('Only admins can create agenda items');
+			// The chase integration creates agenda items with the `service_user` OIDC role; the
+			// conference's project management may add them by hand.
+			const committee = await db.query.committee
+				.findFirst({ where: { id: args.committeeId }, columns: { conferenceId: true } })
+				.then(assertFindFirstExists);
+			if (!ctx.hasRole('service_user')) {
+				await assertTeamRole(ctx, committee.conferenceId, PROJECT_MANAGEMENT_ROLES);
 			}
 
 			const created = await db

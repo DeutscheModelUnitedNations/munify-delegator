@@ -1407,11 +1407,6 @@ export type Mutation = {
     showSelectionOnDashboard?: Boolean | null | undefined,
     title: String
   }) => Surveyquestion,
-  createTeamMember: (p: {
-    conferenceId: ID,
-    role?: TeamroleEnum | null | undefined,
-    userId: ID
-  }) => Teammember,
   createTeamMemberInvitations: (p: {
     conferenceId: ID,
     invitations: CreateInvitationInput[]
@@ -1438,43 +1433,10 @@ export type Mutation = {
   deleteCalendarTrack: (p: {
     id: ID
   }) => Boolean,
-  deleteCommittee: (p: {
-    id: ID
-  }) => Boolean,
-  deleteConference: (p: {
-    id: ID
-  }) => Boolean,
-  deleteConferenceParticipantStatus: (p: {
-    id: ID
-  }) => Boolean,
-  deleteConferenceSupervisor: (p: {
-    id: ID
-  }) => Boolean,
-  deleteCustomConferenceRole: (p: {
-    id: ID
-  }) => Boolean,
-  deleteDeadDelegationMembers: (p: {
-    conferenceId: ID
-  }) => Delegationmember[],
-  deleteDeadSingleParticipants: (p: {
-    conferenceId: ID
-  }) => Singleparticipant[],
-  deleteDeadSupervisors: (p: {
-    conferenceId: ID
-  }) => Conferencesupervisor[],
   deleteDelegation: (p: {
     id: ID
   }) => Boolean,
   deleteDelegationMember: (p: {
-    id: ID
-  }) => Boolean,
-  deleteEmptyDelegations: (p: {
-    conferenceId: ID
-  }) => Delegation[],
-  deleteNation: (p: {
-    alpha3Code: ID
-  }) => Boolean,
-  deleteNonStateActor: (p: {
     id: ID
   }) => Boolean,
   deletePaper: (p: {
@@ -1499,9 +1461,6 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deleteTeamMember: (p: {
-    id: ID
-  }) => Boolean,
-  deleteUser: (p: {
     id: ID
   }) => Boolean,
   deleteWaitingListEntry: (p: {
@@ -1656,13 +1615,6 @@ export type Mutation = {
     id: ID,
     plansOwnAttendenceAtConference?: Boolean | null | undefined
   }) => Conferencesupervisor,
-  updateCustomConferenceRole: (p: {
-    description?: String | null | undefined,
-    fontAwesomeIcon?: String | null | undefined,
-    id: ID,
-    name?: String | null | undefined,
-    seatAmount?: Int | null | undefined
-  }) => Customconferencerole,
   updateDelegation: (p: {
     applied?: Boolean | null | undefined,
     experience?: String | null | undefined,
@@ -1737,10 +1689,6 @@ export type Mutation = {
     showSelectionOnDashboard?: Boolean | null | undefined,
     title?: String | null | undefined
   }) => Surveyquestion,
-  updateTeamMember: (p: {
-    id: ID,
-    role: TeamroleEnum
-  }) => Teammember,
   updateUser: (p: {
     apartment?: String | null | undefined,
     birthday: DateTime,
@@ -2360,7 +2308,6 @@ export type Query = {
     conferenceId: ID,
     filter?: StatsFilter | null | undefined
   }) => StatisticsResult,
-  impersonatableUsers: () => User[],
   impersonationStatus: () => ImpersonationStatus,
   logoutUrl: String,
   myOIDCRoles: OIDCRolesEnum[],

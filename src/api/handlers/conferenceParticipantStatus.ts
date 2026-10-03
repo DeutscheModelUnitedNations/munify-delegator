@@ -13,7 +13,6 @@ import {
 	assertTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
-	isSystemAdmin,
 	participatesIn,
 	systemAdmin,
 	userId,
@@ -227,7 +226,7 @@ schemaBuilder.mutationFields((t) => ({
 		}
 	}),
 
-	/** Bulk attendance toggle across a whole conference. Admin only, as before. */
+	/** Bulk attendance toggle across a whole conference, for its participant care. */
 	updateAllConferenceParticipantStatus: t.field({
 		type: BulkStatusUpdateResult,
 		args: {
@@ -235,11 +234,7 @@ schemaBuilder.mutationFields((t) => ({
 			didAttend: t.arg.boolean()
 		},
 		resolve: async (_root, args, ctx) => {
-			if (!isSystemAdmin(ctx)) {
-				throw new GraphQLError(
-					'You do not have permission to update all conference participant status'
-				);
-			}
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
 
 			const participants = await db.query.user.findMany({
 				where: {
@@ -278,27 +273,6 @@ schemaBuilder.mutationFields((t) => ({
 			pubsub.created();
 
 			return { changed: changed.length };
-		}
-	}),
-
-	deleteConferenceParticipantStatus: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.conferenceParticipantStatus)
-				.where(
-					(await ctx.abilities.conferenceParticipantStatus.filter('delete')).merge({
-						where: { id: args.id }
-					}).sql.where
-				)
-				.returning({ id: schema.conferenceParticipantStatus.id });
-			if (deleted.length === 0) {
-				throw new GraphQLError('Participant status not found, or not yours to delete');
-			}
-			pubsub.removed();
-
-			return true;
 		}
 	})
 }));

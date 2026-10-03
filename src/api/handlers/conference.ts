@@ -5,6 +5,7 @@ import {
 	PROJECT_MANAGEMENT_ROLES,
 	assertTeamRole,
 	hasTeamRole,
+	isInConference,
 	isTeamMemberOf,
 	where
 } from '$api/services/authHelper';
@@ -42,6 +43,32 @@ abilityBuilder.conference
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
 
+/**
+ * Columns only people with a part in the conference may read: where the fee goes, where postal
+ * documents go, and the documents themselves. The rest of a conference is public.
+ */
+type MembersOnlyColumn =
+	| 'accountHolder'
+	| 'iban'
+	| 'bic'
+	| 'bankName'
+	| 'postalName'
+	| 'postalStreet'
+	| 'postalApartment'
+	| 'postalZip'
+	| 'postalCity'
+	| 'postalCountry'
+	| 'contractContent'
+	| 'guardianConsentContent'
+	| 'mediaConsentContent'
+	| 'termsAndConditionsContent'
+	| 'certificateContent';
+
+const membersOnly =
+	(column: MembersOnlyColumn) =>
+	async (conference: Row<'conference'>, _args: object, ctx: Context) =>
+		(await isInConference(ctx, conference.id)) ? conference[column] : null;
+
 /** A link only the conference's team is meant to follow: null for everybody else. */
 const teamOnlyLink =
 	(column: 'linkToTeamWiki' | 'linkToServicesPage') =>
@@ -51,7 +78,55 @@ const teamOnlyLink =
 const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
-		// Conferences are public, but the team's internal tools are not.
+		// Conferences are public; their payment and postal details and documents are not.
+		accountHolder: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('accountHolder')
+		}),
+		iban: t.field({ type: 'String', nullable: true, resolve: membersOnly('iban') }),
+		bic: t.field({ type: 'String', nullable: true, resolve: membersOnly('bic') }),
+		bankName: t.field({ type: 'String', nullable: true, resolve: membersOnly('bankName') }),
+		postalName: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalName') }),
+		postalStreet: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalStreet') }),
+		postalApartment: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('postalApartment')
+		}),
+		postalZip: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalZip') }),
+		postalCity: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalCity') }),
+		postalCountry: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('postalCountry')
+		}),
+		contractContent: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('contractContent')
+		}),
+		guardianConsentContent: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('guardianConsentContent')
+		}),
+		mediaConsentContent: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('mediaConsentContent')
+		}),
+		termsAndConditionsContent: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('termsAndConditionsContent')
+		}),
+		certificateContent: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: membersOnly('certificateContent')
+		}),
+		// The team's internal tools are the team's alone.
 		linkToTeamWiki: t.field({
 			type: 'String',
 			nullable: true,
@@ -384,33 +459,6 @@ schemaBuilder.mutationFields((t) => ({
 					)
 				)
 				.then(assertFindFirstExists);
-		}
-	}),
-
-	deleteConference: t.field({
-		type: 'Boolean',
-		args: { id: t.arg.id({ required: true }) },
-		resolve: async (_root, args, ctx) => {
-			const deleted = await db
-				.delete(schema.conference)
-				.where(
-					(await ctx.abilities.conference.filter('delete')).merge({ where: { id: args.id } }).sql
-						.where
-				)
-				.returning({ id: schema.conference.id });
-			if (deleted.length === 0) {
-				throw new GraphQLError('Conference not found, or not yours to delete');
-			}
-
-			// Everything inside the conference cascades away with it.
-			pubsub.removed();
-			committeePubsub.removed();
-			customConferenceRolePubsub.removed();
-			nonStateActorPubsub.removed();
-			delegationPubsub.removed();
-			singleParticipantPubsub.removed();
-
-			return true;
 		}
 	})
 }));

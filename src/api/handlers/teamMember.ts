@@ -2,117 +2,34 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PROJECT_MANAGEMENT_ROLES,
-	assertMayGrantRole,
-	assertTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
-import { enum_ } from '$api/rumble';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 
-abilityBuilder.teamMember.allow(['read', 'update', 'delete']).when(systemAdmin);
+abilityBuilder.teamMember.allow(['read', 'delete']).when(systemAdmin);
 
 // Team members can see each other.
 abilityBuilder.teamMember.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
 
-// Project management manages the whole team.
+// Project management removes anybody from the team.
 abilityBuilder.teamMember
-	.allow(['update', 'delete'])
+	.allow('delete')
 	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
-// Team coordinators manage everybody but project management, which they can neither demote nor
-// remove (see `assertMayGrantRole` for the other direction).
-abilityBuilder.teamMember.allow(['update', 'delete']).when((ctx) => {
+// Team coordinators remove anybody but project management. Who joins, with which role, goes
+// through invitations (see `assertMayGrantRole`).
+abilityBuilder.teamMember.allow('delete').when((ctx) => {
 	const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
 	return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
 });
 
-const TeamMemberRef = object({ table: 'teamMember' });
+object({ table: 'teamMember' });
 query({ table: 'teamMember' });
 const pubsub = rumblePubsub({ table: 'teamMember' });
 
-const teamRoleEnum = enum_({ tsName: 'teamRole' });
-
 schemaBuilder.mutationFields((t) => ({
-	createTeamMember: t.drizzleField({
-		type: TeamMemberRef,
-		args: {
-			conferenceId: t.arg.id({ required: true }),
-			userId: t.arg.id({ required: true }),
-			role: t.arg({ type: teamRoleEnum })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			await assertTeamRole(ctx, args.conferenceId, PROJECT_MANAGEMENT_ROLES);
-
-			const existing = await db.query.teamMember.findFirst({
-				where: { conferenceId: args.conferenceId, userId: args.userId }
-			});
-			if (existing) {
-				throw new GraphQLError('User is already a team member');
-			}
-
-			const created = await db
-				.insert(schema.teamMember)
-				.values({
-					conferenceId: args.conferenceId,
-					userId: args.userId,
-					role: args.role ?? undefined
-				})
-				.returning()
-				.then(assertFirstEntryExists);
-
-			pubsub.created();
-
-			return db.query.teamMember
-				.findFirst(
-					query(
-						(await ctx.abilities.teamMember.filter('read')).merge({ where: { id: created.id } })
-							.query.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
-
-	updateTeamMember: t.drizzleField({
-		type: TeamMemberRef,
-		args: {
-			id: t.arg.id({ required: true }),
-			role: t.arg({ type: teamRoleEnum, required: true })
-		},
-		resolve: async (query, _root, args, ctx) => {
-			const member = await db.query.teamMember
-				.findFirst({
-					...(await ctx.abilities.teamMember.filter('update')).merge({ where: { id: args.id } })
-						.query.single,
-					columns: { conferenceId: true }
-				})
-				.then(assertFindFirstExists);
-			await assertMayGrantRole(ctx, member.conferenceId, args.role);
-
-			await db
-				.update(schema.teamMember)
-				.set({ role: args.role })
-				.where(
-					(await ctx.abilities.teamMember.filter('update')).merge({ where: { id: args.id } }).sql
-						.where
-				);
-
-			pubsub.updated(args.id);
-
-			return db.query.teamMember
-				.findFirst(
-					query(
-						(await ctx.abilities.teamMember.filter('read')).merge({ where: { id: args.id } }).query
-							.single
-					)
-				)
-				.then(assertFindFirstExists);
-		}
-	}),
-
 	deleteTeamMember: t.field({
 		type: 'Boolean',
 		args: { id: t.arg.id({ required: true }) },
