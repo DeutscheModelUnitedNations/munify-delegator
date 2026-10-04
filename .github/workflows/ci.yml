@@ -223,6 +223,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
+      # Date-keyed build arg: rebuilds the OS-update layer once a day so the image picks up new
+      # Debian security fixes even when the GHA layer cache is older than them.
+      - id: os-updates-date
+        run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
       - id: build
         uses: docker/build-push-action@v5
         with:
@@ -239,6 +244,7 @@ jobs:
           build-args: |
             VERSION=${{ github.ref_name }}
             SHA=${{ github.sha }}
+            OS_UPDATES_DATE=${{ steps.os-updates-date.outputs.date }}
 
       - id: split-tags
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
@@ -361,6 +367,10 @@ jobs:
             type=semver,pattern={{major}}
 
       - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        id: os-updates-date
+        run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
         uses: docker/build-push-action@v5
         with:
           file: Dockerfile.tasks
@@ -369,6 +379,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=tasks
           cache-to: type=gha,mode=max,scope=tasks
+          # Date-keyed build arg: rebuilds the OS-update layer once a day (see docker-build).
+          build-args: |
+            OS_UPDATES_DATE=${{ steps.os-updates-date.outputs.date }}
 
       - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
         id: split-tags

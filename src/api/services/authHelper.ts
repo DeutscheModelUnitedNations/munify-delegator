@@ -24,7 +24,8 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * | Who                         | Scope                                                                |
  * | --------------------------- | -------------------------------------------------------------------- |
  * | system admin (OIDC `admin`) | everything, everywhere, whether on the team or not                   |
- * | PROJECT_MANAGEMENT          | the conference, its structure, team, participants; deleting papers   |
+ * | PROJECT_MANAGEMENT          | the conference, its structure, team, participants; deleting papers;  |
+ * |                             | publishing the adopted resolutions                                   |
  * | PARTICIPANT_CARE            | the participants, their papers (as reviewers), calendar and places   |
  * | TEAM_COORDINATOR            | the team and its members' details, short of granting PROJECT_MANAGEMENT |
  * | REVIEWER                    | reading, reviewing and editing the conference's papers               |
@@ -32,7 +33,8 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * | participants                | their registration, delegation, survey answers, and the submitted    |
  * |                             | papers of their own delegation (an author deletes a draft of theirs) |
  * | supervisors                 | the participants they supervise, contact details included            |
- * | anybody with a part in it   | the conference's payment and postal details and documents            |
+ * | anybody with a part in it   | the conference's payment and postal details, documents and adopted   |
+ * |                             | resolutions                                                          |
  *
  * Registering, joining and editing a registration are open in every stage; only sending an
  * application is bound to the registration stage (`assertApplicationReady`).

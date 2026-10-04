@@ -318,6 +318,12 @@ export type Committee = {
   }) => Nation[],
   numOfSeatsPerDelegation: Int,
   resolutionHeadline: String | null,
+  resolutions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ResolutionOrderInputArgument | null | undefined,
+    where?: ResolutionWhereInputArgument | null | undefined
+  }) => Resolution[],
   updatedAt: DateTime    
 };
 		
@@ -357,6 +363,7 @@ export type CommitteeWhereInputArgument = {
   nations?: NationWhereInputArgument | null | undefined,
   numOfSeatsPerDelegation?: IntWhereInputArgument | null | undefined,
   resolutionHeadline?: StringWhereInputArgument | null | undefined,
+  resolutions?: ResolutionWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
@@ -515,6 +522,12 @@ export type Conference = {
   postalStreet: String | null,
   postalZip: String | null,
   registrationDeadlineGracePeriodMinutes: Int,
+  resolutions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ResolutionOrderInputArgument | null | undefined,
+    where?: ResolutionWhereInputArgument | null | undefined
+  }) => Resolution[],
   schools: () => ConferenceSchools[],
   showCalendar: Boolean,
   showInfoExpanded: Boolean,
@@ -661,6 +674,7 @@ export type ConferenceWhereInputArgument = {
   postalStreet?: StringWhereInputArgument | null | undefined,
   postalZip?: StringWhereInputArgument | null | undefined,
   registrationDeadlineGracePeriodMinutes?: IntWhereInputArgument | null | undefined,
+  resolutions?: ResolutionWhereInputArgument | null | undefined,
   showCalendar?: BooleanWhereInputArgument | null | undefined,
   showInfoExpanded?: BooleanWhereInputArgument | null | undefined,
   singleParticipants?: SingleparticipantWhereInputArgument | null | undefined,
@@ -1376,6 +1390,13 @@ export type Mutation = {
     sitePlanDataURL?: String | null | undefined,
     websiteUrl?: String | null | undefined
   }) => Place,
+  createResolution: (p: {
+    committeeId?: ID | null | undefined,
+    conferenceId: ID,
+    content: String,
+    fileName: String,
+    title?: String | null | undefined
+  }) => Resolution,
   createReviewerSnippet: (p: {
     content: JSON,
     name: String
@@ -1443,6 +1464,9 @@ export type Mutation = {
     id: ID
   }) => Boolean,
   deletePlace: (p: {
+    id: ID
+  }) => Boolean,
+  deleteResolution: (p: {
     id: ID
   }) => Boolean,
   deleteReviewerSnippet: (p: {
@@ -1654,6 +1678,11 @@ export type Mutation = {
     sitePlanDataURL?: String | null | undefined,
     websiteUrl?: String | null | undefined
   }) => Place,
+  updateResolution: (p: {
+    committeeId?: ID | null | undefined,
+    id: ID,
+    title?: String | null | undefined
+  }) => Resolution,
   updateReviewerSnippet: (p: {
     content: JSON,
     id: ID,
@@ -2390,6 +2419,15 @@ export type Query = {
   previewUserByIdOrEmail: (p: {
     emailOrId: String
   }) => UserPreview,
+  resolution: (p: {
+    id: ID
+  }) => Resolution,
+  resolutions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ResolutionOrderInputArgument | null | undefined,
+    where?: ResolutionWhereInputArgument | null | undefined
+  }) => Resolution[],
   reviewerLeaderboard: (p: {
     conferenceId: ID
   }) => ReviewerStat[],
@@ -2503,6 +2541,52 @@ export type RegenerateInvitationResult = {
   newExpiresAt: DateTime | null,
   newToken: String | null,
   success: Boolean    
+};
+		
+export type Resolution = {
+  committee: (p?: {
+    orderBy?: CommitteeOrderInputArgument | null | undefined,
+    where?: CommitteeWhereInputArgument | null | undefined
+  }) => Committee | null,
+  committeeId: ID | null,
+  conference: (p?: {
+    orderBy?: ConferenceOrderInputArgument | null | undefined,
+    where?: ConferenceWhereInputArgument | null | undefined
+  }) => Conference,
+  conferenceId: ID,
+  content: String,
+  createdAt: DateTime,
+  fileName: String,
+  id: ID,
+  title: String,
+  updatedAt: DateTime    
+};
+		
+export type ResolutionOrderInputArgument = {
+  committeeId?: SortingParameter | null | undefined,
+  conferenceId?: SortingParameter | null | undefined,
+  content?: SortingParameter | null | undefined,
+  createdAt?: SortingParameter | null | undefined,
+  fileName?: SortingParameter | null | undefined,
+  id?: SortingParameter | null | undefined,
+  title?: SortingParameter | null | undefined,
+  updatedAt?: SortingParameter | null | undefined    
+};
+		
+export type ResolutionWhereInputArgument = {
+  AND?: ResolutionWhereInputArgument[] | undefined,
+  NOT?: ResolutionWhereInputArgument | null | undefined,
+  OR?: ResolutionWhereInputArgument[] | undefined,
+  committee?: CommitteeWhereInputArgument | null | undefined,
+  committeeId?: IDWhereInputArgument | null | undefined,
+  conference?: ConferenceWhereInputArgument | null | undefined,
+  conferenceId?: IDWhereInputArgument | null | undefined,
+  content?: StringWhereInputArgument | null | undefined,
+  createdAt?: DateTimeWhereInputArgument | null | undefined,
+  fileName?: StringWhereInputArgument | null | undefined,
+  id?: IDWhereInputArgument | null | undefined,
+  title?: StringWhereInputArgument | null | undefined,
+  updatedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
 export type ReviewerStat = {
@@ -3179,6 +3263,15 @@ export type Subscription = {
     orderBy?: PlaceOrderInputArgument | null | undefined,
     where?: PlaceWhereInputArgument | null | undefined
   }) => Place[],
+  resolution: (p: {
+    id: ID
+  }) => Resolution,
+  resolutions: (p?: {
+    limit?: Int | null | undefined,
+    offset?: Int | null | undefined,
+    orderBy?: ResolutionOrderInputArgument | null | undefined,
+    where?: ResolutionWhereInputArgument | null | undefined
+  }) => Resolution[],
   reviewerSnippet: (p: {
     id: ID
   }) => Reviewersnippet,
@@ -3864,7 +3957,7 @@ export const client = {
    */
   liveQuery: makeLiveQuery<Query>({
 	  urqlClient,
-	  availableSubscriptions: new Set(["attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntry"]),
+	  availableSubscriptions: new Set(["attendanceEntries", "attendanceEntry", "calendarDay", "calendarDays", "calendarEntries", "calendarEntry", "calendarTrack", "calendarTracks", "committee", "committeeAgendaItem", "committeeAgendaItems", "committees", "conference", "conferenceParticipantStatus", "conferenceParticipantStatuses", "conferenceSupervisor", "conferenceSupervisors", "conferences", "customConferenceRole", "customConferenceRoles", "delegation", "delegationMember", "delegationMembers", "delegations", "nation", "nations", "nonStateActor", "nonStateActors", "paper", "paperReview", "paperReviews", "paperVersion", "paperVersions", "papers", "paymentTransaction", "paymentTransactions", "place", "places", "resolution", "resolutions", "reviewerSnippet", "reviewerSnippets", "roleApplication", "roleApplications", "singleParticipant", "singleParticipants", "surveyAnswer", "surveyAnswers", "surveyOption", "surveyOptions", "surveyQuestion", "surveyQuestions", "teamMember", "teamMemberInvitation", "teamMemberInvitations", "teamMembers", "user", "userReferenceInPaymentTransaction", "userReferenceInPaymentTransactions", "users", "waitingListEntries", "waitingListEntry"]),
 		schema,
     autoIncludeIdField: 'id'
   }),

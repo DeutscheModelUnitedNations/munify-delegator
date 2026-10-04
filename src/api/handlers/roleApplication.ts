@@ -12,6 +12,7 @@ import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { count, eq } from 'drizzle-orm';
 import { countGiven, nullToUndefined } from '$api/services/args';
+import { normalizeRoleApplicationRanks } from '$api/services/normalizeRoleApplicationRanks';
 
 // Ported from abilities/entities/roleApplication.ts
 abilityBuilder.roleApplication.allow(['read', 'update', 'delete']).when(systemAdmin);
@@ -92,22 +93,25 @@ schemaBuilder.mutationFields((t) => ({
 				throw new GraphQLError('This role is not on offer in the conference');
 			}
 
-			// Rank is assigned as "one past the current count", matching the legacy resolver.
-			const [existing] = await db
-				.select({ value: count() })
-				.from(schema.roleApplication)
-				.where(eq(schema.roleApplication.delegationId, args.delegationId));
+			const created = await db.transaction(async (tx) => {
+				// Close any gap first, so "one past the count" cannot collide with an existing rank.
+				await normalizeRoleApplicationRanks(args.delegationId, tx);
+				const [existing] = await tx
+					.select({ value: count() })
+					.from(schema.roleApplication)
+					.where(eq(schema.roleApplication.delegationId, args.delegationId));
 
-			const created = await db
-				.insert(schema.roleApplication)
-				.values({
-					delegationId: args.delegationId,
-					nationId: nullToUndefined(args.nationId),
-					nonStateActorId: nullToUndefined(args.nonStateActorId),
-					rank: (existing?.value ?? 0) + 1
-				})
-				.returning()
-				.then(assertFirstEntryExists);
+				return tx
+					.insert(schema.roleApplication)
+					.values({
+						delegationId: args.delegationId,
+						nationId: nullToUndefined(args.nationId),
+						nonStateActorId: nullToUndefined(args.nonStateActorId),
+						rank: (existing?.value ?? 0) + 1
+					})
+					.returning()
+					.then(assertFirstEntryExists);
+			});
 
 			pubsub.created();
 
@@ -133,11 +137,16 @@ schemaBuilder.mutationFields((t) => ({
 					(await ctx.abilities.roleApplication.filter('delete')).merge({ where: { id: args.id } })
 						.sql.where
 				)
-				.returning({ id: schema.roleApplication.id });
+				.returning({
+					id: schema.roleApplication.id,
+					delegationId: schema.roleApplication.delegationId
+				});
 			if (deleted.length === 0) {
 				throw new GraphQLError('Role application not found, or not yours to delete');
 			}
+			await normalizeRoleApplicationRanks(deleted[0].delegationId);
 			pubsub.removed();
+			pubsub.updated();
 
 			return true;
 		}

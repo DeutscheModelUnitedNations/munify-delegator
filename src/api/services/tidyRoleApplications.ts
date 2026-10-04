@@ -1,14 +1,11 @@
 import { db, schema } from '$api/db/db';
 import { and, eq, inArray } from 'drizzle-orm';
+import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
 /**
- * Drizzle port of `removeTooSmallRoleApplications.ts`.
- *
  * A delegation's size can change after it has applied for roles. This drops any application for a
  * nation or non-state actor that can no longer seat everyone: for a nation, the seats are summed
  * across every committee that nation sits in; for a non-state actor it is its own seat count.
- *
- * The Prisma original stays until the legacy resolvers are deleted in Phase F.
  */
 export async function tidyRoleApplications(delegationId: string) {
 	const delegation = await db.query.delegation.findFirst({
@@ -73,4 +70,7 @@ export async function tidyRoleApplications(delegationId: string) {
 				)
 			);
 	}
+
+	// Close the gaps the deletions above may have left in the ranking.
+	await normalizeRoleApplicationRanks(delegation.id);
 }

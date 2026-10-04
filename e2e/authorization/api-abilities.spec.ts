@@ -2,6 +2,7 @@ import { test, expect, type Page } from '../support/test';
 import { fixedTestUser, loginAs, makeTestUser } from '../support/auth';
 import {
 	E2E_AGENDA_ITEM_ID,
+	E2E_ASSIGNMENT_ADMIN_ID,
 	E2E_CONFERENCE_ID,
 	E2E_CONNECT_PARTICIPANT_ID,
 	E2E_PAPER_DELEGATE_USER_ID,
@@ -257,4 +258,64 @@ test('a reviewer reads delegations without their join codes', async ({ page }) =
 		}),
 		/non-nullable field Delegation\.entryCode/
 	);
+});
+
+test('project management uploads resolutions, everybody with a part in it downloads them', async ({
+	browser
+}) => {
+	const as = async (claims: Parameters<typeof loginAs>[1]) => {
+		const page = await (await browser.newContext()).newPage();
+		await loginAs(page, claims, { startUrl: '/dashboard' });
+		return page;
+	};
+	const create = `mutation ($c: ID!, $n: String!, $content: String!) {
+		createResolution(conferenceId: $c, fileName: $n, content: $content) { id title }
+	}`;
+	const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4 e2e').toString('base64')}`;
+	const list = `query ($c: ID!) { resolutions(where: { conferenceId: { eq: $c } }) { id } }`;
+
+	// Participant care runs the conference with project management, but the resolutions are not
+	// theirs to publish.
+	const care = await as(fixedTestUser(E2E_PAYMENT_ADMIN_ID));
+	expectRefused(
+		await gql(care, create, { c: E2E_CONFERENCE_ID, n: 'care.pdf', content: pdf }),
+		/requires one of: PROJECT_MANAGEMENT/
+	);
+
+	const management = await as(fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID));
+	expectRefused(
+		await gql(management, create, {
+			c: E2E_CONFERENCE_ID,
+			n: 'page.html',
+			content: 'data:text/html;base64,PGgxPg=='
+		}),
+		/Only PDF files/
+	);
+	const created = await gql(management, create, {
+		c: E2E_CONFERENCE_ID,
+		n: `E2E Resolution ${Date.now()}.pdf`,
+		content: pdf
+	});
+	const resolution = created.data?.createResolution as { id: string; title: string };
+	expect(resolution?.title, JSON.stringify(created)).toMatch(/^E2E Resolution/);
+
+	// A delegate of the conference downloads it.
+	const delegate = await as(fixedTestUser(E2E_PAPER_DELEGATE_USER_ID));
+	const download = await gql(delegate, `query ($id: ID!) { resolution(id: $id) { content } }`, {
+		id: resolution.id
+	});
+	expect(download.data?.resolution, JSON.stringify(download)).toEqual({ content: pdf });
+
+	// Somebody without a part in the conference sees none of them.
+	const outsider = await as(makeTestUser('authz-resolutions'));
+	const outsiderList = await gql(outsider, list, { c: E2E_CONFERENCE_ID });
+	expect(outsiderList.data?.resolutions, JSON.stringify(outsiderList)).toEqual([]);
+
+	expect(
+		(
+			await gql(management, `mutation ($id: ID!) { deleteResolution(id: $id) }`, {
+				id: resolution.id
+			})
+		).data?.deleteResolution
+	).toBe(true);
 });

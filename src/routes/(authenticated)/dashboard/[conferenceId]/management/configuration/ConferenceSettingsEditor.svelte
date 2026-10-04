@@ -27,6 +27,7 @@
 	import LinkSettings from './sections/LinkSettings.svelte';
 	import PaymentSettings from './sections/PaymentSettings.svelte';
 	import DocumentSettings from './sections/DocumentSettings.svelte';
+	import ResolutionManager from './ResolutionManager.svelte';
 
 	let { conferenceId }: { conferenceId: string } = $props();
 
@@ -317,6 +318,11 @@
 			</div>
 		</div>
 	</Form>
+
+	<!-- Resolutions save through their own mutations, so they live outside the settings form. -->
+	<div class="mt-6" class:hidden={currentTab !== 'documents'}>
+		<ResolutionManager {conferenceId} />
+	</div>
 </div>
 
 <Modal bind:open={confirmSaveModalOpen} title={m.confirmSave()}>

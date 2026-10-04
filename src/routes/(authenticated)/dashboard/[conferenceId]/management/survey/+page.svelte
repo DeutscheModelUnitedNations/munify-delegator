@@ -2,6 +2,7 @@
 	import ActionModal from '$lib/components/ActionModal.svelte';
 	import ConfirmDeleteModal from '$lib/components/ConfirmDeleteModal.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
+	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
 	import { surveyFields } from './surveyForm';
 	import SurveyCard from './SurveyCard.svelte';
@@ -60,6 +61,7 @@
 			createDeadline = '';
 		} catch (error) {
 			console.error('Failed to create survey:', error);
+			toast.error(error instanceof Error ? error.message : String(error));
 		} finally {
 			isLoading = false;
 		}

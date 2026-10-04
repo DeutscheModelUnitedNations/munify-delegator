@@ -5,6 +5,7 @@
 	import { downloadCompleteCertificate } from '$lib/utils/pdfGenerator';
 	import { toast } from 'svelte-sonner';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import ResolutionDownloads from './ResolutionDownloads.svelte';
 	import RoleWidget from '$lib/components/delegationStats/RoleWidget.svelte';
 	import type { ComponentProps } from 'svelte';
 	import { planCertificateDownload, type CertificateData } from './certificateDownload';
@@ -145,3 +146,7 @@
 		<div class="skeleton bg-base-200 h-16 w-full max-w-sm"></div>
 	{/if}
 </DashboardSection>
+
+{#if conferenceId}
+	<ResolutionDownloads {conferenceId} />
+{/if}

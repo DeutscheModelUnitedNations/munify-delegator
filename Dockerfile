@@ -3,7 +3,10 @@ FROM oven/bun:1.3-slim AS base
 FROM base AS patched
 WORKDIR /temp
 # Apply OS security updates (e.g. libcap2 CVE-2026-4878) on top of the base image.
-RUN apt-get -y update; apt-get -y upgrade
+# CI passes the current date so this layer is rebuilt daily instead of being served from a
+# build cache that predates newer Debian security fixes.
+ARG OS_UPDATES_DATE
+RUN echo "OS updates as of ${OS_UPDATES_DATE:-unknown}"; apt-get -y update; apt-get -y upgrade
 
 FROM patched AS runner
 WORKDIR /run

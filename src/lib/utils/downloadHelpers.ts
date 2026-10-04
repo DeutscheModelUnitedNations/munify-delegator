@@ -62,6 +62,13 @@ export const downloadPDF = (bytes: Uint8Array, filename: string): void => {
 };
 
 /**
+ * Downloads a stored document (a `data:` URL) under the given file name
+ */
+export const downloadDataURL = async (dataURL: string, filename: string): Promise<void> => {
+	triggerDownload(await (await fetch(dataURL)).blob(), filename);
+};
+
+/**
  * Triggers a browser download for a blob
  */
 const triggerDownload = (blob: Blob, filename: string): void => {

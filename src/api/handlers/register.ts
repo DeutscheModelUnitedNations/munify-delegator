@@ -21,6 +21,7 @@ import './paperReview';
 import './paperVersion';
 import './paymentTransaction';
 import './place';
+import './resolution';
 import './reviewerSnippet';
 import './roleApplication';
 import './statistics';

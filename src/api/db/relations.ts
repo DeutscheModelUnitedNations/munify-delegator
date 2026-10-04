@@ -81,6 +81,10 @@ export const relations = defineRelations(schema, (r) => ({
 		nations: r.many.nation({
 			from: r.committee.id.through(r.committeeToNation.a),
 			to: r.nation.alpha3Code.through(r.committeeToNation.b)
+		}),
+		resolutions: r.many.resolution({
+			from: r.committee.id,
+			to: r.resolution.committeeId
 		})
 	},
 	committeeAgendaItem: {
@@ -142,6 +146,10 @@ export const relations = defineRelations(schema, (r) => ({
 		places: r.many.place({
 			from: r.conference.id,
 			to: r.place.conferenceId
+		}),
+		resolutions: r.many.resolution({
+			from: r.conference.id,
+			to: r.resolution.conferenceId
 		}),
 		singleParticipants: r.many.singleParticipant({
 			from: r.conference.id,
@@ -365,6 +373,17 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.place.conferenceId,
 			to: r.conference.id,
 			optional: false
+		})
+	},
+	resolution: {
+		conference: r.one.conference({
+			from: r.resolution.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		committee: r.one.committee({
+			from: r.resolution.committeeId,
+			to: r.committee.id
 		})
 	},
 	reviewerSnippet: {

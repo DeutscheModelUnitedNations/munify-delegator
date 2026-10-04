@@ -5,7 +5,6 @@ import {
 	assertTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
-	isSystemAdmin,
 	systemAdmin,
 	userId,
 	where
@@ -28,6 +27,9 @@ abilityBuilder.conferenceSupervisor
  * Whoever holds a supervisor's connection code can attach themselves to that supervisor, so it is
  * the supervisor's to hand out: only they and participant care read it.
  */
+/** Codes are generated uppercase, but people type them in lowercase or paste whitespace along. */
+const normalizeConnectionCode = (code: string) => code.trim().toUpperCase();
+
 const WITHOUT_CONNECTION_CODE = { connectionCode: false };
 
 // Supervised participants see their own supervisors.
@@ -180,7 +182,10 @@ schemaBuilder.mutationFields((t) => ({
 
 			const supervisor = await db.query.conferenceSupervisor
 				.findFirst({
-					where: { conferenceId: args.conferenceId, connectionCode: args.connectionCode }
+					where: {
+						conferenceId: args.conferenceId,
+						connectionCode: normalizeConnectionCode(args.connectionCode)
+					}
 				})
 				.then(assertFindFirstExists);
 
@@ -239,14 +244,15 @@ schemaBuilder.mutationFields((t) => ({
 		type: ConferenceSupervisorRef,
 		args: { id: t.arg.id({ required: true }) },
 		resolve: async (query, _root, args, ctx) => {
-			const callerId = userId(ctx);
-			const supervisor = await db.query.conferenceSupervisor
-				.findFirst({ where: { id: args.id } })
-				.then(assertFindFirstExists);
-
-			// Only the supervisor themselves, or an admin - not the general update ability, which
-			// also covers conference management.
-			if (supervisor.userId !== callerId && !isSystemAdmin(ctx)) {
+			// The supervisor themselves, participant care and project management, and admins: the
+			// row's update ability.
+			const supervisor = await db.query.conferenceSupervisor.findFirst({
+				...(await ctx.abilities.conferenceSupervisor.filter('update')).merge({
+					where: { id: args.id }
+				}).query.single,
+				columns: { id: true }
+			});
+			if (!supervisor) {
 				throw new GraphQLError('You are not allowed to rotate this connection code.');
 			}
 
@@ -310,7 +316,10 @@ schemaBuilder.queryFields((t) => ({
 
 			const supervisor = await db.query.conferenceSupervisor
 				.findFirst({
-					where: { conferenceId: args.conferenceId, connectionCode: args.connectionCode },
+					where: {
+						conferenceId: args.conferenceId,
+						connectionCode: normalizeConnectionCode(args.connectionCode)
+					},
 					with: { user: { columns: { givenName: true, familyName: true } } }
 				})
 				.then(assertFindFirstExists);

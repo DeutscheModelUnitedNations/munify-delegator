@@ -7,6 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { client } from '$lib/api/rumbleClient/client';
+	import { entryCodeLength } from '$api/services/entryCodeGenerator';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -14,6 +15,10 @@
 	const params = queryParameters({ code: true });
 
 	let conferenceId = $derived(routeParams.conferenceId);
+
+	// Codes are uppercase only; normalize what people type or paste (a link included).
+	let normalizedCode = $derived((params.code ?? '').trim().toUpperCase());
+	let codeComplete = $derived(normalizedCode.length === entryCodeLength);
 
 	function fetchPreview(connectionCode: string) {
 		return client.query.previewConferenceSupervisor({
@@ -27,10 +32,10 @@
 	let previewLoading = $state(false);
 
 	const connect = async () => {
-		if (!conferenceId || !params.code || !preview) return;
+		if (!conferenceId || !codeComplete || !preview) return;
 
 		const promise = client.mutate.connectToConferenceSupervisor({
-			__args: { conferenceId, connectionCode: params.code },
+			__args: { conferenceId, connectionCode: normalizedCode },
 			id: true
 		});
 		toast.promise(promise, genericPromiseToastMessages);
@@ -40,10 +45,10 @@
 	};
 
 	$effect(() => {
-		if (!params.code || !conferenceId) return;
+		if (!conferenceId || !codeComplete) return;
 		previewLoading = true;
 		preview = undefined;
-		void fetchPreview(params.code)
+		void fetchPreview(normalizedCode)
 			.then((result) => {
 				preview = result;
 			})
@@ -63,15 +68,17 @@
 	>
 		<input
 			type="text"
-			class="input w-full max-w-lg font-mono tracking-[0.6rem]"
+			class="input w-full max-w-lg font-mono tracking-[0.6rem] uppercase"
 			bind:value={params.code}
 		/>
 
-		{#if params.code && previewLoading}
+		{#if !codeComplete}
+			<!-- wait until the full code has been entered -->
+		{:else if previewLoading}
 			<div class="mt-10 ml-10">
 				<i class="fa-duotone fa-spinner fa-spin text-3xl"></i>
 			</div>
-		{:else if params.code && preview}
+		{:else if preview}
 			<div class="alert alert-info mt-4">
 				<div>
 					<h3 class="text-lg font-bold capitalize">
@@ -82,7 +89,7 @@
 					<button class="btn btn-primary mt-4" onclick={connect}>{m.connectSupervisorBtn()}</button>
 				</div>
 			</div>
-		{:else if params.code}
+		{:else}
 			<div class="alert alert-warning mt-4">{m.notFound()}</div>
 		{/if}
 	</DashboardContentCard>

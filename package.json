@@ -163,6 +163,7 @@
 	"name": "munify-delegator",
 	"private": true,
 	"overrides": {
+		"@fastify/busboy": "3.2.2",
 		"@isaacs/brace-expansion": "5.0.1",
 		"@pothos/core": "4.15.1",
 		"axios": "1.20.0",
@@ -170,6 +171,7 @@
 		"devalue": "5.9.4",
 		"fast-uri": "3.1.8",
 		"form-data": "4.0.6",
+		"joi": "17.13.7",
 		"js-yaml": "4.3.2",
 		"minimatch": "10.2.6",
 		"postcss": "8.5.28",

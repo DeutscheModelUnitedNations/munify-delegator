@@ -564,6 +564,22 @@ export const place = snakeCase.table(
 	]
 );
 
+/**
+ * An adopted resolution, downloadable on the after-conference screen. The PDF is stored inline as a
+ * data URL, like the conference's document templates.
+ */
+export const resolution = snakeCase.table('resolution', {
+	...defaultIdAndTimestamps,
+	/** Shown to participants; the uploaded file name unless given. */
+	title: text().notNull(),
+	/** The uploaded file's name, which the download keeps. */
+	fileName: text().notNull(),
+	content: text().notNull(),
+	conferenceId: conferenceRef('cascade'),
+	/** Optional; kept as an untagged resolution when its committee is deleted. */
+	committeeId: text().references(() => committee.id, { onDelete: 'set null', onUpdate: 'cascade' })
+});
+
 export const reviewerSnippet = snakeCase.table(
 	'reviewer_snippet',
 	{
