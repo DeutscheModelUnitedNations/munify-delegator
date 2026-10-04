@@ -4,13 +4,11 @@ import {
 	PARTICIPANT_CARE_ROLES,
 	PROJECT_MANAGEMENT_ROLES,
 	assertTeamRole,
-	hasTeamRole,
-	isInConference,
+	isParticipantOfConference,
 	isTeamMemberOf,
+	systemAdmin,
 	where
 } from '$api/services/authHelper';
-import type { Row } from '$api/db/rows';
-import type { Context } from '$api/context';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { NationRef } from './nation';
 import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
@@ -35,108 +33,51 @@ const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	})
 });
 
-// Everyone can see which conferences exist and their details.
-abilityBuilder.conference.allow('read');
+/** Where the fee goes, where postal documents go, and the documents themselves. */
+const MEMBERS_ONLY = {
+	accountHolder: false,
+	iban: false,
+	bic: false,
+	bankName: false,
+	postalName: false,
+	postalStreet: false,
+	postalApartment: false,
+	postalZip: false,
+	postalCity: false,
+	postalCountry: false,
+	contractContent: false,
+	guardianConsentContent: false,
+	mediaConsentContent: false,
+	termsAndConditionsContent: false,
+	certificateContent: false
+};
+/** The team's internal tools. */
+const TEAM_ONLY = { linkToTeamWiki: false, linkToServicesPage: false };
+
+// Everyone can see which conferences exist and their details - short of the members-only and
+// team-only columns.
+abilityBuilder.conference
+	.allow('read')
+	.when(() => ({ columns: { ...MEMBERS_ONLY, ...TEAM_ONLY } }));
+abilityBuilder.conference.allow('read').when(systemAdmin);
+
+// Participants and supervisors also read the members-only columns.
+abilityBuilder.conference.allow('read').when((ctx) => {
+	const participant = isParticipantOfConference(ctx);
+	return participant ? { where: participant.conference, columns: TEAM_ONLY } : undefined;
+});
+
+// The team reads all of it.
+abilityBuilder.conference.allow('read').when((ctx) => where(isTeamMemberOf(ctx)));
 
 // Update and delete are limited to the conference's own project management.
 abilityBuilder.conference
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOf(ctx, PROJECT_MANAGEMENT_ROLES)));
 
-/**
- * Columns only people with a part in the conference may read: where the fee goes, where postal
- * documents go, and the documents themselves. The rest of a conference is public.
- */
-type MembersOnlyColumn =
-	| 'accountHolder'
-	| 'iban'
-	| 'bic'
-	| 'bankName'
-	| 'postalName'
-	| 'postalStreet'
-	| 'postalApartment'
-	| 'postalZip'
-	| 'postalCity'
-	| 'postalCountry'
-	| 'contractContent'
-	| 'guardianConsentContent'
-	| 'mediaConsentContent'
-	| 'termsAndConditionsContent'
-	| 'certificateContent';
-
-const membersOnly =
-	(column: MembersOnlyColumn) =>
-	async (conference: Row<'conference'>, _args: object, ctx: Context) =>
-		(await isInConference(ctx, conference.id)) ? conference[column] : null;
-
-/** A link only the conference's team is meant to follow: null for everybody else. */
-const teamOnlyLink =
-	(column: 'linkToTeamWiki' | 'linkToServicesPage') =>
-	async (conference: Row<'conference'>, _args: object, ctx: Context) =>
-		(await hasTeamRole(ctx, conference.id)) ? conference[column] : null;
-
 const ConferenceRef = object({
 	table: 'conference',
 	adjust: (t) => ({
-		// Conferences are public; their payment and postal details and documents are not.
-		accountHolder: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('accountHolder')
-		}),
-		iban: t.field({ type: 'String', nullable: true, resolve: membersOnly('iban') }),
-		bic: t.field({ type: 'String', nullable: true, resolve: membersOnly('bic') }),
-		bankName: t.field({ type: 'String', nullable: true, resolve: membersOnly('bankName') }),
-		postalName: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalName') }),
-		postalStreet: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalStreet') }),
-		postalApartment: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('postalApartment')
-		}),
-		postalZip: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalZip') }),
-		postalCity: t.field({ type: 'String', nullable: true, resolve: membersOnly('postalCity') }),
-		postalCountry: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('postalCountry')
-		}),
-		contractContent: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('contractContent')
-		}),
-		guardianConsentContent: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('guardianConsentContent')
-		}),
-		mediaConsentContent: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('mediaConsentContent')
-		}),
-		termsAndConditionsContent: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('termsAndConditionsContent')
-		}),
-		certificateContent: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: membersOnly('certificateContent')
-		}),
-		// The team's internal tools are the team's alone.
-		linkToTeamWiki: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: teamOnlyLink('linkToTeamWiki')
-		}),
-		linkToServicesPage: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: teamOnlyLink('linkToServicesPage')
-		}),
 		// The four document templates and the certificate template are long HTML blobs. The
 		// configuration UI only needs to know whether each one has been filled in, so these
 		// flags let it avoid transferring the content itself.

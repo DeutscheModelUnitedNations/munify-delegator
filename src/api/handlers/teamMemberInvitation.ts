@@ -16,7 +16,6 @@ import {
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId,
-	where,
 	type TeamRole
 } from '$api/services/authHelper';
 import {
@@ -36,22 +35,26 @@ import type { Context } from '$api/context';
 
 abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
+// Only the hash of an invitation's token is stored, and nothing in the app needs even that back.
+const WITHOUT_TOKEN = { token: false };
+
 // Project management manages every invitation of its conference.
-abilityBuilder.teamMemberInvitation
-	.allow(['read', 'update', 'delete'])
-	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
+abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
+	const team = isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES);
+	return team ? { where: team, columns: WITHOUT_TOKEN } : undefined;
+});
 
 // Team coordinators manage the invitations they may hand out - everything but project management.
 abilityBuilder.teamMemberInvitation.allow(['read', 'update', 'delete']).when((ctx) => {
 	const team = isTeamMemberOfConference(ctx, ['TEAM_COORDINATOR']);
-	return team ? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } } } : undefined;
+	return team
+		? { where: { ...team, role: { ne: 'PROJECT_MANAGEMENT' } }, columns: WITHOUT_TOKEN }
+		: undefined;
 });
 
 object({
 	table: 'teamMemberInvitation',
 	adjust: (t) => ({
-		/** Only the hash is stored, and nothing in the app needs even that back. */
-		token: t.field({ type: 'String', nullable: false, resolve: () => '' }),
 		/** Whether the invited address already has an account, which changes the invitation copy. */
 		userExists: t.field({
 			type: 'Boolean',

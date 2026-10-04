@@ -26,7 +26,7 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * | system admin (OIDC `admin`) | everything, everywhere, whether on the team or not                   |
  * | PROJECT_MANAGEMENT          | the conference, its structure, team, participants; deleting papers   |
  * | PARTICIPANT_CARE            | the participants, their papers (as reviewers), calendar and places   |
- * | TEAM_COORDINATOR            | the team, short of granting or removing PROJECT_MANAGEMENT           |
+ * | TEAM_COORDINATOR            | the team and its members' details, short of granting PROJECT_MANAGEMENT |
  * | REVIEWER                    | reading, reviewing and editing the conference's papers               |
  * | any team role               | reading registrations, recording attendance, teammates' phone numbers |
  * | participants                | their registration, delegation, survey answers, and the submitted    |
@@ -182,35 +182,6 @@ export function hasTeamRole(
 
 	const answer = db.query.conference
 		.findFirst({ where: { id: conferenceId, ...team }, columns: { id: true } })
-		.then((conference) => conference !== undefined);
-	answers.set(key, answer);
-	return answer;
-}
-
-/**
- * Whether the caller has any part in the conference - any team role, or as delegate, single
- * participant or supervisor - or is a system admin. Memoized per request like `hasTeamRole`.
- */
-export function isInConference(ctx: Context, conferenceId: string): Promise<boolean> {
-	if (isSystemAdmin(ctx)) return Promise.resolve(true);
-	const team = isTeamMemberOf(ctx);
-	const participant = isParticipantOfConference(ctx);
-	if (!team || !participant) return Promise.resolve(false);
-
-	let answers = teamRoleAnswers.get(ctx);
-	if (!answers) {
-		answers = new Map();
-		teamRoleAnswers.set(ctx, answers);
-	}
-	const key = `${conferenceId}:member`;
-	const known = answers.get(key);
-	if (known) return known;
-
-	const answer = db.query.conference
-		.findFirst({
-			where: { id: conferenceId, OR: [team, participant.conference] },
-			columns: { id: true }
-		})
 		.then((conference) => conference !== undefined);
 	answers.set(key, answer);
 	return answer;

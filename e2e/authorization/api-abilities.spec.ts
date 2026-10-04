@@ -241,8 +241,20 @@ test('payment details and documents are for people with a part in the conference
 test('a reviewer reads delegations without their join codes', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_PAPER_REVIEWER_ID), { startUrl: '/dashboard' });
 
-	const result = await gql(page, `query ($id: ID!) { delegation(id: $id) { id entryCode } }`, {
+	// The delegation itself is readable...
+	const delegation = await gql(page, `query ($id: ID!) { delegation(id: $id) { id school } }`, {
 		id: E2E_PAPER_DELEGATION_ID
 	});
-	expect(result.data?.delegation).toEqual({ id: E2E_PAPER_DELEGATION_ID, entryCode: '' });
+	expect(delegation.data?.delegation, JSON.stringify(delegation)).toMatchObject({
+		id: E2E_PAPER_DELEGATION_ID
+	});
+
+	// ...its join code is masked for this row, and a non-null column that is masked cannot be
+	// selected at all.
+	expectRefused(
+		await gql(page, `query ($id: ID!) { delegation(id: $id) { id entryCode } }`, {
+			id: E2E_PAPER_DELEGATION_ID
+		}),
+		/non-nullable field Delegation\.entryCode/
+	);
 });

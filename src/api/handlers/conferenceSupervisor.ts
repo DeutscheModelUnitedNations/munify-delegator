@@ -3,7 +3,6 @@ import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } 
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
-	hasTeamRole,
 	isOwnUser,
 	isTeamMemberOfConference,
 	isSystemAdmin,
@@ -25,6 +24,12 @@ abilityBuilder.conferenceSupervisor
 	.allow(['read', 'update', 'delete'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
+/**
+ * Whoever holds a supervisor's connection code can attach themselves to that supervisor, so it is
+ * the supervisor's to hand out: only they and participant care read it.
+ */
+const WITHOUT_CONNECTION_CODE = { connectionCode: false };
+
 // Supervised participants see their own supervisors.
 abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 	const id = userId(ctx);
@@ -35,7 +40,8 @@ abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 						{ supervisedDelegationMembers: { user: { id } } },
 						{ supervisedSingleParticipants: { user: { id } } }
 					]
-				}
+				},
+				columns: WITHOUT_CONNECTION_CODE
 			}
 		: undefined;
 });
@@ -57,28 +63,12 @@ abilityBuilder.conferenceSupervisor.allow('read').when((ctx) => {
 				{ supervisedDelegationMembers: supervisedByMe },
 				{ supervisedSingleParticipants: supervisedByMe }
 			]
-		}
+		},
+		columns: WITHOUT_CONNECTION_CODE
 	};
 });
 
-const ConferenceSupervisorRef = object({
-	table: 'conferenceSupervisor',
-	adjust: (t) => ({
-		/**
-		 * Whoever holds the code can attach themselves to this supervisor, so it is the supervisor's
-		 * to hand out: visible to them and to the conference's participant care, nobody else.
-		 */
-		connectionCode: t.field({
-			type: 'String',
-			nullable: false,
-			resolve: async (supervisor, _args, ctx) =>
-				supervisor.userId === userId(ctx) ||
-				(await hasTeamRole(ctx, supervisor.conferenceId, PARTICIPANT_CARE_ROLES))
-					? supervisor.connectionCode
-					: ''
-		})
-	})
-});
+const ConferenceSupervisorRef = object({ table: 'conferenceSupervisor' });
 query({ table: 'conferenceSupervisor' });
 const pubsub = rumblePubsub({ table: 'conferenceSupervisor' });
 // The supervision links are join tables, so a change there shows up on the two sides of it.

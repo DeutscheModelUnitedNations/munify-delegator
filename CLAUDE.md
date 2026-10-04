@@ -226,13 +226,15 @@ bun run preview
     place, role, committee or nation to the conference, a `userId` to the caller unless the
     caller is participant care. A missing check here is how a team of one conference writes into
     another.
-  - **A rule's `columns` apply to the whole request, not to the rows it matched.** rumble ORs
-    the rules that match and unions their columns, as a union of grants should. Visibility that
-    depends on how the reader relates to each row - a co-delegate's phone number, a supervisor's
-    `connectionCode`, a delegation's `entryCode`, a conference's bank details - therefore lives in
-    `object({ adjust })` resolvers that return `null` (or `''` for a non-null column) per row.
-    `hasTeamRole`, `isInConference` and the user handler's relation checks are memoized or batched
-    per request, so such resolvers can ask them per row.
+  - **A rule's `columns` apply to the rows that rule matched** (rumble ≥ 0.25 masks per row), so
+    visibility that depends on how the reader relates to a row is a rule like any other: the user
+    table (co-delegates read identity only; supervisors and the care team contact details;
+    teammates the phone number; nobody but the care team the care notes), the conference (payment
+    and postal details for people with a part in it, team links for the team), a delegation's
+    `entryCode`, a supervisor's `connectionCode`, an invitation's `token`. **A masked non-null
+    column cannot be selected:** the GraphQL type stays non-null, so a reader who is masked and
+    asks for it gets an error for the whole query - not selecting it never throws. Only select
+    such a column where the reader may see it.
 
 - The endpoint is `src/routes/api/graphql/+server.ts`, and `src/api/yoga.ts` holds the one yoga
   instance it, `/api/graphql/stream` and the SSR remote function all share. Adding fields needs a
@@ -696,8 +698,10 @@ Some versions are held back or wired up on purpose. Check here before "updating 
     `$derived`, where an immediate update throws `state_unsafe_mutation`);
   - `autoIncludeIdField` applies to nested selections too, and only to types that have the field;
   - relation nullability unwraps drizzle's `RelationsBuilderColumn` before reading `notNull`;
-  - `getTableConfig` hands `@pothos/plugin-drizzle` 0.20 drizzle's shape (primary keys as key
-    objects with their columns), or any field returning plain rows crashes in its `ModelLoader`;
+  - the per-row column masks test each row with a correlated
+    `exists (... where pk = row.pk and rule)` instead of `pk in (select pk ... where rule)`, which
+    made postgres evaluate every rule against the whole table once per flag and nesting site (a
+    supervisor's group payment query: 9.5 s → 11 ms, same rows);
   - the client generator does not rewrite unchanged files (a rewrite makes Vite reload every open
     page, mid-test in e2e).
 

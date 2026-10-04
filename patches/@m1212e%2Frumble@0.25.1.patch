@@ -1,11 +1,5 @@
-diff --git a/node_modules/@m1212e/rumble/.bun-tag-140b55d03bac10a7 b/.bun-tag-140b55d03bac10a7
-new file mode 100644
-index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
-diff --git a/node_modules/@m1212e/rumble/.bun-tag-25c5eea05cb6e6c5 b/.bun-tag-25c5eea05cb6e6c5
-new file mode 100644
-index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/out/client.cjs b/out/client.cjs
-index 16489af3daf65889eba3c318a9009ccc8a70740c..99aa312ae4ddd4bf495ca0484f5e65bd8d32f3d6 100644
+index 3625b08..3039aae 100644
 --- a/out/client.cjs
 +++ b/out/client.cjs
 @@ -122,8 +122,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
@@ -49,7 +43,7 @@ index 16489af3daf65889eba3c318a9009ccc8a70740c..99aa312ae4ddd4bf495ca0484f5e65bd
  			})}
  `;
 diff --git a/out/client.mjs b/out/client.mjs
-index 59cfe39669ed9619fc092417897580b2d6585765..90f01ff2b1344cd585a71c6a2ce5ec8150b4fa39 100644
+index a333275..cca2733 100644
 --- a/out/client.mjs
 +++ b/out/client.mjs
 @@ -121,8 +121,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
@@ -93,7 +87,7 @@ index 59cfe39669ed9619fc092417897580b2d6585765..90f01ff2b1344cd585a71c6a2ce5ec81
  			})}
  `;
 diff --git a/out/generate-0QFVc3Sg.mjs b/out/generate-0QFVc3Sg.mjs
-index 2a0402fc7d793c4ea71eb2a8b372f62b6a26b833..2d913017163cdaeca8416e7b5ef10bb57528bab8 100644
+index 2a0402f..2d91301 100644
 --- a/out/generate-0QFVc3Sg.mjs
 +++ b/out/generate-0QFVc3Sg.mjs
 @@ -1,5 +1,14 @@
@@ -122,7 +116,7 @@ index 2a0402fc7d793c4ea71eb2a8b372f62b6a26b833..2d913017163cdaeca8416e7b5ef10bb5
  export const schema = ${uneval(minifyIntrospectionQuery(getIntrospectedSchema(schema), {
  		includeEnums: true,
 diff --git a/out/generate-CM3XjmlO.cjs b/out/generate-CM3XjmlO.cjs
-index e0340a3c99fb26a933c851636ea5f2d432330c06..063b17b15e07bbef0f64858235ba21a4a629d99d 100644
+index e0340a3..063b17b 100644
 --- a/out/generate-CM3XjmlO.cjs
 +++ b/out/generate-CM3XjmlO.cjs
 @@ -180,6 +180,16 @@ function makeStringLiteralUnionFromEnum(enumType) {
@@ -152,10 +146,22 @@ index e0340a3c99fb26a933c851636ea5f2d432330c06..063b17b15e07bbef0f64858235ba21a4
  export const schema = ${(0, devalue.uneval)((0, _urql_introspection.minifyIntrospectionQuery)((0, _urql_introspection.getIntrospectedSchema)(schema), {
  		includeEnums: true,
 diff --git a/out/index.cjs b/out/index.cjs
-index f9b239149278637f0e65d1990315ac1476e133a4..1c9e5c5ddc39351298e737e1ab14403fd3e749f3 100644
+index c168449..8cdc38b 100644
 --- a/out/index.cjs
 +++ b/out/index.cjs
-@@ -2032,7 +2032,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
+@@ -440,7 +440,10 @@ function createColumnAccessResolver({ db, actions }, tableSchema) {
+ 	const toSQL = (table, wheres) => (0, drizzle_orm.or)(...wheres.map((where) => (0, drizzle_orm.relationsFilterToSQL)(table, sanitizeFilterValue(where), tableSchema.relations, db._.relations)));
+ 	const uncorrelated = (table, wheres, group) => {
+ 		const inner = (0, drizzle_orm.aliasedTable)(tableSchema.table, `rumble_columns_${group}`);
+-		return drizzle_orm.sql`${table[primaryKeyName]} in (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(toSQL(inner, wheres))})`;
++		// Correlated to the row: an uncorrelated \`pk in (select pk ... where <rule>)\` makes postgres
++		// evaluate every rule against the whole table, once per flag and per nesting site, which turns
++		// queries nesting a masked relation twice into multi-second ones.
++		return drizzle_orm.sql`exists (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(drizzle_orm.sql`${inner[primaryKeyName]} = ${table[primaryKeyName]} and (${toSQL(inner, wheres)})`)})`;
+ 	};
+ 	return function resolveColumnAccess(action, filters) {
+ 		const rules = filters.map((f) => ({
+@@ -2261,7 +2264,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
  					let filterSpecifier = "many";
  					if ((0, drizzle_orm.is)(value, drizzle_orm.One)) {
  						isMany = false;
@@ -164,26 +170,23 @@ index f9b239149278637f0e65d1990315ac1476e133a4..1c9e5c5ddc39351298e737e1ab14403f
  						filterSpecifier = "single";
  					}
  					const subscribe = (subscriptions, _element) => {
-@@ -2894,9 +2894,13 @@ const createSchemaBuilder = ({ db, pubsub, pothosConfig, otel, logger, validatio
- 			relations: db._.relations,
- 			getTableConfig(table) {
- 				const columns = (0, drizzle_orm.isTable)(table) ? Object.values((0, drizzle_orm.getTableColumns)(table)) : [];
-+				// @pothos/plugin-drizzle 0.20 reads drizzle's TableConfig shape: primary keys as key
-+				// objects carrying their columns, not a flat column list.
-+				const primaryColumns = columns.filter((v) => v.primary);
- 				return {
- 					columns,
--					primaryKeys: columns.filter((v) => v.primary)
-+					primaryKeys: primaryColumns.length > 0 ? [{ columns: primaryColumns }] : [],
-+					uniqueConstraints: []
- 				};
- 			}
- 		},
 diff --git a/out/index.mjs b/out/index.mjs
-index 3d9f5e0488a3cac498651288397826b983561866..42ad0cffaab3cbb9fdb0e91ff17cba69ca9fa515 100644
+index 25d5a6f..0a9bc90 100644
 --- a/out/index.mjs
 +++ b/out/index.mjs
-@@ -2002,7 +2002,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
+@@ -410,7 +410,10 @@ function createColumnAccessResolver({ db, actions }, tableSchema) {
+ 	const toSQL = (table, wheres) => or(...wheres.map((where) => relationsFilterToSQL(table, sanitizeFilterValue(where), tableSchema.relations, db._.relations)));
+ 	const uncorrelated = (table, wheres, group) => {
+ 		const inner = aliasedTable(tableSchema.table, `rumble_columns_${group}`);
+-		return sql`${table[primaryKeyName]} in (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(toSQL(inner, wheres))})`;
++		// Correlated to the row: an uncorrelated \`pk in (select pk ... where <rule>)\` makes postgres
++		// evaluate every rule against the whole table, once per flag and per nesting site, which turns
++		// queries nesting a masked relation twice into multi-second ones.
++		return sql`exists (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(sql`${inner[primaryKeyName]} = ${table[primaryKeyName]} and (${toSQL(inner, wheres)})`)})`;
+ 	};
+ 	return function resolveColumnAccess(action, filters) {
+ 		const rules = filters.map((f) => ({
+@@ -2231,7 +2234,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
  					let filterSpecifier = "many";
  					if (is(value, One)) {
  						isMany = false;
@@ -192,18 +195,3 @@ index 3d9f5e0488a3cac498651288397826b983561866..42ad0cffaab3cbb9fdb0e91ff17cba69
  						filterSpecifier = "single";
  					}
  					const subscribe = (subscriptions, _element) => {
-@@ -2864,9 +2864,13 @@ const createSchemaBuilder = ({ db, pubsub, pothosConfig, otel, logger, validatio
- 			relations: db._.relations,
- 			getTableConfig(table) {
- 				const columns = isTable(table) ? Object.values(getTableColumns(table)) : [];
-+				// @pothos/plugin-drizzle 0.20 reads drizzle's TableConfig shape: primary keys as key
-+				// objects carrying their columns, not a flat column list.
-+				const primaryColumns = columns.filter((v) => v.primary);
- 				return {
- 					columns,
--					primaryKeys: columns.filter((v) => v.primary)
-+					primaryKeys: primaryColumns.length > 0 ? [{ columns: primaryColumns }] : [],
-+					uniqueConstraints: []
- 				};
- 			}
- 		},

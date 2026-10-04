@@ -2,7 +2,6 @@ import { db, schema } from '$api/db/db';
 import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
-	hasTeamRole,
 	isTeamMemberOfConference,
 	systemAdmin,
 	userId,
@@ -47,30 +46,14 @@ abilityBuilder.delegation
 	.allow(['read', 'update'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES)));
 
-// Any team member of the conference may see them.
-abilityBuilder.delegation.allow('read').when((ctx) => where(isTeamMemberOfConference(ctx)));
-
-const DelegationRef = object({
-	table: 'delegation',
-	adjust: (t) => ({
-		/**
-		 * Whoever holds the code can join the delegation. Its members, their supervisors and
-		 * participant care hand it out; the rest of the team reads delegations without it. Nobody is
-		 * both on the team and a participant of one conference, so a team member without a care role
-		 * is never also a member or supervisor here.
-		 */
-		entryCode: t.field({
-			type: 'String',
-			nullable: false,
-			resolve: async (delegation, _args, ctx) => {
-				const onTeam = await hasTeamRole(ctx, delegation.conferenceId);
-				const caring =
-					onTeam && (await hasTeamRole(ctx, delegation.conferenceId, PARTICIPANT_CARE_ROLES));
-				return !onTeam || caring ? delegation.entryCode : '';
-			}
-		})
-	})
+// Any team member of the conference may see them - without the join code, which the members,
+// their supervisors and participant care hand out.
+abilityBuilder.delegation.allow('read').when((ctx) => {
+	const team = isTeamMemberOfConference(ctx);
+	return team ? { where: team, columns: { entryCode: false } } : undefined;
 });
+
+const DelegationRef = object({ table: 'delegation' });
 query({ table: 'delegation' });
 const pubsub = rumblePubsub({ table: 'delegation' });
 // Creating a delegation also seats its head delegate, and deleting one takes its members with it.

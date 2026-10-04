@@ -4,12 +4,12 @@ import {
 	PAPER_ROLES,
 	PARTICIPANT_CARE_ROLES,
 	isManagedUser,
+	isTeamMemberOf,
 	isSystemAdmin,
 	systemAdmin,
 	userId,
 	where
 } from '$api/services/authHelper';
-import type { Row } from '$api/db/rows';
 import { assertFindFirstExists } from '@m1212e/rumble';
 import { enum_ } from '$api/rumble';
 import { eq } from 'drizzle-orm';
@@ -20,34 +20,89 @@ import { isUniqueViolationOn } from '$api/services/emailConflict';
 import { reportEmailConflict } from '$api/services/reportEmailConflict';
 import type { Context } from '$api/context';
 
+/**
+ * What of a user's row a reader sees depends on how the reader relates to that row, and rumble
+ * masks columns per row: each rule's `columns` apply to the rows that rule matched.
+ *
+ * - the person themselves: everything but the care team's notes about them;
+ * - who looks after them (participant care, project management, admins): everything;
+ * - their supervisors: everything but those notes;
+ * - teammates: who someone is, plus their phone number - team coordinators: everything but the
+ *   care notes;
+ * - everybody else who may see the row at all (co-delegates, co-supervisors, reviewers reading an
+ *   author): who someone is - name, email, pronouns, birthday for the age checks.
+ */
+const IDENTITY = {
+	id: true,
+	createdAt: true,
+	updatedAt: true,
+	email: true,
+	givenName: true,
+	familyName: true,
+	preferredUsername: true,
+	locale: true,
+	pronouns: true,
+	birthday: true
+};
+const WITHOUT_CARE_NOTES = { globalNotes: false };
+
 // System admins may do anything to any account.
 abilityBuilder.user.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Users see and edit themselves.
-abilityBuilder.user.allow(['read', 'update']).when((ctx) => {
+// Users see and edit themselves - but not what the care team noted about them.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const id = userId(ctx);
+	return id ? { where: { id }, columns: WITHOUT_CARE_NOTES } : undefined;
+});
+abilityBuilder.user.allow('update').when((ctx) => {
 	const id = userId(ctx);
 	return id ? { where: { id } } : undefined;
+});
+
+// Project management and participant care see everybody they look after - the participants,
+// waiting-list entrants and team of the conferences they manage - in full.
+abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
+
+// Supervisors see the participants they supervise, contact details included.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const id = userId(ctx);
+	if (!id) return undefined;
+	const supervisedByCaller = { supervisors: { user: { id } } };
+	return {
+		where: {
+			OR: [{ delegationMemberships: supervisedByCaller }, { singleParticipant: supervisedByCaller }]
+		},
+		columns: WITHOUT_CARE_NOTES
+	};
+});
+
+// Team coordinators see their team in full but for the care notes: the team-management page lists
+// everybody's address, gender and food preference for planning.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const conference = isTeamMemberOf(ctx, ['TEAM_COORDINATOR']);
+	return conference
+		? { where: { teamMember: { conference } }, columns: WITHOUT_CARE_NOTES }
+		: undefined;
+});
+
+// Team members see each other, phone numbers included.
+abilityBuilder.user.allow('read').when((ctx) => {
+	const id = userId(ctx);
+	return id
+		? {
+				where: { teamMember: { conference: { teamMembers: { user: { id } } } } },
+				columns: { ...IDENTITY, phone: true }
+			}
+		: undefined;
 });
 
 // Delegates see each other.
 abilityBuilder.user.allow('read').when((ctx) => {
 	const id = userId(ctx);
 	return id
-		? { where: { delegationMemberships: { delegation: { members: { user: { id } } } } } }
-		: undefined;
-});
-
-// Supervisors see the participants they supervise.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
 		? {
-				where: {
-					OR: [
-						{ delegationMemberships: { supervisors: { user: { id } } } },
-						{ singleParticipant: { supervisors: { user: { id } } } }
-					]
-				}
+				where: { delegationMemberships: { delegation: { members: { user: { id } } } } },
+				columns: IDENTITY
 			}
 		: undefined;
 });
@@ -64,22 +119,29 @@ abilityBuilder.user.allow('read').when((ctx) => {
 							{ supervisedSingleParticipants: { user: { id } } }
 						]
 					}
-				}
+				},
+				columns: IDENTITY
 			}
 		: undefined;
 });
 
-// Team members see each other.
+// Supervisors see the other supervisors of the participants they share.
 abilityBuilder.user.allow('read').when((ctx) => {
 	const id = userId(ctx);
-	return id
-		? { where: { teamMember: { conference: { teamMembers: { user: { id } } } } } }
-		: undefined;
+	if (!id) return undefined;
+	const supervisedByCaller = { supervisors: { user: { id } } };
+	return {
+		where: {
+			conferenceSupervisor: {
+				OR: [
+					{ supervisedDelegationMembers: supervisedByCaller },
+					{ supervisedSingleParticipants: supervisedByCaller }
+				]
+			}
+		},
+		columns: IDENTITY
+	};
 });
-
-// Project management and participant care see everybody they look after: the participants,
-// waiting-list entrants and team of the conferences they manage.
-abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
 
 // Reviewers and conference management see the authors of the conference's papers. They can read
 // every paper there, and a paper's `author` is non-nullable, so without this a single paper by
@@ -90,135 +152,20 @@ abilityBuilder.user.allow('read').when((ctx) => {
 		? {
 				where: {
 					papers: { conference: { teamMembers: { user: { id }, role: { in: [...PAPER_ROLES] } } } }
-				}
+				},
+				columns: IDENTITY
 			}
 		: undefined;
 });
-
-// Supervisors see the other supervisors of the participants they share.
-abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	return id
-		? {
-				where: {
-					OR: [
-						{
-							conferenceSupervisor: {
-								supervisedDelegationMembers: { supervisors: { user: { id } } }
-							}
-						},
-						{
-							conferenceSupervisor: {
-								supervisedSingleParticipants: { supervisors: { user: { id } } }
-							}
-						}
-					]
-				}
-			}
-		: undefined;
-});
-
-/**
- * Per row, whether a user stands in a given relation to the caller. Read rules cannot mask
- * columns per row - rumble unions the columns of every rule that applies to a request - so the
- * private fields below ask this instead. Each relation is a `where` on the user table; rows are
- * checked in one batched query per relation and tick, and answers kept for the rest of the request.
- */
-type Relation = 'managed' | 'supervised' | 'teammate';
-
-const relationChecks = new WeakMap<
-	object,
-	Map<
-		Relation,
-		{ answers: Map<string, Promise<boolean>>; pending: Map<string, (holds: boolean) => void> }
-	>
->();
-
-/** The users standing in `relation` to the caller, or undefined if nobody can. */
-function relationFilter(ctx: Context, relation: Relation) {
-	const id = userId(ctx);
-	if (!id) return undefined;
-	switch (relation) {
-		case 'managed':
-			return isManagedUser(ctx);
-		case 'supervised': {
-			const supervisedByCaller = { supervisors: { user: { id } } };
-			return {
-				OR: [
-					{ delegationMemberships: supervisedByCaller },
-					{ singleParticipant: supervisedByCaller }
-				]
-			};
-		}
-		case 'teammate':
-			return { teamMember: { conference: { teamMembers: { user: { id } } } } };
-	}
-}
-
-function standsInRelation(ctx: Context, relation: Relation, id: string): Promise<boolean> {
-	if (isSystemAdmin(ctx)) return Promise.resolve(true);
-	const filter = relationFilter(ctx, relation);
-	if (!filter) return Promise.resolve(false);
-
-	let byRelation = relationChecks.get(ctx);
-	if (!byRelation) {
-		byRelation = new Map();
-		relationChecks.set(ctx, byRelation);
-	}
-	let batch = byRelation.get(relation);
-	if (!batch) {
-		batch = { answers: new Map(), pending: new Map() };
-		byRelation.set(relation, batch);
-	}
-	const known = batch.answers.get(id);
-	if (known) return known;
-
-	const { pending } = batch;
-	const answer = new Promise<boolean>((resolve) => {
-		if (pending.size === 0) {
-			queueMicrotask(async () => {
-				const waiting = new Map(pending);
-				pending.clear();
-				const matching = await db.query.user.findMany({
-					where: { id: { in: [...waiting.keys()] }, ...filter },
-					columns: { id: true }
-				});
-				const matchingIds = new Set(matching.map((user) => user.id));
-				for (const [waitingId, settle] of waiting) settle(matchingIds.has(waitingId));
-			});
-		}
-		pending.set(id, resolve);
-	});
-	batch.answers.set(id, answer);
-	return answer;
-}
-
-/** Whether the caller looks after this user (see `isManagedUser`). */
-function managesUser(ctx: Context, id: string) {
-	return standsInRelation(ctx, 'managed', id);
-}
-
-/**
- * Contact, address and care details: the person themselves, who looks after them, their
- * supervisors, and admins.
- */
-async function mayReadPrivateFields(ctx: Context, user: { id: string }) {
-	return (
-		user.id === userId(ctx) ||
-		(await managesUser(ctx, user.id)) ||
-		standsInRelation(ctx, 'supervised', user.id)
-	);
-}
-
-/** A phone number, additionally, is shared within a conference's team. */
-async function mayReadPhone(ctx: Context, user: Row<'user'>) {
-	return (await mayReadPrivateFields(ctx, user)) || standsInRelation(ctx, 'teammate', user.id);
-}
 
 /** Refuses unless the caller looks after this user - the care team's edits, not self-service. */
 async function assertManagesUser(ctx: Context, id: string) {
 	ctx.mustBeLoggedIn();
-	if (!(await managesUser(ctx, id))) {
+	const managed = isManagedUser(ctx);
+	const found = managed
+		? await db.query.user.findFirst({ where: { id, ...managed }, columns: { id: true } })
+		: undefined;
+	if (!found) {
 		throw new GraphQLError('User not found, or not one you look after');
 	}
 }
@@ -227,55 +174,9 @@ const genderEnum = enum_({ tsName: 'gender' });
 // The column is an enum; the legacy arg was a loose string that Prisma rejected at runtime.
 const foodPreferenceEnum = enum_({ tsName: 'foodPreference' });
 
-type PrivateColumn =
-	| 'street'
-	| 'apartment'
-	| 'zip'
-	| 'city'
-	| 'country'
-	| 'emergencyContacts'
-	| 'gender'
-	| 'foodPreference';
-
-/** Resolves a private column: null for anybody `mayReadPrivateFields` does not let through. */
-const privateColumn =
-	<C extends PrivateColumn>(column: C) =>
-	async (user: Row<'user'>, _args: object, ctx: Context) =>
-		(await mayReadPrivateFields(ctx, user)) ? user[column] : null;
-
 export const UserRef = object({
 	table: 'user',
 	adjust: (t) => ({
-		// Co-delegates and fellow team members may read a user's row for their name and age, but
-		// not how to reach them at home or what the care team noted about them.
-		phone: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: async (user, _args, ctx) => ((await mayReadPhone(ctx, user)) ? user.phone : null)
-		}),
-		street: t.field({ type: 'String', nullable: true, resolve: privateColumn('street') }),
-		apartment: t.field({ type: 'String', nullable: true, resolve: privateColumn('apartment') }),
-		zip: t.field({ type: 'String', nullable: true, resolve: privateColumn('zip') }),
-		city: t.field({ type: 'String', nullable: true, resolve: privateColumn('city') }),
-		country: t.field({ type: 'String', nullable: true, resolve: privateColumn('country') }),
-		emergencyContacts: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: privateColumn('emergencyContacts')
-		}),
-		gender: t.field({ type: genderEnum, nullable: true, resolve: privateColumn('gender') }),
-		foodPreference: t.field({
-			type: foodPreferenceEnum,
-			nullable: true,
-			resolve: privateColumn('foodPreference')
-		}),
-		/** The care team's notes on a person - never shown to the person themselves. */
-		globalNotes: t.field({
-			type: 'String',
-			nullable: true,
-			resolve: async (user, _args, ctx) =>
-				(await managesUser(ctx, user.id)) ? user.globalNotes : null
-		}),
 		/**
 		 * How many conferences this person actually took part in - registrations that never got a
 		 * seat do not count, which is what makes this a useful "is this a returning participant"
