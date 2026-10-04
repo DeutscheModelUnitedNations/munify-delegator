@@ -155,6 +155,10 @@ schemaBuilder.mutationFields((t) => ({
 		resolve: async (query, _root, args, ctx) => {
 			await assertMayAuthor(ctx, args);
 			assertSavableStatus(args.status);
+			// REVISED answers a review, and a new paper has had none.
+			if (args.status === 'REVISED') {
+				throw new GraphQLError('A new paper is either a draft or a submission');
+			}
 
 			const created = await db.transaction(async (tx) => {
 				const conference = await tx.query.conference
