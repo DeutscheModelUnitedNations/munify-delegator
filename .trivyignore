@@ -108,3 +108,10 @@ CVE-2026-73566  # tar@7.5.19: DoS via crafted long-path tar archive (npm CLI)
 # in), and there is no npm-side fix. Clears once upstream ships a TypeScript 7
 # build against a patched Go toolchain.
 CVE-2026-46600  # golang.org/x/net/dns/dnsmessage: DoS via invalid DNS record parsing (typescript@7 native tsc, via fallow-type-aware)
+
+# @graphql-tools/utils@10.11.0/9.2.1 (graphql-yoga, houdini): prototype pollution
+# in mergeDeep. Only @graphql-tools/merge calls it, to merge our own resolvers and
+# schema extensions at startup - never on request data. The fix ships only in
+# 12.0.1, two majors past what graphql-yoga and houdini support. Clears once they
+# move to a patched major.
+CVE-2026-104852  # @graphql-tools/utils: prototype pollution in mergeDeep (schema merging only)
