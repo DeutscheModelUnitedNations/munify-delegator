@@ -49,6 +49,7 @@ import {
 } from '$db/generated/graphql/Conference';
 import { toDataURL } from '$api/services/fileToDataURL';
 import { db } from '$db/db';
+import { totalSeats } from '$api/services/seatPlanning';
 import { ConferenceState } from '$db/generated/graphql/inputs';
 import { findManyNationQueryObject } from '$db/generated/graphql/Nation';
 
@@ -206,19 +207,18 @@ builder.prismaObject('Conference', {
 		totalSeats: t.field({
 			type: 'Int',
 			resolve: async (conference) => {
-				let count = 0;
+				const [committees, nonStateActors] = await Promise.all([
+					db.committee.findMany({
+						where: { conferenceId: conference.id },
+						select: { numOfSeatsPerDelegation: true, nations: { select: { alpha3Code: true } } }
+					}),
+					db.nonStateActor.findMany({
+						where: { conferenceId: conference.id },
+						select: { seatAmount: true }
+					})
+				]);
 
-				const committees = await db.committee.findMany({
-					where: { conferenceId: conference.id },
-					include: { nations: true }
-				});
-				for (const committee of committees) {
-					count += committee.nations.length;
-				}
-
-				count += await db.nonStateActor.count({ where: { conferenceId: conference.id } });
-
-				return count;
+				return totalSeats(committees, nonStateActors);
 			}
 		}),
 		waitingListLength: t.field({

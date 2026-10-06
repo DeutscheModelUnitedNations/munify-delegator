@@ -13,5 +13,14 @@ export const defineAbilitiesForCommittee = (oidc: OIDC, { can }: AbilityBuilder<
 		can(['update', 'delete'], 'Committee', {
 			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
 		});
+
+		// the content lead additionally decides which nations hold a seat in a committee
+		can('planSeats', 'Committee', {
+			conference: {
+				teamMembers: {
+					some: { user: { id: user.sub }, role: { in: ['PROJECT_MANAGEMENT', 'CONTENT_LEAD'] } }
+				}
+			}
+		});
 	}
 };

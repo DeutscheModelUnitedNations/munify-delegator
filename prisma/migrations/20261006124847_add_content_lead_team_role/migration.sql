@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TeamRole" ADD VALUE 'CONTENT_LEAD';

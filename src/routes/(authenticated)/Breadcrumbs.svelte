@@ -109,6 +109,10 @@
 			translation: m.seats(),
 			icon: 'chair-office'
 		},
+		'seat-planning': {
+			translation: m.seatPlanning(),
+			icon: 'table-cells'
+		},
 		committeeAssignment: {
 			translation: m.committeeAssignment(),
 			icon: 'arrows-turn-to-dots'

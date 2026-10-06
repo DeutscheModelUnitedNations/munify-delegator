@@ -77,7 +77,10 @@ const conferenceUpdate = graphql(`
 
 const ConfigurationCommitteesQuery = graphql(`
 	query ConfigurationCommitteesQuery($conferenceId: String!) {
-		findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
+		findManyCommittees(
+			where: { conferenceId: { equals: $conferenceId } }
+			orderBy: [{ createdAt: asc }]
+		) {
 			id
 			abbreviation
 			name
@@ -86,6 +89,9 @@ const ConfigurationCommitteesQuery = graphql(`
 			nations {
 				alpha2Code
 				alpha3Code
+			}
+			delegationMembers {
+				id
 			}
 			agendaItems {
 				id

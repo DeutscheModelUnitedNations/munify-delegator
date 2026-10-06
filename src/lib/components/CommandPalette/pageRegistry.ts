@@ -52,6 +52,14 @@ export function getAllPages(conferenceId: string): PageEntry[] {
 			keywords: ['plätze', 'seats', 'gremien', 'committees', 'nationen', 'nations']
 		},
 		{
+			id: 'seatPlanning',
+			title: () => m.seatPlanning(),
+			icon: 'fa-table-cells',
+			href: `/management/${conferenceId}/seat-planning`,
+			category: 'management',
+			keywords: ['sitzplanung', 'seat planning', 'sitzverteilung', 'matrix', 'gremien', 'staaten']
+		},
+		{
 			id: 'participants',
 			title: () => m.adminUsers(),
 			icon: 'fa-users',

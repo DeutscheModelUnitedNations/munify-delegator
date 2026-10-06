@@ -34,7 +34,7 @@ import { defineAbilitiesForPlace } from './entities/place';
 import { defineAbilitiesForAttendanceEntry } from './entities/attendanceEntry';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
+const actions = ['list', 'read', 'update', 'delete', 'impersonate', 'planSeats'] as const;
 
 /**
  * Actions which can be run on entities in the system:

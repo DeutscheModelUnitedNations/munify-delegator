@@ -12,9 +12,14 @@ export const defineAbilitiesForNonStateActor = (
 	if (oidc && oidc.user) {
 		const user = oidc.user;
 
-		// only the management of the conference the committee is part of can CUD a nsa
+		// the management and the content lead can edit and delete a nsa; deleting is part of the
+		// seat planning and is blocked while delegations are assigned (assertNonStateActorDeletable)
 		can(['update', 'delete'], 'NonStateActor', {
-			conference: { teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } } }
+			conference: {
+				teamMembers: {
+					some: { user: { id: user.sub }, role: { in: ['PROJECT_MANAGEMENT', 'CONTENT_LEAD'] } }
+				}
+			}
 		});
 	}
 };

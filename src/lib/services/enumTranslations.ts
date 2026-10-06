@@ -1,5 +1,7 @@
 import type { CalendarEntryColor$options, PaperStatus$options, PaperType$options } from '$houdini';
 import { m } from '$lib/paraglide/messages';
+import type { RegionalGroup } from '$lib/services/seatPlanning/unMembers';
+import type { RegionalBaseline } from '$lib/services/seatPlanning/baselines';
 
 export function translatePaperStatus(paperStatus: PaperStatus$options) {
 	switch (paperStatus) {
@@ -116,7 +118,43 @@ export function translateTeamRole(role: string) {
 			return m.teamRoleMember();
 		case 'TEAM_COORDINATOR':
 			return m.teamRoleTeamCoordinator();
+		case 'CONTENT_LEAD':
+			return m.teamRoleContentLead();
+		case 'SYSTEM_ADMIN':
+			return m.administrator();
 		default:
 			return role;
 	}
+}
+
+const regionalGroupLabels: Record<RegionalGroup, () => string> = {
+	'African Group': m.regionalGroupAfrican,
+	'Asia and the Pacific Group': m.regionalGroupAsiaPacific,
+	'Eastern European Group': m.regionalGroupEasternEuropean,
+	'Latin American and Caribbean Group': m.regionalGroupLatinAmerican,
+	'Western European and Others Group': m.regionalGroupWesternEuropean
+};
+
+const regionalGroupShortLabels: Record<RegionalGroup, () => string> = {
+	'African Group': m.regionalGroupAfricanShort,
+	'Asia and the Pacific Group': m.regionalGroupAsiaPacificShort,
+	'Eastern European Group': m.regionalGroupEasternEuropeanShort,
+	'Latin American and Caribbean Group': m.regionalGroupLatinAmericanShort,
+	'Western European and Others Group': m.regionalGroupWesternEuropeanShort
+};
+
+export function translateRegionalGroup(group: RegionalGroup, short = false) {
+	return (short ? regionalGroupShortLabels : regionalGroupLabels)[group]();
+}
+
+const regionalBaselineLabels: Record<RegionalBaseline, () => string> = {
+	UN_MEMBERS: m.regionalBaselineUnMembers,
+	HUMAN_RIGHTS_COUNCIL: m.regionalBaselineHumanRightsCouncil,
+	ECOSOC: m.regionalBaselineEcosoc,
+	SECURITY_COUNCIL: m.regionalBaselineSecurityCouncil,
+	MANUAL: m.regionalBaselineManual
+};
+
+export function translateRegionalBaseline(baseline: RegionalBaseline) {
+	return regionalBaselineLabels[baseline]();
 }
