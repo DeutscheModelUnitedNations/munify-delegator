@@ -126,8 +126,9 @@ jobs:
           # main keeps a stable URL for the latest coverage report.
           LATEST_PREFIX: ${{ github.event_name == 'push' && 'main' || '' }}
           LATEST_REPORTS: coverage
+      # Runs even when nothing was published, so a PR comment from an earlier e2e failure is
+      # still brought up to date.
       - name: Link reports
-        if: steps.publish.outputs.reports != ''
         uses: actions/github-script@v7
         env:
           REPORTS: ${{ steps.publish.outputs.reports }}
@@ -139,7 +140,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const base = (process.env.BASE_URL || `https://${owner.toLowerCase()}.github.io/${repo}/`).replace(/\/?$/, '/');
-            const reports = process.env.REPORTS.split(' ');
+            const reports = process.env.REPORTS ? process.env.REPORTS.split(' ') : [];
             const url = (name) => `${base}${process.env.REPORTS_PATH}/${name}/`;
             const e2eFailed = process.env.E2E_RESULT === 'failure' && reports.includes('playwright');
 
@@ -148,7 +149,9 @@ jobs:
             if (reports.includes('coverage')) lines.push(`📊 [Unit test coverage](${url('coverage')})`);
             const footer = '<sub>Reports are kept for 7 days. GitHub Pages can take a minute to deploy a new report.</sub>';
 
-            await core.summary.addHeading('CI reports', 3).addRaw(lines.join('\n\n') + '\n\n' + footer).write();
+            if (lines.length) {
+              await core.summary.addHeading('CI reports', 3).addRaw(lines.join('\n\n') + '\n\n' + footer).write();
+            }
 
             const pr = context.payload.pull_request;
             if (!pr) return;
@@ -160,7 +163,7 @@ jobs:
             if (!e2eFailed && !existing) return;
 
             const sha = pr.head.sha.slice(0, 7);
-            const heading = e2eFailed ? `### ❌ E2E tests failed on ${sha}` : `### ✅ E2E tests passed on ${sha}`;
+            const heading = process.env.E2E_RESULT === 'failure' ? `### ❌ E2E tests failed on ${sha}` : `### ✅ E2E tests passed on ${sha}`;
             const body = [marker, heading, ...lines, footer].join('\n\n');
             if (existing) {
               await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
