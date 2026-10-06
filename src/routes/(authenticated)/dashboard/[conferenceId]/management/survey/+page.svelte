@@ -96,7 +96,7 @@
 	</div>
 
 	{#if surveys.length === 0}
-		<div class="bg-base-200 flex flex-col items-center justify-center rounded-lg p-12">
+		<div class="bg-base-200 flex flex-col items-center justify-center rounded-box p-12">
 			<i class="fas fa-chart-pie text-5xl opacity-50"></i>
 			<p class="mt-4 text-lg opacity-70">{m.noSurveysYet()}</p>
 			<button class="btn btn-primary mt-4" onclick={() => (showCreateModal = true)}>

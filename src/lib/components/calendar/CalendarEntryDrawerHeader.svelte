@@ -19,7 +19,7 @@
 
 <div
 	class="{colorConfig.bg} border-b {colorConfig.border} px-5 {direction === 'bottom'
-		? 'rounded-t-2xl py-4'
+		? 'rounded-t-box py-4'
 		: 'py-4'}"
 >
 	<div class="flex items-start gap-3">

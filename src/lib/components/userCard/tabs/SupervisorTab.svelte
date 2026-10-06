@@ -174,7 +174,9 @@
 			</div>
 		</td>
 		<td>
-			<code class="bg-base-300 rounded px-1 text-xs font-mono">{group.delegation.entryCode}</code>
+			<code class="bg-base-300 rounded-selector px-1 text-xs font-mono"
+				>{group.delegation.entryCode}</code
+			>
 		</td>
 		<td>
 			<span class="badge badge-sm"
@@ -241,7 +243,7 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Supervisor Info Card -->
-	<div class="bg-base-200 rounded-lg p-4">
+	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex flex-col gap-1 text-sm">
 			<div class="flex items-center gap-1">
 				<span class="text-base-content/60">{m.connectionCode()}:</span>
@@ -250,7 +252,7 @@
 					onclick={copyConnectionCode}
 					title={m.copy()}
 				>
-					<code class="bg-base-300 rounded px-1 group-hover:bg-base-content/20"
+					<code class="bg-base-300 rounded-selector px-1 group-hover:bg-base-content/20"
 						>{conferenceSupervisor.connectionCode}</code
 					>
 				</button>

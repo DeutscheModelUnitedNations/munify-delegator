@@ -82,7 +82,7 @@
 		<DetailRow icon="fa-compass">{singleParticipant.experience}</DetailRow>
 		<DetailRow icon="fa-check-to-slot">
 			<div class="flex items-center gap-2">
-				<div class="bg-base-300 h-full rounded-md px-3 py-[2px]">
+				<div class="bg-base-300 h-full rounded-selector px-3 py-[2px]">
 					{singleParticipant.appliedForRoles.length}
 				</div>
 				<div class="flex flex-col">

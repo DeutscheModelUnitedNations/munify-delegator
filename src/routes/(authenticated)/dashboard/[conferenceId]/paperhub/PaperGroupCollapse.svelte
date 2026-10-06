@@ -34,16 +34,15 @@
 
 <div
 	class={isCommittee
-		? 'border border-base-300 rounded-lg bg-base-100'
-		: 'border border-base-200 rounded-md mb-2 last:mb-0'}
+		? 'border border-base-300 rounded-box bg-base-100'
+		: 'border border-base-200 rounded-box mb-2 last:mb-0'}
 	class:bg-base-50={striped}
 >
 	<div
 		class="cursor-pointer transition-colors {hoverClass} {isCommittee
-			? 'p-4 rounded-t-lg'
-			: 'p-3 rounded-t-md'}"
-		class:rounded-b-lg={isCommittee && !expanded}
-		class:rounded-b-md={!isCommittee && !expanded}
+			? 'p-4 rounded-t-box'
+			: 'p-3 rounded-t-box'}"
+		class:rounded-b-box={!expanded}
 		onclick={onToggle}
 		role="button"
 		tabindex="0"

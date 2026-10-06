@@ -19,7 +19,7 @@
 		</button>
 		{#if expanded}
 			<pre
-				class="bg-base-300 text-base-content mt-2 overflow-x-auto rounded p-2 text-xs w-full">{error}</pre>
+				class="bg-base-300 text-base-content mt-2 overflow-x-auto rounded-box p-2 text-xs w-full">{error}</pre>
 		{/if}
 	</div>
 	<button class="btn btn-error btn-sm" onclick={() => location.reload()}>

@@ -31,17 +31,17 @@
 							<div class="skeleton h-4 w-4 rounded-full"></div>
 							<div class="skeleton h-3 w-14 rounded-full"></div>
 							<div class="ml-auto flex items-center gap-1">
-								<div class="skeleton h-8 w-8 rounded-lg"></div>
-								<div class="skeleton h-8 w-8 rounded-lg"></div>
-								<div class="skeleton h-8 w-8 rounded-lg"></div>
+								<div class="skeleton h-8 w-8 rounded-field"></div>
+								<div class="skeleton h-8 w-8 rounded-field"></div>
+								<div class="skeleton h-8 w-8 rounded-field"></div>
 								{#if mode === 'drawer'}
-									<div class="skeleton h-8 w-8 rounded-lg"></div>
+									<div class="skeleton h-8 w-8 rounded-field"></div>
 								{/if}
 							</div>
 						</div>
 						<div class="skeleton mt-1 h-3 w-44 rounded-full"></div>
 						<div class="mt-2 flex items-center gap-2">
-							<div class="skeleton h-8 w-12 rounded"></div>
+							<div class="skeleton h-8 w-12 rounded-field"></div>
 							<div class="skeleton h-5 w-8 rounded-full"></div>
 						</div>
 					</div>

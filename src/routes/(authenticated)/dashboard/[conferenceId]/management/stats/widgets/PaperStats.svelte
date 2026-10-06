@@ -126,19 +126,19 @@
 						<!-- Legend -->
 						<div class="flex flex-wrap gap-3 text-xs text-base-content/70 mt-2">
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-warning rounded"></span>
+								<span class="inline-block w-3 h-3 bg-warning rounded-selector"></span>
 								{m.paperStatusSubmitted()} ({paperStats.byStatus.submitted})
 							</span>
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-error rounded"></span>
+								<span class="inline-block w-3 h-3 bg-error rounded-selector"></span>
 								{m.paperStatusChangesRequested()} ({paperStats.byStatus.changesRequested})
 							</span>
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-success rounded"></span>
+								<span class="inline-block w-3 h-3 bg-success rounded-selector"></span>
 								{m.paperStatusAccepted()} ({paperStats.byStatus.accepted})
 							</span>
 							<span class="flex items-center gap-1">
-								<span class="inline-block w-3 h-3 bg-base-300 rounded"></span>
+								<span class="inline-block w-3 h-3 bg-base-300 rounded-selector"></span>
 								{m.paperStatusDraft()} ({paperStats.byStatus.draft})
 							</span>
 						</div>
@@ -157,7 +157,7 @@
 					<div class="collapse-content">
 						<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 							{#each paperStats.byCommittee.toSorted((a, b) => b.count - a.count) as committee (committee.committeeId)}
-								<div class="flex items-center gap-2 p-2 bg-base-200 rounded">
+								<div class="flex items-center gap-2 p-2 bg-base-200 rounded-box">
 									<span class="badge badge-primary badge-sm">{committee.abbreviation}</span>
 									<span class="text-sm font-semibold">{committee.count}</span>
 								</div>

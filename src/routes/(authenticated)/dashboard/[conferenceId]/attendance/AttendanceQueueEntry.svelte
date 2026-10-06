@@ -22,7 +22,7 @@
 </script>
 
 <div
-	class="flex items-center gap-3 rounded-lg px-3 py-2 font-mono text-sm transition-all
+	class="flex items-center gap-3 rounded-box px-3 py-2 font-mono text-sm transition-all
 		{rowClass[entry.status]}"
 >
 	<!-- Status icon -->

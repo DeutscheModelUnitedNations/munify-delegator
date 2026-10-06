@@ -116,7 +116,7 @@
 	</div>
 {/snippet}
 
-<div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-lg p-4 shadow-lg">
+<div class="bg-base-200 mt-4 flex w-full flex-col gap-2 rounded-box p-4 shadow-lg">
 	<h2 class="text-2xl font-bold">
 		<i class="fa-duotone fa-money-bill-transfer mr-4"></i>{m.referenceMaker()}
 	</h2>

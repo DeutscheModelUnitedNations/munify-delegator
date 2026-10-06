@@ -80,7 +80,7 @@
 		bind:open
 		{direction}
 		class={direction === 'bottom'
-			? 'max-h-[85vh] overflow-hidden rounded-t-2xl'
+			? 'max-h-[85vh] overflow-hidden rounded-t-box'
 			: 'sm:max-w-md md:max-w-lg'}
 	>
 		{#if entry}

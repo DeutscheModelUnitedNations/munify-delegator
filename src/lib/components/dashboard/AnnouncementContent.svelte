@@ -16,7 +16,7 @@
 </script>
 
 <div
-	class="rounded-lg border border-info/40 bg-base-100/50 p-4 shadow-[0_0_12px_rgba(var(--in)/0.15)]"
+	class="rounded-box border border-info/40 bg-base-100/50 p-4 shadow-[0_0_12px_rgba(var(--in)/0.15)]"
 >
 	<div
 		class={shouldTruncate && !isExpanded

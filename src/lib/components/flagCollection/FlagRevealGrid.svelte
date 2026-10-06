@@ -35,7 +35,7 @@
 </script>
 
 <div
-	class="flag-reveal-container relative overflow-hidden rounded-lg shadow-inner {compact
+	class="flag-reveal-container relative overflow-hidden rounded-box shadow-inner {compact
 		? 'aspect-video'
 		: 'flag-aspect'}"
 >

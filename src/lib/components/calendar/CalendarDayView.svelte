@@ -104,7 +104,7 @@
 			{#each visibleTracks as track (track.id)}
 				<OptionalTooltip tip={track.description} class="tooltip-bottom">
 					<div
-						class="bg-base-200 truncate rounded-t px-2 py-2 text-center text-xs font-medium"
+						class="bg-base-200 truncate rounded-t-box px-2 py-2 text-center text-xs font-medium"
 						title={track.name}
 					>
 						{track.name}

@@ -27,7 +27,7 @@
 	<div class="collapse-title p-6">
 		<div class="flex items-center gap-3">
 			<div
-				class="bg-base-300/50 text-base-content/70 rounded-lg p-3 w-12 h-12 flex justify-center items-center"
+				class="bg-base-300/50 text-base-content/70 rounded-box p-3 w-12 h-12 flex justify-center items-center"
 			>
 				<i class="fas fa-cog text-lg"></i>
 			</div>

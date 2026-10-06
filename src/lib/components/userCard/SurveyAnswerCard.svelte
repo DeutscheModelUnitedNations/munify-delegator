@@ -44,7 +44,7 @@
 
 {#snippet optionRow(option: Option)}
 	<label
-		class="hover:bg-base-200 w-full cursor-pointer flex-row items-center gap-2 rounded-lg p-2 text-sm transition-all duration-300"
+		class="hover:bg-base-200 w-full cursor-pointer flex-row items-center gap-2 rounded-field p-2 text-sm transition-all duration-300"
 	>
 		<input
 			type="radio"

@@ -77,7 +77,7 @@
 	{:else}
 		<div class="flex flex-col gap-2">
 			{#each paymentRefs as ref (ref.id)}
-				<div class="bg-base-200 flex items-center justify-between rounded-lg px-4 py-2">
+				<div class="bg-base-200 flex items-center justify-between rounded-box px-4 py-2">
 					<div class="flex items-center gap-3">
 						{#if ref.recievedAt}
 							<i class="fa-duotone fa-circle-check text-success"></i>

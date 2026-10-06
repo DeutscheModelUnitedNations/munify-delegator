@@ -41,13 +41,13 @@
 		>
 		<span class="flex h-2.5 justify-end">
 			{#if deviation < 0}
-				<span class="bg-warning h-full rounded-sm" style:width="{width(deviation)}px"></span>
+				<span class="bg-warning h-full rounded-selector" style:width="{width(deviation)}px"></span>
 			{/if}
 		</span>
 		<span class="bg-base-content/30 h-4"></span>
 		<span class="flex h-2.5 justify-start">
 			{#if deviation > 0}
-				<span class="bg-primary h-full rounded-sm" style:width="{width(deviation)}px"></span>
+				<span class="bg-primary h-full rounded-selector" style:width="{width(deviation)}px"></span>
 			{/if}
 		</span>
 		<span class="text-right font-semibold tabular-nums {tone(deviation)}">{format(deviation)}</span>

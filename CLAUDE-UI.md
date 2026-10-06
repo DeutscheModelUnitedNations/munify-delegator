@@ -1120,6 +1120,15 @@ Use DaisyUI semantic color classes:
 - `border-base-200` - Light border
 - `border-base-300` - Medium border
 
+### Corner Radii
+
+Radii come from the DMUN corporate identity theme, never from fixed Tailwind sizes (`rounded`, `rounded-md`, `rounded-lg`, `rounded-xl`, …). Use the daisyUI radius tokens, including their side variants (`rounded-t-box`, `first:rounded-l-selector`, …):
+
+- `rounded-box` - Cards, panels, drawers, tables, images, empty states
+- `rounded-field` - Clickable rows, list items and labels that behave like buttons or inputs
+- `rounded-selector` - Small elements: chips, inline `<code>`/ID spans, flags, legend swatches, chart bars
+- `rounded-full` - Circles and pills (avatars, status dots)
+
 ### Light/Dark Mode
 
 The theme is selected via `data-theme="light|dark"` on `<html>`, set by the footer's `ThemeSwitcher` (`$lib/helpers/theme.svelte.ts`). Tailwind's `dark:` variant follows this attribute, so style dark mode with `dark:` classes or `[data-theme='dark']` selectors — never `@media (prefers-color-scheme: dark)` or `matchMedia`, which ignore the user's choice.

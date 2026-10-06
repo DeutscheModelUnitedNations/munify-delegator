@@ -66,7 +66,7 @@
 			<i class="fa-duotone fa-map-location-dot text-base-content/70"></i>
 			{m.statsGeographicDistribution()}
 		</h2>
-		<div class="w-full h-[400px] rounded-lg overflow-hidden">
+		<div class="w-full h-[400px] rounded-box overflow-hidden">
 			<Map options={{ center: [51.948, 10.2651], zoom: 6 }}>
 				<TileLayer
 					url={'https://tile.openstreetmap.org/{z}/{x}/{y}.png'}

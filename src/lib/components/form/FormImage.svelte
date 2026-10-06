@@ -80,7 +80,7 @@
 				<FormDescription {description} />
 				<div
 					role="presentation"
-					class="border-base-300 bg-base-200/50 hover:border-primary relative flex min-h-36 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed transition-colors {dragging
+					class="border-base-300 bg-base-200/50 hover:border-primary relative flex min-h-36 items-center justify-center overflow-hidden rounded-box border-2 border-dashed transition-colors {dragging
 						? 'border-primary bg-primary/10'
 						: ''}"
 					ondragover={(e) => {

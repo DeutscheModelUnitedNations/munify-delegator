@@ -35,7 +35,7 @@
 	bind:open
 	direction="top"
 	keepFocus
-	class="max-h-[85vh] {maxWidth} overflow-hidden rounded-b-2xl"
+	class="max-h-[85vh] {maxWidth} overflow-hidden rounded-b-box"
 >
 	<!-- Header -->
 	<div class="flex items-center justify-between px-5 pt-4 pb-3">

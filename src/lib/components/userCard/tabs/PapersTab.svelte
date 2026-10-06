@@ -52,7 +52,7 @@
 {:else}
 	<div class="flex flex-col gap-3">
 		{#each papers as paper (paper.id)}
-			<div class="bg-base-200 rounded-lg p-4">
+			<div class="bg-base-200 rounded-box p-4">
 				<div class="flex items-start justify-between gap-2">
 					<div class="flex flex-col gap-1">
 						<div class="flex items-center gap-2">

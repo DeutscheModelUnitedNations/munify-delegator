@@ -223,7 +223,7 @@
 		</fieldset>
 	</div>
 	{#if placeLatitude && placeLongitude && !isNaN(parseFloat(placeLatitude)) && !isNaN(parseFloat(placeLongitude))}
-		<div class="h-[200px] w-full overflow-hidden rounded-lg">
+		<div class="h-[200px] w-full overflow-hidden rounded-box">
 			{#await import('sveaflet') then { Map, TileLayer, Marker }}
 				<Map
 					options={{

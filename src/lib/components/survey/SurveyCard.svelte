@@ -31,7 +31,7 @@
 	let questionLocked = $derived(new Date(question.deadline) < new Date());
 </script>
 
-<div class="bg-base-200 flex flex-col gap-3 rounded-lg p-4">
+<div class="bg-base-200 flex flex-col gap-3 rounded-box p-4">
 	<DeadlineDisplay deadline={question.deadline} {conferenceTimezone} />
 	<h3 class="text-lg font-bold">{question.title}</h3>
 	{#if question.description}
@@ -39,7 +39,7 @@
 	{/if}
 
 	<div
-		class="bg-base-100 grid grid-cols-[auto_1fr] items-center gap-2 rounded-md p-3 shadow-sm {!answer &&
+		class="bg-base-100 grid grid-cols-[auto_1fr] items-center gap-2 rounded-box p-3 shadow-sm {!answer &&
 		!questionLocked
 			? 'border-warning border'
 			: ''}"

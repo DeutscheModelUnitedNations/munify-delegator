@@ -56,7 +56,7 @@
 		<h3 class="text-lg font-bold">{m.headDelegate()}</h3>
 		<div class="max-h-60 overflow-y-auto">
 			{#each members as member (member.id)}
-				<label class="hover:bg-base-200 flex cursor-pointer items-center gap-2 rounded-md p-2">
+				<label class="hover:bg-base-200 flex cursor-pointer items-center gap-2 rounded-field p-2">
 					<input
 						type="radio"
 						name="head-delegate"

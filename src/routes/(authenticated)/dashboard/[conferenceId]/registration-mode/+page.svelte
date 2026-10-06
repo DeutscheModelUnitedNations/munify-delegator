@@ -69,7 +69,7 @@
 		<div class="text-base-content/60 text-sm">
 			{conference?.title ?? ''}
 		</div>
-		<div class="bg-base-200 rounded-lg px-3 py-1 font-mono text-lg tabular-nums">
+		<div class="bg-base-200 rounded-box px-3 py-1 font-mono text-lg tabular-nums">
 			{formatTime(currentTime)}
 		</div>
 	</div>
@@ -79,7 +79,7 @@
 		<div class="flex flex-1 flex-col items-center justify-center gap-4 sm:gap-6">
 			<!-- Flag - Most Prominent -->
 			<div class="flex flex-col items-center gap-2">
-				<div class="flag-glow rounded-xl">
+				<div class="flag-glow rounded-box">
 					{#if participantInfo.alpha2Code}
 						<Flag size="lg" alpha2Code={participantInfo.alpha2Code} />
 					{:else if participantInfo.isNSA}

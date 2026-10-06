@@ -264,7 +264,7 @@
 <div
 	class="media-container {!useCamera.current || scannedCode
 		? 'hidden'
-		: ''} bg-primary relative {cameraZIndex} flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-lg shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
+		: ''} bg-primary relative {cameraZIndex} flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-box shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
 >
 	<i
 		class="fa-duotone fa-camera absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-3xl text-white"

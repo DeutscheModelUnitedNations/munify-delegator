@@ -99,14 +99,14 @@
 	{:else if entry.flag?.type === 'nsa'}
 		<Flag nsa icon={entry.flag.fontAwesomeIcon} size="xs" />
 	{:else}
-		<div class="bg-base-300 flex h-6 w-8 items-center justify-center rounded text-xs">
+		<div class="bg-base-300 flex h-6 w-8 items-center justify-center rounded-selector text-xs">
 			<i class="fa-duotone {entry.icon} text-base-content/60"></i>
 		</div>
 	{/if}
 {/snippet}
 
 {#snippet historyCard(entry: HistoryEntry)}
-	<div class="bg-base-200 rounded-lg p-4">
+	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-start gap-3">
 			<!-- Flag or icon -->
 			<div class="flex-shrink-0 mt-0.5">

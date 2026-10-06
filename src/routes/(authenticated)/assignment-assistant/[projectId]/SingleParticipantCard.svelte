@@ -61,7 +61,7 @@
 
 <div
 	role="none"
-	class="flex grow-0 flex-col items-center gap-1 rounded-md p-2 {application.flagged
+	class="flex grow-0 flex-col items-center gap-1 rounded-box p-2 {application.flagged
 		? 'bg-warning'
 		: application.note
 			? `bg-info`

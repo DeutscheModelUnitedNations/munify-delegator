@@ -81,7 +81,7 @@
 								<PersonName givenName={sup.user.givenName} familyName={sup.user.familyName} />
 							</td>
 							<td>
-								<code class="bg-base-300 rounded px-1 text-xs">{sup.connectionCode}</code>
+								<code class="bg-base-300 rounded-selector px-1 text-xs">{sup.connectionCode}</code>
 							</td>
 							<td class="text-center">
 								{#if sup.plansOwnAttendenceAtConference}

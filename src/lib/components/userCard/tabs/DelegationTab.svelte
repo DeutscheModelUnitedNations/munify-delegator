@@ -172,7 +172,7 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Assignment Card -->
-	<div class="bg-base-200 rounded-lg p-4">
+	<div class="bg-base-200 rounded-box p-4">
 		<div class="flex items-center gap-3">
 			{@render assignment()}
 		</div>
@@ -196,7 +196,7 @@
 					onclick={copyEntryCode}
 					title={m.copy()}
 				>
-					<code class="bg-base-300 rounded px-1 group-hover:bg-base-content/20">
+					<code class="bg-base-300 rounded-selector px-1 group-hover:bg-base-content/20">
 						{delegation.entryCode}
 					</code>
 				</button>

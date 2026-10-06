@@ -11,7 +11,7 @@
 </script>
 
 <div
-	class="bg-base-300 tooltip mx-auto flex h-[1.5rem] w-[2rem] items-center justify-center overflow-hidden rounded shadow"
+	class="bg-base-300 tooltip mx-auto flex h-[1.5rem] w-[2rem] items-center justify-center overflow-hidden rounded-selector shadow"
 	data-tip={tooltip}
 >
 	{#if flagCode}

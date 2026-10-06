@@ -107,19 +107,23 @@
 			<StackedBarChart data={breakdownData} height="40px" showLabels={true} showPercentage={true} />
 			<div class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
 				<span class="flex items-center gap-1">
-					<span class="inline-block h-3 w-3 rounded" style="background-color: #22c55e"></span>
+					<span class="inline-block h-3 w-3 rounded-selector" style="background-color: #22c55e"
+					></span>
 					{m.statsSupervisorAcceptedPresent()}: {supervisorStats.acceptedAndPresent}
 				</span>
 				<span class="flex items-center gap-1">
-					<span class="inline-block h-3 w-3 rounded" style="background-color: #84cc16"></span>
+					<span class="inline-block h-3 w-3 rounded-selector" style="background-color: #84cc16"
+					></span>
 					{m.statsSupervisorAcceptedAbsent()}: {supervisorStats.acceptedAndNotPresent}
 				</span>
 				<span class="flex items-center gap-1">
-					<span class="inline-block h-3 w-3 rounded" style="background-color: #f97316"></span>
+					<span class="inline-block h-3 w-3 rounded-selector" style="background-color: #f97316"
+					></span>
 					{m.statsSupervisorRejectedPresent()}: {supervisorStats.rejectedAndPresent}
 				</span>
 				<span class="flex items-center gap-1">
-					<span class="inline-block h-3 w-3 rounded" style="background-color: #ef4444"></span>
+					<span class="inline-block h-3 w-3 rounded-selector" style="background-color: #ef4444"
+					></span>
 					{m.statsSupervisorRejectedAbsent()}: {supervisorStats.rejectedAndNotPresent}
 				</span>
 			</div>

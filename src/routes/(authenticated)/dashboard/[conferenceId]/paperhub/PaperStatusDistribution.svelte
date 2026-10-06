@@ -19,7 +19,7 @@
 {#if counts.total > 0}
 	<div class="border-t border-base-300 pt-4">
 		<h4 class="text-sm font-semibold mb-2">{m.paperStatusOverview()}</h4>
-		<div class="flex h-12 w-full rounded-lg overflow-hidden">
+		<div class="flex h-12 w-full rounded-box overflow-hidden">
 			{#if counts.submitted > 0}
 				<div
 					class="tooltip tooltip-right tooltip-warning bg-warning flex items-center justify-center gap-2 text-warning-content transition-all"
@@ -72,19 +72,19 @@
 		<!-- Legend -->
 		<div class="flex gap-4 text-sm text-base-content/70 mt-2">
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-warning rounded"></span>
+				<span class="inline-block w-3 h-3 bg-warning rounded-selector"></span>
 				{m.paperStatusSubmitted()}
 			</span>
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-info rounded"></span>
+				<span class="inline-block w-3 h-3 bg-info rounded-selector"></span>
 				{m.paperStatusRevised()}
 			</span>
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-error rounded"></span>
+				<span class="inline-block w-3 h-3 bg-error rounded-selector"></span>
 				{m.paperStatusChangesRequested()}
 			</span>
 			<span class="flex items-center gap-1">
-				<span class="inline-block w-3 h-3 bg-success rounded"></span>
+				<span class="inline-block w-3 h-3 bg-success rounded-selector"></span>
 				{m.paperStatusAccepted()}
 			</span>
 		</div>

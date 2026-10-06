@@ -336,7 +336,7 @@
 			{m.globalNotes()}
 		</h3>
 		<p class="text-base-content/60 text-sm">{m.globalNotesDescription()}</p>
-		<div class="bg-base-200 min-h-12 rounded-lg p-3 whitespace-pre-wrap">
+		<div class="bg-base-200 min-h-12 rounded-box p-3 whitespace-pre-wrap">
 			{user.globalNotes ?? '–'}
 		</div>
 		<button class="btn btn-sm btn-outline self-start" onclick={() => (globalNotesOpen = true)}>
