@@ -160,6 +160,7 @@
 		"minimatch": "10.2.3",
 		"postcss": "8.5.28",
 		"preact": "10.28.2",
+		"prosemirror-model": "1.25.12",
 		"prosemirror-view": "1.42.6",
 		"protobufjs": "7.6.1",
 		"rollup": "4.59.0",
