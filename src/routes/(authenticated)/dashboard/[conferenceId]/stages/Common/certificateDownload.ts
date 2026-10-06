@@ -1,6 +1,6 @@
 /** What the certificate download is made of, as fetched for the participant. */
 export interface CertificateData {
-	certificateContent: string | null;
+	certificateContentUrl: string | null;
 	title: string;
 	jwt: string | null;
 	fullName: string | null;
@@ -25,13 +25,13 @@ export function planCertificateDownload(
 	certificate: CertificateData | undefined,
 	userId: string
 ): CertificateDownload {
-	if (!certificate?.certificateContent || !userId) return { kind: 'unavailable' };
+	if (!certificate?.certificateContentUrl || !userId) return { kind: 'unavailable' };
 	const { fullName, jwt, title } = certificate;
 	if (!fullName || !jwt) return { kind: 'incomplete' };
 	return {
 		kind: 'ready',
 		holder: { fullName, jwt },
-		content: certificate.certificateContent,
+		content: certificate.certificateContentUrl,
 		filename: `${fullName.replace(' ', '-')}_${title.replace(' ', '-')}_certificate.pdf`
 	};
 }

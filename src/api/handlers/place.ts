@@ -7,6 +7,7 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
+import { storedFileUrl } from '$api/services/files';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 
@@ -26,6 +27,11 @@ const PlaceRef = object({
 		hasSitePlan: t.field({
 			type: 'Boolean',
 			resolve: (place) => !!place.sitePlanDataURL
+		}),
+		sitePlanUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (place) => storedFileUrl('place', place, 'sitePlan', place.sitePlanDataURL)
 		})
 	})
 });

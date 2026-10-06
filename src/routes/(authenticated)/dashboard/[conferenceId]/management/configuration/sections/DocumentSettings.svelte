@@ -34,23 +34,23 @@
 		loading = true;
 
 		try {
-			// Fetched on demand: the templates are large and only the test print needs them.
+			// Fetched on demand: only the test print needs the templates.
 			const templates = await client.query.conference({
 				__args: { id: conferenceId },
-				contractContent: true,
-				guardianConsentContent: true,
-				mediaConsentContent: true,
-				termsAndConditionsContent: true
+				contractContentUrl: true,
+				guardianConsentContentUrl: true,
+				mediaConsentContentUrl: true,
+				termsAndConditionsContentUrl: true
 			});
 
 			await downloadCompletePostalRegistrationPDF(
 				false,
 				testPrintParticipant(),
 				testPrintRecipient($formData),
-				templateOrDefault(templates.contractContent),
-				templateOrDefault(templates.guardianConsentContent),
-				templateOrDefault(templates.mediaConsentContent),
-				templateOrDefault(templates.termsAndConditionsContent),
+				templateOrDefault(templates.contractContentUrl),
+				templateOrDefault(templates.guardianConsentContentUrl),
+				templateOrDefault(templates.mediaConsentContentUrl),
+				templateOrDefault(templates.termsAndConditionsContentUrl),
 				'test_postal_registration.pdf'
 			);
 		} catch (error) {
@@ -75,7 +75,7 @@
 		try {
 			const templates = await client.query.conference({
 				__args: { id: conferenceId },
-				certificateContent: true
+				certificateContentUrl: true
 			});
 
 			await downloadCompleteCertificate(
@@ -83,7 +83,7 @@
 					fullName: 'Antonio Guterres',
 					jwt: randomString(20) + '.' + randomString(200) + '.' + randomString(350)
 				},
-				templateOrDefault(templates.certificateContent),
+				templateOrDefault(templates.certificateContentUrl),
 				`test_certificate.pdf`
 			);
 		} finally {

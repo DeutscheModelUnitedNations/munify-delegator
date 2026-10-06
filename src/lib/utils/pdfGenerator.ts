@@ -502,6 +502,17 @@ class CertificateGenerator extends PDFPageGenerator {
 	}
 }
 
+/**
+ * Loads a template from where the API serves it. A data URL still works, which is what the
+ * built-in test print templates are.
+ */
+async function loadTemplate(source: string): Promise<PDFDocument> {
+	if (source.startsWith('data:')) return PDFDocument.load(source);
+	const response = await fetch(source);
+	if (!response.ok) throw new Error(`Could not load the template (${response.status})`);
+	return PDFDocument.load(await response.arrayBuffer());
+}
+
 /** Copies every page of `source` to the end of `target`. */
 async function appendPages(target: PDFDocument, source: PDFDocument) {
 	const copiedPages = await target.copyPages(source, source.getPageIndices());
@@ -525,19 +536,19 @@ async function generateCompletePostalRegistrationPDF(
 
 	// First PDF is always included
 	pageGenerators.push(
-		new ContractGenerator(await PDFDocument.load(contract), defaultStyles, recipient, participant)
+		new ContractGenerator(await loadTemplate(contract), defaultStyles, recipient, participant)
 	);
 
 	if (!isOfAge) {
 		// Second PDF depends on age
 		pageGenerators.push(
-			new GuardianGenerator(await PDFDocument.load(guardianAgreement), defaultStyles, participant)
+			new GuardianGenerator(await loadTemplate(guardianAgreement), defaultStyles, participant)
 		);
 	}
 
 	// // Third page depends on age
 	pageGenerators.push(
-		new MediaGenerator(await PDFDocument.load(medialAgreement), defaultStyles, participant)
+		new MediaGenerator(await loadTemplate(medialAgreement), defaultStyles, participant)
 	);
 
 	const singlePDFs: PDFDocument[] = [];
@@ -556,7 +567,7 @@ async function generateCompletePostalRegistrationPDF(
 	// Track main page count before adding appendix (terms and conditions)
 	const mainPageCount = mergedPdfDoc.getPageCount();
 
-	await appendPages(mergedPdfDoc, await PDFDocument.load(termsAndConditions));
+	await appendPages(mergedPdfDoc, await loadTemplate(termsAndConditions));
 
 	// Add page numbers, participant name, data-matrix barcode, and participant ID to each page
 	await numerateDocument(mergedPdfDoc, participant.id, participant.name, mainPageCount);
@@ -608,7 +619,7 @@ export async function downloadCompletePostalRegistrationPDF(
 
 async function generateCertificatePDF(data: ParticipantCertificateData, certificate: string) {
 	const pageGenerator = new CertificateGenerator(
-		await PDFDocument.load(certificate || ''),
+		await loadTemplate(certificate),
 		defaultStyles,
 		data
 	);

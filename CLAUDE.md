@@ -390,6 +390,14 @@ bun run preview
   server-side fetching works without the app being able to fetch its own relative URL. It has to
   stay a remote function: `client.ts` is shared with the browser, and only a remote import is
   stubbed out there. Needs `kit.experimental.remoteFunctions` in `svelte.config.js`.
+- **Stored files are read through URLs, never selected as data.** Images and PDF templates still
+  go in as data URLs (writes are unchanged), but every reader selects the matching `*Url` field
+  (`logoUrl`, `contractContentUrl`, `sitePlanUrl`, `contentUrl` on a resolution, …) and gets
+  `/files/<kind>/<id>/<field>?v=<updatedAt>`, which `src/routes/files/` serves as real bytes with an
+  ETag. The route reads through GraphQL with the request's own context, so column masks decide who
+  gets a template. A new stored file goes in `FILE_SOURCES` in `$api/services/files.ts` plus a URL
+  field on its object. The one reader left on the data URL is the paper/resolution header's
+  emblem, which the resolution editor and `/api/pdf` still take as a data URL.
 - **After a mutation you normally do nothing.** `liveQuery` subscribes as well as queries, and every
   mutation publishes to the tables it writes, so open queries are told to refresh themselves. Fetch
   with `liveQuery`, not `query`, anywhere a component displays the result — `query` is for one-shot

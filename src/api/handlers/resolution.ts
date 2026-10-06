@@ -8,6 +8,7 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
+import { storedFileUrl } from '$api/services/files';
 import { findResolutionFileProblem } from '$lib/helpers/resolutionUpload';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -24,7 +25,17 @@ abilityBuilder.resolution
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
-const ResolutionRef = object({ table: 'resolution' });
+const ResolutionRef = object({
+	table: 'resolution',
+	adjust: (t) => ({
+		// The PDF is up to 10 MB; downloads go through this URL instead of selecting `content`.
+		contentUrl: t.field({
+			type: 'String',
+			resolve: (resolution) =>
+				storedFileUrl('resolution', resolution, 'content', resolution.content) ?? ''
+		})
+	})
+});
 query({ table: 'resolution' });
 const pubsub = rumblePubsub({ table: 'resolution' });
 

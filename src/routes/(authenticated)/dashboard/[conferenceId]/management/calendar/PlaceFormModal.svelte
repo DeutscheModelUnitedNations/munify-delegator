@@ -28,7 +28,7 @@
 				directions: true,
 				info: true,
 				websiteUrl: true,
-				sitePlanDataURL: true
+				sitePlanUrl: true
 			})
 		: undefined;
 
@@ -41,7 +41,11 @@
 	let placeDirections = $state(place?.directions ?? '');
 	let placeInfo = $state(place?.info ?? '');
 	let placeWebsiteUrl = $state(place?.websiteUrl ?? '');
-	let placeSitePlanDataURL = $state<string | null>(place?.sitePlanDataURL ?? null);
+	// The stored plan is served from a URL; only a plan picked in this modal is held as a data
+	// URL, to be uploaded. Leaving it untouched sends nothing, which keeps the stored one.
+	const storedSitePlanUrl = place?.sitePlanUrl ?? null;
+	let uploadedSitePlan = $state<string | null>(null);
+	const sitePlanHref = $derived(uploadedSitePlan ?? storedSitePlanUrl);
 	let placePlusCode = $state('');
 	let plusCodeError = $state('');
 	let plusCodeLoading = $state(false);
@@ -130,7 +134,7 @@
 		const reader = new FileReader();
 		reader.onload = () => {
 			if (typeof reader.result === 'string') {
-				placeSitePlanDataURL = reader.result;
+				uploadedSitePlan = reader.result;
 			}
 		};
 		reader.readAsDataURL(file);
@@ -147,7 +151,7 @@
 			directions: placeDirections || null,
 			info: placeInfo || null,
 			websiteUrl: placeWebsiteUrl || null,
-			sitePlanDataURL: placeSitePlanDataURL
+			sitePlanDataURL: uploadedSitePlan ?? undefined
 		};
 		try {
 			if (editedPlaceId) {
@@ -260,14 +264,14 @@
 			class="file-input w-full"
 			onchange={handleSitePlanUpload}
 		/>
-		{#if placeSitePlanDataURL}
+		{#if sitePlanHref}
 			<div class="mt-1 flex items-center gap-2">
 				<span class="text-success text-xs">
 					<i class="fas fa-check-circle"></i>
 					PDF
 				</span>
 				<a
-					href={placeSitePlanDataURL}
+					href={sitePlanHref}
 					rel="external"
 					download="site-plan.pdf"
 					class="link link-primary text-xs"

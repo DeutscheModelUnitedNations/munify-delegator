@@ -62,10 +62,10 @@ export const downloadPDF = (bytes: Uint8Array, filename: string): void => {
 };
 
 /**
- * Downloads a stored document (a `data:` URL) under the given file name
+ * Downloads a stored document, from its URL, under the given file name
  */
-export const downloadDataURL = async (dataURL: string, filename: string): Promise<void> => {
-	triggerDownload(await (await fetch(dataURL)).blob(), filename);
+export const downloadFromURL = async (url: string, filename: string): Promise<void> => {
+	triggerDownload(await (await fetch(url)).blob(), filename);
 };
 
 /**

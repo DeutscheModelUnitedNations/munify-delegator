@@ -20,7 +20,7 @@ export async function fetchOpenConferences(userId: string) {
 				title: true,
 				website: true,
 				endConference: true,
-				imageDataURL: true,
+				imageUrl: true,
 				language: true,
 				totalSeats: true,
 				totalParticipants: true,

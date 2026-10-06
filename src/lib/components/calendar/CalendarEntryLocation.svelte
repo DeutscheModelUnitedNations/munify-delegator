@@ -35,7 +35,7 @@
 {/snippet}
 
 {#snippet placeLinks(current: CalendarPlace)}
-	{#if current.websiteUrl || current.sitePlanDataURL}
+	{#if current.websiteUrl || current.sitePlanUrl}
 		<div class="flex flex-wrap gap-2">
 			{#if current.websiteUrl}
 				<a
@@ -48,9 +48,9 @@
 					{m.calendarPlaceWebsite()}
 				</a>
 			{/if}
-			{#if current.sitePlanDataURL}
+			{#if current.sitePlanUrl}
 				<a
-					href={current.sitePlanDataURL}
+					href={current.sitePlanUrl}
 					rel="external"
 					download="{current.name} - {m.calendarPlaceSitePlan()}.pdf"
 					class="btn btn-outline btn-sm gap-1.5"
