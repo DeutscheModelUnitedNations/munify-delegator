@@ -118,12 +118,17 @@ model Conference {
 
 /// A committee in a conference. E.g. the human rights council
 model Committee {
-  id                      String @id @default(nanoid())
+  id                      String           @id @default(nanoid())
   name                    String
   abbreviation            String
-  numOfSeatsPerDelegation Int    @default(1)
+  numOfSeatsPerDelegation Int              @default(1)
   /// Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
   resolutionHeadline      String?
+  /// What the regional distribution of the committee's seats is compared to in the seat planning
+  regionalBaseline        RegionalBaseline @default(UN_MEMBERS)
+  /// Target seats per UN regional group for the MANUAL baseline, in the order African, Asia-Pacific,
+  /// Eastern European, Latin American and Caribbean, Western European and Others
+  regionalBaselineTargets Int[]            @default([])
 
   conference        Conference         @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId      String
@@ -135,6 +140,20 @@ model Committee {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Comparison bases for the regional distribution of a committee's seats
+enum RegionalBaseline {
+  /// each group's share of the 193 UN member states
+  UN_MEMBERS
+  /// seat allocation of the Human Rights Council
+  HUMAN_RIGHTS_COUNCIL
+  /// seat allocation of the Economic and Social Council
+  ECOSOC
+  /// seat allocation of the Security Council, permanent members included
+  SECURITY_COUNCIL
+  /// target seats set per committee
+  MANUAL
 }
 
 /// An adopted resolution document that can be downloaded on the after-conference screen.
@@ -255,7 +274,7 @@ model User {
 model ReviewerSnippet {
   id      String @id @default(nanoid())
   name    String
-  content Json   // TipTap JSON format to preserve formatting
+  content Json // TipTap JSON format to preserve formatting
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
@@ -719,37 +738,37 @@ model TeamMemberInvitation {
 
 /// A day within a conference calendar schedule
 model CalendarDay {
-  id           String   @id @default(nanoid())
-  date         DateTime
-  name         String
-  sortOrder    Int
+  id        String   @id @default(nanoid())
+  date      DateTime
+  name      String
+  sortOrder Int
 
   conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId String
 
-  tracks       CalendarTrack[]
-  entries      CalendarEntry[]
+  tracks  CalendarTrack[]
+  entries CalendarEntry[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([conferenceId, sortOrder])
 }
 
 /// A parallel track within a calendar day (e.g. a committee or working group)
 model CalendarTrack {
-  id            String  @id @default(nanoid())
-  name          String
-  description   String?
-  sortOrder     Int
+  id          String  @id @default(nanoid())
+  name        String
+  description String?
+  sortOrder   Int
 
   calendarDay   CalendarDay @relation(fields: [calendarDayId], references: [id], onDelete: Cascade)
   calendarDayId String
 
-  entries       CalendarEntry[]
+  entries CalendarEntry[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([calendarDayId, sortOrder])
 }
@@ -788,18 +807,18 @@ model CalendarEntry {
   color           CalendarEntryColor @default(SESSION)
   room            String?
 
-  place           Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
-  placeId         String?
+  place   Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  placeId String?
 
-  calendarDay     CalendarDay    @relation(fields: [calendarDayId], references: [id], onDelete: Cascade)
-  calendarDayId   String
+  calendarDay   CalendarDay @relation(fields: [calendarDayId], references: [id], onDelete: Cascade)
+  calendarDayId String
 
   /// If null, entry spans all tracks of the day
   calendarTrack   CalendarTrack? @relation(fields: [calendarTrackId], references: [id], onDelete: SetNull)
   calendarTrackId String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// A timestamped attendance record for a conference participant

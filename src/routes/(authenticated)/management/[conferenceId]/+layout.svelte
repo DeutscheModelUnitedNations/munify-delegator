@@ -19,15 +19,15 @@
 <div class="flex min-w-0 grow basis-0 overflow-hidden">
 	<SideNavigationDrawer navigateBackHref="/management" bind:expanded={navbarExpanded}>
 		<NavMenu>
-			{#if canPlanSeats(data.myMembership)}
+			{#if seatPlanningOnly}
+				<!-- content leads have no other entry, so no workflow group around it -->
 				<NavMenuButton
 					href={`/management/${data.conferenceId}/seat-planning`}
 					icon="fa-table-cells"
 					title={m.seatPlanning()}
 					bind:expanded={navbarExpanded}
 				/>
-			{/if}
-			{#if !seatPlanningOnly}
+			{:else}
 				<NavMenuButton
 					href={`/management/${data.conferenceId}/stats`}
 					icon="fa-chart-pie"
@@ -59,6 +59,14 @@
 					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin" small={!navbarExpanded}>
+					{#if canPlanSeats(data.myMembership)}
+						<NavMenuButton
+							href={`/management/${data.conferenceId}/seat-planning`}
+							icon="fa-table-cells"
+							title={m.seatPlanning()}
+							bind:expanded={navbarExpanded}
+						/>
+					{/if}
 					<NavMenuButton
 						href="/management/{data.conferenceId}/assignment"
 						icon="fa-shuffle"

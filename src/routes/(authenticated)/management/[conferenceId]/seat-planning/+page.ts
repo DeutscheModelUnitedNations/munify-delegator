@@ -27,6 +27,8 @@ export const _houdini_load = graphql(`
 			name
 			abbreviation
 			numOfSeatsPerDelegation
+			regionalBaseline
+			regionalBaselineTargets
 			nations {
 				alpha2Code
 				alpha3Code

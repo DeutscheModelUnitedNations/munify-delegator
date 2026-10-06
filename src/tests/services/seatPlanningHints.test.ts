@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import {
 	assignedMemberCounts,
+	committeeSeatTotals,
 	exactSizeWarnings,
 	isOutsideSizeLimits,
 	matchesSeatFilters,
 	nationSeatCounts,
 	parseSizeLimits,
-	regionalBalance,
 	rolesOf,
 	seatedByGroup,
 	seatsWithPending,
@@ -14,7 +14,7 @@ import {
 	sizeHistogram,
 	type PlanningCommittee
 } from '$lib/services/seatPlanning/hints';
-import { unMembers, type UnMember } from '$lib/services/seatPlanning/unMembers';
+import { unMembers } from '$lib/services/seatPlanning/unMembers';
 
 const committees: PlanningCommittee[] = [
 	{ id: 'gv', numOfSeatsPerDelegation: 1, nations: ['deu', 'fra', 'usa', 'chn'] },
@@ -29,6 +29,22 @@ describe('nationSeatCounts', () => {
 		expect(counts.get('usa')).toBe(3);
 		expect(counts.get('fra')).toBe(1);
 		expect(counts.get('gbr')).toBeUndefined();
+	});
+});
+
+describe('committeeSeatTotals', () => {
+	test('multiplies the seated nations with the seats per delegation, in committee order', () => {
+		const totals = committeeSeatTotals(committees, [
+			{ id: 'sr', name: 'Sicherheitsrat', abbreviation: 'SR' },
+			{ id: 'gv', name: 'Generalversammlung', abbreviation: 'GV' }
+		]);
+		expect(totals.map(({ id, seats }) => [id, seats])).toEqual([
+			['gv', 4],
+			['sr', 4],
+			['wiso', 1]
+		]);
+		expect(totals[1]).toMatchObject({ abbreviation: 'SR', nations: 2, seatsPerDelegation: 2 });
+		expect(totals[2]).toMatchObject({ name: '', abbreviation: '' });
 	});
 });
 
@@ -107,63 +123,6 @@ describe('isOutsideSizeLimits', () => {
 	test('never flags unseated nations or missing limits', () => {
 		expect(isOutsideSizeLimits(0, { min: 2, max: 6 })).toBe(false);
 		expect(isOutsideSizeLimits(12, { min: null, max: null })).toBe(false);
-	});
-});
-
-describe('regionalBalance', () => {
-	const member = (alpha3Code: string, regionalGroup: UnMember['regionalGroup']): UnMember => ({
-		alpha3Code,
-		alpha2Code: alpha3Code.slice(0, 2),
-		regionalGroup,
-		region: '',
-		subregion: '',
-		capital: [],
-		languages: [],
-		borders: [],
-		landlocked: false
-	});
-	// 50 % African, 25 % WEOG, 25 % Eastern European
-	const members = [
-		member('af1', 'African Group'),
-		member('af2', 'African Group'),
-		member('af3', 'African Group'),
-		member('af4', 'African Group'),
-		member('we1', 'Western European and Others Group'),
-		member('we2', 'Western European and Others Group'),
-		member('ee1', 'Eastern European Group'),
-		member('ee2', 'Eastern European Group')
-	];
-
-	test('flags groups deviating beyond the threshold and suggests the smallest delegations', () => {
-		const committee = {
-			id: 'gv',
-			numOfSeatsPerDelegation: 1,
-			nations: ['we1', 'we2', 'af1', 'ee1']
-		};
-		const seatCounts = new Map([
-			['af2', 3],
-			['af3', 1]
-		]);
-
-		const hints = regionalBalance([committee], members, seatCounts);
-		const african = hints.find((hint) => hint.group === 'African Group');
-		const weog = hints.find((hint) => hint.group === 'Western European and Others Group');
-
-		expect(african).toMatchObject({ seatShare: 25, memberShare: 50, deviation: -25 });
-		expect(african?.suggestions).toEqual(['af4', 'af3', 'af2']);
-		expect(weog).toMatchObject({ seatShare: 50, memberShare: 25, deviation: 25, suggestions: [] });
-		// Eastern Europe holds exactly its share
-		expect(hints.some((hint) => hint.group === 'Eastern European Group')).toBe(false);
-	});
-
-	test('respects the threshold and skips empty committees', () => {
-		const committee = {
-			id: 'gv',
-			numOfSeatsPerDelegation: 1,
-			nations: ['we1', 'af1', 'af2', 'ee1']
-		};
-		expect(regionalBalance([committee], members, new Map(), 5)).toEqual([]);
-		expect(regionalBalance([{ ...committee, nations: [] }], members, new Map())).toEqual([]);
 	});
 });
 

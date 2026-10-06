@@ -51,7 +51,7 @@
 			title={m.seatPlanningStatesTab()}
 			icon="flag"
 			active={$params.tab !== 'nsa'}
-			onclick={() => ($params.tab = 'states')}
+			onclick={() => ($params.tab = null)}
 		/>
 		<Tab
 			title={m.nonStateActors()}
@@ -62,7 +62,9 @@
 	</Tabs>
 
 	<div class="flex min-h-0 grow flex-col gap-4 xl:flex-row">
-		<div class="min-h-0 min-w-0 grow">
+		<!-- the compact matrix keeps its own width so the hints sit right next to it; the NSA list
+		     needs the room for its inputs -->
+		<div class="min-h-0 min-w-0 {$params.tab === 'nsa' ? 'grow' : ''}">
 			{#if $params.tab === 'nsa'}
 				<NonStateActorTable
 					conferenceId={data.conferenceId}
@@ -79,7 +81,7 @@
 				<SeatMatrix {planner} {committees} {sizeLimits} />
 			{/if}
 		</div>
-		<aside class="shrink-0 overflow-y-auto xl:w-80">
+		<aside class="shrink-0 overflow-y-auto xl:w-96">
 			<HintsSidebar {planner} {committees} {nonStateActors} {sizeLimits} />
 		</aside>
 	</div>

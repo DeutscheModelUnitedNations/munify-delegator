@@ -1,60 +1,61 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { translateRegionalGroup } from '$lib/services/enumTranslations';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import {
-		regionalBalance,
-		type PlanningCommittee,
-		type RegionalBalanceHint
-	} from '$lib/services/seatPlanning/hints';
+	import { regionalDeviations } from '$lib/services/seatPlanning/baselines';
 	import { unMembers } from '$lib/services/seatPlanning/unMembers';
+	import type { SeatPlanner } from '../seatPlanner.svelte';
+	import RegionalBaselineModal from './RegionalBaselineModal.svelte';
+	import RegionalBalanceCard from './RegionalBalanceCard.svelte';
 
 	interface Props {
-		committees: PlanningCommittee[];
-		seatCounts: Map<string, number>;
-		abbreviations: Map<string, string>;
+		planner: SeatPlanner;
+		committees: { id: string; name: string; abbreviation: string }[];
 		maxSuggestions: number;
 	}
 
-	let { committees, seatCounts, abbreviations, maxSuggestions }: Props = $props();
+	let { planner, committees, maxSuggestions }: Props = $props();
 
-	/** deviation of a group's seat share from its member share that is pointed out, in points */
-	const THRESHOLD = 5;
+	let baselineModalOpen = $state(false);
+	let expanded = $state<string>();
 
-	const hints = $derived(regionalBalance(committees, unMembers, seatCounts, THRESHOLD));
-
-	function describe(hint: RegionalBalanceHint) {
-		const values = {
-			group: translateRegionalGroup(hint.group),
-			committee: abbreviations.get(hint.committeeId) ?? '',
-			seatShare: Math.round(hint.seatShare),
-			memberShare: Math.round(hint.memberShare)
-		};
-		return hint.deviation < 0
-			? m.seatPlanningUnderrepresented(values)
-			: m.seatPlanningOverrepresented(values);
-	}
+	const abbreviations = $derived(new Map(committees.map((c) => [c.id, c.abbreviation])));
+	const deviations = $derived(
+		regionalDeviations(planner.committees, unMembers, planner.seatCounts)
+	);
 </script>
 
-{#if hints.length > 0}
-	<section class="flex flex-col gap-2">
+<section class="flex flex-col gap-3">
+	<div class="flex items-center justify-between gap-2">
 		<h4 class="text-sm font-semibold">{m.seatPlanningRegionalBalance()}</h4>
-		{#each hints as hint (`${hint.committeeId}:${hint.group}`)}
-			<div class="alert alert-info alert-soft items-start p-3 text-sm">
-				<i class="fa-duotone fa-earth-americas mt-0.5"></i>
-				<div class="flex flex-col gap-1">
-					<p>{describe(hint)}</p>
-					{#if hint.suggestions.length > 0}
-						<p>
-							<span class="font-semibold">{m.seatPlanningSuggestions()}</span>
-							{hint.suggestions
-								.slice(0, maxSuggestions)
-								.map(getFullTranslatedCountryNameFromISO3Code)
-								.join(', ')}
-						</p>
-					{/if}
-				</div>
-			</div>
-		{/each}
-	</section>
-{/if}
+		<button class="btn btn-ghost btn-sm" onclick={() => (baselineModalOpen = true)}>
+			<i class="fa-duotone fa-sliders"></i>
+			{m.regionalBaselineButton()}
+		</button>
+	</div>
+	<p class="text-base-content/70 text-xs">{m.regionalBalanceIntro()}</p>
+	<div class="text-base-content/70 flex gap-3 text-xs">
+		<span class="inline-flex items-center gap-1.5">
+			<span class="bg-warning h-2 w-3 rounded-sm"></span>{m.regionalBalanceTooFew()}
+		</span>
+		<span class="inline-flex items-center gap-1.5">
+			<span class="bg-primary h-2 w-3 rounded-sm"></span>{m.regionalBalanceTooMany()}
+		</span>
+	</div>
+
+	{#each deviations as deviation (deviation.committeeId)}
+		<RegionalBalanceCard
+			{planner}
+			{deviation}
+			abbreviation={abbreviations.get(deviation.committeeId) ?? ''}
+			expanded={expanded === deviation.committeeId}
+			onToggle={() =>
+				(expanded = expanded === deviation.committeeId ? undefined : deviation.committeeId)}
+			{maxSuggestions}
+		/>
+	{/each}
+</section>
+
+<RegionalBaselineModal
+	bind:open={baselineModalOpen}
+	{committees}
+	plannerCommittees={planner.committees}
+/>

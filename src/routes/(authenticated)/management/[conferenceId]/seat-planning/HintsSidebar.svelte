@@ -3,6 +3,7 @@
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import type { Role } from '$lib/services/seatPlanning/hints';
 	import { useSeatPlanningParams } from './filters';
+	import CommitteeSizes from './hints/CommitteeSizes.svelte';
 	import RegionalBalanceHints from './hints/RegionalBalanceHints.svelte';
 	import SizeHistogram from './hints/SizeHistogram.svelte';
 	import SizeLimitsSection from './hints/SizeLimitsSection.svelte';
@@ -13,7 +14,7 @@
 
 	interface Props {
 		planner: SeatPlanner;
-		committees: { id: string; abbreviation: string }[];
+		committees: { id: string; name: string; abbreviation: string }[];
 		nonStateActors: { id: string; name: string }[];
 		sizeLimits: SizeLimitsStore;
 	}
@@ -25,7 +26,6 @@
 	const params = useSeatPlanningParams();
 
 	const nsaNames = $derived(new Map(nonStateActors.map((nsa) => [nsa.id, nsa.name])));
-	const abbreviations = $derived(new Map(committees.map((c) => [c.id, c.abbreviation])));
 
 	const roleName = (role: Role) =>
 		role.kind === 'nation'
@@ -34,11 +34,18 @@
 
 	/** jumps to the states matrix with exactly these filters */
 	function showStates(filters: { size?: number; group?: string }) {
-		$params.tab = 'states';
+		$params.tab = null;
 		$params.q = null;
 		$params.size = filters.size ?? null;
 		$params.group = filters.group ?? null;
 		$params.noSeat = filters.group ? true : null;
+	}
+
+	/** jumps to the unfiltered states matrix, the committee's seat holders first */
+	function showCommittee(committeeId: string) {
+		showStates({});
+		$params.sort = committeeId;
+		$params.desc = true;
 	}
 </script>
 
@@ -48,14 +55,14 @@
 		{m.seatPlanningHints()}
 	</h3>
 	<SizeHistogram roles={planner.roles} onSelectSize={(size) => showStates({ size })} />
+	<CommitteeSizes
+		plannerCommittees={planner.committees}
+		{committees}
+		onSelectCommittee={showCommittee}
+	/>
 	<SizeLimitsSection roles={planner.roles} {sizeLimits} {roleName} />
 	<SizeRuleHints roles={planner.roles} {roleName} maxSuggestions={MAX_SUGGESTIONS} />
-	<RegionalBalanceHints
-		committees={planner.committees}
-		seatCounts={planner.seatCounts}
-		{abbreviations}
-		maxSuggestions={MAX_SUGGESTIONS}
-	/>
+	<RegionalBalanceHints {planner} {committees} maxSuggestions={MAX_SUGGESTIONS} />
 	<UnseatedGroups
 		seatCounts={planner.seatCounts}
 		onSelectGroup={(group) => showStates({ group })}

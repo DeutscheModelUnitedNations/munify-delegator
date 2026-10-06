@@ -7,9 +7,9 @@ import {
 	rolesOf,
 	seatsWithPending,
 	type PendingSeat,
-	type PlanningCommittee,
 	type Role
 } from '$lib/services/seatPlanning/hints';
+import type { BaselineCommittee, RegionalBaseline } from '$lib/services/seatPlanning/baselines';
 import { SvelteMap } from 'svelte/reactivity';
 import { toast } from 'svelte-sonner';
 
@@ -37,6 +37,8 @@ interface SeatPlannerCommittee {
 	id: string;
 	abbreviation: string;
 	numOfSeatsPerDelegation: number;
+	regionalBaseline: RegionalBaseline;
+	regionalBaselineTargets: number[];
 	nations: { alpha3Code: string }[];
 }
 
@@ -74,7 +76,7 @@ export class SeatPlanner {
 	#abbreviations: Record<string, string | undefined>;
 	#memberCounts: { nations: Map<string, number>; nonStateActors: Map<string, number> };
 
-	committees: PlanningCommittee[];
+	committees: BaselineCommittee[];
 	seatCounts: Map<string, number>;
 	roles: Role[];
 
@@ -85,6 +87,8 @@ export class SeatPlanner {
 			source().committees.map((committee) => ({
 				id: committee.id,
 				numOfSeatsPerDelegation: committee.numOfSeatsPerDelegation,
+				regionalBaseline: committee.regionalBaseline,
+				regionalBaselineTargets: committee.regionalBaselineTargets,
 				nations: [...(this.#seats.get(committee.id) ?? [])]
 			}))
 		);

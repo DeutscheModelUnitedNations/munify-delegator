@@ -5,6 +5,8 @@ import {
 	CommitteeIdFieldObject,
 	CommitteeNameFieldObject,
 	CommitteeNumOfSeatsPerDelegationFieldObject,
+	CommitteeRegionalBaselineFieldObject,
+	CommitteeRegionalBaselineTargetsFieldObject,
 	CommitteeResolutionHeadlineFieldObject,
 	deleteOneCommitteeMutationObject,
 	findManyCommitteeQueryObject,
@@ -12,11 +14,13 @@ import {
 	updateOneCommitteeMutationObject
 } from '$db/generated/graphql/Committee';
 import { db } from '$db/db';
+import { RegionalBaseline } from '$db/generated/graphql/inputs';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/services/formatNames';
 import {
 	assertCommitteeDeletable,
+	assertRegionalBaselineTargets,
 	assertSeatsPerDelegationAllowed,
 	committeeUpdateData,
 	seatRemovalBlockersWhere
@@ -30,6 +34,8 @@ export const GQLCommittee = builder.prismaObject('Committee', {
 		abbreviation: t.field(CommitteeAbbreviationFieldObject),
 		numOfSeatsPerDelegation: t.field(CommitteeNumOfSeatsPerDelegationFieldObject),
 		resolutionHeadline: t.field(CommitteeResolutionHeadlineFieldObject),
+		regionalBaseline: t.field(CommitteeRegionalBaselineFieldObject),
+		regionalBaselineTargets: t.field(CommitteeRegionalBaselineTargetsFieldObject),
 		conference: t.relation('conference', CommitteeConferenceFieldObject),
 		nations: t.relation('nations', {
 			query: (_args, ctx) => ({
@@ -280,6 +286,39 @@ builder.mutationFields((t) => ({
 			});
 
 			return committee;
+		}
+	})
+}));
+
+builder.mutationFields((t) => ({
+	/**
+	 * Sets what the regional distribution of the committee is compared to in the seat planning.
+	 * Manual targets are kept when switching to a template, so switching back restores them.
+	 */
+	setCommitteeRegionalBaseline: t.prismaField({
+		type: 'Committee',
+		args: {
+			committeeId: t.arg.id({ required: true }),
+			baseline: t.arg({ type: RegionalBaseline, required: true }),
+			targets: t.arg.intList({ required: false })
+		},
+		resolve: async (query, root, args, ctx) => {
+			const where = {
+				id: args.committeeId,
+				AND: [ctx.permissions.allowDatabaseAccessTo('planSeats').Committee]
+			};
+			const { regionalBaselineTargets } = await db.committee.findUniqueOrThrow({
+				where,
+				select: { regionalBaselineTargets: true }
+			});
+			const targets = args.targets ?? regionalBaselineTargets;
+			assertRegionalBaselineTargets(args.baseline, targets);
+
+			return await db.committee.update({
+				...query,
+				where,
+				data: { regionalBaseline: args.baseline, regionalBaselineTargets: targets }
+			});
 		}
 	})
 }));

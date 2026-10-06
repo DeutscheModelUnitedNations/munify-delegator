@@ -802,19 +802,19 @@ The seat planning page (`src/routes/(authenticated)/management/[conferenceId]/se
 
 ### Structure
 
-| File                                       | Role                                                                                                         |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `seatPlanner.svelte.ts`                    | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                        |
-| `SeatMatrix.svelte`                        | Pinned table (`table-pin-rows table-pin-cols`), grouped rows, totals in `<tfoot>`                            |
-| `SeatMatrixRow.svelte` / `SeatCell.svelte` | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                |
-| `SeatMatrixFilters.svelte` / `filters.ts`  | Filters persisted in the URL via `queryParameters` (shared with the sidebar)                                 |
-| `HintsSidebar.svelte` + `hints/*`          | Sidebar sections; each section is its own component                                                          |
-| `CountryInfoPopover.svelte`                | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it |
-| `sizeLimits.svelte.ts`                     | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                            |
+| File                                          | Role                                                                                                                                                                                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                    |
+| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table (`table-pin-rows table-pin-cols`), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row                                                                              |
+| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                            |
+| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                 |
+| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets) |
+| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                             |
+| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                        |
 
 ### Rules
 
-- **Logic lives in pure functions** in `src/lib/services/seatPlanning/` (`hints.ts`, `unMembers.ts`) and is unit tested in `src/tests/services/`. Components only render their results.
+- **Logic lives in pure functions** in `src/lib/services/seatPlanning/` (`baselines.ts`, `hints.ts`, `sortRows.ts`, `unMembers.ts`) and is unit tested in `src/tests/services/`. Components only render their results.
 - **Optimistic writes**: the class keeps pending changes in a `SvelteMap` and overlays them on the Houdini data. The mutation returns the changed committee with its nations, so the Houdini cache updates without a refetch. On error the pending entry is dropped; the Houdini client already toasts the server message.
 - **Set, don't toggle**: mutations take the target state (`enabled: true/false`) so concurrent clicks converge.
 - **Undo**: success toasts carry an action that sends the inverse mutation (`toast.success(msg, { action: { label: m.undo(), onClick } })`).

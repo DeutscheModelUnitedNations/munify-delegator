@@ -58,6 +58,22 @@ export function sizeHistogram(roles: Role[]) {
 	return [...counts].map(([size, count]) => ({ size, count })).sort((a, b) => a.size - b.size);
 }
 
+/** Seats per committee in the given order, with the committee's name and abbreviation */
+export function committeeSeatTotals(
+	committees: PlanningCommittee[],
+	info: { id: string; name: string; abbreviation: string }[]
+) {
+	const infoById = new Map(info.map((committee) => [committee.id, committee]));
+	return committees.map(({ id, nations, numOfSeatsPerDelegation }) => ({
+		id,
+		name: infoById.get(id)?.name ?? '',
+		abbreviation: infoById.get(id)?.abbreviation ?? '',
+		nations: nations.length,
+		seatsPerDelegation: numOfSeatsPerDelegation,
+		seats: nations.length * numOfSeatsPerDelegation
+	}));
+}
+
 /**
  * Every delegation should be able to choose between at least `minRoles` roles of exactly its size.
  * Warns about every occurring size with fewer roles and suggests nations one seat away from it.
@@ -86,57 +102,6 @@ export interface SizeLimits {
 export function isOutsideSizeLimits(size: number, { min, max }: SizeLimits) {
 	if (size === 0) return false;
 	return (min !== null && size < min) || (max !== null && size > max);
-}
-
-export interface RegionalBalanceHint {
-	committeeId: string;
-	group: RegionalGroup;
-	/** share of the committee's seats held by the group, in percent */
-	seatShare: number;
-	/** share of the 193 UN members belonging to the group, in percent */
-	memberShare: number;
-	/** seatShare - memberShare in percentage points; negative means under-represented */
-	deviation: number;
-	/** unseated nations of an under-represented group, smallest delegations first */
-	suggestions: string[];
-}
-
-/**
- * Compares, per committee, each regional group's share of the seats with its share of the UN
- * members and reports deviations beyond `threshold` percentage points.
- */
-export function regionalBalance(
-	committees: PlanningCommittee[],
-	members: UnMember[],
-	seatCounts: Map<string, number>,
-	threshold = 5
-): RegionalBalanceHint[] {
-	const groupOf = new Map(members.map((member) => [member.alpha3Code, member.regionalGroup]));
-
-	return committees.flatMap((committee) => {
-		const nations = committee.nations.filter((nation) => groupOf.has(nation));
-		if (nations.length === 0) return [];
-		const seated = new Set(nations);
-
-		return regionalGroups.flatMap((group) => {
-			const groupMembers = members.filter((member) => member.regionalGroup === group);
-			const seatShare =
-				(nations.filter((nation) => groupOf.get(nation) === group).length / nations.length) * 100;
-			const memberShare = (groupMembers.length / members.length) * 100;
-			const deviation = seatShare - memberShare;
-			if (Math.abs(deviation) <= threshold) return [];
-
-			const suggestions =
-				deviation < 0
-					? groupMembers
-							.filter((member) => !seated.has(member.alpha3Code))
-							.map((member) => member.alpha3Code)
-							.sort((a, b) => (seatCounts.get(a) ?? 0) - (seatCounts.get(b) ?? 0))
-					: [];
-
-			return [{ committeeId: committee.id, group, seatShare, memberShare, deviation, suggestions }];
-		});
-	});
 }
 
 /** Per regional group: how many of its members hold at least one seat */

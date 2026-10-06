@@ -12,6 +12,7 @@
 
 <tr>
 	<th class="bg-base-200 z-20">{m.total()}</th>
+	<td class="bg-base-200"></td>
 	{#each committees as committee (committee.id)}
 		{@const seats = committee.nations.length * committee.numOfSeatsPerDelegation}
 		<td class="bg-base-200 text-center font-bold">

@@ -71,6 +71,8 @@ export async function seedSeatPlanning(db: PrismaClient) {
 			name,
 			abbreviation,
 			numOfSeatsPerDelegation: 1,
+			regionalBaseline: 'UN_MEMBERS' as const,
+			regionalBaselineTargets: [],
 			// fixed order of the matrix columns
 			createdAt: new Date(2026, 0, 1 + index),
 			nations: { set: nations.map((alpha3Code) => ({ alpha3Code })) }

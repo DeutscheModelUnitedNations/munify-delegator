@@ -622,6 +622,17 @@ type Committee {
   numOfSeatsPerDelegation: Int!
 
   """
+  What the regional distribution of the committee's seats is compared to in the seat planning
+  """
+  regionalBaseline: RegionalBaseline!
+
+  """
+  Target seats per UN regional group for the MANUAL baseline, in the order African, Asia-Pacific,
+  Eastern European, Latin American and Caribbean, Western European and Others
+  """
+  regionalBaselineTargets: [Int!]!
+
+  """
   Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
   """
   resolutionHeadline: String
@@ -754,6 +765,8 @@ input CommitteeCreateInput {
   name: String!
   nations: NationCreateNestedManyWithoutCommitteesInput
   numOfSeatsPerDelegation: Int
+  regionalBaseline: RegionalBaseline
+  regionalBaselineTargets: [Int!]
   resolutionHeadline: String
   resolutions: ResolutionCreateNestedManyWithoutCommitteeInput
   updatedAt: DateTime
@@ -793,6 +806,8 @@ input CommitteeOrderByWithRelationInput {
   name: SortOrder
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
+  regionalBaseline: SortOrder
+  regionalBaselineTargets: SortOrder
   resolutionHeadline: SortOrder
   resolutions: ResolutionOrderByRelationAggregateInput
   updatedAt: SortOrder
@@ -810,6 +825,8 @@ enum CommitteeScalarFieldEnum {
   id
   name
   numOfSeatsPerDelegation
+  regionalBaseline
+  regionalBaselineTargets
   resolutionHeadline
   updatedAt
 }
@@ -836,6 +853,8 @@ input CommitteeUpdateInput {
   name: StringFieldUpdateOperationsInput
   nations: NationUpdateManyWithoutCommitteesNestedInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+  regionalBaseline: EnumRegionalBaselineFieldUpdateOperationsInput
+  regionalBaselineTargets: [Int!]
   resolutionHeadline: NullableStringFieldUpdateOperationsInput
   resolutions: ResolutionUpdateManyWithoutCommitteeNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
@@ -847,6 +866,8 @@ input CommitteeUpdateManyMutationInput {
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+  regionalBaseline: EnumRegionalBaselineFieldUpdateOperationsInput
+  regionalBaselineTargets: [Int!]
   resolutionHeadline: NullableStringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
@@ -877,6 +898,8 @@ input CommitteeWhereInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
+  regionalBaseline: EnumRegionalBaselineFilter
+  regionalBaselineTargets: IntNullableListFilter
   resolutionHeadline: StringNullableFilter
   resolutions: ResolutionListRelationFilter
   updatedAt: DateTimeFilter
@@ -896,6 +919,8 @@ input CommitteeWhereUniqueInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
+  regionalBaseline: EnumRegionalBaselineFilter
+  regionalBaselineTargets: IntNullableListFilter
   resolutionHeadline: StringNullableFilter
   resolutions: ResolutionListRelationFilter
   updatedAt: DateTimeFilter
@@ -2653,6 +2678,27 @@ input EnumPaperTypeWithAggregatesFilter {
   notIn: [PaperType!]
 }
 
+input EnumRegionalBaselineFieldUpdateOperationsInput {
+  set: RegionalBaseline
+}
+
+input EnumRegionalBaselineFilter {
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
+input EnumRegionalBaselineWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumRegionalBaselineFilter
+  _min: NestedEnumRegionalBaselineFilter
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
 input EnumReviewHelpStatusFieldUpdateOperationsInput {
   set: ReviewHelpStatus
 }
@@ -2880,6 +2926,14 @@ input IntNullableFilter {
   notIn: [Int!]
 }
 
+input IntNullableListFilter {
+  equals: [Int!]
+  has: Int
+  hasEvery: [Int!]
+  hasSome: [Int!]
+  isEmpty: Boolean
+}
+
 input IntNullableWithAggregatesFilter {
   _avg: NestedFloatNullableFilter
   _count: NestedIntNullableFilter
@@ -3062,6 +3116,7 @@ type Mutation {
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
   setCommitteeNationSeat(committeeId: ID!, enabled: Boolean!, nationAlpha3Code: String!): Committee!
+  setCommitteeRegionalBaseline(baseline: RegionalBaseline!, committeeId: ID!, targets: [Int!]): Committee!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
@@ -3420,6 +3475,23 @@ input NestedEnumPaperTypeWithAggregatesFilter {
   in: [PaperType!]
   not: PaperType
   notIn: [PaperType!]
+}
+
+input NestedEnumRegionalBaselineFilter {
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
+input NestedEnumRegionalBaselineWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumRegionalBaselineFilter
+  _min: NestedEnumRegionalBaselineFilter
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
 }
 
 input NestedEnumReviewHelpStatusFilter {
@@ -4714,6 +4786,14 @@ type RegenerateInvitationResult {
   newExpiresAt: DateTime
   newToken: String
   success: Boolean!
+}
+
+enum RegionalBaseline {
+  ECOSOC
+  HUMAN_RIGHTS_COUNCIL
+  MANUAL
+  SECURITY_COUNCIL
+  UN_MEMBERS
 }
 
 type Resolution {

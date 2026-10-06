@@ -189,3 +189,67 @@ test('the project management adds and deletes a committee', async ({ page }) => 
 		.click();
 	await expect(card).toHaveCount(0, { timeout: 15_000 });
 });
+
+test('every matrix column sorts, alphabetically by state by default', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), { startUrl: SEAT_PLANNING });
+
+	const firstState = page.locator('tbody tr').first().locator('th');
+	await expect(firstState).toHaveText('Afghanistan', { timeout: 15_000 });
+
+	// the fixture's Netherlands hold two seats, more than any other state
+	await expect(async () => {
+		await page.getByRole('button', { name: 'Σ' }).click();
+		await expect(firstState).toHaveText('Niederlande', { timeout: 2_000 });
+	}).toPass();
+	await expect(page).toHaveURL(/sort=size/);
+
+	// sorting by regional group mirrors the former grouped view: the African group comes first
+	await page.getByRole('button', { name: /^Regionalgruppe/ }).click();
+	await expect(firstState).toHaveText('Ägypten');
+	await expect(page.locator('tbody tr').first().locator('td').first()).toHaveText('Afrika');
+
+	// the seat planning sits at the top of the workflow group for the project management
+	await page.getByText('Arbeitsabläufe').click();
+	await expect(page.getByRole('listitem', { name: 'Sitzplanung', exact: true })).toBeVisible();
+});
+
+test('the regional baseline of a committee is set in the hints sidebar', async ({ page }) => {
+	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), { startUrl: SEAT_PLANNING });
+
+	await expect(async () => {
+		await page.getByRole('button', { name: 'Vergleichsbasis' }).click();
+		await expect(page.locator('.modal-open')).toBeVisible({ timeout: 2_000 });
+	}).toPass({ timeout: 15_000 });
+	const modal = page.locator('.modal-open');
+
+	await modal.getByLabel('Vergleichsbasis SPSR').selectOption('SECURITY_COUNCIL');
+	// the sidebar card of the committee names its new baseline
+	await expect(
+		page.locator('section', { hasText: 'SPSR' }).getByText('Sicherheitsrat')
+	).toBeVisible();
+
+	// manual targets start from the UN proportions and are saved on demand
+	await modal.getByLabel('Vergleichsbasis SPSR').selectOption('MANUAL');
+	await expect(modal.getByText('Manuelle Zielwerte · SPSR')).toBeVisible();
+	await modal.getByRole('spinbutton').first().fill('1');
+	await modal.getByRole('button', { name: /zielwerte übernehmen/i }).click();
+
+	await expect
+		.poll(async () => {
+			const { data } = await graphql<{
+				findUniqueCommittee: { regionalBaseline: string; regionalBaselineTargets: number[] } | null;
+			}>(
+				page,
+				`query { findUniqueCommittee(where: { id: "${E2E_SEAT_SR_ID}" }) { regionalBaseline regionalBaselineTargets } }`
+			);
+			return data?.findUniqueCommittee;
+		})
+		.toMatchObject({ regionalBaseline: 'MANUAL', regionalBaselineTargets: [1, 0, 0, 0, 0] });
+
+	// all-zero targets are refused by the server
+	const { errors } = await graphql(
+		page,
+		`mutation { setCommitteeRegionalBaseline(committeeId: "${E2E_SEAT_SR_ID}", baseline: MANUAL, targets: [0, 0, 0, 0, 0]) { id } }`
+	);
+	expect(errors?.length).toBeGreaterThan(0);
+});

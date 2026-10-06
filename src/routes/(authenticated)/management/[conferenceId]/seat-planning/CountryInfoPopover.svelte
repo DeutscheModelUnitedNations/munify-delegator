@@ -10,15 +10,29 @@
 	let member = $state<UnMember>();
 	let position = $state({ top: 0, left: 0 });
 
-	/** Shows the facts about a state next to the element that was clicked */
+	/** short delays so sweeping over the list does not flash a popover for every row, and the
+	 * pointer can move from the name into the popover without closing it */
+	const SHOW_DELAY = 250;
+	const HIDE_DELAY = 150;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	/** Shows the facts about a state next to the hovered or focused element */
 	export function show(target: UnMember, anchor: HTMLElement) {
-		const rect = anchor.getBoundingClientRect();
-		member = target;
-		position = {
-			top: Math.min(rect.bottom + 4, window.innerHeight - 320),
-			left: rect.left
-		};
-		popover?.showPopover();
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			const rect = anchor.getBoundingClientRect();
+			member = target;
+			position = {
+				top: Math.min(rect.bottom + 4, window.innerHeight - 320),
+				left: rect.left
+			};
+			if (!popover?.matches(':popover-open')) popover?.showPopover();
+		}, SHOW_DELAY);
+	}
+
+	export function hide() {
+		clearTimeout(timer);
+		timer = setTimeout(() => popover?.hidePopover(), HIDE_DELAY);
 	}
 
 	const languageNames = $derived.by(() => {
@@ -41,7 +55,10 @@
 
 <div
 	bind:this={popover}
-	popover="auto"
+	popover="manual"
+	role="tooltip"
+	onmouseenter={() => clearTimeout(timer)}
+	onmouseleave={hide}
 	class="card bg-base-100 border-base-300 m-0 w-80 border shadow-xl"
 	style:position="fixed"
 	style:inset="auto"

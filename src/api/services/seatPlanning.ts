@@ -1,7 +1,9 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, RegionalBaseline } from '@prisma/client';
 import { GraphQLError } from 'graphql';
 import { m } from '$lib/paraglide/messages';
 import formatNames from '$lib/services/formatNames';
+import { isValidManualTargets } from '$lib/services/seatPlanning/baselines';
+import { regionalGroups } from '$lib/services/seatPlanning/unMembers';
 
 /**
  * Guards for the seat planning tool. They are kept free of database access so the rules can be
@@ -170,5 +172,15 @@ export function assertCommitteeDeletable(assignedMembers: number, papers: number
 export function assertNonStateActorDeletable(assignedDelegations: number) {
 	if (assignedDelegations > 0) {
 		throw new GraphQLError(m.nonStateActorDeleteBlocked());
+	}
+}
+
+/** Manual baselines need usable targets; templates ignore them (they are kept for later) */
+export function assertRegionalBaselineTargets(baseline: RegionalBaseline, targets: number[]) {
+	if (baseline === 'MANUAL' && !isValidManualTargets(targets)) {
+		throw new GraphQLError(m.regionalBaselineTargetsInvalid());
+	}
+	if (targets.length > 0 && targets.length !== regionalGroups.length) {
+		throw new GraphQLError(m.regionalBaselineTargetsInvalid());
 	}
 }

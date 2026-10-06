@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
 	assertCommitteeDeletable,
 	assertNonStateActorDeletable,
+	assertRegionalBaselineTargets,
 	assertSeatsPerDelegationAllowed,
 	committeeUpdateData,
 	lockedCommitteeSeats,
@@ -136,5 +137,19 @@ describe('assertNonStateActorDeletable', () => {
 	test('blocks while a delegation is assigned', () => {
 		expect(() => assertNonStateActorDeletable(1)).toThrow();
 		expect(() => assertNonStateActorDeletable(0)).not.toThrow();
+	});
+});
+
+describe('assertRegionalBaselineTargets', () => {
+	test('a manual baseline needs usable targets', () => {
+		expect(() => assertRegionalBaselineTargets('MANUAL', [3, 3, 2, 3, 4])).not.toThrow();
+		expect(() => assertRegionalBaselineTargets('MANUAL', [])).toThrow();
+		expect(() => assertRegionalBaselineTargets('MANUAL', [0, 0, 0, 0, 0])).toThrow();
+	});
+
+	test('templates keep stored targets but reject malformed ones', () => {
+		expect(() => assertRegionalBaselineTargets('ECOSOC', [])).not.toThrow();
+		expect(() => assertRegionalBaselineTargets('ECOSOC', [3, 3, 2, 3, 4])).not.toThrow();
+		expect(() => assertRegionalBaselineTargets('ECOSOC', [1, 2])).toThrow();
 	});
 });
