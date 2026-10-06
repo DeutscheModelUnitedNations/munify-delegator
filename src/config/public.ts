@@ -18,6 +18,15 @@ const schema = z.object({
 		z.stringbool().default(false)
 	),
 
+	// Full URL of the FontAwesome stylesheet (must bundle all used styles, e.g. `all.min.css`)
+	PUBLIC_FONTAWESOME_CSS_URL: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z
+			.string()
+			.url()
+			.default('https://cdn.dmun.de/cdn/fontawesome-pro-7.0.0-web/css/all.min.css?v=825d23a4')
+	),
+
 	// --- TEMPORARY: Migration notice (remove after migration period) ---
 	PUBLIC_OIDC_MIGRATION_NOTICE: z.preprocess(
 		(v) => (v === '' ? undefined : v),
