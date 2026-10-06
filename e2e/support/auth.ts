@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Claims accepted by the mock-oauth2-server login form (see mock-oidc-landingpage.html)
+ * Claims submitted through the oidc-mock "custom claims" login form (oidc-mock.yaml)
  * and normalized by src/api/services/OIDC.ts into an OIDCUser.
  */
 export interface TestUserClaims {
@@ -40,8 +40,8 @@ export function makeTestUser(
  * Claims for a user with a fixed, predictable id - use this (instead of `makeTestUser`) whenever
  * a test needs the DB fixtures (TeamMember, DelegationMember, ...) seeded ahead of time in
  * e2e/seed/seed.ts, since those rows are created against a fixed userId that must match this
- * user's OIDC `sub`. The mock-oauth2-server login form uses whatever `preferred_username` we
- * submit as the token's `sub`, so `id` must be exactly the id used when seeding.
+ * user's OIDC `sub`. `loginAs` submits `preferred_username` as the token's `sub`, so `id` must
+ * be exactly the id used when seeding.
  */
 export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {}): TestUserClaims {
 	return {
@@ -55,30 +55,35 @@ export function fixedTestUser(id: string, overrides: Partial<TestUserClaims> = {
 }
 
 /**
- * Drives the mock-oauth2-server (dev.docker-compose.yml `mockoidc` service) login page to
- * authenticate as `claims`, then - for a brand new user - completes the mandatory
- * "additional info" profile form the app requires before granting access to the rest of
- * the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
+ * Origin and path prefix of the mock OIDC provider, derived from the same env var the app itself
+ * uses. oidc-mock runs inside the Vite dev server: the app's server talks to its back channel
+ * (`PUBLIC_OIDC_AUTHORITY`), while the browser is sent to the same endpoints under the issuer's
+ * path on the app's own origin. Both count as "on the provider".
  */
-/**
- * Origin of the mock OIDC provider, derived from the same env var the app itself uses so the
- * suite keeps working when the provider is remapped to a non-default port (running alongside
- * other local projects, or CI sharding). Falls back to the dev.docker-compose.yml default.
- */
-const OIDC_ORIGIN = new URL(
-	process.env.PUBLIC_OIDC_AUTHORITY ??
-		'http://localhost:8080/default/.well-known/openid-configuration'
-).origin;
+const OIDC_ISSUER = new URL(
+	(
+		process.env.PUBLIC_OIDC_AUTHORITY ??
+		'http://127.0.0.1:8090/oidc/.well-known/openid-configuration'
+	).replace(/\/\.well-known\/openid-configuration$/, '')
+);
 
 /** True while `url` is on the mock OIDC provider rather than the app under test. */
-function isOidcUrl(url: string | URL): boolean {
+export function isOidcUrl(url: string | URL): boolean {
 	try {
-		return new URL(url.toString()).origin === OIDC_ORIGIN;
+		const parsed = new URL(url.toString());
+		const prefix = OIDC_ISSUER.pathname.replace(/\/$/, '') + '/';
+		return parsed.origin === OIDC_ISSUER.origin || parsed.pathname.startsWith(prefix);
 	} catch {
 		return false;
 	}
 }
 
+/**
+ * Drives the oidc-mock login page (served by the Vite dev server, see oidc-mock.yaml) to
+ * authenticate as `claims` via its "custom claims" form, then - for a brand new user - completes
+ * the mandatory "additional info" profile form the app requires before granting access to the
+ * rest of the app. Ends with `page` navigated to `startUrl` (or wherever the app redirected to).
+ */
 export async function loginAs(
 	page: Page,
 	claims: TestUserClaims,
@@ -88,9 +93,10 @@ export async function loginAs(
 	await page.goto(startUrl);
 
 	await page.waitForURL((url) => isOidcUrl(url), { timeout: 15_000 });
-	await page.locator('input[name="username"]').fill(claims.preferred_username);
-	await page.locator('textarea[name="claims"]').fill(JSON.stringify(claims));
-	await page.locator('form button[type="submit"]').click();
+	await page.locator('details summary').click();
+	await page.locator('input[name="custom_sub"]').fill(claims.preferred_username);
+	await page.locator('textarea[name="custom_claims"]').fill(JSON.stringify(claims));
+	await page.locator('button[name="custom"]').click();
 
 	await page.waitForURL((url) => !isOidcUrl(url), { timeout: 15_000 });
 
