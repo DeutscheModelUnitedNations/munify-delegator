@@ -22,7 +22,7 @@
 	class="border-base-300 grid grid-cols-1 gap-4 border-t py-6 first:border-t-0 first:pt-0 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8"
 	aria-labelledby={headingId}
 >
-	<div class="flex gap-3">
+	<div class="flex items-center gap-3 self-start">
 		<div
 			class="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full"
 		>
