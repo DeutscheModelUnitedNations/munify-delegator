@@ -24,6 +24,13 @@
 		"src/routes/*/dashboard/*/stages/Common/Certificate.svelte",
 		"src/routes/*/dashboard/*/stages/Supervisor/Supervisor.svelte"
 	],
+	// SvelteKit route modules only export what the framework consumes. Houdini adds
+	// `_houdini_load` and `_<Query>Variables`, which its generated load functions read,
+	// so fallow sees no importer and reported every one of them as unused.
+	"ignoreExports": [
+		{ "file": "src/routes/**/+page.ts", "exports": ["*"] },
+		{ "file": "src/routes/**/+layout.ts", "exports": ["*"] }
+	],
 	"health": {
 		"thresholdOverrides": [
 			{
