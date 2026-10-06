@@ -9,6 +9,8 @@
 	let formData = $derived(form.form);
 
 	const populateForm = () => {
+		$formData.given_name = faker.person.firstName();
+		$formData.family_name = faker.person.lastName();
 		$formData.phone = '+4917612345678';
 		$formData.zip = faker.location.zipCode({ format: '#####' });
 		$formData.street = faker.location.streetAddress();
