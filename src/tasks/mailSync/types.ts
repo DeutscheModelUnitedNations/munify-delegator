@@ -110,6 +110,7 @@ export interface SubscriberAttribs {
 			| 'MEMBER'
 			| 'REVIEWER'
 			| 'TEAM_COORDINATOR'
+			| 'CONTENT_LEAD'
 			| undefined;
 	}[];
 }

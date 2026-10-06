@@ -25,6 +25,7 @@ import { makeSeedTeamMember } from '../../prisma/seed/dev/teamMember';
 import { makeSeedSingleParticipant } from '../../prisma/seed/dev/singleParticipant';
 import { makeSeedDelegation } from '../../prisma/seed/dev/delegation';
 import { makeSeedDelegationMember } from '../../prisma/seed/dev/delegationMember';
+import { seedSeatPlanning } from './seatPlanning';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
 export const E2E_ROLE_ID = 'e2e00000role0000000000001';
@@ -613,6 +614,8 @@ export default async function seed() {
 		update: committeeAssignMember,
 		create: committeeAssignMember
 	});
+
+	await seedSeatPlanning(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 

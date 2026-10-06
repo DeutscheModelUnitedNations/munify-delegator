@@ -674,6 +674,7 @@ enum TeamRole {
   REVIEWER
   MEMBER
   TEAM_COORDINATOR
+  CONTENT_LEAD
 }
 
 /// A member of the team organizing the conference. Mostly used for admin stuff, enjoys elevated permissions.

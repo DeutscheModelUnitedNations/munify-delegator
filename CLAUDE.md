@@ -186,7 +186,7 @@ bun run preview
 - **CASL abilities** define fine-grained permissions per entity:
   - Actions: `list`, `read`, `update`, `delete`, `impersonate`
   - Each entity type has dedicated ability definitions
-- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc.
+- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. `CONTENT_LEAD` only reaches the seat planning (`planSeats` CASL action; navigation guard in `src/lib/services/managementAccess.ts`)
 
 #### 4. Internationalization
 

@@ -822,6 +822,7 @@ input CommitteeScalarRelationFilter {
 input CommitteeUpdateDataInput {
   abbreviation: String
   name: String
+  numOfSeatsPerDelegation: Int
   resolutionHeadline: String
 }
 
@@ -954,6 +955,7 @@ type Conference {
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int!
   schools: [ConferenceSchools!]!
+  seatPlanningAssignments: SeatPlanningAssignments!
   showCalendar: Boolean!
 
   """
@@ -3004,9 +3006,11 @@ type Mutation {
   createOneCalendarDay(data: CalendarDayCreateInput!): CalendarDay!
   createOneCalendarEntry(data: CalendarEntryCreateInput!): CalendarEntry!
   createOneCalendarTrack(data: CalendarTrackCreateInput!): CalendarTrack!
+  createOneCommittee(abbreviation: String!, conferenceId: ID!, name: String!, numOfSeatsPerDelegation: Int!): Committee!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!
+  createOneNonStateActor(conferenceId: ID!, data: NonStateActorCreateDataInput!): NonStateActor!
   createOnePaper(data: CreateOnePaperArgs!): Paper!
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOnePlace(data: PlaceCreateInput!): Place!
@@ -3057,6 +3061,7 @@ type Mutation {
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
+  setCommitteeNationSeat(committeeId: ID!, enabled: Boolean!, nationAlpha3Code: String!): Committee!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
@@ -3074,6 +3079,7 @@ type Mutation {
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
   updateOneDelegationMemberCommittee(data: UpdateOneDelegationMemberCommitteeInput!, where: DelegationMemberWhereUniqueInput!): DelegationMember
+  updateOneNonStateActor(data: NonStateActorUpdateDataInput!, where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOnePaper(data: UpdateOnePaperArgs!, where: UpdateOnePaperWhereArgs!): Paper
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOnePlace(data: PlaceUpdateInput!, where: PlaceWhereUniqueInput!): Place
@@ -3658,6 +3664,14 @@ input NonStateActorConferenceIdNameCompoundUniqueInput {
   name: String!
 }
 
+input NonStateActorCreateDataInput {
+  abbreviation: String!
+  description: String!
+  fontAwesomeIcon: String
+  name: String!
+  seatAmount: Int!
+}
+
 input NonStateActorCreateInput {
   abbreviation: String!
   assignedDelegations: DelegationCreateNestedManyWithoutAssignedNonStateActorInput
@@ -3716,6 +3730,14 @@ enum NonStateActorScalarFieldEnum {
   name
   seatAmount
   updatedAt
+}
+
+input NonStateActorUpdateDataInput {
+  abbreviation: String
+  description: String
+  fontAwesomeIcon: String
+  name: String
+  seatAmount: Int
 }
 
 input NonStateActorUpdateInput {
@@ -5155,6 +5177,26 @@ type SearchUserResult {
   participationType: String!
 }
 
+type SeatPlanningAssignedRole {
+  memberCount: Int!
+  nationAlpha3Code: String
+  nonStateActorId: ID
+}
+
+"""
+What the seat planning tool has to respect: committee seats taken by assigned delegates (locked cells) and the size of every delegation assigned to a role.
+"""
+type SeatPlanningAssignments {
+  committeeSeats: [SeatPlanningCommitteeSeat!]!
+  roles: [SeatPlanningAssignedRole!]!
+}
+
+type SeatPlanningCommitteeSeat {
+  committeeId: ID!
+  memberNames: [String!]!
+  nationAlpha3Code: String!
+}
+
 type SeedNewConferenceResult {
   conferenceId: String!
   success: Boolean!
@@ -6404,6 +6446,7 @@ input TeamMemberWhereUniqueInput {
 }
 
 enum TeamRole {
+  CONTENT_LEAD
   MEMBER
   PARTICIPANT_CARE
   PROJECT_MANAGEMENT

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -25,7 +26,9 @@
 					{#each conferences as conference (conference.id)}
 						<tr>
 							<td>{conference.title}</td>
-							<td>{conference.myMembership}</td>
+							<td>
+								{conference.myMembership ? translateTeamRole(conference.myMembership) : ''}
+							</td>
 							<td>
 								<a class="btn" href={`management/${conference.id}`}
 									>{m.open()}<i class="fa-duotone fa-arrow-right"></i></a

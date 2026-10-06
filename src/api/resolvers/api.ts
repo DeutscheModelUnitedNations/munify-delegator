@@ -13,6 +13,9 @@ import './modules/conference/plausibility';
 import './modules/conference/certificateSignature';
 import './modules/conference/statistics';
 import './modules/conference/seed';
+// Every resolver module imports the builder, which imports this file in dev for schema reloads.
+// fallow-ignore-next-line circular-dependency
+import './modules/conference/seatPlanning';
 import './modules/auth';
 import './modules/committee';
 import './modules/committeeAgendaItem';

@@ -1,5 +1,6 @@
 import type { CalendarEntryColor$options, PaperStatus$options, PaperType$options } from '$houdini';
 import { m } from '$lib/paraglide/messages';
+import type { RegionalGroup } from '$lib/services/seatPlanning/unMembers';
 
 export function translatePaperStatus(paperStatus: PaperStatus$options) {
 	switch (paperStatus) {
@@ -116,7 +117,23 @@ export function translateTeamRole(role: string) {
 			return m.teamRoleMember();
 		case 'TEAM_COORDINATOR':
 			return m.teamRoleTeamCoordinator();
+		case 'CONTENT_LEAD':
+			return m.teamRoleContentLead();
+		case 'SYSTEM_ADMIN':
+			return m.administrator();
 		default:
 			return role;
 	}
+}
+
+const regionalGroupLabels: Record<RegionalGroup, () => string> = {
+	'African Group': m.regionalGroupAfrican,
+	'Asia and the Pacific Group': m.regionalGroupAsiaPacific,
+	'Eastern European Group': m.regionalGroupEasternEuropean,
+	'Latin American and Caribbean Group': m.regionalGroupLatinAmerican,
+	'Western European and Others Group': m.regionalGroupWesternEuropean
+};
+
+export function translateRegionalGroup(group: RegionalGroup) {
+	return regionalGroupLabels[group]();
 }

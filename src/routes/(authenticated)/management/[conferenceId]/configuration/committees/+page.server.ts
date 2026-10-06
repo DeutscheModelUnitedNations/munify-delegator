@@ -1,5 +1,4 @@
 import { cache, graphql } from '$houdini';
-import z from 'zod';
 import type { PageServerLoad } from './$types';
 import { message, superValidate } from 'sveltekit-superforms';
 import { zod4 } from 'sveltekit-superforms/adapters';
@@ -10,7 +9,10 @@ import { AddAgendaItemFormSchema } from './form-schema';
 
 const ConfigurationCommitteesQuery = graphql(`
 	query ManagementCommitteeQuery($conferenceId: String!) {
-		findManyCommittees(where: { conferenceId: { equals: $conferenceId } }) {
+		findManyCommittees(
+			where: { conferenceId: { equals: $conferenceId } }
+			orderBy: [{ createdAt: asc }]
+		) {
 			id
 			abbreviation
 			name
@@ -19,6 +21,9 @@ const ConfigurationCommitteesQuery = graphql(`
 			nations {
 				alpha2Code
 				alpha3Code
+			}
+			delegationMembers {
+				id
 			}
 			agendaItems {
 				id
