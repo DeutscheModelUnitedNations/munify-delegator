@@ -1,12 +1,13 @@
 # End-to-end tests
 
-Playwright specs driving the real app against a real database and the mock OIDC provider from
-`dev.docker-compose.yml`.
+Playwright specs driving the real app against a real database and the mock OIDC provider
+[oidc-mock](https://github.com/strehk/oidc-mock), which runs inside the Vite dev server Playwright
+starts (configured in `oidc-mock.yaml`).
 
 ## Running
 
-The suite needs Postgres and the mock OIDC server. The default ports (5432 / 8080 / 5173) are
-often taken by other projects, so every one of them is overridable:
+The suite needs Postgres; the mock OIDC provider comes with the dev server. The default ports
+(5432 / 5173) are often taken by other projects, so both are overridable:
 
 ```bash
 # Default stack (dev.docker-compose.yml on its usual ports)
@@ -15,11 +16,12 @@ bun run test:e2e
 ```
 
 ```bash
-# Alongside another project that already holds 5432 / 8080 / 5173
-docker compose -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres mockoidc
+# Alongside another project that already holds 5432 / 5173
+# Own project name (-p): without it compose replaces the dev Postgres container
+docker compose -p delegator-e2e -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres
 
 export DATABASE_URL="postgres://postgres:postgres@localhost:15432/postgres"
-export PUBLIC_OIDC_AUTHORITY="http://localhost:18080/default/.well-known/openid-configuration"
+export PUBLIC_OIDC_AUTHORITY="http://127.0.0.1:8090/oidc/.well-known/openid-configuration"
 export E2E_PORT=5174
 
 bunx prisma migrate deploy   # first time only
@@ -28,8 +30,10 @@ bunx playwright test
 
 - `E2E_PORT` moves the dev server (`playwright.config.ts`); it also lets CI shard without
   port collisions.
-- The login helper derives the OIDC origin from `PUBLIC_OIDC_AUTHORITY`, so remapping the mock
-  provider's port needs no code change.
+- The oidc-mock back channel listens on `127.0.0.1:8090`. A second dev server (e.g. your normal
+  `bun run dev` next to the e2e one) shares the running mock instead of failing on the port.
+- Logins go through the mock's "custom claims" form, so every spec can sign in with any claims;
+  the preset users in `oidc-mock.yaml` are for clicking around by hand.
 
 ## How the fixtures work
 

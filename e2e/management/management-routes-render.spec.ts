@@ -29,11 +29,12 @@ const ROUTES = [
 	'/postalRegistration',
 	'/survey',
 	'/configuration',
-	'/configuration/committees'
+	'/configuration/committees',
+	'/seat-planning'
 ];
 
 test('every management route renders for an authorised admin', async ({ page }) => {
-	// Seventeen full page loads in one test; the 30s default is for single-flow specs.
+	// One full page load per route in a single test; the 30s default is for single-flow specs.
 	test.setTimeout(240_000);
 	const pageErrors: string[] = [];
 	page.on('pageerror', (e) => pageErrors.push(e.message));

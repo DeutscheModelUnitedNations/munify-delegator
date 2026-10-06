@@ -33,6 +33,16 @@ export const teamDashboardLinks: TeamDashboardLink[] = [
 		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
 	},
 	{
+		id: 'seatPlanning',
+		icon: 'table-cells',
+		getTitle: () => m.seatPlanning(),
+		getDescription: () => m.seatPlanningDescription(),
+		getHref: (ctx) => `/management/${ctx.conferenceId}/seat-planning`,
+		external: false,
+		isVisible: () => true,
+		allowedRoles: ['PROJECT_MANAGEMENT', 'CONTENT_LEAD']
+	},
+	{
 		id: 'attendanceScanner',
 		icon: 'barcode-read',
 		getTitle: () => m.attendanceScanner(),

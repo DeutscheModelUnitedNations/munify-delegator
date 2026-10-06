@@ -61,12 +61,15 @@ export const ConferenceSeedingSchema = z.object({
 			z.object({
 				name: z.string(),
 				abbreviation: z.string().refine((x) => x.length < 6),
+				// Optional and may be empty: a conference can be imported before the first seat
+				// distribution exists; seats are then added in the seat planning tool.
 				nations: z
 					.array(nationSeedSchema)
-					.min(1, { message: 'A committee needs at least one nation' })
 					.refine((items) => hasUniqueValues(items), {
 						message: 'No Duplicate Nations Allowed'
-					}),
+					})
+					.optional()
+					.default([]),
 				numOfSeatsPerDelegation: z.number().min(1).optional().default(1)
 			})
 		)

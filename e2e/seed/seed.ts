@@ -11,8 +11,8 @@
  *
  * ID scheme: "actor" users (team members/reviewers/etc that log in during a test) get a fixed,
  * predictable id so a spec can seed their DB rows here and then log in as them - the app derives
- * a user's DB id straight from the OIDC `sub` claim, and the mock-oauth2-server login form uses
- * whatever `preferred_username` we send as the token's `sub` (see e2e/support/auth.ts
+ * a user's DB id straight from the OIDC `sub` claim, and the e2e login helper submits
+ * `preferred_username` as the token's `sub` to oidc-mock (see e2e/support/auth.ts
  * `fixedTestUser`). "Target" users (acted upon, never log in themselves) are just plain seeded
  * rows.
  */
@@ -25,6 +25,7 @@ import { makeSeedTeamMember } from '../../prisma/seed/dev/teamMember';
 import { makeSeedSingleParticipant } from '../../prisma/seed/dev/singleParticipant';
 import { makeSeedDelegation } from '../../prisma/seed/dev/delegation';
 import { makeSeedDelegationMember } from '../../prisma/seed/dev/delegationMember';
+import { seedSeatPlanning } from './seatPlanning';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
 export const E2E_ROLE_ID = 'e2e00000role0000000000001';
@@ -613,6 +614,8 @@ export default async function seed() {
 		update: committeeAssignMember,
 		create: committeeAssignMember
 	});
+
+	await seedSeatPlanning(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 

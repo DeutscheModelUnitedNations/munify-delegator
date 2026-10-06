@@ -4,6 +4,7 @@
 	import { downloadCompleteCertificate } from '$lib/services/pdfGenerator';
 	import { toast } from 'svelte-sonner';
 	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import ResolutionDownloads from './ResolutionDownloads.svelte';
 	import RoleWidget from '$lib/components/DelegationStats/RoleWidget.svelte';
 	import type { MyConferenceparticipationQuery$result } from '$houdini';
 
@@ -167,3 +168,5 @@
 		<div class="skeleton bg-base-200 h-16 w-full max-w-sm"></div>
 	{/if}
 </DashboardSection>
+
+<ResolutionDownloads {conferenceId} />

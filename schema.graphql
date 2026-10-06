@@ -622,6 +622,17 @@ type Committee {
   numOfSeatsPerDelegation: Int!
 
   """
+  What the regional distribution of the committee's seats is compared to in the seat planning
+  """
+  regionalBaseline: RegionalBaseline!
+
+  """
+  Target seats per UN regional group for the MANUAL baseline, in the order African, Asia-Pacific,
+  Eastern European, Latin American and Caribbean, Western European and Others
+  """
+  regionalBaselineTargets: [Int!]!
+
+  """
   Custom resolution headline (e.g., "Der Sicherheitsrat" or "The Security Council")
   """
   resolutionHeadline: String
@@ -754,7 +765,10 @@ input CommitteeCreateInput {
   name: String!
   nations: NationCreateNestedManyWithoutCommitteesInput
   numOfSeatsPerDelegation: Int
+  regionalBaseline: RegionalBaseline
+  regionalBaselineTargets: [Int!]
   resolutionHeadline: String
+  resolutions: ResolutionCreateNestedManyWithoutCommitteeInput
   updatedAt: DateTime
 }
 
@@ -792,7 +806,10 @@ input CommitteeOrderByWithRelationInput {
   name: SortOrder
   nations: NationOrderByRelationAggregateInput
   numOfSeatsPerDelegation: SortOrder
+  regionalBaseline: SortOrder
+  regionalBaselineTargets: SortOrder
   resolutionHeadline: SortOrder
+  resolutions: ResolutionOrderByRelationAggregateInput
   updatedAt: SortOrder
 }
 
@@ -808,6 +825,8 @@ enum CommitteeScalarFieldEnum {
   id
   name
   numOfSeatsPerDelegation
+  regionalBaseline
+  regionalBaselineTargets
   resolutionHeadline
   updatedAt
 }
@@ -820,6 +839,7 @@ input CommitteeScalarRelationFilter {
 input CommitteeUpdateDataInput {
   abbreviation: String
   name: String
+  numOfSeatsPerDelegation: Int
   resolutionHeadline: String
 }
 
@@ -833,7 +853,10 @@ input CommitteeUpdateInput {
   name: StringFieldUpdateOperationsInput
   nations: NationUpdateManyWithoutCommitteesNestedInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+  regionalBaseline: EnumRegionalBaselineFieldUpdateOperationsInput
+  regionalBaselineTargets: [Int!]
   resolutionHeadline: NullableStringFieldUpdateOperationsInput
+  resolutions: ResolutionUpdateManyWithoutCommitteeNestedInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
 
@@ -843,6 +866,8 @@ input CommitteeUpdateManyMutationInput {
   id: StringFieldUpdateOperationsInput
   name: StringFieldUpdateOperationsInput
   numOfSeatsPerDelegation: IntFieldUpdateOperationsInput
+  regionalBaseline: EnumRegionalBaselineFieldUpdateOperationsInput
+  regionalBaselineTargets: [Int!]
   resolutionHeadline: NullableStringFieldUpdateOperationsInput
   updatedAt: DateTimeFieldUpdateOperationsInput
 }
@@ -873,7 +898,10 @@ input CommitteeWhereInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
+  regionalBaseline: EnumRegionalBaselineFilter
+  regionalBaselineTargets: IntNullableListFilter
   resolutionHeadline: StringNullableFilter
+  resolutions: ResolutionListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -891,7 +919,10 @@ input CommitteeWhereUniqueInput {
   name: StringFilter
   nations: NationListRelationFilter
   numOfSeatsPerDelegation: IntFilter
+  regionalBaseline: EnumRegionalBaselineFilter
+  regionalBaselineTargets: IntNullableListFilter
   resolutionHeadline: StringNullableFilter
+  resolutions: ResolutionListRelationFilter
   updatedAt: DateTimeFilter
 }
 
@@ -949,6 +980,7 @@ type Conference {
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int!
   schools: [ConferenceSchools!]!
+  seatPlanningAssignments: SeatPlanningAssignments!
   showCalendar: Boolean!
 
   """
@@ -1020,6 +1052,7 @@ input ConferenceCreateInput {
   postalStreet: String
   postalZip: String
   registrationDeadlineGracePeriodMinutes: Int
+  resolutions: ResolutionCreateNestedManyWithoutConferenceInput
   showCalendar: Boolean
   showInfoExpanded: Boolean
   singleParticipants: SingleParticipantCreateNestedManyWithoutConferenceInput
@@ -1083,6 +1116,7 @@ input ConferenceOrderByWithRelationInput {
   postalStreet: SortOrder
   postalZip: SortOrder
   registrationDeadlineGracePeriodMinutes: SortOrder
+  resolutions: ResolutionOrderByRelationAggregateInput
   showCalendar: SortOrder
   showInfoExpanded: SortOrder
   singleParticipants: SingleParticipantOrderByRelationAggregateInput
@@ -1624,6 +1658,7 @@ input ConferenceUpdateInput {
   postalStreet: NullableStringFieldUpdateOperationsInput
   postalZip: NullableStringFieldUpdateOperationsInput
   registrationDeadlineGracePeriodMinutes: IntFieldUpdateOperationsInput
+  resolutions: ResolutionUpdateManyWithoutConferenceNestedInput
   showCalendar: BoolFieldUpdateOperationsInput
   showInfoExpanded: BoolFieldUpdateOperationsInput
   singleParticipants: SingleParticipantUpdateManyWithoutConferenceNestedInput
@@ -1737,6 +1772,7 @@ input ConferenceWhereInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  resolutions: ResolutionListRelationFilter
   showCalendar: BoolFilter
   showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
@@ -1803,6 +1839,7 @@ input ConferenceWhereUniqueInput {
   postalStreet: StringNullableFilter
   postalZip: StringNullableFilter
   registrationDeadlineGracePeriodMinutes: IntFilter
+  resolutions: ResolutionListRelationFilter
   showCalendar: BoolFilter
   showInfoExpanded: BoolFilter
   singleParticipants: SingleParticipantListRelationFilter
@@ -2641,6 +2678,27 @@ input EnumPaperTypeWithAggregatesFilter {
   notIn: [PaperType!]
 }
 
+input EnumRegionalBaselineFieldUpdateOperationsInput {
+  set: RegionalBaseline
+}
+
+input EnumRegionalBaselineFilter {
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
+input EnumRegionalBaselineWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumRegionalBaselineFilter
+  _min: NestedEnumRegionalBaselineFilter
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
 input EnumReviewHelpStatusFieldUpdateOperationsInput {
   set: ReviewHelpStatus
 }
@@ -2868,6 +2926,14 @@ input IntNullableFilter {
   notIn: [Int!]
 }
 
+input IntNullableListFilter {
+  equals: [Int!]
+  has: Int
+  hasEvery: [Int!]
+  hasSome: [Int!]
+  isEmpty: Boolean
+}
+
 input IntNullableWithAggregatesFilter {
   _avg: NestedFloatNullableFilter
   _count: NestedIntNullableFilter
@@ -2994,9 +3060,11 @@ type Mutation {
   createOneCalendarDay(data: CalendarDayCreateInput!): CalendarDay!
   createOneCalendarEntry(data: CalendarEntryCreateInput!): CalendarEntry!
   createOneCalendarTrack(data: CalendarTrackCreateInput!): CalendarTrack!
+  createOneCommittee(abbreviation: String!, conferenceId: ID!, name: String!, numOfSeatsPerDelegation: Int!): Committee!
   createOneConferenceSupervisor(conferenceId: ID!, plansOwnAttendenceAtConference: Boolean!, userId: ID): ConferenceSupervisor!
   createOneDelegation(conferenceId: ID!, experience: String, motivation: String, school: String): Delegation!
   createOneDelegationMember(conferenceId: ID!, entryCode: String!): DelegationMember!
+  createOneNonStateActor(conferenceId: ID!, data: NonStateActorCreateDataInput!): NonStateActor!
   createOnePaper(data: CreateOnePaperArgs!): Paper!
   createOnePaymentTransaction(conferenceId: ID!, paymentFor: [ID!]!, userId: ID!): PaymentTransaction!
   createOnePlace(data: PlaceCreateInput!): Place!
@@ -3007,6 +3075,7 @@ type Mutation {
   createOneTeamMember(data: TeamMemberCreateInput!): TeamMember!
   createOneWaitingListEntry(conferenceId: ID!, experience: String!, motivation: String!, requests: String, school: String!): WaitingListEntry!
   createPaperReview(comments: Json!, newStatus: PaperStatus!, paperId: String!): CreatePaperReviewResult!
+  createResolution(committeeId: String, conferenceId: String!, file: File!, title: String): Resolution!
   createReviewerSnippet(content: Json!, name: String!): ReviewerSnippet!
   createTeamMemberInvitations(conferenceId: String!, invitations: [CreateInvitationInput!]!): CreateInvitationsResult!
   deleteDeadDelegationMembers(conferenceId: ID!): [DelegationMember!]!
@@ -3036,6 +3105,7 @@ type Mutation {
   deleteOneTeamMember(where: TeamMemberWhereUniqueInput!): TeamMember
   deleteOneUser(where: UserWhereUniqueInput!): User
   deleteOneWaitingListEntry(where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  deleteResolution(id: String!): Resolution!
   deleteReviewerSnippet(id: String!): ReviewerSnippet!
   importCalendarDay(conferenceId: String!, date: DateTime!, importData: JSONObject!, name: String!, sortOrder: Int!): ImportCalendarDayResult!
   normalizeSchoolsInConference(conferenceId: String!, newSchoolName: String!, schoolsToMerge: [String!]!): Conference
@@ -3045,6 +3115,8 @@ type Mutation {
   seedNewConference(data: JSONObject!): SeedNewConferenceResult!
   sendAssignmentData(data: JSONObject!, where: ConferenceWhereUniqueInput!): SetAssignmentDataResult!
   setAgendaItemReviewHelpStatus(agendaItemId: String!, status: ReviewHelpStatus!): CommitteeAgendaItem!
+  setCommitteeNationSeat(committeeId: ID!, enabled: Boolean!, nationAlpha3Code: String!): Committee!
+  setCommitteeRegionalBaseline(baseline: RegionalBaseline!, committeeId: ID!, targets: [Int!]): Committee!
   startImpersonation(scope: String, targetUserId: String!): Boolean!
   stopImpersonation: Boolean!
   swapRoleApplicationRanks(firstRoleApplicationId: ID!, secondRoleApplicationId: ID!): RoleApplicationRankSwapResult!
@@ -3062,6 +3134,7 @@ type Mutation {
   updateOneCustomConferenceRole(data: CustomConferenceRoleUpdateInput!, where: CustomConferenceRoleWhereUniqueInput!): CustomConferenceRole
   updateOneDelegation(applied: Boolean, experience: String, motivation: String, newHeadDelegateUserId: ID, resetEntryCode: Boolean, school: String, where: DelegationWhereUniqueInput!): Delegation
   updateOneDelegationMemberCommittee(data: UpdateOneDelegationMemberCommitteeInput!, where: DelegationMemberWhereUniqueInput!): DelegationMember
+  updateOneNonStateActor(data: NonStateActorUpdateDataInput!, where: NonStateActorWhereUniqueInput!): NonStateActor
   updateOnePaper(data: UpdateOnePaperArgs!, where: UpdateOnePaperWhereArgs!): Paper
   updateOnePaymentTransaction(assignedStatus: AdministrativeStatus!, id: ID!, recievedAt: DateTime): PaymentTransaction
   updateOnePlace(data: PlaceUpdateInput!, where: PlaceWhereUniqueInput!): Place
@@ -3075,6 +3148,7 @@ type Mutation {
   updateOneUsersIdentityInfo(birthday: DateTime, familyName: String, givenName: String, where: UserWhereUniqueInput!): User
   updateOneUsersNewsletterPreferences(email: String!, wantsJoinTeamInformation: Boolean, wantsToReceiveGeneralInformation: Boolean): User
   updateOneWaitingListEntry(data: WaitingListEntryUpdateInput!, where: WaitingListEntryWhereUniqueInput!): WaitingListEntry
+  updateResolution(clearCommittee: Boolean, committeeId: String, id: String!, title: String): Resolution!
   updateReviewerSnippet(content: Json!, id: String!, name: String!): ReviewerSnippet!
   upsertSelf: UpsertSelfResult!
 }
@@ -3403,6 +3477,23 @@ input NestedEnumPaperTypeWithAggregatesFilter {
   notIn: [PaperType!]
 }
 
+input NestedEnumRegionalBaselineFilter {
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
+input NestedEnumRegionalBaselineWithAggregatesFilter {
+  _count: NestedIntFilter
+  _max: NestedEnumRegionalBaselineFilter
+  _min: NestedEnumRegionalBaselineFilter
+  equals: RegionalBaseline
+  in: [RegionalBaseline!]
+  not: RegionalBaseline
+  notIn: [RegionalBaseline!]
+}
+
 input NestedEnumReviewHelpStatusFilter {
   equals: ReviewHelpStatus
   in: [ReviewHelpStatus!]
@@ -3645,6 +3736,14 @@ input NonStateActorConferenceIdNameCompoundUniqueInput {
   name: String!
 }
 
+input NonStateActorCreateDataInput {
+  abbreviation: String!
+  description: String!
+  fontAwesomeIcon: String
+  name: String!
+  seatAmount: Int!
+}
+
 input NonStateActorCreateInput {
   abbreviation: String!
   assignedDelegations: DelegationCreateNestedManyWithoutAssignedNonStateActorInput
@@ -3703,6 +3802,14 @@ enum NonStateActorScalarFieldEnum {
   name
   seatAmount
   updatedAt
+}
+
+input NonStateActorUpdateDataInput {
+  abbreviation: String
+  description: String
+  fontAwesomeIcon: String
+  name: String
+  seatAmount: Int
 }
 
 input NonStateActorUpdateInput {
@@ -4611,6 +4718,7 @@ type Query {
   findManyPapers(cursor: PaperWhereUniqueInput, distinct: [PaperScalarFieldEnum!], orderBy: [PaperOrderByWithRelationInput!], skip: Int, take: Int, where: PaperWhereInput): [Paper!]!
   findManyPaymentTransactions(cursor: PaymentTransactionWhereUniqueInput, distinct: [PaymentTransactionScalarFieldEnum!], orderBy: [PaymentTransactionOrderByWithRelationInput!], skip: Int, take: Int, where: PaymentTransactionWhereInput): [PaymentTransaction!]!
   findManyPlaces(cursor: PlaceWhereUniqueInput, distinct: [PlaceScalarFieldEnum!], orderBy: [PlaceOrderByWithRelationInput!], skip: Int, take: Int, where: PlaceWhereInput): [Place!]!
+  findManyResolutions(cursor: ResolutionWhereUniqueInput, distinct: [ResolutionScalarFieldEnum!], orderBy: [ResolutionOrderByWithRelationInput!], skip: Int, take: Int, where: ResolutionWhereInput): [Resolution!]!
   findManyRoleApplications(cursor: RoleApplicationWhereUniqueInput, distinct: [RoleApplicationScalarFieldEnum!], orderBy: [RoleApplicationOrderByWithRelationInput!], skip: Int, take: Int, where: RoleApplicationWhereInput): [RoleApplication!]!
   findManySingleParticipants(cursor: SingleParticipantWhereUniqueInput, distinct: [SingleParticipantScalarFieldEnum!], orderBy: [SingleParticipantOrderByWithRelationInput!], skip: Int, take: Int, where: SingleParticipantWhereInput): [SingleParticipant!]!
   findManySurveyAnswers(cursor: SurveyAnswerWhereUniqueInput, distinct: [SurveyAnswerScalarFieldEnum!], orderBy: [SurveyAnswerOrderByWithRelationInput!], skip: Int, take: Int, where: SurveyAnswerWhereInput): [SurveyAnswer!]!
@@ -4640,6 +4748,7 @@ type Query {
   findUniquePaper(where: PaperWhereUniqueInput!): Paper
   findUniquePaymentTransaction(where: PaymentTransactionWhereUniqueInput!): PaymentTransaction
   findUniquePlace(where: PlaceWhereUniqueInput!): Place
+  findUniqueResolution(where: ResolutionWhereUniqueInput!): Resolution
   findUniqueRoleApplication(where: RoleApplicationWhereUniqueInput!): RoleApplication
   findUniqueSingleParticipant(where: SingleParticipantWhereUniqueInput!): SingleParticipant
   findUniqueSurveyAnswer(where: SurveyAnswerWhereUniqueInput!): SurveyAnswer
@@ -4677,6 +4786,154 @@ type RegenerateInvitationResult {
   newExpiresAt: DateTime
   newToken: String
   success: Boolean!
+}
+
+enum RegionalBaseline {
+  ECOSOC
+  HUMAN_RIGHTS_COUNCIL
+  MANUAL
+  SECURITY_COUNCIL
+  UN_MEMBERS
+}
+
+type Resolution {
+  """
+  Optional committee this resolution belongs to. Kept when the committee is
+  deleted so the resolution stays downloadable, just without a committee tag.
+  """
+  committee: Committee
+  committeeId: String
+  conference: Conference!
+  conferenceId: String!
+  createdAt: DateTime!
+
+  """
+  Original filename of the uploaded document (used for the download attachment name)
+  """
+  fileName: String!
+  id: ID!
+
+  """
+  Human readable title shown to participants (defaults to the uploaded filename)
+  """
+  title: String!
+}
+
+input ResolutionCreateInput {
+  committeeId: String
+  conferenceId: String!
+  content: String!
+  createdAt: DateTime
+  fileName: String!
+  id: String
+  title: String!
+  updatedAt: DateTime
+}
+
+input ResolutionCreateNestedManyWithoutCommitteeInput {
+  connect: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionCreateNestedManyWithoutConferenceInput {
+  connect: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionListRelationFilter {
+  every: ResolutionWhereInput
+  none: ResolutionWhereInput
+  some: ResolutionWhereInput
+}
+
+input ResolutionOrderByRelationAggregateInput {
+  _count: SortOrder
+}
+
+input ResolutionOrderByWithRelationInput {
+  committee: CommitteeOrderByWithRelationInput
+  committeeId: SortOrder
+  conference: ConferenceOrderByWithRelationInput
+  conferenceId: SortOrder
+  content: SortOrder
+  createdAt: SortOrder
+  fileName: SortOrder
+  id: SortOrder
+  title: SortOrder
+  updatedAt: SortOrder
+}
+
+enum ResolutionScalarFieldEnum {
+  committeeId
+  conferenceId
+  content
+  createdAt
+  fileName
+  id
+  title
+  updatedAt
+}
+
+input ResolutionUpdateInput {
+  committeeId: NullableStringFieldUpdateOperationsInput
+  conferenceId: StringFieldUpdateOperationsInput
+  content: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  fileName: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input ResolutionUpdateManyMutationInput {
+  content: StringFieldUpdateOperationsInput
+  createdAt: DateTimeFieldUpdateOperationsInput
+  fileName: StringFieldUpdateOperationsInput
+  id: StringFieldUpdateOperationsInput
+  title: StringFieldUpdateOperationsInput
+  updatedAt: DateTimeFieldUpdateOperationsInput
+}
+
+input ResolutionUpdateManyWithoutCommitteeNestedInput {
+  connect: [ResolutionWhereUniqueInput!]
+  disconnect: [ResolutionWhereUniqueInput!]
+  set: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionUpdateManyWithoutConferenceNestedInput {
+  connect: [ResolutionWhereUniqueInput!]
+  disconnect: [ResolutionWhereUniqueInput!]
+  set: [ResolutionWhereUniqueInput!]
+}
+
+input ResolutionWhereInput {
+  AND: [ResolutionWhereInput!]
+  NOT: [ResolutionWhereInput!]
+  OR: [ResolutionWhereInput!]
+  committee: CommitteeWhereInput
+  committeeId: StringNullableFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  content: StringFilter
+  createdAt: DateTimeFilter
+  fileName: StringFilter
+  id: StringFilter
+  title: StringFilter
+  updatedAt: DateTimeFilter
+}
+
+input ResolutionWhereUniqueInput {
+  AND: [ResolutionWhereInput!]
+  NOT: [ResolutionWhereInput!]
+  OR: [ResolutionWhereInput!]
+  committee: CommitteeWhereInput
+  committeeId: StringNullableFilter
+  conference: ConferenceWhereInput
+  conferenceId: StringFilter
+  content: StringFilter
+  createdAt: DateTimeFilter
+  fileName: StringFilter
+  id: String
+  title: StringFilter
+  updatedAt: DateTimeFilter
 }
 
 enum ReviewHelpStatus {
@@ -4998,6 +5255,26 @@ type SearchUserResult {
   given_name: String!
   id: String!
   participationType: String!
+}
+
+type SeatPlanningAssignedRole {
+  memberCount: Int!
+  nationAlpha3Code: String
+  nonStateActorId: ID
+}
+
+"""
+What the seat planning tool has to respect: committee seats taken by assigned delegates (locked cells) and the size of every delegation assigned to a role.
+"""
+type SeatPlanningAssignments {
+  committeeSeats: [SeatPlanningCommitteeSeat!]!
+  roles: [SeatPlanningAssignedRole!]!
+}
+
+type SeatPlanningCommitteeSeat {
+  committeeId: ID!
+  memberNames: [String!]!
+  nationAlpha3Code: String!
 }
 
 type SeedNewConferenceResult {
@@ -6249,6 +6526,7 @@ input TeamMemberWhereUniqueInput {
 }
 
 enum TeamRole {
+  CONTENT_LEAD
   MEMBER
   PARTICIPANT_CARE
   PROJECT_MANAGEMENT
