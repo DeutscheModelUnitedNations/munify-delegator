@@ -69,6 +69,11 @@ bun run typecheck      # TypeScript only
 # Lint (slow - runs automatically on git push via lefthook)
 bun run lint           # Only run manually when specifically needed
 
+# Codebase analysis (fallow: dead code, cycles, duplication, complexity)
+bun run fallow         # Full report
+bun run fallow:audit   # Only what changed against the branch base
+bun run fallow:health  # Health score with letter grade
+
 # Testing
 bun test               # Run tests once
 bun run test:watch     # Watch mode
@@ -181,7 +186,7 @@ bun run preview
 - **CASL abilities** define fine-grained permissions per entity:
   - Actions: `list`, `read`, `update`, `delete`, `impersonate`
   - Each entity type has dedicated ability definitions
-- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc.
+- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. `CONTENT_LEAD` only reaches the seat planning (`planSeats` CASL action; navigation guard in `src/lib/services/managementAccess.ts`)
 
 #### 4. Internationalization
 
@@ -319,8 +324,10 @@ Required variables (see `.env.example`):
 
 ## Git Hooks (Lefthook)
 
-**Pre-commit**: Auto-format staged files with Prettier
-**Pre-push**: Run tests and lint staged files
+**Pre-commit**: Auto-format staged files with Prettier, then run `fallow audit` on the working tree
+**Pre-push**: Run tests, lint and format-check pushed files, and run `fallow audit` against the branch base
+
+The pre-commit fallow step is a gate: it fails the commit when the commit introduces new fallow findings (findings already present in touched files don't count). The pre-push fallow step is advisory: it uses `--brief`, which renders the findings but always exits 0, mirroring the deliberately non-blocking fallow job in CI. To gate pushes too, drop `--brief` from the pre-push command in `lefthook.yml`.
 
 ## Performance Notes
 

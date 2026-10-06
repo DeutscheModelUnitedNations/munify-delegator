@@ -1,4 +1,6 @@
 import { db } from '$db/db';
+import { GraphQLError } from 'graphql';
+import { requireToBeConferenceAdmin } from '$api/services/requireUserToBeConferenceAdmin';
 import {
 	createOneSurveyOptionMutationObject,
 	deleteOneSurveyOptionMutationObject,
@@ -84,7 +86,7 @@ builder.mutationFields((t) => {
 				// Get the question to find its conference
 				const questionId = args.data.questionId;
 				if (!questionId) {
-					throw new Error('Question ID is required');
+					throw new GraphQLError('Question ID is required');
 				}
 
 				const question = await db.surveyQuestion.findUnique({
@@ -92,21 +94,10 @@ builder.mutationFields((t) => {
 				});
 
 				if (!question) {
-					throw new Error('Survey question not found');
+					throw new GraphQLError('Survey question not found');
 				}
 
-				// Verify user is team member with appropriate role
-				const teamMember = await db.teamMember.findFirst({
-					where: {
-						conferenceId: question.conferenceId,
-						userId: user.sub,
-						role: { in: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT'] }
-					}
-				});
-
-				if (!teamMember) {
-					throw new Error('Access denied - requires team member status');
-				}
+				await requireToBeConferenceAdmin({ conferenceId: question.conferenceId, user });
 
 				return field.resolve(query, root, args, ctx, info);
 			}

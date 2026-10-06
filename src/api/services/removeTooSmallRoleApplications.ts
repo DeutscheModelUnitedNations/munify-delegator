@@ -1,5 +1,6 @@
 import { db } from '$db/db';
 import type { Prisma } from '@prisma/client';
+import { normalizeRoleApplicationRanks } from './normalizeRoleApplicationRanks';
 
 /**
  * In case a delegation changes during its existence, we need to check some state throughout the app.
@@ -86,4 +87,35 @@ export async function tidyRoleApplications(delegationWhere: Prisma.DelegationWhe
 			}
 		}
 	});
+
+	// close the gaps the deletions above may have left in the ranking
+	await normalizeRoleApplicationRanks(db, delegation.id);
+}
+
+/**
+ * Re-checks the applications of every delegation of the conference that applied for one of the
+ * given roles, e.g. after a nation lost a committee seat or an NSA got fewer seats.
+ */
+export async function tidyRoleApplicationsForRoles(
+	conferenceId: string,
+	roles: { nationAlpha3Codes?: string[]; nonStateActorIds?: string[] }
+) {
+	const delegations = await db.delegation.findMany({
+		where: {
+			conferenceId,
+			appliedForRoles: {
+				some: {
+					OR: [
+						{ nationId: { in: roles.nationAlpha3Codes ?? [] } },
+						{ nonStateActorId: { in: roles.nonStateActorIds ?? [] } }
+					]
+				}
+			}
+		},
+		select: { id: true }
+	});
+
+	for (const delegation of delegations) {
+		await tidyRoleApplications({ id: delegation.id });
+	}
 }

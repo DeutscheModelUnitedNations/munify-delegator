@@ -62,3 +62,7 @@ bunx prisma migrate reset
 bun prisma/seed/dev/seed.ts
 
 ```
+
+#### Importing a conference
+
+New conferences are created by uploading a JSON file at `/management/seed` (system admins only). The file is validated against the schema served at `/schemata/seed`; [prisma/seed/real/example.json](prisma/seed/real/example.json) is a minimal example. The `nations` of a committee are optional, so a conference can be imported before the seats are distributed (see the Security Council in the example). The seats are then filled in the seat planning tool at `/management/<conferenceId>/seat-planning`.

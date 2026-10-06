@@ -9,8 +9,6 @@
 	import Form from '$lib/components/Form/Form.svelte';
 	import { conferenceSettingsFormSchema } from './form-schema';
 	import { toast } from 'svelte-sonner';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import FormTextArea from '$lib/components/Form/FormTextArea.svelte';
 	import FormFile from '$lib/components/Form/FormFile.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -24,8 +22,11 @@
 	import { queryParam } from 'sveltekit-search-params';
 	import Modal from '$lib/components/Modal.svelte';
 	import { invalidateAll } from '$app/navigation';
-	import { AddAgendaItemFormSchema } from './committees/form-schema';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
+	import CommitteesManager from './committees/CommitteesManager.svelte';
+	import { canConfigureCommittees } from '$lib/services/managementAccess';
+	import ResolutionManager from './ResolutionManager.svelte';
+	import ConfigChangePreview from './ConfigChangePreview.svelte';
+	import { collectConfigChanges } from './changePreview';
 
 	let { data }: { data: PageData } = $props();
 	let form = superForm(data.form, {
@@ -35,7 +36,7 @@
 		onError(e) {
 			toast.error(e.result.error.message);
 		},
-		onResult(_e) {
+		onResult() {
 			cache.markStale();
 			invalidateAll();
 		}
@@ -46,45 +47,36 @@
 
 	let confirmSaveModalOpen = $state(false);
 
-	// Committees tab - agenda item form
-	let agendaForm = superForm(data.addAgendaItemForm, {
-		resetForm: true,
-		validationMethod: 'oninput',
-		validators: zod4Client(AddAgendaItemFormSchema),
-		onError(e) {
-			toast.error(e.result.error.message);
-		},
-		onResult(_e) {
-			cache.markStale();
-			invalidateAll();
+	// The values as they are currently stored on the server. `data.form` is
+	// re-validated from the database on every (re)load, so this stays in sync after
+	// a save.
+	let savedSettings = $derived(data.form.data);
+
+	let pendingChanges = $derived(
+		collectConfigChanges({
+			saved: savedSettings,
+			current: $formData,
+			tainted: $tainted,
+			existingFiles: {
+				image: !!data.imageDataURL,
+				emblem: !!data.emblemDataURL,
+				logo: !!data.logoDataURL,
+				contractBasePDF: data.contractContentSet,
+				guardianConsentBasePDF: data.guardianConsentContentSet,
+				mediaConsentBasePDF: data.mediaConsentContentSet,
+				termsAndConditionsBasePDF: data.termsAndConditionsContentSet,
+				certificateBasePDF: data.certificateContentSet
+			}
+		})
+	);
+
+	let changeCountPerTab = $derived.by(() => {
+		const counts: Partial<Record<TabType, number>> = {};
+		for (const change of pendingChanges) {
+			counts[change.group] = (counts[change.group] ?? 0) + 1;
 		}
+		return counts;
 	});
-
-	// Committee editing state
-	let editCommitteeModalOpen = $state(false);
-	let editingCommittee = $state<{
-		id: string;
-		name: string;
-		abbreviation: string;
-		resolutionHeadline: string | null;
-	}>({ id: '', name: '', abbreviation: '', resolutionHeadline: null });
-
-	// Agenda item editing state
-	let editAgendaItemModalOpen = $state(false);
-	let editingAgendaItem = $state<{
-		id: string;
-		title: string;
-		teaserText: string | null;
-	}>({ id: '', title: '', teaserText: null });
-
-	// Delete confirmation state
-	let deleteModalOpen = $state(false);
-	let deleteConfirmation = $state<{
-		id: string;
-		title: string;
-		paperCount: number;
-		confirmText: string;
-	}>({ id: '', title: '', paperCount: 0, confirmText: '' });
 
 	const validTabs = ['general', 'committees', 'status', 'links', 'payments', 'documents'] as const;
 	type TabType = (typeof validTabs)[number];
@@ -96,6 +88,15 @@
 	function setTab(tab: TabType) {
 		$tabParam = tab;
 	}
+
+	const tabs: { value: TabType; label: string; icon: string }[] = $derived([
+		{ value: 'general', label: m.general(), icon: 'fa-gear' },
+		{ value: 'committees', label: m.committeesAndAgendaItems(), icon: 'fa-podium' },
+		{ value: 'status', label: m.statusAndFeatures(), icon: 'fa-toggle-on' },
+		{ value: 'links', label: m.linksAndContent(), icon: 'fa-link' },
+		{ value: 'payments', label: m.bankingInformation(), icon: 'fa-credit-card' },
+		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' }
+	]);
 
 	type ConferenceState = 'PRE' | 'PARTICIPANT_REGISTRATION' | 'PREPARATION' | 'ACTIVE' | 'POST';
 
@@ -130,112 +131,6 @@
 			description: m.conferenceStatusPostDescription()
 		}
 	];
-
-	// Committee mutations
-	const DeleteAgendaItemMutation = graphql(`
-		mutation DeleteAgendaItemMutationConfig($id: String!) {
-			deleteOneAgendaItem(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
-	const UpdateCommitteeMutation = graphql(`
-		mutation UpdateCommitteeMutationConfig(
-			$id: String!
-			$name: String
-			$abbreviation: String
-			$resolutionHeadline: String
-		) {
-			updateOneCommittee(
-				where: { id: $id }
-				data: { name: $name, abbreviation: $abbreviation, resolutionHeadline: $resolutionHeadline }
-			) {
-				id
-			}
-		}
-	`);
-
-	const UpdateAgendaItemMutation = graphql(`
-		mutation UpdateAgendaItemMutationConfig($id: String!, $title: String!, $teaserText: String) {
-			updateOneAgendaItem(
-				where: { id: $id }
-				data: { title: { set: $title }, teaserText: { set: $teaserText } }
-			) {
-				id
-			}
-		}
-	`);
-
-	async function saveCommittee() {
-		const promise = UpdateCommitteeMutation.mutate({
-			id: editingCommittee.id,
-			name: editingCommittee.name,
-			abbreviation: editingCommittee.abbreviation,
-			resolutionHeadline: editingCommittee.resolutionHeadline
-		});
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		editCommitteeModalOpen = false;
-		cache.markStale();
-		invalidateAll();
-	}
-
-	async function saveAgendaItem() {
-		const promise = UpdateAgendaItemMutation.mutate({
-			id: editingAgendaItem.id,
-			title: editingAgendaItem.title,
-			teaserText: editingAgendaItem.teaserText
-		});
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		editAgendaItemModalOpen = false;
-		cache.markStale();
-		invalidateAll();
-	}
-
-	async function confirmDelete() {
-		const promise = DeleteAgendaItemMutation.mutate({ id: deleteConfirmation.id });
-		toast.promise(promise, genericPromiseToastMessages);
-		await promise;
-		deleteModalOpen = false;
-		cache.markStale();
-		invalidateAll();
-	}
-
-	function openEditCommittee(committee: {
-		id: string;
-		name: string;
-		abbreviation: string;
-		resolutionHeadline: string | null;
-	}) {
-		editingCommittee = {
-			id: committee.id,
-			name: committee.name,
-			abbreviation: committee.abbreviation,
-			resolutionHeadline: committee.resolutionHeadline
-		};
-		editCommitteeModalOpen = true;
-	}
-
-	function openEditAgendaItem(item: { id: string; title: string; teaserText: string | null }) {
-		editingAgendaItem = {
-			id: item.id,
-			title: item.title,
-			teaserText: item.teaserText
-		};
-		editAgendaItemModalOpen = true;
-	}
-
-	function openDeleteConfirmation(item: { id: string; title: string; papers: { id: string }[] }) {
-		deleteConfirmation = {
-			id: item.id,
-			title: item.title,
-			paperCount: item.papers.length,
-			confirmText: ''
-		};
-		deleteModalOpen = true;
-	}
 
 	let loading = $state(false);
 
@@ -303,8 +198,6 @@
 	}
 
 	async function handleGenerateCertificatePDF() {
-		const conference = $formData;
-
 		const randomString = (n: number) => {
 			const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
 			let result = '';
@@ -362,120 +255,39 @@
 
 	<!-- Tab Navigation -->
 	<div role="tablist" class="tabs tabs-border mb-6 flex-wrap">
-		<button
-			role="tab"
-			class="tab {currentTab === 'general' ? 'tab-active' : ''}"
-			onclick={() => setTab('general')}
-		>
-			<i class="fas fa-gear mr-2"></i>
-			{m.general()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'committees' ? 'tab-active' : ''}"
-			onclick={() => setTab('committees')}
-		>
-			<i class="fas fa-podium mr-2"></i>
-			{m.committeesAndAgendaItems()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'status' ? 'tab-active' : ''}"
-			onclick={() => setTab('status')}
-		>
-			<i class="fas fa-toggle-on mr-2"></i>
-			{m.statusAndFeatures()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'links' ? 'tab-active' : ''}"
-			onclick={() => setTab('links')}
-		>
-			<i class="fas fa-link mr-2"></i>
-			{m.linksAndContent()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'payments' ? 'tab-active' : ''}"
-			onclick={() => setTab('payments')}
-		>
-			<i class="fas fa-credit-card mr-2"></i>
-			{m.bankingInformation()}
-		</button>
-		<button
-			role="tab"
-			class="tab {currentTab === 'documents' ? 'tab-active' : ''}"
-			onclick={() => setTab('documents')}
-		>
-			<i class="fas fa-file-pdf mr-2"></i>
-			{m.documentsAndTemplates()}
-		</button>
+		{#each tabs as tab (tab.value)}
+			{@const changeCount = changeCountPerTab[tab.value] ?? 0}
+			<button
+				role="tab"
+				class="tab {currentTab === tab.value ? 'tab-active' : ''}"
+				onclick={() => setTab(tab.value)}
+			>
+				<i class="fas {tab.icon} mr-2"></i>
+				{tab.label}
+				{#if changeCount > 0}
+					<span
+						class="bg-warning ml-2 inline-block size-2 rounded-full"
+						aria-label={m.configChangeTabIndicator({ count: changeCount })}
+					></span>
+				{/if}
+			</button>
+		{/each}
 	</div>
 
 	<!-- Committees Tab (outside main form) -->
 	<div class:hidden={currentTab !== 'committees'}>
 		<div class="alert alert-info mb-6">
-			<i class="fas fa-circle-info"></i>
+			<i class="fa-duotone fa-circle-info"></i>
 			<span>{@html m.tabExplanationCommittees()}</span>
 		</div>
 
-		{#each data.committeesData as committee}
-			{@const agendaItems = committee.agendaItems}
-			<div class="card bg-base-200 shadow-md mb-4">
-				<div class="card-body">
-					<div class="flex items-center justify-between">
-						<h3 class="text-xl font-bold">{committee.name} ({committee.abbreviation})</h3>
-						<button class="btn btn-ghost btn-sm" onclick={() => openEditCommittee(committee)}>
-							<i class="fas fa-edit"></i>
-							{m.edit()}
-						</button>
-					</div>
-					{#if committee.resolutionHeadline}
-						<p class="text-sm opacity-70">
-							{m.resolutionHeadline()}: {committee.resolutionHeadline}
-						</p>
-					{/if}
-					{#each agendaItems as item}
-						<div class="bg-base-300 flex items-center gap-2 rounded-md px-4 py-2">
-							<div class="flex w-full flex-1 flex-col gap-2">
-								<h4>{item.title}</h4>
-								{#if item.teaserText}
-									<p class="text-xs whitespace-pre-wrap">{item.teaserText}</p>
-								{/if}
-								{#if item.papers.length > 0}
-									<span class="badge badge-info badge-sm"
-										>{item.papers.length} {item.papers.length === 1 ? 'Paper' : 'Papers'}</span
-									>
-								{/if}
-							</div>
-							<button class="btn btn-sm" onclick={() => openEditAgendaItem(item)}>
-								<i class="fas fa-edit"></i>
-							</button>
-							<button
-								class="btn btn-error btn-sm"
-								aria-label="Delete"
-								onclick={() => openDeleteConfirmation(item)}
-							>
-								<i class="fas fa-xmark"></i>
-							</button>
-						</div>
-					{/each}
-				</div>
-			</div>
-		{/each}
-
-		<FormFieldset title={m.createNewAgendaItem()}>
-			<Form form={agendaForm} action="?/addAgendaItem">
-				<FormSelect
-					form={agendaForm}
-					name="committeeId"
-					label={m.committee()}
-					options={data.committeesData.map((x) => ({ label: x.abbreviation, value: x.id }))}
-				/>
-				<FormTextInput form={agendaForm} name="title" label={m.title()} />
-				<FormTextArea form={agendaForm} name="teaserText" label={m.teaserText()} />
-			</Form>
-		</FormFieldset>
+		<CommitteesManager
+			conferenceId={data.conferenceId}
+			committees={data.committeesData}
+			canConfigure={canConfigureCommittees(data.myMembership)}
+			agendaItemForm={data.addAgendaItemForm}
+			agendaItemFormAction="?/addAgendaItem"
+		/>
 	</div>
 
 	<Form {form} bind:formElement showSubmitButton={false} action="?/updateSettings">
@@ -799,153 +611,51 @@
 				</button>
 			</FormFieldset>
 		</div>
-
-		<!-- Sticky Save Button -->
-		<div class="sticky bottom-4 mt-6 z-10 pointer-events-none">
-			<div
-				class="bg-base-100/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-base-300 pointer-events-auto max-w-md mx-auto"
-			>
-				<button
-					type="button"
-					onclick={handleSaveClick}
-					class="btn btn-primary w-full"
-					disabled={!$tainted || Object.keys($tainted).length === 0}
-				>
-					<i class="fas fa-save mr-2"></i>
-					{m.saveSettings()}
-				</button>
-			</div>
-		</div>
 	</Form>
+
+	<!-- Resolutions are managed via their own requests, so they must live outside the settings form:
+	     otherwise their buttons and inputs would submit ?/updateSettings. -->
+	<div class:hidden={currentTab !== 'documents'}>
+		<ResolutionManager
+			conferenceId={data.conferenceId}
+			resolutions={data.resolutionsData}
+			committees={data.committeesData}
+		/>
+	</div>
+
+	<!-- Sticky Save Button -->
+	<div class="sticky bottom-4 mt-6 z-10 pointer-events-none">
+		<div
+			class="bg-base-100/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-base-300 pointer-events-auto max-w-md mx-auto"
+		>
+			<button
+				type="button"
+				onclick={handleSaveClick}
+				class="btn btn-primary w-full"
+				disabled={pendingChanges.length === 0}
+			>
+				<i class="fas fa-save mr-2"></i>
+				{pendingChanges.length > 0
+					? m.saveSettingsWithChangeCount({ count: pendingChanges.length })
+					: m.saveSettings()}
+			</button>
+		</div>
+	</div>
 </div>
 
 <Modal bind:open={confirmSaveModalOpen} title={m.confirmSave()}>
-	<p class="py-4">{m.confirmSaveDescription()}</p>
+	<ConfigChangePreview changes={pendingChanges} />
 	{#snippet action()}
 		<button class="btn" onclick={() => (confirmSaveModalOpen = false)}>
 			{m.cancel()}
 		</button>
-		<button class="btn btn-primary" onclick={handleConfirmSave}>
+		<button
+			class="btn btn-primary"
+			disabled={pendingChanges.length === 0}
+			onclick={handleConfirmSave}
+		>
 			<i class="fas fa-save mr-2"></i>
 			{m.save()}
-		</button>
-	{/snippet}
-</Modal>
-
-<!-- Committee Edit Modal -->
-<Modal bind:open={editCommitteeModalOpen} title={m.editCommittee()}>
-	<div class="flex flex-col gap-4">
-		<FormFieldset title={m.basicInfo()}>
-			<div class="flex flex-col gap-4">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text break-words">{m.name()}</span>
-					</div>
-					<input
-						type="text"
-						class="input input-bordered w-full"
-						bind:value={editingCommittee.name}
-					/>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text break-words">{m.abbreviation()}</span>
-					</div>
-					<input
-						type="text"
-						class="input input-bordered w-full"
-						bind:value={editingCommittee.abbreviation}
-					/>
-				</label>
-			</div>
-		</FormFieldset>
-		<FormFieldset title={m.resolutionHeadline()}>
-			<label class="form-control w-full">
-				<input
-					type="text"
-					class="input input-bordered w-full"
-					placeholder={m.resolutionHeadlinePlaceholder()}
-					bind:value={editingCommittee.resolutionHeadline}
-				/>
-				<div class="label">
-					<span class="label-text-alt opacity-70 break-words whitespace-normal"
-						>{m.resolutionHeadlineHint()}</span
-					>
-				</div>
-			</label>
-		</FormFieldset>
-	</div>
-	{#snippet action()}
-		<button class="btn" onclick={() => (editCommitteeModalOpen = false)}>{m.cancel()}</button>
-		<button class="btn btn-primary" onclick={saveCommittee}>{m.save()}</button>
-	{/snippet}
-</Modal>
-
-<!-- Agenda Item Edit Modal -->
-<Modal bind:open={editAgendaItemModalOpen} title={m.editAgendaItem()}>
-	<div class="flex flex-col gap-4">
-		<FormFieldset title={m.agendaItemDetails()}>
-			<div class="flex flex-col gap-4">
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text break-words">{m.title()}</span>
-					</div>
-					<input
-						type="text"
-						class="input input-bordered w-full"
-						bind:value={editingAgendaItem.title}
-					/>
-				</label>
-				<label class="form-control w-full">
-					<div class="label">
-						<span class="label-text break-words">{m.teaserText()}</span>
-					</div>
-					<textarea
-						class="textarea textarea-bordered w-full"
-						bind:value={editingAgendaItem.teaserText}
-					></textarea>
-				</label>
-			</div>
-		</FormFieldset>
-	</div>
-	{#snippet action()}
-		<button class="btn" onclick={() => (editAgendaItemModalOpen = false)}>{m.cancel()}</button>
-		<button class="btn btn-primary" onclick={saveAgendaItem}>{m.save()}</button>
-	{/snippet}
-</Modal>
-
-<!-- Delete Confirmation Modal -->
-<Modal bind:open={deleteModalOpen} title={m.deleteAgendaItem()}>
-	<div class="flex flex-col gap-4">
-		{#if deleteConfirmation.paperCount > 0}
-			<div class="alert alert-warning">
-				<i class="fas fa-exclamation-triangle flex-shrink-0"></i>
-				<span class="break-words"
-					>{m.agendaItemHasPapers({ count: deleteConfirmation.paperCount })}</span
-				>
-			</div>
-			<FormFieldset title={m.confirmation()}>
-				<p class="mb-2 break-words">{m.typeToConfirmDelete({ title: deleteConfirmation.title })}</p>
-				<input
-					type="text"
-					class="input input-bordered w-full"
-					placeholder={deleteConfirmation.title}
-					bind:value={deleteConfirmation.confirmText}
-				/>
-			</FormFieldset>
-		{:else}
-			<p class="break-words">{m.confirmDeleteAgendaItem({ title: deleteConfirmation.title })}</p>
-		{/if}
-	</div>
-	{#snippet action()}
-		<button class="btn" onclick={() => (deleteModalOpen = false)}>{m.cancel()}</button>
-		<button
-			class="btn btn-error"
-			disabled={deleteConfirmation.paperCount > 0 &&
-				deleteConfirmation.confirmText !== deleteConfirmation.title}
-			onclick={confirmDelete}
-		>
-			{m.delete()}
 		</button>
 	{/snippet}
 </Modal>

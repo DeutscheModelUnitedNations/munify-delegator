@@ -21,6 +21,7 @@ import { defineAbilitiesForSurveyQuestion } from './entities/surveyQuestion';
 import { defineAbilitiesForSurveyAnswer } from './entities/surveyAnswer';
 import { defineAbilitiesForSurveyOption } from './entities/surveyOption';
 import { defineAbilitiesForCommitteeAgendaItem } from './entities/committeeAgendaItem';
+import { defineAbilitiesForResolution } from './entities/resolution';
 import { defineAbilitiesForWaitingListEntry } from './entities/waitingListEntry';
 import { defineAbilitiesForPaper } from './entities/paper/paper';
 import { defineAbilitiesForPaperVersion } from './entities/paper/paperVersion';
@@ -33,7 +34,7 @@ import { defineAbilitiesForPlace } from './entities/place';
 import { defineAbilitiesForAttendanceEntry } from './entities/attendanceEntry';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ['list', 'read', 'update', 'delete', 'impersonate'] as const;
+const actions = ['list', 'read', 'update', 'delete', 'impersonate', 'planSeats'] as const;
 
 /**
  * Actions which can be run on entities in the system:
@@ -145,6 +146,7 @@ export const defineAbilitiesForUser = (oidc: OIDC) => {
 
 	defineAbilitiesForCommittee(oidc, builder);
 	defineAbilitiesForCommitteeAgendaItem(oidc, builder);
+	defineAbilitiesForResolution(oidc, builder);
 	defineAbilitiesForConference(oidc, builder);
 	defineAbilitiesForConferenceParticipantStatus(oidc, builder);
 	defineAbilitiesForConferenceSupervisor(oidc, builder);

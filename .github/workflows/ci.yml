@@ -5,6 +5,12 @@ on:
   push:
     branches: [main]
     tags: ['*']
+  workflow_dispatch:
+    inputs:
+      no_cache:
+        description: 'Build the app image without layer cache (forces a fresh dependency install so Trivy scans current deps). Builds and scans only — does not publish.'
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -37,6 +43,43 @@ jobs:
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
       - run: bun run test
+
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      PUBLIC_OIDC_AUTHORITY: http://127.0.0.1:8090/oidc/.well-known/openid-configuration
+      PUBLIC_OIDC_CLIENT_ID: delegator
+      OIDC_SCOPES: 'openid profile offline_access email'
+      OIDC_ROLE_CLAIM: roles
+      SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
+      CERTIFICATE_SECRET: e2e-ci-certificate-secret
+      # Must be `development`: src/api/services/OIDC.ts only passes `allowInsecureRequests` to
+      # oauth4webapi under that value, and the mock OIDC provider is plain HTTP. Any other value
+      # fails discovery with "only requests to HTTPS are allowed" and every login times out.
+      NODE_ENV: development
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-bun
+      # The mock OIDC provider (oidc-mock) runs inside the Vite dev server Playwright starts,
+      # so only Postgres comes from compose.
+      - run: docker compose -f dev.docker-compose.yml up -d postgres
+      - name: Wait for postgres
+        run: timeout 120 bash -c 'until docker exec postgres-dev-delegator pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done'
+      - run: bunx prisma generate
+      - run: bunx svelte-kit sync
+      - run: bunx prisma migrate deploy
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
 
   i18n:
     runs-on: ubuntu-latest
@@ -89,13 +132,61 @@ jobs:
       - run: bunx houdini generate
       - run: bun run build
 
+  # Codebase intelligence report (fallow): dead code, circular dependencies,
+  # duplication and complexity hotspots. This IS a gate (it is in the
+  # docker-build `needs` list), but it runs in `audit` mode so only findings
+  # newly introduced against the branch base count. A full report currently
+  # flags 427 targets repo-wide; failing on those would block every build, so
+  # the gate is scoped to regressions rather than the existing backlog.
+  fallow:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history: fallow scopes PR runs to the diff against the base SHA.
+          fetch-depth: 0
+          # This job runs repo-controlled steps (svelte-kit sync, the fallow
+          # action) with pull-requests/checks write permissions, so don't leave
+          # GITHUB_TOKEN in .git/config for them to read. The fallow action takes
+          # its token through the `github-token` input instead.
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun
+      # Gives fallow a resolvable tsconfig chain ($lib, $app, ... path aliases).
+      - run: bunx svelte-kit sync
+      # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
+      # with write permissions on every PR.
+      - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
+        with:
+          # The CLI version comes from the `fallow` devDependency in package.json,
+          # pinned exactly there so CI and local runs analyse with the same binary.
+          # Only newly introduced findings fail the build; pre-existing ones are
+          # reported but inherited, so the existing backlog does not block merges.
+          command: audit
+          fail-on-issues: true
+          # 0-100 health score with a letter grade, and the health delta header
+          # on the PR comment.
+          score: true
+          comment: ${{ github.event_name == 'pull_request' }}
+          # Skip the Fallow Cloud token broker; comments post as github-actions[bot].
+          branded-token: false
+
   # ============================================
-  # LAYER 2: DOCKER BUILD (push only)
+  # LAYER 2: DOCKER BUILD
   # ============================================
+  # On push (main/tags): build, push to registries, then Trivy-scan the image.
+  # On pull_request / workflow_dispatch: build the image locally (no push, no
+  # registry login) and run the same Trivy image scan, so image-only findings
+  # (e.g. Go stdlib CVEs in the bundled esbuild/lefthook binaries under
+  # /root/.bun) are caught before merge instead of only after the image is
+  # published from main. A manual workflow_dispatch run can set no_cache to
+  # force a fresh dependency install when the GHA cache is serving a stale layer.
 
   docker-build:
-    if: github.event_name == 'push'
-    needs: [format, lint, test, i18n, security, typecheck]
+    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -105,12 +196,14 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - uses: docker/login-action@v3
+      - if: github.event_name == 'push'
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: docker/login-action@v3
+      - if: github.event_name == 'push'
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -124,21 +217,33 @@ jobs:
             deutschemodelunitednations/delegator
           tags: |
             type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
+      # Date-keyed build arg: rebuilds the OS-update layer once a day so the image picks up new
+      # Debian security fixes even when the GHA layer cache is older than them.
+      - id: os-updates-date
+        run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
       - id: build
         uses: docker/build-push-action@v5
         with:
-          push: true
+          # Publish only on push; on PRs and manual dispatch load the image
+          # locally so Trivy can scan it without publishing.
+          push: ${{ github.event_name == 'push' }}
+          load: ${{ github.event_name != 'push' }}
+          # no_cache is only set by manual workflow_dispatch runs.
+          no-cache: ${{ github.event_name == 'workflow_dispatch' && inputs.no_cache == true }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max' || '' }}
           build-args: |
             VERSION=${{ github.ref_name }}
             SHA=${{ github.sha }}
+            OS_UPDATES_DATE=${{ steps.os-updates-date.outputs.date }}
 
       - id: split-tags
         run: echo "fragment=$(echo "${DOCKER_METADATA_OUTPUT_TAGS}" | head -n 1)" >> "$GITHUB_OUTPUT"
@@ -156,32 +261,45 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
       - name: Upload sourcemaps to Bugsink
+        # Best effort: a Bugsink outage or sentry-cli failure must never fail the
+        # release pipeline. Problems are reported as warnings instead.
+        continue-on-error: true
         if: github.ref_type == 'tag' && env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_URL != ''
         env:
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'delegator' }}
         run: |
+          skip() {
+            echo "::endgroup::"
+            echo "::warning::Sourcemap upload to Bugsink skipped - $1"
+            exit 0
+          }
+
           echo "::group::Extracting build artifacts from Docker image"
-          CONTAINER_ID=$(docker create ${{ steps.split-tags.outputs.fragment }})
+          CONTAINER_ID=$(docker create ${{ steps.split-tags.outputs.fragment }}) \
+            || skip "could not create a container from the built image"
           mkdir -p ./build-artifacts
-          docker cp "$CONTAINER_ID:/run/build" ./build-artifacts/
-          docker rm "$CONTAINER_ID"
+          docker cp "$CONTAINER_ID:/run/build" ./build-artifacts/ && COPIED=1 || COPIED=0
+          docker rm "$CONTAINER_ID" || true
+          [ "$COPIED" = "1" ] || skip "could not copy /run/build out of the image"
           echo "Extracted build artifacts to ./build-artifacts/build"
           ls -la ./build-artifacts/build
           echo "::endgroup::"
 
           echo "::group::Installing sentry-cli v2 (v3 has Bugsink compatibility issues)"
-          npm install -g @sentry/cli@2
+          npm install -g @sentry/cli@2 || skip "sentry-cli could not be installed"
           echo "::endgroup::"
 
           echo "::group::Injecting debug IDs into sourcemaps"
-          sentry-cli sourcemaps inject ./build-artifacts/build
+          sentry-cli sourcemaps inject ./build-artifacts/build \
+            || skip "sentry-cli could not inject debug IDs"
           echo "::endgroup::"
 
           echo "::group::Uploading sourcemaps to Bugsink (project: $SENTRY_PROJECT)"
           sentry-cli --url "$SENTRY_URL" sourcemaps \
             --org bugsinkhasnoorgs \
             --project "$SENTRY_PROJECT" \
-            upload ./build-artifacts/build
+            upload ./build-artifacts/build \
+            || skip "sentry-cli could not upload the sourcemaps to $SENTRY_URL"
           echo "Sourcemaps uploaded successfully"
           echo "::endgroup::"
 
@@ -195,7 +313,7 @@ jobs:
 
   docker-build-tasks:
     if: github.event_name == 'push'
-    needs: [format, lint, test, i18n, security, typecheck]
+    needs: [format, lint, test, e2e, i18n, security, typecheck, fallow]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -248,6 +366,10 @@ jobs:
             type=semver,pattern={{major}}
 
       - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
+        id: os-updates-date
+        run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
         uses: docker/build-push-action@v5
         with:
           file: Dockerfile.tasks
@@ -256,6 +378,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=tasks
           cache-to: type=gha,mode=max,scope=tasks
+          # Date-keyed build arg: rebuilds the OS-update layer once a day (see docker-build).
+          build-args: |
+            OS_UPDATES_DATE=${{ steps.os-updates-date.outputs.date }}
 
       - if: steps.changes.outputs.tasks == 'true' || github.ref_type == 'tag'
         id: split-tags

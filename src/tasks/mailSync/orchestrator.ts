@@ -4,13 +4,9 @@ import { logTaskStart, logTaskEnd, taskError } from '../logs';
 import { ensureListsExist } from './listManager';
 import { fetchSubscriberMap } from './subscriberFetcher';
 import { processUsersInBatches } from './userProcessor';
-import {
-	classifyUserBatch,
-	collectDeleteIds,
-	executeDeletes,
-	executeBatch
-} from './subscriberDiff';
-import type { ClassificationResult, BatchExecutionResult, ListmonkSubscriber } from './types';
+import { planUserBatch, planReleases } from './subscriberDiff';
+import { executeActions, collectGarbage } from './subscriberActions';
+import type { ListmonkSubscriber, SyncPlan } from './types';
 
 const TASK_NAME = 'Mail Service: Sync with Listmonk';
 
@@ -30,68 +26,48 @@ export async function runMailSync(): Promise<void> {
 		const listNameToId = await ensureListsExist(conferences);
 		if (!listNameToId) return;
 
-		// STEP 2 (Pass 1 — Classify): Load users in batches, store only lightweight identifiers
-		console.info('\nSTEP 2: Classifying Subscribers');
-		console.info('===============================');
+		// STEP 2 (Pass 1 — Plan): compare every user with Listmonk, keep only the planned actions
+		console.info('\nSTEP 2: Planning Changes');
+		console.info('========================');
 
-		let subscriberMap: Map<string, ListmonkSubscriber> | null = await fetchSubscriberMap();
+		let subscriberMap: Map<string, ListmonkSubscriber> | undefined = await fetchSubscriberMap();
+		if (!subscriberMap) {
+			taskError(TASK_NAME, 'Could not fetch all subscribers from Listmonk. Aborting task.');
+			return;
+		}
 		console.info(`Fetched ${subscriberMap.size} subscribers from Listmonk`);
 
-		const classification: ClassificationResult = {
-			createEmails: new Set(),
-			updateSubscriberIds: new Map(),
-			deleteSubscriberIds: [],
-			upToDate: 0,
-			skippedNoLists: 0
-		};
+		const plan: SyncPlan = { userActions: [], releases: [], upToDate: 0, skippedNoLists: 0 };
 
 		const totalUsers = await processUsersInBatches((batch) => {
-			classifyUserBatch(batch, subscriberMap!, classification);
+			planUserBatch(batch, subscriberMap!, listNameToId, plan);
 		});
+		planReleases(subscriberMap, plan);
 
-		classification.deleteSubscriberIds = collectDeleteIds(subscriberMap);
-
-		console.info(`\nClassification summary:`);
-		console.info(`  Users loaded:        ${totalUsers}`);
-		console.info(`  Users without lists:  ${classification.skippedNoLists}`);
-		console.info(`  Subscribers matched:  ${classification.upToDate} (up to date)`);
-		console.info(`  To create:           ${classification.createEmails.size}`);
-		console.info(`  To update:           ${classification.updateSubscriberIds.size}`);
-		console.info(`  To delete:           ${classification.deleteSubscriberIds.length}`);
+		const creates = plan.userActions.filter((a) => a.kind === 'create').length;
+		console.info(`\nPlan summary:`);
+		console.info(`  Users loaded:         ${totalUsers}`);
+		console.info(`  Users without lists:  ${plan.skippedNoLists}`);
+		console.info(`  Up to date:           ${plan.upToDate}`);
+		console.info(`  To create:            ${creates}`);
+		console.info(`  To update:            ${plan.userActions.length - creates}`);
+		console.info(`  To release:           ${plan.releases.length}`);
 
 		// Release subscriber map for GC before Pass 2
-		subscriberMap = null;
+		subscriberMap = undefined;
 
-		// STEP 3 (Pass 2 — Execute): Delete orphans, then create/update in batches
+		// STEP 3 (Pass 2 — Execute)
 		console.info('\nSTEP 3: Executing Changes');
 		console.info('=========================');
 
-		// Delete before create to free up email addresses that may conflict
-		await executeDeletes(classification.deleteSubscriberIds);
-		classification.deleteSubscriberIds = [];
+		await executeActions('user changes', plan.userActions);
+		await executeActions('releases', plan.releases);
 
-		if (classification.createEmails.size > 0 || classification.updateSubscriberIds.size > 0) {
-			let totalCreated = 0;
-			let totalCreateFailed = 0;
-			let totalUpdated = 0;
-			let totalUpdateFailed = 0;
+		// STEP 4: Delete subscribers that are left without any list, ours or anyone else's
+		console.info('\nSTEP 4: Collecting Garbage');
+		console.info('==========================');
 
-			await processUsersInBatches(async (batch) => {
-				const result: BatchExecutionResult = await executeBatch(
-					batch,
-					classification,
-					listNameToId
-				);
-				totalCreated += result.created;
-				totalCreateFailed += result.createFailed;
-				totalUpdated += result.updated;
-				totalUpdateFailed += result.updateFailed;
-			});
-
-			console.info(`\nExecution summary:`);
-			console.info(`  Created: ${totalCreated} succeeded, ${totalCreateFailed} failed`);
-			console.info(`  Updated: ${totalUpdated} succeeded, ${totalUpdateFailed} failed`);
-		}
+		await collectGarbage();
 	} catch (error) {
 		console.error(`Task "${TASK_NAME}" failed:`, error);
 	} finally {

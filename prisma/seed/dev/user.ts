@@ -21,6 +21,8 @@ export function makeSeedUser(): User {
 		pronouns: faker.helpers.arrayElement(['he/him', 'she/her', 'they/them']),
 		wantsJoinTeamInformation: faker.datatype.boolean(),
 		wantsToReceiveGeneralInformation: faker.datatype.boolean(),
+		emergencyContacts: null,
+		globalNotes: null,
 		createdAt: faker.date.past(),
 		updatedAt: faker.date.past()
 	};

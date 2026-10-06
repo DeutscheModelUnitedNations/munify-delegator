@@ -396,6 +396,38 @@ paths:
                   data:
                     $ref: '#/components/schemas/Subscriber'
 
+    # Not part of the upstream collection, added by hand (listmonk >= v5). Unlike PUT, which
+    # replaces the subscriber's lists even when `lists` is omitted, PATCH leaves the lists alone
+    # unless `lists` is sent, and merges `attribs` key by key instead of replacing them.
+    patch:
+      description: partially modify subscriber data
+      operationId: patchSubscriberById
+      tags:
+        - Subscribers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The id of subscriber to update
+          schema:
+            type: integer
+      requestBody:
+        description: the subscriber fields to change
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubscriber'
+      responses:
+        '200':
+          description: returns updated subscriber.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Subscriber'
+
     delete:
       description: handles subscriber deletion based on id
       operationId: deleteSubscriberById
@@ -3625,7 +3657,7 @@ components:
           enum: [add, remove, unsubscribe]
           description: Whether to add, remove, or unsubscribe the users.
         target_list_ids:
-          type: integer
+          type: array
           description: The ids of the lists to be modified.
           items:
             type: integer

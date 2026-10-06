@@ -13,14 +13,20 @@ const schema = z.object({
 		z.string().url().optional()
 	),
 	PUBLIC_FEEDBACK_URL: z.optional(z.string()),
-	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.coerce.boolean().default(false),
+	PUBLIC_GLOBAL_USER_NOTES_ACTIVE: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.stringbool().default(false)
+	),
 
 	// Base URL for the FontAwesome CSS files (without trailing slash).
 	// The app loads `<base>/fontawesome.min.css`, `<base>/solid.min.css`, etc. from here.
 	PUBLIC_FONTAWESOME_CSS_BASE_URL: z.string(),
 
 	// --- TEMPORARY: Migration notice (remove after migration period) ---
-	PUBLIC_OIDC_MIGRATION_NOTICE: z.coerce.boolean().default(false),
+	PUBLIC_OIDC_MIGRATION_NOTICE: z.preprocess(
+		(v) => (v === '' ? undefined : v),
+		z.stringbool().default(false)
+	),
 
 	PUBLIC_MAX_APPLICATION_TEXT_LENGTH: z.coerce.number().default(1200),
 	PUBLIC_MAX_APPLICATION_SCHOOL_LENGTH: z.coerce.number().default(100),

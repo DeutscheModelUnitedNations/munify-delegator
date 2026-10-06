@@ -28,6 +28,27 @@ builder.mutationFields((t) => {
 
 				const data = ConferenceSeedingSchema.parse(args.data);
 
+				// Guard before the transaction: a nation that has no row cannot be
+				// connected, and Prisma would only report how many records it missed,
+				// not which ones. Report every offending code instead.
+				const knownAlpha2Codes = new Set(
+					(await db.nation.findMany({ select: { alpha2Code: true } })).map((n) =>
+						n.alpha2Code.toLowerCase()
+					)
+				);
+
+				const unknownNations = data.committees.flatMap((committee) =>
+					committee.nations
+						.filter((nation) => !knownAlpha2Codes.has(nation.toLowerCase()))
+						.map((nation) => `${committee.abbreviation}: ${nation}`)
+				);
+
+				if (unknownNations.length > 0) {
+					throw new GraphQLError(
+						`Unknown nations in the seeding data (only UN member states can be assigned to a committee): ${unknownNations.join(', ')}`
+					);
+				}
+
 				const conference = await db.$transaction(async (tx) => {
 					const conference = await tx.conference.create({
 						data: {
@@ -54,15 +75,6 @@ builder.mutationFields((t) => {
 					}
 
 					for (const committee of data.committees) {
-						const nations = await tx.nation.findMany();
-
-						for (const nation of committee.nations) {
-							if (!nations.map((x) => x.alpha2Code.toUpperCase()).includes(nation)) {
-								console.log('found the culprid');
-								console.log(nation);
-							}
-						}
-
 						await tx.committee.create({
 							data: {
 								...committee,

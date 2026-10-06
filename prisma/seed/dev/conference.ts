@@ -1,9 +1,11 @@
 import { type Conference, ConferenceState } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { CONFERENCES, type ConferenceTemplate } from './catalog';
 
 export function makeSeedConference(
 	options?: Partial<
-		Pick<Conference, 'state' | 'startAssignment' | 'startConference' | 'endConference'>
+		Pick<Conference, 'state' | 'startAssignment' | 'startConference' | 'endConference'> &
+			ConferenceTemplate
 	>
 ): Conference {
 	const state = options?.state ?? faker.helpers.arrayElement(Object.values(ConferenceState));
@@ -77,19 +79,40 @@ export function makeSeedConference(
 		}
 	}
 
+	const fallback = faker.helpers.arrayElement(CONFERENCES);
+	const template: ConferenceTemplate = {
+		title: options?.title ?? fallback.title,
+		longTitle: options?.longTitle ?? fallback.longTitle,
+		location: options?.location ?? fallback.location
+	};
+	const year = startConference.getFullYear();
+
 	return {
 		id: faker.database.mongodbObjectId(),
-		title: faker.company.name(),
-		longTitle: `${faker.company.name()} Konferenz`,
-		location: faker.location.city(),
-		language: faker.location.language().name,
-		website: faker.internet.url(),
+		title: `${template.title} ${year}`,
+		longTitle: `${template.longTitle} ${year}`,
+		location: template.location,
+		language: 'Deutsch',
+		website: `https://${template.title.toLowerCase()}.example.org`,
 		info: faker.company.catchPhrase(),
+		showInfoExpanded: false,
+		emblemDataURL: null,
+		logoDataURL: null,
+		linkToTeamWiki: null,
+		linkToServicesPage: null,
+		linkToPaperInbox: null,
+		isOpenPaperSubmission: false,
+		// only the ACTIVE conference gets calendar data in the dev seed
+		showCalendar: state === 'ACTIVE',
+		timezone: 'Europe/Berlin',
+		registrationDeadlineGracePeriodMinutes: 30,
+		contractContent: null,
+		certificateContent: null,
 		state,
 		startAssignment,
 		startConference,
 		endConference,
-		feeAmount: faker.number.int({ max: 200 }),
+		feeAmount: faker.helpers.arrayElement([45, 60, 75, 90]),
 		accountHolder: faker.person.fullName(),
 		iban: faker.finance.iban(),
 		bic: faker.finance.bic(),
@@ -98,8 +121,8 @@ export function makeSeedConference(
 		postalStreet: faker.location.streetAddress(),
 		postalApartment: faker.location.buildingNumber(),
 		postalZip: faker.location.zipCode(),
-		postalCity: faker.location.city(),
-		postalCountry: faker.location.country(),
+		postalCity: template.location,
+		postalCountry: 'Deutschland',
 		termsAndConditionsContent: faker.lorem.paragraph(),
 		guardianConsentContent: faker.lorem.paragraph(),
 		mediaConsentContent: faker.lorem.paragraph(),
@@ -110,6 +133,6 @@ export function makeSeedConference(
 		linkToPreparationGuide: faker.internet.url(),
 		unlockPayments: state === 'PREPARATION',
 		unlockPostals: state === 'PREPARATION',
-		currency: faker.finance.currencyCode()
+		currency: 'EUR'
 	};
 }

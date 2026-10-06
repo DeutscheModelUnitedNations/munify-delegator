@@ -14,5 +14,12 @@ export const defineAbilitiesForConference = (oidc: OIDC, { can }: AbilityBuilder
 		can(['update', 'delete'], 'Conference', {
 			teamMembers: { some: { user: { id: user.sub }, role: 'PROJECT_MANAGEMENT' } }
 		});
+
+		// seat planning (seat matrix and non state actors) is shared with the content lead
+		can('planSeats', 'Conference', {
+			teamMembers: {
+				some: { user: { id: user.sub }, role: { in: ['PROJECT_MANAGEMENT', 'CONTENT_LEAD'] } }
+			}
+		});
 	}
 };

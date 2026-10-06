@@ -27,6 +27,7 @@
 		| 'REVIEWER'
 		| 'PARTICIPANT_CARE'
 		| 'TEAM_COORDINATOR'
+		| 'CONTENT_LEAD'
 		| 'PROJECT_MANAGEMENT';
 
 	const validEmailStatuses: EmailStatusValue[] = [
@@ -320,6 +321,7 @@
 											<option value="TEAM_COORDINATOR"
 												>{translateTeamRole('TEAM_COORDINATOR')}</option
 											>
+											<option value="CONTENT_LEAD">{translateTeamRole('CONTENT_LEAD')}</option>
 											<option value="PROJECT_MANAGEMENT"
 												>{translateTeamRole('PROJECT_MANAGEMENT')}</option
 											>

@@ -109,6 +109,10 @@
 			translation: m.seats(),
 			icon: 'chair-office'
 		},
+		'seat-planning': {
+			translation: m.seatPlanning(),
+			icon: 'table-cells'
+		},
 		committeeAssignment: {
 			translation: m.committeeAssignment(),
 			icon: 'arrows-turn-to-dots'
@@ -313,7 +317,6 @@ import path via the parameter! -->
 <Breadcrumbs
 	importObject={import.meta.glob('./**/+page*.svelte')}
 	availableLanguageTags={locales as any as string[]}
-	delimeterSnippet="disabled"
 	homePath="/"
 >
 	{#snippet pathSnippet(pathSegment: PathSegmentType)}

@@ -3,9 +3,9 @@
 	import { getLocale } from '$lib/paraglide/runtime.js';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
+	import { translateTeamRole } from '$lib/services/enumTranslations';
+	import type { TeamRole } from '@prisma/client';
 	import defaultImage from '$assets/dmun-stock/bw1.jpg';
-
-	type TeamRole = 'PROJECT_MANAGEMENT' | 'PARTICIPANT_CARE' | 'REVIEWER' | 'MEMBER';
 
 	interface DelegationMember {
 		id: string;
@@ -240,25 +240,11 @@
 		}
 
 		if (participation.type === 'teamMember') {
-			return m.teamMemberWithRole({ role: getTeamRoleLabel(participation.teamRole) });
+			return m.teamMemberWithRole({ role: translateTeamRole(participation.teamRole) });
 		}
 
 		return '';
 	});
-
-	function getTeamRoleLabel(role?: TeamRole | null): string {
-		switch (role) {
-			case 'PROJECT_MANAGEMENT':
-				return m.teamRoleProjectManagement();
-			case 'PARTICIPANT_CARE':
-				return m.teamRoleParticipantCare();
-			case 'REVIEWER':
-				return m.teamRoleReviewer();
-			case 'MEMBER':
-			default:
-				return m.teamRoleMember();
-		}
-	}
 
 	const dateOptions: Intl.DateTimeFormatOptions = {
 		year: 'numeric',
@@ -341,15 +327,11 @@
 						size="xs"
 					/>
 				{:else if participation.type === 'delegation'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
+					<div class="bg-base-300 flex h-6 w-8 shrink-0 items-center justify-center rounded">
 						<i class="fa-solid fa-users text-sm"></i>
 					</div>
 				{:else if participation.type === 'singleParticipant'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
+					<div class="bg-base-300 flex h-6 w-8 shrink-0 items-center justify-center rounded">
 						<i
 							class="fa-solid fa-{(participation.customRole?.fontAwesomeIcon ?? 'user').replace(
 								'fa-',
@@ -358,15 +340,11 @@
 						></i>
 					</div>
 				{:else if participation.type === 'supervisor'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
+					<div class="bg-base-300 flex h-6 w-8 shrink-0 items-center justify-center rounded">
 						<i class="fa-solid fa-chalkboard-teacher text-sm"></i>
 					</div>
 				{:else if participation.type === 'teamMember'}
-					<div
-						class="bg-base-300 flex h-[1.5rem] w-[2rem] shrink-0 items-center justify-center rounded"
-					>
+					<div class="bg-base-300 flex h-6 w-8 shrink-0 items-center justify-center rounded">
 						<i class="fa-solid fa-users-gear text-sm"></i>
 					</div>
 				{/if}
