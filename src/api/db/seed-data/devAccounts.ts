@@ -119,6 +119,16 @@ export const devAccounts = [
 		age: 23
 	},
 	{
+		sub: 'dev-team-content-lead',
+		label: '[Team] Content lead',
+		description: 'CONTENT_LEAD everywhere: the seat planning only',
+		givenName: 'Charlie',
+		familyName: 'Inhaltsleitung',
+		roles: [],
+		profile: 'complete',
+		age: 25
+	},
+	{
 		sub: 'dev-team-reviewer',
 		label: '[Team] Reviewer',
 		description: 'REVIEWER everywhere: paper hub with a review queue and saved snippets',

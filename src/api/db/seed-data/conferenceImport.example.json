@@ -1,0 +1,36 @@
+{
+	"$schema": "https://delegator.munify.cloud/schemata/seed",
+	"committees": [
+		{
+			"abbreviation": "GV",
+			"name": "Generalversammlung",
+			"nations": ["DE", "FR", "US"],
+			"numOfSeatsPerDelegation": 1
+		},
+		{
+			"abbreviation": "SR",
+			"name": "Sicherheitsrat",
+			"numOfSeatsPerDelegation": 1
+		}
+	],
+	"conference": {
+		"endConference": "2027-03-13T17:00:00+01:00",
+		"language": "Deutsch",
+		"location": "Kiel",
+		"longTitle": "Model United Nations Example 2027",
+		"startAssignment": "2026-12-01T00:00:00+01:00",
+		"startConference": "2027-03-10T09:00:00+01:00",
+		"title": "MUN-Example 2027",
+		"website": "https://example.org"
+	},
+	"customConferenceRole": [],
+	"nsa": [
+		{
+			"abbreviation": "VA",
+			"description": "Ständiger Beobachter bei den Vereinten Nationen",
+			"fontAwesomeIcon": "fa-church",
+			"name": "Heiliger Stuhl",
+			"seatAmount": 2
+		}
+	]
+}

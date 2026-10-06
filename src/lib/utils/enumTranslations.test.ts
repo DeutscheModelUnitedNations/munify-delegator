@@ -82,15 +82,24 @@ describe('the other enum translations', () => {
 			'X'
 		]);
 		expect(
-			['PROJECT_MANAGEMENT', 'PARTICIPANT_CARE', 'REVIEWER', 'MEMBER', 'TEAM_COORDINATOR', 'X'].map(
-				translateTeamRole
-			)
+			[
+				'PROJECT_MANAGEMENT',
+				'PARTICIPANT_CARE',
+				'REVIEWER',
+				'MEMBER',
+				'TEAM_COORDINATOR',
+				'CONTENT_LEAD',
+				'SYSTEM_ADMIN',
+				'X'
+			].map(translateTeamRole)
 		).toEqual([
 			m.teamRoleProjectManagement(),
 			m.teamRoleParticipantCare(),
 			m.teamRoleReviewer(),
 			m.teamRoleMember(),
 			m.teamRoleTeamCoordinator(),
+			m.teamRoleContentLead(),
+			m.administrator(),
 			'X'
 		]);
 	});

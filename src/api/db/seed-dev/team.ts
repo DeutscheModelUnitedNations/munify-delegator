@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { devEmail, type DevAccountSub } from '../seed-data/devAccounts';
 import { makeSeedTeamMember } from '../seed-data/teamMember';
 import { snippetDocument } from '../seed-data/content';
+import type { Insert } from '../rows';
 import type { SeedBatch } from './batch';
 import type { ConferenceSeed } from './context';
 import { invitationTokens } from './plans';
@@ -10,13 +11,11 @@ import { invitationTokens } from './plans';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Each team persona's role, the same in every conference. */
-const TEAM_PERSONAS: [
-	DevAccountSub,
-	'PROJECT_MANAGEMENT' | 'PARTICIPANT_CARE' | 'TEAM_COORDINATOR' | 'REVIEWER' | 'MEMBER'
-][] = [
+const TEAM_PERSONAS: [DevAccountSub, Insert<'teamMember'>['role']][] = [
 	['dev-team-pm', 'PROJECT_MANAGEMENT'],
 	['dev-team-care', 'PARTICIPANT_CARE'],
 	['dev-team-coordinator', 'TEAM_COORDINATOR'],
+	['dev-team-content-lead', 'CONTENT_LEAD'],
 	['dev-team-reviewer', 'REVIEWER'],
 	['dev-team-member', 'MEMBER']
 ];

@@ -64,7 +64,10 @@
 
 <div class="card bg-base-100 border-base-200 border shadow-xl">
 	<div class="card-body">
-		<div class="card-title block text-center">{m.loginInformation()}</div>
+		<h2 class="card-title justify-center">
+			<i class="fa-duotone fa-shield-halved text-primary"></i>
+			{m.loginInformation()}
+		</h2>
 		<div class="divide-base-200 divide-y">
 			<AccountRow
 				icon="user"

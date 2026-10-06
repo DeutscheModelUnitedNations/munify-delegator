@@ -128,34 +128,28 @@ export async function waitForHydration(page: Page): Promise<void> {
 }
 
 /**
- * Fills the profile fields the app requires (see my-account/form-schema.ts) using the
- * dev-only "Fake User" helper for the fields it covers, and fills in the one field it
- * doesn't (gender) by hand, then saves.
+ * Fills the profile fields the app requires (see my-account/form-schema.ts), then saves.
  */
 async function completeMandatoryProfile(page: Page, claims: TestUserClaims): Promise<void> {
-	// The "Fake User" dev helper fills every field it can, but not the legal name (which is
-	// deliberately kept separate from the OIDC given/family name claims) or gender. Fill the
-	// legal name from `claims` (not a fixed literal) so tests that need to tell users apart by
-	// name (e.g. multiple delegation members in one table) still can - see delegation-member-
-	// management.spec.ts, which broke when this used to hardcode 'E2E'/'Tester' for everyone.
-	// Retry the click: on a freshly-loaded page the button can be present before hydration
-	// attaches its handler, in which case the first click is a no-op.
-	// FakeUser.svelte always writes this exact phone number - check for that literal value
-	// rather than "any non-empty value", since a pre-seeded user (fixedTestUser fixtures) can
-	// already have a non-empty (and possibly invalid) phone number before the button ever fires.
-	const fakeUserButton = page.getByRole('button', { name: /fake user/i });
-	const phoneInput = page.locator('input[name="phone"]');
-	await expect(fakeUserButton).toBeVisible({ timeout: 10_000 });
-	await expect(async () => {
-		await fakeUserButton.click();
-		await expect(phoneInput).toHaveValue(/176\s?12345678/, { timeout: 2_000 });
-	}).toPass({ timeout: 15_000 });
-
+	// Input fired before hydration attaches the handlers is lost.
+	await waitForHydration(page);
+	// The legal name comes from `claims` (not a fixed literal) so tests that need to tell users
+	// apart by name (e.g. multiple delegation members in one table) still can - see
+	// delegation-member-management.spec.ts. Every field is overwritten, since a pre-seeded user
+	// (fixedTestUser fixtures) can already hold an invalid value.
 	await page.locator('input[name="given_name"]').fill(claims.given_name);
 	await page.locator('input[name="family_name"]').fill(claims.family_name);
-	// formsnap generates a random `id` per field (`useId()`) rather than one derived from the
-	// field name, so `#gender` no longer matches anything - select by `name` instead, like the
-	// two inputs above.
+	await page.locator('input[name="phone"]').fill('+4917612345678');
+	await page.locator('input[name="street"]').fill('Teststraße 1');
+	await page.locator('input[name="zip"]').fill('24103');
+	await page.locator('input[name="city"]').fill('Kiel');
+	await page.locator('select[name="country"]').selectOption('DEU');
+	await page
+		.locator('textarea[name="emergencyContacts"]')
+		.fill('Emergency contact: +49 176 12345678');
+	await page.locator('input[name="birthday"]').fill('2005-05-05');
+	await page.locator('select[name="foodPreference"]').selectOption('VEGAN');
+	// formsnap generates a random `id` per field (`useId()`), so fields are selected by `name`.
 	await page.locator('select[name="gender"]').selectOption('NO_STATEMENT');
 
 	const beforePath = new URL(page.url()).pathname;

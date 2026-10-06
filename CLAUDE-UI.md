@@ -32,6 +32,8 @@ Key directories:
 - `paperHub/` - Paper management components including statistics
 - `survey/` - Survey answer modal and compact survey cards for the dashboard
 
+Route-local components that set a pattern are documented below as well (e.g. [Seat Planning](#seat-planning-matrix--hints-sidebar)).
+
 ---
 
 ## DetailedPaperStats Component
@@ -849,6 +851,47 @@ Key-value pair display:
 	</Entry>
 </Grid>
 ```
+
+---
+
+## Seat Planning (Matrix + Hints Sidebar)
+
+The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/management/seat-planning/`) is the reference for two patterns: a large editable matrix with live (optimistic) writes, and a sidebar of hints computed from the same state.
+
+### Structure
+
+| File                                          | Role                                                                                                                                                                                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                    |
+| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table (`table-pin-rows table-pin-cols`), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row                                                                              |
+| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                            |
+| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                 |
+| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets) |
+| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                             |
+| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                        |
+
+### Rules
+
+- **Logic lives in pure functions** in `src/lib/helpers/seatPlanning/` (`baselines.ts`, `hints.ts`, `sortRows.ts`, `unMembers.ts`) and is unit tested next to them. Components only render their results.
+- **Optimistic writes**: the class keeps pending changes in a `SvelteMap` and overlays them on the live query results. The mutation returns the changed committee with its nations, so the cache updates without a refetch, and the committee's publish reaches every other open matrix. On error the pending entry is dropped and the server's message is toasted.
+- **Set, don't toggle**: mutations take the target state (`enabled: true/false`) so concurrent clicks converge.
+- **Undo**: success toasts carry an action that sends the inverse mutation (`toast.success(msg, { action: { label: m.undo(), onClick } })`).
+- **Sidebar → matrix**: hints that point at rows (a size, a regional group) set the shared URL filters instead of keeping their own state.
+
+```svelte
+<script lang="ts">
+	const planner = new SeatPlanner(() => ({ committees, nonStateActors, assignments }));
+</script>
+
+<div class="flex min-h-0 grow flex-col gap-4 xl:flex-row">
+	<div class="min-h-0 min-w-0 grow"><SeatMatrix {planner} {committees} {sizeLimits} /></div>
+	<aside class="shrink-0 overflow-y-auto xl:w-80">
+		<HintsSidebar {planner} {committees} {nonStateActors} {sizeLimits} />
+	</aside>
+</div>
+```
+
+Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violations, `alert-info alert-soft` for suggestions, `alert-error alert-soft` for hard limits.
 
 ---
 

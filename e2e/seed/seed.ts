@@ -25,10 +25,11 @@ import { makeSeedConference } from '../../src/api/db/seed-data/conference';
 import { makeSeedCustomConferenceRole } from '../../src/api/db/seed-data/customConferenceRole';
 import { makeSeedCommittee } from '../../src/api/db/seed-data/committee';
 import { makeSeedUser } from '../../src/api/db/seed-data/user';
-import { makeSeedTeamMember } from '../../src/api/db/seed-data/teamMember';
 import { makeSeedSingleParticipant } from '../../src/api/db/seed-data/singleParticipant';
 import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
+import { seedSeatPlanning } from './seatPlanning';
+import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
 export const E2E_CONFERENCE_ID = 'e2e00000conference0000001';
 export const E2E_ROLE_ID = 'e2e00000role0000000000001';
@@ -255,19 +256,10 @@ export default async function seed() {
 	await upsertActorUser(E2E_COMMITTEE_ASSIGN_HEAD_USER_ID);
 	await upsertActorUser(E2E_TEAM_COORDINATOR_ID);
 
-	async function upsertTeamMember(
+	const upsertTeamMember = (
 		userId: string,
 		role: 'PARTICIPANT_CARE' | 'PROJECT_MANAGEMENT' | 'REVIEWER' | 'TEAM_COORDINATOR'
-	) {
-		const teamMember = {
-			...makeSeedTeamMember({ conferenceId: conference.id, userId, role }),
-			id: `e2e-team-${userId}`
-		};
-		await db
-			.insert(schema.teamMember)
-			.values(teamMember)
-			.onConflictDoUpdate({ target: schema.teamMember.id, set: teamMember });
-	}
+	) => upsertSharedTeamMember(db, conference.id, userId, role);
 
 	await upsertTeamMember(E2E_MGMT_ADMIN_ID, 'PARTICIPANT_CARE');
 	await upsertTeamMember(E2E_PAYMENT_ADMIN_ID, 'PARTICIPANT_CARE');
@@ -599,6 +591,8 @@ export default async function seed() {
 		.insert(schema.delegationMember)
 		.values(committeeAssignMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: committeeAssignMember });
+
+	await seedSeatPlanning(db);
 
 	console.log(`[e2e seed] ready: conference=${conference.id} role=${role.id}`);
 }

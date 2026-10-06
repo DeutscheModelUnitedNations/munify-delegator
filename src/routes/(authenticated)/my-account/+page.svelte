@@ -9,12 +9,10 @@
 	import { translatedNationCodeAddressFormOptions } from '$lib/utils/nationTranslationHelper.svelte';
 	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
 	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
-	import FakeUser from './FakeUser.svelte';
 	import LoginInformationCard from './LoginInformationCard.svelte';
 	import { toast } from 'svelte-sonner';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import { dev } from '$app/environment';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import ProfileSection from './ProfileSection.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { buildUserFormValues } from '$lib/api/userFormValues';
@@ -111,7 +109,7 @@
 	<div class="backdrop"></div>
 {/if}
 <div class="flex w-full flex-col items-center p-4 sm:p-10">
-	<section class="max-ch-md z-20 mt-10 text-center">
+	<section class="max-ch-md z-20 mt-6 text-center">
 		<p>{m.herYouFindYourAccountInfo()}</p>
 
 		<!-- If this is set we are likely to call this via the registration flow
@@ -128,51 +126,43 @@
 			</div>
 		{/if}
 	</section>
-	<div class="mt-10 grid w-full max-w-4xl grid-cols-1 items-start gap-10 lg:grid-cols-2">
+	<div
+		class="mt-10 grid w-full max-w-6xl grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
+	>
 		<div
 			class="card bg-base-100 border-base-200 z-20 border shadow-xl {redirectUrl &&
 				'highlight-card'}"
 		>
 			<div class="card-body bg-base-100 rounded-box">
-				{#if dev}
-					<FakeUser {form} />
-				{/if}
-				<div class="card-title block text-center">{m.personalData()}</div>
+				<h2 class="card-title mb-4 justify-center">
+					<i class="fa-duotone fa-user-pen text-primary"></i>
+					{m.personalData()}
+				</h2>
 				<Form {form}>
-					<FormFieldset title={m.legalName()}>
-						<div class="alert alert-info mb-4">
-							<i class="fa-duotone fa-info-circle shrink-0"></i>
-							<span class="flex-1 min-w-0">{m.legalNameDisclaimer()}</span>
+					<ProfileSection title={m.contactInformation()} icon="address-book">
+						<p class="text-base-content/60 text-xs">
+							<span class="font-semibold">{m.legalName()}:</span>
+							{m.legalNameDisclaimer()}
+						</p>
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+							<FormTextInput
+								{form}
+								name="given_name"
+								label={m.firstName()}
+								placeholder={m.firstName()}
+							/>
+							<FormTextInput
+								{form}
+								name="family_name"
+								label={m.lastName()}
+								placeholder={m.lastName()}
+							/>
 						</div>
-						<FormTextInput
-							{form}
-							name="given_name"
-							label={m.firstName()}
-							placeholder={m.firstName()}
-						/>
-						<FormTextInput
-							{form}
-							name="family_name"
-							label={m.lastName()}
-							placeholder={m.lastName()}
-						/>
-					</FormFieldset>
-					<FormFieldset title={m.contactInformation()}>
 						<FormTextInput
 							{form}
 							name="phone"
 							label={m.phoneNumber()}
 							placeholder="+49 123456789"
-						/>
-						<FormTextInput {form} name="street" label={m.address()} placeholder={m.street()} />
-						<FormTextInput {form} name="apartment" placeholder={m.streetAddition()} />
-						<FormTextInput {form} name="zip" placeholder={m.zipCode()} />
-						<FormTextInput {form} name="city" placeholder={m.city()} />
-						<FormSelect
-							{form}
-							name="country"
-							placeholder={m.pleaseSelectCountry()}
-							options={translatedNationCodeAddressFormOptions}
 						/>
 						<FormTextArea
 							{form}
@@ -181,44 +171,68 @@
 							description={m.emergencyContactDescription()}
 							placeholder={m.emergencyContactsPlaceholder()}
 						/>
-					</FormFieldset>
-					<FormFieldset title={m.personalInformation()}>
-						<FormDateTimeInput
-							{form}
-							name="birthday"
-							label={m.birthDate()}
-							defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
-							enableFutureDates={false}
-						/>
+					</ProfileSection>
+					<ProfileSection title={m.address()} icon="house">
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
+							<FormTextInput {form} name="street" label={m.street()} placeholder={m.street()} />
+							<FormTextInput
+								{form}
+								name="apartment"
+								label={m.streetAddition()}
+								placeholder={m.streetAddition()}
+							/>
+						</div>
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
+							<FormTextInput {form} name="zip" label={m.zipCode()} placeholder={m.zipCode()} />
+							<FormTextInput {form} name="city" label={m.city()} placeholder={m.city()} />
+						</div>
 						<FormSelect
 							{form}
-							name="gender"
-							label={m.gender()}
-							options={[
-								{ value: 'MALE', label: m.male() },
-								{ value: 'FEMALE', label: m.female() },
-								{ value: 'DIVERSE', label: m.diverse() },
-								{ value: 'NO_STATEMENT', label: m.noStatement() }
-							]}
+							name="country"
+							label={m.country()}
+							placeholder={m.pleaseSelectCountry()}
+							options={translatedNationCodeAddressFormOptions}
 						/>
-						<FormTextInput
-							{form}
-							name="pronouns"
-							placeholder={m.pronounsExample()}
-							label={m.pronouns()}
-						/>
-						<FormSelect
-							{form}
-							name="foodPreference"
-							label={m.diet()}
-							options={[
-								{ value: 'VEGAN', label: m.vegan() },
-								{ value: 'VEGETARIAN', label: m.vegetarian() },
-								{ value: 'OMNIVORE', label: m.omnivore() }
-							]}
-						/>
-					</FormFieldset>
-					<FormFieldset title={m.newsletters()}>
+					</ProfileSection>
+					<ProfileSection title={m.aboutYou()} icon="user">
+						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+							<FormDateTimeInput
+								{form}
+								name="birthday"
+								label={m.birthDate()}
+								defaultYear={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).getFullYear()}
+								enableFutureDates={false}
+							/>
+							<FormSelect
+								{form}
+								name="gender"
+								label={m.gender()}
+								options={[
+									{ value: 'MALE', label: m.male() },
+									{ value: 'FEMALE', label: m.female() },
+									{ value: 'DIVERSE', label: m.diverse() },
+									{ value: 'NO_STATEMENT', label: m.noStatement() }
+								]}
+							/>
+							<FormTextInput
+								{form}
+								name="pronouns"
+								placeholder={m.pronounsExample()}
+								label={m.pronouns()}
+							/>
+							<FormSelect
+								{form}
+								name="foodPreference"
+								label={m.diet()}
+								options={[
+									{ value: 'VEGAN', label: m.vegan() },
+									{ value: 'VEGETARIAN', label: m.vegetarian() },
+									{ value: 'OMNIVORE', label: m.omnivore() }
+								]}
+							/>
+						</div>
+					</ProfileSection>
+					<ProfileSection title={m.newsletters()} icon="envelope-open-text">
 						<FormCheckbox
 							{form}
 							name="wantsToReceiveGeneralInformation"
@@ -229,12 +243,14 @@
 							name="wantsJoinTeamInformation"
 							label={m.receiveJoinTeamInformation()}
 						/>
-					</FormFieldset>
+					</ProfileSection>
 				</Form>
 			</div>
 		</div>
 
-		<LoginInformationCard {user} />
+		<div class="lg:sticky lg:top-6">
+			<LoginInformationCard {user} />
+		</div>
 	</div>
 </div>
 

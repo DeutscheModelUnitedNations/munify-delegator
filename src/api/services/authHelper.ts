@@ -28,6 +28,8 @@ export type TeamRole = (typeof teamRole.enumValues)[number];
  * |                             | publishing the adopted resolutions                                   |
  * | PARTICIPANT_CARE            | the participants, their papers (as reviewers), calendar and places   |
  * | TEAM_COORDINATOR            | the team and its members' details, short of granting PROJECT_MANAGEMENT |
+ * | CONTENT_LEAD                | the seat planning: which nations sit in which committee, the         |
+ * |                             | non-state actors and the committees' regional baselines              |
  * | REVIEWER                    | reading, reviewing and editing the conference's papers               |
  * | any team role               | reading registrations, recording attendance, teammates' phone numbers |
  * | participants                | their registration, delegation, survey answers, and the submitted    |
@@ -59,6 +61,12 @@ export const PAPER_ROLES = [
 export const TEAM_ADMIN_ROLES = [
 	'PROJECT_MANAGEMENT',
 	'TEAM_COORDINATOR'
+] as const satisfies readonly TeamRole[];
+
+/** Roles that plan the seats: committee seats per nation, non-state actors, regional baselines. */
+export const SEAT_PLANNING_ROLES = [
+	'PROJECT_MANAGEMENT',
+	'CONTENT_LEAD'
 ] as const satisfies readonly TeamRole[];
 
 /** Only the conference's leadership. */

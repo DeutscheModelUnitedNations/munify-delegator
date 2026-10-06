@@ -317,6 +317,8 @@ export type Committee = {
     where?: NationWhereInputArgument | null | undefined
   }) => Nation[],
   numOfSeatsPerDelegation: Int,
+  regionalBaseline: RegionalbaselineEnum,
+  regionalBaselineTargets: Int[],
   resolutionHeadline: String | null,
   resolutions: (p?: {
     limit?: Int | null | undefined,
@@ -339,6 +341,8 @@ export type CommitteeOrderInputArgument = {
   id?: SortingParameter | null | undefined,
   name?: SortingParameter | null | undefined,
   numOfSeatsPerDelegation?: SortingParameter | null | undefined,
+  regionalBaseline?: SortingParameter | null | undefined,
+  regionalBaselineTargets?: SortingParameter | null | undefined,
   resolutionHeadline?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
 };
@@ -362,6 +366,8 @@ export type CommitteeWhereInputArgument = {
   name?: StringWhereInputArgument | null | undefined,
   nations?: NationWhereInputArgument | null | undefined,
   numOfSeatsPerDelegation?: IntWhereInputArgument | null | undefined,
+  regionalBaseline?: RegionalbaselineEnum | null | undefined,
+  regionalBaselineTargets?: IntArrayWhereInputArgument | null | undefined,
   resolutionHeadline?: StringWhereInputArgument | null | undefined,
   resolutions?: ResolutionWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
@@ -1222,6 +1228,21 @@ export type ImpersonationUser = {
 		
 export type Int = number;
 		
+export type IntArrayWhereInputArgument = {
+  AND?: IntArrayWhereInputArgument[] | undefined,
+  NOT?: IntArrayWhereInputArgument | null | undefined,
+  OR?: IntArrayWhereInputArgument[] | undefined,
+  arrayContained?: Int[] | undefined,
+  arrayContains?: Int[] | undefined,
+  arrayOverlaps?: Int[] | undefined,
+  eq?: Int[] | undefined,
+  in?: Int[] | undefined,
+  isNotNull?: Boolean | null | undefined,
+  isNull?: Boolean | null | undefined,
+  ne?: Int[] | undefined,
+  notIn?: Int[] | undefined    
+};
+		
 export type IntWhereInputArgument = {
   AND?: IntWhereInputArgument[] | undefined,
   NOT?: IntWhereInputArgument | null | undefined,
@@ -1345,6 +1366,12 @@ export type Mutation = {
     name: String,
     sortOrder: Int
   }) => Calendartrack,
+  createCommittee: (p: {
+    abbreviation: String,
+    conferenceId: ID,
+    name: String,
+    numOfSeatsPerDelegation: Int
+  }) => Committee,
   createConferenceSupervisor: (p: {
     conferenceId: ID,
     plansOwnAttendenceAtConference?: Boolean | null | undefined,
@@ -1360,6 +1387,14 @@ export type Mutation = {
     conferenceId: ID,
     entryCode: String
   }) => Delegationmember,
+  createNonStateActor: (p: {
+    abbreviation: String,
+    conferenceId: ID,
+    description: String,
+    fontAwesomeIcon?: String | null | undefined,
+    name: String,
+    seatAmount: Int
+  }) => Nonstateactor,
   createPaper: (p: {
     agendaItemId?: ID | null | undefined,
     authorId: ID,
@@ -1454,10 +1489,16 @@ export type Mutation = {
   deleteCalendarTrack: (p: {
     id: ID
   }) => Boolean,
+  deleteCommittee: (p: {
+    id: ID
+  }) => Boolean,
   deleteDelegation: (p: {
     id: ID
   }) => Boolean,
   deleteDelegationMember: (p: {
+    id: ID
+  }) => Boolean,
+  deleteNonStateActor: (p: {
     id: ID
   }) => Boolean,
   deletePaper: (p: {
@@ -1523,6 +1564,16 @@ export type Mutation = {
     agendaItemId: ID,
     status: ReviewhelpstatusEnum
   }) => Committeeagendaitem,
+  setCommitteeNationSeat: (p: {
+    committeeId: ID,
+    enabled: Boolean,
+    nationAlpha3Code: String
+  }) => Committee,
+  setCommitteeRegionalBaseline: (p: {
+    baseline: RegionalbaselineEnum,
+    committeeId: ID,
+    targets?: Int[] | null | undefined
+  }) => Committee,
   startImpersonation: (p: {
     scope?: String | null | undefined,
     targetUserId: ID
@@ -1574,6 +1625,7 @@ export type Mutation = {
     abbreviation?: String | null | undefined,
     id: ID,
     name?: String | null | undefined,
+    numOfSeatsPerDelegation?: Int | null | undefined,
     resolutionHeadline?: String | null | undefined
   }) => Committee,
   updateConference: (p: {
@@ -1657,6 +1709,14 @@ export type Mutation = {
     conferenceId: ID,
     ids: ID[]
   }) => Int,
+  updateNonStateActor: (p: {
+    abbreviation?: String | null | undefined,
+    description?: String | null | undefined,
+    fontAwesomeIcon?: String | null | undefined,
+    id: ID,
+    name?: String | null | undefined,
+    seatAmount?: Int | null | undefined
+  }) => Nonstateactor,
   updatePaper: (p: {
     content: JSON,
     paperId: ID,
@@ -2453,6 +2513,9 @@ export type Query = {
     conferenceId: ID,
     searchTerm: String
   }) => SearchConferenceResult,
+  seatPlanningAssignments: (p: {
+    conferenceId: ID
+  }) => SeatPlanningAssignments,
   singleParticipant: (p: {
     id: ID
   }) => Singleparticipant,
@@ -2542,6 +2605,8 @@ export type RegenerateInvitationResult = {
   newToken: String | null,
   success: Boolean    
 };
+		
+export type RegionalbaselineEnum = "ECOSOC" | "HUMAN_RIGHTS_COUNCIL" | "MANUAL" | "SECURITY_COUNCIL" | "UN_MEMBERS";
 		
 export type Resolution = {
   committee: (p?: {
@@ -2723,6 +2788,23 @@ export type SearchUserResult = {
   givenName: String,
   id: String,
   participationType: String    
+};
+		
+export type SeatPlanningAssignedRole = {
+  memberCount: Int,
+  nationAlpha3Code: String | null,
+  nonStateActorId: ID | null    
+};
+		
+export type SeatPlanningAssignments = {
+  committeeSeats: () => SeatPlanningCommitteeSeat[],
+  roles: () => SeatPlanningAssignedRole[]    
+};
+		
+export type SeatPlanningCommitteeSeat = {
+  committeeId: ID,
+  memberNames: String[],
+  nationAlpha3Code: String    
 };
 		
 export type Singleparticipant = {
@@ -3629,7 +3711,7 @@ export type TeammemberinvitationWhereInputArgument = {
   usedAt?: DateTimeWhereInputArgument | null | undefined    
 };
 		
-export type TeamroleEnum = "MEMBER" | "PARTICIPANT_CARE" | "PROJECT_MANAGEMENT" | "REVIEWER" | "TEAM_COORDINATOR";
+export type TeamroleEnum = "CONTENT_LEAD" | "MEMBER" | "PARTICIPANT_CARE" | "PROJECT_MANAGEMENT" | "REVIEWER" | "TEAM_COORDINATOR";
 		
 export type UnlockedPieceData = {
   flagAlpha2Code: String | null,

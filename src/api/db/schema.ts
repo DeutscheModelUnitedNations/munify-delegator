@@ -105,7 +105,8 @@ export const teamRole = pgEnum('team_role', [
 	'PARTICIPANT_CARE',
 	'MEMBER',
 	'REVIEWER',
-	'TEAM_COORDINATOR'
+	'TEAM_COORDINATOR',
+	'CONTENT_LEAD'
 ]);
 export const conferenceState = pgEnum('conference_state', [
 	'PRE',
@@ -147,6 +148,15 @@ export const calendarEntryColor = pgEnum('calendar_entry_color', [
 	'BREAK',
 	'HIGHLIGHT',
 	'INFO'
+]);
+
+/** What the regional distribution of a committee's seats is compared to in the seat planning. */
+export const regionalBaseline = pgEnum('regional_baseline', [
+	'UN_MEMBERS',
+	'HUMAN_RIGHTS_COUNCIL',
+	'ECOSOC',
+	'SECURITY_COUNCIL',
+	'MANUAL'
 ]);
 
 export const committeeToNation = implicitManyToMany(
@@ -248,7 +258,14 @@ export const committee = snakeCase.table('committee', {
 	abbreviation: text().notNull(),
 	conferenceId: conferenceRef('cascade'),
 	numOfSeatsPerDelegation: integer().default(1).notNull(),
-	resolutionHeadline: text()
+	resolutionHeadline: text(),
+	regionalBaseline: regionalBaseline().default('UN_MEMBERS').notNull(),
+	/**
+	 * Target seats per UN regional group for the MANUAL baseline, in the order African,
+	 * Asia-Pacific, Eastern European, Latin American and Caribbean, Western European and Others.
+	 * Kept when switching to a template, so switching back restores them.
+	 */
+	regionalBaselineTargets: integer().array().default([]).notNull()
 });
 
 export const committeeAgendaItem = snakeCase.table('committee_agenda_item', {

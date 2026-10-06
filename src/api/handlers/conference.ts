@@ -22,6 +22,7 @@ import { UserRef } from './user';
 import { userFormSchema } from '../../routes/(authenticated)/my-account/form-schema';
 import { nullToUndefined } from '$api/services/args';
 import { distinctNationCodes, schoolRows } from '$api/services/conferenceAggregates';
+import { totalSeats } from '$api/services/seatPlanning';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
@@ -129,26 +130,26 @@ const ConferenceRef = object({
 			}
 		}),
 
-		/** Seats on offer: one per nation seat in every committee, plus one per non-state actor. */
+		/**
+		 * Seats on offer: every nation of a committee is worth its `numOfSeatsPerDelegation`, every
+		 * non-state actor its `seatAmount`.
+		 */
 		totalSeats: t.field({
 			type: 'Int',
 			resolve: async (conference) => {
 				const [committees, nonStateActors] = await Promise.all([
 					db.query.committee.findMany({
 						where: { conferenceId: conference.id },
-						columns: { id: true },
+						columns: { numOfSeatsPerDelegation: true },
 						with: { nations: { columns: { alpha3Code: true } } }
 					}),
 					db.query.nonStateActor.findMany({
 						where: { conferenceId: conference.id },
-						columns: { id: true }
+						columns: { seatAmount: true }
 					})
 				]);
 
-				return (
-					committees.reduce((sum, committee) => sum + committee.nations.length, 0) +
-					nonStateActors.length
-				);
+				return totalSeats(committees, nonStateActors);
 			}
 		}),
 

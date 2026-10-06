@@ -21,7 +21,7 @@
 	import { conferenceSettingsFormSchema, type ConferenceSettings } from './form-schema';
 	import { collectConfigChanges } from './changePreview';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';
-	import CommitteeAgendaEditor from './CommitteeAgendaEditor.svelte';
+	import CommitteesManager from './committees/CommitteesManager.svelte';
 	import GeneralSettings from './sections/GeneralSettings.svelte';
 	import StatusSettings from './sections/StatusSettings.svelte';
 	import LinkSettings from './sections/LinkSettings.svelte';
@@ -274,7 +274,7 @@
 		</div>
 
 		<div class="flex flex-col gap-4">
-			<CommitteeAgendaEditor {conferenceId} />
+			<CommitteesManager {conferenceId} />
 		</div>
 	</div>
 

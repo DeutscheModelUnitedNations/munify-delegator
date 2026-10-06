@@ -4,6 +4,7 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import { oidcMock } from 'oidc-mock/vite';
+import mkcert from 'vite-plugin-mkcert';
 import { fileURLToPath } from 'node:url';
 import type { EnvironmentModuleNode, Plugin } from 'vite';
 
@@ -46,8 +47,19 @@ function rebuildRumbleOnSchemaChange(): Plugin {
 	};
 }
 
+// Serve `vite dev` over HTTPS with a locally trusted mkcert certificate. Disabled under vitest
+// and for the e2e suite (playwright.config.ts sets DEV_HTTPS=false), which runs on plain HTTP.
+// Only the vite CLI's own server gets it: tools that merely load this config (svelte-check
+// resolves it in serve mode to preprocess styles) would otherwise install the certificate
+// authority, which asks for sudo.
+const devHttps =
+	!process.env.VITEST &&
+	process.env.DEV_HTTPS !== 'false' &&
+	/[\\/]vite(\.js)?$/.test(process.argv[1] ?? '');
+
 export default defineConfig({
 	plugins: [
+		devHttps && mkcert(),
 		sentrySvelteKit({
 			autoUploadSourceMaps: false, // We upload manually via CI to Bugsink
 			// Tracing is off (Bugsink only takes errors), so the build-time tracing instrumentation has

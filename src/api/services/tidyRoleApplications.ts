@@ -74,3 +74,29 @@ export async function tidyRoleApplications(delegationId: string) {
 	// Close the gaps the deletions above may have left in the ranking.
 	await normalizeRoleApplicationRanks(delegation.id);
 }
+
+/**
+ * Re-checks the applications of every delegation of the conference that applied for one of the
+ * given roles, e.g. after a nation lost a committee seat or a non-state actor got fewer seats.
+ */
+export async function tidyRoleApplicationsForRoles(
+	conferenceId: string,
+	roles: { nationAlpha3Codes?: string[]; nonStateActorIds?: string[] }
+) {
+	const delegations = await db.query.delegation.findMany({
+		where: {
+			conferenceId,
+			appliedForRoles: {
+				OR: [
+					{ nationId: { in: roles.nationAlpha3Codes ?? [] } },
+					{ nonStateActorId: { in: roles.nonStateActorIds ?? [] } }
+				]
+			}
+		},
+		columns: { id: true }
+	});
+
+	for (const delegation of delegations) {
+		await tidyRoleApplications(delegation.id);
+	}
+}

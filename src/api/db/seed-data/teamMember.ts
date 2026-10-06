@@ -6,7 +6,8 @@ const TEAM_ROLES = [
 	'PARTICIPANT_CARE',
 	'MEMBER',
 	'REVIEWER',
-	'TEAM_COORDINATOR'
+	'TEAM_COORDINATOR',
+	'CONTENT_LEAD'
 ] as const;
 
 export function makeSeedTeamMember(

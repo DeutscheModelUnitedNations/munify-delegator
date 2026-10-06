@@ -22,13 +22,19 @@
 
 	type EmailStatusValue = 'exists' | 'new_user' | 'pending_invitation' | 'already_member';
 	type TeamRoleValue =
-		'MEMBER' | 'REVIEWER' | 'PARTICIPANT_CARE' | 'TEAM_COORDINATOR' | 'PROJECT_MANAGEMENT';
+		| 'MEMBER'
+		| 'REVIEWER'
+		| 'PARTICIPANT_CARE'
+		| 'TEAM_COORDINATOR'
+		| 'CONTENT_LEAD'
+		| 'PROJECT_MANAGEMENT';
 
 	const teamRoles: TeamRoleValue[] = [
 		'MEMBER',
 		'REVIEWER',
 		'PARTICIPANT_CARE',
 		'TEAM_COORDINATOR',
+		'CONTENT_LEAD',
 		'PROJECT_MANAGEMENT'
 	];
 

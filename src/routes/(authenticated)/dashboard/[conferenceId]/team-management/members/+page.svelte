@@ -120,7 +120,8 @@
 		PARTICIPANT_CARE: 'badge-secondary',
 		REVIEWER: 'badge-accent',
 		MEMBER: 'badge-ghost',
-		TEAM_COORDINATOR: 'badge-info'
+		TEAM_COORDINATOR: 'badge-info',
+		CONTENT_LEAD: 'badge-warning'
 	};
 
 	const columns = [

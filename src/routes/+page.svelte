@@ -78,14 +78,6 @@
 			</UndrawCard>
 		</section>
 		<section class="flex flex-col items-center justify-center gap-4">
-			<div class="alert alert-warning max-ch-md" role="alert">
-				<i class="fas fa-wrench text-2xl"></i>
-				<div class="flex flex-col gap-2">
-					<h2 class="text-xl font-bold">{m.homeDraftDisclaimerHeader()}</h2>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
-					<p>{@html m.homeDraftDisclaimer()}</p>
-				</div>
-			</div>
 			{#if configPublic.PUBLIC_FEEDBACK_URL}
 				<div class="alert alert-info max-ch-md" role="alert">
 					<i class="fas fa-bug text-2xl"></i>

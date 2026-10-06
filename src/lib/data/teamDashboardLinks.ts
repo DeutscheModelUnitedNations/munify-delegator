@@ -40,6 +40,19 @@ const teamDashboardLinks: TeamDashboardLink[] = [
 		allowedRoles: ['PARTICIPANT_CARE', 'PROJECT_MANAGEMENT']
 	},
 	{
+		id: 'seatPlanning',
+		icon: 'table-cells',
+		getTitle: () => m.seatPlanning(),
+		getDescription: () => m.seatPlanningDescription(),
+		getHref: (ctx) =>
+			resolve('/(authenticated)/dashboard/[conferenceId]/management/seat-planning', {
+				conferenceId: ctx.conferenceId
+			}),
+		external: false,
+		isVisible: () => true,
+		allowedRoles: ['PROJECT_MANAGEMENT', 'CONTENT_LEAD']
+	},
+	{
 		id: 'attendanceScanner',
 		icon: 'barcode-read',
 		getTitle: () => m.attendanceScanner(),

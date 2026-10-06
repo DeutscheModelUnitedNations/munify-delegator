@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import CommitteeAgendaEditor from '../CommitteeAgendaEditor.svelte';
+	import CommitteesManager from './CommitteesManager.svelte';
 	import type { PageProps } from './$types';
 
 	let { params }: PageProps = $props();
@@ -11,5 +11,5 @@
 		{m.committeesAndAgendaItems()}
 	</h1>
 
-	<CommitteeAgendaEditor conferenceId={params.conferenceId} />
+	<CommitteesManager conferenceId={params.conferenceId} />
 </div>

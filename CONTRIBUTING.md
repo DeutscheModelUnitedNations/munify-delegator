@@ -49,16 +49,17 @@ branch: setup
 
 #### Seeding the database
 
-To seed the database with various data/scenarios which might help you with development, please run [prisma/seed/dev/seed.ts](prisma/seed/dev/seed.ts) with bun after you migrated the database into the current schema. This will create a few datasets for various development scenarios. You can erase and re-seed the db as much as you want when you break things, the seed will always reset to a fixed state. Example usage commands (to run against a running database container):
+To seed the database with various data/scenarios which might help you with development, run [src/api/db/seedDev.ts](src/api/db/seedDev.ts) after you migrated the database into the current schema. It wipes the database and refills it with conferences in every stage, a login persona for every role and a crowd of participants, so you can re-seed as often as you like when you break things. Example usage commands (to run against a running database container):
 
 ```
 // to migrate the db into the correct schema
-bunx prisma migrate dev
+bun run db:migrate
 
-// to reset all data in the database
-bunx prisma migrate reset
-
-// to seed the database with example data
-bun prisma/seed/dev/seed.ts
+// to wipe the database and seed it with example data
+bun run db:seed:dev
 
 ```
+
+#### Importing a conference
+
+New conferences are created by uploading a JSON file at `/dashboard/seed` (system admins only). The file is validated against the schema served at `/schemata/seed`; [src/api/db/seed-data/conferenceImport.example.json](src/api/db/seed-data/conferenceImport.example.json) is a minimal example. The `nations` of a committee are optional, so a conference can be imported before the seats are distributed (see the Security Council in the example). The seats are then filled in the seat planning tool at `/dashboard/<conferenceId>/management/seat-planning`.

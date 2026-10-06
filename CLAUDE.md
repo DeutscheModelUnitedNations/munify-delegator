@@ -435,7 +435,9 @@ bun run preview
   - Actions: `read`, `update`, `delete` (declared in `src/api/rumble.ts`); impersonation, when it
     is redesigned, brings its own
   - Each entity's abilities live at the top of its handler
-- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc.
+- Team member roles: `Admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc. `CONTENT_LEAD` only
+  reaches the seat planning: `SEAT_PLANNING_ROLES` on the API, and in the UI the management guard
+  (`$lib/helpers/managementAccess.ts`) keeps a content lead on that one page.
 
 #### 4. Internationalization
 

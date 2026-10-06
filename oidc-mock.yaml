@@ -110,6 +110,17 @@ users:
       preferred_username: 'dev-team-coordinator'
       locale: 'de'
       roles: []
+  - sub: 'dev-team-content-lead'
+    label: '[Team] Content lead'
+    description: 'CONTENT_LEAD everywhere: the seat planning only'
+    claims:
+      email: 'team-content-lead@delegator.local'
+      email_verified: true
+      given_name: 'Charlie'
+      family_name: 'Inhaltsleitung'
+      preferred_username: 'dev-team-content-lead'
+      locale: 'de'
+      roles: []
   - sub: 'dev-team-reviewer'
     label: '[Team] Reviewer'
     description: 'REVIEWER everywhere: paper hub with a review queue and saved snippets'
