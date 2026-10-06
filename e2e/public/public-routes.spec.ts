@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { E2E_CONFERENCE_ID } from '../seed/seed';
+import { isOidcUrl } from '../support/auth';
 
 // Unauthenticated, publicly reachable routes. None of them had coverage, and the certificate
 // validator is the one place an outsider's input is cryptographically checked - a regression
@@ -27,6 +28,6 @@ test('the public seats page renders for an anonymous visitor', async ({ page }) 
 
 	expect(res?.status()).toBeLessThan(400);
 	// It must render conference content rather than bouncing to the OIDC provider.
-	expect(new URL(page.url()).port).not.toBe('18080');
+	expect(isOidcUrl(page.url())).toBe(false);
 	await expect(page.locator('main, body')).toBeVisible({ timeout: 15_000 });
 });

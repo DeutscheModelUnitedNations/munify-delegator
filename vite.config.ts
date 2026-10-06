@@ -4,6 +4,8 @@ import { defineConfig } from 'vitest/config';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { sentrySvelteKit } from '@sentry/sveltekit';
+import { oidcMock } from 'oidc-mock/vite';
+import mkcert from 'vite-plugin-mkcert';
 
 function devAutoRestart() {
 	const RACE_CONDITION_PATTERNS = [
@@ -48,9 +50,17 @@ function devAutoRestart() {
 	};
 }
 
+// Serve `vite dev` over HTTPS with a locally trusted mkcert certificate. Disabled under vitest
+// and for the e2e suite (playwright.config.ts sets DEV_HTTPS=false), which runs on plain HTTP.
+const devHttps = !process.env.VITEST && process.env.DEV_HTTPS !== 'false';
+
 export default defineConfig({
 	plugins: [
 		devAutoRestart(),
+		devHttps && mkcert(),
+		// Local OIDC provider (oidc-mock.yaml), only active in `vite dev` / `vite preview`.
+		// Skipped under vitest, which would otherwise start it for every unit test run.
+		!process.env.VITEST && oidcMock(),
 		sentrySvelteKit({
 			autoUploadSourceMaps: false // We upload manually via CI to Bugsink
 		}),
