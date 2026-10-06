@@ -23,7 +23,7 @@
 			<span
 				class="btn btn-xs btn-square btn-primary cursor-not-allowed opacity-70"
 				role="img"
-				aria-label={m.seatPlanningLockedBy({ members: label })}
+				aria-label={`${label} – ${m.seatPlanningLockedBy({ members: lockedBy.join(', ') })}`}
 			>
 				<i class="fa-solid fa-lock"></i>
 			</span>
