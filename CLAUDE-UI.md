@@ -1120,6 +1120,10 @@ Use DaisyUI semantic color classes:
 - `border-base-200` - Light border
 - `border-base-300` - Medium border
 
+### Light/Dark Mode
+
+The theme is selected via `data-theme="light|dark"` on `<html>`, set by the footer's `ThemeSwitcher` (`$lib/helpers/theme.svelte.ts`). Tailwind's `dark:` variant follows this attribute, so style dark mode with `dark:` classes or `[data-theme='dark']` selectors — never `@media (prefers-color-scheme: dark)` or `matchMedia`, which ignore the user's choice.
+
 ---
 
 ## Layout Patterns
