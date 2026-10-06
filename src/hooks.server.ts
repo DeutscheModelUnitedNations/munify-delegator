@@ -24,7 +24,10 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 			transformPageChunk: ({ html }) => {
 				return html
 					.replace('%lang%', locale)
-					.replaceAll('%fontawesome.baseUrl%', configPublic.PUBLIC_FONTAWESOME_CSS_BASE_URL);
+					.replace(
+						'%fontawesome.stylesheet%',
+						`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_CSS_URL}" />`
+					);
 			},
 			// Houdini's fetch plugin reads the content-type header from responses
 			// fetched during SSR load; SvelteKit only serializes headers that pass
