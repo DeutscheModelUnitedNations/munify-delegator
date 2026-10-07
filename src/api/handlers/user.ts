@@ -63,17 +63,21 @@ abilityBuilder.user.allow('update').when((ctx) => {
 // waiting-list entrants and team of the conferences they manage - in full.
 abilityBuilder.user.allow('read').when((ctx) => where(isManagedUser(ctx)));
 
+/** A delegation membership or single participation the caller supervises. */
+function supervisedByCaller(ctx: Context) {
+	const id = userId(ctx);
+	return id ? { supervisors: { user: { id } } } : undefined;
+}
+
 // Supervisors see the participants they supervise, contact details included.
 abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	if (!id) return undefined;
-	const supervisedByCaller = { supervisors: { user: { id } } };
-	return {
-		where: {
-			OR: [{ delegationMemberships: supervisedByCaller }, { singleParticipant: supervisedByCaller }]
-		},
-		columns: WITHOUT_CARE_NOTES
-	};
+	const supervised = supervisedByCaller(ctx);
+	return supervised
+		? {
+				where: { OR: [{ delegationMemberships: supervised }, { singleParticipant: supervised }] },
+				columns: WITHOUT_CARE_NOTES
+			}
+		: undefined;
 });
 
 // Team coordinators see their team in full but for the care notes: the team-management page lists
@@ -127,20 +131,20 @@ abilityBuilder.user.allow('read').when((ctx) => {
 
 // Supervisors see the other supervisors of the participants they share.
 abilityBuilder.user.allow('read').when((ctx) => {
-	const id = userId(ctx);
-	if (!id) return undefined;
-	const supervisedByCaller = { supervisors: { user: { id } } };
-	return {
-		where: {
-			conferenceSupervisor: {
-				OR: [
-					{ supervisedDelegationMembers: supervisedByCaller },
-					{ supervisedSingleParticipants: supervisedByCaller }
-				]
+	const supervised = supervisedByCaller(ctx);
+	return supervised
+		? {
+				where: {
+					conferenceSupervisor: {
+						OR: [
+							{ supervisedDelegationMembers: supervised },
+							{ supervisedSingleParticipants: supervised }
+						]
+					}
+				},
+				columns: IDENTITY
 			}
-		},
-		columns: IDENTITY
-	};
+		: undefined;
 });
 
 // Reviewers and conference management see the authors of the conference's papers. They can read
