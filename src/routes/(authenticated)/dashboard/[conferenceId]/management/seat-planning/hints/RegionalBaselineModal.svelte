@@ -84,7 +84,7 @@
 	<div class="flex flex-col gap-4">
 		<p class="text-base-content/70 text-sm">{m.regionalBaselineDescription()}</p>
 
-		<div class="border-base-300 rounded-box flex flex-col overflow-hidden border">
+		<div class="flex flex-col">
 			{#each rows as row (row.id)}
 				<div
 					class="border-base-200 flex items-center gap-3 border-b px-3 py-1.5 last:border-b-0 {row.id ===

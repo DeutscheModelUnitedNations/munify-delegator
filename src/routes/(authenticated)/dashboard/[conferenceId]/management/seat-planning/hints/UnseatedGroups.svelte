@@ -18,11 +18,14 @@
 	<h4 class="text-sm font-semibold">{m.seatPlanningUnseated()}</h4>
 	{#each groups as { group, unseated, total } (group)}
 		<button
-			class="hover:bg-base-300 flex items-center justify-between gap-2 rounded px-1 text-left text-sm"
+			class="btn btn-sm btn-ghost bg-base-100/40 h-auto min-h-8 justify-between gap-2 py-1 text-left font-normal"
 			title={m.seatPlanningShowUnseated()}
 			onclick={() => onSelectGroup(group)}
 		>
-			<span>{translateRegionalGroup(group)}</span>
+			<span class="flex items-center gap-2">
+				<i class="fa-duotone fa-filter text-base-content/60 text-xs"></i>
+				{translateRegionalGroup(group)}
+			</span>
 			<span class="badge badge-sm {unseated > 0 ? 'badge-neutral' : 'badge-ghost'}">
 				{unseated}/{total}
 			</span>
