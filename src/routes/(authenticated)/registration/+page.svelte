@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { resolve } from '$app/paths';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
-	import svgempty from '$assets/undraw/empty_street.svg';
 	import ConferenceCard from '$lib/components/conferenceCard/ConferenceCard.svelte';
 	import { fetchOpenConferences } from './openConferences';
+	import RegistrationEmptyState from './RegistrationEmptyState.svelte';
+	import RegisteredConferenceNotice from './RegisteredConferenceNotice.svelte';
 
 	const currentUser = $derived(await getCurrentUser());
 
@@ -20,38 +20,37 @@
 		)
 	);
 
-	function alreadyRegistered(conferenceId: string) {
-		return registeredConferenceIds.has(conferenceId);
-	}
+	const registeredConferences = $derived(
+		conferences.filter((conference) => registeredConferenceIds.has(conference.id))
+	);
+	const availableConferences = $derived(
+		conferences.filter((conference) => !registeredConferenceIds.has(conference.id))
+	);
 </script>
 
-<div class="flex min-h-screen w-full flex-col items-center p-4">
-	<hero class="my-20 text-center">
-		<h1 class="text-xl">{m.selectConference()}</h1>
-	</hero>
+<div class="@container mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:px-8">
+	{#if conferences.length === 0}
+		<RegistrationEmptyState />
+	{:else}
+		{#each registeredConferences as conference (conference.id)}
+			<RegisteredConferenceNotice {conference} />
+		{/each}
 
-	<main>
-		{#if conferences.length === 0}
-			<section class="flex w-full flex-col items-center gap-4">
-				<img src={svgempty} alt="Empty" class="mb-10 w-1/2" />
-				<h1 class="text-center text-3xl">{m.noConferenceOpenForRegistration()}</h1>
-				<p class="max-ch-md text-center">{m.noConferenceOpenForRegistrationText()}</p>
-				<div class="flex flex-col gap-4 md:flex-row-reverse">
-					<a class="btn mt-10" href={resolve('/')}>{m.backToHome()}</a>
-				</div>
-			</section>
-		{:else}
-			<section
-				class="flex flex-col flex-wrap items-center justify-center gap-8 md:flex-row md:items-stretch"
-			>
-				{#each conferences as conference (conference.id)}
-					<ConferenceCard
-						{conference}
-						alreadyRegistered={alreadyRegistered(conference.id)}
-						baseSlug="/registration"
-					/>
+		<header class="flex flex-col gap-3">
+			<span class="text-primary text-sm font-semibold tracking-widest uppercase">
+				{m.registration()}
+			</span>
+			<h1 class="text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+				{m.selectConference()}
+			</h1>
+		</header>
+
+		{#if availableConferences.length > 0}
+			<section class="flex flex-col gap-8">
+				{#each availableConferences as conference (conference.id)}
+					<ConferenceCard {conference} />
 				{/each}
 			</section>
 		{/if}
-	</main>
+	{/if}
 </div>
