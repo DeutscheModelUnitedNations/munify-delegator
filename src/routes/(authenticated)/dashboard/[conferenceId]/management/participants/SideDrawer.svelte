@@ -20,7 +20,7 @@
 	<Drawer.Portal>
 		<Drawer.Overlay class="fixed inset-0 z-40 bg-black/40" />
 		<Drawer.Content
-			class="bg-base-100 fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col overflow-hidden outline-none"
+			class="bg-base-100 fixed top-0 right-0 z-50 flex h-full w-full max-w-xl flex-col overflow-hidden outline-none"
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between px-5 pt-4 pb-3">

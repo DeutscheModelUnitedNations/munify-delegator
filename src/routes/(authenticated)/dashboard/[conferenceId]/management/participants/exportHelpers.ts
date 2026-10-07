@@ -41,6 +41,7 @@ const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
 			? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(row.birthday)
 			: '',
 	ageAtConference: (row) => numberText(row.ageAtConference),
+	hasOpenIssue: (row) => booleanText(row.hasOpenIssue),
 	hasBirthdayDuringConference: (row) => booleanText(row.hasBirthdayDuringConference),
 	gender: (row) => (row.gender ? translateGender(row.gender) : ''),
 	pronouns: (row) => text(row.pronouns),

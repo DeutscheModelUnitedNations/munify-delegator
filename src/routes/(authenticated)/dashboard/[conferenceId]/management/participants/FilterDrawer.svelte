@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { Table } from '$lib/components/tanStackTable';
-	import type { ParticipantRow, TextFilterMode } from './types';
+	import type { ColumnMeta, ParticipantRow, TextFilterMode } from './types';
 	import type { ParticipantTableFeatures } from './tableFeatures';
 	import SideDrawer from './SideDrawer.svelte';
 	import ColumnCategoryGroups from './ColumnCategoryGroups.svelte';
@@ -63,10 +63,17 @@
 		return textFilterModes.find((m) => m.value === mode)?.needsInput ?? true;
 	}
 
+	/** A column is offered while it is shown, or always when its meta says so. */
+	function isListed(isVisible: boolean, meta: ColumnMeta): boolean {
+		return isVisible || !!meta.alwaysFilterable;
+	}
+
 	const visibleColumns = $derived(
 		table.getAllColumns().flatMap((col) => {
 			const meta = col.columnDef.meta;
-			return meta && col.getIsVisible() && col.getCanFilter() ? [{ col, meta }] : [];
+			return meta && isListed(col.getIsVisible(), meta) && col.getCanFilter()
+				? [{ col, meta }]
+				: [];
 		})
 	);
 
@@ -115,9 +122,9 @@
 
 {#snippet textFilter(col: FilterColumn, header: string)}
 	{@const state = getTextFilterState(col.id)}
-	<div class="flex gap-1">
+	<div class="join w-full">
 		<select
-			class="select select-sm select-bordered"
+			class="select select-md join-item w-auto shrink-0"
 			value={state.mode}
 			onchange={(e) => setTextFilter(col.id, e.currentTarget.value as TextFilterMode, state.value)}
 		>
@@ -128,7 +135,7 @@
 		{#if modeNeedsInput(state.mode)}
 			<input
 				type="text"
-				class="input input-sm input-bordered grow"
+				class="input input-md join-item min-w-0 grow"
 				placeholder={header}
 				value={state.value}
 				oninput={(e) => setTextFilter(col.id, state.mode, e.currentTarget.value)}
@@ -140,18 +147,19 @@
 {#snippet enumFilter(col: FilterColumn)}
 	{@const facetedValues = col.getFacetedUniqueValues()}
 	{@const currentFilter = (col.getFilterValue() as string[] | undefined) ?? []}
-	<div class="flex flex-wrap gap-1">
+	<div class="flex flex-wrap gap-1.5">
 		{#each [...facetedValues.entries()] as [value, count] (value)}
 			{@const filterKey = value == null || value === '' ? '—' : String(value)}
 			{@const isSelected = currentFilter.includes(filterKey)}
 			<button
-				class="badge badge-sm cursor-pointer gap-1"
-				class:badge-primary={isSelected}
-				class:badge-outline={!isSelected}
+				class="btn btn-sm rounded-full text-sm font-normal"
+				class:btn-primary={isSelected}
+				class:btn-soft={!isSelected}
+				aria-pressed={isSelected}
 				onclick={() => toggleEnumValue(col.id, filterKey)}
 			>
 				{translateEnumValue(col.id, filterKey)}
-				<span class="text-xs opacity-60">({count})</span>
+				<span class="text-sm opacity-70">{count}</span>
 			</button>
 		{/each}
 	</div>
@@ -159,13 +167,14 @@
 
 {#snippet booleanFilter(col: FilterColumn)}
 	{@const currentValue = col.getFilterValue() as boolean | null | undefined}
-	<div class="flex gap-1">
+	<div class="join">
 		{#each booleanFilterOptions as option (option.label)}
 			{@const isSelected = (currentValue ?? null) === option.value}
 			<button
-				class="badge badge-sm cursor-pointer"
-				class:badge-primary={isSelected}
-				class:badge-outline={!isSelected}
+				class="btn btn-sm join-item text-sm font-normal"
+				class:btn-primary={isSelected}
+				class:btn-soft={!isSelected}
+				aria-pressed={isSelected}
 				onclick={() => setBooleanFilter(col.id, option.value)}
 			>
 				{option.label}
@@ -183,7 +192,7 @@
 	<div class="flex items-center gap-2">
 		<input
 			type="number"
-			class="input input-sm input-bordered w-20"
+			class="input input-md w-20"
 			placeholder={facetedMinMax?.[0]?.toString() ?? 'Min'}
 			value={currentRange[0] ?? ''}
 			oninput={(e) => setRangeFilter(col.id, 0, e.currentTarget.value)}
@@ -191,7 +200,7 @@
 		<span class="text-base-content/50">—</span>
 		<input
 			type="number"
-			class="input input-sm input-bordered w-20"
+			class="input input-md w-20"
 			placeholder={facetedMinMax?.[1]?.toString() ?? 'Max'}
 			value={currentRange[1] ?? ''}
 			oninput={(e) => setRangeFilter(col.id, 1, e.currentTarget.value)}
@@ -200,12 +209,24 @@
 {/snippet}
 
 <SideDrawer bind:open title={m.filters()} icon="fa-filter">
-	<ColumnCategoryGroups entries={visibleColumns} listClass="flex flex-col gap-3">
+	<div class="flex gap-2">
+		<button class="btn btn-ghost btn-sm" onclick={clearAllFilters}>
+			<i class="fa-duotone fa-filter-circle-xmark"></i>
+			{m.clearAllFilters()}
+		</button>
+	</div>
+
+	<ColumnCategoryGroups
+		entries={visibleColumns}
+		listClass="flex flex-col gap-4"
+		groupClass="bg-base-200 rounded-box p-4"
+	>
 		{#snippet item({ col, meta: colMeta }, header)}
-			<div class="form-control">
-				<div class="label">
-					<span class="label-text font-medium">{header}</span>
-				</div>
+			<div class="flex flex-col gap-1.5">
+				<span class="text-base font-medium">{header}</span>
+				{#if col.id === 'hasOpenIssue'}
+					<p class="text-sm text-base-content/70">{m.openIssuesExplanation()}</p>
+				{/if}
 
 				{#if colMeta.filterType === 'text'}
 					{@render textFilter(col, header)}
@@ -219,11 +240,4 @@
 			</div>
 		{/snippet}
 	</ColumnCategoryGroups>
-
-	{#snippet footer()}
-		<button class="btn btn-ghost btn-sm w-full" onclick={clearAllFilters}>
-			<i class="fa-duotone fa-filter-circle-xmark"></i>
-			{m.clearAllFilters()}
-		</button>
-	{/snippet}
 </SideDrawer>

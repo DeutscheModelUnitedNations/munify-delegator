@@ -19,9 +19,10 @@ function meta(
 	category: ColumnMeta['category'],
 	description: string,
 	defaultVisible: boolean,
-	filterType: ColumnMeta['filterType'] = 'text'
+	filterType: ColumnMeta['filterType'] = 'text',
+	alwaysFilterable = false
 ): ColumnMeta {
-	return { category, description, defaultVisible, filterType };
+	return { category, description, defaultVisible, filterType, alwaysFilterable };
 }
 
 export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, ParticipantRow>[] {
@@ -213,7 +214,7 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			header: m.payment(),
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.paymentStatus }),
 			filterFn: enumFilterFn,
-			meta: meta('status', m.payment(), true, 'enum')
+			meta: meta('status', m.payment(), true, 'enum', true)
 		},
 		{
 			accessorKey: 'postalRegistrationStatus',
@@ -221,7 +222,7 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			cell: ({ row }) =>
 				renderComponent(StatusIcon, { status: row.original.postalRegistrationStatus }),
 			filterFn: enumFilterFn,
-			meta: meta('status', m.postalRegistration(), true, 'enum')
+			meta: meta('status', m.postalRegistration(), true, 'enum', true)
 		},
 		{
 			accessorKey: 'didAttend',
@@ -235,7 +236,7 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			header: m.termsAndConditions(),
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.termsAndConditions }),
 			filterFn: enumFilterFn,
-			meta: meta('status', m.termsAndConditions(), false, 'enum')
+			meta: meta('status', m.termsAndConditions(), false, 'enum', true)
 		},
 		{
 			accessorKey: 'guardianConsent',
@@ -247,7 +248,7 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 					ageAtConference: row.original.ageAtConference
 				}),
 			filterFn: enumFilterFn,
-			meta: meta('status', m.guardianConsent(), false, 'enum')
+			meta: meta('status', m.guardianConsent(), false, 'enum', true)
 		},
 		{
 			accessorKey: 'mediaConsent',
@@ -255,7 +256,7 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			id: 'mediaConsent',
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.mediaConsent }),
 			filterFn: enumFilterFn,
-			meta: meta('status', m.mediaConsentStatus(), false, 'enum')
+			meta: meta('status', m.mediaConsentStatus(), false, 'enum', true)
 		},
 		{
 			accessorKey: 'documentNumber',
@@ -276,7 +277,14 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			header: m.accepted(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.accepted }),
 			filterFn: booleanFilterFn,
-			meta: meta('computed', m.accepted(), true, 'boolean')
+			meta: meta('computed', m.accepted(), true, 'boolean', true)
+		},
+		{
+			accessorKey: 'hasOpenIssue',
+			header: m.openIssues(),
+			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.hasOpenIssue }),
+			filterFn: booleanFilterFn,
+			meta: meta('computed', m.openIssuesDescription(), false, 'boolean', true)
 		},
 		{
 			accessorKey: 'participationCount',

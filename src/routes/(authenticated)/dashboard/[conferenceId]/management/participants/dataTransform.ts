@@ -127,6 +127,12 @@ function statusFields(
 	} satisfies Partial<ParticipantRow>;
 }
 
+/** An accepted participant (not a team member) whose payment or paperwork is not complete. */
+function hasOpenIssue(roleFields: RoleFields, status: ReturnType<typeof statusFields>): boolean {
+	if (!roleFields.accepted || roleFields.role === 'TEAM_MEMBER') return false;
+	return status.paymentStatus !== 'DONE' || status.postalRegistrationStatus !== 'DONE';
+}
+
 function buildRow(
 	user: ParticipantUser,
 	status: ParticipantStatus | undefined,
@@ -135,10 +141,12 @@ function buildRow(
 	endConference: Date | string | undefined
 ): ParticipantRow {
 	const birthday = user.birthday ? new Date(user.birthday) : null;
+	const statuses = statusFields(status, startConference, birthday);
 	return {
 		...userFields(user, birthday),
 		...roleFields,
-		...statusFields(status, startConference, birthday),
+		...statuses,
+		hasOpenIssue: hasOpenIssue(roleFields, statuses),
 		ageAtConference:
 			birthday && startConference ? (getAgeAtConference(birthday, startConference) ?? null) : null,
 		hasBirthdayDuringConference: hasBirthdayDuring(birthday, startConference, endConference)

@@ -12,11 +12,13 @@
 		entries: E[];
 		/** Classes for the list of one category */
 		listClass: string;
+		/** Classes for the wrapper of one category */
+		groupClass?: string;
 		/** One column, with its header text */
 		item: Snippet<[entry: E, header: string]>;
 	}
 
-	let { entries, listClass, item }: Props = $props();
+	let { entries, listClass, groupClass = '', item }: Props = $props();
 
 	const categories: { key: ColumnCategory; label: string }[] = [
 		{ key: 'personal', label: m.personalData() },
@@ -43,8 +45,8 @@
 {#each categories as cat (cat.key)}
 	{@const cols = groupedColumns.get(cat.key)}
 	{#if cols && cols.length > 0}
-		<div>
-			<h3 class="mb-2 text-sm font-semibold text-base-content/70 uppercase">
+		<section class={groupClass}>
+			<h3 class="mb-3 text-xs font-semibold tracking-wider text-base-content/60 uppercase">
 				{cat.label}
 			</h3>
 			<div class={listClass}>
@@ -52,6 +54,6 @@
 					{@render item(entry, headerOf(entry))}
 				{/each}
 			</div>
-		</div>
+		</section>
 	{/if}
 {/each}

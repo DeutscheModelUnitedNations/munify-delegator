@@ -22,6 +22,8 @@ export interface ColumnMeta {
 	description: string;
 	defaultVisible: boolean;
 	filterType: FilterType;
+	/** Offered in the filter drawer even while the column itself is hidden. */
+	alwaysFilterable?: boolean;
 }
 
 export interface ParticipantRow {
@@ -60,6 +62,8 @@ export interface ParticipantRow {
 	accessCardId: string | null;
 
 	accepted: boolean;
+	/** Accepted and expected on site, but payment or a registration document is not DONE. */
+	hasOpenIssue: boolean;
 	ageAtConference: number | null;
 	hasBirthdayDuringConference: boolean;
 	participationCount: number;
