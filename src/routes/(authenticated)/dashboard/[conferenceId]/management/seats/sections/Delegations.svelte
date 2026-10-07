@@ -3,7 +3,6 @@
 	import SeatsTableSection from '../SeatsTableSection.svelte';
 	import { client, type UserPreview } from '$lib/api/rumbleClient/client';
 	import InitialsButton from '../InitialsButton.svelte';
-	import DownloadCommitteeDataBtn from '../downloads/DownloadCommitteeDataBtn.svelte';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import AddParticipantBtn from '../AddParticipantBtn.svelte';
@@ -174,24 +173,23 @@
 	{@const delegation = delegations.find((d) => d.assignedNation?.alpha3Code === nation.alpha3Code)}
 	{@const sumSeats = nationSeatTotal(nation)}
 	<tr>
-		<td>
-			<div
-				class="tooltip tooltip-right flex items-center gap-2"
-				data-tip={getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
-			>
-				<Flag alpha2Code={nation.alpha2Code} size="xs" />
-				{nation.alpha3Code.toUpperCase()}
-				<span class="hidden w-[12ch] truncate text-left text-xs text-gray-400 xl:block">
+		<th class="bg-base-100 z-10! text-left font-normal">
+			<div class="flex flex-col items-start gap-1.5">
+				<div class="flex items-center gap-2">
+					<Flag alpha2Code={nation.alpha2Code} size="xs" />
+					{nation.alpha3Code.toUpperCase()}
+				</div>
+				<span class="text-left text-xs text-gray-400">
 					{getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)}
 				</span>
 			</div>
-		</td>
+		</th>
 		{#each committees as committee (committee.id)}
 			{#if nation.committees.find((c) => c.id === committee.id)}
 				<td>{@render seatCell(nation, committee, delegation, sumSeats)}</td>
 			{:else}
-				<td class="opacity-20">
-					<div class="flex justify-center gap-2">
+				<td>
+					<div class="flex justify-center gap-2 opacity-20">
 						{#each seatKeys(committee.numOfSeatsPerDelegation) as seat (seat)}
 							<i class="fas fa-circle-small text-[8px]"></i>
 						{/each}
@@ -208,46 +206,25 @@
 	</tr>
 {/snippet}
 
-<SeatsTableSection title={m.seats()}>
+<SeatsTableSection>
 	<thead>
-		<tr>
-			<th></th>
-			{#each committees as committee (committee.id)}
-				<th>
-					<DownloadCommitteeDataBtn
-						{conferenceId}
-						committeeId={committee.id}
-						abbreviation={committee.abbreviation}
-					/>
-				</th>
-			{/each}
-		</tr>
-		<tr>
-			<th class="text-left">
-				<i class="fa-duotone fa-sigma"></i>
-			</th>
+		<tr class="z-30!">
+			<th class="bg-base-100 z-20!"></th>
 			{#each committees as committee (committee.id)}
 				{@const seats = committeeSeats.get(committee.id)}
-				<td>
-					<span class={seats?.occupied === seats?.total ? 'font-normal' : ''}>
-						{seats?.occupied ?? 0}
-					</span>
-					<span class="text-xs font-normal">/ {seats?.total ?? 0} </span>
-				</td>
-			{/each}
-		</tr>
-		<tr>
-			<th class="text-left">
-				<i class="fa-duotone fa-flag"></i>
-			</th>
-			{#each committees as committee (committee.id)}
-				<th>
-					<div class="tooltip" data-tip={committee.name}>
-						{committee.abbreviation}
+				<th class="bg-base-100 z-20!">
+					<div class="flex flex-col items-center">
+						<span class="text-lg font-bold">{committee.abbreviation}</span>
+						<span class="text-sm font-normal">
+							<span class={seats?.occupied === seats?.total ? 'font-normal' : 'font-bold'}>
+								{seats?.occupied ?? 0}
+							</span>
+							<span class="text-xs opacity-70">/ {seats?.total ?? 0}</span>
+						</span>
 					</div>
 				</th>
 			{/each}
-			<th><i class="fa-duotone fa-sigma"></i></th>
+			<th class="bg-base-100 z-20!"><i class="fa-duotone fa-sigma"></i></th>
 		</tr>
 	</thead>
 	<tbody>

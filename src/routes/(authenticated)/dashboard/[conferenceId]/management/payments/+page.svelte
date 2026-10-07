@@ -233,7 +233,6 @@
 
 <div class="flex w-full flex-col gap-8 md:p-10">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.payment()}</h2>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.paymentAdminDescription()}</p>
 		<!-- Show last confirmed transaction if available -->

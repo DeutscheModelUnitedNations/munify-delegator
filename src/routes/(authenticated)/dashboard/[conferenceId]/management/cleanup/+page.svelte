@@ -12,7 +12,6 @@
 
 <div class="flex w-full flex-col flex-wrap gap-10 p-10">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.cleanup()}</h2>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
 		<p>{@html m.cleanupDescription()}</p>
 	</div>

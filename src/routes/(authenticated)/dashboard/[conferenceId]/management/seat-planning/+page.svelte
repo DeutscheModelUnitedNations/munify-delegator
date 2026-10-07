@@ -62,11 +62,6 @@
 </script>
 
 <div class="flex h-full min-h-0 w-full flex-col gap-4 py-4">
-	<h2 class="text-2xl font-bold">
-		<i class="fa-duotone fa-table-cells"></i>
-		{m.seatPlanning()}
-	</h2>
-
 	{#if conference.state !== 'PRE'}
 		<div role="alert" class="alert alert-warning">
 			<i class="fa-duotone fa-triangle-exclamation text-xl"></i>

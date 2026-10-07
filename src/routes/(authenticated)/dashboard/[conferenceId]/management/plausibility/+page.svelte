@@ -23,7 +23,6 @@
 
 <div class="flex flex-col gap-8 p-10">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.plausibilityOverview()}</h2>
 		<div class="w-fit">
 			<table class="table">
 				<thead>

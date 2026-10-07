@@ -7,9 +7,5 @@
 </script>
 
 <div class="flex w-full flex-col gap-10 p-10">
-	<h1 class="text-2xl">
-		{m.committeesAndAgendaItems()}
-	</h1>
-
 	<CommitteesManager conferenceId={params.conferenceId} />
 </div>

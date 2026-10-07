@@ -17,10 +17,6 @@
 </script>
 
 <div class="flex flex-col gap-6 p-4">
-	<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-		<h2 class="text-2xl font-bold">{m.calendar()}</h2>
-	</div>
-
 	<!-- Tabs -->
 	<div role="tablist" class="tabs tabs-border">
 		<button

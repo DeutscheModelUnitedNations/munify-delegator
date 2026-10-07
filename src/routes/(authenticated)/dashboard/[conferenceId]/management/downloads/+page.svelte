@@ -3,6 +3,7 @@
 	import AllNations from './AllNations.svelte';
 	import BadgeData from './BadgeData.svelte';
 	import ChaseSeedExport from './ChaseDataExport.svelte';
+	import CommitteeMembers from './CommitteeMembers.svelte';
 	import ConferenceRegistrationList from './ConferenceRegistrationList.svelte';
 	import CsvSettingsPanel from './CsvSettingsPanel.svelte';
 	import DownloadCategoryCard from './DownloadCategoryCard.svelte';
@@ -14,7 +15,6 @@
 
 <div class="flex flex-col gap-8 p-10">
 	<div class="flex flex-col gap-2">
-		<h2 class="text-2xl font-bold">{m.downloads()}</h2>
 		<p class="text-base-content/60">{m.downloadsPageDescription()}</p>
 	</div>
 
@@ -42,6 +42,14 @@
 		icon="fas fa-user-check"
 	>
 		<ParticipantStatusExport conferenceId={params.conferenceId} />
+	</DownloadCategoryCard>
+
+	<DownloadCategoryCard
+		title={m.committeeDataTitle()}
+		description={m.committeeDataDescription()}
+		icon="fas fa-landmark"
+	>
+		<CommitteeMembers conferenceId={params.conferenceId} />
 	</DownloadCategoryCard>
 
 	<DownloadCategoryCard

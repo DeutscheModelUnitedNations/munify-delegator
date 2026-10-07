@@ -35,7 +35,6 @@
 </script>
 
 <div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
-	<h1 class="text-2xl font-bold">{m.announcementSectionTitle()}</h1>
 	<p class="opacity-70">{m.announcementSectionDescription()}</p>
 
 	<div class="alert alert-info mb-6">

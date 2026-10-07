@@ -402,6 +402,8 @@
 	"committeeAssignmentAlertDescriptionNonHeadDelegate": "Dein*e Delegationsleiter*in muss zeitnah die Gremienverteilung vornehmen. Dabei wird entschieden, wer von euch euren Staat in welchem Gremium vertreten wird. Sprecht euch dafür bitte ab und trefft gemeinsam eine Entscheidung, die eure Delegationsleitung dann eintragen kann.",
 	"committeeAssignmentAlertDescriptionSupervisor": "Deine Delegationsleiter*innen müssen nun angeben, wer ihr Land in welchem Gremium vertreten soll. Wenn Du diese Aufgabe siehst, ist mindestens eine Deiner Delegationen noch nicht fertig mit der Zuweisung Deines Gremiums.",
 	"committeeAssignmentLinkDescription": "Weise deinen Delegationsmitgliedern Gremien zu",
+	"committeeDataDescription": "Die Delegierten je Gremium mit Nation, Name und E-Mail-Adresse.",
+	"committeeDataTitle": "Gremiendaten",
 	"committeeDeleteBlocked": "Das Gremium kann nicht gelöscht werden, solange ihm {count} Delegierte zugeteilt sind.",
 	"committeeDeleteBlockedByPapers": "Das Gremium kann nicht gelöscht werden, solange zu seinen Themen {count} Papiere eingereicht sind.",
 	"committeeDeleteConfirm": "Möchtest du das Gremium „{name}“ wirklich löschen? Seine Themen werden ebenfalls gelöscht und alle Staaten verlieren ihren Sitz darin.",
