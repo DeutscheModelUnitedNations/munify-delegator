@@ -3,15 +3,13 @@
 	import type { PathSegment } from 'sveltekit-breadcrumbs';
 	import { locales } from '$lib/paraglide/runtime';
 	import { m } from '$lib/paraglide/messages';
-	import { client } from '$lib/api/rumbleClient/client';
+	import ConferenceSwitcher from './ConferenceSwitcher.svelte';
 	import type { LayoutProps } from './$types';
-	import { browser } from '$app/environment';
 
 	type Parameters = keyof LayoutProps['params'];
 
 	interface LocalizedBreadcrumb {
 		translation: string;
-		delayedLabel?: Promise<string>;
 		icon: string;
 	}
 
@@ -32,17 +30,13 @@
 			translation: m.pendingInvitations(),
 			icon: 'envelope'
 		},
-		conferenceId: {
-			translation: m.conference(),
-			icon: 'flag'
-		},
 		delegations: {
 			translation: m.delegations(),
 			icon: 'users-viewfinder'
 		},
 		dashboard: {
-			translation: m.dashboard(),
-			icon: 'chart-pie'
+			translation: m.conferences(),
+			icon: 'grid-2'
 		},
 		registration: {
 			translation: m.registration(),
@@ -274,64 +268,31 @@
 			};
 		}
 
-		if (segment.isParameter) {
-			switch (segment.key) {
-				case 'conferenceId':
-					breadcrumb.delayedLabel = (async () => {
-						//TODO we could probably load this data serverside
-						// although this would prevent computational breadcrumbs which depend on client side data
-						// it's alright for now I guess
-						if (browser) {
-							const conference = await client.query.conference({
-								__args: { id: segment.value },
-								id: true,
-								title: true
-							});
-							return conference?.title ?? breadcrumb.translation;
-						}
-
-						return breadcrumb.translation;
-					})();
-					break;
-				case 'roleId':
-					//TODO
-					break;
-
-				default:
-					break;
-			}
-		}
 		return breadcrumb;
 	}
 </script>
 
+{#snippet delimiter()}
+	<i class="fa-solid fa-chevron-right text-base-content/30 text-[0.6rem]" aria-hidden="true"></i>
+{/snippet}
+
 <!-- ATTENTION: importObject is dir route specific. You cannot move this file without adjusting this
-import path via the parameter! -->
+import path via the parameter! The home link is the wordmark in the header, so there is no homePath. -->
 <Breadcrumbs
 	importObject={import.meta.glob('./**/+page*.svelte')}
 	availableLanguageTags={[...locales]}
-	homePath="/"
+	delimiterSnippet={delimiter}
 >
 	{#snippet pathSnippet(pathSegment: PathSegmentType)}
-		{@const breadcrumb = getBreadcrumb(pathSegment)}
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
-		<a class="btn btn-ghost btn-sm !no-underline" href={pathSegment.href}>
-			<i class="fa-duotone fa-{breadcrumb.icon}"></i>
-			<p class="ml-1">
-				{#if breadcrumb.delayedLabel}
-					{#await breadcrumb.delayedLabel}
-						<span>
-							{breadcrumb.translation}
-						</span>
-					{:then value}
-						<span>
-							{value ?? breadcrumb.translation}
-						</span>
-					{/await}
-				{:else}
-					{breadcrumb.translation}
-				{/if}
-			</p>
-		</a>
+		{#if pathSegment.key === 'conferenceId' && pathSegment.isParameter}
+			<ConferenceSwitcher conferenceId={pathSegment.value} />
+		{:else}
+			{@const breadcrumb = getBreadcrumb(pathSegment)}
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- sveltekit-breadcrumbs builds href as an absolute URL (page origin + path), which resolve() cannot take -->
+			<a class="btn btn-ghost btn-sm max-w-48 !no-underline" href={pathSegment.href}>
+				<i class="fa-duotone fa-{breadcrumb.icon}"></i>
+				<span class="ml-1 truncate">{breadcrumb.translation}</span>
+			</a>
+		{/if}
 	{/snippet}
 </Breadcrumbs>

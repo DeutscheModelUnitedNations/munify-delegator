@@ -8,6 +8,7 @@ export function fetchSelectableConferences() {
 	return client.liveQuery.conferences({
 		__args: { orderBy: { startConference: 'asc' } },
 		id: true,
+		title: true,
 		state: true,
 		startConference: true
 	});

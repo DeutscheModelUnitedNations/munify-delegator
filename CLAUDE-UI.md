@@ -897,6 +897,23 @@ Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violati
 
 ## Navigation Components
 
+## App Shell
+
+The signed-in area (`routes/(authenticated)/`) has **one** global navigation: a sticky top bar
+(`AuthenticatedHeader.svelte`) inside a centered `max-w-[1400px]` container, which the page content
+shares.
+
+- **Wordmark** (`MUNify DELEGATOR`) links to `/dashboard`, the conference selector.
+- **Breadcrumbs** follow it. The conference crumb is `ConferenceSwitcher.svelte`, a dropdown that
+  names the current conference and switches to another; there is no conference list elsewhere.
+- **Avatar menu** (`UserMenu.svelte`): name and email, my account, feedback, logout, language. It
+  holds no navigation.
+- A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
+
+The dashboard has no sidebar. Only the management and team-management areas add one, through
+`SideNavigationDrawer` (directly, or via `ConferenceSidebarLayout`): a collapsible menu for the many
+pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
+
 ### NavMenu
 
 Sidebar navigation:

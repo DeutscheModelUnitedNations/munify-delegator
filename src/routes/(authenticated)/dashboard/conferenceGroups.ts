@@ -1,4 +1,5 @@
 import type { ConferencestateEnum } from '$lib/api/rumbleClient/client';
+import { m } from '$lib/paraglide/messages';
 
 export type ConferenceGroupKey = 'active' | 'registration' | 'preparation' | 'upcoming' | 'past';
 
@@ -32,4 +33,17 @@ export function groupConferencesByState<T extends Groupable>(conferences: readon
 				})
 		}))
 		.filter((group) => group.conferences.length > 0);
+}
+
+const groupLabels: Record<ConferenceGroupKey, () => string> = {
+	active: m.activeConferences,
+	registration: m.conferencesRegistrationOpen,
+	preparation: m.conferencesInPreparation,
+	upcoming: m.upcomingConferences,
+	past: m.pastConferences
+};
+
+/** The heading a group goes by, wherever conferences are listed. */
+export function conferenceGroupLabel(key: ConferenceGroupKey) {
+	return groupLabels[key]();
 }

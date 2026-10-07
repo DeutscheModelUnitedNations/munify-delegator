@@ -8,11 +8,7 @@
 	let navbarExpanded = $state(true);
 </script>
 
-<ConferenceSidebarLayout
-	conferenceId={params.conferenceId}
-	navigateBackHref={`/dashboard/${params.conferenceId}`}
-	bind:expanded={navbarExpanded}
->
+<ConferenceSidebarLayout conferenceId={params.conferenceId} bind:expanded={navbarExpanded}>
 	{#snippet nav()}
 		<NavMenuButton
 			href={`/dashboard/${params.conferenceId}/team-management/members`}

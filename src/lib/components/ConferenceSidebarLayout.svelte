@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { ResolvedPathname } from '$app/types';
 	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
 	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
 	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
@@ -11,17 +10,16 @@
 	 */
 	interface Props {
 		conferenceId: string;
-		navigateBackHref: ResolvedPathname;
 		expanded: boolean;
 		nav: Snippet;
 		children: Snippet;
 	}
 
-	let { conferenceId, navigateBackHref, expanded = $bindable(), nav, children }: Props = $props();
+	let { conferenceId, expanded = $bindable(), nav, children }: Props = $props();
 </script>
 
 <div class="flex min-w-0 grow basis-0 overflow-hidden">
-	<SideNavigationDrawer {navigateBackHref} bind:expanded>
+	<SideNavigationDrawer bind:expanded>
 		<NavMenu>
 			{@render nav()}
 		</NavMenu>

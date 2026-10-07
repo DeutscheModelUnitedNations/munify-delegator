@@ -7,7 +7,6 @@
 	import CommandPalette from '$lib/components/commandPalette/CommandPalette.svelte';
 	import UserCardDrawer from '$lib/components/userCard/UserCardDrawer.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { resolve } from '$app/paths';
 	import { canPlanSeats, isSeatPlanningOnly } from '$lib/helpers/managementAccess';
 	import { managementMembership } from './managementMembership';
 
@@ -19,12 +18,7 @@
 </script>
 
 <div class="flex min-w-0 grow basis-0 overflow-hidden">
-	<SideNavigationDrawer
-		navigateBackHref={resolve('/(authenticated)/dashboard/[conferenceId]', {
-			conferenceId: params.conferenceId
-		})}
-		bind:expanded={navbarExpanded}
-	>
+	<SideNavigationDrawer bind:expanded={navbarExpanded}>
 		<NavMenu>
 			{#if seatPlanningOnly}
 				<!-- content leads have no other entry, so no workflow group around it -->

@@ -6,21 +6,13 @@
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceSelectorCard from '$lib/components/dashboard/ConferenceSelectorCard.svelte';
 	import { fetchSelectableConferences } from './conferenceSelector';
-	import { groupConferencesByState, type ConferenceGroupKey } from './conferenceGroups';
+	import { conferenceGroupLabel, groupConferencesByState } from './conferenceGroups';
 
 	// Only what decides the grouping; each card fetches what it shows.
 	const conferences = $derived(await fetchSelectableConferences());
 	const currentUser = await getCurrentUser();
 
 	const groups = $derived(groupConferencesByState(conferences));
-
-	const groupLabel: Record<ConferenceGroupKey, () => string> = {
-		active: m.activeConferences,
-		registration: m.conferencesRegistrationOpen,
-		preparation: m.conferencesInPreparation,
-		upcoming: m.upcomingConferences,
-		past: m.pastConferences
-	};
 </script>
 
 {#if conferences.length === 0}
@@ -34,8 +26,8 @@
 		{/if}
 	</div>
 {:else}
-	<div class="flex w-full flex-col items-center px-4 pb-16">
-		<div class="flex w-full max-w-6xl flex-col gap-12">
+	<div class="flex w-full flex-col items-center pb-16">
+		<div class="flex w-full max-w-none flex-col gap-12">
 			<header class="flex flex-col gap-4 pt-6">
 				<AccentStripe />
 				<h1 class="text-4xl font-bold tracking-tight">{m.conferences()}</h1>
@@ -51,7 +43,7 @@
 								? 'text-base-content/50'
 								: 'text-base-content/80'}"
 						>
-							{groupLabel[group.key]()}
+							{conferenceGroupLabel(group.key)}
 						</h2>
 						<span class="badge badge-ghost badge-sm">{group.conferences.length}</span>
 						<div class="bg-base-300 h-px flex-1"></div>
