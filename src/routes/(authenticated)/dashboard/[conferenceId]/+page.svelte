@@ -60,6 +60,7 @@
 					{conferenceId}
 					conferenceState={conference.state}
 					userId={currentUser.sub}
+					assignmentReleased={conference.assignmentReleased}
 					accepted={!!singleParticipant.assignedRole}
 					{status}
 					ofAge={isOfAgeAtConference}
@@ -85,6 +86,7 @@
 					{conferenceId}
 					conferenceState={conference.state}
 					userId={currentUser.sub}
+					assignmentReleased={conference.assignmentReleased}
 					accepted={delegationAccepted}
 					{status}
 					ofAge={isOfAgeAtConference}
@@ -113,6 +115,7 @@
 				<Supervisor
 					{conferenceId}
 					conferenceState={conference.state}
+					assignmentReleased={conference.assignmentReleased}
 					{supervisorId}
 					user={currentUser}
 					{status}

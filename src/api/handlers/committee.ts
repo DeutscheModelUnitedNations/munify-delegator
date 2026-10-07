@@ -28,6 +28,7 @@ import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { and, eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
+import { assignmentVisible } from '$api/services/assignmentVisibility';
 
 // Ported from abilities/entities/committee.ts
 abilityBuilder.committee.allow('read');
@@ -39,7 +40,19 @@ abilityBuilder.committee
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, PROJECT_MANAGEMENT_ROLES)));
 
-export const CommitteeRef = object({ table: 'committee' });
+export const CommitteeRef = object({
+	table: 'committee',
+	adjust: (t) => ({
+		// Who sits in a committee is part of the assignment, which participants only see once it
+		// is released.
+		delegationMembers: t.relation('delegationMembers', {
+			query: async (_args, ctx) =>
+				(await ctx.abilities.delegationMember.filter('read')).merge({
+					where: assignmentVisible(ctx)
+				}).query.many
+		})
+	})
+});
 query({ table: 'committee' });
 const pubsub = rumblePubsub({ table: 'committee' });
 const agendaItemPubsub = rumblePubsub({ table: 'committeeAgendaItem' });

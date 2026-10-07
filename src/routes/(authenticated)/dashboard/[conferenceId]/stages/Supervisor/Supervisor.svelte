@@ -8,6 +8,7 @@
 	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 	import ApplicationRejected from '$lib/components/ApplicationRejected.svelte';
+	import AssignmentPending from '$lib/components/AssignmentPending.svelte';
 	import ChunkLoadError from '$lib/components/ChunkLoadError.svelte';
 	import formatNames from '$lib/helpers/formatNames';
 	import ConferenceStatusWidget from '../../ConferenceStatusWidget.svelte';
@@ -21,13 +22,23 @@
 	interface Props {
 		conferenceId: string;
 		conferenceState: ConferenceState;
+		/** Whether the team has released the assignment; until then nobody is accepted or rejected. */
+		assignmentReleased: boolean;
 		supervisorId: string;
 		user: CurrentUser;
 		status: MyConferenceParticipation['participantStatus'];
 		ofAge: boolean;
 	}
 
-	let { conferenceId, conferenceState, supervisorId, user, status, ofAge }: Props = $props();
+	let {
+		conferenceId,
+		conferenceState,
+		assignmentReleased,
+		supervisorId,
+		user,
+		status,
+		ofAge
+	}: Props = $props();
 
 	/**
 	 * Just who this supervisor's students are and whether they got a role: enough to count them and
@@ -109,6 +120,15 @@
 		acceptedDelegationMembers.length + acceptedSingleParticipants.length
 	);
 	let atLeastOneAccepted = $derived(acceptedStudentsCount > 0);
+	/**
+	 * After registration, before anything else: whether the assignment is still being made, or
+	 * none of the students got a role.
+	 */
+	const outcomeView = $derived.by(() => {
+		if (isStateParticipantRegistration) return undefined;
+		if (!assignmentReleased) return 'pending';
+		return atLeastOneAccepted ? undefined : 'rejected';
+	});
 	let allStudentsAccepted = $derived(
 		!isStateParticipantRegistration &&
 			totalStudentsCount > 0 &&
@@ -241,7 +261,9 @@
 	</DashboardSection>
 {/snippet}
 
-{#if !isStateParticipantRegistration && !atLeastOneAccepted}
+{#if outcomeView === 'pending'}
+	<AssignmentPending />
+{:else if outcomeView === 'rejected'}
 	<ApplicationRejected />
 {:else if conferenceState === 'POST'}
 	{#await import('../Common/Certificate.svelte') then { default: Certificate }}

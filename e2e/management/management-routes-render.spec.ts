@@ -30,7 +30,13 @@ const ROUTES = [
 	'/survey',
 	'/configuration',
 	'/configuration/committees',
-	'/seat-planning'
+	'/seat-planning',
+	'/assignment/introduction',
+	'/assignment/sighting',
+	'/assignment/weighting',
+	'/assignment/singles',
+	'/assignment/delegations',
+	'/assignment/finish'
 ];
 
 test('every management route renders for an authorised admin', async ({ page }) => {

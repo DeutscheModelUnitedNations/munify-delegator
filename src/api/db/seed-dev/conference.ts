@@ -87,6 +87,8 @@ export function buildConferenceStructure(
 		certificateContent: plan.with.certificate ? templates.certificate : null,
 		unlockPayments: false,
 		unlockPostals: false,
+		assignmentReleased: plan.assigned,
+		assignmentReleasedAt: plan.assigned ? at(plan.days.startAssignment) : null,
 		...plan.conference
 	};
 	world.batch.conference.push(conference);
@@ -164,7 +166,7 @@ export function buildConferenceStructure(
 }
 
 /** Seats a delegation of `size` would have as a nation: summed over the committees it sits in. */
-function nationSeats(cs: ConferenceSeed, nation: string) {
+export function nationSeats(cs: ConferenceSeed, nation: string) {
 	return cs.committees
 		.filter((committee) => committee.nations.includes(nation))
 		.reduce((sum, committee) => {

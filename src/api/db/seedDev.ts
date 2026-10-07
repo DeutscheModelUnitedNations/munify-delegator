@@ -16,12 +16,13 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { reset } from 'drizzle-seed';
 import * as schema from './schema';
 import { unMemberNations } from './seed-data/nations';
-import { makeDevAccountUser, makeSeedUser } from './seed-data/user';
+import { careNoteFor, makeDevAccountUser, makeSeedUser } from './seed-data/user';
 import { devAccounts } from './seed-data/devAccounts';
 import { pdfTemplate } from './seed-data/content';
 import { emptyBatch, insertBatch } from './seed-dev/batch';
 import type { CrowdKind, SeedWorld } from './seed-dev/context';
 import { addCrowd, addWaitingList, buildConferenceStructure } from './seed-dev/conference';
+import { addAssignmentDraft } from './seed-dev/assignmentDraft';
 import { addAssignedPersonas, addRegistrationPersonas } from './seed-dev/personas';
 import { addReviewerSnippets, addTeam } from './seed-dev/team';
 import { addPapers } from './seed-dev/papers';
@@ -49,12 +50,15 @@ const CROWD_AGES: Record<CrowdKind, [number, number]> = {
 const batch = emptyBatch();
 batch.nation.push(...unMemberNations());
 
+let participantCount = 0;
+
 const world: SeedWorld = {
 	batch,
 	nations: batch.nation.map((nation) => nation.alpha3Code),
 	crowdUser(kind, options = {}) {
 		const [minAge, maxAge] = options.ages ?? CROWD_AGES[kind];
 		const user = makeSeedUser({ minAge, maxAge, incomplete: options.incomplete });
+		if (kind === 'participant') user.globalNotes = careNoteFor(participantCount++);
 		batch.user.push(user);
 		return user.id;
 	}
@@ -80,6 +84,7 @@ for (const plan of conferencePlans) {
 	if (plan.assigned) addAssignedPersonas(cs);
 	else addRegistrationPersonas(cs);
 	addCrowd(cs);
+	if (plan.with.assignmentDraft) addAssignmentDraft(cs);
 	addWaitingList(cs, 'dev-waitlist');
 	addPapers(cs);
 	addSurveys(cs);

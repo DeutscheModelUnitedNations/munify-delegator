@@ -38,13 +38,22 @@ const globalTeamTendersRule: ListAssignmentRule = {
 
 type DelegationMembership = MailSyncUser['delegationMemberships'][number];
 
-/** The lists one delegation membership puts a user on. */
+/**
+ * The lists one delegation membership puts a user on. Until the team releases the assignment,
+ * nobody is on a list that tells them what they got - or that they got nothing.
+ */
 function delegationMemberListTypes(dm: DelegationMembership): ConferenceListType[] {
 	const { delegation } = dm;
+	const released = delegation.conference.assignmentReleased;
 	const hasRole = Boolean(
 		delegation.assignedNationAlpha3Code || delegation.assignedNonStateActorId
 	);
 	const types: ConferenceListType[] = [];
+
+	if (!released) {
+		types.push(delegation.applied ? 'REGISTRATION_COMPLETED' : 'REGISTRATION_NOT_COMPLETED');
+		return types;
+	}
 
 	if (delegation.assignedNationAlpha3Code) types.push('DELEGATION_MEMBERS_NATIONS');
 	else if (delegation.assignedNonStateActorId) types.push('DELEGATION_MEMBERS_NSA');
@@ -71,11 +80,13 @@ const delegationMemberRule: ListAssignmentRule = {
 
 			conferenceAttribs.push({
 				id: dm.conferenceId,
-				role: dm.delegation.assignedNationAlpha3Code
-					? 'DELEGATE_NATION'
-					: dm.delegation.assignedNonStateActorId
-						? 'DELEGATE_NSA'
-						: undefined,
+				role: !conference.assignmentReleased
+					? undefined
+					: dm.delegation.assignedNationAlpha3Code
+						? 'DELEGATE_NATION'
+						: dm.delegation.assignedNonStateActorId
+							? 'DELEGATE_NSA'
+							: undefined,
 				title: conference.title
 			});
 
@@ -108,13 +119,14 @@ const singleParticipantRule: ListAssignmentRule = {
 					createConferenceListName(sp.conference.title, sp.conferenceId, 'REGISTRATION_COMPLETED')
 				);
 
-				if (sp.assignedRoleId) {
+				// Nobody hears whether they got a role before the team releases it.
+				if (sp.conference.assignmentReleased) {
 					listNames.push(
-						createConferenceListName(sp.conference.title, sp.conferenceId, 'SINGLE_PARTICIPANTS')
-					);
-				} else {
-					listNames.push(
-						createConferenceListName(sp.conference.title, sp.conferenceId, 'REJECTED_PARTICIPANTS')
+						createConferenceListName(
+							sp.conference.title,
+							sp.conferenceId,
+							sp.assignedRoleId ? 'SINGLE_PARTICIPANTS' : 'REJECTED_PARTICIPANTS'
+						)
 					);
 				}
 			} else {
@@ -144,7 +156,10 @@ function supervisorListTypes(supervisor: Supervision): ConferenceListType[] {
 	const delegations = supervisor.supervisedDelegationMembers.map((d) => d.delegation);
 	const singles = supervisor.supervisedSingleParticipants;
 
-	if (supervisor.conference.state !== 'PARTICIPANT_REGISTRATION') {
+	if (
+		supervisor.conference.state !== 'PARTICIPANT_REGISTRATION' &&
+		supervisor.conference.assignmentReleased
+	) {
 		const anyWithRole =
 			delegations.some((d) => d.assignedNationAlpha3Code || d.assignedNonStateActorId) ||
 			singles.some((d) => d.assignedRoleId);

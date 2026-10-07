@@ -5,6 +5,7 @@ import {
 	exactSizeWarnings,
 	isOutsideSizeLimits,
 	matchesSeatFilters,
+	searchSeatRows,
 	nationSeatCounts,
 	parseSizeLimits,
 	rolesOf,
@@ -163,11 +164,13 @@ describe('matchesSeatFilters', () => {
 		expect(matchesSeatFilters(germany, 3, none)).toBe(true);
 	});
 
-	test('searches the localized name and the ISO codes', () => {
-		expect(matchesSeatFilters(germany, 3, { ...none, q: 'deutsch' })).toBe(true);
-		expect(matchesSeatFilters(germany, 3, { ...none, q: ' DE ' })).toBe(true);
-		expect(matchesSeatFilters(germany, 3, { ...none, q: 'deu' })).toBe(true);
-		expect(matchesSeatFilters(germany, 3, { ...none, q: 'frank' })).toBe(false);
+	test('searches the localized name and the ISO codes, best match first', () => {
+		const rows = [germany, { ...germany, name: 'Frankreich', alpha2Code: 'fr', alpha3Code: 'fra' }];
+		const found = (q: string) => searchSeatRows(rows, q).map((row) => row.alpha3Code);
+		expect(found('deutsch')).toEqual(['deu']);
+		expect(found('deu')).toContain('deu');
+		expect(found('fra')).toEqual(['fra']);
+		expect(found('')).toEqual(['deu', 'fra']);
 	});
 
 	test('filters by group, missing seat and exact size', () => {

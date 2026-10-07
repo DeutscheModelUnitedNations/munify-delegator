@@ -178,13 +178,9 @@
 			icon: 'user-clock',
 			translation: m.waitingList()
 		},
-		'assignment-assistant': {
-			icon: 'robot',
-			translation: m.assignmentAssistant()
-		},
-		projectId: {
-			icon: 'folder-open',
-			translation: m.project()
+		introduction: {
+			icon: 'circle-info',
+			translation: m.assignmentTabIntroduction()
 		},
 		sighting: {
 			icon: 'binoculars',
@@ -205,6 +201,10 @@
 		summary: {
 			icon: 'file-chart-column',
 			translation: m.summary()
+		},
+		finish: {
+			icon: 'flag-checkered',
+			translation: m.assignmentTabFinish()
 		},
 		paperhub: {
 			icon: 'files',

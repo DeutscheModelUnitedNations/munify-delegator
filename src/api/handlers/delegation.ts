@@ -17,21 +17,40 @@ import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
 import { eq } from 'drizzle-orm';
+import type { Context } from '$api/context';
+import {
+	DELEGATION_ASSIGNMENT,
+	maskedUntilRelease,
+	onceReleased
+} from '$api/services/assignmentVisibility';
+import { NationRef } from './nation';
+import { NonStateActorRef } from './nonStateActor';
 
 // Ported from abilities/entities/delegation.ts
 abilityBuilder.delegation.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Delegates see their own delegation.
-abilityBuilder.delegation.allow('read').when((ctx) => {
+/** The delegation the caller is a member of. */
+function ownDelegation(ctx: Context) {
 	const id = userId(ctx);
-	return id ? { where: { members: { user: { id } } } } : undefined;
-});
+	return id ? { members: { user: { id } } } : undefined;
+}
 
-// Supervisors see the delegations they supervise.
-abilityBuilder.delegation.allow('read').when((ctx) => {
+/** The delegations the caller supervises. */
+function supervisedDelegation(ctx: Context) {
 	const id = userId(ctx);
-	return id ? { where: { members: { supervisors: { user: { id } } } } } : undefined;
-});
+	return id ? { members: { supervisors: { user: { id } } } } : undefined;
+}
+
+// Delegates see their own delegation, and supervisors the ones they supervise - the assigned
+// nation or non-state actor only once the team has released the assignment.
+abilityBuilder.delegation
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(ownDelegation(ctx), DELEGATION_ASSIGNMENT));
+abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(ownDelegation(ctx)));
+abilityBuilder.delegation
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(supervisedDelegation(ctx), DELEGATION_ASSIGNMENT));
+abilityBuilder.delegation.allow('read').when((ctx) => onceReleased(supervisedDelegation(ctx)));
 
 // The head delegate may change the delegation until it has applied.
 abilityBuilder.delegation.allow(['update', 'delete']).when((ctx) => {
@@ -53,7 +72,37 @@ abilityBuilder.delegation.allow('read').when((ctx) => {
 	return team ? { where: team, columns: { entryCode: false } } : undefined;
 });
 
-const DelegationRef = object({ table: 'delegation' });
+const DelegationRef = object({
+	table: 'delegation',
+	adjust: (t) => ({
+		// Resolved through the foreign keys, which the read rules mask until the assignment is
+		// released - a plain relation would be read through the nation's own (public) rules.
+		assignedNation: t.field({
+			type: NationRef,
+			nullable: true,
+			resolve: async (delegation, _args, ctx) =>
+				delegation.assignedNationAlpha3Code
+					? db.query.nation.findFirst(
+							(await ctx.abilities.nation.filter('read')).merge({
+								where: { alpha3Code: delegation.assignedNationAlpha3Code }
+							}).query.single
+						)
+					: null
+		}),
+		assignedNonStateActor: t.field({
+			type: NonStateActorRef,
+			nullable: true,
+			resolve: async (delegation, _args, ctx) =>
+				delegation.assignedNonStateActorId
+					? db.query.nonStateActor.findFirst(
+							(await ctx.abilities.nonStateActor.filter('read')).merge({
+								where: { id: delegation.assignedNonStateActorId }
+							}).query.single
+						)
+					: null
+		})
+	})
+});
 query({ table: 'delegation' });
 const pubsub = rumblePubsub({ table: 'delegation' });
 // Creating a delegation also seats its head delegate, and deleting one takes its members with it.

@@ -71,10 +71,11 @@ export function addDelegation(cs: ConferenceSeed, plan: DelegationPlan) {
 		});
 	});
 
-	(plan.preferences ?? []).forEach((preference, rank) => {
+	(plan.preferences ?? []).forEach((preference, index) => {
 		cs.batch.roleApplication.push({
 			delegationId,
-			rank,
+			// Ranks run 1..n, as `normalizeRoleApplicationRanks` keeps them.
+			rank: index + 1,
 			...('nation' in preference
 				? { nationId: preference.nation }
 				: { nonStateActorId: preference.nonStateActorId })

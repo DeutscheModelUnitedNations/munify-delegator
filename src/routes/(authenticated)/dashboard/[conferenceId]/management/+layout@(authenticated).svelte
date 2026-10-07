@@ -47,6 +47,21 @@
 					title={m.adminUsers()}
 				/>
 				<NavMenuButton
+					href="/dashboard/{params.conferenceId}/management/delegations"
+					icon="fa-users-viewfinder"
+					title={m.adminDelegations()}
+				/>
+				<NavMenuButton
+					href="/dashboard/{params.conferenceId}/management/individuals"
+					icon="fa-user"
+					title={m.adminSingleParticipants()}
+				/>
+				<NavMenuButton
+					href="/dashboard/{params.conferenceId}/management/supervisors"
+					icon="fa-chalkboard-user"
+					title={m.adminSupervisors()}
+				/>
+				<NavMenuButton
 					href={`/dashboard/${params.conferenceId}/management/waitingList`}
 					icon="fa-user-clock"
 					title={m.waitingList()}

@@ -1,0 +1,47 @@
+<script lang="ts">
+	import { CONVERT_CONTAINER } from '$lib/assignment/board';
+	import codenamize from '$lib/helpers/codenamize';
+	import formatNames from '$lib/helpers/formatNames';
+	import { m } from '$lib/paraglide/messages';
+	import { droppable, type DragDropState } from '@thisux/sveltednd';
+	import type { BoardSingleParticipant } from '../board';
+
+	/** Drop zone turning single participants into delegations, listing those already planned. */
+	interface Props {
+		converted: { singleParticipantId: string; single: BoardSingleParticipant | undefined }[];
+		highlight: boolean;
+		onDrop: (state: DragDropState<{ id: string }>) => void;
+		onRevert: (singleParticipantId: string) => void;
+	}
+
+	let { converted, highlight, onDrop, onRevert }: Props = $props();
+</script>
+
+<section
+	class="flex min-h-24 flex-col gap-2 rounded-lg border-2 border-dashed p-3 transition-colors
+		{highlight ? 'border-primary bg-primary/10' : 'border-base-300'}"
+	aria-label={m.assignmentConvertToDelegation()}
+	use:droppable={{ container: CONVERT_CONTAINER, callbacks: { onDrop } }}
+>
+	<h3 class="font-bold">
+		<i class="fa-duotone fa-user-plus"></i>
+		{m.assignmentConvertToDelegation()}
+	</h3>
+	<p class="text-base-content/60 text-xs">{m.assignmentConvertHint()}</p>
+	<ul class="flex flex-col gap-1">
+		{#each converted as { singleParticipantId, single } (singleParticipantId)}
+			<li class="flex items-center justify-between gap-2 text-sm">
+				<span>
+					{codenamize(singleParticipantId)}
+					{#if single}
+						· {formatNames(single.user.givenName, single.user.familyName)}
+					{/if}
+				</span>
+				<button class="btn btn-ghost btn-xs" onclick={() => onRevert(singleParticipantId)}>
+					<i class="fa-duotone fa-rotate-left"></i>
+					{m.assignmentRevertConversion()}
+				</button>
+			</li>
+		{/each}
+	</ul>
+</section>

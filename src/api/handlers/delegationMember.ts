@@ -13,6 +13,13 @@ import { makeEntryCode } from '$api/services/entryCodeGenerator';
 import { assignedRoleConditions, countGiven, nullToUndefined } from '$api/services/args';
 import { assertTeamRole } from '$api/services/authHelper';
 import { tidyRoleApplications } from '$api/services/tidyRoleApplications';
+import {
+	DELEGATION_MEMBER_ASSIGNMENT,
+	maskedUntilRelease,
+	onceReleased
+} from '$api/services/assignmentVisibility';
+import type { Context } from '$api/context';
+import { CommitteeRef } from './committee';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { GraphQLError } from 'graphql';
@@ -21,14 +28,22 @@ import { and, eq, inArray } from 'drizzle-orm';
 // Ported from abilities/entities/delegationMember.ts
 abilityBuilder.delegationMember.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Co-delegates see each other.
-abilityBuilder.delegationMember.allow('read').when((ctx) => where(isInOwnDelegation(ctx)));
-
-// Supervisors see the delegates of the delegations they supervise.
-abilityBuilder.delegationMember.allow('read').when((ctx) => {
+/** The delegates of the delegations the caller supervises. */
+function supervisedMember(ctx: Context) {
 	const id = userId(ctx);
-	return id ? { where: { delegation: { members: { supervisors: { user: { id } } } } } } : undefined;
-});
+	return id ? { delegation: { members: { supervisors: { user: { id } } } } } : undefined;
+}
+
+// Co-delegates see each other, and supervisors the delegates they supervise - the committee they
+// were seated in only once the team has released the assignment.
+abilityBuilder.delegationMember
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(isInOwnDelegation(ctx), DELEGATION_MEMBER_ASSIGNMENT));
+abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(isInOwnDelegation(ctx)));
+abilityBuilder.delegationMember
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(supervisedMember(ctx), DELEGATION_MEMBER_ASSIGNMENT));
+abilityBuilder.delegationMember.allow('read').when((ctx) => onceReleased(supervisedMember(ctx)));
 
 // Project management and participant care manage their conference's delegation members.
 abilityBuilder.delegationMember
@@ -66,7 +81,25 @@ abilityBuilder.delegationMember.allow('update').when((ctx) => {
 		: undefined;
 });
 
-const DelegationMemberRef = object({ table: 'delegationMember' });
+const DelegationMemberRef = object({
+	table: 'delegationMember',
+	adjust: (t) => ({
+		// Resolved through the foreign key, which the read rules mask until the assignment is
+		// released - a plain relation would be read through the committee's own (public) rules.
+		assignedCommittee: t.field({
+			type: CommitteeRef,
+			nullable: true,
+			resolve: async (member, _args, ctx) =>
+				member.assignedCommitteeId
+					? db.query.committee.findFirst(
+							(await ctx.abilities.committee.filter('read')).merge({
+								where: { id: member.assignedCommitteeId }
+							}).query.single
+						)
+					: null
+		})
+	})
+});
 query({ table: 'delegationMember' });
 const pubsub = rumblePubsub({ table: 'delegationMember' });
 // This handler also writes these, and a subscriber watching them has to hear about it.

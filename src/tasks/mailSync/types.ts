@@ -24,7 +24,9 @@ export type ConferenceListType = (typeof CONFERENCE_LIST_TYPES)[number];
 // Only the fields computeSubscriberState() needs. Loading whole conferences instead would pull
 // their data-URL images and legal documents along, which cost ~5-13 MB per user.
 
-const conferenceColumns = { columns: { id: true, title: true, state: true } } as const;
+const conferenceColumns = {
+	columns: { id: true, title: true, state: true, assignmentReleased: true }
+} as const;
 
 const mailSyncUserQuery = {
 	columns: {

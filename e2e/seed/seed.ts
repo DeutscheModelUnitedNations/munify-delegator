@@ -28,6 +28,7 @@ import { makeSeedUser } from '../../src/api/db/seed-data/user';
 import { makeSeedSingleParticipant } from '../../src/api/db/seed-data/singleParticipant';
 import { makeSeedDelegation } from '../../src/api/db/seed-data/delegation';
 import { makeSeedDelegationMember } from '../../src/api/db/seed-data/delegationMember';
+import { makeSeedTeamMember } from '../../src/api/db/seed-data/teamMember';
 import { seedSeatPlanning } from './seatPlanning';
 import { upsertTeamMember as upsertSharedTeamMember } from './teamMember';
 
@@ -67,6 +68,16 @@ export const E2E_PREP_COMMITTEE_ID = 'e2e00000committee00000002';
 export const E2E_PREP_DELEGATION_ID = 'e2e00000delegation00000005';
 export const E2E_PREP_PARTICIPANT_USER_ID = 'e2e-prep-participant';
 
+// A third conference past registration whose assignment is NOT released: its participant holds a
+// nation and a committee the API must not show them yet. Only the release spec flips the flag, and
+// the seed resets it, so no other spec may rely on this conference.
+export const E2E_UNRELEASED_CONFERENCE_ID = 'e2e00000conference0000004';
+export const E2E_UNRELEASED_NATION_ALPHA3 = 'PRT';
+export const E2E_UNRELEASED_NATION_ALPHA2 = 'PT';
+export const E2E_UNRELEASED_COMMITTEE_ID = 'e2e00000committee000000004';
+export const E2E_UNRELEASED_DELEGATION_ID = 'e2e00000delegation00000006';
+export const E2E_UNRELEASED_PARTICIPANT_USER_ID = 'e2e-unreleased-participant';
+
 export const E2E_SURVEY_QUESTION_ID = 'e2e00000surveyquestion0001';
 export const E2E_SURVEY_QUESTION_TITLE = 'E2E Seeded Survey';
 export const E2E_SURVEY_OPTION_A_ID = 'e2e00000surveyoption000001';
@@ -101,13 +112,13 @@ export const E2E_COMMITTEE_ASSIGN_HEAD_USER_ID = 'e2e-committee-assign-head';
 export const E2E_SUPERVISED_PARTICIPANT_USER_ID = 'e2e-supervised-participant';
 export const E2E_SUPERVISED_SINGLE_PARTICIPANT_ID = 'e2e00000singlepart00000003';
 
-// Assignment: PROJECT_MANAGEMENT admin applies an assignment JSON to a real delegation.
+// Assignment: PROJECT_MANAGEMENT admin plans a nation for a real delegation and applies it.
 export const E2E_ASSIGNMENT_ADMIN_ID = 'e2e-assignment-admin';
 export const E2E_ASSIGNMENT_DELEGATION_ID = 'e2e00000delegation00000001';
 export const E2E_ASSIGNMENT_DELEGATE_USER_ID = 'e2e-assignment-delegate';
 
 // Assignment (splitting): a 2-member delegation split into two 1-member delegations.
-// Kept separate from E2E_ASSIGNMENT_DELEGATION_ID above since splitting hard-deletes the
+// Kept separate from E2E_ASSIGNMENT_DELEGATION_ID above since applying a split deletes the
 // parent delegation - reusing the same fixture would make the two assignment tests order-dependent.
 export const E2E_SPLIT_DELEGATION_ID = 'e2e00000delegation00000003';
 export const E2E_SPLIT_MEMBER_1_ID = 'e2e-split-member-1';
@@ -151,7 +162,10 @@ export default async function seed() {
 		}),
 		id: E2E_CONFERENCE_ID,
 		title: 'E2E Test Conference',
-		isOpenPaperSubmission: true
+		isOpenPaperSubmission: true,
+		// Several fixtures here already hold a nation (papers, committee assignment) and their
+		// specs need the participants to see it.
+		assignmentReleased: true
 	};
 	await db
 		.insert(schema.conference)
@@ -354,11 +368,20 @@ export default async function seed() {
 		.values(assignmentDelegationMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: assignmentDelegationMember });
 
+	// The assignment specs plan their changes in the draft; whatever a failed run left there would
+	// end up in the next run's apply.
+	await db
+		.delete(schema.assignmentUnit)
+		.where(eq(schema.assignmentUnit.conferenceId, conference.id));
+	await db
+		.delete(schema.assignmentSingleRole)
+		.where(eq(schema.assignmentSingleRole.conferenceId, conference.id));
+
 	// --- split fixture: a 2-member delegation for the delegation-splitting assignment path ---
-	// sendAssignmentData splits by re-parenting members into brand new child Delegations, which
-	// conflicts with the per-conference user uniqueness if a previous test run already moved these
-	// users into a (now-orphaned) child delegation - clear their membership first so this stays
-	// idempotent across repeated runs.
+	// Applying a split moves the members into brand new delegations, which conflicts with the
+	// per-conference user uniqueness if a previous test run already moved these users into a (now
+	// orphaned) child delegation - clear their membership first so this stays idempotent across
+	// repeated runs.
 	await db
 		.delete(schema.delegationMember)
 		.where(
@@ -484,7 +507,9 @@ export default async function seed() {
 	const prepConference = {
 		...makeSeedConference({ state: 'PREPARATION' }),
 		id: E2E_PREP_CONFERENCE_ID,
-		title: 'E2E Prep Conference'
+		title: 'E2E Prep Conference',
+		// Its participant sees their role: the assignment is out.
+		assignmentReleased: true
 	};
 	await db
 		.insert(schema.conference)
@@ -591,6 +616,73 @@ export default async function seed() {
 		.insert(schema.delegationMember)
 		.values(committeeAssignMember)
 		.onConflictDoUpdate({ target: schema.delegationMember.id, set: committeeAssignMember });
+
+	// --- unreleased fixture: assigned in the database, not yet visible to the participant ---
+	const unreleasedConference = {
+		...makeSeedConference({ state: 'PREPARATION' }),
+		id: E2E_UNRELEASED_CONFERENCE_ID,
+		title: 'E2E Unreleased Conference',
+		assignmentReleased: false,
+		assignmentReleasedAt: null
+	};
+	await db
+		.insert(schema.conference)
+		.values(unreleasedConference)
+		.onConflictDoUpdate({ target: schema.conference.id, set: unreleasedConference });
+	await upsertNation(E2E_UNRELEASED_NATION_ALPHA3, E2E_UNRELEASED_NATION_ALPHA2);
+	const unreleasedCommittee = {
+		...makeSeedCommittee({ conferenceId: unreleasedConference.id }),
+		id: E2E_UNRELEASED_COMMITTEE_ID,
+		name: 'E2E Unreleased Committee',
+		abbreviation: 'UNRL',
+		numOfSeatsPerDelegation: 1
+	};
+	await db
+		.insert(schema.committee)
+		.values(unreleasedCommittee)
+		.onConflictDoUpdate({ target: schema.committee.id, set: unreleasedCommittee });
+	await db
+		.insert(schema.committeeToNation)
+		.values({ a: unreleasedCommittee.id, b: E2E_UNRELEASED_NATION_ALPHA3 })
+		.onConflictDoNothing();
+	const unreleasedDelegation = {
+		...makeSeedDelegation({ conferenceId: unreleasedConference.id, applied: true }),
+		id: E2E_UNRELEASED_DELEGATION_ID,
+		entryCode: 'UNRLSD',
+		assignedNationAlpha3Code: E2E_UNRELEASED_NATION_ALPHA3
+	};
+	await db
+		.insert(schema.delegation)
+		.values(unreleasedDelegation)
+		.onConflictDoUpdate({ target: schema.delegation.id, set: unreleasedDelegation });
+	await upsertActorUser(E2E_UNRELEASED_PARTICIPANT_USER_ID);
+	const unreleasedMember = {
+		...makeSeedDelegationMember({
+			conferenceId: unreleasedConference.id,
+			delegationId: unreleasedDelegation.id,
+			userId: E2E_UNRELEASED_PARTICIPANT_USER_ID,
+			isHeadDelegate: true,
+			assignedCommitteeId: unreleasedCommittee.id
+		}),
+		id: 'e2e00000delegationmember0006'
+	};
+	await db
+		.insert(schema.delegationMember)
+		.values(unreleasedMember)
+		.onConflictDoUpdate({ target: schema.delegationMember.id, set: unreleasedMember });
+	// Its own row id: the shared helper keys rows by user, and the admin is on the main team too.
+	const unreleasedTeamMember = {
+		...makeSeedTeamMember({
+			conferenceId: unreleasedConference.id,
+			userId: E2E_ASSIGNMENT_ADMIN_ID,
+			role: 'PARTICIPANT_CARE'
+		}),
+		id: `e2e-team-unreleased-${E2E_ASSIGNMENT_ADMIN_ID}`
+	};
+	await db
+		.insert(schema.teamMember)
+		.values(unreleasedTeamMember)
+		.onConflictDoUpdate({ target: schema.teamMember.id, set: unreleasedTeamMember });
 
 	await seedSeatPlanning(db);
 

@@ -9,6 +9,7 @@ import {
 	boolean,
 	index,
 	uniqueIndex,
+	check,
 	type AnyPgColumn,
 	type UpdateDeleteAction
 } from 'drizzle-orm/pg-core';
@@ -183,6 +184,163 @@ export const customConferenceRoleToSingleParticipant = implicitManyToMany(
 	() => singleParticipant.id
 );
 
+/**
+ * The assignment draft: changes the team plans on top of the live registrations, which
+ * `applyAssignment` writes into them in one go. Nothing here is visible to participants, and
+ * every row cascades with the registration it points at, so a withdrawn application simply drops
+ * out of the draft.
+ */
+
+/** How the team rated one application during the sighting. Survives applying the draft. */
+export const assignmentReview = snakeCase.table(
+	'assignment_review',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		delegationId: text().references(() => delegation.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
+		singleParticipantId: text().references(() => singleParticipant.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
+		evaluation: doublePrecision(),
+		flagged: boolean().default(false).notNull(),
+		disqualified: boolean().default(false).notNull(),
+		note: text()
+	},
+	(table) => [
+		uniqueIndex('assignment_review_delegation_id_key').using(
+			'btree',
+			table.delegationId.asc().nullsLast()
+		),
+		uniqueIndex('assignment_review_single_participant_id_key').using(
+			'btree',
+			table.singleParticipantId.asc().nullsLast()
+		),
+		check(
+			'assignment_review_one_application',
+			sql`num_nonnulls(${table.delegationId}, ${table.singleParticipantId}) = 1`
+		)
+	]
+);
+
+/**
+ * A group of people the draft gives a role (or takes one from): a whole delegation, one part of a
+ * split delegation, or a single participant turned into a delegation. A delegation without any
+ * unit keeps what it has.
+ */
+export const assignmentUnit = snakeCase.table(
+	'assignment_unit',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		sourceDelegationId: text().references(() => delegation.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
+		sourceSingleParticipantId: text().references(() => singleParticipant.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		}),
+		nationAlpha3Code: text().references(() => nation.alpha3Code, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		}),
+		nonStateActorId: text().references(() => nonStateActor.id, {
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		})
+	},
+	(table) => [
+		index('assignment_unit_conference_id_idx').using('btree', table.conferenceId.asc().nullsLast()),
+		index('assignment_unit_source_delegation_id_idx').using(
+			'btree',
+			table.sourceDelegationId.asc().nullsLast()
+		),
+		uniqueIndex('assignment_unit_source_single_participant_id_key').using(
+			'btree',
+			table.sourceSingleParticipantId.asc().nullsLast()
+		),
+		check(
+			'assignment_unit_one_source',
+			sql`num_nonnulls(${table.sourceDelegationId}, ${table.sourceSingleParticipantId}) = 1`
+		),
+		check(
+			'assignment_unit_one_role',
+			sql`num_nonnulls(${table.nationAlpha3Code}, ${table.nonStateActorId}) <= 1`
+		)
+	]
+);
+
+/** The members of one part of a split delegation. A unit without members is the whole delegation. */
+export const assignmentUnitMember = snakeCase.table(
+	'assignment_unit_member',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		unitId: text()
+			.notNull()
+			.references(() => assignmentUnit.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		delegationMemberId: text()
+			.notNull()
+			.references(() => delegationMember.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+	},
+	(table) => [
+		uniqueIndex('assignment_unit_member_delegation_member_id_key').using(
+			'btree',
+			table.delegationMemberId.asc().nullsLast()
+		),
+		index('assignment_unit_member_unit_id_idx').using('btree', table.unitId.asc().nullsLast())
+	]
+);
+
+/** The custom role the draft gives a single participant; `roleId` null takes theirs away. */
+export const assignmentSingleRole = snakeCase.table(
+	'assignment_single_role',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		singleParticipantId: text()
+			.notNull()
+			.references(() => singleParticipant.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+		roleId: text().references(() => customConferenceRole.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade'
+		})
+	},
+	(table) => [
+		uniqueIndex('assignment_single_role_single_participant_id_key').using(
+			'btree',
+			table.singleParticipantId.asc().nullsLast()
+		)
+	]
+);
+
+/** The weights the automatic assignment runs with, one row per conference. */
+export const assignmentWeights = snakeCase.table(
+	'assignment_weights',
+	{
+		...defaultIdAndTimestamps,
+		conferenceId: conferenceRef('cascade'),
+		/** The rating that counts as neutral; unrated applications are treated as having it. */
+		nullRating: doublePrecision().default(2.5).notNull(),
+		/** How strongly each star above or below the neutral rating moves the cost. */
+		ratingFactor: doublePrecision().default(1).notNull(),
+		/** What a flag takes off the cost. */
+		markBonus: doublePrecision().default(0).notNull(),
+		/** What a role the application did not wish for costs. */
+		nonWishMalus: doublePrecision().default(50).notNull()
+	},
+	(table) => [
+		uniqueIndex('assignment_weights_conference_id_key').using(
+			'btree',
+			table.conferenceId.asc().nullsLast()
+		)
+	]
+);
+
 export const attendanceEntry = snakeCase.table('attendance_entry', {
 	...defaultIdAndTimestamps,
 	timestamp: timestamp({ precision: 3 })
@@ -320,7 +478,10 @@ export const conference = snakeCase.table('conference', {
 	linkToTeamWiki: text(),
 	logoDataURL: text(),
 	showCalendar: boolean().default(false).notNull(),
-	timezone: text().default('Europe/Berlin').notNull()
+	timezone: text().default('Europe/Berlin').notNull(),
+	/** Whether participants see the roles they were assigned. The team always does. */
+	assignmentReleased: boolean().default(false).notNull(),
+	assignmentReleasedAt: timestamp({ precision: 3 })
 });
 
 export const conferenceParticipantStatus = snakeCase.table(

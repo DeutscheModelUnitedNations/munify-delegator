@@ -98,3 +98,16 @@ export function makeDevAccountUser(account: DevAccount): Insert<'user'> & { id: 
 		wantsJoinTeamInformation: false
 	};
 }
+
+/** What the care team keeps track of: people who misbehaved at an earlier conference. */
+const CARE_NOTES = [
+	'Hat auf der letzten Konferenz nachts das Hotelzimmer verlassen und musste abgeholt werden.',
+	'Wiederholt respektlos gegenüber anderen Delegierten aufgetreten, Verwarnung im Plenum.',
+	'Alkohol im Hotel, Eltern wurden informiert.',
+	'Hat Beschlussvorlagen anderer Delegationen ohne Absprache verändert.',
+	'Vorsicht bei der Zimmerverteilung: Streit mit Zimmernachbarn.'
+] as const;
+
+/** Every sixth participant carries a care note, whichever conference they land in. */
+export const careNoteFor = (index: number) =>
+	index % 6 === 5 ? CARE_NOTES[Math.floor(index / 6) % CARE_NOTES.length] : null;

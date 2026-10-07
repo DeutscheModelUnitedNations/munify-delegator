@@ -46,7 +46,8 @@ export async function fetchMyConferenceParticipation({
 			id: true,
 			title: true,
 			state: true,
-			startConference: true
+			startConference: true,
+			assignmentReleased: true
 		}),
 		client.liveQuery.delegationMembers({
 			__args: { where: forUser },

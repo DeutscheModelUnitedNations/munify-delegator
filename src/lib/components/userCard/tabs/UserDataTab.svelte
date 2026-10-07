@@ -335,7 +335,10 @@
 			<i class="fa-duotone fa-note-sticky mr-1"></i>
 			{m.globalNotes()}
 		</h3>
-		<p class="text-base-content/60 text-sm">{m.globalNotesDescription()}</p>
+		<p class="text-base-content/60 text-sm">
+			{m.globalNotesDescription()}
+			{m.globalNotesHint()}
+		</p>
 		<div class="bg-base-200 min-h-12 rounded-lg p-3 whitespace-pre-wrap">
 			{user.globalNotes ?? '–'}
 		</div>

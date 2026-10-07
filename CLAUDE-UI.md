@@ -949,6 +949,33 @@ Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violati
 
 ---
 
+## Assignment Board
+
+`src/routes/(authenticated)/dashboard/[conferenceId]/management/assignment/` is a tabbed area
+(Sichtung, Gewichtung, Einzelteilnehmende, Zuteilung, Abschluss), one child route per tab, with the
+tabs and a `DraftStatus` badge (pending changes, released or not) in `+layout.svelte`.
+
+| File                              | Role                                                                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `board.ts`                        | `fetchAssignmentBoard` / `fetchAssignmentRoles` (live), `boardState` (groups, seats, occupancy via `$lib/assignment`), `describeRole` |
+| `GroupCard.svelte`                | A draggable group (delegation, split part, converted single): rating, flags, wish rank of its role, pending marker, split/unassign    |
+| `RoleCard.svelte`                 | A drop zone for a nation, non-state actor or custom role: seats taken / total, its groups, free slots, over-capacity in red           |
+| `SplitModal.svelte`               | Splits a delegation by picking a part per member (radio grid, no drag and drop)                                                       |
+| `assignGroup.ts`                  | Plans a role for a group: whole delegations through `assignDelegation`, parts and converted singles through their unit                |
+| `sighting/ApplicationCard.svelte` | One application with its people, texts and wishes; `ReviewControls` rate, flag, disqualify and annotate it                            |
+
+- Drag and drop uses `@thisux/sveltednd` (`draggable` with `dragData: { id: group.key }`, `droppable`
+  containers named `pool`, `role:<key>`); every drop is one draft mutation, and the live queries
+  bring the result back - there is no local copy of the draft.
+- Cards keyed by props that come from live data pull their keys into their own `$derived` before
+  querying (`ApplicationCard`), or a rebuilt parent list re-runs their queries in a loop.
+- `$lib/components/assignment/AssignmentReleaseToggle.svelte` is the release switch; it saves on
+  its own and appears both on the finish tab and in the conference settings.
+- `$lib/components/AssignmentPending.svelte` is what participants and supervisors see between the
+  end of registration and the release, in place of `ApplicationRejected`.
+
+---
+
 ## Navigation Components
 
 ## App Shell

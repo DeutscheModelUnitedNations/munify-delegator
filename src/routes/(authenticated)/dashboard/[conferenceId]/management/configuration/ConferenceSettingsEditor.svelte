@@ -324,7 +324,7 @@
 		</div>
 
 		<div class:hidden={currentTab !== 'status'}>
-			<StatusSettings {form} />
+			<StatusSettings {form} {conferenceId} />
 		</div>
 
 		<div class:hidden={currentTab !== 'links'}>

@@ -7,6 +7,7 @@
 	import { createColumnDefs, participantGroupOrder } from './columns';
 	import { defaultColumnFilters } from './tableState';
 	import TableToolbar from './TableToolbar.svelte';
+	import { queryParameters } from 'sveltekit-search-params';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -24,6 +25,9 @@
 	});
 
 	const columns = createColumnDefs();
+
+	/** `?highlight=<userId>` marks one row, as links from the assignment sighting do. */
+	const params = queryParameters({ highlight: true });
 </script>
 
 <ManagedTable
@@ -38,6 +42,7 @@
 	initialSorting={[{ id: 'family_name', desc: false }]}
 	pageSize={20}
 	onRowClick={(row) => openUserCard(row.userId)}
+	isRowSelected={(row) => row.userId === params.highlight}
 >
 	{#snippet toolbar(table)}
 		<TableToolbar {table} />

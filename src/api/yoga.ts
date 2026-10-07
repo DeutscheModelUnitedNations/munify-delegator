@@ -1,5 +1,6 @@
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { createYoga } from '$api/rumble';
+import { useAssignmentFilterGuard } from '$api/services/assignmentFilterGuard';
 import { dev } from '$app/environment';
 import { GRAPHQL_STREAM_ENDPOINT } from '$lib/api/streamEndpoint';
 
@@ -21,7 +22,7 @@ import '$api/handlers/register';
 export const yoga = createYoga({
 	graphqlEndpoint: '/api/graphql',
 	maskedErrors: !dev,
-	plugins: [useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT })],
+	plugins: [useGraphQLSSE({ endpoint: GRAPHQL_STREAM_ENDPOINT }), useAssignmentFilterGuard()],
 	fetchAPI: {
 		fetch,
 		Request,

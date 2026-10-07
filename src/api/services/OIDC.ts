@@ -7,13 +7,7 @@ import { upsertSelfFromClaims } from './upsertSelf';
 export const oidcRoles = ['admin', 'member', 'service_user'] as const;
 
 /** Everything behind the `(authenticated)` route group. */
-export const AUTHENTICATED_ROUTES = [
-	'/dashboard',
-	'/registration',
-	'/assignment-assistant',
-	'/my-account',
-	'/team-tender'
-];
+export const AUTHENTICATED_ROUTES = ['/dashboard', '/registration', '/my-account', '/team-tender'];
 
 /**
  * The library's default cookie prefix. We do not pass `cookiePrefix`, so this is what it uses;

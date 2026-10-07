@@ -137,9 +137,9 @@ bun run preview
 - **`src/routes/`** - SvelteKit routes (filesystem-based routing)
   - `(authenticated)/` - Protected routes requiring authentication
     - `dashboard/` - Conference dashboards
-    - `management/` - Admin interfaces for conference/delegation management
+    - `management/` - Admin interfaces for conference/delegation management (the assignment
+      lives in `management/assignment/`)
     - `registration/` - User registration flows
-    - `assignment-assistant/` - Delegation assignment tools
   - `api/graphql/` - GraphQL API endpoint
   - `auth/` - OIDC authentication callbacks
   - `seats/`, `vc/`, `validateCertificate/` - Public-facing pages
@@ -425,7 +425,9 @@ bun run preview
   (never edit its `users` by hand - `devAccounts.test.ts` fails on drift), and
   `bun run db:seed:dev` gives each one a user row (id = `sub`) and a part to play. Nine
   conferences cover the stages (`seed-dev/plans.ts`: pre, registration open / in its grace period
-  / closed, preparation with everything and with nothing unlocked, active, post). Team personas
+  / closed, preparation with everything and with nothing unlocked, active, post). The closed one
+  carries an assignment draft in progress; the locked one has seats handed out but not released,
+  so its participants see "assignment in progress". Team personas
   hold one team role everywhere; `[Registration]` personas cover the application steps;
   `[Participant]` personas keep one role (head delegate, minor, supervisor, rejected, …) across
   preparation, active and post, so one login tours the stages. The seed prints the conference ids,
@@ -467,7 +469,37 @@ bun run preview
 - Payment tracking via `PaymentTransaction` model
 - Paper submission system with versioning and reviews
 
-#### 6. Background Tasks
+#### 6. Assignment
+
+- **Draft, apply, release - three separate things.** The team plans in draft tables
+  (`assignmentReview`, `assignmentUnit` + `assignmentUnitMember`, `assignmentSingleRole`,
+  `assignmentWeights`) that hold only _changes_ on top of the live registrations: a delegation
+  without a unit keeps what it has; a unit without members is "this whole delegation gets that
+  role"; units with members are the parts of a split; a unit with a `sourceSingleParticipantId`
+  turns a single participant into a delegation. Every row cascades with the registration it points
+  at, so withdrawn applications drop out on their own.
+- **One pure model, used on both sides.** `$lib/assignment/state.ts` turns live rows + draft into
+  `AssignmentGroup`s, `applyPlan.ts` works out what applying does (merges, splits, new and
+  dissolved delegations, the errors that block it), `autoAssign.ts` is the Hungarian matching
+  (only roles with _exactly_ as many free seats as the group has members). The board in
+  `management/assignment/` and `applyAssignment` (`src/api/services/assignmentDraft.ts`) both go
+  through them, so the preview is what gets written. Applying moves `delegationMember` rows instead
+  of re-creating them, so supervision links and statuses survive, and clears the draft (ratings
+  and weights stay).
+- **Release is only visibility.** `conference.assignmentReleased` (`setAssignmentReleased`,
+  project management and participant care, switchable both ways) decides whether participants and
+  supervisors see roles. Until then their read rules mask `assignedNationAlpha3Code`,
+  `assignedNonStateActorId`, `assignedCommitteeId`, `assignedRoleId` and `assignmentDetails`
+  (`src/api/services/assignmentVisibility.ts`, two rules per participant-side ability:
+  `maskedUntilRelease` and `onceReleased`). A masked foreign key is not enough on its own, so
+  `assignedNation`, `assignedNonStateActor`, `assignedCommittee` and `assignedRole` resolve
+  through the key, and the relations pointing back (`nation.assignedDelegations`,
+  `committee.delegationMembers`, …) are filtered with `assignmentVisible`. The dashboard shows
+  `AssignmentPending` instead of a rejection, and the mail sync keeps role lists back. Anything new
+  that reveals a role to participants has to respect the flag; `e2e/authorization/assignment-release.spec.ts`
+  checks the known paths.
+
+#### 7. Background Tasks
 
 - **node-schedule** for cron jobs
 - Tasks registered in `src/tasks/index.ts`

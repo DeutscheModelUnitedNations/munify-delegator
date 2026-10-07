@@ -4,8 +4,10 @@
 	import FormSection from '$lib/components/form/FormSection.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 	import { conferenceStateIcon } from '../../../../conferenceGroups';
+	import AssignmentReleaseToggle from '$lib/components/assignment/AssignmentReleaseToggle.svelte';
 
-	let { form }: { form: SuperForm<ConferenceSettings> } = $props();
+	let { form, conferenceId }: { form: SuperForm<ConferenceSettings>; conferenceId: string } =
+		$props();
 	let formData = $derived(form.form);
 
 	const conferenceStateOptions: {
@@ -80,6 +82,15 @@
 			<span>{m.showCalendar()}</span>
 		</label>
 	</div>
+</FormSection>
+
+<FormSection
+	title={m.assignmentRelease()}
+	icon="eye"
+	description={m.assignmentReleaseSettingsDescription()}
+>
+	<!-- Saves on its own: it is not part of the settings form. -->
+	<AssignmentReleaseToggle {conferenceId} />
 </FormSection>
 
 <FormSection title={m.conferenceStatus()} icon="signal">

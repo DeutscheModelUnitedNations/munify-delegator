@@ -1,3 +1,4 @@
+import { createFuzzySearch } from '$lib/components/tanStackTable/search';
 import { regionalGroups, type RegionalGroup, type UnMember } from './unMembers';
 
 /**
@@ -144,15 +145,17 @@ interface FilterableRow {
 	regionalGroup: RegionalGroup;
 }
 
-/** Whether a row of the states matrix passes the filters; `size` is its current seat count */
+/** The rows matching the search by name or ISO code, best match first; without one, all of them. */
+export function searchSeatRows<T extends FilterableRow>(rows: readonly T[], q: string | null) {
+	return createFuzzySearch(
+		rows,
+		(row) => `${row.name} ${row.alpha2Code} ${row.alpha3Code}`
+	)(q ?? '');
+}
+
+/** Whether a row of the states matrix passes the filters besides the search (`searchSeatRows`); `size` is its current seat count */
 export function matchesSeatFilters(row: FilterableRow, size: number, filters: SeatFilters) {
-	const search = filters.q?.trim().toLowerCase();
-	const matchesSearch =
-		!search ||
-		row.name.toLowerCase().includes(search) ||
-		[row.alpha2Code, row.alpha3Code].includes(search);
 	return (
-		matchesSearch &&
 		(!filters.group || row.regionalGroup === filters.group) &&
 		(!filters.noSeat || size === 0) &&
 		(filters.size === null || size === filters.size)

@@ -12,6 +12,13 @@ import { fetchUserParticipations, isUserAlreadyRegistered } from '$api/services/
 import { assertTeamRole } from '$api/services/authHelper';
 import { assertApplicationReady } from '$api/services/applicationReadiness';
 import { nullToUndefined } from '$api/services/args';
+import {
+	SINGLE_PARTICIPANT_ASSIGNMENT,
+	maskedUntilRelease,
+	onceReleased
+} from '$api/services/assignmentVisibility';
+import type { Context } from '$api/context';
+import { CustomConferenceRoleRef } from './customConferenceRole';
 import { applicationFormSchema } from '$lib/schemata/applicationForm';
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
@@ -21,8 +28,12 @@ import { and, eq, inArray } from 'drizzle-orm';
 // Ported from abilities/entities/singleParticipant.ts
 abilityBuilder.singleParticipant.allow(['read', 'update', 'delete']).when(systemAdmin);
 
-// Users see their own entry.
-abilityBuilder.singleParticipant.allow('read').when((ctx) => where(isOwnUser(ctx)));
+// Users see their own entry - the role they were given only once the team has released the
+// assignment.
+abilityBuilder.singleParticipant
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(isOwnUser(ctx), SINGLE_PARTICIPANT_ASSIGNMENT));
+abilityBuilder.singleParticipant.allow('read').when((ctx) => onceReleased(isOwnUser(ctx)));
 
 // Participant care and project management see and manage their conference's participants.
 abilityBuilder.singleParticipant
@@ -35,13 +46,39 @@ abilityBuilder.singleParticipant.allow(['update', 'delete']).when((ctx) => {
 	return id ? { where: { user: { id }, applied: false } } : undefined;
 });
 
-// Supervisors see the participants they supervise.
-abilityBuilder.singleParticipant.allow('read').when((ctx) => {
+/** The single participants the caller supervises. */
+function supervisedParticipant(ctx: Context) {
 	const id = userId(ctx);
-	return id ? { where: { supervisors: { user: { id } } } } : undefined;
-});
+	return id ? { supervisors: { user: { id } } } : undefined;
+}
 
-const SingleParticipantRef = object({ table: 'singleParticipant' });
+// Supervisors see the participants they supervise, with their role once it is released.
+abilityBuilder.singleParticipant
+	.allow('read')
+	.when((ctx) => maskedUntilRelease(supervisedParticipant(ctx), SINGLE_PARTICIPANT_ASSIGNMENT));
+abilityBuilder.singleParticipant
+	.allow('read')
+	.when((ctx) => onceReleased(supervisedParticipant(ctx)));
+
+const SingleParticipantRef = object({
+	table: 'singleParticipant',
+	adjust: (t) => ({
+		// Resolved through the foreign key, which the read rules mask until the assignment is
+		// released - a plain relation would be read through the role's own (public) rules.
+		assignedRole: t.field({
+			type: CustomConferenceRoleRef,
+			nullable: true,
+			resolve: async (participant, _args, ctx) =>
+				participant.assignedRoleId
+					? db.query.customConferenceRole.findFirst(
+							(await ctx.abilities.customConferenceRole.filter('read')).merge({
+								where: { id: participant.assignedRoleId }
+							}).query.single
+						)
+					: null
+		})
+	})
+});
 query({ table: 'singleParticipant' });
 const pubsub = rumblePubsub({ table: 'singleParticipant' });
 // Assigning someone from the waiting list also settles their entry there.

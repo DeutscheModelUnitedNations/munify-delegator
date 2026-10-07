@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { createFuzzySearch } from '$lib/components/tanStackTable/search';
 	import { resolve } from '$app/paths';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
@@ -62,26 +63,18 @@
 	// Store expanded state in URL params
 	const openGroup = new ExpandedPaperGroup();
 
-	// Filter papers by search query (delegation name)
+	/** What a paper is searched by: the name of the nation or non-state actor of its delegation */
+	const roleText = ({ delegation }: Paper) =>
+		delegation.assignedNation
+			? getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)
+			: [delegation.assignedNonStateActor?.name, delegation.assignedNonStateActor?.abbreviation]
+					.filter(Boolean)
+					.join(' ');
+
+	// Filter papers by search query (delegation name), keeping the order of the papers
 	const filterPapersBySearch = (papers: Paper[]) => {
-		const query = searchQuery.toLowerCase().trim();
-		if (!query) return papers;
-
-		return papers.filter((paper) => {
-			const nation = paper.delegation.assignedNation;
-			const nsa = paper.delegation.assignedNonStateActor;
-
-			if (nation) {
-				const countryName = getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code);
-				return countryName.toLowerCase().includes(query);
-			}
-			if (nsa) {
-				return (
-					nsa.name.toLowerCase().includes(query) || nsa.abbreviation?.toLowerCase().includes(query)
-				);
-			}
-			return false;
-		});
+		const hits = new Set(createFuzzySearch(papers, roleText)(searchQuery));
+		return papers.filter((paper) => hits.has(paper));
 	};
 
 	// Sorting state per agenda item; unsorted tables keep the server's order

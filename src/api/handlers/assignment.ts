@@ -1,351 +1,551 @@
-import { type Transaction, db, schema } from '$api/db/db';
-import { pubsub as rumblePubsub, schemaBuilder } from '$api/rumble';
-import { makeEntryCode } from '$api/services/entryCodeGenerator';
-import { assertParticipantsOf } from '$api/services/authHelper';
-import { m } from '$lib/paraglide/messages';
-import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
-import { and, eq, inArray } from 'drizzle-orm';
-import { GraphQLError } from 'graphql';
-import { nationSeats } from '$lib/helpers/nationSeats';
-import { planDelegationMerge, supervisionLinks } from '$api/services/delegationMerge';
+import { db, schema } from '$api/db/db';
+import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
 import {
-	ProjectDataSchema,
-	type ProjectData
-} from '../../routes/(authenticated)/assignment-assistant/[projectId]/appData.svelte';
+	PARTICIPANT_CARE_ROLES,
+	assertTeamRole,
+	isTeamMemberOfConference,
+	systemAdmin,
+	where
+} from '$api/services/authHelper';
+import {
+	applyAssignmentDraft,
+	assertTargetOf,
+	draftDelegationTarget,
+	loadAssignmentInput
+} from '$api/services/assignmentDraft';
+import { DEFAULT_WEIGHTS, autoAssign } from '$lib/assignment/autoAssign';
+import { reviewProblem, reviewRow } from '$lib/assignment/review';
+import {
+	assignmentGroups,
+	targetKey,
+	type AssignmentGroup,
+	type Target
+} from '$lib/assignment/state';
+import { assertFindFirstExists } from '@m1212e/rumble';
+import { eq } from 'drizzle-orm';
+import { GraphQLError } from 'graphql';
 
-/**
- * Re-links a supervisor to a delegate after the delegate's row has been recreated.
- *
- * Best-effort on purpose: a supervision link that cannot be restored must not abort the whole
- * assignment run, which is how the legacy version behaved.
+/*
+ * The assignment draft is the team's working copy: project management and participant care plan
+ * who gets which role here, and nobody else sees any of it.
  */
-async function reconnectSupervisor(
-	tx: Transaction,
-	conferenceId: string,
-	supervisorId: string,
-	memberId: string
-) {
-	// The supervisor id may come from the uploaded project, so it has to be one of this conference.
-	const supervisor = await tx.query.conferenceSupervisor.findFirst({
-		where: { id: supervisorId, conferenceId },
-		columns: { id: true }
-	});
-	if (!supervisor) return;
-	try {
-		await tx
-			.insert(schema.conferenceSupervisorToDelegationMember)
-			.values({ a: supervisorId, b: memberId })
-			.onConflictDoNothing();
-	} catch (error) {
-		console.error(`Failed to reconnect supervisor ${supervisorId} to member ${memberId}:`, error);
-	}
-}
+const assignmentTeam = (ctx: Parameters<typeof isTeamMemberOfConference>[0]) =>
+	where(isTeamMemberOfConference(ctx, PARTICIPANT_CARE_ROLES));
 
-type ProjectDelegation = ProjectData['delegations'][number];
+abilityBuilder.assignmentReview.allow(['read', 'update', 'delete']).when(systemAdmin);
+abilityBuilder.assignmentReview.allow(['read', 'update', 'delete']).when(assignmentTeam);
+abilityBuilder.assignmentUnit.allow(['read', 'update', 'delete']).when(systemAdmin);
+abilityBuilder.assignmentUnit.allow(['read', 'update', 'delete']).when(assignmentTeam);
+abilityBuilder.assignmentUnitMember.allow(['read', 'update', 'delete']).when(systemAdmin);
+abilityBuilder.assignmentUnitMember.allow(['read', 'update', 'delete']).when(assignmentTeam);
+abilityBuilder.assignmentSingleRole.allow(['read', 'update', 'delete']).when(systemAdmin);
+abilityBuilder.assignmentSingleRole.allow(['read', 'update', 'delete']).when(assignmentTeam);
+abilityBuilder.assignmentWeights.allow(['read', 'update', 'delete']).when(systemAdmin);
+abilityBuilder.assignmentWeights.allow(['read', 'update', 'delete']).when(assignmentTeam);
 
-/** Throws unless every one of the given users is a member of the delegation being split. */
-function assertMembersOf(parent: { id: string; members: { userId: string }[] }, userIds: string[]) {
-	const members = new Set(parent.members.map((member) => member.userId));
-	const strangers = userIds.filter((id) => !members.has(id));
-	if (strangers.length > 0) {
-		throw new GraphQLError(
-			`Cannot split delegation ${parent.id}: these users are not its members: ${strangers.join(', ')}`
-		);
-	}
-}
+const AssignmentReviewRef = object({ table: 'assignmentReview' });
+query({ table: 'assignmentReview' });
+object({ table: 'assignmentUnit' });
+query({ table: 'assignmentUnit' });
+object({ table: 'assignmentUnitMember' });
+query({ table: 'assignmentUnitMember' });
+object({ table: 'assignmentSingleRole' });
+query({ table: 'assignmentSingleRole' });
+const AssignmentWeightsRef = object({ table: 'assignmentWeights' });
+query({ table: 'assignmentWeights' });
 
-/** Re-creates a split-off delegation's members on its new row, keeping their supervisors. */
-async function createChildMembers(
-	tx: Transaction,
-	conferenceId: string,
-	delegationId: string,
-	child: ProjectDelegation
-) {
-	const anyHeadDelegate = child.members.some((mem) => mem.isHeadDelegate);
-	for (const [memberIndex, member] of child.members.entries()) {
-		const created = await tx
-			.insert(schema.delegationMember)
-			.values({
-				conferenceId,
-				delegationId,
-				userId: member.user.id,
-				// Keep the marked head delegate, or promote the first member if none was.
-				isHeadDelegate: anyHeadDelegate ? member.isHeadDelegate : memberIndex === 0
-			})
-			.returning()
-			.then(assertFirstEntryExists);
-
-		for (const supervisor of member.supervisors ?? []) {
-			await reconnectSupervisor(tx, conferenceId, supervisor.id, created.id);
-		}
-	}
-}
-
-/** Deletes a delegation marked as split and rebuilds it as its children. */
-async function splitDelegation(
-	tx: Transaction,
-	conferenceId: string,
-	parentId: string,
-	children: ProjectDelegation[]
-) {
-	const parentDB = await tx.query.delegation.findFirst({
-		where: { id: parentId, conferenceId },
-		with: { members: true }
-	});
-	if (!parentDB) {
-		throw new GraphQLError(`Parent delegation ${parentId} not found`);
-	}
-
-	assertMembersOf(
-		parentDB,
-		children.flatMap((child) => child.members.map((mem) => mem.user.id))
-	);
-
-	await tx
-		.delete(schema.delegation)
-		.where(
-			and(eq(schema.delegation.id, parentId), eq(schema.delegation.conferenceId, conferenceId))
-		);
-
-	for (const child of children) {
-		const childDB = await tx
-			.insert(schema.delegation)
-			.values({
-				conferenceId,
-				entryCode: makeEntryCode(),
-				applied: true,
-				school: parentDB.school,
-				motivation: parentDB.motivation,
-				experience: parentDB.experience
-			})
-			.returning()
-			.then(assertFirstEntryExists);
-
-		await createChildMembers(tx, conferenceId, childDB.id, child);
-
-		// The in-memory project data is rewritten so later passes see the new ids.
-		child.id = childDB.id;
-	}
-}
-
-type RoleAssignment = { nationAlpha3Code?: string; nonStateActorId?: string };
-
-/** Removes the delegations the given users currently belong to. */
-async function deleteDelegationsOf(tx: Transaction, conferenceId: string, userIds: string[]) {
-	const memberships = await tx.query.delegationMember.findMany({
-		where: { userId: { in: userIds }, conferenceId },
-		columns: { delegationId: true }
-	});
-	await tx.delete(schema.delegation).where(
-		and(
-			eq(schema.delegation.conferenceId, conferenceId),
-			inArray(
-				schema.delegation.id,
-				memberships.map((row) => row.delegationId)
-			)
-		)
-	);
-}
-
-/** The delegation that carries a role: the given one re-assigned, or a brand new one. */
-async function carrierDelegationId(
-	tx: Transaction,
-	conferenceId: string,
-	primaryId: string | undefined,
-	assign: RoleAssignment
-) {
-	if (primaryId) {
-		await tx
-			.update(schema.delegation)
-			.set({
-				assignedNationAlpha3Code: assign.nationAlpha3Code,
-				assignedNonStateActorId: assign.nonStateActorId
-			})
-			.where(
-				and(eq(schema.delegation.id, primaryId), eq(schema.delegation.conferenceId, conferenceId))
-			);
-		return primaryId;
-	}
-
-	const created = await tx
-		.insert(schema.delegation)
-		.values({
-			applied: true,
-			conferenceId,
-			entryCode: makeEntryCode(),
-			assignedNationAlpha3Code: assign.nationAlpha3Code,
-			assignedNonStateActorId: assign.nonStateActorId,
-			experience: 'Created during assignment',
-			motivation: 'Created during assignment',
-			school: 'Created during assignment'
-		})
-		.returning()
-		.then(assertFirstEntryExists);
-	return created.id;
-}
-
-/** Restores the supervision links of every member of a delegation. */
-async function reconnectSupervisorsOf(tx: Transaction, conferenceId: string, delegationId: string) {
-	const carrier = await tx.query.delegation.findFirst({
-		where: { id: delegationId },
-		with: { members: { with: { supervisors: true } } }
-	});
-	for (const { supervisorId, memberId } of supervisionLinks(carrier)) {
-		await reconnectSupervisor(tx, conferenceId, supervisorId, memberId);
-	}
-}
-
-/**
- * Merges the delegations assigned to one nation or non-state actor into one: the smallest
- * existing delegation becomes the carrier, the rest are removed and their members re-created on
- * it.
- */
-async function mergeAssignedDelegations(
-	tx: Transaction,
-	conferenceId: string,
-	assigned: ProjectDelegation[],
-	assign: RoleAssignment
-) {
-	if (assigned.length < 1) return;
-
-	const existing = await tx.query.delegation.findMany({
-		where: { id: { in: assigned.map((x) => x.id) }, conferenceId },
-		with: { members: true }
-	});
-	const plan = planDelegationMerge(assigned, existing);
-	// Everybody placed on the carrier must already be registered in this conference.
-	await assertParticipantsOf(
-		conferenceId,
-		plan.newMembers.map((member) => member.userId)
-	);
-
-	if (plan.leavingUserIds.length > 0) {
-		// Remove the delegations those users are coming from.
-		await deleteDelegationsOf(tx, conferenceId, plan.leavingUserIds);
-	}
-
-	const carrierId = await carrierDelegationId(tx, conferenceId, plan.primaryId, assign);
-
-	for (const member of plan.newMembers) {
-		await tx
-			.insert(schema.delegationMember)
-			.values({ conferenceId, delegationId: carrierId, ...member });
-	}
-
-	await reconnectSupervisorsOf(tx, conferenceId, carrierId);
-}
-
-// The assignment run rewrites registrations wholesale, across three tables.
+const reviewPubsub = rumblePubsub({ table: 'assignmentReview' });
+const unitPubsub = rumblePubsub({ table: 'assignmentUnit' });
+const unitMemberPubsub = rumblePubsub({ table: 'assignmentUnitMember' });
+const singleRolePubsub = rumblePubsub({ table: 'assignmentSingleRole' });
+const weightsPubsub = rumblePubsub({ table: 'assignmentWeights' });
+// Applying rewrites the registrations themselves.
+const conferencePubsub = rumblePubsub({ table: 'conference' });
 const delegationPubsub = rumblePubsub({ table: 'delegation' });
 const delegationMemberPubsub = rumblePubsub({ table: 'delegationMember' });
 const singleParticipantPubsub = rumblePubsub({ table: 'singleParticipant' });
 
+/**
+ * Every draft table changed. A draft write creates, changes and deletes rows in one go, and the
+ * board's lists only hear about rows coming and going, so all three are announced.
+ */
+function publishDraft() {
+	for (const pubsub of [unitPubsub, unitMemberPubsub, singleRolePubsub]) {
+		pubsub.created();
+		pubsub.removed();
+		pubsub.updated();
+	}
+}
+
+const SplitPartInput = schemaBuilder.inputType('AssignmentSplitPartInput', {
+	fields: (t) => ({ memberIds: t.idList({ required: true }) })
+});
+
+const targetFrom = (args: {
+	nationAlpha3Code?: string | null;
+	nonStateActorId?: string | null;
+}): Target => ({
+	nationAlpha3Code: args.nationAlpha3Code || null,
+	nonStateActorId: args.nonStateActorId || null
+});
+
+/** An applied delegation of a conference the caller does assignments in. */
+async function assignableDelegation(ctx: Parameters<typeof assertTeamRole>[0], id: string) {
+	const delegation = await db.query.delegation
+		.findFirst({
+			where: { id, applied: true },
+			columns: {
+				id: true,
+				conferenceId: true,
+				assignedNationAlpha3Code: true,
+				assignedNonStateActorId: true
+			},
+			with: { members: { columns: { id: true } } }
+		})
+		.then(assertFindFirstExists);
+	await assertTeamRole(ctx, delegation.conferenceId, PARTICIPANT_CARE_ROLES);
+	return {
+		...delegation,
+		liveTarget: {
+			nationAlpha3Code: delegation.assignedNationAlpha3Code,
+			nonStateActorId: delegation.assignedNonStateActorId
+		}
+	};
+}
+
+/** An applied single participant of a conference the caller does assignments in. */
+async function assignableSingleParticipant(ctx: Parameters<typeof assertTeamRole>[0], id: string) {
+	const participant = await db.query.singleParticipant
+		.findFirst({
+			where: { id, applied: true },
+			columns: { id: true, conferenceId: true, assignedRoleId: true }
+		})
+		.then(assertFindFirstExists);
+	await assertTeamRole(ctx, participant.conferenceId, PARTICIPANT_CARE_ROLES);
+	return participant;
+}
+
+const REVIEW_PROBLEMS = {
+	application: 'Name either a delegation or a single participant',
+	evaluation: 'A rating lies between 0.5 and 5'
+};
+
+/** The unique column a review of each kind of application is upserted on. */
+const reviewKey = {
+	delegation: schema.assignmentReview.delegationId,
+	single: schema.assignmentReview.singleParticipantId
+};
+
+/** The conference of the application a review is about, once the caller may assign there. */
+async function applicationConference(
+	ctx: Parameters<typeof assertTeamRole>[0],
+	application: ReturnType<typeof reviewRow>['application']
+) {
+	const row =
+		application.kind === 'delegation'
+			? await assignableDelegation(ctx, application.id)
+			: await assignableSingleParticipant(ctx, application.id);
+	return row.conferenceId;
+}
+
+/** Plans `target` for a group, whether it is a whole delegation or a unit of its own. */
+async function draftGroupTarget(conferenceId: string, group: AssignmentGroup, target: Target) {
+	if (group.unitId && (group.part || group.singleParticipantId)) {
+		await db
+			.update(schema.assignmentUnit)
+			.set({ nationAlpha3Code: target.nationAlpha3Code, nonStateActorId: target.nonStateActorId })
+			.where(eq(schema.assignmentUnit.id, group.unitId));
+		return;
+	}
+	if (!group.delegationId) return;
+	await draftDelegationTarget(
+		db,
+		{ id: group.delegationId, conferenceId, liveTarget: group.liveTarget },
+		target
+	);
+}
+
 schemaBuilder.mutationFields((t) => ({
-	/**
-	 * Commits the output of the assignment assistant.
-	 *
-	 * Three passes, in order, all inside one transaction:
-	 *  1. delegations marked as split are deleted and rebuilt as their children;
-	 *  2. single participants get their assigned role;
-	 *  3. for every nation and every non-state actor, the delegations assigned to it are merged
-	 *     into one - the smallest existing delegation becomes the carrier, the rest are removed
-	 *     and their members re-created on it.
-	 *
-	 * Because members are recreated rather than moved, supervision links have to be restored
-	 * afterwards, which is what `reconnectSupervisor` does.
-	 */
-	sendAssignmentData: t.field({
-		type: 'Boolean',
+	/** Records the team's rating of one application, replacing the previous one. */
+	setAssignmentReview: t.drizzleField({
+		type: AssignmentReviewRef,
+		args: {
+			delegationId: t.arg.id({ required: false }),
+			singleParticipantId: t.arg.id({ required: false }),
+			evaluation: t.arg.float({ required: false }),
+			flagged: t.arg.boolean({ required: true }),
+			disqualified: t.arg.boolean({ required: true }),
+			note: t.arg.string({ required: false })
+		},
+		resolve: async (query, _root, args, ctx) => {
+			const problem = reviewProblem(args);
+			if (problem) throw new GraphQLError(REVIEW_PROBLEMS[problem]);
+			const { application, keys, values } = reviewRow(args);
+			const conferenceId = await applicationConference(ctx, application);
+
+			const [row] = await db
+				.insert(schema.assignmentReview)
+				.values({ conferenceId, ...keys, ...values })
+				.onConflictDoUpdate({ target: reviewKey[application.kind], set: values })
+				.returning({ id: schema.assignmentReview.id });
+			// An upsert: the first rating creates the row.
+			reviewPubsub.created();
+			reviewPubsub.updated(row.id);
+
+			return db.query.assignmentReview
+				.findFirst(
+					query(
+						(await ctx.abilities.assignmentReview.filter('read')).merge({
+							where: { id: row.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	setAssignmentWeights: t.drizzleField({
+		type: AssignmentWeightsRef,
 		args: {
 			conferenceId: t.arg.id({ required: true }),
-			data: t.arg({ type: 'JSON', required: true })
+			nullRating: t.arg.float({ required: true }),
+			ratingFactor: t.arg.float({ required: true }),
+			markBonus: t.arg.float({ required: true }),
+			nonWishMalus: t.arg.float({ required: true })
+		},
+		resolve: async (query, _root, { conferenceId, ...weights }, ctx) => {
+			await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
+			const [row] = await db
+				.insert(schema.assignmentWeights)
+				.values({ conferenceId, ...weights })
+				.onConflictDoUpdate({ target: schema.assignmentWeights.conferenceId, set: weights })
+				.returning({ id: schema.assignmentWeights.id });
+			weightsPubsub.created();
+			weightsPubsub.updated(row.id);
+
+			return db.query.assignmentWeights
+				.findFirst(
+					query(
+						(await ctx.abilities.assignmentWeights.filter('read')).merge({
+							where: { id: row.id }
+						}).query.single
+					)
+				)
+				.then(assertFindFirstExists);
+		}
+	}),
+
+	/** Plans a nation, a non-state actor or (with neither) no role for a whole delegation. */
+	assignDelegation: t.field({
+		type: 'Boolean',
+		args: {
+			delegationId: t.arg.id({ required: true }),
+			nationAlpha3Code: t.arg.string({ required: false }),
+			nonStateActorId: t.arg.string({ required: false })
 		},
 		resolve: async (_root, args, ctx) => {
-			const conference = await db.query.conference
+			const delegation = await assignableDelegation(ctx, args.delegationId);
+			const target = targetFrom(args);
+			await assertTargetOf(db, delegation.conferenceId, target);
+			await draftDelegationTarget(db, delegation, target);
+			publishDraft();
+			return true;
+		}
+	}),
+
+	/** Plans a role for one part of a split delegation or a converted single participant. */
+	assignAssignmentUnit: t.field({
+		type: 'Boolean',
+		args: {
+			unitId: t.arg.id({ required: true }),
+			nationAlpha3Code: t.arg.string({ required: false }),
+			nonStateActorId: t.arg.string({ required: false })
+		},
+		resolve: async (_root, args, ctx) => {
+			const unit = await db.query.assignmentUnit
 				.findFirst(
-					(await ctx.abilities.conference.filter('update')).merge({
-						where: { id: args.conferenceId }
+					(await ctx.abilities.assignmentUnit.filter('update')).merge({
+						where: { id: args.unitId }
 					}).query.single
 				)
 				.then(assertFindFirstExists);
+			const target = targetFrom(args);
+			await assertTargetOf(db, unit.conferenceId, target);
+			await db
+				.update(schema.assignmentUnit)
+				.set({ nationAlpha3Code: target.nationAlpha3Code, nonStateActorId: target.nonStateActorId })
+				.where(eq(schema.assignmentUnit.id, unit.id));
+			publishDraft();
+			return true;
+		}
+	}),
 
-			if (!args.data) {
-				throw new GraphQLError(m.plausibilityIncompleteOrInvalidData());
+	/** Splits a delegation into parts, each to be assigned on its own. Replaces an earlier split. */
+	splitDelegation: t.field({
+		type: 'Boolean',
+		args: {
+			delegationId: t.arg.id({ required: true }),
+			parts: t.arg({ type: [SplitPartInput], required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			const delegation = await assignableDelegation(ctx, args.delegationId);
+			const parts = args.parts.map((part) => part.memberIds).filter((ids) => ids.length > 0);
+			const memberIds = new Set(delegation.members.map((member) => member.id));
+			const named = parts.flat();
+			if (parts.length < 2) throw new GraphQLError('A split needs at least two parts');
+			if (named.length !== memberIds.size || new Set(named).size !== named.length) {
+				throw new GraphQLError('Every member has to be in exactly one part');
 			}
-			const data = ProjectDataSchema.parse(args.data);
+			if (named.some((id) => !memberIds.has(id))) {
+				throw new GraphQLError('Only the delegation’s own members can be split off');
+			}
 
 			await db.transaction(async (tx) => {
-				// 1. Split delegations into their children.
-				for (const parent of data.delegations.filter((x) => !!x.splittedInto)) {
-					const children = data.delegations.filter((x) => parent.splittedInto?.includes(x.id));
-					await splitDelegation(tx, conference.id, parent.id, children);
-				}
-
-				// 2. Single participant roles.
-				for (const participant of data.singleParticipants) {
-					if (!participant.assignedRole) continue;
-					const role = await tx.query.customConferenceRole.findFirst({
-						where: { id: participant.assignedRole.id, conferenceId: conference.id },
-						columns: { id: true }
-					});
-					if (!role) {
-						throw new GraphQLError(`Role ${participant.assignedRole.id} is not of this conference`);
-					}
-					await tx
-						.update(schema.singleParticipant)
-						.set({ assignedRoleId: role.id })
-						.where(
-							and(
-								eq(schema.singleParticipant.id, participant.id),
-								eq(schema.singleParticipant.conferenceId, conference.id)
-							)
-						);
-				}
-
-				// 3. Merge the delegations assigned to each nation, then each non-state actor.
-				// The project names its roles itself; only the ones this conference offers count.
-				const offered = await db.query.conference
-					.findFirst({
-						where: { id: conference.id },
-						columns: {},
-						with: {
-							committees: { columns: {}, with: { nations: { columns: { alpha3Code: true } } } },
-							nonStateActors: { columns: { id: true } }
-						}
-					})
-					.then(assertFindFirstExists);
-				const offeredNations = new Set(
-					offered.committees.flatMap((committee) => committee.nations.map((n) => n.alpha3Code))
-				);
-				const offeredNsas = new Set(offered.nonStateActors.map((nsa) => nsa.id));
-
-				for (const nation of nationSeats(data.conference.committees)) {
-					if (!offeredNations.has(nation.nation.alpha3Code)) continue;
-					await mergeAssignedDelegations(
-						tx,
-						conference.id,
-						data.delegations.filter(
-							(x) => x.assignedNation?.alpha2Code === nation.nation.alpha2Code
-						),
-						{ nationAlpha3Code: nation.nation.alpha3Code }
-					);
-				}
-
-				for (const nsa of data.conference.nonStateActors) {
-					if (!offeredNsas.has(nsa.id)) continue;
-					await mergeAssignedDelegations(
-						tx,
-						conference.id,
-						data.delegations.filter((x) => x.assignedNSA?.id === nsa.id),
-						{ nonStateActorId: nsa.id }
+				await tx
+					.delete(schema.assignmentUnit)
+					.where(eq(schema.assignmentUnit.sourceDelegationId, delegation.id));
+				for (const part of parts) {
+					const [unit] = await tx
+						.insert(schema.assignmentUnit)
+						.values({ conferenceId: delegation.conferenceId, sourceDelegationId: delegation.id })
+						.returning({ id: schema.assignmentUnit.id });
+					await tx.insert(schema.assignmentUnitMember).values(
+						part.map((delegationMemberId) => ({
+							conferenceId: delegation.conferenceId,
+							unitId: unit.id,
+							delegationMemberId
+						}))
 					);
 				}
 			});
+			publishDraft();
+			return true;
+		}
+	}),
 
+	/** Drops a delegation's split, and with it the roles planned for its parts. */
+	undoDelegationSplit: t.field({
+		type: 'Boolean',
+		args: { delegationId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const delegation = await assignableDelegation(ctx, args.delegationId);
+			await db
+				.delete(schema.assignmentUnit)
+				.where(eq(schema.assignmentUnit.sourceDelegationId, delegation.id));
+			publishDraft();
+			return true;
+		}
+	}),
+
+	/** Plans to turn a single participant into a delegation of their own, to give it a nation. */
+	convertSingleParticipant: t.field({
+		type: 'Boolean',
+		args: { singleParticipantId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const participant = await assignableSingleParticipant(ctx, args.singleParticipantId);
+			await db
+				.insert(schema.assignmentUnit)
+				.values({
+					conferenceId: participant.conferenceId,
+					sourceSingleParticipantId: participant.id
+				})
+				.onConflictDoNothing();
+			publishDraft();
+			return true;
+		}
+	}),
+
+	revertSingleParticipantConversion: t.field({
+		type: 'Boolean',
+		args: { singleParticipantId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			const participant = await assignableSingleParticipant(ctx, args.singleParticipantId);
+			await db
+				.delete(schema.assignmentUnit)
+				.where(eq(schema.assignmentUnit.sourceSingleParticipantId, participant.id));
+			publishDraft();
+			return true;
+		}
+	}),
+
+	/** Plans a custom role for a single participant, or (without one) none. */
+	assignSingleParticipantRole: t.field({
+		type: 'Boolean',
+		args: {
+			singleParticipantId: t.arg.id({ required: true }),
+			roleId: t.arg.id({ required: false })
+		},
+		resolve: async (_root, args, ctx) => {
+			const participant = await assignableSingleParticipant(ctx, args.singleParticipantId);
+			const roleId = args.roleId || null;
+			if (roleId) {
+				await db.query.customConferenceRole
+					.findFirst({
+						where: { id: roleId, conferenceId: participant.conferenceId },
+						columns: { id: true }
+					})
+					.then(assertFindFirstExists);
+			}
+			if (roleId === participant.assignedRoleId) {
+				await db
+					.delete(schema.assignmentSingleRole)
+					.where(eq(schema.assignmentSingleRole.singleParticipantId, participant.id));
+			} else {
+				await db
+					.insert(schema.assignmentSingleRole)
+					.values({
+						conferenceId: participant.conferenceId,
+						singleParticipantId: participant.id,
+						roleId
+					})
+					.onConflictDoUpdate({
+						target: schema.assignmentSingleRole.singleParticipantId,
+						set: { roleId }
+					});
+			}
+			publishDraft();
+			return true;
+		}
+	}),
+
+	/**
+	 * Gives the unassigned groups of one size the roles with exactly that many free seats, at the
+	 * lowest cost by their wishes, ratings and flags. Returns how many groups got a role.
+	 */
+	autoAssignDelegations: t.field({
+		type: 'Int',
+		args: { conferenceId: t.arg.id({ required: true }), size: t.arg.int({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			const [{ input, roles }, weights, reviews, wishes] = await Promise.all([
+				loadAssignmentInput(db, args.conferenceId),
+				db.query.assignmentWeights.findFirst({ where: { conferenceId: args.conferenceId } }),
+				db.query.assignmentReview.findMany({ where: { conferenceId: args.conferenceId } }),
+				db.query.roleApplication.findMany({
+					where: { delegation: { conferenceId: args.conferenceId } },
+					columns: { delegationId: true, nationId: true, nonStateActorId: true, rank: true }
+				})
+			]);
+			const { groups } = assignmentGroups(input.delegations, input.singleParticipants, input.units);
+			const reviewByApplication = new Map(
+				reviews.map((review) => [review.delegationId ?? review.singleParticipantId, review])
+			);
+
+			const matches = autoAssign({
+				size: args.size,
+				groups,
+				roles,
+				weights: weights ?? DEFAULT_WEIGHTS,
+				reviewOf: (group) =>
+					reviewByApplication.get(group.delegationId ?? group.singleParticipantId ?? ''),
+				wishRankOf: (group, target) =>
+					wishes.find(
+						(wish) =>
+							wish.delegationId === group.delegationId &&
+							targetKey({
+								nationAlpha3Code: wish.nationId,
+								nonStateActorId: wish.nonStateActorId
+							}) === targetKey(target)
+					)?.rank
+			});
+			for (const { group, target } of matches) {
+				await draftGroupTarget(args.conferenceId, group, target);
+			}
+			publishDraft();
+			return matches.length;
+		}
+	}),
+
+	/** Takes the planned roles of the given seat count away again, to assign them anew. */
+	resetAssignmentSize: t.field({
+		type: 'Boolean',
+		args: { conferenceId: t.arg.id({ required: true }), seats: t.arg.int({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			const { input, roles } = await loadAssignmentInput(db, args.conferenceId);
+			const { groups } = assignmentGroups(input.delegations, input.singleParticipants, input.units);
+			const ofSize = new Set(roles.filter((role) => role.seats === args.seats).map((r) => r.key));
+			for (const group of groups) {
+				if (ofSize.has(targetKey(group.target) ?? '')) {
+					await draftGroupTarget(args.conferenceId, group, {
+						nationAlpha3Code: null,
+						nonStateActorId: null
+					});
+				}
+			}
+			publishDraft();
+			return true;
+		}
+	}),
+
+	/** Throws the planned changes away. Ratings and weights stay. */
+	discardAssignmentDraft: t.field({
+		type: 'Boolean',
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await db
+				.delete(schema.assignmentUnit)
+				.where(eq(schema.assignmentUnit.conferenceId, args.conferenceId));
+			await db
+				.delete(schema.assignmentSingleRole)
+				.where(eq(schema.assignmentSingleRole.conferenceId, args.conferenceId));
+			publishDraft();
+			return true;
+		}
+	}),
+
+	/**
+	 * Writes the draft into the registrations in one transaction: splits, merges, roles and
+	 * converted single participants. Refuses, changing nothing, while the draft has problems.
+	 * Whether participants see the result is `setAssignmentReleased`'s business.
+	 */
+	applyAssignment: t.field({
+		type: 'Boolean',
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await applyAssignmentDraft(args.conferenceId);
+
+			publishDraft();
+			// Delegations are created and dissolved, members move, single participants become
+			// delegates; reviews of dissolved delegations go with them.
+			for (const pubsub of [
+				delegationPubsub,
+				delegationMemberPubsub,
+				singleParticipantPubsub,
+				reviewPubsub
+			]) {
+				pubsub.created();
+				pubsub.removed();
+				pubsub.updated();
+			}
+			return true;
+		}
+	}),
+
+	/** Shows participants their assigned roles, or hides them again. */
+	setAssignmentReleased: t.field({
+		type: 'Boolean',
+		args: {
+			conferenceId: t.arg.id({ required: true }),
+			released: t.arg.boolean({ required: true })
+		},
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			await db
+				.update(schema.conference)
+				.set({
+					assignmentReleased: args.released,
+					assignmentReleasedAt: args.released ? new Date() : null
+				})
+				.where(eq(schema.conference.id, args.conferenceId));
+
+			conferencePubsub.updated(args.conferenceId);
+			// What participants may read of these changes with the flag.
 			delegationPubsub.updated();
 			delegationMemberPubsub.updated();
 			singleParticipantPubsub.updated();
-
 			return true;
 		}
 	})

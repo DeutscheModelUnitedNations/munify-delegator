@@ -84,8 +84,6 @@ Rules worth keeping when adding fixtures:
 
 - **Attendance scanner** (`dashboard/[id]/attendance`) - a camera QR scanner. Covering it
   honestly needs a simulated video device; a fake that bypasses the scanner would assert nothing.
-- **Assignment-assistant wizard** - a local drag-and-drop editor over a downloaded JSON file.
-  `assignment.spec.ts` covers the JSON upload that follows it instead.
 
 ## Quarantined
 

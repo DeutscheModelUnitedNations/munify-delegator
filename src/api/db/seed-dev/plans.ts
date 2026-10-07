@@ -8,6 +8,8 @@ import type { Insert } from '../rows';
  *   the server's grace period, and closed for good while the team assigns seats;
  * - preparation comes once with every step unlocked and once with nothing unlocked, no fee, no
  *   templates and no announcement - the "not yet possible" and "missing configuration" paths.
+ *   The locked one has not released its assignment either, so its participants are still
+ *   waiting for their role while the team already sees it.
  */
 
 export type ConferenceKey =
@@ -43,6 +45,8 @@ export interface ConferencePlan {
 		/** Shape the waiting list to show this status light; absent = no waiting list. */
 		waitingList?: 'VACANCIES' | 'LONG_LIST';
 		invitations: boolean;
+		/** An assignment draft in progress: ratings, a split and a few planned roles. */
+		assignmentDraft?: boolean;
 	};
 	/** How much anonymous crowd to add around the personas. */
 	crowd: {
@@ -126,7 +130,8 @@ export const conferencePlans: ConferencePlan[] = [
 	},
 	{
 		key: 'closed',
-		summary: 'PARTICIPANT_REGISTRATION: deadline and grace period over, seats being assigned',
+		summary:
+			'PARTICIPANT_REGISTRATION: deadline and grace period over, seats being assigned (draft in progress)',
 		conference: {
 			title: 'Seed 4 · Registration closed',
 			longTitle: 'Seed-Konferenz nach Anmeldeschluss, Zuteilung läuft',
@@ -134,7 +139,7 @@ export const conferencePlans: ConferencePlan[] = [
 		},
 		days: { startAssignment: -3, startConference: 40, endConference: 43 },
 		assigned: false,
-		with: noExtras,
+		with: { ...noExtras, assignmentDraft: true },
 		crowd: fullCrowd
 	},
 	{
@@ -172,11 +177,15 @@ export const conferencePlans: ConferencePlan[] = [
 	},
 	{
 		key: 'locked',
-		summary: 'PREPARATION: nothing unlocked, no fee, no templates, no papers; waiting list is long',
+		summary:
+			'PREPARATION: nothing unlocked, assignment not released, no fee, no templates, no papers; waiting list is long',
 		conference: {
 			title: 'Seed 6 · Preparation, locked',
 			longTitle: 'Seed-Konferenz in der Vorbereitung ohne Freischaltungen',
 			state: 'PREPARATION',
+			// Seats are handed out, but participants are still waiting for the release.
+			assignmentReleased: false,
+			assignmentReleasedAt: null,
 			feeAmount: null,
 			linkToPreparationGuide: null,
 			info: null

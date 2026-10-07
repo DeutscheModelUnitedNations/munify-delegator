@@ -18,6 +18,7 @@ import { tidyRoleApplicationsForRoles } from '$api/services/tidyRoleApplications
 import { m } from '$lib/paraglide/messages';
 import { assertFindFirstExists, assertFirstEntryExists } from '@m1212e/rumble';
 import { eq } from 'drizzle-orm';
+import { visibleAssignedDelegations } from '$api/services/assignmentVisibility';
 import { GraphQLError } from 'graphql';
 
 abilityBuilder.nonStateActor.allow('read');
@@ -29,7 +30,12 @@ abilityBuilder.nonStateActor
 	.allow(['update', 'delete'])
 	.when((ctx) => where(isTeamMemberOfConference(ctx, SEAT_PLANNING_ROLES)));
 
-const NonStateActorRef = object({ table: 'nonStateActor' });
+export const NonStateActorRef = object({
+	table: 'nonStateActor',
+	adjust: (t) => ({
+		assignedDelegations: t.relation('assignedDelegations', { query: visibleAssignedDelegations })
+	})
+});
 query({ table: 'nonStateActor' });
 const pubsub = rumblePubsub({ table: 'nonStateActor' });
 const roleApplicationPubsub = rumblePubsub({ table: 'roleApplication' });

@@ -11,6 +11,88 @@ import * as schema from './schema';
  * unchanged.
  */
 export const relations = defineRelations(schema, (r) => ({
+	assignmentReview: {
+		conference: r.one.conference({
+			from: r.assignmentReview.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		delegation: r.one.delegation({
+			from: r.assignmentReview.delegationId,
+			to: r.delegation.id
+		}),
+		singleParticipant: r.one.singleParticipant({
+			from: r.assignmentReview.singleParticipantId,
+			to: r.singleParticipant.id
+		})
+	},
+	assignmentSingleRole: {
+		conference: r.one.conference({
+			from: r.assignmentSingleRole.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		singleParticipant: r.one.singleParticipant({
+			from: r.assignmentSingleRole.singleParticipantId,
+			to: r.singleParticipant.id,
+			optional: false
+		}),
+		role: r.one.customConferenceRole({
+			from: r.assignmentSingleRole.roleId,
+			to: r.customConferenceRole.id
+		})
+	},
+	assignmentUnit: {
+		conference: r.one.conference({
+			from: r.assignmentUnit.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		sourceDelegation: r.one.delegation({
+			from: r.assignmentUnit.sourceDelegationId,
+			to: r.delegation.id
+		}),
+		sourceSingleParticipant: r.one.singleParticipant({
+			from: r.assignmentUnit.sourceSingleParticipantId,
+			to: r.singleParticipant.id
+		}),
+		nation: r.one.nation({
+			from: r.assignmentUnit.nationAlpha3Code,
+			to: r.nation.alpha3Code
+		}),
+		nonStateActor: r.one.nonStateActor({
+			from: r.assignmentUnit.nonStateActorId,
+			to: r.nonStateActor.id
+		}),
+		members: r.many.assignmentUnitMember({
+			from: r.assignmentUnit.id,
+			to: r.assignmentUnitMember.unitId
+		})
+	},
+	assignmentUnitMember: {
+		conference: r.one.conference({
+			from: r.assignmentUnitMember.conferenceId,
+			to: r.conference.id,
+			optional: false
+		}),
+		unit: r.one.assignmentUnit({
+			from: r.assignmentUnitMember.unitId,
+			to: r.assignmentUnit.id,
+			optional: false
+		}),
+		delegationMember: r.one.delegationMember({
+			from: r.assignmentUnitMember.delegationMemberId,
+			to: r.delegationMember.id,
+			optional: false
+		})
+	},
+	assignmentWeights: {
+		conference: r.one.conference({
+			from: r.assignmentWeights.conferenceId,
+			to: r.conference.id,
+			optional: false
+		})
+	},
 	attendanceEntry: {
 		conferenceParticipantStatus: r.one.conferenceParticipantStatus({
 			from: r.attendanceEntry.conferenceParticipantStatusId,

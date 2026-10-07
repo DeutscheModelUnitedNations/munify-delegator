@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-	import { matchesSeatFilters, type SizeLimits } from '$lib/helpers/seatPlanning/hints';
+	import {
+		matchesSeatFilters,
+		searchSeatRows,
+		type SizeLimits
+	} from '$lib/helpers/seatPlanning/hints';
 	import { nextSortParams, sortSeatRows } from '$lib/helpers/seatPlanning/sortRows';
 	import { unMembers } from '$lib/helpers/seatPlanning/unMembers';
 	import { DataTable } from '$lib/components/tanStackTable/ui';
@@ -31,12 +35,13 @@
 
 	const rows = $derived(
 		sortSeatRows(
-			unMembers
-				.map((member) => ({
+			searchSeatRows(
+				unMembers.map((member) => ({
 					...member,
 					name: getFullTranslatedCountryNameFromISO3Code(member.alpha3Code)
-				}))
-				.filter((row) => matchesSeatFilters(row, seats.size(row.alpha3Code), params)),
+				})),
+				params.q ?? null
+			).filter((row) => matchesSeatFilters(row, seats.size(row.alpha3Code), params)),
 			{ key: params.sort ?? 'name', descending: params.desc ?? false },
 			seats
 		)

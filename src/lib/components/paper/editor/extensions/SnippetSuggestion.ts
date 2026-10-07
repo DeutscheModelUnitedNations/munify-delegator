@@ -1,6 +1,7 @@
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import type { SuggestionOptions } from '@tiptap/suggestion';
+import { createFuzzySearch } from '$lib/components/tanStackTable/search';
 import { createSuggestionRenderer, type SnippetItem } from './suggestionRenderer';
 
 export type { SnippetItem } from './suggestionRenderer';
@@ -47,9 +48,7 @@ export const SnippetSuggestion = Extension.create<SnippetSuggestionOptions>({
 
 				items: ({ query }) => {
 					const currentSnippets = getSnippets();
-					return currentSnippets
-						.filter((item) => item.name.toLowerCase().includes(query.toLowerCase()))
-						.slice(0, 10);
+					return createFuzzySearch(currentSnippets, (item) => item.name)(query).slice(0, 10);
 				},
 
 				command: ({ editor, range, props }) => {
