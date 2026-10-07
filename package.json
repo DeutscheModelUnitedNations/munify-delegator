@@ -106,7 +106,7 @@
 		"node-forge": "^1.4.0",
 		"node-schedule": "^2.1.1",
 		"numeral": "^2.0.6",
-		"oidc-mock": "^0.1.2",
+		"oidc-mock": "^0.2.0",
 		"openapi-fetch": "^0.13.8",
 		"openapi-typescript": "^7.10.1",
 		"openid-client": "^6.8.1",

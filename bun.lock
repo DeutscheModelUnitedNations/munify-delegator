@@ -111,7 +111,7 @@
         "node-forge": "^1.4.0",
         "node-schedule": "^2.1.1",
         "numeral": "^2.0.6",
-        "oidc-mock": "^0.1.2",
+        "oidc-mock": "^0.2.0",
         "openapi-fetch": "^0.13.8",
         "openapi-typescript": "^7.10.1",
         "openid-client": "^6.8.1",
@@ -2157,7 +2157,7 @@
 
     "ohash": ["ohash@2.0.11", "", {}, "sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ=="],
 
-    "oidc-mock": ["oidc-mock@0.1.2", "", { "dependencies": { "jose": "^6.2.12", "yaml": "^2.9.1", "zod": "^4.6.5" }, "peerDependencies": { "vite": ">=5" }, "optionalPeers": ["vite"], "bin": { "oidc-mock": "dist/cli.js" } }, "sha512-hJ+ReAYdV8dF6vzjeeMC2LvFC7+7BONOxlvJBlgAJPjDB1KEa8RNgzbHWOPG682+k/AI14NIhYNE7Z8/NpWqCA=="],
+    "oidc-mock": ["oidc-mock@0.2.0", "", { "dependencies": { "jose": "^6.2.12", "yaml": "^2.9.1", "zod": "^4.6.5" }, "peerDependencies": { "vite": ">=5" }, "optionalPeers": ["vite"], "bin": { "oidc-mock": "dist/cli.js" } }, "sha512-70No5piFbjkMPLz7bdPDVLR7EqkW1PFxl2dHv+E7DQhO4tGoGjv03rUkqEQR7KGXRRwEnN8pNkukwxUqzJ197Q=="],
 
     "once": ["once@1.4.0", "", { "dependencies": { "wrappy": "1" } }, "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w=="],
 
