@@ -24,7 +24,6 @@ const user = {
 const delegation = {
 	id: 'd1',
 	school: 'Gym',
-	entryCode: 'ABC',
 	memberCount: 3,
 	headDelegateUserId: 'u9'
 };
@@ -45,6 +44,8 @@ const config: ConfigEntry = {
 	tab: 'general',
 	keywords: []
 };
+const seat = { id: 's1', title: 'Frankreich', subtitle: 'Gym', holderUserId: 'u9' };
+const committee = { id: 'c1', title: 'Sicherheitsrat', subtitle: 'SC' };
 const foreignUser = { id: 'f1', email: 'f@b.c', givenName: 'Fo', familyName: 'Reign' };
 
 describe('flattenResults', () => {
@@ -52,6 +53,8 @@ describe('flattenResults', () => {
 		const items = flattenResults({
 			users: [user],
 			delegations: [delegation],
+			seats: [seat],
+			committees: [committee],
 			transactions: [transaction],
 			pages: [page],
 			configs: [config],
@@ -60,6 +63,8 @@ describe('flattenResults', () => {
 		expect(items.map((i) => i.type)).toEqual([
 			'user',
 			'delegation',
+			'seat',
+			'committee',
 			'transaction',
 			'page',
 			'config',
@@ -69,6 +74,18 @@ describe('flattenResults', () => {
 });
 
 describe('resultTarget', () => {
+	test('a seat opens its holder, or the delegation list when nobody holds it', () => {
+		expect(resultTarget({ type: 'seat', data: seat }, conferenceId)).toEqual({ userId: 'u9' });
+		expect(
+			resultTarget({ type: 'seat', data: { ...seat, holderUserId: null } }, conferenceId)
+		).toHaveProperty('href', expect.stringContaining('/conf-1/management/delegations'));
+	});
+	test('a committee opens the committees tab', () => {
+		expect(resultTarget({ type: 'committee', data: committee }, conferenceId)).toHaveProperty(
+			'href',
+			expect.stringContaining('/conf-1/management/configuration?tab=committees')
+		);
+	});
 	test('users open their card', () => {
 		expect(resultTarget({ type: 'user', data: user }, conferenceId)).toEqual({ userId: 'u1' });
 		expect(resultTarget({ type: 'foreignUser', data: foreignUser }, conferenceId)).toEqual({
@@ -85,7 +102,7 @@ describe('resultTarget', () => {
 		);
 		expect(target).toHaveProperty(
 			'href',
-			expect.stringContaining('/conf-1/management/delegations?filter=ABC')
+			expect.stringContaining('/conf-1/management/delegations?filter=Gym')
 		);
 	});
 	test('pages, configuration and transactions navigate', () => {
@@ -157,11 +174,11 @@ describe('describeItem', () => {
 		],
 		[
 			{ type: 'delegation', data: delegation },
-			{ icon: 'fa-users-viewfinder', primary: 'Gym', secondary: `ABC · 3 ${m.members()}` }
+			{ icon: 'fa-users-viewfinder', primary: 'Gym', secondary: `3 ${m.members()}` }
 		],
 		[
 			{ type: 'delegation', data: { ...delegation, school: null } },
-			{ icon: 'fa-users-viewfinder', primary: 'ABC', secondary: `ABC · 3 ${m.members()}` }
+			{ icon: 'fa-users-viewfinder', primary: 'd1', secondary: `3 ${m.members()}` }
 		],
 		[
 			{ type: 'page', data: page },

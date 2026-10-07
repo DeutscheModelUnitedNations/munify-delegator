@@ -39,6 +39,16 @@ const defaultTimestamps = {
 		.$onUpdate(() => new Date())
 };
 
+/**
+ * A trigram index backing rumble's `search` argument (`col % term`, ordered by `col <-> term`).
+ * rumble ORs the match over every text column the reader may see, so the planner can only use
+ * these when all of those columns are indexed - index the whole set a table is searched by.
+ * The `pg_trgm` extension has to exist before the migration creates one.
+ */
+function trigramIndex(name: string, column: AnyPgColumn) {
+	return index(name).using('gin', sql`${column} gin_trgm_ops`);
+}
+
 const defaultIdAndTimestamps = {
 	id: text()
 		.$defaultFn(() => nanoid())
@@ -100,6 +110,14 @@ function implicitManyToMany<TName extends string>(
 }
 
 export const foodPreference = pgEnum('food_preference', ['OMNIVORE', 'VEGETARIAN', 'VEGAN']);
+export const assignmentMarkEffect = pgEnum('assignment_mark_effect', [
+	'WISHES_AND_SEATING',
+	'SEATING_ONLY'
+]);
+export const assignmentExperienceEffect = pgEnum('assignment_experience_effect', [
+	'WISHES_AND_SEATING',
+	'SEATING_ONLY'
+]);
 export const administrativeStatus = pgEnum('administrative_status', ['DONE', 'PROBLEM', 'PENDING']);
 export const teamRole = pgEnum('team_role', [
 	'PROJECT_MANAGEMENT',
@@ -330,8 +348,12 @@ export const assignmentWeights = snakeCase.table(
 		ratingFactor: doublePrecision().default(1).notNull(),
 		/** What a flag takes off the cost. */
 		markBonus: doublePrecision().default(0).notNull(),
-		/** What a role the application did not wish for costs. */
-		nonWishMalus: doublePrecision().default(50).notNull()
+		/** Whether a flag also scales the weight of the group's wishes. */
+		markEffect: assignmentMarkEffect().default('SEATING_ONLY').notNull(),
+		/** What a group of people seated at earlier conferences costs extra; negative rewards it. */
+		experienceModifier: doublePrecision().default(0).notNull(),
+		/** Whether the modifier also scales the weight of the group's wishes. */
+		experienceEffect: assignmentExperienceEffect().default('WISHES_AND_SEATING').notNull()
 	},
 	(table) => [
 		uniqueIndex('assignment_weights_conference_id_key').using(
@@ -593,7 +615,10 @@ export const delegation = snakeCase.table(
 			'btree',
 			table.conferenceId.asc().nullsLast(),
 			table.entryCode.asc().nullsLast()
-		)
+		),
+		// rumble's `search` argument; see `trigramIndex`.
+		trigramIndex('delegation_id_trgm', table.id),
+		trigramIndex('delegation_school_trgm', table.school)
 	]
 );
 
@@ -710,14 +735,18 @@ export const paperVersion = snakeCase.table(
 	]
 );
 
-export const paymentTransaction = snakeCase.table('payment_transaction', {
-	id: text().primaryKey(),
-	amount: doublePrecision().notNull(),
-	...defaultTimestamps,
-	recievedAt: timestamp({ precision: 3 }),
-	conferenceId: conferenceRef('restrict'),
-	userId: userRef('restrict')
-});
+export const paymentTransaction = snakeCase.table(
+	'payment_transaction',
+	{
+		id: text().primaryKey(),
+		amount: doublePrecision().notNull(),
+		...defaultTimestamps,
+		recievedAt: timestamp({ precision: 3 }),
+		conferenceId: conferenceRef('restrict'),
+		userId: userRef('restrict')
+	},
+	(table) => [trigramIndex('payment_transaction_id_trgm', table.id)]
+);
 
 export const place = snakeCase.table(
 	'place',
@@ -971,7 +1000,18 @@ export const user = snakeCase.table(
 		emergencyContacts: text(),
 		globalNotes: text()
 	},
-	(table) => [uniqueIndex('user_email_key').using('btree', table.email.asc().nullsLast())]
+	(table) => [
+		uniqueIndex('user_email_key').using('btree', table.email.asc().nullsLast()),
+		// rumble's `search` argument; see `trigramIndex`. These are the columns every reader of a
+		// user may search; the care team's private columns (address, notes) are left out.
+		trigramIndex('user_id_trgm', table.id),
+		trigramIndex('user_email_trgm', table.email),
+		trigramIndex('user_given_name_trgm', table.givenName),
+		trigramIndex('user_family_name_trgm', table.familyName),
+		trigramIndex('user_preferred_username_trgm', table.preferredUsername),
+		trigramIndex('user_locale_trgm', table.locale),
+		trigramIndex('user_pronouns_trgm', table.pronouns)
+	]
 );
 
 export const userReferenceInPaymentTransaction = snakeCase.table(

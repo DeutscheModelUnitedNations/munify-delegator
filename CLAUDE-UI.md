@@ -353,17 +353,17 @@ rule rather than boxed. Lay out related fields side by side with a `grid` inside
 
 ### Available Form Components
 
-| Component           | Purpose                         | Key Props                                      |
-| ------------------- | ------------------------------- | ---------------------------------------------- |
-| `Form`              | Form wrapper with submit button | `form`, `showSubmitButton`, `action`           |
-| `FormFieldset`      | Visual grouping with legend     | `title`                                        |
-| `FormTextInput`     | Text/email/password input       | `form`, `name`, `label`, `type`, `placeholder` |
-| `FormTextArea`      | Multi-line text                 | `form`, `name`, `label`                        |
-| `FormSelect`        | Dropdown select                 | `form`, `name`, `label`, `options`             |
-| `FormCheckbox`      | Checkbox toggle                 | `form`, `name`, `label`                        |
-| `FormDateTimeInput` | Date/time picker                | `form`, `name`, `label`                        |
-| `FormFile`          | File upload                     | `form`, `name`, `label`                        |
-| `FormSubmitButton`  | Submit with loading state       | `form`, `disabled`, `loading`                  |
+| Component           | Purpose                         | Key Props                                                                     |
+| ------------------- | ------------------------------- | ----------------------------------------------------------------------------- |
+| `Form`              | Form wrapper with submit button | `form`, `showSubmitButton`, `action`                                          |
+| `FormFieldset`      | Visual grouping with legend     | `title`, `icon` (snippet before the title)                                    |
+| `FormTextInput`     | Text/email/password input       | `form`, `name`, `label`, `labelIcon` (snippet), `type`, `step`, `placeholder` |
+| `FormTextArea`      | Multi-line text                 | `form`, `name`, `label`                                                       |
+| `FormSelect`        | Dropdown select                 | `form`, `name`, `label`, `options`                                            |
+| `FormCheckbox`      | Checkbox toggle                 | `form`, `name`, `label`                                                       |
+| `FormDateTimeInput` | Date/time picker                | `form`, `name`, `label`                                                       |
+| `FormFile`          | File upload                     | `form`, `name`, `label`                                                       |
+| `FormSubmitButton`  | Submit with loading state       | `form`, `disabled`, `loading`                                                 |
 
 ### Complete Form Example
 

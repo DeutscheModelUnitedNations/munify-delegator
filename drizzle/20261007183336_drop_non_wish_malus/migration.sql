@@ -1,0 +1,1 @@
+ALTER TABLE "assignment_weights" DROP COLUMN "non_wish_malus";

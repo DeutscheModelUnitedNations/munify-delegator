@@ -1,5 +1,12 @@
 import { db, schema } from '$api/db/db';
-import { abilityBuilder, object, pubsub as rumblePubsub, query, schemaBuilder } from '$api/rumble';
+import {
+	abilityBuilder,
+	enum_,
+	object,
+	pubsub as rumblePubsub,
+	query,
+	schemaBuilder
+} from '$api/rumble';
 import {
 	PARTICIPANT_CARE_ROLES,
 	assertTeamRole,
@@ -7,6 +14,7 @@ import {
 	systemAdmin,
 	where
 } from '$api/services/authHelper';
+import { loadExperiencedIds } from '$api/services/assignmentExperience';
 import {
 	applyAssignmentDraft,
 	assertTargetOf,
@@ -14,6 +22,7 @@ import {
 	loadAssignmentInput
 } from '$api/services/assignmentDraft';
 import { DEFAULT_WEIGHTS, autoAssign } from '$lib/assignment/autoAssign';
+import { experienceShare } from '$lib/assignment/experience';
 import { reviewProblem, reviewRow } from '$lib/assignment/review';
 import {
 	assignmentGroups,
@@ -53,6 +62,9 @@ object({ table: 'assignmentSingleRole' });
 query({ table: 'assignmentSingleRole' });
 const AssignmentWeightsRef = object({ table: 'assignmentWeights' });
 query({ table: 'assignmentWeights' });
+
+const markEffectEnum = enum_({ tsName: 'assignmentMarkEffect' });
+const experienceEffectEnum = enum_({ tsName: 'assignmentExperienceEffect' });
 
 const reviewPubsub = rumblePubsub({ table: 'assignmentReview' });
 const unitPubsub = rumblePubsub({ table: 'assignmentUnit' });
@@ -211,7 +223,9 @@ schemaBuilder.mutationFields((t) => ({
 			nullRating: t.arg.float({ required: true }),
 			ratingFactor: t.arg.float({ required: true }),
 			markBonus: t.arg.float({ required: true }),
-			nonWishMalus: t.arg.float({ required: true })
+			markEffect: t.arg({ type: markEffectEnum, required: true }),
+			experienceModifier: t.arg.float({ required: true }),
+			experienceEffect: t.arg({ type: experienceEffectEnum, required: true })
 		},
 		resolve: async (query, _root, { conferenceId, ...weights }, ctx) => {
 			await assertTeamRole(ctx, conferenceId, PARTICIPANT_CARE_ROLES);
@@ -410,21 +424,23 @@ schemaBuilder.mutationFields((t) => ({
 
 	/**
 	 * Gives the unassigned groups of one size the roles with exactly that many free seats, at the
-	 * lowest cost by their wishes, ratings and flags. Returns how many groups got a role.
+	 * lowest cost by their wishes, ratings, flags and experience. Groups without a wish get the roles left
+	 * over. Returns how many groups got a role.
 	 */
 	autoAssignDelegations: t.field({
 		type: 'Int',
 		args: { conferenceId: t.arg.id({ required: true }), size: t.arg.int({ required: true }) },
 		resolve: async (_root, args, ctx) => {
 			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
-			const [{ input, roles }, weights, reviews, wishes] = await Promise.all([
+			const [{ input, roles }, weights, reviews, wishes, experiencedIds] = await Promise.all([
 				loadAssignmentInput(db, args.conferenceId),
 				db.query.assignmentWeights.findFirst({ where: { conferenceId: args.conferenceId } }),
 				db.query.assignmentReview.findMany({ where: { conferenceId: args.conferenceId } }),
 				db.query.roleApplication.findMany({
 					where: { delegation: { conferenceId: args.conferenceId } },
 					columns: { delegationId: true, nationId: true, nonStateActorId: true, rank: true }
-				})
+				}),
+				loadExperiencedIds(args.conferenceId)
 			]);
 			const { groups } = assignmentGroups(input.delegations, input.singleParticipants, input.units);
 			const reviewByApplication = new Map(
@@ -436,6 +452,7 @@ schemaBuilder.mutationFields((t) => ({
 				groups,
 				roles,
 				weights: weights ?? DEFAULT_WEIGHTS,
+				experienceOf: (group) => experienceShare(group, experiencedIds),
 				reviewOf: (group) =>
 					reviewByApplication.get(group.delegationId ?? group.singleParticipantId ?? ''),
 				wishRankOf: (group, target) =>

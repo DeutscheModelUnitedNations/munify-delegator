@@ -38,6 +38,10 @@ export type AssignmentSplitPartInput = {
   memberIds?: ID[] | undefined    
 };
 		
+export type AssignmentexperienceeffectEnum = "SEATING_ONLY" | "WISHES_AND_SEATING";
+		
+export type AssignmentmarkeffectEnum = "SEATING_ONLY" | "WISHES_AND_SEATING";
+		
 export type Assignmentreview = {
   conference: (p?: {
     orderBy?: ConferenceOrderInputArgument | null | undefined,
@@ -265,9 +269,11 @@ export type Assignmentweights = {
   }) => Conference,
   conferenceId: ID,
   createdAt: DateTime,
+  experienceEffect: AssignmentexperienceeffectEnum,
+  experienceModifier: Float,
   id: ID,
   markBonus: Float,
-  nonWishMalus: Float,
+  markEffect: AssignmentmarkeffectEnum,
   nullRating: Float,
   ratingFactor: Float,
   search_distance: Float | null,
@@ -277,9 +283,11 @@ export type Assignmentweights = {
 export type AssignmentweightsOrderInputArgument = {
   conferenceId?: SortingParameter | null | undefined,
   createdAt?: SortingParameter | null | undefined,
+  experienceEffect?: SortingParameter | null | undefined,
+  experienceModifier?: SortingParameter | null | undefined,
   id?: SortingParameter | null | undefined,
   markBonus?: SortingParameter | null | undefined,
-  nonWishMalus?: SortingParameter | null | undefined,
+  markEffect?: SortingParameter | null | undefined,
   nullRating?: SortingParameter | null | undefined,
   ratingFactor?: SortingParameter | null | undefined,
   updatedAt?: SortingParameter | null | undefined    
@@ -292,9 +300,11 @@ export type AssignmentweightsWhereInputArgument = {
   conference?: ConferenceWhereInputArgument | null | undefined,
   conferenceId?: IDWhereInputArgument | null | undefined,
   createdAt?: DateTimeWhereInputArgument | null | undefined,
+  experienceEffect?: AssignmentexperienceeffectEnum | null | undefined,
+  experienceModifier?: FloatWhereInputArgument | null | undefined,
   id?: IDWhereInputArgument | null | undefined,
   markBonus?: FloatWhereInputArgument | null | undefined,
-  nonWishMalus?: FloatWhereInputArgument | null | undefined,
+  markEffect?: AssignmentmarkeffectEnum | null | undefined,
   nullRating?: FloatWhereInputArgument | null | undefined,
   ratingFactor?: FloatWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
@@ -1913,8 +1923,10 @@ export type Mutation = {
   }) => Assignmentreview,
   setAssignmentWeights: (p: {
     conferenceId: ID,
+    experienceEffect: AssignmentexperienceeffectEnum,
+    experienceModifier: Float,
     markBonus: Float,
-    nonWishMalus: Float,
+    markEffect: AssignmentmarkeffectEnum,
     nullRating: Float,
     ratingFactor: Float
   }) => Assignmentweights,
@@ -2947,10 +2959,6 @@ export type Query = {
     search?: String | null | undefined,
     where?: RoleapplicationWhereInputArgument | null | undefined
   }) => Roleapplication[],
-  searchConference: (p: {
-    conferenceId: ID,
-    searchTerm: String
-  }) => SearchConferenceResult,
   seatPlanningAssignments: (p: {
     conferenceId: ID
   }) => SeatPlanningAssignments,
@@ -3200,45 +3208,6 @@ export type RoleapplicationWhereInputArgument = {
   nonStateActorId?: IDWhereInputArgument | null | undefined,
   rank?: IntWhereInputArgument | null | undefined,
   updatedAt?: DateTimeWhereInputArgument | null | undefined    
-};
-		
-export type SearchConferenceResult = {
-  delegations: () => SearchDelegationResult[],
-  foreignUsers: () => SearchForeignUserResult[],
-  transactions: () => SearchTransactionResult[],
-  users: () => SearchUserResult[]    
-};
-		
-export type SearchDelegationResult = {
-  assignedNationAlpha3Code: String | null,
-  assignedNonStateActorName: String | null,
-  entryCode: String,
-  headDelegateUserId: String | null,
-  id: String,
-  memberCount: Int,
-  school: String | null    
-};
-		
-export type SearchForeignUserResult = {
-  email: String,
-  familyName: String,
-  givenName: String,
-  id: String    
-};
-		
-export type SearchTransactionResult = {
-  amount: Float,
-  currency: String,
-  id: String,
-  recievedAt: String | null    
-};
-		
-export type SearchUserResult = {
-  email: String,
-  familyName: String,
-  givenName: String,
-  id: String,
-  participationType: String    
 };
 		
 export type SeatPlanningAssignedRole = {

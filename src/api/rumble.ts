@@ -39,8 +39,10 @@ export const {
 	defaultLimit: 1000,
 	subscriptions: [{ eventTarget }],
 	actions: ['read', 'update', 'delete'],
-	// Adds a trigram `search` argument to the list queries, ranked by `search_distance`.
-	search: { enabled: true },
+	// Adds a trigram `search` argument to the list queries, ranked by `search_distance`. A row
+	// matches when any one column is this similar to the term; pg_trgm's default of 0.3 misses
+	// a prefix of a longer word ("ann" against "Annabelle" scores 0.27), 0.2 finds it.
+	search: { enabled: true, threshold: 0.2 },
 	// One span per operation and resolver, into the provider `src/instrumentation.server.ts`
 	// registers. Variables stay out of the spans: they regularly carry personal data.
 	otel: {

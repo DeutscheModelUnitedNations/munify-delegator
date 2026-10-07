@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
 	import { DEFAULT_WEIGHTS, assignmentCost } from '$lib/assignment/autoAssign';
+	import { weightImpacts, type ImpactEffect, type ImpactTone } from '$lib/assignment/weightImpact';
 	import Form from '$lib/components/form/Form.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -26,14 +28,21 @@
 			nullRating: true,
 			ratingFactor: true,
 			markBonus: true,
-			nonWishMalus: true
+			markEffect: true,
+			experienceModifier: true,
+			experienceEffect: true
 		})
 	).at(0);
+	// A missing or unusable stored value falls back to the default, so the form always starts valid
+	const orDefault = (value: number | null | undefined, fallback: number) =>
+		typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 	const initialValues = {
-		nullRating: stored?.nullRating ?? DEFAULT_WEIGHTS.nullRating,
-		ratingFactor: stored?.ratingFactor ?? DEFAULT_WEIGHTS.ratingFactor,
-		markBonus: stored?.markBonus ?? DEFAULT_WEIGHTS.markBonus,
-		nonWishMalus: stored?.nonWishMalus ?? DEFAULT_WEIGHTS.nonWishMalus
+		nullRating: orDefault(stored?.nullRating, DEFAULT_WEIGHTS.nullRating),
+		ratingFactor: orDefault(stored?.ratingFactor, DEFAULT_WEIGHTS.ratingFactor),
+		markBonus: orDefault(stored?.markBonus, DEFAULT_WEIGHTS.markBonus),
+		markEffect: stored?.markEffect ?? DEFAULT_WEIGHTS.markEffect,
+		experienceModifier: orDefault(stored?.experienceModifier, DEFAULT_WEIGHTS.experienceModifier),
+		experienceEffect: stored?.experienceEffect ?? DEFAULT_WEIGHTS.experienceEffect
 	};
 
 	const form = superForm(defaults(initialValues, zod4Client(assignmentWeightsSchema)), {
@@ -64,6 +73,12 @@
 			},
 			{ label: m.assignmentExampleFirstWishUnrated(), review: undefined, rank: 1 },
 			{
+				label: m.assignmentExampleFirstWishExperienced(),
+				review: undefined,
+				rank: 1,
+				experience: 1
+			},
+			{
 				label: m.assignmentExampleThirdWishFlagged(),
 				review: { evaluation: null, flagged: true },
 				rank: 3
@@ -72,18 +87,51 @@
 				label: m.assignmentExampleFirstWishPoor(),
 				review: { evaluation: 1, flagged: false },
 				rank: 1
-			},
-			{ label: m.assignmentExampleNoWish(), review: undefined, rank: undefined }
+			}
 		].map((example) => ({
 			label: example.label,
 			cost: assignmentCost(
 				$formData,
 				example.review && { ...example.review, disqualified: false },
-				example.rank
+				example.rank,
+				example.experience
 			)
 		}))
 	);
+
+	const impacts = $derived(weightImpacts($formData));
+
+	const subjects = {
+		ratings: () => m.assignmentImpactSubjectRatings(),
+		aboveAverage: (rating = 0) => m.assignmentImpactSubjectAboveAverage({ rating }),
+		belowAverage: (rating = 0) => m.assignmentImpactSubjectBelowAverage({ rating }),
+		flagged: () => m.assignmentImpactSubjectFlagged(),
+		experienced: () => m.assignmentImpactSubjectExperienced(),
+		newcomers: () => m.assignmentImpactSubjectNewcomers()
+	};
+	const effects: Record<ImpactEffect, (value: number) => string> = {
+		seatedFirst: (value) => m.assignmentImpactEffectSeatedFirst({ value }),
+		leftOutFirst: (value) => m.assignmentImpactEffectLeftOutFirst({ value }),
+		seatedFirstPlain: () => m.assignmentImpactEffectSeatedFirstPlain(),
+		leftOutFirstPlain: () => m.assignmentImpactEffectLeftOutFirstPlain(),
+		wishesWeighMore: () => m.assignmentImpactEffectWishesWeighMore(),
+		wishesWeighLess: () => m.assignmentImpactEffectWishesWeighLess(),
+		winContested: () => m.assignmentImpactEffectWinContested(),
+		loseContested: () => m.assignmentImpactEffectLoseContested(),
+		noEffect: () => m.assignmentImpactEffectNoEffect(),
+		noRoleEffect: () => m.assignmentImpactEffectNoRoleEffect()
+	};
+	const toneClass: Record<ImpactTone, string> = {
+		good: 'text-success',
+		bad: 'text-error',
+		neutral: 'text-base-content/60'
+	};
 </script>
+
+{#snippet nullRating()}<i class="fa-duotone fa-star text-warning"></i>{/snippet}
+{#snippet ratingFactor()}<i class="fa-duotone fa-star-half-stroke text-warning"></i>{/snippet}
+{#snippet experienceModifier()}<i class="fa-duotone fa-user-clock text-warning"></i>{/snippet}
+{#snippet markBonus()}<i class="fa-duotone fa-flag text-warning"></i>{/snippet}
 
 <div class="flex flex-col gap-6 lg:flex-row">
 	<div class="flex grow flex-col gap-4">
@@ -91,42 +139,101 @@
 			<i class="fa-duotone fa-scale-balanced text-xl"></i>
 			<p>{m.assignmentWeightingHint()}</p>
 		</div>
-		<Form {form}>
-			<FormFieldset title={m.assignmentWeightsRating()}>
-				<FormTextInput
-					{form}
-					name="nullRating"
-					type="number"
-					label={m.assignmentNullRating()}
-					description={m.assignmentNullRatingDescription()}
-				/>
-				<FormTextInput
-					{form}
-					name="ratingFactor"
-					type="number"
-					label={m.assignmentRatingFactor()}
-					description={m.assignmentRatingFactorDescription()}
-				/>
-			</FormFieldset>
-			<FormFieldset title={m.assignmentWeightsWishes()}>
-				<FormTextInput
-					{form}
-					name="markBonus"
-					type="number"
-					label={m.assignmentMarkBonus()}
-					description={m.assignmentMarkBonusDescription()}
-				/>
-				<FormTextInput
-					{form}
-					name="nonWishMalus"
-					type="number"
-					label={m.assignmentNonWishMalus()}
-					description={m.assignmentNonWishMalusDescription()}
-				/>
-			</FormFieldset>
-		</Form>
+		<!-- The descriptions here are long, so they get the full width instead of the default 50ch -->
+		<div class="[&_.label-text]:max-w-none">
+			<Form {form}>
+				<FormFieldset title={m.assignmentWeightsRating()}>
+					{#snippet icon()}<i class="fa-duotone fa-star text-warning"></i>{/snippet}
+					<!-- Each field spans the same four rows (label, description, input, errors) so the inputs stay level -->
+					<div
+						class="grid grid-cols-1 gap-x-4 md:grid-cols-2 md:grid-rows-[auto_1fr_auto_auto] md:[&>div]:row-span-4 md:[&>div]:grid md:[&>div]:grid-rows-subgrid"
+					>
+						<FormTextInput
+							{form}
+							name="nullRating"
+							labelIcon={nullRating}
+							placeholder={String(DEFAULT_WEIGHTS.nullRating)}
+							type="number"
+							step="any"
+							label={m.assignmentNullRating()}
+							description={m.assignmentNullRatingDescription()}
+						/>
+						<FormTextInput
+							{form}
+							name="ratingFactor"
+							labelIcon={ratingFactor}
+							placeholder={String(DEFAULT_WEIGHTS.ratingFactor)}
+							type="number"
+							step="any"
+							label={m.assignmentRatingFactor()}
+							description={m.assignmentRatingFactorDescription()}
+						/>
+					</div>
+				</FormFieldset>
+				<FormFieldset title={m.assignmentWeightsWishes()}>
+					{#snippet icon()}<i class="fa-duotone fa-flag text-warning"></i>{/snippet}
+					<div
+						class="grid grid-cols-1 gap-x-4 md:grid-cols-2 md:grid-rows-[auto_1fr_auto_auto] md:[&>div]:row-span-4 md:[&>div]:grid md:[&>div]:grid-rows-subgrid"
+					>
+						<FormTextInput
+							{form}
+							name="markBonus"
+							labelIcon={markBonus}
+							placeholder={String(DEFAULT_WEIGHTS.markBonus)}
+							type="number"
+							step="any"
+							label={m.assignmentMarkBonus()}
+							description={m.assignmentMarkBonusDescription()}
+						/>
+						<FormSelect
+							{form}
+							name="markEffect"
+							label={m.assignmentMarkEffect()}
+							description={m.assignmentMarkEffectDescription()}
+							options={[
+								{
+									value: 'WISHES_AND_SEATING',
+									label: m.assignmentExperienceEffectWishesAndSeating()
+								},
+								{ value: 'SEATING_ONLY', label: m.assignmentExperienceEffectSeatingOnly() }
+							]}
+						/>
+					</div>
+				</FormFieldset>
+				<FormFieldset title={m.assignmentWeightsExperience()}>
+					{#snippet icon()}<i class="fa-duotone fa-user-clock text-warning"></i>{/snippet}
+					<div
+						class="grid grid-cols-1 gap-x-4 md:grid-cols-2 md:grid-rows-[auto_1fr_auto_auto] md:[&>div]:row-span-4 md:[&>div]:grid md:[&>div]:grid-rows-subgrid"
+					>
+						<FormTextInput
+							{form}
+							name="experienceModifier"
+							labelIcon={experienceModifier}
+							placeholder={String(DEFAULT_WEIGHTS.experienceModifier)}
+							type="number"
+							step="any"
+							label={m.assignmentExperienceModifier()}
+							description={m.assignmentExperienceModifierDescription()}
+						/>
+						<FormSelect
+							{form}
+							name="experienceEffect"
+							label={m.assignmentExperienceEffect()}
+							description={m.assignmentExperienceEffectDescription()}
+							options={[
+								{
+									value: 'WISHES_AND_SEATING',
+									label: m.assignmentExperienceEffectWishesAndSeating()
+								},
+								{ value: 'SEATING_ONLY', label: m.assignmentExperienceEffectSeatingOnly() }
+							]}
+						/>
+					</div>
+				</FormFieldset>
+			</Form>
+		</div>
 	</div>
-	<aside class="shrink-0 lg:w-96">
+	<aside class="flex shrink-0 flex-col gap-4 lg:w-96">
 		<div class="card bg-base-100 border-base-200 border shadow-sm">
 			<div class="card-body">
 				<h3 class="card-title text-base">{m.assignmentCostExamples()}</h3>
@@ -141,6 +248,24 @@
 						{/each}
 					</tbody>
 				</table>
+			</div>
+		</div>
+		<div class="card bg-base-100 border-base-200 border shadow-sm">
+			<div class="card-body">
+				<h3 class="card-title text-base">{m.assignmentImpactTitle()}</h3>
+				<p class="text-base-content/60 text-sm">{m.assignmentImpactDescription()}</p>
+				<ul class="flex flex-col gap-3 text-sm">
+					{#each impacts as impact (impact.subject)}
+						<li>
+							<span class="font-semibold">{subjects[impact.subject](impact.rating)}</span>
+							{#each impact.effects as effect, index (effect.effect)}
+								<span class={toneClass[effect.tone]}
+									>{index > 0 ? ' · ' : ': '}{effects[effect.effect](effect.value ?? 0)}</span
+								>
+							{/each}
+						</li>
+					{/each}
+				</ul>
 			</div>
 		</div>
 	</aside>

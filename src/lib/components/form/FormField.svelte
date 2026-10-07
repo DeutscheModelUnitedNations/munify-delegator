@@ -15,6 +15,8 @@
 		name: N;
 		label?: string;
 		description?: string;
+		/** A pictogram shown before the label. */
+		labelIcon?: Snippet;
 		/** Shows the field's constraints (length, range, …) under the input. */
 		showConstraints?: boolean;
 		class?: string;
@@ -27,6 +29,7 @@
 		name,
 		label,
 		description,
+		labelIcon,
 		showConstraints = false,
 		class: className = 'flex w-full flex-col',
 		input
@@ -39,7 +42,10 @@
 			<Control>
 				{#snippet children({ props })}
 					{#if label}
-						<Label class="label mb-2 whitespace-break-spaces">{label}</Label>
+						<Label class="label mb-2 gap-2 whitespace-break-spaces">
+							{#if labelIcon}{@render labelIcon()}{/if}
+							{label}
+						</Label>
 					{/if}
 					<FormDescription {description} />
 					{@render input({ props, constraints })}

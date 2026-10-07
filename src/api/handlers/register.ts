@@ -25,7 +25,6 @@ import './resolution';
 import './reviewerSnippet';
 import './roleApplication';
 import './statistics';
-import './search';
 import './seatPlanning';
 import './singleParticipant';
 import './surveyAnswer';

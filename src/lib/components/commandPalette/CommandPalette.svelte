@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import Fuse from 'fuse.js';
@@ -19,6 +18,7 @@
 		steppedIndex,
 		type ResultItem
 	} from './commandPaletteItems';
+	import { searchConference } from './commandPaletteSearch';
 	import CommandPaletteItem from './CommandPaletteItem.svelte';
 	import CommandPaletteResultGroup from './CommandPaletteResultGroup.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
@@ -73,43 +73,22 @@
 		return configFuse.search(searchInput).map((r) => r.item);
 	});
 
-	// Server search (users + delegations)
-	function fetchSearch(searchTerm: string) {
-		return client.query.searchConference({
-			__args: { conferenceId, searchTerm },
-			users: {
-				id: true,
-				email: true,
-				givenName: true,
-				familyName: true,
-				participationType: true
-			},
-			delegations: {
-				id: true,
-				school: true,
-				entryCode: true,
-				memberCount: true,
-				assignedNationAlpha3Code: true,
-				assignedNonStateActorName: true,
-				headDelegateUserId: true
-			},
-			foreignUsers: { id: true, email: true, givenName: true, familyName: true },
-			transactions: { id: true, amount: true, currency: true, recievedAt: true }
-		});
-	}
-
-	type SearchResults = Awaited<ReturnType<typeof fetchSearch>>;
+	type SearchResults = Awaited<ReturnType<typeof searchConference>>;
 
 	let userResults = $state<SearchResults['users']>([]);
 	let delegationResults = $state<SearchResults['delegations']>([]);
 	let foreignUserResults = $state<SearchResults['foreignUsers']>([]);
 	let transactionResults = $state<SearchResults['transactions']>([]);
+	let seatResults = $state<SearchResults['seats']>([]);
+	let committeeResults = $state<SearchResults['committees']>([]);
 
 	// Combined flat list for keyboard navigation
 	let flatList = $derived(
 		flattenResults({
 			users: userResults,
 			delegations: delegationResults,
+			seats: seatResults,
+			committees: committeeResults,
 			transactions: transactionResults,
 			pages: pageResults,
 			configs: configResults,
@@ -125,6 +104,8 @@
 			userResults = [];
 			delegationResults = [];
 			transactionResults = [];
+			seatResults = [];
+			committeeResults = [];
 			foreignUserResults = [];
 			searchLoading = false;
 			activeIndex = 0;
@@ -134,11 +115,13 @@
 		searchLoading = true;
 		debounceTimer = setTimeout(async () => {
 			try {
-				const result = await fetchSearch(term.trim());
+				const result = await searchConference(conferenceId, term);
 				userResults = result.users;
 				delegationResults = result.delegations;
 				foreignUserResults = result.foreignUsers;
 				transactionResults = result.transactions;
+				seatResults = result.seats;
+				committeeResults = result.committees;
 			} finally {
 				searchLoading = false;
 				activeIndex = 0;
@@ -159,6 +142,8 @@
 				searchInput = '';
 				userResults = [];
 				transactionResults = [];
+				seatResults = [];
+				committeeResults = [];
 				delegationResults = [];
 				foreignUserResults = [];
 				activeIndex = 0;
@@ -213,6 +198,8 @@
 			icon: 'fa-users-viewfinder',
 			fromServer: true
 		},
+		seat: { title: m.seats, icon: 'fa-chair', fromServer: true },
+		committee: { title: m.committees, icon: 'fa-podium', fromServer: true },
 		transaction: { title: m.payment, icon: 'fa-money-bill-transfer', fromServer: true },
 		page: { title: m.commandPalettePages, icon: 'fa-file', fromServer: false },
 		config: { title: m.commandPaletteConfiguration, icon: 'fa-gears', fromServer: false },

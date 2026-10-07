@@ -14,9 +14,23 @@ export interface SearchUser {
 export interface SearchDelegation {
 	id: string;
 	school: string | null;
-	entryCode: string;
 	memberCount: number;
 	headDelegateUserId: string | null;
+}
+
+/** A seat - a nation, non-state actor or role - found by name, with whoever holds it. */
+export interface SearchSeat {
+	id: string;
+	title: string;
+	subtitle: string | null;
+	holderUserId: string | null;
+}
+
+/** A committee or one of its agenda items. */
+export interface SearchCommittee {
+	id: string;
+	title: string;
+	subtitle: string | null;
 }
 
 export interface SearchForeignUser {
@@ -39,11 +53,15 @@ export type ResultItem =
 	| { type: 'delegation'; data: SearchDelegation }
 	| { type: 'config'; data: ConfigEntry }
 	| { type: 'foreignUser'; data: SearchForeignUser }
+	| { type: 'seat'; data: SearchSeat }
+	| { type: 'committee'; data: SearchCommittee }
 	| { type: 'transaction'; data: SearchTransaction };
 
 export interface ResultLists {
 	users: readonly SearchUser[];
 	delegations: readonly SearchDelegation[];
+	seats: readonly SearchSeat[];
+	committees: readonly SearchCommittee[];
 	transactions: readonly SearchTransaction[];
 	pages: readonly PageEntry[];
 	configs: readonly ConfigEntry[];
@@ -52,12 +70,14 @@ export interface ResultLists {
 
 /**
  * Every result in one list, in the order the palette shows them and the keyboard walks them:
- * users, delegations, transactions, pages, configuration, foreign users.
+ * users, delegations, seats, committees, transactions, pages, configuration, foreign users.
  */
 export function flattenResults(lists: ResultLists): ResultItem[] {
 	return [
 		...lists.users.map((data) => ({ type: 'user' as const, data })),
 		...lists.delegations.map((data) => ({ type: 'delegation' as const, data })),
+		...lists.seats.map((data) => ({ type: 'seat' as const, data })),
+		...lists.committees.map((data) => ({ type: 'committee' as const, data })),
 		...lists.transactions.map((data) => ({ type: 'transaction' as const, data })),
 		...lists.pages.map((data) => ({ type: 'page' as const, data })),
 		...lists.configs.map((data) => ({ type: 'config' as const, data })),
@@ -68,6 +88,8 @@ export function flattenResults(lists: ResultLists): ResultItem[] {
 /** Where choosing a result leads: a user's card, or a page. */
 export type ResultTarget = { userId: string } | { href: ResolvedPathname };
 
+// An exhaustive switch over the result types: each case is one line of branching at most.
+// fallow-ignore-next-line complexity
 export function resultTarget(item: ResultItem, conferenceId: string): ResultTarget {
 	switch (item.type) {
 		case 'page':
@@ -80,7 +102,22 @@ export function resultTarget(item: ResultItem, conferenceId: string): ResultTarg
 			if (item.data.headDelegateUserId) return { userId: item.data.headDelegateUserId };
 			return {
 				href: resolve(
-					`/(authenticated)/dashboard/[conferenceId]/management/delegations?filter=${item.data.entryCode}`,
+					`/(authenticated)/dashboard/[conferenceId]/management/delegations?filter=${encodeURIComponent(item.data.school ?? item.data.id)}`,
+					{ conferenceId }
+				)
+			};
+		case 'seat':
+			// A seat opens its holder's card, or the delegation list when nobody holds it yet
+			if (item.data.holderUserId) return { userId: item.data.holderUserId };
+			return {
+				href: resolve('/(authenticated)/dashboard/[conferenceId]/management/delegations', {
+					conferenceId
+				})
+			};
+		case 'committee':
+			return {
+				href: resolve(
+					'/(authenticated)/dashboard/[conferenceId]/management/configuration?tab=committees',
 					{ conferenceId }
 				)
 			};
@@ -112,11 +149,27 @@ export function steppedIndex(key: string, activeIndex: number, count: number) {
 	return undefined;
 }
 
+/** The first role the user holds in the conference, strongest first. */
+const PARTICIPATION_ORDER = [
+	['teamMember', 'team'],
+	['conferenceSupervisor', 'supervisor'],
+	['delegationMemberships', 'delegation'],
+	['singleParticipant', 'single'],
+	['waitingListEntry', 'waitingList']
+] as const;
+
+export function userParticipationType(
+	user: Record<(typeof PARTICIPATION_ORDER)[number][0], readonly unknown[]>
+) {
+	return PARTICIPATION_ORDER.find(([key]) => user[key].length > 0)?.[1] ?? 'unknown';
+}
+
 const participationTypeLabels = new Map<string, () => string>([
 	['delegation', m.delegationMember],
 	['single', m.singleParticipant],
 	['supervisor', m.supervisor],
-	['team', m.teamMember]
+	['team', m.teamMember],
+	['waitingList', m.waitingList]
 ]);
 
 export function participationTypeLabel(type: string): string {
@@ -140,6 +193,7 @@ export function describeTransaction(transaction: SearchTransaction) {
 }
 
 /** How one result reads in the list: its icon and its primary and secondary text. */
+// fallow-ignore-next-line complexity
 export function describeItem(item: ResultItem): {
 	icon: string;
 	primary: string;
@@ -155,8 +209,8 @@ export function describeItem(item: ResultItem): {
 		case 'delegation':
 			return {
 				icon: 'fa-users-viewfinder',
-				primary: item.data.school ?? item.data.entryCode,
-				secondary: `${item.data.entryCode} · ${item.data.memberCount} ${m.members()}`
+				primary: item.data.school ?? item.data.id,
+				secondary: `${item.data.memberCount} ${m.members()}`
 			};
 		case 'transaction':
 			return {
@@ -168,6 +222,18 @@ export function describeItem(item: ResultItem): {
 			return { icon: item.data.icon, primary: item.data.title() };
 		case 'config':
 			return { icon: item.data.icon, primary: item.data.title(), secondary: item.data.section() };
+		case 'seat':
+			return {
+				icon: 'fa-chair',
+				primary: item.data.title,
+				secondary: item.data.subtitle ?? undefined
+			};
+		case 'committee':
+			return {
+				icon: 'fa-podium',
+				primary: item.data.title,
+				secondary: item.data.subtitle ?? undefined
+			};
 		case 'foreignUser':
 			return {
 				icon: 'fa-user-xmark',
