@@ -1,5 +1,5 @@
 import { config } from '../config';
-import { findMailSyncUsers, type MailSyncUser } from './types';
+import { findMailSyncUsers, type MailSyncUser } from './mailSyncUsers';
 import dayjs from 'dayjs';
 
 /**

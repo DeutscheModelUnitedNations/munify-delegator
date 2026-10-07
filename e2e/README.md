@@ -18,7 +18,8 @@ bun run test:e2e
 
 ```bash
 # Alongside another project that already holds 5432 / 5173
-docker compose -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres
+# Own project name (-p): without it compose replaces the dev Postgres container
+docker compose -p delegator-e2e -f dev.docker-compose.yml -f e2e.compose.yml up -d postgres
 
 export DATABASE_URL="postgres://postgres:postgres@localhost:15432/postgres"
 export E2E_PORT=5174

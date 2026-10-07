@@ -42,14 +42,24 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
-      - run: bun run test
+      # Coverage ends in scripts/mergeCoverage.ts, which writes the HTML report to coverage/report/;
+      # the publish-reports job hosts it on GitHub Pages.
+      - run: bun run coverage
+      - name: Upload unit test coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-coverage
+          path: coverage/report/
+          if-no-files-found: ignore
+          retention-days: 7
 
   e2e:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       PUBLIC_OIDC_AUTHORITY: http://127.0.0.1:8090/oidc/.well-known/openid-configuration
-      PUBLIC_OIDC_CLIENT_ID: default
+      PUBLIC_OIDC_CLIENT_ID: delegator
       OIDC_SCOPES: 'openid profile offline_access email'
       OIDC_ROLE_CLAIM: roles
       SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
@@ -71,15 +81,95 @@ jobs:
       - run: bun run db:migrate
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
+      # The HTML report embeds the traces, screenshots and videos of the failed tests, so it is
+      # all the publish-reports job needs to host it.
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
-          path: |
-            playwright-report/
-            test-results/
+          name: report-playwright
+          path: playwright-report/
           retention-days: 7
+
+  # Hosts the HTML reports of this run on GitHub Pages (gh-pages branch) instead of leaving them
+  # as zip downloads: the Playwright report when e2e fails, and the unit test coverage. Runs in
+  # its own job so the jobs that execute the test suites keep a read-only token. On PRs with an
+  # e2e failure it posts (or updates) one comment linking the report. Fork and Dependabot PRs get
+  # a read-only token and can't push to gh-pages, so they keep the plain artifacts.
+  publish-reports:
+    needs: [test, e2e]
+    if: >-
+      !cancelled() && (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name == github.repository &&
+         github.actor != 'dependabot[bot]')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: report-*
+          path: reports
+      - id: publish
+        run: .github/scripts/publish-reports.sh
+        env:
+          REPORTS_DIR: reports
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # main keeps a stable URL for the latest coverage report.
+          LATEST_PREFIX: ${{ github.event_name == 'push' && 'main' || '' }}
+          LATEST_REPORTS: coverage
+      # Runs even when nothing was published, so a PR comment from an earlier e2e failure is
+      # still brought up to date.
+      - name: Link reports
+        uses: actions/github-script@v7
+        env:
+          REPORTS: ${{ steps.publish.outputs.reports }}
+          REPORTS_PATH: ${{ steps.publish.outputs.path }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          # Set the REPORTS_BASE_URL repository variable when Pages is served from a custom domain.
+          BASE_URL: ${{ vars.REPORTS_BASE_URL }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const base = (process.env.BASE_URL || `https://${owner.toLowerCase()}.github.io/${repo}/`).replace(/\/?$/, '/');
+            const reports = process.env.REPORTS ? process.env.REPORTS.split(' ') : [];
+            const url = (name) => `${base}${process.env.REPORTS_PATH}/${name}/`;
+            const e2eFailed = process.env.E2E_RESULT === 'failure' && reports.includes('playwright');
+
+            const lines = [];
+            if (e2eFailed) lines.push(`🎭 [**Playwright report**](${url('playwright')}) (traces, screenshots and videos of the failed tests)`);
+            if (reports.includes('coverage')) lines.push(`📊 [Unit test coverage](${url('coverage')})`);
+            const footer = '<sub>Reports are kept for 7 days. GitHub Pages can take a minute to deploy a new report.</sub>';
+
+            if (lines.length) {
+              await core.summary.addHeading('CI reports', 3).addRaw(lines.join('\n\n') + '\n\n' + footer).write();
+            }
+
+            const pr = context.payload.pull_request;
+            if (!pr) return;
+            const marker = '<!-- ci-reports -->';
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number });
+            const existing = comments.find((c) => c.user?.type === 'Bot' && c.body?.includes(marker));
+            // Only an e2e failure opens the comment; once it exists, later runs keep it current so a
+            // fixed suite doesn't leave a stale failure link behind.
+            if (!e2eFailed && !existing) return;
+
+            const sha = pr.head.sha.slice(0, 7);
+            const heading = process.env.E2E_RESULT === 'failure' ? `### ❌ E2E tests failed on ${sha}` : `### ✅ E2E tests passed on ${sha}`;
+            const body = [marker, heading, ...lines, footer].join('\n\n');
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+            }
 
   i18n:
     runs-on: ubuntu-latest

@@ -151,7 +151,9 @@
 				navigator.clipboard.writeText(entryCode);
 				toast.success(m.codeCopied());
 			})}
-			<a class="btn btn-primary btn-lg mt-10 w-full" href={resolve('/dashboard')}
+			<a
+				class="btn btn-primary btn-lg mt-10 w-full"
+				href={resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId })}
 				>{m.toDashboard()}</a
 			>
 		</div>

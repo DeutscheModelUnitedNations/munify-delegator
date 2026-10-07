@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 const findMailSyncUsers = vi.hoisted(() => vi.fn());
 
 vi.mock('../config', () => ({ config: { MAIL_SYNC_BATCH_SIZE: 2 } }));
-vi.mock('./types', () => ({ findMailSyncUsers }));
+vi.mock('./mailSyncUsers', () => ({ findMailSyncUsers }));
 
 const { processUsersInBatches } = await import('./userProcessor');
 

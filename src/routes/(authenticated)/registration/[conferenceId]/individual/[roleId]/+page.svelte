@@ -65,7 +65,7 @@
 				});
 				toast.promise(promise, genericPromiseToastMessages);
 				await promise;
-				await goto(resolve('/dashboard'));
+				await goto(resolve('/(authenticated)/dashboard/[conferenceId]', { conferenceId }));
 			}
 		}
 	);
