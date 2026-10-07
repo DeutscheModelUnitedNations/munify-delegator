@@ -121,12 +121,15 @@
 			{m.assignmentWishes()}
 		</h4>
 		{#if application.wishes.length > 0}
+			<!-- A delegation ranks its wishes; a single application does not, so no numbers there. -->
 			<ol class="flex flex-col gap-1">
 				{#each application.wishes as wish, index (index)}
 					<li class="flex items-center gap-3">
-						<span class="text-base-content/50 w-4 text-right font-bold tabular-nums">
-							{index + 1}
-						</span>
+						{#if kind === 'delegation'}
+							<span class="text-base-content/50 w-4 text-right font-bold tabular-nums">
+								{index + 1}
+							</span>
+						{/if}
 						{#if wish.alpha2Code}
 							<Flag size="xs" alpha2Code={wish.alpha2Code} />
 						{:else}

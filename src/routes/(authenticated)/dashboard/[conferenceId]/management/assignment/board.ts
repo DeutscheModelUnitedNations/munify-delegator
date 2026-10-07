@@ -30,7 +30,7 @@ export async function fetchAssignmentRows(conferenceId: string) {
 			school: true,
 			assignedRoleId: true,
 			user: { givenName: true, familyName: true },
-			appliedForRoles: { name: true }
+			appliedForRoles: { id: true, name: true }
 		}),
 		client.liveQuery.assignmentUnits({
 			__args: { where: inConference },

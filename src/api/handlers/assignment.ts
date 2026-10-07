@@ -21,11 +21,12 @@ import {
 	draftDelegationTarget,
 	loadAssignmentInput
 } from '$api/services/assignmentDraft';
-import { DEFAULT_WEIGHTS, autoAssign } from '$lib/assignment/autoAssign';
+import { DEFAULT_WEIGHTS, autoAssign, autoAssignSingles } from '$lib/assignment/autoAssign';
 import { experienceShare } from '$lib/assignment/experience';
 import { reviewProblem, reviewRow } from '$lib/assignment/review';
 import {
 	assignmentGroups,
+	singleRoles,
 	targetKey,
 	type AssignmentGroup,
 	type Target
@@ -467,6 +468,84 @@ schemaBuilder.mutationFields((t) => ({
 			});
 			for (const { group, target } of matches) {
 				await draftGroupTarget(args.conferenceId, group, target);
+			}
+			publishDraft();
+			return matches.length;
+		}
+	}),
+
+	/**
+	 * Gives the single participants without a role one of the custom roles they applied for, at the
+	 * lowest cost by their ratings, flags and experience. Roles planned by hand stay and use up their
+	 * seats; nobody gets a role they did not apply for. Returns how many got a role.
+	 */
+	autoAssignSingleParticipants: t.field({
+		type: 'Int',
+		args: { conferenceId: t.arg.id({ required: true }) },
+		resolve: async (_root, args, ctx) => {
+			await assertTeamRole(ctx, args.conferenceId, PARTICIPANT_CARE_ROLES);
+			const [{ input }, weights, reviews, applicants, customRoles, experiencedIds] =
+				await Promise.all([
+					loadAssignmentInput(db, args.conferenceId),
+					db.query.assignmentWeights.findFirst({ where: { conferenceId: args.conferenceId } }),
+					db.query.assignmentReview.findMany({ where: { conferenceId: args.conferenceId } }),
+					db.query.singleParticipant.findMany({
+						where: { conferenceId: args.conferenceId, applied: true },
+						columns: { id: true, assignedRoleId: true },
+						with: { appliedForRoles: { columns: { id: true } } }
+					}),
+					db.query.customConferenceRole.findMany({
+						where: { conferenceId: args.conferenceId },
+						columns: { id: true, seatAmount: true }
+					}),
+					loadExperiencedIds(args.conferenceId)
+				]);
+			const { groups } = assignmentGroups(input.delegations, input.singleParticipants, input.units);
+			const converted = new Set(groups.flatMap((group) => group.singleParticipantId ?? []));
+			const singles = singleRoles(input.singleParticipants, input.draftSingleRoles, converted);
+
+			const held = new Map<string, number>();
+			for (const single of singles) {
+				if (single.roleId) held.set(single.roleId, (held.get(single.roleId) ?? 0) + 1);
+			}
+			const reviewBySingle = new Map(
+				reviews.flatMap((review) =>
+					review.singleParticipantId ? [[review.singleParticipantId, review] as const] : []
+				)
+			);
+			const applicantById = new Map(applicants.map((applicant) => [applicant.id, applicant]));
+
+			const matches = autoAssignSingles({
+				weights: weights ?? DEFAULT_WEIGHTS,
+				roles: customRoles.map((role) => ({
+					id: role.id,
+					freeSeats: role.seatAmount - (held.get(role.id) ?? 0)
+				})),
+				candidates: singles
+					.filter((single) => !single.roleId)
+					.map((single) => ({
+						id: single.singleParticipantId,
+						wishedRoleIds: new Set(
+							applicantById.get(single.singleParticipantId)?.appliedForRoles.map((r) => r.id)
+						),
+						review: reviewBySingle.get(single.singleParticipantId),
+						experience: experiencedIds.has(single.singleParticipantId) ? 1 : 0
+					}))
+			});
+			for (const { singleParticipantId, roleId } of matches) {
+				if (roleId === applicantById.get(singleParticipantId)?.assignedRoleId) {
+					await db
+						.delete(schema.assignmentSingleRole)
+						.where(eq(schema.assignmentSingleRole.singleParticipantId, singleParticipantId));
+				} else {
+					await db
+						.insert(schema.assignmentSingleRole)
+						.values({ conferenceId: args.conferenceId, singleParticipantId, roleId })
+						.onConflictDoUpdate({
+							target: schema.assignmentSingleRole.singleParticipantId,
+							set: { roleId }
+						});
+				}
 			}
 			publishDraft();
 			return matches.length;

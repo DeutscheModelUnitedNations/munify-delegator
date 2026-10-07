@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { DEFAULT_WEIGHTS, assignmentCost, autoAssign } from './autoAssign';
+import { describe, expect, it, it as test } from 'vitest';
+import { DEFAULT_WEIGHTS, assignmentCost, autoAssign, autoAssignSingles } from './autoAssign';
 import { assignmentGroups } from './state';
 import type { SeatedRole } from './capacity';
 
@@ -332,5 +332,75 @@ describe('autoAssign', () => {
 			const result = run({ ...DEFAULT_WEIGHTS, experienceModifier: -4 }, [role('FRA', 2)]);
 			expect([...result.keys()]).toEqual(['vet']);
 		});
+	});
+});
+
+describe('autoAssignSingles', () => {
+	const single = (
+		id: string,
+		wished: string[],
+		evaluation: number | null = null,
+		disqualified = false
+	) => ({
+		id,
+		wishedRoleIds: new Set(wished),
+		review: { evaluation, flagged: false, disqualified },
+		experience: 0
+	});
+	const input = (
+		candidates: ReturnType<typeof single>[],
+		roles: { id: string; freeSeats: number }[]
+	) => ({ candidates, roles, weights: DEFAULT_WEIGHTS });
+
+	test('only gives roles the applicant wished for', () => {
+		const matches = autoAssignSingles(
+			input(
+				[single('a', ['press']), single('b', ['press'])],
+				[
+					{ id: 'press', freeSeats: 1 },
+					{ id: 'it', freeSeats: 5 }
+				]
+			)
+		);
+		expect(matches).toHaveLength(1);
+		expect(matches[0].roleId).toBe('press');
+	});
+
+	test('fills several seats of one role', () => {
+		const matches = autoAssignSingles(
+			input([single('a', ['press']), single('b', ['press'])], [{ id: 'press', freeSeats: 2 }])
+		);
+		expect(matches.map((match) => match.singleParticipantId).sort()).toEqual(['a', 'b']);
+	});
+
+	test('seats the better rated applicant when a role is oversubscribed', () => {
+		const matches = autoAssignSingles(
+			input(
+				[single('low', ['press'], 1), single('high', ['press'], 5), single('mid', ['press'], 3)],
+				[{ id: 'press', freeSeats: 1 }]
+			)
+		);
+		expect(matches).toEqual([{ singleParticipantId: 'high', roleId: 'press' }]);
+	});
+
+	test('moves someone to another wish to seat more people', () => {
+		const matches = autoAssignSingles(
+			input(
+				[single('a', ['press', 'it']), single('b', ['press'])],
+				[
+					{ id: 'press', freeSeats: 1 },
+					{ id: 'it', freeSeats: 1 }
+				]
+			)
+		);
+		expect(matches).toHaveLength(2);
+		expect(matches.find((match) => match.singleParticipantId === 'b')?.roleId).toBe('press');
+	});
+
+	test('skips disqualified applicants and those without wishes', () => {
+		const matches = autoAssignSingles(
+			input([single('a', ['press'], null, true), single('b', [])], [{ id: 'press', freeSeats: 2 }])
+		);
+		expect(matches).toEqual([]);
 	});
 });

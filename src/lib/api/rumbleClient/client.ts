@@ -1651,6 +1651,9 @@ export type Mutation = {
     conferenceId: ID,
     size: Int
   }) => Int,
+  autoAssignSingleParticipants: (p: {
+    conferenceId: ID
+  }) => Int,
   connectToConferenceSupervisor: (p: {
     conferenceId: ID,
     connectionCode: String,

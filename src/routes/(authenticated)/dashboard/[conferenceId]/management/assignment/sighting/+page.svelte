@@ -37,12 +37,17 @@
 		])
 	);
 
-	const params = queryParameters({
-		search: ssp.string(''),
-		status: ssp.string('all'),
-		school: true,
-		application: true
-	});
+	// No defaults written into the URL: that is a navigation on arrival, which pushes a history
+	// entry and traps the back button when the page is entered with `?application=`.
+	const params = queryParameters(
+		{
+			search: ssp.string(''),
+			status: ssp.string('all'),
+			school: true,
+			application: true
+		},
+		{ showDefaults: false }
+	);
 
 	const entries = $derived.by((): SightingEntry[] => {
 		const reviewOf = reviewLookup(reviews);

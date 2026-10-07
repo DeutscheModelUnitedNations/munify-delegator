@@ -172,3 +172,53 @@ export function autoAssign(input: AutoAssignInput) {
 
 	return [...solve(true), ...solve(false)];
 }
+
+export interface SingleCandidate {
+	id: string;
+	/** The custom roles the applicant applied for; they are never given any other. */
+	wishedRoleIds: ReadonlySet<string>;
+	review: GroupReview | undefined;
+	/** 1 if the applicant was seated at an earlier conference, else 0. */
+	experience: number;
+}
+
+export interface AutoAssignSinglesInput {
+	/** The applicants without a role yet. */
+	candidates: readonly SingleCandidate[];
+	/** The custom roles that still have room. */
+	roles: readonly { id: string; freeSeats: number }[];
+	weights: AssignmentWeights;
+	seed?: string;
+}
+
+/**
+ * Seats single participants on the custom roles they applied for, at the lowest total cost. Wishes
+ * are unranked, so they only decide who may get which role; who is left out when a role is
+ * oversubscribed follows from rating, flag and experience (`reviewCost`). Each role is expanded
+ * into one column per free seat, and an applicant whose wishes are all full stays unassigned.
+ */
+export function autoAssignSingles(input: AutoAssignSinglesInput) {
+	const candidates = input.candidates.filter(
+		(candidate) => !candidate.review?.disqualified && candidate.wishedRoleIds.size > 0
+	);
+	const slots = input.roles.flatMap((role) =>
+		Array.from({ length: Math.max(0, role.freeSeats) }, (_, index) => ({ roleId: role.id, index }))
+	);
+	if (candidates.length === 0 || slots.length === 0) return [];
+	const seed = input.seed ?? '';
+
+	const matrix = candidates.map((candidate) =>
+		slots.map((slot) =>
+			candidate.wishedRoleIds.has(slot.roleId)
+				? reviewCost(input.weights, candidate.review, candidate.experience) +
+					hash01(`${seed}|${candidate.id}|${slot.roleId}|${slot.index}`) * TIE_BREAK
+				: FORBIDDEN
+		)
+	);
+	const { assignments } = minWeightAssign(matrix);
+	return assignments.flatMap((column, row) =>
+		column == null || matrix[row][column] >= FORBIDDEN
+			? []
+			: [{ singleParticipantId: candidates[row].id, roleId: slots[column].roleId }]
+	);
+}

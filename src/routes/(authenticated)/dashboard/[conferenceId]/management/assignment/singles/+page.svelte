@@ -8,6 +8,7 @@
 	} from '$lib/assignment/board';
 	import { m } from '$lib/paraglide/messages';
 	import type { DragDropState } from '@thisux/sveltednd';
+	import { toast } from 'svelte-sonner';
 	import { fetchAssignmentBoard, fetchAssignmentRoles } from '../board';
 	import PoolSection from '../PoolSection.svelte';
 	import RoleCard from '../RoleCard.svelte';
@@ -27,6 +28,17 @@
 	const view = $derived(boardState(board, roles));
 
 	let dragging = $state(false);
+	let busy = $state(false);
+
+	async function autoAssign() {
+		busy = true;
+		await Promise.resolve(
+			client.mutate.autoAssignSingleParticipants({ __args: { conferenceId: params.conferenceId } })
+		)
+			.then((assigned) => toast.success(m.assignmentSinglesAutoAssigned({ count: assigned })))
+			.catch(toastError);
+		busy = false;
+	}
 
 	const singleById = $derived(new Map(board.singleParticipants.map((s) => [s.id, s])));
 	const pool = $derived(view.singles.filter((single) => !single.roleId));
@@ -70,6 +82,7 @@
 		single={singleById.get(single.singleParticipantId)}
 		review={view.reviewOf({ delegationId: null, singleParticipantId: single.singleParticipantId })}
 		pending={single.pending}
+		roleId={single.roleId}
 		{container}
 		onDragChange={(isDragging) => (dragging = isDragging)}
 		conferenceId={params.conferenceId}
@@ -80,6 +93,14 @@
 	<div class="alert alert-info alert-soft">
 		<i class="fa-duotone fa-user-tie text-xl"></i>
 		<p>{m.assignmentSinglesHint()}</p>
+		<button
+			class="btn btn-primary btn-sm"
+			disabled={busy || pool.length === 0}
+			onclick={autoAssign}
+		>
+			<i class="fa-duotone fa-wand-magic-sparkles"></i>
+			{m.assignmentAutoAssignSingles()}
+		</button>
 	</div>
 
 	<div class="flex flex-col gap-4 xl:flex-row">
