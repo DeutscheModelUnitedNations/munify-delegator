@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getWeights, setNonWishMalus, setNullRating, setRatingFactor } from '../weights.svelte';
-	import type { PageData } from './$types';
+	import {
+		getWeights,
+		setMarkBonus,
+		setNonWishMalus,
+		setNullRating,
+		setRatingFactor
+	} from '../weights.svelte';
 	import { loadProjects } from '../appData.svelte';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
 	onMount(() => {
-		loadProjects(data.projectId);
+		loadProjects(params.projectId);
 	});
 </script>
 
@@ -48,8 +54,8 @@
 			value={getWeights().nullRating}
 			class="range"
 			step="0.5"
-			onchange={(e: any) => {
-				setNullRating(e.target.value);
+			onchange={(e) => {
+				setNullRating(Number(e.currentTarget.value));
 			}}
 		/>
 		<div class="flex w-full justify-between px-2 text-xs">
@@ -78,8 +84,8 @@
 		max="99"
 		value={getWeights().ratingFactor}
 		pattern="\d*"
-		onchange={(e: any) => {
-			setRatingFactor(e.target.value);
+		onchange={(e) => {
+			setRatingFactor(Number(e.currentTarget.value));
 		}}
 	/>
 	<p>
@@ -107,8 +113,8 @@
 		max="99"
 		value={getWeights().markBonus}
 		pattern="\d*"
-		onchange={(e: any) => {
-			setRatingFactor(e.target.value);
+		onchange={(e) => {
+			setMarkBonus(Number(e.currentTarget.value));
 		}}
 	/>
 
@@ -131,8 +137,8 @@
 		max="0"
 		value={getWeights().nonWishMalus}
 		pattern="\d*"
-		oninput={(e: any) => {
-			setNonWishMalus(e.target.value);
+		oninput={(e) => {
+			setNonWishMalus(Number(e.currentTarget.value));
 		}}
 	/>
 </div>

@@ -1,15 +1,17 @@
 <script lang="ts">
-	import type { PageData } from './$houdini';
+	import { fetchConferenceSeats } from './conferenceSeats';
 	import NationPool from '$lib/components/NationPool.svelte';
 	import NsaPool from '$lib/components/NSAPool.svelte';
-	import { getUniqueNations } from '$lib/services/getUniqueNations';
+	import { getUniqueNations } from '$lib/helpers/getUniqueNations';
 	import { m } from '$lib/paraglide/messages';
 	import CommitteePool from './CommitteePool.svelte';
 	import { dev } from '$app/environment';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
-	const conferenceQuery = $derived(data.SeatsOfConferenceQuery);
-	const conference = $derived($conferenceQuery.data.findUniqueConference);
+	let { params }: PageProps = $props();
+
+	const conference = $derived(await fetchConferenceSeats(params.conferenceId));
+
 	const { nonStateActors: nonStateActorPool, committees } = $derived(conference);
 
 	const nationPool = $derived(getUniqueNations(committees));

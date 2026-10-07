@@ -18,21 +18,30 @@
 	import type { LayoutProps } from './$types';
 	import { page } from '$app/state';
 	import DevTools from '$lib/components/DevTools.svelte';
+	import { onMount } from 'svelte';
 
 	let { children }: LayoutProps = $props();
 
+	// Marks the document once the client has taken over the server-rendered page. The e2e suite
+	// waits for it (`waitForHydration`): a click that lands before hydration attaches its handler is
+	// lost, and `networkidle` - the obvious stand-in - never arrives while the subscription stream
+	// is open.
+	onMount(() => {
+		document.body.dataset.hydrated = 'true';
+	});
+
 	const changeFaDuotoneTheme = () => {
-		const r = document.querySelector(':root');
+		const r = document.documentElement;
 		if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-			(r as any)?.style.setProperty('--fa-primary-color', '#b1cbed');
-			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
-			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
-			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
+			r.style.setProperty('--fa-primary-color', '#b1cbed');
+			r.style.setProperty('--fa-primary-opacity', '1');
+			r.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			r.style.setProperty('--fa-secondary-opacity', '1');
 		} else {
-			(r as any)?.style.setProperty('--fa-primary-color', '#000000');
-			(r as any)?.style.setProperty('--fa-primary-opacity', '1');
-			(r as any)?.style.setProperty('--fa-secondary-color', '#3d7dd2');
-			(r as any)?.style.setProperty('--fa-secondary-opacity', '1');
+			r.style.setProperty('--fa-primary-color', '#000000');
+			r.style.setProperty('--fa-primary-opacity', '1');
+			r.style.setProperty('--fa-secondary-color', '#3d7dd2');
+			r.style.setProperty('--fa-secondary-opacity', '1');
 		}
 
 		//--fa-primary-opacity: 1;
@@ -62,8 +71,6 @@
 <CookieBanner />
 <MaintenanceBanner />
 <div class="flex min-h-screen">
-	<!-- {@render children()} -->
-	<!--TODO https://github.com/HoudiniGraphql/houdini/issues/1369 -->
 	{@render children()}
 </div>
 <Footer />
@@ -74,7 +81,8 @@
 {/if}
 
 <div style="display:none">
-	{#each locales as locale}
+	{#each locales as locale (locale)}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- localizeHref builds a locale-prefixed URL from the current pathname at runtime, which resolve() cannot type -->
 		<a href={localizeHref(page.url.pathname, { locale })}>{locale}</a>
 	{/each}
 </div>

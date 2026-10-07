@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { fixedTestUser, loginAs, makeTestUser } from '../support/auth';
-import { E2E_CONFERENCE_ID, E2E_PAYMENT_ADMIN_ID } from '../seed/seed';
+import { test, expect } from '../support/test';
+import { fixedTestUser, loginAs, makeTestUser, waitForHydration } from '../support/auth';
+import { E2E_CONFERENCE_ID, E2E_PAYMENT_ADMIN_ID, E2E_ROLE_ID } from '../seed/seed';
 
 test('a participant can generate a payment reference and an admin can mark it received', async ({
 	browser
@@ -9,9 +9,20 @@ test('a participant can generate a payment reference and an admin can mark it re
 	const participantPage = await participantContext.newPage();
 
 	const participant = makeTestUser('payment-participant');
-	await loginAs(participantPage, participant, {
-		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/payment/single`
+	await loginAs(participantPage, participant, { startUrl: '/dashboard' });
+
+	// Only somebody taking part in the conference can be paid for, so the participant registers
+	// first - the API refuses a payment reference for anybody else.
+	const registered = await participantPage.request.post('/api/graphql', {
+		data: {
+			query: `mutation ($c: ID!, $r: ID!) { createSingleParticipant(conferenceId: $c, roleId: $r) { id } }`,
+			variables: { c: E2E_CONFERENCE_ID, r: E2E_ROLE_ID }
+		}
 	});
+	expect((await registered.json()).errors).toBeUndefined();
+
+	await participantPage.goto(`/dashboard/${E2E_CONFERENCE_ID}/payment/single`);
+	await waitForHydration(participantPage);
 
 	const generateButton = participantPage.locator('button:has(.fa-sparkles)');
 	await expect(generateButton).toBeVisible({ timeout: 15_000 });
@@ -28,7 +39,7 @@ test('a participant can generate a payment reference and an admin can mark it re
 	const adminPage = await adminContext.newPage();
 
 	await loginAs(adminPage, fixedTestUser(E2E_PAYMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/payments`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/payments`
 	});
 
 	await adminPage.getByPlaceholder(/referenzsuche|reference search/i).fill(reference);
@@ -49,10 +60,10 @@ test('a participant can generate a payment reference and an admin can mark it re
 			async () => {
 				const res = await adminPage.request.post('/api/graphql', {
 					data: {
-						query: `query { findUniquePaymentTransaction(where: { id: "${reference}" }) { recievedAt } }`
+						query: `query { paymentTransaction(id: "${reference}") { recievedAt } }`
 					}
 				});
-				return (await res.json())?.data?.findUniquePaymentTransaction?.recievedAt ?? null;
+				return (await res.json())?.data?.paymentTransaction?.recievedAt ?? null;
 			},
 			{ timeout: 15_000 }
 		)

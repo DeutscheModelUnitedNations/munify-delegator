@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { resolve } from '$app/paths';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import PaperEnum from '$lib/components/Paper/PaperEnum';
+	import PaperTypeStatusColumns from './PaperTypeStatusColumns.svelte';
+	import { groupPapersByDelegation } from './supervisedPapers';
 	import { goto } from '$app/navigation';
-	import type { PaperStatus$options, PaperType$options } from '$houdini';
 
 	interface Props {
 		conferenceId: string;
@@ -13,88 +13,43 @@
 
 	let { conferenceId }: Props = $props();
 
-	const supervisedPapersQuery = graphql(`
-		query FindSupervisedPapersQuery($conferenceId: String!) {
-			findSupervisedPapers(conferenceId: $conferenceId) {
-				id
-				type
-				status
-				createdAt
-				updatedAt
-				firstSubmittedAt
-				agendaItem {
-					id
-					title
-					committee {
-						id
-						abbreviation
-					}
-				}
-				delegation {
-					id
-					assignedNation {
-						alpha2Code
-						alpha3Code
-					}
-					assignedNonStateActor {
-						id
-						name
-						abbreviation
-						fontAwesomeIcon
-					}
-				}
-				author {
-					id
-					given_name
-					family_name
-				}
-			}
-		}
-	`);
+	function fetchSupervisedPapers() {
+		return client.query.findSupervisedPapers({
+			__args: { conferenceId },
+			id: true,
+			type: true,
+			status: true,
+			firstSubmittedAt: true,
+			agendaItem: { title: true, committee: { abbreviation: true } },
+			delegation: {
+				id: true,
+				assignedNation: { alpha2Code: true, alpha3Code: true },
+				assignedNonStateActor: { name: true, fontAwesomeIcon: true }
+			},
+			author: { id: true, givenName: true, familyName: true }
+		});
+	}
+
+	let supervisedPapers = $state<Awaited<ReturnType<typeof fetchSupervisedPapers>>>();
+	let loading = $state(false);
 
 	$effect(() => {
-		supervisedPapersQuery.fetch({ variables: { conferenceId } });
+		loading = true;
+		void fetchSupervisedPapers()
+			.then((result) => {
+				supervisedPapers = result;
+			})
+			.finally(() => {
+				loading = false;
+			});
 	});
 
-	let papersData = $derived($supervisedPapersQuery?.data?.findSupervisedPapers ?? []);
-	let loading = $derived($supervisedPapersQuery.fetching);
+	type SupervisedPaper = Awaited<ReturnType<typeof fetchSupervisedPapers>>[number];
+
+	let papersData = $derived(supervisedPapers ?? []);
 
 	// Group papers by delegation
-	let papersByDelegation = $derived.by(() => {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Map is temporary, converted to array
-		const groups = new Map<
-			string,
-			{
-				delegationId: string;
-				delegationName: string;
-				alpha2Code?: string;
-				nsa?: boolean;
-				icon?: string | null;
-				papers: typeof papersData;
-			}
-		>();
-
-		for (const paper of papersData) {
-			const delegationId = paper.delegation.id;
-			if (!groups.has(delegationId)) {
-				const nation = paper.delegation.assignedNation;
-				const nsa = paper.delegation.assignedNonStateActor;
-				groups.set(delegationId, {
-					delegationId,
-					delegationName: nation
-						? getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code)
-						: (nsa?.name ?? 'Unknown'),
-					alpha2Code: nation?.alpha2Code,
-					nsa: !!nsa,
-					icon: nsa?.fontAwesomeIcon,
-					papers: []
-				});
-			}
-			groups.get(delegationId)!.papers.push(paper);
-		}
-
-		return [...groups.values()].sort((a, b) => a.delegationName.localeCompare(b.delegationName));
-	});
+	let papersByDelegation = $derived(groupPapersByDelegation(papersData));
 
 	let statusCounts = $derived({
 		total: papersData.length,
@@ -104,14 +59,27 @@
 	});
 
 	const handlePaperClick = (paperId: string) => {
-		goto(`./paperhub/${paperId}`);
+		goto(resolve(`/dashboard/${conferenceId}/paperhub/${paperId}`));
 	};
 
-	const formatDate = (date: string | null | undefined) => {
+	const formatDate = (date: Date | string | null | undefined) => {
 		if (!date) return '-';
 		return new Date(date).toLocaleDateString();
 	};
 </script>
+
+{#snippet topic(agendaItem: SupervisedPaper['agendaItem'])}
+	{#if agendaItem}
+		{#if agendaItem.committee?.abbreviation}
+			<span class="badge badge-soft badge-primary badge-sm mr-1">
+				{agendaItem.committee.abbreviation}
+			</span>
+		{/if}
+		{agendaItem.title}
+	{:else}
+		<span class="text-base-content/40">-</span>
+	{/if}
+{/snippet}
 
 <div class="flex flex-col gap-6">
 	<!-- Summary stats -->
@@ -163,8 +131,7 @@
 						<table class="table table-sm w-full align-middle">
 							<thead>
 								<tr>
-									<th class="w-0">{m.paperType()}</th>
-									<th class="w-0">{m.paperStatus()}</th>
+									<PaperTypeStatusColumns />
 									<th>{m.paperTopic()}</th>
 									<th class="w-0 whitespace-nowrap">{m.author()}</th>
 									<th class="w-0 whitespace-nowrap">{m.submittedAt()}</th>
@@ -180,27 +147,13 @@
 										tabindex="0"
 										onkeydown={(e) => e.key === 'Enter' && handlePaperClick(paper.id)}
 									>
-										<td class="align-middle">
-											<PaperEnum.Type type={paper.type} size="xs" />
-										</td>
-										<td class="align-middle">
-											<PaperEnum.Status status={paper.status} size="xs" />
-										</td>
+										<PaperTypeStatusColumns {paper} />
 										<td class="align-middle break-words">
-											{#if paper.agendaItem}
-												{#if paper.agendaItem.committee?.abbreviation}
-													<span class="badge badge-soft badge-primary badge-sm mr-1">
-														{paper.agendaItem.committee.abbreviation}
-													</span>
-												{/if}
-												{paper.agendaItem.title}
-											{:else}
-												<span class="text-base-content/40">-</span>
-											{/if}
+											{@render topic(paper.agendaItem)}
 										</td>
 										<td class="align-middle whitespace-nowrap">
-											{paper.author.given_name}
-											{paper.author.family_name}
+											{paper.author.givenName}
+											{paper.author.familyName}
 										</td>
 										<td class="align-middle text-sm text-base-content/60 whitespace-nowrap">
 											{formatDate(paper.firstSubmittedAt)}

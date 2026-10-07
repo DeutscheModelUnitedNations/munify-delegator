@@ -1,36 +1,67 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
-	import DashboardLinksGrid from '$lib/components/Dashboard/DashboardLinksGrid.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import StatusCard from '$lib/components/StatusCubes/StatusCard.svelte';
+	import type { ComponentProps } from 'svelte';
+	import type { MyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	import { client } from '$lib/api/rumbleClient/client';
+	import DashboardLinksGrid from '$lib/components/dashboard/DashboardLinksGrid.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
+	import StatusCard from '$lib/components/statusCubes/StatusCard.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		conferenceId: string;
-		userId: string;
-		status?: MyConferenceparticipationQuery$result['findUniqueConferenceParticipantStatus'];
+		status?: MyConferenceParticipation['participantStatus'];
 		ofAgeAtConference: boolean;
-		unlockPayment?: boolean;
-		unlockPostals?: boolean;
 	}
 
-	let {
-		conferenceId,
-		status,
-		userId,
-		ofAgeAtConference,
-		unlockPayment = false,
-		unlockPostals = false
-	}: Props = $props();
+	let { conferenceId, status, ofAgeAtConference }: Props = $props();
 
-	let allDone = $derived.by(() => {
-		// NOT_YET_POSSIBLE items don't count as done - only actually DONE items do
-		const paymentDone = unlockPayment && status?.paymentStatus === 'DONE';
-		const termsDone = unlockPostals && status?.termsAndConditions === 'DONE';
-		const guardianDone = ofAgeAtConference || (unlockPostals && status?.guardianConsent === 'DONE');
-		const mediaDone = unlockPostals && status?.mediaConsent === 'DONE';
-		return paymentDone && termsDone && guardianDone && mediaDone;
-	});
+	const conference = $derived(
+		await client.liveQuery.conference({
+			__args: { id: conferenceId },
+			unlockPayments: true,
+			unlockPostals: true
+		})
+	);
+	const unlockPayment = $derived(conference.unlockPayments);
+	const unlockPostals = $derived(conference.unlockPostals);
+
+	type StepStatus = ComponentProps<typeof StatusCard>['status'];
+
+	/** A step that cannot be taken before the conference unlocks it, and is pending until it is. */
+	const stepStatus = (unlocked: boolean, value: StepStatus | undefined): StepStatus =>
+		unlocked ? (value ?? 'PENDING') : 'NOT_YET_POSSIBLE';
+
+	let steps = $derived([
+		{
+			task: m.payment(),
+			faIcon: 'hand-holding-circle-dollar',
+			status: stepStatus(unlockPayment, status?.paymentStatus)
+		},
+		{
+			task: m.userAgreement(),
+			faIcon: 'file-contract',
+			status: stepStatus(unlockPostals, status?.termsAndConditions)
+		},
+		// Only minors need their guardian's consent
+		...(ofAgeAtConference
+			? []
+			: [
+					{
+						task: m.guardianAgreement(),
+						faIcon: 'family',
+						status: stepStatus(unlockPostals, status?.guardianConsent)
+					}
+				]),
+		{
+			task: m.mediaAgreement(),
+			faIcon: 'photo-film',
+			status: stepStatus(unlockPostals, status?.mediaConsent)
+		}
+	]);
+
+	// NOT_YET_POSSIBLE steps don't count as done - only actually DONE ones do. The guardian's
+	// consent is only a step for minors, so adults are done without it.
+	let allDone = $derived(steps.every((step) => step.status === 'DONE'));
 </script>
 
 <DashboardSection
@@ -55,28 +86,9 @@
 				faIcon="user-plus"
 				customDescription={m.statusRegistrationConfirmed()}
 			/>
-			<StatusCard
-				status={unlockPayment ? (status?.paymentStatus ?? 'PENDING') : 'NOT_YET_POSSIBLE'}
-				task={m.payment()}
-				faIcon="hand-holding-circle-dollar"
-			/>
-			<StatusCard
-				status={unlockPostals ? (status?.termsAndConditions ?? 'PENDING') : 'NOT_YET_POSSIBLE'}
-				task={m.userAgreement()}
-				faIcon="file-contract"
-			/>
-			{#if !ofAgeAtConference}
-				<StatusCard
-					status={unlockPostals ? (status?.guardianConsent ?? 'PENDING') : 'NOT_YET_POSSIBLE'}
-					task={m.guardianAgreement()}
-					faIcon="family"
-				/>
-			{/if}
-			<StatusCard
-				status={unlockPostals ? (status?.mediaConsent ?? 'PENDING') : 'NOT_YET_POSSIBLE'}
-				task={m.mediaAgreement()}
-				faIcon="photo-film"
-			/>
+			{#each steps as step (step.task)}
+				<StatusCard status={step.status} task={step.task} faIcon={step.faIcon} />
+			{/each}
 		</DashboardLinksGrid>
 	{/if}
 </DashboardSection>

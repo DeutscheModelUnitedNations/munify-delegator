@@ -1,40 +1,25 @@
 <script lang="ts">
-	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
-	import SideNavigationDrawer from '$lib/components/SideNavigationDrawer.svelte';
+	import type { LayoutProps } from './$types';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
+	import ConferenceSidebarLayout from '$lib/components/ConferenceSidebarLayout.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import type { Snippet } from 'svelte';
-	import type { LayoutData } from './$types';
-	import UserCardDrawer from '$lib/components/UserCard/UserCardDrawer.svelte';
 
-	let { data, children }: { data: LayoutData; children: Snippet } = $props();
-	let navbarExpanded = $state(true);
+	let { children, params }: LayoutProps = $props();
 </script>
 
-<div class="flex min-w-0 grow basis-0 overflow-hidden">
-	<SideNavigationDrawer
-		navigateBackHref={`/dashboard/${data.conferenceId}`}
-		bind:expanded={navbarExpanded}
-	>
-		<NavMenu>
-			<NavMenuButton
-				href={`/dashboard/${data.conferenceId}/team-management/members`}
-				icon="fa-users"
-				title={m.teamMembers()}
-				bind:expanded={navbarExpanded}
-			/>
-			<NavMenuButton
-				href={`/dashboard/${data.conferenceId}/team-management/invitations`}
-				icon="fa-envelope"
-				title={m.pendingInvitations()}
-				bind:expanded={navbarExpanded}
-			/>
-		</NavMenu>
-	</SideNavigationDrawer>
+<ConferenceSidebarLayout>
+	{#snippet nav()}
+		<NavMenuButton
+			href={`/dashboard/${params.conferenceId}/team-management/members`}
+			icon="fa-users"
+			title={m.teamMembers()}
+		/>
+		<NavMenuButton
+			href={`/dashboard/${params.conferenceId}/team-management/invitations`}
+			icon="fa-envelope"
+			title={m.pendingInvitations()}
+		/>
+	{/snippet}
 
-	<div class="flex h-full min-w-0 grow flex-col px-3">
-		{@render children()}
-	</div>
-</div>
-
-<UserCardDrawer conferenceId={data.conferenceId} />
+	{@render children()}
+</ConferenceSidebarLayout>

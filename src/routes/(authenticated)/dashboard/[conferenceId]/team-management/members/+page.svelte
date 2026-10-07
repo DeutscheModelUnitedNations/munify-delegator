@@ -1,24 +1,45 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
-	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
-	import { cache, graphql } from '$houdini';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { IMPERSONATION_ENABLED } from '$lib/data/impersonation';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import BadgeCell from '$lib/components/tanStackTable/cells/BadgeCell.svelte';
+	import TeamMemberActions from './TeamMemberActions.svelte';
+	import TeamManagementPage from '../TeamManagementPage.svelte';
+	import { translateTeamRole } from '$lib/utils/enumTranslations';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import { onMount } from 'svelte';
-	import type { PageData } from './$houdini';
 	import { z } from 'zod';
-	import { genericPromiseToastMessages } from '$lib/services/toast';
-	import { openUserCard } from '$lib/components/UserCard/userCardState.svelte';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { startImpersonation } from '$lib/api/startImpersonation';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
-	const teamQuery = data.TeamManagementMembersQuery;
-	let teamMembers = $derived($teamQuery.data?.findManyTeamMembers ?? []);
-	let isAdmin = data.isAdmin;
-
-	let inviteMembersModalOpen = $state(false);
+	const teamMembers = $derived(
+		await client.liveQuery.teamMembers({
+			__args: { where: { conferenceId: { eq: params.conferenceId } } },
+			id: true,
+			role: true,
+			user: {
+				id: true,
+				givenName: true,
+				familyName: true,
+				email: true,
+				birthday: true,
+				phone: true,
+				street: true,
+				zip: true,
+				city: true,
+				country: true,
+				gender: true,
+				foodPreference: true
+			}
+		})
+	);
+	const isAdmin = $derived((await getCurrentUser()).isAdmin);
 
 	// Dedicated schema for profile completeness validation
 	const profileCompletenessSchema = z.object({
@@ -57,7 +78,7 @@
 	});
 
 	function isProfileComplete(user: {
-		birthday: string | null;
+		birthday: Date | null;
 		phone: string | null;
 		street: string | null;
 		zip: string | null;
@@ -69,63 +90,17 @@
 		return profileCompletenessSchema.safeParse(user).success;
 	}
 
-	const deleteTeamMemberMutation = graphql(`
-		mutation DeleteTeamMemberFromManagement($id: String!) {
-			deleteOneTeamMember(where: { id: $id }) {
-				id
-			}
-		}
-	`);
-
-	const startImpersonationMutation = graphql(`
-		mutation StartImpersonationFromTeamManagement($targetUserId: String!) {
-			startImpersonation(targetUserId: $targetUserId)
-		}
-	`);
-
 	const handleDelete = async (id: string) => {
 		if (!confirm(m.confirmDeleteTeamMember())) return;
 
-		const promise = deleteTeamMemberMutation.mutate({ id });
+		const promise = Promise.resolve(client.mutate.deleteTeamMember({ __args: { id } }));
 		toast.promise(promise, {
 			loading: m.deletingTeamMember(),
 			success: m.teamMemberDeleted(),
 			error: m.deleteTeamMemberError()
 		});
 		await promise;
-
-		cache.markStale();
-		await invalidateAll();
 	};
-
-	const handleImpersonate = async (userId: string) => {
-		try {
-			const promise = startImpersonationMutation.mutate({ targetUserId: userId });
-			toast.promise(promise, genericPromiseToastMessages);
-			await promise;
-			await goto('/dashboard');
-			window.location.reload();
-		} catch (error) {
-			console.error('Failed to start impersonation:', error);
-			toast.error(m.impersonationFailed());
-		}
-	};
-
-	const handleOpenUserCard = (userId: string) => {
-		openUserCard(userId, data.conferenceId);
-	};
-
-	// Expose functions globally for onclick handlers in rendered HTML
-	onMount(() => {
-		window.handleTeamMemberDelete = handleDelete;
-		window.handleTeamMemberImpersonate = handleImpersonate;
-		window.handleTeamMemberOpenUserCard = handleOpenUserCard;
-		return () => {
-			delete window.handleTeamMemberDelete;
-			delete window.handleTeamMemberImpersonate;
-			delete window.handleTeamMemberOpenUserCard;
-		};
-	});
 
 	const roleColors: Record<string, string> = {
 		PROJECT_MANAGEMENT: 'badge-primary',
@@ -136,88 +111,62 @@
 		CONTENT_LEAD: 'badge-warning'
 	};
 
-	const columns = [
+	const columns: ManagedColumn<(typeof teamMembers)[number]>[] = [
 		{
-			key: 'family_name',
-			title: m.familyName(),
-			value: (row: (typeof teamMembers)[number]) => row.user.family_name,
-			sortable: true
+			id: 'family_name',
+			header: m.familyName(),
+			accessorFn: (row) => row.user.familyName
 		},
 		{
-			key: 'given_name',
-			title: m.givenName(),
-			value: (row: (typeof teamMembers)[number]) => row.user.given_name,
-			sortable: true
+			id: 'given_name',
+			header: m.givenName(),
+			accessorFn: (row) => row.user.givenName
 		},
 		{
-			key: 'email',
-			title: m.email(),
-			value: (row: (typeof teamMembers)[number]) => row.user.email,
-			sortable: true
+			id: 'email',
+			header: m.email(),
+			accessorFn: (row) => row.user.email
 		},
 		{
-			key: 'role',
-			title: m.role(),
-			value: (row: (typeof teamMembers)[number]) => translateTeamRole(row.role),
-			sortable: true,
-			parseHTML: true,
-			renderValue: (row: (typeof teamMembers)[number]) =>
-				`<span class="badge ${roleColors[row.role] ?? 'badge-ghost'}">${translateTeamRole(row.role)}</span>`
+			id: 'role',
+			header: m.role(),
+			accessorFn: (row) => translateTeamRole(row.role),
+			cell: ({ row }) =>
+				renderComponent(BadgeCell, {
+					label: translateTeamRole(row.original.role),
+					variant: roleColors[row.original.role] ?? 'badge-ghost'
+				})
 		},
 		{
-			key: 'profileStatus',
-			title: m.profileStatus(),
-			value: (row: (typeof teamMembers)[number]) =>
-				isProfileComplete(row.user) ? m.complete() : m.incomplete(),
-			sortable: true,
-			parseHTML: true,
-			renderValue: (row: (typeof teamMembers)[number]) => {
-				const complete = isProfileComplete(row.user);
-				return complete
-					? `<span class="badge badge-success">${m.complete()}</span>`
-					: `<span class="badge badge-warning" title="${m.profileIncompleteHint()}">${m.incomplete()}</span>`;
-			}
+			id: 'profileStatus',
+			header: m.profileStatus(),
+			accessorFn: (row) => (isProfileComplete(row.user) ? m.complete() : m.incomplete()),
+			cell: ({ row }) =>
+				isProfileComplete(row.original.user)
+					? renderComponent(BadgeCell, { label: m.complete(), variant: 'badge-success' })
+					: renderComponent(BadgeCell, {
+							label: m.incomplete(),
+							variant: 'badge-warning',
+							title: m.profileIncompleteHint()
+						})
 		},
 		{
-			key: 'actions',
-			title: '',
-			value: () => '',
-			parseHTML: true,
-			renderValue: (row: (typeof teamMembers)[number]) => `
-				<div class="flex gap-2 justify-end">
-					<button class="btn btn-ghost btn-sm btn-square" onclick="window.handleTeamMemberOpenUserCard('${row.user.id}')" title="${m.adminUserCard()}">
-						<i class="fa-duotone fa-id-card"></i>
-					</button>
-					${
-						isAdmin
-							? `<button class="btn btn-sm" onclick="window.handleTeamMemberImpersonate('${row.user.id}')" title="${m.impersonation()}">
-							<i class="fa-duotone fa-user-secret"></i>
-						</button>`
-							: ''
-					}
-					<button class="btn btn-sm btn-error" onclick="window.handleTeamMemberDelete('${row.id}')" title="${m.delete()}">
-						<i class="fa-solid fa-trash"></i>
-					</button>
-				</div>
-			`
+			id: 'actions',
+			header: '',
+			cell: ({ row }) =>
+				renderComponent(TeamMemberActions, {
+					onOpenUserCard: () => openUserCard(row.original.user.id),
+					onImpersonate:
+						isAdmin && IMPERSONATION_ENABLED
+							? () => startImpersonation(row.original.user.id)
+							: undefined,
+					onDelete: () => handleDelete(row.original.id)
+				}),
+			enableSorting: false
 		}
 	];
 </script>
 
-<div class="flex flex-col gap-4 p-6">
-	<div class="flex justify-between items-center">
-		<h1 class="text-3xl font-bold">{m.teamMembers()}</h1>
-		<div class="flex gap-2">
-			<button class="btn btn-primary" onclick={() => (inviteMembersModalOpen = true)}>
-				<i class="fa-duotone fa-envelope"></i>
-				{m.inviteTeamMembers()}
-			</button>
-		</div>
-	</div>
-
-	<DataTable {columns} rows={teamMembers} />
-</div>
-
-{#if inviteMembersModalOpen}
-	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={data.conferenceId} />
-{/if}
+<TeamManagementPage title={m.teamMembers()} conferenceId={params.conferenceId}>
+	<ManagedTable {columns} rows={teamMembers} />
+</TeamManagementPage>

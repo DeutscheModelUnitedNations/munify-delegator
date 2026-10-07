@@ -13,19 +13,24 @@ This document provides guidance for building consistent user interfaces in MUNif
 
 ## Component Library Overview
 
-Components are located in `src/lib/components/`. Key directories:
+Components are located in `src/lib/components/`.
 
-- `Calendar/` - Conference calendar display (day views, time markers, entry cards)
-- `Form/` - Form inputs integrated with sveltekit-superforms
-- `Dashboard/` - Dashboard section layouts and widgets
-- `DataTable/` - Searchable, sortable data tables
-- `NavMenu/` - Sidebar navigation components
-- `Tabs/` - Tab navigation
-- `DelegationStats/` - Statistics display widgets
-- `InfoGrid/` - Key-value pair display grids
-- `Charts/` - ECharts-based visualizations
-- `PaperHub/` - Paper management components including statistics
-- `Survey/` - Survey answer modal and compact survey cards for the dashboard
+**Naming convention**: directories are `camelCase`, component files are `PascalCase`
+(e.g. `tanStackTable/ui/ManagedTable.svelte`). This matches munify-chase.
+
+Key directories:
+
+- `calendar/` - Conference calendar display (day views, time markers, entry cards)
+- `form/` - Form inputs integrated with sveltekit-superforms
+- `dashboard/` - Dashboard section layouts and widgets
+- `dataTable/` - Searchable, sortable data tables
+- `navMenu/` - Sidebar navigation components
+- `tabs/` - Tab navigation
+- `delegationStats/` - Statistics display widgets
+- `infoGrid/` - Key-value pair display grids
+- `charts/` - ECharts-based visualizations
+- `paperHub/` - Paper management components including statistics
+- `survey/` - Survey answer modal and compact survey cards for the dashboard
 
 Route-local components that set a pattern are documented below as well (e.g. [Seat Planning](#seat-planning-matrix--hints-sidebar)).
 
@@ -33,7 +38,7 @@ Route-local components that set a pattern are documented below as well (e.g. [Se
 
 ## DetailedPaperStats Component
 
-`src/lib/components/PaperHub/DetailedPaperStats.svelte`
+`src/lib/components/paperHub/DetailedPaperStats.svelte`
 
 Displays comprehensive paper statistics with multiple charts and gauges for the Paper Hub dashboard.
 
@@ -62,7 +67,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import DetailedPaperStats from '$lib/components/PaperHub/DetailedPaperStats.svelte';
+	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
 
 	// allPapers: flat array of all papers across committees
 	// committeesWithPapers: array of committees with their papers grouped
@@ -76,7 +81,7 @@ interface Props {
 
 ### Chart Subcomponents
 
-This component uses the following chart components from `$lib/components/Charts/ECharts/`:
+This component uses the following chart components from `$lib/components/charts/echarts/`:
 
 | Component             | Purpose                                    |
 | --------------------- | ------------------------------------------ |
@@ -98,11 +103,11 @@ This component uses the following chart components from `$lib/components/Charts/
 
 ## Team Management Components
 
-Components in `src/lib/components/TeamManagement/` for managing team invitations.
+Components in `src/lib/components/teamManagement/` for managing team invitations.
 
 ### InviteTeamMembersModal
 
-`src/lib/components/TeamManagement/InviteTeamMembersModal.svelte`
+`src/lib/components/teamManagement/InviteTeamMembersModal.svelte`
 
 Modal for inviting team members via email. Supports batch email input, status checking, and role assignment.
 
@@ -119,7 +124,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
+	import InviteTeamMembersModal from '$lib/components/teamManagement/InviteTeamMembersModal.svelte';
 
 	let inviteModalOpen = $state(false);
 </script>
@@ -143,7 +148,7 @@ interface Props {
 
 ### PendingInvitationsTable
 
-`src/lib/components/TeamManagement/PendingInvitationsTable.svelte`
+`src/lib/components/teamManagement/PendingInvitationsTable.svelte`
 
 Table displaying pending team member invitations with actions.
 
@@ -171,7 +176,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import PendingInvitationsTable from '$lib/components/TeamManagement/PendingInvitationsTable.svelte';
+	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
 </script>
 
 <PendingInvitationsTable invitations={data.pendingInvitations} />
@@ -188,11 +193,11 @@ interface Props {
 
 ## Calendar Components
 
-Components in `src/lib/components/Calendar/` for displaying conference calendar schedules.
+Components in `src/lib/components/calendar/` for displaying conference calendar schedules.
 
 ### CalendarDisplay
 
-`src/lib/components/Calendar/CalendarDisplay.svelte`
+`src/lib/components/calendar/CalendarDisplay.svelte`
 
 Main calendar container that renders day tabs (small screens) or side-by-side columns (3xl+). Handles day selection, track filtering, and entry click → drawer.
 
@@ -209,7 +214,7 @@ interface Props {
 
 ```svelte
 <script lang="ts">
-	import CalendarDisplay from '$lib/components/Calendar/CalendarDisplay.svelte';
+	import CalendarDisplay from '$lib/components/calendar/CalendarDisplay.svelte';
 </script>
 
 <CalendarDisplay days={previewDays} timezone="Europe/Berlin" />
@@ -224,7 +229,7 @@ interface Props {
 
 ### CalendarDayView
 
-`src/lib/components/Calendar/CalendarDayView.svelte`
+`src/lib/components/calendar/CalendarDayView.svelte`
 
 Renders a single day's timeline with hour grid, entries positioned by time, and a live "now" marker.
 
@@ -244,7 +249,7 @@ interface Props {
 
 ### CalendarTimeMarker
 
-`src/lib/components/Calendar/CalendarTimeMarker.svelte`
+`src/lib/components/calendar/CalendarTimeMarker.svelte`
 
 Displays a red "now" line on the calendar timeline. Uses `Intl.DateTimeFormat` with conference timezone to compute position.
 
@@ -261,13 +266,13 @@ interface Props {
 
 ### CalendarEntryCard
 
-`src/lib/components/Calendar/CalendarEntryCard.svelte`
+`src/lib/components/calendar/CalendarEntryCard.svelte`
 
 Renders a single calendar entry as a colored card positioned on the timeline. Shows icon, name, time range, room, and track.
 
 ### CalendarEntryDrawer
 
-`src/lib/components/Calendar/CalendarEntryDrawer.svelte`
+`src/lib/components/calendar/CalendarEntryDrawer.svelte`
 
 Slide-out drawer showing full entry details including place information, map, and site plan.
 
@@ -311,15 +316,28 @@ Renders a keyboard shortcut hint with OS-aware modifier formatting. On macOS, re
 
 Forms use `sveltekit-superforms` for validation and state management. Always structure forms consistently.
 
+### FormSection (long forms)
+
+For long forms (the profile, the conference settings) group fields with `FormSection` instead:
+icon, title and optional `description` on the left, fields on the right, groups separated by a
+rule rather than boxed. Lay out related fields side by side with a `grid` inside it.
+
+```svelte
+<FormSection title={m.address()} icon="house">...</FormSection>
+```
+
+`FormImage` is the image upload (drop zone with preview, replace and discard). It fills the same
+`File` field as `FormFile`; pass `storedUrl` to preview what the server already holds.
+
 ### FormFieldset (Required for Grouping)
 
 **Always** wrap related form inputs with `FormFieldset` to provide visual grouping:
 
 ```svelte
 <script lang="ts">
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
 </script>
 
 <FormFieldset title="Personal Information">
@@ -351,11 +369,11 @@ Forms use `sveltekit-superforms` for validation and state management. Always str
 
 ```svelte
 <script lang="ts">
-	import Form from '$lib/components/Form/Form.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import FormTextInput from '$lib/components/Form/FormTextInput.svelte';
-	import FormSelect from '$lib/components/Form/FormSelect.svelte';
-	import FormCheckbox from '$lib/components/Form/FormCheckbox.svelte';
+	import Form from '$lib/components/form/Form.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import FormSelect from '$lib/components/form/FormSelect.svelte';
+	import FormCheckbox from '$lib/components/form/FormCheckbox.svelte';
 	import { superForm } from 'sveltekit-superforms';
 
 	let { data } = $props();
@@ -405,7 +423,7 @@ Use `Modal` for dialogs. It handles backdrop clicks and accessibility.
 ```svelte
 <script lang="ts">
 	import Modal from '$lib/components/Modal.svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 
 	let modalOpen = $state(false);
 </script>
@@ -447,6 +465,38 @@ When using superforms inside a modal, integrate the Form component:
 </Modal>
 ```
 
+### ActionModal and ConfirmDeleteModal
+
+For a modal that only asks for a confirmation (with or without a few fields), prefer these to a
+hand-built `Modal`. Both are always open: render them inside an `{#if}` and close them in
+`onClose`, which cancelling and the backdrop call.
+
+```svelte
+{#if editing}
+	<ActionModal
+		title={m.edit()}
+		confirmLabel={m.save()}
+		loading={saving}
+		onConfirm={save}
+		onClose={() => (editing = false)}
+	>
+		<input class="input" bind:value={name} />
+	</ActionModal>
+{/if}
+
+{#if deleting}
+	<ConfirmDeleteModal
+		title={m.delete()}
+		text={m.reallyDelete()}
+		onConfirm={remove}
+		onClose={() => (deleting = false)}
+	/>
+{/if}
+```
+
+`ConfirmDeleteModal` tracks its own loading state while `onConfirm` (async) runs. `ActionModal`
+also takes `subtitle` (snippet), `confirmClass`, `confirmDisabled`, `bodyClass` and `boxClass`.
+
 ---
 
 ## Drawer Component
@@ -487,7 +537,7 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ## TopDrawer Component
 
-Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `vaul-svelte`, it provides a gesture-friendly drawer with drag-to-close support. Used in management tool pages (accessFlow, postalRegistration, payments) for showing scanned/searched item details.
+Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `SlidePanel`. It closes on overlay click, Escape and the close button, and animates out the same way for each. Used in management tool pages (accessFlow, postalRegistration, payments) for showing scanned/searched item details.
 
 ### Props
 
@@ -526,7 +576,19 @@ Use `TopDrawer` for overlay panels that slide down from the top of the screen. B
 </TopDrawer>
 ```
 
-**Note:** `TopDrawer` is different from `Drawer` — TopDrawer uses vaul-svelte for gesture/swipe support and slides from the top; Drawer is a right-side slide-out panel.
+**Note:** `TopDrawer` is different from `Drawer` — TopDrawer slides down from the top on `SlidePanel`; Drawer is a right-side slide-out detail panel.
+
+## SlidePanel Component
+
+`$lib/components/SlidePanel.svelte` is the shared base for animated edge panels (`TopDrawer`, the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
+
+| Prop        | Type                           | Description                                |
+| ----------- | ------------------------------ | ------------------------------------------ |
+| `open`      | `boolean` (bindable)           | Controls visibility                        |
+| `direction` | `'top' \| 'right' \| 'bottom'` | Edge it slides in from (default `'right'`) |
+| `class`     | `string`                       | Sizing classes: max width/height, rounding |
+| `keepFocus` | `boolean`                      | Do not move focus into the panel on open   |
+| `children`  | `Snippet`                      | Panel content                              |
 
 ---
 
@@ -554,16 +616,16 @@ Use `BarcodeScanner` for pages that need barcode scanning via camera or manual t
 
 ```svelte
 <script lang="ts">
-	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
 	import { queryParameters } from 'sveltekit-search-params';
 
-	let params = queryParameters({ queryUserId: true });
+	const params = queryParameters({ queryUserId: true });
 	let scannerRef: BarcodeScanner;
 </script>
 
 <BarcodeScanner
 	bind:this={scannerRef}
-	bind:scannedCode={$params.queryUserId}
+	bind:scannedCode={params.queryUserId}
 	barcodeFormats={['data_matrix', 'code_128']}
 	persistKey="useCameraForMyPage"
 	manualPlaceholder="Enter code..."
@@ -585,7 +647,7 @@ Main section wrapper with icon, title, and description:
 
 ```svelte
 <script lang="ts">
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 </script>
 
 <DashboardSection
@@ -615,7 +677,7 @@ Simple card container for content:
 
 ```svelte
 <script lang="ts">
-	import DashboardContentCard from '$lib/components/Dashboard/DashboardContentCard.svelte';
+	import DashboardContentCard from '$lib/components/dashboard/DashboardContentCard.svelte';
 </script>
 
 <DashboardContentCard title="Statistics" description="Overview of current data">
@@ -644,7 +706,7 @@ Checklist table with status icons:
 
 ```svelte
 <script lang="ts">
-	import TodoTable from '$lib/components/Dashboard/TodoTable.svelte';
+	import TodoTable from '$lib/components/dashboard/TodoTable.svelte';
 </script>
 
 <TodoTable
@@ -666,7 +728,7 @@ Survey components handle displaying and answering surveys on the participant das
 
 Self-fetching dashboard component (like `CalendarSection`) that queries surveys and renders them. Renders nothing if no surveys exist.
 
-**File:** `src/lib/components/Dashboard/SurveySection.svelte`
+**File:** `src/lib/components/dashboard/SurveySection.svelte`
 
 **Props:** `conferenceId: string`, `userId: string`, `conferenceTimezone: string`
 
@@ -681,7 +743,7 @@ Self-fetching dashboard component (like `CalendarSection`) that queries surveys 
 
 Compact card for a single survey within the dashboard section.
 
-**File:** `src/lib/components/Survey/SurveyCard.svelte`
+**File:** `src/lib/components/survey/SurveyCard.svelte`
 
 **Props:**
 
@@ -696,7 +758,7 @@ Shows deadline status, title, description, current answer badge, and an "Answer"
 
 Modal for answering or changing a survey answer with radio option cards and capacity indicators.
 
-**File:** `src/lib/components/Survey/SurveyAnswerModal.svelte`
+**File:** `src/lib/components/survey/SurveyAnswerModal.svelte`
 
 **Props:**
 
@@ -722,40 +784,90 @@ Shows an open/closed badge with the deadline formatted in the conference timezon
 
 ## Data Display
 
-### DataTable
+### ManagedTable
 
-Searchable, sortable table with optional row expansion:
+The table of the management pages, built on TanStack Table
+(`$lib/components/tanStackTable/ui/ManagedTable.svelte`): sortable, paginated, with a search box
+kept in the URL (`?filter=`), an export button and the size / zebra settings. Columns are
+`ManagedColumn<Row>` definitions; the accessor is what gets sorted and searched (every term must
+occur somewhere in the row, fuzzily, via Fuse), `cell` renders it:
 
 ```svelte
 <script lang="ts">
-	import DataTable from '$lib/components/DataTable/DataTable.svelte';
+	import { renderComponent } from '$lib/components/tanStackTable';
+	import type { ManagedColumn } from '$lib/components/tanStackTable/managedTable';
+	import ManagedTable from '$lib/components/tanStackTable/ui/ManagedTable.svelte';
+	import BadgeCell from '$lib/components/tanStackTable/cells/BadgeCell.svelte';
 
-	const columns = [
-		{ key: 'name', title: 'Name', value: (row) => row.name, sortable: true },
-		{ key: 'email', title: 'Email', value: (row) => row.email }
+	const columns: ManagedColumn<Row>[] = [
+		{ id: 'name', header: 'Name', accessorFn: (row) => row.name },
+		{
+			id: 'role',
+			header: 'Role',
+			accessorFn: (row) => row.role,
+			cell: ({ row }) => renderComponent(BadgeCell, { label: row.original.role })
+		}
 	];
 </script>
 
-<DataTable
+<ManagedTable
 	{columns}
 	rows={data}
-	enableSearch={true}
-	sortBy="name"
-	rowSelected={(row) => handleRowClick(row)}
+	columnClasses={{ role: 'text-center' }}
+	onRowClick={(row) => handleRowClick(row)}
+	isRowSelected={(row) => row.id === selectedId}
 />
 ```
 
-With expandable rows:
+Cells are Svelte components under `tanStackTable/cells/` (`BadgeCell`, `IconCell`, `IconListCell`,
+`AssignmentBadge`, …), never HTML strings. A cell text longer than 24ch is truncated. The first
+column has to be an accessor column. `tanStackTable/commonColumns.ts` holds the person-table
+columns `nameColumn()`, `appliedColumn()` and `userCardColumn()`; `RegistrationAdminTable` adds the
+row-opens-a-drawer behaviour on top.
+
+Extra controls go in the `toolbar` snippet (inside the search row; it gets the table).
+
+**Filters and columns come with the table.** A column opts into filtering with a typed `filter`:
+`{ type: 'text' | 'boolean' | 'range' }` or `{ type: 'enum', label?: (value) => string }`, plus an
+optional `hint` (shown in the drawer) and `alwaysAvailable` (offered while the column is hidden).
+The type picks the control and the filter function, so a column never sets `filterFn` itself. Any
+table with a filterable column gets a Filters button, active-filter chips and a filter drawer, and
+`defaultFilters` is what it opens with (and what the drawer's reset returns to). Every table gets a Columns drawer: `defaultVisible` says what shows
+before anyone configures it, `group` and `groupOrder` sort the drawers into sections,
+`description` explains a column, and `storageKey` remembers the choice in the browser.
+
+**The table's state lives in the URL**, so a copied link shows the same table: `?filter=` (the
+search, or `queryParamKey`), `filters=` (JSON; `[]` is "no filters", a missing parameter is the
+defaults), `sort=family_name,-email` (`none` for no sorting), `columns=` (the shown column ids),
+`page=` and `size=`. A parameter is dropped again when the value equals what the page would show
+anyway. The codecs are in `managedTable.ts`, the sync is `sveltekit-search-params`. The size and
+zebra settings are personal preferences kept per browser and are not part of the link.
+
+**Export** (CSV, JSON, print) is built into the table from the shown columns and every row the
+filters let through, in sort order. A column exports its accessor's value as text (booleans as
+Ja/Nein, dates formatted); give it `exportValue: (row) => string` when the cell shows something
+else, such as a translated enum. A column with neither accessor nor `exportValue` (an actions
+column) is not exported.
+
+While a search is active the table drops its sorting so the best match comes first; clearing the
+search brings `initialSorting` back.
+
+### CollapsibleCard
+
+A card whose header toggles its body, with an optional `badge` snippet at the header's end:
 
 ```svelte
-<DataTable {columns} rows={data} showExpandIcon={true}>
-	{#snippet expandedRowContent(row)}
-		<div class="p-4">
-			<p>Expanded content for {row.name}</p>
-		</div>
-	{/snippet}
-</DataTable>
+<CollapsibleCard icon="users" title={m.members()} bind:expanded>
+	{#snippet badge()}<span class="badge">{count}</span>{/snippet}
+	<MemberList {delegationId} />
+</CollapsibleCard>
 ```
+
+### LoadState
+
+`<LoadState {loading} {error}>…</LoadState>` shows a spinner while `loading`, the error once one
+occurred, and its children otherwise - for state a component loads by hand rather than through an
+awaited `$derived`.
 
 ### DelegationStats
 
@@ -763,7 +875,7 @@ Statistics widgets using DaisyUI stats component:
 
 ```svelte
 <script lang="ts">
-	import GenericWidget from '$lib/components/DelegationStats/GenericWidget.svelte';
+	import GenericWidget from '$lib/components/delegationStats/GenericWidget.svelte';
 </script>
 
 <GenericWidget
@@ -781,8 +893,8 @@ Key-value pair display:
 
 ```svelte
 <script lang="ts">
-	import Grid from '$lib/components/InfoGrid/Grid.svelte';
-	import Entry from '$lib/components/InfoGrid/Entry.svelte';
+	import Grid from '$lib/components/infoGrid/Grid.svelte';
+	import Entry from '$lib/components/infoGrid/Entry.svelte';
 </script>
 
 <Grid>
@@ -798,24 +910,24 @@ Key-value pair display:
 
 ## Seat Planning (Matrix + Hints Sidebar)
 
-The seat planning page (`src/routes/(authenticated)/management/[conferenceId]/seat-planning/`) is the reference for two patterns: a large editable matrix with live (optimistic) writes, and a sidebar of hints computed from the same state.
+The seat planning page (`src/routes/(authenticated)/dashboard/[conferenceId]/management/seat-planning/`) is the reference for two patterns: a large editable matrix with live (optimistic) writes, and a sidebar of hints computed from the same state.
 
 ### Structure
 
-| File                                          | Role                                                                                                                                                                                                                                                                     |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                    |
-| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table (`table-pin-rows table-pin-cols`), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row                                                                              |
-| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                            |
-| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                 |
-| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets) |
-| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                             |
-| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                        |
+| File                                          | Role                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `seatPlanner.svelte.ts`                       | `SeatPlanner` class: derived seat state, optimistic updates, undo toast, lock lookups                                                                                                                                                                                                                                                        |
+| `SeatMatrix.svelte` / `SortableHeader.svelte` | Pinned table on the shared `DataTable.Root` shell (`$lib/components/tanStackTable/ui`: scroll container, zebra and size from the table settings; `SortButton` is the shared sort header button), every column sortable (`sortSeatRows`), totals in `<tfoot>`. Only the first column may be a `th`: `table-pin-cols` pins every `th` of a row |
+| `SeatMatrixRow.svelte` / `SeatCell.svelte`    | One row per state, one toggle button per committee; locked cells render a lock with a tooltip                                                                                                                                                                                                                                                |
+| `SeatMatrixFilters.svelte` / `filters.ts`     | Filters and sorting persisted in the URL via `queryParameters` (shared with the sidebar)                                                                                                                                                                                                                                                     |
+| `HintsSidebar.svelte` + `hints/*`             | Sidebar sections; each section is its own component. `RegionalBalanceHints` draws diverging seat bars per committee (`RegionalDeviationBars`) against the committee's baseline, set in `RegionalBaselineModal` (UN 193, HRC, ECOSOC, Security Council or manual targets)                                                                     |
+| `CountryInfoPopover.svelte`                   | Native `popover="auto"`, positioned `fixed` next to the clicked name, so the scroll container cannot clip it                                                                                                                                                                                                                                 |
+| `sizeLimits.svelte.ts`                        | Per-browser settings in `localStorage`, loaded in an `$effect` (never during SSR)                                                                                                                                                                                                                                                            |
 
 ### Rules
 
-- **Logic lives in pure functions** in `src/lib/services/seatPlanning/` (`baselines.ts`, `hints.ts`, `sortRows.ts`, `unMembers.ts`) and is unit tested in `src/tests/services/`. Components only render their results.
-- **Optimistic writes**: the class keeps pending changes in a `SvelteMap` and overlays them on the Houdini data. The mutation returns the changed committee with its nations, so the Houdini cache updates without a refetch. On error the pending entry is dropped; the Houdini client already toasts the server message.
+- **Logic lives in pure functions** in `src/lib/helpers/seatPlanning/` (`baselines.ts`, `hints.ts`, `sortRows.ts`, `unMembers.ts`) and is unit tested next to them. Components only render their results.
+- **Optimistic writes**: the class keeps pending changes in a `SvelteMap` and overlays them on the live query results. The mutation returns the changed committee with its nations, so the cache updates without a refetch, and the committee's publish reaches every other open matrix. On error the pending entry is dropped and the server's message is toasted.
 - **Set, don't toggle**: mutations take the target state (`enabled: true/false`) so concurrent clicks converge.
 - **Undo**: success toasts carry an action that sends the inverse mutation (`toast.success(msg, { action: { label: m.undo(), onClick } })`).
 - **Sidebar → matrix**: hints that point at rows (a size, a regional group) set the shared URL filters instead of keeping their own state.
@@ -839,27 +951,49 @@ Hint sections use soft alerts: `alert alert-warning alert-soft` for rule violati
 
 ## Navigation Components
 
+## App Shell
+
+The signed-in area (`routes/(authenticated)/`) has **one** global navigation: a sticky top bar
+(`AuthenticatedHeader.svelte`) inside a centered `max-w-[1400px]` container, which the page content
+shares.
+
+- **Wordmark** (`MUNify DELEGATOR`) links to `/dashboard`, the conference selector.
+- **Breadcrumbs** follow it. The conference crumb is `ConferenceSwitcher.svelte`, a dropdown that
+  names the current conference and switches to another; there is no conference list elsewhere.
+- **Avatar menu** (`UserMenu.svelte`): name and email, my account, feedback, logout, language. It
+  holds no navigation.
+- A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
+
+The dashboard has no sidebar. Only the management and team-management areas add one, through
+`SideNavigationDrawer` (directly, or via `ConferenceSidebarLayout`): a menu that is always fully shown on
+desktop (a drawer behind the top bar's burger on mobile) for the many pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
+
 ### NavMenu
 
 Sidebar navigation:
 
 ```svelte
 <script lang="ts">
-	import NavMenu from '$lib/components/NavMenu/NavMenu.svelte';
-	import NavMenuButton from '$lib/components/NavMenu/NavMenuButton.svelte';
-	import NavMenuDetails from '$lib/components/NavMenu/NavMenuDetails.svelte';
-
-	let expanded = $state(true);
+	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
+	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
+	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
 </script>
 
 <NavMenu>
-	<NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" bind:expanded />
+	<NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" />
 	<NavMenuDetails title="Settings" icon="fa-cog">
-		<NavMenuButton title="General" href="/settings/general" icon="fa-gear" bind:expanded />
-		<NavMenuButton title="Security" href="/settings/security" icon="fa-shield" bind:expanded />
+		<NavMenuButton title="General" href="/settings/general" icon="fa-gear" />
+		<NavMenuButton title="Security" href="/settings/security" icon="fa-shield" />
 	</NavMenuDetails>
 </NavMenu>
 ```
+
+`NavMenuDetails` is a labelled group whose entries are indented below it; it does not collapse.
+
+### ConferenceSidebarLayout
+
+The layout of a conference area with its own side navigation (team management): pass the menu's entries as the `nav` snippet; it also mounts the user card drawer
+those pages open.
 
 ### Tabs
 
@@ -867,8 +1001,8 @@ Tab navigation:
 
 ```svelte
 <script lang="ts">
-	import Tabs from '$lib/components/Tabs/Tabs.svelte';
-	import Tab from '$lib/components/Tabs/Tab.svelte';
+	import Tabs from '$lib/components/tabs/Tabs.svelte';
+	import Tab from '$lib/components/tabs/Tab.svelte';
 
 	let activeTab = $state('overview');
 </script>
@@ -915,6 +1049,12 @@ Colored status indicator with optional blink:
 
 **Colors**: `success`, `warning`, `error`, `info`
 **Sizes**: `xs`, `sm`, `md`, `lg`, `xl`
+
+### OptionalTooltip
+
+`<OptionalTooltip tip={track.description}>…</OptionalTooltip>` wraps its children in a DaisyUI tooltip only
+when `tip` is set, and renders them bare otherwise - such as a calendar track that may have a
+description.
 
 ### Badges
 
@@ -1074,17 +1214,20 @@ For card-based layouts:
 
 ## URL State Management
 
-Use `sveltekit-search-params` for URL-persisted state:
+Use `sveltekit-search-params` (v4, runes-based) for URL-persisted state. `queryParameters` returns a
+reactive object: read `params.x`, assign `params.x = …` to navigate, and assign `null` to drop the
+key. Call it during component init. Name it `params`, and the route prop `routeParams` where both
+exist.
 
 ```svelte
 <script lang="ts">
-	import { queryParam } from 'sveltekit-search-params';
+	import { queryParameters, ssp } from 'sveltekit-search-params';
 
-	const tabParam = queryParam('tab');
-	let activeTab = $derived($tabParam ?? 'overview');
+	const params = queryParameters({ tab: true, page: ssp.number(1) });
+	let activeTab = $derived(params.tab ?? 'overview');
 
 	function setTab(tab: string) {
-		$tabParam = tab;
+		params.tab = tab;
 	}
 </script>
 ```

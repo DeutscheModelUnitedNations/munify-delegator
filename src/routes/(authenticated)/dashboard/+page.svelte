@@ -1,56 +1,75 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import AccentStripe from '$lib/components/AccentStripe.svelte';
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import MyConferenceCard from '$lib/components/Dashboard/MyConferenceCard.svelte';
+	import ConferenceSelectorCard from '$lib/components/dashboard/ConferenceSelectorCard.svelte';
+	import { fetchSelectableConferences } from './conferenceSelector';
+	import {
+		conferenceGroupIcon,
+		conferenceGroupLabel,
+		groupConferencesByState
+	} from './conferenceGroups';
 
-	let { data }: { data: PageData } = $props();
+	// Only what decides the grouping; each card fetches what it shows.
+	const conferences = $derived(await fetchSelectableConferences());
+	const currentUser = await getCurrentUser();
 
-	// Sort conferences: upcoming first (by start date asc), then past conferences (by start date desc)
-	const sortedConferences = $derived.by(() => {
-		const now = new Date();
-		const upcoming = data.conferences
-			.filter((c) => new Date(c.startConference) >= now)
-			.sort(
-				(a, b) => new Date(a.startConference).getTime() - new Date(b.startConference).getTime()
-			);
-		const past = data.conferences
-			.filter((c) => new Date(c.startConference) < now)
-			.sort(
-				(a, b) => new Date(b.startConference).getTime() - new Date(a.startConference).getTime()
-			);
-		return [...upcoming, ...past];
-	});
+	const groups = $derived(groupConferencesByState(conferences));
 </script>
 
-{#if data.conferences.length === 0}
-	<NoConferenceIndicator />
+{#if conferences.length === 0}
+	<div class="flex w-full flex-col items-center gap-4">
+		<NoConferenceIndicator />
+		{#if currentUser.isAdmin}
+			<a class="btn btn-ghost btn-sm" href={resolve('/dashboard/seed')}>
+				<i class="fa-duotone fa-seedling"></i>
+				{m.seedConference()}
+			</a>
+		{/if}
+	</div>
 {:else}
-	<div class="flex w-full flex-col items-center">
-		<div class="flex w-full max-w-4xl flex-col gap-6">
-			<DashboardSection
-				icon="globe"
-				title={m.myConferences()}
-				description={m.myConferencesDescription()}
-			>
-				<div class="flex flex-col gap-4">
-					{#each sortedConferences as conference (conference.id)}
-						<MyConferenceCard {conference} />
-					{/each}
-
-					<!-- Register for another conference card -->
-					<a
-						href="/registration"
-						class="card bg-base-100 border-primary hover:bg-base-200 border-2 border-dashed transition-colors"
-					>
-						<div class="card-body items-center justify-center py-8">
-							<i class="fa-duotone fa-plus text-primary mb-2 text-4xl"></i>
-							<span class="text-primary font-medium">{m.registerForAnotherConference()}</span>
-						</div>
-					</a>
+	<div class="flex w-full flex-col items-center pb-16">
+		<div class="flex w-full max-w-none flex-col gap-12">
+			<header class="flex flex-col gap-4 pt-6">
+				<AccentStripe />
+				<div class="flex items-start justify-between gap-4">
+					<div class="flex flex-col gap-4">
+						<h1 class="text-4xl font-bold tracking-tight">{m.conferences()}</h1>
+						<p class="text-base-content/70 max-w-xl">{m.conferenceSelectorIntro()}</p>
+					</div>
+					{#if currentUser.isAdmin}
+						<a class="btn btn-primary btn-lg shrink-0 gap-2" href={resolve('/dashboard/seed')}>
+							<i class="fa-solid fa-plus text-2xl"></i>
+							{m.seedConference()}
+						</a>
+					{/if}
 				</div>
-			</DashboardSection>
+			</header>
+
+			{#each groups as group (group.key)}
+				{@const past = group.key === 'past'}
+				<section class="flex flex-col gap-5">
+					<div class="flex items-center gap-3">
+						<h2
+							class="text-sm font-semibold tracking-widest uppercase {past
+								? 'text-base-content/50'
+								: 'text-base-content/80'}"
+						>
+							<i class="{conferenceGroupIcon(group.key)} mr-1.5"></i>
+							{conferenceGroupLabel(group.key)}
+						</h2>
+						<span class="badge badge-ghost badge-sm">{group.conferences.length}</span>
+						<div class="bg-base-300 h-px flex-1"></div>
+					</div>
+					<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+						{#each group.conferences as conference (conference.id)}
+							<ConferenceSelectorCard conferenceId={conference.id} muted={past} />
+						{/each}
+					</div>
+				</section>
+			{/each}
 		</div>
 	</div>
 {/if}

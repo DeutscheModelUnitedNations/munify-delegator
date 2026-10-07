@@ -25,8 +25,11 @@ export async function openFirstConferenceForRegistration(
 	const href = await registerButton.getAttribute('href');
 	if (!href) throw new Error('registration button had no href');
 
+	// `resolve()` renders relative hrefs (`./registration/…`) on server-rendered pages, so compare
+	// the path the link actually points at, not the attribute text.
+	const target = new URL(href, page.url()).pathname;
 	await registerButton.click();
-	await page.waitForURL(new RegExp(`${href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+	await page.waitForURL((url) => url.pathname === target);
 
 	return conferenceId;
 }

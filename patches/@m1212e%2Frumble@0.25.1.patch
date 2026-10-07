@@ -1,0 +1,197 @@
+diff --git a/out/client.cjs b/out/client.cjs
+index 3625b08..3039aae 100644
+--- a/out/client.cjs
++++ b/out/client.cjs
+@@ -122,8 +122,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
+ 	})));
+ 	const subscriberReady = svelteReactivityReady.then(() => {
+ 		svelteSubscriber = createSubscriber((update) => {
++			// Announce every emission on the next task. urql emits synchronously - a replayed value
++			// on subscribe, or a cache hit fanned out to every operation with the same key when some
++			// other query is issued - and that code often runs inside a `$derived`, where calling
++			// `update()` throws `state_unsafe_mutation` and leaves the page unrendered. A microtask
++			// is not enough: Svelte flushes its batches in microtasks too, and an update landing
++			// between them trips its "Batch has scheduled roots" invariant.
+ 			const unsub = observable.subscribe((_d) => {
+-				update();
++				setTimeout(update, 0);
+ 			});
+ 			return () => unsub.unsubscribe();
+ 		});
+@@ -197,10 +203,13 @@ function makeGraphQLSubscriptionRequest({ subscriptionName, input, client, schem
+ 	}), wonka.toObservable);
+ }
+ function stringifySelection({ parentTypeName, selection, types, autoIncludeIdField, varCtx }) {
+-	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined") selection[autoIncludeIdField] = true;
+ 	const parentType = types.find((t) => t.name === parentTypeName);
++	// Only where the type has the field (result objects without an identity have none), all the way
++	// down, and without writing it into the caller's selection object, which is often shared.
++	const entries = Object.entries(selection);
++	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined" && parentType && "fields" in parentType && parentType.fields.some((f) => f.name === autoIncludeIdField)) entries.unshift([autoIncludeIdField, true]);
+ 	return `{
+-${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
++${entries.filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
+ 		if (typeof value === "object") {
+ 			const subField = parentType && "fields" in parentType ? parentType.fields.find((f) => f.name === key) : void 0;
+ 			let argsString = "";
+@@ -215,6 +224,7 @@ ${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key
+ 				parentTypeName: subNamedType.name,
+ 				selection: value,
+ 				types,
++				autoIncludeIdField,
+ 				varCtx
+ 			})}
+ `;
+diff --git a/out/client.mjs b/out/client.mjs
+index a333275..cca2733 100644
+--- a/out/client.mjs
++++ b/out/client.mjs
+@@ -121,8 +121,14 @@ function makeGraphQLQueryRequest({ queryName, schema, input, client, enableSubsc
+ 	})));
+ 	const subscriberReady = svelteReactivityReady.then(() => {
+ 		svelteSubscriber = createSubscriber((update) => {
++			// Announce every emission on the next task. urql emits synchronously - a replayed value
++			// on subscribe, or a cache hit fanned out to every operation with the same key when some
++			// other query is issued - and that code often runs inside a `$derived`, where calling
++			// `update()` throws `state_unsafe_mutation` and leaves the page unrendered. A microtask
++			// is not enough: Svelte flushes its batches in microtasks too, and an update landing
++			// between them trips its "Batch has scheduled roots" invariant.
+ 			const unsub = observable.subscribe((_d) => {
+-				update();
++				setTimeout(update, 0);
+ 			});
+ 			return () => unsub.unsubscribe();
+ 		});
+@@ -196,10 +202,13 @@ function makeGraphQLSubscriptionRequest({ subscriptionName, input, client, schem
+ 	}), toObservable);
+ }
+ function stringifySelection({ parentTypeName, selection, types, autoIncludeIdField, varCtx }) {
+-	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined") selection[autoIncludeIdField] = true;
+ 	const parentType = types.find((t) => t.name === parentTypeName);
++	// Only where the type has the field (result objects without an identity have none), all the way
++	// down, and without writing it into the caller's selection object, which is often shared.
++	const entries = Object.entries(selection);
++	if (autoIncludeIdField && typeof selection[autoIncludeIdField] === "undefined" && parentType && "fields" in parentType && parentType.fields.some((f) => f.name === autoIncludeIdField)) entries.unshift([autoIncludeIdField, true]);
+ 	return `{
+-${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
++${entries.filter(([key]) => key !== argsKey).reduce((acc, [key, value]) => {
+ 		if (typeof value === "object") {
+ 			const subField = parentType && "fields" in parentType ? parentType.fields.find((f) => f.name === key) : void 0;
+ 			let argsString = "";
+@@ -214,6 +223,7 @@ ${Object.entries(selection).filter(([key]) => key !== argsKey).reduce((acc, [key
+ 				parentTypeName: subNamedType.name,
+ 				selection: value,
+ 				types,
++				autoIncludeIdField,
+ 				varCtx
+ 			})}
+ `;
+diff --git a/out/generate-0QFVc3Sg.mjs b/out/generate-0QFVc3Sg.mjs
+index 2a0402f..2d91301 100644
+--- a/out/generate-0QFVc3Sg.mjs
++++ b/out/generate-0QFVc3Sg.mjs
+@@ -1,5 +1,14 @@
+ import { GraphQLEnumType, GraphQLInputObjectType, GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType } from "graphql";
+-import { access, mkdir, rm, writeFile } from "node:fs/promises";
++import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
++// Writes only when the content differs. Rewriting an identical file on every dev server start
++// still counts as a change to a file watcher, and Vite reloads every open page for it.
++async function writeFileIfChanged(path, content) {
++	try {
++		if (await readFile(path, "utf8") === content) return;
++	} catch {}
++	await writeFile(path, content);
++}
++
+ import { join } from "node:path";
+ import { getIntrospectedSchema, minifyIntrospectionQuery } from "@urql/introspection";
+ import { uneval } from "devalue";
+@@ -216,7 +225,7 @@ export type ${key} = ${rep};
+ 	});
+ 	imports.push(...c.imports);
+ 	code += c.code;
+-	await Promise.all([writeFile(join(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), writeFile(join(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
++	await Promise.all([writeFileIfChanged(join(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), writeFileIfChanged(join(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
+ import type { IntrospectionQuery } from "graphql";
+ export const schema = ${uneval(minifyIntrospectionQuery(getIntrospectedSchema(schema), {
+ 		includeEnums: true,
+diff --git a/out/generate-CM3XjmlO.cjs b/out/generate-CM3XjmlO.cjs
+index e0340a3..063b17b 100644
+--- a/out/generate-CM3XjmlO.cjs
++++ b/out/generate-CM3XjmlO.cjs
+@@ -180,6 +180,16 @@ function makeStringLiteralUnionFromEnum(enumType) {
+ }
+ //#endregion
+ //#region lib/client/generate/generate.ts
++
++// Writes only when the content differs. Rewriting an identical file on every dev server start
++// still counts as a change to a file watcher, and Vite reloads every open page for it.
++async function writeFileIfChanged(path, content) {
++	try {
++		if (await (0, node_fs_promises.readFile)(path, "utf8") === content) return;
++	} catch {}
++	await (0, node_fs_promises.writeFile)(path, content);
++}
++
+ async function generateFromSchema({ outputPath, schema, rumbleImportPath = "@m1212e/rumble/client", apiUrl, useExternalUrqlClient = false, removeExisting = true, forceReactivity, autoIncludeIdField }) {
+ 	if (removeExisting) try {
+ 		await (0, node_fs_promises.access)(outputPath);
+@@ -216,7 +226,7 @@ export type ${key} = ${rep};
+ 	});
+ 	imports.push(...c.imports);
+ 	code += c.code;
+-	await Promise.all([(0, node_fs_promises.writeFile)((0, node_path.join)(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), (0, node_fs_promises.writeFile)((0, node_path.join)(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
++	await Promise.all([writeFileIfChanged((0, node_path.join)(outputPath, "client.ts"), `${autoGenerationPreamble}\n${imports.join("\n")}\n${code}`), writeFileIfChanged((0, node_path.join)(outputPath, `${schemaFileName}.ts`), `${autoGenerationPreamble}
+ import type { IntrospectionQuery } from "graphql";
+ export const schema = ${(0, devalue.uneval)((0, _urql_introspection.minifyIntrospectionQuery)((0, _urql_introspection.getIntrospectedSchema)(schema), {
+ 		includeEnums: true,
+diff --git a/out/index.cjs b/out/index.cjs
+index c168449..8cdc38b 100644
+--- a/out/index.cjs
++++ b/out/index.cjs
+@@ -440,7 +440,10 @@ function createColumnAccessResolver({ db, actions }, tableSchema) {
+ 	const toSQL = (table, wheres) => (0, drizzle_orm.or)(...wheres.map((where) => (0, drizzle_orm.relationsFilterToSQL)(table, sanitizeFilterValue(where), tableSchema.relations, db._.relations)));
+ 	const uncorrelated = (table, wheres, group) => {
+ 		const inner = (0, drizzle_orm.aliasedTable)(tableSchema.table, `rumble_columns_${group}`);
+-		return drizzle_orm.sql`${table[primaryKeyName]} in (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(toSQL(inner, wheres))})`;
++		// Correlated to the row: an uncorrelated \`pk in (select pk ... where <rule>)\` makes postgres
++		// evaluate every rule against the whole table, once per flag and per nesting site, which turns
++		// queries nesting a masked relation twice into multi-second ones.
++		return drizzle_orm.sql`exists (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(drizzle_orm.sql`${inner[primaryKeyName]} = ${table[primaryKeyName]} and (${toSQL(inner, wheres)})`)})`;
+ 	};
+ 	return function resolveColumnAccess(action, filters) {
+ 		const rules = filters.map((f) => ({
+@@ -2261,7 +2264,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
+ 					let filterSpecifier = "many";
+ 					if ((0, drizzle_orm.is)(value, drizzle_orm.One)) {
+ 						isMany = false;
+-						nullable = value.optional || !value.sourceColumns.every((column) => column.notNull);
++						nullable = value.optional || !value.sourceColumns.every((column) => (column._?.column ?? column).notNull); // drizzle 1.0 rc.5+ wraps relation columns in a RelationsBuilderColumn whose column sits at `_.column`
+ 						filterSpecifier = "single";
+ 					}
+ 					const subscribe = (subscriptions, _element) => {
+diff --git a/out/index.mjs b/out/index.mjs
+index 25d5a6f..0a9bc90 100644
+--- a/out/index.mjs
++++ b/out/index.mjs
+@@ -410,7 +410,10 @@ function createColumnAccessResolver({ db, actions }, tableSchema) {
+ 	const toSQL = (table, wheres) => or(...wheres.map((where) => relationsFilterToSQL(table, sanitizeFilterValue(where), tableSchema.relations, db._.relations)));
+ 	const uncorrelated = (table, wheres, group) => {
+ 		const inner = aliasedTable(tableSchema.table, `rumble_columns_${group}`);
+-		return sql`${table[primaryKeyName]} in (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(toSQL(inner, wheres))})`;
++		// Correlated to the row: an uncorrelated \`pk in (select pk ... where <rule>)\` makes postgres
++		// evaluate every rule against the whole table, once per flag and per nesting site, which turns
++		// queries nesting a masked relation twice into multi-second ones.
++		return sql`exists (${db.select({ pk: inner[primaryKeyName] }).from(inner).where(sql`${inner[primaryKeyName]} = ${table[primaryKeyName]} and (${toSQL(inner, wheres)})`)})`;
+ 	};
+ 	return function resolveColumnAccess(action, filters) {
+ 		const rules = filters.map((f) => ({
+@@ -2231,7 +2234,7 @@ const createObjectImplementer = ({ db, search, otel, logger: loggerConfig, schem
+ 					let filterSpecifier = "many";
+ 					if (is(value, One)) {
+ 						isMany = false;
+-						nullable = value.optional || !value.sourceColumns.every((column) => column.notNull);
++						nullable = value.optional || !value.sourceColumns.every((column) => (column._?.column ?? column).notNull); // drizzle 1.0 rc.5+ wraps relation columns in a RelationsBuilderColumn whose column sits at `_.column`
+ 						filterSpecifier = "single";
+ 					}
+ 					const subscribe = (subscriptions, _element) => {

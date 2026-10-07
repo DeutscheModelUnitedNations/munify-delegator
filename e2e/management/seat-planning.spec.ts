@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import {
 	E2E_SEAT_ASSIGNED_NSA_ID,
@@ -16,7 +17,8 @@ import {
 // they run in order and each one leaves the seats as it found them.
 test.describe.configure({ mode: 'serial' });
 
-const SEAT_PLANNING = `/management/${E2E_SEAT_CONFERENCE_ID}/seat-planning`;
+const MANAGEMENT = `/dashboard/${E2E_SEAT_CONFERENCE_ID}/management`;
+const SEAT_PLANNING = `${MANAGEMENT}/seat-planning`;
 
 interface GraphQLResponse<T> {
 	data?: T | null;
@@ -30,12 +32,9 @@ async function graphql<T = unknown>(page: Page, query: string): Promise<GraphQLR
 
 async function committeeNations(page: Page, committeeId: string) {
 	const { data } = await graphql<{
-		findUniqueCommittee: { nations: { alpha3Code: string }[] } | null;
-	}>(
-		page,
-		`query { findUniqueCommittee(where: { id: "${committeeId}" }) { nations { alpha3Code } } }`
-	);
-	return (data?.findUniqueCommittee?.nations ?? []).map((nation) => nation.alpha3Code).sort();
+		committee: { nations: { alpha3Code: string }[] } | null;
+	}>(page, `query { committee(id: "${committeeId}") { nations { alpha3Code } } }`);
+	return (data?.committee?.nations ?? []).map((nation) => nation.alpha3Code).sort();
 }
 
 test('the project management sets a seat live and can undo it', async ({ page }) => {
@@ -107,7 +106,7 @@ test('non-state actors are created, edited and deleted in the list', async ({ pa
 	await expect(assignedRow.getByRole('button', { name: 'Löschen' })).toBeDisabled();
 	const { errors } = await graphql(
 		page,
-		`mutation { deleteOneNonStateActor(where: { id: "${E2E_SEAT_ASSIGNED_NSA_ID}" }) { id } }`
+		`mutation { deleteNonStateActor(id: "${E2E_SEAT_ASSIGNED_NSA_ID}") }`
 	);
 	expect(errors?.length).toBeGreaterThan(0);
 
@@ -121,18 +120,16 @@ test('non-state actors are created, edited and deleted in the list', async ({ pa
 
 test('a content lead only reaches the seat planning', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_SEAT_CONTENT_LEAD_ID), {
-		startUrl: `/management/${E2E_SEAT_CONFERENCE_ID}/stats`
+		startUrl: `${MANAGEMENT}/stats`
 	});
 
 	await page.waitForURL((url) => url.pathname === SEAT_PLANNING, { timeout: 15_000 });
-	await page.goto(`/management/${E2E_SEAT_CONFERENCE_ID}/participants`);
+	await page.goto(`${MANAGEMENT}/participants`);
 	await page.waitForURL((url) => url.pathname === SEAT_PLANNING, { timeout: 15_000 });
 
 	// the only management entry is the seat planning
 	await expect(page.getByRole('listitem', { name: 'Sitzplanung', exact: true })).toBeVisible();
-	await expect(page.locator(`a[href="/management/${E2E_SEAT_CONFERENCE_ID}/stats"]`)).toHaveCount(
-		0
-	);
+	await expect(page.locator(`a[href="${MANAGEMENT}/stats"]`)).toHaveCount(0);
 
 	// may plan seats, but not change the committee set-up
 	const seat = await graphql(
@@ -142,7 +139,7 @@ test('a content lead only reaches the seat planning', async ({ page }) => {
 	expect(seat.errors).toBeUndefined();
 	const committee = await graphql(
 		page,
-		`mutation { createOneCommittee(conferenceId: "${E2E_SEAT_CONFERENCE_ID}", name: "Forbidden", abbreviation: "NO", numOfSeatsPerDelegation: 1) { id } }`
+		`mutation { createCommittee(conferenceId: "${E2E_SEAT_CONFERENCE_ID}", name: "Forbidden", abbreviation: "NO", numOfSeatsPerDelegation: 1) { id } }`
 	);
 	expect(committee.errors?.length).toBeGreaterThan(0);
 });
@@ -158,13 +155,20 @@ test('participant care cannot open the seat planning', async ({ page }) => {
 	expect(seat.errors?.length).toBeGreaterThan(0);
 });
 
+/** A committee's card on the configuration page, found by the heading that names it. */
+function committeeCard(page: Page, heading: string) {
+	return page
+		.getByRole('heading', { name: heading, exact: true })
+		.locator('xpath=ancestor::section[1]');
+}
+
 test('the project management adds and deletes a committee', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_SEAT_PM_ID), {
-		startUrl: `/management/${E2E_SEAT_CONFERENCE_ID}/configuration?tab=committees`
+		startUrl: `${MANAGEMENT}/configuration?tab=committees`
 	});
 
 	// a committee with an assigned delegate cannot be deleted
-	const gvCard = page.locator('.card', { hasText: 'Generalversammlung (SPGV)' });
+	const gvCard = committeeCard(page, 'Generalversammlung (SPGV)');
 	await expect(gvCard.getByRole('button', { name: /löschen/i })).toBeDisabled({ timeout: 15_000 });
 
 	const abbreviation = `C${Date.now() % 100000}`;
@@ -178,9 +182,9 @@ test('the project management adds and deletes a committee', async ({ page }) => 
 	await modal.getByPlaceholder('Sitze pro Delegation').fill('2');
 	await modal.getByRole('button', { name: /erstellen/i }).click();
 
-	const card = page.locator('.card', { hasText: `E2E Committee (${abbreviation})` });
+	const card = committeeCard(page, `E2E Committee (${abbreviation})`);
 	await expect(card).toBeVisible({ timeout: 15_000 });
-	await expect(card).toContainText('Sitze pro Delegation: 2');
+	await expect(card.getByTitle('Sitze pro Delegation')).toHaveText('2');
 
 	await card.getByRole('button', { name: /löschen/i }).click();
 	await page
@@ -237,12 +241,12 @@ test('the regional baseline of a committee is set in the hints sidebar', async (
 	await expect
 		.poll(async () => {
 			const { data } = await graphql<{
-				findUniqueCommittee: { regionalBaseline: string; regionalBaselineTargets: number[] } | null;
+				committee: { regionalBaseline: string; regionalBaselineTargets: number[] } | null;
 			}>(
 				page,
-				`query { findUniqueCommittee(where: { id: "${E2E_SEAT_SR_ID}" }) { regionalBaseline regionalBaselineTargets } }`
+				`query { committee(id: "${E2E_SEAT_SR_ID}") { regionalBaseline regionalBaselineTargets } }`
 			);
-			return data?.findUniqueCommittee;
+			return data?.committee;
 		})
 		.toMatchObject({ regionalBaseline: 'MANUAL', regionalBaselineTargets: [1, 0, 0, 0, 0] });
 

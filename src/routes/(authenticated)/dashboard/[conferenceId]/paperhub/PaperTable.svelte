@@ -1,47 +1,35 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
+	import type { ResolvedPathname } from '$app/types';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/services/enumIcons';
-	import { translatePaperType, translatePaperStatus } from '$lib/services/enumTranslations';
-	import type { PaperStatus$options, PaperType$options } from '$houdini';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { getPaperTypeIcon, getPaperStatusIcon } from '$lib/utils/enumIcons';
+	import { translatePaperType, translatePaperStatus } from '$lib/utils/enumTranslations';
+	import type { PaperstatusEnum, PapertypeEnum } from '$lib/api/rumbleClient/client';
+	import type { PaperSortKey, SortConfig } from './paperSorting';
 
 	interface Paper {
 		id: string;
-		type: PaperType$options;
-		status: PaperStatus$options;
-		createdAt: string | null;
-		updatedAt: string | null;
-		firstSubmittedAt: string | null;
+		type: PapertypeEnum;
+		status: PaperstatusEnum;
+		updatedAt: Date | null;
+		firstSubmittedAt: Date | null;
 		delegation: {
-			id: string;
-			assignedNation: {
-				alpha2Code: string;
-				alpha3Code: string;
-			} | null;
-			assignedNonStateActor: {
-				id: string;
-				name: string;
-				abbreviation: string;
-				fontAwesomeIcon: string | null;
-			} | null;
+			assignedNation: { alpha2Code: string; alpha3Code: string } | null;
+			assignedNonStateActor: { name: string; fontAwesomeIcon: string | null } | null;
 		};
-	}
-
-	interface SortConfig {
-		key: string;
-		direction: 'asc' | 'desc';
 	}
 
 	interface Props {
 		papers: Paper[];
 		sortable?: boolean;
 		sortConfig?: SortConfig | null;
-		onSort?: (key: string) => void;
+		onSort?: (key: PaperSortKey) => void;
 		showStatus?: boolean;
 		showUpdatedAt?: boolean;
-		linkPrefix?: string;
+		/** Where a row leads; already passed through `resolve()`. */
+		paperHref: (paperId: string) => ResolvedPathname;
 	}
 
 	let {
@@ -51,11 +39,11 @@
 		onSort,
 		showStatus = true,
 		showUpdatedAt = true,
-		linkPrefix = './paperhub/'
+		paperHref
 	}: Props = $props();
 
 	// Type colors for icon badges
-	const getTypeColor = (type: PaperType$options) => {
+	const getTypeColor = (type: PapertypeEnum) => {
 		switch (type) {
 			case 'POSITION_PAPER':
 				return 'text-primary';
@@ -67,32 +55,26 @@
 	};
 
 	// Status colors for icon badges
-	const getStatusColor = (status: PaperStatus$options) => {
-		switch (status) {
-			case 'SUBMITTED':
-				return 'text-warning';
-			case 'REVISED':
-				return 'text-info';
-			case 'CHANGES_REQUESTED':
-				return 'text-error';
-			case 'ACCEPTED':
-				return 'text-success';
-			default:
-				return 'text-base-content/50';
-		}
+	const STATUS_COLORS: Record<PaperstatusEnum, string> = {
+		DRAFT: 'text-base-content/50',
+		SUBMITTED: 'text-warning',
+		REVISED: 'text-info',
+		CHANGES_REQUESTED: 'text-error',
+		ACCEPTED: 'text-success'
 	};
+	const getStatusColor = (status: PaperstatusEnum) => STATUS_COLORS[status];
 
-	const formatDate = (date: string | null) => {
+	const formatDate = (date: Date | null) => {
 		if (!date) return '-';
 		return new Date(date).toLocaleDateString();
 	};
 
-	const getSortIcon = (key: string) => {
+	const getSortIcon = (key: PaperSortKey) => {
 		if (!sortConfig || sortConfig.key !== key) return 'fa-sort';
 		return sortConfig.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
 	};
 
-	const handleSort = (key: string) => {
+	const handleSort = (key: PaperSortKey) => {
 		if (sortable && onSort) {
 			onSort(key);
 		}
@@ -100,97 +82,87 @@
 
 	const handleRowClick = (e: MouseEvent, paperId: string) => {
 		if (e.ctrlKey || e.metaKey) {
-			open(`${linkPrefix}${paperId}`, '_blank');
+			open(paperHref(paperId), '_blank');
 		} else {
-			goto(`${linkPrefix}${paperId}`);
+			goto(paperHref(paperId));
 		}
 	};
 
 	const handleRowAuxclick = (e: MouseEvent, paperId: string) => {
 		if (e.button === 1) {
 			e.preventDefault();
-			open(`${linkPrefix}${paperId}`, '_blank', 'noopener,noreferrer');
+			open(paperHref(paperId), '_blank', 'noopener,noreferrer');
 		}
 	};
 
 	const handleRowKeypress = (e: KeyboardEvent, paperId: string) => {
 		if (e.key === 'Enter') {
-			goto(`${linkPrefix}${paperId}`);
+			goto(paperHref(paperId));
 		}
 	};
 </script>
+
+{#snippet sortableHeader(
+	key: PaperSortKey,
+	label: { text: string } | { icon: string; title: string }
+)}
+	<th
+		class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
+		onclick={() => handleSort(key)}
+		title={'title' in label ? label.title : undefined}
+	>
+		<div class="flex items-center gap-1">
+			{#if 'text' in label}
+				{label.text}
+			{:else}
+				<i class="fa-solid {label.icon}"></i>
+			{/if}
+			{#if sortable}
+				<i class="fa-solid {getSortIcon(key)} text-xs opacity-50"></i>
+			{/if}
+		</div>
+	</th>
+{/snippet}
+
+{#snippet delegationCell(delegation: Paper['delegation'])}
+	<div class="flex items-center gap-2">
+		{#if delegation.assignedNation}
+			<Flag size="xs" alpha2Code={delegation.assignedNation.alpha2Code} />
+			<span class="truncate max-w-32">
+				{getFullTranslatedCountryNameFromISO3Code(delegation.assignedNation.alpha3Code)}
+			</span>
+		{:else if delegation.assignedNonStateActor}
+			<Flag size="xs" nsa={true} icon={delegation.assignedNonStateActor.fontAwesomeIcon} />
+			<span class="truncate max-w-32">
+				{delegation.assignedNonStateActor.name}
+			</span>
+		{/if}
+	</div>
+{/snippet}
 
 <div class="overflow-x-auto">
 	<table class="table table-xs">
 		<thead>
 			<tr class="text-xs">
-				<th
-					class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-					onclick={() => handleSort('country')}
-				>
-					<div class="flex items-center gap-1">
-						{m.country()}
-						{#if sortable}
-							<i class="fa-solid {getSortIcon('country')} text-xs opacity-50"></i>
-						{/if}
-					</div>
-				</th>
-				<th
-					class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-					onclick={() => handleSort('type')}
-					title={m.paperType()}
-				>
-					<div class="flex items-center gap-1">
-						<i class="fa-solid fa-file"></i>
-						{#if sortable}
-							<i class="fa-solid {getSortIcon('type')} text-xs opacity-50"></i>
-						{/if}
-					</div>
-				</th>
+				{@render sortableHeader('country', { text: m.country() })}
+				{@render sortableHeader('type', { icon: 'fa-file', title: m.paperType() })}
 				{#if showStatus}
-					<th
-						class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-						onclick={() => handleSort('status')}
-						title={m.status()}
-					>
-						<div class="flex items-center gap-1">
-							<i class="fa-solid fa-circle-info"></i>
-							{#if sortable}
-								<i class="fa-solid {getSortIcon('status')} text-xs opacity-50"></i>
-							{/if}
-						</div>
-					</th>
+					{@render sortableHeader('status', { icon: 'fa-circle-info', title: m.status() })}
 				{/if}
-				<th
-					class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-					onclick={() => handleSort('firstSubmittedAt')}
-					title={m.submittedAt()}
-				>
-					<div class="flex items-center gap-1">
-						<i class="fa-solid fa-paper-plane"></i>
-						{#if sortable}
-							<i class="fa-solid {getSortIcon('firstSubmittedAt')} text-xs opacity-50"></i>
-						{/if}
-					</div>
-				</th>
+				{@render sortableHeader('firstSubmittedAt', {
+					icon: 'fa-paper-plane',
+					title: m.submittedAt()
+				})}
 				{#if showUpdatedAt}
-					<th
-						class={sortable ? 'cursor-pointer hover:bg-base-200/50 select-none' : ''}
-						onclick={() => handleSort('updatedAt')}
-						title={m.paperUpdatedAt()}
-					>
-						<div class="flex items-center gap-1">
-							<i class="fa-solid fa-clock-rotate-left"></i>
-							{#if sortable}
-								<i class="fa-solid {getSortIcon('updatedAt')} text-xs opacity-50"></i>
-							{/if}
-						</div>
-					</th>
+					{@render sortableHeader('updatedAt', {
+						icon: 'fa-clock-rotate-left',
+						title: m.paperUpdatedAt()
+					})}
 				{/if}
 			</tr>
 		</thead>
 		<tbody>
-			{#each papers as paper}
+			{#each papers as paper (paper.id)}
 				<tr
 					class="hover:bg-base-200/50 cursor-pointer"
 					onclick={(e) => handleRowClick(e, paper.id)}
@@ -200,25 +172,7 @@
 					onkeypress={(e) => handleRowKeypress(e, paper.id)}
 				>
 					<td>
-						<div class="flex items-center gap-2">
-							{#if paper.delegation.assignedNation}
-								<Flag size="xs" alpha2Code={paper.delegation.assignedNation.alpha2Code} />
-								<span class="truncate max-w-32">
-									{getFullTranslatedCountryNameFromISO3Code(
-										paper.delegation.assignedNation.alpha3Code
-									)}
-								</span>
-							{:else if paper.delegation.assignedNonStateActor}
-								<Flag
-									size="xs"
-									nsa={true}
-									icon={paper.delegation.assignedNonStateActor.fontAwesomeIcon}
-								/>
-								<span class="truncate max-w-32">
-									{paper.delegation.assignedNonStateActor.name}
-								</span>
-							{/if}
-						</div>
+						{@render delegationCell(paper.delegation)}
 					</td>
 					<td>
 						<div class="tooltip" data-tip={translatePaperType(paper.type)}>

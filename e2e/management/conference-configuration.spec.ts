@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs, waitForHydration } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_ASSIGNMENT_ADMIN_ID } from '../seed/seed';
 
@@ -23,7 +23,7 @@ test.fixme('an admin can change a conference setting through the confirm-preview
 	const newLocation = `E2E Location ${Date.now()}`;
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/configuration`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/configuration`
 	});
 	await waitForHydration(page);
 
@@ -49,9 +49,9 @@ test.fixme('an admin can change a conference setting through the confirm-preview
 
 		const res = await page.request.post('/api/graphql', {
 			data: {
-				query: `query { findUniqueConference(where: { id: "${E2E_CONFERENCE_ID}" }) { location } }`
+				query: `query { conference(id: "${E2E_CONFERENCE_ID}") { location } }`
 			}
 		});
-		expect((await res.json())?.data?.findUniqueConference?.location).toBe(newLocation);
+		expect((await res.json())?.data?.conference?.location).toBe(newLocation);
 	}).toPass({ timeout: 60_000 });
 });

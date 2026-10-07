@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CalendarEntryColor } from '$houdini';
+import { allColors } from '$lib/components/calendar/calendarColors';
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -19,7 +19,7 @@ const entrySchema = z.object({
 	startTime: z.string().regex(timeRegex),
 	endTime: z.string().regex(timeRegex),
 	fontAwesomeIcon: z.string().nullable(),
-	color: z.nativeEnum(CalendarEntryColor),
+	color: z.enum(allColors),
 	room: z.string().nullable(),
 	trackName: z.string().nullable(),
 	place: placeSchema.nullable()

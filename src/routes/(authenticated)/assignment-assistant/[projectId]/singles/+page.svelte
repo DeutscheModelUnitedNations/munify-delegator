@@ -1,39 +1,38 @@
 <script lang="ts">
 	import TextPreview from '$lib/components/TextPreview.svelte';
-	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
+	import { droppable, type DragDropState } from '@thisux/sveltednd';
 	import {
 		getSingleApplications,
 		getSingleRoles,
 		unassignSingleRole,
 		convertSingleToDelegation,
 		assignSingleRole,
-		loadProjects
+		loadProjects,
+		type SingleParticipant
 	} from '../appData.svelte';
 
 	import SingleParticipantCard from '../SingleParticipantCard.svelte';
+	import DraggableApplication from '../DraggableApplication.svelte';
+	import { dropMove, routeSingleDrop } from '../dropRouting';
 	import { onMount } from 'svelte';
-	import type { PageData } from './$types';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
 	let dragging = $state(false);
 
 	onMount(() => {
-		loadProjects(data.projectId);
+		loadProjects(params.projectId);
 	});
 
 	function handleDrop(state: DragDropState<{ id: string }>) {
-		const { draggedItem, sourceContainer, targetContainer } = state;
-
-		if (!targetContainer || sourceContainer === targetContainer || !draggedItem.id) return;
-
-		if (targetContainer === 'backToPool') {
-			unassignSingleRole(draggedItem.id);
-		} else if (targetContainer === 'convertToDelegation') {
-			convertSingleToDelegation(draggedItem.id);
-		} else if (targetContainer.startsWith('role')) {
-			assignSingleRole(draggedItem.id, targetContainer.replace('role-', ''));
-		}
+		const move = dropMove(state);
+		if (!move) return;
+		routeSingleDrop(move, {
+			unassign: unassignSingleRole,
+			convert: convertSingleToDelegation,
+			assign: assignSingleRole
+		});
 	}
 
 	let getNumAssignmentsForRole = (role: string) =>
@@ -54,41 +53,34 @@
 	</p>
 </TextPreview>
 
-<div class="mt-6 flex flex-col gap-4">
+{#snippet applicationPool(title: string, applications: SingleParticipant[])}
 	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
-		<h2 class="text-xl font-bold">Einzelteilnehmenden-Pool</h2>
+		<h2 class="text-xl font-bold">{title}</h2>
 		<div class="flex flex-wrap gap-2">
-			{#each getSingleApplications().filter((x) => !x.assignedRole) as application}
-				<div
-					role="none"
-					use:draggable={{ container: 'pool', dragData: { id: application.id } }}
-					ondrag={() => (dragging = true)}
-					ondragend={() => (dragging = false)}
-					class="cursor-grab"
+			{#each applications as application (application.id)}
+				<DraggableApplication
+					container="pool"
+					id={application.id}
+					onDragChange={(d) => (dragging = d)}
 				>
 					<SingleParticipantCard {application} />
-				</div>
+				</DraggableApplication>
 			{/each}
 		</div>
 	</div>
-	{#each getSingleRoles() as role}
+{/snippet}
+
+<div class="mt-6 flex flex-col gap-4">
+	{@render applicationPool(
+		'Einzelteilnehmenden-Pool',
+		getSingleApplications().filter((x) => !x.assignedRole)
+	)}
+	{#each getSingleRoles() as role (role.id)}
 		{#if !role.name.toLowerCase().startsWith('einzel')}
-			<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
-				<h2 class="text-xl font-bold">{role.name} ({getNumAssignmentsForRole(role.id)})</h2>
-				<div class="flex flex-wrap gap-2">
-					{#each getSingleApplications().filter((x) => x.assignedRole?.id === role.id) as application}
-						<div
-							role="none"
-							use:draggable={{ container: 'pool', dragData: { id: application.id } }}
-							ondrag={() => (dragging = true)}
-							ondragend={() => (dragging = false)}
-							class="cursor-grab"
-						>
-							<SingleParticipantCard {application} />
-						</div>
-					{/each}
-				</div>
-			</div>
+			{@render applicationPool(
+				`${role.name} (${getNumAssignmentsForRole(role.id)})`,
+				getSingleApplications().filter((x) => x.assignedRole?.id === role.id)
+			)}
 		{/if}
 	{/each}
 </div>
@@ -108,7 +100,7 @@
 			<i class="fas fa-box-archive text-4xl text-white"></i>
 		</div>
 		<div class="flex w-full flex-1 gap-4">
-			{#each getSingleRoles() as role}
+			{#each getSingleRoles() as role (role.id)}
 				{#if !role.name.toLowerCase().startsWith('einzel')}
 					<div
 						class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-white"

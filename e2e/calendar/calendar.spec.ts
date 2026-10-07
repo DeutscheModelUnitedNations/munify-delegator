@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_MGMT_ADMIN_ID } from '../seed/seed';
 
 test('an admin can build a calendar day with a place and an entry', async ({ page }) => {
 	await loginAs(page, fixedTestUser(E2E_MGMT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/calendar`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/calendar`
 	});
 
 	const dayName = `E2E Day ${Date.now()}`;
@@ -52,10 +52,10 @@ test('an admin can build a calendar day with a place and an entry', async ({ pag
 	// fixtures and can scroll/hide older ones behind a day-switcher.
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyCalendarEntries(where: { name: { equals: "${entryName}" } }) { name place { name } } }`
+			query: `query { calendarEntries(where: { name: { eq: "${entryName}" } }) { name place { name } } }`
 		}
 	});
 	const json = await res.json();
-	expect(json.data?.findManyCalendarEntries?.[0]?.name).toBe(entryName);
-	expect(json.data?.findManyCalendarEntries?.[0]?.place?.name).toBe(placeName);
+	expect(json.data?.calendarEntries?.[0]?.name).toBe(entryName);
+	expect(json.data?.calendarEntries?.[0]?.place?.name).toBe(placeName);
 });

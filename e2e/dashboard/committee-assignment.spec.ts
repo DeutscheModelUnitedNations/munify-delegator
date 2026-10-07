@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import {
 	E2E_COMMITTEE_ASSIGN_HEAD_USER_ID,
@@ -15,7 +15,10 @@ test('a head delegate can assign a delegation member to a committee', async ({ p
 	});
 
 	const committeeSelect = page.locator('select.select');
-	await expect(committeeSelect).toBeVisible({ timeout: 15_000 });
+	// This page fires two parallel liveQuery calls (delegationMembers, committees) on top of the
+	// layout's own queries (conferences, breadcrumb conference lookup, impersonation status), which
+	// measurably pushes first render past 15s under load - give it more room than a single-query page.
+	await expect(committeeSelect).toBeVisible({ timeout: 30_000 });
 	await committeeSelect.selectOption({ label: 'E2E' });
 
 	await page.getByRole('button', { name: 'Speichern' }).click();
@@ -26,9 +29,9 @@ test('a head delegate can assign a delegation member to a committee', async ({ p
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniqueDelegationMember(where: { conferenceId_userId: { conferenceId: "${E2E_CONFERENCE_ID}", userId: "${E2E_COMMITTEE_ASSIGN_HEAD_USER_ID}" } }) { assignedCommittee { id } } }`
+			query: `query { delegationMembers(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, userId: { eq: "${E2E_COMMITTEE_ASSIGN_HEAD_USER_ID}" } }) { assignedCommittee { id } } }`
 		}
 	});
-	const data = (await res.json())?.data?.findUniqueDelegationMember;
+	const data = (await res.json())?.data?.delegationMembers?.[0];
 	expect(data?.assignedCommittee?.id).toBe(E2E_COMMITTEE_ID);
 });

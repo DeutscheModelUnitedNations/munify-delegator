@@ -1,32 +1,28 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
-	import { invalidateAll } from '$app/navigation';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { toast } from 'svelte-sonner';
 	import { m } from '$lib/paraglide/messages';
-	import type { PageProps } from './$types';
+	import { resolve } from '$app/paths';
 
-	let { data }: PageProps = $props();
+	// The signed-in person does not change while the page is open.
+	const currentUser = await getCurrentUser();
 
-	let signedUp = $state(data.wantsJoinTeamInformation);
+	const dbUser = await client.query.user({
+		__args: { id: currentUser.sub },
+		wantsJoinTeamInformation: true
+	});
+
+	let signedUp = $state(dbUser?.wantsJoinTeamInformation ?? false);
 	let loading = $state(false);
-
-	const updatePreferenceMutation = graphql(`
-		mutation UpdateTeamTenderPreference($email: String!, $wantsJoinTeamInformation: Boolean!) {
-			updateOneUsersNewsletterPreferences(
-				email: $email
-				wantsJoinTeamInformation: $wantsJoinTeamInformation
-			) {
-				id
-			}
-		}
-	`);
 
 	const toggleSignUp = async (value: boolean) => {
 		loading = true;
-		const promise = updatePreferenceMutation.mutate({
-			email: data.user.email,
-			wantsJoinTeamInformation: value
-		});
+		const promise = Promise.resolve(
+			client.mutate.updateUsersNewsletterPreferences({
+				__args: { email: currentUser.email, wantsJoinTeamInformation: value }
+			})
+		);
 		toast.promise(promise, {
 			success: value ? m.teamTenderSignUpSuccess() : m.teamTenderUnsubscribeSuccess(),
 			error: m.teamTenderError(),
@@ -34,8 +30,6 @@
 		});
 		try {
 			await promise;
-			cache.markStale();
-			await invalidateAll();
 			signedUp = value;
 		} finally {
 			loading = false;
@@ -75,7 +69,7 @@
 			{/if}
 
 			<div class="divider"></div>
-			<a class="link link-hover text-sm" href="/my-account">
+			<a class="link link-hover text-sm" href={resolve('/my-account')}>
 				{m.teamTenderManagePreferences()}
 			</a>
 		</div>

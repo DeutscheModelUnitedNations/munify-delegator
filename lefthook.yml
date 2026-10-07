@@ -14,8 +14,10 @@ pre-commit:
       # what this commit introduces: `--base HEAD` diffs the working tree, which
       # is what is about to be committed. Blocking - the audit exits 1 on a fail
       # verdict, i.e. when the commit introduces new findings (inherited ones do
-      # not count). Add `--brief` to make it advisory again.
-      run: bunx fallow audit --base HEAD --quiet --gate-marker pre-commit
+      # not count). Add `--brief` to make it advisory again. CRAP is scored
+      # with the coverage of the last `bun run coverage` / `test:e2e:coverage`
+      # (merged into coverage/coverage-final.json), and estimated without one.
+      run: bunx fallow audit --base HEAD --quiet --gate-marker pre-commit $([ -f coverage/coverage-final.json ] && echo --coverage coverage/coverage-final.json)
       skip:
         - merge
         - rebase
@@ -23,7 +25,8 @@ pre-push:
   parallel: true
   commands:
     test:
-      run: bun test
+      # vitest, like CI — bun's own runner cannot resolve SvelteKit's aliases and virtual modules
+      run: bun run test
     lint:
       run: bunx eslint "{push_files}" --cache --cache-strategy content
     format:
@@ -34,4 +37,4 @@ pre-push:
       # `origin/HEAD` / `origin/main`), so you see locally what CI will report
       # on the PR. Advisory for the same reason as above; to gate pushes, drop
       # `--brief` (and consider dropping `continue-on-error` in ci.yml too).
-      run: bunx fallow audit --quiet --brief --gate-marker pre-push
+      run: bunx fallow audit --quiet --brief --gate-marker pre-push $([ -f coverage/coverage-final.json ] && echo --coverage coverage/coverage-final.json)

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -24,6 +24,12 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	}).toPass({ timeout: 20_000 });
 	await waitForHydration(page);
 
+	// `waitUntil: 'commit'` resolves as soon as the URL changes, while the signup form - which has an
+	// attendance toggle of its own - is still on screen. Wait for the dashboard's connection code,
+	// which only the supervisor stage renders, so the toggle below is the dashboard's.
+	const connectionCode = page.locator('p.font-mono');
+	await expect(connectionCode).toBeVisible({ timeout: 15_000 });
+
 	// --- toggle own attendance off (defaults to true on signup) ---
 	const attendanceToggle = page.locator('input[type="checkbox"].toggle-success');
 	await expect(attendanceToggle).toBeChecked({ timeout: 15_000 });
@@ -33,8 +39,6 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	});
 
 	// --- rotate the connection code ---
-	const connectionCode = page.locator('p.font-mono');
-	await expect(connectionCode).toBeVisible({ timeout: 15_000 });
 	const originalCode = (await connectionCode.textContent())?.trim();
 	await page.getByRole('button', { name: 'Rotate entry code' }).click();
 	await expect(connectionCode).not.toHaveText(originalCode!, { timeout: 15_000 });
@@ -42,10 +46,10 @@ test('a supervisor can sign up, toggle their own attendance, and rotate their co
 	// --- verify both changes actually persisted server-side, not just client-side state ---
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyConferenceSupervisors(where: { user: { email: { equals: "${supervisor.email}" } } }) { plansOwnAttendenceAtConference connectionCode } }`
+			query: `query { conferenceSupervisors(where: { user: { email: { eq: "${supervisor.email}" } } }) { plansOwnAttendenceAtConference connectionCode } }`
 		}
 	});
-	const data = (await res.json())?.data?.findManyConferenceSupervisors?.[0];
+	const data = (await res.json())?.data?.conferenceSupervisors?.[0];
 	expect(data?.plansOwnAttendenceAtConference).toBe(false);
 	expect(data?.connectionCode).not.toBe(originalCode);
 });

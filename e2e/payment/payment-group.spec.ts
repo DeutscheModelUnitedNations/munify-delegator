@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import { E2E_CONFERENCE_ID, E2E_SUPERVISOR_FOR_CONNECT_USER_ID } from '../seed/seed';
 
@@ -14,10 +14,10 @@ test('a supervisor can generate a group payment reference covering themselves an
 
 	const feeRes = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniqueConference(where: { id: "${E2E_CONFERENCE_ID}" }) { feeAmount } }`
+			query: `query { conference(id: "${E2E_CONFERENCE_ID}") { feeAmount } }`
 		}
 	});
-	const feeAmount = (await feeRes.json())?.data?.findUniqueConference?.feeAmount as number;
+	const feeAmount = (await feeRes.json())?.data?.conference?.feeAmount as number;
 	expect(feeAmount).toBeGreaterThan(0);
 
 	// The page auto-selects the supervisor + all supervised participants on mount - wait for

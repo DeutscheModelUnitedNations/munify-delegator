@@ -1,29 +1,29 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { conferenceResolutionsQuery } from '$lib/queries/conferenceResolutionsQuery';
-	import { groupResolutionsByCommittee } from '$lib/services/resolutionGroups';
-	import DashboardSection from '$lib/components/Dashboard/DashboardSection.svelte';
-	import type { ConferenceResolutionsQuery$result } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { downloadResolution } from '$lib/api/downloadResolution';
+	import { groupResolutionsByCommittee } from '$lib/helpers/resolutionGroups';
+	import DashboardSection from '$lib/components/dashboard/DashboardSection.svelte';
 
-	type ConferenceResolution = ConferenceResolutionsQuery$result['findManyResolutions'][number];
+	let { conferenceId }: { conferenceId: string } = $props();
 
-	let { conferenceId }: { conferenceId: string | undefined } = $props();
-
-	$effect(() => {
-		if (conferenceId) {
-			conferenceResolutionsQuery.fetch({ variables: { conferenceId } });
-		}
-	});
-
-	// The store's `data` is untyped here, so name the row type explicitly.
+	const resolutions = $derived(
+		await client.liveQuery.resolutions({
+			__args: {
+				where: { conferenceId: { eq: conferenceId } },
+				orderBy: { createdAt: 'asc' }
+			},
+			id: true,
+			title: true,
+			committee: { id: true, name: true, abbreviation: true }
+		})
+	);
 	const groupedResolutions = $derived(
-		groupResolutionsByCommittee<ConferenceResolution>(
-			$conferenceResolutionsQuery.data?.findManyResolutions
-		)
+		groupResolutionsByCommittee<(typeof resolutions)[number]>(resolutions)
 	);
 </script>
 
-{#if $conferenceResolutionsQuery.fetching || groupedResolutions.length > 0}
+{#if groupedResolutions.length > 0}
 	<DashboardSection
 		icon="file-contract"
 		title={m.adoptedResolutions()}
@@ -38,23 +38,19 @@
 					<ul class="flex flex-col gap-2">
 						{#each group.items as resolution (resolution.id)}
 							<li>
-								<a
+								<button
+									type="button"
 									class="btn btn-outline btn-sm justify-start gap-2"
-									href={`/api/resolution/${resolution.id}`}
-									target="_blank"
-									rel="noopener"
-									download
+									onclick={() => downloadResolution(resolution.id)}
 								>
 									<i class="fa-duotone fa-file-pdf text-primary"></i>
 									<span class="truncate">{resolution.title}</span>
 									<i class="fas fa-download ml-auto"></i>
-								</a>
+								</button>
 							</li>
 						{/each}
 					</ul>
 				</div>
-			{:else}
-				<div class="skeleton bg-base-200 h-16 w-full max-w-sm"></div>
 			{/each}
 		</div>
 	</DashboardSection>

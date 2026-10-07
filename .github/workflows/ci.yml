@@ -42,15 +42,15 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
-      # Coverage writes its HTML report to coverage/ (vitest's default reporters), which the
-      # publish-reports job hosts on GitHub Pages.
+      # Coverage ends in scripts/mergeCoverage.ts, which writes the HTML report to coverage/report/;
+      # the publish-reports job hosts it on GitHub Pages.
       - run: bun run coverage
       - name: Upload unit test coverage
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: report-coverage
-          path: coverage/
+          path: coverage/report/
           if-no-files-found: ignore
           retention-days: 7
 
@@ -65,20 +65,20 @@ jobs:
       SECRET: e2e-ci-secret-e2e-ci-secret-e2e-ci-secret
       CERTIFICATE_SECRET: e2e-ci-certificate-secret
       # Must be `development`: src/api/services/OIDC.ts only passes `allowInsecureRequests` to
-      # oauth4webapi under that value, and the mock OIDC provider is plain HTTP. Any other value
-      # fails discovery with "only requests to HTTPS are allowed" and every login times out.
+      # oauth4webapi under that value, and the mock OIDC provider (oidc-mock) is plain HTTP. Any
+      # other value fails discovery with "only requests to HTTPS are allowed" and every login
+      # times out.
       NODE_ENV: development
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun
-      # The mock OIDC provider (oidc-mock) runs inside the Vite dev server Playwright starts,
-      # so only Postgres comes from compose.
+      # The OIDC provider (oidc-mock) starts with the Vite dev server that Playwright launches, so
+      # Postgres is the only container. Reuse the project's compose definition for it.
       - run: docker compose -f dev.docker-compose.yml up -d postgres
       - name: Wait for postgres
         run: timeout 120 bash -c 'until docker exec postgres-dev-delegator pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done'
-      - run: bunx prisma generate
       - run: bunx svelte-kit sync
-      - run: bunx prisma migrate deploy
+      - run: bun run db:migrate
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
       # The HTML report embeds the traces, screenshots and videos of the failed tests, so it is
@@ -203,9 +203,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
-      - run: bunx prisma generate
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
-      - run: bunx houdini generate
       - run: bun run check
 
   build:
@@ -217,9 +215,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-bun
       - run: bunx svelte-kit sync
-      - run: bunx prisma generate
       - run: bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --strategy url baseLocale
-      - run: bunx houdini generate
       - run: bun run build
 
   # Codebase intelligence report (fallow): dead code, circular dependencies,
@@ -247,9 +243,14 @@ jobs:
       - uses: ./.github/actions/setup-bun
       # Gives fallow a resolvable tsconfig chain ($lib, $app, ... path aliases).
       - run: bunx svelte-kit sync
+      # Unit coverage, merged into coverage/coverage-final.json, so CRAP is scored
+      # from measured coverage rather than estimated (FALLOW_COVERAGE below).
+      - run: bun run coverage
       # Pinned to a commit SHA rather than the mutable @v3 tag: this action runs
       # with write permissions on every PR.
       - uses: fallow-rs/fallow@79a0e8d8dbcaa408dce348b3df14fc1e824f988b # v3.22.0
+        env:
+          FALLOW_COVERAGE: coverage/coverage-final.json
         with:
           # The CLI version comes from the `fallow` devDependency in package.json,
           # pinned exactly there so CI and local runs analyse with the same binary.
@@ -419,7 +420,7 @@ jobs:
               - 'src/tasks/**'
               - 'src/api/services/**'
               - 'src/lib/services/formatNames.ts'
-              - 'prisma/schema.prisma'
+              - 'src/api/db/**'
               - 'scripts/tasksBuild.ts'
               - 'Dockerfile.tasks'
               - 'package.json'
@@ -490,6 +491,47 @@ jobs:
           scanners: 'vuln,secret,misconfig'
 
   # ============================================
+  # LAYER 3: DEPLOY (push to main / tag only)
+  # ============================================
+  # Triggers a Dokploy redeploy once the new images have been built, pushed and
+  # passed the Trivy scans above. Dokploy's per-app deploy webhook just needs a
+  # POST to its URL — the application to redeploy is encoded in the URL itself,
+  # so no body or auth header is needed. The app and the background tasks are
+  # separate Dokploy applications, so each has its own webhook; an unconfigured
+  # one is skipped with a warning instead of failing the run.
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: [docker-build, docker-build-tasks]
+    runs-on: ubuntu-latest
+    env:
+      DOKPLOY_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK_URL }}
+      DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL }}
+    steps:
+      - name: Trigger Dokploy deployment (app)
+        if: env.DOKPLOY_DEPLOY_WEBHOOK_URL != ''
+        run: curl --fail --silent --show-error -X POST "$DOKPLOY_DEPLOY_WEBHOOK_URL"
+
+      - name: App deploy skipped
+        if: env.DOKPLOY_DEPLOY_WEBHOOK_URL == ''
+        run: |
+          echo "::warning::Dokploy app deploy skipped - DOKPLOY_DEPLOY_WEBHOOK_URL not configured"
+          echo "To enable auto-deploy, add the DOKPLOY_DEPLOY_WEBHOOK_URL secret (from the"
+          echo "application's Webhook URL in Dokploy's deployment logs) to this repository."
+
+      - name: Trigger Dokploy deployment (tasks)
+        if: env.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL != ''
+        run: curl --fail --silent --show-error -X POST "$DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL"
+
+      - name: Tasks deploy skipped
+        if: env.DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL == ''
+        run: |
+          echo "::warning::Dokploy tasks deploy skipped - DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL not configured"
+          echo "To enable auto-deploy of the background tasks, add the"
+          echo "DOKPLOY_TASKS_DEPLOY_WEBHOOK_URL secret (from the tasks application's"
+          echo "Webhook URL in Dokploy's deployment logs) to this repository."
+
+  # ============================================
   # LAYER 3: RELEASE (tag push only)
   # ============================================
 
@@ -515,7 +557,7 @@ jobs:
             # MUNify Delegator `${{ github.ref_name }}`
 
             [![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://svelte.dev)
-            [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
+            [![Drizzle](https://img.shields.io/badge/Drizzle-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team)
             [![GraphQL](https://img.shields.io/badge/GraphQL-E10098?style=for-the-badge&logo=graphql&logoColor=white)](https://graphql.org)
             [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/deutschemodelunitednations/delegator)
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import {
 	E2E_ASSIGNMENT_ADMIN_ID,
@@ -21,7 +21,7 @@ test('an admin can apply a nation assignment to a delegation via the assignment 
 	page.on('dialog', (dialog) => dialog.accept());
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/assignment`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment`
 	});
 
 	const projectData = {
@@ -72,11 +72,11 @@ test('an admin can apply a nation assignment to a delegation via the assignment 
 			async () => {
 				const res = await page.request.post('/api/graphql', {
 					data: {
-						query: `query { findUniqueDelegation(where: { id: "${E2E_ASSIGNMENT_DELEGATION_ID}" }) { assignedNation { alpha3Code } } }`
+						query: `query { delegation(id: "${E2E_ASSIGNMENT_DELEGATION_ID}") { assignedNation { alpha3Code } } }`
 					}
 				});
 				const json = await res.json();
-				return json?.data?.findUniqueDelegation?.assignedNation?.alpha3Code;
+				return json?.data?.delegation?.assignedNation?.alpha3Code;
 			},
 			{ timeout: 15_000 }
 		)

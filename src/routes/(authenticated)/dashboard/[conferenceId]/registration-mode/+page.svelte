@@ -1,24 +1,29 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import DataMatrixDisplay from '$lib/components/RegistrationMode/DataMatrixDisplay.svelte';
+	import { resolve } from '$app/paths';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchMyConferenceParticipation } from '$lib/api/myConferenceParticipation';
+	import DataMatrixDisplay from '$lib/components/registrationMode/DataMatrixDisplay.svelte';
 	import Flag from '$lib/components/Flag.svelte';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { translateTeamRole } from '$lib/services/enumTranslations';
 	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
+	import { describeParticipant } from './participantInfo';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
-	let conferenceQueryData = $derived(data.conferenceQueryData);
-	let conference = $derived(conferenceQueryData?.findUniqueConference);
-	let delegationMember = $derived(conferenceQueryData?.findUniqueDelegationMember);
-	let singleParticipant = $derived(conferenceQueryData?.findUniqueSingleParticipant);
-	let supervisor = $derived(conferenceQueryData?.findUniqueConferenceSupervisor);
-	let teamMember = $derived(conferenceQueryData?.findUniqueTeamMember);
+	const currentUser = $derived(await getCurrentUser());
+
+	const participation = $derived(
+		await fetchMyConferenceParticipation({
+			userId: currentUser.sub,
+			conferenceId: params.conferenceId
+		})
+	);
+	let conference = $derived(participation?.conference);
 
 	// User identity from OIDC
-	let fullName = $derived(`${data.user.given_name} ${data.user.family_name}`);
-	let userId = $derived(data.user.sub);
+	let fullName = $derived(`${currentUser.given_name} ${currentUser.family_name}`);
+	let userId = $derived(currentUser.sub);
 
 	// Live timestamp
 	let currentTime = $state(new Date());
@@ -39,83 +44,7 @@
 		}
 	});
 
-	// Determine participant type and role info
-	type ParticipantInfo = {
-		type: 'delegation' | 'single' | 'team' | 'supervisor' | 'unassigned' | 'none';
-		roleDisplay: string;
-		committeeAbbreviation?: string;
-		alpha2Code?: string;
-		isNSA?: boolean;
-		nsaIcon?: string | null;
-	};
-
-	let participantInfo = $derived.by((): ParticipantInfo => {
-		// Delegation Member with assigned nation
-		if (delegationMember?.delegation?.assignedNation) {
-			const nation = delegationMember.delegation.assignedNation;
-			const committee = delegationMember.assignedCommittee;
-			return {
-				type: 'delegation',
-				roleDisplay: getFullTranslatedCountryNameFromISO3Code(nation.alpha3Code),
-				committeeAbbreviation: committee?.abbreviation,
-				alpha2Code: nation.alpha2Code.toLowerCase()
-			};
-		}
-
-		// Delegation Member with assigned NSA
-		if (delegationMember?.delegation?.assignedNonStateActor) {
-			const nsa = delegationMember.delegation.assignedNonStateActor;
-			return {
-				type: 'delegation',
-				roleDisplay: nsa.name,
-				isNSA: true,
-				nsaIcon: nsa.fontAwesomeIcon
-			};
-		}
-
-		// Delegation Member without assignment
-		if (delegationMember) {
-			return { type: 'unassigned', roleDisplay: '' };
-		}
-
-		// Single Participant with assigned role
-		if (singleParticipant?.assignedRole) {
-			const role = singleParticipant.assignedRole;
-			return {
-				type: 'single',
-				roleDisplay: role.name,
-				isNSA: true,
-				nsaIcon: role.fontAwesomeIcon
-			};
-		}
-
-		// Single Participant without assignment
-		if (singleParticipant) {
-			return { type: 'unassigned', roleDisplay: '' };
-		}
-
-		// Team Member (always valid)
-		if (teamMember) {
-			return {
-				type: 'team',
-				roleDisplay: translateTeamRole(teamMember.role),
-				isNSA: true,
-				nsaIcon: 'users-gear'
-			};
-		}
-
-		// Supervisor (always valid)
-		if (supervisor) {
-			return {
-				type: 'supervisor',
-				roleDisplay: m.supervisor(),
-				isNSA: true,
-				nsaIcon: 'chalkboard-user'
-			};
-		}
-
-		return { type: 'none', roleDisplay: '' };
-	});
+	let participantInfo = $derived(describeParticipant(participation));
 
 	let isValidParticipant = $derived(
 		participantInfo.type !== 'unassigned' && participantInfo.type !== 'none'
@@ -198,7 +127,7 @@
 
 	<!-- Back Button -->
 	<div class="mt-auto w-full pt-4">
-		<a href="/dashboard/{conference?.id}" class="btn btn-ghost btn-sm gap-2">
+		<a href={resolve(`/dashboard/${params.conferenceId}`)} class="btn btn-ghost btn-sm gap-2">
 			<i class="fa-solid fa-arrow-left"></i>
 			{m.backToDashboard()}
 		</a>

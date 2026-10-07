@@ -7,7 +7,7 @@ export const TASK_CRON_DEFAULTS = {
 
 export type TaskId = keyof typeof TASK_CRON_DEFAULTS;
 
-export function isTaskEnabled(id: TaskId): boolean {
+function isTaskEnabled(id: TaskId): boolean {
 	return !!process.env[`TASK_CRON_${id}`];
 }
 

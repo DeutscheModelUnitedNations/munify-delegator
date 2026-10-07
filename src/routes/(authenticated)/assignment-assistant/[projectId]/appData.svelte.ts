@@ -1,13 +1,16 @@
 import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
 import { RAW_DATA_KEY } from '../local_storage_keys';
 import { z } from 'zod';
+import { nationSeats } from '$lib/helpers/nationSeats';
+import { remainingSeats, summarizeSchools } from './projectStats';
 
-export const NationSchema = z.object({
+const NationSchema = z.object({
 	alpha2Code: z.string(),
 	alpha3Code: z.string()
 });
 
-export const CommitteeSchema = z.object({
+const CommitteeSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	abbreviation: z.string(),
@@ -15,13 +18,13 @@ export const CommitteeSchema = z.object({
 	nations: z.array(NationSchema)
 });
 
-export const IndividualApplicationOptionSchema = z.object({
+const IndividualApplicationOptionSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	fontAwesomeIcon: z.string().nullable()
 });
 
-export const NonStateActorSchema = z.object({
+const NonStateActorSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	abbreviation: z.string(),
@@ -29,60 +32,67 @@ export const NonStateActorSchema = z.object({
 	seatAmount: z.number()
 });
 
-export const AppliedForDelegationRoleSchema = z.object({
+const AppliedForDelegationRoleSchema = z.object({
 	id: z.string(),
 	rank: z.number(),
 	nation: NationSchema.nullish(),
 	nonStateActor: NonStateActorSchema.nullish(),
-	fontAwesomeIcon: z.undefined(),
-	name: z.undefined()
+	// `.optional()` on top of `z.undefined()`: this only discriminates the role-application union
+	// from AppliedForSingleRoleSchema below, and a `JSON` GraphQL scalar round-trips through real
+	// JSON, which drops `undefined`-valued keys entirely (`JSON.stringify({ a: undefined })` is
+	// `"{}"`) - so the key is always *absent* on arrival, never present-with-undefined. Zod 4's
+	// `z.undefined()` alone requires the key to exist (unlike zod 3, which this schema was written
+	// against), so it rejects every real payload without `.optional()`.
+	fontAwesomeIcon: z.undefined().optional(),
+	name: z.undefined().optional()
 });
 
-export const UserSchema = z.object({
+const UserSchema = z.object({
 	id: z.string()
 });
 
-export const SupervisorSchema = z.object({
+const SupervisorSchema = z.object({
 	id: z.string(),
 	user: UserSchema
 });
 
-export const MemberSchema = z.object({
+const MemberSchema = z.object({
 	id: z.string(),
 	isHeadDelegate: z.boolean(),
 	user: UserSchema,
 	supervisors: z.optional(z.array(SupervisorSchema))
 });
 
-export const AppliedForSingleRoleSchema = z.object({
+const AppliedForSingleRoleSchema = z.object({
 	id: z.string(),
 	fontAwesomeIcon: z.string().nullable(),
 	name: z.string(),
-	rank: z.undefined(),
-	nation: z.undefined(),
-	nonStateActor: z.undefined()
+	// See the matching comment on AppliedForDelegationRoleSchema above.
+	rank: z.undefined().optional(),
+	nation: z.undefined().optional(),
+	nonStateActor: z.undefined().optional()
 });
 
-export const SightingPropsSchema = z.object({
+const SightingPropsSchema = z.object({
 	evaluation: z.number().nullish(),
 	flagged: z.boolean().nullish(),
 	disqualified: z.boolean().nullish(),
 	note: z.string().nullish()
 });
 
-export const DelegationAssignmentSchema = z.object({
+const DelegationAssignmentSchema = z.object({
 	assignedNation: NationSchema.nullish()
 });
 
-export const NSAAssignmentSchema = z.object({
+const NSAAssignmentSchema = z.object({
 	assignedNSA: NonStateActorSchema.nullish()
 });
 
-export const SingleAssignmentSchema = z.object({
+const SingleAssignmentSchema = z.object({
 	assignedRole: IndividualApplicationOptionSchema.nullish()
 });
 
-export const ConferenceSchema = z.object({
+const ConferenceSchema = z.object({
 	id: z.string(),
 	title: z.string(),
 	startConference: z.coerce.date(),
@@ -91,13 +101,14 @@ export const ConferenceSchema = z.object({
 	individualApplicationOptions: z.array(IndividualApplicationOptionSchema)
 });
 
-export const DelegationSchema = z.object({
+const DelegationSchema = z.object({
 	id: z.string(),
 	appliedForRoles: z.array(AppliedForDelegationRoleSchema),
 	members: z.array(MemberSchema),
 	school: z.string().optional(),
-	supervisors: z.undefined(),
-	user: z.undefined(),
+	// See the matching comment on AppliedForDelegationRoleSchema above.
+	supervisors: z.undefined().optional(),
+	user: z.undefined().optional(),
 	splittedFrom: z.string().nullish(),
 	splittedInto: z.array(z.string()).nullish(),
 	...SightingPropsSchema.shape,
@@ -105,15 +116,16 @@ export const DelegationSchema = z.object({
 	...NSAAssignmentSchema.shape
 });
 
-export const SingleParticipantSchema = z.object({
+const SingleParticipantSchema = z.object({
 	id: z.string(),
 	user: UserSchema,
 	appliedForRoles: z.array(AppliedForSingleRoleSchema),
 	school: z.string().optional(),
 	supervisors: z.optional(z.array(SupervisorSchema)),
-	members: z.undefined(),
-	splittedFrom: z.undefined(),
-	splittedInto: z.undefined(),
+	// See the matching comment on AppliedForDelegationRoleSchema above.
+	members: z.undefined().optional(),
+	splittedFrom: z.undefined().optional(),
+	splittedInto: z.undefined().optional(),
 	...SightingPropsSchema.shape,
 	...SingleAssignmentSchema.shape
 });
@@ -124,31 +136,23 @@ export const ProjectDataSchema = z.object({
 	singleParticipants: z.array(SingleParticipantSchema)
 });
 
-export const ProjectSchema = z.object({
-	id: z.string(),
-	created: z.string(),
-	fileName: z.string(),
-	data: ProjectDataSchema
-});
-
-export type Nation = z.infer<typeof NationSchema>;
-export type Committee = z.infer<typeof CommitteeSchema>;
+export type ProjectNation = z.infer<typeof NationSchema>;
 export type IndividualApplicationOption = z.infer<typeof IndividualApplicationOptionSchema>;
 export type NonStateActor = z.infer<typeof NonStateActorSchema>;
-export type AppliedForDelegationRole = z.infer<typeof AppliedForDelegationRoleSchema>;
-export type Delegation = z.infer<typeof DelegationSchema>;
-export type AppliedForSingleRole = z.infer<typeof AppliedForSingleRoleSchema>;
+export type ProjectDelegation = z.infer<typeof DelegationSchema>;
 export type SingleParticipant = z.infer<typeof SingleParticipantSchema>;
-export type User = z.infer<typeof UserSchema>;
 export type Member = z.infer<typeof MemberSchema>;
-export type Supervisor = z.infer<typeof SupervisorSchema>;
-export type SightingProps = z.infer<typeof SightingPropsSchema>;
-export type DelegationAssignment = z.infer<typeof DelegationAssignmentSchema>;
-export type NSAAssignment = z.infer<typeof NSAAssignmentSchema>;
-export type SingleAssignment = z.infer<typeof SingleAssignmentSchema>;
-export type Conference = z.infer<typeof ConferenceSchema>;
+type DelegationAssignment = z.infer<typeof DelegationAssignmentSchema>;
+type NSAAssignment = z.infer<typeof NSAAssignmentSchema>;
+type Conference = z.infer<typeof ConferenceSchema>;
 export type ProjectData = z.infer<typeof ProjectDataSchema>;
-export type Project = z.infer<typeof ProjectSchema>;
+/** A project as stored in localStorage. */
+type Project = {
+	id: string;
+	created: string;
+	fileName: string;
+	data: ProjectData;
+};
 
 let allProjects: Project[] = $state([]);
 let selectedProject: Project | undefined = $state();
@@ -158,14 +162,14 @@ export const loadProjects = async (projectId?: string | undefined) => {
 	if (projectsRaw) {
 		allProjects = JSON.parse(projectsRaw);
 		if (projectId) {
-			selectedProject = allProjects.find((project: any) => project.id === projectId);
+			selectedProject = allProjects.find((project) => project.id === projectId);
 			return;
 		}
 	}
-	goto('/assignment-assistant');
+	goto(resolve('/assignment-assistant'));
 };
 
-export const saveProjects = () => {
+const saveProjects = () => {
 	localStorage.setItem(RAW_DATA_KEY, JSON.stringify(allProjects));
 };
 
@@ -193,24 +197,7 @@ export const getApplications = () => {
 	];
 };
 
-export const getSchools = () => {
-	const applications = getApplications();
-	const schools: { school: string; count: number; members: number }[] = [];
-	for (const application of applications) {
-		const schoolEntry = schools.find((x) => x.school === application.school);
-		if (schoolEntry) {
-			schoolEntry.count += 1;
-			schoolEntry.members += application?.members?.length ?? 1;
-		} else {
-			schools.push({
-				school: application.school ?? 'No School',
-				count: 1,
-				members: application?.members?.length ?? 1
-			});
-		}
-	}
-	return schools.toSorted((a, b) => a.school.localeCompare(b.school));
-};
+export const getSchools = () => summarizeSchools(getApplications());
 
 export const getDelegationApplications = () => {
 	const project = getProject();
@@ -235,29 +222,13 @@ export const getSingleRoles = () => {
 };
 
 export const getNations: () => {
-	nation: Nation;
+	nation: ProjectNation;
 	seats: number;
 	committees: string[];
 }[] = () => {
 	const project = getProject();
 	if (!project) return [];
-	const role: { nation: Nation; seats: number; committees: string[] }[] = [];
-	project.data.conference.committees.forEach((committee) => {
-		committee.nations.forEach((nation) => {
-			const entry = role.find((role) => role.nation.alpha2Code === nation.alpha2Code);
-			if (entry) {
-				entry.seats += committee.numOfSeatsPerDelegation;
-				entry.committees = [committee.abbreviation, ...entry.committees];
-			} else {
-				role.push({
-					nation,
-					seats: committee.numOfSeatsPerDelegation,
-					committees: [committee.abbreviation]
-				});
-			}
-		});
-	});
-	return role;
+	return nationSeats(project.data.conference.committees);
 };
 
 export const getNSAs: () => NonStateActor[] = () => {
@@ -266,30 +237,22 @@ export const getNSAs: () => NonStateActor[] = () => {
 	return project.data.conference.nonStateActors;
 };
 
-export const getRemainingSeats = (assignment: Nation | NonStateActor) => {
-	const delegations = getDelegationApplications().filter((x) => {
-		const isNation = 'alpha2Code' in assignment;
-		if (isNation) {
-			return x.assignedNation?.alpha2Code === assignment.alpha2Code;
-		}
-		return x.assignedNSA?.id === assignment.id;
+export const getRemainingSeats = (assignment: ProjectNation | NonStateActor) =>
+	remainingSeats(assignment, {
+		delegations: getDelegationApplications(),
+		nations: getNations(),
+		nsas: getNSAs()
 	});
-	let seats = getNations().find(
-		(x) => x.nation.alpha2Code === (assignment as Nation).alpha2Code
-	)?.seats;
-	if (!seats) {
-		seats = getNSAs().find((x) => x.id === (assignment as NonStateActor).id)?.seatAmount;
-	}
-	return seats ? seats - delegations.reduce((acc, x) => acc + x.members.length, 0) : 0;
-};
 
 export const getMoreInfoLink = (id: string) => {
 	const project = getProject();
-	if (!project) return '';
+	if (!project) return undefined;
 	if (project.data.singleParticipants.find((singleParticipant) => singleParticipant.id === id)) {
-		return `/management/${project.data.conference.id}/individuals?selected=${id}`;
+		return resolve(
+			`/dashboard/${project.data.conference.id}/management/individuals?selected=${id}`
+		);
 	}
-	return `/management/${project.data.conference.id}/delegations?selected=${id}`;
+	return resolve(`/dashboard/${project.data.conference.id}/management/delegations?selected=${id}`);
 };
 
 export const evaluateApplication = (id: string, evaluation: number) => {
@@ -390,7 +353,7 @@ export const splitDelegation = (delegationId: string, buckets: Member[][]) => {
 	const splittedInto = buckets
 		.filter((bucket) => bucket.length > 0) // Don't create empty delegations
 		.map((bucket) => {
-			const newDelegation: Delegation = JSON.parse(JSON.stringify(delegation));
+			const newDelegation: ProjectDelegation = JSON.parse(JSON.stringify(delegation));
 			newDelegation.id = Math.round(Math.random() * 1000000).toString();
 			newDelegation.members = bucket;
 			newDelegation.splittedFrom = delegation.id;
@@ -408,7 +371,7 @@ export const splitDelegation = (delegationId: string, buckets: Member[][]) => {
 export const convertSingleToDelegation = (singleId: string) => {
 	const single = getSingleApplications().find((single) => single.id === singleId);
 	if (!single) return;
-	const newDelegation: Delegation = {
+	const newDelegation: ProjectDelegation = {
 		id: single.id,
 		members: [
 			{

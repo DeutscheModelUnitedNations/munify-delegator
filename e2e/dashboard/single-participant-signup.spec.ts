@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -58,10 +58,10 @@ test('a single participant can manage role applications and complete their signu
 
 	const res = await page.request.post('/api/graphql', {
 		data: {
-			query: `query { findUniqueSingleParticipant(where: { conferenceId_userId: { conferenceId: "${conferenceId}", userId: "${participant.preferred_username}" } }) { applied appliedForRoles { id } } }`
+			query: `query { singleParticipants(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${participant.preferred_username}" } }) { applied appliedForRoles { id } } }`
 		}
 	});
-	const data = (await res.json())?.data?.findUniqueSingleParticipant;
+	const data = (await res.json())?.data?.singleParticipants?.[0];
 	expect(data?.applied).toBe(true);
 	expect(data?.appliedForRoles?.length).toBe(1);
 });

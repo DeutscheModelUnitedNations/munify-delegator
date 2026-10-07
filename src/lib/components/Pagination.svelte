@@ -18,7 +18,7 @@
 		<i class="fas fa-chevron-left"></i>
 	</button>
 
-	{#each Array.from({ length: total }, (_, i) => i) as index}
+	{#each { length: total }, index}
 		<button
 			class="btn join-item btn-sm {active === index + 1 && 'btn-primary'}"
 			onclick={() => setPage(index + 1)}

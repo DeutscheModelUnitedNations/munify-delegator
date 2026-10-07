@@ -22,10 +22,21 @@ const OPTIONS: Parameters<typeof build>[0] = {
 	bundle: true,
 	splitting: true,
 	tsconfig,
+	// The tasks share `$api/**` with the app, which reaches for SvelteKit's virtual modules.
+	// Nothing resolves them outside a SvelteKit build, so they point at plain-Node stand-ins.
+	esbuildOptions(options) {
+		options.alias = {
+			...options.alias,
+			'$app/environment': join(rootDir, 'src', 'tasks', 'shims', 'appEnvironment.ts'),
+			'$env/dynamic/private': join(rootDir, 'src', 'tasks', 'shims', 'envDynamicPrivate.ts')
+		};
+	},
 	external: [
-		// ...Object.keys(packagejson.dependencies),
-		// ...Object.keys(packagejson.peerDependencies),
-		...Object.keys(packagejson.devDependencies)
+		...Object.keys(packagejson.devDependencies),
+		// Real runtime dependencies, installed in Dockerfile.tasks rather than bundled: `pg`
+		// resolves its optional native bindings dynamically, which a bundle cannot carry.
+		'drizzle-orm',
+		'pg'
 	]
 };
 

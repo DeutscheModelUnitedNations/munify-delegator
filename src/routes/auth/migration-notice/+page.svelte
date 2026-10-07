@@ -36,6 +36,7 @@
 					<i class="fa-duotone fa-circle-info text-info mr-2"></i>
 					{m.migrationNoticeFaqIdentityProviderTitle()}
 				</h3>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 				<p class="text-base-content">{@html m.migrationNoticeFaqIdentityProviderBody()}</p>
 			</div>
 
@@ -83,6 +84,7 @@
 					{m.migrationNoticeFaqHelpTitle()}
 				</h3>
 				<p class="text-base-content">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/, interpolating the deployment's configured support address -->
 					{@html m.migrationNoticeFaqHelpBody({ email: configPublic.PUBLIC_SUPPORT_EMAIL })}
 				</p>
 			</div>

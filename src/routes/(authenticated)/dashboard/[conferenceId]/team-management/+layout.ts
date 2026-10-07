@@ -1,49 +1,26 @@
-import { graphql } from '$houdini';
+import { client } from '$lib/api/rumbleClient/client';
+import { fetchCurrentUser } from '$lib/api/currentUser';
 import { error } from '@sveltejs/kit';
 import type { LayoutLoad } from './$types';
 import { m } from '$lib/paraglide/messages';
 
-const teamMemberAccessCheck = graphql(`
-	query TeamMemberAccessCheck($conferenceId: String!, $userId: String!) {
-		findUniqueTeamMember(
-			where: { conferenceId_userId: { conferenceId: $conferenceId, userId: $userId } }
-		) {
-			id
-			role
-		}
-	}
-`);
+const ALLOWED_ROLES = ['PROJECT_MANAGEMENT', 'TEAM_COORDINATOR'];
 
 export const load: LayoutLoad = async (event) => {
-	const { user } = await event.parent();
-	const conferenceId = event.params.conferenceId;
-
+	const user = await fetchCurrentUser();
 	const isAdmin = user.myOIDCRoles.includes('admin');
 
-	// System admins can access
-	if (isAdmin) {
-		return {
-			conferenceId,
-			isAdmin
-		};
-	}
+	if (isAdmin) return;
 
-	// Check if user is team member with appropriate role
-	const { data } = await teamMemberAccessCheck.fetch({
-		event,
-		variables: { conferenceId, userId: user.sub },
-		blocking: true
+	const [teamMember] = await client.query.teamMembers({
+		__args: {
+			where: { conferenceId: { eq: event.params.conferenceId }, userId: { eq: user.sub } }
+		},
+		id: true,
+		role: true
 	});
 
-	const teamMember = data?.findUniqueTeamMember;
-	const allowedRoles = ['PROJECT_MANAGEMENT', 'TEAM_COORDINATOR'];
-
-	if (!teamMember || !allowedRoles.includes(teamMember.role)) {
+	if (!teamMember || !ALLOWED_ROLES.includes(teamMember.role)) {
 		error(403, m.noAccess());
 	}
-
-	return {
-		conferenceId,
-		isAdmin
-	};
 };

@@ -1,6 +1,5 @@
 <script>
-	import { locales, getLocale, localizeHref, setLocale } from '$lib/paraglide/runtime';
-	import { page } from '$app/state';
+	import { locales, getLocale, setLocale } from '$lib/paraglide/runtime';
 	import Flag from './Flag.svelte';
 
 	const alpha2CodeLookup = {
@@ -9,7 +8,7 @@
 </script>
 
 <div class="join gap-0">
-	{#each locales as lang, i}
+	{#each locales as lang (lang)}
 		<button
 			class="btn join-item {getLocale() === lang ? 'btn-primary' : ''}"
 			onclick={() => setLocale(lang)}

@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
-	import { onMount } from 'svelte';
+	import { client } from '$lib/api/rumbleClient/client';
 	import LoadingData from '../components/LoadingData.svelte';
-	import formatNames from '$lib/services/formatNames';
-	import { getAgeAtConference } from '$lib/services/ageChecker';
+	import formatNames from '$lib/helpers/formatNames';
+	import { getAgeAtConference } from '$lib/helpers/ageChecker';
 
 	interface Props {
 		userIds: string[];
@@ -12,58 +11,57 @@
 
 	let { userIds, startConference }: Props = $props();
 
-	const getApplicationUserDetailsQuery = graphql(`
-		query GetApplicationUserDetails($userIds: [String!]) {
-			findManyUsers(where: { id: { in: $userIds } }) {
-				id
-				given_name
-				family_name
-				gender
-				birthday
-				globalNotes
-				conferenceParticipationsCount
-			}
-		}
-	`);
+	function fetchUsers(ids: string[]) {
+		return client.query.users({
+			__args: { where: { id: { in: ids } } },
+			id: true,
+			givenName: true,
+			familyName: true,
+			gender: true,
+			birthday: true,
+			conferenceParticipationsCount: true
+		});
+	}
+
+	let users = $state<Awaited<ReturnType<typeof fetchUsers>>>();
+	let usersLoading = $state(false);
 
 	$effect(() => {
 		if (userIds.length === 0) return;
-		getApplicationUserDetailsQuery.fetch({
-			variables: {
-				userIds: userIds
-			}
-		});
+		usersLoading = true;
+		void fetchUsers(userIds)
+			.then((result) => {
+				users = result;
+			})
+			.finally(() => {
+				usersLoading = false;
+			});
 	});
+
+	/** The badge colour and icon for each gender; anything else gets the neutral one. */
+	const genderBadges: Record<string, { color: string; icon: string }> = {
+		FEMALE: { color: 'bg-pink-600', icon: 'venus' },
+		MALE: { color: 'bg-blue-500', icon: 'mars' }
+	};
+	const otherGenderBadge = { color: 'bg-gray-500', icon: 'venus-mars' };
+	const genderBadge = (gender: string | null | undefined) =>
+		(gender && genderBadges[gender]) || otherGenderBadge;
 </script>
 
 <tr>
 	<td class="text-center"><i class="fa-duotone fa-users text-lg"></i></td>
 	<td>
-		<LoadingData
-			fetching={$getApplicationUserDetailsQuery.fetching}
-			error={!$getApplicationUserDetailsQuery.data?.findManyUsers}
-		>
+		<LoadingData fetching={usersLoading} error={!users}>
 			<ul class="flex list-inside list-disc flex-col justify-center gap-1">
-				{#each $getApplicationUserDetailsQuery.data?.findManyUsers ?? [] as user (user.id)}
+				{#each users ?? [] as user (user.id)}
+					{@const badge = genderBadge(user.gender)}
 					<li>
-						{formatNames(user.given_name, user.family_name)}
+						{formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
 						<span class="badge badge-xs badge-neutral">
-							{getAgeAtConference(user.birthday, startConference) ?? '?'}
+							{(user.birthday && getAgeAtConference(user.birthday, startConference)) ?? '?'}
 						</span>
-						<span
-							class="badge badge-xs {user.gender === 'FEMALE'
-								? 'bg-pink-600'
-								: user.gender === 'MALE'
-									? 'bg-blue-500'
-									: 'bg-gray-500'}"
-						>
-							<i
-								class="fa-solid fa-{user.gender === 'FEMALE'
-									? 'venus'
-									: user.gender === 'MALE'
-										? 'mars'
-										: 'venus-mars'}"
-							></i>
+						<span class="badge badge-xs {badge.color}">
+							<i class="fa-solid fa-{badge.icon}"></i>
 						</span>
 						{#if user.conferenceParticipationsCount > 0}
 							<span class="badge badge-xs badge-warning">

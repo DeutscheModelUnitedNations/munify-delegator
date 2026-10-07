@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { MyConferenceparticipationQuery$result } from '$houdini';
+	import type { Row } from '$api/db/rows';
 	import type { Snippet } from 'svelte';
 	import Flag from './Flag.svelte';
 
-	type NonStateActorPool = NonNullable<
-		MyConferenceparticipationQuery$result['findUniqueConference']
-	>['nonStateActors'];
+	type NonStateActorPool = Pick<
+		Row<'nonStateActor'>,
+		'id' | 'name' | 'description' | 'seatAmount' | 'fontAwesomeIcon'
+	>[];
 
 	interface Props {
 		nonStateActorPool: NonStateActorPool;
@@ -26,7 +27,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each nonStateActorPool.sort((a, b) => a.name.localeCompare(b.name)) as nsa}
+			{#each nonStateActorPool.sort((a, b) => a.name.localeCompare(b.name)) as nsa (nsa.id)}
 				<tr>
 					<td class="align-top md:align-middle">
 						<div class="flex items-center gap-4">

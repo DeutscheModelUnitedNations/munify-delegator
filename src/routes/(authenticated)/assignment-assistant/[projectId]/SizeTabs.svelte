@@ -5,11 +5,14 @@
 		largestNationOrNSA: number;
 	}
 
+	// `largestNationOrNSA` is used by `{#each { length: largestNationOrNSA }}` below, an array-like
+	// each block fallow does not read.
+	// fallow-ignore-next-line unused-component-prop
 	let { tab, changeTab, largestNationOrNSA }: Props = $props();
 </script>
 
 <div role="tablist" class="tabs-box tabs mb-4">
-	{#each { length: largestNationOrNSA } as _, i}
+	{#each { length: largestNationOrNSA }, i (i)}
 		<button
 			role="tab"
 			aria-selected={tab === i + 1}

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -10,6 +10,10 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a head delegate can set preferences and complete their delegation signup', async ({
 	browser
 }) => {
+	// Two separate sign-ups, each through the full login and profile flow, plus the flow itself
+	// run within a few seconds of the default 30s.
+	test.setTimeout(90_000);
+
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
 	headPage.on('dialog', (dialog) => dialog.accept());
@@ -103,10 +107,10 @@ test('a head delegate can set preferences and complete their delegation signup',
 
 	const res = await headPage.request.post('/api/graphql', {
 		data: {
-			query: `query { findManyDelegations(where: { entryCode: { equals: "${entryCode}" } }) { applied appliedForRoles { id } } }`
+			query: `query { delegations(where: { entryCode: { eq: "${entryCode}" } }) { applied appliedForRoles { id } } }`
 		}
 	});
 	const json = await res.json();
-	expect(json.data?.findManyDelegations?.[0]?.applied).toBe(true);
-	expect(json.data?.findManyDelegations?.[0]?.appliedForRoles?.length).toBe(3);
+	expect(json.data?.delegations?.[0]?.applied).toBe(true);
+	expect(json.data?.delegations?.[0]?.appliedForRoles?.length).toBe(3);
 });

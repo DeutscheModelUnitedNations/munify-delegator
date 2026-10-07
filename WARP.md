@@ -6,7 +6,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 MUNify DELEGATOR is a registration and organization management system for Model United Nations conferences. Built with SvelteKit 2, it handles delegation registration, assignment, and management workflows for MUN conferences.
 
-**Tech Stack**: SvelteKit 2 (Svelte 5 runes mode), TypeScript, Prisma ORM (PostgreSQL), GraphQL (Pothos + Yoga), Tailwind CSS 4 + DaisyUI, Houdini (GraphQL client), Paraglide (i18n)
+**Tech Stack**: SvelteKit 2 (Svelte 5 runes mode), TypeScript, Drizzle ORM (PostgreSQL), GraphQL via [rumble](https://github.com/m1212e/rumble), Tailwind CSS 4 + DaisyUI, urql with a generated typed client, Paraglide (i18n)
 
 ## Development Commands
 
@@ -30,17 +30,18 @@ bunx lefthook install
 ### Database Management
 
 ```bash
-# Migrate database to latest schema
-bunx prisma migrate dev
+# Write a migration for the current schema.ts, then apply it
+bun run db:generate
+bun run db:migrate
 
-# Reset database (WARNING: deletes all data)
-bunx prisma migrate reset
+# Drop every table and enum (WARNING: deletes all data)
+bun run db:reset
 
-# Seed database with development data
-bun prisma/seed/dev/seed.ts
+# Wipe and refill the dev database with faker data
+bun run db:seed:dev
 
-# Open Prisma Studio (database GUI)
-bun run studio
+# Database GUI
+bun run db:studio
 ```
 
 ### Code Quality
@@ -86,66 +87,84 @@ bun run machine-translate
 - **`src/routes/`** - SvelteKit file-based routing
   - `(authenticated)/` - Protected routes requiring authentication
     - `dashboard/[conferenceId]/` - Participant-facing conference dashboard
-    - `management/[conferenceId]/` - Admin conference management UI
+    - `dashboard/[conferenceId]/management/` - Admin conference management UI
     - `registration/[conferenceId]/` - Registration flows (delegation, individual, supervisor)
     - `assignment-assistant/` - Committee assignment tooling
   - `api/graphql/` - GraphQL API endpoint
-  - `auth/` - OIDC authentication flows
+  - `auth/` - the auth pages the OIDC library does not serve itself (invitation hand-off, error,
+    email conflict, migration notice)
 
 - **`src/api/`** - GraphQL API implementation
-  - `resolvers/` - Pothos GraphQL resolvers organized by entity
-  - `abilities/` - CASL permission definitions per entity
-  - `context/` - Request context (OIDC, permissions)
+  - `handlers/` - One module per entity, holding its abilities, queries and mutations
+  - `rumble.ts` - The rumble instance (schema builder, ability builder, client generator)
+  - `context.ts` - Request context (OIDC data and its helpers)
+  - `db/` - Drizzle schema, relations, client, reset and dev seed
   - `services/` - Business logic services
 
 - **`src/lib/`** - Shared utilities
+  - `api/` - The urql client plus the **generated** `rumbleClient/`
   - `components/` - Reusable Svelte components
-  - `queries/` - Houdini GraphQL queries/mutations
   - `services/` - Frontend services
   - `schemata/` - Zod validation schemas
-  - `db/` - Database utilities
   - `paraglide/` - Generated i18n code
 
 - **`src/tasks/`** - Background tasks (email sync, conference status updates)
 
-- **`prisma/`** - Database schema, migrations, and seed scripts
-  - `schema.prisma` - Main database schema
-  - `migrations/` - Database migration history
-  - `seed/dev/` - Development seed scripts
+- **`drizzle/`** - Generated migration history
 
 ### Key Architectural Patterns
 
 #### GraphQL API Layer
 
-- **Schema Generation**: Pothos schema builder with Prisma plugin generates GraphQL schema from Prisma models
-- **Resolvers**: Organized by entity in `src/api/resolvers/modules/` (e.g., `conference.ts`, `delegation.ts`)
-- **Auto-generated CRUD**: `prisma-generator-pothos-codegen` creates base CRUD operations
+- **Schema Generation**: rumble builds the schema from the drizzle tables; `object({ table })` and
+  `query({ table })` give an entity its type and its two root queries
+- **Handlers**: Organized by entity in `src/api/handlers/` (e.g., `conference.ts`, `delegation.ts`),
+  all listed in `register.ts`
 - **Server**: GraphQL Yoga serves the API at `/api/graphql`
+- Schema changes need a dev server restart
 
 #### Frontend Data Flow
 
-- **Houdini Client**: Type-safe GraphQL client with automatic cache management
-- **Code Generation**: `houdini.config.js` watches schema and generates TypeScript types
-- **Queries**: Store queries in `src/lib/queries/` for reuse across components
-- **Load Functions**: SvelteKit `+page.ts` files use Houdini queries for SSR/CSR data loading
+- **Generated client**: `client.query.x({ __args, …selection })` and `client.mutate.x(…)`, written
+  into `src/lib/api/rumbleClient/` on dev server start
+- **Fetching happens in components**, not in `load`: `const x = $derived(await client.liveQuery.…)`
+  at the top of `<script>`. `load` survives only for redirect/403 guards, page options, and the one
+  invitation route that has to set a cookie before rendering; a guard returns no data
+- **Global state**: `$lib/state/currentUser.svelte` for the signed-in person, cached in the browser
+  only — module state on the server is shared across requests
+- **SSR**: component fetches during SSR go through the remote function in
+  `src/api/graphql.remote.ts`, which runs the schema in-process rather than over HTTP
+- **After mutations**: usually nothing — mutations publish to the tables they write and `liveQuery`
+  refreshes itself. `invalidateAll()` still re-runs the remaining layout loads but not a
+  component's own fetch
+- **Subscriptions**: served over SSE on `/api/graphql`, with Redis (`REDIS_URL`) as the event
+  target so several instances share events
+- **Forms**: superforms in SPA mode (`defaults()` + `SPA: true`, mutation in `onUpdate`) with
+  [Formsnap](https://formsnap.dev) field primitives behind the `Form*` components in
+  `$lib/components/form/`. No form actions, no `superValidate`
 
 #### Authentication & Authorization
 
-- **OIDC Integration**: Uses OpenID Connect (recommended: Logto, but supports any OIDC provider)
-- **Context Building**: `src/api/context/context.ts` constructs request context with OIDC data
-- **Permission System**: CASL ability-based authorization
-  - Definitions in `src/api/abilities/entities/`
+- **OIDC Integration**: `@m1212e/sveltekit-oidc` (recommended provider: Logto, but any OIDC provider
+  works). `src/api/services/OIDC.ts` builds it and `src/hooks.server.ts` installs its `handle`,
+  which guards the authenticated routes, serves both callback routes without `+page` files and puts
+  the session on `event.locals.oidc`. The login-time user upsert is
+  `src/api/services/upsertSelf.ts`
+- **Impersonation**: stalled during the migration — the library owns the session cookies the old
+  implementation swapped. `$lib/data/impersonation` gates the UI
+- **Context Building**: `src/api/context.ts` constructs request context from `event.locals.oidc`
+- **Permission System**: rumble abilities, which are drizzle filters composed into each query
+  - Definitions at the top of each handler in `src/api/handlers/`
   - Admins get full access, team members get scoped access based on roles
   - Roles: `admin`, `PROJECT_MANAGEMENT`, `PARTICIPANT_CARE`, etc.
 
 #### Database & ORM
 
-- **Prisma Models**: Single source of truth in `prisma/schema.prisma`
-- **Generators**: Three generators run on schema changes:
-  1. `@prisma/client` - TypeScript client
-  2. `prisma-pothos-types` - Pothos integration types
-  3. `prisma-generator-pothos-codegen` - Auto-generated resolvers
-- **Migrations**: All schema changes must create migrations (`bunx prisma migrate dev`)
+- **Drizzle schema**: Single source of truth in `src/api/db/schema.ts`, with the relation graph in
+  `relations.ts`
+- **Relational API**: `db.query.x.findMany({ where, with, columns })`; columns are camelCase in
+  TypeScript and snake_case in the database
+- **Migrations**: All schema changes must create migrations (`bun run db:generate`)
 
 #### Internationalization
 
@@ -156,8 +175,8 @@ bun run machine-translate
 #### UI Components
 
 - **Tailwind CSS 4**: Utility-first styling with DaisyUI component library
-- **Svelte 5 Runes**: Uses modern runes mode (`$state`, `$derived`, `$effect`)
-- **Houdini Integration**: `houdini-svelte` plugin provides reactive stores
+- **Svelte 5 Runes**: Uses modern runes mode (`$state`, `$derived`, `$effect`), with
+  `experimental.async` enabled so components can await at the top level
 
 ### State Management Concepts
 
@@ -169,11 +188,11 @@ bun run machine-translate
 
 ### Testing Database Changes
 
-After modifying `prisma/schema.prisma`:
+After modifying `src/api/db/schema.ts`:
 
-1. Run `bunx prisma migrate dev` to create migration
-2. Run `bun prisma/seed/dev/seed.ts` to seed test data
-3. Use Prisma Studio (`bun run studio`) to verify data structure
+1. Run `bun run db:generate` and `bun run db:migrate` to create and apply the migration
+2. Run `bun run db:seed:dev` to refill test data
+3. Use `bun run db:studio` to verify the data structure
 
 ### Configuration
 
@@ -187,17 +206,17 @@ After modifying `prisma/schema.prisma`:
 - **Aliases**: Configured in `svelte.config.js`:
   - `$api` → `src/api`
   - `$assets` → `src/assets`
-  - `$db` → `prisma`
-  - `$config` → `src/config`
-  - `$houdini` → `.houdini`
+  - `$config` → `src/lib/config`
 
 ## Development Workflow
 
-1. **Schema Changes**: Edit `prisma/schema.prisma` → run migrations → regenerate GraphQL schema
-2. **API Changes**: Modify resolvers in `src/api/resolvers/modules/` → schema regenerates automatically
+1. **Schema Changes**: Edit `src/api/db/schema.ts` → `db:generate` → `db:migrate` → restart the dev server
+2. **API Changes**: Modify a handler in `src/api/handlers/` → restart the dev server, which rebuilds
+   the schema and regenerates the frontend client
 3. **Frontend Changes**: Edit Svelte components → Vite hot-reloads
-4. **Adding GraphQL Operations**: Create `.gql` files or use `graphql()` function → Houdini generates types
-5. **Permission Changes**: Edit ability files in `src/api/abilities/entities/`
+4. **Adding Operations**: Call `client.liveQuery` / `client.mutate` with a selection object in the
+   component; there are no GraphQL documents and no data-loading `load` functions in this codebase
+5. **Permission Changes**: Edit the `abilityBuilder` calls at the top of the entity's handler
 
 ## Commit Convention
 

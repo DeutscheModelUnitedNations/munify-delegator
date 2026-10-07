@@ -3,6 +3,7 @@
 	import Choice from '../Choice.svelte';
 	import EndOfChat from '../EndOfChat.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		conferenceId: string;
@@ -10,14 +11,14 @@
 
 	let { conferenceId }: Props = $props();
 
-	const choices = [
+	const choices = $derived([
 		{
 			icon: 'arrow-right',
 			title: 'Zur Anmeldung',
 			class: 'btn-primary',
-			href: `${conferenceId}/supervisor`
+			href: resolve(`/registration/${conferenceId}/supervisor`)
 		}
-	];
+	]);
 </script>
 
 <ChatBot delay={400}>

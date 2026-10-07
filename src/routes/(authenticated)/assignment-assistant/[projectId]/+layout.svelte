@@ -1,11 +1,15 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
-	import type { LayoutData } from './$types';
+	import type { LayoutProps } from './$types';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { getProject } from './appData.svelte';
-	import Tabs from '$lib/components/Tabs/Tabs.svelte';
-	import Tab from '$lib/components/Tabs/Tab.svelte';
+	import Tabs from '$lib/components/tabs/Tabs.svelte';
+	import Tab from '$lib/components/tabs/Tab.svelte';
 
-	let { data, children }: { data: LayoutData; children: Snippet } = $props();
+	let { children, params }: LayoutProps = $props();
+
+	const tab = $derived(page.route.id?.split('/').pop());
+	const projectId = $derived(params.projectId);
 
 	const downloadData = () => {
 		const filename = `assignment-assistant-data_${new Date().toISOString()}.json`;
@@ -21,7 +25,7 @@
 </script>
 
 <div class="navbar bg-base-200 gap-4 p-2">
-	<a class="btn btn-ghost" href="/assignment-assistant" aria-label="Back">
+	<a class="btn btn-ghost" href={resolve('/assignment-assistant')} aria-label="Back">
 		<i class="fas fa-arrow-left"></i>
 	</a>
 	<div class="flex flex-1 flex-col items-start">
@@ -35,20 +39,35 @@
 
 <main class="hidden w-full flex-col p-10 lg:flex">
 	<Tabs>
-		<Tab active={data.tab === 'sighting'} title="Sichtung" icon="eye" href="sighting" />
 		<Tab
-			active={data.tab === 'weighting'}
+			active={tab === 'sighting'}
+			title="Sichtung"
+			icon="eye"
+			href={resolve(`/assignment-assistant/${projectId}/sighting`)}
+		/>
+		<Tab
+			active={tab === 'weighting'}
 			title="Gewichtung"
 			icon="balance-scale"
-			href="weighting"
+			href={resolve(`/assignment-assistant/${projectId}/weighting`)}
 		/>
-		<Tab active={data.tab === 'singles'} title="Singles" icon="user-tie" href="singles" />
-		<Tab active={data.tab === 'assignment'} title="Zuweisung" icon="split" href="assignment" />
 		<Tab
-			active={data.tab === 'summary'}
+			active={tab === 'singles'}
+			title="Singles"
+			icon="user-tie"
+			href={resolve(`/assignment-assistant/${projectId}/singles`)}
+		/>
+		<Tab
+			active={tab === 'assignment'}
+			title="Zuweisung"
+			icon="split"
+			href={resolve(`/assignment-assistant/${projectId}/assignment`)}
+		/>
+		<Tab
+			active={tab === 'summary'}
 			title="Zusammenfassung"
 			icon="clipboard-list"
-			href="summary"
+			href={resolve(`/assignment-assistant/${projectId}/summary`)}
 		/>
 	</Tabs>
 

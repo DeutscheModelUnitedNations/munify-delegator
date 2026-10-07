@@ -1,25 +1,19 @@
 <script lang="ts">
-	import { cache, graphql } from '$houdini';
+	import { resolve } from '$app/paths';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
-	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
-	import { persisted } from 'svelte-persisted-store';
-	import { get } from 'svelte/store';
+	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import { untrack } from 'svelte';
-	import FormFieldset from '$lib/components/Form/FormFieldset.svelte';
-	import BarcodeScanner from '$lib/components/Scanner/BarcodeScanner.svelte';
+	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
+	import AttendanceQueueEntry from './AttendanceQueueEntry.svelte';
+	import { isNetworkError, retryDelay, type QueueEntry } from './attendanceQueue';
+	import type { PageProps } from './$types';
+
+	let { params }: PageProps = $props();
 
 	// --- Types ---
-
-	interface QueueEntry {
-		localId: string;
-		userId: string;
-		timestamp: string;
-		status: 'pending' | 'processing' | 'success' | 'error';
-		errorKind?: 'network' | 'user_not_found' | 'duplicate' | 'unknown';
-		errorMessage?: string;
-		retryCount: number;
-	}
 
 	interface ScanLogEntry {
 		userId: string;
@@ -37,7 +31,7 @@
 
 	// --- Props & Params ---
 
-	const conferenceId: string = $derived($page.params.conferenceId ?? '');
+	const conferenceId: string = $derived(params.conferenceId ?? '');
 
 	// --- Session state ---
 
@@ -46,9 +40,9 @@
 
 	// --- localStorage backup ---
 
-	const sessionStore = persisted<ScanSession | null>(
-		`attendanceSession-${$page.params.conferenceId}`,
-		null
+	// One saved session per conference, so the store follows the conference in the URL.
+	const sessionStore = $derived(
+		new PersistedState<ScanSession | null>(`attendanceSession-${params.conferenceId}`, null)
 	);
 
 	// --- Queue ---
@@ -60,20 +54,6 @@
 
 	let scannedCode = $state<string | null>('');
 	let scannerRef = $state<BarcodeScanner>();
-
-	// --- Mutation ---
-
-	const createAttendanceEntryMutation = graphql(`
-		mutation createAttendanceEntryForScanner(
-			$userId: String!
-			$conferenceId: String!
-			$occasion: String!
-		) {
-			createOneAttendanceEntry(userId: $userId, conferenceId: $conferenceId, occasion: $occasion) {
-				id
-			}
-		}
-	`);
 
 	// --- Stats counters (independent of queue lifecycle) ---
 
@@ -96,7 +76,7 @@
 			startedAt: new Date().toISOString(),
 			entries: []
 		};
-		sessionStore.set(session);
+		sessionStore.current = session;
 		sessionActive = true;
 		queue = [];
 		totalScansCounter = 0;
@@ -113,7 +93,7 @@
 		// Only reactive dependency: conferenceId
 		const id = conferenceId;
 		untrack(() => {
-			const stored = get(sessionStore);
+			const stored = sessionStore.current;
 			if (stored && stored.conferenceId === id) {
 				occasion = stored.occasion;
 				sessionActive = true;
@@ -161,10 +141,10 @@
 			totalScansCounter += 1;
 
 			// Add to localStorage backup
-			const session = get(sessionStore);
+			const session = sessionStore.current;
 			if (session) {
 				session.entries.push({ userId, timestamp: now, synced: false });
-				sessionStore.set(session);
+				sessionStore.current = session;
 			}
 
 			// Reset scanner immediately for next scan
@@ -182,96 +162,101 @@
 		processing = true;
 
 		try {
-			while (true) {
-				const pendingEntry = queue.find((e) => e.status === 'pending');
-				if (!pendingEntry) break;
-
+			let pendingEntry = queue.find((e) => e.status === 'pending');
+			while (pendingEntry) {
 				pendingEntry.status = 'processing';
 				queue = [...queue];
-
-				// Duplicate check against full session history
-				const session = get(sessionStore);
-				const alreadySynced = session?.entries.some(
-					(e) => e.userId === pendingEntry.userId && e.synced
-				);
-				if (alreadySynced) {
-					pendingEntry.status = 'error';
-					pendingEntry.errorKind = 'duplicate';
-					pendingEntry.errorMessage = m.duplicateScan();
-					queue = [...queue];
-					toast.warning(m.duplicateScan());
-
-					// Mark session entry as synced so it won't be restored as pending on reload
-					updateLogEntrySynced(pendingEntry.userId, pendingEntry.timestamp);
-					continue;
-				}
-
-				try {
-					await createAttendanceEntryMutation.mutate({
-						userId: pendingEntry.userId,
-						conferenceId,
-						occasion: occasion.trim()
-					});
-
-					cache.markStale();
-					pendingEntry.status = 'success';
-					queue = [...queue];
-					syncedScansCounter += 1;
-					toast.success(m.attendanceRecorded());
-
-					// Update localStorage synced status
-					updateLogEntrySynced(pendingEntry.userId, pendingEntry.timestamp);
-
-					// Auto-remove success entries after 3s
-					scheduleRemoval(pendingEntry.localId);
-				} catch (err) {
-					const isNetworkError =
-						err instanceof TypeError ||
-						(err instanceof Error &&
-							(err.message.includes('fetch') ||
-								err.message.includes('network') ||
-								err.name === 'AbortError'));
-
-					if (isNetworkError) {
-						pendingEntry.status = 'error';
-						pendingEntry.errorKind = 'network';
-						pendingEntry.errorMessage = m.networkErrorRetrying();
-						pendingEntry.retryCount += 1;
-						queue = [...queue];
-
-						// Schedule retry with exponential backoff
-						const delay = Math.min(1000 * Math.pow(2, pendingEntry.retryCount - 1), 30000);
-						setTimeout(() => {
-							const entry = queue.find((e) => e.localId === pendingEntry.localId);
-							if (entry && entry.status === 'error' && entry.errorKind === 'network') {
-								entry.status = 'pending';
-								queue = [...queue];
-								processQueue();
-							}
-						}, delay);
-					} else {
-						pendingEntry.status = 'error';
-						pendingEntry.errorKind = 'unknown';
-						pendingEntry.errorMessage = err instanceof Error ? err.message : String(err);
-						queue = [...queue];
-						toast.error(pendingEntry.errorMessage);
-					}
-				}
+				await syncEntry(pendingEntry);
+				pendingEntry = queue.find((e) => e.status === 'pending');
 			}
 		} finally {
 			processing = false;
 		}
 	}
 
+	/** Records one scan's attendance, unless the session already holds it. */
+	async function syncEntry(entry: QueueEntry) {
+		// Duplicate check against full session history
+		const session = sessionStore.current;
+		if (session?.entries.some((e) => e.userId === entry.userId && e.synced)) {
+			markDuplicate(entry);
+			return;
+		}
+
+		try {
+			await client.mutate.createAttendanceEntry({
+				__args: {
+					userId: entry.userId,
+					conferenceId,
+					occasion: occasion.trim()
+				},
+				id: true
+			});
+			markSynced(entry);
+		} catch (err) {
+			markFailed(entry, err);
+		}
+	}
+
+	function markDuplicate(entry: QueueEntry) {
+		entry.status = 'error';
+		entry.errorKind = 'duplicate';
+		entry.errorMessage = m.duplicateScan();
+		queue = [...queue];
+		toast.warning(m.duplicateScan());
+
+		// Mark session entry as synced so it won't be restored as pending on reload
+		updateLogEntrySynced(entry.userId, entry.timestamp);
+	}
+
+	function markSynced(entry: QueueEntry) {
+		entry.status = 'success';
+		queue = [...queue];
+		syncedScansCounter += 1;
+		toast.success(m.attendanceRecorded());
+
+		// Update localStorage synced status
+		updateLogEntrySynced(entry.userId, entry.timestamp);
+
+		// Auto-remove success entries after 3s
+		scheduleRemoval(entry.localId);
+	}
+
+	function markFailed(entry: QueueEntry, err: unknown) {
+		entry.status = 'error';
+		if (!isNetworkError(err)) {
+			entry.errorKind = 'unknown';
+			entry.errorMessage = err instanceof Error ? err.message : String(err);
+			queue = [...queue];
+			toast.error(entry.errorMessage);
+			return;
+		}
+
+		entry.errorKind = 'network';
+		entry.errorMessage = m.networkErrorRetrying();
+		entry.retryCount += 1;
+		queue = [...queue];
+
+		// Schedule retry with exponential backoff
+		setTimeout(() => {
+			const retried = queue.find((e) => e.localId === entry.localId);
+			if (retried && retried.status === 'error' && retried.errorKind === 'network') {
+				retried.status = 'pending';
+				queue = [...queue];
+				processQueue();
+			}
+		}, retryDelay(entry.retryCount));
+	}
+
 	function updateLogEntrySynced(userId: string, timestamp: string) {
-		const session = get(sessionStore);
+		const session = sessionStore.current;
 		if (!session) return;
 		const logEntry = session.entries.find(
 			(e) => e.userId === userId && e.timestamp === timestamp && !e.synced
 		);
 		if (logEntry) {
 			logEntry.synced = true;
-			sessionStore.set(session);
+			sessionStore.current = session;
 		}
 	}
 
@@ -288,7 +273,7 @@
 	// --- Download backup ---
 
 	function downloadBackup() {
-		const session = get(sessionStore);
+		const session = sessionStore.current;
 		if (!session) return;
 
 		const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
@@ -302,11 +287,75 @@
 	}
 </script>
 
+{#snippet sessionSetup()}
+	<FormFieldset title={m.sessionOccasion()}>
+		<input
+			class="input w-full"
+			type="text"
+			bind:value={occasion}
+			placeholder={m.sessionOccasionPlaceholder()}
+			onkeydown={(e) => {
+				if (e.key === 'Enter') startSession();
+			}}
+		/>
+		<button class="btn btn-primary mt-2" onclick={startSession} disabled={!occasion.trim()}>
+			<i class="fa-solid fa-play"></i>
+			{m.startSession()}
+		</button>
+	</FormFieldset>
+
+	<div class="alert alert-info">
+		<i class="fa-duotone fa-info-circle text-lg"></i>
+		<span>{m.noActiveSession()}</span>
+	</div>
+{/snippet}
+
+{#snippet activeSessionBar()}
+	<div class="bg-base-200 flex flex-wrap items-center gap-4 rounded-box p-4">
+		<div class="flex items-center gap-2">
+			<div class="inline-grid *:[grid-area:1/1]">
+				<span class="status status-success status-xl"></span>
+				<span class="status status-success status-xl animate-ping"></span>
+			</div>
+			<span class="font-bold">{m.sessionActive()}</span>
+			<span class="text-base-content/70">— {occasion}</span>
+		</div>
+
+		<div class="flex flex-wrap items-center gap-3 text-sm">
+			<span class="badge badge-soft badge-primary"
+				>{m.scanCount({ count: totalScansCounter.toString() })}</span
+			>
+			<span class="badge badge-soft badge-success">{syncedScansCounter} {m.scanSynced()}</span>
+			{#if pendingScans > 0}
+				<span class="badge badge-soft badge-warning">{pendingScans} {m.scanPending()}</span>
+			{/if}
+			{#if errorScans > 0}
+				<span class="badge badge-soft badge-error">{errorScans} {m.errors()}</span>
+			{/if}
+		</div>
+
+		<div class="ml-auto flex gap-2">
+			<button class="btn btn-ghost btn-sm" onclick={downloadBackup}>
+				<i class="fa-duotone fa-download"></i>
+				{m.downloadBackup()}
+			</button>
+			<button class="btn btn-error btn-sm" onclick={endSession}>
+				<i class="fa-solid fa-stop"></i>
+				{m.endSession()}
+			</button>
+		</div>
+	</div>
+{/snippet}
+
 <div class="flex w-full flex-col gap-6 md:p-10">
 	<!-- Header -->
 	<div class="flex flex-col gap-2">
 		<div class="flex items-center gap-2">
-			<a class="btn btn-square btn-ghost" aria-label={m.back()} href={`/dashboard/${conferenceId}`}>
+			<a
+				class="btn btn-square btn-ghost"
+				aria-label={m.back()}
+				href={resolve(`/dashboard/${conferenceId}`)}
+			>
 				<i class="fa-duotone fa-arrow-left"></i>
 			</a>
 			<h2 class="text-2xl font-bold">{m.attendanceScanner()}</h2>
@@ -316,62 +365,9 @@
 
 	<!-- Session Setup / Active Session -->
 	{#if !sessionActive}
-		<FormFieldset title={m.sessionOccasion()}>
-			<input
-				class="input w-full"
-				type="text"
-				bind:value={occasion}
-				placeholder={m.sessionOccasionPlaceholder()}
-				onkeydown={(e) => {
-					if (e.key === 'Enter') startSession();
-				}}
-			/>
-			<button class="btn btn-primary mt-2" onclick={startSession} disabled={!occasion.trim()}>
-				<i class="fa-solid fa-play"></i>
-				{m.startSession()}
-			</button>
-		</FormFieldset>
-
-		<div class="alert alert-info">
-			<i class="fa-duotone fa-info-circle text-lg"></i>
-			<span>{m.noActiveSession()}</span>
-		</div>
+		{@render sessionSetup()}
 	{:else}
-		<!-- Active session bar -->
-		<div class="bg-base-200 flex flex-wrap items-center gap-4 rounded-box p-4">
-			<div class="flex items-center gap-2">
-				<div class="inline-grid *:[grid-area:1/1]">
-					<span class="status status-success status-xl"></span>
-					<span class="status status-success status-xl animate-ping"></span>
-				</div>
-				<span class="font-bold">{m.sessionActive()}</span>
-				<span class="text-base-content/70">— {occasion}</span>
-			</div>
-
-			<div class="flex flex-wrap items-center gap-3 text-sm">
-				<span class="badge badge-soft badge-primary"
-					>{m.scanCount({ count: totalScansCounter.toString() })}</span
-				>
-				<span class="badge badge-soft badge-success">{syncedScansCounter} {m.scanSynced()}</span>
-				{#if pendingScans > 0}
-					<span class="badge badge-soft badge-warning">{pendingScans} {m.scanPending()}</span>
-				{/if}
-				{#if errorScans > 0}
-					<span class="badge badge-soft badge-error">{errorScans} {m.errors()}</span>
-				{/if}
-			</div>
-
-			<div class="ml-auto flex gap-2">
-				<button class="btn btn-ghost btn-sm" onclick={downloadBackup}>
-					<i class="fa-duotone fa-download"></i>
-					{m.downloadBackup()}
-				</button>
-				<button class="btn btn-error btn-sm" onclick={endSession}>
-					<i class="fa-solid fa-stop"></i>
-					{m.endSession()}
-				</button>
-			</div>
-		</div>
+		{@render activeSessionBar()}
 
 		<!-- Scanner -->
 		<BarcodeScanner
@@ -390,54 +386,7 @@
 				<h3 class="text-lg font-bold">{m.attendanceLog()}</h3>
 				<div class="flex flex-col gap-1">
 					{#each queue as entry (entry.localId)}
-						<div
-							class="flex items-center gap-3 rounded-lg px-3 py-2 font-mono text-sm transition-all
-								{entry.status === 'success' ? 'bg-success/10 text-success opacity-60' : ''}
-								{entry.status === 'processing' ? 'bg-base-200' : ''}
-								{entry.status === 'pending' ? 'bg-base-200' : ''}
-								{entry.status === 'error' ? 'bg-error/10 text-error' : ''}"
-						>
-							<!-- Status icon -->
-							{#if entry.status === 'success'}
-								<i class="fa-duotone fa-check"></i>
-							{:else if entry.status === 'processing'}
-								<span class="loading loading-spinner loading-xs"></span>
-							{:else if entry.status === 'pending'}
-								<i class="fa-duotone fa-clock"></i>
-							{:else if entry.status === 'error' && entry.errorKind === 'network'}
-								<i class="fa-duotone fa-arrow-rotate-right"></i>
-							{:else if entry.status === 'error' && entry.errorKind === 'duplicate'}
-								<i class="fa-duotone fa-clone"></i>
-							{:else}
-								<i class="fa-duotone fa-xmark"></i>
-							{/if}
-
-							<!-- User ID -->
-							<span class="flex-1 truncate text-base-content">{entry.userId}</span>
-
-							<!-- Timestamp -->
-							<span class="text-base-content/50 text-xs">
-								{new Date(entry.timestamp).toLocaleTimeString()}
-							</span>
-
-							<!-- Error info / retry count -->
-							{#if entry.status === 'error' && entry.errorKind === 'network'}
-								<span class="text-xs">({entry.retryCount})</span>
-							{:else if entry.status === 'error' && entry.errorKind === 'duplicate'}
-								<span class="text-xs">{m.duplicateScan()}</span>
-							{/if}
-
-							<!-- Dismiss button for non-network errors -->
-							{#if entry.status === 'error' && entry.errorKind !== 'network'}
-								<button
-									class="btn btn-ghost btn-xs btn-square"
-									onclick={() => dismissEntry(entry.localId)}
-									aria-label={m.dismiss()}
-								>
-									<i class="fa-duotone fa-xmark"></i>
-								</button>
-							{/if}
-						</div>
+						<AttendanceQueueEntry {entry} onDismiss={() => dismissEntry(entry.localId)} />
 					{/each}
 				</div>
 			</div>

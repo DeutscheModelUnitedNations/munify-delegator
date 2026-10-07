@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { getDelegationApplication, splitDelegation, type Member } from './appData.svelte';
 
 	interface Props {
@@ -9,30 +9,46 @@
 	}
 	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
 	import LoadingData from './components/LoadingData.svelte';
-	import formatNames from '$lib/services/formatNames';
+	import { dropMove, movedBetweenBuckets } from './dropRouting';
+	import formatNames from '$lib/helpers/formatNames';
 
 	let { open, close, id }: Props = $props();
 
 	let buckets = $state<Member[][]>([[]]);
 
-	const getUserDetailsQuery = graphql(`
-		query GetUserDetailsForPartition($userIds: [String!]) {
-			findManyUsers(where: { id: { in: $userIds } }) {
-				id
-				given_name
-				family_name
-			}
-		}
-	`);
+	let users = $state<{ id: string; givenName: string | null; familyName: string | null }[]>([]);
+	let usersLoading = $state(false);
+	let usersFailed = $state(false);
 
 	$effect(() => {
 		if (!id) return;
-		getUserDetailsQuery.fetch({
-			variables: {
-				userIds: buckets.flat().map((x) => x.user.id)
-			}
-		});
+		const userIds = buckets.flat().map((member) => member.user.id);
+		// An empty `in` list would compile to invalid SQL, so there is nothing to ask for.
+		if (userIds.length === 0) {
+			users = [];
+			return;
+		}
+		usersLoading = true;
+		usersFailed = false;
+		void client.query
+			.users({
+				__args: { where: { id: { in: userIds } } },
+				id: true,
+				givenName: true,
+				familyName: true
+			})
+			.then((result) => {
+				users = result;
+			})
+			.catch(() => {
+				usersFailed = true;
+			})
+			.finally(() => {
+				usersLoading = false;
+			});
 	});
+
+	const nameOf = (userId: string) => users.find((user) => user.id === userId);
 
 	$effect(() => {
 		if (!id) {
@@ -45,17 +61,10 @@
 	});
 
 	const handleDrop = (state: DragDropState<{ id: string }>) => {
-		if (!id) return;
-		const { draggedItem, sourceContainer, targetContainer } = state;
-		if (!targetContainer || sourceContainer === targetContainer || !draggedItem.id) return;
-		if (sourceContainer === targetContainer) return;
-		const sourceBucket = parseInt(sourceContainer.split('-')[1]);
-		const targetBucket = parseInt(targetContainer.split('-')[1]);
-		const member = getDelegationApplication(id)!.members.find((x) => x.user.id === draggedItem.id);
-
-		if (!member) return;
-		buckets[sourceBucket] = buckets[sourceBucket].filter((x) => x.user.id !== draggedItem.id);
-		buckets[targetBucket] = [...buckets[targetBucket], member];
+		const move = dropMove(state);
+		if (!id || !move) return;
+		const member = getDelegationApplication(id)!.members.find((x) => x.user.id === move.itemId);
+		if (member) buckets = movedBetweenBuckets(buckets, move, member);
 	};
 
 	const apply = () => {
@@ -69,7 +78,7 @@
 	<div class="modal-box w-11/12 max-w-5xl">
 		<h3 class="text-lg font-bold">Zerteilen</h3>
 		<div class="flex gap-2 p-4">
-			{#each buckets as bucket, i}
+			{#each buckets as bucket, i (i)}
 				<div
 					class="bg-base-200 flex flex-1 flex-col gap-2 rounded-lg p-4"
 					use:droppable={{
@@ -79,7 +88,7 @@
 						}
 					}}
 				>
-					{#each bucket as member}
+					{#each bucket as member (member.id)}
 						<div class="flex items-center gap-2">
 							<div
 								class="bg-base-300 flex cursor-grab items-center gap-2 rounded-md p-2 shadow-md"
@@ -90,15 +99,10 @@
 							>
 								<i class="fas fa-grip-dots"></i>
 								<p>
-									<LoadingData
-										fetching={$getUserDetailsQuery.fetching}
-										error={$getUserDetailsQuery.error}
-									>
+									<LoadingData fetching={usersLoading} error={usersFailed}>
 										{formatNames(
-											$getUserDetailsQuery.data?.findManyUsers.find((u) => u.id === member.user.id)
-												?.given_name,
-											$getUserDetailsQuery.data?.findManyUsers.find((u) => u.id === member.user.id)
-												?.family_name
+											nameOf(member.user.id)?.givenName ?? undefined,
+											nameOf(member.user.id)?.familyName ?? undefined
 										)}
 									</LoadingData>
 									{#if member.isHeadDelegate}

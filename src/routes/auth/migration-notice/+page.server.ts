@@ -1,8 +1,7 @@
 // --- TEMPORARY: Migration notice route (remove after migration period) ---
 import type { Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { codeVerifierCookieName, oidcStateCookieName, startSignin } from '$api/services/OIDC';
-import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/constants/migrationNotice';
+import { MIGRATION_NOTICE_VERSION, MIGRATION_NOTICE_COOKIE } from '$lib/data/migrationNotice';
 
 function isSafeRedirectPath(path: string): boolean {
 	return path.startsWith('/') && !path.startsWith('//') && !path.includes('://');
@@ -15,38 +14,21 @@ export const actions: Actions = {
 		const safePath = isSafeRedirectPath(next) ? next : '/';
 		const dismiss = formData.get('dismiss') === 'true';
 
-		// Only set acknowledgment cookie if user opted to not see it again
-		if (dismiss) {
-			event.cookies.set(MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION, {
-				sameSite: 'lax',
-				maxAge: 60 * 60 * 24 * 30,
-				path: '/',
-				secure: true,
-				httpOnly: true
-			});
-		}
-
-		// Build the target URL and start OIDC flow
-		const targetUrl = new URL(safePath, event.url.origin);
-		const { encrypted_state, encrypted_verifier, redirect_uri } = await startSignin(targetUrl);
-
-		event.cookies.set(codeVerifierCookieName, encrypted_verifier, {
+		// The acknowledgement is always recorded, because the handle that shows this page keys off
+		// it: without it, sending someone back to the page they wanted would bounce them straight
+		// back here. Ticking "don't show again" makes it outlive the browser session, otherwise it
+		// only suppresses the notice until the browser is closed.
+		event.cookies.set(MIGRATION_NOTICE_COOKIE, MIGRATION_NOTICE_VERSION, {
 			sameSite: 'lax',
-			maxAge: 60 * 5,
+			maxAge: dismiss ? 60 * 60 * 24 * 30 : undefined,
 			path: '/',
 			secure: true,
 			httpOnly: true
 		});
 
-		event.cookies.set(oidcStateCookieName, encrypted_state, {
-			sameSite: 'lax',
-			maxAge: 60 * 5,
-			path: '/',
-			secure: true,
-			httpOnly: true
-		});
-
-		throw redirect(302, redirect_uri);
+		// Going back to the page they wanted is what starts the login: it is behind the OIDC
+		// handle's protected routes, which is what sent them here in the first place.
+		redirect(302, safePath);
 	}
 };
 // --- END TEMPORARY ---

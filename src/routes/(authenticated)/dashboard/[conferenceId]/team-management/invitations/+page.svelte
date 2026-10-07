@@ -1,28 +1,33 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import InviteTeamMembersModal from '$lib/components/TeamManagement/InviteTeamMembersModal.svelte';
-	import PendingInvitationsTable from '$lib/components/TeamManagement/PendingInvitationsTable.svelte';
-	import type { PageData } from './$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import TeamManagementPage from '../TeamManagementPage.svelte';
+	import PendingInvitationsTable from '$lib/components/teamManagement/PendingInvitationsTable.svelte';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
-	const invitationsQuery = data.TeamManagementInvitationsQuery;
-	let pendingInvitations = $derived($invitationsQuery.data?.findManyTeamMemberInvitations ?? []);
-
-	let inviteMembersModalOpen = $state(false);
+	/** Invitations that are still open: neither accepted nor withdrawn. */
+	const pendingInvitations = $derived(
+		await client.liveQuery.teamMemberInvitations({
+			__args: {
+				where: {
+					conferenceId: { eq: params.conferenceId },
+					usedAt: { isNull: true },
+					revokedAt: { isNull: true }
+				}
+			},
+			id: true,
+			email: true,
+			role: true,
+			expiresAt: true,
+			userExists: true,
+			invitedBy: { givenName: true, familyName: true }
+		})
+	);
 </script>
 
-<div class="flex flex-col gap-4 p-6">
-	<div class="flex justify-between items-center">
-		<h1 class="text-3xl font-bold">{m.pendingInvitations()}</h1>
-		<div class="flex gap-2">
-			<button class="btn btn-primary" onclick={() => (inviteMembersModalOpen = true)}>
-				<i class="fa-duotone fa-envelope"></i>
-				{m.inviteTeamMembers()}
-			</button>
-		</div>
-	</div>
-
+<TeamManagementPage title={m.pendingInvitations()} conferenceId={params.conferenceId}>
 	{#if pendingInvitations.length > 0}
 		<PendingInvitationsTable invitations={pendingInvitations} />
 	{:else}
@@ -31,8 +36,4 @@
 			<p>{m.noResults()}</p>
 		</div>
 	{/if}
-</div>
-
-{#if inviteMembersModalOpen}
-	<InviteTeamMembersModal bind:open={inviteMembersModalOpen} conferenceId={data.conferenceId} />
-{/if}
+</TeamManagementPage>

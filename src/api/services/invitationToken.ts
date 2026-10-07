@@ -6,7 +6,7 @@ export const pendingInvitationCookieName = 'pending_invitation_token';
 
 // 32 character token using URL-safe characters
 const tokenAlphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-export const invitationTokenLength = 32;
+const invitationTokenLength = 32;
 export const makeInvitationToken = customAlphabet(tokenAlphabet, invitationTokenLength);
 
 /**
@@ -31,4 +31,16 @@ export function getInvitationExpiryDate(): Date {
  */
 export function isTokenExpired(expiresAt: Date): boolean {
 	return new Date() > expiresAt;
+}
+
+/** Whether an invitation can still be accepted: it exists, and is neither revoked, used nor expired. */
+export function isOpenInvitation<
+	T extends { revokedAt: Date | null; usedAt: Date | null; expiresAt: Date }
+>(invitation: T | undefined): invitation is T {
+	return (
+		!!invitation &&
+		!invitation.revokedAt &&
+		!invitation.usedAt &&
+		!isTokenExpired(invitation.expiresAt)
+	);
 }

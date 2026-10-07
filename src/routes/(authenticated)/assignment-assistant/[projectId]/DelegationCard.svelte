@@ -1,94 +1,71 @@
 <script lang="ts">
-	import { graphql } from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
 	import StarRating from '$lib/components/StarRating.svelte';
-	import { getAgeAtConference } from '$lib/services/ageChecker';
-	import codenamize from '$lib/services/codenamize';
-	import formatNames from '$lib/services/formatNames';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import { getConference, type Delegation } from './appData.svelte';
+	import { getAgeAtConference } from '$lib/helpers/ageChecker';
+	import codenamize from '$lib/helpers/codenamize';
+	import formatNames from '$lib/helpers/formatNames';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import { getConference, type ProjectDelegation } from './appData.svelte';
 	import LoadingData from './components/LoadingData.svelte';
+	import ApplicationDetailIcons from './ApplicationDetailIcons.svelte';
 	import { getWeights } from './weights.svelte';
+	import { fetchApplicationSchool, fetchSupervisorNames } from './applicationDetails';
 
 	interface Props {
-		application: Delegation;
+		application: ProjectDelegation;
 	}
 
 	let { application }: Props = $props();
 
 	let optionsOpen = $state(false);
 
-	let applicationDetails = $derived.by<
-		| {
-				school?: string;
-				experience?: string;
-				motivation?: string;
-		  }
-		| undefined
-	>(() => {
-		const delegation = $getApplicationDetailsQuery.data?.findUniqueDelegation;
-		const singleParticipant = $getApplicationDetailsQuery.data?.findUniqueSingleParticipant;
+	/** The card only receives ids; these are the details it shows. */
+	async function fetchDetails(applicationId: string, supervisorIds: string[], userIds: string[]) {
+		const [application, supervisors, users] = await Promise.all([
+			fetchApplicationSchool(applicationId),
+			fetchSupervisorNames(supervisorIds),
+			// An empty `in` list would compile to invalid SQL.
+			userIds.length > 0
+				? client.query.users({
+						__args: { where: { id: { in: userIds } } },
+						id: true,
+						givenName: true,
+						familyName: true,
+						birthday: true,
+						conferenceParticipationsCount: true
+					})
+				: []
+		]);
 
-		return delegation ?? singleParticipant ?? undefined;
-	});
+		return { application, supervisors, users };
+	}
 
-	let supervisorDetails = $derived.by(() => {
-		return $getApplicationDetailsQuery.data?.findManyConferenceSupervisors ?? [];
-	});
+	let details = $state<Awaited<ReturnType<typeof fetchDetails>>>();
+	let detailsLoading = $state(false);
+	let detailsFailed = $state(false);
 
-	let userDetails = $derived.by(() => {
-		return $getApplicationDetailsQuery.data?.findManyUsers ?? [];
-	});
-
-	const getApplicationDetailsQuery = graphql(`
-		query GetApplicationDetailsForCard(
-			$applicationId: String!
-			$supervisorIds: [String!]
-			$userIds: [String!]
-		) {
-			findUniqueDelegation(where: { id: $applicationId }) {
-				id
-				school
-				experience
-				motivation
-			}
-
-			findUniqueSingleParticipant(where: { id: $applicationId }) {
-				id
-				school
-				experience
-				motivation
-			}
-
-			findManyConferenceSupervisors(where: { id: { in: $supervisorIds } }) {
-				user {
-					id
-					given_name
-					family_name
-				}
-			}
-
-			findManyUsers(where: { id: { in: $userIds } }) {
-				id
-				given_name
-				family_name
-				birthday
-				conferenceParticipationsCount
-			}
-		}
-	`);
+	let applicationDetails = $derived(details?.application);
+	let supervisorDetails = $derived(details?.supervisors ?? []);
+	let userDetails = $derived(details?.users ?? []);
 
 	$effect(() => {
 		if (!application.id) return;
-		getApplicationDetailsQuery.fetch({
-			variables: {
-				applicationId: application.id,
-				supervisorIds:
-					application.members
-						?.flatMap((m) => m.supervisors?.map((sp) => sp.id))
-						.filter((v) => !!v) ?? [],
-				userIds: application.members?.map((m) => m.user.id).filter((v) => !!v) ?? []
-			}
-		});
+		detailsLoading = true;
+		detailsFailed = false;
+		void fetchDetails(
+			application.id,
+			application.members?.flatMap((m) => m.supervisors?.map((sp) => sp.id) ?? []) ?? [],
+			application.members?.map((m) => m.user.id) ?? []
+		)
+			.then((result) => {
+				details = result;
+			})
+			.catch(() => {
+				detailsFailed = true;
+			})
+			.finally(() => {
+				detailsLoading = false;
+			});
 	});
 
 	let gotWishNation = $derived.by(() => {
@@ -124,92 +101,64 @@
 	</p>
 	<StarRating rating={application.evaluation ?? getWeights().nullRating} size="xs" />
 	<div class="flex items-center justify-center gap-2 text-xs">
-		<LoadingData
-			fetching={$getApplicationDetailsQuery.fetching}
-			error={$getApplicationDetailsQuery.error}
-		>
+		<LoadingData fetching={detailsLoading} error={detailsFailed}>
 			<div class="tooltip" data-tip="Durchschnittsalter">
 				{(
-					$getApplicationDetailsQuery.data?.findManyUsers?.reduce((acc, user) => {
+					userDetails.reduce((acc, user) => {
+						if (!user.birthday) return acc;
 						const age = getAgeAtConference(
 							user.birthday,
 							getConference()?.startConference ?? new Date()
 						);
 						return acc + (age ? age : 0);
-					}, 0) / ($getApplicationDetailsQuery.data?.findManyUsers?.length || 1)
+					}, 0) / (userDetails.length || 1)
 				).toFixed(1)}
 			</div>
 		</LoadingData>
-		{#if application.note}
-			<div class="tooltip" data-tip={application.note}>
-				<i class="fas fa-sticky-note"></i>
-			</div>
-		{/if}
-		<div class="tooltip" data-tip={application.id}>
-			<i class="fas fa-barcode-scan"></i>
-		</div>
-		<LoadingData
-			fetching={$getApplicationDetailsQuery.fetching}
-			error={$getApplicationDetailsQuery.error}
+		<ApplicationDetailIcons
+			id={application.id}
+			note={application.note}
+			school={applicationDetails?.school}
+			supervisors={supervisorDetails}
+			loading={detailsLoading}
+			failed={detailsFailed}
 		>
-			<div class="tooltip" data-tip={applicationDetails?.school}>
-				<i class="fas fa-school"></i>
-			</div>
-		</LoadingData>
-		{#if application.appliedForRoles.length > 0}
-			<div
-				class="tooltip"
-				data-tip={application.appliedForRoles
-					.map((x) =>
-						x.nation?.alpha3Code
-							? getFullTranslatedCountryNameFromISO3Code(x.nation?.alpha3Code ?? '')
-							: x.nonStateActor?.abbreviation
-					)
-					.join(', ')}
-			>
-				<i class="fas fa-flag"></i>
-			</div>
-		{/if}
-		<LoadingData
-			fetching={$getApplicationDetailsQuery.fetching}
-			error={$getApplicationDetailsQuery.error}
-		>
-			<div
-				class="tooltip"
-				data-tip={userDetails.map((x) => formatNames(x.given_name, x.family_name)).join(', ')}
-			>
-				<i class="fas fa-users"></i>
-			</div>
-		</LoadingData>
-		{#if supervisorDetails?.length > 0}
-			<LoadingData
-				fetching={$getApplicationDetailsQuery.fetching}
-				error={$getApplicationDetailsQuery.error}
-			>
+			{#if application.appliedForRoles.length > 0}
 				<div
 					class="tooltip"
-					data-tip={supervisorDetails
-						.map((x) => formatNames(x.user.given_name, x.user.family_name))
+					data-tip={application.appliedForRoles
+						.map((x) =>
+							x.nation?.alpha3Code
+								? getFullTranslatedCountryNameFromISO3Code(x.nation?.alpha3Code ?? '')
+								: x.nonStateActor?.abbreviation
+						)
 						.join(', ')}
 				>
-					<i class="fas fa-chalkboard-user"></i>
+					<i class="fas fa-flag"></i>
+				</div>
+			{/if}
+			<LoadingData fetching={detailsLoading} error={detailsFailed}>
+				<div
+					class="tooltip"
+					data-tip={userDetails
+						.map((x) => formatNames(x.givenName ?? undefined, x.familyName ?? undefined))
+						.join(', ')}
+				>
+					<i class="fas fa-users"></i>
 				</div>
 			</LoadingData>
-		{/if}
+		</ApplicationDetailIcons>
 		{#if application.splittedFrom}
 			<div class="tooltip" data-tip={`Zerteilt von ${codenamize(application.splittedFrom)}`}>
 				<i class="fas fa-split"></i>
 			</div>
 		{/if}
-		<LoadingData
-			fetching={$getApplicationDetailsQuery.fetching}
-			error={$getApplicationDetailsQuery.error}
-		>
+		<LoadingData fetching={detailsLoading} error={detailsFailed}>
 			<div class="tooltip" data-tip="Durchschnittliche Konferenzteilnahmen">
 				{(
-					$getApplicationDetailsQuery.data?.findManyUsers?.reduce((acc, user) => {
+					userDetails.reduce((acc, user) => {
 						return acc + (user.conferenceParticipationsCount ?? 0);
-					}, 0) / ($getApplicationDetailsQuery.data?.findManyUsers?.length || 1)
+					}, 0) / (userDetails.length || 1)
 				).toFixed(1)}
 			</div>
 		</LoadingData>

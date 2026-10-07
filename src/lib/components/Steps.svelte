@@ -12,7 +12,7 @@
 
 <div class="bg-base-100 min-w-60 rounded-2xl p-4 shadow-lg">
 	<ul class="steps">
-		{#each steps as step, i}
+		{#each steps as step, i (i)}
 			<li class="step {i <= currentStep && 'step-primary'} mx-2 text-xs sm:text-base">
 				{step.title}
 			</li>

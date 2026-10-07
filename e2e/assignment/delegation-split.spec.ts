@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { fixedTestUser, loginAs } from '../support/auth';
 import {
 	E2E_ASSIGNMENT_ADMIN_ID,
@@ -15,7 +15,7 @@ test('an admin can split a delegation into two single-member delegations', async
 	page.on('dialog', (dialog) => dialog.accept());
 
 	await loginAs(page, fixedTestUser(E2E_ASSIGNMENT_ADMIN_ID), {
-		startUrl: `/management/${E2E_CONFERENCE_ID}/assignment`
+		startUrl: `/dashboard/${E2E_CONFERENCE_ID}/management/assignment`
 	});
 
 	const projectData = {
@@ -69,24 +69,27 @@ test('an admin can split a delegation into two single-member delegations', async
 	}
 
 	// The parent delegation should be gone, and each split member should now be head delegate of
-	// their own new, single-member delegation.
+	// their own new, single-member delegation. The plural query is used rather than the singular
+	// `delegation(id)` one: rumble's generated singular query throws (via `assertFindFirstExists`)
+	// on a not-found id instead of returning null, so it can't express "confirm this id no longer
+	// exists" the way the old Prisma `findUnique` convention could.
 	await expect
 		.poll(
 			async () => {
 				const data = await graphql(
-					`query { findUniqueDelegation(where: { id: "${E2E_SPLIT_DELEGATION_ID}" }) { id } }`
+					`query { delegations(where: { id: { eq: "${E2E_SPLIT_DELEGATION_ID}" } }) { id } }`
 				);
-				return data?.findUniqueDelegation;
+				return data?.delegations;
 			},
 			{ timeout: 15_000 }
 		)
-		.toBeNull();
+		.toEqual([]);
 
 	for (const memberId of [E2E_SPLIT_MEMBER_1_ID, E2E_SPLIT_MEMBER_2_ID]) {
 		const data = await graphql(
-			`query { findUniqueDelegationMember(where: { conferenceId_userId: { conferenceId: "${E2E_CONFERENCE_ID}", userId: "${memberId}" } }) { isHeadDelegate delegation { id } } }`
+			`query { delegationMembers(where: { conferenceId: { eq: "${E2E_CONFERENCE_ID}" }, userId: { eq: "${memberId}" } }) { isHeadDelegate delegation { id } } }`
 		);
-		expect(data?.findUniqueDelegationMember?.isHeadDelegate).toBe(true);
-		expect(data?.findUniqueDelegationMember?.delegation?.id).not.toBe(E2E_SPLIT_DELEGATION_ID);
+		expect(data?.delegationMembers?.[0]?.isHeadDelegate).toBe(true);
+		expect(data?.delegationMembers?.[0]?.delegation?.id).not.toBe(E2E_SPLIT_DELEGATION_ID);
 	}
 });

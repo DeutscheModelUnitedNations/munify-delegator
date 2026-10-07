@@ -10,26 +10,29 @@
 		loadProjects,
 		resetSeatCategory,
 		unassignNationOrNSAFromDelegation,
-		type Nation,
-		type NonStateActor
+		type ProjectNation,
+		type NonStateActor,
+		type ProjectDelegation
 	} from '../appData.svelte';
 	import DelegationCard from '../DelegationCard.svelte';
-	import { draggable, droppable, type DragDropState } from '@thisux/sveltednd';
+	import DraggableApplication from '../DraggableApplication.svelte';
+	import { droppable, type DragDropState } from '@thisux/sveltednd';
 	import NationCard from '../NationCard.svelte';
 	import { autoAssign } from '../autoAssign.svelte';
 	import SizeTabs from '../SizeTabs.svelte';
+	import { dropMove, isRoleContainer, planRoleAssignment, type DropMove } from '../dropRouting';
 	import PartitionModal from '../PartitionModal.svelte';
 	import TextPreview from '$lib/components/TextPreview.svelte';
 	import { onMount } from 'svelte';
-	import type { PageData } from './$types';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { params }: PageProps = $props();
 
 	let dragging = $state(false);
 	let optionsModalOpen = $state<string | undefined>(undefined);
 
 	onMount(() => {
-		loadProjects(data.projectId);
+		loadProjects(params.projectId);
 	});
 
 	let largestApplication = $derived(() =>
@@ -48,72 +51,40 @@
 	const countApplicationsWithXMembers = (x: number) =>
 		getDelegationApplications().filter((application) => application.members.length === x).length;
 
-	function handleDrop(state: DragDropState<{ id: string }>) {
-		const { draggedItem, sourceContainer, targetContainer } = state;
-		if (!targetContainer || sourceContainer === targetContainer || !draggedItem.id) return;
+	const roleAssignments = {
+		nation: assignNationToDelegation,
+		nsa: assignNSAToDelegation,
+		full: () => alert('Not enough seats')
+	};
 
-		if (targetContainer === 'options') {
-			optionsModalOpen = draggedItem.id;
-			return;
-		}
-
-		if (
-			(sourceContainer === 'delegationApplications' && targetContainer.startsWith('nations')) ||
-			targetContainer.startsWith('nsa')
-		) {
-			const identifier = targetContainer.split('-')[1];
-			const nation = getNations().find((x) => x.nation.alpha3Code === identifier)?.nation;
-			const nsa = getNSAs().find((x) => x.id === identifier);
-			if (!identifier) return;
-			if (nation) {
-				if (
-					getRemainingSeats(nation) -
-						(getDelegationApplication(draggedItem.id)?.members.length ?? 0) <
-					0
-				) {
-					alert('Not enough seats');
-					return;
-				}
-				assignNationToDelegation(draggedItem.id, identifier);
-			} else if (nsa) {
-				assignNSAToDelegation(draggedItem.id, identifier);
-			}
-		}
-
-		if (
-			(sourceContainer.startsWith('nations') || sourceContainer.startsWith('nsa')) &&
-			(targetContainer.startsWith('nations') || targetContainer.startsWith('nsa'))
-		) {
-			unassignNationOrNSAFromDelegation(draggedItem.id);
-
-			const identifier = targetContainer.split('-')[1];
-			const nation = getNations().find((x) => x.nation.alpha3Code === identifier)?.nation;
-			const nsa = getNSAs().find((x) => x.id === identifier);
-			if (!identifier) return;
-			if (nation) {
-				if (
-					getRemainingSeats(nation) -
-						(getDelegationApplication(draggedItem.id)?.members.length ?? 0) <
-					0
-				) {
-					alert('Not enough seats');
-					return;
-				}
-				assignNationToDelegation(draggedItem.id, identifier);
-			} else if (nsa) {
-				assignNSAToDelegation(draggedItem.id, identifier);
-			}
-		}
-
-		if (
-			(sourceContainer.startsWith('nations') || sourceContainer.startsWith('nsa')) &&
-			targetContainer === 'delegationApplications'
-		) {
-			unassignNationOrNSAFromDelegation(draggedItem.id);
-		}
+	/** Assigns the delegation to the nation or NSA a drop zone stands for, if it has room. */
+	function assignToRoleContainer(delegationId: string, container: string) {
+		const members = getDelegationApplication(delegationId)?.members.length ?? 0;
+		const plan = planRoleAssignment(container, members, {
+			nations: getNations(),
+			nsas: getNSAs(),
+			remainingSeats: getRemainingSeats
+		});
+		if (plan) roleAssignments[plan.action](delegationId, plan.identifier);
 	}
 
-	const getAssignedDelegationsForNation = (nation: Nation) => {
+	/**
+	 * Moving a delegation off a nation or NSA frees its old seats first, whether it goes to
+	 * another one or back to the pool.
+	 */
+	function moveBetweenRoles(move: DropMove) {
+		if (isRoleContainer(move.source)) unassignNationOrNSAFromDelegation(move.itemId);
+		if (isRoleContainer(move.target)) assignToRoleContainer(move.itemId, move.target);
+	}
+
+	function handleDrop(state: DragDropState<{ id: string }>) {
+		const move = dropMove(state);
+		if (!move) return;
+		if (move.target === 'options') optionsModalOpen = move.itemId;
+		else moveBetweenRoles(move);
+	}
+
+	const getAssignedDelegationsForNation = (nation: ProjectNation) => {
 		return getDelegationApplications().filter(
 			(x) => x.assignedNation?.alpha3Code === nation.alpha3Code
 		);
@@ -123,6 +94,14 @@
 		return getDelegationApplications().filter((x) => x.assignedNSA?.id === nsa.id);
 	};
 </script>
+
+{#snippet assignedDelegations(container: string, applications: ProjectDelegation[])}
+	{#each applications as application (application.id)}
+		<DraggableApplication {container} id={application.id} onDragChange={(d) => (dragging = d)}>
+			<DelegationCard {application} />
+		</DraggableApplication>
+	{/each}
+{/snippet}
 
 <TextPreview>
 	<h2>Delegationszuteilung</h2>
@@ -169,7 +148,7 @@
 				>
 			</div>
 			<div class="flex flex-row flex-wrap gap-2">
-				{#each getNations().filter((x) => x.seats === nationTab) as nation}
+				{#each getNations().filter((x) => x.seats === nationTab) as nation (nation.nation.alpha3Code)}
 					<div
 						class="transition-all duration-300"
 						use:droppable={{
@@ -183,26 +162,14 @@
 							committees={nation.committees}
 							emptySeats={getRemainingSeats(nation.nation)}
 						>
-							{#if getAssignedDelegationsForNation(nation.nation)}
-								{#each getAssignedDelegationsForNation(nation.nation) as application}
-									<div
-										role="none"
-										use:draggable={{
-											container: `nations-${nation.nation.alpha3Code}`,
-											dragData: { id: application.id }
-										}}
-										ondrag={() => (dragging = true)}
-										ondragend={() => (dragging = false)}
-										class="cursor-grab"
-									>
-										<DelegationCard {application} />
-									</div>
-								{/each}
-							{/if}
+							{@render assignedDelegations(
+								`nations-${nation.nation.alpha3Code}`,
+								getAssignedDelegationsForNation(nation.nation)
+							)}
 						</NationCard>
 					</div>
 				{/each}
-				{#each getNSAs().filter((x) => x.seatAmount === nationTab) as nsa}
+				{#each getNSAs().filter((x) => x.seatAmount === nationTab) as nsa (nsa.id)}
 					<div
 						class="transition-all duration-300"
 						use:droppable={{
@@ -212,22 +179,7 @@
 						}}
 					>
 						<NationCard {nsa} emptySeats={getRemainingSeats(nsa)}>
-							{#if getAssignedDelegationsForNSA(nsa)}
-								{#each getAssignedDelegationsForNSA(nsa) as application}
-									<div
-										role="none"
-										use:draggable={{
-											container: `nsa-${nsa.id}`,
-											dragData: { id: application.id }
-										}}
-										ondrag={() => (dragging = true)}
-										ondragend={() => (dragging = false)}
-										class="cursor-grab"
-									>
-										<DelegationCard {application} />
-									</div>
-								{/each}
-							{/if}
+							{@render assignedDelegations(`nsa-${nsa.id}`, getAssignedDelegationsForNSA(nsa))}
 						</NationCard>
 					</div>
 				{/each}
@@ -257,20 +209,15 @@
 				>
 			</div>
 			<div class="flex flex-row flex-wrap gap-2">
-				{#each getDelegationApplications().filter((x) => x.members.length === delegationTab && !x.assignedNation && !x.assignedNSA) as application}
-					<div
-						role="none"
-						use:draggable={{
-							container: 'delegationApplications',
-							dragData: { id: application.id },
-							attributes: { draggingClass: 'opacity-50' }
-						}}
-						ondrag={() => (dragging = true)}
-						ondragend={() => (dragging = false)}
-						class="cursor-grab"
+				{#each getDelegationApplications().filter((x) => x.members.length === delegationTab && !x.assignedNation && !x.assignedNSA) as application (application.id)}
+					<DraggableApplication
+						container="delegationApplications"
+						id={application.id}
+						draggingClass="opacity-50"
+						onDragChange={(d) => (dragging = d)}
 					>
 						<DelegationCard {application} />
-					</div>
+					</DraggableApplication>
 				{/each}
 			</div>
 		</div>

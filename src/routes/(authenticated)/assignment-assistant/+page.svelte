@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { RAW_DATA_KEY } from './local_storage_keys';
 
@@ -7,14 +8,14 @@
 		id: string;
 		fileName: string;
 		created: string;
-		data: Record<string, any>;
+		data: Record<string, unknown>;
 	}[] = $state([]);
 
 	let files: FileList | undefined = $state();
 	let content:
 		| {
 				fileName: string;
-				data: Record<string, any>;
+				data: Record<string, unknown>;
 		  }
 		| undefined = $state();
 
@@ -67,7 +68,7 @@
 			...content
 		});
 		localStorage.setItem(RAW_DATA_KEY, JSON.stringify(projects));
-		goto(`/assignment-assistant/${id}`);
+		goto(resolve(`/assignment-assistant/${id}`));
 	};
 
 	const deleteProject = (id: string) => {
@@ -103,7 +104,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each projects as project}
+					{#each projects as project (project.id)}
 						<tr>
 							<td>{project.fileName}</td>
 							<td>{new Date(project.created).toLocaleString()}</td>
@@ -115,7 +116,10 @@
 								>
 									<i class="fas fa-trash"></i>
 								</button>
-								<a class="btn btn-primary btn-sm" href={`/assignment-assistant/${project.id}`}>
+								<a
+									class="btn btn-primary btn-sm"
+									href={resolve(`/assignment-assistant/${project.id}`)}
+								>
 									Weiter
 									<i class="fas fa-arrow-right"></i>
 								</a>

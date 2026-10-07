@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { loginAs, makeTestUser, waitForHydration } from '../support/auth';
 import { openFirstConferenceForRegistration } from '../support/registration';
 
@@ -9,6 +9,10 @@ import { openFirstConferenceForRegistration } from '../support/registration';
 test('a head delegate can rotate the entry code, remove a member, and transfer head delegate', async ({
 	browser
 }) => {
+	// Three separate sign-ups (head delegate plus two members), each through the full login and
+	// profile flow, take longer than the default 30s on their own.
+	test.setTimeout(90_000);
+
 	const headContext = await browser.newContext();
 	const headPage = await headContext.newPage();
 	headPage.on('dialog', (dialog) => dialog.accept());
@@ -50,10 +54,8 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	// (src/api/abilities/entities/user.ts), so a removed member becomes invisible to this lookup
 	// afterwards - resolve ids while everyone is still a member, not after removing anyone.
 	async function userIdFor(email: string) {
-		const data = await graphql(
-			`query { findManyUsers(where: { email: { equals: "${email}" } }) { id } }`
-		);
-		return data?.findManyUsers?.[0]?.id as string;
+		const data = await graphql(`query { users(where: { email: { eq: "${email}" } }) { id } }`);
+		return data?.users?.[0]?.id as string;
 	}
 
 	// --- two members join ---
@@ -98,18 +100,18 @@ test('a head delegate can rotate the entry code, remove a member, and transfer h
 	await waitForHydration(headPage);
 
 	const memberCData = await graphql(
-		`query { findUniqueDelegationMember(where: { conferenceId_userId: { conferenceId: "${conferenceId}", userId: "${memberCUserId}" } }) { id } }`
+		`query { delegationMembers(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${memberCUserId}" } }) { id } }`
 	);
-	expect(memberCData?.findUniqueDelegationMember).toBeNull();
+	expect(memberCData?.delegationMembers).toEqual([]);
 
 	// --- transfer head delegate to member B ---
 	const memberBRow = headPage.locator('tr', { hasText: 'E2E member-mgmt-b' });
 
 	async function isMemberBHeadDelegate() {
 		const data = await graphql(
-			`query { findUniqueDelegationMember(where: { conferenceId_userId: { conferenceId: "${conferenceId}", userId: "${memberBUserId}" } }) { isHeadDelegate } }`
+			`query { delegationMembers(where: { conferenceId: { eq: "${conferenceId}" }, userId: { eq: "${memberBUserId}" } }) { isHeadDelegate } }`
 		);
-		return data?.findUniqueDelegationMember?.isHeadDelegate;
+		return data?.delegationMembers?.[0]?.isHeadDelegate;
 	}
 
 	// Retry the click: this confirm()-gated action has been observed to occasionally not

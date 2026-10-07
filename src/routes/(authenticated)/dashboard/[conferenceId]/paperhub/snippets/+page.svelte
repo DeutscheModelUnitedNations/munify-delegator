@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
 	function getContentPreview(content: unknown): string {
 		if (!content || typeof content !== 'object') return '';
 		const jsonContent = content as JSONContent;
@@ -21,29 +21,35 @@
 
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { graphql, cache } from '$houdini';
-	import { invalidateAll } from '$app/navigation';
+	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
-	import type { PageData } from './$houdini';
 	import Modal from '$lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
-	import StarterKit from '@tiptap/starter-kit';
 	import Placeholder from '@tiptap/extension-placeholder';
-	import Underline from '@tiptap/extension-underline';
+	import Heading from '@tiptap/extension-heading';
+	import Blockquote from '@tiptap/extension-blockquote';
+	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
+	import { UndoRedo } from '@tiptap/extensions';
+	import { getCommonExtensions } from '$lib/components/paper/editor/settings/common.svelte';
 	import type { JSONContent } from '@tiptap/core';
 	import type { Readable } from 'svelte/store';
-	import Menu from '$lib/components/Paper/Editor/Menu';
-	import { validatePlaceholders } from '$lib/services/snippetPlaceholders';
-	import { PlaceholderHighlight } from '$lib/components/Paper/Editor/extensions/PlaceholderHighlight';
+	import Menu from '$lib/components/paper/editor/menu';
+	import { checkSnippet, saveErrorMessage } from './snippetValidation';
+	import { PlaceholderHighlight } from '$lib/components/paper/editor/extensions/PlaceholderHighlight';
 	import {
 		isValidTipTapContent,
 		getEmptyTipTapDocument
-	} from '$lib/components/Paper/Editor/contentValidation';
+	} from '$lib/components/paper/editor/contentValidation';
 
-	let { data }: { data: PageData } = $props();
-
-	let snippetQuery = $derived(data.MySnippetsQuery);
-	let snippets = $derived($snippetQuery?.data?.myReviewerSnippets ?? []);
+	const snippets = $derived(
+		await client.liveQuery.myReviewerSnippets({
+			id: true,
+			name: true,
+			content: true,
+			createdAt: true,
+			updatedAt: true
+		})
+	);
 
 	// State for editing
 	let isEditing = $state(false);
@@ -56,44 +62,16 @@
 	let deleteConfirmOpen = $state(false);
 	let deletingSnippet = $state<{ id: string; name: string } | null>(null);
 
-	// Create mutation stores
-	const createMutation = graphql(`
-		mutation CreateSnippetMutation($name: String!, $content: Json!) {
-			createReviewerSnippet(name: $name, content: $content) {
-				id
-				name
-				content
-			}
-		}
-	`);
-
-	const updateMutation = graphql(`
-		mutation UpdateSnippetMutation($id: String!, $name: String!, $content: Json!) {
-			updateReviewerSnippet(id: $id, name: $name, content: $content) {
-				id
-				name
-				content
-			}
-		}
-	`);
-
-	const deleteMutation = graphql(`
-		mutation DeleteSnippetMutation($id: String!) {
-			deleteReviewerSnippet(id: $id) {
-				id
-			}
-		}
-	`);
-
 	function initEditor(content: JSONContent) {
 		editor = createEditor({
 			extensions: [
-				StarterKit.configure({
-					heading: {
-						levels: [2, 3]
-					}
-				}),
-				Underline,
+				...getCommonExtensions(),
+				OrderedList,
+				BulletList,
+				ListItem,
+				UndoRedo,
+				Blockquote,
+				Heading.configure({ levels: [2, 3] }),
 				Placeholder.configure({
 					placeholder: m.snippetContentPlaceholder()
 				}),
@@ -140,76 +118,41 @@
 		editor = undefined;
 	}
 
+	/** Updates the snippet being edited, or creates it if it is new. */
+	function saveSnippet(name: string, content: JSONContent) {
+		return editingId
+			? client.mutate.updateReviewerSnippet({
+					__args: { id: editingId, name, content },
+					id: true,
+					name: true,
+					content: true
+				})
+			: client.mutate.createReviewerSnippet({
+					__args: { name, content },
+					id: true,
+					name: true,
+					content: true
+				});
+	}
+
 	async function handleSave() {
-		if (!editName.trim()) {
-			toast.error(m.snippetNameRequired());
-			return;
-		}
-
-		// Check if content has actual text (recursively checks all node types)
-		function hasTextNode(node: JSONContent): boolean {
-			if (node.type === 'text' && node.text?.trim()) {
-				return true;
-			}
-			if (node.content && Array.isArray(node.content)) {
-				return node.content.some(hasTextNode);
-			}
-			return false;
-		}
-
-		const hasContent = editContent.content?.some(hasTextNode) ?? false;
-
-		if (!hasContent) {
-			toast.error(m.snippetContentRequired());
-			return;
-		}
-
-		// Validate placeholders
-		const validation = validatePlaceholders(editContent);
-
-		if (validation.malformed.length > 0) {
-			toast.error(m.malformedPlaceholders());
-			return;
-		}
-
-		if (validation.empty.length > 0) {
-			toast.error(m.emptyPlaceholders());
-			return;
-		}
-
-		if (validation.tooLong.length > 0) {
-			toast.error(m.placeholderTooLong());
+		const check = checkSnippet(editName, editContent);
+		if (check.error) {
+			toast.error(check.error);
 			return;
 		}
 
 		// Show detected placeholders as info
-		if (validation.valid.length > 0) {
+		if (check.hasPlaceholders) {
 			toast.success(m.detectedPlaceholders());
 		}
 
 		try {
-			if (editingId) {
-				// Update existing
-				await updateMutation.mutate({
-					id: editingId,
-					name: editName.trim(),
-					content: editContent
-				});
-				toast.success(m.snippetSaved());
-			} else {
-				// Create new
-				await createMutation.mutate({
-					name: editName.trim(),
-					content: editContent
-				});
-				toast.success(m.snippetSaved());
-			}
+			await saveSnippet(editName.trim(), editContent);
+			toast.success(m.snippetSaved());
 			closeModal();
-			cache.markStale();
-			await invalidateAll();
 		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : m.genericError();
-			toast.error(message);
+			toast.error(saveErrorMessage(error));
 		}
 	}
 
@@ -222,12 +165,10 @@
 		if (!deletingSnippet) return;
 
 		try {
-			await deleteMutation.mutate({ id: deletingSnippet.id });
+			await client.mutate.deleteReviewerSnippet({ __args: { id: deletingSnippet.id } });
 			toast.success(m.snippetDeleted());
 			deleteConfirmOpen = false;
 			deletingSnippet = null;
-			cache.markStale();
-			await invalidateAll();
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : m.genericError();
 			toast.error(message);
@@ -308,7 +249,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each snippets as snippet}
+						{#each snippets as snippet (snippet.id)}
 							{@const contentPreview = getContentPreview(snippet.content)}
 							<tr>
 								<td class="font-medium">
@@ -379,59 +320,11 @@
 			<legend class="fieldset-legend">{m.snippetContent()}</legend>
 			{#if $editor}
 				<Menu.Wrapper>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-						active={$editor.isActive('heading', { level: 2 })}
-						label={m.heading2()}
-						icon="fa-heading"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-						active={$editor.isActive('heading', { level: 3 })}
-						label={m.heading3()}
-						icon="fa-h"
-					/>
-
+					<Menu.TextStyleButtons editor={$editor} />
 					<Menu.Divider />
-
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleBold().run()}
-						active={$editor.isActive('bold')}
-						label={m.bold()}
-						icon="fa-bold"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleItalic().run()}
-						active={$editor.isActive('italic')}
-						label={m.italic()}
-						icon="fa-italic"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleUnderline().run()}
-						active={$editor.isActive('underline')}
-						label={m.underline()}
-						icon="fa-underline"
-					/>
-
-					<Menu.Divider />
-
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleBulletList().run()}
-						active={$editor.isActive('bulletList')}
-						label={m.bulletList()}
-						icon="fa-list"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleOrderedList().run()}
-						active={$editor.isActive('orderedList')}
-						label={m.orderedList()}
-						icon="fa-list-ol"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleBlockquote().run()}
-						active={$editor.isActive('blockquote')}
-						label={m.blockquote()}
-						icon="fa-quote-left"
+					<Menu.ToggleButtons
+						editor={$editor}
+						items={['bulletList', 'orderedList', 'blockquote']}
 					/>
 				</Menu.Wrapper>
 				<div class="prose prose-sm max-w-none focus:outline-none px-2 pb-2 min-h-32">

@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import CardInfoSectionWithIcons from '$lib/components/CardInfoSectionWithIcons.svelte';
+	import { getCurrentUser } from '$lib/state/currentUser.svelte';
+	import { fetchExistingRegistrations } from './existingRegistrations';
 	import UndrawCard from '$lib/components/UndrawCard.svelte';
 	import AssistantModal from './AssistantModal/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -9,45 +12,35 @@
 	import UndrawLetter from '$assets/undraw/letter.svg';
 	import UndrawEducator from '$assets/undraw/educator.svg';
 
-	import type { PageData } from './$houdini';
 	import MermaidWrapper from '$lib/components/MermaidWrapper.svelte';
+	import type { PageProps } from './$types';
 
-	let { data }: { data: PageData } = $props();
-	let conferenceQuery = $derived(data.ConferenceRegistrationQuery);
+	let { params }: PageProps = $props();
 
+	const currentUser = $derived(await getCurrentUser());
+
+	/** Which of the three registration paths the caller has already taken, if any. */
+	const existing = $derived(await fetchExistingRegistrations(params.conferenceId, currentUser.sub));
 	let showAssistant = $state(false);
 
-	let alreadyRegistered = $derived.by(() => {
-		if (!$conferenceQuery?.data?.findManySingleParticipants) return false;
-		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
-		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
-		if ($conferenceQuery.data.findManySingleParticipants.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyConferenceSupervisors.length > 0) {
-			return true;
-		}
-	});
+	// Any existing registration in this conference, in any role, closes the flow.
+	let alreadyRegistered = $derived(
+		existing.singleParticipants.length > 0 ||
+			existing.delegationMembers.length > 0 ||
+			existing.supervisors.length > 0
+	);
 
-	let individualBlocked = $derived.by(() => {
-		if (!$conferenceQuery?.data?.findManyDelegationMembers) return false;
-		if (!$conferenceQuery?.data?.findManyConferenceSupervisors) return false;
-		if ($conferenceQuery.data.findManyDelegationMembers.length > 0) {
-			return true;
-		}
-		if ($conferenceQuery.data.findManyConferenceSupervisors.length > 0) {
-			return true;
-		}
-	});
+	// Delegates and supervisors cannot also register as individuals.
+	let individualBlocked = $derived(
+		existing.delegationMembers.length > 0 || existing.supervisors.length > 0
+	);
 </script>
 
 <div class="flex min-h-screen w-full flex-col items-center p-4">
 	<hero class="my-20 text-center">
 		<h1 class="mb-3 text-3xl tracking-wider uppercase">{m.signup()}</h1>
 		<p class="max-ch-md">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation string authored in messages/ -->
 			{@html m.conferenceSignupIntroduction()}
 		</p>
 		<div role="alert " class="alert md:alert-horizontal alert-vertical mt-10">
@@ -74,7 +67,7 @@
 				title={m.createDelegation()}
 				img={UndrawNew}
 				btnText={m.createDelegation()}
-				btnLink={`${data.conferenceId}/create-delegation`}
+				btnLink={resolve(`/registration/${params.conferenceId}/create-delegation`)}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -91,7 +84,7 @@
 				title={m.joinDelegation()}
 				img={UndrawTeam}
 				btnText={m.enterCode()}
-				btnLink={`${data.conferenceId}/join-delegation`}
+				btnLink={resolve(`/registration/${params.conferenceId}/join-delegation`)}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -108,7 +101,7 @@
 				title={m.individualApplication()}
 				img={UndrawLetter}
 				btnText={m.individualApplication()}
-				btnLink={`${data.conferenceId}/individual`}
+				btnLink={resolve(`/registration/${params.conferenceId}/individual`)}
 				disabled={individualBlocked}
 			>
 				<CardInfoSectionWithIcons
@@ -125,7 +118,7 @@
 				title={m.supervisor()}
 				img={UndrawEducator}
 				btnText={m.applyAsSupervisor()}
-				btnLink={`${data.conferenceId}/supervisor`}
+				btnLink={resolve(`/registration/${params.conferenceId}/supervisor`)}
 				disabled={alreadyRegistered}
 			>
 				<CardInfoSectionWithIcons
@@ -182,10 +175,10 @@
 
 						linkStyle default stroke-width:3px;
 
-						click E "/registration/${data.conferenceId}/create-delegation"
-						click D "/registration/${data.conferenceId}/join-delegation"
-						click Individual "/registration/${data.conferenceId}/individual"
-						click G "/registration/${data.conferenceId}/supervisor"
+						click E "/registration/${params.conferenceId}/create-delegation"
+						click D "/registration/${params.conferenceId}/join-delegation"
+						click Individual "/registration/${params.conferenceId}/individual"
+						click G "/registration/${params.conferenceId}/supervisor"
 				`}
 				></MermaidWrapper>
 			</div>
@@ -194,5 +187,5 @@
 </div>
 
 {#if showAssistant}
-	<AssistantModal onClose={() => (showAssistant = false)} conferenceId={data.conferenceId} />
+	<AssistantModal onClose={() => (showAssistant = false)} conferenceId={params.conferenceId} />
 {/if}

@@ -1,23 +1,39 @@
 <script lang="ts">
 	import Flag from '$lib/components/Flag.svelte';
-	import type { Nation, RoleApplication } from '@prisma/client';
-	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/services/nationTranslationHelper.svelte';
-	import getNumOfSeatsPerNation from '$lib/services/numOfSeatsPerNation';
-	import type {
-		MyConferenceparticipationQuery,
-		MyConferenceparticipationQuery$result
-	} from '$houdini';
+	import { client } from '$lib/api/rumbleClient/client';
+	import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
+	import getNumOfSeatsPerNation from '$lib/helpers/numOfSeatsPerNation';
 
 	interface Props {
-		roleApplications: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueDelegationMember']
-		>['delegation']['appliedForRoles'];
-		committees: NonNullable<
-			MyConferenceparticipationQuery$result['findUniqueConference']
-		>['committees'];
+		delegationId: string;
+		conferenceId: string;
 	}
 
-	let { roleApplications, committees }: Props = $props();
+	let { delegationId, conferenceId }: Props = $props();
+
+	const [delegation, conference] = $derived(
+		await Promise.all([
+			client.liveQuery.delegation({
+				__args: { id: delegationId },
+				appliedForRoles: {
+					id: true,
+					rank: true,
+					nation: { alpha2Code: true, alpha3Code: true },
+					nonStateActor: { name: true, fontAwesomeIcon: true, seatAmount: true }
+				}
+			}),
+			client.liveQuery.conference({
+				__args: { id: conferenceId },
+				committees: {
+					abbreviation: true,
+					numOfSeatsPerDelegation: true,
+					nations: { alpha2Code: true, alpha3Code: true }
+				}
+			})
+		])
+	);
+	const committees = $derived(conference.committees);
+	const roleApplications = $derived(delegation.appliedForRoles.toSorted((a, b) => a.rank - b.rank));
 </script>
 
 <table class="table">
@@ -30,7 +46,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each roleApplications.sort((a, b) => a.rank - b.rank) as application, index}
+		{#each roleApplications as application, index (application.id)}
 			{@const committeesOfRoleApplication =
 				application.nation?.alpha2Code &&
 				committees.filter((x) =>

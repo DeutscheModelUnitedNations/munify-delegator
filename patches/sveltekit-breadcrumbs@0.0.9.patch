@@ -1,0 +1,13 @@
+diff --git a/dist/Breadcrumbs.svelte b/dist/Breadcrumbs.svelte
+index 10b9da14db0e088f3901a9b0cab2202f60b543b1..9dfeb2eb30d88f04848a23b849fe77880c6f245c 100644
+--- a/dist/Breadcrumbs.svelte
++++ b/dist/Breadcrumbs.svelte
+@@ -109,8 +109,6 @@
+ 		});
+ 	});
+ 
+-	console.log(importObject);
+-	console.log(staticPaths);
+ 
+ 	/**
+ 	 * Finds the best matching static path array for a given path string segment array
