@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import {
+	filterFnFor,
 	matchesEnumFilter,
 	matchesRangeFilter,
 	matchesTextFilter,
 	toggledEnumFilter,
 	updatedRangeFilter
-} from './filterFns';
-import type { TextFilterMode } from './types';
+} from './filters';
+import type { TextFilterMode } from './filters';
 
 describe('matchesTextFilter', () => {
 	test('passes everything without a filter', () => {
@@ -124,5 +125,14 @@ describe('updatedRangeFilter', () => {
 		const current: [number | null, number | null] = [1, 2];
 		updatedRangeFilter(current, 0, '5');
 		expect(current).toEqual([1, 2]);
+	});
+});
+
+describe('filterFnFor', () => {
+	test('has a filter function for every kind of filter', () => {
+		const types = ['text', 'enum', 'boolean', 'range'] as const;
+		const fns = types.map((type) => filterFnFor(type));
+		for (const fn of fns) expect(fn).toBeTypeOf('function');
+		expect(new Set(fns).size).toBe(types.length);
 	});
 });

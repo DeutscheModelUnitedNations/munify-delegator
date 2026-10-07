@@ -2,7 +2,7 @@
 	import { BarcodeDetector, type BarcodeFormat } from 'barcode-detector';
 	import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { persisted } from 'svelte-persisted-store';
+	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { m } from '$lib/paraglide/messages';
 
@@ -40,7 +40,7 @@
 	let canvasElem: HTMLCanvasElement;
 	let streaming = $state(false);
 	// The storage key and the formats are configuration fixed for the scanner's lifetime.
-	let useCamera = persisted(
+	let useCamera = new PersistedState(
 		untrack(() => persistKey),
 		false
 	);
@@ -169,7 +169,7 @@
 
 	// Stop video when camera toggled off
 	$effect(() => {
-		if (!$useCamera) {
+		if (!useCamera.current) {
 			if (streaming) {
 				stopVideo();
 			}
@@ -192,7 +192,7 @@
 
 	export function reset() {
 		scannedCode = null;
-		if ($useCamera) {
+		if (useCamera.current) {
 			startVideo();
 		} else if (manualInputElem) {
 			manualInputElem.value = '';
@@ -206,12 +206,12 @@
 		<input
 			type="checkbox"
 			id="useCamera-{persistKey}"
-			bind:checked={$useCamera}
+			bind:checked={useCamera.current}
 			class="toggle toggle-primary mr-2"
 		/>
 		{m.useCameraForScanning()}</label
 	>
-	{#if $useCamera}
+	{#if useCamera.current}
 		<button class="btn btn-primary mt-4" disabled={streaming} onclick={startVideo}>
 			<i class="fa-solid fa-video"></i>
 			{m.startCamera()}
@@ -231,7 +231,7 @@
 	{@render extraControls()}
 {/if}
 
-{#if !$useCamera}
+{#if !useCamera.current}
 	<FormFieldset title={m.userIdInput()}>
 		<div class="join">
 			<input
@@ -262,7 +262,7 @@
 
 <!-- Camera preview -->
 <div
-	class="media-container {!$useCamera || scannedCode
+	class="media-container {!useCamera.current || scannedCode
 		? 'hidden'
 		: ''} bg-primary relative {cameraZIndex} flex aspect-video max-w-1/3 items-center justify-center overflow-hidden rounded-lg shadow-lg lg:fixed lg:top-4 lg:right-4 lg:w-60"
 >
@@ -275,7 +275,7 @@
 	<canvas bind:this={canvasElem} class="hidden"></canvas>
 </div>
 
-{#if $useCamera}
+{#if useCamera.current}
 	<div class="flex flex-col gap-2">
 		<div
 			class="bg-base-200 border-1 border-base-300 flex h-18 w-full max-w-md items-center gap-6 rounded-box p-6"

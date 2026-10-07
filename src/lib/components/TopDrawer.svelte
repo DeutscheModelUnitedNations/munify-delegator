@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Drawer } from 'vaul-svelte';
+	import { Dialog } from 'bits-ui';
+	import SlidePanel from './SlidePanel.svelte';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -30,43 +31,36 @@
 	}: Props = $props();
 </script>
 
-<Drawer.Root bind:open direction="top" openFocus={null}>
-	<Drawer.Portal>
-		<Drawer.Overlay class="fixed inset-0 z-40 bg-black/40" />
-		<Drawer.Content
-			class="bg-base-100 fixed top-0 left-1/2 z-50 flex max-h-[85vh] w-full {maxWidth} -translate-x-1/2 flex-col overflow-hidden rounded-b-2xl outline-none"
-		>
-			<!-- Header -->
-			<div class="flex items-center justify-between px-5 pt-4 pb-3">
-				<Drawer.Title class="flex items-center gap-2 text-lg font-bold">
-					{#if titleIcon}
-						<i class="fa-duotone {titleIcon} text-xl"></i>
-					{/if}
-					{title}
-				</Drawer.Title>
-				{#if headerActions}
-					<div class="flex gap-2">
-						{@render headerActions()}
-					</div>
-				{/if}
-			</div>
-
-			<!-- Scrollable content -->
-			<div class="flex-1 overflow-y-auto px-5 pb-5" data-vaul-no-drag>
-				{@render children()}
-			</div>
-
-			<!-- Footer -->
-			{#if footer}
-				<div class="border-base-300 flex gap-2 border-t p-4">
-					{@render footer()}
-				</div>
+<SlidePanel
+	bind:open
+	direction="top"
+	keepFocus
+	class="max-h-[85vh] {maxWidth} overflow-hidden rounded-b-2xl"
+>
+	<!-- Header -->
+	<div class="flex items-center justify-between px-5 pt-4 pb-3">
+		<Dialog.Title class="flex items-center gap-2 text-lg font-bold">
+			{#if titleIcon}
+				<i class="fa-duotone {titleIcon} text-xl"></i>
 			{/if}
-
-			<!-- Drag handle (bottom for top drawer) -->
-			<div class="flex justify-center pb-3 pt-1">
-				<div class="bg-base-content/30 h-1.5 w-12 rounded-full"></div>
+			{title}
+		</Dialog.Title>
+		{#if headerActions}
+			<div class="flex gap-2">
+				{@render headerActions()}
 			</div>
-		</Drawer.Content>
-	</Drawer.Portal>
-</Drawer.Root>
+		{/if}
+	</div>
+
+	<!-- Scrollable content -->
+	<div class="flex-1 overflow-y-auto px-5 pb-5">
+		{@render children()}
+	</div>
+
+	<!-- Footer -->
+	{#if footer}
+		<div class="border-base-300 flex gap-2 border-t p-4">
+			{@render footer()}
+		</div>
+	{/if}
+</SlidePanel>

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Drawer } from 'vaul-svelte';
-	import type { DrawerDirection } from 'vaul-svelte';
+	import SlidePanel, { type DrawerDirection } from '$lib/components/SlidePanel.svelte';
 	import { browser } from '$app/environment';
 	import { m } from '$lib/paraglide/messages';
 	import CalendarEntryDrawerHeader from './CalendarEntryDrawerHeader.svelte';
@@ -77,37 +76,34 @@
 {/snippet}
 
 {#key direction}
-	<Drawer.Root bind:open {direction}>
-		<Drawer.Portal>
-			<Drawer.Overlay class="fixed inset-0 z-40 bg-black/40" />
-			<Drawer.Content
-				class="bg-base-100 fixed z-50 flex flex-col outline-none {direction === 'bottom'
-					? 'bottom-0 left-0 right-0 max-h-[85vh] overflow-hidden rounded-t-2xl'
-					: 'top-0 right-0 bottom-0 w-full sm:max-w-md md:max-w-lg'}"
-			>
-				{#if entry}
-					<CalendarEntryDrawerHeader {entry} {direction} onClose={() => (open = false)} />
+	<SlidePanel
+		bind:open
+		{direction}
+		class={direction === 'bottom'
+			? 'max-h-[85vh] overflow-hidden rounded-t-2xl'
+			: 'sm:max-w-md md:max-w-lg'}
+	>
+		{#if entry}
+			<CalendarEntryDrawerHeader {entry} {direction} onClose={() => (open = false)} />
 
-					<!-- Scrollable content -->
-					<div class="flex-1 overflow-y-auto" data-vaul-no-drag>
-						<div class="space-y-3 p-4">
-							<CalendarEntryTimeInfo {entry} {track} {dayName} {dayDate} />
+			<!-- Scrollable content -->
+			<div class="flex-1 overflow-y-auto">
+				<div class="space-y-3 p-4">
+					<CalendarEntryTimeInfo {entry} {track} {dayName} {dayDate} />
 
-							{#if entry.description}
-								<p class="text-base-content/80 whitespace-pre-wrap px-1 text-sm">
-									{entry.description}
-								</p>
-							{/if}
+					{#if entry.description}
+						<p class="text-base-content/80 whitespace-pre-wrap px-1 text-sm">
+							{entry.description}
+						</p>
+					{/if}
 
-							<div class="divider"></div>
+					<div class="divider"></div>
 
-							<CalendarEntryLocation place={entry.place} room={entry.room} />
-						</div>
-					</div>
+					<CalendarEntryLocation place={entry.place} room={entry.room} />
+				</div>
+			</div>
 
-					{@render actions(entry)}
-				{/if}
-			</Drawer.Content>
-		</Drawer.Portal>
-	</Drawer.Root>
+			{@render actions(entry)}
+		{/if}
+	</SlidePanel>
 {/key}

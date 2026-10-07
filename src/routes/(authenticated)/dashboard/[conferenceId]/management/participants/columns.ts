@@ -1,11 +1,17 @@
-import { type ColumnDef, renderComponent } from '$lib/components/tanStackTable';
+import { renderComponent } from '$lib/components/tanStackTable';
+import { columnIdOf, type ManagedColumn } from '$lib/components/tanStackTable/managedTable';
 import { m } from '$lib/paraglide/messages';
 import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
-import { translateGender, translateTeamRole } from '$lib/utils/enumTranslations';
+import {
+	translateAdministrativeStatus,
+	translateFoodPreference,
+	translateGender,
+	translateParticipationRole,
+	translateTeamRole
+} from '$lib/utils/enumTranslations';
 import { getFullTranslatedCountryNameFromISO3Code } from '$lib/utils/nationTranslationHelper.svelte';
-import type { ColumnMeta, ParticipantRow } from './types';
-import type { ParticipantTableFeatures } from './tableFeatures';
-import { textFilterFn, enumFilterFn, booleanFilterFn, rangeFilterFn } from './filterFns';
+import type { ParticipantRow } from './types';
+import { getPlainTextValue } from './exportHelpers';
 import RoleBadge from './RoleBadge.svelte';
 import StatusIcon from './StatusIcon.svelte';
 import FlagCell from './FlagCell.svelte';
@@ -15,53 +21,48 @@ import GuardianConsentCell from './GuardianConsentCell.svelte';
 import MonoCell from './MonoCell.svelte';
 import ConferenceBirthdayCell from './ConferenceBirthdayCell.svelte';
 
-function meta(
-	category: ColumnMeta['category'],
-	description: string,
-	defaultVisible: boolean,
-	filterType: ColumnMeta['filterType'] = 'text',
-	alwaysFilterable = false
-): ColumnMeta {
-	return { category, description, defaultVisible, filterType, alwaysFilterable };
-}
-
-export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, ParticipantRow>[] {
+function participantColumns(): ManagedColumn<ParticipantRow>[] {
 	return [
 		// --- Personal ---
 		{
 			accessorKey: 'userId',
 			header: m.userId(),
 			cell: ({ row }) => renderComponent(MonoCell, { value: row.original.userId }),
-			filterFn: textFilterFn,
-			meta: meta('personal', m.userId(), false)
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'family_name',
 			header: m.familyName(),
 			cell: ({ row }) => capitalizeFirstLetter(row.original.family_name),
-			filterFn: textFilterFn,
-			meta: meta('personal', m.familyName(), true)
+			group: m.personalData(),
+			defaultVisible: true,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'given_name',
 			header: m.givenName(),
 			cell: ({ row }) => capitalizeFirstLetter(row.original.given_name),
-			filterFn: textFilterFn,
-			meta: meta('personal', m.givenName(), true)
+			group: m.personalData(),
+			defaultVisible: true,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'email',
 			header: m.email(),
 			cell: ({ row }) => row.original.email ?? '',
-			filterFn: textFilterFn,
-			meta: meta('personal', m.email(), true)
+			group: m.personalData(),
+			defaultVisible: true,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'phone',
 			header: m.phone(),
 			cell: ({ row }) => row.original.phone ?? '',
-			filterFn: textFilterFn,
-			meta: meta('personal', m.phone(), false)
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'birthday',
@@ -77,13 +78,15 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 				const b = rowB.original.birthday?.getTime() ?? 0;
 				return a - b;
 			},
-			meta: meta('personal', m.birthday(), false)
+			group: m.personalData(),
+			defaultVisible: false
 		},
 		{
 			accessorKey: 'ageAtConference',
 			header: m.conferenceAge(),
-			meta: meta('computed', m.conferenceAge(), false, 'range'),
-			filterFn: rangeFilterFn
+			group: m.computedValues(),
+			defaultVisible: false,
+			filter: { type: 'range' }
 		},
 		{
 			accessorKey: 'hasBirthdayDuringConference',
@@ -92,42 +95,48 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 				renderComponent(ConferenceBirthdayCell, {
 					hasBirthday: row.original.hasBirthdayDuringConference
 				}),
-			filterFn: booleanFilterFn,
-			meta: meta('computed', m.conferenceBirthday(), false, 'boolean')
+			group: m.computedValues(),
+			defaultVisible: false,
+			filter: { type: 'boolean' }
 		},
 		{
 			accessorKey: 'gender',
 			header: m.gender(),
 			cell: ({ row }) => (row.original.gender ? translateGender(row.original.gender) : ''),
-			filterFn: enumFilterFn,
-			meta: meta('personal', m.gender(), false, 'enum')
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'enum', label: translateGender }
 		},
 		{
 			accessorKey: 'pronouns',
 			header: m.pronouns(),
-			filterFn: textFilterFn,
-			meta: meta('personal', m.pronouns(), false)
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'foodPreference',
 			header: m.foodPreference(),
 			cell: ({ row }) =>
 				renderComponent(FoodPreferenceCell, { value: row.original.foodPreference }),
-			filterFn: enumFilterFn,
-			meta: meta('personal', m.foodPreference(), false, 'enum')
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'enum', label: translateFoodPreference }
 		},
 		{
 			accessorKey: 'city',
 			header: m.city(),
 			cell: ({ row }) => (row.original.city ? capitalizeFirstLetter(row.original.city) : ''),
-			filterFn: textFilterFn,
-			meta: meta('personal', m.city(), false)
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'country',
 			header: m.country(),
-			filterFn: textFilterFn,
-			meta: meta('personal', m.country(), false)
+			group: m.personalData(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 
 		// --- Role ---
@@ -135,8 +144,9 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			accessorKey: 'role',
 			header: m.participationType(),
 			cell: ({ row }) => renderComponent(RoleBadge, { role: row.original.role }),
-			filterFn: enumFilterFn,
-			meta: meta('role', m.participationType(), true, 'enum')
+			group: m.participation(),
+			defaultVisible: true,
+			filter: { type: 'enum', label: translateParticipationRole }
 		},
 		{
 			id: 'nation',
@@ -158,27 +168,31 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 				const b = rowB.getValue<string>(columnId) ?? '';
 				return a.localeCompare(b);
 			},
-			filterFn: textFilterFn,
-			meta: meta('role', m.nation(), true)
+			group: m.participation(),
+			defaultVisible: true,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'committee',
 			header: m.committee(),
-			filterFn: enumFilterFn,
-			meta: meta('role', m.committee(), true, 'enum')
+			group: m.participation(),
+			defaultVisible: true,
+			filter: { type: 'enum' }
 		},
 		{
 			accessorKey: 'delegationSchool',
 			header: m.schoolOrInstitution(),
-			filterFn: textFilterFn,
-			meta: meta('role', m.schoolOrInstitution(), false)
+			group: m.participation(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'isHeadDelegate',
 			header: m.headDelegate(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.isHeadDelegate }),
-			filterFn: booleanFilterFn,
-			meta: meta('role', m.headDelegate(), false, 'boolean')
+			group: m.participation(),
+			defaultVisible: false,
+			filter: { type: 'boolean' }
 		},
 		{
 			accessorKey: 'assignedRoleName',
@@ -190,22 +204,25 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 				if (icon) return `${name}`;
 				return name;
 			},
-			filterFn: textFilterFn,
-			meta: meta('role', m.assignedRole(), false)
+			group: m.participation(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'teamRole',
 			header: m.teamMember(),
 			cell: ({ row }) => (row.original.teamRole ? translateTeamRole(row.original.teamRole) : ''),
-			filterFn: enumFilterFn,
-			meta: meta('role', m.teamMember(), false, 'enum')
+			group: m.participation(),
+			defaultVisible: false,
+			filter: { type: 'enum', label: translateTeamRole }
 		},
 		{
 			accessorKey: 'plansOwnAttendance',
 			header: m.attendancePlan(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.plansOwnAttendance }),
-			filterFn: booleanFilterFn,
-			meta: meta('role', m.attendancePlan(), false, 'boolean')
+			group: m.participation(),
+			defaultVisible: false,
+			filter: { type: 'boolean' }
 		},
 
 		// --- Status ---
@@ -213,30 +230,34 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			accessorKey: 'paymentStatus',
 			header: m.payment(),
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.paymentStatus }),
-			filterFn: enumFilterFn,
-			meta: meta('status', m.payment(), true, 'enum', true)
+			group: m.status(),
+			defaultVisible: true,
+			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
 		},
 		{
 			accessorKey: 'postalRegistrationStatus',
 			header: m.postalRegistration(),
 			cell: ({ row }) =>
 				renderComponent(StatusIcon, { status: row.original.postalRegistrationStatus }),
-			filterFn: enumFilterFn,
-			meta: meta('status', m.postalRegistration(), true, 'enum', true)
+			group: m.status(),
+			defaultVisible: true,
+			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
 		},
 		{
 			accessorKey: 'didAttend',
 			header: m.attendance(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.didAttend }),
-			filterFn: booleanFilterFn,
-			meta: meta('status', m.attendance(), true, 'boolean')
+			group: m.status(),
+			defaultVisible: true,
+			filter: { type: 'boolean' }
 		},
 		{
 			accessorKey: 'termsAndConditions',
 			header: m.termsAndConditions(),
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.termsAndConditions }),
-			filterFn: enumFilterFn,
-			meta: meta('status', m.termsAndConditions(), false, 'enum', true)
+			group: m.status(),
+			defaultVisible: false,
+			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
 		},
 		{
 			accessorKey: 'guardianConsent',
@@ -247,28 +268,32 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 					status: row.original.guardianConsent,
 					ageAtConference: row.original.ageAtConference
 				}),
-			filterFn: enumFilterFn,
-			meta: meta('status', m.guardianConsent(), false, 'enum', true)
+			group: m.status(),
+			defaultVisible: false,
+			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
 		},
 		{
 			accessorKey: 'mediaConsent',
 			header: m.mediaConsentStatus(),
 			id: 'mediaConsent',
 			cell: ({ row }) => renderComponent(StatusIcon, { status: row.original.mediaConsent }),
-			filterFn: enumFilterFn,
-			meta: meta('status', m.mediaConsentStatus(), false, 'enum', true)
+			group: m.status(),
+			defaultVisible: false,
+			filter: { type: 'enum', label: translateAdministrativeStatus, alwaysAvailable: true }
 		},
 		{
 			accessorKey: 'documentNumber',
 			header: m.documentNumber(),
-			filterFn: textFilterFn,
-			meta: meta('status', m.documentNumber(), false)
+			group: m.status(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 		{
 			accessorKey: 'accessCardId',
 			header: m.accessCardId(),
-			filterFn: textFilterFn,
-			meta: meta('status', m.accessCardId(), false)
+			group: m.status(),
+			defaultVisible: false,
+			filter: { type: 'text' }
 		},
 
 		// --- Computed ---
@@ -276,21 +301,43 @@ export function createColumnDefs(): ColumnDef<ParticipantTableFeatures, Particip
 			accessorKey: 'accepted',
 			header: m.accepted(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.accepted }),
-			filterFn: booleanFilterFn,
-			meta: meta('computed', m.accepted(), true, 'boolean', true)
+			group: m.computedValues(),
+			defaultVisible: true,
+			filter: { type: 'boolean', alwaysAvailable: true }
 		},
 		{
 			accessorKey: 'hasOpenIssue',
 			header: m.openIssues(),
 			cell: ({ row }) => renderComponent(BooleanIcon, { value: row.original.hasOpenIssue }),
-			filterFn: booleanFilterFn,
-			meta: meta('computed', m.openIssuesDescription(), false, 'boolean', true)
+			group: m.computedValues(),
+			defaultVisible: false,
+			description: m.openIssuesDescription(),
+			filter: { type: 'boolean', alwaysAvailable: true, hint: m.openIssuesExplanation() }
 		},
 		{
 			accessorKey: 'participationCount',
 			header: m.participationCount(),
-			meta: meta('computed', m.participationCount(), false, 'range'),
-			filterFn: rangeFilterFn
+			group: m.computedValues(),
+			defaultVisible: false,
+			filter: { type: 'range' }
 		}
 	];
 }
+
+/** The columns, each exporting the text `getPlainTextValue` gives for it. */
+export function createColumnDefs(): ManagedColumn<ParticipantRow>[] {
+	return participantColumns().map((column) => {
+		const id = columnIdOf(column);
+		return id === undefined
+			? column
+			: { ...column, exportValue: (row) => getPlainTextValue(row, id) };
+	});
+}
+
+/** The order of the groups in the filter and column drawers. */
+export const participantGroupOrder = () => [
+	m.personalData(),
+	m.participation(),
+	m.status(),
+	m.computedValues()
+];

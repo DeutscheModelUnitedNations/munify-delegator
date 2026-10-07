@@ -9,7 +9,7 @@ interface Draft {
 	text: string;
 }
 
-// svelte-persisted-store keeps one store per key for the whole module, so every test gets its own
+// A key of its own per test keeps drafts from leaking between them
 let testIndex = 0;
 let KEY = 'draft-test-0';
 const DAY = 24 * 60 * 60 * 1000;

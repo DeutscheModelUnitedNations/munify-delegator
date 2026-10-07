@@ -1,4 +1,4 @@
-import Fuse from 'fuse.js';
+import Fuse, { type FuseSortFunctionArg } from 'fuse.js';
 import type { ColumnDef, RowData, TableFeatures } from '@tanstack/svelte-table';
 
 /**
@@ -23,11 +23,26 @@ export function rowSearchText<TFeatures extends TableFeatures, TData extends Row
 	return text;
 }
 
+/** Where in the text the earliest of the matches starts. */
+function firstMatchIndex(matches: FuseSortFunctionArg['matches']): number {
+	let first = Number.POSITIVE_INFINITY;
+	for (const match of matches ?? []) {
+		if (!('indices' in match)) continue;
+		for (const [start] of match.indices) first = Math.min(first, start);
+	}
+	return first;
+}
+
 /**
  * The fuzzy search every table has always used: Fuse over each row's text with a threshold of
  * 0.4, every whitespace separated term of the search having to match. Results come best match
- * first, and a match near the start of the text (the name) ranks highest. Returns a function from
- * a search to the matching rows; an empty search gives every row in its own order.
+ * first, and of equally good matches the one nearer the start of the text (the name) ranks higher.
+ *
+ * Fuse by default holds a match against its distance from the start of the text, so a row's text
+ * made of many columns only matched fuzzily near the front: a typo in the e-mail address, a
+ * hundred characters in, never found anything. The location is therefore ignored for matching and
+ * only used to order. Returns a function from a search to the matching rows; an empty search
+ * gives every row in its own order.
  */
 export function createFuzzySearch<T>(
 	rows: readonly T[],
@@ -39,6 +54,10 @@ export function createFuzzySearch<T>(
 			keys: ['text'],
 			shouldSort: true,
 			threshold: 0.4,
+			ignoreLocation: true,
+			includeMatches: true,
+			sortFn: (a, b) =>
+				a.score - b.score || firstMatchIndex(a.matches) - firstMatchIndex(b.matches),
 			minMatchCharLength: 1,
 			useExtendedSearch: true
 		}

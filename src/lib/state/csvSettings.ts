@@ -1,5 +1,4 @@
-import { persisted } from 'svelte-persisted-store';
-import { browser } from '$app/environment';
+import { PersistedState } from './persistedState.svelte';
 
 export type CsvDelimiter = ';' | ',' | '\t' | '|';
 export type CsvEncoding = 'utf-8' | 'utf-8-bom' | 'iso-8859-1';
@@ -14,23 +13,7 @@ const defaultSettings: CsvSettings = {
 	encoding: 'utf-8'
 };
 
-// Only create the persisted store on the client side
-function createCsvSettingsStore() {
-	if (browser) {
-		return persisted<CsvSettings>('csvExportSettings', defaultSettings);
-	}
-	// Return a dummy store for SSR that won't persist
-	return {
-		subscribe: (fn: (value: CsvSettings) => void) => {
-			fn(defaultSettings);
-			return () => {};
-		},
-		set: () => {},
-		update: () => {}
-	};
-}
-
-export const csvSettings = createCsvSettingsStore();
+export const csvSettings = new PersistedState<CsvSettings>('csvExportSettings', defaultSettings);
 
 // Helper to get the delimiter label for display
 export function getDelimiterLabel(delimiter: CsvDelimiter): string {

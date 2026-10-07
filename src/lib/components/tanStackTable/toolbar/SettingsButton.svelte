@@ -17,7 +17,7 @@
 <dialog class="modal {confirmDialogOpen && 'modal-open'}">
 	<div class="modal-box relative">
 		<h3 class="text-xl font-bold">{m.settings()}</h3>
-		<div class="flex flex-wrap gap-2 py-5">
+		<div class="flex flex-col gap-6 py-5">
 			<TableSizeControl />
 			<ZebraControl />
 		</div>

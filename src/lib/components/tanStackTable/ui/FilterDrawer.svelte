@@ -1,45 +1,29 @@
-<script lang="ts">
+<script lang="ts" generics="TData extends object">
 	import { m } from '$lib/paraglide/messages';
 	import type { Table } from '$lib/components/tanStackTable';
-	import type { ColumnMeta, ParticipantRow, TextFilterMode } from './types';
-	import type { ParticipantTableFeatures } from './tableFeatures';
-	import SideDrawer from './SideDrawer.svelte';
-	import ColumnCategoryGroups from './ColumnCategoryGroups.svelte';
-	import { toggledEnumFilter, updatedRangeFilter } from './filterFns';
 	import {
-		translateAdministrativeStatus,
-		translateParticipationRole,
-		translateFoodPreference,
-		translateGender,
-		translateTeamRole
-	} from '$lib/utils/enumTranslations';
+		type ManagedColumn,
+		type ManagedTableFeatures
+	} from '$lib/components/tanStackTable/managedTable';
+	import {
+		toggledEnumFilter,
+		updatedRangeFilter,
+		type TextFilterMode
+	} from '$lib/components/tanStackTable/filters';
+	import { filterEntries } from '$lib/components/tanStackTable/columnEntries';
+	import SideDrawer from './SideDrawer.svelte';
+	import ColumnGroups from './ColumnGroups.svelte';
 
 	interface Props {
 		open: boolean;
-		table: Table<ParticipantTableFeatures, ParticipantRow>;
+		table: Table<ManagedTableFeatures, TData>;
+		columns: ManagedColumn<TData>[];
+		groupOrder?: string[];
+		/** What "clear all filters" does; it clears the table's filters where left out */
 		onResetFilters?: () => void;
 	}
 
-	let { open = $bindable(), table, onResetFilters }: Props = $props();
-
-	const enumTranslators: Record<string, (value: string) => string> = {
-		role: translateParticipationRole,
-		gender: translateGender,
-		foodPreference: translateFoodPreference,
-		teamRole: translateTeamRole,
-		paymentStatus: translateAdministrativeStatus,
-		postalRegistrationStatus: translateAdministrativeStatus,
-		termsAndConditions: translateAdministrativeStatus,
-		guardianConsent: translateAdministrativeStatus,
-		mediaConsent: translateAdministrativeStatus,
-		committee: (v: string) => v
-	};
-
-	function translateEnumValue(columnId: string, value: string): string {
-		if (value === '—') return value;
-		const translator = enumTranslators[columnId];
-		return translator ? translator(value) : value;
-	}
+	let { open = $bindable(), table, columns, groupOrder, onResetFilters }: Props = $props();
 
 	const textFilterModes: { value: TextFilterMode; label: string; needsInput: boolean }[] = [
 		{ value: 'contains', label: m.filterContains(), needsInput: true },
@@ -63,25 +47,13 @@
 		return textFilterModes.find((m) => m.value === mode)?.needsInput ?? true;
 	}
 
-	/** A column is offered while it is shown, or always when its meta says so. */
-	function isListed(isVisible: boolean, meta: ColumnMeta): boolean {
-		return isVisible || !!meta.alwaysFilterable;
-	}
+	const entries = $derived(filterEntries(columns, table));
 
-	const visibleColumns = $derived(
-		table.getAllColumns().flatMap((col) => {
-			const meta = col.columnDef.meta;
-			return meta && isListed(col.getIsVisible(), meta) && col.getCanFilter()
-				? [{ col, meta }]
-				: [];
-		})
-	);
-
-	type FilterColumn = (typeof visibleColumns)[number]['col'];
+	type FilterColumn = (typeof entries)[number]['col'];
 
 	function clearAllFilters() {
-		onResetFilters?.();
-		table.resetColumnFilters();
+		if (onResetFilters) onResetFilters();
+		else table.resetColumnFilters();
 	}
 
 	function getTextFilterState(columnId: string): { mode: TextFilterMode; value: string } {
@@ -144,7 +116,7 @@
 	</div>
 {/snippet}
 
-{#snippet enumFilter(col: FilterColumn)}
+{#snippet enumFilter(col: FilterColumn, label: ((value: string) => string) | undefined)}
 	{@const facetedValues = col.getFacetedUniqueValues()}
 	{@const currentFilter = (col.getFilterValue() as string[] | undefined) ?? []}
 	<div class="flex flex-wrap gap-1.5">
@@ -158,7 +130,7 @@
 				aria-pressed={isSelected}
 				onclick={() => toggleEnumValue(col.id, filterKey)}
 			>
-				{translateEnumValue(col.id, filterKey)}
+				{filterKey === '—' || !label ? filterKey : label(filterKey)}
 				<span class="text-sm opacity-70">{count}</span>
 			</button>
 		{/each}
@@ -216,28 +188,29 @@
 		</button>
 	</div>
 
-	<ColumnCategoryGroups
-		entries={visibleColumns}
+	<ColumnGroups
+		{entries}
+		{groupOrder}
 		listClass="flex flex-col gap-4"
 		groupClass="bg-base-200 rounded-box p-4"
 	>
-		{#snippet item({ col, meta: colMeta }, header)}
+		{#snippet item({ col, filter, header })}
 			<div class="flex flex-col gap-1.5">
 				<span class="text-base font-medium">{header}</span>
-				{#if col.id === 'hasOpenIssue'}
-					<p class="text-sm text-base-content/70">{m.openIssuesExplanation()}</p>
+				{#if filter.hint}
+					<p class="text-sm text-base-content/70">{filter.hint}</p>
 				{/if}
 
-				{#if colMeta.filterType === 'text'}
+				{#if filter.type === 'text'}
 					{@render textFilter(col, header)}
-				{:else if colMeta.filterType === 'enum'}
-					{@render enumFilter(col)}
-				{:else if colMeta.filterType === 'boolean'}
+				{:else if filter.type === 'enum'}
+					{@render enumFilter(col, filter.label)}
+				{:else if filter.type === 'boolean'}
 					{@render booleanFilter(col)}
-				{:else if colMeta.filterType === 'range'}
+				{:else if filter.type === 'range'}
 					{@render rangeFilter(col)}
 				{/if}
 			</div>
 		{/snippet}
-	</ColumnCategoryGroups>
+	</ColumnGroups>
 </SideDrawer>

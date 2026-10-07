@@ -3,8 +3,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { m } from '$lib/paraglide/messages';
 	import { toast } from 'svelte-sonner';
-	import { persisted } from 'svelte-persisted-store';
-	import { get } from 'svelte/store';
+	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import { untrack } from 'svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import BarcodeScanner from '$lib/components/scanner/BarcodeScanner.svelte';
@@ -43,7 +42,7 @@
 
 	// One saved session per conference, so the store follows the conference in the URL.
 	const sessionStore = $derived(
-		persisted<ScanSession | null>(`attendanceSession-${params.conferenceId}`, null)
+		new PersistedState<ScanSession | null>(`attendanceSession-${params.conferenceId}`, null)
 	);
 
 	// --- Queue ---
@@ -77,7 +76,7 @@
 			startedAt: new Date().toISOString(),
 			entries: []
 		};
-		sessionStore.set(session);
+		sessionStore.current = session;
 		sessionActive = true;
 		queue = [];
 		totalScansCounter = 0;
@@ -94,7 +93,7 @@
 		// Only reactive dependency: conferenceId
 		const id = conferenceId;
 		untrack(() => {
-			const stored = get(sessionStore);
+			const stored = sessionStore.current;
 			if (stored && stored.conferenceId === id) {
 				occasion = stored.occasion;
 				sessionActive = true;
@@ -142,10 +141,10 @@
 			totalScansCounter += 1;
 
 			// Add to localStorage backup
-			const session = get(sessionStore);
+			const session = sessionStore.current;
 			if (session) {
 				session.entries.push({ userId, timestamp: now, synced: false });
-				sessionStore.set(session);
+				sessionStore.current = session;
 			}
 
 			// Reset scanner immediately for next scan
@@ -178,7 +177,7 @@
 	/** Records one scan's attendance, unless the session already holds it. */
 	async function syncEntry(entry: QueueEntry) {
 		// Duplicate check against full session history
-		const session = get(sessionStore);
+		const session = sessionStore.current;
 		if (session?.entries.some((e) => e.userId === entry.userId && e.synced)) {
 			markDuplicate(entry);
 			return;
@@ -250,14 +249,14 @@
 	}
 
 	function updateLogEntrySynced(userId: string, timestamp: string) {
-		const session = get(sessionStore);
+		const session = sessionStore.current;
 		if (!session) return;
 		const logEntry = session.entries.find(
 			(e) => e.userId === userId && e.timestamp === timestamp && !e.synced
 		);
 		if (logEntry) {
 			logEntry.synced = true;
-			sessionStore.set(session);
+			sessionStore.current = session;
 		}
 	}
 
@@ -274,7 +273,7 @@
 	// --- Download backup ---
 
 	function downloadBackup() {
-		const session = get(sessionStore);
+		const session = sessionStore.current;
 		if (!session) return;
 
 		const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });

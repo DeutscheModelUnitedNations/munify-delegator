@@ -1,16 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { CsvDelimiter, CsvEncoding } from '$lib/state/csvSettings';
 
-// The real store only persists in the browser; outside it, it ignores writes.
-vi.mock('$lib/state/csvSettings', async () => {
-	const { writable } = await import('svelte/store');
-	return {
-		csvSettings: writable<{ delimiter: CsvDelimiter; encoding: CsvEncoding }>({
-			delimiter: ';',
-			encoding: 'utf-8'
-		})
-	};
-});
+// The real state only persists in the browser; outside it, it keeps the value in memory.
+vi.mock('$lib/state/csvSettings', () => ({
+	csvSettings: {
+		current: { delimiter: ';', encoding: 'utf-8' } satisfies {
+			delimiter: CsvDelimiter;
+			encoding: CsvEncoding;
+		}
+	}
+}));
 
 const { downloadCSV, downloadJSON, downloadPDF } = await import('./downloadHelpers');
 const { csvSettings } = await import('$lib/state/csvSettings');
@@ -40,7 +39,7 @@ describe('download helpers', () => {
 	const bytes = async (blob: Blob) => [...new Uint8Array(await blob.arrayBuffer())];
 
 	function useSettings(delimiter: CsvDelimiter, encoding: CsvEncoding) {
-		csvSettings.set({ delimiter, encoding });
+		csvSettings.current = { delimiter, encoding };
 	}
 
 	test('writes plain UTF-8 CSV with the stored delimiter', async () => {

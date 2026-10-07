@@ -3,7 +3,7 @@
 	import { client } from '$lib/api/rumbleClient/client';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
-	import { persisted } from 'svelte-persisted-store';
+	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import ScanFlowPage from '$lib/components/scanner/ScanFlowPage.svelte';
 	import { ScannedUserFlow } from '$lib/components/scanner/scannedUserFlow.svelte';
@@ -20,7 +20,7 @@
 	let { params: routeParams }: PageProps = $props();
 
 	// Session state
-	let occasion = persisted('accessFlowOccasion', '');
+	const occasion = new PersistedState('accessFlowOccasion', '');
 
 	// Access card input state
 	let accessCardInput = $state('');
@@ -92,7 +92,7 @@
 
 	const saveAndNext = () =>
 		flow.runExclusive(async () => {
-			const save = planAccessFlowSave(flow.data, accessCardInput, $occasion);
+			const save = planAccessFlowSave(flow.data, accessCardInput, occasion.current);
 			if (!save) {
 				toast.error(m.userNotFound());
 				return;
@@ -148,7 +148,12 @@
 	{#snippet header()}
 		<!-- Session-wide occasion input -->
 		<FormFieldset title={m.occasionForSession()}>
-			<input class="input w-full" type="text" bind:value={$occasion} placeholder={m.occasion()} />
+			<input
+				class="input w-full"
+				type="text"
+				bind:value={occasion.current}
+				placeholder={m.occasion()}
+			/>
 		</FormFieldset>
 	{/snippet}
 

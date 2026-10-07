@@ -1,4 +1,3 @@
-import type { ColumnDef, RowData, TableFeatures } from '$lib/components/tanStackTable';
 import { m } from '$lib/paraglide/messages';
 import { capitalizeFirstLetter } from '$lib/helpers/capitalizeFirstLetter';
 import {
@@ -77,12 +76,4 @@ const plainTextValues: Record<string, (row: ParticipantRow) => string> = {
 
 export function getPlainTextValue(row: ParticipantRow, columnId: string): string {
 	return Object.hasOwn(plainTextValues, columnId) ? plainTextValues[columnId](row) : '';
-}
-
-export function getColumnHeader<TFeatures extends TableFeatures, TData extends RowData>(
-	col: ColumnDef<TFeatures, TData>
-): string {
-	const header = col.header;
-	if (typeof header === 'string') return header;
-	return col.id ?? ('accessorKey' in col ? String(col.accessorKey) : '');
 }

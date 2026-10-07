@@ -1,8 +1,17 @@
-import type { FilterFn } from '$lib/components/tanStackTable';
-import type { ParticipantTableFeatures } from './tableFeatures';
-import type { ParticipantRow, TextFilterMode } from './types';
+import type { FilterFn, RowData } from '@tanstack/svelte-table';
+import type { ManagedTableFeatures } from './managedTable';
 
-type ParticipantFilterFn = FilterFn<ParticipantTableFeatures, ParticipantRow>;
+export type TextFilterMode =
+	| 'contains'
+	| 'containsNot'
+	| 'equals'
+	| 'equalsNot'
+	| 'startsWith'
+	| 'startsWithNot'
+	| 'isEmpty'
+	| 'isNotEmpty';
+
+type ManagedFilterFn<TData extends RowData> = FilterFn<ManagedTableFeatures, TData>;
 
 export type TextFilterValue = { mode: TextFilterMode; value: string };
 
@@ -52,31 +61,29 @@ export function matchesRangeFilter(
 	return (min == null || value >= min) && (max == null || value <= max);
 }
 
-export const textFilterFn: ParticipantFilterFn = (
-	row,
-	columnId,
-	filterValue: TextFilterValue | undefined
-) => matchesTextFilter(row.getValue(columnId), filterValue);
+const textFilterFn =
+	<TData extends RowData>(): ManagedFilterFn<TData> =>
+	(row, columnId, filterValue: TextFilterValue | undefined) =>
+		matchesTextFilter(row.getValue(columnId), filterValue);
 
-export const enumFilterFn: ParticipantFilterFn = (row, columnId, filterValue: string[]) =>
-	matchesEnumFilter(row.getValue(columnId), filterValue);
+const enumFilterFn =
+	<TData extends RowData>(): ManagedFilterFn<TData> =>
+	(row, columnId, filterValue: string[]) =>
+		matchesEnumFilter(row.getValue(columnId), filterValue);
 
-export const booleanFilterFn: ParticipantFilterFn = (
-	row,
-	columnId,
-	filterValue: boolean | null
-) => {
-	if (filterValue === null || filterValue === undefined) return true;
-	const value = row.getValue(columnId);
-	if (value == null) return false;
-	return Boolean(value) === filterValue;
-};
+const booleanFilterFn =
+	<TData extends RowData>(): ManagedFilterFn<TData> =>
+	(row, columnId, filterValue: boolean | null) => {
+		if (filterValue === null || filterValue === undefined) return true;
+		const value = row.getValue(columnId);
+		if (value == null) return false;
+		return Boolean(value) === filterValue;
+	};
 
-export const rangeFilterFn: ParticipantFilterFn = (
-	row,
-	columnId,
-	filterValue: [number | null, number | null]
-) => matchesRangeFilter(row.getValue<number>(columnId), filterValue);
+const rangeFilterFn =
+	<TData extends RowData>(): ManagedFilterFn<TData> =>
+	(row, columnId, filterValue: [number | null, number | null]) =>
+		matchesRangeFilter(row.getValue<number>(columnId), filterValue);
 
 type RangeFilterValue = [number | null, number | null];
 
@@ -100,4 +107,21 @@ export function updatedRangeFilter(
 	const next: RangeFilterValue = current ? [...current] : [null, null];
 	next[index] = value === '' ? null : Number(value);
 	return next[0] === null && next[1] === null ? undefined : next;
+}
+
+/** The kinds of filter a column can offer; each has its own control and its own filter function. */
+export type FilterType = 'text' | 'enum' | 'boolean' | 'range';
+
+/** The filter function of a kind of filter. */
+export function filterFnFor<TData extends RowData>(type: FilterType): ManagedFilterFn<TData> {
+	switch (type) {
+		case 'text':
+			return textFilterFn<TData>();
+		case 'enum':
+			return enumFilterFn<TData>();
+		case 'boolean':
+			return booleanFilterFn<TData>();
+		case 'range':
+			return rangeFilterFn<TData>();
+	}
 }

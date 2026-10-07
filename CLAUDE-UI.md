@@ -537,7 +537,7 @@ Use `Drawer` for slide-out panels (e.g., detail views, edit forms).
 
 ## TopDrawer Component
 
-Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `vaul-svelte`, it provides a gesture-friendly drawer with drag-to-close support. Used in management tool pages (accessFlow, postalRegistration, payments) for showing scanned/searched item details.
+Use `TopDrawer` for overlay panels that slide down from the top of the screen. Built on `SlidePanel`. It closes on overlay click, Escape and the close button, and animates out the same way for each. Used in management tool pages (accessFlow, postalRegistration, payments) for showing scanned/searched item details.
 
 ### Props
 
@@ -576,7 +576,19 @@ Use `TopDrawer` for overlay panels that slide down from the top of the screen. B
 </TopDrawer>
 ```
 
-**Note:** `TopDrawer` is different from `Drawer` — TopDrawer uses vaul-svelte for gesture/swipe support and slides from the top; Drawer is a right-side slide-out panel.
+**Note:** `TopDrawer` is different from `Drawer` — TopDrawer slides down from the top on `SlidePanel`; Drawer is a right-side slide-out detail panel.
+
+## SlidePanel Component
+
+`$lib/components/SlidePanel.svelte` is the shared base for animated edge panels (`TopDrawer`, the table's `SideDrawer`, `CalendarEntryDrawer`). It is a bits-ui `Dialog` with Svelte transitions, so focus trapping, Escape and overlay click come for free. There is no swipe-to-dismiss (vaul-svelte was removed: it pulled in a second, Svelte 4-era bits-ui). Put `Dialog.Title` / `Dialog.Close` from `bits-ui` inside the content.
+
+| Prop        | Type                           | Description                                |
+| ----------- | ------------------------------ | ------------------------------------------ |
+| `open`      | `boolean` (bindable)           | Controls visibility                        |
+| `direction` | `'top' \| 'right' \| 'bottom'` | Edge it slides in from (default `'right'`) |
+| `class`     | `string`                       | Sizing classes: max width/height, rounding |
+| `keepFocus` | `boolean`                      | Do not move focus into the panel on open   |
+| `children`  | `Snippet`                      | Panel content                              |
 
 ---
 
@@ -813,8 +825,32 @@ column has to be an accessor column. `tanStackTable/commonColumns.ts` holds the 
 columns `nameColumn()`, `appliedColumn()` and `userCardColumn()`; `RegistrationAdminTable` adds the
 row-opens-a-drawer behaviour on top.
 
-Pages with their own filters or column configuration (the participants table, the waiting list)
-use `SortableTable` and `createTable` directly.
+Extra controls go in the `toolbar` snippet (inside the search row; it gets the table).
+
+**Filters and columns come with the table.** A column opts into filtering with a typed `filter`:
+`{ type: 'text' | 'boolean' | 'range' }` or `{ type: 'enum', label?: (value) => string }`, plus an
+optional `hint` (shown in the drawer) and `alwaysAvailable` (offered while the column is hidden).
+The type picks the control and the filter function, so a column never sets `filterFn` itself. Any
+table with a filterable column gets a Filters button, active-filter chips and a filter drawer, and
+`defaultFilters` is what it opens with (and what the drawer's reset returns to). Every table gets a Columns drawer: `defaultVisible` says what shows
+before anyone configures it, `group` and `groupOrder` sort the drawers into sections,
+`description` explains a column, and `storageKey` remembers the choice in the browser.
+
+**The table's state lives in the URL**, so a copied link shows the same table: `?filter=` (the
+search, or `queryParamKey`), `filters=` (JSON; `[]` is "no filters", a missing parameter is the
+defaults), `sort=family_name,-email` (`none` for no sorting), `columns=` (the shown column ids),
+`page=` and `size=`. A parameter is dropped again when the value equals what the page would show
+anyway. The codecs are in `managedTable.ts`, the sync is `sveltekit-search-params`. The size and
+zebra settings are personal preferences kept per browser and are not part of the link.
+
+**Export** (CSV, JSON, print) is built into the table from the shown columns and every row the
+filters let through, in sort order. A column exports its accessor's value as text (booleans as
+Ja/Nein, dates formatted); give it `exportValue: (row) => string` when the cell shows something
+else, such as a translated enum. A column with neither accessor nor `exportValue` (an actions
+column) is not exported.
+
+While a search is active the table drops its sorting so the best match comes first; clearing the
+search brings `initialSorting` back.
 
 ### CollapsibleCard
 

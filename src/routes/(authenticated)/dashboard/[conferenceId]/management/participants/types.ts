@@ -3,29 +3,6 @@ export type ParticipationRole =
 
 export type AdministrativeStatus = 'DONE' | 'PENDING' | 'PROBLEM';
 
-export type ColumnCategory = 'personal' | 'status' | 'role' | 'computed';
-
-export type FilterType = 'text' | 'enum' | 'boolean' | 'range';
-
-export type TextFilterMode =
-	| 'contains'
-	| 'containsNot'
-	| 'equals'
-	| 'equalsNot'
-	| 'startsWith'
-	| 'startsWithNot'
-	| 'isEmpty'
-	| 'isNotEmpty';
-
-export interface ColumnMeta {
-	category: ColumnCategory;
-	description: string;
-	defaultVisible: boolean;
-	filterType: FilterType;
-	/** Offered in the filter drawer even while the column itself is hidden. */
-	alwaysFilterable?: boolean;
-}
-
 export interface ParticipantRow {
 	userId: string;
 	given_name: string;

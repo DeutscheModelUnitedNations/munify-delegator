@@ -1,84 +1,49 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
-	import { stringify } from 'csv-stringify/browser/esm/sync';
+	import { downloadCSV, downloadJSON } from '$lib/utils/downloadHelpers';
+	import type { TableExport } from '../managedTable';
+
 	interface Props {
-		exportedData: object[];
+		/** Called when an export is chosen, so the text is only built then */
+		getExport: () => TableExport;
+		/** Base name of the downloaded file */
+		filename: string;
 	}
 
-	let { exportedData }: Props = $props();
+	let { getExport, filename }: Props = $props();
 
-	let confirmDialogOpen = $state(false);
+	const stamp = () => new Date().toISOString().slice(0, 10);
 
-	const exportPdf = () => {
-		confirmDialogOpen = false;
-		window.print();
-	};
+	function exportCsv() {
+		const { header, data } = getExport();
+		downloadCSV(header, data, `${filename}-${stamp()}.csv`);
+	}
 
-	const exportJson = () => {
-		confirmDialogOpen = false;
-		const data = JSON.stringify(exportedData, null, 2);
-		const blob = new Blob([data], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'export.json';
-		a.click();
-		URL.revokeObjectURL(url);
-	};
-
-	const exportCsv = () => {
-		confirmDialogOpen = false;
-		const data = exportedData;
-		// header
-		const csv = data.map((row) => Object.values(row));
-
-		const blob = new Blob(
-			[stringify(csv, { header: true, columns: Object.keys(data[0]), delimiter: ';' })],
-			{
-				type: 'text/csv'
-			}
+	function exportJson() {
+		const { header, data } = getExport();
+		downloadJSON(
+			data.map((row) => Object.fromEntries(header.map((name, i) => [name, row[i]]))),
+			`${filename}-${stamp()}.json`
 		);
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'export.csv';
-		a.click();
-		URL.revokeObjectURL(url);
-	};
+	}
 </script>
 
-<button
-	class="btn btn-square btn-ghost"
-	onclick={() => (confirmDialogOpen = true)}
-	aria-label="Export"
->
-	<i class="fa-duotone fa-file-export text-xl"></i>
-</button>
-
-<dialog class="modal {confirmDialogOpen && 'modal-open'}">
-	<div class="modal-box">
-		<h3 class="text-lg font-bold">{m.areYouSure()}</h3>
-		<p class="py-4">
-			{m.areYouSureYouWantToExport()}
-		</p>
-		<div class="modal-action justify-between">
-			<button class="btn btn-error" onclick={() => (confirmDialogOpen = false)} aria-label="Exit">
-				<i class="fas fa-xmark"></i>
+<div class="no-print dropdown dropdown-end">
+	<button tabindex="0" class="btn btn-square btn-ghost" aria-label={m.exportData()}>
+		<i class="fa-duotone fa-file-export text-xl"></i>
+	</button>
+	<ul class="dropdown-content menu z-10 w-48 rounded-box bg-base-200 p-2 shadow">
+		<li>
+			<button onclick={exportCsv}><i class="fa-duotone fa-file-csv"></i> CSV</button>
+		</li>
+		<li>
+			<button onclick={exportJson}><i class="fa-duotone fa-file-code"></i> JSON</button>
+		</li>
+		<li>
+			<button onclick={() => window.print()}>
+				<i class="fa-duotone fa-print"></i>
+				{m.printTable()}
 			</button>
-			<div class="flex gap-2">
-				<button class="btn btn-primary" onclick={exportPdf} aria-label="Print">
-					<div class="flex items-center gap-3">
-						<i class="fas fa-print text-xl"></i>
-						<i class="fas fa-file-pdf text-xl"></i>
-					</div>
-				</button>
-				<button class="btn btn-primary w-16" onclick={exportCsv} aria-label="Export CSV">
-					<i class="fas fa-file-csv text-xl"></i>
-				</button>
-				<button class="btn btn-primary w-16" onclick={exportJson} aria-label="Export JSON">
-					<i class="fas fa-file-code text-xl"></i>
-				</button>
-			</div>
-		</div>
-	</div>
-</dialog>
+		</li>
+	</ul>
+</div>

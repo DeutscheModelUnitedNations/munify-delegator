@@ -83,23 +83,27 @@
 			accessorKey: 'family_name',
 			header: m.familyName(),
 			cell: ({ getValue }) => capitalizeFirstLetter(getValue<string>()),
+			filter: { type: 'text' },
 			enableSorting: true
 		},
 		{
 			accessorKey: 'given_name',
 			header: m.givenName(),
 			cell: ({ getValue }) => capitalizeFirstLetter(getValue<string>()),
+			filter: { type: 'text' },
 			enableSorting: true
 		},
 		{
 			accessorKey: 'email',
 			header: m.email(),
+			filter: { type: 'text' },
 			enableSorting: true
 		},
 		{
 			accessorKey: 'phone',
 			header: m.phone(),
 			cell: ({ getValue }) => getValue<string | null>() ?? '—',
+			filter: { type: 'text' },
 			enableSorting: true
 		},
 		{
@@ -109,11 +113,13 @@
 				const age = getValue<number | undefined>();
 				return age !== undefined ? String(age) : '—';
 			},
+			filter: { type: 'range' },
 			enableSorting: true
 		},
 		{
 			accessorKey: 'participationCount',
 			header: m.participationCount(),
+			filter: { type: 'range' },
 			enableSorting: true
 		},
 		{
@@ -123,12 +129,14 @@
 				const v = getValue<string | null>();
 				return v ? capitalizeFirstLetter(v) : '—';
 			},
+			filter: { type: 'text' },
 			enableSorting: true
 		},
 		{
 			accessorKey: 'school',
 			header: m.schoolOrInstitution(),
 			cell: ({ getValue }) => getValue<string | null>() ?? '—',
+			filter: { type: 'text' },
 			enableSorting: true
 		},
 		{
@@ -156,25 +164,26 @@
 				renderComponent(HiddenIcon, {
 					value: row.original.hidden
 				}),
+			filter: { type: 'boolean' },
 			enableSorting: true
 		}
 	];
 </script>
 
-<div class="mb-2 flex justify-end">
-	<button class="btn btn-ghost btn-sm" onclick={() => (filterHidden = !filterHidden)}>
-		<i class="fa-duotone fa-eye-slash"></i>
-		{m.filterHiddenEntries()}
-		{#if filterHidden}
-			<span class="badge badge-primary badge-xs"></span>
-		{/if}
-	</button>
-</div>
-
 <ManagedTable
 	{columns}
 	{rows}
 	onRowClick={(row) => openUserCard(row.userId)}
+	storageKey="waiting-list-columns-{params.conferenceId}"
 	initialSorting={[{ id: 'createdAt', desc: false }]}
 	pageSize={20}
-/>
+	searchColumns={['family_name', 'given_name', 'email']}
+>
+	{#snippet toolbar()}
+		<label class="no-print flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+			<i class="fa-duotone fa-eye-slash"></i>
+			{m.filterHiddenEntries()}
+			<input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={filterHidden} />
+		</label>
+	{/snippet}
+</ManagedTable>

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { m } from '$lib/paraglide/messages';
 	import {
 		csvSettings,
@@ -12,31 +11,14 @@
 	const delimiters: CsvDelimiter[] = [';', ',', '\t', '|'];
 	const encodings: CsvEncoding[] = ['utf-8', 'utf-8-bom', 'iso-8859-1'];
 
-	// Only access the store on the client side
-	let currentSettings = $state({
-		delimiter: ';' as CsvDelimiter,
-		encoding: 'utf-8' as CsvEncoding
-	});
-
-	$effect(() => {
-		if (browser) {
-			const unsubscribe = csvSettings.subscribe((value) => {
-				currentSettings = value;
-			});
-			return unsubscribe;
-		}
-	});
+	const currentSettings = $derived(csvSettings.current);
 
 	const updateDelimiter = (delimiter: CsvDelimiter) => {
-		if (browser) {
-			csvSettings.update((s) => ({ ...s, delimiter }));
-		}
+		csvSettings.current = { ...csvSettings.current, delimiter };
 	};
 
 	const updateEncoding = (encoding: CsvEncoding) => {
-		if (browser) {
-			csvSettings.update((s) => ({ ...s, encoding }));
-		}
+		csvSettings.current = { ...csvSettings.current, encoding };
 	};
 </script>
 

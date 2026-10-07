@@ -1,5 +1,4 @@
-import { persisted } from 'svelte-persisted-store';
-import { browser } from '$app/environment';
+import { PersistedState } from '$lib/state/persistedState.svelte';
 import type { StatsFilter as GraphQLStatsFilter } from '$lib/api/rumbleClient/client';
 import {
 	filteredStatValue,
@@ -43,31 +42,16 @@ export type { StatsFilterOption };
 // Default filter value (used on server and as initial client value)
 const DEFAULT_FILTER: StatsFilterOption = 'all';
 
-// Persisted store for filter - only accesses localStorage in browser
-const statsFilterStore = persisted<StatsFilterOption>('statsFilter', DEFAULT_FILTER);
-
-// Server-safe state that syncs with persisted store on client
-let statsFilter = $state<StatsFilterOption>(DEFAULT_FILTER);
-
-// Sync persisted store to local state on client
-if (browser) {
-	statsFilterStore.subscribe((value) => {
-		statsFilter = value;
-	});
-}
+// Persisted on the client; the server and a first visit start at the default
+const statsFilter = new PersistedState<StatsFilterOption>('statsFilter', DEFAULT_FILTER);
 
 export function unifiedFilter() {
 	const setFilter = (newFilter: StatsFilterOption) => {
-		statsFilter = newFilter;
-		// Only persist to localStorage in browser
-		if (browser) {
-			statsFilterStore.set(newFilter);
-		}
+		statsFilter.current = newFilter;
 	};
 
 	const getFilter = () => {
-		// Return the current state (hydrated from localStorage on client)
-		return statsFilter;
+		return statsFilter.current;
 	};
 
 	// Get filtered value for objects with total/applied/notApplied
@@ -75,19 +59,22 @@ export function unifiedFilter() {
 		object: FilterableCount | undefined,
 		roleBasedData?: RoleCounts,
 		entityType?: EntityType
-	): number | undefined => filteredStatValue(statsFilter, object, roleBasedData, entityType);
+	): number | undefined =>
+		filteredStatValue(statsFilter.current, object, roleBasedData, entityType);
 
 	// Check if current filter is role-based
 	const isRoleBasedFilter = () => {
-		return statsFilter === 'appliedWithRole' || statsFilter === 'appliedWithoutRole';
+		return (
+			statsFilter.current === 'appliedWithRole' || statsFilter.current === 'appliedWithoutRole'
+		);
 	};
 
 	// Check if current filter shows applied data
 	const isAppliedFilter = () => {
 		return (
-			statsFilter === 'applied' ||
-			statsFilter === 'appliedWithRole' ||
-			statsFilter === 'appliedWithoutRole'
+			statsFilter.current === 'applied' ||
+			statsFilter.current === 'appliedWithRole' ||
+			statsFilter.current === 'appliedWithoutRole'
 		);
 	};
 
@@ -114,7 +101,7 @@ function mapFilterToGraphQL(filter: StatsFilterOption): GraphQLStatsFilter {
 
 /** The filter argument every statistics widget passes to its query. Reactive. */
 export function statsQueryFilter(): GraphQLStatsFilter {
-	return mapFilterToGraphQL(statsFilter);
+	return mapFilterToGraphQL(statsFilter.current);
 }
 
 // Local Store History

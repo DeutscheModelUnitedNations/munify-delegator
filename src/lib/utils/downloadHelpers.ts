@@ -1,5 +1,4 @@
 import { stringify } from 'csv-stringify/browser/esm/sync';
-import { get } from 'svelte/store';
 import { csvSettings, type CsvEncoding, type CsvDelimiter } from '$lib/state/csvSettings';
 
 // UTF-8 BOM for Excel compatibility
@@ -37,7 +36,7 @@ export const downloadCSV = (
 	filename: string,
 	overrideDelimiter?: CsvDelimiter
 ): void => {
-	const settings = get(csvSettings);
+	const settings = csvSettings.current;
 	const delimiter = overrideDelimiter ?? settings.delimiter;
 
 	const csv = [header, ...data];

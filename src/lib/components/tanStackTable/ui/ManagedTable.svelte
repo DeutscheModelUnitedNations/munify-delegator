@@ -1,22 +1,40 @@
 <script lang="ts" generics="TData extends object">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, untrack, type Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { queryParameters } from 'sveltekit-search-params';
+	import { queryParameters, ssp } from 'sveltekit-search-params';
 	import { m } from '$lib/paraglide/messages';
 	import {
 		createTable,
 		createFuzzySearch,
 		rowSearchText,
+		type ColumnFiltersState,
+		type ColumnVisibilityState,
 		type PaginationState,
-		type SortingState
+		type SortingState,
+		type Table
 	} from '$lib/components/tanStackTable';
 	import {
+		columnIdOf,
+		defaultColumnVisibility,
+		initialColumnVisibility,
 		managedTableFeatures,
+		filtersParam,
+		sameSorting,
+		shownColumnsParam,
+		shownFromVisibility,
+		sortingParam,
+		visibilityFromShown,
 		soleFilteredRow,
-		type ManagedColumn
+		tableExport,
+		type ManagedColumn,
+		type ManagedTableFeatures
 	} from '$lib/components/tanStackTable/managedTable';
 	import { DataTable } from '$lib/components/tanStackTable/ui';
+	import { filterFnFor } from '$lib/components/tanStackTable/filters';
 	import SortableTable from './SortableTable.svelte';
+	import ActiveFilters from './ActiveFilters.svelte';
+	import ColumnConfigDrawer from './ColumnConfigDrawer.svelte';
+	import FilterDrawer from './FilterDrawer.svelte';
 	import ExportButton from '../toolbar/ExportButton.svelte';
 	import PrintHeader from '../toolbar/PrintHeader.svelte';
 	import SettingsButton from '../toolbar/SettingsButton.svelte';
@@ -25,7 +43,11 @@
 	/**
 	 * The table of the management pages: a sortable, paginated table with a search box kept in the
 	 * URL, an export button and the size / zebra settings. Search is fuzzy (Fuse) and matches across
-	 * all columns, using what each column's accessor returns.
+	 * the columns named in `searchColumns` (all by default), using what each column's accessor
+	 * returns. Columns that say how they can be
+	 * filtered (`filter`) get a filter drawer, active-filter chips and filters kept in the URL
+	 * (`?filters=`); every column can be hidden from the column drawer, where `defaultVisible` and
+	 * `group` apply and the choice is remembered under `storageKey`.
 	 */
 	interface Props {
 		columns: ManagedColumn<TData>[];
@@ -40,6 +62,19 @@
 		title?: string;
 		initialSorting?: SortingState;
 		pageSize?: number;
+		/**
+		 * The filters a table opens with, applied once they are non-empty and the URL holds none.
+		 * "Clear all" in the filter drawer returns to them.
+		 */
+		defaultFilters?: ColumnFiltersState;
+		/** Where the shown columns are remembered in the browser; not remembered without it */
+		storageKey?: string;
+		/** Ids of the columns the search looks at; every column where left out */
+		searchColumns?: readonly string[];
+		/** Group headings in the order the drawers list them in */
+		groupOrder?: string[];
+		/** Extra controls in the toolbar row, before the filter and column buttons */
+		toolbar?: Snippet<[Table<ManagedTableFeatures, TData>]>;
 	}
 
 	let {
@@ -52,23 +87,95 @@
 		queryParamKey,
 		title = page.url.pathname.split('/').pop() ?? '',
 		initialSorting = [],
-		pageSize = 50
+		pageSize = 50,
+		defaultFilters,
+		storageKey,
+		groupOrder,
+		searchColumns,
+		toolbar
 	}: Props = $props();
 
 	const { getTableSize, getZebra } = getTableSettings();
 
-	// The URL key is fixed for a table's lifetime; the search params object cannot follow a change.
+	// Everything a viewer can set is kept in the URL, so a copied link shows the same table. The
+	// URL key of the search is fixed for a table's lifetime; the search params object cannot follow
+	// a change. The state is read off the parameters, with the page's own defaults where a
+	// parameter is missing, and written back when the user changes it.
 	const searchKey = untrack(() => queryParamKey) ?? 'filter';
-	const urlParams = queryParameters({ [searchKey]: true });
+	const searchParams = queryParameters(
+		{ [searchKey]: ssp.string() },
+		{ pushHistory: false, showDefaults: false }
+	);
+	const params = queryParameters(
+		{
+			filters: filtersParam,
+			sort: sortingParam,
+			columns: shownColumnsParam,
+			page: ssp.number(),
+			size: ssp.number()
+		},
+		{ pushHistory: false, showDefaults: false }
+	);
 
-	// svelte-ignore state_referenced_locally
-	let sorting = $state<SortingState>(initialSorting);
-	// svelte-ignore state_referenced_locally
-	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize });
-	const globalFilter = $derived(urlParams[searchKey] ?? '');
+	const globalFilter = $derived(searchParams[searchKey] ?? '');
 
+	// Searching shows the best match first, so it replaces the sorting until one is chosen again
+	const defaultSorting = $derived(globalFilter.trim() ? [] : initialSorting);
+	const sorting = $derived<SortingState>(params.sort ?? defaultSorting);
+	const pagination = $derived<PaginationState>({
+		pageIndex: Math.max((params.page ?? 1) - 1, 0),
+		pageSize: params.size ?? pageSize
+	});
+	const columnFilters = $derived<ColumnFiltersState>(params.filters ?? defaultFilters ?? []);
+
+	// What the columns show without a link saying: what this browser remembered, else the defaults.
+	// svelte-ignore state_referenced_locally
+	let ownVisibility = $state<ColumnVisibilityState>(defaultColumnVisibility(columns));
+	const columnVisibility = $derived<ColumnVisibilityState>(
+		params.columns ? visibilityFromShown(columns, params.columns) : ownVisibility
+	);
+	let filterDrawerOpen = $state(false);
+	let columnDrawerOpen = $state(false);
+
+	const hasFilters = $derived(columns.some((column) => column.filter));
+	/** The columns with the filter function their kind of filter needs */
+	const tableColumns = $derived(
+		columns.map((column) =>
+			column.filter && !column.filterFn
+				? { ...column, filterFn: filterFnFor<TData>(column.filter.type) }
+				: column
+		)
+	);
+
+	$effect(() => {
+		if (!storageKey) return;
+		const visibility = initialColumnVisibility(localStorage.getItem(storageKey), columns);
+		if (visibility) ownVisibility = visibility;
+	});
+
+	function setColumnVisibility(state: ColumnVisibilityState) {
+		ownVisibility = state;
+		if (storageKey) localStorage.setItem(storageKey, JSON.stringify(state));
+		const shown = shownFromVisibility(columns, state);
+		const defaults = shownFromVisibility(columns, defaultColumnVisibility(columns));
+		params.columns = shown.join() === defaults.join() ? null : shown;
+	}
+
+	function resetFilters() {
+		params.filters = null;
+		params.page = null;
+	}
+
+	const searchedColumns = $derived(
+		searchColumns
+			? columns.filter((column) => {
+					const id = columnIdOf(column);
+					return id !== undefined && searchColumns.includes(id);
+				})
+			: columns
+	);
 	const searchRows = $derived(
-		createFuzzySearch(rows, (row, index) => rowSearchText(columns, row, index))
+		createFuzzySearch(rows, (row, index) => rowSearchText(searchedColumns, row, index))
 	);
 	/** The rows matching the search, best match first; every row without one. */
 	const searchedRows = $derived(searchRows(globalFilter));
@@ -79,7 +186,7 @@
 			return [...searchedRows];
 		},
 		get columns() {
-			return columns;
+			return tableColumns;
 		},
 		state: {
 			get sorting() {
@@ -87,19 +194,49 @@
 			},
 			get pagination() {
 				return pagination;
+			},
+			get columnFilters() {
+				return columnFilters;
+			},
+			get columnVisibility() {
+				return columnVisibility;
 			}
 		},
 		onSortingChange: (updater) => {
-			sorting = typeof updater === 'function' ? updater(sorting) : updater;
+			const next = typeof updater === 'function' ? updater(sorting) : updater;
+			params.sort = sameSorting(next, defaultSorting) ? null : next;
 		},
 		onPaginationChange: (updater) => {
-			pagination = typeof updater === 'function' ? updater(pagination) : updater;
+			const next = typeof updater === 'function' ? updater(pagination) : updater;
+			params.page = next.pageIndex === 0 ? null : next.pageIndex + 1;
+			params.size = next.pageSize === pageSize ? null : next.pageSize;
+		},
+		onColumnFiltersChange: (updater) => {
+			params.filters = typeof updater === 'function' ? updater(columnFilters) : updater;
+			params.page = null;
+		},
+		onColumnVisibilityChange: (updater) => {
+			setColumnVisibility(typeof updater === 'function' ? updater(columnVisibility) : updater);
 		}
 	});
 
 	function setSearch(value: string) {
-		urlParams[searchKey] = value === '' ? null : value;
-		pagination = { ...pagination, pageIndex: 0 };
+		searchParams[searchKey] = value === '' ? null : value;
+		params.sort = null;
+		params.page = null;
+	}
+
+	/** What the export contains: the shown columns, for every row the filters let through. */
+	function getExport() {
+		const shown = new Set(table.getVisibleLeafColumns().map((column) => column.id));
+		return tableExport(
+			columns.filter((column) => {
+				const id = columnIdOf(column);
+				return id === undefined || shown.has(id);
+			}),
+			table.getPrePaginatedRowModel().rows.map((row) => row.original),
+			{ yes: m.yes(), no: m.no() }
+		);
 	}
 
 	onMount(() => {
@@ -134,12 +271,43 @@
 	{:else}
 		<div class="grow"></div>
 	{/if}
+	{@render toolbar?.(table)}
+	{#if hasFilters}
+		<button class="btn btn-ghost btn-sm no-print" onclick={() => (filterDrawerOpen = true)}>
+			<i class="fa-duotone fa-filter"></i>
+			{m.filters()}
+			{#if columnFilters.length > 0}
+				<span class="badge badge-primary badge-xs">{columnFilters.length}</span>
+			{/if}
+		</button>
+	{/if}
+	<button class="btn btn-ghost btn-sm no-print" onclick={() => (columnDrawerOpen = true)}>
+		<i class="fa-duotone fa-columns"></i>
+		{m.columns()}
+	</button>
 	<span class="text-base-content/60 text-sm whitespace-nowrap">
-		{searchedRows.length} / {rows.length}
+		{table.getFilteredRowModel().rows.length} / {rows.length}
 	</span>
 	<SettingsButton />
-	<ExportButton exportedData={[...searchedRows]} />
+	<ExportButton filename={title || 'export'} {getExport} />
 </div>
+{#if hasFilters}
+	<ActiveFilters {table} {columns} {columnFilters} />
+	<FilterDrawer
+		bind:open={filterDrawerOpen}
+		{table}
+		{columns}
+		{groupOrder}
+		onResetFilters={resetFilters}
+	/>
+{/if}
+<ColumnConfigDrawer
+	bind:open={columnDrawerOpen}
+	{table}
+	{columns}
+	{groupOrder}
+	onVisibilityChange={setColumnVisibility}
+/>
 
 <PrintHeader {title} searchPattern={globalFilter} />
 

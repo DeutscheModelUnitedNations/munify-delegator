@@ -13,15 +13,15 @@
 	};
 </script>
 
-<div class="card bg-base-100 dark:bg-base-200 p-4 shadow-md">
-	<div class="card-title">{m.tableSize()}</div>
-	<div class="card-body">
+<div class="flex flex-col gap-2">
+	<div class="font-semibold">{m.tableSize()}</div>
+	<div>
 		<input
 			type="range"
 			min="0"
 			max="3"
 			value={translateTableSize(getTableSize())}
-			class="range"
+			class="range w-full"
 			step="1"
 			onchange={(e) => {
 				switch (e.currentTarget.value) {

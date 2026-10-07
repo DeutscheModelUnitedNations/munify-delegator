@@ -197,11 +197,7 @@
 				icon="fa-rotate-right"
 			/>
 			<Menu.Divider />
-			<Menu.ToggleButtons editor={$editor} items={['heading2', 'heading3']} />
-
-			<Menu.Divider />
-
-			<Menu.ToggleButtons editor={$editor} items={['bold', 'italic', 'underline']} />
+			<Menu.TextStyleButtons editor={$editor} />
 			<Menu.Button
 				onClick={setLink}
 				active={$editor.isActive('link')}

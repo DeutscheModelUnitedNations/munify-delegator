@@ -25,9 +25,12 @@
 	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/Modal.svelte';
 	import { createEditor, EditorContent, type Editor } from 'svelte-tiptap';
-	import StarterKit from '@tiptap/starter-kit';
 	import Placeholder from '@tiptap/extension-placeholder';
-	import Underline from '@tiptap/extension-underline';
+	import Heading from '@tiptap/extension-heading';
+	import Blockquote from '@tiptap/extension-blockquote';
+	import { OrderedList, BulletList, ListItem } from '@tiptap/extension-list';
+	import { UndoRedo } from '@tiptap/extensions';
+	import { getCommonExtensions } from '$lib/components/paper/editor/settings/common.svelte';
 	import type { JSONContent } from '@tiptap/core';
 	import type { Readable } from 'svelte/store';
 	import Menu from '$lib/components/paper/editor/menu';
@@ -62,12 +65,13 @@
 	function initEditor(content: JSONContent) {
 		editor = createEditor({
 			extensions: [
-				StarterKit.configure({
-					heading: {
-						levels: [2, 3]
-					}
-				}),
-				Underline,
+				...getCommonExtensions(),
+				OrderedList,
+				BulletList,
+				ListItem,
+				UndoRedo,
+				Blockquote,
+				Heading.configure({ levels: [2, 3] }),
 				Placeholder.configure({
 					placeholder: m.snippetContentPlaceholder()
 				}),
@@ -316,59 +320,11 @@
 			<legend class="fieldset-legend">{m.snippetContent()}</legend>
 			{#if $editor}
 				<Menu.Wrapper>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-						active={$editor.isActive('heading', { level: 2 })}
-						label={m.heading2()}
-						icon="fa-heading"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-						active={$editor.isActive('heading', { level: 3 })}
-						label={m.heading3()}
-						icon="fa-h"
-					/>
-
+					<Menu.TextStyleButtons editor={$editor} />
 					<Menu.Divider />
-
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleBold().run()}
-						active={$editor.isActive('bold')}
-						label={m.bold()}
-						icon="fa-bold"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleItalic().run()}
-						active={$editor.isActive('italic')}
-						label={m.italic()}
-						icon="fa-italic"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleUnderline().run()}
-						active={$editor.isActive('underline')}
-						label={m.underline()}
-						icon="fa-underline"
-					/>
-
-					<Menu.Divider />
-
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleBulletList().run()}
-						active={$editor.isActive('bulletList')}
-						label={m.bulletList()}
-						icon="fa-list"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleOrderedList().run()}
-						active={$editor.isActive('orderedList')}
-						label={m.orderedList()}
-						icon="fa-list-ol"
-					/>
-					<Menu.Button
-						onClick={() => $editor?.chain().focus().toggleBlockquote().run()}
-						active={$editor.isActive('blockquote')}
-						label={m.blockquote()}
-						icon="fa-quote-left"
+					<Menu.ToggleButtons
+						editor={$editor}
+						items={['bulletList', 'orderedList', 'blockquote']}
 					/>
 				</Menu.Wrapper>
 				<div class="prose prose-sm max-w-none focus:outline-none px-2 pb-2 min-h-32">

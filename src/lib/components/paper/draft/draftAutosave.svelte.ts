@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
-import { persisted } from 'svelte-persisted-store';
-import { get, type Writable } from 'svelte/store';
+import { PersistedState } from '$lib/state/persistedState.svelte';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -30,13 +29,13 @@ export class DraftAutosave<D extends { savedAt: number }, C> {
 	/** Bumped to remount the editor (`{#key}`) when its content is replaced from outside. */
 	editorKey = $state(0);
 
-	#store: Writable<D | null> | null;
+	#store: PersistedState<D | null> | null;
 	#options: DraftAutosaveOptions<D, C>;
 	#lastSavedContent: string | null = null;
 
 	constructor(storageKey: string, options: DraftAutosaveOptions<D, C>) {
 		this.#options = options;
-		this.#store = browser ? persisted<D | null>(storageKey, null) : null;
+		this.#store = browser ? new PersistedState<D | null>(storageKey, null) : null;
 		// Synchronously, so the editor mounts with the right content
 		this.#loadStoredDraft();
 
@@ -54,7 +53,7 @@ export class DraftAutosave<D extends { savedAt: number }, C> {
 	}
 
 	#loadStoredDraft() {
-		const storedDraft = this.#store ? get(this.#store) : null;
+		const storedDraft = this.#store?.current ?? null;
 		if (!storedDraft) {
 			this.#options.resetEditor?.();
 			return;
@@ -87,7 +86,7 @@ export class DraftAutosave<D extends { savedAt: number }, C> {
 
 	/** Forgets the stored draft, e.g. once the paper or review it held has been saved for real. */
 	clear() {
-		this.#store?.set(null);
+		if (this.#store) this.#store.current = null;
 	}
 
 	save() {
@@ -109,6 +108,6 @@ export class DraftAutosave<D extends { savedAt: number }, C> {
 		this.#lastSavedContent = contentString;
 
 		const content: C = JSON.parse(contentString);
-		this.#store.set(this.#options.toDraft(content, Date.now()));
+		this.#store.current = this.#options.toDraft(content, Date.now());
 	}
 }

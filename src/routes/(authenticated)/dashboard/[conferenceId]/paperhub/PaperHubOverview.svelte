@@ -14,7 +14,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { FlagCollectionSection } from '$lib/components/flagCollection';
 	import ReviewerLeaderboard from '$lib/components/paperHub/ReviewerLeaderboard.svelte';
-	import { persisted } from 'svelte-persisted-store';
+	import { PersistedState } from '$lib/state/persistedState.svelte';
 	import DetailedPaperStats from '$lib/components/paperHub/DetailedPaperStats.svelte';
 	import { PaperSortState, paperHasReviews, sortPapers } from './paperSorting';
 	import { ExpandedPaperGroup, PaperGroupsSnapshot } from './paperGroups.svelte';
@@ -26,7 +26,7 @@
 	let { conferenceId }: Props = $props();
 
 	// Focus mode state - limits papers to 5 oldest without reviews (persisted to localStorage)
-	let focusMode = persisted('paperHubFocusMode', false);
+	const focusMode = new PersistedState('paperHubFocusMode', false);
 
 	const paperSelection = {
 		id: true,
@@ -158,7 +158,7 @@
 		let result = sortPapers(papers, config ?? { key: 'updatedAt', direction: 'asc' });
 
 		// Apply focus mode: prioritize papers without reviews, then oldest first, limit to 5
-		if ($focusMode) {
+		if (focusMode.current) {
 			result.sort((a, b) => {
 				const aHasReviews = paperHasReviews(a);
 				const bHasReviews = paperHasReviews(b);
@@ -188,12 +188,12 @@
 	<PaperStatusBadges
 		counts={countByStatus(papers)}
 		size={size === 'xs' ? 'small' : 'default'}
-		blur={$focusMode}
+		blur={focusMode.current}
 	/>
 	<div class="tooltip tooltip-left" data-tip={m.reviewProgressTooltip()}>
 		<span
 			class="{size === 'sm' ? 'text-sm' : 'text-xs'} text-base-content/60 ml-2"
-			class:blur-sm={$focusMode}
+			class:blur-sm={focusMode.current}
 		>
 			{getReviewProgress(papers)}%
 		</span>
@@ -226,10 +226,10 @@
 							<p class="text-sm text-base-content/60">{m.focusModeDescription()}</p>
 						</div>
 					</div>
-					<input type="checkbox" class="toggle toggle-primary" bind:checked={$focusMode} />
+					<input type="checkbox" class="toggle toggle-primary" bind:checked={focusMode.current} />
 				</div>
 
-				<PaperStatusDistribution counts={overallStatusCounts} blur={$focusMode} />
+				<PaperStatusDistribution counts={overallStatusCounts} blur={focusMode.current} />
 
 				<MyReviewStats {conferenceId} />
 			</div>
