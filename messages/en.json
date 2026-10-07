@@ -100,6 +100,7 @@
 	"appDocs": "App Documentation",
 	"appDocsDescription": "Help and guides for using DELEGATOR",
 	"application": "Application",
+	"applicationDeadline": "Application Deadline",
 	"applicationRejected": "Application Rejected",
 	"applicationRejectedText": "We are sad to inform you, that you cannot participate at this conference. This is either because you did not complete the registration in time, there were too many applications for the conference or due to individual reasons. If you have any questions, please contact the participant care.",
 	"applicationTimeframeClosed": "The registration period is closed.",

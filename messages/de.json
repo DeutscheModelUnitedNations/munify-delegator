@@ -100,6 +100,7 @@
 	"appDocs": "App-Dokumentation",
 	"appDocsDescription": "Hilfe und Anleitungen zur Nutzung von DELEGATOR",
 	"application": "Bewerbung",
+	"applicationDeadline": "Bewerbungsfrist",
 	"applicationRejected": "Bewerbung nicht erfolgreich",
 	"applicationRejectedText": "Leider konnten wir dich nicht zur Konferenz zulassen. Dafür kann es verschiedene Gründe geben: Entweder deine Anmeldung wurde garnicht abgeschlossen, es gab zu viele Anmeldungen für die Konferenz oder es hat andere, individuelle Gründe. Bei Fragen wende dich gerne an die Teilnehmendenbetreuung.",
 	"applicationTimeframeClosed": "Der Anmeldezeitraum ist geschlossen.",

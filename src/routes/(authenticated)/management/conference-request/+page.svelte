@@ -162,7 +162,7 @@
 						/>
 					</label>
 					<label class="flex flex-col">
-						<FormLabel label={m.startAssignment()} />
+						<FormLabel label={m.applicationDeadline()} />
 						<input type="datetime-local" class="input w-full" bind:value={form.startAssignment} />
 						{@render timeError(form.startAssignment)}
 					</label>
