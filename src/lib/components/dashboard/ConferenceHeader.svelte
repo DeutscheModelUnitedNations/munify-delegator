@@ -8,11 +8,11 @@
 		state: ConferencestateEnum;
 		startDate?: Date | null;
 		endDate?: Date | null;
-		emblemDataURL?: string | null;
-		logoDataURL?: string | null;
+		emblemUrl?: string | null;
+		logoUrl?: string | null;
 	}
 
-	let { title, longTitle, state, startDate, endDate, emblemDataURL, logoDataURL }: Props = $props();
+	let { title, longTitle, state, startDate, endDate, emblemUrl, logoUrl }: Props = $props();
 
 	const formatDate = (date: Date | null | undefined) => {
 		if (!date) return '';
@@ -79,18 +79,18 @@
 <header class="card bg-base-100 border-base-200 border shadow-sm">
 	<div class="card-body">
 		<div class="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-			{#if logoDataURL}
+			{#if logoUrl}
 				<div class="shrink-0">
 					<img
-						src={logoDataURL}
+						src={logoUrl}
 						alt={title}
 						class="h-20 w-20 rounded-lg object-contain md:h-24 md:w-24"
 					/>
 				</div>
-			{:else if emblemDataURL}
+			{:else if emblemUrl}
 				<div class="shrink-0">
 					<img
-						src={emblemDataURL}
+						src={emblemUrl}
 						alt={title}
 						class="h-20 w-20 rounded-lg object-contain md:h-24 md:w-24"
 					/>

@@ -436,6 +436,7 @@ export type Conference = {
   }) => Calendarday[],
   certificateContent: String | null,
   certificateContentSet: Boolean,
+  certificateContentUrl: String | null,
   committees: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -456,6 +457,7 @@ export type Conference = {
   }) => Conferenceparticipantstatus[],
   contractContent: String | null,
   contractContentSet: Boolean,
+  contractContentUrl: String | null,
   createdAt: DateTime,
   currency: String | null,
   delegationMembers: (p?: {
@@ -471,13 +473,16 @@ export type Conference = {
     where?: DelegationWhereInputArgument | null | undefined
   }) => Delegation[],
   emblemDataURL: String | null,
+  emblemUrl: String | null,
   endConference: DateTime,
   feeAmount: Float | null,
   guardianConsentContent: String | null,
   guardianConsentContentSet: Boolean,
+  guardianConsentContentUrl: String | null,
   iban: String | null,
   id: ID,
   imageDataURL: String | null,
+  imageUrl: String | null,
   individualApplicationOptions: (p?: {
     limit?: Int | null | undefined,
     offset?: Int | null | undefined,
@@ -493,9 +498,11 @@ export type Conference = {
   linkToTeamWiki: String | null,
   location: String | null,
   logoDataURL: String | null,
+  logoUrl: String | null,
   longTitle: String | null,
   mediaConsentContent: String | null,
   mediaConsentContentSet: Boolean,
+  mediaConsentContentUrl: String | null,
   nextDocumentNumber: Int,
   nonStateActors: (p?: {
     limit?: Int | null | undefined,
@@ -566,6 +573,7 @@ export type Conference = {
   }) => Teammember[],
   termsAndConditionsContent: String | null,
   termsAndConditionsContentSet: Boolean,
+  termsAndConditionsContentUrl: String | null,
   timezone: String,
   title: String,
   totalParticipants: Int,
@@ -2193,6 +2201,7 @@ export type Place = {
   longitude: Float | null,
   name: String,
   sitePlanDataURL: String | null,
+  sitePlanUrl: String | null,
   updatedAt: DateTime,
   websiteUrl: String | null    
 };
@@ -2620,6 +2629,7 @@ export type Resolution = {
   }) => Conference,
   conferenceId: ID,
   content: String,
+  contentUrl: String,
   createdAt: DateTime,
   fileName: String,
   id: ID,

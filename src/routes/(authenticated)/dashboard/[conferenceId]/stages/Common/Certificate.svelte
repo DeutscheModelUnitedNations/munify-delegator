@@ -58,7 +58,7 @@
 		void Promise.all([
 			client.query.conference({
 				__args: { id: requestedFor.conferenceId },
-				certificateContent: true,
+				certificateContentUrl: true,
 				title: true
 			}),
 			client.query.getCertificateJWT({
@@ -126,7 +126,7 @@
 	description={m.certificateDescription()}
 >
 	{#if certificate}
-		{#if !certificate.certificateContent}
+		{#if !certificate.certificateContentUrl}
 			<div class="alert alert-warning">
 				<i class="fas fa-hourglass-half"></i>
 				<p>{m.certificateNotYetAvailable()}</p>

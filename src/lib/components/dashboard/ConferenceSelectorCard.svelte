@@ -26,7 +26,7 @@
 				title: true,
 				longTitle: true,
 				location: true,
-				imageDataURL: true,
+				imageUrl: true,
 				state: true,
 				startConference: true,
 				endConference: true,
@@ -79,7 +79,7 @@
 >
 	<figure>
 		<img
-			src={conference.imageDataURL || defaultImage}
+			src={conference.imageUrl || defaultImage}
 			alt=""
 			class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 {muted
 				? 'grayscale'

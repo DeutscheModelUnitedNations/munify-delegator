@@ -10,8 +10,8 @@ import {
  * Reads everything a postal registration PDF is built from: the person's address and birthday,
  * and the conference's postal address and consent texts.
  *
- * Meant to be called once, at the moment of download. The consent texts are long and nobody
- * looks at them on screen, so no component should keep them in a live query.
+ * Meant to be called once, at the moment of download. The templates are PDFs, so only their
+ * URLs are selected; the PDF generator fetches the files.
  */
 export async function fetchPostalRegistrationSources(userId: string, conferenceId: string) {
 	const [user, conference] = await Promise.all([
@@ -36,10 +36,10 @@ export async function fetchPostalRegistrationSources(userId: string, conferenceI
 			postalZip: true,
 			postalCity: true,
 			postalCountry: true,
-			contractContent: true,
-			guardianConsentContent: true,
-			mediaConsentContent: true,
-			termsAndConditionsContent: true
+			contractContentUrl: true,
+			guardianConsentContentUrl: true,
+			mediaConsentContentUrl: true,
+			termsAndConditionsContentUrl: true
 		})
 	]);
 	return { user, conference };
@@ -71,10 +71,10 @@ export async function downloadPostalRegistrationDocuments({
 		ofAgeAtConference(conference.startConference, birthday),
 		participant,
 		recipient,
-		conference.contractContent,
-		conference.guardianConsentContent,
-		conference.mediaConsentContent,
-		conference.termsAndConditionsContent,
+		conference.contractContentUrl,
+		conference.guardianConsentContentUrl,
+		conference.mediaConsentContentUrl,
+		conference.termsAndConditionsContentUrl,
 		fileName
 	);
 }

@@ -23,6 +23,7 @@ import { userFormSchema } from '../../routes/(authenticated)/my-account/form-sch
 import { nullToUndefined } from '$api/services/args';
 import { distinctNationCodes, schoolRows } from '$api/services/conferenceAggregates';
 import { totalSeats } from '$api/services/seatPlanning';
+import { storedFileUrl } from '$api/services/files';
 
 const ConferenceSchools = schemaBuilder.simpleObject('ConferenceSchools', {
 	fields: (t) => ({
@@ -101,6 +102,68 @@ const ConferenceRef = object({
 		certificateContentSet: t.field({
 			type: 'Boolean',
 			resolve: (conference) => !!conference.certificateContent
+		}),
+
+		// The uploaded images and templates are megabytes of base64. These URLs serve them as real
+		// files, which the browser caches; they are null when nothing is stored (or the reader may
+		// not see it). The files themselves are not meant to be selected any more.
+		imageUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl('conference', conference, 'image', conference.imageDataURL)
+		}),
+		emblemUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl('conference', conference, 'emblem', conference.emblemDataURL)
+		}),
+		logoUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl('conference', conference, 'logo', conference.logoDataURL)
+		}),
+		contractContentUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl('conference', conference, 'contract', conference.contractContent)
+		}),
+		guardianConsentContentUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl(
+					'conference',
+					conference,
+					'guardianConsent',
+					conference.guardianConsentContent
+				)
+		}),
+		mediaConsentContentUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl('conference', conference, 'mediaConsent', conference.mediaConsentContent)
+		}),
+		termsAndConditionsContentUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl(
+					'conference',
+					conference,
+					'termsAndConditions',
+					conference.termsAndConditionsContent
+				)
+		}),
+		certificateContentUrl: t.field({
+			type: 'String',
+			nullable: true,
+			resolve: (conference) =>
+				storedFileUrl('conference', conference, 'certificate', conference.certificateContent)
 		}),
 
 		/** Everyone who actually holds a seat - delegates of assigned delegations plus role holders. */

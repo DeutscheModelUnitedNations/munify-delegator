@@ -102,7 +102,7 @@
 >
 	<figure class="relative aspect-video">
 		<img
-			src={conference.imageDataURL ? conference.imageDataURL : defaultImage}
+			src={conference.imageUrl ? conference.imageUrl : defaultImage}
 			alt="Conference"
 			class={alreadyRegistered ? 'scale-110 blur-sm brightness-150 contrast-50 saturate-0' : ''}
 		/>

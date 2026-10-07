@@ -27,8 +27,8 @@
 			state: true,
 			startConference: true,
 			endConference: true,
-			emblemDataURL: true,
-			logoDataURL: true,
+			emblemUrl: true,
+			logoUrl: true,
 			info: true,
 			showInfoExpanded: true,
 			showCalendar: true,
@@ -43,8 +43,8 @@
 	state={conference.state}
 	startDate={conference.startConference}
 	endDate={conference.endConference}
-	emblemDataURL={conference.emblemDataURL}
-	logoDataURL={conference.logoDataURL}
+	emblemUrl={conference.emblemUrl}
+	logoUrl={conference.logoUrl}
 />
 {#if conference.info && !isTeamMember}
 	<DashboardSection

@@ -12,9 +12,9 @@
 		form: SuperForm<ConferenceSettings>;
 		/** The images as currently stored, previewed until a new file is picked. */
 		storedImages: {
-			imageDataURL: string | null;
-			emblemDataURL: string | null;
-			logoDataURL: string | null;
+			imageUrl: string | null;
+			emblemUrl: string | null;
+			logoUrl: string | null;
 		};
 	}
 
@@ -55,9 +55,9 @@
 	/>
 	<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
 	<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
-	{#if $formData.image || storedImages.imageDataURL}
+	{#if $formData.image || storedImages.imageUrl}
 		<img
-			src={$formData.image ? URL.createObjectURL($formData.image) : storedImages.imageDataURL}
+			src={$formData.image ? URL.createObjectURL($formData.image) : storedImages.imageUrl}
 			class="h-64 w-64"
 			alt="Preview of the file you selected"
 		/>
@@ -65,9 +65,9 @@
 	<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
 	<div class="mt-4">
 		<p class="text-sm opacity-70 mb-2">{m.conferenceEmblem()}</p>
-		{#if $formData.emblem || storedImages.emblemDataURL}
+		{#if $formData.emblem || storedImages.emblemUrl}
 			<img
-				src={$formData.emblem ? URL.createObjectURL($formData.emblem) : storedImages.emblemDataURL}
+				src={$formData.emblem ? URL.createObjectURL($formData.emblem) : storedImages.emblemUrl}
 				class="h-24 w-24 mb-2"
 				alt="Emblem preview"
 			/>
@@ -77,9 +77,9 @@
 	</div>
 	<div class="mt-4">
 		<p class="text-sm opacity-70 mb-2">{m.conferenceLogo()}</p>
-		{#if $formData.logo || storedImages.logoDataURL}
+		{#if $formData.logo || storedImages.logoUrl}
 			<img
-				src={$formData.logo ? URL.createObjectURL($formData.logo) : storedImages.logoDataURL}
+				src={$formData.logo ? URL.createObjectURL($formData.logo) : storedImages.logoUrl}
 				class="h-24 w-24 mb-2"
 				alt="Logo preview"
 			/>

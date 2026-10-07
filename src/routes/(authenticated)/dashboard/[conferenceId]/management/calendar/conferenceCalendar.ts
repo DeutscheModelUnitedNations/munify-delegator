@@ -30,7 +30,7 @@ export async function fetchConferenceCalendar(conferenceId: string) {
 					directions: true,
 					info: true,
 					websiteUrl: true,
-					sitePlanDataURL: true
+					sitePlanUrl: true
 				},
 				room: true,
 				calendarTrackId: true

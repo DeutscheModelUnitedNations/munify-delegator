@@ -75,9 +75,9 @@
 	const storedFiles = $derived(
 		await client.liveQuery.conference({
 			__args: { id: conferenceId },
-			imageDataURL: true,
-			emblemDataURL: true,
-			logoDataURL: true,
+			imageUrl: true,
+			emblemUrl: true,
+			logoUrl: true,
 			contractContentSet: true,
 			guardianConsentContentSet: true,
 			mediaConsentContentSet: true,
@@ -170,9 +170,9 @@
 					certificateContent: await fileToDataURL(certificateBasePDF)
 				},
 				id: true,
-				imageDataURL: true,
-				emblemDataURL: true,
-				logoDataURL: true,
+				imageUrl: true,
+				emblemUrl: true,
+				logoUrl: true,
 				certificateContentSet: true,
 				termsAndConditionsContentSet: true,
 				mediaConsentContentSet: true,
@@ -197,9 +197,9 @@
 			current: $formData,
 			tainted: $tainted,
 			existingFiles: {
-				image: !!storedFiles.imageDataURL,
-				emblem: !!storedFiles.emblemDataURL,
-				logo: !!storedFiles.logoDataURL,
+				image: !!storedFiles.imageUrl,
+				emblem: !!storedFiles.emblemUrl,
+				logo: !!storedFiles.logoUrl,
 				contractBasePDF: storedFiles.contractContentSet,
 				guardianConsentBasePDF: storedFiles.guardianConsentContentSet,
 				mediaConsentBasePDF: storedFiles.mediaConsentContentSet,
