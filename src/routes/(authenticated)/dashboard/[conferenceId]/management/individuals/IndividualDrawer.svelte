@@ -7,6 +7,9 @@
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { resolve } from '$app/paths';
+	import StarRating from '$lib/components/StarRating.svelte';
+	import { fetchAssignmentReviews } from '../assignment/board';
 	import ApplicationStatusAlert from '$lib/components/registrationAdmin/ApplicationStatusAlert.svelte';
 	import DetailsTable from '$lib/components/registrationAdmin/DetailsTable.svelte';
 	import DetailRow from '$lib/components/registrationAdmin/DetailRow.svelte';
@@ -39,6 +42,12 @@
 				user: { givenName: true, familyName: true }
 			}
 		})
+	);
+
+	const evaluation = $derived(
+		(await fetchAssignmentReviews(conferenceId)).find(
+			(review) => review.singleParticipantId === singleParticipantId
+		)?.evaluation
 	);
 
 	const revokeApplication = async () => {
@@ -78,6 +87,25 @@
 
 	<DetailsTable>
 		<DetailRow icon="fa-school">{singleParticipant.school}</DetailRow>
+		{#if singleParticipant.applied}
+			<DetailRow icon="fa-star">
+				<div class="flex items-center justify-between gap-2">
+					<StarRating rating={evaluation ?? 0} size="md" />
+					<a
+						class="btn btn-xs"
+						href="{resolve(
+							'/(authenticated)/dashboard/[conferenceId]/management/assignment/sighting',
+							{
+								conferenceId
+							}
+						)}?application={singleParticipantId}"
+						aria-label={m.assignmentTabSighting()}
+					>
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				</div>
+			</DetailRow>
+		{/if}
 		<DetailRow icon="fa-fire-flame-curved">{singleParticipant.motivation}</DetailRow>
 		<DetailRow icon="fa-compass">{singleParticipant.experience}</DetailRow>
 		<DetailRow icon="fa-check-to-slot">

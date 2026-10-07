@@ -13,6 +13,8 @@
 	import IconListCell from '$lib/components/tanStackTable/cells/IconListCell.svelte';
 	import RegistrationAdminTable from '$lib/components/registrationAdmin/RegistrationAdminTable.svelte';
 	import IndividualDrawer from './IndividualDrawer.svelte';
+	import StarRating from '$lib/components/StarRating.svelte';
+	import { fetchAssignmentReviews } from '../assignment/board';
 	import type { PageProps } from './$types';
 
 	let { params: routeParams }: PageProps = $props();
@@ -30,6 +32,11 @@
 			user: { id: true, familyName: true, givenName: true }
 		})
 	);
+	const reviews = $derived(await fetchAssignmentReviews(routeParams.conferenceId));
+	const evaluationById = $derived(
+		new Map(reviews.map((review) => [review.singleParticipantId, review.evaluation]))
+	);
+
 	const columns: ManagedColumn<(typeof singleParticipants)[number]>[] = [
 		nameColumn(),
 		appliedColumn(),
@@ -46,6 +53,18 @@
 								tooltip: r.name
 							}))
 						})
+		},
+		{
+			id: 'evaluation',
+			header: m.assignmentWeightsRating(),
+			accessorFn: (row) => evaluationById.get(row.id) ?? 0,
+			cell: ({ row }) =>
+				row.original.applied
+					? renderComponent(StarRating, {
+							rating: evaluationById.get(row.original.id) ?? 0,
+							size: 'xs'
+						})
+					: ''
 		},
 		{
 			id: 'role',

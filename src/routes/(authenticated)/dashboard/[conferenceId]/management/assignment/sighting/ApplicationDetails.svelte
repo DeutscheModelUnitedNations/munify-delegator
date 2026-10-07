@@ -17,9 +17,10 @@
 		conferenceId: string;
 		application: ReturnType<typeof delegationApplication>;
 		startConference: Date | string;
+		kind: 'delegation' | 'single';
 	}
 
-	let { conferenceId, application, startConference }: Props = $props();
+	let { conferenceId, application, startConference, kind }: Props = $props();
 
 	const supervisors = $derived(distinctSupervisors(application.supervisors, formatNames));
 
@@ -40,38 +41,41 @@
 	);
 </script>
 
-<div class="grid gap-x-8 gap-y-6 lg:grid-cols-3">
-	<table class="table table-sm">
-		<thead>
-			<tr>
-				<th>{m.members()} <span class="badge badge-xs">{application.people.length}</span></th>
-				<th class="text-right">{m.assignmentAge()}</th>
-				<th class="text-center"><i class="fa-duotone fa-venus-mars"></i></th>
-				<th class="text-right" title={m.assignmentPreviousParticipations()}>
-					<i class="fa-duotone fa-rotate-left"></i>
-				</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each application.people as person (person.id)}
-				<PersonLine {person} {startConference} />
-			{/each}
-		</tbody>
-		<tfoot>
-			<tr class="text-base-content/70">
-				<th></th>
-				<td class="text-right tabular-nums" title={m.assignmentAverageAge()}>
-					<span class="mr-1 opacity-60" aria-hidden="true">Ø</span>{summary.averageAge === undefined
-						? '?'
-						: Math.round(summary.averageAge * 10) / 10}
-				</td>
-				<td></td>
-				<td class="text-right tabular-nums" title={m.assignmentPreviousParticipations()}>
-					{summary.participations}
-				</td>
-			</tr>
-		</tfoot>
-	</table>
+<div class="grid gap-x-8 gap-y-6 {kind === 'delegation' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}">
+	{#if kind === 'delegation'}
+		<table class="table table-sm">
+			<thead>
+				<tr>
+					<th>{m.members()} <span class="badge badge-xs">{application.people.length}</span></th>
+					<th class="text-right">{m.assignmentAge()}</th>
+					<th class="text-center"><i class="fa-duotone fa-venus-mars"></i></th>
+					<th class="text-right" title={m.assignmentPreviousParticipations()}>
+						<i class="fa-duotone fa-rotate-left"></i>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each application.people as person (person.id)}
+					<PersonLine {person} {startConference} />
+				{/each}
+			</tbody>
+			<tfoot>
+				<tr class="text-base-content/70">
+					<th></th>
+					<td class="text-right tabular-nums" title={m.assignmentAverageAge()}>
+						<span class="mr-1 opacity-60" aria-hidden="true">Ø</span>{summary.averageAge ===
+						undefined
+							? '?'
+							: Math.round(summary.averageAge * 10) / 10}
+					</td>
+					<td></td>
+					<td class="text-right tabular-nums" title={m.assignmentPreviousParticipations()}>
+						{summary.participations}
+					</td>
+				</tr>
+			</tfoot>
+		</table>
+	{/if}
 
 	<div class="flex flex-col gap-4">
 		<section class="flex flex-col gap-1">
@@ -137,7 +141,11 @@
 		{/if}
 	</section>
 
-	<div class="grid gap-x-8 gap-y-5 lg:col-span-3 lg:grid-cols-2">
+	<div
+		class="grid gap-x-8 gap-y-5 {kind === 'delegation'
+			? 'lg:col-span-3'
+			: 'lg:col-span-2'} lg:grid-cols-2"
+	>
 		<ApplicationText
 			icon="fire-flame-curved"
 			label={m.motivation()}

@@ -13,6 +13,9 @@
 	import ApplicationStatusAlert from '$lib/components/registrationAdmin/ApplicationStatusAlert.svelte';
 	import DetailsTable from '$lib/components/registrationAdmin/DetailsTable.svelte';
 	import DetailRow from '$lib/components/registrationAdmin/DetailRow.svelte';
+	import { resolve } from '$app/paths';
+	import StarRating from '$lib/components/StarRating.svelte';
+	import { fetchAssignmentReviews } from '../assignment/board';
 	import UserCardButton from '$lib/components/registrationAdmin/UserCardButton.svelte';
 
 	interface Props {
@@ -53,6 +56,12 @@
 			assignedNation: { alpha2Code: true, alpha3Code: true },
 			assignedNonStateActor: { id: true, name: true, fontAwesomeIcon: true }
 		})
+	);
+
+	const evaluation = $derived(
+		(await fetchAssignmentReviews(conferenceId)).find(
+			(review) => review.delegationId === delegationId
+		)?.evaluation
 	);
 
 	let members = $derived(
@@ -145,10 +154,29 @@
 				</button>
 			</div>
 		</DetailRow>
+		{#if delegation.applied}
+			<DetailRow icon="fa-star">
+				<div class="flex items-center justify-between gap-2">
+					<StarRating rating={evaluation ?? 0} size="md" />
+					<a
+						class="btn btn-xs"
+						href="{resolve(
+							'/(authenticated)/dashboard/[conferenceId]/management/assignment/sighting',
+							{
+								conferenceId
+							}
+						)}?application={delegationId}"
+						aria-label={m.assignmentTabSighting()}
+					>
+						<i class="fa-duotone fa-arrow-up-right-from-square"></i>
+					</a>
+				</div>
+			</DetailRow>
+		{/if}
 		<DetailRow icon="fa-fire-flame-curved">{delegation.motivation}</DetailRow>
 		<DetailRow icon="fa-compass">{delegation.experience}</DetailRow>
 		<DetailRow icon="fa-flag">
-			<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
+			<span class="bg-base-300 mr-1 rounded-md px-3 py-0.5"
 				>{delegation.appliedForRoles.length}</span
 			>
 			{appliedForRoleNames}

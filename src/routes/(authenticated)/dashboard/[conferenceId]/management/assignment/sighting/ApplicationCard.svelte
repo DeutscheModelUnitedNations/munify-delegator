@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import type { delegationApplication, SightingReview } from '$lib/assignment/sighting';
+	import {
+		genderIcon,
+		type delegationApplication,
+		type SightingReview
+	} from '$lib/assignment/sighting';
+	import { openUserCard } from '$lib/components/userCard/userCardState.svelte';
+	import { getAgeAtConference } from '$lib/helpers/ageChecker';
+	import formatNames from '$lib/helpers/formatNames';
 	import { m } from '$lib/paraglide/messages';
 	import ApplicationDetails from './ApplicationDetails.svelte';
 	import NoteInput from './NoteInput.svelte';
@@ -28,6 +35,11 @@
 					conferenceId
 				})
 	);
+	/** A single participant is one person: their name and facts head the card instead of a table. */
+	const person = $derived(kind === 'single' ? application.people[0] : undefined);
+	const age = $derived(
+		person?.birthday ? getAgeAtConference(person.birthday, startConference) : undefined
+	);
 	const border = $derived(
 		review?.disqualified
 			? 'border-error border-2'
@@ -43,7 +55,34 @@
 			<div class="flex flex-col">
 				<h3 class="flex items-center gap-2 text-xl font-bold">
 					<i class="fa-duotone {kind === 'delegation' ? 'fa-users' : 'fa-user'}"></i>
-					{codename}
+					{#if person}
+						<button
+							type="button"
+							class="link link-hover cursor-pointer"
+							onclick={() => openUserCard(person.id)}
+						>
+							{formatNames(person.givenName, person.familyName)}
+						</button>
+						<span class="flex items-center gap-3 text-base font-normal tabular-nums">
+							<span title={m.assignmentAge()}>{age ?? '?'}</span>
+							<i class="fa-solid fa-{genderIcon(person.gender)}"></i>
+							{#if person.conferenceParticipationsCount > 0}
+								<span class="text-warning" title={m.assignmentPreviousParticipations()}>
+									<i class="fa-solid fa-rotate-left"></i>
+									{person.conferenceParticipationsCount}
+								</span>
+							{/if}
+							{#if person.globalNotes?.trim()}
+								<i
+									class="fa-solid fa-triangle-exclamation text-error text-lg"
+									title={person.globalNotes.trim()}
+									aria-label={m.globalNotes()}
+								></i>
+							{/if}
+						</span>
+					{:else}
+						{codename}
+					{/if}
 				</h3>
 				<span class="text-base-content/50 font-mono text-xs">{id}</span>
 			</div>
@@ -62,7 +101,7 @@
 			</div>
 		</div>
 
-		<ApplicationDetails {conferenceId} {application} {startConference} />
+		<ApplicationDetails {conferenceId} {application} {startConference} {kind} />
 
 		<NoteInput {kind} {id} {review} />
 	</div>

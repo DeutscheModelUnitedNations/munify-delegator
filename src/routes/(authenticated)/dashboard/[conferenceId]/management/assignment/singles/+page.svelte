@@ -72,6 +72,7 @@
 		pending={single.pending}
 		{container}
 		onDragChange={(isDragging) => (dragging = isDragging)}
+		conferenceId={params.conferenceId}
 	/>
 {/snippet}
 

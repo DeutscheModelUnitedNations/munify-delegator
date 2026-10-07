@@ -8,8 +8,6 @@ export type ImpactSubject =
 export type ImpactEffect =
 	| 'seatedFirst'
 	| 'leftOutFirst'
-	| 'seatedFirstPlain'
-	| 'leftOutFirstPlain'
 	| 'wishesWeighMore'
 	| 'wishesWeighLess'
 	| 'winContested'
@@ -21,20 +19,18 @@ export interface Impact {
 	subject: ImpactSubject;
 	/** The rating the subject is measured against, for the rating subjects. */
 	rating?: number;
-	effects: { effect: ImpactEffect; tone: ImpactTone; value?: number }[];
+	effects: { effect: ImpactEffect; tone: ImpactTone }[];
 }
-
-const round = (value: number) => Math.round(value * 100) / 100;
 
 type Effect = Impact['effects'][number];
 
 const NO_EFFECT: Impact['effects'] = [{ effect: 'noEffect', tone: 'neutral' }];
 
 /** Seated or left out first, and (when it reaches contested roles) wishes weighing more or less. */
-function favourEffects(favoured: boolean, value: number, reachesWishes: boolean): Effect[] {
+function favourEffects(favoured: boolean, reachesWishes: boolean): Effect[] {
 	const seating: Effect = favoured
-		? { effect: 'seatedFirst', tone: 'good', value }
-		: { effect: 'leftOutFirst', tone: 'bad', value };
+		? { effect: 'seatedFirst', tone: 'good' }
+		: { effect: 'leftOutFirst', tone: 'bad' };
 	const wishes: Effect = reachesWishes
 		? favoured
 			? { effect: 'wishesWeighMore', tone: 'good' }
@@ -50,7 +46,7 @@ function ratingImpacts(weights: AssignmentWeights): Impact[] {
 			subject: 'aboveAverage',
 			rating: weights.nullRating,
 			effects: [
-				{ effect: 'seatedFirstPlain', tone: 'good' },
+				{ effect: 'seatedFirst', tone: 'good' },
 				{ effect: 'wishesWeighMore', tone: 'good' }
 			]
 		},
@@ -58,7 +54,7 @@ function ratingImpacts(weights: AssignmentWeights): Impact[] {
 			subject: 'belowAverage',
 			rating: weights.nullRating,
 			effects: [
-				{ effect: 'leftOutFirstPlain', tone: 'bad' },
+				{ effect: 'leftOutFirst', tone: 'bad' },
 				{ effect: 'wishesWeighLess', tone: 'bad' }
 			]
 		}
@@ -70,11 +66,7 @@ function markImpacts(weights: AssignmentWeights): Impact[] {
 	return [
 		{
 			subject: 'flagged',
-			effects: favourEffects(
-				weights.markBonus > 0,
-				round(Math.abs(weights.markBonus)),
-				weights.markEffect === 'WISHES_AND_SEATING'
-			)
+			effects: favourEffects(weights.markBonus > 0, weights.markEffect === 'WISHES_AND_SEATING')
 		}
 	];
 }
@@ -85,8 +77,8 @@ function experienceImpacts(weights: AssignmentWeights): Impact[] {
 	const favoured = modifier < 0;
 	const contested = weights.experienceEffect === 'WISHES_AND_SEATING';
 	const newcomerSeating: Effect = favoured
-		? { effect: 'leftOutFirstPlain', tone: 'bad' }
-		: { effect: 'seatedFirstPlain', tone: 'good' };
+		? { effect: 'leftOutFirst', tone: 'bad' }
+		: { effect: 'seatedFirst', tone: 'good' };
 	const newcomerContested: Effect[] = !contested
 		? []
 		: favoured
@@ -95,7 +87,7 @@ function experienceImpacts(weights: AssignmentWeights): Impact[] {
 	return [
 		{
 			subject: 'experienced',
-			effects: favourEffects(favoured, round(Math.abs(modifier)), contested)
+			effects: favourEffects(favoured, contested)
 		},
 		{ subject: 'newcomers', effects: [newcomerSeating, ...newcomerContested] }
 	];

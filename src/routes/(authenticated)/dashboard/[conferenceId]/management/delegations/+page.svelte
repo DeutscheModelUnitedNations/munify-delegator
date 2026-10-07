@@ -12,6 +12,8 @@
 	import codenmz from '$lib/helpers/codenamize';
 	import type { PageProps } from './$types';
 	import { assignedRoleName } from './delegationRole';
+	import StarRating from '$lib/components/StarRating.svelte';
+	import { fetchAssignmentReviews } from '../assignment/board';
 
 	let { params: routeParams }: PageProps = $props();
 
@@ -29,10 +31,15 @@
 			appliedForRoles: { id: true }
 		})
 	);
+	const reviews = $derived(await fetchAssignmentReviews(routeParams.conferenceId));
+	const evaluationById = $derived(
+		new Map(reviews.map((review) => [review.delegationId, review.evaluation]))
+	);
 	// The nation's translated name is only known client-side, so it is joined on here.
 	const delegations = $derived(
 		fetchedDelegations.map((d) => ({
 			...d,
+			evaluation: evaluationById.get(d.id) ?? null,
 			assignedNation: d.assignedNation
 				? {
 						...d.assignedNation,
@@ -71,6 +78,15 @@
 								icon: row.original.assignedNonStateActor.fontAwesomeIcon
 							})
 						: ''
+		},
+		{
+			id: 'evaluation',
+			header: m.assignmentWeightsRating(),
+			accessorFn: (row) => row.evaluation ?? 0,
+			cell: ({ row }) =>
+				row.original.applied
+					? renderComponent(StarRating, { rating: row.original.evaluation ?? 0, size: 'xs' })
+					: ''
 		},
 		{
 			id: 'school',

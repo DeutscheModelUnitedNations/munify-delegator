@@ -16,11 +16,8 @@ describe('weightImpacts', () => {
 
 	it('favours well-rated and disfavours poorly rated groups around the average', () => {
 		expect(impactOf({ nullRating: 3 }, 'aboveAverage')?.rating).toBe(3);
-		expect(effectsOf({}, 'aboveAverage')).toEqual([
-			'seatedFirstPlain:good',
-			'wishesWeighMore:good'
-		]);
-		expect(effectsOf({}, 'belowAverage')).toEqual(['leftOutFirstPlain:bad', 'wishesWeighLess:bad']);
+		expect(effectsOf({}, 'aboveAverage')).toEqual(['seatedFirst:good', 'wishesWeighMore:good']);
+		expect(effectsOf({}, 'belowAverage')).toEqual(['leftOutFirst:bad', 'wishesWeighLess:bad']);
 	});
 
 	it('ignores ratings at a factor of 0', () => {
@@ -54,19 +51,18 @@ describe('weightImpacts', () => {
 	it('punishes experienced groups and helps newcomers for a positive modifier', () => {
 		const weights = { experienceModifier: 0.1, experienceEffect: 'WISHES_AND_SEATING' as const };
 		expect(effectsOf(weights, 'experienced')).toEqual(['leftOutFirst:bad', 'wishesWeighLess:bad']);
-		expect(effectsOf(weights, 'newcomers')).toEqual(['seatedFirstPlain:good', 'winContested:good']);
-		expect(impactOf(weights, 'experienced')?.effects[0].value).toBe(0.1);
+		expect(effectsOf(weights, 'newcomers')).toEqual(['seatedFirst:good', 'winContested:good']);
 	});
 
 	it('rewards experienced groups and sets newcomers back for a negative modifier', () => {
 		const weights = { experienceModifier: -2, experienceEffect: 'WISHES_AND_SEATING' as const };
 		expect(effectsOf(weights, 'experienced')).toEqual(['seatedFirst:good', 'wishesWeighMore:good']);
-		expect(effectsOf(weights, 'newcomers')).toEqual(['leftOutFirstPlain:bad', 'loseContested:bad']);
+		expect(effectsOf(weights, 'newcomers')).toEqual(['leftOutFirst:bad', 'loseContested:bad']);
 	});
 
 	it('says the seating-only option leaves the choice of role alone', () => {
 		const weights = { experienceModifier: 0.1, experienceEffect: 'SEATING_ONLY' as const };
 		expect(effectsOf(weights, 'experienced')).toEqual(['leftOutFirst:bad', 'noRoleEffect:neutral']);
-		expect(effectsOf(weights, 'newcomers')).toEqual(['seatedFirstPlain:good']);
+		expect(effectsOf(weights, 'newcomers')).toEqual(['seatedFirst:good']);
 	});
 });

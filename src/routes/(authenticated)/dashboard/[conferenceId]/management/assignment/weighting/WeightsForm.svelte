@@ -109,11 +109,9 @@
 		experienced: () => m.assignmentImpactSubjectExperienced(),
 		newcomers: () => m.assignmentImpactSubjectNewcomers()
 	};
-	const effects: Record<ImpactEffect, (value: number) => string> = {
-		seatedFirst: (value) => m.assignmentImpactEffectSeatedFirst({ value }),
-		leftOutFirst: (value) => m.assignmentImpactEffectLeftOutFirst({ value }),
-		seatedFirstPlain: () => m.assignmentImpactEffectSeatedFirstPlain(),
-		leftOutFirstPlain: () => m.assignmentImpactEffectLeftOutFirstPlain(),
+	const effects: Record<ImpactEffect, () => string> = {
+		seatedFirst: () => m.assignmentImpactEffectSeatedFirst(),
+		leftOutFirst: () => m.assignmentImpactEffectLeftOutFirst(),
 		wishesWeighMore: () => m.assignmentImpactEffectWishesWeighMore(),
 		wishesWeighLess: () => m.assignmentImpactEffectWishesWeighLess(),
 		winContested: () => m.assignmentImpactEffectWinContested(),
@@ -260,7 +258,7 @@
 							<span class="font-semibold">{subjects[impact.subject](impact.rating)}</span>
 							{#each impact.effects as effect, index (effect.effect)}
 								<span class={toneClass[effect.tone]}
-									>{index > 0 ? ' · ' : ': '}{effects[effect.effect](effect.value ?? 0)}</span
+									>{index > 0 ? ' · ' : ': '}{effects[effect.effect]()}</span
 								>
 							{/each}
 						</li>
