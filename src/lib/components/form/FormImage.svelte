@@ -73,57 +73,55 @@
 </script>
 
 <Field {form} {name}>
-	{#snippet children()}
-		<div class="flex w-full flex-col gap-1">
-			<Control>
-				{#snippet children({ props })}
-					<Label class="label mb-1 whitespace-break-spaces">{label}</Label>
-					<FormDescription {description} />
-					<div
-						role="presentation"
-						class="border-base-300 bg-base-200/50 hover:border-primary relative flex min-h-36 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed transition-colors {dragging
-							? 'border-primary bg-primary/10'
+	<div class="flex w-full flex-col gap-1">
+		<Control>
+			{#snippet children({ props })}
+				<Label class="label mb-1 whitespace-break-spaces">{label}</Label>
+				<FormDescription {description} />
+				<div
+					role="presentation"
+					class="border-base-300 bg-base-200/50 hover:border-primary relative flex min-h-36 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed transition-colors {dragging
+						? 'border-primary bg-primary/10'
+						: ''}"
+					ondragover={(e) => {
+						e.preventDefault();
+						dragging = true;
+					}}
+					ondragleave={() => (dragging = false)}
+					ondrop={onDrop}
+				>
+					{#if src}
+						<img {src} alt={label} class="max-h-48 w-full object-contain p-2" />
+					{/if}
+					<label
+						class="flex cursor-pointer flex-col items-center gap-1 p-6 text-center text-sm {src
+							? 'bg-base-100/80 absolute inset-0 justify-center opacity-0 transition-opacity hover:opacity-100 focus-within:opacity-100'
 							: ''}"
-						ondragover={(e) => {
-							e.preventDefault();
-							dragging = true;
-						}}
-						ondragleave={() => (dragging = false)}
-						ondrop={onDrop}
 					>
-						{#if src}
-							<img {src} alt={label} class="max-h-48 w-full object-contain p-2" />
-						{/if}
-						<label
-							class="flex cursor-pointer flex-col items-center gap-1 p-6 text-center text-sm {src
-								? 'bg-base-100/80 absolute inset-0 justify-center opacity-0 transition-opacity hover:opacity-100 focus-within:opacity-100'
-								: ''}"
+						<i class="fa-duotone fa-cloud-arrow-up text-primary text-2xl"></i>
+						<span class="font-medium">{src ? m.replaceImage() : m.chooseOrDropImage()}</span>
+						<input
+							{...props}
+							bind:this={input}
+							type="file"
+							class="sr-only"
+							{accept}
+							bind:files={$file}
+						/>
+					</label>
+					{#if picked}
+						<button
+							type="button"
+							class="btn btn-circle btn-xs btn-neutral absolute top-2 right-2"
+							aria-label={m.discardSelectedImage()}
+							onclick={clearPicked}
 						>
-							<i class="fa-duotone fa-cloud-arrow-up text-primary text-2xl"></i>
-							<span class="font-medium">{src ? m.replaceImage() : m.chooseOrDropImage()}</span>
-							<input
-								{...props}
-								bind:this={input}
-								type="file"
-								class="sr-only"
-								{accept}
-								bind:files={$file}
-							/>
-						</label>
-						{#if picked}
-							<button
-								type="button"
-								class="btn btn-circle btn-xs btn-neutral absolute top-2 right-2"
-								aria-label={m.discardSelectedImage()}
-								onclick={clearPicked}
-							>
-								<i class="fa-solid fa-xmark"></i>
-							</button>
-						{/if}
-					</div>
-				{/snippet}
-			</Control>
-			<FormFieldErrors />
-		</div>
-	{/snippet}
+							<i class="fa-solid fa-xmark"></i>
+						</button>
+					{/if}
+				</div>
+			{/snippet}
+		</Control>
+		<FormFieldErrors />
+	</div>
 </Field>
