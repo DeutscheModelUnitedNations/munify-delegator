@@ -72,9 +72,11 @@
 	};
 
 	const importFile = async (event: Event & { currentTarget: HTMLInputElement }) => {
-		const file = event.currentTarget.files?.[0];
+		// currentTarget is reset once the event dispatch ends, so keep the input before awaiting
+		const input = event.currentTarget;
+		const file = input.files?.[0];
 		if (file) importJson(await file.text());
-		event.currentTarget.value = '';
+		input.value = '';
 	};
 
 	const resetForm = () => {
