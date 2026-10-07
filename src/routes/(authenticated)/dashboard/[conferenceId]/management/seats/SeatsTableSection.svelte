@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { DataTable } from '$lib/components/tanStackTable/ui';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -21,14 +22,11 @@
 	{/if}
 
 	<!-- fits the viewport and scrolls inside itself, so the header row and the first column never leave the screen -->
-	<div
-		class="border-base-content/20 rounded-box max-h-[calc(100dvh-8rem)] w-full overflow-auto border"
+	<!-- fits the viewport and scrolls inside itself, so the header row and the first column never leave the screen -->
+	<DataTable.Root
+		wrapperClass="max-h-[calc(100dvh-8rem)] w-full"
+		class="table-pin-cols text-center"
 	>
-		<!-- borders sit on the cells: the pinned ones would otherwise leave gaps in collapsed row borders -->
-		<table
-			class="table-pin-rows table-pin-cols table border-separate border-spacing-0 text-center [&_td]:border-r [&_td]:border-b [&_th]:border-r [&_th]:border-b [&_td]:border-base-content/15 [&_th]:border-base-content/15 [&_tr>:last-child]:border-r-0 [&_tbody>tr:last-child>*]:border-b-0"
-		>
-			{@render children()}
-		</table>
-	</div>
+		{@render children()}
+	</DataTable.Root>
 </section>

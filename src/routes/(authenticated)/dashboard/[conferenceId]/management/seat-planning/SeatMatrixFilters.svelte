@@ -15,7 +15,7 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
-	<label class="input input-sm w-56">
+	<label class="input input-bordered flex grow items-center gap-2">
 		<i class="fa-duotone fa-magnifying-glass"></i>
 		<input
 			type="search"
@@ -25,7 +25,7 @@
 		/>
 	</label>
 	<select
-		class="select select-sm w-auto"
+		class="select select-bordered w-auto"
 		aria-label={m.countryInfoRegionalGroup()}
 		value={params.group ?? ''}
 		onchange={(e) => (params.group = e.currentTarget.value || null)}
@@ -36,7 +36,7 @@
 		{/each}
 	</select>
 	<select
-		class="select select-sm w-auto"
+		class="select select-bordered w-auto"
 		aria-label={m.seatPlanningDelegationSize()}
 		value={params.size?.toString() ?? ''}
 		onchange={(e) => (params.size = e.currentTarget.value ? Number(e.currentTarget.value) : null)}
@@ -49,7 +49,7 @@
 	<label class="label cursor-pointer gap-2 text-sm">
 		<input
 			type="checkbox"
-			class="toggle toggle-sm"
+			class="toggle"
 			checked={params.noSeat ?? false}
 			onchange={(e) => (params.noSeat = e.currentTarget.checked || null)}
 		/>

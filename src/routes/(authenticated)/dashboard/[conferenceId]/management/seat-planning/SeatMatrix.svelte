@@ -4,6 +4,7 @@
 	import { matchesSeatFilters, type SizeLimits } from '$lib/helpers/seatPlanning/hints';
 	import { nextSortParams, sortSeatRows } from '$lib/helpers/seatPlanning/sortRows';
 	import { unMembers } from '$lib/helpers/seatPlanning/unMembers';
+	import { DataTable } from '$lib/components/tanStackTable/ui';
 	import CountryInfoPopover from './CountryInfoPopover.svelte';
 	import { useSeatPlanningParams } from './filters';
 	import SeatMatrixFilters from './SeatMatrixFilters.svelte';
@@ -56,6 +57,9 @@
 		params.sort = next.sort;
 	}
 
+	// w-52 + w-40 + w-16 per committee and for the total column
+	const minWidth = $derived(208 + 160 + 64 * (committees.length + 1));
+
 	const header = (key: string) => ({
 		active: (params.sort ?? 'name') === key,
 		descending: params.desc ?? false,
@@ -63,13 +67,17 @@
 	});
 </script>
 
-<div class="flex h-full min-h-0 flex-col gap-3">
+<div class="flex h-full flex-col gap-3">
 	<SeatMatrixFilters {sizes} />
 
-	<!-- shrink to the table instead of spreading its columns over wide screens -->
-	<div class="border-base-300 rounded-box min-h-0 w-fit max-w-full grow overflow-auto border">
-		<!-- fixed layout: column widths must not move under the cursor while seats are toggled -->
-		<table class="table-pin-rows table-pin-cols table-xs table w-max table-fixed">
+	<!-- the table is laid out out of flow, so it takes the height the sidebar gives the row instead of
+	     stretching it; stacked below xl there is no sidebar beside it, hence the minimum -->
+	<div class="relative min-h-96 grow">
+		<DataTable.Root
+			wrapperClass="absolute inset-0"
+			class="table-pin-cols table-fixed"
+			style="min-width: {minWidth}px"
+		>
 			<thead>
 				<tr>
 					<SortableHeader label={m.seatPlanningState()} pinned class="w-52" {...header('name')}>
@@ -117,7 +125,7 @@
 			<tfoot>
 				<SeatMatrixTotals committees={planner.committees} {totalSeats} />
 			</tfoot>
-		</table>
+		</DataTable.Root>
 	</div>
 </div>
 

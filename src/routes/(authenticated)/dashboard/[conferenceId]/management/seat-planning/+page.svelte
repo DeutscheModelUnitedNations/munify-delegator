@@ -61,7 +61,7 @@
 	const params = useSeatPlanningParams();
 </script>
 
-<div class="flex h-full min-h-0 w-full flex-col gap-4 py-4">
+<div class="flex w-full flex-col gap-4 py-4">
 	{#if conference.state !== 'PRE'}
 		<div role="alert" class="alert alert-warning">
 			<i class="fa-duotone fa-triangle-exclamation text-xl"></i>
@@ -87,10 +87,10 @@
 		/>
 	</Tabs>
 
-	<div class="flex min-h-0 grow flex-col gap-4 xl:flex-row">
+	<div class="flex flex-col gap-4 xl:flex-row">
 		<!-- the compact matrix keeps its own width so the hints sit right next to it; the NSA list
 		     needs the room for its inputs -->
-		<div class="min-h-0 min-w-0 {params.tab === 'nsa' ? 'grow' : ''}">
+		<div class="flex min-h-0 min-w-0 grow flex-col">
 			{#if params.tab === 'nsa'}
 				<NonStateActorTable
 					conferenceId={routeParams.conferenceId}
@@ -107,7 +107,7 @@
 				<SeatMatrix {planner} {committees} {sizeLimits} />
 			{/if}
 		</div>
-		<aside class="shrink-0 overflow-y-auto xl:w-96">
+		<aside class="shrink-0 xl:w-96">
 			<HintsSidebar {planner} {committees} {nonStateActors} {sizeLimits} />
 		</aside>
 	</div>

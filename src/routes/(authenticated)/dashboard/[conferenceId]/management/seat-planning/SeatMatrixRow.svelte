@@ -22,14 +22,8 @@
 	const outsideLimits = $derived(isOutsideSizeLimits(size, sizeLimits));
 </script>
 
-<tr class="group hover:bg-base-200 {outsideLimits ? 'bg-error/10' : ''}">
-	<!-- the pinned column needs an opaque background, so it follows the row's tint itself: the
-	     gradient layers the translucent error tint over the opaque base colour -->
-	<th
-		class="bg-base-100 group-hover:bg-base-200 font-normal {outsideLimits
-			? 'from-error/10 to-error/10 bg-linear-to-r'
-			: ''}"
-	>
+<tr class="hover:bg-base-300 {outsideLimits ? 'bg-error/10' : ''}">
+	<th class="bg-inherit font-normal">
 		<button
 			class="flex cursor-help items-center gap-2 text-left"
 			onmouseenter={(e) => onShowInfo(row, e.currentTarget)}

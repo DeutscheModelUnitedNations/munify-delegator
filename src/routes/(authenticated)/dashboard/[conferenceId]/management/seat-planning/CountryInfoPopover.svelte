@@ -15,6 +15,23 @@
 	const SHOW_DELAY = 250;
 	const HIDE_DELAY = 150;
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	let anchorElement: HTMLElement | undefined;
+	let open = $state(false);
+
+	/** a leave event alone is not reliable (a focused anchor, a popover that appears under a
+	 * resting pointer), so while open the pointer's position decides */
+	$effect(() => {
+		if (!open) return;
+		const onMove = (event: PointerEvent) => {
+			const inside = event
+				.composedPath()
+				.some((node) => node === popover || node === anchorElement);
+			if (inside) clearTimeout(timer);
+			else hide();
+		};
+		window.addEventListener('pointermove', onMove);
+		return () => window.removeEventListener('pointermove', onMove);
+	});
 
 	/** Shows the facts about a state next to the hovered or focused element */
 	export function show(target: UnMember, anchor: HTMLElement) {
@@ -22,17 +39,22 @@
 		timer = setTimeout(() => {
 			const rect = anchor.getBoundingClientRect();
 			member = target;
+			anchorElement = anchor;
 			position = {
 				top: Math.min(rect.bottom + 4, window.innerHeight - 320),
 				left: rect.left
 			};
 			if (!popover?.matches(':popover-open')) popover?.showPopover();
+			open = true;
 		}, SHOW_DELAY);
 	}
 
 	export function hide() {
 		clearTimeout(timer);
-		timer = setTimeout(() => popover?.hidePopover(), HIDE_DELAY);
+		timer = setTimeout(() => {
+			popover?.hidePopover();
+			open = false;
+		}, HIDE_DELAY);
 	}
 
 	const languageNames = $derived.by(() => {

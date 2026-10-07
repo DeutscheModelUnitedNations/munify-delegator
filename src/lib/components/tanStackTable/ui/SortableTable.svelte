@@ -14,6 +14,7 @@
 	} from '$lib/components/tanStackTable';
 	import { m } from '$lib/paraglide/messages';
 	import TableRoot from './Table.svelte';
+	import SortButton from './SortButton.svelte';
 	import TableHeader from './TableHeader.svelte';
 	import TableBody from './TableBody.svelte';
 	import TableRow from './TableRow.svelte';
@@ -41,19 +42,9 @@
 		onRowClick,
 		isRowSelected,
 		columnClasses = {},
-		class: className = 'table-zebra table-sm'
+		class: className = ''
 	}: Props = $props();
 </script>
-
-{#snippet sortIndicator(sorted: false | 'asc' | 'desc', canSort: boolean)}
-	{#if sorted === 'asc'}
-		<i class="fa-duotone fa-arrow-down-a-z text-xs"></i>
-	{:else if sorted === 'desc'}
-		<i class="fa-duotone fa-arrow-down-z-a text-xs"></i>
-	{:else if canSort}
-		<i class="fa-duotone fa-arrows-up-down text-xs opacity-30"></i>
-	{/if}
-{/snippet}
 
 <TableRoot class={className}>
 	<TableHeader>
@@ -64,14 +55,9 @@
 					{@const sorted = column_getIsSorted(header.column)}
 					<TableHead class={columnClasses[header.column.id]}>
 						{#if !header.isPlaceholder}
-							<button
-								class="flex items-center gap-2"
-								class:cursor-pointer={canSort}
-								onclick={() => column_toggleSorting(header.column)}
-							>
+							<SortButton {sorted} {canSort} onclick={() => column_toggleSorting(header.column)}>
 								<FlexRender {header} />
-								{@render sortIndicator(sorted, canSort)}
-							</button>
+							</SortButton>
 						{/if}
 					</TableHead>
 				{/each}

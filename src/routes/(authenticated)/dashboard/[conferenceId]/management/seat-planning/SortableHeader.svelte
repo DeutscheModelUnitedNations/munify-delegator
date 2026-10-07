@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
+	import SortButton from '$lib/components/tanStackTable/ui/SortButton.svelte';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -23,11 +24,6 @@
 		class: className = '',
 		children
 	}: Props = $props();
-
-	const icon = $derived.by(() => {
-		if (!active) return 'fa-sort opacity-30';
-		return descending ? 'fa-sort-down' : 'fa-sort-up';
-	});
 </script>
 
 <svelte:element
@@ -35,12 +31,11 @@
 	class="bg-base-200 {pinned ? 'z-20' : ''} {className}"
 	aria-sort={active ? (descending ? 'descending' : 'ascending') : 'none'}
 >
-	<button
-		class="inline-flex items-center gap-1 font-semibold hover:underline"
+	<SortButton
+		sorted={active ? (descending ? 'desc' : 'asc') : false}
 		title={m.seatPlanningSortBy({ column: label })}
 		onclick={onSort}
 	>
 		{@render children()}
-		<i class="fa-duotone {icon} text-xs"></i>
-	</button>
+	</SortButton>
 </svelte:element>

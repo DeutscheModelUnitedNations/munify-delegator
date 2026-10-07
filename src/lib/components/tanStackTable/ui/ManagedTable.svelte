@@ -38,7 +38,6 @@
 	import ExportButton from '../toolbar/ExportButton.svelte';
 	import PrintHeader from '../toolbar/PrintHeader.svelte';
 	import SettingsButton from '../toolbar/SettingsButton.svelte';
-	import { getTableSettings } from '../toolbar/tableSettings.svelte';
 
 	/**
 	 * The table of the management pages: a sortable, paginated table with a search box kept in the
@@ -94,8 +93,6 @@
 		searchColumns,
 		toolbar
 	}: Props = $props();
-
-	const { getTableSize, getZebra } = getTableSettings();
 
 	// Everything a viewer can set is kept in the URL, so a copied link shows the same table. The
 	// URL key of the search is fixed for a table's lifetime; the search params object cannot follow
@@ -312,12 +309,6 @@
 <PrintHeader {title} searchPattern={globalFilter} />
 
 <div class="mt-4 min-w-0">
-	<SortableTable
-		{table}
-		{onRowClick}
-		{isRowSelected}
-		{columnClasses}
-		class="{getZebra() ? 'table-zebra' : ''} table-{getTableSize()}"
-	/>
+	<SortableTable {table} {onRowClick} {isRowSelected} {columnClasses} />
 	<DataTable.Pagination {table} />
 </div>

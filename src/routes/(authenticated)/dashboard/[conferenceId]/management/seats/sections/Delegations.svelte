@@ -172,7 +172,7 @@
 	{@const delegation = delegations.find((d) => d.assignedNation?.alpha3Code === nation.alpha3Code)}
 	{@const sumSeats = nationSeatTotal(nation)}
 	<tr>
-		<th class="bg-base-100 z-10! text-left font-normal">
+		<th class="z-10! bg-inherit text-left font-normal">
 			<div class="flex flex-col items-start gap-1.5">
 				<div class="flex items-center gap-2">
 					<Flag alpha2Code={nation.alpha2Code} size="xs" />
