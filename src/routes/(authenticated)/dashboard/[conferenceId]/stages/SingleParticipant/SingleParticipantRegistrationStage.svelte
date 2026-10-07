@@ -87,7 +87,6 @@
 		});
 		toast.promise(promise, genericPromiseToastMessages);
 		await promise;
-		goto(resolve('/dashboard'));
 	};
 
 	let todos = $derived([
