@@ -2,8 +2,9 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import { client } from '$lib/api/rumbleClient/client';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormSection from '$lib/components/form/FormSection.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
+	import PdfTemplateHelp from '$lib/components/form/PdfTemplateHelp.svelte';
 	import FormFile from '$lib/components/form/FormFile.svelte';
 	import {
 		downloadCompleteCertificate,
@@ -92,73 +93,81 @@
 	}
 </script>
 
-<div class="alert alert-info mb-6">
-	<i class="fas fa-circle-info"></i>
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-	<span>{@html m.tabExplanationDocuments()}</span>
-</div>
-
-<FormFieldset title={m.postalRegistration()}>
+<FormSection title={m.postalRegistration()} icon="envelope">
 	<FormTextInput {form} name="postalName" placeholder={m.name()} label={m.name()} />
-	<FormTextInput {form} name="postalStreet" placeholder={m.street()} label={m.street()} />
-	<FormTextInput
-		{form}
-		name="postalApartment"
-		placeholder={m.streetAddition()}
-		label={m.streetAddition()}
-	/>
-	<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
-	<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
+		<FormTextInput {form} name="postalStreet" placeholder={m.street()} label={m.street()} />
+		<FormTextInput
+			{form}
+			name="postalApartment"
+			placeholder={m.streetAddition()}
+			label={m.streetAddition()}
+		/>
+	</div>
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
+		<FormTextInput {form} name="postalZip" placeholder={m.zipCode()} label={m.zipCode()} />
+		<FormTextInput {form} name="postalCity" placeholder={m.city()} label={m.city()} />
+	</div>
 	<FormTextInput {form} name="postalCountry" placeholder={m.country()} label={m.country()} />
-</FormFieldset>
+</FormSection>
 
-<FormFieldset title={m.postalTemplates()}>
-	<FormFile
-		{form}
-		name="contractBasePDF"
-		label={m.postalTemplateContract()}
-		accept="*.pdf"
-		inputClass={storedDocuments.contractContentSet ? 'file-input-success' : undefined}
-	/>
-	<FormFile
-		{form}
-		name="guardianConsentBasePDF"
-		label={m.postalTemplateGuardianConsent()}
-		accept="*.pdf"
-		inputClass={storedDocuments.guardianConsentContentSet ? 'file-input-success' : undefined}
-	/>
-	<FormFile
-		{form}
-		name="mediaConsentBasePDF"
-		label={m.postalTemplateMediaConsent()}
-		accept="*.pdf"
-		inputClass={storedDocuments.mediaConsentContentSet ? 'file-input-success' : undefined}
-	/>
-	<FormFile
-		{form}
-		name="termsAndConditionsBasePDF"
-		label={m.postalTemplateTermsAndConditions()}
-		accept="*.pdf"
-		inputClass={storedDocuments.termsAndConditionsContentSet ? 'file-input-success' : undefined}
-	/>
-	<button
-		class="btn dark:btn-outline {loading ||
-		!storedDocuments.contractContentSet ||
-		!storedDocuments.guardianConsentContentSet ||
-		!storedDocuments.mediaConsentContentSet ||
-		!storedDocuments.termsAndConditionsContentSet
-			? 'btn-disabled'
-			: ''}"
-		onclick={async (e) => {
-			e.preventDefault();
-			handleGeneratePostalPDF();
-		}}
-	>
-		<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
-	</button>
-</FormFieldset>
+<FormSection title={m.postalTemplates()} icon="file-pdf">
+	{#snippet titleAction()}
+		<PdfTemplateHelp />
+	{/snippet}
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+		<FormFile
+			{form}
+			name="contractBasePDF"
+			label={m.postalTemplateContract()}
+			accept="*.pdf"
+			inputClass={storedDocuments.contractContentSet ? 'file-input-success' : undefined}
+		/>
+		<FormFile
+			{form}
+			name="guardianConsentBasePDF"
+			label={m.postalTemplateGuardianConsent()}
+			accept="*.pdf"
+			inputClass={storedDocuments.guardianConsentContentSet ? 'file-input-success' : undefined}
+		/>
+		<FormFile
+			{form}
+			name="mediaConsentBasePDF"
+			label={m.postalTemplateMediaConsent()}
+			accept="*.pdf"
+			inputClass={storedDocuments.mediaConsentContentSet ? 'file-input-success' : undefined}
+		/>
+		<FormFile
+			{form}
+			name="termsAndConditionsBasePDF"
+			label={m.postalTemplateTermsAndConditions()}
+			accept="*.pdf"
+			inputClass={storedDocuments.termsAndConditionsContentSet ? 'file-input-success' : undefined}
+		/>
+	</div>
+	<div>
+		<button
+			class="btn btn-sm dark:btn-outline {loading ||
+			!storedDocuments.contractContentSet ||
+			!storedDocuments.guardianConsentContentSet ||
+			!storedDocuments.mediaConsentContentSet ||
+			!storedDocuments.termsAndConditionsContentSet
+				? 'btn-disabled'
+				: ''}"
+			onclick={async (e) => {
+				e.preventDefault();
+				handleGeneratePostalPDF();
+			}}
+		>
+			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+		</button>
+	</div>
+</FormSection>
 
-<FormFieldset title={m.certificate()}>
+<FormSection title={m.certificate()} icon="award">
+	{#snippet titleAction()}
+		<PdfTemplateHelp />
+	{/snippet}
 	<FormFile
 		{form}
 		name="certificateBasePDF"
@@ -166,15 +175,17 @@
 		accept="*.pdf"
 		inputClass={storedDocuments.certificateContentSet ? 'file-input-success' : undefined}
 	/>
-	<button
-		class="btn dark:btn-outline {loading || !storedDocuments.certificateContentSet
-			? 'btn-disabled'
-			: ''}"
-		onclick={async (e) => {
-			e.preventDefault();
-			handleGenerateCertificatePDF();
-		}}
-	>
-		<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
-	</button>
-</FormFieldset>
+	<div>
+		<button
+			class="btn btn-sm dark:btn-outline {loading || !storedDocuments.certificateContentSet
+				? 'btn-disabled'
+				: ''}"
+			onclick={async (e) => {
+				e.preventDefault();
+				handleGenerateCertificatePDF();
+			}}
+		>
+			<i class="fas {!loading ? 'fa-vial' : 'fa-spinner fa-spin'}"></i>{m.postalTemplateTest()}
+		</button>
+	</div>
+</FormSection>

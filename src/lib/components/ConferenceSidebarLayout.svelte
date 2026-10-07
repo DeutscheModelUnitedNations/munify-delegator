@@ -10,16 +10,15 @@
 	 */
 	interface Props {
 		conferenceId: string;
-		expanded: boolean;
 		nav: Snippet;
 		children: Snippet;
 	}
 
-	let { conferenceId, expanded = $bindable(), nav, children }: Props = $props();
+	let { conferenceId, nav, children }: Props = $props();
 </script>
 
-<div class="flex min-w-0 grow basis-0 overflow-hidden">
-	<SideNavigationDrawer bind:expanded>
+<div class="flex min-w-0 grow basis-0 overflow-x-clip">
+	<SideNavigationDrawer>
 		<NavMenu>
 			{@render nav()}
 		</NavMenu>

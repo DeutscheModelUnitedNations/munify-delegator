@@ -76,7 +76,7 @@
 				</div>
 			{:else}
 				<!-- Summary -->
-				<div class="stats bg-base-100 w-full mb-4">
+				<div class="stats w-full mb-4">
 					<div class="stat py-2 px-3">
 						<div class="stat-title text-xs">{m.statsUniqueCountries()}</div>
 						<div class="stat-value text-xl">{uniqueCountries}</div>
@@ -88,7 +88,7 @@
 				</div>
 
 				<!-- Chart -->
-				<div class="rounded-lg bg-base-100 p-4">
+				<div>
 					{#if showPieChart}
 						<PieChart data={pieData} height="300px" />
 					{:else}

@@ -87,6 +87,7 @@
 		"@urql/exchange-graphcache": "^9.0.2",
 		"@vitest/coverage-v8": "^5.0.3",
 		"barcode-detector": "^3.2.2",
+		"bits-ui": "^2.19.5",
 		"codenamize-ts": "1.0.2",
 		"concurrently": "^10.0.5",
 		"csv-parse": "^7.0.3",

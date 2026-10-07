@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormSection from '$lib/components/form/FormSection.svelte';
 	import type { ConferenceSettings } from '../form-schema';
+	import { conferenceStateIcon } from '../../../../conferenceGroups';
 
 	let { form }: { form: SuperForm<ConferenceSettings> } = $props();
 	let formData = $derived(form.form);
@@ -40,58 +41,52 @@
 	];
 </script>
 
-<div class="alert alert-info mb-6">
-	<i class="fas fa-circle-info"></i>
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-	<span>{@html m.tabExplanationStatus()}</span>
-</div>
-
-<FormFieldset title={m.features()}>
+<FormSection title={m.features()} icon="toggle-on">
 	<div class="flex flex-col gap-3">
-		<label class="label cursor-pointer justify-start gap-3">
+		<label class="flex cursor-pointer items-center gap-3">
 			<input
 				type="checkbox"
 				class="toggle toggle-primary"
 				name="unlockPayments"
 				bind:checked={$formData.unlockPayments}
 			/>
-			<span class="label-text">{m.paymentOpen()}</span>
+			<span>{m.paymentOpen()}</span>
 		</label>
-		<label class="label cursor-pointer justify-start gap-3">
+		<label class="flex cursor-pointer items-center gap-3">
 			<input
 				type="checkbox"
 				class="toggle toggle-primary"
 				name="unlockPostals"
 				bind:checked={$formData.unlockPostals}
 			/>
-			<span class="label-text">{m.postalOpen()}</span>
+			<span>{m.postalOpen()}</span>
 		</label>
-		<label class="label cursor-pointer justify-start gap-3">
+		<label class="flex cursor-pointer items-center gap-3">
 			<input
 				type="checkbox"
 				class="toggle toggle-primary"
 				name="isOpenPaperSubmission"
 				bind:checked={$formData.isOpenPaperSubmission}
 			/>
-			<span class="label-text">{m.paperSubmissionOpen()}</span>
+			<span>{m.paperSubmissionOpen()}</span>
 		</label>
-		<label class="label cursor-pointer justify-start gap-3">
+		<label class="flex cursor-pointer items-center gap-3">
 			<input
 				type="checkbox"
 				class="toggle toggle-primary"
 				name="showCalendar"
 				bind:checked={$formData.showCalendar}
 			/>
-			<span class="label-text">{m.showCalendar()}</span>
+			<span>{m.showCalendar()}</span>
 		</label>
 	</div>
-</FormFieldset>
+</FormSection>
 
-<FormFieldset title={m.conferenceStatus()}>
+<FormSection title={m.conferenceStatus()} icon="signal">
 	<div class="flex flex-col gap-3">
 		{#each conferenceStateOptions as option (option.value)}
 			<label
-				class="flex items-start gap-3 p-3 rounded-lg border border-base-300 cursor-pointer hover:bg-base-200 transition-colors {$formData.state ===
+				class="border-base-300 hover:bg-base-200 flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {$formData.state ===
 				option.value
 					? 'border-primary bg-primary/5'
 					: ''}"
@@ -105,10 +100,13 @@
 					onchange={() => ($formData.state = option.value)}
 				/>
 				<div class="flex flex-col gap-1">
-					<span class="font-medium">{option.label}</span>
+					<span class="font-medium">
+						<i class="{conferenceStateIcon(option.value)} mr-1"></i>
+						{option.label}
+					</span>
 					<span class="text-sm opacity-70">{option.description}</span>
 				</div>
 			</label>
 		{/each}
 	</div>
-</FormFieldset>
+</FormSection>

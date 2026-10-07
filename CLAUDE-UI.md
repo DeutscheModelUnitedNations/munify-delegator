@@ -316,6 +316,19 @@ Renders a keyboard shortcut hint with OS-aware modifier formatting. On macOS, re
 
 Forms use `sveltekit-superforms` for validation and state management. Always structure forms consistently.
 
+### FormSection (long forms)
+
+For long forms (the profile, the conference settings) group fields with `FormSection` instead:
+icon, title and optional `description` on the left, fields on the right, groups separated by a
+rule rather than boxed. Lay out related fields side by side with a `grid` inside it.
+
+```svelte
+<FormSection title={m.address()} icon="house">...</FormSection>
+```
+
+`FormImage` is the image upload (drop zone with preview, replace and discard). It fills the same
+`File` field as `FormFile`; pass `storedUrl` to preview what the server already holds.
+
 ### FormFieldset (Required for Grouping)
 
 **Always** wrap related form inputs with `FormFieldset` to provide visual grouping:
@@ -911,8 +924,8 @@ shares.
 - A thin strip on top of the bar marks impersonation (yellow) and the dev server (red).
 
 The dashboard has no sidebar. Only the management and team-management areas add one, through
-`SideNavigationDrawer` (directly, or via `ConferenceSidebarLayout`): a collapsible menu for the many
-pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
+`SideNavigationDrawer` (directly, or via `ConferenceSidebarLayout`): a menu that is always fully shown on
+desktop (a drawer behind the top bar's burger on mobile) for the many pages of that area, with no logo and no back/dashboard/home buttons - the top bar covers those.
 
 ### NavMenu
 
@@ -923,18 +936,18 @@ Sidebar navigation:
 	import NavMenu from '$lib/components/navMenu/NavMenu.svelte';
 	import NavMenuButton from '$lib/components/navMenu/NavMenuButton.svelte';
 	import NavMenuDetails from '$lib/components/navMenu/NavMenuDetails.svelte';
-
-	let expanded = $state(true);
 </script>
 
 <NavMenu>
-	<NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" bind:expanded />
+	<NavMenuButton title="Dashboard" href="/dashboard" icon="fa-home" />
 	<NavMenuDetails title="Settings" icon="fa-cog">
-		<NavMenuButton title="General" href="/settings/general" icon="fa-gear" bind:expanded />
-		<NavMenuButton title="Security" href="/settings/security" icon="fa-shield" bind:expanded />
+		<NavMenuButton title="General" href="/settings/general" icon="fa-gear" />
+		<NavMenuButton title="Security" href="/settings/security" icon="fa-shield" />
 	</NavMenuDetails>
 </NavMenu>
 ```
+
+`NavMenuDetails` is a labelled group whose entries are indented below it; it does not collapse.
 
 ### ConferenceSidebarLayout
 

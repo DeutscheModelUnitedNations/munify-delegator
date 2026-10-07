@@ -41,7 +41,7 @@
 		</h2>
 
 		{#if stats?.registered}
-			<div class="stats bg-base-100 w-full">
+			<div class="stats w-full">
 				<div class="stat py-2 px-3">
 					<div class="stat-title text-xs">{m.delegationMembers()}</div>
 					<div class="stat-value text-xl">{chartData[0]?.value ?? 0}</div>

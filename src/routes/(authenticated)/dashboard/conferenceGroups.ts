@@ -47,3 +47,22 @@ const groupLabels: Record<ConferenceGroupKey, () => string> = {
 export function conferenceGroupLabel(key: ConferenceGroupKey) {
 	return groupLabels[key]();
 }
+
+const groupIcons: Record<ConferenceGroupKey, string> = {
+	active: 'fa-circle-play',
+	registration: 'fa-envelope-open-text',
+	preparation: 'fa-list-check',
+	upcoming: 'fa-calendar-clock',
+	past: 'fa-flag-checkered'
+};
+
+/** The FontAwesome Duotone icon of a group, wherever conferences are listed. */
+export function conferenceGroupIcon(key: ConferenceGroupKey) {
+	return `fa-duotone ${groupIcons[key]}`;
+}
+
+/** The icon a conference state goes by: the one of the group that state lands in. */
+export function conferenceStateIcon(state: ConferencestateEnum) {
+	const group = groupOrder.find((entry) => entry.state === state);
+	return group ? conferenceGroupIcon(group.key) : conferenceGroupIcon('upcoming');
+}

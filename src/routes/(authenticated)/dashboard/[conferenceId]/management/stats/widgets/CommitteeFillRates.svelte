@@ -43,7 +43,7 @@
 				<!-- Committee gauges grid -->
 				<div class="grid grid-cols-2 gap-4 md:grid-cols-3">
 					{#each sortedCommittees as committee (committee.committeeId)}
-						<div class="rounded-lg bg-base-100 p-3">
+						<div>
 							<GaugeChart value={committee.fillPercentage} height="120px" />
 							<div class="mt-1 text-center">
 								<div class="text-xs font-medium">{committee.name}</div>

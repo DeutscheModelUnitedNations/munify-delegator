@@ -4,25 +4,18 @@
 	interface Props {
 		title: string;
 		icon: string;
-		small?: boolean;
 		children: Snippet;
 	}
 
-	let { title, icon, small = false, children }: Props = $props();
+	let { title, icon, children }: Props = $props();
 </script>
 
-{#if small}
-	{@render children()}
-{:else}
-	<li>
-		<details>
-			<summary>
-				<i class="fa-duotone {icon} w-5 text-center"></i>
-				<span>{title}</span>
-			</summary>
-			<ul>
-				{@render children()}
-			</ul>
-		</details>
-	</li>
-{/if}
+<li>
+	<span class="menu-title flex items-center gap-2 pt-3">
+		<i class="fa-duotone {icon} w-5 text-center"></i>
+		{title}
+	</span>
+	<ul>
+		{@render children()}
+	</ul>
+</li>

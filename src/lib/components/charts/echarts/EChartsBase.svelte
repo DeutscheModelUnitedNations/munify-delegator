@@ -2,7 +2,7 @@
 	import * as echarts from 'echarts';
 	import type { EChartsOption } from 'echarts';
 	import { onMount } from 'svelte';
-	import { themedChartOptions, type ThemeColors } from './chartOptions';
+	import { chartTheme, themedChartOptions, type ThemeColors } from './chartOptions';
 
 	interface Props {
 		options: EChartsOption;
@@ -35,14 +35,13 @@
 			};
 		}
 
-		const isDark =
-			document.documentElement.getAttribute('data-theme')?.includes('dark') ||
-			window.matchMedia('(prefers-color-scheme: dark)').matches;
+		// The page's own text color, so every daisyUI theme gets a readable chart.
+		const textColor = getComputedStyle(chartContainer ?? document.body).color;
 
 		return {
-			textColor: isDark ? '#e5e7eb' : '#374151',
+			textColor,
 			backgroundColor: 'transparent',
-			borderColor: isDark ? '#374151' : '#e5e7eb'
+			borderColor: `color-mix(in srgb, ${textColor} 20%, transparent)`
 		};
 	}
 
@@ -64,7 +63,7 @@
 	onMount(() => {
 		if (!chartContainer) return;
 
-		chartInstance = echarts.init(chartContainer);
+		chartInstance = echarts.init(chartContainer, chartTheme(getThemeColors()));
 		chartInstance.setOption(themedOptions, { notMerge, lazyUpdate });
 
 		// Handle resize
@@ -76,8 +75,10 @@
 		// Handle theme changes
 		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		const handleThemeChange = () => {
-			// Recompute themed options with fresh theme colors
-			chartInstance?.setOption(themedChartOptions(options, getThemeColors(), colorPalette), {
+			// The theme is fixed at init, so a theme change builds the chart anew
+			chartInstance?.dispose();
+			chartInstance = echarts.init(chartContainer, chartTheme(getThemeColors()));
+			chartInstance.setOption(themedChartOptions(options, getThemeColors(), colorPalette), {
 				notMerge: true
 			});
 		};

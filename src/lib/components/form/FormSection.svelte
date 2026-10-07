@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 
 	/**
-	 * One group of the profile form: icon, title and an optional hint on the left, the fields on the
+	 * One group of a long form: icon, title and an optional hint on the left, the fields on the
 	 * right. Sections are separated by a rule rather than boxed, so the card holds no nested cards.
 	 */
 	interface Props {
@@ -10,10 +10,12 @@
 		/** FontAwesome duotone icon name without the `fa-` prefix. */
 		icon: string;
 		description?: string;
+		/** Sits beside the title, e.g. a help button. */
+		titleAction?: Snippet;
 		children: Snippet;
 	}
 
-	let { title, icon, description, children }: Props = $props();
+	let { title, icon, description, titleAction, children }: Props = $props();
 
 	const headingId = $props.id();
 </script>
@@ -29,7 +31,10 @@
 			<i class="fa-duotone fa-{icon}"></i>
 		</div>
 		<div class="flex flex-col gap-1">
-			<h3 id={headingId} class="font-semibold">{title}</h3>
+			<div class="flex items-center gap-1">
+				<h3 id={headingId} class="font-semibold">{title}</h3>
+				{@render titleAction?.()}
+			</div>
 			{#if description}
 				<p class="text-base-content/60 text-xs">{description}</p>
 			{/if}

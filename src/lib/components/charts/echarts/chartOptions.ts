@@ -11,6 +11,24 @@ export interface ThemeColors {
 	borderColor: string;
 }
 
+/**
+ * An echarts theme that colors the text of the components echarts styles on its own (legend,
+ * axis labels and names), which the root `textStyle` does not reach.
+ */
+export function chartTheme(theme: ThemeColors) {
+	const axis = {
+		axisLabel: { color: theme.textColor },
+		nameTextStyle: { color: theme.textColor }
+	};
+	return {
+		legend: { textStyle: { color: theme.textColor } },
+		categoryAxis: axis,
+		valueAxis: axis,
+		timeAxis: axis,
+		logAxis: axis
+	};
+}
+
 /** The centered title every chart shows above its plot, or none when it has no title. */
 export function chartTitle(title: string | undefined) {
 	return title ? { text: title, left: 'center', top: 10 } : undefined;
@@ -44,7 +62,7 @@ export interface BarChartParams {
 	color?: string;
 }
 
-export function barChartOptions(p: BarChartParams): EChartsOption {
+function barAxes(p: BarChartParams) {
 	const { horizontal } = p;
 	const categoryAxis = {
 		type: 'category' as const,
@@ -55,16 +73,33 @@ export function barChartOptions(p: BarChartParams): EChartsOption {
 			interval: 0
 		}
 	};
-
 	const valueAxis = {
 		type: 'value' as const,
 		name: horizontal ? p.xAxisName : p.yAxisName
 	};
+	return horizontal
+		? { xAxis: valueAxis, yAxis: categoryAxis }
+		: { xAxis: categoryAxis, yAxis: valueAxis };
+}
 
-	const label = p.showValues
-		? { show: true, position: horizontal ? ('right' as const) : ('top' as const), formatter: '{c}' }
-		: undefined;
+function barSeriesStyle(p: BarChartParams) {
+	const { horizontal } = p;
+	return {
+		itemStyle: p.color
+			? { color: p.color }
+			: { borderRadius: horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0] },
+		label: p.showValues
+			? {
+					show: true,
+					position: horizontal ? ('right' as const) : ('top' as const),
+					formatter: '{c}',
+					textBorderWidth: 0
+				}
+			: undefined
+	};
+}
 
+export function barChartOptions(p: BarChartParams): EChartsOption {
 	return {
 		title: chartTitle(p.title),
 		tooltip: {
@@ -80,16 +115,12 @@ export function barChartOptions(p: BarChartParams): EChartsOption {
 			top: p.title ? 50 : 20,
 			containLabel: true
 		},
-		xAxis: horizontal ? valueAxis : categoryAxis,
-		yAxis: horizontal ? categoryAxis : valueAxis,
+		...barAxes(p),
 		series: [
 			{
 				type: 'bar',
 				data: p.values,
-				itemStyle: p.color
-					? { color: p.color }
-					: { borderRadius: horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0] },
-				label,
+				...barSeriesStyle(p),
 				emphasis: {
 					itemStyle: {
 						shadowBlur: 10,
@@ -194,7 +225,8 @@ const insideValueLabel = {
 	position: 'inside' as const,
 	formatter: positiveValueLabel,
 	fontSize: 10,
-	color: '#fff'
+	color: '#fff',
+	textBorderWidth: 0
 };
 
 export function multiSeriesBarChartOptions(p: MultiSeriesBarChartParams): EChartsOption {

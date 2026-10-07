@@ -53,7 +53,7 @@
 		</h2>
 
 		<!-- Summary stats -->
-		<div class="stats bg-base-100 w-full">
+		<div class="stats w-full">
 			<div class="stat py-2 px-3">
 				<div class="stat-title text-xs">{m.statsWithRole()}</div>
 				<div class="stat-value text-xl text-success">{totalWithRole}</div>
@@ -70,7 +70,7 @@
 
 		<!-- Charts -->
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">{m.statsDelegationMembers()}</h3>
 				<PieChart data={delegationData} donut height="220px" showLegend={true} />
 				<div class="mt-2 text-center text-xs opacity-70">
@@ -79,7 +79,7 @@
 				</div>
 			</div>
 
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">{m.statsSingleParticipants()}</h3>
 				<PieChart data={singleParticipantData} donut height="220px" showLegend={true} />
 				<div class="mt-2 text-center text-xs opacity-70">
@@ -88,7 +88,7 @@
 				</div>
 			</div>
 
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">{m.statsCommitteeAssignment()}</h3>
 				<PieChart data={committeeData} donut height="220px" showLegend={true} />
 				<div class="mt-2 text-center text-xs opacity-70">

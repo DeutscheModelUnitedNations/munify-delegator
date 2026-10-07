@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import CommitteeNameFields from './CommitteeNameFields.svelte';
+	import SeatsPerDelegationField from './SeatsPerDelegationField.svelte';
 
 	interface Props {
 		conferenceId: string;
@@ -41,18 +41,9 @@
 
 <Modal bind:open title={m.addCommittee()}>
 	<CommitteeNameFields bind:name bind:abbreviation />
-	<FormFieldset title={m.seatsPerDelegation()}>
-		<label class="floating-label">
-			<span>{m.seatsPerDelegation()}</span>
-			<input
-				type="number"
-				min="1"
-				class="input w-full"
-				placeholder={m.seatsPerDelegation()}
-				bind:value={numOfSeatsPerDelegation}
-			/>
-		</label>
-	</FormFieldset>
+	<div class="flex flex-col gap-4">
+		<SeatsPerDelegationField bind:seats={numOfSeatsPerDelegation} />
+	</div>
 	{#snippet action()}
 		<button class="btn" onclick={() => (open = false)}>{m.cancel()}</button>
 		<button class="btn btn-primary" disabled={!valid} onclick={create}>

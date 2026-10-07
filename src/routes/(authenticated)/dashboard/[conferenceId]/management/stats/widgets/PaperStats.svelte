@@ -74,7 +74,7 @@
 			</h2>
 
 			<!-- Stats row with historical comparison -->
-			<div class="stats bg-base-100 w-full">
+			<div class="stats w-full">
 				<div class="stat py-3 px-4">
 					<div class="stat-title text-xs">{m.statsPaperTotal()}</div>
 					<div class="stat-value text-2xl">{paperStats.total}</div>
@@ -150,7 +150,7 @@
 
 			<!-- Committee breakdown (collapsible) -->
 			{#if paperStats.byCommittee.length > 0}
-				<details class="collapse collapse-arrow bg-base-100 mt-3">
+				<details class="collapse collapse-arrow border border-base-300 mt-3">
 					<summary class="collapse-title text-sm font-medium py-2 min-h-0">
 						{m.statsPapersByCommittee()}
 					</summary>

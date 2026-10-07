@@ -2,17 +2,15 @@
 	import type { ResolvedPathname } from '$app/types';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import { isMobileOrTablet } from '$lib/utils/detectMobile';
 
 	interface Props {
 		title: string;
 		href: ResolvedPathname;
 		icon: string;
 		active?: boolean;
-		expanded: boolean;
 	}
 
-	let { title, href, icon, active, expanded = $bindable() }: Props = $props();
+	let { title, href, icon, active }: Props = $props();
 	let showAsActive = $derived.by(() => {
 		if (active !== undefined) {
 			return active;
@@ -22,22 +20,11 @@
 			return false;
 		}
 	});
-
-	function closeIfMobile() {
-		if (isMobileOrTablet()) {
-			expanded = false;
-		}
-	}
 </script>
 
-<li class="w-full overflow-hidden" {title}>
-	<a
-		{href}
-		onclick={closeIfMobile}
-		class="flex w-full items-center justify-center p-2 {showAsActive ? 'menu-active' : ''}"
-		aria-label="Toggle menu expand state"
-	>
-		<i class="{showAsActive ? 'fas ' : 'fa-duotone'} {icon} ml-2 w-5 text-center"></i>
-		<p class="overflow-hidden duration-300 {expanded ? 'h-5 w-full pl-1' : 'h-0 w-0'}">{title}</p>
+<li class="w-full" {title}>
+	<a {href} class="flex w-full items-center gap-2 {showAsActive ? 'menu-active' : ''}">
+		<i class="{showAsActive ? 'fas ' : 'fa-duotone'} {icon} w-5 text-center"></i>
+		<span class="truncate">{title}</span>
 	</a>
 </li>

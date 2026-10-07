@@ -88,7 +88,7 @@
 		<p class="text-xs text-base-content/60">{m.statsTotalDisclaimer()}</p>
 
 		<!-- Stats row -->
-		<div class="stats bg-base-100 w-full">
+		<div class="stats w-full">
 			{#each statItems as item (item.title)}
 				<div class="stat py-3 px-4">
 					<div class="stat-title text-xs">{item.title}</div>
@@ -100,7 +100,7 @@
 
 		<!-- Stacked bar chart -->
 		{#if chartData.length > 0}
-			<div class="mt-3 rounded-lg bg-base-100 p-4">
+			<div class="mt-3">
 				<StackedBarChart data={chartData} height="40px" showPercentage={true} />
 			</div>
 		{/if}

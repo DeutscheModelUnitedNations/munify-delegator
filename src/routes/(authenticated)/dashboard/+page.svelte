@@ -6,7 +6,11 @@
 	import NoConferenceIndicator from '$lib/components/NoConferenceIndicator.svelte';
 	import ConferenceSelectorCard from '$lib/components/dashboard/ConferenceSelectorCard.svelte';
 	import { fetchSelectableConferences } from './conferenceSelector';
-	import { conferenceGroupLabel, groupConferencesByState } from './conferenceGroups';
+	import {
+		conferenceGroupIcon,
+		conferenceGroupLabel,
+		groupConferencesByState
+	} from './conferenceGroups';
 
 	// Only what decides the grouping; each card fetches what it shows.
 	const conferences = $derived(await fetchSelectableConferences());
@@ -30,8 +34,18 @@
 		<div class="flex w-full max-w-none flex-col gap-12">
 			<header class="flex flex-col gap-4 pt-6">
 				<AccentStripe />
-				<h1 class="text-4xl font-bold tracking-tight">{m.conferences()}</h1>
-				<p class="text-base-content/70 max-w-xl">{m.conferenceSelectorIntro()}</p>
+				<div class="flex items-start justify-between gap-4">
+					<div class="flex flex-col gap-4">
+						<h1 class="text-4xl font-bold tracking-tight">{m.conferences()}</h1>
+						<p class="text-base-content/70 max-w-xl">{m.conferenceSelectorIntro()}</p>
+					</div>
+					{#if currentUser.isAdmin}
+						<a class="btn btn-primary btn-lg shrink-0 gap-2" href={resolve('/dashboard/seed')}>
+							<i class="fa-solid fa-plus text-2xl"></i>
+							{m.seedConference()}
+						</a>
+					{/if}
+				</div>
 			</header>
 
 			{#each groups as group (group.key)}
@@ -43,6 +57,7 @@
 								? 'text-base-content/50'
 								: 'text-base-content/80'}"
 						>
+							<i class="{conferenceGroupIcon(group.key)} mr-1.5"></i>
 							{conferenceGroupLabel(group.key)}
 						</h2>
 						<span class="badge badge-ghost badge-sm">{group.conferences.length}</span>
@@ -55,13 +70,6 @@
 					</div>
 				</section>
 			{/each}
-
-			{#if currentUser.isAdmin}
-				<a class="btn btn-ghost btn-sm self-center" href={resolve('/dashboard/seed')}>
-					<i class="fa-duotone fa-seedling"></i>
-					{m.seedConference()}
-				</a>
-			{/if}
 		</div>
 	</div>
 {/if}

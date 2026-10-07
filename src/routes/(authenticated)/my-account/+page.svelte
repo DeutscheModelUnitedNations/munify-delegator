@@ -12,7 +12,7 @@
 	import LoginInformationCard from './LoginInformationCard.svelte';
 	import { toast } from 'svelte-sonner';
 	import FormTextArea from '$lib/components/form/FormTextArea.svelte';
-	import ProfileSection from './ProfileSection.svelte';
+	import FormSection from '$lib/components/form/FormSection.svelte';
 	import { client } from '$lib/api/rumbleClient/client';
 	import { getCurrentUser } from '$lib/state/currentUser.svelte';
 	import { buildUserFormValues } from '$lib/api/userFormValues';
@@ -139,7 +139,7 @@
 					{m.personalData()}
 				</h2>
 				<Form {form}>
-					<ProfileSection title={m.contactInformation()} icon="address-book">
+					<FormSection title={m.contactInformation()} icon="address-book">
 						<p class="text-base-content/60 text-xs">
 							<span class="font-semibold">{m.legalName()}:</span>
 							{m.legalNameDisclaimer()}
@@ -171,8 +171,8 @@
 							description={m.emergencyContactDescription()}
 							placeholder={m.emergencyContactsPlaceholder()}
 						/>
-					</ProfileSection>
-					<ProfileSection title={m.address()} icon="house">
+					</FormSection>
+					<FormSection title={m.address()} icon="house">
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
 							<FormTextInput {form} name="street" label={m.street()} placeholder={m.street()} />
 							<FormTextInput
@@ -193,8 +193,8 @@
 							placeholder={m.pleaseSelectCountry()}
 							options={translatedNationCodeAddressFormOptions}
 						/>
-					</ProfileSection>
-					<ProfileSection title={m.aboutYou()} icon="user">
+					</FormSection>
+					<FormSection title={m.aboutYou()} icon="user">
 						<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
 							<FormDateTimeInput
 								{form}
@@ -231,8 +231,8 @@
 								]}
 							/>
 						</div>
-					</ProfileSection>
-					<ProfileSection title={m.newsletters()} icon="envelope-open-text">
+					</FormSection>
+					<FormSection title={m.newsletters()} icon="envelope-open-text">
 						<FormCheckbox
 							{form}
 							name="wantsToReceiveGeneralInformation"
@@ -243,7 +243,7 @@
 							name="wantsJoinTeamInformation"
 							label={m.receiveJoinTeamInformation()}
 						/>
-					</ProfileSection>
+					</FormSection>
 				</Form>
 			</div>
 		</div>

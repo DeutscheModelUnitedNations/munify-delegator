@@ -16,7 +16,7 @@
 			{title}
 		</h2>
 		<div class="overflow-x-auto">
-			<table class="table table-sm bg-base-100 rounded-lg">
+			<table class="table table-sm">
 				<thead>
 					<tr>
 						<th></th>

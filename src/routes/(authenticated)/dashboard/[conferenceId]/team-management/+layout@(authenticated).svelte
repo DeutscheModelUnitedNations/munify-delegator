@@ -5,22 +5,19 @@
 	import { m } from '$lib/paraglide/messages';
 
 	let { children, params }: LayoutProps = $props();
-	let navbarExpanded = $state(true);
 </script>
 
-<ConferenceSidebarLayout conferenceId={params.conferenceId} bind:expanded={navbarExpanded}>
+<ConferenceSidebarLayout conferenceId={params.conferenceId}>
 	{#snippet nav()}
 		<NavMenuButton
 			href={`/dashboard/${params.conferenceId}/team-management/members`}
 			icon="fa-users"
 			title={m.teamMembers()}
-			bind:expanded={navbarExpanded}
 		/>
 		<NavMenuButton
 			href={`/dashboard/${params.conferenceId}/team-management/invitations`}
 			icon="fa-envelope"
 			title={m.pendingInvitations()}
-			bind:expanded={navbarExpanded}
 		/>
 	{/snippet}
 

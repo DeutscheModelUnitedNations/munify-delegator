@@ -95,7 +95,7 @@
 
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<!-- Postal Progress -->
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">
 					<i class="fa-duotone fa-envelope mr-1"></i>
 					{m.postalRegistration()}
@@ -131,7 +131,7 @@
 			</div>
 
 			<!-- Payment Progress -->
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">
 					<i class="fa-duotone fa-credit-card mr-1"></i>
 					{m.payment()}
@@ -168,7 +168,7 @@
 		</div>
 
 		<!-- Completion Matrix -->
-		<div class="mt-4 rounded-lg bg-base-100 p-4">
+		<div class="mt-4">
 			<h3 class="mb-2 text-center text-sm font-medium">
 				<i class="fa-duotone fa-grid-2 mr-1"></i>
 				{m.statsCompletionMatrix()}

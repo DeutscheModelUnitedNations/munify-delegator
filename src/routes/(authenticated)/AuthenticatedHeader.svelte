@@ -39,10 +39,19 @@
 			});
 		}
 	});
+
+	let headerHeight = $state(0);
+
+	// The side navigation sticks below the header, so it needs to know how tall the header is
+	$effect(() => {
+		document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+		return () => document.documentElement.style.removeProperty('--header-height');
+	});
 </script>
 
 <header
-	class="no-print bg-base-100/90 border-base-300 sticky top-0 z-30 w-full border-b backdrop-blur"
+	bind:clientHeight={headerHeight}
+	class="no-print bg-base-100/80 sticky top-0 z-30 w-full backdrop-blur"
 >
 	{#if stripClass}
 		<div class="h-0.5 w-full {stripClass}"></div>
@@ -67,7 +76,10 @@
 			<span class="font-light">MUNify</span> <span class="font-bold">DELEGATOR</span>
 		</a>
 
-		<div class="order-last w-full min-w-0 md:order-none md:w-auto md:flex-1">
+		<!-- daisyUI's .breadcrumbs scrolls horizontally, which clips the conference switcher's dropdown; let it overflow and wrap instead, and drop its own separators since the breadcrumbs draw chevrons -->
+		<div
+			class="order-last w-full min-w-0 md:order-none md:w-auto md:flex-1 [&_.breadcrumbs]:overflow-visible [&_.breadcrumbs>ul]:flex-wrap [&_.breadcrumbs_li]:before:hidden [&_.breadcrumbs_li]:after:hidden"
+		>
 			<Breadcrumbs />
 		</div>
 		<div class="flex-1 md:hidden"></div>

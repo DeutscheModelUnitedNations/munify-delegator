@@ -1,29 +1,29 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormSection from '$lib/components/form/FormSection.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 
 	let { form }: { form: SuperForm<ConferenceSettings> } = $props();
 </script>
 
-<div class="alert alert-info mb-6">
-	<i class="fas fa-circle-info"></i>
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-	<span>{@html m.tabExplanationPayments()}</span>
-</div>
-
-<FormFieldset title={m.bankingInformation()}>
-	<FormTextInput {form} name="feeAmount" placeholder="75,00" label={m.fee()} type="number" />
-	<FormTextInput {form} name="bankName" placeholder="Bank Name" label={m.bankName()} />
-	<FormTextInput {form} name="iban" placeholder="DE12345678901234567890" label={m.iban()} />
-	<FormTextInput {form} name="bic" placeholder="ABCDEFGH" label={m.bic()} />
+<FormSection title={m.conferenceFeeSection()} icon="coins">
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+		<FormTextInput {form} name="feeAmount" placeholder="75,00" label={m.fee()} type="number" />
+		<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
+	</div>
+</FormSection>
+<FormSection title={m.conferenceBankAccount()} icon="building-columns">
 	<FormTextInput
 		{form}
 		name="accountHolder"
 		placeholder="Max Mustermann"
 		label={m.accountHolder()}
 	/>
-	<FormTextInput {form} name="currency" placeholder="EUR" label={m.currency()} />
-</FormFieldset>
+	<FormTextInput {form} name="bankName" placeholder="Bank Name" label={m.bankName()} />
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr]">
+		<FormTextInput {form} name="iban" placeholder="DE12345678901234567890" label={m.iban()} />
+		<FormTextInput {form} name="bic" placeholder="ABCDEFGH" label={m.bic()} />
+	</div>
+</FormSection>

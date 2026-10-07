@@ -76,7 +76,7 @@
 					{m.noDataAvailable()}
 				</div>
 			{:else}
-				<div class="mt-3 rounded-lg bg-base-100 p-4">
+				<div class="mt-3">
 					<LineChart {xAxisData} {series} height="350px" yAxisName={m.statsParticipants()} />
 				</div>
 			{/if}

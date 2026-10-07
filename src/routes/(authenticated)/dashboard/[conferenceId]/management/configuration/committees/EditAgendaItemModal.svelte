@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
+	import AgendaItemFields from './AgendaItemFields.svelte';
 	import type { AgendaItem } from './types';
 
 	interface Props {
@@ -32,17 +32,7 @@
 </script>
 
 <Modal open={!!item} title={m.editAgendaItem()} onclose={() => (item = undefined)}>
-	<FormFieldset title={m.agendaItemDetails()}>
-		<label class="floating-label">
-			<span>{m.title()}</span>
-			<input class="input w-full" placeholder={m.title()} bind:value={draft.title} />
-		</label>
-		<label class="floating-label">
-			<span>{m.teaserText()}</span>
-			<textarea class="textarea w-full" placeholder={m.teaserText()} bind:value={draft.teaserText}
-			></textarea>
-		</label>
-	</FormFieldset>
+	<AgendaItemFields bind:title={draft.title} bind:teaserText={draft.teaserText} />
 	{#snippet action()}
 		<button class="btn" onclick={() => (item = undefined)}>{m.cancel()}</button>
 		<button class="btn btn-primary" onclick={() => item && save(item.id)}>{m.save()}</button>

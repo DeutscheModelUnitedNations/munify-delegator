@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { client } from '$lib/api/rumbleClient/client';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 	import { toast } from 'svelte-sonner';
 	import CommitteeNameFields from './CommitteeNameFields.svelte';
+	import SeatsPerDelegationField from './SeatsPerDelegationField.svelte';
 	import type { ManagedCommittee } from './types';
 
 	interface Props {
@@ -54,26 +54,22 @@
 	<div class="flex flex-col gap-4">
 		<CommitteeNameFields bind:name={draft.name} bind:abbreviation={draft.abbreviation} />
 		{#if canConfigure}
-			<FormFieldset title={m.seatsPerDelegation()}>
-				<input
-					type="number"
-					min="1"
-					class="input w-full"
-					aria-label={m.seatsPerDelegation()}
-					bind:value={draft.seats}
-				/>
+			<div class="flex flex-col gap-4">
+				<SeatsPerDelegationField bind:seats={draft.seats} />
 				<p class="text-xs break-words whitespace-normal opacity-70">{m.seatsPerDelegationHint()}</p>
-			</FormFieldset>
+			</div>
 		{/if}
-		<FormFieldset title={m.resolutionHeadline()}>
-			<input
-				class="input w-full"
-				aria-label={m.resolutionHeadline()}
-				placeholder={m.resolutionHeadlinePlaceholder()}
-				bind:value={draft.resolutionHeadline}
-			/>
+		<div class="flex flex-col gap-4">
+			<label class="floating-label">
+				<span>{m.resolutionHeadline()}</span>
+				<input
+					class="input w-full"
+					placeholder={m.resolutionHeadlinePlaceholder()}
+					bind:value={draft.resolutionHeadline}
+				/>
+			</label>
 			<p class="text-xs break-words whitespace-normal opacity-70">{m.resolutionHeadlineHint()}</p>
-		</FormFieldset>
+		</div>
 	</div>
 	{#snippet action()}
 		<button class="btn" onclick={() => (committee = undefined)}>{m.cancel()}</button>

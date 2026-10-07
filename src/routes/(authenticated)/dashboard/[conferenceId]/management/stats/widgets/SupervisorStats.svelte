@@ -71,7 +71,7 @@
 		</h2>
 
 		<!-- Summary stats -->
-		<div class="stats bg-base-100 w-full">
+		<div class="stats w-full">
 			<div class="stat py-2 px-3">
 				<div class="stat-title text-xs">{m.supervisors()}</div>
 				<div class="stat-value text-xl">{supervisorStats.total}</div>
@@ -89,20 +89,20 @@
 		<!-- Charts -->
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<!-- Acceptance Status Chart -->
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">{m.statsSupervisorAcceptanceStatus()}</h3>
 				<PieChart data={acceptanceData} donut height="180px" showLegend={true} />
 			</div>
 
 			<!-- Attendance Status Chart -->
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				<h3 class="mb-2 text-center text-sm font-medium">{m.statsSupervisorAttendanceStatus()}</h3>
 				<PieChart data={attendanceData} donut height="180px" showLegend={true} />
 			</div>
 		</div>
 
 		<!-- Breakdown Bar -->
-		<div class="rounded-lg bg-base-100 p-4">
+		<div>
 			<h3 class="mb-2 text-sm font-medium">{m.statsSupervisorBreakdown()}</h3>
 			<StackedBarChart data={breakdownData} height="40px" showLabels={true} showPercentage={true} />
 			<div class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">

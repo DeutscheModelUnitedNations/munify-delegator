@@ -91,7 +91,7 @@
 </script>
 
 {#snippet committeeAverageList()}
-	<div class="collapse collapse-arrow bg-base-100 mt-3">
+	<div class="collapse collapse-arrow border border-base-300 mt-3">
 		<input type="checkbox" bind:checked={showCommitteeAverages} />
 		<div class="collapse-title text-sm font-medium py-2">
 			{m.statsCommitteeAverages()}
@@ -136,7 +136,7 @@
 			<!-- Average stats cards by category -->
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
 				{#each averageCards as card (card.id)}
-					<div class="bg-base-100 rounded-lg p-3 text-center">
+					<div class="text-center">
 						<div class="text-xs text-base-content/70">
 							{card.label}
 						</div>
@@ -154,7 +154,7 @@
 			{/if}
 
 			<!-- Stacked bar chart -->
-			<div class="mt-3 rounded-lg bg-base-100 p-4">
+			<div class="mt-3">
 				<MultiSeriesBarChart
 					labels={chartLabels}
 					series={chartSeries}

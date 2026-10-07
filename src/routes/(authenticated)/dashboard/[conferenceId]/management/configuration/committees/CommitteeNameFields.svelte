@@ -1,5 +1,4 @@
 <script lang="ts">
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
 	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
@@ -10,7 +9,7 @@
 	let { name = $bindable(), abbreviation = $bindable() }: Props = $props();
 </script>
 
-<FormFieldset title={m.basicInfo()}>
+<div class="flex flex-col gap-4">
 	<label class="floating-label">
 		<span>{m.name()}</span>
 		<input class="input w-full" placeholder={m.name()} bind:value={name} />
@@ -19,4 +18,4 @@
 		<span>{m.abbreviation()}</span>
 		<input class="input w-full" placeholder={m.abbreviation()} bind:value={abbreviation} />
 	</label>
-</FormFieldset>
+</div>

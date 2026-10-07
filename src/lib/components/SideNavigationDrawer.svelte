@@ -1,61 +1,49 @@
 <script lang="ts">
+	import { afterNavigate } from '$app/navigation';
 	import { setHeaderStatus } from '$lib/state/authenticatedHeaderStatus.svelte';
-	import { isMobileOrTablet } from '$lib/utils/detectMobile';
-	import { onMount, type Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
-		expanded?: boolean;
 		children: Snippet;
 	}
 
-	let { expanded = $bindable(!isMobileOrTablet()), children }: Props = $props();
+	let { children }: Props = $props();
 
-	onMount(() => {
-		if (isMobileOrTablet()) {
-			expanded = false;
-		}
-	});
+	/** Only the mobile drawer opens and closes; from `sm` up the menu is always shown. */
+	let mobileOpen = $state(false);
 
 	$effect(() => {
-		if (!expanded) {
+		if (!mobileOpen) {
 			setHeaderStatus({
 				openNavCallback: () => {
-					expanded = !expanded;
+					mobileOpen = true;
 				}
 			});
 		}
 	});
+
+	afterNavigate(() => {
+		mobileOpen = false;
+	});
 </script>
 
-{#if expanded}
+{#if mobileOpen}
 	<button
 		aria-label="Close navigation drawer"
 		aria-hidden="true"
 		class="fixed top-0 left-0 z-10 h-full w-full bg-black opacity-40 sm:hidden"
-		onclick={() => (expanded = false)}
+		onclick={() => (mobileOpen = false)}
 	></button>
 {/if}
 
-<div class="fixed top-0 left-0 z-20 h-full py-4 pl-3 sm:static sm:h-auto sm:py-0 sm:pl-0">
+<div
+	class="fixed top-0 left-0 z-20 h-full py-4 pl-3 sm:sticky sm:top-[var(--header-height,0px)] sm:h-[calc(100dvh-var(--header-height,0px))] sm:w-60 sm:shrink-0 sm:py-0 sm:pl-0 {mobileOpen
+		? ''
+		: 'hidden sm:block'}"
+>
 	<div
-		class="bg-base-100 border-base-300 rounded-box relative flex flex-col overflow-hidden border duration-300 {expanded
-			? 'h-full w-60 shadow sm:shadow-none'
-			: 'h-0 w-0 items-center sm:h-full sm:w-16'}"
+		class="bg-base-100 rounded-box h-full w-60 overflow-y-auto px-3 py-2 shadow-lg sm:bg-transparent sm:shadow-none"
 	>
-		<div class="flex p-2 {expanded ? 'justify-end' : 'justify-center'}">
-			<button
-				class="btn btn-ghost btn-circle btn-sm"
-				onclick={() => {
-					expanded = !expanded;
-				}}
-				aria-label="Toggle menu expand state"
-			>
-				<i class="fa-duotone fa-arrow-right text-center {expanded ? 'rotate-180' : ''} duration-300"
-				></i>
-			</button>
-		</div>
-		<div class="flex-1 overflow-y-auto {expanded ? 'px-3 pb-4' : 'hidden px-1 pb-2 sm:block'}">
-			{@render children()}
-		</div>
+		{@render children()}
 	</div>
 </div>

@@ -33,7 +33,7 @@
 		</h2>
 
 		{#if stats?.waitingList}
-			<div class="stats bg-base-100 w-full">
+			<div class="stats w-full">
 				<div class="stat py-2 px-3">
 					<div class="stat-title text-xs">{m.registrationsTotal()}</div>
 					<div class="stat-value text-xl">{stats.waitingList.total}</div>
@@ -49,7 +49,7 @@
 			</div>
 
 			{#if stats.waitingList.total > 0}
-				<div class="mt-3 rounded-lg bg-base-100 p-4">
+				<div class="mt-3">
 					<PieChart data={chartData} height="200px" donut={true} showLegend={true} />
 				</div>
 			{/if}

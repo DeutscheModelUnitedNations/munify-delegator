@@ -22,6 +22,7 @@
 	import { collectConfigChanges } from './changePreview';
 	import ConfigChangePreview from './ConfigChangePreview.svelte';
 	import CommitteesManager from './committees/CommitteesManager.svelte';
+	import TabIntro from './sections/TabIntro.svelte';
 	import GeneralSettings from './sections/GeneralSettings.svelte';
 	import StatusSettings from './sections/StatusSettings.svelte';
 	import LinkSettings from './sections/LinkSettings.svelte';
@@ -235,6 +236,22 @@
 		{ value: 'documents', label: m.documentsAndTemplates(), icon: 'fa-file-pdf' }
 	]);
 
+	const tabIntros: Record<TabType, () => string> = {
+		general: m.tabExplanationGeneral,
+		committees: m.tabExplanationCommittees,
+		status: m.tabExplanationStatus,
+		links: m.tabExplanationLinks,
+		payments: m.tabExplanationPayments,
+		documents: m.tabExplanationDocuments
+	};
+	let tabIntro = $derived(tabIntros[currentTab]());
+
+	let saveLabel = $derived(
+		pendingChanges.length > 0
+			? m.saveSettingsWithChangeCount({ count: pendingChanges.length })
+			: m.saveSettings()
+	);
+
 	function handleConfirmSave() {
 		confirmSaveModalOpen = false;
 		formElement?.requestSubmit();
@@ -242,37 +259,60 @@
 </script>
 
 <div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
-	<h1 class="text-2xl font-bold">{m.settings()}</h1>
+	<h1 class="sr-only">{m.settings()}</h1>
 
-	<!-- Tab Navigation -->
-	<div role="tablist" class="tabs tabs-border mb-6 flex-wrap">
-		{#each tabs as tab (tab.value)}
-			{@const changeCount = changeCountPerTab[tab.value] ?? 0}
-			<button
-				role="tab"
-				class="tab {currentTab === tab.value ? 'tab-active' : ''}"
-				onclick={() => setTab(tab.value)}
-			>
-				<i class="fas {tab.icon} mr-2"></i>
-				{tab.label}
-				{#if changeCount > 0}
-					<span
-						class="bg-warning ml-2 inline-block size-2 rounded-full"
-						aria-label={m.configChangeTabIndicator({ count: changeCount })}
-					></span>
-				{/if}
-			</button>
-		{/each}
+	<!-- One row always: labels truncate (full text in the tooltip) instead of wrapping. -->
+	<div class="mb-4">
+		<div role="tablist" class="tabs tabs-border flex-nowrap">
+			{#each tabs as tab (tab.value)}
+				{@const changeCount = changeCountPerTab[tab.value] ?? 0}
+				<button
+					role="tab"
+					class="tab min-w-0 shrink px-3 {currentTab === tab.value ? 'tab-active' : ''}"
+					title={tab.label}
+					onclick={() => setTab(tab.value)}
+				>
+					<span class="relative mr-2 shrink-0">
+						<i class="fas {tab.icon}"></i>
+						{#if changeCount > 0}
+							<span
+								class="absolute -top-0.5 -left-1.5 flex size-2"
+								role="img"
+								aria-label={m.configChangeTabIndicator({ count: changeCount })}
+							>
+								<span
+									class="bg-warning absolute inline-flex size-full animate-ping rounded-full opacity-75"
+								></span>
+								<span class="bg-warning relative inline-flex size-2 rounded-full"></span>
+							</span>
+						{/if}
+					</span>
+					<span class="truncate">{tab.label}</span>
+				</button>
+			{/each}
+		</div>
+	</div>
+
+	<!-- What the open tab is for, with the save button on the same row. -->
+	<div class="mb-6 flex items-center gap-4">
+		<TabIntro>
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
+			{@html tabIntro}
+		</TabIntro>
+		<button
+			type="button"
+			class="btn btn-primary btn-sm btn-square shrink-0"
+			onclick={() => (confirmSaveModalOpen = true)}
+			disabled={pendingChanges.length === 0}
+			title={saveLabel}
+			aria-label={saveLabel}
+		>
+			<i class="fas fa-save"></i>
+		</button>
 	</div>
 
 	<!-- Committees Tab (outside main form) -->
 	<div class:hidden={currentTab !== 'committees'}>
-		<div class="alert alert-info mb-6">
-			<i class="fas fa-circle-info"></i>
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-			<span>{@html m.tabExplanationCommittees()}</span>
-		</div>
-
 		<div class="flex flex-col gap-4">
 			<CommitteesManager {conferenceId} />
 		</div>
@@ -298,31 +338,22 @@
 		<div class:hidden={currentTab !== 'documents'}>
 			<DocumentSettings {conferenceId} {form} storedDocuments={storedFiles} />
 		</div>
-
-		<!-- Sticky Save Button -->
-		<div class="sticky bottom-4 mt-6 z-10 pointer-events-none">
-			<div
-				class="bg-base-100/95 backdrop-blur-sm p-4 rounded-xl shadow-xl border border-base-300 pointer-events-auto max-w-md mx-auto"
-			>
-				<button
-					type="button"
-					onclick={() => (confirmSaveModalOpen = true)}
-					class="btn btn-primary w-full"
-					disabled={pendingChanges.length === 0}
-				>
-					<i class="fas fa-save mr-2"></i>
-					{pendingChanges.length > 0
-						? m.saveSettingsWithChangeCount({ count: pendingChanges.length })
-						: m.saveSettings()}
-				</button>
-			</div>
-		</div>
 	</Form>
 
 	<!-- Resolutions save through their own mutations, so they live outside the settings form. -->
 	<div class="mt-6" class:hidden={currentTab !== 'documents'}>
 		<ResolutionManager {conferenceId} />
 	</div>
+
+	<button
+		type="button"
+		onclick={() => (confirmSaveModalOpen = true)}
+		class="btn btn-primary mt-6 w-full"
+		disabled={pendingChanges.length === 0}
+	>
+		<i class="fas fa-save mr-2"></i>
+		{saveLabel}
+	</button>
 </div>
 
 <Modal bind:open={confirmSaveModalOpen} title={m.confirmSave()}>

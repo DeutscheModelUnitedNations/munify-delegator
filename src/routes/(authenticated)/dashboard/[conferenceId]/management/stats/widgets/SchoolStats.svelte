@@ -82,7 +82,7 @@
 			</div>
 
 			<!-- Summary -->
-			<div class="stats bg-base-100 w-full mb-4">
+			<div class="stats w-full mb-4">
 				<div class="stat py-2 px-3">
 					<div class="stat-title text-xs">{m.statsSchools()}</div>
 					<div class="stat-value text-xl">{totalSchools}</div>
@@ -97,7 +97,7 @@
 				</div>
 			</div>
 
-			<div class="rounded-lg bg-base-100 p-4">
+			<div>
 				{#if showTable}
 					{@render schoolTable()}
 				{:else}

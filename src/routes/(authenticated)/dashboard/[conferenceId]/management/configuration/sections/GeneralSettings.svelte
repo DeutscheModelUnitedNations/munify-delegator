@@ -2,9 +2,9 @@
 	import { m } from '$lib/paraglide/messages';
 	import type { SuperForm } from 'sveltekit-superforms';
 	import dayjs from 'dayjs';
-	import FormFieldset from '$lib/components/form/FormFieldset.svelte';
+	import FormSection from '$lib/components/form/FormSection.svelte';
 	import FormTextInput from '$lib/components/form/FormTextInput.svelte';
-	import FormFileInput from '$lib/components/form/FormFile.svelte';
+	import FormImage from '$lib/components/form/FormImage.svelte';
 	import FormDateTimeInput from '$lib/components/form/FormDateTimeInput.svelte';
 	import type { ConferenceSettings } from '../form-schema';
 
@@ -28,13 +28,7 @@
 	);
 </script>
 
-<div class="alert alert-info mb-6">
-	<i class="fas fa-circle-info"></i>
-	<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted: translation strings authored in messages/ -->
-	<span>{@html m.tabExplanationGeneral()}</span>
-</div>
-
-<FormFieldset title={m.general()}>
+<FormSection title={m.conferenceBasics()} icon="gear">
 	<FormTextInput
 		{form}
 		name="title"
@@ -47,64 +41,62 @@
 		placeholder={`Model United Nation Schleswig-Holstein ${new Date().getFullYear() + 1}`}
 		label={m.conferenceLongTitle()}
 	/>
-	<FormTextInput
-		{form}
-		name="location"
-		placeholder="New York, USA"
-		label={m.conferenceLocation()}
-	/>
-	<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
-	<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
-	{#if $formData.image || storedImages.imageUrl}
-		<img
-			src={$formData.image ? URL.createObjectURL($formData.image) : storedImages.imageUrl}
-			class="h-64 w-64"
-			alt="Preview of the file you selected"
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+		<FormTextInput
+			{form}
+			name="location"
+			placeholder="New York, USA"
+			label={m.conferenceLocation()}
 		/>
-	{/if}
-	<FormFileInput {form} name="image" label={m.conferenceImage()} accept="image/*" />
-	<div class="mt-4">
-		<p class="text-sm opacity-70 mb-2">{m.conferenceEmblem()}</p>
-		{#if $formData.emblem || storedImages.emblemUrl}
-			<img
-				src={$formData.emblem ? URL.createObjectURL($formData.emblem) : storedImages.emblemUrl}
-				class="h-24 w-24 mb-2"
-				alt="Emblem preview"
-			/>
-		{/if}
-		<FormFileInput {form} name="emblem" label={m.conferenceEmblem()} accept="image/svg+xml" />
-		<p class="text-xs opacity-50 mt-1">{m.conferenceEmblemHint()}</p>
+		<FormTextInput {form} name="language" placeholder="Deutsch" label={m.conferenceLanguage()} />
 	</div>
-	<div class="mt-4">
-		<p class="text-sm opacity-70 mb-2">{m.conferenceLogo()}</p>
-		{#if $formData.logo || storedImages.logoUrl}
-			<img
-				src={$formData.logo ? URL.createObjectURL($formData.logo) : storedImages.logoUrl}
-				class="h-24 w-24 mb-2"
-				alt="Logo preview"
-			/>
-		{/if}
-		<FormFileInput {form} name="logo" label={m.conferenceLogo()} accept="image/*" />
-		<p class="text-xs opacity-50 mt-1">{m.conferenceLogoHint()}</p>
+	<FormTextInput {form} name="website" placeholder="mun-sh.de" label={m.conferenceWebsite()} />
+</FormSection>
+
+<FormSection title={m.conferenceImagery()} icon="images">
+	<FormImage {form} name="image" label={m.conferenceImage()} storedUrl={storedImages.imageUrl} />
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+		<FormImage
+			{form}
+			name="emblem"
+			label={m.conferenceEmblem()}
+			description={m.conferenceEmblemHint()}
+			accept="image/svg+xml"
+			storedUrl={storedImages.emblemUrl}
+		/>
+		<FormImage
+			{form}
+			name="logo"
+			label={m.conferenceLogo()}
+			description={m.conferenceLogoHint()}
+			storedUrl={storedImages.logoUrl}
+		/>
 	</div>
-	<FormDateTimeInput
-		{form}
-		name="startAssignment"
-		label={m.conferenceStartAssignment()}
-		enableTime
-	/>
-	<FormTextInput
-		{form}
-		name="registrationDeadlineGracePeriodMinutes"
-		label={m.registrationDeadlineGracePeriod()}
-	/>
-	<p class="test-sm mb-2 opacity-50">
-		{m.technicalRegistrationDeadline()}: {technicalRegistrationDeadline.toLocaleString()}
-	</p>
-	<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
-	<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+</FormSection>
+
+<FormSection title={m.conferenceSchedule()} icon="calendar-days">
+	<div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+		<FormDateTimeInput
+			{form}
+			name="startAssignment"
+			label={m.conferenceStartAssignment()}
+			enableTime
+		/>
+		<div class="flex flex-col">
+			<FormTextInput
+				{form}
+				name="registrationDeadlineGracePeriodMinutes"
+				label={m.registrationDeadlineGracePeriod()}
+			/>
+			<p class="text-base-content/60 mt-1 text-xs">
+				{m.technicalRegistrationDeadline()}: {technicalRegistrationDeadline.toLocaleString()}
+			</p>
+		</div>
+		<FormDateTimeInput {form} name="startConference" label={m.conferenceStart()} />
+		<FormDateTimeInput {form} name="endConference" label={m.conferenceEnd()} />
+	</div>
 	<fieldset class="fieldset">
-		<legend class="fieldset-legend">{m.conferenceTimezone()}</legend>
+		<legend class="label mb-2">{m.conferenceTimezone()}</legend>
 		<input
 			type="text"
 			class="input w-full"
@@ -120,4 +112,4 @@
 		</datalist>
 		<p class="text-base-content/50 mt-1 text-xs">{m.conferenceTimezoneHint()}</p>
 	</fieldset>
-</FormFieldset>
+</FormSection>

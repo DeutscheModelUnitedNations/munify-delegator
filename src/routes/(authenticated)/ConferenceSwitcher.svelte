@@ -1,7 +1,12 @@
 <script lang="ts">
+	import { DropdownMenu } from 'bits-ui';
 	import { resolve } from '$app/paths';
 	import { m } from '$lib/paraglide/messages';
-	import { conferenceGroupLabel, groupConferencesByState } from './dashboard/conferenceGroups';
+	import {
+		conferenceGroupIcon,
+		conferenceGroupLabel,
+		groupConferencesByState
+	} from './dashboard/conferenceGroups';
 	import { fetchSelectableConferences } from './dashboard/conferenceSelector';
 
 	/** The breadcrumb's conference crumb: names the current conference and switches to another. */
@@ -16,37 +21,49 @@
 	const current = $derived(conferences.find((conference) => conference.id === conferenceId));
 </script>
 
-<div class="dropdown">
-	<div tabindex="0" role="button" class="btn btn-ghost btn-sm max-w-56 gap-1.5">
+<DropdownMenu.Root>
+	<DropdownMenu.Trigger class="btn btn-ghost btn-sm max-w-56 gap-1.5">
 		<i class="fa-duotone fa-flag"></i>
 		<span class="truncate font-semibold">{current?.title ?? m.conference()}</span>
 		<i class="fa-solid fa-chevron-down text-base-content/50 text-[0.6rem]"></i>
-	</div>
-	<ul
-		tabindex="-1"
-		class="menu dropdown-content rounded-box bg-base-100 border-base-300 z-30 mt-2 max-h-96 w-72 flex-nowrap overflow-y-auto border p-2 shadow-xl"
-	>
-		<li>
-			<a href={resolve('/dashboard')}>
-				<i class="fa-duotone fa-grid-2 w-4"></i>
-				{m.conferences()}
-			</a>
-		</li>
-		{#each groups as group (group.key)}
-			<li class="menu-title mt-2">{conferenceGroupLabel(group.key)}</li>
-			{#each group.conferences as conference (conference.id)}
-				<li>
-					<a
-						href={resolve('/(authenticated)/dashboard/[conferenceId]', {
-							conferenceId: conference.id
-						})}
-						class={conference.id === conferenceId ? 'menu-active' : ''}
-						aria-current={conference.id === conferenceId ? 'page' : undefined}
+	</DropdownMenu.Trigger>
+	<DropdownMenu.Portal>
+		<!-- the portal and collision handling keep the menu on screen whatever the bar clips -->
+		<DropdownMenu.Content
+			align="start"
+			sideOffset={8}
+			collisionPadding={8}
+			class="rounded-box flex-col bg-base-100 z-50 max-h-[min(24rem,var(--bits-dropdown-menu-content-available-height))] w-72 overflow-y-auto p-2 shadow-xl outline-none"
+		>
+			{#each groups as group (group.key)}
+				<DropdownMenu.Group>
+					<DropdownMenu.GroupHeading
+						class="text-base-content/60 mt-2 px-3 py-1 text-xs font-semibold"
 					>
-						<span class="truncate">{conference.title}</span>
-					</a>
-				</li>
+						<i class="{conferenceGroupIcon(group.key)} mr-1"></i>
+						{conferenceGroupLabel(group.key)}
+					</DropdownMenu.GroupHeading>
+					{#each group.conferences as conference (conference.id)}
+						<DropdownMenu.Item>
+							{#snippet child({ props })}
+								<a
+									{...props}
+									href={resolve('/(authenticated)/dashboard/[conferenceId]', {
+										conferenceId: conference.id
+									})}
+									class="flex items-center gap-2 rounded-field px-3 py-2 text-sm data-highlighted:bg-base-200 {conference.id ===
+									conferenceId
+										? 'bg-primary/10 text-primary font-semibold'
+										: ''}"
+									aria-current={conference.id === conferenceId ? 'page' : undefined}
+								>
+									<span class="truncate">{conference.title}</span>
+								</a>
+							{/snippet}
+						</DropdownMenu.Item>
+					{/each}
+				</DropdownMenu.Group>
 			{/each}
-		{/each}
-	</ul>
-</div>
+		</DropdownMenu.Content>
+	</DropdownMenu.Portal>
+</DropdownMenu.Root>

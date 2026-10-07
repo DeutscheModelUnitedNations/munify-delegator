@@ -11,14 +11,13 @@
 	import { managementMembership } from './managementMembership';
 
 	let { children, params }: LayoutProps = $props();
-	let navbarExpanded = $state(true);
 
 	const membership = $derived(await managementMembership(params.conferenceId));
 	const seatPlanningOnly = $derived(isSeatPlanningOnly(membership));
 </script>
 
-<div class="flex min-w-0 grow basis-0 overflow-hidden">
-	<SideNavigationDrawer bind:expanded={navbarExpanded}>
+<div class="flex min-w-0 grow basis-0 overflow-x-clip">
+	<SideNavigationDrawer>
 		<NavMenu>
 			{#if seatPlanningOnly}
 				<!-- content leads have no other entry, so no workflow group around it -->
@@ -26,131 +25,111 @@
 					href="/dashboard/{params.conferenceId}/management/seat-planning"
 					icon="fa-table-cells"
 					title={m.seatPlanning()}
-					bind:expanded={navbarExpanded}
 				/>
 			{:else}
 				<NavMenuButton
 					href={`/dashboard/${params.conferenceId}/management/stats`}
 					icon="fa-chart-pie"
 					title={m.adminStats()}
-					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href={`/dashboard/${params.conferenceId}/management/configuration`}
 					icon="fa-gears"
 					title={m.settings()}
-					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href={`/dashboard/${params.conferenceId}/management/seats`}
 					icon="fa-chair-office"
 					title={m.seats()}
-					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href="/dashboard/{params.conferenceId}/management/participants"
 					icon="fa-users"
 					title={m.adminUsers()}
-					bind:expanded={navbarExpanded}
 				/>
 				<NavMenuButton
 					href={`/dashboard/${params.conferenceId}/management/waitingList`}
 					icon="fa-user-clock"
 					title={m.waitingList()}
-					bind:expanded={navbarExpanded}
 				/>
-				<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin" small={!navbarExpanded}>
+				<NavMenuDetails title={m.navWorkflows()} icon="fa-arrows-spin">
 					{#if canPlanSeats(membership)}
 						<NavMenuButton
 							href="/dashboard/{params.conferenceId}/management/seat-planning"
 							icon="fa-table-cells"
 							title={m.seatPlanning()}
-							bind:expanded={navbarExpanded}
 						/>
 					{/if}
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/assignment"
 						icon="fa-shuffle"
 						title={m.adminAssignment()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/postalRegistration"
 						icon="fa-envelope"
 						title={m.postalRegistration()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/payments"
 						icon="fa-money-bill-transfer"
 						title={m.payment()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/accessFlow"
 						icon="fa-id-card-clip"
 						title={m.accessFlow()}
-						bind:expanded={navbarExpanded}
 					/>
 				</NavMenuDetails>
-				<NavMenuDetails title={m.navInfo()} icon="fa-comments" small={!navbarExpanded}>
+				<NavMenuDetails title={m.navInfo()} icon="fa-comments">
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/announcement"
 						icon="fa-bullhorn"
 						title={m.announcementSectionTitle()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/calendar"
 						icon="fa-calendar-days"
 						title={m.calendar()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/survey"
 						icon="fa-chart-pie"
 						title={m.survey()}
-						bind:expanded={navbarExpanded}
 					/>
 				</NavMenuDetails>
 
-				<NavMenuDetails title={m.navMaintenance()} icon="fa-toolbox" small={!navbarExpanded}>
+				<NavMenuDetails title={m.navMaintenance()} icon="fa-toolbox">
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/plausibility"
 						icon="fa-shield-check"
 						title={m.adminPlausibility()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/cleanup"
 						icon="fa-broom"
 						title={m.cleanup()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/helper"
 						icon="fa-gear-code"
 						title={m.helper()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/import"
 						icon="fa-file-import"
 						title={m.import()}
-						bind:expanded={navbarExpanded}
 					/>
 					<NavMenuButton
 						href="/dashboard/{params.conferenceId}/management/downloads"
 						icon="fa-download"
 						title={m.downloads()}
-						bind:expanded={navbarExpanded}
 					/>
 				</NavMenuDetails>
 				<NavMenuButton
 					href="/dashboard/{params.conferenceId}/team-management"
 					icon="fa-user-group"
 					title={m.teamManagement()}
-					bind:expanded={navbarExpanded}
 				/>
 			{/if}
 		</NavMenu>

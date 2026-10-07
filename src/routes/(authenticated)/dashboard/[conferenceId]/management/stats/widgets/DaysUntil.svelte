@@ -15,7 +15,7 @@
 
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
 	<div class="card-body p-4">
-		<div class="stats bg-base-100 w-full">
+		<div class="stats w-full">
 			<div class="stat py-2 px-3">
 				<div class="stat-figure">
 					<i class="fa-duotone fa-hourglass-clock text-2xl text-base-content/70"></i>
@@ -29,7 +29,7 @@
 
 <section class="card border border-base-300 bg-base-200 col-span-2 md:col-span-4 xl:col-span-4">
 	<div class="card-body p-4">
-		<div class="stats bg-base-100 w-full">
+		<div class="stats w-full">
 			<div class="stat py-2 px-3">
 				<div class="stat-figure">
 					<i class="fa-duotone fa-check-to-slot text-2xl text-base-content/70"></i>

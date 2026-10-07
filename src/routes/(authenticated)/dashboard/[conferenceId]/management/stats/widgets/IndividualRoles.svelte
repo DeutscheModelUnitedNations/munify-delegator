@@ -47,7 +47,7 @@
 			{m.singleParticipants()}
 		</h2>
 		<div class="overflow-x-auto">
-			<table class="table table-sm bg-base-100 rounded-lg">
+			<table class="table table-sm">
 				<thead>
 					<tr>
 						<th class="w-full text-xs">{m.role()}</th>
