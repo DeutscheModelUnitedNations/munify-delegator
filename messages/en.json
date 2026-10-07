@@ -459,6 +459,7 @@
 	"conferenceRequestImportTitle": "Import existing JSON",
 	"conferenceRequestJson": "Generated JSON",
 	"conferenceRequestNoEntries": "No entries yet",
+	"conferenceRequestNonexistentTime": "This time does not exist in Europe/Berlin because the clocks are set forward. Please choose another time.",
 	"conferenceRequestTimezoneHint": "Times are interpreted in Europe/Berlin.",
 	"conferenceSeats": "Seats of the Conference",
 	"conferenceSettings": "Conference Settings",

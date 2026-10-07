@@ -459,6 +459,7 @@
 	"conferenceRequestImportTitle": "Bestehendes JSON importieren",
 	"conferenceRequestJson": "Erzeugtes JSON",
 	"conferenceRequestNoEntries": "Noch keine Einträge",
+	"conferenceRequestNonexistentTime": "Diese Uhrzeit gibt es in Europe/Berlin nicht, weil die Uhren vorgestellt werden. Bitte wähle eine andere Zeit.",
 	"conferenceRequestTimezoneHint": "Zeiten werden in Europe/Berlin interpretiert.",
 	"conferenceSeats": "Plätze der Konferenz",
 	"conferenceSettings": "Konferenzeinstellungen",

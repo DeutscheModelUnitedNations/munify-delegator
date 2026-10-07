@@ -38,6 +38,8 @@ export type RoleDraft = {
 	fontAwesomeIcon: string;
 };
 
+export type DateField = 'startAssignment' | 'startConference' | 'endConference';
+
 export type RequestFormState = {
 	title: string;
 	longTitle: string;
@@ -51,6 +53,11 @@ export type RequestFormState = {
 	committees: CommitteeDraft[];
 	nsa: NsaDraft[];
 	customConferenceRole: RoleDraft[];
+	/**
+	 * UTC offsets (e.g. `+02:00`) taken from an import. The hour that is repeated when the clocks go
+	 * back exists twice on the wall clock, so the offset is what tells the two occurrences apart.
+	 */
+	offsetHints: Partial<Record<DateField, string>>;
 };
 
 export const emptyRequestForm = (): RequestFormState => ({
@@ -64,7 +71,8 @@ export const emptyRequestForm = (): RequestFormState => ({
 	endConference: '',
 	committees: [],
 	nsa: [],
-	customConferenceRole: []
+	customConferenceRole: [],
+	offsetHints: {}
 });
 
 export const newCommittee = (): CommitteeDraft => ({
@@ -125,16 +133,28 @@ const formatOffset = (offsetMinutes: number) => {
 	return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
 };
 
+const LOCAL_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
 /** `2027-03-10T09:00` (Berlin wall clock) → `2027-03-10T09:00:00+01:00`; empty if incomplete */
-export const localToIso = (value: string): string => {
-	const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+export const localToIso = (value: string, preferredOffset?: string): string => {
+	const match = LOCAL_PATTERN.exec(value);
 	if (!match) return '';
 	const [, year, month, day, hour, minute] = match;
+	const withOffset = (offset: string) => `${year}-${month}-${day}T${hour}:${minute}:00${offset}`;
+
+	// the repeated hour of the autumn clock change is ambiguous, an imported offset resolves it
+	if (preferredOffset && isoToLocal(withOffset(preferredOffset)) === value) {
+		return withOffset(preferredOffset);
+	}
+
 	const wallClockAsUtc = Date.UTC(+year, +month - 1, +day, +hour, +minute);
 	let offset = offsetMinutesAt(wallClockAsUtc);
 	// re-check once with the corrected instant, so dates right at a DST switch resolve properly
 	offset = offsetMinutesAt(wallClockAsUtc - offset * 60000);
-	return `${year}-${month}-${day}T${hour}:${minute}:00${formatOffset(offset)}`;
+	const iso = withOffset(formatOffset(offset));
+
+	// the hour skipped by the spring clock change never happens: the instant would read as another time
+	return isoToLocal(iso) === value ? iso : '';
 };
 
 /** `2027-03-10T09:00:00+01:00` → `2027-03-10T09:00` (Berlin wall clock); empty if unparsable */
@@ -143,6 +163,16 @@ export const isoToLocal = (value: string): string => {
 	if (Number.isNaN(ms)) return '';
 	const p = zonedParts(ms);
 	return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+};
+
+/** A complete input that names a time which does not exist in Europe/Berlin (clocks jump forward) */
+export const isNonexistentLocalTime = (value: string): boolean =>
+	LOCAL_PATTERN.test(value) && localToIso(value) === '';
+
+const isoOffset = (value: string): string | undefined => {
+	if (Number.isNaN(Date.parse(value))) return undefined;
+	if (/Z$/i.test(value)) return '+00:00';
+	return /([+-]\d{2}:\d{2})$/.exec(value)?.[1];
 };
 
 /** Builds the JSON document an admin imports on `/management/seed` */
@@ -154,9 +184,9 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 		location: state.location.trim(),
 		website: state.website.trim(),
 		language: state.language.trim(),
-		startAssignment: localToIso(state.startAssignment),
-		startConference: localToIso(state.startConference),
-		endConference: localToIso(state.endConference)
+		startAssignment: localToIso(state.startAssignment, state.offsetHints.startAssignment),
+		startConference: localToIso(state.startConference, state.offsetHints.startConference),
+		endConference: localToIso(state.endConference, state.offsetHints.endConference)
 	},
 	nsa: state.nsa.map((nsa) => ({
 		name: nsa.name.trim(),
@@ -178,25 +208,23 @@ export const toSeedJson = (state: RequestFormState): SeedJson => ({
 	}))
 });
 
-// Lenient on purpose: an import (or a stored draft) may be incomplete or even invalid,
-// the form then simply shows what is wrong. Only the structure has to be recognisable.
+// A document has to look like a seed document (a `conference` object) and every list entry has to be an
+// object: otherwise the import is rejected instead of silently replacing the form with a reduced copy.
+// Only the individual fields are lenient, an incomplete request is shown with what is wrong.
 const text = z.string().catch('');
 const count = z.number().catch(1);
 
 const importSchema = z.object({
-	conference: z
-		.object({
-			title: text,
-			longTitle: text,
-			location: text,
-			website: text,
-			language: text,
-			startAssignment: text,
-			startConference: text,
-			endConference: text
-		})
-		.partial()
-		.catch({}),
+	conference: z.object({
+		title: text,
+		longTitle: text,
+		location: text,
+		website: text,
+		language: text,
+		startAssignment: text,
+		startConference: text,
+		endConference: text
+	}),
 	nsa: z
 		.array(
 			z.object({
@@ -207,7 +235,7 @@ const importSchema = z.object({
 				fontAwesomeIcon: text
 			})
 		)
-		.catch([]),
+		.default([]),
 	committees: z
 		.array(
 			z.object({
@@ -217,10 +245,10 @@ const importSchema = z.object({
 				nations: z.array(z.string()).catch([])
 			})
 		)
-		.catch([]),
+		.default([]),
 	customConferenceRole: z
 		.array(z.object({ name: text, description: text, fontAwesomeIcon: text }))
-		.catch([])
+		.default([])
 });
 
 /** Parses JSON text (import or stored draft) into form state; `null` if it is not a seed document */
@@ -244,6 +272,11 @@ export const fromSeedJsonText = (raw: string): RequestFormState | null => {
 		startAssignment: isoToLocal(conference.startAssignment ?? ''),
 		startConference: isoToLocal(conference.startConference ?? ''),
 		endConference: isoToLocal(conference.endConference ?? ''),
+		offsetHints: {
+			startAssignment: isoOffset(conference.startAssignment ?? ''),
+			startConference: isoOffset(conference.startConference ?? ''),
+			endConference: isoOffset(conference.endConference ?? '')
+		},
 		nsa: nsa.map((item) => ({ ...item, key: crypto.randomUUID() })),
 		committees: committees.map((item) => ({ ...item, key: crypto.randomUUID() })),
 		customConferenceRole: customConferenceRole.map((item) => ({

@@ -10,6 +10,7 @@
 	import {
 		emptyRequestForm,
 		fromSeedJsonText,
+		isNonexistentLocalTime,
 		newCommittee,
 		newNsa,
 		newRole,
@@ -108,6 +109,12 @@
 	};
 </script>
 
+{#snippet timeError(value: string)}
+	{#if isNonexistentLocalTime(value)}
+		<p class="text-error mt-1 text-sm">{m.conferenceRequestNonexistentTime()}</p>
+	{/if}
+{/snippet}
+
 {#snippet addButton(label: string, onclick: () => void)}
 	<button type="button" class="btn btn-sm self-start" {onclick}>
 		<i class="fa-duotone fa-plus"></i>
@@ -157,14 +164,17 @@
 					<label class="flex flex-col">
 						<FormLabel label={m.startAssignment()} />
 						<input type="datetime-local" class="input w-full" bind:value={form.startAssignment} />
+						{@render timeError(form.startAssignment)}
 					</label>
 					<label class="flex flex-col">
 						<FormLabel label={m.startConference()} />
 						<input type="datetime-local" class="input w-full" bind:value={form.startConference} />
+						{@render timeError(form.startConference)}
 					</label>
 					<label class="flex flex-col">
 						<FormLabel label={m.endConference()} />
 						<input type="datetime-local" class="input w-full" bind:value={form.endConference} />
+						{@render timeError(form.endConference)}
 					</label>
 				</div>
 			</FormFieldset>

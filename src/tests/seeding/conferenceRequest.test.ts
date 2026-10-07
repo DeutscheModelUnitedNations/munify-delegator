@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	emptyRequestForm,
 	fromSeedJsonText,
+	isNonexistentLocalTime,
 	isoToLocal,
 	localToIso,
 	newCommittee,
@@ -55,6 +56,39 @@ describe('conferenceRequest', () => {
 			startConference: form.startConference,
 			committees: [{ name: 'Sicherheitsrat', abbreviation: 'SR', nations: ['DE'] }]
 		});
+	});
+
+	describe('daylight saving time edge cases', () => {
+		it('treats a time skipped by the spring clock change as nonexistent', () => {
+			expect(localToIso('2027-03-28T02:30')).toBe('');
+			expect(isNonexistentLocalTime('2027-03-28T02:30')).toBe(true);
+			expect(isNonexistentLocalTime('2027-03-28T03:30')).toBe(false);
+			expect(isNonexistentLocalTime('')).toBe(false);
+		});
+
+		it('keeps both occurrences of the repeated autumn hour apart across an import', () => {
+			for (const iso of ['2027-10-31T02:30:00+02:00', '2027-10-31T02:30:00+01:00']) {
+				const imported = fromSeedJsonText(JSON.stringify({ conference: { startConference: iso } }));
+				expect(imported).not.toBeNull();
+				if (!imported) return;
+				expect(toSeedJson(imported).conference.startConference).toBe(iso);
+			}
+		});
+	});
+
+	it('rejects objects that are not seed documents', () => {
+		expect(fromSeedJsonText('{"unrelated": true}')).toBeNull();
+	});
+
+	it('rejects a document with a malformed list entry instead of dropping the list', () => {
+		expect(
+			fromSeedJsonText(JSON.stringify({ conference: {}, committees: [{ name: 'GV' }, 'oops'] }))
+		).toBeNull();
+		expect(fromSeedJsonText(JSON.stringify({ conference: {}, nsa: 'not a list' }))).toBeNull();
+	});
+
+	it('accepts a document with only a conference', () => {
+		expect(fromSeedJsonText('{"conference": {}}')).toMatchObject({ committees: [], nsa: [] });
 	});
 
 	it('rejects documents that are not JSON objects', () => {
