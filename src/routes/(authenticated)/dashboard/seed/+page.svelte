@@ -3,6 +3,8 @@
 	import { m } from '$lib/paraglide/messages';
 	import { z } from 'zod';
 	import { client } from '$lib/api/rumbleClient/client';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/utils/toast';
 
@@ -33,17 +35,30 @@
 		}
 	});
 
-	const seedNewConference = () => {
+	const seedNewConference = async () => {
 		if (!seedData) return;
 
-		toast.promise(
-			client.mutate.seedNewConference({ __args: { data: seedData }, id: true }),
-			genericPromiseToastMessages
+		const promise = Promise.resolve(
+			client.mutate.seedNewConference({ __args: { data: seedData }, id: true })
+		);
+		toast.promise(promise, genericPromiseToastMessages);
+
+		// The toast already reports a failure.
+		const conference = await promise.catch(() => undefined);
+		if (!conference) return;
+		await goto(
+			resolve('/(authenticated)/dashboard/[conferenceId]/management', {
+				conferenceId: conference.id
+			})
 		);
 	};
 </script>
 
 <div class="flex w-full flex-col items-center gap-4 p-10">
+	<a href={resolve('/(authenticated)/dashboard/conference-request')} class="btn btn-ghost self-end">
+		<i class="fa-duotone fa-file-pen"></i>
+		{m.conferenceRequest()}
+	</a>
 	<input
 		type="file"
 		class="file-input w-full"

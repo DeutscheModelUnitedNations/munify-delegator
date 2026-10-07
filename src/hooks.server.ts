@@ -32,7 +32,12 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 		event.request = localizedRequest;
 		return resolve(event, {
 			transformPageChunk: ({ html }) => {
-				return html.replace('%lang%', locale);
+				return html
+					.replace('%lang%', locale)
+					.replace(
+						'%fontawesome.stylesheet%',
+						`<link rel="stylesheet" href="${configPublic.PUBLIC_FONTAWESOME_CSS_URL}" />`
+					);
 			}
 		});
 	});

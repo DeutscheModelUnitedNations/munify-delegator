@@ -6,6 +6,7 @@ import { sentrySvelteKit } from '@sentry/sveltekit/vite';
 import { oidcMock } from 'oidc-mock/vite';
 import { fileURLToPath } from 'node:url';
 import type { EnvironmentModuleNode, Plugin } from 'vite';
+import mkcert from 'vite-plugin-mkcert';
 
 /** Whether `file` is one of the modules, or imports one of them, directly or transitively. */
 function reachesFile(modules: EnvironmentModuleNode[], file: string) {
@@ -46,8 +47,22 @@ function rebuildRumbleOnSchemaChange(): Plugin {
 	};
 }
 
+// Serve `vite dev` over HTTPS with a locally trusted mkcert certificate. Off for the e2e suite
+// (playwright.config.ts sets DEV_HTTPS=false), which runs on plain HTTP, and outside the Vite CLI:
+// vitest and svelte-check (which preprocesses styles through this config) load it too, and the
+// plugin fetches the mkcert binary as soon as it is configured.
+const runByViteCli = process.argv.some((arg) =>
+	/[\\/](\.bin[\\/]vite|vite[\\/]bin[\\/]vite\.js)$/.test(arg)
+);
+const devHttps =
+	runByViteCli &&
+	!process.argv.includes('build') &&
+	!process.env.VITEST &&
+	process.env.DEV_HTTPS !== 'false';
+
 export default defineConfig({
 	plugins: [
+		devHttps && mkcert(),
 		sentrySvelteKit({
 			autoUploadSourceMaps: false, // We upload manually via CI to Bugsink
 			// Tracing is off (Bugsink only takes errors), so the build-time tracing instrumentation has

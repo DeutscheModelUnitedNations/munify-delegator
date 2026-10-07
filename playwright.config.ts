@@ -27,6 +27,8 @@ export default defineConfig({
 	],
 	webServer: {
 		command: `bun run dev:server -- --port ${PORT} --strictPort`,
+		// The dev server serves HTTPS via mkcert by default (vite.config.ts); the suite stays on HTTP.
+		env: { DEV_HTTPS: 'false' },
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
