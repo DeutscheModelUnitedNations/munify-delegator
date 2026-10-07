@@ -2,7 +2,8 @@
 	import { ConferenceSeedingSchema } from '$lib/seeding/seedSchema';
 	import { m } from '$lib/paraglide/messages';
 	import { z } from 'zod';
-	import { graphql } from '$houdini';
+	import { cache, graphql } from '$houdini';
+	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { genericPromiseToastMessages } from '$lib/services/toast';
 
@@ -42,19 +43,31 @@
 		}
 	`);
 
-	const seedNewConference = () => {
+	const seedNewConference = async () => {
 		if (!seedData) return;
 
-		toast.promise(
-			seedNewConferenceMutation.mutate({
-				data: seedData
-			}),
-			genericPromiseToastMessages
+		const mutation = seedNewConferenceMutation.mutate({
+			data: seedData
+		});
+		toast.promise(mutation, genericPromiseToastMessages);
+
+		const conferenceId = await mutation.then(
+			(result) => result.data?.seedNewConference.conferenceId,
+			// the toast already reports the error
+			() => undefined
 		);
+		if (!conferenceId) return;
+
+		cache.markStale();
+		await goto(`/management/${conferenceId}`);
 	};
 </script>
 
 <div class="flex w-full flex-col items-center gap-4 p-10">
+	<a href="/management/conference-request" class="btn btn-ghost self-end">
+		<i class="fa-duotone fa-file-pen"></i>
+		{m.conferenceRequest()}
+	</a>
 	<input
 		type="file"
 		class="file-input w-full"
