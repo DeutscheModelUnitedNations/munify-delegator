@@ -29,7 +29,7 @@
 {/snippet}
 
 {#await import('sveaflet') then { Map, TileLayer, Marker, Popup }}
-	<div class="h-[250px] overflow-hidden rounded-lg" data-vaul-no-drag>
+	<div class="h-[250px] overflow-hidden rounded-box" data-vaul-no-drag>
 		<Map
 			options={{
 				center: [lat, lng],

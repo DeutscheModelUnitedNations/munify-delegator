@@ -30,8 +30,8 @@
 
 <div {id} class="card bg-base-200 border border-base-300">
 	<div
-		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-lg"
-		class:rounded-b-lg={!expanded}
+		class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-300/30 transition-colors rounded-t-box"
+		class:rounded-b-box={!expanded}
 		{...toggleButtonProps(() => (expanded = !expanded))}
 	>
 		<div class="flex items-center gap-3">

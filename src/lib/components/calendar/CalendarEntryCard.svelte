@@ -37,7 +37,7 @@
 
 <button
 	type="button"
-	class="{colorConfig.bg} {colorConfig.border} flex h-full w-full cursor-pointer flex-col overflow-hidden rounded border-l-4 px-2 py-1 text-left transition-opacity hover:opacity-80"
+	class="{colorConfig.bg} {colorConfig.border} flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-box border-l-4 px-2 py-1 text-left transition-opacity hover:opacity-80"
 	{onclick}
 	disabled={!onclick}
 >

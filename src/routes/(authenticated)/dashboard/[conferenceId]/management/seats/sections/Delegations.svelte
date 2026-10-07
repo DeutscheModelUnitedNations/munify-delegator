@@ -160,7 +160,7 @@
 	{:else}
 		<div class="tooltip" data-tip={m.committeeAssignment()}>
 			<div
-				class="border-info flex h-8 w-10 items-center justify-center rounded-md border border-dotted"
+				class="border-info flex h-8 w-10 items-center justify-center rounded-selector border border-dotted"
 			>
 				<i class="fas fa-hourglass-half text-info"></i>
 			</div>

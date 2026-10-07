@@ -7,6 +7,9 @@
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui';
 
+/* follow the data-theme attribute set by the theme switcher instead of the system preference */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 @import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-light';
 @import '@deutschemodelunitednations/corporate-identity/css/theme/dmun-dark';
 

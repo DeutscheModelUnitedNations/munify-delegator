@@ -57,7 +57,7 @@
 
 	{#if recommendation}
 		<button
-			class="bg-base-200 hover:bg-base-300 flex items-start gap-2 rounded-lg px-2 py-1.5 text-left text-xs"
+			class="bg-base-200 hover:bg-base-300 flex items-start gap-2 rounded-field px-2 py-1.5 text-left text-xs"
 			aria-expanded={expanded}
 			onclick={onToggle}
 		>

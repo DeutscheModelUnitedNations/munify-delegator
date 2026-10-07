@@ -53,7 +53,7 @@
 
 <div
 	class="h-full w-full flex items-center justify-center transition-all duration-500 {bgClass} {overlayClass}"
-	class:rounded-sm={!overlay}
+	class:rounded-selector={!overlay}
 	class:aspect-square={!overlay}
 	class:hover:scale-105={!compact && !overlay}
 	title={tooltipText}

@@ -17,12 +17,12 @@
 	<h4 class="text-sm font-semibold">{m.seatPlanningSizeHistogram()}</h4>
 	{#each histogram as { size, count } (size)}
 		<button
-			class="hover:bg-base-300 flex items-center gap-2 rounded px-1 text-left text-sm"
+			class="hover:bg-base-300 flex items-center gap-2 rounded-field px-1 text-left text-sm"
 			title={m.seatPlanningSizeOption({ size })}
 			onclick={() => onSelectSize(size)}
 		>
 			<span class="w-5 text-right font-mono">{size}</span>
-			<span class="bg-base-300 h-3 grow overflow-hidden rounded">
+			<span class="bg-base-300 h-3 grow overflow-hidden rounded-selector">
 				<span
 					class="block h-full {count < 3 ? 'bg-warning' : 'bg-primary'}"
 					style:width="{(count / maxCount) * 100}%"

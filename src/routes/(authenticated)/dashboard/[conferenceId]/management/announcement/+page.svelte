@@ -34,7 +34,7 @@
 	}
 </script>
 
-<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
+<div class="card-body bg-base-100 dark:bg-base-200 rounded-box">
 	<p class="opacity-70">{m.announcementSectionDescription()}</p>
 
 	<div class="alert alert-info mb-6">
@@ -61,7 +61,9 @@
 				<div class="label">
 					<span class="label-text">{m.preview()}</span>
 				</div>
-				<div class="bg-base-200 rounded-lg p-4 h-96 w-full overflow-auto prose prose-sm max-w-none">
+				<div
+					class="bg-base-200 rounded-box p-4 h-96 w-full overflow-auto prose prose-sm max-w-none"
+				>
 					<Markdown source={info} />
 				</div>
 			</div>

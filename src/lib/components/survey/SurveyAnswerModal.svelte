@@ -86,7 +86,7 @@
 {#snippet optionCard(option: SurveyOption)}
 	{@const capacity = remainingCapacity(option)}
 	<label
-		class="items-between bg-base-200 hover:bg-base-300 flex cursor-pointer gap-4 rounded-md p-4 transition-all duration-300"
+		class="items-between bg-base-200 hover:bg-base-300 flex cursor-pointer gap-4 rounded-box p-4 transition-all duration-300"
 	>
 		<input
 			type="radio"
@@ -102,7 +102,7 @@
 			{#if option.description}
 				<p class="whitespace-pre-line text-sm">{option.description}</p>
 			{/if}
-			<div class="{capacityClass(capacity)} flex w-auto items-center rounded-md p-2 text-sm">
+			<div class="{capacityClass(capacity)} flex w-auto items-center rounded-box p-2 text-sm">
 				<i class="fa-duotone fa-users mr-2"></i>
 				{@render seats(option, capacity)}
 			</div>

@@ -5,6 +5,19 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		%fontawesome.stylesheet%
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			// apply the color theme before the first paint, keep in sync with src/lib/helpers/theme.svelte.ts
+			try {
+				var themePreference = localStorage.getItem('theme');
+				var themeIsDark =
+					themePreference === 'dark' ||
+					(themePreference !== 'light' &&
+						window.matchMedia('(prefers-color-scheme: dark)').matches);
+				document.documentElement.setAttribute('data-theme', themeIsDark ? 'dark' : 'light');
+			} catch (e) {
+				// no storage access: the theme store sets the attribute after hydration
+			}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

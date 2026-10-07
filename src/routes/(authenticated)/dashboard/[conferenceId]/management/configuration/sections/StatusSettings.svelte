@@ -86,7 +86,7 @@
 	<div class="flex flex-col gap-3">
 		{#each conferenceStateOptions as option (option.value)}
 			<label
-				class="border-base-300 hover:bg-base-200 flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {$formData.state ===
+				class="border-base-300 hover:bg-base-200 flex cursor-pointer items-start gap-3 rounded-box border p-3 transition-colors {$formData.state ===
 				option.value
 					? 'border-primary bg-primary/5'
 					: ''}"

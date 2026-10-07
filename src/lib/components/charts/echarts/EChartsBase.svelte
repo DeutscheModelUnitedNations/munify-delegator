@@ -73,7 +73,6 @@
 		resizeObserver.observe(chartContainer);
 
 		// Handle theme changes
-		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		const handleThemeChange = () => {
 			// The theme is fixed at init, so a theme change builds the chart anew
 			chartInstance?.dispose();
@@ -82,9 +81,7 @@
 				notMerge: true
 			});
 		};
-		mediaQuery.addEventListener('change', handleThemeChange);
-
-		// Also watch for data-theme attribute changes
+		// data-theme follows both the theme switcher and the system preference
 		const observer = new MutationObserver(handleThemeChange);
 		observer.observe(document.documentElement, {
 			attributes: true,
@@ -93,7 +90,6 @@
 
 		return () => {
 			resizeObserver.disconnect();
-			mediaQuery.removeEventListener('change', handleThemeChange);
 			observer.disconnect();
 			chartInstance?.dispose();
 		};

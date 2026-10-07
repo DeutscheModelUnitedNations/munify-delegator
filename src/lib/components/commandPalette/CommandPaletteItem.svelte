@@ -11,7 +11,7 @@
 </script>
 
 <button
-	class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors {active
+	class="flex w-full cursor-pointer items-center gap-3 rounded-field px-3 py-2 text-left transition-colors {active
 		? 'bg-base-200'
 		: 'hover:bg-base-200/50'}"
 	{onclick}

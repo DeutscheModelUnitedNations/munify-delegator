@@ -15,7 +15,7 @@
 </script>
 
 {#if suggestions.length > 0}
-	<ul class="menu bg-base-200 w-full rounded-lg p-1">
+	<ul class="menu bg-base-200 w-full rounded-box p-1">
 		{#each suggestions as suggestion (suggestion.id)}
 			<li>
 				<button

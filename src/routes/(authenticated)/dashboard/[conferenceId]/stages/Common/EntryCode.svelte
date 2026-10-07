@@ -16,7 +16,7 @@
 	let qrModalOpen = $state(false);
 </script>
 
-<div class="bg-base-200 border-base-300 mt-4 flex items-center gap-2 rounded-lg border p-2 pl-4">
+<div class="bg-base-200 border-base-300 mt-4 flex items-center gap-2 rounded-box border p-2 pl-4">
 	<p class="overflow-x-auto font-mono text-xl tracking-[0.6rem] uppercase">
 		{entryCode}
 	</p>

@@ -28,7 +28,7 @@
 </script>
 
 <div
-	class="flex grow-0 flex-col items-center gap-2 rounded-md p-2 shadow-md {emptySeats
+	class="flex grow-0 flex-col items-center gap-2 rounded-box p-2 shadow-md {emptySeats
 		? 'bg-warning'
 		: 'bg-base-200'}"
 	role="region"
@@ -38,7 +38,7 @@
 	<h3 class="text-xs">{subtitle}</h3>
 	{@render children?.()}
 	{#if hasEmptySeats}
-		<div class="w-full rounded-lg border-2 border-dashed text-center font-bold" role="region">
+		<div class="w-full rounded-box border-2 border-dashed text-center font-bold" role="region">
 			{emptySeats}
 		</div>
 	{/if}

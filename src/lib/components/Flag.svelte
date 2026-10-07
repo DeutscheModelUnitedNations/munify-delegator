@@ -12,13 +12,13 @@
 	const flagClassNames = () => {
 		switch (size) {
 			case 'xs':
-				return 'w-[2rem] h-[1.5rem] rounded';
+				return 'w-[2rem] h-[1.5rem] rounded-selector';
 			case 'sm':
-				return 'w-[4rem] h-[3rem] rounded-lg';
+				return 'w-[4rem] h-[3rem] rounded-selector';
 			case 'md':
-				return 'w-[6rem] h-[4.5rem] rounded-lg';
+				return 'w-[6rem] h-[4.5rem] rounded-selector';
 			case 'lg':
-				return 'w-[8rem] h-[6rem] rounded-lg';
+				return 'w-[8rem] h-[6rem] rounded-selector';
 		}
 	};
 

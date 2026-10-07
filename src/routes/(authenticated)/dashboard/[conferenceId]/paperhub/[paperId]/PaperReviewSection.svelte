@@ -309,18 +309,16 @@
 	}
 
 	/* Dark Mode Support (If your app uses class="dark" or media queries) */
-	@media (prefers-color-scheme: dark) {
-		.runway-text-swoop {
-			background: linear-gradient(
-				110deg,
-				#9ca3af 45%,
-				/* Base: Light Grey */ #ffffff 50%,
-				/* Shine: Bright White */ #9ca3af 55% /* Base: Light Grey */
-			);
-			background-clip: text;
-			-webkit-background-clip: text;
-			background-size: 225% 100%;
-		}
+	:global([data-theme='dark']) .runway-text-swoop {
+		background: linear-gradient(
+			110deg,
+			#9ca3af 45%,
+			/* Base: Light Grey */ #ffffff 50%,
+			/* Shine: Bright White */ #9ca3af 55% /* Base: Light Grey */
+		);
+		background-clip: text;
+		-webkit-background-clip: text;
+		background-size: 225% 100%;
 	}
 
 	/* The Movement Logic */

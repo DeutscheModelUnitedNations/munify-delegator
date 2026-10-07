@@ -13,7 +13,7 @@
 	let { user, loading, alreadyInConference, targetRole }: Props = $props();
 </script>
 
-<div class="bg-base-200 flex w-full flex-col items-center justify-center gap-1 rounded-lg p-4">
+<div class="bg-base-200 flex w-full flex-col items-center justify-center gap-1 rounded-box p-4">
 	{#if loading}
 		<div>
 			<i class="fa-duotone fa-spinner fa-spin"></i>

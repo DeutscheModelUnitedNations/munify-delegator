@@ -284,7 +284,7 @@
 
 {#snippet referencedUser(user: NonNullable<typeof referencedUsers>[number], received: boolean)}
 	{@const name = formatNames(user.givenName ?? undefined, user.familyName ?? undefined)}
-	<div class="bg-base-200 flex w-full items-center gap-4 rounded-md px-4 py-2">
+	<div class="bg-base-200 flex w-full items-center gap-4 rounded-box px-4 py-2">
 		<i class="fa-duotone {paymentStatusIcon(user.id, received)} text-2xl"></i>
 		<div class="text-lg font-bold">
 			{name}
@@ -325,7 +325,7 @@
 	{/if}
 
 	<!-- Amount display -->
-	<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-md p-3">
+	<div class="bg-base-200 mb-4 w-fit max-w-sm rounded-box p-3">
 		<div class="font-mono text-3xl font-bold">
 			{transaction.amount.toLocaleString(undefined, {
 				style: 'currency',

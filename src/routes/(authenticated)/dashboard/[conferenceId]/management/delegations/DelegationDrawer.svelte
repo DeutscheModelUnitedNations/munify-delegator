@@ -148,7 +148,7 @@
 		<DetailRow icon="fa-fire-flame-curved">{delegation.motivation}</DetailRow>
 		<DetailRow icon="fa-compass">{delegation.experience}</DetailRow>
 		<DetailRow icon="fa-flag">
-			<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]"
+			<span class="bg-base-300 mr-1 rounded-selector px-3 py-[2px]"
 				>{delegation.appliedForRoles.length}</span
 			>
 			{appliedForRoleNames}

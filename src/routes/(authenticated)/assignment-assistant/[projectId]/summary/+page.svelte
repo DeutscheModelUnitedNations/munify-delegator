@@ -113,7 +113,7 @@
 </TextPreview>
 
 <div class="mt-10 flex flex-col gap-10">
-	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
+	<div class="bg-base-200 flex flex-col gap-4 rounded-box p-4 shadow-lg">
 		<h2 class="text-xl font-bold"><i class="fas fa-user-slash mr-3"></i>Ausschlüsse</h2>
 		<div class="flex flex-wrap gap-2">
 			{#each getRejections() as application (application.id)}
@@ -121,12 +121,12 @@
 			{/each}
 		</div>
 	</div>
-	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
+	<div class="bg-base-200 flex flex-col gap-4 rounded-box p-4 shadow-lg">
 		<h2 class="text-xl font-bold"><i class="fas fa-split mr-3"></i>Zerteilungen</h2>
 		<div class="flex flex-col gap-6">
 			{#each getSplittings() as { parent } (parent.id)}
 				<div class="flex grow-0 items-center justify-start gap-2">
-					<div class="bg-base-300 flex items-center rounded-md p-2 shadow">
+					<div class="bg-base-300 flex items-center rounded-box p-2 shadow">
 						<div class="flex flex-col">
 							<h3 class="text-base font-bold">{codenamize(parent.id)}</h3>
 							<p class="text-sm">{parent.id}</p>
@@ -152,7 +152,7 @@
 					<i class="fas fa-split text-xl"></i>
 					<!-- <div class="flex grow-0 flex-col items-start justify-center gap-2"> -->
 					<!-- 	{#each children as child} -->
-					<!-- 		<div class="bg-base-300 flex flex-col rounded-md p-2 shadow"> -->
+					<!-- 		<div class="bg-base-300 flex flex-col rounded-box p-2 shadow"> -->
 					<!-- 			<h3 class="text-base font-bold">{codenamize(child.id)}</h3> -->
 					<!-- 			<p class="text-sm"> -->
 					<!-- 				{child.members -->
@@ -166,7 +166,7 @@
 			{/each}
 		</div>
 	</div>
-	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
+	<div class="bg-base-200 flex flex-col gap-4 rounded-box p-4 shadow-lg">
 		<h2 class="text-xl font-bold"><i class="fas fa-merge mr-3"></i>Zusammenführungen</h2>
 		<div class="flex flex-wrap gap-2">
 			{#each getMerges() as { applications, nation, nsa } (nation ? nation.alpha3Code : nsa.id)}

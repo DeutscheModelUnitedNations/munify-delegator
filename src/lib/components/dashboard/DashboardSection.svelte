@@ -35,8 +35,8 @@
 
 	const iconClasses = $derived(
 		variant === 'info'
-			? 'bg-info/20 text-info flex h-12 w-12 shrink-0 items-center justify-center rounded-lg p-3'
-			: 'bg-primary/10 text-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-lg p-3'
+			? 'bg-info/20 text-info flex h-12 w-12 shrink-0 items-center justify-center rounded-box p-3'
+			: 'bg-primary/10 text-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-box p-3'
 	);
 </script>
 

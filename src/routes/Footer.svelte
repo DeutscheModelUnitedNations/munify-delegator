@@ -3,6 +3,7 @@
 	import dmunLogoDark from '$assets/logo/dmun-lang-darkmode.svg';
 	import { configPublic } from '$config/public';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { resolve } from '$app/paths';
 </script>
@@ -18,7 +19,10 @@
 				{@html m.imprintAndPrivacy()}
 			</a>
 		</nav>
-		<LanguageSwitcher />
+		<div class="flex flex-wrap justify-center gap-4">
+			<LanguageSwitcher />
+			<ThemeSwitcher />
+		</div>
 		<nav>
 			<div class="grid grid-flow-col gap-4" id="socials">
 				<a href="https://www.instagram.com/dmun_ev/" aria-label="Instagram">

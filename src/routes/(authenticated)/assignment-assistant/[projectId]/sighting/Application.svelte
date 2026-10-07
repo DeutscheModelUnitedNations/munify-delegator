@@ -116,7 +116,8 @@
 {/snippet}
 
 {#snippet appliedForRoles()}
-	<span class="bg-base-300 mr-1 rounded-md px-3 py-[2px]">{application.appliedForRoles.length}</span
+	<span class="bg-base-300 mr-1 rounded-selector px-3 py-[2px]"
+		>{application.appliedForRoles.length}</span
 	>
 	{appliedForRoleNames}
 {/snippet}

@@ -230,12 +230,12 @@
 		: 'translate-y-40'} transition-all duration-300"
 >
 	<div
-		class="bg-warning flex w-full grow-0 flex-col items-center justify-center gap-4 rounded-t-xl p-4 shadow-lg"
+		class="bg-warning flex w-full grow-0 flex-col items-center justify-center gap-4 rounded-t-box p-4 shadow-lg"
 		use:droppable={{ container: 'options', callbacks: { onDrop: handleDrop } }}
 	>
 		<h2 class="w-full text-center font-bold">Zerteilen</h2>
 		<div
-			class="flex h-full w-full flex-1 items-center justify-center gap-4 rounded-lg border-2 border-dashed border-white"
+			class="flex h-full w-full flex-1 items-center justify-center gap-4 rounded-box border-2 border-dashed border-white"
 		>
 			<i class="fas fa-split text-4xl text-white"></i>
 		</div>

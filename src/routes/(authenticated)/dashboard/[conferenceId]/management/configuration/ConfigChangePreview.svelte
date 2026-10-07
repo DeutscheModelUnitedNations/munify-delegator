@@ -12,7 +12,7 @@
 
 {#snippet changeItem(change: ConfigChange)}
 	<li
-		class="rounded-lg border p-3 {change.highImpact
+		class="rounded-box border p-3 {change.highImpact
 			? 'border-warning/50 bg-warning/10'
 			: 'border-base-300 bg-base-200'}"
 	>

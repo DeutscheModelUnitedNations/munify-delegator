@@ -72,7 +72,7 @@
 			{/if}
 		</div>
 
-		<div class="flex items-center gap-3 bg-base-200 p-4 rounded-lg">
+		<div class="flex items-center gap-3 bg-base-200 p-4 rounded-box">
 			{#if flagType === 'NATION' && flagAlpha2Code}
 				<Flag size="sm" alpha2Code={flagAlpha2Code} />
 			{:else}

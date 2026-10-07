@@ -23,9 +23,9 @@
 	});
 </script>
 
-<div class="animate-registration-pulse rounded-xl p-1">
-	<div class="animate-registration-border rounded-lg p-1">
-		<div class="flex items-center justify-center rounded-md bg-white p-2">
+<div class="animate-registration-pulse rounded-box p-1">
+	<div class="animate-registration-border rounded-box p-1">
+		<div class="flex items-center justify-center rounded-box bg-white p-2">
 			<canvas bind:this={canvasElement} class="max-w-full"></canvas>
 		</div>
 	</div>

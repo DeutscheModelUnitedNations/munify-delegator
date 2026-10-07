@@ -54,7 +54,7 @@
 </TextPreview>
 
 {#snippet applicationPool(title: string, applications: SingleParticipant[])}
-	<div class="bg-base-200 flex flex-col gap-4 rounded-lg p-4 shadow-lg">
+	<div class="bg-base-200 flex flex-col gap-4 rounded-box p-4 shadow-lg">
 		<h2 class="text-xl font-bold">{title}</h2>
 		<div class="flex flex-wrap gap-2">
 			{#each applications as application (application.id)}
@@ -86,14 +86,14 @@
 </div>
 
 <div
-	class="bg-warning fixed top-10 right-10 bottom-10 left-10 z-50 flex flex-col justify-center gap-4 rounded-lg p-4 shadow-lg {dragging
+	class="bg-warning fixed top-10 right-10 bottom-10 left-10 z-50 flex flex-col justify-center gap-4 rounded-box p-4 shadow-lg {dragging
 		? ''
 		: 'translate-y-[100vh]'} transition-all duration-300"
 >
 	<h2 class="w-full text-center font-bold">Ablegen</h2>
 	<div class="flex h-full w-full flex-col items-center justify-center gap-4">
 		<div
-			class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-white"
+			class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-box border-2 border-dashed border-white"
 			use:droppable={{ container: 'backToPool', callbacks: { onDrop: handleDrop } }}
 		>
 			<h3 class="text-2xl text-white">Zurück in den Pool</h3>
@@ -103,7 +103,7 @@
 			{#each getSingleRoles() as role (role.id)}
 				{#if !role.name.toLowerCase().startsWith('einzel')}
 					<div
-						class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-white"
+						class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-box border-2 border-dashed border-white"
 						use:droppable={{ container: `role-${role.id}`, callbacks: { onDrop: handleDrop } }}
 					>
 						<h3 class="text-2xl text-white">{role.name}</h3>
@@ -113,7 +113,7 @@
 			{/each}
 		</div>
 		<div
-			class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-white"
+			class="flex h-full w-full flex-1 flex-col items-center justify-center gap-4 rounded-box border-2 border-dashed border-white"
 			use:droppable={{ container: 'convertToDelegation', callbacks: { onDrop: handleDrop } }}
 		>
 			<h3 class="text-2xl text-white">Zu Delegation</h3>

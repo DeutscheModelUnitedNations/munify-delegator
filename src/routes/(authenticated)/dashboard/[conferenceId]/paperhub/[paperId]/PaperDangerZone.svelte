@@ -59,7 +59,7 @@
 				<label class="label" for="delete-confirmation">
 					<span class="label-text text-sm">{m.paperDeleteConfirmation()}</span>
 				</label>
-				<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded">
+				<div class="text-xs text-base-content/50 mb-2 font-mono bg-base-200 p-2 rounded-box">
 					{confirmationText}
 				</div>
 				<input

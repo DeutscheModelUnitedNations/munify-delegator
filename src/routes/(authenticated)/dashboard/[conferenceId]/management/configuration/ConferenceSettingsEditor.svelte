@@ -258,7 +258,7 @@
 	}
 </script>
 
-<div class="card-body bg-base-100 dark:bg-base-200 rounded-2xl">
+<div class="card-body bg-base-100 dark:bg-base-200 rounded-box">
 	<h1 class="sr-only">{m.settings()}</h1>
 
 	<!-- One row always: labels truncate (full text in the tooltip) instead of wrapping. -->
